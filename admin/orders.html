@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Orders Management | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html" class="is-active"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;"><span data-i18n="backToSite">← Back to Site</span></a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="orderManagement">Orders</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;"><span data-i18n="logout">Logout</span></a>
+				</div>
+			</header>
+
+			<div style="margin-top: 24px;">
+				<div class="admin-filters">
+					<div class="admin-search">
+						<input type="text" placeholder="Search orders..." data-action="search" data-field="searchQuery">
+					</div>
+					<select style="padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px;" data-filter="status" data-field="statusFilter">
+						<option value="">All Status</option>
+						<option value="pending">Pending</option>
+						<option value="processing">Processing</option>
+						<option value="shipped">Shipped</option>
+						<option value="completed">Completed</option>
+						<option value="cancelled">Cancelled</option>
+					</select>
+					<button class="btn" data-action="export-csv" data-api="/api/admin/orders/export" data-method="GET">Export CSV</button>
+				</div>
+
+				<div class="admin-table-wrapper" data-api="/api/admin/orders" data-method="GET">
+					<table class="admin-table">
+						<thead>
+							<tr>
+								<th data-i18n="orderNumber">Order #</th>
+								<th data-i18n="customer">Customer</th>
+								<th data-i18n="items">Items</th>
+								<th data-i18n="total">Total</th>
+								<th data-i18n="status">Status</th>
+								<th data-i18n="date">Date</th>
+								<th data-i18n="actions">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr data-entity="order" data-id="12349">
+								<td><a href="order-detail.html" style="color: var(--color-primary);" data-field="orderNumber" data-action="view-order" data-api="/api/admin/orders/12349">#12349</a></td>
+								<td data-field="customerName">John Doe</td>
+								<td data-field="itemCount">3 items</td>
+								<td data-field="total">$89.50</td>
+								<td><span class="badge badge-success" data-field="status">Completed</span></td>
+								<td data-field="date">Oct 31, 2025</td>
+								<td><a href="order-detail.html" class="btn-icon btn--outline" style="font-size: 12px;" data-action="view-order" data-api="/api/admin/orders/12349">View</a></td>
+							</tr>
+							<tr data-entity="order" data-id="12348">
+								<td><a href="order-detail.html" style="color: var(--color-primary);" data-field="orderNumber" data-action="view-order" data-api="/api/admin/orders/12348">#12348</a></td>
+								<td data-field="customerName">Jane Smith</td>
+								<td data-field="itemCount">5 items</td>
+								<td data-field="total">$145.00</td>
+								<td><span class="badge badge-warning" data-field="status">Processing</span></td>
+								<td data-field="date">Oct 31, 2025</td>
+								<td><a href="order-detail.html" class="btn-icon btn--outline" style="font-size: 12px;" data-action="view-order" data-api="/api/admin/orders/12348">View</a></td>
+							</tr>
+							<tr data-entity="order" data-id="12347">
+								<td><a href="order-detail.html" style="color: var(--color-primary);" data-field="orderNumber" data-action="view-order" data-api="/api/admin/orders/12347">#12347</a></td>
+								<td data-field="customerName">Mike Johnson</td>
+								<td data-field="itemCount">2 items</td>
+								<td data-field="total">$56.00</td>
+								<td><span class="badge badge-info" data-field="status">Shipped</span></td>
+								<td data-field="date">Oct 30, 2025</td>
+								<td><a href="order-detail.html" class="btn-icon btn--outline" style="font-size: 12px;">View</a></td>
+							</tr>
+							<tr>
+								<td><a href="order-detail.html" style="color: var(--color-primary);">#12346</a></td>
+								<td>Sarah Lee</td>
+								<td>8 items</td>
+								<td>$234.00</td>
+								<td><span class="badge badge-pending">Pending</span></td>
+								<td>Oct 30, 2025</td>
+								<td><a href="order-detail.html" class="btn-icon btn--outline" style="font-size: 12px;">View</a></td>
+							</tr>
+							<tr>
+								<td><a href="order-detail.html" style="color: var(--color-primary);">#12345</a></td>
+								<td>Alex Brown</td>
+								<td>3 items</td>
+								<td>$60.48</td>
+								<td><span class="badge badge-warning">Processing</span></td>
+								<td>Oct 29, 2025</td>
+								<td><a href="order-detail.html" class="btn-icon btn--outline" style="font-size: 12px;">View</a></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="admin-pagination">
+					<button>Previous</button>
+					<button class="active">1</button>
+					<button>2</button>
+					<button>3</button>
+					<button>Next</button>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+

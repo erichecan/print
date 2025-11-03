@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#e8f4f8"/>
+  <text x="400" y="250" font-family="Arial" font-size="24" fill="#999" text-anchor="middle">Hero Bottles (800x500)</text>
+  <ellipse cx="250" cy="200" rx="40" ry="120" fill="#1e88e5"/>
+  <ellipse cx="400" cy="200" rx="40" ry="120" fill="#43a047"/>
+  <ellipse cx="550" cy="200" rx="40" ry="120" fill="#e53935"/>
+</svg>
+

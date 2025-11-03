@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>My Account | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-10-31 13:00:00] Account Center Page -->
+</head>
+<body>
+	<div class="topbar" role="region" aria-label="Top Utility Bar">
+		<div class="container util">
+			<a href="account.html">My Account</a>
+			<a href="cart.html">Cart (0)</a>
+			<a href="tel:8002934232">800-293-4232</a>
+		</div>
+	</div>
+
+	<header class="primary" role="banner">
+		<div class="container">
+			<nav class="nav" aria-label="Primary Navigation">
+				<div class="brand">
+					<a href="home.html" style="display:flex;align-items:center;gap:10px">
+						<div class="brand__logo" aria-hidden="true"></div>
+						<span class="brand__name">suvernire plus</span>
+					</a>
+				</div>
+				<div class="menu" role="menubar">
+					<a role="menuitem" href="home.html">Home</a>
+					<a role="menuitem" href="long-sleeve.html">Products</a>
+					<a role="menuitem" href="design-lab.html">Design Lab</a>
+				</div>
+				<div class="cta">
+					<a class="btn" href="design-lab.html">Start Designing</a>
+				</div>
+			</nav>
+		</div>
+	</header>
+
+	<main id="main">
+		<nav class="breadcrumb" aria-label="Breadcrumb">
+			<div class="container">
+				<ol>
+					<li><a href="home.html">Home</a></li>
+					<li aria-current="page">My Account</li>
+				</ol>
+			</div>
+		</nav>
+
+		<section class="account" aria-label="Account Dashboard">
+			<div class="container account__grid">
+				<aside class="account-nav">
+					<nav aria-label="Account Navigation">
+						<a class="nav-link is-active" href="#orders" data-panel="orders">My Orders</a>
+						<a class="nav-link" href="#designs" data-panel="designs">My Designs</a>
+						<a class="nav-link" href="#settings" data-panel="settings">Account Settings</a>
+						<a class="nav-link" href="help.html">Help Center</a>
+					</nav>
+				</aside>
+
+				<div class="account-content">
+					<section id="orders" class="account-section" data-api="/api/user/orders" data-method="GET">
+						<h1 data-field="pageTitle">My Orders</h1>
+						<div class="orders-list">
+							<article class="order-card" data-entity="order" data-id="12345">
+								<div class="order-header">
+									<div>
+										<strong data-field="orderNumber">Order #12345</strong>
+										<p class="muted" data-field="placedDate">Placed on Nov 1, 2025</p>
+									</div>
+									<span class="status status-processing" data-field="status">Processing</span>
+								</div>
+								<div class="order-items-preview">
+									<div class="preview-img placeholder" data-field="itemThumbnail"></div>
+									<div class="preview-img placeholder" data-field="itemThumbnail"></div>
+									<div class="preview-img placeholder" data-field="itemThumbnail"></div>
+								</div>
+								<div class="order-footer">
+									<span class="order-total" data-field="total">Total: $60.48</span>
+									<a class="btn btn--outline" href="order-detail.html" data-action="view-order" data-api="/api/orders/12345">View Details</a>
+								</div>
+							</article>
+
+							<article class="order-card" data-entity="order" data-id="11890">
+								<div class="order-header">
+									<div>
+										<strong data-field="orderNumber">Order #11890</strong>
+										<p class="muted" data-field="placedDate">Placed on Oct 15, 2025</p>
+									</div>
+									<span class="status status-shipped" data-field="status">Shipped</span>
+								</div>
+								<div class="order-items-preview">
+									<div class="preview-img placeholder" data-field="itemThumbnail"></div>
+								</div>
+								<div class="order-footer">
+									<span class="order-total" data-field="total">Total: $24.00</span>
+									<a class="btn btn--outline" href="order-tracking.html" data-action="track-order" data-api="/api/orders/11890/tracking">Track Order</a>
+								</div>
+							</article>
+						</div>
+					</section>
+
+					<section id="designs" class="account-section" style="display:none" data-api="/api/user/designs" data-method="GET">
+						<h1 data-field="pageTitle">My Designs</h1>
+						<div class="designs-grid">
+							<article class="design-card" data-entity="design" data-id="design-001">
+								<div class="design-preview placeholder" data-field="thumbnail"></div>
+								<h3 data-field="name">Team Design v3</h3>
+								<p class="muted" data-field="lastEdited">Last edited: Oct 28, 2025</p>
+								<div class="design-actions">
+									<a class="btn btn--outline" href="design-lab.html" data-action="edit-design" data-api="/api/designs/design-001">Edit</a>
+									<button class="btn--text" data-action="delete-design" data-api="/api/designs/design-001" data-method="DELETE">Delete</button>
+								</div>
+							</article>
+							<article class="design-card" data-entity="design" data-id="design-002">
+								<div class="design-preview placeholder" data-field="thumbnail"></div>
+								<h3 data-field="name">Event Hoodies</h3>
+								<p class="muted" data-field="lastEdited">Last edited: Oct 10, 2025</p>
+								<div class="design-actions">
+									<a class="btn btn--outline" href="design-lab.html" data-action="edit-design" data-api="/api/designs/design-002">Edit</a>
+									<button class="btn--text" data-action="delete-design" data-api="/api/designs/design-002" data-method="DELETE">Delete</button>
+								</div>
+							</article>
+						</div>
+					</section>
+
+					<section id="settings" class="account-section" style="display:none" data-api="/api/user/profile" data-method="GET">
+						<h1 data-field="pageTitle">Account Settings</h1>
+						<form class="profile-form" data-api="/api/user/profile" data-method="PUT">
+							<label for="profile-name">Full Name</label>
+							<input id="profile-name" type="text" value="John Doe" data-field="user.fullName">
+
+							<label for="profile-email">Email</label>
+							<input id="profile-email" type="email" value="john@example.com" data-field="user.email">
+
+							<label for="profile-phone">Phone</label>
+							<input id="profile-phone" type="tel" value="(555) 123-4567" data-field="user.phone">
+
+							<h2>Change Password</h2>
+							<label for="current-password">Current Password</label>
+							<input id="current-password" type="password" data-field="password.current">
+
+							<label for="new-password">New Password</label>
+							<input id="new-password" type="password" data-field="password.new">
+
+							<label for="confirm-password">Confirm New Password</label>
+							<input id="confirm-password" type="password" data-field="password.confirm">
+
+							<button class="btn" type="submit" data-action="update-profile">Save Changes</button>
+						</form>
+					</section>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<footer class="site-footer" role="contentinfo">
+		<div class="container">
+			<small>© 2025 suvernire plus.</small>
+			<nav aria-label="Legal Links">
+				<a href="#privacy">Privacy Policy</a>
+				<span aria-hidden="true"> | </span>
+				<a href="#terms">User Agreement</a>
+			</nav>
+		</div>
+	</footer>
+
+	<script>
+		document.querySelectorAll('.account-nav .nav-link').forEach(link => {
+			link.addEventListener('click', (e) => {
+				e.preventDefault();
+				const targetId = link.getAttribute('href').replace('#', '');
+				document.querySelectorAll('.account-nav .nav-link').forEach(l => l.classList.remove('is-active'));
+				link.classList.add('is-active');
+				document.querySelectorAll('.account-section').forEach(s => s.style.display = 'none');
+				document.getElementById(targetId).style.display = 'block';
+			});
+		});
+	</script>
+</body>
+</html>
+

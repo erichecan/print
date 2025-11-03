@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Shopping Cart | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-10-31 12:45:00] Shopping Cart Page -->
+</head>
+<body>
+	<!-- Topbar -->
+	<div class="topbar" role="region" aria-label="Top Utility Bar">
+		<div class="container util">
+			<a href="ndx-welcome.html">Sign In</a>
+			<a href="cart.html">Cart (2)</a>
+			<a href="tel:8002934232">800-293-4232</a>
+		</div>
+	</div>
+
+	<header class="primary" role="banner">
+		<div class="container">
+			<nav class="nav" aria-label="Primary Navigation">
+				<div class="brand">
+					<a href="home.html" style="display:flex;align-items:center;gap:10px">
+						<div class="brand__logo" aria-hidden="true"></div>
+						<span class="brand__name">suvernire plus</span>
+					</a>
+				</div>
+				<div class="menu" role="menubar">
+					<a role="menuitem" href="home.html">Home</a>
+					<a role="menuitem" href="long-sleeve.html">Products</a>
+					<a role="menuitem" href="design-lab.html">Design Lab</a>
+				</div>
+				<div class="cta">
+					<a class="btn btn--outline" href="help.html">Help</a>
+					<a class="btn" href="design-lab.html">Start Designing</a>
+				</div>
+			</nav>
+		</div>
+	</header>
+
+	<main id="main">
+		<nav class="breadcrumb" aria-label="Breadcrumb">
+			<div class="container">
+				<ol>
+					<li><a href="home.html">Home</a></li>
+					<li aria-current="page">Shopping Cart</li>
+				</ol>
+			</div>
+		</nav>
+
+		<section class="cart" aria-label="Shopping Cart">
+			<div class="container cart__grid">
+				<div class="cart__items" data-api="/api/cart" data-method="GET">
+					<h1 data-field="pageTitle">Shopping Cart</h1>
+					<div class="cart-table">
+						<div class="cart-row header">
+							<span>Product</span>
+							<span>Color/Size</span>
+							<span>Quantity</span>
+							<span>Price</span>
+							<span></span>
+						</div>
+
+						<div class="cart-row" data-entity="cart-item" data-id="item-001">
+							<div class="item-info">
+								<div class="item-img placeholder" data-field="thumbnail"></div>
+								<div class="item-details">
+									<strong data-field="productName">Gildan Midweight 50/50 Pullover Hoodie</strong>
+									<small data-field="sku">Item #108200</small>
+								</div>
+							</div>
+							<div class="item-variants" data-field="variants">
+								<small data-field="variantDescription">Royal • M</small>
+							</div>
+							<div class="item-qty">
+								<button class="qty-btn" type="button" aria-label="Decrease" data-action="update-quantity" data-api="/api/cart/items/item-001" data-method="PUT">−</button>
+								<input type="number" value="1" min="1" aria-label="Quantity" data-field="quantity">
+								<button class="qty-btn" type="button" aria-label="Increase" data-action="update-quantity" data-api="/api/cart/items/item-001" data-method="PUT">+</button>
+							</div>
+							<div class="item-price" data-field="unitPrice">$24.00</div>
+							<div class="item-remove"><button type="button" aria-label="Remove" data-action="remove" data-api="/api/cart/items/item-001" data-method="DELETE">×</button></div>
+						</div>
+
+						<div class="cart-row" data-entity="cart-item" data-id="item-002">
+							<div class="item-info">
+								<div class="item-img placeholder" data-field="thumbnail"></div>
+								<div class="item-details">
+									<strong data-field="productName">Hanes EcoSmart Long Sleeve</strong>
+									<small data-field="sku">Item #205600</small>
+								</div>
+							</div>
+							<div class="item-variants" data-field="variants">
+								<small data-field="variantDescription">Navy • L</small>
+							</div>
+							<div class="item-qty">
+								<button class="qty-btn" type="button" aria-label="Decrease" data-action="update-quantity" data-api="/api/cart/items/item-002" data-method="PUT">−</button>
+								<input type="number" value="2" min="1" aria-label="Quantity" data-field="quantity">
+								<button class="qty-btn" type="button" aria-label="Increase" data-action="update-quantity" data-api="/api/cart/items/item-002" data-method="PUT">+</button>
+							</div>
+							<div class="item-price" data-field="unitPrice">$32.00</div>
+							<div class="item-remove"><button type="button" aria-label="Remove" data-action="remove" data-api="/api/cart/items/item-002" data-method="DELETE">×</button></div>
+						</div>
+					</div>
+
+					<div class="promo">
+						<label for="promo-code">Promo Code</label>
+						<div class="promo-input">
+							<input id="promo-code" type="text" placeholder="Enter code" data-field="couponCode">
+							<button class="btn" type="button" data-action="apply-coupon" data-api="/api/cart/coupon" data-method="POST">Apply</button>
+						</div>
+					</div>
+				</div>
+
+				<aside class="cart-summary">
+					<div class="summary-card">
+						<h2>Order Summary</h2>
+						<div class="summary-row">
+							<span data-field="summaryLabel">Subtotal</span>
+							<span data-field="subtotal">$56.00</span>
+						</div>
+						<div class="summary-row">
+							<span data-field="summaryLabel">Shipping</span>
+							<span data-field="shipping">Free</span>
+						</div>
+						<div class="summary-row">
+							<span data-field="summaryLabel">Estimated Tax</span>
+							<span data-field="tax">$4.48</span>
+						</div>
+						<hr class="divider">
+						<div class="summary-row total">
+							<span data-field="summaryLabel">Total</span>
+							<span data-field="total">$60.48</span>
+						</div>
+					<a class="btn" style="width:100%;margin-top:12px;" href="checkout.html" data-action="navigate" data-target="checkout">Proceed to Checkout</a>
+					<a class="btn btn--outline" style="width:100%;" href="home.html" data-action="navigate" data-target="home">Continue Shopping</a>
+					</div>
+
+					<div class="trust-badges">
+						<p><strong>✓ 100% Satisfaction Guaranteed</strong></p>
+						<p><strong>✓ Secure Checkout</strong></p>
+						<p><strong>✓ Free Shipping on Orders $25+</strong></p>
+					</div>
+				</aside>
+			</div>
+		</section>
+	</main>
+
+	<footer class="site-footer" role="contentinfo">
+		<div class="container">
+			<small>© 2025 suvernire plus.</small>
+			<nav aria-label="Legal Links">
+				<a href="#privacy">Privacy Policy</a>
+				<span aria-hidden="true"> | </span>
+				<a href="#terms">User Agreement</a>
+			</nav>
+		</div>
+	</footer>
+</body>
+</html>
+

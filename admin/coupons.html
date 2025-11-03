@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Coupons Management | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html" class="is-active"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;"><span data-i18n="backToSite">← Back to Site</span></a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="couponManagement">Coupons</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;"><span data-i18n="logout">Logout</span></a>
+				</div>
+			</header>
+
+			<div style="margin-top: 24px;">
+				<div class="admin-filters">
+					<div class="admin-search">
+						<input type="text" placeholder="Search coupons...">
+					</div>
+					<button class="btn">+ New Coupon</button>
+				</div>
+
+				<div class="admin-table-wrapper">
+					<table class="admin-table">
+						<thead>
+							<tr>
+								<th>Code</th>
+								<th>Type</th>
+								<th>Discount</th>
+								<th>Usage</th>
+								<th>Valid Until</th>
+								<th>Status</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><strong>WELCOME10</strong></td>
+								<td><span class="badge badge-info">Percentage</span></td>
+								<td>10%</td>
+								<td>156 / Unlimited</td>
+								<td>Nov 30, 2025</td>
+								<td><span class="badge badge-success">Active</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="#">Edit</a>
+											<a href="#">View Usage</a>
+											<a href="#">Deactivate</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td><strong>SAVE20</strong></td>
+								<td><span class="badge badge-info">Percentage</span></td>
+								<td>20%</td>
+								<td>89 / 100</td>
+								<td>Dec 15, 2025</td>
+								<td><span class="badge badge-success">Active</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="#">Edit</a>
+											<a href="#">View Usage</a>
+											<a href="#">Deactivate</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td><strong>FREESHIP</strong></td>
+								<td><span class="badge badge-warning">Free Shipping</span></td>
+								<td>100%</td>
+								<td>234 / Unlimited</td>
+								<td>Nov 20, 2025</td>
+								<td><span class="badge badge-success">Active</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="#">Edit</a>
+											<a href="#">View Usage</a>
+											<a href="#">Deactivate</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td><strong>STUDENT15</strong></td>
+								<td><span class="badge badge-info">Percentage</span></td>
+								<td>15%</td>
+								<td>45 / 500</td>
+								<td>Jan 1, 2026</td>
+								<td><span class="badge badge-success">Active</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="#">Edit</a>
+											<a href="#">View Usage</a>
+											<a href="#">Deactivate</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td><strong>BLACKFRIDAY</strong></td>
+								<td><span class="badge badge-info">Percentage</span></td>
+								<td>30%</td>
+								<td>1240 / 5000</td>
+								<td>Nov 29, 2025</td>
+								<td><span class="badge badge-pending">Expired</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="#">Edit</a>
+											<a href="#">View Usage</a>
+											<a href="#">Archive</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="admin-pagination">
+					<button>Previous</button>
+					<button class="active">1</button>
+					<button>Next</button>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+

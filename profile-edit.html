@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Edit Profile | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-11-01 00:00:00] Profile editing page -->
+</head>
+<body>
+	<div class="topbar" role="region" aria-label="Top Utility Bar">
+		<div class="container util">
+			<a href="account.html">My Account</a>
+			<a href="cart.html">Cart (0)</a>
+			<a href="tel:8002934232">800-293-4232</a>
+		</div>
+	</div>
+
+	<header class="primary" role="banner">
+		<div class="container">
+			<nav class="nav" aria-label="Primary Navigation">
+				<div class="brand">
+					<a href="home.html" style="display:flex;align-items:center;gap:10px">
+						<div class="brand__logo" aria-hidden="true"></div>
+						<span class="brand__name">suvernire plus</span>
+					</a>
+				</div>
+				<div class="menu" role="menubar">
+					<a role="menuitem" href="home.html">Home</a>
+					<a role="menuitem" href="long-sleeve.html">Products</a>
+					<a role="menuitem" href="design-lab.html">Design Lab</a>
+				</div>
+				<div class="cta">
+					<a class="btn" href="design-lab.html">Start Designing</a>
+				</div>
+			</nav>
+		</div>
+	</header>
+
+	<main id="main">
+		<nav class="breadcrumb" aria-label="Breadcrumb">
+			<div class="container">
+				<ol>
+					<li><a href="home.html">Home</a></li>
+					<li><a href="account.html">My Account</a></li>
+					<li aria-current="page">Edit Profile</li>
+				</ol>
+			</div>
+		</nav>
+
+		<section aria-label="Profile Edit">
+			<div class="container" style="max-width: 700px; padding: 24px 0;">
+				<h1 style="margin-bottom: 24px;">Edit Profile</h1>
+
+				<div style="background: #fff; border: 1px solid var(--color-border); border-radius: 14px; padding: 24px; display: grid; gap: 20px;">
+					<div style="display: flex; gap: 20px; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--color-border);">
+						<div class="placeholder" style="width: 80px; height: 80px; border-radius: 50%; flex-shrink: 0;"></div>
+						<div>
+							<h3 style="margin: 0 0 8px;">Profile Photo</h3>
+							<div style="display: flex; gap: 12px;">
+								<button class="btn btn--outline" type="button">Change Photo</button>
+								<button class="btn btn--outline" type="button" style="color: var(--color-text-muted);">Remove</button>
+							</div>
+						</div>
+					</div>
+
+					<div class="form" style="display: grid; gap: 16px;">
+						<div>
+							<label>Full Name</label>
+							<input type="text" value="John Doe" placeholder="Your full name">
+						</div>
+
+						<div>
+							<label>Email</label>
+							<input type="email" value="john@example.com" placeholder="your@email.com">
+						</div>
+
+						<div>
+							<label>Phone</label>
+							<input type="tel" value="+1 (555) 123-4567" placeholder="Phone number">
+						</div>
+
+						<div>
+							<label>Company (Optional)</label>
+							<input type="text" value="" placeholder="Company name">
+						</div>
+
+						<div>
+							<label>Bio</label>
+							<textarea rows="4" placeholder="Tell us about yourself" style="padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; width: 100%; font-family: inherit; resize: vertical;"></textarea>
+						</div>
+					</div>
+				</div>
+
+				<div style="background: #fff; border: 1px solid var(--color-border); border-radius: 14px; padding: 24px; margin-top: 20px;">
+					<h2 style="margin: 0 0 20px;">Change Password</h2>
+					<div class="form" style="display: grid; gap: 16px;">
+						<div>
+							<label>Current Password</label>
+							<input type="password" placeholder="Enter current password">
+						</div>
+						<div>
+							<label>New Password</label>
+							<input type="password" placeholder="At least 8 characters">
+						</div>
+						<div>
+							<label>Confirm New Password</label>
+							<input type="password" placeholder="Re-enter new password">
+						</div>
+					</div>
+				</div>
+
+				<div style="display: flex; gap: 12px; margin-top: 24px;">
+					<button class="btn" type="button" style="flex: 1;" onclick="alert('Profile saved!'); window.location.href='account.html'">Save Changes</button>
+					<button class="btn btn--outline" type="button" onclick="window.location.href='account.html'">Cancel</button>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<footer class="site-footer" role="contentinfo">
+		<div class="container">
+			<small>© 2025 suvernire plus.</small>
+			<nav aria-label="Legal Links">
+				<a href="#privacy">Privacy Policy</a>
+				<span aria-hidden="true"> | </span>
+				<a href="#terms">User Agreement</a>
+			</nav>
+		</div>
+	</footer>
+</body>
+</html>
+

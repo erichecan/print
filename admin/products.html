@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Products Management | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+	<!-- [2025-11-01 00:00:00] Product management page -->
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html" class="is-active"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;"><span data-i18n="backToSite">← Back to Site</span></a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="productManagement">Products</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;"><span data-i18n="logout">Logout</span></a>
+				</div>
+			</header>
+
+			<div style="margin-top: 24px;">
+				<div class="admin-filters">
+					<div class="admin-search">
+						<input type="text" placeholder="Search products..." data-action="search" data-field="searchQuery">
+					</div>
+					<select style="padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px;" data-filter="category" data-field="categoryFilter">
+						<option value="">All Categories</option>
+						<option value="t-shirts">T-Shirts</option>
+						<option value="hoodies">Hoodies</option>
+						<option value="hats">Hats</option>
+					</select>
+					<select style="padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px;" data-filter="status" data-field="statusFilter">
+						<option value="">All Status</option>
+						<option value="active">Active</option>
+						<option value="out_of_stock">Out of Stock</option>
+						<option value="archived">Archived</option>
+					</select>
+					<a href="product-edit.html" class="btn" data-action="navigate" data-target="product-edit">+ New Product</a>
+				</div>
+
+				<div class="admin-table-wrapper" data-api="/api/admin/products" data-method="GET">
+					<table class="admin-table">
+						<thead>
+							<tr>
+								<th><input type="checkbox" data-action="select-all"></th>
+								<th data-i18n="product">Product</th>
+								<th data-i18n="category">Category</th>
+								<th data-i18n="price">Price</th>
+								<th data-i18n="stock">Stock</th>
+								<th data-i18n="status">Status</th>
+								<th data-i18n="actions">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr data-entity="product" data-id="108200">
+								<td><input type="checkbox" data-action="select-item"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="placeholder" style="width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0;" data-field="thumbnail"></div>
+										<div>
+											<div style="font-weight: 600;" data-field="name">Gildan Midweight 50/50 Hoodie</div>
+											<div style="font-size: 12px; color: var(--color-text-muted);" data-field="sku">SKU: GIL-108200</div>
+										</div>
+									</div>
+								</td>
+								<td data-field="categoryName">Hoodies</td>
+								<td data-field="price">$24.00</td>
+								<td data-field="stockQuantity">156</td>
+								<td><span class="badge badge-success" data-field="status">Active</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="product-edit.html?id=108200" data-action="edit" data-api="/api/admin/products/108200">Edit</a>
+											<a href="#" data-action="duplicate" data-api="/api/admin/products/108200/duplicate" data-method="POST">Duplicate</a>
+											<a href="#" style="color: #EF4444;" data-action="archive" data-api="/api/admin/products/108200" data-method="DELETE">Archive</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr data-entity="product" data-id="205600">
+								<td><input type="checkbox" data-action="select-item"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="placeholder" style="width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0;" data-field="thumbnail"></div>
+										<div>
+											<div style="font-weight: 600;" data-field="name">Hanes EcoSmart Long Sleeve</div>
+											<div style="font-size: 12px; color: var(--color-text-muted);" data-field="sku">SKU: HAN-205600</div>
+										</div>
+									</div>
+								</td>
+								<td data-field="categoryName">T-Shirts</td>
+								<td data-field="price">$16.00</td>
+								<td data-field="stockQuantity">43</td>
+								<td><span class="badge badge-success" data-field="status">Active</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="product-edit.html?id=205600" data-action="edit" data-api="/api/admin/products/205600">Edit</a>
+											<a href="#" data-action="duplicate" data-api="/api/admin/products/205600/duplicate" data-method="POST">Duplicate</a>
+											<a href="#" style="color: #EF4444;" data-action="archive" data-api="/api/admin/products/205600" data-method="DELETE">Archive</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr data-entity="product" data-id="300100">
+								<td><input type="checkbox" data-action="select-item"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="placeholder" style="width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0;" data-field="thumbnail"></div>
+										<div>
+											<div style="font-weight: 600;" data-field="name">Custom Embroidered Cap</div>
+											<div style="font-size: 12px; color: var(--color-text-muted);" data-field="sku">SKU: CAP-300100</div>
+										</div>
+									</div>
+								</td>
+								<td data-field="categoryName">Hats</td>
+								<td data-field="price">$12.00</td>
+								<td data-field="stockQuantity">8</td>
+								<td><span class="badge badge-warning" data-field="status">Low Stock</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="product-edit.html?id=300100" data-action="edit" data-api="/api/admin/products/300100">Edit</a>
+											<a href="#" data-action="duplicate" data-api="/api/admin/products/300100/duplicate" data-method="POST">Duplicate</a>
+											<a href="#" style="color: #EF4444;" data-action="archive" data-api="/api/admin/products/300100" data-method="DELETE">Archive</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td><input type="checkbox"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="placeholder" style="width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0;"></div>
+										<div>
+											<div style="font-weight: 600;">Stanley Water Bottle 24oz</div>
+											<div style="font-size: 12px; color: var(--color-text-muted);">SKU: STN-400250</div>
+										</div>
+									</div>
+								</td>
+								<td>Drinkware</td>
+								<td>$32.00</td>
+								<td>0</td>
+								<td><span class="badge badge-error">Out of Stock</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="product-edit.html?id=400250">Edit</a>
+											<a href="#">Duplicate</a>
+											<a href="#" style="color: #EF4444;">Archive</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td><input type="checkbox"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="placeholder" style="width: 48px; height: 48px; border-radius: 8px; flex-shrink: 0;"></div>
+										<div>
+											<div style="font-weight: 600;">Tech Polo Shirt</div>
+											<div style="font-size: 12px; color: var(--color-text-muted);">SKU: POL-600300</div>
+										</div>
+									</div>
+								</td>
+								<td>Polos</td>
+								<td>$28.00</td>
+								<td>234</td>
+								<td><span class="badge badge-success">Active</span></td>
+								<td>
+									<div class="actions-dropdown">
+										<button class="actions-dropdown-btn">⋯</button>
+										<div class="actions-dropdown-menu">
+											<a href="product-edit.html?id=600300">Edit</a>
+											<a href="#">Duplicate</a>
+											<a href="#" style="color: #EF4444;">Archive</a>
+										</div>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="admin-pagination">
+					<button>Previous</button>
+					<button class="active">1</button>
+					<button>2</button>
+					<button>3</button>
+					<button>Next</button>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#8EC5E3"/>
+  <text x="400" y="250" font-family="Arial" font-size="24" fill="#fff" text-anchor="middle">Custom Promo Products (800x500)</text>
+  <!-- Beanie and scarf box -->
+  <rect x="50" y="350" width="140" height="120" rx="5" fill="#f0f0f0"/>
+  <rect x="60" y="360" width="120" height="100" rx="3" fill="#4a90e2"/>
+  <rect x="50" y="270" width="140" height="100" rx="5" fill="#e8e8e8"/>
+  
+  <!-- Hoodie box -->
+  <rect x="220" y="280" width="150" height="120" rx="5" fill="#f0f0f0"/>
+  <rect x="230" y="290" width="130" height="100" rx="5" fill="#555"/>
+  
+  <!-- Watch box -->
+  <rect x="400" y="350" width="100" height="90" rx="5" fill="#8b4513"/>
+  <rect x="420" y="380" width="60" height="50" rx="3" fill="#1a1a1a"/>
+  
+  <!-- T-shirt box -->
+  <rect x="530" y="260" width="150" height="150" rx="5" fill="#f0f0f0"/>
+  <rect x="550" y="280" width="110" height="110" rx="5" fill="#ccc"/>
+  
+  <!-- Mug box -->
+  <rect x="700" y="200" width="80" height="100" rx="5" fill="#f0f0f0"/>
+  <circle cx="740" cy="240" r="25" fill="#d32f2f"/>
+  
+  <!-- Cap box -->
+  <rect x="450" y="100" width="130" height="110" rx="5" fill="#8b4513"/>
+  <ellipse cx="515" cy="150" rx="45" ry="25" fill="#555"/>
+  
+  <!-- Sweatpants box -->
+  <rect x="600" y="320" width="120" height="130" rx="5" fill="#8b4513"/>
+  <rect x="620" y="340" width="80" height="90" rx="5" fill="#555"/>
+  
+  <!-- Water bottle box -->
+  <rect x="100" y="180" width="110" height="140" rx="5" fill="#8b4513"/>
+  <rect x="110" y="200" width="90" height="110" rx="5" fill="#1976d2"/>
+  
+  <!-- Red folder box -->
+  <rect x="300" y="100" width="120" height="100" rx="5" fill="#8b4513"/>
+  <rect x="310" y="110" width="100" height="80" rx="3" fill="#d32f2f"/>
+</svg>
+

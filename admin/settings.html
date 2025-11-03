@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Settings | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html" class="is-active"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;"><span data-i18n="backToSite">← Back to Site</span></a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="settings">Settings</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;"><span data-i18n="logout">Logout</span></a>
+				</div>
+			</header>
+
+			<div style="margin-top: 24px; max-width: 800px;">
+				<div class="admin-form">
+					<h3 style="margin: 0 0 20px; font-size: 18px;">Site Settings</h3>
+					<div class="admin-form-group">
+						<label>Site Name</label>
+						<input type="text" value="suvernire plus">
+					</div>
+					<div class="admin-form-group">
+						<label>Contact Email</label>
+						<input type="email" value="support@suvernireplus.com">
+					</div>
+					<div class="admin-form-group">
+						<label>Phone Number</label>
+						<input type="tel" value="800-293-4232">
+					</div>
+					<div class="admin-form-group">
+						<label>Default Currency</label>
+						<select>
+							<option selected>USD ($)</option>
+							<option>EUR (€)</option>
+							<option>GBP (£)</option>
+						</select>
+					</div>
+					<div class="admin-form-group">
+						<label>Default Shipping Provider</label>
+						<select>
+							<option>Select provider</option>
+							<option selected>UPS</option>
+							<option>FedEx</option>
+							<option>DHL</option>
+							<option>USPS</option>
+						</select>
+					</div>
+					<button class="btn">Save Settings</button>
+				</div>
+
+				<div class="admin-form" style="margin-top: 24px;">
+					<h3 style="margin: 0 0 20px; font-size: 18px;">Payment Integration</h3>
+					<div class="admin-form-group">
+						<label>Payment Gateway</label>
+						<select>
+							<option>Select gateway</option>
+							<option>Stripe</option>
+							<option>PayPal</option>
+							<option>Square</option>
+						</select>
+					</div>
+					<div class="admin-form-group">
+						<label>API Key</label>
+						<div style="display: grid; grid-template-columns: 1fr auto; gap: 8px;">
+							<input type="password" value="••••••••••••••••" readonly>
+							<button class="btn btn--outline">Show</button>
+						</div>
+					</div>
+					<div class="admin-form-group">
+						<label>Test Mode</label>
+						<div style="display: flex; gap: 8px; align-items: center;">
+							<input type="checkbox" id="test-mode" checked>
+							<label for="test-mode" style="margin: 0; font-weight: 400;">Enable test/sandbox mode</label>
+						</div>
+					</div>
+					<button class="btn">Save Payment Settings</button>
+				</div>
+
+				<div class="admin-form" style="margin-top: 24px;">
+					<h3 style="margin: 0 0 20px; font-size: 18px;">Design Review Settings</h3>
+					<div class="admin-form-group">
+						<label>Auto-approve designs</label>
+						<div style="display: flex; gap: 8px; align-items: center;">
+							<input type="checkbox" id="auto-approve">
+							<label for="auto-approve" style="margin: 0; font-weight: 400;">Automatically approve designs without review</label>
+						</div>
+					</div>
+					<div class="admin-form-group">
+						<label>Copyright Check</label>
+						<div style="display: flex; gap: 8px; align-items: center;">
+							<input type="checkbox" id="copyright-check" checked>
+							<label for="copyright-check" style="margin: 0; font-weight: 400;">Enable automatic copyright detection</label>
+						</div>
+					</div>
+					<div class="admin-form-group">
+						<label>Review Notification Email</label>
+						<input type="email" value="review@suvernireplus.com">
+					</div>
+					<button class="btn">Save Review Settings</button>
+				</div>
+
+				<div class="admin-form" style="margin-top: 24px; border: 2px solid #EF4444; background: rgba(239,68,68,0.05);">
+					<h3 style="margin: 0 0 20px; font-size: 18px; color: #EF4444;">Danger Zone</h3>
+					<div style="display: grid; gap: 12px;">
+						<button class="btn" style="background: #EF4444; border-color: #EF4444;">Clear All Cache</button>
+						<button class="btn" style="background: #EF4444; border-color: #EF4444;">Reset Database</button>
+						<button class="btn" style="background: #EF4444; border-color: #EF4444;">Delete All Test Data</button>
+					</div>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+
