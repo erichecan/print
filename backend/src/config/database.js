@@ -2,15 +2,55 @@
 const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'suvernireplus',
-  process.env.DB_USER || 'postgres',
-  process.env.DB_PASSWORD || '',
-  {
+// Configuration for Sequelize CLI
+const config = {
+  development: {
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'suvernireplus',
     host: process.env.DB_HOST || 'localhost',
     port: process.env.DB_PORT || 5432,
     dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    logging: process.env.NODE_ENV === 'development' ? console.log : false
+  },
+  test: {
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME + '_test' || 'suvernireplus_test',
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    dialect: 'postgres',
+    logging: false
+  },
+  production: {
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 5432,
+    dialect: 'postgres',
+    logging: false,
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
+    }
+  }
+};
+
+const env = process.env.NODE_ENV || 'development';
+const dbConfig = config[env];
+
+const sequelize = new Sequelize(
+  dbConfig.database,
+  dbConfig.username,
+  dbConfig.password,
+  {
+    host: dbConfig.host,
+    port: dbConfig.port,
+    dialect: dbConfig.dialect,
+    logging: dbConfig.logging,
     pool: {
       max: 5,
       min: 0,
@@ -21,7 +61,8 @@ const sequelize = new Sequelize(
       timestamps: true,
       underscored: true,
       freezeTableName: false
-    }
+    },
+    ...(dbConfig.dialectOptions || {})
   }
 );
 
@@ -35,8 +76,10 @@ const testConnection = async () => {
   }
 };
 
-module.exports = {
-  sequelize,
-  testConnection
-};
+// Export for Sequelize CLI
+module.exports = config;
+
+// Also export sequelize instance for direct use
+module.exports.sequelize = sequelize;
+module.exports.testConnection = testConnection;
 
