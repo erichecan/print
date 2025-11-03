@@ -1,0 +1,156 @@
+{
+  "hero": {
+    "tee": {
+      "url": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=600&fit=crop",
+      "local": "/assets/hero/hero-card-tee.jpg",
+      "alt": "Custom T-Shirt"
+    },
+    "bottle": {
+      "url": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=800&h=600&fit=crop",
+      "local": "/assets/hero/hero-card-bottle.jpg",
+      "alt": "Custom Water Bottle"
+    },
+    "hat": {
+      "url": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=800&h=600&fit=crop",
+      "local": "/assets/hero/hero-card-hat.jpg",
+      "alt": "Custom Baseball Cap"
+    },
+    "bag": {
+      "url": "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&h=600&fit=crop",
+      "local": "/assets/hero/hero-card-bag.jpg",
+      "alt": "Custom Tote Bag"
+    }
+  },
+  "categories": {
+    "t-shirts": {
+      "url": "/assets/cat-tshirt.webp",
+      "alt": "T-Shirts"
+    },
+    "sweatshirts": {
+      "url": "/assets/cat-sweatshirt.webp",
+      "alt": "Sweatshirts"
+    },
+    "hats": {
+      "url": "/assets/cat-hat.webp",
+      "alt": "Hats"
+    },
+    "jackets": {
+      "url": "/assets/cat-tshirt.webp",
+      "alt": "Jackets & Vests"
+    },
+    "bags": {
+      "url": "/assets/cat-bag.webp",
+      "alt": "Bags"
+    },
+    "drinkware": {
+      "url": "/assets/cat-drinkware.webp",
+      "alt": "Drinkware"
+    },
+    "polos": {
+      "url": "/assets/cat-tshirt.webp",
+      "alt": "Polos & Business"
+    },
+    "workwear": {
+      "url": "/assets/cat-workwear.webp",
+      "alt": "Workwear"
+    },
+    "office": {
+      "url": "/assets/cat-office.webp",
+      "alt": "Office Supplies"
+    },
+    "tech": {
+      "url": "/assets/cat-tech.webp",
+      "alt": "Technology"
+    }
+  },
+  "brands": {
+    "nike": {
+      "url": "/assets/brands/nike.svg",
+      "alt": "Nike"
+    },
+    "carhartt": {
+      "url": "/assets/brands/carhartt.svg",
+      "alt": "Carhartt"
+    },
+    "new-era": {
+      "url": "/assets/brands/new-era.svg",
+      "alt": "New Era"
+    },
+    "north-face": {
+      "url": "/assets/brands/northface.svg",
+      "alt": "The North Face"
+    },
+    "stanley": {
+      "url": "/assets/brands/stanley.svg",
+      "alt": "Stanley"
+    },
+    "patagonia": {
+      "url": "/assets/brands/patagonia.svg",
+      "alt": "Patagonia"
+    },
+    "champion": {
+      "url": "/assets/brands/champion.svg",
+      "alt": "Champion"
+    },
+    "adidas": {
+      "url": "/assets/brands/adidas.svg",
+      "alt": "Adidas"
+    },
+    "columbia": {
+      "url": "/assets/brands/columbia.svg",
+      "alt": "Columbia"
+    },
+    "hydro-flask": {
+      "url": "/assets/brands/hydro-flask.svg",
+      "alt": "Hydro Flask"
+    }
+  },
+  "products": {
+    "prod-001": {
+      "url": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop",
+      "local": "/assets/products/prod-001.jpg",
+      "alt": "Gildan Long Sleeve T-Shirt"
+    },
+    "prod-002": {
+      "url": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&h=400&fit=crop",
+      "local": "/assets/products/prod-002.jpg",
+      "alt": "Hanes EcoSmart Long Sleeve"
+    },
+    "prod-003": {
+      "url": "https://images.unsplash.com/photo-1603252109303-2751441dd159?w=400&h=400&fit=crop",
+      "local": "/assets/products/prod-003.jpg",
+      "alt": "Jerzees Dri-Power Long Sleeve"
+    },
+    "prod-004": {
+      "url": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop",
+      "local": "/assets/products/prod-004.jpg",
+      "alt": "Hanes Beefy Long Sleeve"
+    },
+    "prod-005": {
+      "url": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=400&h=400&fit=crop",
+      "local": "/assets/products/prod-005.jpg",
+      "alt": "Gildan Ultra Blend Long Sleeve"
+    },
+    "prod-006": {
+      "url": "https://images.unsplash.com/photo-1603252109303-2751441dd159?w=400&h=400&fit=crop",
+      "local": "/assets/products/prod-006.jpg",
+      "alt": "Hanes Performance Long Sleeve"
+    },
+    "hoodie-front": {
+      "url": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&h=800&fit=crop",
+      "local": "/assets/products/hoodie-front.jpg",
+      "alt": "Hoodie Front View"
+    },
+    "hoodie-back": {
+      "url": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800&h=800&fit=crop",
+      "local": "/assets/products/hoodie-back.jpg",
+      "alt": "Hoodie Back View"
+    },
+    "hoodie-detail": {
+      "url": "https://images.unsplash.com/photo-1586916874020862-654d56854a92?w=800&h=800&fit=crop",
+      "local": "/assets/products/hoodie-detail.jpg",
+      "alt": "Hoodie Detail"
+    }
+  }
+}
+
