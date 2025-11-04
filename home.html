@@ -60,38 +60,58 @@
 	</script>
 </head>
 <body>
-	<!-- [2025-10-31 10:15:30] Top utility toolbar -->
-	<div class="topbar" role="region" aria-label="Top Utility Bar">
-		<div class="container util">
-			<a href="ndx-welcome.html" aria-label="Sign in">Sign In</a>
-			<a href="cart.html" aria-label="View cart">Cart (0)</a>
-			<a href="tel:8002934232" aria-label="Call us">800-293-4232</a>
-		</div>
-	</div>
+    <!-- [2025-11-04 00:12:30] Restore classic header: search, phone, chat, top categories -->
+    <div id="top-message-bar" role="region" aria-label="Promotional Bar">
+        <p>Custom T‑shirts & Promotional Products • Fast & Free Shipping • All‑Inclusive Pricing</p>
+    </div>
 
-	<!-- [2025-10-31 10:15:30] Primary site header and navigation -->
-	<header class="primary" role="banner">
-		<div class="container">
-			<nav class="nav" aria-label="Primary Navigation">
-				<div class="brand">
-					<a href="home.html" style="display:flex;align-items:center;gap:10px">
-						<div class="brand__logo" aria-hidden="true"></div>
-						<span class="brand__name">suvernire plus</span>
-					</a>
-				</div>
-				<div class="menu" role="menubar">
-					<a role="menuitem" href="home.html">Home</a>
-					<a role="menuitem" href="design-lab.html">Design Lab</a>
-					<a role="menuitem" href="long-sleeve.html">Products</a>
-					<a role="menuitem" href="help.html">Help</a>
-				</div>
-				<div class="cta">
-					<a class="btn btn--outline" href="checkout.html">Get a Quote</a>
-					<a class="btn" href="design-lab.html">Start Designing</a>
-				</div>
-			</nav>
-		</div>
-	</header>
+    <header id="main-header" role="banner">
+        <div class="container">
+            <div class="brand">
+                <a class="brand" href="home.html" aria-label="Suvernire Plus">
+                    <img src="assets/logo.svg" alt="Suvernire Plus" loading="lazy" />
+                </a>
+            </div>
+            <div class="search-bar" role="search">
+                <form action="long-sleeve.html" method="get" aria-label="Site search">
+                    <button type="submit" aria-label="Search">🔍</button>
+                    <input type="search" name="q" placeholder="Search for t‑shirts, hoodies, koozies, and more" />
+                </form>
+            </div>
+            <div class="contact-info" aria-label="Contact options">
+                <div class="contact-item">
+                    <span class="icon">📞</span>
+                    <div>
+                        <span class="label">Talk to a Real Person</span>
+                        <a class="value" href="tel:8552712660">855‑271‑2660</a>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">💬</span>
+                    <div>
+                        <span class="label">Chat with a Real Person</span>
+                        <a class="value" href="help.html">Chat Now</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav id="secondary-nav" aria-label="Main categories">
+        <div class="container">
+            <ul class="nav-links">
+                <li class="has-dropdown"><a href="long-sleeve.html">Custom T‑shirts</a></li>
+                <li class="has-dropdown"><a href="long-sleeve.html">Custom Apparel</a></li>
+                <li class="has-dropdown"><a href="long-sleeve.html">Promotional Products</a></li>
+                <li><a href="design-lab.html">Design Lab</a></li>
+                <li><a href="help.html">Groups & Events</a></li>
+            </ul>
+            <div class="user-actions">
+                <a class="signin-link" href="ndx-welcome.html"><span class="icon">👤</span><span>Sign In</span></a>
+                <a class="cart-link" href="cart.html"><span class="icon">🛒</span><span>Cart</span></a>
+            </div>
+        </div>
+    </nav>
 
 	<main id="main">
 		<!-- [2025-10-31 10:15:30] Hero section with copy and product visuals -->
@@ -106,10 +126,19 @@
 					</div>
 				</div>
 				<div class="hero__media" aria-label="Featured Products">
-					<div class="hero__card placeholder" aria-label="Featured Tee"></div>
-					<div class="hero__card placeholder" aria-label="Featured Bottle"></div>
-					<div class="hero__card placeholder" aria-label="Featured Hat"></div>
-					<div class="hero__card placeholder" aria-label="Featured Bag"></div>
+					<!-- [2025-11-04 00:05:00] Replace hero placeholders with uploaded images -->
+					<div class="hero__card" aria-label="Featured Tee">
+						<img src="assets/hero/hero-card-tee.jpg" alt="Featured Tee" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">
+					</div>
+					<div class="hero__card" aria-label="Featured Bottle">
+						<img src="assets/hero/hero-card-bottle.jpg" alt="Featured Bottle" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">
+					</div>
+					<div class="hero__card" aria-label="Featured Hat">
+						<img src="assets/hero/hero-card-hat.jpg" alt="Featured Hat" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">
+					</div>
+					<div class="hero__card" aria-label="Featured Bag">
+						<img src="assets/hero/hero-card-bag.jpg" alt="Featured Bag" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">
+					</div>
 				</div>
 			</div>
 		</section>
@@ -148,16 +177,17 @@
 			<div class="container">
 				<h2 class="visually-hidden">Featured Brands</h2>
 				<div class="brandrow" role="list" aria-label="Brand Logos">
-					<div class="brandlogo placeholder" role="listitem" aria-label="Nike"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="Carhartt"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="New Era"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="The North Face"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="Stanley"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="Patagonia"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="Champion"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="Adidas"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="Columbia"></div>
-					<div class="brandlogo placeholder" role="listitem" aria-label="Hydro Flask"></div>
+					<!-- [2025-11-04 00:05:00] Use uploaded brand logos (prefer PNG if present) -->
+					<img class="brandlogo" src="assets/brands/nike.svg" alt="Nike" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/carhartt.svg" alt="Carhartt" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/new-era.png" alt="New Era" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/northface.svg" alt="The North Face" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/stanley.svg" alt="Stanley" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/patagonia.svg" alt="Patagonia" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/champion.png" alt="Champion" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/adidas.png" alt="Adidas" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/columbia.png" alt="Columbia" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
+					<img class="brandlogo" src="assets/brands/hydro-flask.png" alt="Hydro Flask" role="listitem" style="object-fit:contain;display:block;width:auto;margin:0 auto;">
 				</div>
 			</div>
 		</section>
