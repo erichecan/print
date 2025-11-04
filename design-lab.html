@@ -38,19 +38,20 @@
             <!-- Left vertical rail -->
             <nav class="lab__rail" aria-label="Editor Tools">
                 <button class="rail__btn is-active" data-tool="upload" title="Upload">
-                    <span class="rail__icon">⬆️</span>
+                    <!-- [2025-11-04 00:20:30] SVG icon set for rail -->
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 3l5 5h-3v6h-4V8H7l5-5zm-7 14h14v2H5v-2z"/></svg></span>
                     <span class="rail__label">Upload</span>
                 </button>
                 <button class="rail__btn" data-tool="text" title="Add Text">
-                    <span class="rail__icon">📝</span>
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></span>
                     <span class="rail__label">Text</span>
                 </button>
                 <button class="rail__btn" data-tool="art" title="Add Art">
-                    <span class="rail__icon">🖼️</span>
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14h18zM5 5h14v9l-3-3-4 4-3-3-4 4V5z"/></svg></span>
                     <span class="rail__label">Art</span>
                 </button>
                 <button class="rail__btn" data-tool="products" title="Products">
-                    <span class="rail__icon">🛍️</span>
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M6 2l1 4h10l1-4h2l-1 4h3v2H1V6h3L3 2h3zm-2 8h16l-1.6 10.4A2 2 0 0116.42 22H7.58a2 2 0 01-1.98-1.6L4 10z"/></svg></span>
                     <span class="rail__label">Products</span>
                 </button>
             </nav>
@@ -58,20 +59,20 @@
             <!-- Sidebar tools (panel) -->
             <aside class="lab__tools" aria-label="Tools Panel">
 				<div class="tools__tabs">
-					<button class="tab-btn active" data-panel="upload">
-						<span>📤</span> Upload
+                    <button class="tab-btn active" data-panel="upload">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3l5 5h-3v6h-4V8H7l5-5zm-7 14h14v2H5v-2z"/></svg></span> Upload
 					</button>
-					<button class="tab-btn" data-panel="text">
-						<span>📝</span> Text
+                    <button class="tab-btn" data-panel="text">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></span> Text
 					</button>
-					<button class="tab-btn" data-panel="art">
-						<span>🎨</span> Art
+                    <button class="tab-btn" data-panel="art">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 00-9 9 5 5 0 005 5h1a2 2 0 012 2 2 2 0 002 2 9 9 0 000-18zm6 7a1 1 0 110-2 1 1 0 010 2zM15 7a1 1 0 110-2 1 1 0 010 2zM9 7a1 1 0 110-2 1 1 0 010 2z"/></svg></span> Art
 					</button>
-					<button class="tab-btn" data-panel="layers">
-						<span>📚</span> Layers
+                    <button class="tab-btn" data-panel="layers">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2l10 5-10 5L2 7l10-5zm0 7l10 5-10 5-10-5 10-5zm0 7l10 5-10 5-10-5 10-5z"/></svg></span> Layers
 					</button>
-					<button class="tab-btn" data-panel="edit">
-						<span>✏️</span> Edit
+                    <button class="tab-btn" data-panel="edit">
+                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></span> Edit
 					</button>
 				</div>
 				<div class="tools__content">
@@ -117,9 +118,9 @@
 						<div class="tool-row">
 							<label style="font-size: 13px; font-weight: 600;">Alignment</label>
 							<div style="display: flex; gap: 4px;">
-								<button class="align-btn" data-align="left" title="Align Left">⬅️</button>
-								<button class="align-btn" data-align="center" title="Align Center">⬆️</button>
-								<button class="align-btn" data-align="right" title="Align Right">➡️</button>
+                                <button class="align-btn" data-align="left" title="Align Left"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 4h2v16H3V4zm4 5h14v2H7V9zm0 6h10v2H7v-2z"/></svg></button>
+                                <button class="align-btn" data-align="center" title="Align Center"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 4h18v2H3V4zm4 5h10v2H7V9zm-4 6h18v2H3v-2z"/></svg></button>
+                                <button class="align-btn" data-align="right" title="Align Right"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M21 4h-2v16h2V4zm-4 5H3v2h14V9zm0 6H7v2h10v-2z"/></svg></button>
 							</div>
 						</div>
 						<div class="tool-row">
@@ -220,8 +221,8 @@
 				<header class="stage__header">
 					<h2 class="stage__title">Design Preview</h2>
 					<div class="stage__actions">
-						<button class="action-btn" title="Undo" aria-label="Undo">↶</button>
-						<button class="action-btn" title="Redo" aria-label="Redo">↷</button>
+                        <button class="action-btn" title="Undo" aria-label="Undo"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5V2L7 7l5 5V9c3.31 0 6 2.69 6 6 0 1.15-.33 2.23-.9 3.14l1.46 1.46A7.96 7.96 0 0020 15c0-4.42-3.58-8-8-8z"/></svg></button>
+                        <button class="action-btn" title="Redo" aria-label="Redo"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5V2l5 5-5 5V9c-3.31 0-6 2.69-6 6 0 1.15.33 2.23.9 3.14L5.44 19.6A7.96 7.96 0 014 15c0-4.42 3.58-8 8-8z"/></svg></button>
 					</div>
 				</header>
 				<div class="stage__toolbar">
@@ -578,9 +579,9 @@
 				
 				const actions = document.createElement('div');
 				actions.className = 'layer-actions';
-				const visBtn = document.createElement('button');
-				visBtn.className = 'layer-btn vis-btn';
-				visBtn.textContent = '👁️';
+                const visBtn = document.createElement('button');
+                visBtn.className = 'layer-btn vis-btn';
+                visBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10z"/></svg>';
 				visBtn.title = 'Hide/Show';
 				visBtn.addEventListener('click', (e) => {
 					e.stopPropagation();
@@ -588,9 +589,9 @@
 					el.style.display = visible ? 'none' : '';
 					layerItem.style.opacity = visible ? '0.5' : '1';
 				});
-				const delBtn = document.createElement('button');
-				delBtn.className = 'layer-btn del-btn';
-				delBtn.textContent = '🗑️';
+                const delBtn = document.createElement('button');
+                delBtn.className = 'layer-btn del-btn';
+                delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9zM7 9h2v10H7V9z"/></svg>';
 				delBtn.title = 'Delete';
 				delBtn.addEventListener('click', (e) => {
 					e.stopPropagation();
