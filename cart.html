@@ -11,6 +11,10 @@
 	<!-- [2025-10-31 12:45:00] Shopping Cart Page -->
 </head>
 <body>
+    <!-- [2025-11-04 00:24:20] SVG icon set (check) for trust badges -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="icon-check" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.17L4.83 12 3.41 13.41 9 19l12-12-1.41-1.41z"/></symbol>
+    </svg>
 	<!-- Topbar -->
 	<div class="topbar" role="region" aria-label="Top Utility Bar">
 		<div class="container util">
@@ -139,11 +143,11 @@
 					<a class="btn btn--outline" style="width:100%;" href="home.html" data-action="navigate" data-target="home">Continue Shopping</a>
 					</div>
 
-					<div class="trust-badges">
-						<p><strong>✓ 100% Satisfaction Guaranteed</strong></p>
-						<p><strong>✓ Secure Checkout</strong></p>
-						<p><strong>✓ Free Shipping on Orders $25+</strong></p>
-					</div>
+                    <div class="trust-badges">
+                        <p><strong><svg width="14" height="14" style="vertical-align:-2px"><use href="#icon-check"/></svg> 100% Satisfaction Guaranteed</strong></p>
+                        <p><strong><svg width="14" height="14" style="vertical-align:-2px"><use href="#icon-check"/></svg> Secure Checkout</strong></p>
+                        <p><strong><svg width="14" height="14" style="vertical-align:-2px"><use href="#icon-check"/></svg> Free Shipping on Orders $25+</strong></p>
+                    </div>
 				</aside>
 			</div>
 		</section>

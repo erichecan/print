@@ -13,6 +13,10 @@
 	<script src="scripts/image-loader.js" defer></script>
 </head>
 <body>
+    <!-- [2025-11-04 00:24:10] SVG icon set (star) for ratings -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="icon-star" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></symbol>
+    </svg>
 	<!-- [2025-10-31 11:05:00] Topbar -->
 	<div class="topbar" role="region" aria-label="Top Utility Bar">
 		<div class="container util">
@@ -118,8 +122,8 @@
 					<details data-filter="rating">
 						<summary data-field="filterLabel">Rating</summary>
 						<ul>
-							<li><label><input type="radio" name="rating" value="4" data-filter-value="4"> 4★ & up</label></li>
-							<li><label><input type="radio" name="rating" value="3" data-filter-value="3"> 3★ & up</label></li>
+                            <li><label><input type="radio" name="rating" value="4" data-filter-value="4"> 4 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg> & up</label></li>
+                            <li><label><input type="radio" name="rating" value="3" data-filter-value="3"> 3 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg> & up</label></li>
 							<li><label><input type="radio" name="rating" value="0" checked data-filter-value="0"> Any</label></li>
 						</ul>
 					</details>
@@ -133,7 +137,7 @@
 						<article class="product" data-entity="product" data-id="prod-001" data-category="cotton" data-brand="gildan" data-price="12" data-rating="4.6" data-colors="black,white,gray" data-sizes="S,M,L,XL">
 							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Gildan Long Sleeve T‑Shirt" data-field="thumbnail" data-api="/api/products/prod-001"></a>
 							<h3 class="product__title" data-field="name">Gildan Long Sleeve T‑Shirt</h3>
-							<p class="product__meta" data-field="price"><span data-field="priceFrom">From</span> $<span data-field="priceValue">12</span> • <span data-field="rating">4.6</span>★</p>
+                            <p class="product__meta" data-field="price"><span data-field="priceFrom">From</span> $<span data-field="priceValue">12</span> • <span data-field="rating">4.6</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 							<div class="product__swatches" aria-label="Available colors" data-field="colors">
 								<span class="swatch" style="--sw:#111" data-field="color"></span>
 								<span class="swatch" style="--sw:#fff" data-field="color"></span>
@@ -143,7 +147,7 @@
 						<article class="product" data-entity="product" data-id="prod-002" data-category="blend" data-brand="hanes" data-price="16" data-rating="4.9" data-colors="black,green,blue" data-sizes="XS,S,M,L,XL,2XL">
 							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Hanes EcoSmart Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-002"></a>
 							<h3 class="product__title" data-field="name">Hanes EcoSmart Long Sleeve</h3>
-							<p class="product__meta" data-field="price">From $<span data-field="priceValue">16</span> • <span data-field="rating">4.9</span>★</p>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">16</span> • <span data-field="rating">4.9</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 							<div class="product__swatches" aria-label="Available colors" data-field="colors">
 								<span class="swatch" style="--sw:#111" data-field="color"></span>
 								<span class="swatch" style="--sw:#10B981" data-field="color"></span>
@@ -153,7 +157,7 @@
 						<article class="product" data-entity="product" data-id="prod-003" data-category="performance" data-brand="jerzees" data-price="22" data-rating="4.2" data-colors="gray,blue,red" data-sizes="S,M,L,XL">
 							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Jerzees Dri‑Power Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-003"></a>
 							<h3 class="product__title" data-field="name">Jerzees Dri‑Power Long Sleeve</h3>
-							<p class="product__meta" data-field="price">From $<span data-field="priceValue">22</span> • <span data-field="rating">4.2</span>★</p>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">22</span> • <span data-field="rating">4.2</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 							<div class="product__swatches" aria-label="Available colors" data-field="colors">
 								<span class="swatch" style="--sw:#9CA3AF" data-field="color"></span>
 								<span class="swatch" style="--sw:#3B82F6" data-field="color"></span>
@@ -163,7 +167,7 @@
 						<article class="product" data-entity="product" data-id="prod-004" data-category="cotton" data-brand="hanes" data-price="14" data-rating="4.7" data-colors="white,green" data-sizes="XS,S,M,L,XL">
 							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Hanes Beefy Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-004"></a>
 							<h3 class="product__title" data-field="name">Hanes Beefy Long Sleeve</h3>
-							<p class="product__meta" data-field="price">From $<span data-field="priceValue">14</span> • <span data-field="rating">4.7</span>★</p>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">14</span> • <span data-field="rating">4.7</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 							<div class="product__swatches" aria-label="Available colors" data-field="colors">
 								<span class="swatch" style="--sw:#fff" data-field="color"></span>
 								<span class="swatch" style="--sw:#10B981" data-field="color"></span>
@@ -172,7 +176,7 @@
 						<article class="product" data-entity="product" data-id="prod-005" data-category="blend" data-brand="gildan" data-price="18" data-rating="4.1" data-colors="black,gray" data-sizes="S,M,L,XL,2XL">
 							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Gildan Ultra Blend Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-005"></a>
 							<h3 class="product__title" data-field="name">Gildan Ultra Blend Long Sleeve</h3>
-							<p class="product__meta" data-field="price">From $<span data-field="priceValue">18</span> • <span data-field="rating">4.1</span>★</p>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">18</span> • <span data-field="rating">4.1</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 							<div class="product__swatches" aria-label="Available colors" data-field="colors">
 								<span class="swatch" style="--sw:#111" data-field="color"></span>
 								<span class="swatch" style="--sw:#9CA3AF" data-field="color"></span>
@@ -181,7 +185,7 @@
 						<article class="product" data-entity="product" data-id="prod-006" data-category="performance" data-brand="hanes" data-price="26" data-rating="4.8" data-colors="blue,green" data-sizes="S,M,L,XL">
 							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Hanes Performance Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-006"></a>
 							<h3 class="product__title" data-field="name">Hanes Performance Long Sleeve</h3>
-							<p class="product__meta" data-field="price">From $<span data-field="priceValue">26</span> • <span data-field="rating">4.8</span>★</p>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">26</span> • <span data-field="rating">4.8</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 							<div class="product__swatches" aria-label="Available colors" data-field="colors">
 								<span class="swatch" style="--sw:#3B82F6" data-field="color"></span>
 								<span class="swatch" style="--sw:#10B981" data-field="color"></span>

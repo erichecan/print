@@ -52,6 +52,15 @@
 	</script>
 </head>
 <body>
+    <!-- [2025-11-04 00:24:00] SVG icon set (star, check) -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="icon-star" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/>
+        </symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M9 16.17L4.83 12 3.41 13.41 9 19l12-12-1.41-1.41z"/>
+        </symbol>
+    </svg>
 	<!-- [2025-10-31 11:34:00] Topbar and header reused -->
 	<div class="topbar" role="region" aria-label="Top Utility Bar">
 		<div class="container util">
@@ -111,15 +120,28 @@
 				<!-- Product info / purchase panel -->
 				<aside class="buy" aria-label="Purchase" data-entity="product" data-id="108200" data-api="/api/products/108200">
 					<h1 class="pdp__title" data-field="name">Gildan Midweight 50/50 Pullover Hoodie</h1>
-					<div class="pdp__meta">
-						<div class="rating" aria-label="4.8 out of 5 stars">★★★★☆ <small data-field="rating">4.8</small></div>
+                    <div class="pdp__meta">
+                        <div class="rating" aria-label="4.8 out of 5 stars">
+                            <svg width="14" height="14" aria-hidden="true"><use href="#icon-star"/></svg>
+                            <svg width="14" height="14" aria-hidden="true"><use href="#icon-star"/></svg>
+                            <svg width="14" height="14" aria-hidden="true"><use href="#icon-star"/></svg>
+                            <svg width="14" height="14" aria-hidden="true"><use href="#icon-star"/></svg>
+                            <svg width="14" height="14" aria-hidden="true" style="opacity:.4"><use href="#icon-star"/></svg>
+                            <small data-field="rating" style="margin-left:6px">4.8</small>
+                        </div>
 						<div class="sku" data-field="sku">Item #108200</div>
 					</div>
 					<p class="pdp__price" data-field="price"><strong>From $<span data-field="priceValue">24</span></strong> per item</p>
 
 					<!-- Rating summary -->
-					<div class="rating-summary" aria-label="Rating summary" data-api="/api/products/108200/reviews">
-						<div class="stars">★★★★★</div>
+                    <div class="rating-summary" aria-label="Rating summary" data-api="/api/products/108200/reviews">
+                        <div class="stars" aria-hidden="true" style="display:flex;gap:2px">
+                            <svg width="16" height="16"><use href="#icon-star"/></svg>
+                            <svg width="16" height="16"><use href="#icon-star"/></svg>
+                            <svg width="16" height="16"><use href="#icon-star"/></svg>
+                            <svg width="16" height="16"><use href="#icon-star"/></svg>
+                            <svg width="16" height="16" style="opacity:.6"><use href="#icon-star"/></svg>
+                        </div>
 						<div><strong data-field="averageRating">4.8</strong> (<span data-field="reviewCount">326</span> reviews)</div>
 					</div>
 
@@ -231,27 +253,33 @@
 				<aside class="reviews__summary">
 					<h2 class="sr-only">Ratings</h2>
 					<div class="reviews__score">4.8</div>
-					<div class="reviews__stars">★★★★★</div>
+                    <div class="reviews__stars" aria-hidden="true" style="display:flex;gap:2px">
+                        <svg width="16" height="16"><use href="#icon-star"/></svg>
+                        <svg width="16" height="16"><use href="#icon-star"/></svg>
+                        <svg width="16" height="16"><use href="#icon-star"/></svg>
+                        <svg width="16" height="16"><use href="#icon-star"/></svg>
+                        <svg width="16" height="16" style="opacity:.6"><use href="#icon-star"/></svg>
+                    </div>
 					<p class="muted">Based on 326 reviews</p>
 					<ul class="reviews__bars">
-						<li><span>5★</span><div class="bar"><i style="width:78%"></i></div></li>
-						<li><span>4★</span><div class="bar"><i style="width:18%"></i></div></li>
-						<li><span>3★</span><div class="bar"><i style="width:3%"></i></div></li>
-						<li><span>2★</span><div class="bar"><i style="width:1%"></i></div></li>
-						<li><span>1★</span><div class="bar"><i style="width:0%"></i></div></li>
+                        <li><span>5 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></span><div class="bar"><i style="width:78%"></i></div></li>
+                        <li><span>4 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></span><div class="bar"><i style="width:18%"></i></div></li>
+                        <li><span>3 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></span><div class="bar"><i style="width:3%"></i></div></li>
+                        <li><span>2 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></span><div class="bar"><i style="width:1%"></i></div></li>
+                        <li><span>1 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></span><div class="bar"><i style="width:0%"></i></div></li>
 					</ul>
 				</aside>
 				<section class="reviews__list">
 					<article class="review">
-						<header>★★★★★ <strong>Great quality and quick!</strong> — <small>Mary B.</small></header>
+                        <header><span aria-hidden="true" style="display:inline-flex;gap:2px;margin-right:6px"><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14" style="opacity:.6"><use href="#icon-star"/></svg></span> <strong>Great quality and quick!</strong> — <small>Mary B.</small></header>
 						<p>Hoodies arrived early and the print looks fantastic. True to size.</p>
 					</article>
 					<article class="review">
-						<header>★★★★★ <strong>Soft and durable</strong> — <small>David P.</small></header>
+                        <header><span aria-hidden="true" style="display:inline-flex;gap:2px;margin-right:6px"><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14" style="opacity:.6"><use href="#icon-star"/></svg></span> <strong>Soft and durable</strong> — <small>David P.</small></header>
 						<p>Our team loved them. Warm but not too heavy. Will reorder.</p>
 					</article>
 					<article class="review">
-						<header>★★★★☆ <strong>Nice fit</strong> — <small>Jenna F.</small></header>
+                        <header><span aria-hidden="true" style="display:inline-flex;gap:2px;margin-right:6px"><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14"><use href="#icon-star"/></svg><svg width="14" height="14" style="opacity:.3"><use href="#icon-star"/></svg></span> <strong>Nice fit</strong> — <small>Jenna F.</small></header>
 						<p>Comfortable and well made. Colors match the proof.</p>
 					</article>
 				</section>
@@ -266,17 +294,17 @@
 					<article class="product" aria-label="Heavyweight Hoodie">
 						<a href="product-hoodie.html" class="product__image placeholder"></a>
 						<h3 class="product__title">Heavyweight Pullover Hoodie</h3>
-						<p class="product__meta">From $32 • 4.7★</p>
+                        <p class="product__meta">From $32 • 4.7 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 					</article>
 					<article class="product" aria-label="Zip Hoodie">
 						<a href="product-hoodie.html" class="product__image placeholder"></a>
 						<h3 class="product__title">Midweight Zip Hoodie</h3>
-						<p class="product__meta">From $29 • 4.6★</p>
+                        <p class="product__meta">From $29 • 4.6 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 					</article>
 					<article class="product" aria-label="Crewneck">
 						<a href="product-hoodie.html" class="product__image placeholder"></a>
 						<h3 class="product__title">Fleece Crewneck</h3>
-						<p class="product__meta">From $22 • 4.5★</p>
+                        <p class="product__meta">From $22 • 4.5 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
 					</article>
 				</div>
 			</div>
