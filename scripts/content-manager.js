@@ -69,44 +69,156 @@ class ContentManager {
 
   /**
    * Handle file upload
+   * [2025-11-02 22:20:00] Enhanced file upload with automatic download and path update
    */
   async handleFileUpload(category, key, file) {
     if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      alert('Please select an image file (JPG, PNG, WebP, SVG)');
       return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+      alert('Image size must be less than 5MB. Please compress the image first.');
       return;
     }
 
-    // Show preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const preview = document.querySelector(`.image-preview[data-category="${category}"][data-key="${key}"]`);
-      if (preview) {
-        preview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; height: auto; border-radius: 8px;">`;
-      }
-    };
-    reader.readAsDataURL(file);
-
-    // In production, upload to server via API
-    // For now, show instruction
-    const fileName = file.name;
-    const suggestedPath = `/assets/${category === 'hero' ? 'hero' : category === 'brands' ? 'brands' : 'categories'}/${fileName}`;
-    
-    // Update the URL input
-    const urlInput = document.querySelector(`.image-url[data-category="${category}"][data-key="${key}"]`);
-    if (urlInput) {
-      urlInput.value = suggestedPath;
+    // Show loading state
+    const preview = document.querySelector(`.image-preview[data-category="${category}"][data-key="${key}"]`);
+    if (preview) {
+      preview.innerHTML = '<div class="placeholder-preview">Loading...</div>';
     }
 
-    alert(`File selected: ${fileName}\n\nPlease:\n1. Save the file to: assets/${category === 'hero' ? 'hero' : category === 'brands' ? 'brands' : 'categories'}/\n2. Click "Update" to save the path`);
+    // Read file as data URL for preview
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const imageDataUrl = e.target.result;
+      
+      // Show preview
+      if (preview) {
+        preview.innerHTML = `
+          <img src="${imageDataUrl}" alt="Preview" style="max-width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+          <div class="upload-overlay" style="position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">
+            ✓ Uploaded
+          </div>
+        `;
+      }
+
+      // Generate file name based on category and key
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      let fileName = '';
+      
+      if (category === 'hero') {
+        const heroNames = {
+          'tee': 'hero-card-tee',
+          'bottle': 'hero-card-bottle',
+          'hat': 'hero-card-hat',
+          'bag': 'hero-card-bag'
+        };
+        fileName = `${heroNames[key] || key}.${fileExtension}`;
+      } else if (category === 'brands') {
+        fileName = `${key.replace(/-/g, '-')}.${fileExtension}`;
+      } else if (category === 'categories') {
+        fileName = `cat-${key.replace(/-/g, '-')}.${fileExtension}`;
+      } else {
+        fileName = file.name;
+      }
+
+      // Determine target directory
+      const targetDir = category === 'hero' ? 'hero' : category === 'brands' ? 'brands' : category === 'categories' ? 'categories' : 'images';
+      const filePath = `/assets/${targetDir}/${fileName}`;
+
+      // Update URL input
+      const urlInput = document.querySelector(`.image-url[data-category="${category}"][data-key="${key}"]`);
+      if (urlInput) {
+        urlInput.value = filePath;
+      }
+
+      // Auto-update config
+      this.updateImage(category, key, filePath);
+
+      // Create download button for user to save the file
+      await this.downloadImageFile(file, fileName, targetDir);
+    };
+    
+    reader.onerror = () => {
+      alert('Failed to read image file. Please try again.');
+      if (preview) {
+        preview.innerHTML = '<div class="placeholder-preview">Upload Failed</div>';
+      }
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Download image file to user's download folder
+   * [2025-11-02 22:20:00] Helper function to save uploaded image
+   */
+  async downloadImageFile(file, fileName, targetDir) {
+    // Create a download link
+    const blob = file;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    
+    // Trigger download
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // Show instruction modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+    
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 8px; max-width: 500px; margin: 20px;">
+        <h3 style="margin: 0 0 16px; font-size: 20px;">✅ 图片已准备下载</h3>
+        <p style="margin: 0 0 12px; color: #666;">
+          <strong>${fileName}</strong> 已添加到下载列表。
+        </p>
+        <ol style="margin: 0 0 20px; padding-left: 20px; color: #666; line-height: 1.8;">
+          <li>将下载的图片文件移动到：<br><code style="background: #f5f5f5; padding: 4px 8px; border-radius: 4px;">assets/${targetDir}/</code></li>
+          <li>确保文件名为：<strong>${fileName}</strong></li>
+          <li>点击下方"保存配置"按钮保存更改</li>
+        </ol>
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button onclick="this.closest('div').remove(); this.closest('div').remove();" 
+                  style="padding: 10px 20px; background: #f5f5f5; border: none; border-radius: 6px; cursor: pointer;">
+            我知道了
+          </button>
+          <button onclick="saveAllChanges(); this.closest('div').remove(); this.closest('div').remove();" 
+                  style="padding: 10px 20px; background: #FF1F3D; color: white; border: none; border-radius: 6px; cursor: pointer;">
+            保存配置
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Auto close after 10 seconds
+    setTimeout(() => {
+      if (modal.parentNode) {
+        modal.remove();
+      }
+    }, 10000);
   }
 
   /**
@@ -126,8 +238,9 @@ class ContentManager {
       return `
         <div class="image-item">
           <label>${brand.alt || key}</label>
-          <div class="image-preview" data-category="brands" data-key="${key}">
-            <img src="${brand.url}" alt="${brand.alt}" style="max-width: 100%; height: auto;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'placeholder-preview\\'>Preview</div>'">
+          <div class="image-preview" data-category="brands" data-key="${key}" style="position: relative;">
+            <img src="${brand.url}" alt="${brand.alt}" style="max-width: 100%; height: auto;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'placeholder-preview\\'>点击上传</div><input type=\\'file\\' accept=\\'image/*\\' class=\\'image-input\\' data-category=\\'brands\\' data-key=\\'${key}\\'>">
+            <input type="file" accept="image/*" class="image-input" data-category="brands" data-key="${key}">
           </div>
           <div class="image-info">
             <input type="text" class="image-url" value="${brand.url}" data-category="brands" data-key="${key}">
@@ -151,8 +264,9 @@ class ContentManager {
       return `
         <div class="image-item">
           <label>${cat.alt || key}</label>
-          <div class="image-preview" data-category="categories" data-key="${key}">
-            <img src="${cat.url}" alt="${cat.alt}" style="max-width: 100%; height: auto;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'placeholder-preview\\'>Preview</div>'">
+          <div class="image-preview" data-category="categories" data-key="${key}" style="position: relative;">
+            <img src="${cat.url}" alt="${cat.alt}" style="max-width: 100%; height: auto;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\\'placeholder-preview\\'>点击上传</div><input type=\\'file\\' accept=\\'image/*\\' class=\\'image-input\\' data-category=\\'categories\\' data-key=\\'${key}\\'>">
+            <input type="file" accept="image/*" class="image-input" data-category="categories" data-key="${key}">
           </div>
           <div class="image-info">
             <input type="text" class="image-url" value="${cat.url}" data-category="categories" data-key="${key}">
@@ -171,20 +285,46 @@ class ContentManager {
     if (this.config) {
       this.renderBrandLogos();
       this.renderCategoryImages();
-      this.setupEventListeners();
+      // Wait a bit for DOM to update
+      setTimeout(() => {
+        this.setupEventListeners();
+      }, 100);
     }
   }
 
   /**
    * Setup event listeners
+   * [2025-11-02 22:20:00] Enhanced to handle dynamically generated content
    */
   setupEventListeners() {
-    // File input handlers
+    // Remove existing listeners to avoid duplicates
+    const existingInputs = document.querySelectorAll('.image-input');
+    existingInputs.forEach(input => {
+      const newInput = input.cloneNode(true);
+      input.parentNode.replaceChild(newInput, input);
+    });
+
+    // File input handlers - use event delegation for dynamic content
+    document.addEventListener('change', (e) => {
+      if (e.target.classList.contains('image-input')) {
+        const category = e.target.dataset.category;
+        const key = e.target.dataset.key;
+        const file = e.target.files[0];
+        if (file) {
+          this.handleFileUpload(category, key, file);
+        }
+      }
+    });
+
+    // Also bind directly to existing inputs
     document.querySelectorAll('.image-input').forEach(input => {
       input.addEventListener('change', (e) => {
         const category = e.target.dataset.category;
         const key = e.target.dataset.key;
-        this.handleFileUpload(category, key, e.target.files[0]);
+        const file = e.target.files[0];
+        if (file) {
+          this.handleFileUpload(category, key, file);
+        }
       });
     });
   }

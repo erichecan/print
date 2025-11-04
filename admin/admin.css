@@ -157,6 +157,21 @@
   margin-bottom: 12px;
   overflow: hidden;
   position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.image-preview:hover {
+  border-color: var(--color-primary, #FF1F3D);
+  background: var(--color-bg-subtle, #f8f8f8);
+}
+
+.image-preview:hover .placeholder-preview::before {
+  content: '📁 点击上传图片';
+}
+
+.image-preview:has(img) {
+  cursor: default;
 }
 
 .image-preview img {
@@ -178,6 +193,16 @@
   height: 100%;
   opacity: 0;
   cursor: pointer;
+  z-index: 10;
+}
+
+.upload-overlay {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .image-info {
