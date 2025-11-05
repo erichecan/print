@@ -34,7 +34,8 @@
 	</header>
 
     <main class="lab" id="main">
-        <div class="container lab__grid">
+        <!-- [2025-11-05 01:30:00] Redesigned to Custom Ink style: 5-region layout -->
+        <div class="lab__grid">
             <!-- Left vertical rail -->
             <nav class="lab__rail" aria-label="Editor Tools">
                 <button class="rail__btn is-active" data-tool="upload" title="Upload">
@@ -54,20 +55,121 @@
                     <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M6 2l1 4h10l1-4h2l-1 4h3v2H1V6h3L3 2h3zm-2 8h16l-1.6 10.4A2 2 0 0116.42 22H7.58a2 2 0 01-1.98-1.6L4 10z"/></svg></span>
                     <span class="rail__label">Products</span>
                 </button>
+                <!-- [2025-11-05 01:30:00] Added Product Colors and Add Names tools -->
+                <button class="rail__btn" data-tool="colors" title="Product Colors">
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z"/></svg></span>
+                    <span class="rail__label">Product Colors</span>
+                </button>
+                <button class="rail__btn" data-tool="names" title="Add Names">
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></span>
+                    <span class="rail__label">Add Names</span>
+                </button>
             </nav>
 
-            <!-- Sidebar tools (panel) -->
-            <aside class="lab__tools" aria-label="Tools Panel">
-				<div class="tools__tabs">
-                    <button class="tab-btn active" data-panel="upload">
-                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3l5 5h-3v6h-4V8H7l5-5zm-7 14h14v2H5v-2z"/></svg></span> Upload
-					</button>
-                    <button class="tab-btn" data-panel="text">
-                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></span> Text
-					</button>
-                    <button class="tab-btn" data-panel="art">
-                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3a9 9 0 00-9 9 5 5 0 005 5h1a2 2 0 012 2 2 2 0 002 2 9 9 0 000-18zm6 7a1 1 0 110-2 1 1 0 010 2zM15 7a1 1 0 110-2 1 1 0 010 2zM9 7a1 1 0 110-2 1 1 0 010 2z"/></svg></span> Art
-					</button>
+            <!-- [2025-11-05 01:30:00] Tools panel removed - functionality moved to guide panel -->
+            
+            <!-- Canvas area with guide panel -->
+            <section class="lab__stage" aria-label="Preview">
+                <!-- Guide Panel: What's next for you? -->
+                <div class="guide-panel" id="guide-panel">
+                    <h3 class="guide-panel__title">What's next for you?</h3>
+                    <div class="guide-actions">
+                        <button class="guide-action-btn" data-action="upload" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 3l5 5h-3v6h-4V8H7l5-5zm-7 14h14v2H5v-2z"/></svg>
+                            <span>Upload</span>
+                        </button>
+                        <button class="guide-action-btn" data-action="text" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg>
+                            <span>Add Text</span>
+                        </button>
+                        <button class="guide-action-btn" data-action="art" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14h18zM5 5h14v9l-3-3-4 4-3-3-4 4V5z"/></svg>
+                            <span>Add Art</span>
+                        </button>
+                        <button class="guide-action-btn" data-action="products" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M6 2l1 4h10l1-4h2l-1 4h3v2H1V6h3L3 2h3zm-2 8h16l-1.6 10.4A2 2 0 0116.42 22H7.58a2 2 0 01-1.98-1.6L4 10z"/></svg>
+                            <span>Change Products</span>
+                        </button>
+                    </div>
+                    <p class="guide-hint">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        Drag & drop a file anywhere to upload
+                    </p>
+                </div>
+
+                <!-- Product preview area -->
+                <div class="stage__canvas-wrapper">
+                    <div class="product-preview">
+                        <img id="hoodie-front" class="garment" src="assets/mock-hoodie-front.webp" alt="Hoodie front" aria-hidden="false">
+                        <img id="hoodie-back" class="garment" src="assets/mock-hoodie-back.webp" alt="Hoodie back" aria-hidden="true" style="display:none">
+                        <div id="art-layer" class="art-layer"></div>
+                        <div class="print-area-indicator" aria-hidden="true"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Sidebar: View Switcher -->
+            <aside class="lab__sidebar" aria-label="View Options">
+                <div class="sidebar__view-switcher">
+                    <button class="view-switch-btn is-active" data-view="front" type="button">
+                        <div class="view-thumbnail">
+                            <img src="assets/mock-hoodie-front.webp" alt="Front view" width="60" height="60">
+                        </div>
+                        <span>Front</span>
+                    </button>
+                    <button class="view-switch-btn" data-view="back" type="button">
+                        <div class="view-thumbnail">
+                            <img src="assets/mock-hoodie-back.webp" alt="Back view" width="60" height="60">
+                        </div>
+                        <span>Back</span>
+                    </button>
+                    <button class="view-switch-btn" data-view="sleeve" type="button">
+                        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                        <span>Sleeve Design</span>
+                    </button>
+                    <button class="view-switch-btn" data-view="zoom" type="button" title="Zoom">
+                        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path fill="currentColor" d="M12 10h-2v2H9v-2H7V9h2V7h1v2h2v1z"/></svg>
+                        <span>Zoom</span>
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Bottom Bar: Product Info & Actions -->
+        <div class="bottom-bar">
+            <div class="bottom-bar__left">
+                <button class="btn btn--primary" type="button" id="add-products-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Add Products
+                </button>
+                <div class="product-info">
+                    <img class="product-info__thumb" src="assets/mock-hoodie-front.webp" alt="Current product" width="40" height="40">
+                    <div class="product-info__details">
+                        <p class="product-info__name">Gildan Softstyle Jersey T-shirt</p>
+                        <div class="product-info__meta">
+                            <span class="product-info__color">Navy</span>
+                            <a href="#" class="product-info__link">Change Product</a>
+                            <a href="#" class="product-info__link">Change Color</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-bar__right">
+                <button class="btn btn--secondary" type="button">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                    Save | Share
+                </button>
+                <button class="btn btn--primary" type="button" id="get-price-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                    Get Price
+                </button>
+            </div>
+        </div>
+
+        <!-- [2025-11-05 01:40:00] All tools panel and old stage/inspector code removed -->
+    </main>
+
+    <script>
                     <button class="tab-btn" data-panel="layers">
                         <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2l10 5-10 5L2 7l10-5zm0 7l10 5-10 5-10-5 10-5zm0 7l10 5-10 5-10-5 10-5z"/></svg></span> Layers
 					</button>
@@ -216,11 +318,7 @@
 				</div>
 			</aside>
 
-            <!-- Canvas area -->
-            <section class="lab__stage" aria-label="Preview">
-				<header class="stage__header">
-					<h2 class="stage__title">Design Preview</h2>
-					<div class="stage__actions">
+            <!-- [2025-11-05 01:40:00] Duplicate Stage section removed - already added above -->
                         <button class="action-btn" title="Undo" aria-label="Undo"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5V2L7 7l5 5V9c3.31 0 6 2.69 6 6 0 1.15-.33 2.23-.9 3.14l1.46 1.46A7.96 7.96 0 0020 15c0-4.42-3.58-8-8-8z"/></svg></button>
                         <button class="action-btn" title="Redo" aria-label="Redo"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5V2l5 5-5 5V9c-3.31 0-6 2.69-6 6 0 1.15.33 2.23.9 3.14L5.44 19.6A7.96 7.96 0 014 15c0-4.42 3.58-8 8-8z"/></svg></button>
 					</div>
@@ -249,7 +347,7 @@
                         <span class="chip-img placeholder" aria-hidden="true"></span>
                         <div class="chip-info">
                             <strong>Gildan Midweight 50/50 Pullover Hoodie</strong>
-							<small>Royal • <a href="product-hoodie.html">Change Color</a></small>
+							<small>Royal �?<a href="product-hoodie.html">Change Color</a></small>
                         </div>
                     </div>
 				<div class="prod-acts">
@@ -344,10 +442,8 @@
         </section>
     </main>
 
-	<script>
-		// [2025-11-01 01:00:00] Design Lab with layers panel, drag-to-reorder, show/hide, delete
-		(function(){
-			const fileInput = document.getElementById('file');
+    <script>
+        const fileInput = document.getElementById('file');
 			const browseBtn = document.getElementById('browse');
 			const artLayer = document.getElementById('art-layer');
 			const layersList = document.getElementById('layers-list');

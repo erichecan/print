@@ -1,10 +1,12 @@
 // [2025-11-02 20:52:00] Express application setup
+// [2025-11-04 23:56:00] Added cookie-parser for session management
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
 const logger = require('./utils/logger');
 const { RATE_LIMIT } = require('./utils/constants');
 
@@ -24,7 +26,12 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
+// Cookie parser (for session and auth cookies)
+app.use(cookieParser());
+
 // Body parsing middleware
+// Webhook routes need raw body, so we skip JSON parsing for them
+app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -60,11 +67,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes (will be added in subsequent phases)
-// app.use('/api/auth', require('./routes/authRoutes'));
-// app.use('/api/products', require('./routes/productRoutes'));
-// app.use('/api/cart', require('./routes/cartRoutes'));
-// app.use('/api/orders', require('./routes/orderRoutes'));
+// API routes
+app.use('/api/products', require('./routes/products'));
+app.use('/api/collections', require('./routes/collections'));
+app.use('/api/cart', require('./routes/cart'));
+app.use('/api/checkout', require('./routes/checkout'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/webhooks', require('./routes/webhooks'));
+app.use('/api/auth', require('./routes/authRoutes'));
 // app.use('/api/designs', require('./routes/designRoutes'));
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));

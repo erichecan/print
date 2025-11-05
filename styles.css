@@ -311,14 +311,25 @@ footer.site-footer { background: var(--color-secondary); color: #cbd5e1; border-
 
 /* 2025-10-31 12:08:00 Design Lab (design-lab.html) */
 .lab-body { background: #fff; }
-/* 2025-11-01 00:00:00 Design Lab layout optimization: improved grid, rail icons, tools tabs */
-.lab__grid { display: grid; grid-template-columns: 80px 320px 1fr 380px; gap: 20px; padding: 20px 0; }
-.lab__rail { background: #fff; border: 1px solid var(--color-border); border-radius: 14px; padding: 12px 8px; display: grid; gap: 8px; align-self: start; position: sticky; top: 72px; }
-.rail__btn { width: 100%; min-height: 64px; border: 1px solid var(--color-border); border-radius: 10px; background: #fff; font-weight: 600; font-size: 11px; color: var(--color-text); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; transition: all 0.15s; }
-.rail__btn:hover { background: var(--color-bg-subtle); border-color: var(--color-primary); }
-.rail__btn.is-active { outline: 2px solid var(--color-primary); outline-offset: 2px; background: rgba(255,31,61,0.05); border-color: var(--color-primary); }
+/* [2025-11-05 02:00:00] Design Lab Custom Ink style: 5-region layout */
+.lab__grid { display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: 80px 1fr 120px; height: 100vh; gap: 0; padding: 0; }
+.lab__rail { background: #2C2C2C; color: white; grid-row: 2; padding: 12px 8px; display: grid; gap: 8px; align-content: start; border: none; border-radius: 0; position: relative; top: 0; }
+.rail__btn { width: 100%; min-height: 64px; border: none; border-radius: 8px; background: transparent; font-weight: 600; font-size: 11px; color: rgba(255, 255, 255, 0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 4px; transition: all 0.15s; }
+.rail__btn:hover { background: rgba(255, 255, 255, 0.1); color: white; }
+.rail__btn.is-active { background: rgba(255, 255, 255, 0.15); color: white; }
 .rail__icon { font-size: 24px; line-height: 1; }
 .rail__label { font-size: 11px; font-weight: 600; }
+/* [2025-11-05 01:45:00] Right Sidebar: View Switcher */
+.lab__sidebar { background: #F5F5F5; grid-row: 2; padding: 20px 12px; border-left: 1px solid #E5E5E5; display: flex; flex-direction: column; gap: 12px; }
+.sidebar__view-switcher { display: flex; flex-direction: column; gap: 8px; }
+.view-switch-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 8px; border: 1px solid #E5E5E5; border-radius: 8px; background: white; cursor: pointer; transition: all 0.15s; font-weight: 600; font-size: 12px; color: var(--color-text); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.view-switch-btn:hover { border-color: var(--color-primary); background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+.view-switch-btn.is-active { border-color: var(--color-primary); background: rgba(255,31,61,0.08); color: var(--color-primary); }
+.view-thumbnail { width: 60px; height: 60px; border-radius: 6px; overflow: hidden; border: 1px solid var(--color-border); background: white; }
+.view-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+.view-switch-btn svg { width: 24px; height: 24px; color: currentColor; }
+
+/* Legacy tools/inspector styles (kept for backward compatibility) */
 .lab__tools, .lab__inspector { background: #fff; border: 1px solid var(--color-border); border-radius: 14px; align-self: start; }
 .lab__tools { padding: 0; display: flex; flex-direction: column; }
 .lab__inspector { padding: 16px; display: grid; gap: 16px; }
@@ -360,7 +371,28 @@ footer.site-footer { background: var(--color-secondary); color: #cbd5e1; border-
 .layer-btn { padding: 4px 8px; border: none; background: transparent; cursor: pointer; font-size: 14px; opacity: 0.6; transition: all 0.15s; }
 .layer-btn:hover { opacity: 1; color: var(--color-primary); }
 
-.lab__stage { background: #fff; border: 1px solid var(--color-border); border-radius: 14px; padding: 16px; display: grid; gap: 16px; }
+/* [2025-11-05 01:45:00] Design Lab Custom Ink style: Canvas area with guide panel */
+.lab__stage { background: #F5F5F5; grid-row: 2; position: relative; display: flex; align-items: center; justify-content: center; padding: 0; overflow: hidden; }
+.stage__canvas-wrapper { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; }
+.product-preview { position: relative; max-width: 600px; max-height: 80%; aspect-ratio: 4/5; z-index: 2; }
+.garment { width: 100%; height: 100%; object-fit: contain; display: block; }
+.art-layer { position: absolute; inset: 0; pointer-events: none; }
+.art { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); max-width: 70%; max-height: 70%; pointer-events: auto; cursor: move; }
+.art.text { font-size: 36px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+.art.is-selected { outline: 2px dashed var(--color-primary); outline-offset: 2px; }
+.print-area-indicator { position: absolute; inset: 10%; border: 2px dashed rgba(255,31,61,0.3); pointer-events: none; border-radius: 4px; }
+
+/* [2025-11-05 01:45:00] Guide Panel - "What's next for you?" */
+.guide-panel { position: absolute; left: 120px; top: 50%; transform: translateY(-50%); background: white; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); z-index: 5; min-width: 280px; max-width: 320px; }
+.guide-panel__title { margin: 0 0 16px; font-size: 18px; font-weight: 700; color: var(--color-text); }
+.guide-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.guide-action-btn { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 12px; border: 1px solid var(--color-border); border-radius: 8px; background: white; cursor: pointer; transition: all 0.15s; font-weight: 600; font-size: 13px; color: var(--color-text); }
+.guide-action-btn:hover { background: var(--color-bg-subtle); border-color: var(--color-primary); color: var(--color-primary); }
+.guide-action-btn svg { width: 24px; height: 24px; color: currentColor; }
+.guide-hint { margin: 0; font-size: 13px; color: var(--color-text-muted); display: flex; align-items: center; gap: 6px; }
+.guide-hint svg { width: 16px; height: 16px; color: currentColor; }
+
+/* Legacy stage styles (kept for backward compatibility) */
 .stage__header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--color-border); }
 .stage__title { margin: 0; font-size: 18px; font-weight: 700; color: var(--color-text); }
 .stage__actions { display: flex; gap: 4px; }
@@ -368,12 +400,6 @@ footer.site-footer { background: var(--color-secondary); color: #cbd5e1; border-
 .action-btn:hover { background: var(--color-bg-subtle); border-color: var(--color-primary); }
 .stage__toolbar { display: flex; justify-content: space-between; align-items: center; }
 .stage { position: relative; aspect-ratio: 4/5; background: #f8faf9; border: 1px dashed var(--color-border); border-radius: 12px; overflow: hidden; }
-.garment { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
-.art-layer { position: absolute; inset: 0; pointer-events: none; }
-.art { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); max-width: 70%; max-height: 70%; pointer-events: auto; cursor: move; }
-.art.text { font-size: 36px; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.12); }
-.art.is-selected { outline: 2px dashed var(--color-primary); outline-offset: 2px; }
-.print-area-indicator { position: absolute; inset: 10%; border: 2px dashed rgba(255,31,61,0.3); pointer-events: none; }
 .thumbs { display: flex; gap: 8px; }
 .thumb { width: 48px; height: 48px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-bg-subtle); }
 .thumb.is-active { outline: 2px solid var(--color-primary); outline-offset: 2px; }
@@ -404,14 +430,31 @@ footer.site-footer { background: var(--color-secondary); color: #cbd5e1; border-
 .reco { background: #fff; border: 1px solid var(--color-border); border-radius: 12px; padding: 10px; display: grid; gap: 8px; }
 .reco-img { height: 120px; border: 1px dashed var(--color-border); border-radius: 10px; }
 
-/* 2025-11-01 00:00:00 Design Lab responsive adjustments */
+/* [2025-11-05 01:45:00] Bottom Bar: Product Info & Actions */
+.bottom-bar { grid-column: 1 / -1; background: white; border-top: 1px solid #E5E5E5; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.bottom-bar__left { display: flex; align-items: center; gap: 16px; }
+.bottom-bar__right { display: flex; align-items: center; gap: 12px; }
+.product-info { display: flex; align-items: center; gap: 12px; }
+.product-info__thumb { width: 40px; height: 40px; border-radius: 6px; border: 1px solid var(--color-border); object-fit: cover; }
+.product-info__details { display: flex; flex-direction: column; gap: 4px; }
+.product-info__name { margin: 0; font-size: 14px; font-weight: 600; color: var(--color-text); }
+.product-info__meta { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.product-info__color { color: var(--color-text-muted); }
+.product-info__link { color: var(--color-primary); text-decoration: none; font-weight: 600; }
+.product-info__link:hover { text-decoration: underline; }
+
+/* [2025-11-05 01:45:00] Design Lab responsive adjustments - Custom Ink style */
 @media (max-width: 1180px) {
-  .lab__grid { grid-template-columns: 80px 280px 1fr; gap: 16px; }
+  .lab__grid { grid-template-columns: 80px 1fr 100px; }
+  .guide-panel { left: 60px; min-width: 240px; padding: 20px; }
 }
 @media (max-width: 800px) {
-  .lab__grid { grid-template-columns: 1fr; gap: 16px; }
-  .lab__rail { display: none; }
-  .lab__tools, .lab__inspector { margin: 0; }
+  .lab__grid { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; }
+  .lab__rail { grid-row: auto; display: flex; flex-direction: row; overflow-x: auto; padding: 8px; }
+  .lab__sidebar { grid-row: auto; display: flex; flex-direction: row; padding: 12px; }
+  .guide-panel { position: static; transform: none; margin: 20px auto; max-width: 100%; }
+  .bottom-bar { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .bottom-bar__right { width: 100%; justify-content: flex-end; }
 }
 /* Responsive */
 @media (max-width: 1024px) {

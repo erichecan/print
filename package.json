@@ -1,0 +1,17 @@
+{
+  "name": "print-ecom-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*",
+    "backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "echo use per-app dev",
+    "build": "echo use per-app build",
+    "lint": "echo use per-app lint"
+  }
+}
+
+
