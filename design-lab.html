@@ -169,33 +169,273 @@
         <!-- [2025-11-05 01:40:00] All tools panel and old stage/inspector code removed -->
     </main>
 
+    <!-- Hidden file input for uploads -->
+    <input id="file" type="file" accept="image/*" hidden>
+    <input id="text-input" type="text" hidden>
+
     <script>
-                    <button class="tab-btn" data-panel="layers">
-                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2l10 5-10 5L2 7l10-5zm0 7l10 5-10 5-10-5 10-5zm0 7l10 5-10 5-10-5 10-5z"/></svg></span> Layers
-					</button>
-                    <button class="tab-btn" data-panel="edit">
-                        <span><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></span> Edit
-					</button>
-				</div>
-				<div class="tools__content">
-					<div class="tools__panel active" id="upload-panel">
-						<label class="upload">
-							<input id="file" type="file" accept="image/*" hidden>
-							<button class="btn btn--outline" type="button" id="browse">Browse Your Computer</button>
-						</label>
-						<p class="muted" style="margin: 8px 0 0; font-size: 13px;">Drag & Drop anywhere<br>300 DPI or higher works best. Max size 20 MB.</p>
-					</div>
-					<div class="tools__panel" id="text-panel">
-						<div class="tool-row">
-							<input id="text-input" type="text" placeholder="Your slogan">
-							<button class="btn" id="add-text" type="button">Add</button>
-						</div>
-						<div class="tool-row">
-							<label style="font-size: 13px; font-weight: 600;">Font</label>
-							<select id="font">
-								<option value="Inter, sans-serif">Inter</option>
-								<option value="'Times New Roman', serif">Times</option>
-								<option value="'Courier New', monospace">Courier</option>
+        // [2025-01-27 14:30:00] Phase 2: JavaScript functionality implementation
+        (function() {
+            'use strict';
+            
+            // ========== DOM Elements ==========
+            const fileInput = document.getElementById('file');
+            const textInput = document.getElementById('text-input');
+            const artLayer = document.getElementById('art-layer');
+            const guidePanel = document.getElementById('guide-panel');
+            const labStage = document.querySelector('.lab__stage');
+            const hoodieFront = document.getElementById('hoodie-front');
+            const hoodieBack = document.getElementById('hoodie-back');
+            
+            // State variables
+            let selected = null;
+            let layerCounter = 0;
+            let currentView = 'front';
+            
+            // ========== Phase 2 Functions ==========
+            
+            // 1. Guide Panel Button Functions
+            document.querySelectorAll('.guide-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.dataset.action;
+                    handleGuideAction(action);
+                });
+            });
+            
+            function handleGuideAction(action) {
+                switch(action) {
+                    case 'upload':
+                        fileInput.click();
+                        break;
+                    case 'text':
+                        addTextElement();
+                        break;
+                    case 'art':
+                        // TODO: Open art library modal
+                        console.log('Art library - to be implemented');
+                        break;
+                    case 'products':
+                        // TODO: Open product selector
+                        console.log('Product selector - to be implemented');
+                        break;
+                }
+            }
+            
+            // 2. File Upload Handler
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.className = 'art is-selected';
+                    img.alt = 'Uploaded artwork';
+                    img.dataset.layerId = 'layer-' + (++layerCounter);
+                    placeArt(img, 'image');
+                    hideGuidePanel();
+                }
+            });
+            
+            // 3. Add Text Element
+            function addTextElement() {
+                const text = prompt('Enter text:', 'Your Text');
+                if (!text) return;
+                
+                const textEl = document.createElement('div');
+                textEl.className = 'art text is-selected';
+                textEl.textContent = text;
+                textEl.style.fontFamily = 'Inter, sans-serif';
+                textEl.style.fontSize = '36px';
+                textEl.style.color = '#FF1F3D';
+                textEl.dataset.layerId = 'layer-' + (++layerCounter);
+                placeArt(textEl, 'text');
+                hideGuidePanel();
+            }
+            
+            function placeArt(el, type) {
+                if (!artLayer) return;
+                artLayer.appendChild(el);
+                el.style.position = 'absolute';
+                el.style.left = '50%';
+                el.style.top = '45%';
+                el.style.transform = 'translate(-50%, -50%)';
+                el.style.cursor = 'move';
+                select(el);
+                enableDrag(el);
+            }
+            
+            function select(el) {
+                document.querySelectorAll('.art').forEach(a => a.classList.remove('is-selected'));
+                if (el) {
+                    el.classList.add('is-selected');
+                    selected = el;
+                } else {
+                    selected = null;
+                }
+            }
+            
+            function enableDrag(el) {
+                let dragging = false;
+                let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+                
+                el.addEventListener('pointerdown', function(e) {
+                    select(el);
+                    dragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    const rect = el.getBoundingClientRect();
+                    const stageRect = artLayer.getBoundingClientRect();
+                    startLeft = rect.left - stageRect.left;
+                    startTop = rect.top - stageRect.top;
+                    el.setPointerCapture(e.pointerId);
+                    e.preventDefault();
+                });
+                
+                el.addEventListener('pointermove', function(e) {
+                    if (!dragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    el.style.left = (startLeft + dx) + 'px';
+                    el.style.top = (startTop + dy) + 'px';
+                });
+                
+                el.addEventListener('pointerup', function(e) {
+                    dragging = false;
+                });
+            }
+            
+            // 4. View Switcher Function
+            document.querySelectorAll('.view-switch-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    setView(view);
+                });
+            });
+            
+            function setView(view) {
+                currentView = view;
+                
+                // Update button states
+                document.querySelectorAll('.view-switch-btn').forEach(btn => {
+                    btn.classList.toggle('is-active', btn.dataset.view === view);
+                });
+                
+                // Update garment display
+                if (view === 'front') {
+                    if (hoodieFront) hoodieFront.style.display = '';
+                    if (hoodieBack) hoodieBack.style.display = 'none';
+                } else if (view === 'back') {
+                    if (hoodieFront) hoodieFront.style.display = 'none';
+                    if (hoodieBack) hoodieBack.style.display = '';
+                } else if (view === 'sleeve') {
+                    // TODO: Show sleeve view
+                    console.log('Sleeve view - to be implemented');
+                } else if (view === 'zoom') {
+                    // TODO: Zoom functionality
+                    console.log('Zoom - to be implemented');
+                }
+            }
+            
+            // 5. Drag & Drop for entire canvas
+            if (labStage) {
+                labStage.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('drag-over');
+                });
+                
+                labStage.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+                
+                labStage.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0 && files[0].type.startsWith('image/')) {
+                        fileInput.files = files;
+                        fileInput.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
+            
+            // 6. Hide guide panel when content is added
+            function hideGuidePanel() {
+                if (guidePanel && artLayer.children.length > 0) {
+                    guidePanel.style.display = 'none';
+                }
+            }
+            
+            // 7. Rail button handlers
+            document.querySelectorAll('.rail__btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tool = this.dataset.tool;
+                    
+                    // Update active state
+                    document.querySelectorAll('.rail__btn').forEach(b => b.classList.remove('is-active'));
+                    this.classList.add('is-active');
+                    
+                    // Trigger corresponding guide action
+                    const actionMap = {
+                        'upload': 'upload',
+                        'text': 'text',
+                        'art': 'art',
+                        'products': 'products'
+                    };
+                    
+                    if (actionMap[tool]) {
+                        handleGuideAction(actionMap[tool]);
+                    } else if (tool === 'colors') {
+                        // TODO: Open color picker
+                        console.log('Product colors - to be implemented');
+                    } else if (tool === 'names') {
+                        // TODO: Add names functionality
+                        console.log('Add names - to be implemented');
+                    }
+                });
+            });
+            
+            // 8. Bottom bar button handlers
+            const addProductsBtn = document.getElementById('add-products-btn');
+            const getPriceBtn = document.getElementById('get-price-btn');
+            
+            if (addProductsBtn) {
+                addProductsBtn.addEventListener('click', function() {
+                    // TODO: Open product selector
+                    console.log('Add products - to be implemented');
+                });
+            }
+            
+            if (getPriceBtn) {
+                getPriceBtn.addEventListener('click', function() {
+                    // TODO: Navigate to cart/checkout
+                    window.location.href = 'cart.html';
+                });
+            }
+            
+            // 9. Product color change links
+            document.querySelectorAll('.product-info__link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const action = this.textContent.trim();
+                    if (action === 'Change Color') {
+                        // TODO: Open color selector
+                        console.log('Change color - to be implemented');
+                    } else if (action === 'Change Product') {
+                        // TODO: Open product selector
+                        console.log('Change product - to be implemented');
+                    }
+                });
+            });
+            
+        })();
+    </script>
+
+    <!-- Modeled after Custom Ink Design Lab layout per provided screenshot -->
+	
+	<!-- [2025-11-02 22:50:00] Common footer with fixed links -->
+	<section class="footer-info" aria-label="Site Information">
 								<option value="Arial, sans-serif">Arial</option>
 								<option value="Georgia, serif">Georgia</option>
 								<option value="Verdana, sans-serif">Verdana</option>

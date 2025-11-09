@@ -14,6 +14,8 @@ const i18n = {
       promotions: "Promotions",
       settings: "Settings",
       backToSite: "← Back to Site",
+      productionManagement: "Production Management",
+      offlineWorkflowBoard: "Offline Order Workflow",
       
       // Common
       logout: "Logout",
@@ -37,6 +39,23 @@ const i18n = {
       fromYesterday: "from yesterday",
       newToday: "new today",
       critical: "critical",
+      ordersInProgress: "Orders in Progress",
+      averageCycleTime: "Average Cycle Time",
+      rushOrders: "Rush Orders",
+      delayedOrders: "Delayed",
+      saveView: "Save View",
+      dateRange: "Date Range",
+      allPriorities: "All priorities",
+      rushPriority: "Rush",
+      standardPriority: "Standard",
+      allOwnersComingSoon: "All owners (coming soon)",
+      searchOfflineOrders: "Search orders or companies...",
+      workflowConfigInfo: 'Workflow stages can be customized in <a href="settings.html" target="_blank" rel="noopener">System Settings</a>. Use the button to adjust column names for the board.',
+      customizeWorkflow: "Customize Workflow",
+      newOfflineOrder: "New Offline Order",
+      toggleSidebar: "Toggle sidebar",
+      collapseSidebar: "Collapse sidebar",
+      expandSidebar: "Expand sidebar",
       
       // Products
       productManagement: "Products",
@@ -181,6 +200,8 @@ const i18n = {
       promotions: "促销活动",
       settings: "系统设置",
       backToSite: "← 返回前台",
+      productionManagement: "生产管理",
+      offlineWorkflowBoard: "线下订单看板",
       
       // Common
       logout: "退出登录",
@@ -204,6 +225,23 @@ const i18n = {
       fromYesterday: "较昨日",
       newToday: "今日新增",
       critical: "严重",
+      ordersInProgress: "进行中的订单",
+      averageCycleTime: "平均周期",
+      rushOrders: "加急订单",
+      delayedOrders: "已延迟",
+      saveView: "保存视图",
+      dateRange: "日期范围",
+      allPriorities: "全部优先级",
+      rushPriority: "加急",
+      standardPriority: "标准",
+      allOwnersComingSoon: "所有负责人（即将上线）",
+      searchOfflineOrders: "搜索订单或公司...",
+      workflowConfigInfo: '可在 <a href="settings.html" target="_blank" rel="noopener">系统设置</a> 中调整流程阶段。点击按钮可修改看板列名称。',
+      customizeWorkflow: "自定义流程",
+      newOfflineOrder: "新建线下订单",
+      toggleSidebar: "切换侧边栏",
+      collapseSidebar: "折叠侧边栏",
+      expandSidebar: "展开侧边栏",
       
       // Products
       productManagement: "商品管理",
@@ -376,6 +414,8 @@ const i18n = {
         btn.classList.add('is-active');
       }
     });
+    ensureProductionNav();
+    applySidebarState(isSidebarCollapsed());
   },
   
   init() {
@@ -399,9 +439,93 @@ const i18n = {
         });
       }
     }
+    ensureProductionNav();
+    ensureSidebarToggle();
+    applySidebarState(isSidebarCollapsed());
     this.updatePage();
   }
 };
+
+const SIDEBAR_STORAGE_KEY = 'admin-sidebar-collapsed';
+
+function isSidebarCollapsed() {
+  return localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true';
+}
+
+function applySidebarState(collapsed) {
+  const grid = document.querySelector('.admin-grid');
+  if (grid) {
+    grid.classList.toggle('sidebar-collapsed', collapsed);
+  }
+
+  const toggle = document.querySelector('.admin-sidebar-toggle');
+  if (toggle) {
+    const label = collapsed ? i18n.t('expandSidebar') : i18n.t('collapseSidebar');
+    toggle.setAttribute('aria-label', label);
+    toggle.setAttribute('title', label);
+    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  }
+
+  const navLinks = document.querySelectorAll('.admin-nav a');
+  navLinks.forEach(link => {
+    const textEl = link.querySelector('[data-i18n]');
+    if (textEl) {
+      link.setAttribute('title', textEl.textContent || textEl.getAttribute('data-i18n'));
+    }
+  });
+}
+
+function ensureSidebarToggle() {
+  const header = document.querySelector('.admin-header');
+  if (!header || header.querySelector('.admin-sidebar-toggle')) {
+    return;
+  }
+
+  let leftGroup = header.querySelector('.admin-header-left');
+  const titleEl = header.querySelector('h1');
+  if (!leftGroup && titleEl) {
+    leftGroup = document.createElement('div');
+    leftGroup.className = 'admin-header-left';
+    header.insertBefore(leftGroup, titleEl);
+    leftGroup.appendChild(titleEl);
+  }
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'admin-sidebar-toggle';
+  button.innerHTML = '☰';
+  if (leftGroup) {
+    leftGroup.insertBefore(button, leftGroup.firstChild);
+  } else {
+    header.insertBefore(button, header.firstChild);
+  }
+
+  const collapsed = isSidebarCollapsed();
+  applySidebarState(collapsed);
+
+  button.addEventListener('click', () => {
+    const next = !isSidebarCollapsed();
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+    applySidebarState(next);
+  });
+}
+
+function ensureProductionNav() {
+  const navList = document.querySelector('.admin-nav ul');
+  if (!navList) return;
+  const existing = navList.querySelector('a[href="offline-orders-board.html"]');
+  if (existing) return;
+
+  const li = document.createElement('li');
+  li.innerHTML = `<a href="offline-orders-board.html"><span class="admin-nav-icon">🛠️</span> <span data-i18n="productionManagement">Production Management</span></a>`;
+
+  const settingsItem = navList.querySelector('a[href="settings.html"]');
+  if (settingsItem && settingsItem.parentElement) {
+    navList.insertBefore(li, settingsItem.parentElement);
+  } else {
+    navList.appendChild(li);
+  }
+}
 
 // Auto-init when DOM ready
 if (document.readyState === 'loading') {

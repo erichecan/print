@@ -5,6 +5,17 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     const now = new Date();
     
+    const stageConfig = {
+      stages: [
+        { key: 'intake', label: 'Intake', description: 'New offline POD requests' },
+        { key: 'collect-materials', label: 'Collect Materials', description: 'Awaiting brand assets and specs' },
+        { key: 'design', label: 'Design', description: 'Design team working on mockups' },
+        { key: 'production', label: 'Production', description: 'Manufacturing and finishing' },
+        { key: 'logistics', label: 'Logistics', description: 'Preparing shipment and delivery' },
+        { key: 'completed', label: 'Completed', description: 'Order fulfilled and delivered' }
+      ]
+    };
+
     const settings = [
       {
         id: uuidv4(),
@@ -52,6 +63,12 @@ module.exports = {
         id: uuidv4(),
         key: 'payment_methods',
         value: JSON.stringify(['stripe', 'paypal']),
+        updated_at: now
+      },
+      {
+        id: uuidv4(),
+        key: 'offline_workflow_stages',
+        value: JSON.stringify(stageConfig),
         updated_at: now
       }
     ];

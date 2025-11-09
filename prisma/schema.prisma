@@ -350,3 +350,75 @@ model Session {
   @@index([expiresAt])
   @@map("sessions")
 }
+
+// [2025-11-08 06:55:02] Offline POD orders
+enum OfflineOrderStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model OfflineOrder {
+  id              String              @id @default(uuid())
+  orderCode       String              @unique @map("order_code")
+  projectName     String              @map("project_name")
+  primaryProduct  String?             @map("primary_product")
+  quantity        Int?
+  deliveryDate    DateTime?           @map("delivery_date")
+  description     String?             @db.Text
+  requiresMockups Boolean             @default(false) @map("requires_mockups")
+  requiresProof   Boolean             @default(false) @map("requires_proof")
+  rushOrder       Boolean             @default(false) @map("rush_order")
+  stageKey        String              @map("stage_key")
+  stageLabel      String              @map("stage_label")
+  stagePosition   Int?                @map("stage_position")
+  status          OfflineOrderStatus  @default(ACTIVE)
+  contactName     String              @map("contact_name")
+  company         String?
+  email           String
+  phone           String?
+  configuration   Json?               @map("configuration")
+  metadata        Json?               @map("metadata")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @map("updated_at")
+
+  assets          OfflineOrderAsset[]
+  histories       OfflineOrderStageHistory[]
+
+  @@index([email])
+  @@index([stageKey])
+  @@index([status])
+  @@map("offline_orders")
+}
+
+model OfflineOrderAsset {
+  id          String        @id @default(uuid())
+  orderId     String        @map("order_id")
+  order       OfflineOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fileName    String        @map("file_name")
+  fileSize    Int           @map("file_size")
+  contentType String?       @map("content_type")
+  storageKey  String        @map("storage_key")
+  url         String
+  uploadedAt  DateTime      @default(now()) @map("uploaded_at")
+  uploadedBy  String?       @map("uploaded_by")
+
+  @@index([orderId])
+  @@map("offline_order_assets")
+}
+
+model OfflineOrderStageHistory {
+  id           String        @id @default(uuid())
+  orderId      String        @map("order_id")
+  order        OfflineOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStageKey String?       @map("from_stage_key")
+  toStageKey   String        @map("to_stage_key")
+  actorId      String?       @map("actor_id")
+  actorName    String?       @map("actor_name")
+  note         String?       @db.Text
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([toStageKey])
+  @@map("offline_order_stage_history")
+}
