@@ -7,6 +7,7 @@ const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
+const path = require('path');
 const logger = require('./utils/logger');
 const { RATE_LIMIT } = require('./utils/constants');
 
@@ -34,6 +35,11 @@ app.use(cookieParser());
 app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/admin', express.static(path.join(__dirname, '../admin')));
+app.use(express.static(path.join(__dirname, '..')));
+app.use('/admin.css', express.static(path.join(__dirname, '../admin/admin.css')));
+app.use('/i18n.js', express.static(path.join(__dirname, '../admin/i18n.js')));
 
 // Compression
 app.use(compression());
@@ -75,6 +81,8 @@ app.use('/api/checkout', require('./routes/checkout'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/offline-orders', require('./routes/offlineOrders'));
+app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
 // app.use('/api/designs', require('./routes/designRoutes'));
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));
