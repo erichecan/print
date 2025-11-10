@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "workspaces": [
     "apps/*",
-    "backend",
-    "packages/*"
+    "backend"
   ],
+  "_comment": "调整 workspace 以匹配现有目录 [2025-11-10 12:00:00]",
   "scripts": {
     "dev": "echo use per-app dev",
     "build": "echo use per-app build",

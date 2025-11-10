@@ -5,23 +5,34 @@ A full-featured custom merchandise e-commerce platform with design lab, order ma
 **Status:** ✅ Phase 1 Complete - Ready for Client Review  
 **Built:** November 2025  
 **Theme:** Brand Red (#FF1F3D)  
-**Platform:** Static HTML + CSS + Vanilla JS
+**Platform:** Next.js 14 + Express (Node.js 18)
 
 ---
 
 ## Quick Start
 
+<!-- 更新 Quick Start 2025-11-10 12:50:00 -->
 ```bash
-# Clone the repository
-cd print
+# 安装 Node.js 18+ 与 npm 9+
+# 克隆仓库后，在根目录安装依赖（启用 npm workspaces）
+npm install
 
-# Start local server
-python -m http.server 8080
+# 启动前端 Next.js 应用
+npm run dev --workspace apps/web
+# 浏览器访问 http://localhost:3000
 
-# Open in browser
-# Frontend: http://localhost:8080/home.html
-# Admin: http://localhost:8080/admin/login.html
+# 启动后端 API
+npm run dev --workspace backend
+# API 提供 http://localhost:3001/api （示例端口）
 ```
+
+## Deployment
+
+<!-- 更新 Deployment 2025-11-10 13:58:00 -->
+- 使用 `docker-compose.yml` 一键启动：`docker compose up --build`
+- 个性化部署请参考 `docs/DEPLOYMENT-GUIDE.md`
+- 生产环境变量示例：`backend/env.production.template`、`apps/web/env.production.template`
+- 后端生产启动脚本：`npm run start:prod --workspace backend`
 
 ---
 
@@ -186,11 +197,13 @@ python -m http.server 8080
 
 ## Tech Stack
 
-- **HTML5** - Semantic markup
-- **CSS3** - Custom properties, Grid, Flexbox
-- **JavaScript** - Vanilla JS (minimal, form handling)
-- **Responsive** - Mobile-first design
-- **Accessibility** - ARIA labels, semantic HTML
+<!-- 更新 Tech Stack 2025-11-10 12:52:00 -->
+- **Next.js 14** - React 应用框架（App Router）
+- **React 18.2** - 前端组件与交互
+- **TypeScript 5.4** - 前端类型系统
+- **Express 4** - 后端 REST API 层
+- **PostgreSQL + Prisma/Sequelize** - 数据访问
+- **Stripe** - 支付集成
 
 ---
 

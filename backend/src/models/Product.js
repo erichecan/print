@@ -38,6 +38,22 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
+    // [2025-11-10 10:30:00] Added cost management numeric fields
+    unit_cost: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0
+    },
+    sale_price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0
+    },
+    gross_profit: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0
+    },
     is_customizable: {
       type: DataTypes.BOOLEAN,
       defaultValue: true

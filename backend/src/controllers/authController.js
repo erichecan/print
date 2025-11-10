@@ -3,7 +3,8 @@
  * [2025-11-05 01:00:00]
  */
 const prisma = require('../lib/prisma');
-const bcrypt = require('bcrypt');
+// [2025-11-09 20:50:12] Switch to bcryptjs to avoid native build dependency on Windows
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';

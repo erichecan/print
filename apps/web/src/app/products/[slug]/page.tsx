@@ -70,16 +70,20 @@ function ProductDetailContent() {
       (selectedSize ? v.size === selectedSize : !v.size)
   );
 
-  // Auto-select first variant on load
+  // [2025-11-10 13:12:45] 自动选择默认变体并满足 exhaustive-deps
   useEffect(() => {
-    if (product && !selectedColor && !selectedSize) {
-      const firstVariant = product.variants[0];
-      if (firstVariant) {
-        setSelectedColor(firstVariant.color || null);
-        setSelectedSize(firstVariant.size || null);
-      }
+    if (!product) {
+      return;
     }
-  }, [product]);
+    if (selectedColor || selectedSize) {
+      return;
+    }
+    const firstVariant = product.variants[0];
+    if (firstVariant) {
+      setSelectedColor(firstVariant.color || null);
+      setSelectedSize(firstVariant.size || null);
+    }
+  }, [product, selectedColor, selectedSize]);
 
   useEffect(() => {
     if (!slug) return;
@@ -324,7 +328,7 @@ function ProductDetailContent() {
           <div className="product-highlights">
             <p><strong>Free Shipping</strong> • Standard 2-week delivery</p>
             <p><strong>Rush Available</strong> • As fast as 3 days</p>
-            <p><strong>100% Satisfaction</strong> • We'll make it right</p>
+            <p><strong>100% Satisfaction</strong> • We will make it right</p>
           </div>
         </aside>
       </div>
