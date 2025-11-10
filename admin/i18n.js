@@ -4,8 +4,10 @@ const i18n = {
   translations: {
     en: {
       // Sidebar
+      // [2025-11-10 10:30:00] Added cost management navigation translations
       dashboard: "Dashboard",
       products: "Products",
+      costManagement: "Cost Management",
       categories: "Categories",
       orders: "Orders",
       users: "Users",
@@ -58,6 +60,7 @@ const i18n = {
       expandSidebar: "Expand sidebar",
       
       // Products
+      // [2025-11-10 10:30:00] Added cost management field translations
       productManagement: "Products",
       newProduct: "+ New Product",
       productName: "Product Name",
@@ -73,6 +76,32 @@ const i18n = {
       allCategories: "All Categories",
       allStatus: "All Status",
       duplicate: "Duplicate",
+      costOverview: "Cost Overview",
+      totalCost: "Total Cost",
+      totalRevenue: "Total Revenue",
+      averageGrossProfit: "Average Gross Profit",
+      averageMargin: "Average Margin",
+      costTableTitle: "Product Cost Breakdown",
+      product: "Product",
+      unitCost: "Unit Cost",
+      unitSalePrice: "Unit Sale Price",
+      unitGrossProfit: "Unit Gross Profit",
+      margin: "Margin",
+      lastUpdated: "Last Updated",
+      editCosts: "Edit Costs",
+      currencyCAD: "CAD",
+      currencyUSD: "USD",
+      timeframe30Days: "Last 30 days",
+      timeframe90Days: "Last 90 days",
+      timeframe12Months: "Last 12 months",
+      // [2025-11-10 10:30:00] Cost management messaging
+      costLoading: "Loading cost data...",
+      costNoResults: "No products match your filters.",
+      costInvalidNumber: "Please enter a valid number.",
+      costMultiCurrencyNotice: "Multi-currency reporting is coming soon. Showing CAD figures for now.",
+      costUpdateSuccess: "Cost data updated successfully.",
+      costProductMissing: "Product not found in current view.",
+      costNoProductsLoaded: "No products loaded yet.",
       
       // Categories
       categoryManagement: "Categories",
@@ -190,8 +219,10 @@ const i18n = {
     },
     zh: {
       // Sidebar
+      // [2025-11-10 10:30:00] 新增成本管理导航文案
       dashboard: "仪表板",
       products: "商品管理",
+      costManagement: "成本管理",
       categories: "分类管理",
       orders: "订单管理",
       users: "用户管理",
@@ -244,6 +275,7 @@ const i18n = {
       expandSidebar: "展开侧边栏",
       
       // Products
+      // [2025-11-10 10:30:00] 新增成本管理字段文案
       productManagement: "商品管理",
       newProduct: "+ 新建商品",
       productName: "商品名称",
@@ -259,6 +291,32 @@ const i18n = {
       allCategories: "全部分类",
       allStatus: "全部状态",
       duplicate: "复制",
+      costOverview: "成本概览",
+      totalCost: "总成本",
+      totalRevenue: "总成交额",
+      averageGrossProfit: "平均毛利",
+      averageMargin: "平均毛利率",
+      costTableTitle: "商品成本明细",
+      product: "商品",
+      unitCost: "单位成本",
+      unitSalePrice: "单位成交价",
+      unitGrossProfit: "单位毛利",
+      margin: "毛利率",
+      lastUpdated: "更新时间",
+      editCosts: "编辑成本",
+      currencyCAD: "加元",
+      currencyUSD: "美元",
+      timeframe30Days: "最近30天",
+      timeframe90Days: "最近90天",
+      timeframe12Months: "最近12个月",
+      // [2025-11-10 10:30:00] 成本管理提示文案
+      costLoading: "正在加载成本数据...",
+      costNoResults: "没有符合条件的商品。",
+      costInvalidNumber: "请输入有效的数字。",
+      costMultiCurrencyNotice: "多币种报表功能即将上线，当前仍显示加元数据。",
+      costUpdateSuccess: "成本数据更新成功。",
+      costProductMissing: "当前列表中未找到该商品。",
+      costNoProductsLoaded: "尚未加载任何商品。",
       
       // Categories
       categoryManagement: "分类管理",
@@ -513,17 +571,35 @@ function ensureSidebarToggle() {
 function ensureProductionNav() {
   const navList = document.querySelector('.admin-nav ul');
   if (!navList) return;
-  const existing = navList.querySelector('a[href="offline-orders-board.html"]');
-  if (existing) return;
 
-  const li = document.createElement('li');
-  li.innerHTML = `<a href="offline-orders-board.html"><span class="admin-nav-icon">🛠️</span> <span data-i18n="productionManagement">Production Management</span></a>`;
+  // [2025-11-10 10:30:00] Inject cost management entry when missing
+  if (!navList.querySelector('a[href="cost-management.html"]')) {
+    const costLi = document.createElement('li');
+    costLi.innerHTML = `<a href="cost-management.html"><span class="admin-nav-icon">💰</span> <span data-i18n="costManagement">Cost Management</span></a>`;
+    const categoriesItem = navList.querySelector('a[href="categories.html"]');
+    if (categoriesItem && categoriesItem.parentElement) {
+      navList.insertBefore(costLi, categoriesItem.parentElement);
+    } else {
+      const settingsItem = navList.querySelector('a[href="settings.html"]');
+      if (settingsItem && settingsItem.parentElement) {
+        navList.insertBefore(costLi, settingsItem.parentElement);
+      } else {
+        navList.appendChild(costLi);
+      }
+    }
+  }
+
+  const offlineLink = navList.querySelector('a[href="offline-orders-board.html"]');
+  if (offlineLink) return;
+
+  const offlineLi = document.createElement('li');
+  offlineLi.innerHTML = `<a href="offline-orders-board.html"><span class="admin-nav-icon">🛠️</span> <span data-i18n="productionManagement">Production Management</span></a>`;
 
   const settingsItem = navList.querySelector('a[href="settings.html"]');
   if (settingsItem && settingsItem.parentElement) {
-    navList.insertBefore(li, settingsItem.parentElement);
+    navList.insertBefore(offlineLi, settingsItem.parentElement);
   } else {
-    navList.appendChild(li);
+    navList.appendChild(offlineLi);
   }
 }
 

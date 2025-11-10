@@ -11,11 +11,10 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^5.3.0",
     "@stripe/stripe-js": "^8.3.0",
-    "@types/uuid": "^11.0.0",
     "axios": "^1.13.2",
     "next": "14.2.5",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "react-hook-form": "^7.66.0",
     "swr": "^2.3.6",
     "uuid": "^13.0.0"
@@ -27,5 +26,6 @@
     "eslint": "8.57.0",
     "eslint-config-next": "14.2.5",
     "typescript": "5.4.5"
-  }
+  },
+  "_comment": "同步 React 版本与 Next.js 兼容矩阵 [2025-11-10 12:05:00]"
 }

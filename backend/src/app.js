@@ -83,6 +83,7 @@ app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/offline-orders', require('./routes/offlineOrders'));
 app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
+app.use('/api/admin/cost-management', require('./routes/adminCostManagement')); // [2025-11-10 10:30:00] Cost management routes
 // app.use('/api/designs', require('./routes/designRoutes'));
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));

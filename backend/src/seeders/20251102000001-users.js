@@ -1,5 +1,6 @@
 // [2025-11-02 21:00:00] Seed admin user
-const bcrypt = require('bcrypt');
+// [2025-11-09 20:50:12] Use bcryptjs to align with runtime dependency switch
+const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
