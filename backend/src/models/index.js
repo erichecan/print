@@ -57,6 +57,7 @@ User.hasMany(Session, { foreignKey: 'user_id', as: 'sessions', onDelete: 'CASCAD
 
 Address.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 CartItem.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+// [2025-11-10 15:45:30] Deduplicated Order -> User association to avoid alias conflicts
 Order.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Design.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 ProductReview.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -111,7 +112,6 @@ Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'items', onDelete: 'CASCA
 Order.hasMany(OrderAddressSnapshot, { foreignKey: 'order_id', as: 'addressSnapshots', onDelete: 'CASCADE' });
 Order.belongsTo(Address, { foreignKey: 'shipping_address_id', as: 'shippingAddress' });
 Order.belongsTo(Address, { foreignKey: 'billing_address_id', as: 'billingAddress' });
-Order.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
 OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
