@@ -569,38 +569,82 @@ function ensureSidebarToggle() {
 }
 
 function ensureProductionNav() {
-  const navList = document.querySelector('.admin-nav ul');
-  if (!navList) return;
+  const sidebar = document.querySelector('.admin-sidebar');
+  if (!sidebar) return;
 
-  // [2025-11-10 10:30:00] Inject cost management entry when missing
-  if (!navList.querySelector('a[href="cost-management.html"]')) {
-    const costLi = document.createElement('li');
-    costLi.innerHTML = `<a href="cost-management.html"><span class="admin-nav-icon">💰</span> <span data-i18n="costManagement">Cost Management</span></a>`;
-    const categoriesItem = navList.querySelector('a[href="categories.html"]');
-    if (categoriesItem && categoriesItem.parentElement) {
-      navList.insertBefore(costLi, categoriesItem.parentElement);
-    } else {
-      const settingsItem = navList.querySelector('a[href="settings.html"]');
-      if (settingsItem && settingsItem.parentElement) {
-        navList.insertBefore(costLi, settingsItem.parentElement);
-      } else {
-        navList.appendChild(costLi);
-      }
+  let navContainer = sidebar.querySelector('.admin-nav');
+  if (!navContainer) {
+    navContainer = document.createElement('div');
+    navContainer.className = 'admin-nav';
+    sidebar.insertBefore(navContainer, sidebar.firstChild);
+  }
+
+  let heading = navContainer.querySelector('h3');
+  if (!heading) {
+    heading = document.createElement('h3');
+    navContainer.insertBefore(heading, navContainer.firstChild);
+  }
+  heading.textContent = 'suvernire plus';
+
+  let navList = navContainer.querySelector('ul');
+  if (!navList) {
+    navList = document.createElement('ul');
+    navContainer.appendChild(navList);
+  }
+
+  // [2025-11-10 15:42:25] Canonical admin navigation structure to prevent duplicates
+  const NAV_ITEMS = [
+    { key: 'dashboard', href: 'index.html', icon: '📊', label: 'dashboard' },
+    { key: 'products', href: 'products.html', icon: '🛍️', label: 'products' },
+    { key: 'categories', href: 'categories.html', icon: '📁', label: 'categories' },
+    { key: 'orders', href: 'orders.html', icon: '📦', label: 'orders' },
+    { key: 'production', href: 'offline-orders-board.html', icon: '🛠️', label: 'productionManagement' },
+    { key: 'cost', href: 'cost-management.html', icon: '💰', label: 'costManagement' },
+    { key: 'users', href: 'users.html', icon: '👥', label: 'users' },
+    { key: 'designs', href: 'designs.html', icon: '🎨', label: 'designReview' },
+    { key: 'coupons', href: 'coupons.html', icon: '🎫', label: 'coupons' },
+    { key: 'promotions', href: 'promotions.html', icon: '🎉', label: 'promotions' },
+    { key: 'settings', href: 'settings.html', icon: '⚙️', label: 'settings' }
+  ];
+
+  const fallbackActive = {
+    'product-edit.html': 'products.html',
+    'order-detail.html': 'orders.html',
+    'user-detail.html': 'users.html',
+    'design-review.html': 'designs.html',
+    'content-manager.html': 'products.html',
+    'categories.html': 'categories.html'
+  };
+
+  const path = window.location.pathname;
+  const currentFile = path.substring(path.lastIndexOf('/') + 1) || 'index.html';
+  const resolvedTarget = fallbackActive[currentFile] || currentFile;
+
+  navList.innerHTML = '';
+
+  NAV_ITEMS.forEach(item => {
+    const li = document.createElement('li');
+    const link = document.createElement('a');
+    link.href = item.href;
+    link.innerHTML = `<span class="admin-nav-icon">${item.icon}</span> <span data-i18n="${item.label}">${i18n.t(item.label)}</span>`;
+    if (resolvedTarget === item.href) {
+      link.classList.add('is-active');
     }
+    li.appendChild(link);
+    navList.appendChild(li);
+  });
+
+  let footer = navContainer.querySelector('[data-nav-footer]');
+  if (!footer) {
+    footer = document.createElement('div');
+    footer.setAttribute('data-nav-footer', 'true');
+    footer.style.marginTop = '32px';
+    footer.style.paddingTop = '24px';
+    footer.style.borderTop = '1px solid var(--color-border)';
+    navContainer.appendChild(footer);
   }
 
-  const offlineLink = navList.querySelector('a[href="offline-orders-board.html"]');
-  if (offlineLink) return;
-
-  const offlineLi = document.createElement('li');
-  offlineLi.innerHTML = `<a href="offline-orders-board.html"><span class="admin-nav-icon">🛠️</span> <span data-i18n="productionManagement">Production Management</span></a>`;
-
-  const settingsItem = navList.querySelector('a[href="settings.html"]');
-  if (settingsItem && settingsItem.parentElement) {
-    navList.insertBefore(offlineLi, settingsItem.parentElement);
-  } else {
-    navList.appendChild(offlineLi);
-  }
+  footer.innerHTML = `<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;" data-i18n="backToSite">${i18n.t('backToSite')}</a>`;
 }
 
 // Auto-init when DOM ready
