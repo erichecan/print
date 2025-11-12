@@ -583,6 +583,17 @@ export const ordersApi = {
   },
 };
 
+// [2025-11-12 06:32:00] User profile type for auth API responses
+export interface UserProfile {
+  id: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Auth API
 export const authApi = {
   register: (data: { email: string; password: string; firstName?: string; lastName?: string }) =>
@@ -590,14 +601,70 @@ export const authApi = {
   login: (email: string, password: string) =>
     api('/auth/login', { method: 'POST', body: { email, password } }),
   logout: () => api('/auth/logout', { method: 'POST' }),
-  me: () => api('/auth/me'),
+  me: () => api<UserProfile>('/auth/me'), // [2025-11-12 06:32:00] Add type parameter for user profile
+  updateProfile: (data: { firstName?: string; lastName?: string; phone?: string }) =>
+    api('/auth/me', { method: 'PATCH', body: data }),
   forgotPassword: (email: string) =>
     api('/auth/forgot-password', { method: 'POST', body: { email } }),
   resetPassword: (token: string, password: string) =>
     api('/auth/reset-password', { method: 'POST', body: { token, password } }),
 };
 
+// Address API
+export interface Address {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  company: string | null;
+  address1: string;
+  address2: string | null;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  phone: string | null;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AddressPayload {
+  firstName: string;
+  lastName: string;
+  company?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+  phone?: string;
+  isDefault?: boolean;
+}
+
+export const addressesApi = {
+  list: () => api<Address[]>('/addresses'),
+  get: (id: string) => api<Address>(`/addresses/${id}`),
+  create: (data: AddressPayload) => api<Address>('/addresses', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<AddressPayload>) =>
+    api<Address>(`/addresses/${id}`, { method: 'PATCH', body: data }),
+  delete: (id: string) => api(`/addresses/${id}`, { method: 'DELETE' }),
+  setDefault: (id: string) => api<Address>(`/addresses/${id}/set-default`, { method: 'POST' }),
+};
+
 // [2025-11-11 23:21:12] 后台商品 API
+// Image Upload API
+export const imageUploadApi = {
+  upload: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api('/admin/upload/image', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+};
+
 export const adminProductsApi = {
   list: (params: {
     page?: number;
@@ -699,6 +766,66 @@ export const adminOrdersApi = {
     }),
 };
 
+// Offline Orders API (Public)
+export interface OfflineOrderPayload {
+  projectName: string;
+  primaryProduct?: string;
+  quantity?: number;
+  deliveryDate?: string;
+  artworkNotes?: string;
+  company?: string;
+  contactName: string;
+  email: string;
+  phone?: string;
+  requiresMockups?: boolean;
+  requiresProof?: boolean;
+  rushOrder?: boolean;
+  configuration?: Record<string, unknown>;
+}
+
+export interface OfflineOrderResponse {
+  success: boolean;
+  order: {
+    id: string;
+    orderCode: string;
+    projectName: string;
+    email: string;
+    status: string;
+    createdAt: string;
+  };
+}
+
+export const offlineOrdersApi = {
+  create: async (payload: OfflineOrderPayload, files?: File[]): Promise<OfflineOrderResponse> => {
+    const formData = new FormData();
+    
+    // Append form fields
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (typeof value === 'boolean') {
+          formData.append(key, value.toString());
+        } else if (typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, String(value));
+        }
+      }
+    });
+    
+    // Append files
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('assets', file);
+      });
+    }
+    
+    return api('/offline-orders', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+};
+
 export const adminOfflineOrdersApi = {
   list: (params: {
     page?: number;
@@ -757,6 +884,43 @@ export const adminOfflineOrdersApi = {
     }),
   getMetrics: () =>
     api<AdminOfflineOrderMetricsResponse>(`/admin/offline-orders/metrics/summary`),
+};
+
+// Admin Audit Logs API
+export interface AdminAuditLog {
+  id: string;
+  action: string;
+  actorId: string | null;
+  actorEmail: string | null;
+  targetType: string;
+  targetId: string | null;
+  meta: Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+}
+
+export interface AdminAuditLogListParams {
+  page?: number;
+  limit?: number;
+  targetType?: string;
+  targetId?: string;
+  action?: string;
+}
+
+export const adminAuditLogsApi = {
+  list: (params: AdminAuditLogListParams = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.append('page', params.page.toString());
+    if (params.limit) query.append('limit', params.limit.toString());
+    if (params.targetType) query.append('targetType', params.targetType);
+    if (params.targetId) query.append('targetId', params.targetId);
+    if (params.action) query.append('action', params.action);
+    const queryString = query.toString();
+    return api<AdminPagination<AdminAuditLog>>(
+      `/admin/audit-logs${queryString ? `?${queryString}` : ''}`
+    );
+  },
 };
 
 // [2025-11-11 15:39:42] Design Lab API
