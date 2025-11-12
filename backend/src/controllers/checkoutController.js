@@ -134,6 +134,7 @@ exports.prepareCheckout = async (req, res) => {
   try {
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
+    const { shippingAddress, shippingMethod = 'standard' } = req.body || {}; // [2025-11-12 00:45:10] 支持传入地址进行运费与税费预估
 
     const cart = await getOrCreateCart(userId, sessionId);
 
@@ -146,9 +147,27 @@ exports.prepareCheckout = async (req, res) => {
       return sum + Number(item.priceSnapshot) * item.quantity;
     }, 0);
 
+    let shippingCost = 0;
+    let tax = 0;
+
+    if (shippingAddress?.country && shippingAddress?.province) {
+      // [2025-11-12 00:45:10] 当地址完整时返回运费与税费估算
+      shippingCost = calculateShipping(
+        shippingAddress.country,
+        shippingAddress.province,
+        shippingMethod
+      );
+      tax = calculateTax(subtotal, shippingAddress.province);
+    }
+
+    const total = subtotal + shippingCost + tax;
+
     res.json({
       subtotal: Math.round(subtotal * 100) / 100,
       itemCount: cart.items.length,
+      shipping: Math.round(shippingCost * 100) / 100,
+      tax: Math.round(tax * 100) / 100,
+      total: Math.round(total * 100) / 100,
       items: cart.items.map((item) => ({
         id: item.id,
         variantId: item.variantId,
@@ -246,6 +265,12 @@ exports.createPaymentIntent = async (req, res) => {
       paymentIntentId: paymentIntent.id,
       amount: total,
       currency: 'CAD',
+      breakdown: {
+        subtotal: Math.round(subtotal * 100) / 100,
+        shipping: Math.round(shippingCost * 100) / 100,
+        tax: Math.round(tax * 100) / 100,
+        total: Math.round(total * 100) / 100,
+      }, // [2025-11-12 00:45:10] 返回费用明细供前端展示
     });
   } catch (error) {
     console.error('Error creating payment intent:', error);
@@ -257,6 +282,65 @@ exports.createPaymentIntent = async (req, res) => {
  * POST /api/checkout/confirm - Confirm order after payment
  * [2025-11-04 23:53:00]
  */
+const splitFullName = (fullName = '') => {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 0) {
+    return { firstName: '', lastName: '' };
+  }
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: '' };
+  }
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(' '),
+  };
+}; // [2025-11-12 00:45:10] 工具函数：拆分全名以持久化地址
+
+async function upsertUserAddress(prismaClient, userId, address, options = {}) {
+  if (!address?.addressLine1) {
+    return null;
+  }
+
+  const { isDefault = false } = options;
+  const { firstName, lastName } = splitFullName(address.fullName);
+
+  const existing = await prismaClient.address.findFirst({
+    where: {
+      userId,
+      address1: address.addressLine1,
+      postalCode: address.postalCode,
+    },
+  });
+
+  const payload = {
+    firstName: firstName || address.fullName || 'Customer',
+    lastName,
+    company: null,
+    address1: address.addressLine1,
+    address2: address.addressLine2 || null,
+    city: address.city,
+    province: address.province,
+    postalCode: address.postalCode,
+    country: (address.country || 'CA').toUpperCase(),
+    phone: address.phone || null,
+    isDefault,
+  };
+
+  if (existing) {
+    return prismaClient.address.update({
+      where: { id: existing.id },
+      data: payload,
+    });
+  }
+
+  return prismaClient.address.create({
+    data: {
+      userId,
+      ...payload,
+    },
+  });
+} // [2025-11-12 00:45:10] 登录用户下单后同步地址簿
+
 exports.confirmOrder = async (req, res) => {
   try {
     const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'standard' } = req.body;
@@ -310,46 +394,64 @@ exports.confirmOrder = async (req, res) => {
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     // Create order
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        userId: userId || null,
-        email,
-        status: 'PENDING',
-        currency: 'CAD',
-        subtotal: subtotal,
-        shippingCost: shippingCost,
-        tax: tax,
-        discount: 0,
-        total: total,
-        paymentStatus: 'COMPLETED',
-        paymentIntentId: paymentIntentId,
-        shippingAddress: shippingAddress,
-        billingAddress: billingAddress || shippingAddress,
-        items: {
-          create: cart.items.map((item) => ({
-            variantId: item.variantId,
-            quantity: item.quantity,
-            priceSnapshot: item.priceSnapshot,
-          })),
+    const order = await prisma.$transaction(async (tx) => {
+      const createdOrder = await tx.order.create({
+        data: {
+          orderNumber,
+          userId: userId || null,
+          email,
+          status: 'PENDING',
+          currency: 'CAD',
+          subtotal: subtotal,
+          shippingCost: shippingCost,
+          tax: tax,
+          discount: 0,
+          total: total,
+          paymentStatus: 'COMPLETED',
+          paymentIntentId: paymentIntentId,
+          shippingAddress: {
+            ...shippingAddress,
+            shippingMethod,
+          },
+          billingAddress: billingAddress || shippingAddress,
+          items: {
+            create: cart.items.map((item) => ({
+              variantId: item.variantId,
+              quantity: item.quantity,
+              priceSnapshot: item.priceSnapshot,
+            })),
+          },
         },
-      },
-      include: {
-        items: {
-          include: {
-            variant: {
-              include: {
-                product: true,
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: {
+                  product: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
 
-    // Clear cart
-    await prisma.cartItem.deleteMany({
-      where: { cartId: cart.id },
+      if (userId) {
+        // [2025-11-12 00:45:10] 保存用户常用地址
+        await upsertUserAddress(tx, userId, shippingAddress, { isDefault: true });
+        if (
+          billingAddress &&
+          (billingAddress.addressLine1 !== shippingAddress.addressLine1 ||
+            billingAddress.postalCode !== shippingAddress.postalCode)
+        ) {
+          await upsertUserAddress(tx, userId, billingAddress, { isDefault: false });
+        }
+      }
+
+      await tx.cartItem.deleteMany({
+        where: { cartId: cart.id },
+      });
+
+      return createdOrder;
     });
 
     res.status(201).json({

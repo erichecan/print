@@ -2,12 +2,17 @@
 const { Setting } = require('../models');
 
 const DEFAULT_STAGE_CONFIG = [
-  { key: 'intake', label: 'Intake', description: 'New offline POD requests' },
-  { key: 'collect-materials', label: 'Collect Materials', description: 'Awaiting brand assets and specs' },
-  { key: 'design', label: 'Design', description: 'Design team working on mockups' },
-  { key: 'production', label: 'Production', description: 'Manufacturing and finishing' },
-  { key: 'logistics', label: 'Logistics', description: 'Preparing shipment and delivery' },
-  { key: 'completed', label: 'Completed', description: 'Order fulfilled and delivered' }
+  { key: 'intake', label: 'Intake', description: 'New offline POD requests', position: 0 },
+  {
+    key: 'collect-materials',
+    label: 'Collect Materials',
+    description: 'Awaiting brand assets and specs',
+    position: 1
+  },
+  { key: 'design', label: 'Design', description: 'Design team working on mockups', position: 2 },
+  { key: 'production', label: 'Production', description: 'Manufacturing and finishing', position: 3 },
+  { key: 'logistics', label: 'Logistics', description: 'Preparing shipment and delivery', position: 4 },
+  { key: 'completed', label: 'Completed', description: 'Order fulfilled and delivered', position: 5 }
 ];
 
 const STAGE_SETTING_KEY = 'offline_workflow_stages';
@@ -38,28 +43,37 @@ const parseSettingValue = (rawValue) => {
 };
 
 const normalizeStages = (stages = []) => {
-  if (!Array.isArray(stages) || !stages.length) {
-    return DEFAULT_STAGE_CONFIG;
-  }
+  const source = Array.isArray(stages) && stages.length ? stages : DEFAULT_STAGE_CONFIG;
 
   const seen = new Set();
 
-  return stages
-    .map((stage) => {
+  const normalized = source
+    .map((stage, index) => {
       const label = stage?.label?.toString().trim();
       if (!label) return null;
 
       const key = slugify(stage.key || label);
       if (!key || seen.has(key)) return null;
 
+      const rawPosition =
+        stage?.position !== undefined && !Number.isNaN(Number(stage.position))
+          ? parseInt(stage.position, 10)
+          : index;
+
       seen.add(key);
       return {
         key,
         label,
-        description: stage?.description?.toString().trim() || ''
+        description: stage?.description?.toString().trim() || '',
+        position: rawPosition
       };
     })
     .filter(Boolean);
+
+  return normalized.map((stage, index) => ({
+    ...stage,
+    position: stage.position ?? index
+  }));
 };
 
 const getStageConfig = async () => {
@@ -113,6 +127,7 @@ module.exports = {
   updateStageConfig,
   findStageByKey,
   getInitialStage,
-  STAGE_SETTING_KEY
+  STAGE_SETTING_KEY,
+  normalizeStages
 };
 
