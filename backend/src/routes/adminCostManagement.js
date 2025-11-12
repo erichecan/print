@@ -1,32 +1,19 @@
 // [2025-11-10 10:30:00] Admin routes for product cost management
 const express = require('express');
 const costManagementController = require('../controllers/costManagementController');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get(
-  '/summary',
-  // TODO: restore requireAdmin middleware when auth is ready [2025-11-10 10:30:00]
-  costManagementController.getCostSummary
-);
+router.use(requireAdmin);
 
-router.get(
-  '/products',
-  // TODO: restore requireAdmin middleware when auth is ready [2025-11-10 10:30:00]
-  costManagementController.listProductCosts
-);
+router.get('/summary', costManagementController.getCostSummary);
 
-router.put(
-  '/products/:id',
-  // TODO: restore requireAdmin middleware when auth is ready [2025-11-10 10:30:00]
-  costManagementController.updateProductCost
-);
+router.get('/products', costManagementController.listProductCosts);
 
-router.get(
-  '/categories',
-  // TODO: restore requireAdmin middleware when auth is ready [2025-11-10 10:30:00]
-  costManagementController.listCostCategories
-);
+router.put('/products/:id', costManagementController.updateProductCost);
+
+router.get('/categories', costManagementController.listCostCategories);
 
 module.exports = router;
 

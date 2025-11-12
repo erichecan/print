@@ -61,11 +61,34 @@ const getSignedUrl = async (key, expiresIn = 3600) => {
   }
 };
 
+// [2025-11-11 15:18:42] Generate pre-signed PUT URL for direct browser uploads
+const getUploadSignedUrl = async ({ key, contentType, expiresIn = 600 }) => {
+  try {
+    const params = {
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Expires: expiresIn,
+      ContentType: contentType,
+      ACL: 'private'
+    };
+
+    const url = await s3.getSignedUrlPromise('putObject', params);
+    return {
+      uploadUrl: url,
+      fileUrl: `https://${BUCKET_NAME}.s3.amazonaws.com/${key}`
+    };
+  } catch (error) {
+    console.error('[2025-11-11 15:18:42] getUploadSignedUrl error:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   s3,
   uploadToS3,
   deleteFromS3,
   getSignedUrl,
+  getUploadSignedUrl,
   BUCKET_NAME
 };
 

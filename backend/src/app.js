@@ -13,6 +13,8 @@ const { RATE_LIMIT } = require('./utils/constants');
 
 const app = express();
 
+const prototypeRoot = path.join(__dirname, '../prototype'); // [2025-11-11 22:05:10] Centralize legacy prototype path
+
 // Trust proxy (for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
 
@@ -36,10 +38,9 @@ app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/admin', express.static(path.join(__dirname, '../admin')));
-app.use(express.static(path.join(__dirname, '..')));
-app.use('/admin.css', express.static(path.join(__dirname, '../admin/admin.css')));
-app.use('/i18n.js', express.static(path.join(__dirname, '../admin/i18n.js')));
+app.use('/prototype/admin', express.static(path.join(prototypeRoot, 'admin'))); // [2025-11-11 22:05:10] Serve archived admin UI under prototype namespace
+app.use('/prototype/static', express.static(path.join(prototypeRoot, 'static-pages'))); // [2025-11-11 22:05:10] Serve archived static pages separately
+app.use('/assets', express.static(path.join(__dirname, '../assets'))); // [2025-11-11 22:07:22] Expose shared assets without legacy HTML
 
 // Compression
 app.use(compression());
@@ -84,7 +85,10 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/offline-orders', require('./routes/offlineOrders'));
 app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
 app.use('/api/admin/cost-management', require('./routes/adminCostManagement')); // [2025-11-10 10:30:00] Cost management routes
-// app.use('/api/designs', require('./routes/designRoutes'));
+app.use('/api/admin/products', require('./routes/adminProducts')); // [2025-11-11 23:20:15] Admin product management routes
+app.use('/api/admin/categories', require('./routes/adminCategories')); // [2025-11-11 23:20:15] Admin category management routes
+app.use('/api/admin/orders', require('./routes/adminOrders')); // [2025-11-12 01:05:02] Admin order management routes
+app.use('/api/designs', require('./routes/designs')); // [2025-11-11 15:33:45] Design Lab public routes
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));
 

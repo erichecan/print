@@ -5,29 +5,11 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { cartApi } from '@/lib/api';
+import { cartApi, CartResponse, CartItemResponse } from '@/lib/api'; // [2025-11-10 22:52:03] Reuse typed cart API responses
 import useSWR from 'swr';
 
-interface CartItem {
-  id: string;
-  variantId: string;
-  productId: string;
-  productName: string;
-  variantDescription: string;
-  quantity: number;
-  unitPrice: number;
-  subtotal: number;
-  thumbnail: string | null;
-}
-
-interface Cart {
-  items: CartItem[];
-  subtotal: number;
-  shipping: number;
-  discount: number;
-  total: number;
-  itemCount: number;
-}
+type CartItem = CartItemResponse; // [2025-11-10 22:52:03] Alias to shared API response type
+type Cart = CartResponse; // [2025-11-10 22:52:03] Alias to shared API response type
 
 interface CartContextType {
   cart: Cart | null;

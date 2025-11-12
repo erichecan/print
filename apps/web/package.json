@@ -9,23 +9,27 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sentry/nextjs": "^8.40.0",
     "@stripe/react-stripe-js": "^5.3.0",
     "@stripe/stripe-js": "^8.3.0",
     "axios": "^1.13.2",
-    "next": "14.2.5",
+    "fabric": "^6.0.0",
+    "immer": "^10.1.1",
+    "next": "^14.2.33",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-hook-form": "^7.66.0",
     "swr": "^2.3.6",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zustand": "^4.5.2"
   },
   "devDependencies": {
     "@types/node": "20.11.30",
     "@types/react": "18.2.66",
     "@types/react-dom": "18.2.22",
     "eslint": "8.57.0",
-    "eslint-config-next": "14.2.5",
+    "eslint-config-next": "14.2.33",
     "typescript": "5.4.5"
   },
-  "_comment": "同步 React 版本与 Next.js 兼容矩阵 [2025-11-10 12:05:00]"
+  "_comment": "同步 React 版本与 Next.js 兼容矩阵 [2025-11-10 12:05:00]; 新增 Fabric.js 与 Zustand 支撑 Design Lab [2025-11-11 15:36:28]; 升级 Next.js 至 14.2.33 [2025-11-12 01:20:12]"
 }

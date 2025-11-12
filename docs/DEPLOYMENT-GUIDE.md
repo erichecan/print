@@ -1,56 +1,230 @@
-# 部署指南
+# Deployment Guide
 
-<!-- 更新于 2025-11-10 13:55:00 -->
+> [2025-11-12 03:30:00] Complete deployment guide for production release
 
-## 环境概览
-- 前端：Next.js 14（apps/web），默认端口 3000
-- 后端：Express API（backend），默认端口 3001
-- 数据库：PostgreSQL 15，默认端口 5432
+## Prerequisites
 
-## 前置条件
-1. 准备容器运行环境（Docker Engine + Compose，或 Kubernetes 集群）
-2. 配置 `.env`（参考 `backend/env.production.template`、`apps/web/env.production.template`）
-3. Stripe、JWT 等敏感配置请使用安全的 Secret Manager
+- Node.js 18+ and npm 9+
+- PostgreSQL 15+
+- Docker & Docker Compose (optional, for containerized deployment)
+- Stripe account with API keys
+- Sentry account (optional, for error tracking)
 
-## Docker Compose 快速启动
+## Pre-Deployment Checklist
+
+1. ✅ All environment variables configured
+2. ✅ Database migrations tested
+3. ✅ Build scripts verified
+4. ✅ Docker images built and tested
+5. ✅ Smoke tests passing
+6. ✅ Monitoring configured (Sentry, logs)
+7. ✅ Backup strategy in place
+
+## Step-by-Step Deployment
+
+### 1. Environment Setup
+
+#### Backend Environment
+
 ```bash
-docker compose up --build
+cd backend
+cp env.example .env
+# Edit .env with production values:
+# - DATABASE_URL (production PostgreSQL)
+# - JWT_SECRET (strong random secret)
+# - STRIPE_SECRET_KEY (production key)
+# - STRIPE_WEBHOOK_SECRET (from Stripe dashboard)
+# - SENTRY_DSN (if using Sentry)
 ```
 
-## 自定义部署
-1. 构建镜像
-   ```bash
-   docker build -t suvernire-backend ./backend
-   docker build -t suvernire-web ./apps/web
-   ```
-2. 创建数据库 & 迁移
-   ```bash
-   docker run --rm --env-file backend/.env suvernire-backend npm run prisma:migrate
-   ```
-3. 启动服务（示意）
-   ```bash
-   docker run -d --env-file backend/.env -p 3001:3001 suvernire-backend
-   docker run -d --env-file apps/web/.env -p 3000:3000 suvernire-web
-   ```
+#### Frontend Environment
 
-## 发布流程
-1. 在 Staging 环境运行 `npm run lint --workspace apps/web`、`npm test --workspace backend`、`npm run migrate:deploy --workspace backend`
-2. 构建并推送镜像到镜像仓库（如 GHCR/ECR），带版本标签
-3. 使用蓝绿或滚动方式发布：
-   - 蓝绿：部署新版本并通过健康检查后切换流量
-   - 滚动：逐台替换实例，确保最小可用容量
-4. 发布完成后，持续监控 30 分钟并确认关键指标稳定
+```bash
+cd apps/web
+cp .env.example .env.production
+# Edit .env.production with production values:
+# - NEXT_PUBLIC_API_URL (production API endpoint)
+# - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (production key)
+# - NEXT_PUBLIC_SENTRY_DSN (if using Sentry)
+# - NEXT_PUBLIC_SITE_URL (production site URL)
+```
 
-## 回滚策略
-- 数据库：使用 Prisma/Sequelize `migrate:deploy` 前先备份；若失败，执行相应 `migrate:resolve` 或 `db:migrate:undo`
-- 应用：保留上一版本镜像与环境变量，执行 `docker stack deploy` 或 `kubectl rollout undo`
-- 支付：若出现重复扣款风险，立即暂停 Stripe Webhook 并联系财务团队
+### 2. Database Setup
 
-## 上线清单
-- [ ] 数据库迁移已执行
-- [ ] Stripe Webhook URL 已配置
-- [ ] HTTPS 证书/反向代理已就绪
-- [ ] 健康检查端点可用
-- [ ] 监控/日志管道开启
-- [ ] 备份与回滚策略确认
+```bash
+# Run migrations
+./scripts/db-migrate.sh
 
+# Create initial backup
+./scripts/db-backup.sh
+```
+
+### 3. Build Application
+
+```bash
+# Build all services
+./scripts/build.sh
+
+# Or build individually:
+npm run build --workspace apps/web
+npm run build --workspace backend  # if build script exists
+```
+
+### 4. Docker Deployment
+
+```bash
+# Build and start services
+docker compose up --build -d
+
+# Or use deployment script
+./scripts/deploy.sh production --build
+```
+
+### 5. Verify Deployment
+
+```bash
+# Run smoke tests
+./scripts/e2e-smoke.sh https://your-domain.com https://api.your-domain.com/api
+
+# Check service health
+docker compose ps
+docker compose logs backend
+docker compose logs web
+```
+
+## Production Configuration
+
+### Database Backup Strategy
+
+- **Automated backups**: Set up cron job to run `./scripts/db-backup.sh` daily
+- **Retention**: Script keeps last 7 backups automatically
+- **Storage**: Store backups in secure location (S3, encrypted volume)
+
+### Monitoring Setup
+
+#### Sentry
+
+1. Create Sentry project
+2. Get DSN from project settings
+3. Add to environment variables:
+   - Backend: `SENTRY_DSN`, `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE`
+   - Frontend: `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_ENVIRONMENT`
+
+#### Stripe Webhooks
+
+1. Go to Stripe Dashboard → Webhooks
+2. Add endpoint: `https://api.your-domain.com/api/webhooks/stripe`
+3. Select events: `payment_intent.succeeded`, `payment_intent.payment_failed`
+4. Copy webhook secret to `STRIPE_WEBHOOK_SECRET`
+
+### Logging
+
+- Backend logs: Check `docker compose logs backend` or application logs
+- Frontend logs: Check browser console and Sentry
+- Database logs: Check PostgreSQL logs
+
+## Rollback Procedure
+
+### Quick Rollback
+
+```bash
+# Stop current services
+docker compose down
+
+# Restore previous Docker images (if using version tags)
+docker pull your-registry/backend:previous-version
+docker pull your-registry/web:previous-version
+
+# Restart with previous images
+docker compose up -d
+```
+
+### Database Rollback
+
+```bash
+# Restore from backup
+./scripts/db-restore.sh backups/backup_YYYYMMDD_HHMMSS.dump
+
+# Or rollback specific migration
+cd backend
+npx prisma migrate resolve --rolled-back migration_name
+```
+
+## Post-Deployment Verification
+
+1. ✅ Homepage loads correctly
+2. ✅ Product listing works
+3. ✅ Product detail pages load
+4. ✅ Cart functionality works
+5. ✅ Checkout flow completes
+6. ✅ Admin dashboard accessible
+7. ✅ Offline orders kanban board works
+8. ✅ API endpoints respond correctly
+9. ✅ Database connections stable
+10. ✅ No errors in Sentry
+
+## Troubleshooting
+
+### Services won't start
+
+```bash
+# Check logs
+docker compose logs backend
+docker compose logs web
+
+# Verify environment variables
+docker compose exec backend env | grep DATABASE_URL
+docker compose exec web env | grep NEXT_PUBLIC_API_URL
+```
+
+### Database connection issues
+
+```bash
+# Test connection
+docker compose exec backend npx prisma db pull
+
+# Check migration status
+docker compose exec backend npx prisma migrate status
+```
+
+### Build failures
+
+```bash
+# Clear build cache
+docker compose build --no-cache
+
+# Check Node version
+node --version  # Should be 18+
+
+# Verify dependencies
+npm install
+```
+
+## Security Checklist
+
+- [ ] All secrets in environment variables (not committed)
+- [ ] Database credentials rotated
+- [ ] JWT secret is strong and unique
+- [ ] CORS configured correctly
+- [ ] Rate limiting enabled
+- [ ] HTTPS enabled (use reverse proxy like Nginx)
+- [ ] Firewall rules configured
+- [ ] Regular security updates scheduled
+
+## Performance Optimization
+
+- Enable Next.js production optimizations
+- Configure CDN for static assets
+- Enable database connection pooling
+- Set up Redis caching (if configured)
+- Monitor API response times
+- Set up load balancing (if needed)
+
+## Support & Maintenance
+
+- **Backup frequency**: Daily automated backups
+- **Update schedule**: Weekly security updates, monthly feature updates
+- **Monitoring**: 24/7 Sentry alerts for critical errors
+- **Log retention**: 14 days minimum
+
+For detailed release checklist, see `docs/RELEASE-CHECKLIST.md`.
