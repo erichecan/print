@@ -1,17 +1,16 @@
 /**
  * Checkout Failure Page
  * [2025-11-12 00:45:10] 支付失败提示页
+ * [2025-11-12 06:19:54] 添加 'use client' 指令以支持 styled-jsx
  */
+'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
-export default function CheckoutFailurePage({
-  searchParams,
-}: {
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
-  const reasonParam = searchParams?.reason;
-  const reason = Array.isArray(reasonParam) ? reasonParam[0] : reasonParam || '';
+export default function CheckoutFailurePage() {
+  const searchParams = useSearchParams();
+  const reason = searchParams?.get('reason') || '';
 
   return (
     <div className="failure-page">

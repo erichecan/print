@@ -1,21 +1,17 @@
 /**
  * Checkout Success Page
  * [2025-11-12 00:45:10] 支付成功提示页
+ * [2025-11-12 06:19:54] 添加 'use client' 指令以支持 styled-jsx
  */
+'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
-export default function CheckoutSuccessPage({
-  searchParams,
-}: {
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
-  const orderNumberParam = searchParams?.orderNumber;
-  const emailParam = searchParams?.email;
-  const orderNumber = Array.isArray(orderNumberParam)
-    ? orderNumberParam[0]
-    : orderNumberParam || '';
-  const email = Array.isArray(emailParam) ? emailParam[0] : emailParam || '';
+export default function CheckoutSuccessPage() {
+  const searchParams = useSearchParams();
+  const orderNumber = searchParams?.get('orderNumber') || '';
+  const email = searchParams?.get('email') || '';
 
   const orderLink =
     orderNumber && email
