@@ -83,6 +83,7 @@ app.use('/api/orders', require('./routes/orders'));
 app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/addresses', require('./routes/addresses')); // [2025-01-27 14:00:00] User address management routes
+app.use('/api/user/preferences', require('./routes/userPreferences')); // [2025-01-27 14:45:00] User preferences routes
 app.use('/api/offline-orders', require('./routes/offlineOrders'));
 app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
 app.use('/api/admin/cost-management', require('./routes/adminCostManagement')); // [2025-11-10 10:30:00] Cost management routes
