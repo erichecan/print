@@ -1,23 +1,17 @@
-# Netlify Configuration for Next.js 14 App Router (Static Export)
-# [2025-01-27 12:00:00] Created for Netlify deployment
+# Netlify Configuration (Root Level)
+# [2025-01-27 12:30:00] Alternative configuration at root level
 # 
-# 部署说明：
-# 1. 在 Netlify 控制台设置：
-#    - Base directory: apps/web
-#    - Build command: npm install && npm run build
-#    - Publish directory: out
-# 2. 设置环境变量：
-#    - NETLIFY=true
-#    - NEXT_PUBLIC_API_URL=你的后端API地址（例如：https://api.your-domain.com/api）
+# 如果 apps/web/netlify.toml 不工作，可以使用这个根目录的配置
+# 在 Netlify 控制台：
+# - Base directory: （留空）
+# - Build command: （留空，使用此配置）
+# - Publish directory: （留空，使用此配置）
 
 [build]
-  # 构建命令
-  # 注意：base directory 设置为 apps/web，所以命令在 apps/web 目录下执行
-  # npm workspaces 会自动检测父目录的 package.json 并安装所有依赖
-  command = "npm install && npm run build"
-  # 发布目录（Next.js 静态导出模式输出到 out 目录）
-  # 注意：此路径相对于 netlify.toml 所在目录（apps/web）
-  publish = "out"
+  # 构建命令：切换到 apps/web 目录并构建
+  command = "cd apps/web && npm install && npm run build"
+  # 发布目录：相对于仓库根目录
+  publish = "apps/web/out"
 
 [build.environment]
   # Node.js 版本
@@ -38,8 +32,6 @@
   force = true
 
 # 所有其他路由回退到 index.html（由 Next.js 客户端路由处理）
-# 这是静态导出模式的标准配置
-# 注意：必须放在最后，确保静态资源优先匹配
 [[redirects]]
   from = "/*"
   to = "/index.html"
