@@ -52,11 +52,12 @@ describe('ErrorMessage', () => {
   });
 
   it('should show retry button for retryable errors', () => {
+    const onRetry = jest.fn();
     const error: ApiError = {
       message: 'Network error',
       retryable: true,
     };
-    render(<ErrorMessage error={error} />);
+    render(<ErrorMessage error={error} onRetry={onRetry} />);
     
     expect(screen.getByText('Try again')).toBeInTheDocument();
   });

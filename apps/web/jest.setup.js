@@ -1,8 +1,11 @@
 /**
  * Jest Setup
  * [2025-01-27 11:30:00] Jest 测试环境设置
+ * [2025-01-27 14:25:00] 调整为 CommonJS 语法以兼容 Jest 设置文件
  */
-import '@testing-library/jest-dom';
+const React = require('react');
+
+require('@testing-library/jest-dom');
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -24,16 +27,19 @@ jest.mock('next/navigation', () => ({
 
 // Mock Stripe
 jest.mock('@stripe/stripe-js', () => ({
-  loadStripe: jest.fn(() => Promise.resolve({
-    elements: jest.fn(() => ({
-      create: jest.fn(),
-    })),
-  })),
+  loadStripe: jest.fn(() =>
+    Promise.resolve({
+      elements: jest.fn(() => ({
+        create: jest.fn(),
+      })),
+    })
+  ),
 }));
 
 jest.mock('@stripe/react-stripe-js', () => ({
-  Elements: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  CardElement: () => <div data-testid="card-element">Card Element</div>,
+  Elements: ({ children }) => React.createElement('div', null, children),
+  CardElement: () =>
+    React.createElement('div', { 'data-testid': 'card-element' }, 'Card Element'),
   useStripe: () => ({
     confirmCardPayment: jest.fn(),
   }),

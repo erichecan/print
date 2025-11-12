@@ -2,7 +2,16 @@
  * Admin Product Controller
  * [2025-11-11 23:18:42] 提供后台商品管理 CRUD 能力
  */
+const path = require('path');
+const fs = require('fs');
 const prisma = require('../lib/prisma');
+const { redis, deleteCache } = require('../config/redis');
+const {
+  PRODUCT_UPLOAD_DIR,
+  buildStorageKey,
+  buildPublicUrl,
+  extractStorageKeyFromUrl,
+} = require('../utils/productUpload');
 
 // [2025-11-11 23:18:42] 简易 slug 生成工具，确保与 Prisma 事务兼容
 const slugify = (value = '') =>
@@ -35,6 +44,39 @@ const ensureUniqueSlug = async (tx, baseSlug, existingId) => {
 
     counter += 1;
     candidate = `${baseSlug}-${counter}`;
+  }
+};
+
+// [2025-01-27 15:02:30] Normalize alt text inputs from multipart form submissions
+const parseAltInputs = (rawInput) => {
+  if (!rawInput) return [];
+  if (Array.isArray(rawInput)) return rawInput;
+  return [rawInput];
+};
+
+// [2025-01-27 15:02:30] Trim alt text while preserving fallback values
+const sanitizeAltText = (value, fallback) => {
+  if (!value) return fallback || null;
+  return value.toString().trim().substring(0, 255) || (fallback || null);
+};
+
+// [2025-01-27 15:02:30] Clear cached product responses after asset mutations
+const invalidateProductCache = async (slug) => {
+  try {
+    const listKeys = await redis.keys('products:list:*');
+    if (listKeys.length) {
+      await redis.del(...listKeys);
+    }
+
+    if (slug) {
+      await deleteCache(`products:detail:${slug}`);
+      const relatedKeys = await redis.keys(`products:related:${slug}:*`);
+      if (relatedKeys.length) {
+        await redis.del(...relatedKeys);
+      }
+    }
+  } catch (error) {
+    console.warn('[adminProductController] Failed to invalidate product cache', error.message);
   }
 };
 
@@ -468,6 +510,135 @@ exports.updateProductStatus = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
     return res.status(500).json({ error: 'Failed to update product status' });
+  }
+};
+
+// [2025-01-27 15:02:30] Handle direct product image uploads via admin panel
+exports.uploadProductImages = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const files = Array.isArray(req.files) ? req.files : [];
+
+    if (!files.length) {
+      return res.status(400).json({ error: 'At least one image file is required' });
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+      select: { id: true, slug: true },
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const altInput =
+      req.body.alt || req.body.alts || req.body.altText || req.body.altTexts || null;
+    const altValues = parseAltInputs(altInput);
+
+    const existingCount = await prisma.productImage.count({ where: { productId: id } });
+
+    const createPayload = files.map((file, index) => {
+      const storageKey = buildStorageKey(file.filename);
+      const publicUrl = buildPublicUrl(storageKey);
+      const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
+      const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
+
+      return {
+        productId: id,
+        url: publicUrl,
+        alt: sanitizeAltText(providedAlt, fallbackAlt),
+        sortOrder: existingCount + index,
+      };
+    });
+
+    const images = await prisma.$transaction(async (tx) => {
+      await tx.productImage.createMany({ data: createPayload });
+
+      return tx.productImage.findMany({
+        where: { productId: id },
+        orderBy: { sortOrder: 'asc' },
+      });
+    });
+
+    await invalidateProductCache(product.slug);
+
+    res.status(201).json({
+      message: 'Images uploaded successfully',
+      images,
+    });
+  } catch (error) {
+    console.error('[adminProductController] uploadProductImages error:', error);
+    res.status(500).json({ error: 'Failed to upload product images' });
+  }
+};
+
+// [2025-01-27 15:02:30] Remove product images and clean up cached payloads
+exports.deleteProductImage = async (req, res) => {
+  try {
+    const { productId, imageId } = req.params;
+
+    const image = await prisma.productImage.findUnique({
+      where: { id: imageId },
+      select: {
+        id: true,
+        productId: true,
+        url: true,
+        sortOrder: true,
+        product: {
+          select: {
+            slug: true,
+          },
+        },
+      },
+    });
+
+    if (!image || image.productId !== productId) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const remainingImages = await prisma.$transaction(async (tx) => {
+      await tx.productImage.delete({ where: { id: imageId } });
+
+      const list = await tx.productImage.findMany({
+        where: { productId },
+        orderBy: { sortOrder: 'asc' },
+      });
+
+      for (let index = 0; index < list.length; index += 1) {
+        const current = list[index];
+        if (current.sortOrder !== index) {
+          await tx.productImage.update({
+            where: { id: current.id },
+            data: { sortOrder: index },
+          });
+          list[index].sortOrder = index;
+        }
+      }
+
+      return list;
+    });
+
+    const storageKey = extractStorageKeyFromUrl(image.url);
+    if (storageKey && storageKey.startsWith('products/')) {
+      const relativePath = storageKey.replace(/^products\//, '');
+      const absolutePath = path.join(PRODUCT_UPLOAD_DIR, relativePath);
+      fs.unlink(absolutePath, (err) => {
+        if (err && err.code !== 'ENOENT') {
+          console.warn('[adminProductController] Failed to remove image file', absolutePath, err.message);
+        }
+      });
+    }
+
+    await invalidateProductCache(image.product?.slug);
+
+    res.json({
+      message: 'Image deleted successfully',
+      images: remainingImages,
+    });
+  } catch (error) {
+    console.error('[adminProductController] deleteProductImage error:', error);
+    res.status(500).json({ error: 'Failed to delete product image' });
   }
 };
 

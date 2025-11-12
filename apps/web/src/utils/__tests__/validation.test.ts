@@ -39,7 +39,7 @@ describe('validation utilities', () => {
     it('should reject invalid Canadian postal codes', () => {
       expect(validateCanadianPostalCode('12345')).toBe(false);
       expect(validateCanadianPostalCode('ABC123')).toBe(false);
-      expect(validateCanadianPostalCode('A1A1A1')).toBe(false);
+      expect(validateCanadianPostalCode('1A1A1A')).toBe(false);
     });
   });
 

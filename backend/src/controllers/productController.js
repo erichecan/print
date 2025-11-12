@@ -131,6 +131,15 @@ exports.getProducts = async (req, res) => {
       const topVariant = product.variants?.[0];
       const stockQuantity = topVariant?.stockQuantity || 0;
 
+      // [2025-01-27 15:02:55] Normalize image payloads with optimized CDN parameters
+      const images = (product.images || []).map((image) => ({
+        url: optimizeImageUrl(image.url, { width: 640, quality: 80 }) || image.url,
+        alt: image.alt || product.name,
+        sortOrder: image.sortOrder,
+      }));
+
+      const primaryImage = images.length ? images[0] : null;
+
       return {
         id: product.id,
         name: product.name,
@@ -155,12 +164,9 @@ exports.getProducts = async (req, res) => {
               slug: product.brand.slug,
             }
           : null,
-        thumbnail: product.images && product.images.length > 0
-          ? {
-              url: optimizeImageUrl(product.images[0].url, { width: 640, quality: 80 }) || product.images[0].url,
-              alt: product.images[0].alt || `${product.name} thumbnail`,
-            }
-          : null,
+        images,
+        primaryImage,
+        thumbnail: primaryImage,
         stockStatus: stockQuantity > 10 ? 'in_stock' : stockQuantity > 0 ? 'low_stock' : 'out_of_stock',
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
@@ -303,6 +309,7 @@ exports.getProductBySlug = async (req, res) => {
         id: image.id,
         url: optimizeImageUrl(image.url, { width: 1280, quality: 85 }) || image.url,
         alt: image.alt || product.name,
+        sortOrder: image.sortOrder,
       })),
       variants: product.variants.map((variant) => ({
         id: variant.id,
@@ -322,6 +329,10 @@ exports.getProductBySlug = async (req, res) => {
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
+
+    formattedProduct.primaryImage = formattedProduct.images.length
+      ? formattedProduct.images[0]
+      : null; // [2025-01-27 15:02:55] Surface primary image for frontend consumption
 
     await setCache(cacheKey, formattedProduct, PRODUCT_DETAIL_CACHE_TTL);
 
@@ -399,24 +410,32 @@ exports.getRelatedProducts = async (req, res) => {
       },
     });
 
-    const formattedRelated = relatedProducts.map((product) => ({
-      id: product.id,
-      name: product.name,
-      slug: product.slug,
-      price: {
-        base: Number(product.basePrice || 0),
-        sale: Number(product.salePrice || product.basePrice || 0),
-        currency: 'CAD',
-      },
-      category: product.category,
-      thumbnail: product.images && product.images.length > 0
-        ? {
-            url: optimizeImageUrl(product.images[0].url, { width: 480, quality: 80 }) || product.images[0].url,
-            alt: product.images[0].alt || `${product.name} thumbnail`,
-          }
-        : null,
-      stockStatus: product.variants?.[0]?.stockQuantity > 0 ? 'in_stock' : 'out_of_stock',
-    }));
+    const formattedRelated = relatedProducts.map((product) => {
+      const images = (product.images || []).map((image) => ({
+        url: optimizeImageUrl(image.url, { width: 480, quality: 80 }) || image.url,
+        alt: image.alt || product.name,
+        sortOrder: image.sortOrder,
+      }));
+
+      // [2025-01-27 15:02:55] Provide lightweight image data for related product carousel
+      const primaryImage = images.length ? images[0] : null;
+
+      return {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: {
+          base: Number(product.basePrice || 0),
+          sale: Number(product.salePrice || product.basePrice || 0),
+          currency: 'CAD',
+        },
+        category: product.category,
+        images,
+        primaryImage,
+        thumbnail: primaryImage,
+        stockStatus: product.variants?.[0]?.stockQuantity > 0 ? 'in_stock' : 'out_of_stock',
+      };
+    });
 
     await setCache(cacheKey, formattedRelated, PRODUCT_LIST_CACHE_TTL);
 
