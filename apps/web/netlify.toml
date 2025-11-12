@@ -11,9 +11,12 @@
 #    - NEXT_PUBLIC_API_URL=你的后端API地址（例如：https://api.your-domain.com/api）
 
 [build]
-  # 构建命令（在 apps/web 目录下执行）
+  # 构建命令
+  # 注意：base directory 设置为 apps/web，所以命令在 apps/web 目录下执行
+  # npm workspaces 会自动检测父目录的 package.json 并安装所有依赖
   command = "npm install && npm run build"
   # 发布目录（Next.js 静态导出模式输出到 out 目录）
+  # 注意：此路径相对于 netlify.toml 所在目录（apps/web）
   publish = "out"
 
 [build.environment]
