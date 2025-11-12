@@ -8,42 +8,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { authApi, ordersApi } from '@/lib/api';
-
-interface AccountOrderDetail {
-  id: string;
-  orderNumber: string;
-  status: string;
-  paymentStatus: string;
-  subtotal: number;
-  shippingCost: number;
-  tax: number;
-  discount: number;
-  total: number;
-  currency: string;
-  createdAt: string;
-  updatedAt: string;
-  shippingAddress?: any;
-  billingAddress?: any;
-  items: Array<{
-    id: string;
-    sku: string;
-    productName: string;
-    variantDescription: string;
-    quantity: number;
-    unitPrice: number;
-    subtotal: number;
-    thumbnail?: string | null;
-  }>;
-  shipments?: Array<{
-    id: string;
-    trackingNumber?: string | null;
-    carrier?: string | null;
-    status: string;
-    labelUrl?: string | null;
-    createdAt: string;
-  }>;
-}
+import { authApi, ordersApi, AccountOrderDetail } from '@/lib/api'; // [2025-11-12 06:42:30] Import AccountOrderDetail type from api.ts
 
 export default function AccountOrderDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();

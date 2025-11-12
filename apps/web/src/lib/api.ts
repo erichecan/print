@@ -551,13 +551,49 @@ export const checkoutApi = {
     }),
 };
 
+// [2025-11-12 06:42:30] Order detail type for account orders API
+export interface AccountOrderDetail {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  subtotal: number;
+  shippingCost: number;
+  tax: number;
+  discount: number;
+  total: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+  shippingAddress?: any;
+  billingAddress?: any;
+  items: Array<{
+    id: string;
+    sku: string;
+    productName: string;
+    variantDescription: string;
+    quantity: number;
+    unitPrice: number;
+    subtotal: number;
+    thumbnail?: string | null;
+  }>;
+  shipments?: Array<{
+    id: string;
+    trackingNumber?: string | null;
+    carrier?: string | null;
+    status: string;
+    labelUrl?: string | null;
+    createdAt: string;
+  }>;
+}
+
 // Orders API
 export const ordersApi = {
   list: (page: number = 1, limit: number = 20) =>
     api(`/orders?page=${page}&limit=${limit}`),
-  getById: (id: string) => api(`/orders/${id}`),
+  getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`), // [2025-11-12 06:42:30] Add type parameter for order detail
   getByOrderNumber: (orderNumber: string, email: string) =>
-    api(`/orders/number/${orderNumber}?email=${encodeURIComponent(email)}`),
+    api<AccountOrderDetail>(`/orders/number/${orderNumber}?email=${encodeURIComponent(email)}`), // [2025-11-12 06:42:30] Add type parameter
   downloadInvoice: async (id: string) => {
     const response = await fetch(`${API_BASE_URL}/orders/${id}/invoice`, {
       method: 'GET',
