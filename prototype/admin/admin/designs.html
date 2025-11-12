@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Design Reviews | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html" class="is-active"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;"><span data-i18n="backToSite">← Back to Site</span></a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="designReviewManagement">Design Reviews</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;"><span data-i18n="logout">Logout</span></a>
+				</div>
+			</header>
+
+			<div style="margin-top: 24px;">
+				<div class="admin-filters">
+					<div class="admin-search">
+						<input type="text" placeholder="Search designs...">
+					</div>
+					<select style="padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px;">
+						<option>All Status</option>
+						<option>Pending Review</option>
+						<option>Approved</option>
+						<option>Rejected</option>
+					</select>
+				</div>
+
+				<div class="admin-table-wrapper">
+					<table class="admin-table">
+						<thead>
+							<tr>
+								<th>Thumbnail</th>
+								<th>Design Name</th>
+								<th>User</th>
+								<th>Submitted</th>
+								<th>Status</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td><div class="placeholder" style="width: 60px; height: 60px; border-radius: 8px;"></div></td>
+								<td><div style="font-weight: 600;">Conference Backpack</div></td>
+								<td>alex.brown</td>
+								<td>Oct 31, 2025</td>
+								<td><span class="badge badge-pending">Pending</span></td>
+								<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">Review</a></td>
+							</tr>
+							<tr>
+								<td><div class="placeholder" style="width: 60px; height: 60px; border-radius: 8px;"></div></td>
+								<td><div style="font-weight: 600;">Team Jerseys</div></td>
+								<td>sports.club</td>
+								<td>Oct 31, 2025</td>
+								<td><span class="badge badge-pending">Pending</span></td>
+								<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">Review</a></td>
+							</tr>
+							<tr>
+								<td><div class="placeholder" style="width: 60px; height: 60px; border-radius: 8px;"></div></td>
+								<td><div style="font-weight: 600;">Holiday Swag Box</div></td>
+								<td>marketing.dept</td>
+								<td>Oct 30, 2025</td>
+								<td><span class="badge badge-pending">Pending</span></td>
+								<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">Review</a></td>
+							</tr>
+							<tr>
+								<td><div class="placeholder" style="width: 60px; height: 60px; border-radius: 8px;"></div></td>
+								<td><div style="font-weight: 600;">Welcome Kit</div></td>
+								<td>hr.team</td>
+								<td>Oct 30, 2025</td>
+								<td><span class="badge badge-success">Approved</span></td>
+								<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">View</a></td>
+							</tr>
+							<tr>
+								<td><div class="placeholder" style="width: 60px; height: 60px; border-radius: 8px;"></div></td>
+								<td><div style="font-weight: 600;">Logo T-Shirt</div></td>
+								<td>john.doe</td>
+								<td>Oct 29, 2025</td>
+								<td><span class="badge badge-error">Rejected</span></td>
+								<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">View</a></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="admin-pagination">
+					<button>Previous</button>
+					<button class="active">1</button>
+					<button>2</button>
+					<button>Next</button>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+

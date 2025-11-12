@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Welcome Back | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-10-31 11:48:00] Welcome Back page modeled after Custom Ink NDX welcome -->
+</head>
+<body class="ndx-body">
+	<main class="ndx" aria-labelledby="ndx-title">
+		<div class="ndx__card">
+			<section class="ndx__left placeholder" aria-hidden="true"></section>
+			<section class="ndx__right">
+				<h1 id="ndx-title">Welcome Back</h1>
+				<p class="ndx__subtitle">Sign in to continue designing or place an order.</p>
+
+				<form class="ndx__form" novalidate>
+					<label for="email">Email</label>
+					<input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+
+					<label for="code">One-time code (optional)</label>
+					<div class="ndx__row">
+						<input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code">
+						<button class="btn btn--outline" type="button" id="send-code">Send Code</button>
+					</div>
+
+					<div class="ndx__actions">
+						<button class="btn btn--outline" type="reset">Save</button>
+						<button class="btn" type="submit">Next</button>
+					</div>
+
+					<p class="ndx__help"><a href="help.html">Forgot your email?</a> • <a href="help.html">Need help?</a></p>
+				</form>
+			</section>
+		</div>
+	</main>
+
+	<script>
+		// [2025-10-31 11:48:00] Minimal UX: fake send code + validation
+		(function(){
+			const form = document.querySelector('.ndx__form');
+			document.getElementById('send-code').addEventListener('click', function(){
+				this.textContent = 'Code Sent';
+				this.disabled = true;
+				setTimeout(()=>{ this.textContent = 'Send Code'; this.disabled = false; }, 3000);
+			});
+			form.addEventListener('submit', function(e){
+				e.preventDefault();
+				const email = document.getElementById('email');
+				if(!email.value){ email.focus(); email.setAttribute('aria-invalid','true'); return; }
+				window.location.href = 'account.html';
+			});
+		})();
+	</script>
+
+	<!-- Reference: Inspired by Custom Ink NDX welcome -->
+	<!-- Source: https://www.customink.com/ndx/#/welcomeBack -->
+</body>
+</html>
+

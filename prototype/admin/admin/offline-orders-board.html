@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Offline Order Workflow Board | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+	<!-- [2025-11-08 05:45:12] Offline order workflow static prototype entry -->
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="offline-orders-board.html" class="is-active"><span class="admin-nav-icon">🛠️</span> <span data-i18n="productionManagement">Production Management</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;" data-i18n="backToSite">← Back to Site</a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="offlineWorkflowBoard">Offline Order Workflow</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;" data-i18n="logout">Logout</a>
+				</div>
+			</header>
+
+			<div class="kanban-page">
+				<!-- [2025-11-08 05:45:24] Trello-style toolbar with search/filter/stat placeholders -->
+				<section class="kanban-toolbar">
+					<div class="kanban-toolbar-main">
+						<div class="admin-search kanban-search">
+							<input id="kanbanSearchInput" type="text" placeholder="Search orders or companies..." aria-label="Search offline orders" data-i18n-placeholder="searchOfflineOrders">
+						</div>
+						<select id="kanbanPriorityFilter" class="kanban-select" aria-label="Filter by priority">
+							<option value="" data-i18n="allPriorities">All priorities</option>
+							<option value="rush" data-i18n="rushPriority">Rush</option>
+							<option value="standard" data-i18n="standardPriority">Standard</option>
+						</select>
+						<select id="kanbanOwnerFilter" class="kanban-select" aria-label="Filter by account owner" disabled>
+							<option value="" data-i18n="allOwnersComingSoon">All owners (coming soon)</option>
+						</select>
+						<button id="kanbanDateButton" class="btn btn--outline" type="button" data-i18n="dateRange">Date Range</button>
+					</div>
+					<div class="kanban-toolbar-actions">
+						<button id="kanbanSaveView" class="btn" type="button" data-i18n="saveView">Save View</button>
+						<button id="kanbanExport" class="btn btn--outline" type="button" data-i18n="exportCsv">Export CSV</button>
+						<button id="kanbanNewOrder" class="btn btn--primary" type="button" data-i18n="newOfflineOrder">New Offline Order</button>
+					</div>
+				</section>
+
+				<!-- [2025-11-08 05:45:36] Metrics strip reserving space for analytics -->
+				<section class="kanban-metrics">
+					<div class="kanban-metric-card" data-metric="total">
+						<span class="kanban-metric-label" data-i18n="ordersInProgress">Orders in Progress</span>
+						<strong class="kanban-metric-value" data-metric-value>--</strong>
+					</div>
+					<div class="kanban-metric-card" data-metric="cycle">
+						<span class="kanban-metric-label" data-i18n="averageCycleTime">Average Cycle Time</span>
+						<strong class="kanban-metric-value" data-metric-value>6.4 days</strong>
+					</div>
+					<div class="kanban-metric-card" data-metric="rush">
+						<span class="kanban-metric-label" data-i18n="rushOrders">Rush Orders</span>
+						<strong class="kanban-metric-value" data-metric-value>--</strong>
+					</div>
+					<div class="kanban-metric-card" data-metric="delayed">
+						<span class="kanban-metric-label" data-i18n="delayedOrders">Delayed</span>
+						<strong class="kanban-metric-value" data-metric-value>--</strong>
+					</div>
+				</section>
+
+				<!-- [2025-11-08 05:45:47] Configuration entry placeholder -->
+				<section class="kanban-config-entry">
+					<p data-i18n-html="workflowConfigInfo">Workflow stages can be customized in <a href="settings.html" target="_blank" rel="noopener">System Settings</a>. Use the button to adjust column names for the board.</p>
+					<button id="kanbanConfigButton" class="btn btn--outline" type="button" data-i18n="customizeWorkflow">Customize Workflow</button>
+				</section>
+
+				<!-- [2025-11-08 05:45:59] Trello-style board columns -->
+				<section class="kanban-board" id="offlineBoard" aria-label="Offline order workflow board"></section>
+
+				<template id="kanban-column-template">
+					<article class="kanban-column" data-stage-column>
+						<header class="kanban-column-header">
+							<h2 data-stage-label></h2>
+							<span class="kanban-column-count" data-stage-count>0</span>
+						</header>
+						<div class="kanban-column-body" data-stage-body></div>
+						<footer class="kanban-column-footer">
+							<button class="btn btn--ghost" type="button" data-stage-footer>+ Add note</button>
+						</footer>
+					</article>
+				</template>
+
+				<template id="kanban-card-template">
+					<div class="kanban-card" draggable="true" data-order-card>
+						<header class="kanban-card-header">
+							<span class="kanban-card-title" data-card-title></span>
+							<span class="kanban-card-chip" data-card-chip hidden></span>
+						</header>
+						<p class="kanban-card-meta" data-card-meta></p>
+						<p class="kanban-card-detail" data-card-detail></p>
+					</div>
+				</template>
+
+				<!-- [2025-11-08 06:03:42] Upcoming enhancements module removed per product review -->
+				<section class="kanban-dom-preview">
+					<details open>
+						<summary>Workflow DOM Outline</summary>
+						<pre id="kanbanDomPreview">Loading DOM outline…</pre>
+					</details>
+				</section>
+			</div>
+		</main>
+	</div>
+	<script>
+		function updateKanbanDomPreview() {
+			var previewTarget = document.getElementById('kanbanDomPreview');
+			if (!previewTarget) {
+				return;
+			}
+
+			var board = document.querySelector('.kanban-board');
+			if (!board) {
+				previewTarget.textContent = 'No board found.';
+				return;
+			}
+
+			var lines = [];
+			board.querySelectorAll('.kanban-column').forEach(function (column, columnIndex) {
+				var headerEl = column.querySelector('.kanban-column-header h2');
+				var headerText = headerEl ? headerEl.textContent.trim() : 'Column ' + (columnIndex + 1);
+				lines.push('• ' + headerText);
+
+				var cards = column.querySelectorAll('.kanban-card');
+				if (!cards.length) {
+					lines.push('    ∘ (empty)');
+				} else {
+					cards.forEach(function (card) {
+						var titleEl = card.querySelector('.kanban-card-title');
+						var titleText = titleEl ? titleEl.textContent.trim() : 'Untitled card';
+						lines.push('    ∘ ' + titleText);
+					});
+				}
+			});
+
+			previewTarget.textContent = lines.join('\n');
+		}
+
+		document.addEventListener('DOMContentLoaded', updateKanbanDomPreview);
+		document.addEventListener('offlineBoardUpdated', updateKanbanDomPreview);
+	</script>
+	<script src="offline-orders-board.js"></script>
+</body>
+</html>
+

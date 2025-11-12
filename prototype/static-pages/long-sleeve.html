@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Long Sleeve T‑Shirts | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-10-31 11:05:00] Product Listing Page (PLP): Long Sleeve T‑Shirts -->
+	<!-- [2025-11-02 22:10:00] Add image loader for dynamic image loading -->
+	<script src="scripts/image-loader.js" defer></script>
+</head>
+<body>
+    <!-- [2025-11-04 00:24:10] SVG icon set (star) for ratings -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="icon-star" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z"/></symbol>
+    </svg>
+	<!-- [2025-10-31 11:05:00] Topbar -->
+	<div class="topbar" role="region" aria-label="Top Utility Bar">
+		<div class="container util">
+			<a href="ndx-welcome.html" aria-label="Sign in">Sign In</a>
+			<a href="cart.html" aria-label="View cart">Cart (0)</a>
+			<a href="tel:8002934232" aria-label="Call us">800-293-4232</a>
+		</div>
+	</div>
+
+	<!-- [2025-10-31 11:05:00] Header/Nav -->
+	<header class="primary" role="banner">
+		<div class="container">
+			<nav class="nav" aria-label="Primary Navigation">
+				<div class="brand">
+					<a href="home.html" style="display:flex;align-items:center;gap:10px">
+						<div class="brand__logo" aria-hidden="true"></div>
+						<span class="brand__name">suvernire plus</span>
+					</a>
+				</div>
+				<div class="menu" role="menubar">
+					<a role="menuitem" href="home.html">Home</a>
+					<a role="menuitem" href="long-sleeve.html" aria-current="page">Products</a>
+					<a role="menuitem" href="help.html">Help</a>
+				</div>
+				<div class="cta">
+					<a class="btn btn--outline" href="checkout.html">Get a Quote</a>
+					<a class="btn" href="design-lab.html">Start Designing</a>
+				</div>
+			</nav>
+		</div>
+	</header>
+
+	<main id="main">
+		<!-- [2025-10-31 11:05:00] PLP header: title, results count, sort -->
+		<section class="plp-head" aria-label="Page Header">
+			<div class="container plp-head__bar">
+				<h1 data-field="pageTitle">Long Sleeve T‑Shirts</h1>
+				<div class="plp-controls">
+					<div class="results" aria-live="polite" data-field="resultsCount"><strong id="results-count" data-field="resultsNumber">0</strong> results</div>
+					<label class="sort" for="sort-select">Sort</label>
+					<select id="sort-select" aria-label="Sort products" data-action="sort" data-field="sortBy" data-api="/api/products?sort={value}">
+						<option value="relevance">Relevance</option>
+						<option value="bestselling">Best Sellers</option>
+						<option value="price-asc">Price: Low to High</option>
+						<option value="price-desc">Price: High to Low</option>
+					</select>
+				</div>
+			</div>
+		</section>
+
+		<!-- [2025-10-31 11:05:00] PLP body: filters + product grid -->
+		<section class="plp" aria-label="Products">
+			<div class="container plp__grid">
+				<aside class="filters" aria-label="Filters">
+					<!-- [2025-10-31 11:05:00] Filter: Category -->
+					<details open data-filter="category">
+						<summary data-field="filterLabel">Category</summary>
+						<ul data-api="/api/products/filter" data-method="GET">
+							<li><label><input type="checkbox" name="category" value="performance" data-filter-value="performance"> Performance</label></li>
+							<li><label><input type="checkbox" name="category" value="cotton" data-filter-value="cotton"> 100% Cotton</label></li>
+							<li><label><input type="checkbox" name="category" value="blend" data-filter-value="blend"> Cotton/Poly Blend</label></li>
+						</ul>
+					</details>
+
+					<details data-filter="brand">
+						<summary data-field="filterLabel">Brand</summary>
+						<ul data-api="/api/brands">
+							<li><label><input type="checkbox" name="brand" value="gildan" data-filter-value="gildan"> Gildan</label></li>
+							<li><label><input type="checkbox" name="brand" value="hanes" data-filter-value="hanes"> Hanes</label></li>
+							<li><label><input type="checkbox" name="brand" value="jerzees" data-filter-value="jerzees"> Jerzees</label></li>
+						</ul>
+					</details>
+
+					<details open data-filter="color">
+						<summary data-field="filterLabel">Color</summary>
+						<div class="swatches" role="group" aria-label="Colors">
+							<button type="button" class="swatch" data-color="black" data-filter-value="black" style="--sw:#111" aria-pressed="false" aria-label="Black"></button>
+							<button type="button" class="swatch" data-color="white" data-filter-value="white" style="--sw:#fff" aria-pressed="false" aria-label="White"></button>
+							<button type="button" class="swatch" data-color="gray" data-filter-value="gray" style="--sw:#9CA3AF" aria-pressed="false" aria-label="Gray"></button>
+							<button type="button" class="swatch" data-color="green" data-filter-value="green" style="--sw:#10B981" aria-pressed="false" aria-label="Green"></button>
+							<button type="button" class="swatch" data-color="blue" data-filter-value="blue" style="--sw:#3B82F6" aria-pressed="false" aria-label="Blue"></button>
+							<button type="button" class="swatch" data-color="red" data-filter-value="red" style="--sw:#EF4444" aria-pressed="false" aria-label="Red"></button>
+						</div>
+					</details>
+
+					<details open data-filter="size">
+						<summary data-field="filterLabel">Size</summary>
+						<div class="sizes" role="group" aria-label="Sizes">
+							<button type="button" class="size" data-size="XS" data-filter-value="XS">XS</button>
+							<button type="button" class="size" data-size="S" data-filter-value="S">S</button>
+							<button type="button" class="size" data-size="M" data-filter-value="M">M</button>
+							<button type="button" class="size" data-size="L" data-filter-value="L">L</button>
+							<button type="button" class="size" data-size="XL" data-filter-value="XL">XL</button>
+							<button type="button" class="size" data-size="2XL" data-filter-value="2XL">2XL</button>
+						</div>
+					</details>
+
+					<details data-filter="price">
+						<summary data-field="filterLabel">Price</summary>
+						<label class="range"><input id="price-min" type="number" min="0" value="0" data-filter-value="min"> to <input id="price-max" type="number" min="0" value="100" data-filter-value="max"></label>
+					</details>
+
+					<details data-filter="rating">
+						<summary data-field="filterLabel">Rating</summary>
+						<ul>
+                            <li><label><input type="radio" name="rating" value="4" data-filter-value="4"> 4 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg> & up</label></li>
+                            <li><label><input type="radio" name="rating" value="3" data-filter-value="3"> 3 <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg> & up</label></li>
+							<li><label><input type="radio" name="rating" value="0" checked data-filter-value="0"> Any</label></li>
+						</ul>
+					</details>
+
+					<button id="clear-filters" class="btn btn--outline" type="button" data-action="clear-filters">Clear Filters</button>
+				</aside>
+
+				<section class="products" aria-label="Product Results" id="products" data-api="/api/products" data-method="GET">
+					<!-- [2025-10-31 11:05:00] Product cards (placeholder images) -->
+					<div class="product-grid">
+						<article class="product" data-entity="product" data-id="prod-001" data-category="cotton" data-brand="gildan" data-price="12" data-rating="4.6" data-colors="black,white,gray" data-sizes="S,M,L,XL">
+							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Gildan Long Sleeve T‑Shirt" data-field="thumbnail" data-api="/api/products/prod-001"></a>
+							<h3 class="product__title" data-field="name">Gildan Long Sleeve T‑Shirt</h3>
+                            <p class="product__meta" data-field="price"><span data-field="priceFrom">From</span> $<span data-field="priceValue">12</span> • <span data-field="rating">4.6</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
+							<div class="product__swatches" aria-label="Available colors" data-field="colors">
+								<span class="swatch" style="--sw:#111" data-field="color"></span>
+								<span class="swatch" style="--sw:#fff" data-field="color"></span>
+								<span class="swatch" style="--sw:#9CA3AF" data-field="color"></span>
+							</div>
+						</article>
+						<article class="product" data-entity="product" data-id="prod-002" data-category="blend" data-brand="hanes" data-price="16" data-rating="4.9" data-colors="black,green,blue" data-sizes="XS,S,M,L,XL,2XL">
+							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Hanes EcoSmart Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-002"></a>
+							<h3 class="product__title" data-field="name">Hanes EcoSmart Long Sleeve</h3>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">16</span> • <span data-field="rating">4.9</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
+							<div class="product__swatches" aria-label="Available colors" data-field="colors">
+								<span class="swatch" style="--sw:#111" data-field="color"></span>
+								<span class="swatch" style="--sw:#10B981" data-field="color"></span>
+								<span class="swatch" style="--sw:#3B82F6" data-field="color"></span>
+							</div>
+						</article>
+						<article class="product" data-entity="product" data-id="prod-003" data-category="performance" data-brand="jerzees" data-price="22" data-rating="4.2" data-colors="gray,blue,red" data-sizes="S,M,L,XL">
+							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Jerzees Dri‑Power Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-003"></a>
+							<h3 class="product__title" data-field="name">Jerzees Dri‑Power Long Sleeve</h3>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">22</span> • <span data-field="rating">4.2</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
+							<div class="product__swatches" aria-label="Available colors" data-field="colors">
+								<span class="swatch" style="--sw:#9CA3AF" data-field="color"></span>
+								<span class="swatch" style="--sw:#3B82F6" data-field="color"></span>
+								<span class="swatch" style="--sw:#EF4444" data-field="color"></span>
+							</div>
+						</article>
+						<article class="product" data-entity="product" data-id="prod-004" data-category="cotton" data-brand="hanes" data-price="14" data-rating="4.7" data-colors="white,green" data-sizes="XS,S,M,L,XL">
+							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Hanes Beefy Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-004"></a>
+							<h3 class="product__title" data-field="name">Hanes Beefy Long Sleeve</h3>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">14</span> • <span data-field="rating">4.7</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
+							<div class="product__swatches" aria-label="Available colors" data-field="colors">
+								<span class="swatch" style="--sw:#fff" data-field="color"></span>
+								<span class="swatch" style="--sw:#10B981" data-field="color"></span>
+							</div>
+						</article>
+						<article class="product" data-entity="product" data-id="prod-005" data-category="blend" data-brand="gildan" data-price="18" data-rating="4.1" data-colors="black,gray" data-sizes="S,M,L,XL,2XL">
+							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Gildan Ultra Blend Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-005"></a>
+							<h3 class="product__title" data-field="name">Gildan Ultra Blend Long Sleeve</h3>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">18</span> • <span data-field="rating">4.1</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
+							<div class="product__swatches" aria-label="Available colors" data-field="colors">
+								<span class="swatch" style="--sw:#111" data-field="color"></span>
+								<span class="swatch" style="--sw:#9CA3AF" data-field="color"></span>
+							</div>
+						</article>
+						<article class="product" data-entity="product" data-id="prod-006" data-category="performance" data-brand="hanes" data-price="26" data-rating="4.8" data-colors="blue,green" data-sizes="S,M,L,XL">
+							<a href="product-hoodie.html" class="product__image placeholder" aria-label="Hanes Performance Long Sleeve" data-field="thumbnail" data-api="/api/products/prod-006"></a>
+							<h3 class="product__title" data-field="name">Hanes Performance Long Sleeve</h3>
+                            <p class="product__meta" data-field="price">From $<span data-field="priceValue">26</span> • <span data-field="rating">4.8</span> <svg width="12" height="12" style="vertical-align:-1px"><use href="#icon-star"/></svg></p>
+							<div class="product__swatches" aria-label="Available colors" data-field="colors">
+								<span class="swatch" style="--sw:#3B82F6" data-field="color"></span>
+								<span class="swatch" style="--sw:#10B981" data-field="color"></span>
+							</div>
+						</article>
+					</div>
+					<nav class="pagination" aria-label="Pagination" data-api="/api/products?page={n}">
+						<button class="btn btn--outline" type="button" disabled data-action="pagination-prev">Prev</button>
+						<button class="btn" type="button" aria-current="page" data-action="pagination-page" data-page="1">1</button>
+						<button class="btn btn--outline" type="button" data-action="pagination-page" data-page="2">2</button>
+						<button class="btn btn--outline" type="button" data-action="pagination-next" data-page="2">Next</button>
+					</nav>
+				</section>
+			</div>
+		</section>
+	</main>
+
+	<!-- [2025-11-02 22:45:00] Common footer with fixed links -->
+	<section class="footer-info" aria-label="Site Information">
+		<div class="container footergrid">
+			<div>
+				<h4>Shop</h4>
+				<ul>
+					<li><a href="long-sleeve.html">All Products</a></li>
+					<li><a href="design-lab.html">Design Lab</a></li>
+					<li><a href="promotions.html">Promotions</a></li>
+					<li><a href="help.html">Help Center</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Your Account</h4>
+				<ul>
+					<li><a href="account.html">My Account</a></li>
+					<li><a href="order-tracking.html">Track Order</a></li>
+					<li><a href="cart.html">View Cart</a></li>
+					<li><a href="account.html">My Designs</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Support</h4>
+				<ul>
+					<li><a href="help.html">Help Center</a></li>
+					<li><a href="contact.html">Contact Us</a></li>
+					<li><a href="shipping-info.html">Shipping Info</a></li>
+					<li><a href="returns.html">Returns</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Legal</h4>
+				<ul>
+					<li><a href="privacy-policy.html">Privacy Policy</a></li>
+					<li><a href="terms-of-service.html">Terms of Service</a></li>
+					<li><a href="size-guide.html">Size Guide</a></li>
+					<li><a href="sitemap.xml">Sitemap</a></li>
+				</ul>
+			</div>
+		</div>
+	</section>
+
+	<footer class="site-footer" role="contentinfo">
+		<div class="container">
+			<small>© 2025 suvernire plus. All rights reserved.</small>
+			<nav aria-label="Legal Links">
+				<a href="privacy-policy.html">Privacy Policy</a>
+				<span aria-hidden="true"> | </span>
+				<a href="terms-of-service.html">Terms of Service</a>
+				<span aria-hidden="true"> | </span>
+				<a href="returns.html">Returns</a>
+				<span aria-hidden="true"> | </span>
+				<a href="contact.html">Contact</a>
+			</nav>
+		</div>
+	</footer>
+
+	<!-- [2025-10-31 11:05:00] Client-side filtering & sorting -->
+	<script>
+		// [2025-10-31 11:05:00] Simple PLP filter/sort with data-* attributes
+		(function(){
+			const grid = document.querySelector('.product-grid');
+			const cards = Array.from(document.querySelectorAll('.product'));
+			const countEl = document.getElementById('results-count');
+			const sortSelect = document.getElementById('sort-select');
+			const swatches = Array.from(document.querySelectorAll('.filters .swatch'));
+			const sizeBtns = Array.from(document.querySelectorAll('.filters .size'));
+			const clearBtn = document.getElementById('clear-filters');
+
+			function getChecked(name){
+				return Array.from(document.querySelectorAll('input[name="'+name+'"]:checked')).map(i=>i.value);
+			}
+
+			function getRating(){
+				const r = document.querySelector('input[name="rating"]:checked');
+				return r ? Number(r.value) : 0;
+			}
+
+			const selected = { colors: new Set(), sizes: new Set() };
+
+			function applyFilters(){
+				const categories = getChecked('category');
+				const brands = getChecked('brand');
+				const minPrice = Number(document.getElementById('price-min').value||0);
+				const maxPrice = Number(document.getElementById('price-max').value||Infinity);
+				const minRating = getRating();
+
+				let visible = cards.slice();
+				visible.forEach(card => {
+					const price = Number(card.dataset.price);
+					const rating = Number(card.dataset.rating);
+					const cardCats = (card.dataset.category||'').split(',');
+					const cardBrand = card.dataset.brand;
+					const cardColors = (card.dataset.colors||'').split(',');
+					const cardSizes = (card.dataset.sizes||'').split(',');
+
+					let show = true;
+					if(categories.length && !categories.some(c=>cardCats.includes(c))) show = false;
+					if(brands.length && !brands.includes(cardBrand)) show = false;
+					if(!(price>=minPrice && price<=maxPrice)) show = false;
+					if(rating < minRating) show = false;
+					if(selected.colors.size && ![...selected.colors].some(c=>cardColors.includes(c))) show = false;
+					if(selected.sizes.size && ![...selected.sizes].some(s=>cardSizes.includes(s))) show = false;
+
+					card.style.display = show ? '' : 'none';
+				});
+
+				const shown = visible.filter(c=>c.style.display!=='none');
+				countEl.textContent = String(shown.length);
+			}
+
+			function sortCards(){
+				const val = sortSelect.value;
+				const items = cards.slice().filter(c=>c.style.display!== 'none');
+				let comparator = null;
+				if(val==='price-asc') comparator = (a,b)=>Number(a.dataset.price)-Number(b.dataset.price);
+				if(val==='price-desc') comparator = (a,b)=>Number(b.dataset.price)-Number(a.dataset.price);
+				if(val==='bestselling') comparator = (a,b)=>Number(b.dataset.rating)-Number(a.dataset.rating);
+				if(comparator){
+					items.sort(comparator).forEach(el=>grid.appendChild(el));
+				}
+			}
+
+			swatches.forEach(btn=>{
+				btn.addEventListener('click', ()=>{
+					const color = btn.dataset.color;
+					if(btn.getAttribute('aria-pressed')==='true'){
+						btn.setAttribute('aria-pressed','false');
+						selected.colors.delete(color);
+					}else{
+						btn.setAttribute('aria-pressed','true');
+						selected.colors.add(color);
+					}
+					applyFilters(); sortCards();
+				});
+			});
+
+			sizeBtns.forEach(btn=>{
+				btn.addEventListener('click', ()=>{
+					const s = btn.dataset.size;
+					btn.classList.toggle('is-active');
+					if(btn.classList.contains('is-active')) selected.sizes.add(s); else selected.sizes.delete(s);
+					applyFilters(); sortCards();
+				});
+			});
+
+			['change','input'].forEach(ev=>{
+				['category','brand','rating'].forEach(name=>{
+					Array.from(document.querySelectorAll('input[name="'+name+'"]')).forEach(inp=>{
+						inp.addEventListener(ev, ()=>{applyFilters(); sortCards();});
+					});
+				});
+				document.getElementById('price-min').addEventListener(ev, ()=>{applyFilters(); sortCards();});
+				document.getElementById('price-max').addEventListener(ev, ()=>{applyFilters(); sortCards();});
+			});
+
+			sortSelect.addEventListener('change', sortCards);
+
+			clearBtn.addEventListener('click', ()=>{
+				Array.from(document.querySelectorAll('input[type="checkbox"][name="category"], input[type="checkbox"][name="brand"]')).forEach(i=>i.checked=false);
+				document.querySelector('input[name="rating"][value="0"]').checked = true;
+				document.getElementById('price-min').value = 0;
+				document.getElementById('price-max').value = 100;
+				swatches.forEach(b=>b.setAttribute('aria-pressed','false'));
+				selected.colors.clear(); selected.sizes.clear();
+				sizeBtns.forEach(b=>b.classList.remove('is-active'));
+				applyFilters(); sortCards();
+			});
+
+			// init
+			applyFilters();
+		})();
+    </script>
+
+    <!-- [2025-11-04 00:00:00] Add common navigation and link fixes -->
+    <script src="scripts/fix-all-links.js"></script>
+    <script src="scripts/common-navigation.js"></script>
+
+</body>
+</html>
+

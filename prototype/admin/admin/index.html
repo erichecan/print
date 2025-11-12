@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Admin Dashboard | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+	<!-- [2025-11-01 00:00:00] Admin dashboard -->
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html" class="is-active"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;" data-i18n="backToSite">← Back to Site</a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="dashboard">Dashboard</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;" data-i18n="logout">Logout</a>
+				</div>
+			</header>
+
+				<div style="margin-top: 24px;">
+				<div class="stats-grid" data-api="/api/admin/stats" data-method="GET">
+					<div class="stat-card" data-field="revenue">
+						<div class="stat-card-value" data-field="revenueValue">$24,580</div>
+						<div class="stat-card-label" data-i18n="todaysRevenue">Today's Revenue</div>
+						<div class="stat-card-change positive" data-field="revenueChange">+12% <span data-i18n="fromYesterday">from yesterday</span></div>
+					</div>
+					<div class="stat-card" data-field="orders">
+						<div class="stat-card-value" data-field="ordersValue">142</div>
+						<div class="stat-card-label" data-i18n="newOrders">New Orders</div>
+						<div class="stat-card-change positive" data-field="ordersChange">+8% <span data-i18n="fromYesterday">from yesterday</span></div>
+					</div>
+					<div class="stat-card" data-field="reviews">
+						<div class="stat-card-value" data-field="reviewsValue">23</div>
+						<div class="stat-card-label" data-i18n="pendingReviews">Pending Reviews</div>
+						<div class="stat-card-change" data-field="reviewsChange">3 <span data-i18n="newToday">new today</span></div>
+					</div>
+					<div class="stat-card" data-field="stock">
+						<div class="stat-card-value" data-field="stockValue">8</div>
+						<div class="stat-card-label" data-i18n="lowStockItems">Low Stock Items</div>
+						<div class="stat-card-change" data-field="stockChange">2 <span data-i18n="critical">critical</span></div>
+					</div>
+				</div>
+
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+					<div class="admin-table-wrapper" data-api="/api/admin/orders?limit=10" data-method="GET">
+						<div style="padding: 16px 16px 0;">
+							<h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 700;" data-i18n="recentOrders">Recent Orders</h3>
+						</div>
+						<table class="admin-table">
+							<thead>
+								<tr>
+									<th data-i18n="orderNumber">Order #</th>
+									<th data-i18n="customer">Customer</th>
+									<th data-i18n="total">Amount</th>
+									<th data-i18n="status">Status</th>
+									<th data-i18n="date">Date</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr data-entity="order" data-id="12349">
+									<td><a href="order-detail.html" style="color: var(--color-primary);" data-action="view-order" data-field="orderNumber" data-api="/api/admin/orders/12349">#12349</a></td>
+									<td data-field="customerName">John Doe</td>
+									<td data-field="total">$89.50</td>
+									<td><span class="badge badge-success" data-field="status">Completed</span></td>
+									<td data-field="date">Oct 31</td>
+								</tr>
+								<tr data-entity="order" data-id="12348">
+									<td><a href="order-detail.html" style="color: var(--color-primary);" data-action="view-order" data-field="orderNumber" data-api="/api/admin/orders/12348">#12348</a></td>
+									<td data-field="customerName">Jane Smith</td>
+									<td data-field="total">$145.00</td>
+									<td><span class="badge badge-warning" data-field="status">Processing</span></td>
+									<td data-field="date">Oct 31</td>
+								</tr>
+								<tr>
+									<td><a href="order-detail.html" style="color: var(--color-primary);">#12347</a></td>
+									<td>Mike Johnson</td>
+									<td>$56.00</td>
+									<td><span class="badge badge-info">Shipped</span></td>
+									<td>Oct 30</td>
+								</tr>
+								<tr>
+									<td><a href="order-detail.html" style="color: var(--color-primary);">#12346</a></td>
+									<td>Sarah Lee</td>
+									<td>$234.00</td>
+									<td><span class="badge badge-pending">Pending</span></td>
+									<td>Oct 30</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="admin-table-wrapper">
+						<div style="padding: 16px 16px 0;">
+							<h3 style="margin: 0 0 16px; font-size: 16px; font-weight: 700;" data-i18n="pendingDesignReviews">Pending Design Reviews</h3>
+						</div>
+						<table class="admin-table">
+							<thead>
+								<tr>
+									<th data-i18n="designName">Design</th>
+									<th>User</th>
+									<th data-i18n="status">Status</th>
+									<th data-i18n="date">Date</th>
+									<th data-i18n="actions">Actions</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td>Conference Backpack</td>
+									<td>alex.brown</td>
+									<td><span class="badge badge-pending">Pending</span></td>
+									<td>Oct 31</td>
+									<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">Review</a></td>
+								</tr>
+								<tr>
+									<td>Team Jerseys</td>
+									<td>sports.club</td>
+									<td><span class="badge badge-pending">Pending</span></td>
+									<td>Oct 31</td>
+									<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">Review</a></td>
+								</tr>
+								<tr>
+									<td>Holiday Swag</td>
+									<td>marketing.dept</td>
+									<td><span class="badge badge-pending">Pending</span></td>
+									<td>Oct 30</td>
+									<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">Review</a></td>
+								</tr>
+								<tr>
+									<td>Welcome Kit</td>
+									<td>hr.team</td>
+									<td><span class="badge badge-success">Approved</span></td>
+									<td>Oct 30</td>
+									<td><a href="design-review.html" class="btn-icon btn--outline" style="font-size: 12px;">View</a></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+

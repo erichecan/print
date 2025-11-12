@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Admin Login | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+	<!-- [2025-11-01 00:00:00] Admin login page -->
+</head>
+<body class="ndx-body">
+	<main class="ndx" aria-labelledby="admin-login-title">
+		<div class="ndx__card" style="max-width: 440px;">
+			<section class="ndx__right">
+				<h1 id="admin-login-title">Admin Login</h1>
+				<p class="ndx__subtitle">Sign in to access the admin dashboard</p>
+
+				<form class="ndx__form" novalidate>
+					<label for="username">Username</label>
+					<input id="username" type="text" placeholder="admin" required autocomplete="username">
+
+					<label for="password">Password</label>
+					<input id="password" type="password" placeholder="Enter password" required autocomplete="current-password">
+
+					<div style="display: flex; gap: 8px; align-items: center; margin-top: -8px;">
+						<input id="remember" type="checkbox">
+						<label for="remember" style="font-size: 13px; font-weight: 400; margin: 0;">Remember me</label>
+					</div>
+
+					<button class="btn" type="submit" style="width: 100%; justify-content: center; margin-top: 8px;">Sign In</button>
+
+					<p class="ndx__help" style="text-align: center;"><a href="../home.html" style="color: var(--color-primary);">← Back to main site</a></p>
+				</form>
+			</section>
+		</div>
+	</main>
+
+	<script>
+		document.querySelector('form').addEventListener('submit', function(e){
+			e.preventDefault();
+			const username = document.getElementById('username').value;
+			const password = document.getElementById('password').value;
+			if(username && password){
+				window.location.href = 'index.html';
+			}
+		});
+	</script>
+</body>
+</html>
+

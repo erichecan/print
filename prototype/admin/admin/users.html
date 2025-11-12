@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Users Management | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html" class="is-active"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;"><span data-i18n="backToSite">← Back to Site</span></a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1 data-i18n="userManagement">Users</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;"><span data-i18n="logout">Logout</span></a>
+				</div>
+			</header>
+
+			<div style="margin-top: 24px;">
+				<div class="admin-filters">
+					<div class="admin-search">
+						<input type="text" placeholder="Search users..." data-action="search" data-field="searchQuery">
+					</div>
+					<select style="padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px;" data-filter="role" data-field="roleFilter">
+						<option value="">All Roles</option>
+						<option value="customer">Customer</option>
+						<option value="admin">Admin</option>
+					</select>
+					<select style="padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px;" data-filter="status" data-field="statusFilter">
+						<option value="">All Status</option>
+						<option value="active">Active</option>
+						<option value="inactive">Inactive</option>
+					</select>
+				</div>
+
+				<div class="admin-table-wrapper" data-api="/api/admin/users" data-method="GET">
+					<table class="admin-table">
+						<thead>
+							<tr>
+								<th><input type="checkbox" data-action="select-all"></th>
+								<th data-i18n="user">User</th>
+								<th data-i18n="email">Email</th>
+								<th data-i18n="role">Role</th>
+								<th data-i18n="orders">Orders</th>
+								<th data-i18n="status">Status</th>
+								<th data-i18n="joined">Joined</th>
+								<th data-i18n="actions">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr data-entity="user" data-id="user-001">
+								<td><input type="checkbox" data-action="select-item"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="admin-user-avatar" style="width: 32px; height: 32px;" data-field="avatar"></div>
+										<div style="font-weight: 600;" data-field="fullName">John Doe</div>
+									</div>
+								</td>
+								<td data-field="email">john@example.com</td>
+								<td><span class="badge badge-info" data-field="role">Customer</span></td>
+								<td data-field="orderCount">12</td>
+								<td><span class="badge badge-success" data-field="status">Active</span></td>
+								<td data-field="joinedDate">Jan 2024</td>
+								<td><a href="user-detail.html" class="btn-icon btn--outline" style="font-size: 12px;" data-action="view-user" data-api="/api/admin/users/user-001">View</a></td>
+							</tr>
+							<tr data-entity="user" data-id="user-002">
+								<td><input type="checkbox" data-action="select-item"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="admin-user-avatar" style="width: 32px; height: 32px;" data-field="avatar"></div>
+										<div style="font-weight: 600;" data-field="fullName">Jane Smith</div>
+									</div>
+								</td>
+								<td data-field="email">jane@example.com</td>
+								<td><span class="badge badge-info" data-field="role">Customer</span></td>
+								<td data-field="orderCount">8</td>
+								<td><span class="badge badge-success" data-field="status">Active</span></td>
+								<td data-field="joinedDate">Feb 2024</td>
+								<td><a href="user-detail.html" class="btn-icon btn--outline" style="font-size: 12px;" data-action="view-user" data-api="/api/admin/users/user-002">View</a></td>
+							</tr>
+							<tr data-entity="user" data-id="user-admin">
+								<td><input type="checkbox" data-action="select-item"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="admin-user-avatar" style="width: 32px; height: 32px;" data-field="avatar"></div>
+										<div style="font-weight: 600;" data-field="fullName">Admin User</div>
+									</div>
+								</td>
+								<td data-field="email">admin@suvernire.com</td>
+								<td><span class="badge badge-error" data-field="role">Admin</span></td>
+								<td>-</td>
+								<td><span class="badge badge-success" data-field="status">Active</span></td>
+								<td data-field="joinedDate">Jan 2024</td>
+								<td><a href="user-detail.html" class="btn-icon btn--outline" style="font-size: 12px;" data-action="view-user" data-api="/api/admin/users/user-admin">View</a></td>
+							</tr>
+							<tr data-entity="user" data-id="user-003">
+								<td><input type="checkbox" data-action="select-item"></td>
+								<td>
+									<div style="display: flex; gap: 12px; align-items: center;">
+										<div class="admin-user-avatar" style="width: 32px; height: 32px;" data-field="avatar"></div>
+										<div style="font-weight: 600;" data-field="fullName">Mike Johnson</div>
+									</div>
+								</td>
+								<td data-field="email">mike@example.com</td>
+								<td><span class="badge badge-info" data-field="role">Customer</span></td>
+								<td data-field="orderCount">3</td>
+								<td><span class="badge badge-success" data-field="status">Active</span></td>
+								<td data-field="joinedDate">Mar 2024</td>
+								<td><a href="user-detail.html" class="btn-icon btn--outline" style="font-size: 12px;" data-action="view-user" data-api="/api/admin/users/user-003">View</a></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="admin-pagination" data-api="/api/admin/users?page={n}">
+					<button data-action="pagination-prev">Previous</button>
+					<button class="active" data-action="pagination-page" data-page="1">1</button>
+					<button data-action="pagination-page" data-page="2">2</button>
+					<button data-action="pagination-page" data-page="3">3</button>
+					<button data-action="pagination-next">Next</button>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+

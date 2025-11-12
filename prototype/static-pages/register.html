@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Create Account | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-11-01 00:00:00] User registration page -->
+</head>
+<body class="ndx-body">
+	<main class="ndx" aria-labelledby="register-title">
+		<div class="ndx__card">
+			<section class="ndx__left placeholder" aria-hidden="true"></section>
+			<section class="ndx__right">
+				<h1 id="register-title">Create Your Account</h1>
+				<p class="ndx__subtitle">Join suvernire plus to start creating custom merchandise.</p>
+
+				<form class="ndx__form" novalidate>
+					<label for="fullname">Full Name</label>
+					<input id="fullname" type="text" autocomplete="name" placeholder="John Doe" required>
+
+					<label for="email">Email</label>
+					<input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+
+					<label for="password">Password</label>
+					<input id="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required>
+					<small style="color: var(--color-text-muted); font-size: 12px;">Must contain at least 8 characters</small>
+
+					<label for="account-type">Account Type</label>
+					<select id="account-type">
+						<option value="personal">Personal Account</option>
+						<option value="business">Business Account</option>
+					</select>
+
+					<div style="display: flex; gap: 8px; align-items: start; margin-top: 8px;">
+						<input id="terms" type="checkbox" required>
+					<label for="terms" style="font-size: 13px; font-weight: 400; margin: 0;">I agree to the <a href="terms-of-service.html" style="color: var(--color-primary);">Terms of Service</a> and <a href="privacy-policy.html" style="color: var(--color-primary);">Privacy Policy</a></label>
+					</div>
+
+					<div class="ndx__actions">
+						<button class="btn btn--outline" type="button" onclick="window.location.href='home.html'">Cancel</button>
+						<button class="btn" type="submit">Create Account</button>
+					</div>
+
+					<p class="ndx__help">Already have an account? <a href="ndx-welcome.html" style="color: var(--color-primary);">Sign in</a></p>
+				</form>
+			</section>
+		</div>
+	</main>
+
+	<script>
+		(function(){
+			const form = document.querySelector('.ndx__form');
+			form.addEventListener('submit', function(e){
+				e.preventDefault();
+				const name = document.getElementById('fullname');
+				const email = document.getElementById('email');
+				const password = document.getElementById('password');
+				if(!name.value || !email.value || !password.value){
+					alert('Please fill in all required fields');
+					return;
+				}
+				if(password.value.length < 8){
+					alert('Password must be at least 8 characters');
+					return;
+				}
+				window.location.href = 'account.html';
+			});
+		})();
+	</script>
+</body>
+</html>
+

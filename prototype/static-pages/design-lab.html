@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Design Lab | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-10-31 12:08:00] Design Lab: upload art, edit, instant apparel preview -->
+</head>
+<body class="lab-body">
+	<header class="primary" role="banner">
+		<div class="container">
+		<nav class="nav" aria-label="Primary Navigation">
+			<div class="brand">
+				<a href="home.html" style="display:flex;align-items:center;gap:10px">
+					<div class="brand__logo" aria-hidden="true"></div>
+					<span class="brand__name">suvernire plus</span>
+				</a>
+			</div>
+			<div class="menu" role="menubar">
+				<a role="menuitem" href="home.html">Home</a>
+				<a role="menuitem" href="long-sleeve.html">Products</a>
+				<a role="menuitem" href="help.html">Help</a>
+			</div>
+			<div class="cta">
+				<a class="btn btn--outline" href="checkout.html">Get a Quote</a>
+				<a class="btn" href="ndx-welcome.html">Sign In</a>
+			</div>
+			</nav>
+		</div>
+	</header>
+
+    <main class="lab" id="main">
+        <!-- [2025-11-05 01:30:00] Redesigned to Custom Ink style: 5-region layout -->
+        <div class="lab__grid">
+            <!-- Left vertical rail -->
+            <nav class="lab__rail" aria-label="Editor Tools">
+                <button class="rail__btn is-active" data-tool="upload" title="Upload">
+                    <!-- [2025-11-04 00:20:30] SVG icon set for rail -->
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 3l5 5h-3v6h-4V8H7l5-5zm-7 14h14v2H5v-2z"/></svg></span>
+                    <span class="rail__label">Upload</span>
+                </button>
+                <button class="rail__btn" data-tool="text" title="Add Text">
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg></span>
+                    <span class="rail__label">Text</span>
+                </button>
+                <button class="rail__btn" data-tool="art" title="Add Art">
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14h18zM5 5h14v9l-3-3-4 4-3-3-4 4V5z"/></svg></span>
+                    <span class="rail__label">Art</span>
+                </button>
+                <button class="rail__btn" data-tool="products" title="Products">
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M6 2l1 4h10l1-4h2l-1 4h3v2H1V6h3L3 2h3zm-2 8h16l-1.6 10.4A2 2 0 0116.42 22H7.58a2 2 0 01-1.98-1.6L4 10z"/></svg></span>
+                    <span class="rail__label">Products</span>
+                </button>
+                <!-- [2025-11-05 01:30:00] Added Product Colors and Add Names tools -->
+                <button class="rail__btn" data-tool="colors" title="Product Colors">
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.38-.61-.38-.99 0-.83.67-1.5 1.5-1.5H16c2.76 0 5-2.24 5-5 0-4.42-4.03-8-9-8z"/></svg></span>
+                    <span class="rail__label">Product Colors</span>
+                </button>
+                <button class="rail__btn" data-tool="names" title="Add Names">
+                    <span class="rail__icon"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></span>
+                    <span class="rail__label">Add Names</span>
+                </button>
+            </nav>
+
+            <!-- [2025-11-05 01:30:00] Tools panel removed - functionality moved to guide panel -->
+            
+            <!-- Canvas area with guide panel -->
+            <section class="lab__stage" aria-label="Preview">
+                <!-- Guide Panel: What's next for you? -->
+                <div class="guide-panel" id="guide-panel">
+                    <h3 class="guide-panel__title">What's next for you?</h3>
+                    <div class="guide-actions">
+                        <button class="guide-action-btn" data-action="upload" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 3l5 5h-3v6h-4V8H7l5-5zm-7 14h14v2H5v-2z"/></svg>
+                            <span>Upload</span>
+                        </button>
+                        <button class="guide-action-btn" data-action="text" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 000-1.42l-2.34-2.34a1.003 1.003 0 00-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg>
+                            <span>Add Text</span>
+                        </button>
+                        <button class="guide-action-btn" data-action="art" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M21 19V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14h18zM5 5h14v9l-3-3-4 4-3-3-4 4V5z"/></svg>
+                            <span>Add Art</span>
+                        </button>
+                        <button class="guide-action-btn" data-action="products" type="button">
+                            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M6 2l1 4h10l1-4h2l-1 4h3v2H1V6h3L3 2h3zm-2 8h16l-1.6 10.4A2 2 0 0116.42 22H7.58a2 2 0 01-1.98-1.6L4 10z"/></svg>
+                            <span>Change Products</span>
+                        </button>
+                    </div>
+                    <p class="guide-hint">
+                        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                        Drag & drop a file anywhere to upload
+                    </p>
+                </div>
+
+                <!-- Product preview area -->
+                <div class="stage__canvas-wrapper">
+                    <div class="product-preview">
+                        <img id="hoodie-front" class="garment" src="assets/mock-hoodie-front.webp" alt="Hoodie front" aria-hidden="false">
+                        <img id="hoodie-back" class="garment" src="assets/mock-hoodie-back.webp" alt="Hoodie back" aria-hidden="true" style="display:none">
+                        <div id="art-layer" class="art-layer"></div>
+                        <div class="print-area-indicator" aria-hidden="true"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Sidebar: View Switcher -->
+            <aside class="lab__sidebar" aria-label="View Options">
+                <div class="sidebar__view-switcher">
+                    <button class="view-switch-btn is-active" data-view="front" type="button">
+                        <div class="view-thumbnail">
+                            <img src="assets/mock-hoodie-front.webp" alt="Front view" width="60" height="60">
+                        </div>
+                        <span>Front</span>
+                    </button>
+                    <button class="view-switch-btn" data-view="back" type="button">
+                        <div class="view-thumbnail">
+                            <img src="assets/mock-hoodie-back.webp" alt="Back view" width="60" height="60">
+                        </div>
+                        <span>Back</span>
+                    </button>
+                    <button class="view-switch-btn" data-view="sleeve" type="button">
+                        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                        <span>Sleeve Design</span>
+                    </button>
+                    <button class="view-switch-btn" data-view="zoom" type="button" title="Zoom">
+                        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/><path fill="currentColor" d="M12 10h-2v2H9v-2H7V9h2V7h1v2h2v1z"/></svg>
+                        <span>Zoom</span>
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Bottom Bar: Product Info & Actions -->
+        <div class="bottom-bar">
+            <div class="bottom-bar__left">
+                <button class="btn btn--primary" type="button" id="add-products-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Add Products
+                </button>
+                <div class="product-info">
+                    <img class="product-info__thumb" src="assets/mock-hoodie-front.webp" alt="Current product" width="40" height="40">
+                    <div class="product-info__details">
+                        <p class="product-info__name">Gildan Softstyle Jersey T-shirt</p>
+                        <div class="product-info__meta">
+                            <span class="product-info__color">Navy</span>
+                            <a href="#" class="product-info__link">Change Product</a>
+                            <a href="#" class="product-info__link">Change Color</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-bar__right">
+                <button class="btn btn--secondary" type="button">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                    Save | Share
+                </button>
+                <button class="btn btn--primary" type="button" id="get-price-btn">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                    Get Price
+                </button>
+            </div>
+        </div>
+
+        <!-- [2025-11-05 01:40:00] All tools panel and old stage/inspector code removed -->
+    </main>
+
+    <!-- Hidden file input for uploads -->
+    <input id="file" type="file" accept="image/*" hidden>
+    <input id="text-input" type="text" hidden>
+
+    <script>
+        // [2025-01-27 14:30:00] Phase 2: JavaScript functionality implementation
+        (function() {
+            'use strict';
+            
+            // ========== DOM Elements ==========
+            const fileInput = document.getElementById('file');
+            const textInput = document.getElementById('text-input');
+            const artLayer = document.getElementById('art-layer');
+            const guidePanel = document.getElementById('guide-panel');
+            const labStage = document.querySelector('.lab__stage');
+            const hoodieFront = document.getElementById('hoodie-front');
+            const hoodieBack = document.getElementById('hoodie-back');
+            
+            // State variables
+            let selected = null;
+            let layerCounter = 0;
+            let currentView = 'front';
+            
+            // ========== Phase 2 Functions ==========
+            
+            // 1. Guide Panel Button Functions
+            document.querySelectorAll('.guide-action-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const action = this.dataset.action;
+                    handleGuideAction(action);
+                });
+            });
+            
+            function handleGuideAction(action) {
+                switch(action) {
+                    case 'upload':
+                        fileInput.click();
+                        break;
+                    case 'text':
+                        addTextElement();
+                        break;
+                    case 'art':
+                        // TODO: Open art library modal
+                        console.log('Art library - to be implemented');
+                        break;
+                    case 'products':
+                        // TODO: Open product selector
+                        console.log('Product selector - to be implemented');
+                        break;
+                }
+            }
+            
+            // 2. File Upload Handler
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.className = 'art is-selected';
+                    img.alt = 'Uploaded artwork';
+                    img.dataset.layerId = 'layer-' + (++layerCounter);
+                    placeArt(img, 'image');
+                    hideGuidePanel();
+                }
+            });
+            
+            // 3. Add Text Element
+            function addTextElement() {
+                const text = prompt('Enter text:', 'Your Text');
+                if (!text) return;
+                
+                const textEl = document.createElement('div');
+                textEl.className = 'art text is-selected';
+                textEl.textContent = text;
+                textEl.style.fontFamily = 'Inter, sans-serif';
+                textEl.style.fontSize = '36px';
+                textEl.style.color = '#FF1F3D';
+                textEl.dataset.layerId = 'layer-' + (++layerCounter);
+                placeArt(textEl, 'text');
+                hideGuidePanel();
+            }
+            
+            function placeArt(el, type) {
+                if (!artLayer) return;
+                artLayer.appendChild(el);
+                el.style.position = 'absolute';
+                el.style.left = '50%';
+                el.style.top = '45%';
+                el.style.transform = 'translate(-50%, -50%)';
+                el.style.cursor = 'move';
+                select(el);
+                enableDrag(el);
+            }
+            
+            function select(el) {
+                document.querySelectorAll('.art').forEach(a => a.classList.remove('is-selected'));
+                if (el) {
+                    el.classList.add('is-selected');
+                    selected = el;
+                } else {
+                    selected = null;
+                }
+            }
+            
+            function enableDrag(el) {
+                let dragging = false;
+                let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+                
+                el.addEventListener('pointerdown', function(e) {
+                    select(el);
+                    dragging = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    const rect = el.getBoundingClientRect();
+                    const stageRect = artLayer.getBoundingClientRect();
+                    startLeft = rect.left - stageRect.left;
+                    startTop = rect.top - stageRect.top;
+                    el.setPointerCapture(e.pointerId);
+                    e.preventDefault();
+                });
+                
+                el.addEventListener('pointermove', function(e) {
+                    if (!dragging) return;
+                    const dx = e.clientX - startX;
+                    const dy = e.clientY - startY;
+                    el.style.left = (startLeft + dx) + 'px';
+                    el.style.top = (startTop + dy) + 'px';
+                });
+                
+                el.addEventListener('pointerup', function(e) {
+                    dragging = false;
+                });
+            }
+            
+            // 4. View Switcher Function
+            document.querySelectorAll('.view-switch-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    setView(view);
+                });
+            });
+            
+            function setView(view) {
+                currentView = view;
+                
+                // Update button states
+                document.querySelectorAll('.view-switch-btn').forEach(btn => {
+                    btn.classList.toggle('is-active', btn.dataset.view === view);
+                });
+                
+                // Update garment display
+                if (view === 'front') {
+                    if (hoodieFront) hoodieFront.style.display = '';
+                    if (hoodieBack) hoodieBack.style.display = 'none';
+                } else if (view === 'back') {
+                    if (hoodieFront) hoodieFront.style.display = 'none';
+                    if (hoodieBack) hoodieBack.style.display = '';
+                } else if (view === 'sleeve') {
+                    // TODO: Show sleeve view
+                    console.log('Sleeve view - to be implemented');
+                } else if (view === 'zoom') {
+                    // TODO: Zoom functionality
+                    console.log('Zoom - to be implemented');
+                }
+            }
+            
+            // 5. Drag & Drop for entire canvas
+            if (labStage) {
+                labStage.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    this.classList.add('drag-over');
+                });
+                
+                labStage.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+                
+                labStage.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    this.classList.remove('drag-over');
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0 && files[0].type.startsWith('image/')) {
+                        fileInput.files = files;
+                        fileInput.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
+            
+            // 6. Hide guide panel when content is added
+            function hideGuidePanel() {
+                if (guidePanel && artLayer.children.length > 0) {
+                    guidePanel.style.display = 'none';
+                }
+            }
+            
+            // 7. Rail button handlers
+            document.querySelectorAll('.rail__btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tool = this.dataset.tool;
+                    
+                    // Update active state
+                    document.querySelectorAll('.rail__btn').forEach(b => b.classList.remove('is-active'));
+                    this.classList.add('is-active');
+                    
+                    // Trigger corresponding guide action
+                    const actionMap = {
+                        'upload': 'upload',
+                        'text': 'text',
+                        'art': 'art',
+                        'products': 'products'
+                    };
+                    
+                    if (actionMap[tool]) {
+                        handleGuideAction(actionMap[tool]);
+                    } else if (tool === 'colors') {
+                        // TODO: Open color picker
+                        console.log('Product colors - to be implemented');
+                    } else if (tool === 'names') {
+                        // TODO: Add names functionality
+                        console.log('Add names - to be implemented');
+                    }
+                });
+            });
+            
+            // 8. Bottom bar button handlers
+            const addProductsBtn = document.getElementById('add-products-btn');
+            const getPriceBtn = document.getElementById('get-price-btn');
+            
+            if (addProductsBtn) {
+                addProductsBtn.addEventListener('click', function() {
+                    // TODO: Open product selector
+                    console.log('Add products - to be implemented');
+                });
+            }
+            
+            if (getPriceBtn) {
+                getPriceBtn.addEventListener('click', function() {
+                    // TODO: Navigate to cart/checkout
+                    window.location.href = 'cart.html';
+                });
+            }
+            
+            // 9. Product color change links
+            document.querySelectorAll('.product-info__link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const action = this.textContent.trim();
+                    if (action === 'Change Color') {
+                        // TODO: Open color selector
+                        console.log('Change color - to be implemented');
+                    } else if (action === 'Change Product') {
+                        // TODO: Open product selector
+                        console.log('Change product - to be implemented');
+                    }
+                });
+            });
+            
+        })();
+    </script>
+
+    <!-- Modeled after Custom Ink Design Lab layout per provided screenshot -->
+	
+	<!-- [2025-11-02 22:50:00] Common footer with fixed links -->
+	<section class="footer-info" aria-label="Site Information">
+								<option value="Arial, sans-serif">Arial</option>
+								<option value="Georgia, serif">Georgia</option>
+								<option value="Verdana, sans-serif">Verdana</option>
+							</select>
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px; font-weight: 600;">Size: <span id="text-size-value">36</span>px</label>
+							<input id="text-size" type="range" min="12" max="120" value="36">
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px; font-weight: 600;">Letter Spacing: <span id="letter-spacing-value">0</span>px</label>
+							<input id="letter-spacing" type="range" min="-5" max="20" value="0">
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px; font-weight: 600;">Line Height: <span id="line-height-value">1.2</span></label>
+							<input id="line-height" type="range" min="0.8" max="3" step="0.1" value="1.2">
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px; font-weight: 600;">Color</label>
+							<input id="color" type="color" value="#FF1F3D">
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px; font-weight: 600;">Alignment</label>
+							<div style="display: flex; gap: 4px;">
+                                <button class="align-btn" data-align="left" title="Align Left"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 4h2v16H3V4zm4 5h14v2H7V9zm0 6h10v2H7v-2z"/></svg></button>
+                                <button class="align-btn" data-align="center" title="Align Center"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M3 4h18v2H3V4zm4 5h10v2H7V9zm-4 6h18v2H3v-2z"/></svg></button>
+                                <button class="align-btn" data-align="right" title="Align Right"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M21 4h-2v16h2V4zm-4 5H3v2h14V9zm0 6H7v2h10v-2z"/></svg></button>
+							</div>
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px;"><input id="outline-toggle" type="checkbox"> Add Outline</label>
+						</div>
+						<div class="tool-row" id="outline-controls" style="display: none;">
+							<label style="font-size: 13px; font-weight: 600;">Outline Width: <span id="outline-width-value">2</span>px</label>
+							<input id="outline-width" type="range" min="1" max="10" value="2">
+						</div>
+						<div class="tool-row" id="outline-controls" style="display: none;">
+							<label style="font-size: 13px; font-weight: 600;">Outline Color</label>
+							<input id="outline-color" type="color" value="#000000">
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px;"><input id="shadow-toggle" type="checkbox"> Add Shadow</label>
+						</div>
+						<div class="tool-row" id="shadow-controls" style="display: none;">
+							<label style="font-size: 13px; font-weight: 600;">Shadow X: <span id="shadow-x-value">1</span>px</label>
+							<input id="shadow-x" type="range" min="-10" max="10" value="1">
+						</div>
+						<div class="tool-row" id="shadow-controls" style="display: none;">
+							<label style="font-size: 13px; font-weight: 600;">Shadow Y: <span id="shadow-y-value">1</span>px</label>
+							<input id="shadow-y" type="range" min="-10" max="10" value="1">
+						</div>
+						<div class="tool-row" id="shadow-controls" style="display: none;">
+							<label style="font-size: 13px; font-weight: 600;">Shadow Blur: <span id="shadow-blur-value">0</span>px</label>
+							<input id="shadow-blur" type="range" min="0" max="20" value="0">
+						</div>
+					</div>
+					<div class="tools__panel" id="art-panel">
+						<div class="art-filters" style="display: flex; gap: 8px; margin-bottom: 12px;">
+							<button class="art-filter-btn active" data-category="all">All</button>
+							<button class="art-filter-btn" data-category="icons">Icons</button>
+							<button class="art-filter-btn" data-category="patterns">Patterns</button>
+							<button class="art-filter-btn" data-category="logos">Logos</button>
+						</div>
+						<div id="art-library" class="art-library">
+							<div class="art-item" data-category="icons">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Star</p>
+							</div>
+							<div class="art-item" data-category="icons">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Heart</p>
+							</div>
+							<div class="art-item" data-category="patterns">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Stripes</p>
+							</div>
+							<div class="art-item" data-category="patterns">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Polka</p>
+							</div>
+							<div class="art-item" data-category="logos">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Logo 1</p>
+							</div>
+							<div class="art-item" data-category="logos">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Logo 2</p>
+							</div>
+							<div class="art-item" data-category="icons">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Diamond</p>
+							</div>
+							<div class="art-item" data-category="patterns">
+								<div class="art-preview placeholder" style="aspect-ratio: 1/1; border-radius: 8px;"></div>
+								<p style="font-size: 11px; margin: 4px 0 0; text-align: center;">Grid</p>
+							</div>
+						</div>
+					</div>
+					<div class="tools__panel" id="layers-panel">
+						<div id="layers-list" class="layers-list">
+							<p class="muted" style="text-align: center; padding: 16px 0;">No layers yet. Add images or text to start.</p>
+						</div>
+					</div>
+					<div class="tools__panel" id="edit-panel">
+						<div class="tool-row">
+							<label style="font-size: 13px; font-weight: 600;">Scale: <span id="scale-value">100</span>%</label>
+							<input id="scale" type="range" min="20" max="200" value="100">
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px; font-weight: 600;">Rotate: <span id="rotate-value">0</span>°</label>
+							<input id="rotate" type="range" min="-180" max="180" value="0">
+						</div>
+						<div class="tool-row">
+							<label style="font-size: 13px;"><input id="snap" type="checkbox" checked> Snap to center</label>
+						</div>
+						<div class="tool-row">
+							<button class="btn btn--outline" id="remove" type="button" style="width: 100%; justify-content: center;">Remove Selected</button>
+						</div>
+					</div>
+				</div>
+			</aside>
+
+            <!-- [2025-11-05 01:40:00] Duplicate Stage section removed - already added above -->
+                        <button class="action-btn" title="Undo" aria-label="Undo"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5V2L7 7l5 5V9c3.31 0 6 2.69 6 6 0 1.15-.33 2.23-.9 3.14l1.46 1.46A7.96 7.96 0 0020 15c0-4.42-3.58-8-8-8z"/></svg></button>
+                        <button class="action-btn" title="Redo" aria-label="Redo"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5V2l5 5-5 5V9c-3.31 0-6 2.69-6 6 0 1.15.33 2.23.9 3.14L5.44 19.6A7.96 7.96 0 014 15c0-4.42 3.58-8 8-8z"/></svg></button>
+					</div>
+				</header>
+				<div class="stage__toolbar">
+					<div class="view-switch">
+						<button class="btn btn--outline" data-view="front" id="view-front">Front</button>
+						<button class="btn btn--outline" data-view="back" id="view-back">Back</button>
+					</div>
+					<div class="save-actions">
+						<a class="btn btn--outline" href="account.html">Save</a>
+						<a class="btn btn--outline" href="help.html">Share</a>
+						<a class="btn" href="cart.html">Get Price</a>
+					</div>
+				</div>
+				<div class="stage">
+					<img id="hoodie-front" class="garment" src="assets/mock-hoodie-front.webp" alt="Hoodie front" aria-hidden="false">
+					<img id="hoodie-back" class="garment" src="assets/mock-hoodie-back.webp" alt="Hoodie back" aria-hidden="true" style="display:none">
+					<!-- Art overlays will be injected here -->
+					<div id="art-layer" class="art-layer"></div>
+					<div class="print-area-indicator" aria-hidden="true"></div>
+				</div>
+                <!-- Product toolbar under canvas -->
+                <div class="product-toolbar">
+                    <div class="prod-chip">
+                        <span class="chip-img placeholder" aria-hidden="true"></span>
+                        <div class="chip-info">
+                            <strong>Gildan Midweight 50/50 Pullover Hoodie</strong>
+							<small>Royal �?<a href="product-hoodie.html">Change Color</a></small>
+                        </div>
+                    </div>
+				<div class="prod-acts">
+					<a class="btn btn--outline" href="long-sleeve.html">Add Products</a>
+					<a class="btn" href="cart.html">Get Price</a>
+				</div>
+                </div>
+				<ul class="thumbs" role="list" aria-label="Additional Product Views">
+					<li><button class="thumb placeholder is-active" data-view="front" aria-label="Front"></button></li>
+					<li><button class="thumb placeholder" data-view="back" aria-label="Back"></button></li>
+					<li><button class="thumb placeholder" aria-label="Sleeve"></button></li>
+				</ul>
+			</section>
+
+            <!-- Right preview and info accordions -->
+            <aside class="lab__inspector" aria-label="Info">
+                <div class="preview-card">
+                    <div class="preview-main placeholder" aria-label="Secondary preview"></div>
+                    <div class="preview-thumbs">
+                        <button class="thumb placeholder is-active" aria-label="Front"></button>
+                        <button class="thumb placeholder" aria-label="Back"></button>
+                        <button class="thumb placeholder" aria-label="Detail"></button>
+                        <button class="thumb placeholder" aria-label="Detail"></button>
+                    </div>
+                </div>
+                <details open>
+                    <summary>Size & Fit Guide</summary>
+                    <div class="panel">
+                        <div class="fit-grid">
+                            <div>
+                                <strong>Youth Sizes</strong>
+                                <p>YXS | YS | YM | YL</p>
+                            </div>
+                            <div>
+                                <strong>Adult Sizes</strong>
+                                <p>S | M | L | XL | 2XL | 3XL | 4XL | 5XL</p>
+                            </div>
+                        </div>
+						<a href="size-guide.html" class="link">View Sizing Guide</a>
+                    </div>
+                </details>
+                <details>
+                    <summary>Shipping</summary>
+                    <div class="panel"><p>Free 2‑week delivery. Rush available as soon as 3 days.</p></div>
+                </details>
+                <details>
+                    <summary>More Details</summary>
+                    <div class="panel"><p>50/50 cotton‑poly. Pouch pocket. Tear‑away label.</p></div>
+                </details>
+                <details>
+                    <summary>Special Print Areas</summary>
+                    <div class="panel"><p>Front, back, and sleeve placements supported.</p></div>
+                </details>
+            </aside>
+		</div>
+        </div>
+        <!-- Recommendations strip -->
+        <section class="lab-recos" aria-label="Buy more, save more">
+            <div class="container">
+                <h3 class="muted" style="margin:8px 0">Buy more, save more</h3>
+                <div class="recos-grid">
+				<article class="reco">
+					<div class="reco-img placeholder"></div>
+					<div class="reco-info">
+						<p>Gildan Midweight 50/50 Crewneck Sweatshirt</p>
+						<a href="long-sleeve.html" class="btn btn--outline">Add this product</a>
+					</div>
+				</article>
+				<article class="reco">
+					<div class="reco-img placeholder"></div>
+					<div class="reco-info">
+						<p>Softstyle Jersey T‑shirt</p>
+						<a href="long-sleeve.html" class="btn btn--outline">Add this product</a>
+					</div>
+				</article>
+				<article class="reco">
+					<div class="reco-img placeholder"></div>
+					<div class="reco-info">
+						<p>Long Sleeve Jersey T‑shirt</p>
+						<a href="long-sleeve.html" class="btn btn--outline">Add this product</a>
+					</div>
+				</article>
+				<article class="reco">
+					<div class="reco-img placeholder"></div>
+					<div class="reco-info">
+						<p>Youth Midweight 50/50 Crewneck</p>
+						<a href="long-sleeve.html" class="btn btn--outline">Add this product</a>
+					</div>
+				</article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const fileInput = document.getElementById('file');
+			const browseBtn = document.getElementById('browse');
+			const artLayer = document.getElementById('art-layer');
+			const layersList = document.getElementById('layers-list');
+			const scale = document.getElementById('scale');
+			const rotate = document.getElementById('rotate');
+			const color = document.getElementById('color');
+			const addText = document.getElementById('add-text');
+			const textInput = document.getElementById('text-input');
+			const removeBtn = document.getElementById('remove');
+		const snap = document.getElementById('snap');
+		const scaleValue = document.getElementById('scale-value');
+		const rotateValue = document.getElementById('rotate-value');
+		const textSize = document.getElementById('text-size');
+		const textSizeValue = document.getElementById('text-size-value');
+		const letterSpacing = document.getElementById('letter-spacing');
+		const letterSpacingValue = document.getElementById('letter-spacing-value');
+		const lineHeight = document.getElementById('line-height');
+		const lineHeightValue = document.getElementById('line-height-value');
+		const outlineToggle = document.getElementById('outline-toggle');
+		const outlineWidth = document.getElementById('outline-width');
+		const outlineWidthValue = document.getElementById('outline-width-value');
+		const outlineColor = document.getElementById('outline-color');
+		const shadowToggle = document.getElementById('shadow-toggle');
+		const shadowX = document.getElementById('shadow-x');
+		const shadowXValue = document.getElementById('shadow-x-value');
+		const shadowY = document.getElementById('shadow-y');
+		const shadowYValue = document.getElementById('shadow-y-value');
+		const shadowBlur = document.getElementById('shadow-blur');
+		const shadowBlurValue = document.getElementById('shadow-blur-value');
+		const alignBtns = document.querySelectorAll('.align-btn');
+		let selected = null;
+		let layerCounter = 0;
+		
+		// Toggle outline/shadow controls
+		if(outlineToggle){
+			outlineToggle.addEventListener('change', () => {
+				const controls = document.querySelectorAll('#outline-controls');
+				controls.forEach(c => c.style.display = outlineToggle.checked ? 'grid' : 'none');
+			});
+		}
+		if(shadowToggle){
+			shadowToggle.addEventListener('change', () => {
+				const controls = document.querySelectorAll('#shadow-controls');
+				controls.forEach(c => c.style.display = shadowToggle.checked ? 'grid' : 'none');
+			});
+		}
+		
+		// Text size, letter-spacing, line-height
+		if(textSize && textSizeValue){
+			textSize.addEventListener('input', () => {
+				textSizeValue.textContent = textSize.value;
+				if(selected && selected.classList.contains('text')){
+					selected.style.fontSize = textSize.value + 'px';
+				}
+			});
+		}
+		if(letterSpacing && letterSpacingValue){
+			letterSpacing.addEventListener('input', () => {
+				letterSpacingValue.textContent = letterSpacing.value;
+				if(selected && selected.classList.contains('text')){
+					selected.style.letterSpacing = letterSpacing.value + 'px';
+				}
+			});
+		}
+		if(lineHeight && lineHeightValue){
+			lineHeight.addEventListener('input', () => {
+				lineHeightValue.textContent = lineHeight.value;
+				if(selected && selected.classList.contains('text')){
+					selected.style.lineHeight = lineHeight.value;
+				}
+			});
+		}
+		
+		// Outline controls
+		if(outlineWidth && outlineWidthValue){
+			outlineWidth.addEventListener('input', () => {
+				outlineWidthValue.textContent = outlineWidth.value;
+				applyTextStyles();
+			});
+		}
+		if(outlineColor){
+			outlineColor.addEventListener('input', () => {
+				applyTextStyles();
+			});
+		}
+		
+		// Shadow controls
+		if(shadowX && shadowXValue){
+			shadowX.addEventListener('input', () => {
+				shadowXValue.textContent = shadowX.value;
+				applyTextStyles();
+			});
+		}
+		if(shadowY && shadowYValue){
+			shadowY.addEventListener('input', () => {
+				shadowYValue.textContent = shadowY.value;
+				applyTextStyles();
+			});
+		}
+		if(shadowBlur && shadowBlurValue){
+			shadowBlur.addEventListener('input', () => {
+				shadowBlurValue.textContent = shadowBlur.value;
+				applyTextStyles();
+			});
+		}
+		
+		// Alignment buttons
+		alignBtns.forEach(btn => {
+			btn.addEventListener('click', () => {
+				const align = btn.dataset.align;
+				alignBtns.forEach(b => b.classList.remove('active'));
+				btn.classList.add('active');
+				if(selected && selected.classList.contains('text')){
+					selected.style.textAlign = align;
+				}
+			});
+		});
+		
+		function applyTextStyles(){
+			if(!selected || !selected.classList.contains('text')) return;
+			if(outlineToggle && outlineToggle.checked && outlineWidth && outlineColor){
+				const width = outlineWidth.value + 'px';
+				selected.style.webkitTextStroke = `${width} ${outlineColor.value}`;
+			} else {
+				selected.style.webkitTextStroke = '';
+			}
+			if(shadowToggle && shadowToggle.checked && shadowX && shadowY && shadowBlur){
+				const x = shadowX.value + 'px';
+				const y = shadowY.value + 'px';
+				const blur = shadowBlur.value + 'px';
+				selected.style.textShadow = `${x} ${y} ${blur} rgba(0,0,0,0.5)`;
+			} else if(!shadowToggle || !shadowToggle.checked){
+				selected.style.textShadow = '0 1px 2px rgba(0,0,0,0.12)';
+			}
+		}
+		
+		// Art library filtering
+		document.querySelectorAll('.art-filter-btn').forEach(btn => {
+			btn.addEventListener('click', () => {
+				document.querySelectorAll('.art-filter-btn').forEach(b => b.classList.remove('active'));
+				btn.classList.add('active');
+				const category = btn.dataset.category;
+				document.querySelectorAll('.art-item').forEach(item => {
+					item.style.display = category === 'all' || item.dataset.category === category ? '' : 'none';
+				});
+			});
+		});
+		
+		// Art library click to add
+		document.querySelectorAll('.art-item').forEach(item => {
+			item.addEventListener('click', () => {
+				const text = item.querySelector('p').textContent;
+				const el = document.createElement('div');
+				el.className = 'art text is-selected';
+				el.textContent = text;
+				el.style.fontFamily = 'Inter, sans-serif';
+				el.style.color = '#FF1F3D';
+				el.dataset.layerId = 'layer-' + (++layerCounter);
+				placeArt(el, 'art');
+			});
+		});
+		
+		// Tools tabs switching
+		document.querySelectorAll('.tab-btn').forEach(btn => {
+			btn.addEventListener('click', () => {
+				const panelId = btn.dataset.panel + '-panel';
+				document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+				document.querySelectorAll('.tools__panel').forEach(p => p.classList.remove('active'));
+				btn.classList.add('active');
+				document.getElementById(panelId).classList.add('active');
+			});
+		});
+		
+		browseBtn.addEventListener('click', ()=> fileInput.click());
+			fileInput.addEventListener('change', (e)=>{
+				const f = e.target.files[0]; if(!f) return;
+				const img = document.createElement('img');
+				img.src = URL.createObjectURL(f);
+				img.className = 'art is-selected';
+				img.alt = 'Artwork';
+				img.dataset.layerId = 'layer-' + (++layerCounter);
+				placeArt(img, 'image');
+			});
+
+			addText.addEventListener('click', ()=>{
+				const t = document.createElement('div');
+				t.className = 'art text is-selected';
+				t.textContent = textInput.value || 'Your Text';
+				t.style.fontFamily = document.getElementById('font').value;
+				t.style.color = color.value;
+				t.dataset.layerId = 'layer-' + (++layerCounter);
+				placeArt(t, 'text');
+			});
+
+			function placeArt(el, type){
+				artLayer.appendChild(el);
+				el.style.left = '50%'; el.style.top = '45%'; el.style.transform = 'translate(-50%, -50%)';
+				select(el);
+				enableDrag(el);
+				addLayerToList(el, type);
+			}
+
+			function addLayerToList(el, type){
+				const layerItem = document.createElement('div');
+				layerItem.className = 'layer-item is-active';
+				layerItem.dataset.layerId = el.dataset.layerId;
+				layerItem.dataset.type = type;
+				
+				const thumb = document.createElement('div');
+				thumb.className = 'layer-thumb';
+				if(type === 'image'){
+					const thumbImg = document.createElement('img');
+					thumbImg.src = el.src;
+					thumb.appendChild(thumbImg);
+				} else {
+					thumb.textContent = el.textContent?.substring(0, 2).toUpperCase() || 'TX';
+				}
+				
+				const info = document.createElement('div');
+				info.className = 'layer-info';
+				const name = document.createElement('p');
+				name.className = 'layer-name';
+				name.textContent = type === 'image' ? 'Image ' + layerCounter : (el.textContent || 'Text Layer');
+				const typeLabel = document.createElement('p');
+				typeLabel.className = 'layer-type';
+				typeLabel.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+				info.appendChild(name);
+				info.appendChild(typeLabel);
+				
+				const actions = document.createElement('div');
+				actions.className = 'layer-actions';
+                const visBtn = document.createElement('button');
+                visBtn.className = 'layer-btn vis-btn';
+                visBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10z"/></svg>';
+				visBtn.title = 'Hide/Show';
+				visBtn.addEventListener('click', (e) => {
+					e.stopPropagation();
+					const visible = el.style.display !== 'none';
+					el.style.display = visible ? 'none' : '';
+					layerItem.style.opacity = visible ? '0.5' : '1';
+				});
+                const delBtn = document.createElement('button');
+                delBtn.className = 'layer-btn del-btn';
+                delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2zm1 6h2v10h-2V9zm4 0h2v10h-2V9zM7 9h2v10H7V9z"/></svg>';
+				delBtn.title = 'Delete';
+				delBtn.addEventListener('click', (e) => {
+					e.stopPropagation();
+					el.remove();
+					layerItem.remove();
+					if(selected === el) selected = null;
+					updateLayersList();
+				});
+				actions.appendChild(visBtn);
+				actions.appendChild(delBtn);
+				
+				layerItem.appendChild(thumb);
+				layerItem.appendChild(info);
+				layerItem.appendChild(actions);
+				
+				layerItem.addEventListener('click', () => select(el));
+				
+				layersList.querySelector('.muted')?.remove();
+				layersList.appendChild(layerItem);
+			}
+
+			function updateLayersList(){
+				if(layersList.children.length === 0){
+					const emptyMsg = document.createElement('p');
+					emptyMsg.className = 'muted';
+					emptyMsg.textContent = 'No layers yet. Add images or text to start.';
+					emptyMsg.style.textAlign = 'center';
+					emptyMsg.style.padding = '16px 0';
+					layersList.appendChild(emptyMsg);
+				}
+			}
+
+			function select(el){
+				Array.from(document.querySelectorAll('.art')).forEach(a=>a.classList.remove('is-selected'));
+				Array.from(document.querySelectorAll('.layer-item')).forEach(li=>li.classList.remove('is-active'));
+				el.classList.add('is-selected');
+				selected = el;
+				const layerItem = layersList.querySelector(`[data-layer-id="${el.dataset.layerId}"]`);
+				if(layerItem) layerItem.classList.add('is-active');
+			}
+
+			function enableDrag(el){
+				let dragging = false; let sx=0, sy=0, startLeft=0, startTop=0;
+				el.addEventListener('pointerdown', (ev)=>{
+					select(el);
+					dragging = true; sx = ev.clientX; sy = ev.clientY;
+					const r = el.getBoundingClientRect();
+					startLeft = r.left; startTop = r.top;
+					el.setPointerCapture(ev.pointerId);
+				});
+				el.addEventListener('pointermove', (ev)=>{
+					if(!dragging) return;
+					const dx = ev.clientX - sx; const dy = ev.clientY - sy;
+					const stageRect = artLayer.getBoundingClientRect();
+					const newLeft = startLeft + dx - stageRect.left;
+					const newTop = startTop + dy - stageRect.top;
+					el.style.left = newLeft + 'px';
+					el.style.top = newTop + 'px';
+					el.style.transform = 'translate(-50%, -50%) rotate(' + (Number(rotate.value)||0) + 'deg) scale(' + (Number(scale.value)/100) + ')';
+				});
+				el.addEventListener('pointerup', (ev)=>{
+					dragging = false;
+					if(snap.checked){
+						el.style.left = '50%';
+					}
+				});
+			}
+
+			scale.addEventListener('input', ()=>{
+				if(scaleValue) scaleValue.textContent = scale.value;
+				if(!selected) return;
+				selected.style.transform = 'translate(-50%, -50%) rotate(' + (Number(rotate.value)||0) + 'deg) scale(' + (Number(scale.value)/100) + ')';
+			});
+			rotate.addEventListener('input', ()=>{
+				if(rotateValue) rotateValue.textContent = rotate.value;
+				if(!selected) return;
+				selected.style.transform = 'translate(-50%, -50%) rotate(' + (Number(rotate.value)||0) + 'deg) scale(' + (Number(scale.value)/100) + ')';
+			});
+			color.addEventListener('input', ()=>{
+				if(selected && selected.classList.contains('text')) selected.style.color = color.value;
+			});
+			removeBtn.addEventListener('click', () => { 
+				if(selected){ 
+					const layerItem = layersList.querySelector(`[data-layer-id="${selected.dataset.layerId}"]`);
+					layerItem?.remove();
+					selected.remove(); 
+					selected=null;
+					updateLayersList();
+				}
+			});
+
+			// View switch
+			document.getElementById('view-front').addEventListener('click', ()=>setView('front'));
+			document.getElementById('view-back').addEventListener('click', ()=>setView('back'));
+			document.querySelectorAll('.thumb[data-view]')?.forEach(b=>b.addEventListener('click', ()=>setView(b.dataset.view)));
+			function setView(v){
+				document.getElementById('hoodie-front').style.display = (v==='front')?'':'none';
+				document.getElementById('hoodie-back').style.display = (v==='back')?'':'none';
+				document.querySelectorAll('.thumb').forEach(t=>t.classList.toggle('is-active', t.dataset.view===v));
+			}
+		})();
+	</script>
+
+	<!-- Modeled after Custom Ink Design Lab layout per provided screenshot -->
+	
+	<!-- [2025-11-02 22:50:00] Common footer with fixed links -->
+	<section class="footer-info" aria-label="Site Information">
+		<div class="container footergrid">
+			<div>
+				<h4>Shop</h4>
+				<ul>
+					<li><a href="long-sleeve.html">All Products</a></li>
+					<li><a href="design-lab.html">Design Lab</a></li>
+					<li><a href="promotions.html">Promotions</a></li>
+					<li><a href="help.html">Help Center</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Your Account</h4>
+				<ul>
+					<li><a href="account.html">My Account</a></li>
+					<li><a href="order-tracking.html">Track Order</a></li>
+					<li><a href="cart.html">View Cart</a></li>
+					<li><a href="account.html">My Designs</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Support</h4>
+				<ul>
+					<li><a href="help.html">Help Center</a></li>
+					<li><a href="contact.html">Contact Us</a></li>
+					<li><a href="shipping-info.html">Shipping Info</a></li>
+					<li><a href="returns.html">Returns</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Legal</h4>
+				<ul>
+					<li><a href="privacy-policy.html">Privacy Policy</a></li>
+					<li><a href="terms-of-service.html">Terms of Service</a></li>
+					<li><a href="size-guide.html">Size Guide</a></li>
+					<li><a href="sitemap.xml">Sitemap</a></li>
+				</ul>
+			</div>
+		</div>
+	</section>
+
+	<footer class="site-footer" role="contentinfo">
+		<div class="container">
+			<small>© 2025 suvernire plus. All rights reserved.</small>
+			<nav aria-label="Legal Links">
+				<a href="privacy-policy.html">Privacy Policy</a>
+				<span aria-hidden="true"> | </span>
+				<a href="terms-of-service.html">Terms of Service</a>
+				<span aria-hidden="true"> | </span>
+				<a href="returns.html">Returns</a>
+				<span aria-hidden="true"> | </span>
+				<a href="contact.html">Contact</a>
+			</nav>
+		</div>
+    </footer>
+
+    <!-- [2025-11-04 00:00:00] Add common navigation and link fixes -->
+    <script src="scripts/fix-all-links.js"></script>
+    <script src="scripts/common-navigation.js"></script>
+
+</body>
+</html>
+
