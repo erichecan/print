@@ -34,9 +34,11 @@
 2. 进入你的站点设置
 3. 前往 **Site settings > Build & deploy > Build settings**
 4. 更新以下设置：
-   - **Base directory**: `apps/web`
-   - **Build command**: `npm install && npm run build`
+   - **Base directory**: `apps/web` ⚠️ **重要：必须设置**
+   - **Build command**: `npm install && npm run build`（或留空，使用 netlify.toml 中的配置）
    - **Publish directory**: `out` ⚠️ **重要：必须是 `out`**
+
+**注意**：`netlify.toml` 现在位于 `apps/web` 目录下，Netlify 会自动检测并使用它。
 
 ### 步骤 2: 设置环境变量
 
@@ -90,10 +92,28 @@
 
 ## 如果问题仍然存在
 
-请提供以下信息以便进一步诊断：
+### 替代方案：不使用 Base Directory
+
+如果使用 base directory 仍然有问题，可以尝试以下方案：
+
+1. **移除 Base Directory 设置**：
+   - 在 Netlify 控制台，将 Base directory 留空
+   - 在根目录创建 `netlify.toml`（如果还没有）
+   - 设置构建命令为：`cd apps/web && npm install && npm run build`
+   - 设置发布目录为：`apps/web/out`
+
+2. **检查构建日志**：
+   - 查看构建日志中是否有 `out` 目录生成的确认信息
+   - 检查是否有依赖安装错误
+   - 确认 `NETLIFY=true` 环境变量已设置
+
+### 需要提供的信息
+
+如果问题仍然存在，请提供以下信息以便进一步诊断：
 1. Netlify 构建日志（完整输出）
 2. 浏览器控制台错误信息（F12 > Console）
 3. Network 标签中的请求详情（F12 > Network，刷新页面）
+4. Netlify 控制台的 Build settings 截图
 
 ## 相关文件
 
