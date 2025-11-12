@@ -17,6 +17,14 @@ A full-featured custom merchandise e-commerce platform with design lab, order ma
 # 克隆仓库后，在根目录安装依赖（启用 npm workspaces）
 npm install
 
+# 配置环境变量
+cp backend/env.example backend/.env
+cp apps/web/.env.example apps/web/.env.local
+# 编辑 .env 文件，填入必要的配置（数据库、Stripe 等）
+
+# 运行数据库迁移
+./scripts/db-migrate.sh
+
 # 启动前端 Next.js 应用
 npm run dev --workspace apps/web
 # 浏览器访问 http://localhost:3000
@@ -28,11 +36,66 @@ npm run dev --workspace backend
 
 ## Deployment
 
-<!-- 更新 Deployment 2025-11-10 13:58:00 -->
-- 使用 `docker-compose.yml` 一键启动：`docker compose up --build`
-- 个性化部署请参考 `docs/DEPLOYMENT-GUIDE.md`
-- 生产环境变量示例：`backend/env.production.template`、`apps/web/env.production.template`
-- 后端生产启动脚本：`npm run start:prod --workspace backend`
+<!-- 更新 Deployment 2025-11-12 03:30:00 -->
+### Production Build
+
+```bash
+# 构建所有服务
+./scripts/build.sh
+
+# 或跳过测试
+./scripts/build.sh --skip-tests
+```
+
+### Docker Deployment
+
+```bash
+# 使用 docker-compose 一键启动
+docker compose up --build -d
+
+# 或使用部署脚本
+./scripts/deploy.sh production --build
+```
+
+### Database Management
+
+```bash
+# 备份数据库
+./scripts/db-backup.sh
+
+# 恢复数据库
+./scripts/db-restore.sh backups/backup_YYYYMMDD_HHMMSS.dump
+
+# 运行迁移
+./scripts/db-migrate.sh
+
+# 重置数据库（危险操作）
+./scripts/db-migrate.sh --reset
+```
+
+### Environment Variables
+
+- 后端：复制 `backend/env.example` 为 `backend/.env` 并配置
+- 前端：复制 `apps/web/.env.example` 为 `apps/web/.env.local`（开发）或 `apps/web/.env.production`（生产）
+
+详细配置说明请参考：
+- `backend/env.example` - 后端环境变量模板
+- `apps/web/.env.example` - 前端环境变量模板
+- `docs/RELEASE-CHECKLIST.md` - 发布前检查清单
+
+### Smoke Tests
+
+```bash
+# 运行 E2E 冒烟测试
+./scripts/e2e-smoke.sh http://localhost:3000 http://localhost:3001/api
+```
+
+## Monitoring & Alerts
+
+- 后端使用 Sentry（`@sentry/node`）捕获异常，启用前设置 `SENTRY_DSN`、`SENTRY_ENVIRONMENT`、`SENTRY_TRACES_SAMPLE_RATE`
+- 前端集成 `@sentry/nextjs`，将 `NEXT_PUBLIC_SENTRY_DSN` 注入构建，支持浏览器 Replays 采样控制
+- 模板文件已提供占位变量：`backend/env.example`、`apps/web/env.production.template`
+- 推荐在 Sentry 中配置邮件/Slack 报警，确保支付与订单链路异常可被即时感知
 
 ---
 
@@ -192,6 +255,8 @@ npm run dev --workspace backend
 - `THEME-MIGRATION.md` - Color theme migration notes
 - `visual-check.md` - Visual testing checklist
 - `style-guide.md` - Design guidelines
+- `docs/E2E-PLAYBOOK.md` - 全链路 E2E 测试脚本
+- `docs/RELEASE-CHECKLIST.md` - 发布前自检清单
 
 ---
 

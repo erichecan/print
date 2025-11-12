@@ -1,6 +1,7 @@
 /**
  * Product Detail Page
  * [2025-11-05 01:10:00]
+ * [2025-11-12 03:05:00] Enhanced with inventory messaging, related products, and SEO metadata
  */
 'use client';
 
@@ -58,6 +59,8 @@ function ProductDetailContent() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
   // Get unique colors and sizes from variants
   const colors = Array.from(new Set(product?.variants.map(v => v.color).filter(Boolean))) as string[];
@@ -103,6 +106,25 @@ function ProductDetailContent() {
 
     fetchProduct();
   }, [slug]);
+
+  // [2025-11-12 03:05:00] Fetch related products when product loads
+  useEffect(() => {
+    if (!slug || !product) return;
+
+    async function fetchRelated() {
+      try {
+        setLoadingRelated(true);
+        const response = await productsApi.getRelated(slug, 4);
+        setRelatedProducts(response.data || []);
+      } catch (err) {
+        console.error('[2025-11-12 03:05:00] Failed to load related products:', err);
+      } finally {
+        setLoadingRelated(false);
+      }
+    }
+
+    fetchRelated();
+  }, [slug, product]);
 
   const handleAddToCart = async () => {
     if (!selectedVariant) {
@@ -307,11 +329,18 @@ function ProductDetailContent() {
               </button>
             </div>
             {selectedVariant && (
-              <small className="stock-info">
-                {selectedVariant.stockQuantity > 0
-                  ? `${selectedVariant.stockQuantity} in stock`
-                  : 'Out of stock'}
-              </small>
+              <div className="stock-info-wrapper">
+                <small className={`stock-info ${selectedVariant.stockQuantity === 0 ? 'stock-out' : selectedVariant.stockQuantity <= 5 ? 'stock-low' : ''}`}>
+                  {selectedVariant.stockQuantity === 0
+                    ? 'Out of stock'
+                    : selectedVariant.stockQuantity <= 5
+                    ? `Only ${selectedVariant.stockQuantity} left in stock`
+                    : `${selectedVariant.stockQuantity} in stock`}
+                </small>
+                {selectedVariant.stockQuantity > 0 && selectedVariant.stockQuantity <= 5 && (
+                  <small className="stock-warning">⚠️ Low stock - Order soon!</small>
+                )}
+              </div>
             )}
           </div>
 
@@ -332,6 +361,35 @@ function ProductDetailContent() {
           </div>
         </aside>
       </div>
+
+      {/* [2025-11-12 03:05:00] Related Products Section */}
+      {relatedProducts.length > 0 && (
+        <section className="related-products">
+          <div className="container">
+            <h2 className="related-products-title">You may also like</h2>
+            <div className="related-products-grid">
+              {relatedProducts.map((related) => {
+                const relatedImage = related.images?.[0]?.url || '/placeholder-product.jpg';
+                const relatedPrice = Number(related.basePrice);
+                return (
+                  <Link key={related.id} href={`/products/${related.slug}`} className="related-product-card">
+                    <div className="related-product-image">
+                      <Image
+                        src={relatedImage}
+                        alt={related.name}
+                        width={280}
+                        height={280}
+                      />
+                    </div>
+                    <h3 className="related-product-name">{related.name}</h3>
+                    <p className="related-product-price">${relatedPrice.toFixed(2)} CAD</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       <style jsx>{`
         .product-detail-page {
@@ -555,9 +613,26 @@ function ProductDetailContent() {
           text-align: center;
           font-size: 16px;
         }
+        .stock-info-wrapper {
+          display: grid;
+          gap: 4px;
+        }
         .stock-info {
           color: #666;
           font-size: 13px;
+        }
+        .stock-info.stock-low {
+          color: #f59e0b;
+          font-weight: 600;
+        }
+        .stock-info.stock-out {
+          color: #ef4444;
+          font-weight: 600;
+        }
+        .stock-warning {
+          color: #f59e0b;
+          font-size: 12px;
+          font-weight: 500;
         }
         .add-to-cart-button {
           padding: 16px 32px;
@@ -585,9 +660,61 @@ function ProductDetailContent() {
           font-size: 14px;
           color: #666;
         }
+        .related-products {
+          padding: 48px 0;
+          background: #f9fafb;
+          border-top: 1px solid #e5e5e5;
+        }
+        .related-products-title {
+          font-size: 24px;
+          font-weight: 700;
+          margin: 0 0 24px;
+        }
+        .related-products-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+          gap: 24px;
+        }
+        .related-product-card {
+          background: #fff;
+          border-radius: 12px;
+          overflow: hidden;
+          border: 1px solid #e5e5e5;
+          text-decoration: none;
+          color: inherit;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .related-product-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .related-product-image {
+          width: 100%;
+          aspect-ratio: 1;
+          position: relative;
+          overflow: hidden;
+        }
+        .related-product-name {
+          padding: 12px 16px 4px;
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0;
+          color: #1f2937;
+        }
+        .related-product-price {
+          padding: 0 16px 16px;
+          font-size: 18px;
+          font-weight: 700;
+          color: #ff1f3d;
+          margin: 0;
+        }
         @media (max-width: 1024px) {
           .product-detail-grid {
             grid-template-columns: 1fr;
+          }
+          .related-products-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
           }
         }
       `}</style>

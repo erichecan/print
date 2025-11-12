@@ -20,8 +20,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile # [2025-11-10 23:55:03] 调整构建上下文以便复制根目录下的 Prisma schema
     environment:
       NODE_ENV: production
       PORT: 3001

@@ -12,10 +12,11 @@ import Link from 'next/link';
 
 function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
   const searchParams = useSearchParams();
-  const email = searchParams.get('email');
+  const email = searchParams?.get('email') ?? ''; // [2025-11-11 06:14:29] 兼容返回 null 的情况，保持类型安全
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [downloading, setDownloading] = useState(false); // [2025-11-12 01:13:22] 控制发票下载状态
 
   useEffect(() => {
     if (!email) {
@@ -34,6 +35,27 @@ function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
         setLoading(false);
       });
   }, [orderNumber, email]);
+
+  const handleInvoiceDownload = async () => {
+    if (!order) return;
+    try {
+      setDownloading(true);
+      const blob = await ordersApi.downloadInvoiceByOrderNumber(order.orderNumber, email);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${order.orderNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[2025-11-12 01:13:22] Guest invoice download failed', err);
+      alert('Unable to download the invoice right now. Please try again later.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -63,13 +85,23 @@ function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
         </p>
       </div>
 
-      <div className="order-status">
-        <div className={`status-badge status-${order.status}`}>
-          {order.status}
+      <div className="order-toolbar">
+        <div className="order-status">
+          <div className={`status-badge status-${order.status}`}>
+            {order.status}
+          </div>
+          <div className={`payment-badge payment-${order.paymentStatus}`}>
+            Payment: {order.paymentStatus}
+          </div>
         </div>
-        <div className={`payment-badge payment-${order.paymentStatus}`}>
-          Payment: {order.paymentStatus}
-        </div>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={handleInvoiceDownload}
+          disabled={downloading}
+        >
+          {downloading ? 'Downloading…' : 'Download invoice'}
+        </button>
       </div>
 
       <div className="order-grid">
@@ -195,11 +227,18 @@ function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
         .order-date {
           color: #666;
         }
+        .order-toolbar {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+          align-items: center;
+          margin-bottom: 2rem;
+          flex-wrap: wrap;
+        }
         .order-status {
           display: flex;
           gap: 1rem;
           justify-content: center;
-          margin-bottom: 2rem;
         }
         .status-badge,
         .payment-badge {
@@ -284,6 +323,10 @@ function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
         .btn-primary {
           background: #ff1f3d;
           color: white;
+        }
+        .btn-primary:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
         .btn-outline {
           border: 1px solid #ddd;

@@ -2,12 +2,12 @@
 FROM node:18-alpine AS base
 WORKDIR /app
 
-## Install dependencies with cleaning [2025-11-10 13:45:00]
-COPY package*.json ./
+## Install dependencies with cleaning [2025-11-10 23:55:03]
+COPY backend/package*.json ./
 RUN npm install --omit=dev
 
-## Copy source and build assets [2025-11-10 13:45:00]
-COPY src ./src
+## Copy source and build assets [2025-11-10 23:55:03]
+COPY backend/src ./src
 COPY prisma ./prisma
 
 ## Expose server port [2025-11-10 13:45:00]

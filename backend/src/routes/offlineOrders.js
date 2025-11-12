@@ -1,17 +1,13 @@
 // [2025-11-08 06:56:45] Offline order intake routes
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const { authenticateOptional } = require('../middleware/auth');
 const offlineOrderController = require('../controllers/offlineOrderController');
+const { ensureOfflineUploadRoot, getAllowedExtensions, isExtensionAllowed } = require('../utils/offlineUpload');
 
 const router = express.Router();
 
-const uploadRoot = path.join(__dirname, '../../uploads/offline-orders');
-if (!fs.existsSync(uploadRoot)) {
-  fs.mkdirSync(uploadRoot, { recursive: true });
-}
+const uploadRoot = ensureOfflineUploadRoot();
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
@@ -24,12 +20,24 @@ const storage = multer.diskStorage({
   }
 });
 
+const fileFilter = (_req, file, cb) => {
+  if (!isExtensionAllowed(file.originalname)) {
+    const error = new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname);
+    error.message = `Unsupported file type: ${file.originalname}. Allowed extensions: ${getAllowedExtensions().join(
+      ', '
+    )}`;
+    return cb(error);
+  }
+  cb(null, true);
+};
+
 const upload = multer({
   storage,
   limits: {
     fileSize: parseInt(process.env.OFFLINE_ORDER_MAX_FILE_MB || '50', 10) * 1024 * 1024,
     files: parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)
-  }
+  },
+  fileFilter
 });
 
 router.post(

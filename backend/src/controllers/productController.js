@@ -162,3 +162,57 @@ exports.getProductBySlug = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch product' });
   }
 };
+
+/**
+ * Get related products by category
+ * GET /api/products/:slug/related?limit=4
+ * [2025-11-12 03:00:00] Added for product detail page recommendations
+ */
+exports.getRelatedProducts = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const limit = parseInt(req.query.limit) || 4;
+
+    // First get the current product
+    const currentProduct = await prisma.product.findUnique({
+      where: { slug },
+      select: { id: true, categoryId: true, brandId: true },
+    });
+
+    if (!currentProduct) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Find related products in the same category, excluding current product
+    const relatedProducts = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        categoryId: currentProduct.categoryId,
+        id: { not: currentProduct.id },
+      },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        images: {
+          orderBy: { sortOrder: 'asc' },
+          take: 1,
+        },
+        variants: {
+          take: 1,
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    res.json({ data: relatedProducts });
+  } catch (error) {
+    console.error('[2025-11-12 03:00:00] Error fetching related products:', error);
+    res.status(500).json({ error: 'Failed to fetch related products' });
+  }
+};

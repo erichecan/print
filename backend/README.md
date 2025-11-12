@@ -72,7 +72,11 @@ API endpoints will be documented as they are implemented. See `API-SPEC.md` in t
 
 ## Environment Variables
 
-See `.env.example` for all required environment variables.
+See `.env.example` for all required environment variables. 启用生产监控时，请配置：
+
+- `SENTRY_DSN`：Sentry 项目 DSN
+- `SENTRY_ENVIRONMENT`：环境标签（如 `production`）
+- `SENTRY_TRACES_SAMPLE_RATE`：跟踪采样率（默认 0.1）
 
 ## Development
 
