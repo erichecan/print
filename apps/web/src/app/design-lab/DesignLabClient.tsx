@@ -59,6 +59,9 @@ const DesignLabClient = () => {
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'edit' | 'layers'>('edit');
   const [selectedTextObject, setSelectedTextObject] = useState<any>(null);
+  const [showPrintArea, setShowPrintArea] = useState(true);
+  const printAreaRef = useRef<any>(null);
+  const safeAreaRef = useRef<any>(null);
 
   const ensureFabric = useCallback(async () => {
     if (fabricRef.current) {
@@ -331,6 +334,94 @@ const DesignLabClient = () => {
     [selectedTextObject, handleCanvasChange]
   );
 
+  // [2025-01-27 16:00:00] Initialize print area visualization
+  const initializePrintArea = useCallback(async (fabric: any, canvasInstance: any) => {
+    if (!canvasInstance) return;
+
+    const canvasWidth = canvas?.size?.width || 500;
+    const canvasHeight = canvas?.size?.height || 600;
+
+    // Print area: 80% of canvas (centered)
+    const printAreaWidth = canvasWidth * 0.8;
+    const printAreaHeight = canvasHeight * 0.8;
+    const printAreaLeft = (canvasWidth - printAreaWidth) / 2;
+    const printAreaTop = (canvasHeight - printAreaHeight) / 2;
+
+    // Safe area: 90% of print area (centered within print area)
+    const safeAreaWidth = printAreaWidth * 0.9;
+    const safeAreaHeight = printAreaHeight * 0.9;
+    const safeAreaLeft = printAreaLeft + (printAreaWidth - safeAreaWidth) / 2;
+    const safeAreaTop = printAreaTop + (printAreaHeight - safeAreaHeight) / 2;
+
+    // Create print area rectangle (dashed border)
+    if (!printAreaRef.current) {
+      const printAreaRect = new fabric.Rect({
+        left: printAreaLeft,
+        top: printAreaTop,
+        width: printAreaWidth,
+        height: printAreaHeight,
+        fill: 'transparent',
+        stroke: '#ff1f3d',
+        strokeWidth: 2,
+        strokeDashArray: [10, 5],
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        name: 'print-area',
+      });
+      printAreaRef.current = printAreaRect;
+      canvasInstance.add(printAreaRect);
+      canvasInstance.sendToBack(printAreaRect);
+    }
+
+    // Create safe area rectangle (dotted border)
+    if (!safeAreaRef.current) {
+      const safeAreaRect = new fabric.Rect({
+        left: safeAreaLeft,
+        top: safeAreaTop,
+        width: safeAreaWidth,
+        height: safeAreaHeight,
+        fill: 'transparent',
+        stroke: '#ff1f3d',
+        strokeWidth: 1,
+        strokeDashArray: [3, 3],
+        strokeOpacity: 0.5,
+        selectable: false,
+        evented: false,
+        excludeFromExport: true,
+        name: 'safe-area',
+      });
+      safeAreaRef.current = safeAreaRect;
+      canvasInstance.add(safeAreaRect);
+      canvasInstance.sendToBack(safeAreaRect);
+    }
+
+    // Ensure print area indicators are always at the back
+    if (printAreaRef.current) {
+      canvasInstance.sendToBack(printAreaRef.current);
+    }
+    if (safeAreaRef.current) {
+      canvasInstance.sendToBack(safeAreaRef.current);
+    }
+
+    canvasInstance.renderAll();
+  }, [canvas]);
+
+  // [2025-01-27 16:00:00] Toggle print area visibility
+  const togglePrintArea = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    const newVisibility = !showPrintArea;
+    setShowPrintArea(newVisibility);
+
+    if (printAreaRef.current) {
+      printAreaRef.current.set('visible', newVisibility);
+    }
+    if (safeAreaRef.current) {
+      safeAreaRef.current.set('visible', newVisibility);
+    }
+    fabricCanvasRef.current.renderAll();
+  }, [showPrintArea]);
+
   useEffect(() => {
     const detectUser = async () => {
       try {
@@ -447,6 +538,9 @@ const DesignLabClient = () => {
         updateLayersFromCanvas();
       });
 
+      // [2025-01-27 16:00:00] Initialize print area visualization
+      initializePrintArea(fabric, canvasInstance);
+
       // [2025-01-27 15:40:00] Initial layer update
       updateLayersFromCanvas();
 
@@ -462,7 +556,7 @@ const DesignLabClient = () => {
     };
 
     setupFabricEvents();
-  }, [ensureFabric, handleCanvasChange, handleSelectionChange, updateLayersFromCanvas]);
+  }, [ensureFabric, handleCanvasChange, handleSelectionChange, updateLayersFromCanvas, initializePrintArea]);
 
   useEffect(() => {
     if (!draft) {
@@ -734,6 +828,16 @@ const DesignLabClient = () => {
           </button>
           <button type="button" onClick={handleDeleteSelection} disabled={mobileLocked} className="lab__rail-btn">
             删除对象
+          </button>
+          {/* [2025-01-27 16:00:00] Print area toggle */}
+          <button
+            type="button"
+            onClick={togglePrintArea}
+            disabled={mobileLocked}
+            className={`lab__rail-btn ${showPrintArea ? 'active' : ''}`}
+            title={showPrintArea ? '隐藏打印区域' : '显示打印区域'}
+          >
+            {showPrintArea ? '📐 打印区域' : '📐'}
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
         </nav>
