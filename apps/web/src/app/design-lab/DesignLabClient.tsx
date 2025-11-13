@@ -58,6 +58,7 @@ const DesignLabClient = () => {
   const [designName, setDesignName] = useState('');
   const [uploading, setUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<'edit' | 'layers'>('edit');
+  const [selectedTextObject, setSelectedTextObject] = useState<any>(null);
 
   const ensureFabric = useCallback(async () => {
     if (fabricRef.current) {
@@ -138,8 +139,15 @@ const DesignLabClient = () => {
     const selected = fabricCanvasRef.current?.getActiveObject() as (Record<string, any> & { id?: string }) | undefined;
     if (selected?.id) {
       setActiveObjectId(selected.id);
+      // [2025-01-27 15:50:00] Check if selected object is a text object
+      if (selected.type === 'textbox' || selected.type === 'i-text' || selected.type === 'text') {
+        setSelectedTextObject(selected);
+      } else {
+        setSelectedTextObject(null);
+      }
     } else {
       setActiveObjectId(null);
+      setSelectedTextObject(null);
     }
   }, []);
 
@@ -258,6 +266,69 @@ const DesignLabClient = () => {
       }
     },
     [sendToBack, updateLayersFromCanvas, handleCanvasChange]
+  );
+
+  // [2025-01-27 15:50:00] Advanced text tools handlers
+  const handleTextFontSizeChange = useCallback(
+    (fontSize: number) => {
+      if (!fabricCanvasRef.current || !selectedTextObject) return;
+      selectedTextObject.set('fontSize', fontSize);
+      fabricCanvasRef.current.renderAll();
+      handleCanvasChange();
+      setSelectedTextObject({ ...selectedTextObject, fontSize });
+    },
+    [selectedTextObject, handleCanvasChange]
+  );
+
+  const handleTextBoldToggle = useCallback(() => {
+    if (!fabricCanvasRef.current || !selectedTextObject) return;
+    const currentWeight = selectedTextObject.fontWeight || 'normal';
+    const newWeight = currentWeight === 'bold' ? 'normal' : 'bold';
+    selectedTextObject.set('fontWeight', newWeight);
+    fabricCanvasRef.current.renderAll();
+    handleCanvasChange();
+    setSelectedTextObject({ ...selectedTextObject, fontWeight: newWeight });
+  }, [selectedTextObject, handleCanvasChange]);
+
+  const handleTextItalicToggle = useCallback(() => {
+    if (!fabricCanvasRef.current || !selectedTextObject) return;
+    const currentStyle = selectedTextObject.fontStyle || 'normal';
+    const newStyle = currentStyle === 'italic' ? 'normal' : 'italic';
+    selectedTextObject.set('fontStyle', newStyle);
+    fabricCanvasRef.current.renderAll();
+    handleCanvasChange();
+    setSelectedTextObject({ ...selectedTextObject, fontStyle: newStyle });
+  }, [selectedTextObject, handleCanvasChange]);
+
+  const handleTextUnderlineToggle = useCallback(() => {
+    if (!fabricCanvasRef.current || !selectedTextObject) return;
+    const currentUnderline = selectedTextObject.underline || false;
+    selectedTextObject.set('underline', !currentUnderline);
+    fabricCanvasRef.current.renderAll();
+    handleCanvasChange();
+    setSelectedTextObject({ ...selectedTextObject, underline: !currentUnderline });
+  }, [selectedTextObject, handleCanvasChange]);
+
+  const handleTextAlign = useCallback(
+    (align: 'left' | 'center' | 'right' | 'justify') => {
+      if (!fabricCanvasRef.current || !selectedTextObject) return;
+      selectedTextObject.set('textAlign', align);
+      fabricCanvasRef.current.renderAll();
+      handleCanvasChange();
+      setSelectedTextObject({ ...selectedTextObject, textAlign: align });
+    },
+    [selectedTextObject, handleCanvasChange]
+  );
+
+  const handleTextColorChange = useCallback(
+    (color: string) => {
+      if (!fabricCanvasRef.current || !selectedTextObject) return;
+      selectedTextObject.set('fill', color);
+      fabricCanvasRef.current.renderAll();
+      handleCanvasChange();
+      setSelectedTextObject({ ...selectedTextObject, fill: color });
+    },
+    [selectedTextObject, handleCanvasChange]
   );
 
   useEffect(() => {
@@ -700,10 +771,146 @@ const DesignLabClient = () => {
               {mode === 'preview' && (
                 <p className="lab__hint">登录后可在移动端进行文字修改，或前往桌面端体验完整功能。</p>
               )}
-              {mode !== 'preview' && textTargets.length === 0 && (
-                <p className="lab__hint">暂无可编辑文字对象，点击左侧"添加文字"开始创作。</p>
+
+              {/* [2025-01-27 15:50:00] Advanced text tools for selected text object */}
+              {selectedTextObject && mode !== 'preview' && (
+                <div className="lab__text-tools">
+                  <h4>文字样式</h4>
+                  
+                  {/* Font Size */}
+                  <label className="lab__field">
+                    <span>字体大小</span>
+                    <input
+                      type="number"
+                      min="8"
+                      max="200"
+                      value={selectedTextObject.fontSize || 28}
+                      onChange={(e) => handleTextFontSizeChange(parseInt(e.target.value, 10) || 28)}
+                      disabled={mobileLocked}
+                    />
+                  </label>
+
+                  {/* Text Formatting */}
+                  <div className="lab__text-format-buttons">
+                    <button
+                      type="button"
+                      className={`lab__format-btn ${selectedTextObject.fontWeight === 'bold' ? 'active' : ''}`}
+                      onClick={handleTextBoldToggle}
+                      disabled={mobileLocked}
+                      title="粗体"
+                    >
+                      <strong>B</strong>
+                    </button>
+                    <button
+                      type="button"
+                      className={`lab__format-btn ${selectedTextObject.fontStyle === 'italic' ? 'active' : ''}`}
+                      onClick={handleTextItalicToggle}
+                      disabled={mobileLocked}
+                      title="斜体"
+                    >
+                      <em>I</em>
+                    </button>
+                    <button
+                      type="button"
+                      className={`lab__format-btn ${selectedTextObject.underline ? 'active' : ''}`}
+                      onClick={handleTextUnderlineToggle}
+                      disabled={mobileLocked}
+                      title="下划线"
+                    >
+                      <u>U</u>
+                    </button>
+                  </div>
+
+                  {/* Text Alignment */}
+                  <div className="lab__text-align-buttons">
+                    <span className="lab__field-label">对齐方式</span>
+                    <div className="lab__align-buttons">
+                      <button
+                        type="button"
+                        className={`lab__align-btn ${selectedTextObject.textAlign === 'left' ? 'active' : ''}`}
+                        onClick={() => handleTextAlign('left')}
+                        disabled={mobileLocked}
+                        title="左对齐"
+                      >
+                        ⬅️
+                      </button>
+                      <button
+                        type="button"
+                        className={`lab__align-btn ${selectedTextObject.textAlign === 'center' ? 'active' : ''}`}
+                        onClick={() => handleTextAlign('center')}
+                        disabled={mobileLocked}
+                        title="居中"
+                      >
+                        ⬌
+                      </button>
+                      <button
+                        type="button"
+                        className={`lab__align-btn ${selectedTextObject.textAlign === 'right' ? 'active' : ''}`}
+                        onClick={() => handleTextAlign('right')}
+                        disabled={mobileLocked}
+                        title="右对齐"
+                      >
+                        ➡️
+                      </button>
+                      <button
+                        type="button"
+                        className={`lab__align-btn ${selectedTextObject.textAlign === 'justify' ? 'active' : ''}`}
+                        onClick={() => handleTextAlign('justify')}
+                        disabled={mobileLocked}
+                        title="两端对齐"
+                      >
+                        ⬌⬌
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Text Color */}
+                  <label className="lab__field">
+                    <span>文字颜色</span>
+                    <div className="lab__color-input-wrapper">
+                      <input
+                        type="color"
+                        value={selectedTextObject.fill || '#111111'}
+                        onChange={(e) => handleTextColorChange(e.target.value)}
+                        disabled={mobileLocked}
+                        className="lab__color-input"
+                      />
+                      <input
+                        type="text"
+                        value={selectedTextObject.fill || '#111111'}
+                        onChange={(e) => handleTextColorChange(e.target.value)}
+                        disabled={mobileLocked}
+                        className="lab__color-text-input"
+                        placeholder="#111111"
+                      />
+                    </div>
+                  </label>
+
+                  {/* Text Content */}
+                  <label className="lab__field">
+                    <span>文字内容</span>
+                    <textarea
+                      value={selectedTextObject.text || ''}
+                      onChange={(e) => {
+                        if (selectedTextObject) {
+                          selectedTextObject.set('text', e.target.value);
+                          fabricCanvasRef.current?.renderAll();
+                          handleCanvasChange();
+                          setSelectedTextObject({ ...selectedTextObject, text: e.target.value });
+                        }
+                      }}
+                      disabled={mobileLocked}
+                      rows={3}
+                    />
+                  </label>
+                </div>
               )}
-              {mode !== 'preview' &&
+
+              {/* Quick edit for all text objects */}
+              {!selectedTextObject && mode !== 'preview' && textTargets.length === 0 && (
+                <p className="lab__hint">暂无可编辑文字对象，点击左侧"添加文字"开始创作，或选择一个文字对象进行编辑。</p>
+              )}
+              {!selectedTextObject && mode !== 'preview' &&
                 textTargets.map((target) => (
                   <label key={target.id} className="lab__field">
                     <span>文字块</span>
@@ -1034,6 +1241,113 @@ const DesignLabClient = () => {
           font-size: 14px;
           color: #777;
           line-height: 1.5;
+        }
+        /* [2025-01-27 15:50:00] Advanced text tools styles */
+        .lab__text-tools {
+          margin-bottom: 24px;
+          padding-bottom: 24px;
+          border-bottom: 1px solid #e5e5e5;
+        }
+        .lab__text-tools h4 {
+          margin: 0 0 16px 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #334155;
+        }
+        .lab__text-format-buttons {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 16px;
+        }
+        .lab__format-btn {
+          width: 36px;
+          height: 36px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          font-weight: 600;
+          transition: all 0.2s ease;
+        }
+        .lab__format-btn:hover:not(:disabled) {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+        }
+        .lab__format-btn.active {
+          background: #fff5f5;
+          border-color: #ff1f3d;
+          color: #ff1f3d;
+        }
+        .lab__format-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .lab__text-align-buttons {
+          margin-bottom: 16px;
+        }
+        .lab__field-label {
+          display: block;
+          font-size: 14px;
+          font-weight: 500;
+          color: #334155;
+          margin-bottom: 8px;
+        }
+        .lab__align-buttons {
+          display: flex;
+          gap: 8px;
+        }
+        .lab__align-btn {
+          flex: 1;
+          height: 36px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          transition: all 0.2s ease;
+        }
+        .lab__align-btn:hover:not(:disabled) {
+          background: #f8fafc;
+          border-color: #cbd5e1;
+        }
+        .lab__align-btn.active {
+          background: #fff5f5;
+          border-color: #ff1f3d;
+        }
+        .lab__align-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .lab__color-input-wrapper {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+        .lab__color-input {
+          width: 60px;
+          height: 36px;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          cursor: pointer;
+        }
+        .lab__color-text-input {
+          flex: 1;
+          padding: 8px 12px;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          font-size: 14px;
+          font-family: monospace;
+        }
+        .lab__color-text-input:focus {
+          outline: none;
+          border-color: #ff1f3d;
         }
         .lab__field {
           display: flex;
