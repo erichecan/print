@@ -62,6 +62,7 @@ const DesignLabClient = () => {
   const [showPrintArea, setShowPrintArea] = useState(true);
   const printAreaRef = useRef<any>(null);
   const safeAreaRef = useRef<any>(null);
+  const [zoomLevel, setZoomLevel] = useState(100);
 
   const ensureFabric = useCallback(async () => {
     if (fabricRef.current) {
@@ -139,7 +140,7 @@ const DesignLabClient = () => {
   }, [setCanvas]);
 
   const handleSelectionChange = useCallback(() => {
-    const selected = fabricCanvasRef.current?.getActiveObject() as (Record<string, any> & { id?: string }) | undefined;
+      const selected = fabricCanvasRef.current?.getActiveObject() as (Record<string, any> & { id?: string }) | undefined;
     if (selected?.id) {
       setActiveObjectId(selected.id);
       // [2025-01-27 15:50:00] Check if selected object is a text object
@@ -421,6 +422,44 @@ const DesignLabClient = () => {
     }
     fabricCanvasRef.current.renderAll();
   }, [showPrintArea]);
+
+  // [2025-01-27 16:05:00] Zoom controls
+  const handleZoomChange = useCallback(
+    (newZoom: number) => {
+      if (!fabricCanvasRef.current) return;
+      const clampedZoom = Math.max(50, Math.min(400, newZoom));
+      setZoomLevel(clampedZoom);
+
+      const canvasInstance = fabricCanvasRef.current;
+      const zoom = clampedZoom / 100;
+      canvasInstance.setZoom(zoom);
+
+      // Center the canvas after zoom
+      const canvasWidth = canvasInstance.getWidth();
+      const canvasHeight = canvasInstance.getHeight();
+      const vpt = canvasInstance.viewportTransform;
+      if (vpt) {
+        vpt[4] = (canvasWidth - canvasWidth * zoom) / 2;
+        vpt[5] = (canvasHeight - canvasHeight * zoom) / 2;
+        canvasInstance.setViewportTransform(vpt);
+      }
+
+      canvasInstance.renderAll();
+    },
+    []
+  );
+
+  const handleZoomIn = useCallback(() => {
+    handleZoomChange(zoomLevel + 10);
+  }, [zoomLevel, handleZoomChange]);
+
+  const handleZoomOut = useCallback(() => {
+    handleZoomChange(zoomLevel - 10);
+  }, [zoomLevel, handleZoomChange]);
+
+  const handleZoomReset = useCallback(() => {
+    handleZoomChange(100);
+  }, [handleZoomChange]);
 
   useEffect(() => {
     const detectUser = async () => {
@@ -847,6 +886,47 @@ const DesignLabClient = () => {
               <p>移动端快速预览模式，请登录后在桌面端进行完整编辑。</p>
             </div>
           )}
+          {/* [2025-01-27 16:05:00] Zoom controls */}
+          <div className="lab__zoom-controls">
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              disabled={mobileLocked || zoomLevel <= 50}
+              className="lab__zoom-btn"
+              title="缩小"
+            >
+              −
+            </button>
+            <input
+              type="range"
+              min="50"
+              max="400"
+              step="10"
+              value={zoomLevel}
+              onChange={(e) => handleZoomChange(parseInt(e.target.value, 10))}
+              disabled={mobileLocked}
+              className="lab__zoom-slider"
+            />
+            <span className="lab__zoom-value">{zoomLevel}%</span>
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              disabled={mobileLocked || zoomLevel >= 400}
+              className="lab__zoom-btn"
+              title="放大"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomReset}
+              disabled={mobileLocked || zoomLevel === 100}
+              className="lab__zoom-reset"
+              title="重置缩放"
+            >
+              重置
+            </button>
+          </div>
           <canvas ref={canvasElementRef} width={canvas?.size?.width || 500} height={canvas?.size?.height || 600} />
         </main>
         <aside className="lab__sidebar">
@@ -871,10 +951,10 @@ const DesignLabClient = () => {
           {/* [2025-01-27 15:40:00] Edit Tab */}
           {activeTab === 'edit' && (
             <div className="lab__tab-content">
-              <h3>快速编辑</h3>
-              {mode === 'preview' && (
-                <p className="lab__hint">登录后可在移动端进行文字修改，或前往桌面端体验完整功能。</p>
-              )}
+          <h3>快速编辑</h3>
+          {mode === 'preview' && (
+            <p className="lab__hint">登录后可在移动端进行文字修改，或前往桌面端体验完整功能。</p>
+          )}
 
               {/* [2025-01-27 15:50:00] Advanced text tools for selected text object */}
               {selectedTextObject && mode !== 'preview' && (
@@ -1015,16 +1095,16 @@ const DesignLabClient = () => {
                 <p className="lab__hint">暂无可编辑文字对象，点击左侧"添加文字"开始创作，或选择一个文字对象进行编辑。</p>
               )}
               {!selectedTextObject && mode !== 'preview' &&
-                textTargets.map((target) => (
-                  <label key={target.id} className="lab__field">
-                    <span>文字块</span>
-                    <textarea
-                      value={target.text}
-                      onChange={(event) => handleQuickEditChange(target.id, event.target.value)}
-                      disabled={mobileLocked}
-                    />
-                  </label>
-                ))}
+            textTargets.map((target) => (
+              <label key={target.id} className="lab__field">
+                <span>文字块</span>
+                <textarea
+                  value={target.text}
+                  onChange={(event) => handleQuickEditChange(target.id, event.target.value)}
+                  disabled={mobileLocked}
+                />
+              </label>
+            ))}
             </div>
           )}
 
@@ -1202,6 +1282,10 @@ const DesignLabClient = () => {
         .lab__rail-btn:disabled {
           opacity: 0.4;
           cursor: not-allowed;
+        }
+        .lab__rail-btn.active {
+          background: rgba(255, 31, 61, 0.2);
+          border: 1px solid rgba(255, 31, 61, 0.5);
         }
         .lab__stage {
           position: relative;
