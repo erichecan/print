@@ -651,10 +651,12 @@ export const designLabApi = {
       body: payload,
     }),
   deleteDraft: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),
-  generateAssetUpload: async () => {
-    const response = await fetch(`${API_BASE_URL}/designs/upload-signature`, {
+  generateAssetUpload: async (designId: string, payload: { fileName: string; fileSize: number; contentType: string }) => {
+    const response = await fetch(`${API_BASE_URL}/designs/${designId}/upload-signature`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
+      body: JSON.stringify(payload),
     });
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: response.statusText }));
