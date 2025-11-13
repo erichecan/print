@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Edit Product | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="../styles.css">
+	<link rel="stylesheet" href="admin.css">
+	<script src="i18n.js"></script>
+</head>
+<body class="admin-body">
+	<div class="admin-grid">
+		<aside class="admin-sidebar">
+			<div class="admin-nav">
+				<h3>suvernire plus</h3>
+				<ul>
+					<li><a href="index.html"><span class="admin-nav-icon">📊</span> <span data-i18n="dashboard">Dashboard</span></a></li>
+					<li><a href="products.html"><span class="admin-nav-icon">🛍️</span> <span data-i18n="products">Products</span></a></li>
+					<li><a href="categories.html"><span class="admin-nav-icon">📁</span> <span data-i18n="categories">Categories</span></a></li>
+					<li><a href="orders.html"><span class="admin-nav-icon">📦</span> <span data-i18n="orders">Orders</span></a></li>
+					<li><a href="users.html"><span class="admin-nav-icon">👥</span> <span data-i18n="users">Users</span></a></li>
+					<li><a href="designs.html"><span class="admin-nav-icon">🎨</span> <span data-i18n="designReview">Design Review</span></a></li>
+					<li><a href="coupons.html"><span class="admin-nav-icon">🎫</span> <span data-i18n="coupons">Coupons</span></a></li>
+					<li><a href="promotions.html"><span class="admin-nav-icon">🎉</span> <span data-i18n="promotions">Promotions</span></a></li>
+					<li><a href="settings.html"><span class="admin-nav-icon">⚙️</span> <span data-i18n="settings">Settings</span></a></li>
+				</ul>
+				<div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--color-border);">
+					<a href="../home.html" style="color: var(--color-text-muted); font-size: 14px;"><span data-i18n="backToSite">← Back to Site</span></a>
+				</div>
+			</div>
+		</aside>
+
+		<main class="admin-main">
+			<header class="admin-header">
+				<h1>Edit Product</h1>
+				<div class="admin-user">
+					<div class="admin-user-avatar"></div>
+					<span class="admin-user-name">Admin User</span>
+					<a href="login.html" style="color: var(--color-text-muted); text-decoration: none; font-size: 13px;"><span data-i18n="logout">Logout</span></a>
+				</div>
+			</header>
+
+			<div style="margin-top: 24px;">
+				<div class="admin-form" data-entity="product" data-id="108200" data-api="/api/admin/products/108200" data-method="PUT">
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+						<div>
+							<div class="admin-form-group">
+								<label>Product Name *</label>
+								<input type="text" value="Gildan Midweight 50/50 Pullover Hoodie" data-field="name" required>
+							</div>
+							<div class="admin-form-group">
+								<label>SKU *</label>
+								<input type="text" value="GIL-108200" data-field="sku" required>
+							</div>
+							<div class="admin-form-group">
+								<label>Category *</label>
+								<select data-field="categoryId" required data-api="/api/categories" data-method="GET">
+									<option value="">Select category</option>
+									<option value="hoodies" selected>Hoodies</option>
+									<option value="t-shirts">T-Shirts</option>
+									<option value="hats">Hats</option>
+									<option value="bags">Bags</option>
+									<option value="drinkware">Drinkware</option>
+								</select>
+							</div>
+							<div class="admin-form-group">
+								<label>Base Price ($) *</label>
+								<input type="number" value="24.00" step="0.01" data-field="basePrice" required>
+							</div>
+							<div class="admin-form-group">
+								<label>Compare At Price ($)</label>
+								<input type="number" value="" step="0.01" data-field="compareAtPrice">
+							</div>
+						</div>
+						<div>
+							<div class="admin-form-group">
+								<label>Product Images</label>
+								<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;" data-field="images">
+									<div class="placeholder" style="aspect-ratio: 1; border-radius: 8px;" data-field="image"></div>
+									<div class="placeholder" style="aspect-ratio: 1; border-radius: 8px;" data-field="image"></div>
+									<div class="placeholder" style="aspect-ratio: 1; border-radius: 8px;" data-field="image"></div>
+								</div>
+								<button class="btn btn--outline" style="margin-top: 8px; width: 100%;" data-action="upload-image" data-api="/api/uploads" data-method="POST">Upload Images</button>
+							</div>
+							<div class="admin-form-group">
+								<label>Status</label>
+								<select data-field="status">
+									<option value="active" selected>Active</option>
+									<option value="draft">Draft</option>
+									<option value="archived">Archived</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<div class="admin-form-group">
+						<label>Description</label>
+						<textarea data-field="description">Midweight 50/50 cotton/polyester fleece hoodie with set-in sleeves. Soft fabric for comfortable wear.</textarea>
+					</div>
+
+					<div style="border-top: 1px solid var(--color-border); padding-top: 20px; margin-top: 20px;">
+						<h3 style="margin: 0 0 16px; font-size: 16px;">Variants & Inventory</h3>
+						<div style="display: grid; gap: 12px;" data-field="variants">
+							<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 120px 80px auto; gap: 8px; align-items: start;" data-entity="variant">
+								<input type="text" placeholder="Color" value="Royal" data-field="color">
+								<select data-field="size"><option>XS</option><option>S</option><option>M</option><option selected>L</option><option>XL</option></select>
+								<input type="number" placeholder="Stock" value="156" data-field="stockQuantity">
+								<input type="number" placeholder="Price" step="0.01" value="24.00" data-field="price">
+								<button class="btn--outline" style="padding: 10px;" data-action="remove-variant">✕</button>
+							</div>
+							<div style="display: grid; grid-template-columns: 1fr 1fr 1fr 120px 80px auto; gap: 8px;" data-entity="variant">
+								<input type="text" placeholder="Color" value="Navy" data-field="color">
+								<select data-field="size"><option>XS</option><option>S</option><option selected>M</option><option>L</option><option>XL</option></select>
+								<input type="number" placeholder="Stock" value="89" data-field="stockQuantity">
+								<input type="number" placeholder="Price" step="0.01" value="24.00" data-field="price">
+								<button class="btn--outline" style="padding: 10px;" data-action="remove-variant">✕</button>
+							</div>
+							<button class="btn--outline" type="button" data-action="add-variant">+ Add Variant</button>
+						</div>
+					</div>
+
+					<div class="admin-form-actions">
+						<button class="btn" type="submit" data-action="save-product">Save Product</button>
+						<button class="btn btn--outline" onclick="window.location.href='products.html'" data-action="cancel">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</main>
+	</div>
+</body>
+</html>
+

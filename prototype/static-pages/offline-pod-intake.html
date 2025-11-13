@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>POD Offline Order Intake | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<link rel="stylesheet" href="offline-pod-intake.css">
+	<!-- [2025-11-08 06:25:42] POD offline order intake static layout -->
+</head>
+<body>
+	<!-- [2025-11-08 06:45:10] Match global top utility bar -->
+	<div class="topbar" role="region" aria-label="Top Utility Bar">
+		<div class="container util">
+			<a href="ndx-welcome.html">Sign In</a>
+			<a href="cart.html">Cart (0)</a>
+			<a href="tel:8002934232">800-293-4232</a>
+		</div>
+	</div>
+
+	<!-- [2025-11-08 06:45:10] Primary navigation consistent with site -->
+	<header class="primary" role="banner">
+		<div class="container">
+			<nav class="nav" aria-label="Primary Navigation">
+				<div class="brand">
+					<a href="home.html" style="display:flex;align-items:center;gap:10px">
+						<div class="brand__logo" aria-hidden="true"></div>
+						<span class="brand__name">suvernire plus</span>
+					</a>
+				</div>
+				<div class="menu" role="menubar">
+					<a role="menuitem" href="design-lab.html">Design Lab</a>
+					<a role="menuitem" href="long-sleeve.html">Products</a>
+					<a role="menuitem" href="help.html">Help</a>
+				</div>
+				<div class="cta">
+					<a class="btn btn--outline" href="checkout.html">Get a Quote</a>
+					<a class="btn" href="design-lab.html">Start Designing</a>
+				</div>
+			</nav>
+		</div>
+	</header>
+
+	<main id="main" class="pod-intake">
+		<section class="pod-hero">
+			<div class="container">
+				<div class="pod-hero__tag">POD Offline</div>
+				<h1>Submit Your Print-On-Demand Brief</h1>
+				<p>Upload artwork, specify production details, and get full visibility into our offline workflow.</p>
+				<div class="pod-hero__actions">
+					<a class="btn btn--outline" href="admin/offline-orders-board.html" target="_blank" rel="noopener">Open Offline Workflow Board</a>
+				</div>
+			</div>
+		</section>
+
+		<section class="pod-content container">
+			<div class="pod-primary">
+				<!-- [2025-11-08 06:25:56] Intake form structure -->
+				<form class="pod-form" data-module="pod-intake">
+					<div class="pod-form__section">
+						<h2>Order Details</h2>
+						<div class="pod-form__grid">
+							<label class="pod-field">
+								<span class="pod-field__label">Project Name</span>
+								<input type="text" name="projectName" placeholder="e.g. ACME Welcome Kits" required>
+							</label>
+							<label class="pod-field">
+								<span class="pod-field__label">Requested Delivery Date</span>
+								<input type="date" name="deliveryDate" required>
+							</label>
+							<label class="pod-field">
+								<span class="pod-field__label">Primary Product</span>
+								<select name="primaryProduct">
+									<option value="">Select a product</option>
+									<option value="hoodie">Hoodies</option>
+									<option value="tumbler">Tumblers</option>
+									<option value="notebook">Notebooks</option>
+								</select>
+							</label>
+							<label class="pod-field">
+								<span class="pod-field__label">Estimated Quantity</span>
+								<input type="number" min="1" step="1" placeholder="500" name="quantity">
+							</label>
+						</div>
+					</div>
+
+					<div class="pod-form__section">
+						<h2>Artwork &amp; Assets</h2>
+						<div class="pod-upload" data-upload-zone>
+							<div class="pod-upload__icon">⬆️</div>
+							<p>Drag &amp; drop files here or <span>browse</span></p>
+							<p class="pod-upload__hint">We support AI, EPS, SVG, PDF, PNG. Up to 500MB.</p>
+							<button type="button" class="btn btn--outline">Choose Files</button>
+						</div>
+						<textarea class="pod-field pod-field--textarea" rows="4" placeholder="Describe placement requirements, colorways, finishes..." name="artworkNotes"></textarea>
+					</div>
+
+					<div class="pod-form__section">
+						<h2>Contact</h2>
+						<div class="pod-form__grid">
+							<label class="pod-field">
+								<span class="pod-field__label">Company / Team</span>
+								<input type="text" name="company">
+							</label>
+							<label class="pod-field">
+								<span class="pod-field__label">Primary Contact</span>
+								<input type="text" name="contactName" required>
+							</label>
+							<label class="pod-field">
+								<span class="pod-field__label">Email</span>
+								<input type="email" name="email" required>
+							</label>
+							<label class="pod-field">
+								<span class="pod-field__label">Phone</span>
+								<input type="tel" name="phone">
+							</label>
+						</div>
+					</div>
+
+					<div class="pod-form__section">
+						<h2>Configuration Flags</h2>
+						<div class="pod-config">
+							<label class="pod-config__item">
+								<input type="checkbox" name="requiresMockups" checked>
+								<span>Create digital mockups</span>
+							</label>
+							<label class="pod-config__item">
+								<input type="checkbox" name="requiresProof">
+								<span>Send physical proof</span>
+							</label>
+							<label class="pod-config__item">
+								<input type="checkbox" name="rushOrder">
+								<span>Prioritize as rush order</span>
+							</label>
+						</div>
+					</div>
+
+					<div class="pod-form__actions">
+						<button type="submit" class="btn">Submit Offline Order</button>
+						<button type="button" class="btn btn--outline">Save Draft</button>
+					</div>
+				</form>
+			</div>
+
+			<aside class="pod-sidebar">
+				<!-- [2025-11-08 06:26:11] Summary cards -->
+				<div class="pod-summary">
+					<h3>Workflow Snapshot</h3>
+					<ol>
+						<li>Submit intake details</li>
+						<li>Offline ops review within 4 hours</li>
+						<li>Design mockups returned in 2 business days</li>
+						<li>Production &amp; logistics schedule confirmed</li>
+					</ol>
+				</div>
+
+				<div class="pod-summary">
+					<h3>Estimated Timeline</h3>
+					<ul>
+						<li><span>Intake review</span><strong>Same day</strong></li>
+						<li><span>Design iteration</span><strong>2-3 days</strong></li>
+						<li><span>Production window</span><strong>7-14 days</strong></li>
+						<li><span>Logistics &amp; delivery</span><strong>2-5 days</strong></li>
+					</ul>
+				</div>
+
+				<div class="pod-summary">
+					<h3>Need help?</h3>
+					<p>Email <a href="mailto:offline@suvernire.plus">offline@suvernire.plus</a> or call <strong>1-800-555-0175</strong>.</p>
+					<p class="pod-summary__note">Configurations and options are managed in Admin Settings &gt; Offline Workflow.</p>
+				</div>
+			</aside>
+		</section>
+
+		<section class="pod-faq">
+			<div class="container">
+				<h2>Offline POD checklist</h2>
+				<div class="pod-faq__grid">
+					<div class="pod-faq__item">
+						<h3>Brand assets</h3>
+						<p>Upload vector logos, color specs, and typography guidelines to ensure accurate reproduction.</p>
+					</div>
+					<div class="pod-faq__item">
+						<h3>Packaging instructions</h3>
+						<p>Include kitting requirements, inserts, and shipping labels so our fulfillment team can execute perfectly.</p>
+					</div>
+					<div class="pod-faq__item">
+						<h3>Approval flow</h3>
+						<p>Let us know who signs off on proofs. We can route approvals via email or the admin workflow board.</p>
+					</div>
+					<div class="pod-faq__item">
+						<h3>Shipment details</h3>
+						<p>Multiple ship-to addresses? No problem—attach a CSV template and we’ll handle split fulfillment.</p>
+					</div>
+				</div>
+			</div>
+		</section>
+	</main>
+
+	<!-- [2025-11-08 06:45:10] Footer aligned with site pattern -->
+	<footer class="site-footer" role="contentinfo">
+		<div class="container">
+			<small>© 2025 suvernire plus.</small>
+			<nav aria-label="Legal Links">
+				<a href="privacy-policy.html">Privacy Policy</a>
+				<span aria-hidden="true"> | </span>
+				<a href="terms-of-service.html">Terms of Service</a>
+				<span aria-hidden="true"> | </span>
+				<a href="returns.html">Returns</a>
+				<span aria-hidden="true"> | </span>
+				<a href="contact.html">Contact</a>
+			</nav>
+		</div>
+	</footer>
+	<script src="offline-pod-intake.js"></script>
+</body>
+</html>
+

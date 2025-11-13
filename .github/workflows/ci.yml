@@ -1,0 +1,27 @@
+# CI workflow for linting and tests [2025-11-10 14:12:00]
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository # [2025-11-10 14:12:00]
+        uses: actions/checkout@v4
+      - name: Setup Node.js # [2025-11-10 14:12:00]
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+      - name: Install dependencies # [2025-11-10 14:12:00]
+        run: npm install
+      - name: Lint frontend # [2025-11-10 14:12:00]
+        run: npm run lint --workspace apps/web
+      - name: Test backend # [2025-11-10 14:12:00]
+        run: npm test --workspace backend
+

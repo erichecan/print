@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="875" viewBox="0 0 1700 875">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e6f1f6"/>
+      <stop offset="100%" stop-color="#8EC5E3"/>
+    </linearGradient>
+  </defs>
+  <rect width="1700" height="875" fill="url(#bg)"/>
+  <text x="850" y="440" text-anchor="middle" font-family="Arial" font-size="36" fill="#1b365d" opacity="0.5">Hero 1700x875 Placeholder</text>
+</svg>

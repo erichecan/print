@@ -1,0 +1,8 @@
+{
+  "overlaySvg": "https://www.customink.com/assets/site_content/pages/home/rotator/svg/celebrate-with-swag-dfa4cbf4d416f7564f21ed9b29db00b798c4c2912e7db4baaa124355c41ad01e.svg",
+  "sources": {
+    "lg": "./assets/hero/hero-products-1700.webp",
+    "md": "./assets/hero/hero-products-1448.webp",
+    "sm": "./assets/hero/hero-products-700.webp"
+  }
+}

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Checkout | suvernire plus</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="styles.css">
+	<!-- [2025-10-31 12:50:00] Checkout Page -->
+</head>
+<body>
+	<div class="topbar" role="region" aria-label="Top Utility Bar">
+		<div class="container util">
+			<a href="ndx-welcome.html">Sign In</a>
+			<a href="cart.html">Cart (2)</a>
+			<a href="tel:8002934232">800-293-4232</a>
+		</div>
+	</div>
+
+	<header class="primary" role="banner">
+		<div class="container">
+			<nav class="nav" aria-label="Primary Navigation">
+				<div class="brand">
+					<a href="home.html" style="display:flex;align-items:center;gap:10px">
+						<div class="brand__logo" aria-hidden="true"></div>
+						<span class="brand__name">suvernire plus</span>
+					</a>
+				</div>
+				<div class="menu" role="menubar">
+					<a role="menuitem" href="home.html">Home</a>
+					<a role="menuitem" href="help.html">Help</a>
+				</div>
+				<div class="cta">
+					<span style="font-size:13px">Secure Checkout 🔒</span>
+				</div>
+			</nav>
+		</div>
+	</header>
+
+	<main id="main">
+		<nav class="breadcrumb" aria-label="Breadcrumb">
+			<div class="container">
+				<ol>
+					<li><a href="home.html">Home</a></li>
+					<li><a href="cart.html">Cart</a></li>
+					<li aria-current="page">Checkout</li>
+				</ol>
+			</div>
+		</nav>
+
+		<section class="checkout" aria-label="Checkout">
+			<div class="container checkout__grid">
+				<div class="checkout__form">
+					<h1 data-field="pageTitle">Shipping Information</h1>
+					<form class="form" novalidate data-api="/api/orders" data-method="POST">
+						<label for="full-name">Full Name</label>
+						<input id="full-name" type="text" required data-field="user.fullName">
+
+						<label for="email">Email</label>
+						<input id="email" type="email" required data-field="user.email">
+
+						<label for="phone">Phone</label>
+						<input id="phone" type="tel" required data-field="user.phone">
+
+						<label for="address">Street Address</label>
+						<input id="address" type="text" required data-field="address.addressLine1">
+
+						<div class="form-row">
+							<div>
+								<label for="city">City</label>
+								<input id="city" type="text" required data-field="address.city">
+							</div>
+							<div>
+								<label for="state">State</label>
+								<select id="state" required data-field="address.state">
+									<option value="">Select</option>
+									<option value="CA">California</option>
+									<option value="NY">New York</option>
+									<option value="TX">Texas</option>
+								</select>
+							</div>
+							<div>
+								<label for="zip">ZIP Code</label>
+								<input id="zip" type="text" required data-field="address.zipCode">
+							</div>
+						</div>
+
+						<h2>Delivery Options</h2>
+						<div class="delivery-options">
+							<label class="delivery-opt">
+								<input type="radio" name="delivery" value="standard" checked data-field="deliveryOption">
+								<div>
+									<strong>Standard Delivery</strong>
+									<small>Free • 2 weeks</small>
+								</div>
+							</label>
+							<label class="delivery-opt">
+								<input type="radio" name="delivery" value="rush" data-field="deliveryOption">
+								<div>
+									<strong>Rush Delivery</strong>
+									<small>+$15 • 3-5 days</small>
+								</div>
+							</label>
+						</div>
+
+						<h2>Payment Information</h2>
+						<label for="card-number">Card Number</label>
+						<input id="card-number" type="text" placeholder="1234 5678 9012 3456" maxlength="19" required data-field="payment.cardNumber">
+
+						<div class="form-row">
+							<div>
+								<label for="card-expiry">Expiry Date</label>
+								<input id="card-expiry" type="text" placeholder="MM/YY" required data-field="payment.expiry">
+							</div>
+							<div>
+								<label for="card-cvv">CVV</label>
+								<input id="card-cvv" type="text" placeholder="123" maxlength="4" required data-field="payment.cvv">
+							</div>
+						</div>
+
+						<label class="checkbox-label">
+							<input type="checkbox" id="same-address" data-field="billingSameAsShipping">
+							<span>Billing address same as shipping</span>
+						</label>
+
+						<button class="btn" type="submit" style="width:100%;padding:16px;font-size:16px;margin-top:16px" data-action="place-order" onclick="event.preventDefault();window.location.href='order-confirmation.html'">Place Order</button>
+					</form>
+				</div>
+
+				<aside class="checkout-summary">
+					<div class="summary-card">
+						<h2>Order Summary</h2>
+						<div class="order-items" data-field="orderItems">
+							<div class="order-item" data-entity="order-item">
+								<div class="order-item-img placeholder" data-field="thumbnail"></div>
+								<div class="order-item-info">
+									<strong data-field="itemDescription">Hoodie × <span data-field="quantity">1</span></strong>
+									<small data-field="variantDescription">Royal • M</small>
+								</div>
+								<span data-field="unitPrice">$24.00</span>
+							</div>
+							<div class="order-item" data-entity="order-item">
+								<div class="order-item-img placeholder" data-field="thumbnail"></div>
+								<div class="order-item-info">
+									<strong data-field="itemDescription">Long Sleeve × <span data-field="quantity">2</span></strong>
+									<small data-field="variantDescription">Navy • L</small>
+								</div>
+								<span data-field="unitPrice">$32.00</span>
+							</div>
+						</div>
+						<hr class="divider">
+						<div class="summary-row">
+							<span data-field="summaryLabel">Subtotal</span>
+							<span data-field="subtotal">$56.00</span>
+						</div>
+						<div class="summary-row">
+							<span data-field="summaryLabel">Shipping</span>
+							<span class="shipping-free" data-field="shipping">Free</span>
+						</div>
+						<div class="summary-row">
+							<span data-field="summaryLabel">Tax</span>
+							<span data-field="tax">$4.48</span>
+						</div>
+						<hr class="divider">
+						<div class="summary-row total">
+							<span data-field="summaryLabel">Total</span>
+							<span data-field="total">$60.48</span>
+						</div>
+					</div>
+					<div class="trust-note">
+						<p>🔒 Your payment information is secure and encrypted</p>
+					</div>
+				</aside>
+			</div>
+		</section>
+	</main>
+
+	<!-- [2025-11-02 22:40:00] Common footer with fixed links -->
+	<section class="footer-info" aria-label="Site Information">
+		<div class="container footergrid">
+			<div>
+				<h4>Shop</h4>
+				<ul>
+					<li><a href="long-sleeve.html">All Products</a></li>
+					<li><a href="design-lab.html">Design Lab</a></li>
+					<li><a href="promotions.html">Promotions</a></li>
+					<li><a href="help.html">Help Center</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Your Account</h4>
+				<ul>
+					<li><a href="account.html">My Account</a></li>
+					<li><a href="order-tracking.html">Track Order</a></li>
+					<li><a href="cart.html">View Cart</a></li>
+					<li><a href="account.html">My Designs</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Support</h4>
+				<ul>
+					<li><a href="help.html">Help Center</a></li>
+					<li><a href="contact.html">Contact Us</a></li>
+					<li><a href="shipping-info.html">Shipping Info</a></li>
+					<li><a href="returns.html">Returns</a></li>
+				</ul>
+			</div>
+			<div>
+				<h4>Legal</h4>
+				<ul>
+					<li><a href="privacy-policy.html">Privacy Policy</a></li>
+					<li><a href="terms-of-service.html">Terms of Service</a></li>
+					<li><a href="size-guide.html">Size Guide</a></li>
+					<li><a href="sitemap.xml">Sitemap</a></li>
+				</ul>
+			</div>
+		</div>
+	</section>
+
+	<footer class="site-footer" role="contentinfo">
+		<div class="container">
+			<small>© 2025 suvernire plus. All rights reserved.</small>
+			<nav aria-label="Legal Links">
+				<a href="privacy-policy.html">Privacy Policy</a>
+				<span aria-hidden="true"> | </span>
+				<a href="terms-of-service.html">Terms of Service</a>
+				<span aria-hidden="true"> | </span>
+				<a href="returns.html">Returns</a>
+				<span aria-hidden="true"> | </span>
+				<a href="contact.html">Contact</a>
+			</nav>
+		</div>
+    </footer>
+
+    <!-- [2025-11-04 00:00:00] Add common navigation and link fixes -->
+    <script src="scripts/fix-all-links.js"></script>
+    <script src="scripts/common-navigation.js"></script>
+
+</body>
+</html>
+
