@@ -7,7 +7,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { authApi, ordersApi } from '@/lib/api';
+import { authApi, ordersApi, type AccountOrderDetail } from '@/lib/api';
 
 interface AccountOrderSummary {
   id: string;
@@ -53,7 +53,32 @@ export default function AccountOrdersPage() {
       try {
         // [2025-01-27 14:10:00] 添加搜索查询支持（如果API支持）
         const data = await ordersApi.list(page, pagination.limit, statusFilter || undefined, sortBy);
-        let filteredOrders = data.orders || (data as any).data || [];
+        let filteredOrders: AccountOrderSummary[] = [];
+        if ('orders' in data) {
+          filteredOrders = (data.orders || []).map((order: AccountOrderDetail) => ({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            total: order.total,
+            currency: order.currency,
+            createdAt: order.createdAt,
+            itemCount: order.items?.length || 0,
+            thumbnail: order.items?.[0]?.thumbnail || null,
+          }));
+        } else if ('data' in data) {
+          filteredOrders = (data.data || []).map((order: AccountOrderDetail) => ({
+            id: order.id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            total: order.total,
+            currency: order.currency,
+            createdAt: order.createdAt,
+            itemCount: order.items?.length || 0,
+            thumbnail: order.items?.[0]?.thumbnail || null,
+          }));
+        }
         
         // [2025-01-27 14:10:00] 前端搜索过滤（如果后端不支持搜索）
         if (searchQuery.trim()) {
@@ -63,7 +88,8 @@ export default function AccountOrdersPage() {
         }
         
         setOrders(filteredOrders);
-        setPagination(data.pagination || { page, limit: pagination.limit, total: filteredOrders.length, totalPages: 1 });
+        const paginationData = 'pagination' in data ? data.pagination : undefined;
+        setPagination(paginationData || { page, limit: pagination.limit, total: filteredOrders.length, totalPages: 1 });
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'Failed to load orders.');
       } finally {

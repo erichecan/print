@@ -331,7 +331,7 @@ export const ordersApi = {
     query.append('limit', limit.toString());
     if (status) query.append('status', status);
     if (sort) query.append('sort', sort);
-    return api(`/orders?${query.toString()}`);
+    return api<{ orders: AccountOrderDetail[]; pagination?: any } | { data: AccountOrderDetail[]; pagination?: any }>(`/orders?${query.toString()}`);
   },
   getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`),
   getByOrderNumber: (orderNumber: string, email: string) =>

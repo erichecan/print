@@ -30,7 +30,12 @@ interface Order {
 
 export default function AdminDashboardPage() {
   const { data, error, isLoading } = useSWR('/admin/orders', () => ordersApi.list(1, 100));
-  const orders = (data?.data || []) as Order[];
+  const orders = useMemo(() => {
+    if (!data) return [];
+    if ('data' in data) return data.data as Order[];
+    if ('orders' in data) return data.orders as Order[];
+    return [];
+  }, [data]);
 
   const stats = useMemo(() => {
     if (!orders.length) {
