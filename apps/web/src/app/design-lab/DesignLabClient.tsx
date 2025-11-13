@@ -1329,6 +1329,43 @@ const DesignLabClient = () => {
           background: rgba(255, 31, 61, 0.2);
           border: 1px solid rgba(255, 31, 61, 0.5);
         }
+        /* [2025-01-27 16:10:00] View switching controls */
+        .lab__view-controls {
+          position: absolute;
+          top: 16px;
+          left: 16px;
+          display: flex;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.95);
+          padding: 4px;
+          border-radius: 8px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          z-index: 10;
+        }
+        .lab__view-btn {
+          padding: 8px 16px;
+          border: none;
+          background: transparent;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          color: #64748b;
+          transition: all 0.2s ease;
+        }
+        .lab__view-btn:hover:not(:disabled) {
+          background: #f8fafc;
+          color: #334155;
+        }
+        .lab__view-btn.active {
+          background: #fff5f5;
+          color: #ff1f3d;
+          font-weight: 600;
+        }
+        .lab__view-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
         .lab__stage {
           position: relative;
           background: #f5f5f5;
