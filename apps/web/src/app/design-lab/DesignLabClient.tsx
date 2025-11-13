@@ -63,6 +63,7 @@ const DesignLabClient = () => {
   const printAreaRef = useRef<any>(null);
   const safeAreaRef = useRef<any>(null);
   const [zoomLevel, setZoomLevel] = useState(100);
+  const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve'>('front');
 
   const ensureFabric = useCallback(async () => {
     if (fabricRef.current) {
@@ -460,6 +461,17 @@ const DesignLabClient = () => {
   const handleZoomReset = useCallback(() => {
     handleZoomChange(100);
   }, [handleZoomChange]);
+
+  // [2025-01-27 16:10:00] View switching (front/back/sleeve)
+  const handleViewSwitch = useCallback(
+    (view: 'front' | 'back' | 'sleeve') => {
+      setCurrentView(view);
+      // In a real implementation, this would switch the canvas content
+      // For now, we just update the state
+      // TODO: Implement actual view switching with different canvas snapshots
+    },
+    []
+  );
 
   useEffect(() => {
     const detectUser = async () => {
@@ -886,6 +898,36 @@ const DesignLabClient = () => {
               <p>移动端快速预览模式，请登录后在桌面端进行完整编辑。</p>
             </div>
           )}
+          {/* [2025-01-27 16:10:00] View switching controls */}
+          <div className="lab__view-controls">
+            <button
+              type="button"
+              onClick={() => handleViewSwitch('front')}
+              disabled={mobileLocked}
+              className={`lab__view-btn ${currentView === 'front' ? 'active' : ''}`}
+              title="正面"
+            >
+              正面
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewSwitch('back')}
+              disabled={mobileLocked}
+              className={`lab__view-btn ${currentView === 'back' ? 'active' : ''}`}
+              title="背面"
+            >
+              背面
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewSwitch('sleeve')}
+              disabled={mobileLocked}
+              className={`lab__view-btn ${currentView === 'sleeve' ? 'active' : ''}`}
+              title="袖子"
+            >
+              袖子
+            </button>
+          </div>
           {/* [2025-01-27 16:05:00] Zoom controls */}
           <div className="lab__zoom-controls">
             <button
