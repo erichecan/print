@@ -424,6 +424,8 @@ export interface AdminCategorySummary {
     products: number;
     children: number;
   };
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AdminCategoryDetail extends AdminCategorySummary {
@@ -467,6 +469,8 @@ export interface AdminProductSummary {
     url: string;
     alt?: string | null;
   } | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AdminProductDetail extends AdminProductSummary {
