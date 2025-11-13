@@ -363,7 +363,7 @@ export default function AddressesPage() {
 
       {addresses.length === 0 && !showAddForm ? (
         <div style={{ textAlign: 'center', padding: '48px', background: '#f9f9f9', borderRadius: '8px' }}>
-          <p style={{ marginBottom: '16px' }}>You haven't saved any addresses yet.</p>
+          <p style={{ marginBottom: '16px' }}>You haven&apos;t saved any addresses yet.</p>
           <button
             type="button"
             onClick={() => {

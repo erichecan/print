@@ -1134,7 +1134,7 @@ const DesignLabClient = () => {
 
               {/* Quick edit for all text objects */}
               {!selectedTextObject && mode !== 'preview' && textTargets.length === 0 && (
-                <p className="lab__hint">暂无可编辑文字对象，点击左侧"添加文字"开始创作，或选择一个文字对象进行编辑。</p>
+                <p className="lab__hint">暂无可编辑文字对象，点击左侧&ldquo;添加文字&rdquo;开始创作，或选择一个文字对象进行编辑。</p>
               )}
               {!selectedTextObject && mode !== 'preview' &&
             textTargets.map((target) => (

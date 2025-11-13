@@ -601,4 +601,188 @@ export const adminProductsApi = {
     api(`/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' }),
 };
 
+// [2025-01-27 16:15:00] Design Lab API Types
+export interface DesignCanvasSnapshot {
+  size: { width: number; height: number };
+  objects: any[];
+}
+
+export interface DesignDraft {
+  id: string;
+  name: string;
+  productVariantId: string;
+  userId?: string | null;
+  sessionId?: string | null;
+  status: string;
+  currentVersion: number;
+  canvasSnapshot: DesignCanvasSnapshot;
+  pricingSnapshot?: any | null;
+  thumbnailUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateDesignDraftPayload {
+  productVariantId: string;
+  name?: string;
+  canvas?: DesignCanvasSnapshot;
+  pricing?: any;
+}
+
+export interface UpdateDesignDraftPayload {
+  name?: string;
+  canvas?: DesignCanvasSnapshot;
+  pricing?: any;
+  thumbnailUrl?: string;
+  summary?: string;
+}
+
+// [2025-01-27 16:15:00] Design Lab API
+export const designLabApi = {
+  createDraft: (payload: CreateDesignDraftPayload) =>
+    api<{ data: DesignDraft; meta?: { sessionId?: string } }>('/designs', {
+      method: 'POST',
+      body: payload,
+    }),
+  getDraft: (id: string) => api<{ data: DesignDraft }>(`/designs/${id}`),
+  updateDraft: (id: string, payload: UpdateDesignDraftPayload) =>
+    api<{ data: DesignDraft }>(`/designs/${id}`, {
+      method: 'PUT',
+      body: payload,
+    }),
+  deleteDraft: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),
+};
+
+// [2025-01-27 16:15:00] Admin Orders API Types
+export interface AdminOrderSummary {
+  id: string;
+  orderNumber: string;
+  status: string;
+  paymentStatus: string;
+  total: number;
+  currency: string;
+  customerEmail?: string | null;
+  customerName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOrderListParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  paymentStatus?: string;
+  search?: string;
+  sort?: string;
+}
+
+export interface AdminOrderRefundPayload {
+  reason?: string;
+}
+
+// [2025-01-27 16:15:00] Admin Orders API
+export const adminOrdersApi = {
+  list: (params?: AdminOrderListParams) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.status) query.append('status', params.status);
+    if (params?.paymentStatus) query.append('paymentStatus', params.paymentStatus);
+    if (params?.search) query.append('search', params.search);
+    if (params?.sort) query.append('sort', params.sort);
+    const queryString = query.toString();
+    return api<{ data: AdminOrderSummary[]; pagination: any }>(
+      `/admin/orders${queryString ? `?${queryString}` : ''}`
+    );
+  },
+  get: (id: string) => api<any>(`/admin/orders/${id}`),
+  updateStatus: (id: string, payload: any) =>
+    api(`/admin/orders/${id}/status`, { method: 'PATCH', body: payload }),
+  recordRefund: (id: string, payload: AdminOrderRefundPayload) =>
+    api(`/admin/orders/${id}/refund`, { method: 'POST', body: payload }),
+  auditTrail: (id: string, params?: { limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.limit) query.append('limit', params.limit.toString());
+    const queryString = query.toString();
+    return api(`/admin/orders/${id}/audit-trail${queryString ? `?${queryString}` : ''}`);
+  },
+};
+
+// [2025-01-27 16:15:00] Admin Offline Orders API Types
+export interface AdminOfflineOrderSummary {
+  id: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail?: string | null;
+  customerPhone?: string | null;
+  total: number;
+  currency: string;
+  stage: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOfflineOrderDetail extends AdminOfflineOrderSummary {
+  items?: any[];
+  notes?: any[];
+  assets?: any[];
+  productionWorkOrder?: any;
+}
+
+export interface AdminOfflineOrderListResponse {
+  orders: AdminOfflineOrderSummary[];
+  metrics?: any;
+}
+
+export type OfflineOrderStage = string;
+
+export interface ProductionWorkOrderPayload {
+  status?: string;
+  priority?: number;
+  startDate?: string | null;
+  dueDate?: string | null;
+  assigneeId?: string;
+  assigneeName?: string;
+  eventNote?: string;
+}
+
+// [2025-01-27 16:15:00] Admin Offline Orders API
+export const adminOfflineOrdersApi = {
+  list: (params?: { stage?: string; search?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.stage) query.append('stage', params.stage);
+    if (params?.search) query.append('search', params.search);
+    const queryString = query.toString();
+    return api<AdminOfflineOrderListResponse>(
+      `/admin/offline-orders${queryString ? `?${queryString}` : ''}`
+    );
+  },
+  get: (id: string) => api<{ order: AdminOfflineOrderDetail }>(`/admin/offline-orders/${id}`),
+  getMetrics: () => api<any>('/admin/offline-orders/metrics'),
+  updateStage: (id: string, payload: { stageKey: string }) =>
+    api(`/admin/offline-orders/${id}/stage`, { method: 'PATCH', body: payload }),
+  addNote: (id: string, note: string) =>
+    api(`/admin/offline-orders/${id}/notes`, { method: 'POST', body: { note } }),
+  uploadAssets: async (id: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('assets', file));
+    const response = await fetch(`${API_BASE_URL}/admin/offline-orders/${id}/assets`, {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `API Error: ${response.status}`);
+    }
+    return response.json();
+  },
+  upsertProductionWorkOrder: (id: string, payload: ProductionWorkOrderPayload) =>
+    api(`/admin/offline-orders/${id}/production-work-order`, {
+      method: 'PUT',
+      body: payload,
+    }),
+};
+
 export default api;
