@@ -651,6 +651,21 @@ export const designLabApi = {
       body: payload,
     }),
   deleteDraft: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),
+  generateAssetUpload: async () => {
+    const response = await fetch(`${API_BASE_URL}/designs/upload-signature`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `API Error: ${response.status}`);
+    }
+    return response.json();
+  },
+  requestQuote: (designId: string, payload?: any) =>
+    api(`/designs/${designId}/quote`, { method: 'POST', body: payload || {} }),
+  submitOrder: (designId: string, payload?: any) =>
+    api(`/designs/${designId}/order`, { method: 'POST', body: payload || {} }),
 };
 
 // [2025-01-27 16:15:00] Admin Orders API Types

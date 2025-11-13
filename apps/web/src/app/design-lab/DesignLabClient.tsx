@@ -803,7 +803,7 @@ const DesignLabClient = () => {
         id: textbox.id || uuidv4(),
         text: textbox.text || '',
       }));
-  }, [canvas]);
+  }, []);
 
   const handleQuickEditChange = useCallback((id: string, value: string) => {
     if (!fabricCanvasRef.current) {
