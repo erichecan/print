@@ -416,6 +416,10 @@ export interface AdminCategorySummary {
   imageUrl?: string | null;
   isActive: boolean;
   sortOrder: number;
+  parent?: {
+    id: string;
+    name: string;
+  } | null;
   _count?: {
     products: number;
     children: number;
