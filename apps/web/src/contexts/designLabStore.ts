@@ -8,6 +8,16 @@ import type { DesignCanvasSnapshot, DesignDraft } from '@/lib/api';
 
 type EditorMode = 'edit' | 'quick-edit' | 'preview';
 
+// [2025-01-27 15:35:00] Layer information interface
+export interface LayerInfo {
+  id: string;
+  type: 'textbox' | 'image' | 'rect' | 'circle' | 'path' | 'group' | 'i-text' | 'text';
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  zIndex: number;
+}
+
 interface DesignLabState {
   draft?: DesignDraft;
   canvas: DesignCanvasSnapshot;
@@ -15,6 +25,7 @@ interface DesignLabState {
   future: DesignCanvasSnapshot[];
   mode: EditorMode;
   mobileLocked: boolean;
+  layers: LayerInfo[];
   setDraft: (draft: DesignDraft) => void;
   patchDraft: (changes: Partial<DesignDraft>) => void;
   setCanvas: (snapshot: DesignCanvasSnapshot, options?: { pushHistory?: boolean }) => void;
@@ -22,6 +33,12 @@ interface DesignLabState {
   redo: () => void;
   setMode: (mode: EditorMode) => void;
   setMobileLocked: (locked: boolean) => void;
+  updateLayers: (layers: LayerInfo[]) => void;
+  toggleLayerVisibility: (layerId: string) => void;
+  toggleLayerLock: (layerId: string) => void;
+  bringToFront: (layerId: string) => void;
+  sendToBack: (layerId: string) => void;
+  moveLayer: (layerId: string, newIndex: number) => void;
 }
 
 const defaultSnapshot: DesignCanvasSnapshot = {
@@ -38,6 +55,7 @@ export const useDesignLabStore = create<DesignLabState>()(
     future: [],
     mode: 'edit',
     mobileLocked: false,
+    layers: [],
     setDraft: (draft: DesignDraft) =>
       set((state) => {
         state.draft = draft;
@@ -91,6 +109,64 @@ export const useDesignLabStore = create<DesignLabState>()(
     setMobileLocked: (locked: boolean) =>
       set((state) => {
         state.mobileLocked = locked;
+      }),
+    // [2025-01-27 15:35:00] Layer management methods
+    updateLayers: (layers: LayerInfo[]) =>
+      set((state) => {
+        state.layers = layers;
+      }),
+    toggleLayerVisibility: (layerId: string) =>
+      set((state) => {
+        const layer = state.layers.find((l) => l.id === layerId);
+        if (layer) {
+          layer.visible = !layer.visible;
+        }
+      }),
+    toggleLayerLock: (layerId: string) =>
+      set((state) => {
+        const layer = state.layers.find((l) => l.id === layerId);
+        if (layer) {
+          layer.locked = !layer.locked;
+        }
+      }),
+    bringToFront: (layerId: string) =>
+      set((state) => {
+        const layerIndex = state.layers.findIndex((l) => l.id === layerId);
+        if (layerIndex !== -1) {
+          const layer = state.layers[layerIndex];
+          state.layers.splice(layerIndex, 1);
+          state.layers.push(layer);
+          // Update zIndex
+          state.layers.forEach((l, index) => {
+            l.zIndex = index;
+          });
+        }
+      }),
+    sendToBack: (layerId: string) =>
+      set((state) => {
+        const layerIndex = state.layers.findIndex((l) => l.id === layerId);
+        if (layerIndex !== -1) {
+          const layer = state.layers[layerIndex];
+          state.layers.splice(layerIndex, 1);
+          state.layers.unshift(layer);
+          // Update zIndex
+          state.layers.forEach((l, index) => {
+            l.zIndex = index;
+          });
+        }
+      }),
+    moveLayer: (layerId: string, newIndex: number) =>
+      set((state) => {
+        const layerIndex = state.layers.findIndex((l) => l.id === layerId);
+        if (layerIndex !== -1 && newIndex >= 0 && newIndex < state.layers.length) {
+          const layer = state.layers[layerIndex];
+          state.layers.splice(layerIndex, 1);
+          state.layers.splice(newIndex, 0, layer);
+          // Update zIndex
+          state.layers.forEach((l, index) => {
+            l.zIndex = index;
+          });
+        }
       }),
   }))
 );

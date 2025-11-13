@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { authApi, designLabApi, type DesignDraft, type DesignCanvasSnapshot } from '@/lib/api';
-import { useDesignLabStore } from '@/contexts/designLabStore';
+import { useDesignLabStore, type LayerInfo } from '@/contexts/designLabStore';
 
 const AUTO_SAVE_DELAY = 1200;
 
@@ -26,11 +26,12 @@ const DesignLabClient = () => {
   const initialSyncRef = useRef(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { draft, canvas, mode, mobileLocked } = useDesignLabStore((state) => ({
+  const { draft, canvas, mode, mobileLocked, layers } = useDesignLabStore((state) => ({
     draft: state.draft,
     canvas: state.canvas,
     mode: state.mode,
     mobileLocked: state.mobileLocked,
+    layers: state.layers,
   }));
   const setDraft = useDesignLabStore((state) => state.setDraft);
   const patchDraft = useDesignLabStore((state) => state.patchDraft);
@@ -39,6 +40,12 @@ const DesignLabClient = () => {
   const redo = useDesignLabStore((state) => state.redo);
   const setMode = useDesignLabStore((state) => state.setMode);
   const setMobileLocked = useDesignLabStore((state) => state.setMobileLocked);
+  const updateLayers = useDesignLabStore((state) => state.updateLayers);
+  const toggleLayerVisibility = useDesignLabStore((state) => state.toggleLayerVisibility);
+  const toggleLayerLock = useDesignLabStore((state) => state.toggleLayerLock);
+  const bringToFront = useDesignLabStore((state) => state.bringToFront);
+  const sendToBack = useDesignLabStore((state) => state.sendToBack);
+  const moveLayer = useDesignLabStore((state) => state.moveLayer);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,6 +57,7 @@ const DesignLabClient = () => {
   const [activeObjectId, setActiveObjectId] = useState<string | null>(null);
   const [designName, setDesignName] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'edit' | 'layers'>('edit');
 
   const ensureFabric = useCallback(async () => {
     if (fabricRef.current) {
@@ -127,13 +135,130 @@ const DesignLabClient = () => {
   }, [setCanvas]);
 
   const handleSelectionChange = useCallback(() => {
-      const selected = fabricCanvasRef.current?.getActiveObject() as (Record<string, any> & { id?: string }) | undefined;
+    const selected = fabricCanvasRef.current?.getActiveObject() as (Record<string, any> & { id?: string }) | undefined;
     if (selected?.id) {
       setActiveObjectId(selected.id);
     } else {
       setActiveObjectId(null);
     }
   }, []);
+
+  // [2025-01-27 15:40:00] Update layers list from canvas objects
+  const updateLayersFromCanvas = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+
+    const objects = fabricCanvasRef.current.getObjects();
+    const layerInfos: LayerInfo[] = objects.map((obj: any, index: number) => {
+      const id = obj.id || uuidv4();
+      if (!obj.id) obj.id = id;
+
+      let name = '未命名';
+      let type: LayerInfo['type'] = 'rect';
+
+      if (obj.type === 'textbox' || obj.type === 'i-text' || obj.type === 'text') {
+        type = obj.type === 'textbox' ? 'textbox' : obj.type === 'i-text' ? 'i-text' : 'text';
+        name = (obj.text || obj.text || '文字').substring(0, 20);
+      } else if (obj.type === 'image') {
+        type = 'image';
+        name = '图片';
+      } else {
+        type = obj.type as LayerInfo['type'];
+        name = obj.type || '对象';
+      }
+
+      return {
+        id,
+        type,
+        name,
+        visible: obj.visible !== false,
+        locked: obj.selectable === false || obj.evented === false,
+        zIndex: index,
+      };
+    });
+
+    // Reverse to show top layer first (like Custom Ink)
+    updateLayers(layerInfos.reverse());
+  }, [updateLayers]);
+
+  // [2025-01-27 15:40:00] Handle layer selection
+  const handleLayerSelect = useCallback(
+    (layerId: string) => {
+      if (!fabricCanvasRef.current) return;
+      const obj = fabricCanvasRef.current.getObjects().find((o: any) => o.id === layerId);
+      if (obj) {
+        fabricCanvasRef.current.setActiveObject(obj);
+        fabricCanvasRef.current.renderAll();
+        setActiveObjectId(layerId);
+      }
+    },
+    []
+  );
+
+  // [2025-01-27 15:40:00] Handle layer visibility toggle
+  const handleLayerVisibilityToggle = useCallback(
+    (layerId: string) => {
+      if (!fabricCanvasRef.current) return;
+      const obj = fabricCanvasRef.current.getObjects().find((o: any) => o.id === layerId);
+      if (obj) {
+        obj.visible = !obj.visible;
+        fabricCanvasRef.current.renderAll();
+        toggleLayerVisibility(layerId);
+        handleCanvasChange();
+      }
+    },
+    [toggleLayerVisibility, handleCanvasChange]
+  );
+
+  // [2025-01-27 15:40:00] Handle layer lock toggle
+  const handleLayerLockToggle = useCallback(
+    (layerId: string) => {
+      if (!fabricCanvasRef.current) return;
+      const obj = fabricCanvasRef.current.getObjects().find((o: any) => o.id === layerId);
+      if (obj) {
+        obj.selectable = obj.selectable === false;
+        obj.evented = obj.evented === false;
+        if (obj.selectable === false) {
+          fabricCanvasRef.current.discardActiveObject();
+        }
+        fabricCanvasRef.current.renderAll();
+        toggleLayerLock(layerId);
+        handleCanvasChange();
+      }
+    },
+    [toggleLayerLock, handleCanvasChange]
+  );
+
+  // [2025-01-27 15:40:00] Handle bring to front
+  const handleBringToFront = useCallback(
+    (layerId: string) => {
+      if (!fabricCanvasRef.current) return;
+      const obj = fabricCanvasRef.current.getObjects().find((o: any) => o.id === layerId);
+      if (obj) {
+        fabricCanvasRef.current.bringToFront(obj);
+        fabricCanvasRef.current.renderAll();
+        bringToFront(layerId);
+        updateLayersFromCanvas();
+        handleCanvasChange();
+      }
+    },
+    [bringToFront, updateLayersFromCanvas, handleCanvasChange]
+  );
+
+  // [2025-01-27 15:40:00] Handle send to back
+  const handleSendToBack = useCallback(
+    (layerId: string) => {
+      if (!fabricCanvasRef.current) return;
+      const obj = fabricCanvasRef.current.getObjects().find((o: any) => o.id === layerId);
+      if (obj) {
+        fabricCanvasRef.current.sendToBack(obj);
+        fabricCanvasRef.current.renderAll();
+        sendToBack(layerId);
+        updateLayersFromCanvas();
+        handleCanvasChange();
+      }
+    },
+    [sendToBack, updateLayersFromCanvas, handleCanvasChange]
+  );
 
   useEffect(() => {
     const detectUser = async () => {
@@ -235,25 +360,38 @@ const DesignLabClient = () => {
       }
 
       const canvasInstance = fabricCanvasRef.current;
-      canvasInstance.on('object:added', handleCanvasChange);
+      canvasInstance.on('object:added', () => {
+        handleCanvasChange();
+        updateLayersFromCanvas();
+      });
       canvasInstance.on('object:modified', handleCanvasChange);
-      canvasInstance.on('object:removed', handleCanvasChange);
+      canvasInstance.on('object:removed', () => {
+        handleCanvasChange();
+        updateLayersFromCanvas();
+      });
       canvasInstance.on('selection:created', handleSelectionChange);
       canvasInstance.on('selection:updated', handleSelectionChange);
       canvasInstance.on('selection:cleared', handleSelectionChange);
+      canvasInstance.on('object:moving', () => {
+        updateLayersFromCanvas();
+      });
+
+      // [2025-01-27 15:40:00] Initial layer update
+      updateLayersFromCanvas();
 
       return () => {
-        canvasInstance.off('object:added', handleCanvasChange);
-        canvasInstance.off('object:modified', handleCanvasChange);
-        canvasInstance.off('object:removed', handleCanvasChange);
-        canvasInstance.off('selection:created', handleSelectionChange);
-        canvasInstance.off('selection:updated', handleSelectionChange);
-        canvasInstance.off('selection:cleared', handleSelectionChange);
+        canvasInstance.off('object:added');
+        canvasInstance.off('object:modified');
+        canvasInstance.off('object:removed');
+        canvasInstance.off('selection:created');
+        canvasInstance.off('selection:updated');
+        canvasInstance.off('selection:cleared');
+        canvasInstance.off('object:moving');
       };
     };
 
     setupFabricEvents();
-  }, [ensureFabric, handleCanvasChange, handleSelectionChange]);
+  }, [ensureFabric, handleCanvasChange, handleSelectionChange, updateLayersFromCanvas]);
 
   useEffect(() => {
     if (!draft) {
@@ -537,22 +675,126 @@ const DesignLabClient = () => {
           <canvas ref={canvasElementRef} width={canvas?.size?.width || 500} height={canvas?.size?.height || 600} />
         </main>
         <aside className="lab__sidebar">
-          <h3>快速编辑</h3>
-          {mode === 'preview' && (
-            <p className="lab__hint">登录后可在移动端进行文字修改，或前往桌面端体验完整功能。</p>
+          {/* [2025-01-27 15:40:00] Tab navigation */}
+          <div className="lab__sidebar-tabs">
+            <button
+              type="button"
+              className={`lab__tab-btn ${activeTab === 'edit' ? 'active' : ''}`}
+              onClick={() => setActiveTab('edit')}
+            >
+              快速编辑
+            </button>
+            <button
+              type="button"
+              className={`lab__tab-btn ${activeTab === 'layers' ? 'active' : ''}`}
+              onClick={() => setActiveTab('layers')}
+            >
+              图层
+            </button>
+          </div>
+
+          {/* [2025-01-27 15:40:00] Edit Tab */}
+          {activeTab === 'edit' && (
+            <div className="lab__tab-content">
+              <h3>快速编辑</h3>
+              {mode === 'preview' && (
+                <p className="lab__hint">登录后可在移动端进行文字修改，或前往桌面端体验完整功能。</p>
+              )}
+              {mode !== 'preview' && textTargets.length === 0 && (
+                <p className="lab__hint">暂无可编辑文字对象，点击左侧"添加文字"开始创作。</p>
+              )}
+              {mode !== 'preview' &&
+                textTargets.map((target) => (
+                  <label key={target.id} className="lab__field">
+                    <span>文字块</span>
+                    <textarea
+                      value={target.text}
+                      onChange={(event) => handleQuickEditChange(target.id, event.target.value)}
+                      disabled={mobileLocked}
+                    />
+                  </label>
+                ))}
+            </div>
           )}
-          {mode !== 'preview' && textTargets.length === 0 && <p className="lab__hint">暂无可编辑文字对象，点击左侧“添加文字”开始创作。</p>}
-          {mode !== 'preview' &&
-            textTargets.map((target) => (
-              <label key={target.id} className="lab__field">
-                <span>文字块</span>
-                <textarea
-                  value={target.text}
-                  onChange={(event) => handleQuickEditChange(target.id, event.target.value)}
-                  disabled={mobileLocked}
-                />
-              </label>
-            ))}
+
+          {/* [2025-01-27 15:40:00] Layers Tab */}
+          {activeTab === 'layers' && (
+            <div className="lab__tab-content">
+              <h3>图层管理</h3>
+              {layers.length === 0 ? (
+                <p className="lab__hint">暂无图层，添加文字或图片后会自动显示在这里。</p>
+              ) : (
+                <div className="lab__layers-list">
+                  {layers.map((layer, index) => (
+                    <div
+                      key={layer.id}
+                      className={`lab__layer-item ${activeObjectId === layer.id ? 'active' : ''} ${!layer.visible ? 'hidden' : ''}`}
+                      onClick={() => handleLayerSelect(layer.id)}
+                    >
+                      <div className="lab__layer-info">
+                        <span className="lab__layer-icon">
+                          {layer.type === 'textbox' || layer.type === 'i-text' || layer.type === 'text' ? 'T' : '🖼️'}
+                        </span>
+                        <span className="lab__layer-name" title={layer.name}>
+                          {layer.name}
+                        </span>
+                      </div>
+                      <div className="lab__layer-actions">
+                        <button
+                          type="button"
+                          className="lab__layer-action-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLayerVisibilityToggle(layer.id);
+                          }}
+                          title={layer.visible ? '隐藏' : '显示'}
+                        >
+                          {layer.visible ? '👁️' : '👁️‍🗨️'}
+                        </button>
+                        <button
+                          type="button"
+                          className="lab__layer-action-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleLayerLockToggle(layer.id);
+                          }}
+                          title={layer.locked ? '解锁' : '锁定'}
+                        >
+                          {layer.locked ? '🔒' : '🔓'}
+                        </button>
+                        {index > 0 && (
+                          <button
+                            type="button"
+                            className="lab__layer-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBringToFront(layer.id);
+                            }}
+                            title="置顶"
+                          >
+                            ⬆️
+                          </button>
+                        )}
+                        {index < layers.length - 1 && (
+                          <button
+                            type="button"
+                            className="lab__layer-action-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSendToBack(layer.id);
+                            }}
+                            title="置底"
+                          >
+                            ⬇️
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </aside>
       </div>
       <footer className="lab__footer">
@@ -674,12 +916,119 @@ const DesignLabClient = () => {
         .lab__sidebar {
           background: #ffffff;
           border-left: 1px solid #e5e5e5;
+          padding: 0;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+        }
+        /* [2025-01-27 15:40:00] Sidebar tabs */
+        .lab__sidebar-tabs {
+          display: flex;
+          border-bottom: 1px solid #e5e5e5;
+          background: #f8fafc;
+        }
+        .lab__tab-btn {
+          flex: 1;
+          padding: 12px 16px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          color: #64748b;
+          transition: all 0.2s ease;
+          border-bottom: 2px solid transparent;
+        }
+        .lab__tab-btn:hover {
+          background: #f1f5f9;
+          color: #334155;
+        }
+        .lab__tab-btn.active {
+          color: #ff1f3d;
+          border-bottom-color: #ff1f3d;
+          background: #ffffff;
+        }
+        .lab__tab-content {
           padding: 24px;
+          flex: 1;
           overflow-y: auto;
         }
-        .lab__sidebar h3 {
+        .lab__tab-content h3 {
           margin: 0 0 16px 0;
           font-size: 18px;
+        }
+        /* [2025-01-27 15:40:00] Layers list */
+        .lab__layers-list {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .lab__layer-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: background 0.2s ease;
+          border: 1px solid transparent;
+        }
+        .lab__layer-item:hover {
+          background: #f8fafc;
+        }
+        .lab__layer-item.active {
+          background: #fff5f5;
+          border-color: #ff1f3d;
+        }
+        .lab__layer-item.hidden {
+          opacity: 0.5;
+        }
+        .lab__layer-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex: 1;
+          min-width: 0;
+        }
+        .lab__layer-icon {
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f1f5f9;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: 600;
+          flex-shrink: 0;
+        }
+        .lab__layer-name {
+          font-size: 14px;
+          color: #334155;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .lab__layer-actions {
+          display: flex;
+          gap: 4px;
+          flex-shrink: 0;
+        }
+        .lab__layer-action-btn {
+          width: 28px;
+          height: 28px;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          transition: background 0.2s ease;
+        }
+        .lab__layer-action-btn:hover {
+          background: #e2e8f0;
         }
         .lab__hint {
           font-size: 14px;
