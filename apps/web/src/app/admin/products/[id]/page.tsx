@@ -11,9 +11,8 @@ export async function generateStaticParams() {
 export default function AdminProductEditPage({
   params,
 }: {
-  params: { id: string }>;
+  params: { id: string };
 }) {
-  // [2025-01-27 15:15:00] Next.js 15: params 现在是异步的
-  const { id } = // params 已同步
-  return <AdminProductEditClient id={id} />;
+  // [2025-11-14 05:48:10] Next.js 14: params 保持同步，可直接读取
+  return <AdminProductEditClient id={params.id} />;
 }
