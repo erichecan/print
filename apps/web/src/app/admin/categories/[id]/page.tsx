@@ -1,83 +1,17 @@
-'use client';
+// [2025-01-27 14:30:00] 服务器组件包装器，用于静态导出模式
+import AdminCategoryEditClient from './AdminCategoryEditClient';
 
-/**
- * Admin Category Edit Page
- * [2025-11-11 23:26:11] 编辑分类页
- */
-import useSWR from 'swr';
-import { useRouter } from 'next/navigation';
-import { CategoryForm } from '@/components/admin/CategoryForm';
-import { adminCategoriesApi } from '@/lib/api';
+// [2025-01-27 14:25:00] 为静态导出模式添加 generateStaticParams
+export async function generateStaticParams() {
+  // 返回空数组，因为分类 ID 是动态的，无法在构建时预生成
+  // 页面会在客户端运行时动态加载
+  return [];
+}
 
 export default function AdminCategoryEditPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const router = useRouter();
-  const { data, isLoading, error, mutate } = useSWR(
-    ['admin-category', params.id],
-    () => adminCategoriesApi.get(params.id)
-  );
-
-  return (
-    <div className="admin-section">
-      <header className="page-header">
-        <div>
-          <h1>编辑分类</h1>
-          <p>调整分类名称、层级与展示内容。</p>
-        </div>
-        <button type="button" className="text-button" onClick={() => router.back()}>
-          返回
-        </button>
-      </header>
-
-      {isLoading && <p>正在加载分类数据…</p>}
-      {error && <p className="error">分类加载失败，请刷新后重试。</p>}
-      {data && (
-        <CategoryForm
-          mode="edit"
-          category={data}
-          onSuccess={async () => {
-            await mutate();
-            router.refresh();
-          }}
-        />
-      )}
-
-      <style jsx>{`
-        .admin-section {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 16px;
-        }
-        .page-header h1 {
-          margin: 0;
-          font-size: 26px;
-        }
-        .page-header p {
-          margin: 4px 0 0;
-          color: #64748b;
-        }
-        .text-button {
-          background: none;
-          border: none;
-          color: #2563eb;
-          cursor: pointer;
-          font-weight: 600;
-        }
-        .error {
-          color: #ef4444;
-        }
-      `}</style>
-    </div>
-  );
+  return <AdminCategoryEditClient id={params.id} />;
 }
-
-

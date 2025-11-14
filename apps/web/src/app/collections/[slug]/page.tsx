@@ -55,6 +55,13 @@ async function fetchCollection(slug: string) {
   return (await response.json()) as CollectionDetail;
 }
 
+// [2025-01-27 14:25:00] 为静态导出模式添加 generateStaticParams
+export async function generateStaticParams() {
+  // 返回空数组，因为分类 slug 是动态的，无法在构建时预生成
+  // 页面会在客户端运行时动态加载
+  return [];
+}
+
 export default async function CollectionPage({ params }: { params: { slug: string } }) {
   const collection = await fetchCollection(params.slug);
 
