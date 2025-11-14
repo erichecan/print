@@ -95,7 +95,6 @@ ProductVariant.hasMany(OrderItem, { foreignKey: 'variant_id', as: 'orderItems' }
 
 ProductImage.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
 CartItem.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
-OrderItem.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
 
 // Design associations
 Design.hasMany(DesignAsset, { foreignKey: 'design_id', as: 'assets', onDelete: 'CASCADE' });
@@ -104,7 +103,6 @@ Design.hasMany(OrderItem, { foreignKey: 'design_id', as: 'orderItems' });
 
 DesignAsset.belongsTo(Design, { foreignKey: 'design_id', as: 'design' });
 CartItem.belongsTo(Design, { foreignKey: 'design_id', as: 'design' });
-OrderItem.belongsTo(Design, { foreignKey: 'design_id', as: 'design' });
 
 // Order associations
 Order.hasMany(OrderItem, { foreignKey: 'order_id', as: 'items', onDelete: 'CASCADE' });

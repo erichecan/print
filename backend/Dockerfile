@@ -1,6 +1,8 @@
 ## Backend production Dockerfile [2025-11-10 13:45:00]
-FROM node:18-alpine AS base
+FROM node:18-bullseye-slim AS base
 WORKDIR /app
+# [2025-11-14 06:22:30] 使用 Debian 基础镜像并安装 openssl 以满足 Prisma 依赖
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 
 ## Install dependencies with cleaning [2025-11-10 23:55:03]
 COPY backend/package*.json ./
