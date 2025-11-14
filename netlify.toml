@@ -8,51 +8,22 @@
 # - Publish directory: （留空，使用此配置）
 
 [build]
-  # 构建命令：切换到 apps/web 目录并构建
-  command = "cd apps/web && npm install && NETLIFY=true npm run build"
-  # 发布目录：相对于仓库根目录
-  publish = "apps/web/out"
+  # [2025-11-14 06:22:00] 改用 Netlify Next.js 插件，先安装根依赖再构建子应用
+  command = "npm install && cd apps/web && npm install && npm run build"
+  # [2025-11-14 06:22:00] SSR 模式下由插件接管 .next 输出
+  publish = "apps/web/.next"
 
 [build.environment]
   # Node.js 版本
   NODE_VERSION = "18"
   # 禁用 Next.js 遥测
   NEXT_TELEMETRY_DISABLED = "1"
-  # 标记为 Netlify 环境（触发静态导出模式）
-  NETLIFY = "true"
   # 设置 CI 环境变量以避免构建警告导致失败
   CI = "false"
 
-# Next.js 14 App Router 静态导出路由配置
-# 静态导出模式下，所有路由都需要回退到 index.html（SPA 模式）
-
-# 静态资源（优先匹配）
-[[redirects]]
-  from = "/_next/static/*"
-  to = "/_next/static/:splat"
-  status = 200
-  force = true
-
-# 所有其他路由回退到 index.html（由 Next.js 客户端路由处理）
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
-
-# 静态资源缓存头
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/_next/image/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# [2025-11-14 06:22:00] 启用 Netlify 官方 Next.js 插件以支持 SSR
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+  [plugins.inputs]
+    base = "apps/web"
 

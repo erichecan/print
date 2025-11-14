@@ -13,5 +13,9 @@
     "lint": "echo use per-app lint"
   },
   "dependencies": {
+  },
+  "_comment_devDependencies": "[2025-11-14 06:23:00] 引入 Netlify SSR 插件",
+  "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.8.1"
   }
 }

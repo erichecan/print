@@ -15,6 +15,8 @@ FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# [2025-11-14 06:10:30] 复制构建阶段依赖以便 next start 可执行
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/next.config.mjs ./next.config.mjs
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.next ./.next

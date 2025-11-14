@@ -86,7 +86,6 @@ ProductVariant.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 ProductReview.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 CartItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
-OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 Design.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
 // ProductVariant associations
@@ -114,6 +113,7 @@ Order.belongsTo(Address, { foreignKey: 'shipping_address_id', as: 'shippingAddre
 Order.belongsTo(Address, { foreignKey: 'billing_address_id', as: 'billingAddress' });
 
 OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
+// [2025-11-14 06:15:00] OrderItem -> Product 保持单一 alias，避免 Sequelize 冲突
 OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 OrderItem.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
 OrderItem.belongsTo(Design, { foreignKey: 'design_id', as: 'design' });
