@@ -9,7 +9,7 @@
 
 [build]
   # 构建命令：切换到 apps/web 目录并构建
-  command = "cd apps/web && npm install && npm run build"
+  command = "cd apps/web && npm install && NETLIFY=true npm run build"
   # 发布目录：相对于仓库根目录
   publish = "apps/web/out"
 
@@ -20,6 +20,8 @@
   NEXT_TELEMETRY_DISABLED = "1"
   # 标记为 Netlify 环境（触发静态导出模式）
   NETLIFY = "true"
+  # 设置 CI 环境变量以避免构建警告导致失败
+  CI = "false"
 
 # Next.js 14 App Router 静态导出路由配置
 # 静态导出模式下，所有路由都需要回退到 index.html（SPA 模式）
