@@ -1,64 +1,11 @@
-# Netlify Configuration for Next.js 14 App Router (Static Export)
-# [2025-01-27 12:00:00] Created for Netlify deployment
-# 
-# 部署说明：
-# 1. 在 Netlify 控制台设置：
-#    - Base directory: apps/web
-#    - Build command: npm install && npm run build
-#    - Publish directory: out
-# 2. 设置环境变量：
-#    - NETLIFY=true
-#    - NEXT_PUBLIC_API_URL=你的后端API地址（例如：https://api.your-domain.com/api）
+# Netlify configuration scoped to apps/web
+# [2025-11-14 06:38:00] 与根 netlify.toml 保持一致，启用 SSR 模式
 
 [build]
-  # 构建命令
-  # 注意：base directory 设置为 apps/web，所以命令在 apps/web 目录下执行
-  # npm workspaces 会自动检测父目录的 package.json 并安装所有依赖
   command = "npm install && npm run build"
-  # 发布目录（Next.js 静态导出模式输出到 out 目录）
-  # 注意：此路径相对于 netlify.toml 所在目录（apps/web）
-  publish = "out"
+  publish = ".next"
 
 [build.environment]
-  # Node.js 版本
   NODE_VERSION = "18"
-  # 禁用 Next.js 遥测
   NEXT_TELEMETRY_DISABLED = "1"
-  # 标记为 Netlify 环境（触发静态导出模式）
-  NETLIFY = "true"
-
-# Next.js 14 App Router 静态导出路由配置
-# 静态导出模式下，所有路由都需要回退到 index.html（SPA 模式）
-
-# 静态资源（优先匹配）
-[[redirects]]
-  from = "/_next/static/*"
-  to = "/_next/static/:splat"
-  status = 200
-  force = true
-
-# 所有其他路由回退到 index.html（由 Next.js 客户端路由处理）
-# 这是静态导出模式的标准配置
-# 注意：必须放在最后，确保静态资源优先匹配
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
-
-# 静态资源缓存头
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/_next/image/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
 
