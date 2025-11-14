@@ -9,6 +9,8 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function OrderDetailPage({ params }: { params: { orderNumber: string } }) {
-  return <OrderDetailContent orderNumber={params.orderNumber} />;
+export default async function OrderDetailPage({ params }: { params: Promise<{ orderNumber: string }> }) {
+  // [2025-01-27 15:15:00] Next.js 15: params 现在是异步的
+  const { orderNumber } = await params;
+  return <OrderDetailContent orderNumber={orderNumber} />;
 }

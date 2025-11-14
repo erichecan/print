@@ -62,8 +62,10 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default async function CollectionPage({ params }: { params: { slug: string } }) {
-  const collection = await fetchCollection(params.slug);
+export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> }) {
+  // [2025-01-27 15:15:00] Next.js 15: params 现在是异步的
+  const { slug } = await params;
+  const collection = await fetchCollection(slug);
 
   if (!collection) {
     notFound();

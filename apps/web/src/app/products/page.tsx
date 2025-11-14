@@ -175,11 +175,13 @@ function normalizeSearchParams(
 }
 
 export default async function ProductsPage({
-  searchParams = {},
+  searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  // [2025-01-27 15:15:00] Next.js 15: searchParams 现在是异步的
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const normalizedParams = normalizeSearchParams(searchParams);
+  const resolvedSearchParams = await (searchParams ?? Promise.resolve({}));
+  const normalizedParams = normalizeSearchParams(resolvedSearchParams);
   let collections: Collection[] = [];
   let productsResponse: ProductsResponse | null = null;
   let fetchError: string | null = null;

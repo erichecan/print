@@ -1,6 +1,8 @@
 'use client';
 // [2025-11-10 23:55:03] 自定义 404 页面以避免默认 _error 组件触发 SSR useContext 异常
-// [2025-01-27 14:15:00] 修复静态导出模式下的 404 页面结构，使用客户端组件
+// [2025-01-27 14:15:00] 修复静态导出模式下的 404 页面结构
+// [2025-01-27 15:10:00] Next.js 15: 使用 Link 组件替代 a 标签以满足 ESLint 要求
+import Link from 'next/link';
 
 export default function NotFoundPage() {
   return (
@@ -10,7 +12,7 @@ export default function NotFoundPage() {
         <p style={{ fontSize: '1.125rem', lineHeight: 1.8 }}>
           很抱歉，你访问的页面不存在。请检查链接是否正确，或者返回首页继续浏览。
         </p>
-        <a
+        <Link
           href="/"
           style={{
             display: 'inline-block',
@@ -24,7 +26,7 @@ export default function NotFoundPage() {
           }}
         >
           返回首页
-        </a>
+        </Link>
       </div>
     </div>
   );

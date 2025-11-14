@@ -1,4 +1,5 @@
 // [2025-01-27 14:30:00] 服务器组件包装器，用于静态导出模式
+// [2025-01-27 15:15:00] Next.js 15: params 现在是异步的，需要使用 await
 import AccountOrderDetailClient from './AccountOrderDetailClient';
 
 // [2025-01-27 14:25:00] 为静态导出模式添加 generateStaticParams
@@ -8,10 +9,11 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function AccountOrderDetailPage({
+export default async function AccountOrderDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  return <AccountOrderDetailClient id={params.id} />;
+  const { id } = await params;
+  return <AccountOrderDetailClient id={id} />;
 }

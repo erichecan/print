@@ -10,8 +10,10 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function ProductDetailPage({ params }: { params: { slug: string } }) {
+export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  // [2025-01-27 15:15:00] Next.js 15: params 现在是异步的
   // params 参数必须存在以满足 Next.js 静态导出要求
   // 但实际 slug 由 ProductDetailContent 通过 useParams() 获取
+  await params; // 确保 params 被解析
   return <ProductDetailContent />;
 }

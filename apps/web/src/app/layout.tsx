@@ -5,15 +5,11 @@
  * [2025-11-11 23:57:05] Integrated global header/footer and Inter font
  */
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import { Inter } from 'next/font/google';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
+import { CartProvider } from '@/contexts/CartContext'; // [2025-01-27 15:10:00] Next.js 15: 直接导入客户端组件，无需 dynamic
 import './globals.css';
-
-const CartProvider = dynamic(() => import('@/contexts/CartContext').then((mod) => mod.CartProvider), {
-  ssr: false,
-}); // [2025-11-10 22:56:25] Defer CartProvider to client to prevent SSR hook usage during static generation
 
 const inter = Inter({
   subsets: ['latin'],
