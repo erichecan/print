@@ -2,16 +2,21 @@
 const Redis = require('ioredis');
 require('dotenv').config();
 
-const redis = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
-  retryStrategy: (times) => {
-    const delay = Math.min(times * 50, 2000);
-    return delay;
-  },
-  maxRetriesPerRequest: 3
-});
+const redisConnectionOptions =
+  process.env.REDIS_URL ||
+  {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: process.env.REDIS_PORT || 6379,
+    password: process.env.REDIS_PASSWORD || undefined,
+    retryStrategy: (times) => {
+      const delay = Math.min(times * 50, 2000);
+      return delay;
+    },
+    maxRetriesPerRequest: 3
+  };
+
+// [2025-11-14 06:29:00] 支持 REDIS_URL 以便容器内部直接使用 redis 服务
+const redis = new Redis(redisConnectionOptions);
 
 redis.on('connect', () => {
   console.log('✅ Redis connection established successfully.');
