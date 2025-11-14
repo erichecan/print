@@ -8,10 +8,10 @@
 # - Publish directory: （留空，使用此配置）
 
 [build]
-  # [2025-11-14 06:22:00] 改用 Netlify Next.js 插件，先安装根依赖再构建子应用
-  command = "npm install && cd apps/web && npm install && npm run build"
-  # [2025-11-14 06:22:00] SSR 模式下由插件接管 .next 输出
-  publish = "apps/web/.next"
+  # [2025-11-14 06:35:00] 直接在 apps/web 子目录构建，简化插件配置
+  base = "apps/web"
+  command = "npm install && npm run build"
+  publish = ".next"
 
 [build.environment]
   # Node.js 版本
@@ -21,9 +21,7 @@
   # 设置 CI 环境变量以避免构建警告导致失败
   CI = "false"
 
-# [2025-11-14 06:22:00] 启用 Netlify 官方 Next.js 插件以支持 SSR
+# [2025-11-14 06:35:00] 启用 Netlify 官方 Next.js 插件以支持 SSR
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-  [plugins.inputs]
-    base = "apps/web"
 
