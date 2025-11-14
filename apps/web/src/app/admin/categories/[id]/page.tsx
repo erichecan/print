@@ -1,4 +1,5 @@
 // [2025-01-27 14:30:00] 服务器组件包装器，用于静态导出模式
+// [2025-01-27 15:45:00] 修复 Next.js 14 的异步 params 问题
 import AdminCategoryEditClient from './AdminCategoryEditClient';
 
 // [2025-01-27 14:25:00] 为静态导出模式添加 generateStaticParams
@@ -8,12 +9,11 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default async function AdminCategoryEditPage({
+export default function AdminCategoryEditPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  // [2025-01-27 15:15:00] Next.js 15: params 现在是异步的
-  const { id } = await params;
-  return <AdminCategoryEditClient id={id} />;
+  // [2025-01-27 15:45:00] Next.js 14: params 是同步的
+  return <AdminCategoryEditClient id={params.id} />;
 }
