@@ -1,5 +1,6 @@
 // [2025-01-27 14:30:00] 服务器组件包装器，用于静态导出模式
 // [2025-01-27 14:55:00] 移除 Suspense，简化结构以避免 Next.js 解析问题
+// [2025-01-27 15:00:00] 添加 params 参数以满足 Next.js 静态导出要求
 import { ProductDetailContent } from './ProductDetailContent';
 
 // [2025-01-27 14:25:00] 为静态导出模式添加 generateStaticParams
@@ -9,6 +10,8 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function ProductDetailPage() {
+export default function ProductDetailPage({ params }: { params: { slug: string } }) {
+  // params 参数必须存在以满足 Next.js 静态导出要求
+  // 但实际 slug 由 ProductDetailContent 通过 useParams() 获取
   return <ProductDetailContent />;
 }
