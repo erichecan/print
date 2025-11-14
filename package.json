@@ -13,6 +13,5 @@
     "lint": "echo use per-app lint"
   },
   "dependencies": {
-    "@sentry/nextjs": "^8.55.0"
   }
 }
