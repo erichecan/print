@@ -8,12 +8,12 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default async function AdminProductEditPage({
+export default function AdminProductEditPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string }>;
 }) {
   // [2025-01-27 15:15:00] Next.js 15: params 现在是异步的
-  const { id } = await params;
+  const { id } = // params 已同步
   return <AdminProductEditClient id={id} />;
 }
