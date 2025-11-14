@@ -39,7 +39,7 @@ export default function AdminOrdersPage() {
   const [searchInput, setSearchInput] = useState('');
 
   const swrKey = useMemo(() => ['admin-orders', filters], [filters]);
-  const { data, isLoading, mutate } = useSWR(swrKey, ([, params]) => adminOrdersApi.list(params));
+  const { data, isLoading, mutate } = useSWR(swrKey, ([, params]: [string, AdminOrderListParams]) => adminOrdersApi.list(params));
 
   const orders = data?.data ?? [];
   const pagination = data?.pagination;
@@ -144,7 +144,7 @@ export default function AdminOrdersPage() {
                         {order.orderNumber}
                       </Link>
                     </td>
-                    <td>{order.email}</td>
+                    <td>{order.customerEmail || '—'}</td>
                     <td>{order.itemCount}</td>
                     <td>${order.total.toFixed(2)} {order.currency}</td>
                     <td>

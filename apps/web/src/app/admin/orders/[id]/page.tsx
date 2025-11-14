@@ -11,7 +11,7 @@ import Link from 'next/link';
 import AdminShell from '@/components/admin/AdminShell';
 import {
   adminOrdersApi,
-  AdminOrderDetail,
+  AdminOrderSummary,
   AdminOrderUpdatePayload,
   AdminOrderRefundPayload,
   AdminAuditLogEntry,
@@ -43,7 +43,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     ([, orderId]) => adminOrdersApi.auditTrail(orderId, { limit: 20 })
   );
 
-  const auditLogs = auditLogResponse?.data ?? [];
+  const auditLogs = (auditLogResponse as any)?.data ?? [];
 
   const describeAuditEntry = (log: AdminAuditLogEntry) => {
     const meta = (log.meta || {}) as Record<string, any>;
@@ -134,7 +134,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     }
   };
 
-  const order: AdminOrderDetail | undefined = data;
+  const order: AdminOrderSummary | undefined = data;
 
   return (
     <AdminShell>
@@ -266,7 +266,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
               <div className="card">
                 <h2>Customer</h2>
                 <p>
-                  <strong>Email:</strong> {order.email}
+                  <strong>Email:</strong> {order.customerEmail || '—'}
                 </p>
                 <p>
                   <strong>Last updated:</strong> {new Date(order.updatedAt).toLocaleString()}
@@ -276,7 +276,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
               <div className="card">
                 <h2>Items</h2>
                 <div className="items-list">
-                  {order.items.map((item) => (
+                  {(order.items || []).map((item: any) => (
                     <article key={item.id} className="item-row">
                       <div className="item-meta">
                         <h3>{item.productName}</h3>
@@ -300,20 +300,20 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                 <h2>Summary</h2>
                 <div className="summary-row">
                   <span>Subtotal</span>
-                  <span>${order.subtotal.toFixed(2)}</span>
+                  <span>${(order.subtotal || 0).toFixed(2)}</span>
                 </div>
                 <div className="summary-row">
                   <span>Shipping</span>
-                  <span>${order.shippingCost.toFixed(2)}</span>
+                  <span>${(order.shippingCost || 0).toFixed(2)}</span>
                 </div>
                 <div className="summary-row">
                   <span>Tax</span>
-                  <span>${order.tax.toFixed(2)}</span>
+                  <span>${(order.tax || 0).toFixed(2)}</span>
                 </div>
-                {order.discount > 0 && (
+                {(order.discount || 0) > 0 && (
                   <div className="summary-row">
                     <span>Discount</span>
-                    <span>- ${order.discount.toFixed(2)}</span>
+                    <span>- ${(order.discount || 0).toFixed(2)}</span>
                   </div>
                 )}
                 <hr />
@@ -351,11 +351,11 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                 </address>
               </div>
 
-              {order.shipments.length > 0 && (
+              {(order.shipments || []).length > 0 && (
                 <div className="card">
                   <h3>Shipments</h3>
                   <div className="shipments">
-                    {order.shipments.map((shipment) => (
+                    {(order.shipments || []).map((shipment: any) => (
                       <div key={shipment.id} className="shipment-row">
                         <p>
                           <strong>{shipment.status}</strong> — {new Date(shipment.createdAt).toLocaleString()}
@@ -378,7 +378,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                   <p className="muted">暂无审计记录。</p>
                 ) : (
                   <ul className="audit-list">
-                    {auditLogs.map((log) => (
+                    {auditLogs.map((log: AdminAuditLogEntry) => (
                       <li key={log.id} className="audit-list__item">
                         <div className="audit-list__meta">
                           <span>{new Date(log.createdAt).toLocaleString()}</span>

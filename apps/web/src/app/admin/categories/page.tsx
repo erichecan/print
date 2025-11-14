@@ -155,7 +155,7 @@ export default function AdminCategoriesPage() {
                       {category.isActive ? '启用' : '禁用'}
                     </span>
                   </td>
-                  <td>{new Date(category.updatedAt).toLocaleString()}</td>
+                  <td>{category.updatedAt ? new Date(category.updatedAt).toLocaleString() : '-'}</td>
                   <td>
                     <div className="actions">
                       <Link href={`/admin/categories/${category.id}`} className="link">

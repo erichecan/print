@@ -83,15 +83,15 @@ export default function AdminOfflineOrdersPage() {
   } = useSWR('admin-offline-orders-metrics', adminOfflineOrdersApi.getMetrics);
 
   const stages = useMemo(() => {
-    const list = boardData?.stages ?? [];
+    const list = metricsData?.stages ?? [];
     return [...list].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  }, [boardData?.stages]);
+  }, [metricsData?.stages]);
 
   const groupedOrders = useMemo(() => {
     const groups = new Map<string, AdminOfflineOrderSummary[]>();
     stages.forEach((stage) => groups.set(stage.key, []));
     (boardData?.orders || []).forEach((order) => {
-      const bucket = groups.get(order.stage.key);
+      const bucket = groups.get(order.stage);
       if (bucket) bucket.push(order);
     });
     return groups;
@@ -115,15 +115,17 @@ export default function AdminOfflineOrdersPage() {
     (order: AdminOfflineOrderSummary) => {
       setSelectedOrderId(order.id);
       setDetailRevision('');
-      setStageDraft(order.stage.key);
-      setProductionStatusDraft(order.productionWorkOrder?.status || '');
+      setStageDraft(order.stage);
+      // [2025-11-14 00:42:00] productionWorkOrder 在 detailData 中，不在 summary 中
+      setProductionStatusDraft('');
       setProductionNoteDraft('');
       setNoteDraft('');
-      setPriorityDraft(order.productionWorkOrder?.priority ?? '');
-      setStartDateDraft(toInputDate(order.productionWorkOrder?.startDate));
-      setDueDateDraft(toInputDate(order.productionWorkOrder?.dueDate));
-      setAssigneeIdDraft(order.productionWorkOrder?.assignee?.id || '');
-      setAssigneeNameDraft(order.productionWorkOrder?.assignee?.name || '');
+      setPriorityDraft('');
+      setStartDateDraft('');
+      setDueDateDraft('');
+      // [2025-11-14 00:43:00] productionWorkOrder 在 detailData 中，不在 summary 中
+      setAssigneeIdDraft('');
+      setAssigneeNameDraft('');
     },
     []
   );
@@ -222,7 +224,7 @@ export default function AdminOfflineOrdersPage() {
       return;
     }
     // [2025-11-12 02:47:30] Keep production draft fields aligned with latest backend data
-    setStageDraft(selectedDetail.stage.key);
+    setStageDraft(selectedDetail.stage);
     setProductionStatusDraft(selectedDetail.productionWorkOrder?.status || '');
     setPriorityDraft(selectedDetail.productionWorkOrder?.priority ?? '');
     setStartDateDraft(toInputDate(selectedDetail.productionWorkOrder?.startDate));
@@ -286,7 +288,7 @@ export default function AdminOfflineOrdersPage() {
             </div>
           </div>
           <div className="metrics-stages">
-            {metricsData.stages.map((stage) => (
+            {metricsData.stages.map((stage: { key: string; label: string; count: number }) => (
               <div key={stage.key} className="metrics-stage">
                 <span className="metrics-stage__label">{stage.label}</span>
                 <span className="metrics-stage__count">{stage.count}</span>
@@ -326,20 +328,20 @@ export default function AdminOfflineOrdersPage() {
                       <dl>
                         <div>
                           <dt>Order Code</dt>
-                          <dd>{order.orderCode}</dd>
+                          <dd>{order.orderNumber}</dd>
                         </div>
                         <div>
                           <dt>Company</dt>
-                          <dd>{order.contact.company || '—'}</dd>
+                          <dd>—</dd>
                         </div>
                         <div>
                           <dt>Delivery</dt>
-                          <dd>{formatDate(order.deliveryDate)}</dd>
+                          <dd>—</dd>
                         </div>
                       </dl>
                       <footer>
-                        <span>{order.assets.length} assets</span>
-                        <span>{order.contact.email}</span>
+                        <span>—</span>
+                        <span>{order.customerEmail || '—'}</span>
                       </footer>
                     </article>
                   ))}
@@ -365,13 +367,13 @@ export default function AdminOfflineOrdersPage() {
             <div className="detail-body">
               <header>
                 <h2>{selectedDetail.projectName}</h2>
-                <p>#{selectedDetail.orderCode}</p>
+                <p>#{selectedDetail.orderNumber}</p>
               </header>
 
               <section>
                 <h3>Stage</h3>
                 <div className="detail-stage">
-                  <select value={stageDraft || selectedDetail.stage.key} onChange={(event) => setStageDraft(event.target.value)}>
+                  <select value={stageDraft || selectedDetail.stage} onChange={(event) => setStageDraft(event.target.value)}>
                     {stages.map((stage) => (
                       <option key={stage.key} value={stage.key}>
                         {stage.label}
@@ -389,19 +391,19 @@ export default function AdminOfflineOrdersPage() {
                 <dl className="detail-grid">
                   <div>
                     <dt>Name</dt>
-                    <dd>{selectedDetail.contact.name}</dd>
+                    <dd>{selectedDetail.customerName}</dd>
                   </div>
                   <div>
                     <dt>Email</dt>
-                    <dd>{selectedDetail.contact.email}</dd>
+                    <dd>{selectedDetail.customerEmail || '—'}</dd>
                   </div>
                   <div>
                     <dt>Phone</dt>
-                    <dd>{selectedDetail.contact.phone || '—'}</dd>
+                    <dd>{selectedDetail.customerPhone || '—'}</dd>
                   </div>
                   <div>
                     <dt>Company</dt>
-                    <dd>{selectedDetail.contact.company || '—'}</dd>
+                    <dd>—</dd>
                   </div>
                 </dl>
               </section>
@@ -419,7 +421,7 @@ export default function AdminOfflineOrdersPage() {
                   </div>
                   <div>
                     <dt>Delivery Date</dt>
-                    <dd>{formatDate(selectedDetail.deliveryDate)}</dd>
+                    <dd>—</dd>
                   </div>
                   <div>
                     <dt>Rush Order</dt>
@@ -443,9 +445,9 @@ export default function AdminOfflineOrdersPage() {
                   </label>
                   {uploading && <span className="uploading">Uploading…</span>}
                 </div>
-                {selectedDetail.assets.length ? (
+                {selectedDetail.assets && selectedDetail.assets.length > 0 ? (
                   <ul className="asset-list">
-                    {selectedDetail.assets.map((asset) => (
+                    {selectedDetail.assets.map((asset: any) => (
                       <li key={asset.id}>
                         <a href={asset.url} target="_blank" rel="noopener noreferrer">
                           {asset.fileName}
@@ -570,7 +572,7 @@ export default function AdminOfflineOrdersPage() {
                     <div>
                       <span className="muted">Events</span>
                       <ul className="event-list">
-                        {selectedDetail.productionWorkOrder.events.map((event) => (
+                        {selectedDetail.productionWorkOrder.events.map((event: any) => (
                           <li key={event.id}>
                             <strong>{event.status}</strong>
                             <span>{formatDate(event.createdAt)}</span>
@@ -587,9 +589,9 @@ export default function AdminOfflineOrdersPage() {
 
               <section>
                 <h3>Notes & History</h3>
-                {selectedDetail.histories.length ? (
+                {selectedDetail.histories && selectedDetail.histories.length > 0 ? (
                   <ul className="history-list">
-                    {selectedDetail.histories.map((history) => (
+                    {selectedDetail.histories.map((history: any) => (
                       <li key={history.id}>
                         <div className="history-header">
                           <strong>{history.actorName || 'System'}</strong>

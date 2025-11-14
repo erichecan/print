@@ -57,7 +57,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
         slug: category.slug,
         description: category.description || '',
         imageUrl: category.imageUrl || '',
-        parentId: category.parentId || '',
+        parentId: category.parent?.id || '',
         sortOrder: category.sortOrder,
         isActive: category.isActive,
       });

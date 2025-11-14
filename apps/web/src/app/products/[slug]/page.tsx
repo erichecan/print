@@ -59,7 +59,7 @@ function ProductDetailContent() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [relatedProducts, setRelatedProducts] = useState<(Product | any)[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
   // [2025-01-27 13:40:00] 评价相关状态
   const [reviews, setReviews] = useState<ProductReview[]>([]);
@@ -127,7 +127,7 @@ function ProductDetailContent() {
       try {
         setLoadingRelated(true);
         const response = await productsApi.getRelated(slug, 4);
-        setRelatedProducts(response.data || []);
+        setRelatedProducts((response.data || []) as Product[]);
       } catch (err) {
         console.error('[2025-11-12 03:05:00] Failed to load related products:', err);
       } finally {
@@ -158,7 +158,7 @@ function ProductDetailContent() {
     async function fetchReviews() {
       try {
         setLoadingReviews(true);
-        const response = await productsApi.getReviews(product.id);
+        const response = await productsApi.getReviews(product!.id);
         setReviews(response.reviews || []);
         setReviewSummary({
           average: response.summary?.average || 0,

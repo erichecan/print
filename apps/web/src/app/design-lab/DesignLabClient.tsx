@@ -70,8 +70,9 @@ const DesignLabClient = () => {
       return fabricRef.current;
     }
     const fabricModule = await import('fabric');
-    fabricRef.current = fabricModule.fabric;
-    return fabricModule.fabric;
+    const fabric = fabricModule.default || fabricModule;
+    fabricRef.current = fabric;
+    return fabric;
   }, []);
 
   const ensureObjectIds = useCallback(() => {
@@ -79,7 +80,7 @@ const DesignLabClient = () => {
     if (!canvasInstance) {
       return;
     }
-    canvasInstance.getObjects().forEach((obj) => {
+    canvasInstance.getObjects().forEach((obj: any) => {
       const fabricObject = obj as unknown as { id?: string };
       if (!fabricObject.id) {
         fabricObject.id = uuidv4();
@@ -112,7 +113,7 @@ const DesignLabClient = () => {
           canvasInstance.renderAll();
           applyingSnapshotRef.current = false;
         },
-        (o, object) => {
+        (o: any, object: any) => {
           if (object) {
             const castObject = object as unknown as { id?: string };
             if (!castObject.id) {
@@ -530,14 +531,16 @@ const DesignLabClient = () => {
         let draftData: DesignDraft | null = null;
 
         if (designIdParam) {
-          const response = await designLabApi.getDraft(designIdParam);
+          const response = await designLabApi.getDraft(designIdParam) as any;
           draftData = response.data;
         } else if (variantIdParam) {
-          const response = await designLabApi.createDraft({ productVariantId: variantIdParam });
+          const response = await designLabApi.createDraft({ productVariantId: variantIdParam }) as any;
           draftData = response.data;
-          const nextParams = new URLSearchParams(params?.toString() || '');
-          nextParams.set('designId', draftData.id);
-          router.replace(`/design-lab?${nextParams.toString()}`);
+          if (draftData) {
+            const nextParams = new URLSearchParams(params?.toString() || '');
+            nextParams.set('designId', draftData.id);
+            router.replace(`/design-lab?${nextParams.toString()}`);
+          }
         } else {
           setError('请通过产品详情页选择定制变体进入 Design Lab。');
           return;
@@ -626,7 +629,7 @@ const DesignLabClient = () => {
           canvas,
           name: designName,
           summary: 'Auto save',
-        });
+        }) as any;
         patchDraft(response.data);
       } catch (err: any) {
         setError(err.message || '自动保存失败');
@@ -662,7 +665,7 @@ const DesignLabClient = () => {
     }
     try {
       setSaving(true);
-      const response = await designLabApi.updateDraft(draft.id, { name: designName.trim(), summary: 'Rename design' });
+      const response = await designLabApi.updateDraft(draft.id, { name: designName.trim(), summary: 'Rename design' }) as any;
       patchDraft(response.data);
     } catch (err: any) {
       setError(err.message || '更新设计名称失败');
@@ -725,7 +728,7 @@ const DesignLabClient = () => {
           fileName: file.name,
           fileSize: file.size,
           contentType: file.type || 'application/octet-stream',
-        });
+        }) as any;
 
         await fetch(response.data.uploadUrl, {
           method: 'PUT',
@@ -738,9 +741,9 @@ const DesignLabClient = () => {
         const fabric = await ensureFabric();
         fabric.Image.fromURL(
           response.data.asset.url,
-          (img) => {
+          (img: any) => {
             if (img) {
-              const imageObject = img as fabric.Image & { id?: string };
+              const imageObject = img as any & { id?: string };
               imageObject.id = uuidv4();
               imageObject.set({
                 left: 80,
@@ -770,7 +773,7 @@ const DesignLabClient = () => {
       return;
     }
     try {
-      const response = await designLabApi.requestQuote(draft.id, quantity);
+      const response = await designLabApi.requestQuote(draft.id, quantity) as any;
       setQuote(response.data);
     } catch (err: any) {
       setError(err.message || '计算报价失败');
@@ -785,7 +788,7 @@ const DesignLabClient = () => {
       const response = await designLabApi.submitOrder(draft.id, {
         quantity,
       });
-      patchDraft(response.data.design);
+      patchDraft((response as any).data.design);
       alert('设计已锁定并生成下单草稿，请前往购物车继续结账。');
     } catch (err: any) {
       setError(err.message || '提交订单失败，需登录才能继续');
@@ -798,8 +801,8 @@ const DesignLabClient = () => {
     }
     return fabricCanvasRef.current
       .getObjects('textbox')
-      .map((obj) => obj as (fabric.Textbox & { id?: string }))
-      .map((textbox) => ({
+      .map((obj: any) => obj as (any & { id?: string }))
+      .map((textbox: any) => ({
         id: textbox.id || uuidv4(),
         text: textbox.text || '',
       }));
@@ -1137,7 +1140,7 @@ const DesignLabClient = () => {
                 <p className="lab__hint">暂无可编辑文字对象，点击左侧&ldquo;添加文字&rdquo;开始创作，或选择一个文字对象进行编辑。</p>
               )}
               {!selectedTextObject && mode !== 'preview' &&
-            textTargets.map((target) => (
+            textTargets.map((target: any) => (
               <label key={target.id} className="lab__field">
                 <span>文字块</span>
                 <textarea

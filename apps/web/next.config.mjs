@@ -2,8 +2,8 @@
  * Next.js config
  * Updated: 2025-11-04 00:00:00
  * [2025-01-27 12:00:00] Added Netlify output configuration
+ * [2025-01-27 14:10:00] 移除 Sentry 配置，使用简单的错误处理方案
  */
-import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig = {
   reactStrictMode: true,
@@ -65,15 +65,6 @@ const nextConfig = {
   },
 };
 
-const sentryWebpackPluginOptions = {
-  silent: true,
-  dryRun: !process.env.SENTRY_DSN && !process.env.NEXT_PUBLIC_SENTRY_DSN,
-};
-
-const sentryOptions = {
-  hideSourceMaps: true,
-};
-
-export default withSentryConfig(nextConfig, sentryWebpackPluginOptions, sentryOptions);
+export default nextConfig;
 
 

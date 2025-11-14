@@ -688,6 +688,15 @@ export interface AdminOrderSummary {
   currency: string;
   customerEmail?: string | null;
   customerName?: string | null;
+  itemCount?: number; // [2025-11-14 01:00:00] 添加 itemCount 字段
+  items?: any[]; // [2025-11-14 01:01:00] 添加 items 字段
+  subtotal?: number; // [2025-11-14 01:02:00] 添加 subtotal 字段
+  shippingCost?: number; // [2025-11-14 01:02:00] 添加 shippingCost 字段
+  tax?: number; // [2025-11-14 01:02:00] 添加 tax 字段
+  discount?: number; // [2025-11-14 01:02:00] 添加 discount 字段
+  shippingAddress?: any; // [2025-11-14 01:02:00] 添加 shippingAddress 字段
+  billingAddress?: any; // [2025-11-14 01:03:00] 添加 billingAddress 字段
+  shipments?: any[]; // [2025-11-14 01:04:00] 添加 shipments 字段
   createdAt: string;
   updatedAt: string;
 }
@@ -703,6 +712,24 @@ export interface AdminOrderListParams {
 
 export interface AdminOrderRefundPayload {
   reason?: string;
+}
+
+export interface AdminOrderUpdatePayload {
+  status?: string;
+  paymentStatus?: string;
+  trackingNumber?: string | null;
+  carrier?: string | null;
+  estimatedDelivery?: string | null;
+}
+
+export interface AdminAuditLogEntry {
+  id: string;
+  action: string;
+  actorName?: string;
+  actorEmail?: string; // [2025-11-14 01:05:00] 添加 actorEmail 字段
+  createdAt: string;
+  metadata?: any;
+  meta?: any; // [2025-11-14 00:58:00] 添加 meta 字段（metadata 的别名）
 }
 
 // [2025-01-27 16:15:00] Admin Orders API
@@ -740,10 +767,12 @@ export interface AdminOfflineOrderSummary {
   customerName: string;
   customerEmail?: string | null;
   customerPhone?: string | null;
+  projectName?: string; // [2025-11-14 00:45:00] 添加 projectName 字段
   total: number;
   currency: string;
   stage: string;
   status: string;
+  rushOrder?: boolean; // [2025-11-14 00:40:00] 添加 rushOrder 字段
   createdAt: string;
   updatedAt: string;
 }
@@ -753,6 +782,10 @@ export interface AdminOfflineOrderDetail extends AdminOfflineOrderSummary {
   notes?: any[];
   assets?: any[];
   productionWorkOrder?: any;
+  primaryProduct?: string; // [2025-11-14 00:50:00] 添加缺失的字段
+  quantity?: number;
+  description?: string;
+  histories?: any[]; // [2025-11-14 00:52:00] 添加 histories 字段
 }
 
 export interface AdminOfflineOrderListResponse {

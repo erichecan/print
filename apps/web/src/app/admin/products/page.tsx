@@ -159,7 +159,7 @@ export default function AdminProductsPage() {
                       {product.isActive ? '上架' : '下架'}
                     </span>
                   </td>
-                  <td>{new Date(product.updatedAt).toLocaleString()}</td>
+                  <td>{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : '-'}</td>
                   <td>
                     <div className="actions">
                       <Link href={`/admin/products/${product.id}`} className="link">

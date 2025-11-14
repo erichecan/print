@@ -44,7 +44,7 @@ interface DesignLabState {
 const defaultSnapshot: DesignCanvasSnapshot = {
   size: { width: 500, height: 600 },
   objects: [],
-  version: '5.0.0',
+  // [2025-11-14 01:10:00] version 字段不在 DesignCanvasSnapshot 类型中，移除
 };
 
 export const useDesignLabStore = create<DesignLabState>()(
