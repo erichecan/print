@@ -3,12 +3,14 @@
  * [2025-01-27 00:00:00]
  * [2025-11-05 00:35:00] Added CartProvider
  * [2025-11-11 23:57:05] Integrated global header/footer and Inter font
+ * [2025-11-15 12:35:00] Admin 路径不显示 header/footer
  */
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { CartProvider } from '@/contexts/CartContext'; // [2025-01-27 15:10:00] Next.js 15: 直接导入客户端组件，无需 dynamic
+import LayoutWrapper from './LayoutWrapper';
 import './globals.css';
 
 const inter = Inter({
@@ -30,9 +32,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <CartProvider>
-          <SiteHeader />
-          <main id="main">{children}</main>
-          <SiteFooter />
+          <LayoutWrapper>{children}</LayoutWrapper>
         </CartProvider>
       </body>
     </html>
