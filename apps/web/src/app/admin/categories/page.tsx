@@ -3,14 +3,12 @@
 /**
  * Admin Categories Page
  * [2025-11-11 23:25:24] 后台分类列表页
+ * [2025-11-15 16:25:00] 还原 prototype/admin/admin/categories.html 卡片布局
  */
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
-import {
-  adminCategoriesApi,
-  AdminCategorySummary,
-} from '@/lib/api';
+import { adminCategoriesApi, AdminCategorySummary } from '@/lib/api';
 
 type CategoryFilters = {
   page: number;
@@ -22,6 +20,29 @@ const initialFilters: CategoryFilters = {
   page: 1,
   search: '',
   status: 'all',
+};
+
+// [2025-11-15 16:25:00] Category icon fallback，确保 UI 与原型一致
+const CATEGORY_ICON_MAP: Record<string, string> = {
+  tshirt: '👕',
+  shirt: '👕',
+  hoodie: '🧥',
+  hoodies: '🧥',
+  hat: '🧢',
+  hats: '🧢',
+  bag: '🎒',
+  bags: '🎒',
+  drinkware: '🥤',
+  bottle: '🥤',
+};
+
+const getCategoryIcon = (name: string) => {
+  const key = name.toLowerCase();
+  const entry = Object.entries(CATEGORY_ICON_MAP).find(([alias]) => key.includes(alias));
+  if (entry) {
+    return entry[1];
+  }
+  return '📁';
 };
 
 export default function AdminCategoriesPage() {
@@ -83,118 +104,92 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="admin-section">
-      <header className="page-header">
+    <div style={{ marginTop: 24 }}>
+      <div className="admin-page-header">
         <div>
-          <h1>分类管理</h1>
-          <p>维护商品分类结构与展示顺序。</p>
+          <h1 data-i18n="categories">Categories</h1>
+          <p className="text-muted">Manage navigation groupings and featured collections</p>
         </div>
-        <Link href="/admin/categories/new" className="primary-btn">
-          新建分类
+        <Link href="/admin/categories/new" className="btn btn--primary">
+          + New Category
         </Link>
-      </header>
+      </div>
 
-      <section className="filters">
-        <form className="search-form" onSubmit={handleSearchSubmit}>
+      <div className="admin-toolbar">
+        <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>
           <input
             type="text"
-            placeholder="搜索分类名称/描述"
+            placeholder="Search categories..."
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
           />
-          <button type="submit">搜索</button>
+          <button type="submit" className="btn btn--outline btn--xs">
+            Search
+          </button>
         </form>
-        <div className="filter-selects">
-          <label>
-            状态
-            <select
-              value={filters.status}
-              onChange={handleStatusFilterChange}
-            >
-              <option value="all">全部</option>
-              <option value="active">启用</option>
-              <option value="inactive">禁用</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <div className="table-card">
-        {isLoading ? (
-          <div className="placeholder">正在加载分类列表...</div>
-        ) : categories.length === 0 ? (
-          <div className="placeholder">暂无分类，立即创建一个吧。</div>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>分类名称</th>
-                <th>Slug</th>
-                <th>父级分类</th>
-                <th>排序</th>
-                <th>商品数量</th>
-                <th>状态</th>
-                <th>更新日期</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categories.map((category) => (
-                <tr key={category.id}>
-                  <td>{category.name}</td>
-                  <td>{category.slug}</td>
-                  <td>{category.parent?.name || '-'}</td>
-                  <td>{category.sortOrder}</td>
-                  <td>{category._count?.products ?? 0}</td>
-                  <td>
-                    <span
-                      className={`status-badge ${
-                        category.isActive ? 'active' : 'inactive'
-                      }`}
-                    >
-                      {category.isActive ? '启用' : '禁用'}
-                    </span>
-                  </td>
-                  <td>{category.updatedAt ? new Date(category.updatedAt).toLocaleString() : '-'}</td>
-                  <td>
-                    <div className="actions">
-                      <Link href={`/admin/categories/${category.id}`} className="link">
-                        编辑
-                      </Link>
-                      <button
-                        type="button"
-                        className="link"
-                        onClick={() => handleStatusChange(category)}
-                      >
-                        {category.isActive ? '禁用' : '启用'}
-                      </button>
-                      <button
-                        type="button"
-                        className="link danger"
-                        onClick={() => handleArchive(category)}
-                      >
-                        归档
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        <select value={filters.status} onChange={handleStatusFilterChange}>
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
       </div>
 
+      {isLoading ? (
+        <div className="admin-table-placeholder">Loading categories…</div>
+      ) : categories.length === 0 ? (
+        <div className="admin-table-placeholder">No categories yet.</div>
+      ) : (
+        <div className="admin-category-list">
+          {categories.map((category) => (
+            <article key={category.id} className="admin-category-card">
+              <div className="category-meta">
+                <div className="category-icon" aria-hidden="true">
+                  {getCategoryIcon(category.name)}
+                </div>
+                <div>
+                  <div className="category-name">{category.name}</div>
+                  <div className="category-slug">/{category.slug}</div>
+                  <div className="category-stats">
+                    {(category._count?.products ?? 0).toLocaleString()} products • Sort{' '}
+                    {category.sortOrder ?? 0}
+                  </div>
+                </div>
+              </div>
+              <div className="category-actions">
+                <span className={`badge ${category.isActive ? 'badge-success' : 'badge-pending'}`}>
+                  {category.isActive ? 'Active' : 'Inactive'}
+                </span>
+                <div className="actions-dropdown">
+                  <button type="button" className="actions-dropdown-btn" aria-haspopup="menu" aria-expanded="false">
+                    ⋯
+                  </button>
+                  <div className="actions-dropdown-menu" role="menu">
+                    <Link href={`/admin/categories/${category.id}`} role="menuitem">
+                      Edit
+                    </Link>
+                    <button type="button" role="menuitem" onClick={() => handleStatusChange(category)}>
+                      {category.isActive ? 'Disable' : 'Activate'}
+                    </button>
+                    <button type="button" role="menuitem" onClick={() => handleArchive(category)} style={{ color: '#EF4444' }}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
       {pagination && pagination.totalPages > 1 && (
-        <div className="pagination">
+        <div className="admin-pagination">
           {Array.from({ length: pagination.totalPages }).map((_, index) => {
             const pageNumber = index + 1;
             return (
               <button
                 key={pageNumber}
                 type="button"
-                className={`page-btn${
-                  pageNumber === filters.page ? ' active' : ''
-                }`}
+                className={pageNumber === filters.page ? 'active' : undefined}
                 onClick={() => goToPage(pageNumber)}
               >
                 {pageNumber}
@@ -203,8 +198,6 @@ export default function AdminCategoriesPage() {
           })}
         </div>
       )}
-
-      
     </div>
   );
 }

@@ -22,13 +22,13 @@
 17. ✅ `login.html` → `/login`（全站共享登录）
 
 ### ⏳ 待核对项
-- 确认 `categories.html` 与原型内容完全一致（当前结构已迁移但仍使用旧 UI）
-- 确认 `orders.html` 列表及详情页与原型的字段顺序保持同步
+- （无）2025-11-15 16:45:00 已完成 `categories.html` 与 `/admin/categories` 的卡片式复刻
+- （无）2025-11-15 16:45:00 已完成 `orders.html` / `order-detail.html` 与 `/admin/orders` / `/admin/orders/[id]` 的 1:1 对齐
 
 ## 主要问题
 
 ### 1. 部分旧页面仍需细节复核
-- `categories` / `orders` 仍沿用旧 UI，需要按原型进一步整理（计划中）
+- ✅ `categories` / `orders` 页面已完成卡片 + 表格布局重构，交互与原型一致
 - `offline-orders` 为功能增强版，继续沿用现有实现
 - ✅ `/admin/products` 现已支持后端筛选（搜索 / 状态 / 分类）与批量上/下架/归档
 - ✅ `/admin/users` 新增 `/api/admin/users` 列表与详情接口，页面展示真实用户、统计与订单
