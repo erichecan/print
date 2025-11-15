@@ -134,7 +134,7 @@ export default function AdminDashboardPage() {
             ${stats.todaysRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </div>
           <div className="stat-card-label" data-i18n="todaysRevenue">
-            Today's Revenue
+            Today&apos;s Revenue
           </div>
           <div className="stat-card-change positive" data-field="revenueChange">
             +12% <span data-i18n="fromYesterday">from yesterday</span>

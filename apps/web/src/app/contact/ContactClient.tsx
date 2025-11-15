@@ -2,7 +2,7 @@
  * Contact Client Component
  * [2025-01-27 19:20:00] 联系页面客户端组件（处理表单提交）
  */
-'use client';
+"use client";
 
 import { useState } from 'react';
 import { contactApi } from '@/lib/api';
@@ -82,7 +82,7 @@ export default function ContactClient() {
         {submitted ? (
           <div style={{ background: '#e8f5e9', padding: '16px', borderRadius: '8px', color: '#2e7d32' }}>
             <strong>Thank you for contacting us!</strong>
-            <p style={{ margin: '8px 0 0' }}>We'll get back to you within 24 hours.</p>
+            <p style={{ margin: '8px 0 0' }}>We&apos;ll get back to you within 24 hours.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>

@@ -63,7 +63,7 @@ export default function AdminProductsPage() {
 
   const categoryOptions: AdminCategorySummary[] = categoryResponse?.data ?? [];
 
-  const products = data?.data ?? [];
+  const products = useMemo(() => data?.data ?? [], [data]);
   const pagination = data?.pagination;
 
   const filteredProducts = useMemo(() => {

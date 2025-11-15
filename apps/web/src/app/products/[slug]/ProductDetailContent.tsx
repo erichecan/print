@@ -152,15 +152,17 @@ export function ProductDetailContent() {
     checkAuth();
   }, []);
 
+  const productId = product?.id;
+
   // [2025-01-27 13:40:00] 获取产品评价
   useEffect(() => {
-    if (!product?.id) return;
+    if (!productId) return;
 
     async function fetchReviews() {
       try {
         setLoadingReviews(true);
         // [2025-01-27 21:50:00] 使用新的 productReviewApi
-        const response = await productReviewApi.list(product!.id, { page: 1, limit: 50 });
+        const response = await productReviewApi.list(productId, { page: 1, limit: 50 });
         setReviews(response.data || []);
         setReviewStats(response.stats || null);
       } catch (err) {
@@ -171,7 +173,7 @@ export function ProductDetailContent() {
     }
 
     fetchReviews();
-  }, [product?.id]);
+  }, [productId]);
 
   // [2025-01-27 13:40:00] 提交评价处理函数
   const handleSubmitReview = async (e: React.FormEvent) => {

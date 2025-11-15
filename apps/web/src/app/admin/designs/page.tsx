@@ -23,13 +23,12 @@ export default function AdminDesignsPage() {
     })
   );
 
-  const designs = data?.data ?? [];
-  const pagination = data?.pagination;
-  const totalPages = pagination?.totalPages ?? 1;
-  const canPrev = filters.page > 1;
-  const canNext = filters.page < totalPages;
-
-  const displayedDesigns = useMemo(() => designs, [designs]);
+const designs = useMemo(() => data?.data ?? [], [data]);
+const pagination = data?.pagination;
+const totalPages = pagination?.totalPages ?? 1;
+const canPrev = filters.page > 1;
+const canNext = filters.page < totalPages;
+const displayedDesigns = designs;
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

@@ -275,7 +275,7 @@ export default function HelpClient() {
 
       {filteredFAQs.length === 0 && searchQuery && (
         <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-          <p>No results found for "{searchQuery}".</p>
+          <p>No results found for &quot;{searchQuery}&quot;.</p>
           <p style={{ marginTop: '8px' }}>
             Try different keywords or <Link href="/contact" style={{ color: '#ff1f3d', textDecoration: 'underline' }}>contact our support team</Link>.
           </p>
@@ -285,7 +285,7 @@ export default function HelpClient() {
       <section style={{ display: 'grid', gap: '12px', maxWidth: '720px', background: '#f8f9fa', padding: '24px', borderRadius: '12px' }}>
         <h2>Still need help?</h2>
         <p style={{ margin: 0 }}>
-          Can't find what you're looking for? Our support team is here to help. Reach out via{' '}
+          Can&apos;t find what you&apos;re looking for? Our support team is here to help. Reach out via{' '}
           <Link href="/contact" style={{ color: '#ff1f3d', textDecoration: 'underline' }}>contact form</Link>,{' '}
           email at <a href="mailto:support@suvernireplus.com" style={{ color: '#ff1f3d', textDecoration: 'underline' }}>support@suvernireplus.com</a>, or call us at{' '}
           <a href="tel:8552712660" style={{ color: '#ff1f3d', textDecoration: 'underline' }}>855-271-2660</a>.
