@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useMemo, useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { authApi } from '@/lib/api';
@@ -22,13 +22,16 @@ interface AdminUser {
 type AuthState = 'loading' | 'authorized' | 'unauthenticated' | 'forbidden';
 
 const NAV_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: '📊', exact: true },
-  { href: '/admin/products', label: 'Products', icon: '🛍️' },
-  { href: '/admin/categories', label: 'Categories', icon: '📁' },
-  { href: '/admin/orders', label: 'Orders', icon: '📦' },
-  { href: '/admin/users', label: 'Users', icon: '👥' },
-  { href: '/admin/offline-orders', label: 'Offline Orders', icon: '🛠️' },
-]; // [2025-11-11 06:13:03] 扩展后台导航链接
+  { href: '/admin', label: 'Dashboard', icon: '📊', exact: true, i18n: 'dashboard' },
+  { href: '/admin/products', label: 'Products', icon: '🛍️', i18n: 'products' },
+  { href: '/admin/categories', label: 'Categories', icon: '📁', i18n: 'categories' },
+  { href: '/admin/orders', label: 'Orders', icon: '📦', i18n: 'orders' },
+  { href: '/admin/users', label: 'Users', icon: '👥', i18n: 'users' },
+  { href: '/admin/designs', label: 'Design Review', icon: '🎨', i18n: 'designReview' },
+  { href: '/admin/coupons', label: 'Coupons', icon: '🎫', i18n: 'coupons' },
+  { href: '/admin/promotions', label: 'Promotions', icon: '🎉', i18n: 'promotions' },
+  { href: '/admin/settings', label: 'Settings', icon: '⚙️', i18n: 'settings' },
+];
 
 export default function AdminShell({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -37,6 +40,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>('loading');
   const [authMessage, setAuthMessage] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -85,6 +89,18 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       return pathname === href;
     }
     return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const currentNav = useMemo(() => {
+    return NAV_LINKS.find((link) => isActive(link.href, link.exact));
+  }, [pathname]);
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => !prev);
+  };
+
+  const toggleSidebarMobile = () => {
+    setSidebarOpen((prev) => !prev);
   };
 
   if (authState === 'loading') {
@@ -223,17 +239,16 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     );
   }
 
-  // [2025-11-15 12:35:00] 侧边栏布局，匹配原始 admin 设计
   return (
     <div className={`admin-grid ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-      <aside className="admin-sidebar">
+      <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="admin-nav">
           <div className="admin-nav__header">
             <h3>suvernire plus</h3>
             <button
               type="button"
               className="admin-sidebar-toggle"
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              onClick={toggleSidebar}
               aria-label="Toggle sidebar"
             >
               {sidebarCollapsed ? '→' : '←'}
@@ -245,6 +260,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 <Link
                   href={link.href}
                   className={isActive(link.href, link.exact) ? 'is-active' : ''}
+                  data-i18n={link.i18n}
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <span className="admin-nav-icon">{link.icon}</span>
                   {!sidebarCollapsed && <span>{link.label}</span>}
@@ -254,7 +271,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </ul>
           {!sidebarCollapsed && (
             <div className="admin-nav__footer">
-              <Link href="/" className="admin-nav__back-link">
+              <Link href="/" className="admin-nav__back-link" data-i18n="backToSite">
                 ← Back to Site
               </Link>
             </div>
@@ -264,186 +281,30 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
       <main className="admin-main">
         <header className="admin-header">
-          <h1>
-            {NAV_LINKS.find((link) => isActive(link.href, link.exact))?.label || 'Admin'}
-          </h1>
-          <div className="admin-user">
-            <div className="admin-user-avatar"></div>
-            <span className="admin-user-name">
-              {user.firstName || user.email}
-            </span>
+          <div className="admin-header-left">
             <button
               type="button"
-              onClick={handleLogout}
-              className="admin-logout-link"
+              className="admin-sidebar-toggle admin-sidebar-toggle--mobile"
+              onClick={toggleSidebarMobile}
+              aria-label="Open sidebar"
             >
+              ☰
+            </button>
+            <h1 data-i18n={currentNav?.i18n || 'dashboard'}>
+              {currentNav?.label ?? 'Dashboard'}
+            </h1>
+          </div>
+          <div className="admin-user">
+            <div className="admin-user-avatar" aria-hidden="true"></div>
+            <span className="admin-user-name">{user.firstName || user.email}</span>
+            <button type="button" onClick={handleLogout} className="admin-logout-link" data-i18n="logout">
               Logout
             </button>
           </div>
         </header>
+
         <div className="admin-content">{children}</div>
       </main>
-
-      <style jsx>{`
-        .admin-grid {
-          display: grid;
-          grid-template-columns: 260px 1fr;
-          min-height: 100vh;
-          background: #f5f5f5;
-        }
-        .admin-grid.sidebar-collapsed {
-          grid-template-columns: 72px 1fr;
-        }
-        .admin-sidebar {
-          background: #fff;
-          border-right: 1px solid #e5e5e5;
-          padding: 24px 16px;
-          position: sticky;
-          top: 0;
-          height: 100vh;
-          overflow-y: auto;
-        }
-        .admin-nav__header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          margin-bottom: 24px;
-        }
-        .admin-nav__header h3 {
-          font-size: 18px;
-          font-weight: 700;
-          margin: 0;
-        }
-        .admin-sidebar-toggle {
-          border: 1px solid #e5e5e5;
-          background: #fff;
-          border-radius: 8px;
-          width: 32px;
-          height: 32px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .admin-sidebar-toggle:hover {
-          background: #f5f5f5;
-          border-color: #ff1f3d;
-        }
-        .admin-nav ul {
-          list-style: none;
-          margin: 0;
-          padding: 0;
-        }
-        .admin-nav li {
-          margin: 4px 0;
-        }
-        .admin-nav a {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 10px 12px;
-          border-radius: 8px;
-          color: #111827;
-          text-decoration: none;
-          font-weight: 500;
-          transition: all 0.15s;
-        }
-        .admin-nav a:hover {
-          background: #f5f5f5;
-          color: #ff1f3d;
-        }
-        .admin-nav a.is-active {
-          background: #ff1f3d;
-          color: #fff;
-        }
-        .admin-nav-icon {
-          width: 20px;
-          height: 20px;
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 18px;
-        }
-        .admin-nav__footer {
-          margin-top: 32px;
-          padding-top: 24px;
-          border-top: 1px solid #e5e5e5;
-        }
-        .admin-nav__back-link {
-          color: #6b7280;
-          font-size: 14px;
-          text-decoration: none;
-        }
-        .admin-nav__back-link:hover {
-          color: #ff1f3d;
-        }
-        .admin-main {
-          display: flex;
-          flex-direction: column;
-          overflow-x: hidden;
-        }
-        .admin-header {
-          background: #fff;
-          border-bottom: 1px solid #e5e5e5;
-          padding: 16px 24px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          position: sticky;
-          top: 0;
-          z-index: 100;
-        }
-        .admin-header h1 {
-          font-size: 24px;
-          font-weight: 700;
-          margin: 0;
-        }
-        .admin-user {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .admin-user-avatar {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #ff1f3d, #e3002b);
-        }
-        .admin-user-name {
-          font-weight: 600;
-          font-size: 14px;
-        }
-        .admin-logout-link {
-          background: none;
-          border: none;
-          color: #6b7280;
-          text-decoration: none;
-          font-size: 13px;
-          cursor: pointer;
-          padding: 4px 8px;
-          border-radius: 4px;
-          transition: all 0.2s;
-        }
-        .admin-logout-link:hover {
-          background: #f5f5f5;
-          color: #ff1f3d;
-        }
-        .admin-content {
-          flex: 1;
-          padding: 24px;
-        }
-        @media (max-width: 768px) {
-          .admin-grid {
-            grid-template-columns: 1fr;
-          }
-          .admin-sidebar {
-            display: none;
-          }
-        }
-      `}</style>
     </div>
   );
 }

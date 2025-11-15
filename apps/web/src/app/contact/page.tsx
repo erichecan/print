@@ -2,9 +2,69 @@
  * Contact Page
  * [2025-11-11 22:30:35] Scaffold
  * [2025-11-12 00:05:40] Added support channels and response time details
+ * [2025-01-27 17:15:00] 补充 SEO 元数据
+ * [2025-01-27 19:20:00] 添加联系表单提交功能
  */
+'use client';
+
+import { useState } from 'react';
+import { generateSEOMetadata } from '@/lib/seo';
+import { contactApi } from '@/lib/api';
+import type { Metadata } from 'next';
+
+// [2025-01-27 17:15:00] 生成联系页面 SEO 元数据
+export const metadata: Metadata = generateSEOMetadata({
+  title: 'Contact Us - Get Help with Your Order',
+  description: 'Need help with an order, artwork, or shipping? Contact Suvernire Plus by phone, email, or live chat. Our merch specialists are available seven days a week.',
+  keywords: ['contact', 'customer service', 'support', 'help', 'order support', 'customer care'],
+  url: 'https://suvernireplus.com/contact',
+  image: 'https://suvernireplus.com/assets/og-home.jpg',
+});
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: '',
+    orderNumber: '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await contactApi.submit({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        subject: formData.subject || undefined,
+        message: formData.message,
+        orderNumber: formData.orderNumber || undefined,
+      });
+
+      setSubmitted(true);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        subject: '',
+        message: '',
+        orderNumber: '',
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to submit contact form. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <section className="container" style={{ padding: '72px 0', display: 'grid', gap: '32px', maxWidth: '720px' }}>
       <header style={{ display: 'grid', gap: '12px' }}>
@@ -28,6 +88,147 @@ export default function ContactPage() {
             <strong>Live chat:</strong> Available in the Design Lab and Help Center for real-time collaboration.
           </li>
         </ul>
+      </section>
+
+      {/* [2025-01-27 19:20:00] 联系表单 */}
+      <section style={{ display: 'grid', gap: '16px', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px' }}>
+        <h2>Send us a message</h2>
+        {submitted ? (
+          <div style={{ background: '#e8f5e9', padding: '16px', borderRadius: '8px', color: '#2e7d32' }}>
+            <strong>Thank you for contacting us!</strong>
+            <p style={{ margin: '8px 0 0' }}>We'll get back to you within 24 hours.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '16px' }}>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <label htmlFor="name" style={{ fontWeight: 500 }}>
+                Name <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                type="text"
+                id="name"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                style={{
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <label htmlFor="email" style={{ fontWeight: 500 }}>
+                Email <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <input
+                type="email"
+                id="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                style={{
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <label htmlFor="phone" style={{ fontWeight: 500 }}>Phone</label>
+              <input
+                type="tel"
+                id="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                style={{
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <label htmlFor="subject" style={{ fontWeight: 500 }}>Subject</label>
+              <input
+                type="text"
+                id="subject"
+                value={formData.subject}
+                onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+                placeholder="e.g., Order inquiry, Design help, Shipping question"
+                style={{
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <label htmlFor="orderNumber" style={{ fontWeight: 500 }}>Order Number (if applicable)</label>
+              <input
+                type="text"
+                id="orderNumber"
+                value={formData.orderNumber}
+                onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
+                style={{
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <label htmlFor="message" style={{ fontWeight: 500 }}>
+                Message <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <textarea
+                id="message"
+                required
+                rows={6}
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                style={{
+                  padding: '10px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+
+            {error && (
+              <div style={{ background: '#fee', padding: '12px', borderRadius: '6px', color: '#c33' }}>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn"
+              style={{
+                padding: '12px 24px',
+                fontWeight: 600,
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                opacity: submitting ? 0.6 : 1,
+              }}
+            >
+              {submitting ? 'Sending...' : 'Send Message'}
+            </button>
+          </form>
+        )}
       </section>
 
       <section style={{ display: 'grid', gap: '12px' }}>

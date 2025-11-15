@@ -2,6 +2,7 @@
  * Collection Detail Page
  * [2025-11-11 22:29:20] TODO scaffold
  * [2025-11-12 00:02:00] Fetches collection hero and product grid from backend
+ * [2025-01-27 18:05:00] 补充 SEO 元数据
  */
 
 import Link from 'next/link';
@@ -9,6 +10,21 @@ import Image from 'next/image'; // [2025-11-11 06:06:54] 使用 Next Image 提�
 import { notFound } from 'next/navigation';
 // [2025-11-15 11:20:00] 使用集中管理的 API 配置
 import { API_BASE_URL } from '@/lib/api-config';
+import { generateSEOMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+// [2025-01-27 18:05:00] 生成分类页面 SEO 元数据
+// 注意：由于是客户端数据获取，这里使用基础元数据模板
+export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
+  const categoryName = params.slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+  return generateSEOMetadata({
+    title: `${categoryName} - Custom Products Collection`,
+    description: `Browse our ${categoryName} collection. Custom ${categoryName} with free shipping and satisfaction guarantee.`,
+    keywords: [categoryName, 'custom products', 'custom merchandise', 'apparel', 'promotional products'],
+    url: `https://suvernireplus.com/collections/${params.slug}`,
+    image: 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
+  });
+}
 
 type ProductListItem = {
   id: string;

@@ -2,43 +2,146 @@
 
 /**
  * Admin Products Page
- * [2025-11-11 23:24:02] 后台商品列表页
+ * [2025-11-15 13:10:00] 完整还原 prototype/admin/admin/products.html 布局与交互
+ * [2025-11-15 14:32:05] 增强：后端筛选 + 批量操作 + 分类下拉真实数据
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
-import { adminProductsApi, AdminProductSummary } from '@/lib/api';
+import {
+  adminProductsApi,
+  AdminProductSummary,
+  adminCategoriesApi,
+  AdminCategorySummary,
+} from '@/lib/api';
 
-type ProductFilters = {
+type RemoteFilters = {
   page: number;
   search: string;
   status: 'all' | 'active' | 'inactive';
+  categoryId?: string;
 };
 
-const initialFilters: ProductFilters = {
+type StatusFilter = 'all' | 'active' | 'out_of_stock' | 'archived';
+
+const remoteDefaults: RemoteFilters = {
   page: 1,
   search: '',
   status: 'all',
 };
 
+const statusOptions: Array<{ value: StatusFilter; label: string }> = [
+  { value: 'all', label: 'All Status' },
+  { value: 'active', label: 'Active' },
+  { value: 'out_of_stock', label: 'Out of Stock' },
+  { value: 'archived', label: 'Archived' },
+];
+
 export default function AdminProductsPage() {
-  const [filters, setFilters] = useState<ProductFilters>(initialFilters);
-  const [searchInput, setSearchInput] = useState('');
+  const [remoteFilters, setRemoteFilters] = useState<RemoteFilters>(remoteDefaults);
+  const [searchDraft, setSearchDraft] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState('');
+  const [processingBulk, setProcessingBulk] = useState(false);
 
-  const swrKey = useMemo(() => ['admin-products', filters], [filters]);
+  const swrKey = useMemo(() => ['admin-products', remoteFilters], [remoteFilters]);
 
-  const { data, isLoading, mutate } = useSWR(
-    swrKey,
-    ([, params]: [string, ProductFilters]) =>
-      adminProductsApi.list({
-        page: params.page,
-        search: params.search || undefined,
-        status: params.status === 'all' ? undefined : params.status,
-      })
-  ); // [2025-11-11 06:10:58] 显式标注 SWR fetcher 的参数类型
+  const { data, isLoading, error, mutate } = useSWR(swrKey, ([, params]) =>
+    adminProductsApi.list({
+      page: params.page,
+      search: params.search || undefined,
+      status: params.status === 'all' ? undefined : params.status,
+      categoryId: params.categoryId || undefined,
+    })
+  );
+
+  const { data: categoryResponse } = useSWR('admin-product-categories', () =>
+    adminCategoriesApi.list({ page: 1, limit: 200, status: 'active' })
+  );
+
+  const categoryOptions: AdminCategorySummary[] = categoryResponse?.data ?? [];
 
   const products = data?.data ?? [];
   const pagination = data?.pagination;
+
+  const filteredProducts = useMemo(() => {
+    if (statusFilter === 'out_of_stock') {
+      return products.filter((product) => (product.stockQuantity ?? 0) === 0);
+    }
+    return products;
+  }, [products, statusFilter]);
+
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const allowedIds = new Set(filteredProducts.map((product) => product.id));
+      const next = new Set<string>();
+      prev.forEach((id) => {
+        if (allowedIds.has(id)) {
+          next.add(id);
+        }
+      });
+      return next;
+    });
+  }, [filteredProducts]);
+
+  const allSelected =
+    filteredProducts.length > 0 && filteredProducts.every((product) => selectedIds.has(product.id));
+
+  const handleToggleAll = (checked: boolean) => {
+    if (!checked) {
+      setSelectedIds(new Set());
+      return;
+    }
+    setSelectedIds(new Set(filteredProducts.map((product) => product.id)));
+  };
+
+  const handleToggleOne = (product: AdminProductSummary, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(product.id);
+      } else {
+        next.delete(product.id);
+      }
+      return next;
+    });
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setRemoteFilters((prev) => ({
+      ...prev,
+      page: 1,
+      search: searchDraft.trim(),
+    }));
+  };
+
+  const handleStatusFilterChange = (value: StatusFilter) => {
+    setStatusFilter(value);
+    setRemoteFilters((prev) => ({
+      ...prev,
+      page: 1,
+      status: value === 'active' ? 'active' : value === 'archived' ? 'inactive' : 'all',
+    }));
+  };
+
+  const handleCategoryFilterChange = (value: string) => {
+    setCategoryFilter(value);
+    setRemoteFilters((prev) => ({
+      ...prev,
+      page: 1,
+      categoryId: value || undefined,
+    }));
+  };
+
+  const goToPage = (page: number) => {
+    setRemoteFilters((prev) => ({
+      ...prev,
+      page,
+    }));
+  };
 
   const handleStatusChange = async (product: AdminProductSummary) => {
     await adminProductsApi.updateStatus(product.id, !product.isActive);
@@ -46,139 +149,237 @@ export default function AdminProductsPage() {
   };
 
   const handleArchive = async (product: AdminProductSummary) => {
-    const confirmed = window.confirm(
-      `确定要将商品「${product.name}」下架并归档吗？`
-    );
-    if (!confirmed) return;
+    const confirmed = window.confirm(`确定要将商品「${product.name}」下架并归档吗？`);
+    if (!confirmed) {
+      return;
+    }
     await adminProductsApi.archive(product.id);
     mutate();
   };
 
-  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setFilters((prev) => ({
-      ...prev,
-      page: 1,
-      search: searchInput.trim(),
-    }));
+  const handleBulkAction = async () => {
+    if (!bulkAction || selectedIds.size === 0) {
+      return;
+    }
+    setProcessingBulk(true);
+    try {
+      const requests: Array<Promise<unknown>> = [];
+      selectedIds.forEach((id) => {
+        if (bulkAction === 'archive') {
+          requests.push(adminProductsApi.archive(id));
+        } else if (bulkAction === 'activate') {
+          requests.push(adminProductsApi.updateStatus(id, true));
+        } else if (bulkAction === 'deactivate') {
+          requests.push(adminProductsApi.updateStatus(id, false));
+        }
+      });
+      await Promise.all(requests);
+      setSelectedIds(new Set());
+      setBulkAction('');
+      mutate();
+    } catch (apiError) {
+      console.error('[AdminProductsPage] bulk action error', apiError);
+      alert((apiError as Error).message || 'Bulk action failed');
+    } finally {
+      setProcessingBulk(false);
+    }
   };
 
-  const handleStatusFilterChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const value = event.target.value as ProductFilters['status'];
-    setFilters((prev) => ({
-      ...prev,
-      page: 1,
-      status: value,
-    }));
+  const formatCurrency = (value?: string | number | null) => {
+    const numeric = Number(value ?? 0);
+    return `$${numeric.toFixed(2)}`;
   };
 
-  const goToPage = (page: number) => {
-    setFilters((prev) => ({
-      ...prev,
-      page,
-    }));
+  const statusLabel = (product: AdminProductSummary) => {
+    if (!product.isActive) {
+      return 'Archived';
+    }
+    if ((product.stockQuantity ?? 0) === 0) {
+      return 'Out of Stock';
+    }
+    return 'Active';
   };
+
+  const statusClass = (product: AdminProductSummary) => {
+    if (!product.isActive) {
+      return 'badge badge-pending';
+    }
+    if ((product.stockQuantity ?? 0) === 0) {
+      return 'badge badge-warning';
+    }
+    return 'badge badge-success';
+  };
+
+  const totalPages = pagination?.totalPages ?? 1;
+  const canPrev = remoteFilters.page > 1;
+  const canNext = remoteFilters.page < totalPages;
 
   return (
-    <div className="admin-section">
-      <header className="page-header">
+    <div style={{ marginTop: 24 }}>
+      <div className="admin-page-header">
         <div>
-          <h1>商品管理</h1>
-          <p>管理商品上架状态、库存与定价。</p>
+          <h1 data-i18n="products">Products</h1>
+          <p className="text-muted">Manage product catalog, status, inventory, and pricing</p>
         </div>
-        <Link href="/admin/products/new" className="primary-btn">
-          新建商品
-        </Link>
-      </header>
+        <div className="admin-btn-group">
+          <Link href="/admin/products/new" className="btn btn--primary" data-i18n="newProduct">
+            + New Product
+          </Link>
+        </div>
+      </div>
 
-      <section className="filters">
-        <form className="search-form" onSubmit={handleSearchSubmit}>
+      <div className="admin-filters admin-filters--wrap">
+        <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>
           <input
-            type="text"
-            placeholder="搜索名称 / SKU / 描述"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
+            type="search"
+            placeholder="Search products..."
+            aria-label="Search products"
+            value={searchDraft}
+            onChange={(event) => setSearchDraft(event.target.value)}
+            data-field="searchQuery"
           />
-          <button type="submit">搜索</button>
+          <button type="submit" className="btn btn--outline btn--xs">
+            Search
+          </button>
         </form>
-        <div className="filter-selects">
-          <label>
-            状态
-            <select
-              value={filters.status}
-              onChange={handleStatusFilterChange}
-            >
-              <option value="all">全部</option>
-              <option value="active">已上架</option>
-              <option value="inactive">已下架</option>
-            </select>
-          </label>
+        <select
+          value={categoryFilter}
+          onChange={(event) => handleCategoryFilterChange(event.target.value)}
+          aria-label="Filter by category"
+          data-field="categoryFilter"
+        >
+          <option value="">All Categories</option>
+          {categoryOptions.map((category) => (
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(event) => handleStatusFilterChange(event.target.value as StatusFilter)}
+          aria-label="Filter by status"
+          data-field="statusFilter"
+        >
+          {statusOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <div className="bulk-actions">
+          <span>
+            Selected:&nbsp;<strong>{selectedIds.size}</strong>
+          </span>
+          <select
+            value={bulkAction}
+            onChange={(event) => setBulkAction(event.target.value)}
+            disabled={selectedIds.size === 0 || processingBulk}
+          >
+            <option value="">Bulk action…</option>
+            <option value="activate">Activate</option>
+            <option value="deactivate">Disable</option>
+            <option value="archive">Archive</option>
+          </select>
+          <button
+            type="button"
+            className="btn btn--outline btn--xs"
+            onClick={handleBulkAction}
+            disabled={!bulkAction || selectedIds.size === 0 || processingBulk}
+          >
+            Apply
+          </button>
         </div>
-      </section>
+      </div>
 
-      <div className="table-card">
+      <div className="admin-table-wrapper" data-api="/api/admin/products" data-method="GET">
         {isLoading ? (
-          <div className="placeholder">正在加载商品列表...</div>
-        ) : products.length === 0 ? (
-          <div className="placeholder">暂无商品，请先创建。</div>
+          <div className="admin-table-placeholder">Loading products…</div>
+        ) : error ? (
+          <div className="admin-table-placeholder error">Failed to load products.</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="admin-table-placeholder">No products match current filters.</div>
         ) : (
-          <table>
+          <table className="admin-table">
             <thead>
               <tr>
-                <th>商品名称</th>
+                <th>
+                  <input
+                    type="checkbox"
+                    aria-label="Select all products"
+                    checked={allSelected}
+                    onChange={(event) => handleToggleAll(event.target.checked)}
+                  />
+                </th>
+                <th>Product</th>
                 <th>SKU</th>
-                <th>分类</th>
-                <th>价格</th>
-                <th>库存</th>
-                <th>状态</th>
-                <th>更新日期</th>
-                <th>操作</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Inventory</th>
+                <th>Status</th>
+                <th>Updated</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
-                <tr key={product.id}>
+              {filteredProducts.map((product) => (
+                <tr key={product.id} data-entity="product" data-id={product.id}>
                   <td>
-                    <div className="product-cell">
-                      <span className="name">{product.name}</span>
-                      <span className="slug">/{product.slug}</span>
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${product.name}`}
+                      checked={selectedIds.has(product.id)}
+                      onChange={(event) => handleToggleOne(product, event.target.checked)}
+                    />
+                  </td>
+                  <td>
+                    <div className="product-listing">
+                      <div className="product-thumbnail" aria-hidden="true">
+                        {product.primaryImage?.url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={product.primaryImage.url} alt={product.primaryImage.alt || ''} />
+                        ) : (
+                          <div className="placeholder" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="product-name" data-field="name">
+                          {product.name}
+                        </div>
+                        <div className="product-slug" data-field="slug">
+                          /{product.slug}
+                        </div>
+                      </div>
                     </div>
                   </td>
-                  <td>{product.sku}</td>
-                  <td>{product.category?.name || '-'}</td>
-                  <td>${Number(product.salePrice || product.basePrice).toFixed(2)}</td>
-                  <td>{product.stockQuantity}</td>
+                  <td data-field="sku">{product.sku || '—'}</td>
+                  <td data-field="category">{product.category?.name || 'Unassigned'}</td>
+                  <td data-field="price">{formatCurrency(product.salePrice ?? product.basePrice)}</td>
+                  <td data-field="inventory">{product.stockQuantity ?? 0}</td>
                   <td>
-                    <span
-                      className={`status-badge ${
-                        product.isActive ? 'active' : 'inactive'
-                      }`}
-                    >
-                      {product.isActive ? '上架' : '下架'}
+                    <span className={statusClass(product)} data-field="status">
+                      {statusLabel(product)}
                     </span>
                   </td>
-                  <td>{product.updatedAt ? new Date(product.updatedAt).toLocaleString() : '-'}</td>
+                  <td data-field="updatedAt">
+                    {product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : '—'}
+                  </td>
                   <td>
-                    <div className="actions">
-                      <Link href={`/admin/products/${product.id}`} className="link">
-                        编辑
-                      </Link>
-                      <button
-                        type="button"
-                        className="link"
-                        onClick={() => handleStatusChange(product)}
-                      >
-                        {product.isActive ? '下架' : '上架'}
+                    <div className="actions-dropdown">
+                      <button type="button" className="actions-dropdown-btn" aria-haspopup="menu" aria-expanded="false">
+                        ⋯
                       </button>
-                      <button
-                        type="button"
-                        className="link danger"
-                        onClick={() => handleArchive(product)}
-                      >
-                        归档
-                      </button>
+                      <div className="actions-dropdown-menu" role="menu">
+                        <Link href={`/admin/products/${product.id}`} role="menuitem">
+                          Edit
+                        </Link>
+                        <button type="button" role="menuitem" onClick={() => handleStatusChange(product)}>
+                          {product.isActive ? 'Disable' : 'Activate'}
+                        </button>
+                        <button type="button" role="menuitem" onClick={() => handleArchive(product)}>
+                          Archive
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -188,210 +389,29 @@ export default function AdminProductsPage() {
         )}
       </div>
 
-      {pagination && pagination.totalPages > 1 && (
-        <div className="pagination">
-          {Array.from({ length: pagination.totalPages }).map((_, index) => {
+      {pagination && (
+        <div className="admin-pagination">
+          <button type="button" disabled={!canPrev} onClick={() => canPrev && goToPage(remoteFilters.page - 1)}>
+            Previous
+          </button>
+          {Array.from({ length: totalPages }).map((_, index) => {
             const pageNumber = index + 1;
             return (
               <button
                 key={pageNumber}
                 type="button"
-                className={`page-btn${
-                  pageNumber === filters.page ? ' active' : ''
-                }`}
+                className={pageNumber === remoteFilters.page ? 'active' : undefined}
                 onClick={() => goToPage(pageNumber)}
               >
                 {pageNumber}
               </button>
             );
           })}
+          <button type="button" disabled={!canNext} onClick={() => canNext && goToPage(remoteFilters.page + 1)}>
+            Next
+          </button>
         </div>
       )}
-
-      <style jsx>{`
-        .admin-section {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-        .page-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 16px;
-        }
-        .page-header h1 {
-          margin: 0;
-          font-size: 26px;
-        }
-        .page-header p {
-          margin: 4px 0 0;
-          color: #64748b;
-        }
-        .primary-btn {
-          padding: 10px 18px;
-          background: #ff1f3d;
-          border-radius: 10px;
-          color: #fff;
-          font-weight: 600;
-          text-decoration: none;
-        }
-        .filters {
-          display: flex;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
-        .search-form {
-          display: flex;
-          gap: 8px;
-        }
-        .search-form input {
-          min-width: 260px;
-          padding: 10px 12px;
-          border-radius: 8px;
-          border: 1px solid #cbd5f5;
-        }
-        .search-form button {
-          padding: 10px 16px;
-          border-radius: 8px;
-          border: none;
-          background: #1f2937;
-          color: #fff;
-          font-weight: 600;
-          cursor: pointer;
-        }
-        .filter-selects {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-        .filter-selects select {
-          padding: 8px 12px;
-          border-radius: 8px;
-          border: 1px solid #cbd5f5;
-        }
-        .table-card {
-          background: #fff;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-        }
-        table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        thead {
-          background: #f8fafc;
-        }
-        th,
-        td {
-          padding: 14px 16px;
-          font-size: 14px;
-          border-bottom: 1px solid #e2e8f0;
-          text-align: left;
-        }
-        tbody tr:hover {
-          background: #f9fafb;
-        }
-        .product-cell {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .product-cell .name {
-          font-weight: 600;
-        }
-        .product-cell .slug {
-          font-size: 12px;
-          color: #94a3b8;
-        }
-        .status-badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 64px;
-          padding: 4px 10px;
-          border-radius: 999px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-        .status-badge.active {
-          background: rgba(16, 185, 129, 0.12);
-          color: #059669;
-        }
-        .status-badge.inactive {
-          background: rgba(148, 163, 184, 0.12);
-          color: #475569;
-        }
-        .actions {
-          display: flex;
-          gap: 8px;
-          flex-wrap: wrap;
-        }
-        .link {
-          background: none;
-          border: none;
-          color: #2563eb;
-          cursor: pointer;
-          text-decoration: none;
-          font-weight: 600;
-        }
-        .link.danger {
-          color: #ef4444;
-        }
-        .placeholder {
-          padding: 48px;
-          text-align: center;
-          color: #64748b;
-        }
-        .pagination {
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-        }
-        .page-btn {
-          min-width: 36px;
-          height: 36px;
-          border-radius: 8px;
-          border: 1px solid #cbd5f5;
-          background: #fff;
-          cursor: pointer;
-        }
-        .page-btn.active {
-          background: #1f2937;
-          color: #fff;
-          border-color: #1f2937;
-        }
-        @media (max-width: 1024px) {
-          th:nth-child(3),
-          td:nth-child(3),
-          th:nth-child(4),
-          td:nth-child(4),
-          th:nth-child(6),
-          td:nth-child(6) {
-            display: none;
-          }
-        }
-        @media (max-width: 768px) {
-          .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-          .filters {
-            flex-direction: column;
-            align-items: stretch;
-          }
-          .search-form {
-            width: 100%;
-          }
-          .search-form input {
-            flex: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }
-
-

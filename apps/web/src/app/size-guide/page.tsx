@@ -2,7 +2,19 @@
  * Size Guide Page
  * [2025-11-11 22:33:10] Scaffold
  * [2025-11-12 00:07:00] Added measurement instructions and core size charts
+ * [2025-01-27 17:45:00] 补充 SEO 元数据
  */
+import { generateSEOMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+// [2025-01-27 17:45:00] 生成尺码指南页面 SEO 元数据
+export const metadata: Metadata = generateSEOMetadata({
+  title: 'Size Guide - Clothing Size Charts & Measurements',
+  description: 'Find the perfect fit with our size guide. Measurement instructions and size charts for t-shirts, hoodies, and apparel.',
+  keywords: ['size guide', 'size chart', 'measurements', 'clothing sizes', 'fit guide', 'sizing'],
+  url: 'https://suvernireplus.com/size-guide',
+  image: 'https://suvernireplus.com/assets/og-home.jpg',
+});
 
 const sizeRows = [
   { size: 'XS', chest: '32-34"', length: '26"' },

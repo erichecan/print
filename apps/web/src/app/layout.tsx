@@ -18,9 +18,46 @@ const inter = Inter({
   display: 'swap',
 }); // [2025-11-11 23:57:05] Ensure Inter font served via next/font for CLS stability
 
+// [2025-01-27 16:30:00] 补充完整的 SEO 元数据，基于原型实现
 export const metadata: Metadata = {
-  title: 'Print E-commerce',
-  description: 'Custom print merchandise e-commerce platform',
+  title: {
+    default: 'Custom Merch & Promotional Products | suvernire plus',
+    template: '%s | suvernire plus',
+  },
+  description: 'Design custom t-shirts, hoodies, and apparel online. Free shipping, satisfaction guaranteed. Professional design tools, bulk pricing available.',
+  keywords: ['custom t-shirts', 'custom apparel', 'promotional products', 'bulk printing', 'custom hoodies', 'design tools'],
+  authors: [{ name: 'suvernire plus' }],
+  creator: 'suvernire plus',
+  publisher: 'suvernire plus',
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://suvernireplus.com',
+    siteName: 'suvernire plus',
+    title: 'Custom Merch & Promotional Products | suvernire plus',
+    description: 'Design custom t-shirts, hoodies, and apparel online. Free shipping, satisfaction guaranteed.',
+    images: [
+      {
+        url: 'https://suvernireplus.com/assets/og-home.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'suvernire plus - Custom Merch & Promotional Products',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Custom Merch & Promotional Products | suvernire plus',
+    description: 'Design custom t-shirts, hoodies, and apparel online. Free shipping, satisfaction guaranteed.',
+    images: ['https://suvernireplus.com/assets/twitter-home.jpg'],
+  },
+  alternates: {
+    canonical: 'https://suvernireplus.com',
+  },
 };
 
 export default function RootLayout({

@@ -1,9 +1,21 @@
 /**
  * Home Page
  * [2025-11-11 23:58:10] Migrated marketing homepage layout from prototype into Next.js
+ * [2025-01-27 16:40:00] 补充完整的 SEO 元数据和结构化数据
  */
 import Image from 'next/image';
 import Link from 'next/link';
+import { generateSEOMetadata, generateWebsiteSchema, generateOrganizationSchema } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+// [2025-01-27 16:40:00] 生成首页 SEO 元数据
+export const metadata: Metadata = generateSEOMetadata({
+  title: 'Custom Merch & Promotional Products',
+  description: 'Design custom t-shirts, hoodies, and apparel online. Free shipping, satisfaction guaranteed. Professional design tools, bulk pricing available.',
+  keywords: ['custom t-shirts', 'custom apparel', 'promotional products', 'bulk printing', 'custom hoodies', 'design tools'],
+  url: 'https://suvernireplus.com',
+  image: 'https://suvernireplus.com/assets/og-home.jpg',
+});
 
 const heroCards = [
   { src: '/assets/hero/hero-card-tee.jpg', alt: 'Featured Tee' },
@@ -189,5 +201,6 @@ export default function Home() {
         </div>
       </section>
     </div>
+    </>
   );
 }

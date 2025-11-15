@@ -17,6 +17,7 @@ const OrderItem = require('./OrderItem')(sequelize, DataTypes);
 const Design = require('./Design')(sequelize, DataTypes);
 const DesignAsset = require('./DesignAsset')(sequelize, DataTypes);
 const Coupon = require('./Coupon')(sequelize, DataTypes);
+const CouponUsage = require('./CouponUsage')(sequelize, DataTypes);
 const Promotion = require('./Promotion')(sequelize, DataTypes);
 const Upload = require('./Upload')(sequelize, DataTypes);
 const Setting = require('./Setting')(sequelize, DataTypes);
@@ -39,6 +40,7 @@ const models = {
   Design,
   DesignAsset,
   Coupon,
+  CouponUsage,
   Promotion,
   Upload,
   Setting,

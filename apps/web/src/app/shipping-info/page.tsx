@@ -2,7 +2,19 @@
  * Shipping Information Page
  * [2025-11-11 22:31:25] Scaffold
  * [2025-11-12 00:06:20] Added delivery timelines and rate overview
+ * [2025-01-27 17:40:00] 补充 SEO 元数据
  */
+import { generateSEOMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+// [2025-01-27 17:40:00] 生成配送信息页面 SEO 元数据
+export const metadata: Metadata = generateSEOMetadata({
+  title: 'Shipping Information - Delivery Options & Rates',
+  description: 'Shipping options and delivery timelines for Canada and United States. Standard and rush shipping rates. Free shipping available.',
+  keywords: ['shipping', 'delivery', 'shipping rates', 'shipping options', 'rush shipping', 'free shipping'],
+  url: 'https://suvernireplus.com/shipping-info',
+  image: 'https://suvernireplus.com/assets/og-home.jpg',
+});
 
 const shippingTable = [
   { region: 'Canada', service: 'Standard', rate: '$9.99 CAD', timeline: 'Arrives in 7–10 business days' },

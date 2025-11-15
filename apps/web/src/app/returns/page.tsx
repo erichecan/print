@@ -2,7 +2,19 @@
  * Returns & Exchanges Page
  * [2025-11-11 22:31:00] Scaffold
  * [2025-11-12 00:06:00] Documented return windows and support flow
+ * [2025-01-27 17:35:00] 补充 SEO 元数据
  */
+import { generateSEOMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+// [2025-01-27 17:35:00] 生成退货政策页面 SEO 元数据
+export const metadata: Metadata = generateSEOMetadata({
+  title: 'Returns & Exchanges Policy',
+  description: 'Learn about Suvernire Plus return and exchange policy. Custom products return process, timelines, and how to start a return.',
+  keywords: ['returns', 'exchanges', 'return policy', 'refund policy', 'custom product returns'],
+  url: 'https://suvernireplus.com/returns',
+  image: 'https://suvernireplus.com/assets/og-home.jpg',
+});
 
 const faqItems = [
   {

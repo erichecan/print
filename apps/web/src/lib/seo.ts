@@ -1,0 +1,164 @@
+/**
+ * SEO Utilities
+ * [2025-01-27 16:35:00] 创建 SEO 工具函数，用于生成结构化数据和元数据
+ */
+
+import type { Metadata } from 'next';
+
+export interface SEOMetadata {
+  title: string;
+  description: string;
+  keywords?: string[];
+  image?: string;
+  url?: string;
+  type?: 'website' | 'article' | 'product';
+  publishedTime?: string;
+  modifiedTime?: string;
+}
+
+/**
+ * 生成页面 SEO 元数据
+ * [2025-01-27 16:35:00] 基于页面信息生成完整的 SEO 元数据
+ */
+export function generateSEOMetadata(options: SEOMetadata): Metadata {
+  const {
+    title,
+    description,
+    keywords = [],
+    image = 'https://suvernireplus.com/assets/og-home.jpg',
+    url = 'https://suvernireplus.com',
+    type = 'website',
+    publishedTime,
+    modifiedTime,
+  } = options;
+
+  const fullTitle = `${title} | suvernire plus`;
+
+  return {
+    title: fullTitle,
+    description,
+    keywords,
+    openGraph: {
+      type,
+      title: fullTitle,
+      description,
+      url,
+      siteName: 'suvernire plus',
+      images: [
+        {
+          url: image,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+      ...(publishedTime && { publishedTime }),
+      ...(modifiedTime && { modifiedTime }),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: fullTitle,
+      description,
+      images: [image],
+    },
+    alternates: {
+      canonical: url,
+    },
+  };
+}
+
+/**
+ * 生成网站结构化数据 (JSON-LD)
+ * [2025-01-27 16:35:00] 基于原型实现，生成 schema.org 结构化数据
+ */
+export function generateWebsiteSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'suvernire plus',
+    url: 'https://suvernireplus.com',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: 'https://suvernireplus.com/search?q={search_term_string}',
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+}
+
+/**
+ * 生成组织结构化数据 (JSON-LD)
+ * [2025-01-27 16:35:00] 生成 Organization schema
+ */
+export function generateOrganizationSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'suvernire plus',
+    url: 'https://suvernireplus.com',
+    logo: 'https://suvernireplus.com/assets/logo.svg',
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+1-855-271-2660',
+      contactType: 'Customer Service',
+      areaServed: 'US',
+      availableLanguage: ['en', 'zh'],
+    },
+    sameAs: [
+      // 可以添加社交媒体链接
+    ],
+  };
+}
+
+/**
+ * 生成产品结构化数据 (JSON-LD)
+ * [2025-01-27 16:35:00] 用于产品详情页
+ */
+export function generateProductSchema(product: {
+  name: string;
+  description: string;
+  image?: string;
+  price?: number;
+  currency?: string;
+  sku?: string;
+  brand?: string;
+  availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
+}) {
+  const {
+    name,
+    description,
+    image = 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
+    price,
+    currency = 'USD',
+    sku,
+    brand = 'suvernire plus',
+    availability = 'InStock',
+  } = product;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name,
+    description,
+    image,
+    brand: {
+      '@type': 'Brand',
+      name: brand,
+    },
+    ...(sku && { sku }),
+    offers: {
+      '@type': 'Offer',
+      url: `https://suvernireplus.com/products/${sku || name.toLowerCase().replace(/\s+/g, '-')}`,
+      priceCurrency: currency,
+      price,
+      availability: `https://schema.org/${availability}`,
+      seller: {
+        '@type': 'Organization',
+        name: brand,
+      },
+    },
+  };
+}
+

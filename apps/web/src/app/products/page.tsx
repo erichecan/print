@@ -3,12 +3,24 @@
  * [2025-11-11 22:28:40] Initial scaffold
  * [2025-11-12 00:00:20] Connected to products API with filters, search, and pagination
  * [2025-01-27 13:20:00] Removed TODO marker, page is production-ready
+ * [2025-01-27 17:00:00] 补充 SEO 元数据
  */
 
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-11 06:07:23] 使用 Next Image 组件提升性能
 // [2025-11-15 11:20:00] 使用集中管理的 API 配置
 import { API_BASE_URL } from '@/lib/api-config';
+import { generateSEOMetadata } from '@/lib/seo';
+import type { Metadata } from 'next';
+
+// [2025-01-27 17:00:00] 生成产品列表页 SEO 元数据
+export const metadata: Metadata = generateSEOMetadata({
+  title: 'Browse All Products - Custom T-Shirts, Hoodies & More',
+  description: 'Browse our full catalog of custom t-shirts, hoodies, apparel, and promotional products. Filter by category, price, and brand. Free shipping available.',
+  keywords: ['custom t-shirts', 'custom hoodies', 'apparel', 'promotional products', 'custom merchandise', 'bulk orders'],
+  url: 'https://suvernireplus.com/products',
+  image: 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
+});
 
 type SearchParams = {
   page?: string;

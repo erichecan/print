@@ -177,6 +177,125 @@ function generateOrderConfirmationEmail(order) {
 }
 
 /**
+ * Generate shipping notification email HTML
+ * [2025-01-27 19:00:00] 添加发货通知邮件模板
+ */
+function generateShippingNotificationEmail(order, trackingNumber, carrier) {
+  const shipDate = new Date().toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Order Has Shipped - ${order.orderNumber}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #e3f2fd; padding: 20px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+    <h1 style="color: #1565c0; margin-top: 0;">🎉 Your Order Has Shipped!</h1>
+    <p style="margin: 0; color: #1565c0;">We're excited to let you know your order is on its way.</p>
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Shipping Information</h2>
+    <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+    <p><strong>Shipped Date:</strong> ${shipDate}</p>
+    <p><strong>Tracking Number:</strong> <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px; font-family: monospace;">${trackingNumber}</code></p>
+    ${carrier ? `<p><strong>Carrier:</strong> ${carrier}</p>` : ''}
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Track Your Package</h2>
+    <p>You can track your order using the tracking number above. Most carriers provide real-time tracking updates.</p>
+    ${trackingNumber ? `<p style="text-align: center; margin-top: 20px;">
+      <a href="https://suvernireplus.com/order-tracking?order=${order.orderNumber}" 
+         style="background-color: #2196f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">
+        Track Your Order
+      </a>
+    </p>` : ''}
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Shipping Address</h2>
+    <p style="margin: 0;">
+      ${order.shippingAddress?.fullName || ''}<br>
+      ${order.shippingAddress?.addressLine1 || ''}<br>
+      ${order.shippingAddress?.addressLine2 ? order.shippingAddress.addressLine2 + '<br>' : ''}
+      ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.province || ''} ${order.shippingAddress?.postalCode || ''}<br>
+      ${order.shippingAddress?.country || ''}
+    </p>
+  </div>
+
+  <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin-top: 20px;">
+    <p style="margin: 0; color: #2e7d32;">
+      <strong>Expected Delivery:</strong><br>
+      Your package should arrive within 5-10 business days. You'll receive another email when it's delivered.
+    </p>
+  </div>
+
+  <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9em;">
+    <p>If you have any questions about your shipment, please contact our support team.</p>
+    <p style="margin: 0;">© ${new Date().getFullYear()} Suvernire Plus. All rights reserved.</p>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Generate contact form submission email HTML
+ * [2025-01-27 19:05:00] 联系表单提交邮件模板
+ */
+function generateContactFormEmail(formData) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Contact Form Submission</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
+    <h1 style="color: #2c3e50; margin-top: 0;">New Contact Form Submission</h1>
+    <p style="margin: 0;">A customer has submitted a contact form.</p>
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Contact Information</h2>
+    <p><strong>Name:</strong> ${formData.name || 'N/A'}</p>
+    <p><strong>Email:</strong> <a href="mailto:${formData.email}">${formData.email}</a></p>
+    ${formData.phone ? `<p><strong>Phone:</strong> <a href="tel:${formData.phone}">${formData.phone}</a></p>` : ''}
+    ${formData.subject ? `<p><strong>Subject:</strong> ${formData.subject}</p>` : ''}
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Message</h2>
+    <p style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px;">${formData.message || 'No message provided.'}</p>
+  </div>
+
+  ${formData.orderNumber ? `
+  <div style="background-color: #fff3cd; padding: 15px; border-radius: 5px; margin-top: 20px;">
+    <p style="margin: 0; color: #856404;">
+      <strong>Related Order:</strong> ${formData.orderNumber}
+    </p>
+  </div>
+  ` : ''}
+
+  <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9em;">
+    <p>Submitted at: ${new Date().toLocaleString('en-CA')}</p>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
  * Generate refund confirmation email HTML
  * [2025-01-27 10:00:00]
  */
@@ -322,9 +441,89 @@ async function sendRefundConfirmation(order, refundAmount, reason) {
   }
 }
 
+/**
+ * Send shipping notification email
+ * [2025-01-27 19:00:00] 发送发货通知邮件
+ */
+async function sendShippingNotification(order, trackingNumber, carrier) {
+  try {
+    const transporter = getTransporter();
+    const emailFrom = process.env.EMAIL_FROM || 'noreply@suvernireplus.com';
+    const appName = process.env.APP_NAME || 'Suvernire Plus';
+
+    const html = generateShippingNotificationEmail(order, trackingNumber, carrier);
+
+    const mailOptions = {
+      from: `"${appName}" <${emailFrom}>`,
+      to: order.email,
+      subject: `Your Order Has Shipped - ${order.orderNumber}`,
+      html,
+      text: `Your Order Has Shipped\n\nOrder Number: ${order.orderNumber}\nTracking Number: ${trackingNumber}\n\nYour package is on its way!`,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    logger.info('Shipping notification email sent', {
+      orderNumber: order.orderNumber,
+      email: order.email,
+      trackingNumber,
+      messageId: result.messageId,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Failed to send shipping notification email', {
+      orderNumber: order.orderNumber,
+      email: order.email,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Send contact form submission notification
+ * [2025-01-27 19:05:00] 发送联系表单提交通知
+ */
+async function sendContactFormNotification(formData) {
+  try {
+    const transporter = getTransporter();
+    const emailFrom = process.env.EMAIL_FROM || 'noreply@suvernireplus.com';
+    const supportEmail = process.env.SUPPORT_EMAIL || process.env.EMAIL_FROM || 'support@suvernireplus.com';
+    const appName = process.env.APP_NAME || 'Suvernire Plus';
+
+    const html = generateContactFormEmail(formData);
+
+    const mailOptions = {
+      from: `"${appName}" <${emailFrom}>`,
+      to: supportEmail,
+      replyTo: formData.email,
+      subject: `New Contact Form: ${formData.subject || 'General Inquiry'}`,
+      html,
+      text: `New Contact Form Submission\n\nFrom: ${formData.name} <${formData.email}>\nSubject: ${formData.subject || 'General Inquiry'}\n\nMessage:\n${formData.message || 'No message provided.'}`,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    logger.info('Contact form notification email sent', {
+      from: formData.email,
+      subject: formData.subject,
+      messageId: result.messageId,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Failed to send contact form notification email', {
+      email: formData.email,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
 module.exports = {
   sendOrderConfirmation,
   sendRefundConfirmation,
+  sendShippingNotification,
+  sendContactFormNotification,
   getTransporter,
 };
 

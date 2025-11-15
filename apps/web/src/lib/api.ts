@@ -572,12 +572,19 @@ export const adminCategoriesApi = {
 
 // [2025-01-27 15:00:00] Admin Products API
 export const adminProductsApi = {
-  list: (params?: { page?: number; limit?: number; search?: string; status?: 'active' | 'inactive' }) => {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: 'active' | 'inactive';
+    categoryId?: string;
+  }) => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
+    if (params?.categoryId) query.append('categoryId', params.categoryId);
     const queryString = query.toString();
     return api<{ data: AdminProductSummary[]; pagination: any }>(
       `/admin/products${queryString ? `?${queryString}` : ''}`
@@ -610,6 +617,71 @@ export const adminProductsApi = {
   },
   deleteImage: (productId: string, imageId: string) =>
     api(`/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' }),
+};
+
+export interface AdminUserSummary {
+  id: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  fullName: string;
+  role: string;
+  emailVerified: boolean;
+  orderCount: number;
+  totalSpent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminUserDetailResponse {
+  user: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    fullName: string;
+    phone?: string | null;
+    role: string;
+    emailVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+  stats: {
+    totalOrders: number;
+    totalSpent: number;
+    designsCreated: number;
+    memberSince: string;
+  };
+  recentOrders: Array<{
+    id: string;
+    orderNumber: string;
+    status: string;
+    paymentStatus: string;
+    total: number;
+    createdAt: string;
+  }>;
+}
+
+export const adminUsersApi = {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: 'customer' | 'admin';
+    status?: 'active' | 'inactive';
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.search) query.append('search', params.search);
+    if (params?.role) query.append('role', params.role);
+    if (params?.status) query.append('status', params.status);
+    const queryString = query.toString();
+    return api<{ data: AdminUserSummary[]; pagination: any }>(
+      `/admin/users${queryString ? `?${queryString}` : ''}`
+    );
+  },
+  get: (id: string) => api<AdminUserDetailResponse>(`/admin/users/${id}`),
 };
 
 // [2025-01-27 16:15:00] Design Lab API Types
@@ -844,6 +916,41 @@ export const adminOfflineOrdersApi = {
       method: 'PUT',
       body: payload,
     }),
+};
+
+// [2025-01-27 19:15:00] Contact form API
+export const contactApi = {
+  submit: (data: {
+    name: string;
+    email: string;
+    phone?: string;
+    subject?: string;
+    message: string;
+    orderNumber?: string;
+  }) =>
+    api('/contact', {
+      method: 'POST',
+      body: data,
+    }),
+};
+
+// [2025-01-27 19:45:00] Coupon API
+export const couponApi = {
+  validate: (code: string, subtotal: number, userId?: string) =>
+    api('/coupons/validate', {
+      method: 'POST',
+      body: { code, subtotal, userId },
+    }),
+  getActive: () => api<{ coupons: Array<{
+    id: string;
+    code: string;
+    type: 'percentage' | 'fixed';
+    value: number;
+    minOrderValue: number | null;
+    maxDiscount: number | null;
+    startDate: string;
+    endDate: string;
+  }>}>('/coupons'),
 };
 
 export default api;
