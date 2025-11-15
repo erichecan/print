@@ -22,8 +22,31 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // CORS configuration
+// [2025-11-15 11:10:00] 支持多个前端域名（本地开发 + Netlify 部署）
+const allowedOrigins = [
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'https://souvenirplus.netlify.app',
+  process.env.FRONTEND_URL,
+].filter(Boolean); // 移除 undefined 值
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+  origin: (origin, callback) => {
+    // 允许没有 origin 的请求（如移动应用或 Postman）
+    if (!origin) return callback(null, true);
+    
+    // 检查 origin 是否在允许列表中
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // 也允许所有 netlify.app 子域名（用于预览部署）
+      if (origin.endsWith('.netlify.app')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
   credentials: true,
   optionsSuccessStatus: 200
 };
