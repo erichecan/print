@@ -2,7 +2,7 @@
  * Help Center Client Component
  * [2025-01-27 19:25:00] 帮助中心客户端组件（处理搜索和交互）
  */
-'use client';
+"use client";
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
@@ -31,11 +31,11 @@ const faqCategories = [
       },
       {
         question: 'How do I track my order?',
-        answer: 'Once your order ships, you'll receive an email with a tracking number. You can also track your order on our order tracking page using your order number.',
+        answer: 'Once your order ships, you\'ll receive an email with a tracking number. You can also track your order on our order tracking page using your order number.',
       },
       {
         question: 'What if my order is incorrect or damaged?',
-        answer: 'Contact us within 14 days of delivery. We'll replace or refund your order to make things right. Custom products can only be returned if they differ from the approved proof.',
+        answer: 'Contact us within 14 days of delivery. We\'ll replace or refund your order to make things right. Custom products can only be returned if they differ from the approved proof.',
       },
     ],
   },
@@ -115,7 +115,7 @@ const faqCategories = [
       },
       {
         question: 'How do I start a return?',
-        answer: 'Contact us with your order number and reason for return. We'll provide return instructions and a prepaid return label if applicable.',
+        answer: 'Contact us with your order number and reason for return. We\'ll provide return instructions and a prepaid return label if applicable.',
       },
       {
         question: 'When will I receive my refund?',
@@ -123,7 +123,7 @@ const faqCategories = [
       },
       {
         question: 'Who pays for return shipping?',
-        answer: 'We cover return shipping costs if the item is defective or incorrect. Otherwise, return shipping is the customer's responsibility.',
+        answer: 'We cover return shipping costs if the item is defective or incorrect. Otherwise, return shipping is the customer\'s responsibility.',
       },
     ],
   },
