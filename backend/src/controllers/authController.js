@@ -17,6 +17,19 @@ function generateToken(userId) {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
+// [2025-11-15 12:25:00] Cookie 配置辅助函数，统一跨域 cookie 设置
+function getCookieOptions() {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProduction, // 生产环境必须使用 HTTPS
+    sameSite: isProduction ? 'none' : 'lax', // 跨域请求需要 'none'
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    domain: undefined, // 不设置 domain，让浏览器自动处理
+    path: '/', // 确保 cookie 在所有路径下可用
+  };
+}
+
 /**
  * POST /api/auth/register - Register new user
  * [2025-11-05 01:00:00]
