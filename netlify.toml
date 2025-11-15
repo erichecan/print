@@ -1,5 +1,6 @@
 # Netlify Configuration (Root Level)
 # [2025-01-27 12:30:00] Alternative configuration at root level
+# [2025-11-15 10:22:30] 合并 Netlify 配置，仅保留根目录版本供部署使用
 # 
 # 如果 apps/web/netlify.toml 不工作，可以使用这个根目录的配置
 # 在 Netlify 控制台：
