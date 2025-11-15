@@ -9,7 +9,7 @@
 4. ✅ `categories.html` → `/admin/categories`
 5. ✅ `orders.html` → `/admin/orders`
 6. ✅ `order-detail.html` → `/admin/orders/[id]`
-7. ✅ `offline-orders-board.html` → `/admin/offline-orders`
+7. ✅ `offline-orders-board.html` → `/admin/offline-orders` - **2025-11-15 17:05:00 完成 1:1 Trello 看板复刻**
 8. ✅ `users.html` → `/admin/users`
 9. ✅ `user-detail.html` → `/admin/users/[id]`
 10. ✅ `designs.html` → `/admin/designs`
@@ -29,7 +29,7 @@
 
 ### 1. 部分旧页面仍需细节复核
 - ✅ `categories` / `orders` 页面已完成卡片 + 表格布局重构，交互与原型一致
-- `offline-orders` 为功能增强版，继续沿用现有实现
+- ✅ `offline-orders` 页面已与原型的工具栏 / 指标条 / DOM 预览完全同步，保留后端操作
 - ✅ `/admin/products` 现已支持后端筛选（搜索 / 状态 / 分类）与批量上/下架/归档
 - ✅ `/admin/users` 新增 `/api/admin/users` 列表与详情接口，页面展示真实用户、统计与订单
 - ✅ `/admin/designs` / `/admin/designs/[id]`、`/admin/coupons`、`/admin/promotions`、`/admin/settings`、`/admin/content-manager`、`/admin/cost-management` 已接入新的后台 API（设计审核、优惠券 CRUD、促销管理、站点设置、内容配置、成本看板）
@@ -41,6 +41,6 @@
 ## 建议
 
 下一步：
-1. 复核 `categories`/`orders` 与原型的差异
-2. 按照同样方式整理剩余 legacy 页面，彻底完成统一设计语言
+1. 继续核对 `/admin/orders` 相关子页面在移动端的表现
+2. 按照相同模式整理剩余 legacy 页面，彻底完成统一设计语言
 

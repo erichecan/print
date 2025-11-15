@@ -97,6 +97,10 @@ export default function Home() {
               <Link className="btn btn--outline" href="/products">
                 Browse Products
               </Link>
+              {/* [2025-11-15 15:21:40] Provide entry point to offline order intake */}
+              <Link className="btn btn--outline" href="/offline-orders">
+                Submit Offline Order
+              </Link>
             </div>
           </div>
           <div className="hero__media" aria-label="Featured product categories">

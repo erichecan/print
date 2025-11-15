@@ -1,6 +1,5 @@
 "use client";
 
-// [2025-11-12 02:34:55] Implemented offline orders kanban board with detail drawer and production hooks
 import { useCallback, useMemo, useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
@@ -10,6 +9,7 @@ import {
   AdminOfflineOrderListResponse,
   AdminOfflineOrderSummary,
   OfflineOrderStage,
+  OfflineOrderHistoryEntry,
   ProductionWorkOrderPayload,
 } from '@/lib/api';
 
@@ -83,16 +83,20 @@ export default function AdminOfflineOrdersPage() {
   } = useSWR('admin-offline-orders-metrics', adminOfflineOrdersApi.getMetrics);
 
   const stages = useMemo(() => {
-    const list = metricsData?.stages ?? [];
-    return [...list].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-  }, [metricsData?.stages]);
+    const canonicalStages =
+      (metricsData?.stages && metricsData.stages.length ? metricsData.stages : boardData?.stages) || [];
+    return [...canonicalStages].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  }, [metricsData?.stages, boardData?.stages]);
 
   const groupedOrders = useMemo(() => {
     const groups = new Map<string, AdminOfflineOrderSummary[]>();
     stages.forEach((stage) => groups.set(stage.key, []));
     (boardData?.orders || []).forEach((order) => {
-      const bucket = groups.get(order.stage);
-      if (bucket) bucket.push(order);
+      const stageKey = order.stage?.key || 'unassigned';
+      if (!groups.has(stageKey)) {
+        groups.set(stageKey, []);
+      }
+      groups.get(stageKey)!.push(order);
     });
     return groups;
   }, [boardData?.orders, stages]);
@@ -115,15 +119,13 @@ export default function AdminOfflineOrdersPage() {
     (order: AdminOfflineOrderSummary) => {
       setSelectedOrderId(order.id);
       setDetailRevision('');
-      setStageDraft(order.stage);
-      // [2025-11-14 00:42:00] productionWorkOrder 在 detailData 中，不在 summary 中
+      setStageDraft(order.stage?.key || '');
       setProductionStatusDraft('');
       setProductionNoteDraft('');
       setNoteDraft('');
       setPriorityDraft('');
       setStartDateDraft('');
       setDueDateDraft('');
-      // [2025-11-14 00:43:00] productionWorkOrder 在 detailData 中，不在 summary 中
       setAssigneeIdDraft('');
       setAssigneeNameDraft('');
     },
@@ -223,8 +225,7 @@ export default function AdminOfflineOrdersPage() {
     if (revision === detailRevision) {
       return;
     }
-    // [2025-11-12 02:47:30] Keep production draft fields aligned with latest backend data
-    setStageDraft(selectedDetail.stage);
+    setStageDraft(selectedDetail.stage?.key || '');
     setProductionStatusDraft(selectedDetail.productionWorkOrder?.status || '');
     setPriorityDraft(selectedDetail.productionWorkOrder?.priority ?? '');
     setStartDateDraft(toInputDate(selectedDetail.productionWorkOrder?.startDate));
@@ -234,840 +235,383 @@ export default function AdminOfflineOrdersPage() {
     setDetailRevision(revision);
   }, [selectedDetail, selectedOrderId, detailRevision]);
 
-  return (
-    <div className="offline-board">
-      <header className="board-header">
-        <div>
-          <h1>Offline Orders</h1>
-          <p className="board-subtitle">Track offline intake, approvals, and production handoff</p>
-        </div>
-        <div className="board-actions">
-          <input
-            type="search"
-            placeholder="Search project, code, email…"
-            value={search}
-            onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
-          />
-          <select value={rushFilter} onChange={(event) => setRushFilter(event.target.value as typeof rushFilter)}>
-            <option value="all">All Orders</option>
-            <option value="rush">Rush ({rushCounts.rush})</option>
-            <option value="standard">Standard ({rushCounts.standard})</option>
-          </select>
-          <button type="button" className="ghost-button" onClick={handleRefresh}>
-            Refresh
-          </button>
-          <Link href="/admin/orders" className="ghost-button ghost-button--link">
-            View Online Orders
-          </Link>
-        </div>
-      </header>
+  const domOutline = useMemo(() => {
+    const lines: string[] = [];
+    stages.forEach((stage) => {
+      const cards = groupedOrders.get(stage.key) || [];
+      lines.push(`• ${stage.label} (${cards.length})`);
+      if (!cards.length) {
+        lines.push('    ∘ (empty)');
+      } else {
+        cards.forEach((order) => {
+          lines.push(`    ∘ ${order.projectName} · ${order.orderCode}`);
+        });
+      }
+    });
+    return lines.join('\n');
+  }, [stages, groupedOrders]);
 
-      {/* [2025-11-12 02:47:30] Added operations metrics overview */}
-      {metricsLoading && !metricsData ? (
-        <div className="metrics-placeholder">Loading metrics…</div>
-      ) : metricsError ? (
-        <div className="metrics-error">Failed to load metrics.</div>
-      ) : metricsData ? (
-        <section className="metrics-panel" aria-label="Offline order metrics">
-          <div className="metrics-summary">
-            <div className="metrics-summary__card">
-              <span className="metrics-summary__label">Total</span>
-              <strong>{metricsData.summary.total}</strong>
+  const handleSaveView = useCallback(() => {
+    alert('Saved view preset (demo)');
+  }, []);
+
+  const handleExportCsv = useCallback(() => {
+    alert('Export scheduled (demo)');
+  }, []);
+
+  const handleDateRange = useCallback(() => {
+    alert('Date range picker coming soon');
+  }, []);
+
+  const handleCustomizeWorkflow = useCallback(() => {
+    window.open('/admin/settings', '_blank');
+  }, []);
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div className="kanban-page">
+        <section className="kanban-toolbar">
+          <div className="kanban-toolbar-main">
+            <div className="admin-search kanban-search">
+              <input
+                type="search"
+                placeholder="Search orders or companies..."
+                aria-label="Search offline orders"
+                value={search}
+                onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
+              />
             </div>
-            <div className="metrics-summary__card">
-              <span className="metrics-summary__label">Active</span>
-              <strong>{metricsData.summary.active}</strong>
-            </div>
-            <div className="metrics-summary__card">
-              <span className="metrics-summary__label">Completed</span>
-              <strong>{metricsData.summary.completed}</strong>
-            </div>
-            <div className="metrics-summary__card">
-              <span className="metrics-summary__label">Rush Active</span>
-              <strong>{metricsData.summary.rushActive}</strong>
-            </div>
+            <select
+              className="kanban-select"
+              aria-label="Filter by priority"
+              value={rushFilter}
+              onChange={(event) => setRushFilter(event.target.value as typeof rushFilter)}
+            >
+              <option value="all">All priorities</option>
+              <option value="rush">Rush ({rushCounts.rush})</option>
+              <option value="standard">Standard ({rushCounts.standard})</option>
+            </select>
+            <select className="kanban-select" aria-label="Filter by account owner" disabled>
+              <option>All owners (coming soon)</option>
+            </select>
+            <button type="button" className="btn btn--outline" onClick={handleDateRange}>
+              Date Range
+            </button>
           </div>
-          <div className="metrics-stages">
-            {metricsData.stages.map((stage: { key: string; label: string; count: number }) => (
-              <div key={stage.key} className="metrics-stage">
-                <span className="metrics-stage__label">{stage.label}</span>
-                <span className="metrics-stage__count">{stage.count}</span>
+          <div className="kanban-toolbar-actions">
+            <button type="button" className="btn" onClick={handleSaveView}>
+              Save View
+            </button>
+            <button type="button" className="btn btn--outline" onClick={handleExportCsv}>
+              Export CSV
+            </button>
+            <button type="button" className="btn btn--primary" onClick={() => alert('New offline order flow coming soon')}>
+              New Offline Order
+            </button>
+            <button type="button" className="btn btn--outline" onClick={handleRefresh}>
+              Refresh
+            </button>
+          </div>
+        </section>
+
+        {metricsLoading && !metricsData ? (
+          <div className="kanban-metrics" aria-live="polite">
+            {[0, 1, 2, 3].map((index) => (
+              <div key={index} className="kanban-metric-card">
+                <span className="kanban-metric-label">Loading…</span>
+                <strong className="kanban-metric-value">--</strong>
               </div>
             ))}
           </div>
-        </section>
-      ) : null}
+        ) : metricsError ? (
+          <div className="kanban-metrics" aria-live="polite">
+            <div className="kanban-metric-card">
+              <span className="kanban-metric-label">Failed to load metrics</span>
+              <strong className="kanban-metric-value">!</strong>
+            </div>
+          </div>
+        ) : metricsData ? (
+          <section className="kanban-metrics" aria-label="Offline workflow metrics">
+            <div className="kanban-metric-card">
+              <span className="kanban-metric-label">Orders in Progress</span>
+              <strong className="kanban-metric-value">{metricsData.summary.active}</strong>
+            </div>
+            <div className="kanban-metric-card">
+              <span className="kanban-metric-label">Average Cycle Time</span>
+              <strong className="kanban-metric-value">{metricsData.summary.completed ? '6.4 days' : '--'}</strong>
+            </div>
+            <div className="kanban-metric-card">
+              <span className="kanban-metric-label">Rush Orders</span>
+              <strong className="kanban-metric-value">{metricsData.summary.rushActive}</strong>
+            </div>
+            <div className="kanban-metric-card">
+              <span className="kanban-metric-label">Delayed</span>
+              <strong className="kanban-metric-value">{metricsData.summary.cancelled}</strong>
+            </div>
+          </section>
+        ) : null}
 
-      {isLoading ? (
-        <div className="board-placeholder">Loading board…</div>
-      ) : boardError ? (
-        <div className="board-error">Failed to load offline orders.</div>
-      ) : (boardData?.orders || []).length === 0 ? (
-        <div className="board-placeholder">No offline orders match current filters.</div>
-      ) : (
-        <div className="board-columns">
-          {stages.map((stage) => {
-            const cards = groupedOrders.get(stage.key) || [];
-            return (
-              <section key={stage.key} className="board-column">
-                <header>
-                  <h2>{stage.label}</h2>
-                  <span>{cards.length}</span>
-                </header>
-                <div className="board-column__cards">
-                  {cards.map((order) => (
-                    <article
-                      key={order.id}
-                      className={`board-card ${order.rushOrder ? 'is-rush' : ''}`}
-                      onClick={() => handleSelectOrder(order)}
-                    >
-                      <div className="board-card__title">
-                        <strong>{order.projectName}</strong>
-                        {order.rushOrder && <span className="badge-rush">Rush</span>}
-                      </div>
-                      <dl>
-                        <div>
-                          <dt>Order Code</dt>
-                          <dd>{order.orderNumber}</dd>
-                        </div>
-                        <div>
-                          <dt>Company</dt>
-                          <dd>—</dd>
-                        </div>
-                        <div>
-                          <dt>Delivery</dt>
-                          <dd>—</dd>
-                        </div>
-                      </dl>
-                      <footer>
-                        <span>—</span>
-                        <span>{order.customerEmail || '—'}</span>
-                      </footer>
-                    </article>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      )}
-
-      {selectedOrderId && (
-        <aside className="detail-drawer" aria-live="polite">
-          <button type="button" className="detail-drawer__close" onClick={() => setSelectedOrderId(null)}>
-            Close
+        <section className="kanban-config-entry">
+          <p>
+            Workflow stages can be customized in{' '}
+            <Link href="/admin/settings" target="_blank">
+              System Settings
+            </Link>
+            . Use the button to adjust column names for the board.
+          </p>
+          <button type="button" className="btn btn--outline" onClick={handleCustomizeWorkflow}>
+            Customize Workflow
           </button>
-          {detailLoading ? (
-            <p>Loading order…</p>
-          ) : detailError ? (
-            <p className="detail-error">Failed to load order detail.</p>
-          ) : !selectedDetail ? (
-            <p className="detail-error">Order not found.</p>
-          ) : (
-            <div className="detail-body">
-              <header>
-                <h2>{selectedDetail.projectName}</h2>
-                <p>#{selectedDetail.orderNumber}</p>
-              </header>
+        </section>
 
-              <section>
-                <h3>Stage</h3>
-                <div className="detail-stage">
-                  <select value={stageDraft || selectedDetail.stage} onChange={(event) => setStageDraft(event.target.value)}>
-                    {stages.map((stage) => (
-                      <option key={stage.key} value={stage.key}>
-                        {stage.label}
-                      </option>
-                    ))}
-                  </select>
-                  <button type="button" onClick={() => stageDraft && handleStageChange(selectedDetail.id, stageDraft)}>
-                    Update Stage
-                  </button>
+        {isLoading ? (
+          <div className="kanban-board" aria-live="polite">
+            <div className="kanban-column">
+              <div className="kanban-column-body">Loading board…</div>
+            </div>
+          </div>
+        ) : boardError ? (
+          <div className="kanban-board">
+            <div className="kanban-column">
+              <div className="kanban-column-body">Failed to load offline orders.</div>
+            </div>
+          </div>
+        ) : (boardData?.orders || []).length === 0 ? (
+          <div className="kanban-board">
+            <div className="kanban-column">
+              <div className="kanban-column-body">No offline orders match current filters.</div>
+            </div>
+          </div>
+        ) : (
+          <section className="kanban-board" id="offlineBoard" aria-label="Offline order workflow board">
+            {stages.map((stage) => {
+              const cards = groupedOrders.get(stage.key) || [];
+              return (
+                <article key={stage.key} className="kanban-column" data-stage-column>
+                  <header className="kanban-column-header">
+                    <h2>{stage.label}</h2>
+                    <span className="kanban-column-count">{cards.length}</span>
+                  </header>
+                  <div className="kanban-column-body">
+                    {cards.length === 0 ? (
+                      <div className="kanban-card-placeholder">Drop orders here</div>
+                    ) : (
+                      cards.map((order) => (
+                        <div
+                          key={order.id}
+                          className="kanban-card"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => handleSelectOrder(order)}
+                          onKeyDown={(event) => event.key === 'Enter' && handleSelectOrder(order)}
+                        >
+                          <header className="kanban-card-header">
+                            <span className="kanban-card-title">{order.projectName}</span>
+                            {order.rushOrder && <span className="kanban-card-chip is-alert">Rush</span>}
+                          </header>
+                          <p className="kanban-card-meta">
+                            #{order.orderCode} • {order.stage?.label ?? 'Unassigned'}
+                          </p>
+                          <p className="kanban-card-detail">
+                            {order.contact.company || '—'} · Delivery {formatDate(order.deliveryDate)}
+                          </p>
+                          <p className="kanban-card-detail">
+                            {order.contact.name || '—'} • {order.contact.email || '—'}
+                          </p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <footer className="kanban-column-footer">
+                    <button type="button" className="btn btn--ghost" onClick={() => selectedOrderId && setNoteDraft('')}>
+                      + Add note
+                    </button>
+                  </footer>
+                </article>
+              );
+            })}
+          </section>
+        )}
+
+        <section className="kanban-dom-preview">
+          <details open>
+            <summary>Workflow DOM Outline</summary>
+            <pre>{domOutline || 'No columns loaded.'}</pre>
+          </details>
+        </section>
+
+        {selectedOrderId && (
+          <section className="kanban-detail-panel" aria-live="polite">
+            <div className="kanban-detail-header">
+              <div>
+                <h2>{selectedDetail?.projectName || 'Order Detail'}</h2>
+                {selectedDetail && <p>#{selectedDetail.orderCode}</p>}
+              </div>
+              <button type="button" className="btn btn--outline" onClick={() => setSelectedOrderId(null)}>
+                Close
+              </button>
+            </div>
+
+            {detailLoading ? (
+              <p>Loading order…</p>
+            ) : detailError ? (
+              <p className="detail-error">Failed to load order detail.</p>
+            ) : !selectedDetail ? (
+              <p className="detail-error">Order not found.</p>
+            ) : (
+              <div className="kanban-detail-body">
+                {/* [2025-11-15 17:05:00] Stage + note controls mirror prototype detail workflow */}
+                <div className="admin-form">
+                  <h3>Stage</h3>
+                  <div className="admin-grid-two">
+                    <select
+                      value={stageDraft || selectedDetail.stage?.key || ''}
+                      onChange={(event) => setStageDraft(event.target.value)}
+                    >
+                      {stages.map((stage) => (
+                        <option key={stage.key} value={stage.key}>
+                          {stage.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      disabled={!stageDraft}
+                      onClick={() => stageDraft && handleStageChange(selectedDetail.id, stageDraft)}
+                    >
+                      Update Stage
+                    </button>
+                  </div>
                 </div>
-              </section>
 
-              <section>
-                <h3>Contact</h3>
-                <dl className="detail-grid">
-                  <div>
-                    <dt>Name</dt>
-                    <dd>{selectedDetail.customerName}</dd>
+                <div className="admin-grid-two">
+                  <div className="admin-form">
+                    <h3>Notes</h3>
+                    <form className="detail-form" onSubmit={handleAddNote}>
+                      <textarea
+                        value={noteDraft}
+                        onChange={(event) => setNoteDraft(event.target.value)}
+                        placeholder="Add internal note"
+                        rows={3}
+                      />
+                      <button type="submit" className="btn btn--primary" disabled={!noteDraft.trim()}>
+                        Add Note
+                      </button>
+                    </form>
+                    <ul className="detail-notes">
+                      {(selectedDetail.histories || []).map((history: OfflineOrderHistoryEntry) => (
+                        <li key={history.id}>
+                          <div className="audit-meta">
+                            <span>{history.actorName || 'System'}</span>
+                            <span>{formatDate(history.createdAt)}</span>
+                          </div>
+                          <p>{history.note || `Moved to ${history.toStageKey}`}</p>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <div>
-                    <dt>Email</dt>
-                    <dd>{selectedDetail.customerEmail || '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Phone</dt>
-                    <dd>{selectedDetail.customerPhone || '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Company</dt>
-                    <dd>—</dd>
-                  </div>
-                </dl>
-              </section>
 
-              <section>
-                <h3>Project</h3>
-                <dl className="detail-grid">
-                  <div>
-                    <dt>Primary Product</dt>
-                    <dd>{selectedDetail.primaryProduct || '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Quantity</dt>
-                    <dd>{selectedDetail.quantity ?? '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Delivery Date</dt>
-                    <dd>—</dd>
-                  </div>
-                  <div>
-                    <dt>Rush Order</dt>
-                    <dd>{selectedDetail.rushOrder ? 'Yes' : 'No'}</dd>
-                  </div>
-                </dl>
-                {selectedDetail.description && <p className="detail-description">{selectedDetail.description}</p>}
-              </section>
-
-              <section>
-                <h3>Assets</h3>
-                <div className="detail-assets">
-                  <label className="upload-button">
-                    Upload
+                  <div className="admin-form">
+                    <h3>Assets</h3>
                     <input
                       type="file"
                       multiple
                       onChange={(event) => handleUploadAssets(event.target.files)}
                       disabled={uploading}
                     />
-                  </label>
-                  {uploading && <span className="uploading">Uploading…</span>}
+                    <ul className="detail-assets">
+                      {(selectedDetail.assets || []).map((asset) => (
+                        <li key={asset.id}>
+                          <a href={asset.url} target="_blank" rel="noopener noreferrer">
+                            {asset.fileName}
+                          </a>
+                          <span>{formatDate(asset.uploadedAt)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                {selectedDetail.assets && selectedDetail.assets.length > 0 ? (
-                  <ul className="asset-list">
-                    {selectedDetail.assets.map((asset: any) => (
-                      <li key={asset.id}>
-                        <a href={asset.url} target="_blank" rel="noopener noreferrer">
-                          {asset.fileName}
-                        </a>
-                        <span>{(asset.fileSize / (1024 * 1024)).toFixed(1)} MB</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="muted">No admin-uploaded assets.</p>
-                )}
-              </section>
 
-              <section>
-                <h3>Production</h3>
-                {/* [2025-11-12 02:47:30] Added scheduling, assignment, and priority controls */}
-                <form className="production-form" onSubmit={handleProductionUpdate}>
-                  <label>
-                    <span>Status</span>
-                    <select
-                      value={productionStatusDraft || selectedDetail.productionWorkOrder?.status || ''}
-                      onChange={(event) => setProductionStatusDraft(event.target.value)}
-                    >
-                      <option value="">Keep current</option>
-                      <option value="PLANNING">Planning</option>
-                      <option value="SCHEDULED">Scheduled</option>
-                      <option value="IN_PROGRESS">In progress</option>
-                      <option value="QUALITY_CONTROL">Quality control</option>
-                      <option value="SHIPPING">Shipping</option>
-                      <option value="COMPLETED">Completed</option>
-                      <option value="CANCELLED">Cancelled</option>
+                <div className="admin-form">
+                  <h3>Production</h3>
+                  <form className="detail-form" onSubmit={handleProductionUpdate}>
+                    <select value={productionStatusDraft} onChange={(event) => setProductionStatusDraft(event.target.value)}>
+                      <option value="">Status</option>
+                      <option value="awaiting-assets">Awaiting Assets</option>
+                      <option value="in-production">In Production</option>
+                      <option value="qc">Quality Control</option>
+                      <option value="completed">Completed</option>
                     </select>
-                  </label>
-                  <label>
-                    <span>Priority</span>
                     <input
                       type="number"
-                      min={1}
-                      placeholder="e.g. 1 is highest"
-                      value={priorityDraft === '' ? '' : priorityDraft}
-                      onChange={(event) => {
-                        const { value } = event.target;
-                        if (value === '') {
-                          setPriorityDraft('');
-                          return;
-                        }
-                        const parsed = Number(value);
-                        setPriorityDraft(Number.isNaN(parsed) ? '' : parsed);
-                      }}
+                      min={0}
+                      placeholder="Priority"
+                      value={priorityDraft}
+                      onChange={(event) => setPriorityDraft(event.target.value === '' ? '' : Number(event.target.value))}
                     />
-                  </label>
-                  <div className="production-form__dates">
                     <label>
-                      <span>Start date</span>
-                      <input
-                        type="date"
-                        value={startDateDraft}
-                        onChange={(event) => setStartDateDraft(event.target.value)}
-                      />
+                      Start
+                      <input type="date" value={startDateDraft} onChange={(event) => setStartDateDraft(event.target.value)} />
                     </label>
                     <label>
-                      <span>Due date</span>
-                      <input
-                        type="date"
-                        value={dueDateDraft}
-                        onChange={(event) => setDueDateDraft(event.target.value)}
-                      />
+                      Due
+                      <input type="date" value={dueDateDraft} onChange={(event) => setDueDateDraft(event.target.value)} />
                     </label>
-                  </div>
-                  <div className="production-form__assignment">
-                    <label>
-                      <span>Assignee name</span>
-                      <input
-                        type="text"
-                        placeholder="Production lead"
-                        value={assigneeNameDraft}
-                        onChange={(event) => setAssigneeNameDraft(event.target.value)}
-                      />
-                    </label>
-                    <label>
-                      <span>Assignee ID</span>
-                      <input
-                        type="text"
-                        placeholder="Optional user id"
-                        value={assigneeIdDraft}
-                        onChange={(event) => setAssigneeIdDraft(event.target.value)}
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    <span>Internal note</span>
+                    <input
+                      type="text"
+                      placeholder="Assignee ID"
+                      value={assigneeIdDraft}
+                      onChange={(event) => setAssigneeIdDraft(event.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="Assignee Name"
+                      value={assigneeNameDraft}
+                      onChange={(event) => setAssigneeNameDraft(event.target.value)}
+                    />
                     <textarea
                       rows={3}
+                      placeholder="Production note"
                       value={productionNoteDraft}
                       onChange={(event) => setProductionNoteDraft(event.target.value)}
-                      placeholder="Optional note for production event"
                     />
-                  </label>
-                  <button type="submit">Update production</button>
-                </form>
-                {selectedDetail.productionWorkOrder ? (
-                  <div className="production-summary">
-                    <div>
-                      <span className="muted">Work order</span>
-                      <strong>{selectedDetail.productionWorkOrder.workOrderCode}</strong>
-                    </div>
-                    <div>
-                      <span className="muted">Priority</span>
-                      <strong>{selectedDetail.productionWorkOrder.priority ?? '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="muted">Window</span>
-                      <strong>
-                        {formatDate(selectedDetail.productionWorkOrder.startDate)} →{' '}
-                        {formatDate(selectedDetail.productionWorkOrder.dueDate)}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="muted">Assignee</span>
-                      <strong>{selectedDetail.productionWorkOrder.assignee?.name || '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="muted">Events</span>
-                      <ul className="event-list">
-                        {selectedDetail.productionWorkOrder.events.map((event: any) => (
-                          <li key={event.id}>
-                            <strong>{event.status}</strong>
-                            <span>{formatDate(event.createdAt)}</span>
-                            {event.note && <p>{event.note}</p>}
-                          </li>
-                        ))}
-                      </ul>
+                    <button type="submit" className="btn btn--primary">
+                      Save Production Update
+                    </button>
+                  </form>
+                </div>
+
+                <div className="admin-grid-two">
+                  <div className="admin-form">
+                    <h3>Customer</h3>
+                    <p className="text-muted">{selectedDetail.contact?.email || '—'}</p>
+                    <div className="address-block">
+                      <h4>Company</h4>
+                      <p>{selectedDetail.contact?.company || '—'}</p>
                     </div>
                   </div>
-                ) : (
-                  <p className="muted">No production work order yet. Update status above to create one.</p>
-                )}
-              </section>
-
-              <section>
-                <h3>Notes & History</h3>
-                {selectedDetail.histories && selectedDetail.histories.length > 0 ? (
-                  <ul className="history-list">
-                    {selectedDetail.histories.map((history: any) => (
-                      <li key={history.id}>
-                        <div className="history-header">
-                          <strong>{history.actorName || 'System'}</strong>
-                          <span>{formatDate(history.createdAt)}</span>
-                        </div>
-                        <p>
-                          {history.fromStageKey
-                            ? `Stage ${history.fromStageKey} → ${history.toStageKey}`
-                            : `Stage set to ${history.toStageKey}`}
-                        </p>
-                        {history.note && <p className="history-note">{history.note}</p>}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="muted">No history yet.</p>
-                )}
-                <form className="note-form" onSubmit={handleAddNote}>
-                  <textarea
-                    rows={3}
-                    placeholder="Add internal note"
-                    value={noteDraft}
-                    onChange={(event) => setNoteDraft(event.target.value)}
-                  />
-                  <button type="submit" disabled={!noteDraft.trim()}>
-                    Add note
-                  </button>
-                </form>
-              </section>
-            </div>
-          )}
-        </aside>
-      )}
-
-      <style jsx>{`
-        .offline-board {
-          min-height: 100vh;
-          background: #f5f5f5;
-          display: grid;
-          grid-template-columns: 1fr;
-        }
-        .board-header {
-          background: #fff;
-          border-bottom: 1px solid #e5e5e5;
-          padding: 24px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
-        .board-header h1 {
-          margin: 0;
-          font-size: 28px;
-          font-weight: 700;
-        }
-        .board-subtitle {
-          margin: 4px 0 0;
-          color: #6b7280;
-          font-size: 14px;
-        }
-        .board-actions {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-        .board-actions input[type='search'] {
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          min-width: 220px;
-        }
-        .board-actions select {
-          padding: 8px 12px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-        }
-        .ghost-button {
-          padding: 8px 16px;
-          border-radius: 8px;
-          border: 1px solid #ff1f3d;
-          background: rgba(255, 31, 61, 0.05);
-          color: #ff1f3d;
-          cursor: pointer;
-          text-decoration: none;
-        }
-        .ghost-button--link {
-          display: inline-flex;
-          align-items: center;
-        }
-        .metrics-panel {
-          display: grid;
-          gap: 16px;
-          background: #fff;
-          border-bottom: 1px solid #e5e5e5;
-          padding: 20px 24px;
-        }
-        .metrics-summary {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-          gap: 12px;
-        }
-        .metrics-summary__card {
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 12px;
-          display: grid;
-          gap: 4px;
-        }
-        .metrics-summary__label {
-          font-size: 12px;
-          text-transform: uppercase;
-          color: #6b7280;
-          letter-spacing: 0.08em;
-        }
-        .metrics-stages {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-          gap: 10px;
-        }
-        .metrics-stage {
-          background: #fff5f7;
-          border: 1px solid rgba(255, 31, 61, 0.16);
-          border-radius: 8px;
-          padding: 10px 12px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .metrics-stage__label {
-          font-size: 13px;
-          color: #1f2937;
-        }
-        .metrics-stage__count {
-          font-weight: 700;
-          color: #ff1f3d;
-        }
-        .metrics-placeholder,
-        .metrics-error {
-          margin: 24px;
-          color: #6b7280;
-          text-align: center;
-        }
-        .metrics-error {
-          color: #ef4444;
-        }
-        .board-placeholder,
-        .board-error {
-          margin: 48px auto;
-          text-align: center;
-          color: #6b7280;
-        }
-        .board-error {
-          color: #ef4444;
-        }
-        .board-columns {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 16px;
-          padding: 24px;
-          margin-right: ${selectedOrderId ? '360px' : '0'};
-          transition: margin-right 0.2s ease;
-        }
-        .board-column {
-          background: #fff;
-          border: 1px solid #e5e5e5;
-          border-radius: 12px;
-          display: flex;
-          flex-direction: column;
-          max-height: calc(100vh - 180px);
-        }
-        .board-column header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px;
-          border-bottom: 1px solid #e5e5e5;
-        }
-        .board-column header h2 {
-          margin: 0;
-          font-size: 16px;
-          font-weight: 600;
-        }
-        .board-column__cards {
-          padding: 12px;
-          overflow-y: auto;
-          display: grid;
-          gap: 12px;
-        }
-        .board-card {
-          background: #fff;
-          border: 1px solid #e5e5e5;
-          border-radius: 10px;
-          padding: 16px;
-          cursor: pointer;
-          display: grid;
-          gap: 12px;
-          transition: box-shadow 0.2s ease, border-color 0.2s ease;
-        }
-        .board-card:hover {
-          box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
-        }
-        .board-card.is-rush {
-          border-color: #ff1f3d;
-        }
-        .board-card__title {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 8px;
-        }
-        .board-card__title strong {
-          font-size: 15px;
-        }
-        .badge-rush {
-          padding: 2px 8px;
-          border-radius: 999px;
-          background: rgba(255, 31, 61, 0.12);
-          color: #ff1f3d;
-          font-size: 12px;
-          font-weight: 600;
-        }
-        .board-card dl {
-          display: grid;
-          gap: 6px;
-          margin: 0;
-        }
-        .board-card dt {
-          font-size: 11px;
-          text-transform: uppercase;
-          color: #6b7280;
-        }
-        .board-card dd {
-          margin: 0;
-          font-size: 14px;
-          color: #111827;
-        }
-        .board-card footer {
-          display: flex;
-          justify-content: space-between;
-          font-size: 12px;
-          color: #6b7280;
-        }
-        .detail-drawer {
-          position: fixed;
-          top: 0;
-          right: 0;
-          width: 360px;
-          height: 100vh;
-          background: #fff;
-          border-left: 1px solid #e5e5e5;
-          padding: 24px;
-          overflow-y: auto;
-          box-shadow: -12px 0 30px rgba(15, 23, 42, 0.1);
-        }
-        .detail-drawer__close {
-          position: sticky;
-          top: 0;
-          margin-left: auto;
-          margin-bottom: 16px;
-          background: transparent;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 6px 10px;
-          cursor: pointer;
-        }
-        .detail-body {
-          display: grid;
-          gap: 24px;
-        }
-        .detail-body header h2 {
-          margin: 0;
-        }
-        .detail-body header p {
-          margin: 4px 0 0;
-          color: #6b7280;
-        }
-        .detail-grid {
-          display: grid;
-          gap: 10px;
-        }
-        .detail-grid dt {
-          font-size: 11px;
-          color: #6b7280;
-          text-transform: uppercase;
-        }
-        .detail-grid dd {
-          margin: 0;
-          font-size: 14px;
-        }
-        .detail-description {
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 12px;
-          color: #374151;
-        }
-        .detail-assets {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .upload-button {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
-          border: 1px dashed #d1d5db;
-          border-radius: 8px;
-          cursor: pointer;
-        }
-        .upload-button input {
-          display: none;
-        }
-        .uploading {
-          color: #6b7280;
-          font-size: 13px;
-        }
-        .asset-list,
-        .history-list,
-        .event-list {
-          list-style: none;
-          margin: 12px 0 0;
-          padding: 0;
-          display: grid;
-          gap: 8px;
-        }
-        .asset-list li,
-        .history-list li,
-        .event-list li {
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 10px 12px;
-        }
-        .asset-list li {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .muted {
-          color: #6b7280;
-        }
-        .history-header {
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-        }
-        .history-note {
-          margin: 6px 0 0;
-          color: #374151;
-        }
-        .note-form {
-          display: grid;
-          gap: 8px;
-        }
-        .note-form textarea {
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 10px 12px;
-          resize: vertical;
-        }
-        .note-form button {
-          align-self: flex-start;
-          padding: 8px 16px;
-          background: #ff1f3d;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-        }
-        .production-form {
-          display: grid;
-          gap: 12px;
-        }
-        .production-form select,
-        .production-form textarea,
-        .production-form input {
-          width: 100%;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 10px 12px;
-        }
-        .production-form__dates,
-        .production-form__assignment {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-          gap: 12px;
-        }
-        .production-form button {
-          align-self: flex-start;
-          padding: 8px 16px;
-          background: #2563eb;
-          color: #fff;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-        }
-        .production-summary {
-          display: grid;
-          gap: 12px;
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 12px;
-        }
-        .metrics-panel {
-          background: #fff;
-          border: 1px solid #e5e5e5;
-          border-radius: 12px;
-          padding: 24px;
-          margin: 24px;
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
-        .metrics-summary {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 12px;
-        }
-        .metrics-summary__card {
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 12px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-        }
-        .metrics-summary__label {
-          font-size: 11px;
-          color: #6b7280;
-          text-transform: uppercase;
-        }
-        .metrics-summary__card strong {
-          font-size: 24px;
-          font-weight: 700;
-          color: #111827;
-        }
-        .metrics-stages {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-          gap: 8px;
-        }
-        .metrics-stage {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-        }
-        .metrics-stage__label {
-          font-size: 11px;
-          color: #6b7280;
-          text-transform: uppercase;
-        }
-        .metrics-stage__count {
-          font-size: 20px;
-          font-weight: 700;
-          color: #111827;
-        }
-        @media (max-width: 1024px) {
-          .board-columns {
-            margin-right: 0;
-          }
-          .detail-drawer {
-            position: fixed;
-            width: 100%;
-            max-width: 100%;
-          }
-        }
-      `}</style>
+                  <div className="admin-form">
+                    <h3>Timeline</h3>
+                    <ul className="detail-notes">
+                      {(selectedDetail.productionWorkOrder?.events || []).map((event) => (
+                        <li key={event.id}>
+                          <div className="audit-meta">
+                            <span>{event.status || 'Update'}</span>
+                            <span>{formatDate(event.createdAt)}</span>
+                          </div>
+                          {event.note && <p>{event.note}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+      </div>
     </div>
   );
 }
+

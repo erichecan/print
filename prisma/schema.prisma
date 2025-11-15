@@ -78,7 +78,8 @@ model Category {
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
 
-  products Product[]
+  products       Product[]
+  designTemplates DesignTemplate[]
 
   @@index([slug])
   @@index([parentId])
@@ -500,6 +501,7 @@ model Design {
 
   versions DesignVersion[]
   assets   DesignAsset[]
+  comments DesignComment[]
 
   @@index([userId])
   @@index([sessionId])
@@ -549,4 +551,57 @@ enum DesignStatus {
   LOCKED
   ORDERED
   ARCHIVED
+}
+
+// [2025-01-27 21:30:00] Design Template model - 设计模板
+model DesignTemplate {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?   @db.Text
+  category         String?   // 模板分类：'birthday', 'wedding', 'business', 'sports', etc.
+  tags             String[]  @default([])
+  thumbnailUrl     String?   @map("thumbnail_url")
+  previewUrl       String?   @map("preview_url")
+  designData       Json      @map("design_data")
+  productCategoryId String?  @map("product_category_id")
+  productCategory  Category? @relation(fields: [productCategoryId], references: [id], onDelete: SetNull)
+  usageCount       Int       @default(0) @map("usage_count")
+  likesCount       Int       @default(0) @map("likes_count")
+  isFeatured       Boolean   @default(false) @map("is_featured")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdBy        String?   @map("created_by")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([category])
+  @@index([productCategoryId])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("design_templates")
+}
+
+// [2025-01-27 21:30:00] Design Comment model - 设计评论
+model DesignComment {
+  id           String         @id @default(uuid())
+  designId     String         @map("design_id")
+  design       Design         @relation(fields: [designId], references: [id], onDelete: Cascade)
+  userId       String?        @map("user_id")
+  parentId     String?        @map("parent_id")
+  parent       DesignComment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      DesignComment[] @relation("CommentReplies")
+  content      String         @db.Text
+  authorName   String?        @map("author_name")
+  authorEmail  String?        @map("author_email")
+  likesCount   Int            @default(0) @map("likes_count")
+  isApproved   Boolean        @default(true) @map("is_approved")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@index([designId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@index([isApproved])
+  @@map("design_comments")
 }

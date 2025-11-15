@@ -841,6 +841,100 @@
   color: #475569;
 }
 
+.kanban-card-placeholder {
+  min-height: 80px;
+  border: 1px dashed var(--color-border);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  background: #fff;
+}
+
+.kanban-detail-panel {
+  margin-top: 32px;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px;
+  display: grid;
+  gap: 24px;
+}
+
+.kanban-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.kanban-detail-header h2 {
+  margin: 0;
+}
+
+.kanban-detail-header p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+}
+
+.kanban-detail-body {
+  display: grid;
+  gap: 24px;
+}
+
+.detail-form {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-form textarea,
+.detail-form select,
+.detail-form input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.detail-notes,
+.detail-assets {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+
+.detail-notes li,
+.detail-assets li {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 12px;
+  background: var(--color-bg-subtle);
+}
+
+.detail-assets a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.kanban-detail-body .admin-grid-two {
+  align-items: flex-start;
+}
+
+.kanban-detail-body label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.kanban-detail-body label input {
+  margin-top: 4px;
+}
+
 @media (max-width: 960px) {
   .kanban-toolbar-main {
     flex-direction: column;

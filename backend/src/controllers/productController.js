@@ -369,14 +369,45 @@ exports.getRelatedProducts = async (req, res) => {
       return res.json({ data: cachedRelated });
     }
 
+    // [2025-01-27 21:50:00] 改进推荐算法：考虑评分、销量、相关性
+    // 获取产品评分统计（先获取产品列表，再查询评分）
+    const candidateProducts = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        categoryId: currentProduct.categoryId,
+        id: { not: currentProduct.id },
+      },
+      select: { id: true },
+      take: limit * 2,
+    });
+    
+    const productIds = candidateProducts.map((p) => p.id);
+    
+    const ratingStats = await prisma.productReview.groupBy({
+      by: ['productId'],
+      where: {
+        productId: { in: productIds },
+      },
+      _avg: { rating: true },
+      _count: true,
+    });
+    
+    const ratingMap = new Map();
+    ratingStats.forEach((stat) => {
+      ratingMap.set(stat.productId, {
+        avgRating: Number(stat._avg.rating || 0),
+        reviewCount: Number(stat._count || 0),
+      });
+    });
+    
+    // 获取同类别产品（优先高评分和高销量）
     const relatedProducts = await prisma.product.findMany({
       where: {
         isActive: true,
         categoryId: currentProduct.categoryId,
         id: { not: currentProduct.id },
       },
-      take: limit,
-      orderBy: { createdAt: 'desc' },
+      take: limit * 2, // 获取更多候选产品，然后排序筛选
       select: {
         id: true,
         name: true,
@@ -409,8 +440,40 @@ exports.getRelatedProducts = async (req, res) => {
         },
       },
     });
+    
+    // [2025-01-27 21:50:00] 计算推荐分数并排序
+    const productsWithScore = relatedProducts.map((product) => {
+      const rating = ratingMap.get(product.id) || { avgRating: 0, reviewCount: 0 };
+      const stockQuantity = product.variants?.[0]?.stockQuantity || 0;
+      
+      // 推荐分数计算：
+      // - 评分权重：40% (avgRating / 5 * 0.4)
+      // - 评价数量权重：20% (log(reviewCount + 1) / 10 * 0.2)
+      // - 库存权重：20% (有库存优先)
+      // - 随机性：20% (保持多样性)
+      const ratingScore = (rating.avgRating / 5) * 0.4;
+      const reviewScore = Math.min(Math.log10(rating.reviewCount + 1) / 10, 1) * 0.2;
+      const stockScore = (stockQuantity > 0 ? 1 : 0) * 0.2;
+      const randomScore = Math.random() * 0.2;
+      
+      const recommendationScore = ratingScore + reviewScore + stockScore + randomScore;
+      
+      return {
+        ...product,
+        recommendationScore,
+        rating: {
+          average: rating.avgRating,
+          count: rating.reviewCount,
+        },
+      };
+    });
+    
+    // 按推荐分数排序并取前 limit 个
+    const topProducts = productsWithScore
+      .sort((a, b) => b.recommendationScore - a.recommendationScore)
+      .slice(0, limit);
 
-    const formattedRelated = relatedProducts.map((product) => {
+    const formattedRelated = topProducts.map((product) => {
       const images = (product.images || []).map((image) => ({
         url: optimizeImageUrl(image.url, { width: 480, quality: 80 }) || image.url,
         alt: image.alt || product.name,
@@ -434,6 +497,7 @@ exports.getRelatedProducts = async (req, res) => {
         primaryImage,
         thumbnail: primaryImage,
         stockStatus: product.variants?.[0]?.stockQuantity > 0 ? 'in_stock' : 'out_of_stock',
+        rating: product.rating,
       };
     });
 

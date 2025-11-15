@@ -18,9 +18,15 @@ export interface LayerInfo {
   zIndex: number;
 }
 
+// [2025-01-27 21:00:00] 多视图支持：front/back/sleeve
+type DesignView = 'front' | 'back' | 'sleeve';
+
 interface DesignLabState {
   draft?: DesignDraft;
   canvas: DesignCanvasSnapshot;
+  // [2025-01-27 21:00:00] 多视图画布状态
+  viewCanvases: Record<DesignView, DesignCanvasSnapshot>;
+  currentView: DesignView;
   history: DesignCanvasSnapshot[];
   future: DesignCanvasSnapshot[];
   mode: EditorMode;
@@ -29,6 +35,8 @@ interface DesignLabState {
   setDraft: (draft: DesignDraft) => void;
   patchDraft: (changes: Partial<DesignDraft>) => void;
   setCanvas: (snapshot: DesignCanvasSnapshot, options?: { pushHistory?: boolean }) => void;
+  setView: (view: DesignView) => void; // [2025-01-27 21:00:00] 切换视图
+  getCurrentViewCanvas: () => DesignCanvasSnapshot; // [2025-01-27 21:00:00] 获取当前视图画布
   undo: () => void;
   redo: () => void;
   setMode: (mode: EditorMode) => void;
@@ -51,6 +59,13 @@ export const useDesignLabStore = create<DesignLabState>()(
   immer((set, get) => ({
     draft: undefined,
     canvas: defaultSnapshot,
+    // [2025-01-27 21:00:00] 初始化多视图画布
+    viewCanvases: {
+      front: defaultSnapshot,
+      back: { ...defaultSnapshot, objects: [] },
+      sleeve: { ...defaultSnapshot, size: { width: 200, height: 600 }, objects: [] }, // 袖子区域较小
+    },
+    currentView: 'front',
     history: [],
     future: [],
     mode: 'edit',
@@ -60,6 +75,10 @@ export const useDesignLabStore = create<DesignLabState>()(
       set((state) => {
         state.draft = draft;
         state.canvas = draft.canvasSnapshot || defaultSnapshot;
+        // [2025-01-27 21:00:00] 初始化所有视图为同一画布（如果只有单一视图数据）
+        state.viewCanvases.front = draft.canvasSnapshot || defaultSnapshot;
+        state.viewCanvases.back = { ...defaultSnapshot, objects: [] };
+        state.viewCanvases.sleeve = { ...defaultSnapshot, size: { width: 200, height: 600 }, objects: [] };
         state.history = [];
         state.future = [];
       }),
@@ -72,14 +91,32 @@ export const useDesignLabStore = create<DesignLabState>()(
     setCanvas: (snapshot: DesignCanvasSnapshot, options = { pushHistory: true }) =>
       set((state) => {
         if (options.pushHistory) {
-          state.history.push(state.canvas);
+          // [2025-01-27 21:00:00] 保存当前视图的画布到历史
+          const currentViewCanvas = state.viewCanvases[state.currentView];
+          state.history.push(currentViewCanvas);
           if (state.history.length > 20) {
             state.history.shift();
           }
         }
         state.canvas = snapshot;
+        // [2025-01-27 21:00:00] 同时更新当前视图的画布
+        state.viewCanvases[state.currentView] = snapshot;
         state.future = [];
       }),
+    // [2025-01-27 21:00:00] 切换视图
+    setView: (view: DesignView) =>
+      set((state) => {
+        // 保存当前视图的画布
+        state.viewCanvases[state.currentView] = state.canvas;
+        // 切换到新视图并加载对应的画布
+        state.currentView = view;
+        state.canvas = state.viewCanvases[view];
+      }),
+    // [2025-01-27 21:00:00] 获取当前视图的画布
+    getCurrentViewCanvas: () => {
+      const state = get();
+      return state.viewCanvases[state.currentView];
+    },
     undo: () =>
       set((state) => {
         if (!state.history.length) {

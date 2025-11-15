@@ -20,6 +20,7 @@ import {
   checkoutApi,
   CheckoutAddressPayload,
   CartResponse,
+  couponApi,
 } from '@/lib/api';
 import { validateAddressForm, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
 
@@ -43,6 +44,7 @@ interface CheckoutTotals {
   subtotal: number;
   shipping: number;
   tax: number;
+  discount?: number; // [2025-01-27 20:10:00] 折扣金额
   total: number;
 }
 
@@ -120,9 +122,11 @@ function CheckoutSkeleton() {
 function CheckoutSummary({
   cart,
   totals,
+  appliedCoupon,
 }: {
   cart: CartResponse;
   totals: CheckoutTotals;
+  appliedCoupon?: { code: string; discountAmount: number } | null; // [2025-01-27 20:10:00] 已应用的优惠券
 }) {
   const shippingText =
     totals.shipping > 0 ? `$${totals.shipping.toFixed(2)}` : 'Calculated at checkout';
@@ -158,6 +162,13 @@ function CheckoutSummary({
           <span>Subtotal</span>
           <span>${totals.subtotal.toFixed(2)}</span>
         </div>
+        {/* [2025-01-27 20:10:00] 显示优惠券折扣 */}
+        {appliedCoupon && (
+          <div className="summary-row discount">
+            <span>Discount ({appliedCoupon.code})</span>
+            <span>-${appliedCoupon.discountAmount.toFixed(2)}</span>
+          </div>
+        )}
         <div className="summary-row">
           <span>Shipping</span>
           <span>{shippingText}</span>
@@ -182,9 +193,11 @@ function CheckoutSummary({
 function CheckoutForm({
   cart,
   onTotalsChange,
+  onCouponChange, // [2025-01-27 20:20:00] 传递优惠券状态给父组件
 }: {
   cart: CartResponse;
   onTotalsChange: (totals: CheckoutTotals) => void;
+  onCouponChange?: (coupon: { code: string; discountAmount: number } | null) => void; // [2025-01-27 20:20:00]
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -233,6 +246,12 @@ function CheckoutForm({
   const [cardError, setCardError] = useState<string | null>(null);
   const [cardComplete, setCardComplete] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'confirming'>('form');
+  
+  // [2025-01-27 20:15:00] 优惠券状态
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   // [2025-01-27 11:20:00] 地址持久化：从 localStorage 加载保存的地址
   useEffect(() => {
@@ -312,6 +331,58 @@ function CheckoutForm({
     bootstrap();
   }, [cart.subtotal, notifyTotals]);
 
+  // [2025-01-27 20:15:00] 应用优惠券
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !addressReady) return;
+    
+    setApplyingCoupon(true);
+    setCouponError(null);
+    
+    try {
+      const subtotalForCoupon = totals.subtotal || cart.subtotal;
+      const result = await couponApi.validate(couponCode.trim().toUpperCase(), subtotalForCoupon);
+      
+      const discountAmount = result.coupon.discountAmount;
+      const applied = {
+        code: result.coupon.code,
+        discountAmount,
+      };
+      setAppliedCoupon(applied);
+      setCouponCode('');
+      onCouponChange?.(applied); // [2025-01-27 20:20:00] 通知父组件
+      
+      // [2025-01-27 20:15:00] 更新总计以包含折扣
+      const newTotal = Math.max(0, totals.total - discountAmount);
+      notifyTotals({
+        ...totals,
+        discount: discountAmount,
+        total: newTotal,
+      });
+    } catch (err: any) {
+      setCouponError(err.message || 'Invalid coupon code');
+      setAppliedCoupon(null);
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
+  // [2025-01-27 20:15:00] 移除优惠券
+  const handleRemoveCoupon = () => {
+    const discountToRemove = appliedCoupon?.discountAmount || 0;
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError(null);
+    onCouponChange?.(null); // [2025-01-27 20:20:00] 通知父组件
+    
+    // [2025-01-27 20:15:00] 更新总计（移除折扣）
+    const newTotal = totals.total + discountToRemove;
+    notifyTotals({
+      ...totals,
+      discount: 0,
+      total: newTotal,
+    });
+  };
+
   const refreshTotals = useCallback(
     async (shippingMethod: string) => {
       if (!addressReady) return;
@@ -322,11 +393,17 @@ function CheckoutForm({
           shippingAddress: mapAddressForApi(address),
           shippingMethod,
         });
+        
+        // [2025-01-27 20:15:00] 重新计算时保留折扣
+        const discount = appliedCoupon?.discountAmount || 0;
+        const baseTotal = (result.subtotal ?? cart.subtotal) + (result.shipping ?? 0) + (result.tax ?? 0);
+        
         notifyTotals({
           subtotal: result.subtotal ?? cart.subtotal,
           shipping: result.shipping ?? 0,
           tax: result.tax ?? 0,
-          total: result.total ?? cart.subtotal,
+          discount,
+          total: Math.max(0, baseTotal - discount),
         });
       } catch (error: unknown) {
         setRatesError(
@@ -338,7 +415,7 @@ function CheckoutForm({
         setIsCalculatingTotals(false);
       }
     },
-    [address, addressReady, cart.subtotal, notifyTotals]
+    [address, addressReady, cart.subtotal, notifyTotals, appliedCoupon]
   );
 
   const loadShippingRates = useCallback(async () => {
@@ -901,6 +978,45 @@ function CheckoutForm({
         </div>
       )}
 
+      {/* [2025-01-27 20:15:00] 优惠券输入 */}
+      <h2>Coupon Code</h2>
+      <div className="coupon-section">
+        {appliedCoupon ? (
+          <div className="coupon-applied">
+            <div className="coupon-info">
+              <strong>Coupon: {appliedCoupon.code}</strong>
+              <span>-${appliedCoupon.discountAmount.toFixed(2)}</span>
+            </div>
+            <button type="button" onClick={handleRemoveCoupon} className="remove-coupon-btn">
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="coupon-input-group">
+            <input
+              type="text"
+              placeholder="Enter coupon code"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              onKeyPress={(e) => e.key === 'Enter' && handleApplyCoupon()}
+              className="coupon-input"
+              disabled={applyingCoupon || !addressReady}
+            />
+            <button
+              type="button"
+              onClick={handleApplyCoupon}
+              disabled={applyingCoupon || !couponCode.trim() || !addressReady}
+              className="coupon-apply-btn"
+            >
+              {applyingCoupon ? '...' : 'Apply'}
+            </button>
+          </div>
+        )}
+        {couponError && (
+          <div className="coupon-error-message">{couponError}</div>
+        )}
+      </div>
+
       {submitError && (
         <div className="error-message">
           <p>{submitError}</p>
@@ -1179,12 +1295,115 @@ function CheckoutForm({
             transform: rotate(360deg);
           }
         }
+        /* [2025-01-27 20:15:00] 优惠券样式 */
+        .coupon-section {
+          display: grid;
+          gap: 12px;
+          padding: 20px;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          background: #f8fafc;
+        }
+        .coupon-input-group {
+          display: flex;
+          gap: 8px;
+        }
+        .coupon-input {
+          flex: 1;
+          padding: 12px 14px;
+          border: 1px solid #d4d7de;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .coupon-input:focus {
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+          outline: none;
+        }
+        .coupon-input:disabled {
+          background: #f1f5f9;
+          cursor: not-allowed;
+        }
+        .coupon-apply-btn {
+          padding: 12px 20px;
+          background: #2563eb;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s ease;
+        }
+        .coupon-apply-btn:hover:not(:disabled) {
+          background: #1e40af;
+        }
+        .coupon-apply-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        .coupon-applied {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 16px;
+          background: #e8f5e9;
+          border-radius: 8px;
+          border: 1px solid #81c784;
+        }
+        .coupon-info {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex: 1;
+          gap: 12px;
+        }
+        .coupon-info strong {
+          color: #2e7d32;
+        }
+        .coupon-info span {
+          color: #2e7d32;
+          font-weight: 600;
+          font-size: 1.1rem;
+        }
+        .remove-coupon-btn {
+          padding: 8px 16px;
+          background: transparent;
+          border: 1px solid #2e7d32;
+          color: #2e7d32;
+          border-radius: 6px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .remove-coupon-btn:hover {
+          background: #2e7d32;
+          color: white;
+        }
+        .coupon-error-message {
+          margin-top: 8px;
+          padding: 12px;
+          background: #fee;
+          border: 1px solid #fcc;
+          border-radius: 6px;
+          color: #c33;
+          font-size: 0.875rem;
+        }
+        .summary-row.discount {
+          color: #2e7d32;
+          font-weight: 600;
+        }
         @media (max-width: 768px) {
           .checkout-form {
             padding: 24px;
           }
           .form-row {
             grid-template-columns: 1fr;
+          }
+          .coupon-input-group {
+            flex-direction: column;
           }
         }
       `}</style>
@@ -1196,6 +1415,7 @@ export default function CheckoutPage() {
   const { cart, isLoading } = useCart();
   const router = useRouter();
   const [checkoutTotals, setCheckoutTotals] = useState<CheckoutTotals>(emptyTotals);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null); // [2025-01-27 20:20:00]
 
   useEffect(() => {
     if (!isLoading && (!cart || cart.items.length === 0)) {
@@ -1211,9 +1431,17 @@ export default function CheckoutPage() {
     <div className="container">
       <div className="checkout-grid">
         <Elements stripe={stripePromise}>
-          <CheckoutForm cart={cart} onTotalsChange={setCheckoutTotals} />
+          <CheckoutForm 
+            cart={cart} 
+            onTotalsChange={setCheckoutTotals}
+            onCouponChange={setAppliedCoupon} // [2025-01-27 20:20:00] 接收优惠券状态
+          />
         </Elements>
-        <CheckoutSummary cart={cart} totals={checkoutTotals} />
+        <CheckoutSummary 
+          cart={cart} 
+          totals={checkoutTotals}
+          appliedCoupon={appliedCoupon} // [2025-01-27 20:20:00] 传递优惠券状态
+        />
       </div>
     </div>
   );

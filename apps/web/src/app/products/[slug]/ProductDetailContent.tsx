@@ -9,7 +9,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { productsApi, authApi, type ProductReview, type ProductReviewsResponse } from '@/lib/api'; // [2025-01-27 13:40:00] 添加评价相关导入
+import { productsApi, authApi, productReviewApi, type ProductReview, type ProductReviewStats } from '@/lib/api'; // [2025-01-27 13:40:00] 添加评价相关导入
 import { useCart } from '@/contexts/CartContext';
 
 interface ProductVariant {
@@ -63,7 +63,7 @@ export function ProductDetailContent() {
   const [loadingRelated, setLoadingRelated] = useState(false);
   // [2025-01-27 13:40:00] 评价相关状态
   const [reviews, setReviews] = useState<ProductReview[]>([]);
-  const [reviewSummary, setReviewSummary] = useState<{ average: number; total: number; counts: Record<string, number> } | null>(null);
+  const [reviewStats, setReviewStats] = useState<ProductReviewStats | null>(null); // [2025-01-27 21:50:00] 使用新的评价统计类型
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -73,6 +73,7 @@ export function ProductDetailContent() {
     comment: '',
   });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [helpfulReviews, setHelpfulReviews] = useState<Set<string>>(new Set()); // [2025-01-27 21:50:00] 已标记为有用的评价
 
   // Get unique colors and sizes from variants
   const colors = Array.from(new Set(product?.variants.map(v => v.color).filter(Boolean))) as string[];
@@ -158,13 +159,10 @@ export function ProductDetailContent() {
     async function fetchReviews() {
       try {
         setLoadingReviews(true);
-        const response = await productsApi.getReviews(product!.id);
-        setReviews(response.reviews || []);
-        setReviewSummary({
-          average: response.summary?.average || 0,
-          total: response.summary?.total || 0,
-          counts: response.summary?.counts || { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0 },
-        });
+        // [2025-01-27 21:50:00] 使用新的 productReviewApi
+        const response = await productReviewApi.list(product!.id, { page: 1, limit: 50 });
+        setReviews(response.data || []);
+        setReviewStats(response.stats || null);
       } catch (err) {
         console.error('[2025-01-27 13:40:00] Failed to load reviews:', err);
       } finally {
@@ -190,20 +188,16 @@ export function ProductDetailContent() {
 
     setSubmittingReview(true);
     try {
-      await productsApi.submitReview({
-        productId: product.id,
+      // [2025-01-27 21:50:00] 使用新的 productReviewApi
+      await productReviewApi.create(product.id, {
         rating: reviewForm.rating,
         title: reviewForm.title.trim(),
         comment: reviewForm.comment.trim(),
       });
       // 重新加载评价
-      const response = await productsApi.getReviews(product.id);
-      setReviews(response.reviews || []);
-      setReviewSummary({
-        average: response.summary?.average || 0,
-        total: response.summary?.total || 0,
-        counts: response.summary?.counts || { '5': 0, '4': 0, '3': 0, '2': 0, '1': 0 },
-      });
+      const response = await productReviewApi.list(product.id, { page: 1, limit: 50 });
+      setReviews(response.data || []);
+      setReviewStats(response.stats || null);
       setReviewForm({ rating: 5, title: '', comment: '' });
       setShowReviewForm(false);
       alert('Thank you for your review!');
@@ -211,6 +205,26 @@ export function ProductDetailContent() {
       alert(err.message || 'Failed to submit review. Please try again.');
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  // [2025-01-27 21:50:00] 标记评价为有用
+  const handleMarkHelpful = async (reviewId: string) => {
+    if (helpfulReviews.has(reviewId)) {
+      return; // 已经标记过
+    }
+
+    try {
+      await productReviewApi.markHelpful(reviewId);
+      setHelpfulReviews(new Set([...helpfulReviews, reviewId]));
+      // 更新本地评价数据
+      setReviews(reviews.map((review) =>
+        review.id === reviewId
+          ? { ...review, helpfulCount: review.helpfulCount + 1 }
+          : review
+      ));
+    } catch (err: any) {
+      console.error('Failed to mark review as helpful:', err);
     }
   };
 
@@ -455,20 +469,20 @@ export function ProductDetailContent() {
         <div className="container">
           <h2 className="reviews-title">Customer Reviews</h2>
 
-          {reviewSummary && reviewSummary.total > 0 && (
+          {reviewStats && reviewStats.count > 0 && (
             <div className="reviews-summary">
               <div className="summary-rating">
-                <div className="summary-average">{reviewSummary.average.toFixed(1)}</div>
+                <div className="summary-average">{reviewStats.average.toFixed(1)}</div>
                 <div className="summary-stars">
-                  {'★'.repeat(Math.round(reviewSummary.average))}
-                  {'☆'.repeat(5 - Math.round(reviewSummary.average))}
+                  {'★'.repeat(Math.round(reviewStats.average))}
+                  {'☆'.repeat(5 - Math.round(reviewStats.average))}
                 </div>
-                <div className="summary-count">{reviewSummary.total} reviews</div>
+                <div className="summary-count">{reviewStats.count} reviews</div>
               </div>
               <div className="summary-breakdown">
                 {[5, 4, 3, 2, 1].map((rating) => {
-                  const count = reviewSummary.counts[rating.toString()] || 0;
-                  const percentage = reviewSummary.total > 0 ? (count / reviewSummary.total) * 100 : 0;
+                  const count = reviewStats.distribution[rating as keyof typeof reviewStats.distribution] || 0;
+                  const percentage = reviewStats.count > 0 ? (count / reviewStats.count) * 100 : 0;
                   return (
                     <div key={rating} className="breakdown-row">
                       <span className="breakdown-rating">{rating}★</span>
@@ -587,6 +601,29 @@ export function ProductDetailContent() {
                   </div>
                   <h4 className="review-title">{review.title}</h4>
                   <p className="review-comment">{review.comment}</p>
+                  {/* [2025-01-27 21:50:00] 添加"有用"按钮 */}
+                  <div className="review-actions">
+                    <button
+                      type="button"
+                      onClick={() => handleMarkHelpful(review.id)}
+                      disabled={helpfulReviews.has(review.id)}
+                      className="btn-helpful"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#666',
+                        cursor: helpfulReviews.has(review.id) ? 'default' : 'pointer',
+                        fontSize: '14px',
+                        padding: '8px 0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <span>{helpfulReviews.has(review.id) ? '✓' : 'Helpful'}</span>
+                      {review.helpfulCount > 0 && <span>({review.helpfulCount})</span>}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

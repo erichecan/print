@@ -86,14 +86,20 @@ export interface Product {
 // [2025-01-27 13:35:00] Product Review types
 export interface ProductReview {
   id: string;
+  productId?: string;
+  userId?: string | null;
   rating: number;
   title: string;
   comment: string;
   isVerifiedPurchase: boolean;
+  helpfulCount?: number;
   createdAt: string;
+  updatedAt?: string;
   user?: {
+    id?: string;
     firstName?: string | null;
     lastName?: string | null;
+    email?: string;
   } | null;
 }
 
@@ -1265,6 +1271,124 @@ export const couponApi = {
     startDate: string;
     endDate: string;
   }>}>('/coupons'),
+};
+
+// [2025-01-27 21:50:00] Design Template API
+export interface DesignTemplate {
+  id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  tags: string[];
+  thumbnailUrl?: string | null;
+  previewUrl?: string | null;
+  designData: any;
+  productCategoryId?: string | null;
+  usageCount: number;
+  likesCount: number;
+  isFeatured: boolean;
+  createdAt: string;
+}
+
+export const templateApi = {
+  list: (params?: {
+    category?: string;
+    search?: string;
+    featured?: boolean;
+    limit?: number;
+    offset?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.category) query.append('category', params.category);
+    if (params?.search) query.append('search', params.search);
+    if (params?.featured) query.append('featured', 'true');
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.offset) query.append('offset', params.offset.toString());
+    const queryString = query.toString();
+    return api<{ data: DesignTemplate[]; pagination: any }>(`/templates${queryString ? `?${queryString}` : ''}`);
+  },
+  get: (id: string) => api<{ data: DesignTemplate }>(`/templates/${id}`),
+  like: (id: string) => api(`/templates/${id}/like`, { method: 'POST' }),
+};
+
+// [2025-01-27 21:50:00] Design Comment API
+export interface DesignComment {
+  id: string;
+  designId: string;
+  userId?: string | null;
+  parentId?: string | null;
+  content: string;
+  authorName?: string | null;
+  likesCount: number;
+  createdAt: string;
+  replies?: DesignComment[];
+}
+
+export const designCommentApi = {
+  list: (designId: string, params?: { limit?: number; offset?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.offset) query.append('offset', params.offset.toString());
+    const queryString = query.toString();
+    return api<{ data: DesignComment[]; pagination: any }>(`/designs/${designId}/comments${queryString ? `?${queryString}` : ''}`);
+  },
+  create: (designId: string, data: {
+    content: string;
+    parentId?: string;
+    authorName?: string;
+    authorEmail?: string;
+  }) => api<{ data: DesignComment }>(`/designs/${designId}/comments`, {
+    method: 'POST',
+    body: data,
+  }),
+  like: (id: string) => api(`/comments/${id}/like`, { method: 'POST' }),
+};
+
+// [2025-01-27 21:50:00] Product Review API
+// Note: ProductReview interface is already defined above, reusing it
+// Extending the existing interface if needed
+
+export interface ProductReviewStats {
+  average: number;
+  count: number;
+  distribution: {
+    5: number;
+    4: number;
+    3: number;
+    2: number;
+    1: number;
+  };
+}
+
+export const productReviewApi = {
+  list: (productId: string, params?: {
+    page?: number;
+    limit?: number;
+    rating?: number;
+    sort?: 'newest' | 'oldest' | 'helpful';
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.rating) query.append('rating', params.rating.toString());
+    if (params?.sort) query.append('sort', params.sort);
+    const queryString = query.toString();
+    return api<{
+      data: ProductReview[];
+      pagination: any;
+      stats: ProductReviewStats;
+    }>(`/products/${productId}/reviews${queryString ? `?${queryString}` : ''}`);
+  },
+  create: (productId: string, data: {
+    rating: number;
+    title: string;
+    comment: string;
+    orderId?: string;
+  }) => api<{ data: ProductReview }>(`/products/${productId}/reviews`, {
+    method: 'POST',
+    body: data,
+  }),
+  markHelpful: (id: string) => api(`/reviews/${id}/helpful`, { method: 'POST' }),
 };
 
 export default api;
