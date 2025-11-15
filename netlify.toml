@@ -21,6 +21,9 @@
   NEXT_TELEMETRY_DISABLED = "1"
   # 设置 CI 环境变量以避免构建警告导致失败
   CI = "false"
+  # [2025-11-15 11:35:00] 后端 API URL（如果 Netlify Dashboard 中无法设置，可以在这里设置）
+  # 注意：如果 Dashboard 中已设置，Dashboard 的优先级更高
+  # NEXT_PUBLIC_API_URL = "https://print-mnmz.onrender.com/api"
 
 # [2025-11-14 06:35:00] 启用 Netlify 官方 Next.js 插件以支持 SSR
 [[plugins]]

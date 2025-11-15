@@ -37,7 +37,7 @@ export default function ForgotPasswordPage() {
         <h1>Forgot Password</h1>
         {success ? (
           <div className="success-message">
-            <p>If an account with that email exists, we've sent you a password reset link.</p>
+            <p>If an account with that email exists, we&apos;ve sent you a password reset link.</p>
             <Link href="/login" className="btn-primary">
               Back to Sign In
             </Link>
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <>
             <p style={{ marginBottom: '1.5rem', color: '#666' }}>
-              Enter your email address and we'll send you a link to reset your password.
+              Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
             <form onSubmit={handleSubmit}>
               {error && <div className="error-message">{error}</div>}
