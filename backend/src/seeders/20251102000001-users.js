@@ -14,7 +14,7 @@ module.exports = {
         password_hash: hashedPassword,
         first_name: 'Admin',
         last_name: 'User',
-        role: 'admin',
+        role: 'ADMIN', // [2025-11-15 10:55:00] Prisma enum uses uppercase values, so seed data follows suit
         email_verified: true,
         created_at: new Date(),
         updated_at: new Date()

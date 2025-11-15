@@ -7,6 +7,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-11 06:07:23] 使用 Next Image 组件提升性能
+// [2025-11-15 11:20:00] 使用集中管理的 API 配置
+import { API_BASE_URL } from '@/lib/api-config';
 
 type SearchParams = {
   page?: string;
@@ -59,8 +61,6 @@ type Brand = {
   name: string;
   slug?: string;
 };
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 const currencyFormatter = new Intl.NumberFormat('en-CA', {
   style: 'currency',

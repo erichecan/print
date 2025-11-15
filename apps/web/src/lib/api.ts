@@ -2,8 +2,9 @@
  * API Client
  * [2025-11-05 00:10:00]
  * [2025-01-27 13:35:00] Restored complete API file and added product reviews API
+ * [2025-11-15 11:20:00] 使用集中管理的 API 配置
  */
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+import { API_BASE_URL } from './api-config';
 
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
