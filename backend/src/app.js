@@ -18,12 +18,10 @@ const prototypeRoot = path.join(__dirname, '../prototype'); // [2025-11-11 22:05
 // Trust proxy (for rate limiting behind reverse proxy)
 app.set('trust proxy', 1);
 
-// Security middleware
-app.use(helmet());
-
-// CORS configuration
+// CORS configuration - MUST be before Helmet
 // [2025-11-15 11:10:00] 支持多个前端域名（本地开发 + Netlify 部署）
 // [2025-11-15 12:05:00] 修复 CORS 配置，确保正确处理所有请求
+// [2025-11-15 12:15:00] CORS 必须在 Helmet 之前，确保 CORS 头不被覆盖
 const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:3000',
@@ -53,13 +51,22 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range', 'Set-Cookie'],
+  preflightContinue: false,
 };
 app.use(cors(corsOptions));
 
 // [2025-11-15 12:05:00] 确保 OPTIONS 请求被正确处理
 app.options('*', cors(corsOptions));
+
+// Security middleware - AFTER CORS
+// [2025-11-15 12:15:00] 配置 Helmet 以配合 CORS，允许跨域请求
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false, // 允许嵌入资源
+  contentSecurityPolicy: false, // 暂时禁用 CSP，避免与 CORS 冲突
+}));
 
 // Cookie parser (for session and auth cookies)
 app.use(cookieParser());
