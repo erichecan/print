@@ -66,12 +66,39 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
+// [2025-11-15 10:55:00] 增强健康检查，包含数据库连接状态
+app.get('/health', async (req, res) => {
+  const health = {
     status: 'ok',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  });
+    uptime: process.uptime(),
+    services: {}
+  };
+
+  // 检查数据库连接
+  try {
+    const prisma = require('./lib/prisma');
+    await prisma.$queryRaw`SELECT 1`;
+    health.services.database = 'connected';
+  } catch (error) {
+    health.services.database = 'disconnected';
+    health.status = 'degraded';
+  }
+
+  // 检查 Redis（可选）
+  try {
+    const { redis } = require('./config/redis');
+    if (redis && redis.status === 'ready') {
+      health.services.redis = 'connected';
+    } else {
+      health.services.redis = 'not_configured';
+    }
+  } catch (error) {
+    health.services.redis = 'error';
+  }
+
+  const statusCode = health.status === 'ok' ? 200 : 503;
+  res.status(statusCode).json(health);
 });
 
 // API routes
