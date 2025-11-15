@@ -5,7 +5,7 @@
 const path = require('path');
 const fs = require('fs');
 const prisma = require('../lib/prisma');
-const { redis, deleteCache } = require('../config/redis');
+const { redis, deleteCache, getRedisKeys } = require('../config/redis');
 const {
   PRODUCT_UPLOAD_DIR,
   buildStorageKey,
@@ -61,16 +61,17 @@ const sanitizeAltText = (value, fallback) => {
 };
 
 // [2025-01-27 15:02:30] Clear cached product responses after asset mutations
+// [2025-11-15 10:50:00] 使用安全的 getRedisKeys 方法，支持 Redis 不可用的情况
 const invalidateProductCache = async (slug) => {
   try {
-    const listKeys = await redis.keys('products:list:*');
+    const listKeys = await getRedisKeys('products:list:*');
     if (listKeys.length) {
       await redis.del(...listKeys);
     }
 
     if (slug) {
       await deleteCache(`products:detail:${slug}`);
-      const relatedKeys = await redis.keys(`products:related:${slug}:*`);
+      const relatedKeys = await getRedisKeys(`products:related:${slug}:*`);
       if (relatedKeys.length) {
         await redis.del(...relatedKeys);
       }
