@@ -1,23 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import useSWR from 'swr';
+import { adminSettingsApi, SiteSettingsPayload } from '@/lib/api';
+
+const DEFAULT_SETTINGS: SiteSettingsPayload = {
+  siteName: 'suvernire plus',
+  contactEmail: 'support@souvenirplus.com',
+  contactPhone: '800-293-4232',
+  currency: 'USD',
+  shippingProvider: 'UPS',
+  paymentGateway: 'Stripe',
+  testMode: true,
+  autoApproveDesigns: false,
+  copyrightCheck: true,
+  reviewEmail: 'review@souvenirplus.com',
+};
 
 export default function AdminSettingsPage() {
-  const [siteName, setSiteName] = useState('suvernire plus');
-  const [contactEmail, setContactEmail] = useState('support@souvenirplus.com');
-  const [contactPhone, setContactPhone] = useState('800-293-4232');
-  const [currency, setCurrency] = useState('USD');
-  const [shippingProvider, setShippingProvider] = useState('UPS');
-  const [gateway, setGateway] = useState('Stripe');
-  const [testMode, setTestMode] = useState(true);
-  const [autoApprove, setAutoApprove] = useState(false);
-  const [copyrightCheck, setCopyrightCheck] = useState(true);
-  const [reviewEmail, setReviewEmail] = useState('review@souvenirplus.com');
+  const { data, isLoading, error, mutate } = useSWR('admin-site-settings', adminSettingsApi.getSite);
+  const [settings, setSettings] = useState<SiteSettingsPayload>(DEFAULT_SETTINGS);
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    alert('Settings saved (demo only).');
+  useEffect(() => {
+    if (data?.data) {
+      setSettings(data.data);
+    }
+  }, [data]);
+
+  const handleChange = <K extends keyof SiteSettingsPayload>(key: K, value: SiteSettingsPayload[K]) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
   };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    try {
+      setSaving(true);
+      await adminSettingsApi.updateSite(settings);
+      mutate();
+    } catch (apiError) {
+      alert((apiError as Error).message || 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (isLoading && !data) {
+    return <div className="admin-table-placeholder">Loading settings…</div>;
+  }
+
+  if (error) {
+    return <div className="admin-table-placeholder error">Failed to load settings.</div>;
+  }
 
   return (
     <div style={{ marginTop: 24, maxWidth: 840 }}>
@@ -32,19 +66,19 @@ export default function AdminSettingsPage() {
         <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Site Settings</h3>
         <div className="admin-form-group">
           <label>Site Name</label>
-          <input type="text" value={siteName} onChange={(event) => setSiteName(event.target.value)} />
+          <input type="text" value={settings.siteName} onChange={(event) => handleChange('siteName', event.target.value)} />
         </div>
         <div className="admin-form-group">
           <label>Contact Email</label>
-          <input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} />
+          <input type="email" value={settings.contactEmail} onChange={(event) => handleChange('contactEmail', event.target.value)} />
         </div>
         <div className="admin-form-group">
           <label>Phone Number</label>
-          <input type="tel" value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} />
+          <input type="tel" value={settings.contactPhone} onChange={(event) => handleChange('contactPhone', event.target.value)} />
         </div>
         <div className="admin-form-group">
           <label>Default Currency</label>
-          <select value={currency} onChange={(event) => setCurrency(event.target.value)}>
+          <select value={settings.currency} onChange={(event) => handleChange('currency', event.target.value)}>
             <option value="USD">USD ($)</option>
             <option value="EUR">EUR (€)</option>
             <option value="GBP">GBP (£)</option>
@@ -52,15 +86,15 @@ export default function AdminSettingsPage() {
         </div>
         <div className="admin-form-group">
           <label>Default Shipping Provider</label>
-          <select value={shippingProvider} onChange={(event) => setShippingProvider(event.target.value)}>
+          <select value={settings.shippingProvider} onChange={(event) => handleChange('shippingProvider', event.target.value)}>
             <option value="UPS">UPS</option>
             <option value="FedEx">FedEx</option>
             <option value="DHL">DHL</option>
             <option value="USPS">USPS</option>
           </select>
         </div>
-        <button type="submit" className="btn">
-          Save Settings
+        <button type="submit" className="btn" disabled={saving}>
+          {saving ? 'Saving…' : 'Save Settings'}
         </button>
       </form>
 
@@ -68,30 +102,25 @@ export default function AdminSettingsPage() {
         <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Payment Integration</h3>
         <div className="admin-form-group">
           <label>Payment Gateway</label>
-          <select value={gateway} onChange={(event) => setGateway(event.target.value)}>
+          <select value={settings.paymentGateway} onChange={(event) => handleChange('paymentGateway', event.target.value)}>
             <option value="Stripe">Stripe</option>
             <option value="PayPal">PayPal</option>
             <option value="Square">Square</option>
           </select>
         </div>
         <div className="admin-form-group">
-          <label>API Key</label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
-            <input type="password" value="••••••••••••••••" readOnly />
-            <button type="button" className="btn btn--outline" disabled>
-              Show
-            </button>
-          </div>
-        </div>
-        <div className="admin-form-group">
           <label>Test Mode</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="checkbox" checked={testMode} onChange={(event) => setTestMode(event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={settings.testMode}
+              onChange={(event) => handleChange('testMode', event.target.checked)}
+            />
             <span>Enable test/sandbox mode</span>
           </div>
         </div>
         <button type="button" className="btn" disabled>
-          Save Payment Settings
+          API Keys managed via environment variables
         </button>
       </div>
 
@@ -100,7 +129,11 @@ export default function AdminSettingsPage() {
         <div className="admin-form-group">
           <label>Auto-approve designs</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="checkbox" checked={autoApprove} onChange={(event) => setAutoApprove(event.target.checked)} />
+            <input
+              type="checkbox"
+              checked={settings.autoApproveDesigns}
+              onChange={(event) => handleChange('autoApproveDesigns', event.target.checked)}
+            />
             <span>Automatically approve designs without review</span>
           </div>
         </div>
@@ -109,18 +142,18 @@ export default function AdminSettingsPage() {
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="checkbox"
-              checked={copyrightCheck}
-              onChange={(event) => setCopyrightCheck(event.target.checked)}
+              checked={settings.copyrightCheck}
+              onChange={(event) => handleChange('copyrightCheck', event.target.checked)}
             />
             <span>Enable automatic copyright detection</span>
           </div>
         </div>
         <div className="admin-form-group">
           <label>Review Notification Email</label>
-          <input type="email" value={reviewEmail} onChange={(event) => setReviewEmail(event.target.value)} />
+          <input type="email" value={settings.reviewEmail} onChange={(event) => handleChange('reviewEmail', event.target.value)} />
         </div>
-        <button type="button" className="btn" disabled>
-          Save Review Settings
+        <button type="button" className="btn btn--outline" disabled={saving}>
+          {saving ? 'Saving…' : 'Save Review Settings'}
         </button>
       </div>
 

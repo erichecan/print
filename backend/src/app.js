@@ -157,6 +157,10 @@ app.use('/api/admin/products', require('./routes/adminProducts')); // [2025-11-1
 app.use('/api/admin/categories', require('./routes/adminCategories')); // [2025-11-11 23:20:15] Admin category management routes
 app.use('/api/admin/orders', require('./routes/adminOrders')); // [2025-11-12 01:05:02] Admin order management routes
 app.use('/api/admin/users', require('./routes/adminUsers')); // [2025-11-15 14:05:00] Admin user management routes
+app.use('/api/admin/coupons', require('./routes/adminCoupons')); // [2025-11-15 15:15:00] Admin coupon management routes
+app.use('/api/admin/promotions', require('./routes/adminPromotions')); // [2025-11-15 15:20:00] Admin promotion management routes
+app.use('/api/admin/settings', require('./routes/adminSettings')); // [2025-11-15 15:30:00] Admin site/content settings routes
+app.use('/api/admin/designs', require('./routes/adminDesigns')); // [2025-11-15 15:05:00] Admin design review routes
 app.use('/api/designs', require('./routes/designs')); // [2025-11-11 15:33:45] Design Lab public routes
 app.use('/api/contact', require('./routes/contact')); // [2025-01-27 19:10:00] Contact form routes
 app.use('/api/coupons', require('./routes/coupons')); // [2025-01-27 19:40:00] Coupon routes

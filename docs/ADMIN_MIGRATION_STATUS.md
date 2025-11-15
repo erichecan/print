@@ -32,6 +32,7 @@
 - `offline-orders` 为功能增强版，继续沿用现有实现
 - ✅ `/admin/products` 现已支持后端筛选（搜索 / 状态 / 分类）与批量上/下架/归档
 - ✅ `/admin/users` 新增 `/api/admin/users` 列表与详情接口，页面展示真实用户、统计与订单
+- ✅ `/admin/designs` / `/admin/designs/[id]`、`/admin/coupons`、`/admin/promotions`、`/admin/settings`、`/admin/content-manager`、`/admin/cost-management` 已接入新的后台 API（设计审核、优惠券 CRUD、促销管理、站点设置、内容配置、成本看板）
 
 ### 2. 样式统一性
 - 2025-11-15 起所有新迁移页面均依赖 `admin.css`

@@ -684,6 +684,225 @@ export const adminUsersApi = {
   get: (id: string) => api<AdminUserDetailResponse>(`/admin/users/${id}`),
 };
 
+export interface AdminDesignSummary {
+  id: string;
+  name: string;
+  status: string;
+  reviewStatus: 'Pending' | 'Approved' | 'Rejected' | string;
+  createdAt: string;
+  updatedAt: string;
+  thumbnailUrl?: string | null;
+  user?: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+  } | null;
+  productVariant?: {
+    id: string;
+    sku?: string | null;
+    color?: string | null;
+    size?: string | null;
+    product?: {
+      id: string;
+      name: string;
+    } | null;
+  } | null;
+}
+
+export interface AdminDesignDetail extends AdminDesignSummary {
+  canvasSnapshot: any;
+  pricingSnapshot?: any;
+  assets: Array<{
+    id: string;
+    fileName: string;
+    url: string;
+    contentType: string;
+    uploadedAt: string;
+  }>;
+  versions: Array<{
+    id: string;
+    version: number;
+    summary?: string | null;
+    createdAt: string;
+  }>;
+}
+
+export const adminDesignsApi = {
+  list: (params?: { page?: number; limit?: number; search?: string; status?: 'pending' | 'approved' | 'rejected' }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.search) query.append('search', params.search);
+    if (params?.status) query.append('status', params.status);
+    const queryString = query.toString();
+    return api<{ data: AdminDesignSummary[]; pagination: any }>(
+      `/admin/designs${queryString ? `?${queryString}` : ''}`
+    );
+  },
+  get: (id: string) => api<{ data: AdminDesignDetail }>(`/admin/designs/${id}`),
+  updateStatus: (id: string, payload: { status: 'approve' | 'reject' | 'pending' | 'lock'; note?: string }) =>
+    api<{ data: AdminDesignSummary }>(`/admin/designs/${id}/status`, { method: 'PATCH', body: payload }),
+};
+
+export interface AdminCoupon {
+  id: string;
+  code: string;
+  type: 'percentage' | 'fixed';
+  value: number;
+  minOrderValue?: number | null;
+  maxDiscount?: number | null;
+  usageLimit?: number | null;
+  userUsageLimit?: number | null;
+  usedCount: number;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const adminCouponsApi = {
+  list: (params?: { search?: string; status?: 'all' | 'active' | 'inactive' }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.status && params.status !== 'all') query.append('status', params.status);
+    const queryString = query.toString();
+    return api<{ data: AdminCoupon[] }>(`/admin/coupons${queryString ? `?${queryString}` : ''}`);
+  },
+  create: (data: {
+    code: string;
+    type: 'percentage' | 'fixed';
+    value: number;
+    minOrderValue?: number;
+    maxDiscount?: number;
+    usageLimit?: number;
+    userUsageLimit?: number;
+    startDate: string;
+    endDate: string;
+    isActive?: boolean;
+  }) => api<{ data: AdminCoupon }>('/admin/coupons', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<Omit<AdminCoupon, 'id' | 'createdAt' | 'updatedAt' | 'usedCount' | 'isActive'>>) =>
+    api<{ data: AdminCoupon }>(`/admin/coupons/${id}`, { method: 'PUT', body: data }),
+  toggle: (id: string, isActive: boolean) =>
+    api<{ data: AdminCoupon }>(`/admin/coupons/${id}/status`, { method: 'PATCH', body: { isActive } }),
+  remove: (id: string) => api(`/admin/coupons/${id}`, { method: 'DELETE' }),
+};
+
+export interface AdminPromotion {
+  id: string;
+  title: string;
+  description?: string | null;
+  bannerImageUrl?: string | null;
+  linkUrl?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const adminPromotionsApi = {
+  list: (params?: { search?: string; status?: 'all' | 'active' | 'inactive' }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.status && params.status !== 'all') query.append('status', params.status);
+    const queryString = query.toString();
+    return api<{ data: AdminPromotion[] }>(`/admin/promotions${queryString ? `?${queryString}` : ''}`);
+  },
+  create: (data: Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt'>) =>
+    api<{ data: AdminPromotion }>('/admin/promotions', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt'>>) =>
+    api<{ data: AdminPromotion }>(`/admin/promotions/${id}`, { method: 'PUT', body: data }),
+  remove: (id: string) => api(`/admin/promotions/${id}`, { method: 'DELETE' }),
+};
+
+export interface SiteSettingsPayload {
+  siteName: string;
+  contactEmail: string;
+  contactPhone: string;
+  currency: string;
+  shippingProvider: string;
+  paymentGateway: string;
+  testMode: boolean;
+  autoApproveDesigns: boolean;
+  copyrightCheck: boolean;
+  reviewEmail: string;
+}
+
+export interface ContentConfig {
+  heroCards: Array<{
+    id: string;
+    title: string;
+    subtitle: string;
+    imageUrl: string;
+    linkUrl: string;
+  }>;
+  brandLogos: Array<{
+    id: string;
+    name: string;
+    imageUrl: string;
+  }>;
+  featuredCollections: Array<{
+    id: string;
+    title: string;
+    linkUrl: string;
+  }>;
+}
+
+export const adminSettingsApi = {
+  getSite: () => api<{ data: SiteSettingsPayload }>('/admin/settings/site'),
+  updateSite: (data: SiteSettingsPayload) =>
+    api<{ data: SiteSettingsPayload }>('/admin/settings/site', { method: 'PUT', body: data }),
+};
+
+export const adminContentApi = {
+  get: () => api<{ data: ContentConfig }>('/admin/settings/content'),
+  update: (data: ContentConfig) =>
+    api<{ data: ContentConfig }>('/admin/settings/content', { method: 'PUT', body: data }),
+};
+
+export interface AdminCostSummary {
+  totalCost: number;
+  totalRevenue: number;
+  averageGrossProfit: number;
+  averageMargin: number;
+}
+
+export interface AdminCostRow {
+  id: string;
+  name: string;
+  sku?: string | null;
+  category?: {
+    id: string;
+    name: string;
+  } | null;
+  unitCost: number;
+  salePrice: number;
+  grossProfit: number;
+  margin: number;
+  updatedAt: string;
+}
+
+export const adminCostManagementApi = {
+  getSummary: () => api<{ data: AdminCostSummary }>('/admin/cost-management/summary'),
+  listProducts: (params?: { search?: string; categoryId?: string; sort?: string; order?: 'asc' | 'desc' }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.categoryId) query.append('categoryId', params.categoryId);
+    if (params?.sort) query.append('sort', params.sort);
+    if (params?.order) query.append('order', params.order);
+    const queryString = query.toString();
+    return api<{ data: AdminCostRow[] }>(`/admin/cost-management/products${queryString ? `?${queryString}` : ''}`);
+  },
+  updateProduct: (id: string, data: { unitCost: number; salePrice: number; grossProfit?: number }) =>
+    api<{ data: AdminCostRow }>(`/admin/cost-management/products/${id}`, { method: 'PUT', body: data }),
+  listCategories: () => api<{ data: Array<{ id: string; name: string; productCount: number }> }>(
+    '/admin/cost-management/categories'
+  ),
+};
+
 // [2025-01-27 16:15:00] Design Lab API Types
 export interface DesignCanvasSnapshot {
   size: { width: number; height: number };
@@ -836,64 +1055,159 @@ export const adminOrdersApi = {
 };
 
 // [2025-01-27 16:15:00] Admin Offline Orders API Types
+// [2025-11-15 15:02:30] Offline order stage metadata aligned with backend payload
+export interface OfflineOrderStageMeta {
+  key: string;
+  label: string;
+  description?: string;
+  position?: number;
+}
+
+// [2025-11-15 15:02:30] Offline order contact shape used across admin views
+export interface OfflineOrderContact {
+  name: string;
+  company?: string | null;
+  email: string;
+  phone?: string | null;
+}
+
+// [2025-11-15 15:02:30] Offline order asset metadata for intake uploads
+export interface OfflineOrderAsset {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  contentType?: string | null;
+  url: string;
+  uploadedAt?: string;
+  uploadedBy?: string | null;
+}
+
+// [2025-11-15 15:02:30] Offline order history entry for stage tracking
+export interface OfflineOrderHistoryEntry {
+  id: string;
+  fromStageKey?: string | null;
+  toStageKey: string;
+  actorId?: string | null;
+  actorName?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+// [2025-11-15 15:02:30] Production work order event timeline definition
+export interface ProductionWorkOrderEvent {
+  id: string;
+  status: string;
+  actorId?: string | null;
+  actorName?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+// [2025-11-15 15:02:30] Production work order detail returned by backend
+export interface ProductionWorkOrderDetail {
+  id: string;
+  workOrderCode: string;
+  status: string;
+  priority?: number | null;
+  startDate?: string | null;
+  dueDate?: string | null;
+  completedDate?: string | null;
+  assignee?: {
+    id?: string | null;
+    name?: string | null;
+  } | null;
+  notes?: string | null;
+  metadata?: any;
+  events: ProductionWorkOrderEvent[];
+}
+
+// [2025-11-15 15:02:30] Admin offline order summary aligned with mapOrder response
 export interface AdminOfflineOrderSummary {
   id: string;
-  orderNumber: string;
-  customerName: string;
-  customerEmail?: string | null;
-  customerPhone?: string | null;
-  projectName?: string; // [2025-11-14 00:45:00] 添加 projectName 字段
-  total: number;
-  currency: string;
-  stage: string;
+  orderCode: string;
+  projectName: string;
+  primaryProduct?: string | null;
+  quantity?: number | null;
+  deliveryDate?: string | null;
+  description?: string | null;
+  requiresMockups: boolean;
+  requiresProof: boolean;
+  rushOrder: boolean;
+  stage: OfflineOrderStageMeta;
   status: string;
-  rushOrder?: boolean; // [2025-11-14 00:40:00] 添加 rushOrder 字段
+  contact: OfflineOrderContact;
+  configuration?: any;
+  metadata?: any;
+  assets: OfflineOrderAsset[];
+  productionWorkOrder?: ProductionWorkOrderDetail | null;
   createdAt: string;
   updatedAt: string;
 }
 
+// [2025-11-15 15:02:30] Admin offline order detail extends summary with histories
 export interface AdminOfflineOrderDetail extends AdminOfflineOrderSummary {
-  items?: any[];
-  notes?: any[];
-  assets?: any[];
-  productionWorkOrder?: any;
-  primaryProduct?: string; // [2025-11-14 00:50:00] 添加缺失的字段
-  quantity?: number;
-  description?: string;
-  histories?: any[]; // [2025-11-14 00:52:00] 添加 histories 字段
+  histories: OfflineOrderHistoryEntry[];
 }
 
+// [2025-11-15 15:02:30] Offline order list response with pagination and stage config
 export interface AdminOfflineOrderListResponse {
   orders: AdminOfflineOrderSummary[];
-  metrics?: any;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  stages: OfflineOrderStageMeta[];
 }
 
-export type OfflineOrderStage = string;
+// [2025-11-15 15:02:30] Metrics payload for offline operations dashboard
+export interface OfflineOrderMetricsResponse {
+  summary: {
+    total: number;
+    active: number;
+    completed: number;
+    cancelled: number;
+    rushActive: number;
+  };
+  stages: Array<
+    OfflineOrderStageMeta & {
+      count: number;
+    }
+  >;
+}
+
+export type OfflineOrderStage = OfflineOrderStageMeta;
 
 export interface ProductionWorkOrderPayload {
   status?: string;
   priority?: number;
   startDate?: string | null;
   dueDate?: string | null;
+  completedDate?: string | null;
   assigneeId?: string;
   assigneeName?: string;
+  notes?: string;
+  metadata?: any;
   eventNote?: string;
 }
 
-// [2025-01-27 16:15:00] Admin Offline Orders API
+// [2025-11-15 15:02:30] Admin Offline Orders API aligned with backend routes
 export const adminOfflineOrdersApi = {
-  list: (params?: { stage?: string; search?: string }) => {
+  list: (params?: { stageKey?: string; search?: string; rush?: boolean; status?: string }) => {
     const query = new URLSearchParams();
-    if (params?.stage) query.append('stage', params.stage);
+    if (params?.stageKey) query.append('stageKey', params.stageKey);
     if (params?.search) query.append('search', params.search);
+    if (params?.status) query.append('status', params.status);
+    if (params?.rush !== undefined) query.append('rush', params.rush ? 'true' : 'false');
     const queryString = query.toString();
     return api<AdminOfflineOrderListResponse>(
       `/admin/offline-orders${queryString ? `?${queryString}` : ''}`
     );
   },
   get: (id: string) => api<{ order: AdminOfflineOrderDetail }>(`/admin/offline-orders/${id}`),
-  getMetrics: () => api<any>('/admin/offline-orders/metrics'),
-  updateStage: (id: string, payload: { stageKey: string }) =>
+  getMetrics: () => api<OfflineOrderMetricsResponse>('/admin/offline-orders/metrics/summary'),
+  updateStage: (id: string, payload: { stageKey: string; note?: string }) =>
     api(`/admin/offline-orders/${id}/stage`, { method: 'PATCH', body: payload }),
   addNote: (id: string, note: string) =>
     api(`/admin/offline-orders/${id}/notes`, { method: 'POST', body: { note } }),
@@ -912,8 +1226,8 @@ export const adminOfflineOrdersApi = {
     return response.json();
   },
   upsertProductionWorkOrder: (id: string, payload: ProductionWorkOrderPayload) =>
-    api(`/admin/offline-orders/${id}/production-work-order`, {
-      method: 'PUT',
+    api(`/admin/offline-orders/${id}/production`, {
+      method: 'POST',
       body: payload,
     }),
 };

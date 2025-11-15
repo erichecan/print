@@ -1,38 +1,60 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
+import useSWR from 'swr';
+import { adminDesignsApi, AdminDesignSummary } from '@/lib/api';
 
-interface DesignRow {
-  id: string;
-  name: string;
-  user: string;
-  submitted: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
-}
-
-const DESIGN_ROWS: DesignRow[] = [
-  { id: 'design-001', name: 'Conference Backpack', user: 'alex.brown', submitted: 'Oct 31, 2025', status: 'Pending' },
-  { id: 'design-002', name: 'Team Jerseys', user: 'sports.club', submitted: 'Oct 31, 2025', status: 'Pending' },
-  { id: 'design-003', name: 'Holiday Swag Box', user: 'marketing.dept', submitted: 'Oct 30, 2025', status: 'Pending' },
-  { id: 'design-004', name: 'Welcome Kit', user: 'hr.team', submitted: 'Oct 30, 2025', status: 'Approved' },
-  { id: 'design-005', name: 'Logo T-Shirt', user: 'john.doe', submitted: 'Oct 29, 2025', status: 'Rejected' },
-];
+type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected';
 
 export default function AdminDesignsPage() {
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchDraft, setSearchDraft] = useState('');
+  const [filters, setFilters] = useState<{ search: string; status: StatusFilter; page: number }>({
+    search: '',
+    status: 'pending',
+    page: 1,
+  });
 
-  const filteredDesigns = useMemo(() => {
-    return DESIGN_ROWS.filter((design) => {
-      const matchesSearch = search
-        ? design.name.toLowerCase().includes(search.toLowerCase()) ||
-          design.user.toLowerCase().includes(search.toLowerCase())
-        : true;
-      const matchesStatus = statusFilter === 'all' ? true : design.status.toLowerCase() === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [search, statusFilter]);
+  const { data, isLoading, error, mutate } = useSWR(['admin-designs', filters], ([, params]) =>
+    adminDesignsApi.list({
+      page: params.page,
+      search: params.search ? params.search.trim() : undefined,
+      status: params.status !== 'all' ? params.status : undefined,
+    })
+  );
+
+  const designs = data?.data ?? [];
+  const pagination = data?.pagination;
+  const totalPages = pagination?.totalPages ?? 1;
+  const canPrev = filters.page > 1;
+  const canNext = filters.page < totalPages;
+
+  const displayedDesigns = useMemo(() => designs, [designs]);
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFilters((prev) => ({ ...prev, page: 1, search: searchDraft }));
+  };
+
+  const handleStatusChange = (status: StatusFilter) => {
+    setFilters((prev) => ({ ...prev, status, page: 1 }));
+  };
+
+  const goToPage = (page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
+  };
+
+  const statusClassName = (design: AdminDesignSummary) => {
+    if (design.reviewStatus === 'Approved') {
+      return 'badge badge-success';
+    }
+    if (design.reviewStatus === 'Rejected') {
+      return 'badge badge-error';
+    }
+    return 'badge badge-pending';
+  };
+
+  const handleRefresh = () => mutate();
 
   return (
     <div style={{ marginTop: 24 }}>
@@ -41,18 +63,24 @@ export default function AdminDesignsPage() {
           <h1 data-i18n="designReview">Design Reviews</h1>
           <p className="text-muted">Review custom artwork before production</p>
         </div>
+        <button type="button" className="btn btn--outline" onClick={handleRefresh} disabled={isLoading}>
+          Refresh
+        </button>
       </div>
 
-      <div className="admin-filters">
-        <div className="admin-search">
+      <div className="admin-filters admin-filters--wrap">
+        <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>
           <input
             type="text"
             placeholder="Search designs..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            value={searchDraft}
+            onChange={(event) => setSearchDraft(event.target.value)}
           />
-        </div>
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <button type="submit" className="btn btn--outline btn--xs">
+            Search
+          </button>
+        </form>
+        <select value={filters.status} onChange={(event) => handleStatusChange(event.target.value as StatusFilter)}>
           <option value="all">All Status</option>
           <option value="pending">Pending Review</option>
           <option value="approved">Approved</option>
@@ -61,58 +89,94 @@ export default function AdminDesignsPage() {
       </div>
 
       <div className="admin-table-wrapper">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Thumbnail</th>
-              <th>Design Name</th>
-              <th>User</th>
-              <th>Submitted</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredDesigns.map((design) => (
-              <tr key={design.id}>
-                <td>
-                  <div className="placeholder" style={{ width: 60, height: 60, borderRadius: 8 }} />
-                </td>
-                <td style={{ fontWeight: 600 }}>{design.name}</td>
-                <td>{design.user}</td>
-                <td>{design.submitted}</td>
-                <td>
-                  <span
-                    className={
-                      design.status === 'Approved'
-                        ? 'badge badge-success'
-                        : design.status === 'Rejected'
-                        ? 'badge badge-error'
-                        : 'badge badge-pending'
-                    }
-                  >
-                    {design.status}
-                  </span>
-                </td>
-                <td>
-                  <Link href={`/admin/designs/${design.id}`} className="btn-icon btn--outline" style={{ fontSize: 12 }}>
-                    {design.status === 'Pending' ? 'Review' : 'View'}
-                  </Link>
-                </td>
+        {isLoading ? (
+          <div className="admin-table-placeholder">Loading designs…</div>
+        ) : error ? (
+          <div className="admin-table-placeholder error">Failed to load designs.</div>
+        ) : displayedDesigns.length === 0 ? (
+          <div className="admin-table-placeholder">No designs match current filters.</div>
+        ) : (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Thumbnail</th>
+                <th>Design Name</th>
+                <th>User</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {displayedDesigns.map((design) => (
+                <tr key={design.id}>
+                  <td>
+                    <div className="product-thumbnail" style={{ width: 60, height: 60 }}>
+                      {design.thumbnailUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={design.thumbnailUrl} alt={design.name} />
+                      ) : (
+                        <div className="placeholder" />
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{design.name}</div>
+                    <div className="product-slug">
+                      {design.productVariant?.product?.name ?? 'Custom Product'}
+                    </div>
+                  </td>
+                  <td>
+                    {design.user?.email ? (
+                      <>
+                        <div style={{ fontWeight: 500 }}>{design.user.email}</div>
+                        <div className="product-slug">
+                          {[design.user.firstName, design.user.lastName].filter(Boolean).join(' ') || '—'}
+                        </div>
+                      </>
+                    ) : (
+                      'Guest session'
+                    )}
+                  </td>
+                  <td>{new Date(design.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <span className={statusClassName(design)}>{design.reviewStatus}</span>
+                  </td>
+                  <td>
+                    <Link href={`/admin/designs/${design.id}`} className="btn-icon btn--outline" style={{ fontSize: 12 }}>
+                      {design.reviewStatus === 'Pending' ? 'Review' : 'View'}
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <div className="admin-pagination">
-        <button type="button">Previous</button>
-        <button type="button" className="active">
-          1
-        </button>
-        <button type="button">2</button>
-        <button type="button">Next</button>
-      </div>
+      {pagination && (
+        <div className="admin-pagination">
+          <button type="button" disabled={!canPrev} onClick={() => canPrev && goToPage(filters.page - 1)}>
+            Previous
+          </button>
+          {Array.from({ length: totalPages }).map((_, index) => {
+            const pageNumber = index + 1;
+            return (
+              <button
+                key={pageNumber}
+                type="button"
+                className={pageNumber === filters.page ? 'active' : undefined}
+                onClick={() => goToPage(pageNumber)}
+              >
+                {pageNumber}
+              </button>
+            );
+          })}
+          <button type="button" disabled={!canNext} onClick={() => canNext && goToPage(filters.page + 1)}>
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

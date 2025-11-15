@@ -1,48 +1,35 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-
-const COST_ROWS = [
-  {
-    id: 'sku-tee-001',
-    product: 'Heritage Tee',
-    sku: 'TEE-001',
-    unitCost: 8.5,
-    unitPrice: 22,
-    margin: 0.61,
-    updatedAt: 'Oct 31, 2025',
-  },
-  {
-    id: 'sku-bottle-002',
-    product: 'Traveler Bottle',
-    sku: 'BOT-002',
-    unitCost: 12.4,
-    unitPrice: 32,
-    margin: 0.61,
-    updatedAt: 'Oct 29, 2025',
-  },
-  {
-    id: 'sku-hoodie-003',
-    product: 'Cozy Hoodie',
-    sku: 'HD-003',
-    unitCost: 24.1,
-    unitPrice: 58,
-    margin: 0.58,
-    updatedAt: 'Oct 27, 2025',
-  },
-];
+import { useState } from 'react';
+import useSWR from 'swr';
+import { adminCostManagementApi, AdminCostRow, AdminCostSummary } from '@/lib/api';
 
 export default function CostManagementPage() {
-  const [currency, setCurrency] = useState('CAD');
-  const [timeframe, setTimeframe] = useState('30');
   const [search, setSearch] = useState('');
+  const summaryQuery = useSWR('admin-cost-summary', adminCostManagementApi.getSummary);
+  const productsQuery = useSWR(['admin-cost-products', search], ([, searchQuery]) =>
+    adminCostManagementApi.listProducts({ search: searchQuery || undefined })
+  );
 
-  const filteredRows = useMemo(() => {
-    if (!search.trim()) {
-      return COST_ROWS;
+  const summary: AdminCostSummary | undefined = summaryQuery.data?.data;
+  const products: AdminCostRow[] = productsQuery.data?.data ?? [];
+
+  const handleEdit = async (row: AdminCostRow) => {
+    const unitCostInput = window.prompt('Unit cost', row.unitCost.toString());
+    const salePriceInput = window.prompt('Sale price', row.salePrice.toString());
+    if (!unitCostInput || !salePriceInput) {
+      return;
     }
-    return COST_ROWS.filter((row) => row.product.toLowerCase().includes(search.toLowerCase()));
-  }, [search]);
+    const unitCost = Number(unitCostInput);
+    const salePrice = Number(salePriceInput);
+    if (Number.isNaN(unitCost) || Number.isNaN(salePrice)) {
+      alert('Invalid numeric values');
+      return;
+    }
+    await adminCostManagementApi.updateProduct(row.id, { unitCost, salePrice });
+    productsQuery.mutate();
+    summaryQuery.mutate();
+  };
 
   return (
     <div style={{ marginTop: 24 }}>
@@ -56,24 +43,17 @@ export default function CostManagementPage() {
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Cost Overview</h2>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <select value={currency} onChange={(event) => setCurrency(event.target.value)}>
-              <option value="CAD">CAD</option>
-              <option value="USD">USD</option>
-            </select>
-            <select value={timeframe} onChange={(event) => setTimeframe(event.target.value)}>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="365">Last 12 months</option>
-            </select>
+        </div>
+        {summary ? (
+          <div className="stats-grid" style={{ marginBottom: 24 }}>
+            <StatCard value={`$${summary.totalCost.toLocaleString()}`} label="Total Cost" change="" />
+            <StatCard value={`$${summary.totalRevenue.toLocaleString()}`} label="Total Revenue" change="" positive />
+            <StatCard value={`$${summary.averageGrossProfit.toFixed(2)}`} label="Average Gross Profit" change="24h rolling" />
+            <StatCard value={`${summary.averageMargin.toFixed(1)}%`} label="Average Margin" change="" positive />
           </div>
-        </div>
-        <div className="stats-grid" style={{ marginBottom: 24 }}>
-          <StatCard value="$82,450" label="Total Cost" change="+6% vs prior period" positive />
-          <StatCard value="$146,320" label="Total Revenue" change="+9% vs prior period" positive />
-          <StatCard value="$18.60" label="Average Gross Profit" change="Stable" />
-          <StatCard value="43%" label="Average Margin" change="+2 pts vs prior" positive />
-        </div>
+        ) : (
+          <div className="admin-table-placeholder">Loading summary…</div>
+        )}
       </section>
 
       <section>
@@ -88,52 +68,49 @@ export default function CostManagementPage() {
                 onChange={(event) => setSearch(event.target.value)}
               />
             </div>
-            <a href="#" className="btn" onClick={(event) => event.preventDefault()}>
-              Edit Costs
-            </a>
           </div>
         </div>
         <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>SKU</th>
-                <th>Unit Cost</th>
-                <th>Unit Sale Price</th>
-                <th>Unit Gross Profit</th>
-                <th>Margin</th>
-                <th>Last Updated</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.length === 0 ? (
+          {productsQuery.isLoading ? (
+            <div className="admin-table-placeholder">Loading product costs…</div>
+          ) : productsQuery.error ? (
+            <div className="admin-table-placeholder error">Failed to load product cost data.</div>
+          ) : products.length === 0 ? (
+            <div className="admin-table-placeholder">No rows found.</div>
+          ) : (
+            <table className="admin-table">
+              <thead>
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: 24, color: 'var(--color-text-muted)' }}>
-                    No rows found.
-                  </td>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Unit Cost</th>
+                  <th>Unit Sale Price</th>
+                  <th>Unit Gross Profit</th>
+                  <th>Margin</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                filteredRows.map((row) => (
+              </thead>
+              <tbody>
+                {products.map((row) => (
                   <tr key={row.id}>
-                    <td>{row.product}</td>
-                    <td>{row.sku}</td>
+                    <td>{row.name}</td>
+                    <td>{row.sku || '—'}</td>
                     <td>${row.unitCost.toFixed(2)}</td>
-                    <td>${row.unitPrice.toFixed(2)}</td>
-                    <td>${(row.unitPrice - row.unitCost).toFixed(2)}</td>
-                    <td>{Math.round(row.margin * 100)}%</td>
-                    <td>{row.updatedAt}</td>
+                    <td>${row.salePrice.toFixed(2)}</td>
+                    <td>${row.grossProfit.toFixed(2)}</td>
+                    <td>{row.margin.toFixed(1)}%</td>
+                    <td>{new Date(row.updatedAt).toLocaleDateString()}</td>
                     <td>
-                      <button type="button" className="btn btn--outline" style={{ fontSize: 12 }} disabled>
+                      <button type="button" className="btn btn--outline" style={{ fontSize: 12 }} onClick={() => handleEdit(row)}>
                         Edit
                       </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </section>
     </div>
@@ -145,7 +122,7 @@ function StatCard({ value, label, change, positive }: { value: string; label: st
     <div className="stat-card">
       <div className="stat-card-value">{value}</div>
       <div className="stat-card-label">{label}</div>
-      <div className={`stat-card-change ${positive ? 'positive' : ''}`}>{change}</div>
+      {change && <div className={`stat-card-change ${positive ? 'positive' : ''}`}>{change}</div>}
     </div>
   );
 }
