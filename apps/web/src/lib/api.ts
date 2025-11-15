@@ -148,6 +148,8 @@ export interface UserProfile {
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
+  role?: string; // [2025-11-15 12:05:00] 添加角色字段
+  emailVerified?: boolean; // [2025-11-15 12:05:00] 添加邮箱验证字段
   createdAt?: string;
   updatedAt?: string;
 }

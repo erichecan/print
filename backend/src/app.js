@@ -23,6 +23,7 @@ app.use(helmet());
 
 // CORS configuration
 // [2025-11-15 11:10:00] 支持多个前端域名（本地开发 + Netlify 部署）
+// [2025-11-15 12:05:00] 修复 CORS 配置，确保正确处理所有请求
 const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:3000',
@@ -43,14 +44,22 @@ const corsOptions = {
       if (origin.endsWith('.netlify.app')) {
         callback(null, true);
       } else {
+        // [2025-11-15 12:05:00] 记录被拒绝的 origin 以便调试
+        console.warn(`[CORS] Blocked origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     }
   },
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
 };
 app.use(cors(corsOptions));
+
+// [2025-11-15 12:05:00] 确保 OPTIONS 请求被正确处理
+app.options('*', cors(corsOptions));
 
 // Cookie parser (for session and auth cookies)
 app.use(cookieParser());
