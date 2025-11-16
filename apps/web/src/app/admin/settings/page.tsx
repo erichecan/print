@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { adminSettingsApi, SiteSettingsPayload } from '@/lib/api';
+import { adminSettingsApi, SiteSettingsPayload, adminProductionTemplatesApi, ProductionTemplate } from '@/lib/api';
 
 const DEFAULT_SETTINGS: SiteSettingsPayload = {
   siteName: 'suvernire plus',
@@ -21,12 +21,24 @@ export default function AdminSettingsPage() {
   const { data, isLoading, error, mutate } = useSWR('admin-site-settings', adminSettingsApi.getSite);
   const [settings, setSettings] = useState<SiteSettingsPayload>(DEFAULT_SETTINGS);
   const [saving, setSaving] = useState(false);
+  const { data: tplData, isLoading: tplLoading, error: tplError, mutate: mutateTpl } = useSWR(
+    'admin-production-templates',
+    adminProductionTemplatesApi.get
+  );
+  const [templates, setTemplates] = useState<ProductionTemplate[]>([]);
+  const [tplSaving, setTplSaving] = useState(false);
 
   useEffect(() => {
     if (data?.data) {
       setSettings(data.data);
     }
   }, [data]);
+
+  useEffect(() => {
+    if (tplData?.data) {
+      setTemplates(tplData.data);
+    }
+  }, [tplData]);
 
   const handleChange = <K extends keyof SiteSettingsPayload>(key: K, value: SiteSettingsPayload[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -45,6 +57,63 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleTplName = (index: number, value: string) => {
+    setTemplates((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], name: value };
+      return next;
+    });
+  };
+
+  const handleStageChange = (tplIndex: number, stageIndex: number, field: 'key' | 'label', value: string) => {
+    setTemplates((prev) => {
+      const next = [...prev];
+      const tpl = next[tplIndex];
+      const stages = [...(tpl.stages || [])];
+      const current = { ...(stages[stageIndex] || { key: '', label: '' }) };
+      current[field] = value;
+      stages[stageIndex] = current;
+      next[tplIndex] = { ...tpl, stages };
+      return next;
+    });
+  };
+
+  const handleAddStage = (tplIndex: number) => {
+    setTemplates((prev) => {
+      const next = [...prev];
+      const tpl = next[tplIndex];
+      next[tplIndex] = { ...tpl, stages: [...(tpl.stages || []), { key: '', label: '' }] };
+      return next;
+    });
+  };
+
+  const handleRemoveStage = (tplIndex: number, stageIndex: number) => {
+    setTemplates((prev) => {
+      const next = [...prev];
+      const tpl = next[tplIndex];
+      const stages = [...(tpl.stages || [])];
+      stages.splice(stageIndex, 1);
+      next[tplIndex] = { ...tpl, stages };
+      return next;
+    });
+  };
+
+  const handleAddTemplate = () => {
+    setTemplates((prev) => [...prev, { id: `tpl-${Date.now()}`, name: 'New Template', stages: [] }]);
+  };
+
+  const handleTplSave = async () => {
+    try {
+      setTplSaving(true);
+      await adminProductionTemplatesApi.update(templates);
+      await mutateTpl();
+    } catch (apiError) {
+      alert((apiError as Error).message || 'Failed to save production templates');
+    } finally {
+      setTplSaving(false);
+    }
+  };
+
   if (isLoading && !data) {
     return <div className="admin-table-placeholder">Loading settings…</div>;
   }
@@ -59,6 +128,55 @@ export default function AdminSettingsPage() {
         <div>
           <h1 data-i18n="settings">Settings</h1>
           <p className="text-muted">Configure storefront, payments, and review workflow</p>
+        </div>
+      </div>
+
+      <div className="admin-form" style={{ marginBottom: 24 }}>
+        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Production Stage Templates</h3>
+        {tplLoading && !templates.length && <div className="admin-table-placeholder">Loading templates…</div>}
+        {tplError && <div className="admin-table-placeholder error">Failed to load templates.</div>}
+        {!tplLoading && templates.map((tpl, ti) => (
+          <div key={tpl.id} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 16, marginBottom: 12 }}>
+            <div className="admin-form-group">
+              <label>Template Name</label>
+              <input type="text" value={tpl.name} onChange={(e) => handleTplName(ti, e.target.value)} />
+            </div>
+            <div className="admin-form-group">
+              <label>Stages</label>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {(tpl.stages || []).map((stage, si) => (
+                  <div key={`${tpl.id}-stage-${si}`} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="key (e.g., printing)"
+                      value={stage.key}
+                      onChange={(e) => handleStageChange(ti, si, 'key', e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder="label (e.g., 印刷生产)"
+                      value={stage.label}
+                      onChange={(e) => handleStageChange(ti, si, 'label', e.target.value)}
+                    />
+                    <button type="button" className="btn btn--outline btn--xs" onClick={() => handleRemoveStage(ti, si)}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className="btn btn--outline btn--xs" onClick={() => handleAddStage(ti)}>
+                  + Add Stage
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" className="btn btn--outline" onClick={handleAddTemplate}>
+            + Add Template
+          </button>
+          <button type="button" className="btn" onClick={handleTplSave} disabled={tplSaving}>
+            {tplSaving ? 'Saving…' : 'Save Templates'}
+          </button>
         </div>
       </div>
 

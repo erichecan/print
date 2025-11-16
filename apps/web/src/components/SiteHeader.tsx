@@ -85,13 +85,141 @@ export function SiteHeader() {
         </div>
         <nav className="primary-nav" aria-label="Primary">
           <div className="container primary-nav__inner">
-            <div className="primary-nav__links">
-              <Link href="/products">Custom T-shirts</Link>
-              <Link href="/collections/apparel">Custom Apparel</Link>
-              <Link href="/collections/promotional-products">Promotional Products</Link>
-              <Link href="/design-lab">Design Lab</Link>
-              <Link href="/help">Groups & Events</Link>
-            </div>
+            <ul className="mega">
+              <li className="mega__item">
+                <Link href="/products" className="mega__trigger">Custom T-shirts</Link>
+                <div className="mega__panel" role="region" aria-label="Custom T-shirts">
+                  <div className="mega__cols">
+                    <div className="mega__col">
+                      <Link href="/products?category=short-sleeve">Short Sleeve T-shirts</Link>
+                      <Link href="/products?category=long-sleeve">Long Sleeve T-shirts</Link>
+                      <Link href="/products?category=tank-tops">Tank Tops & Sleeveless</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=performance">Performance Shirts</Link>
+                      <Link href="/products?category=tri-blend">Soft Tri-Blend T-shirts</Link>
+                      <Link href="/products?category=sustainable">Sustainable T-shirts</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=women">Women’s T-shirts</Link>
+                      <Link href="/products?category=kids">Kids T-shirts</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?tag=no-minimum">No Minimum T-shirts</Link>
+                      <Link href="/products">View All Custom T-shirts</Link>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li className="mega__item">
+                <Link href="/collections/apparel" className="mega__trigger">Custom Apparel</Link>
+                <div className="mega__panel" role="region" aria-label="Custom Apparel">
+                  <div className="mega__cols">
+                    <div className="mega__col">
+                      <Link href="/products?category=hoodies">Hoodies</Link>
+                      <Link href="/products?category=crewneck-sweatshirts">Crewneck Sweatshirts</Link>
+                      <Link href="/products?category=quarter-zip">Quarter Zip Sweatshirts</Link>
+                      <Link href="/products?category=sweatshirts">View All Sweatshirts</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=baseball-hats">Baseball Hats</Link>
+                      <Link href="/products?category=trucker-hats">Trucker Hats</Link>
+                      <Link href="/products?category=beanies">Beanies</Link>
+                      <Link href="/products?category=all-hats">View All Hats</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=jackets">Jackets</Link>
+                      <Link href="/products?category=polo-shirts">Polo Shirts</Link>
+                      <Link href="/products?category=business-apparel">Business Apparel</Link>
+                      <Link href="/products?category=workwear">Workwear & Uniforms</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=activewear">Activewear</Link>
+                      <Link href="/products?category=team-jerseys">Team Jerseys</Link>
+                      <Link href="/products?category=pants-shorts">Pants & Shorts</Link>
+                      <Link href="/products?category=accessories">Accessories</Link>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li className="mega__item">
+                <Link href="/collections/promotional-products" className="mega__trigger">Promotional Products</Link>
+                <div className="mega__panel" role="region" aria-label="Promotional Products">
+                  <div className="mega__cols">
+                    <div className="mega__col">
+                      <Link href="/products?category=water-bottles">Water Bottles</Link>
+                      <Link href="/products?category=mugs">Mugs</Link>
+                      <Link href="/products?category=tumblers">Tumblers</Link>
+                      <Link href="/products?category=koozies">Koozie®</Link>
+                      <Link href="/products?category=drinkware">View All Drinkware</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=backpacks">Backpacks</Link>
+                      <Link href="/products?category=tote-bags">Tote Bags</Link>
+                      <Link href="/products?category=drawstring-bags">Drawstring Bags</Link>
+                      <Link href="/products?category=pouches">Pouches</Link>
+                      <Link href="/products?category=bags">View All Bags</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=pens">Pens & Writing</Link>
+                      <Link href="/products?category=stationery">Stationery</Link>
+                      <Link href="/products?category=stickers">Stickers & Magnets</Link>
+                      <Link href="/products?category=office-supplies">Office Supplies</Link>
+                      <Link href="/products?category=technology">Technology</Link>
+                    </div>
+                    <div className="mega__col">
+                      <Link href="/products?category=gifts">Gifts</Link>
+                      <Link href="/products?category=trade-show">Trade Show & Signage</Link>
+                      <Link href="/products?category=outdoor">Outdoor & Leisure</Link>
+                      <Link href="/products?category=home-auto-tools">Home, Auto, & Tools</Link>
+                      <Link href="/products?category=health">Health & Personal Care</Link>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li className="mega__item">
+                <Link href="/design-lab" className="mega__trigger">Design Lab</Link>
+                <div className="mega__panel mega__panel--simple">
+                  <div className="mega__cta">
+                    <h3>The Design Lab Makes It Fun & Easy to Design</h3>
+                    <p>Create custom t-shirts and promotional products your group will love. Simply upload your own logo or create a design using our collection of fonts & artwork.</p>
+                    <div className="mega__cta-actions">
+                      <Link className="btn btn--primary" href="/design-lab">Start Designing</Link>
+                      <Link className="btn btn--outline" href="/design-lab?templates=1">Explore Templates</Link>
+                    </div>
+                  </div>
+                </div>
+              </li>
+              <li className="mega__item">
+                <Link href="/help" className="mega__trigger">Groups & Events</Link>
+                <div className="mega__panel" role="region" aria-label="Groups & Events">
+                  <div className="mega__cols">
+                    <div className="mega__col">
+                      <strong>Tools & Resources</strong>
+                      <Link href="/help#group-ordering">Group Ordering</Link>
+                      <Link href="/help#fundraising">Fundraising</Link>
+                      <Link href="/help#online-stores">Online Stores</Link>
+                      <Link href="/help#pro-services">Pro Services</Link>
+                      <Link href="/help#tips">Tips & Advice</Link>
+                      <Link href="/design-lab">T-shirt Maker</Link>
+                    </div>
+                    <div className="mega__col">
+                      <strong>Businesses & Professionals</strong>
+                      <Link href="/help#corporate-swag">Corporate Swag</Link>
+                      <Link href="/help#businesses">For Businesses</Link>
+                      <Link href="/help#trade-shows">For Trade Shows</Link>
+                    </div>
+                    <div className="mega__col">
+                      <strong>Schools & Groups</strong>
+                      <Link href="/help#schools">For Schools K-12</Link>
+                      <Link href="/help#colleges">For Teachers & Colleges</Link>
+                      <Link href="/help#sports">For Sports Teams</Link>
+                      <Link href="/help#celebrations">For Activities & Celebrations</Link>
+                    </div>
+                  </div>
+                </div>
+              </li>
+            </ul>
             <div className="primary-nav__actions">
               <Link href="/login">
                 <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />

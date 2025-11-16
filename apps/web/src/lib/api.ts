@@ -879,6 +879,23 @@ export const adminContentApi = {
     api<{ data: ContentConfig }>('/admin/settings/content', { method: 'PUT', body: data }),
 };
 
+// [2025-11-16 16:05:00] Production templates types & APIs
+export interface ProductionStage {
+  key: string;
+  label: string;
+}
+export interface ProductionTemplate {
+  id: string;
+  name: string;
+  stages: ProductionStage[];
+}
+
+export const adminProductionTemplatesApi = {
+  get: () => api<{ data: ProductionTemplate[] }>('/admin/settings/production/templates'),
+  update: (templates: ProductionTemplate[]) =>
+    api<{ data: ProductionTemplate[] }>('/admin/settings/production/templates', { method: 'PUT', body: templates }),
+};
+
 export interface AdminCostSummary {
   totalCost: number;
   totalRevenue: number;

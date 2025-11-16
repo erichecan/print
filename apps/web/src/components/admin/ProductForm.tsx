@@ -86,6 +86,23 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     },
   });
 
+  // [2025-11-16 16:05:00] 自动生成/规范化 slug，展示说明
+  const nameValue = watch('name');
+  const slugValue = watch('slug');
+  useEffect(() => {
+    const slugify = (value: string) =>
+      value
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .substring(0, 60);
+    if (nameValue && (!slugValue || slugValue.trim() === '')) {
+      setValue('slug' as any, slugify(nameValue));
+    }
+  }, [nameValue, slugValue, setValue]);
+
   const {
     fields: variantFields,
     append: appendVariant,
@@ -347,7 +364,15 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           </div>
           <div className="form-field">
             <label>自定义 Slug</label>
-            <input type="text" {...register('slug')} placeholder="不填写则自动生成" />
+            <input
+              type="text"
+              {...register('slug')}
+              placeholder="不填写则自动生成"
+              title="Slug 用于 URL（仅字母/数字/连字符），例如 /products/custom-tee"
+            />
+            <small style={{ color: '#64748b' }}>
+              Slug = URL 唯一标识（仅字母/数字/连字符），示例：/products/custom-tee
+            </small>
           </div>
           <div className="form-field">
             <label>SKU *</label>
