@@ -241,202 +241,197 @@ export default async function ProductsPage({
       : null;
 
   return (
-    <div className="products-page">
-      <div className="container products-page__header">
-        <header>
-          <p className="eyebrow">Browse Products</p>
-          <h1>Custom apparel & promo gear catalog</h1>
-          <p className="lead">
-            Discover curated apparel, drinkware, tech, and swag-ready products. Filter by category,
-            search by keyword, and sort to find the right fit for your group.
-          </p>
-        </header>
-
-        <form className="plp-filters" method="get">
-          <div className="plp-filters__search">
-            <label htmlFor="search">Search</label>
-            <input
-              id="search"
-              name="search"
-              type="search"
-              placeholder="Search products"
-              defaultValue={currentSearch}
-            />
+    <div className="catalog-page">
+      <div className="plp-head">
+        <div className="container plp-head__bar">
+          <div>
+            <p className="eyebrow">Shop the catalog</p>
+            <h1>Custom apparel & promo gear</h1>
+            <p className="plp-head__meta">
+              <span>
+                {pagination.total} items · Page {pagination.page} of {pagination.totalPages}
+              </span>
+            </p>
           </div>
-
-          <div className="plp-filters__select">
-            <label htmlFor="collection">Category</label>
-            <select id="collection" name="collection" defaultValue={currentCollection}>
-              <option value="">All categories</option>
-              {collections.map((collection) => (
-                <option key={collection.slug} value={collection.slug}>
-                  {collection.name}
-                </option>
-              ))}
-            </select>
+          <div className="plp-head__actions">
+            <Link href="/design-lab" className="btn">
+              Start Designing
+            </Link>
+            <Link href="/contact" className="btn btn--outline">
+              Get a Quote
+            </Link>
           </div>
-
-          {/* [2025-01-27 14:00:00] 品牌筛选 */}
-          {brands.length > 0 && (
-            <div className="plp-filters__select">
-              <label htmlFor="brand">Brand</label>
-              <select id="brand" name="brand" defaultValue={currentBrand}>
-                <option value="">All brands</option>
-                {brands.map((brand) => (
-                  <option key={brand.slug || brand.name} value={brand.name}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* [2025-01-27 14:00:00] 价格区间筛选 */}
-          <div className="plp-filters__price-range">
-            <label htmlFor="minPrice">Price Range (CAD)</label>
-            <div className="price-inputs">
-              <input
-                id="minPrice"
-                name="minPrice"
-                type="number"
-                placeholder="Min"
-                min="0"
-                step="0.01"
-                defaultValue={currentMinPrice}
-                style={{ width: '100px' }}
-              />
-              <span>to</span>
-              <input
-                id="maxPrice"
-                name="maxPrice"
-                type="number"
-                placeholder="Max"
-                min="0"
-                step="0.01"
-                defaultValue={currentMaxPrice}
-                style={{ width: '100px' }}
-              />
-            </div>
-          </div>
-
-          <div className="plp-filters__select">
-            <label htmlFor="sort">Sort</label>
-            <select id="sort" name="sort" defaultValue={currentSort}>
-              {SORT_OPTIONS.map((option) => (
-                <option key={option.value || 'featured'} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button type="submit" className="btn">
-            Apply Filters
-          </button>
-          <Link href="/products" className="btn btn--outline">
-            Reset
-          </Link>
-        </form>
+        </div>
       </div>
 
-      <div className="container products-page__results">
-        <div className="results-meta">
-          <span>
-            Showing {products.length} of {pagination.total} items
-          </span>
-          <span>
-            Page {pagination.page} of {pagination.totalPages}
-          </span>
-        </div>
+      {/* [2025-11-16 11:15:00] Prototype-aligned PLP layout */}
+      <section className="plp">
+        <div className="container plp__grid">
+          <aside>
+            <form className="filters" method="get">
+              <details open>
+                <summary>Search catalog</summary>
+                <div className="filters__body">
+                  <input
+                    type="search"
+                    name="search"
+                    placeholder="Search tees, hoodies, drinkware..."
+                    defaultValue={currentSearch}
+                  />
+                </div>
+              </details>
 
-        {fetchError ? (
-          <div className="results-empty">
-            <h2>There was a problem loading products</h2>
-            <p>{fetchError}</p>
-            <p>Please try refreshing the page or adjusting your filters.</p>
-          </div>
-        ) : products.length === 0 ? (
-          <div className="results-empty">
-            <h2>No products found</h2>
-            <p>Try adjusting your filters or search term to discover more products.</p>
-          </div>
-        ) : (
-          <div className="results-grid">
-            {products.map((product) => {
-              const price = product.price ?? product.basePrice ?? 0;
-              return (
-                <article key={product.id} className="product-card">
-                  <Link href={`/products/${product.slug}`}>
-                    <div className="product-card__image">
-                      {product.primaryImage?.url ? (
-                        <Image
-                          src={product.primaryImage.url}
-                          alt={product.primaryImage.alt ?? product.name}
-                          className="product-card__image-media" // [2025-11-11 06:07:52] 统一图片样式
-                          width={480}
-                          height={480}
-                          sizes="(max-width: 768px) 100vw, 480px" // [2025-11-11 06:07:23] 明确图片尺寸
-                        />
-                      ) : (
-                        <div className="product-card__placeholder">Image coming soon</div>
-                      )}
-                    </div>
-                    <div className="product-card__body">
-                      <h3>{product.name}</h3>
-                      <p className="product-card__price">{currencyFormatter.format(Number(price))}</p>
-                      <p className="product-card__meta">
-                        {product.brand?.name ? `${product.brand.name} • ` : ''}
-                        {product.category?.name || 'General'}
+              <details open>
+                <summary>Category</summary>
+                <div className="filters__body">
+                  <select name="collection" defaultValue={currentCollection}>
+                    <option value="">All categories</option>
+                    {collections.map((collection) => (
+                      <option key={collection.slug} value={collection.slug}>
+                        {collection.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </details>
+
+              {brands.length > 0 && (
+                <details>
+                  <summary>Brand</summary>
+                  <div className="filters__body">
+                    <select name="brand" defaultValue={currentBrand}>
+                      <option value="">All brands</option>
+                      {brands.map((brand) => (
+                        <option key={brand.slug || brand.name} value={brand.name}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </details>
+              )}
+
+              <details>
+                <summary>Price range (CAD)</summary>
+                <div className="filters__body">
+                  <div className="price-inputs">
+                    <input
+                      type="number"
+                      name="minPrice"
+                      placeholder="Min"
+                      min="0"
+                      step="0.01"
+                      defaultValue={currentMinPrice}
+                    />
+                    <span>to</span>
+                    <input
+                      type="number"
+                      name="maxPrice"
+                      placeholder="Max"
+                      min="0"
+                      step="0.01"
+                      defaultValue={currentMaxPrice}
+                    />
+                  </div>
+                </div>
+              </details>
+
+              <details>
+                <summary>Sort by</summary>
+                <div className="filters__body">
+                  <select name="sort" defaultValue={currentSort}>
+                    {SORT_OPTIONS.map((option) => (
+                      <option key={option.value || 'featured'} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </details>
+
+              <div className="filters__actions">
+                <button type="submit" className="btn">
+                  Apply Filters
+                </button>
+                <Link href="/products" className="btn btn--outline">
+                  Reset
+                </Link>
+              </div>
+            </form>
+          </aside>
+
+          <div className="products">
+            <div className="results-meta">
+              <span>
+                Showing {products.length} of {pagination.total} products
+              </span>
+              <span>
+                Page {pagination.page} of {pagination.totalPages}
+              </span>
+            </div>
+
+            {fetchError ? (
+              <div className="results-empty">
+                <h2>We hit a snag loading products</h2>
+                <p>{fetchError}</p>
+                <p>Refresh the page or adjust your filters and try again.</p>
+              </div>
+            ) : products.length === 0 ? (
+              <div className="results-empty">
+                <h2>No products found</h2>
+                <p>Try expanding your filters or enter a different search.</p>
+              </div>
+            ) : (
+              <div className="product-grid">
+                {products.map((product) => {
+                  const price = product.price ?? product.basePrice ?? 0;
+                  return (
+                    <article key={product.id} className="product">
+                      <Link href={`/products/${product.slug}`} className="product__image">
+                        {product.primaryImage?.url ? (
+                          <Image
+                            src={product.primaryImage.url}
+                            alt={product.primaryImage.alt ?? product.name}
+                            width={480}
+                            height={480}
+                            sizes="(max-width: 768px) 100vw, 320px"
+                          />
+                        ) : (
+                          <div className="product-card__placeholder">Image coming soon</div>
+                        )}
+                      </Link>
+                      <h3 className="product__title">{product.name}</h3>
+                      <p className="product__meta">
+                        {product.category?.name ?? 'All categories'} ·{' '}
+                        {product.brand?.name ?? 'Multiple brands'}
                       </p>
-                      {product.description && (
-                        <p className="product-card__description">{product.description}</p>
-                      )}
-                    </div>
-                  </Link>
-                </article>
-              );
-            })}
-          </div>
-        )}
+                      <p className="product__description">
+                        {product.description ??
+                          'Suvernire Plus staples ready for screen-print, embroidery, or rush delivery.'}
+                      </p>
+                      <p className="product__price">{currencyFormatter.format(Number(price))}</p>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
 
-        {!fetchError && pagination.totalPages > 0 && (
-          <nav className="pagination" aria-label="Pagination">
-            <span>
-              Page {pagination.page} of {pagination.totalPages}
-            </span>
-            <div className="pagination__controls">
-              <Link
-                href={buildRoute(normalizedParams, { page: '1' })}
-                className="btn btn--outline"
-                aria-disabled={pagination.page === 1}
-              >
-                First
-              </Link>
-              {prevLink ? (
-                <Link href={prevLink} className="btn btn--outline">
+            <div className="pagination">
+              <div className="pagination__controls">
+                <Link href={prevLink ?? '#'} className="btn btn--outline" aria-disabled={!prevLink}>
                   Previous
                 </Link>
-              ) : (
-                <span className="btn btn--outline is-disabled">Previous</span>
-              )}
-              {nextLink ? (
-                <Link href={nextLink} className="btn btn--outline">
+                <Link href={nextLink ?? '#'} className="btn" aria-disabled={!nextLink}>
                   Next
                 </Link>
-              ) : (
-                <span className="btn btn--outline is-disabled">Next</span>
-              )}
-              <Link
-                href={buildRoute(normalizedParams, { page: String(pagination.totalPages) })}
-                className="btn btn--outline"
-                aria-disabled={pagination.page === pagination.totalPages}
-              >
-                Last
-              </Link>
+              </div>
+              <p>
+                Page {pagination.page} of {pagination.totalPages}
+              </p>
             </div>
-          </nav>
-        )}
-      </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
