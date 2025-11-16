@@ -8,6 +8,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-suvernireplus}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432" # [2025-11-16 18:39:30] Expose Postgres to host for local tools
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:

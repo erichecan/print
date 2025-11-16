@@ -6,12 +6,19 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
+      // [2025-11-16 18:48:00] Ensure UUID generation extension exists BEFORE table creation.
+      // Prefer pgcrypto's gen_random_uuid() which is widely available (e.g., Neon).
+      await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";', { transaction });
+      // uuid-ossp may not be available in some managed Postgres offerings; keep it best-effort only.
+      await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', { transaction });
+
       await queryInterface.createTable(
         'settings',
         {
           id: {
             type: Sequelize.DataTypes.UUID,
-            defaultValue: Sequelize.literal('uuid_generate_v4()'),
+            // [2025-11-16 18:48:00] Use gen_random_uuid() to avoid dependency on uuid-ossp.
+            defaultValue: Sequelize.literal('gen_random_uuid()'),
             primaryKey: true,
             allowNull: false,
           },
@@ -41,9 +48,6 @@ module.exports = {
         name: 'idx_settings_key',
         transaction,
       });
-
-      // Ensure extension for uuid_generate_v4 exists (Postgres)
-      await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', { transaction });
 
       await transaction.commit();
     } catch (error) {
