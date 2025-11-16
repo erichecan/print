@@ -51,6 +51,28 @@ export default function AdminPromotionsPage() {
     }
   };
 
+  // [2025-11-16 18:05:00] Toggle promotion status inline
+  const togglePromotion = async (promotion: AdminPromotion) => {
+    await adminPromotionsApi.update(promotion.id, { isActive: !promotion.isActive });
+    mutate();
+  };
+
+  // [2025-11-16 18:05:00] Quick edit title/period
+  const quickEdit = async (promotion: AdminPromotion) => {
+    const nextTitle = window.prompt('Edit title', promotion.title);
+    if (nextTitle === null) return;
+    const nextStart = window.prompt('Edit start date (YYYY-MM-DD, empty for none)', promotion.startDate || '');
+    if (nextStart === null) return;
+    const nextEnd = window.prompt('Edit end date (YYYY-MM-DD, empty for none)', promotion.endDate || '');
+    if (nextEnd === null) return;
+    await adminPromotionsApi.update(promotion.id, {
+      title: nextTitle,
+      startDate: nextStart || null,
+      endDate: nextEnd || null,
+    });
+    mutate();
+  };
+
   const removePromotion = async (promotion: AdminPromotion) => {
     const confirmed = window.confirm(`Delete promotion "${promotion.title}"?`);
     if (!confirmed) return;
@@ -153,7 +175,7 @@ export default function AdminPromotionsPage() {
         </select>
       </div>
 
-      <div style={{ display: 'grid', gap: 20 }}>
+      <div className="admin-table-wrapper">
         {isLoading ? (
           <div className="admin-table-placeholder">Loading promotions…</div>
         ) : error ? (
@@ -161,45 +183,75 @@ export default function AdminPromotionsPage() {
         ) : promotions.length === 0 ? (
           <div className="admin-table-placeholder">No promotions found.</div>
         ) : (
-          promotions.map((promotion) => (
-            <article
-              key={promotion.id}
-              style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 14, padding: 24 }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                <div>
-                  <h3 style={{ margin: '0 0 8px', fontSize: 18 }}>{promotion.title}</h3>
-                  <p className="text-muted" style={{ margin: 0 }}>
-                    {promotion.description || '—'}
-                  </p>
-                </div>
-                <span className={promotion.isActive ? 'badge badge-success' : 'badge badge-pending'}>
-                  {promotion.isActive ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              {promotion.bannerImageUrl && (
-                <div className="product-thumbnail" style={{ width: '100%', height: 160, borderRadius: 12, marginBottom: 16 }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={promotion.bannerImageUrl} alt={promotion.title} />
-                </div>
-              )}
-              <div style={{ padding: 16, background: 'var(--color-bg-subtle)', borderRadius: 8 }}>
-                <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 8 }}>Promotion Details</div>
-                <ul style={{ margin: 0, paddingLeft: 18, color: 'var(--color-text)' }}>
-                  <li>Link: {promotion.linkUrl || '—'}</li>
-                  <li>
-                    Validity: {promotion.startDate || 'N/A'} → {promotion.endDate || 'N/A'}
-                  </li>
-                  <li>Sort Order: {promotion.sortOrder}</li>
-                </ul>
-              </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                <button type="button" className="btn btn--outline" onClick={() => removePromotion(promotion)}>
-                  Delete
-                </button>
-              </div>
-            </article>
-          ))
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th style={{ width: 64 }}>Banner</th>
+                <th>Title</th>
+                <th>Link</th>
+                <th>Period</th>
+                <th>Sort</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {promotions.map((promotion) => (
+                <tr key={promotion.id}>
+                  <td>
+                    {promotion.bannerImageUrl ? (
+                      <div className="product-thumbnail" style={{ width: 56, height: 40, borderRadius: 8 }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={promotion.bannerImageUrl} alt={promotion.title} />
+                      </div>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <strong>{promotion.title}</strong>
+                      <span className="text-muted" style={{ fontSize: 12, marginTop: 2 }}>
+                        {promotion.description || '—'}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    {promotion.linkUrl ? (
+                      <a href={promotion.linkUrl} target="_blank" rel="noreferrer">
+                        {promotion.linkUrl}
+                      </a>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    {promotion.startDate || 'N/A'} → {promotion.endDate || 'N/A'}
+                  </td>
+                  <td>{promotion.sortOrder}</td>
+                  <td>
+                    <span className={promotion.isActive ? 'badge badge-success' : 'badge badge-pending'}>
+                      {promotion.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="actions-dropdown">
+                      <button className="actions-dropdown-btn" type="button">
+                        ⋯
+                      </button>
+                      <div className="actions-dropdown-menu">
+                        <button type="button" onClick={() => togglePromotion(promotion)}>
+                          {promotion.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button type="button" onClick={() => quickEdit(promotion)}>Quick Edit</button>
+                        <button type="button" onClick={() => removePromotion(promotion)}>Delete</button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
