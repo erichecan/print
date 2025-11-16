@@ -189,18 +189,33 @@ select {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 0;
+  position: relative; /* [2025-11-16 15:05:00] 作为 megamenu 定位容器，防止面板随触发项横向移动 */
 }
 
 /* [2025-11-16 13:50:00] Mega menu */
 .mega { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; font-weight: 600; }
-.mega__item { position: relative; }
+.mega__item { position: static; } /* [2025-11-16 15:05:00] 让面板基于父容器定位而非每个 li */
 .mega__trigger { display: inline-block; padding: 8px 6px; }
-.mega__panel { position: absolute; left: 0; right: auto; top: calc(100% + 12px); background: #fff; border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 16px 32px rgba(2,6,23,0.12); padding: 20px; display: none; z-index: 400; min-width: 840px; }
-.mega__item:hover .mega__panel, .mega__item:focus-within .mega__panel { display: block; }
+.mega__panel {
+  position: absolute;
+  left: 0;
+  right: 0; /* 占据容器宽度，避免最右侧被截断 */
+  top: calc(100% + 8px);
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 32px rgba(2,6,23,0.12);
+  padding: 20px;
+  display: none;
+  z-index: 400;
+}
+.mega__item:hover .mega__panel,
+.mega__item:focus-within .mega__panel,
+.mega__panel:hover { display: block; } /* [2025-11-16 15:05:00] 鼠标可移入面板不消失 */
 .mega__cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
 .mega__col { display: grid; gap: 12px; min-width: 160px; }
 .mega__col strong { font-size: 14px; color: var(--color-text-muted); text-transform: none; }
-.mega__panel--simple { min-width: 720px; }
+.mega__panel--simple { max-width: 960px; margin-inline: auto; } /* 简版面板居中 */
 .mega__cta { display: grid; gap: 16px; max-width: 680px; }
 .mega__cta h3 { margin: 0; font-size: 28px; line-height: 1.25; text-align: center; }
 .mega__cta-actions { display: flex; gap: 12px; justify-content: center; }
