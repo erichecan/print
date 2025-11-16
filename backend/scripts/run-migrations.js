@@ -7,7 +7,8 @@ function run(command, description) {
 }
 
 try {
-  run('npx prisma migrate deploy', 'Prisma migrate deploy');
+  // [2025-11-16 11:21:45] 在 Render 上工作目录为 backend/，需要显式传入 schema 路径
+  run('npx prisma migrate deploy --schema=../prisma/schema.prisma', 'Prisma migrate deploy');
   run('npx sequelize-cli db:migrate', 'Sequelize CLI migrate');
   console.log('所有迁移已成功执行 [2025-11-10 14:02:00]');
 } catch (error) {
