@@ -22,18 +22,77 @@ interface AdminUser {
 
 type AuthState = 'loading' | 'authorized' | 'unauthenticated' | 'forbidden';
 
+// [2025-11-16 14:05:30] 统一侧栏图标（SVG），避免 Emoji 在不同平台不一致
+const ICONS: Record<string, JSX.Element> = {
+  dashboard: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
+    </svg>
+  ),
+  products: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M21 16V8l-9-5-9 5v8l9 5 9-5zM12 5.15L18.53 9 12 12.85 5.47 9 12 5.15zM5 10.73l6 3.47v5.65L5 16.38v-5.65zm8 9.12v-5.65l6-3.47v5.65L13 19.85z" />
+    </svg>
+  ),
+  categories: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10 0h8v8h-8v-8zm0-10h8v8h-8V3z" />
+    </svg>
+  ),
+  orders: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M7 4h10l1 2h3v2h-2l-2.6 9.59A2.003 2.003 0 0114.5 19h-5a2 2 0 01-1.92-1.46L5 8H3V6h3l1-2zm2.38 13h5.24l2.04-7H7.34l2.04 7zM7 22a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm10 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+    </svg>
+  ),
+  users: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm-8 9a8 8 0 1116 0v1H4v-1z" />
+    </svg>
+  ),
+  design: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41L18.37 3.3a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.84z" />
+    </svg>
+  ),
+  production: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M22 13v7H2v-7h20zM4 6h4v5H4V6zm6 0h4v5h-4V6zm6 0h4v5h-4V6z" />
+    </svg>
+  ),
+  costs: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M11 17h2v2h-2v-2zm0-12h2v10h-2V5zM12 1a11 11 0 100 22 11 11 0 000-22z" />
+    </svg>
+  ),
+  coupons: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M21 5H3v4a2 2 0 110 4v4h18v-4a2 2 0 110-4V5zm-6 2h2v2h-2V7zM7 7h6v2H7V7zm0 4h10v2H7v-2z" />
+    </svg>
+  ),
+  promotions: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M3 3h18v4H3V3zm0 6h18v12l-9-4-9 4V9z" />
+    </svg>
+  ),
+  settings: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M19.14 12.94a7.973 7.973 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.994 7.994 0 00-1.63-.95l-.36-2.54A.5.5 0 0012.9 1h-3.8a.5.5 0 00-.5.42l-.36 2.54c-.57.23-1.11.53-1.63.95l-2.39-.96a.5.5 0 00-.6.22L.8 7.03a.5.5 0 00.12.64l2.03 1.58c-.08.62-.08 1.26 0 1.88L.92 14.7a.5.5 0 00-.12.64l1.92 3.32c.14.25.44.35.7.24l2.39-.96c.5.42 1.06.75 1.63.98l.36 2.54c.05.26.26.44.5.44h3.8c.24 0 .45-.18.5-.44l.36-2.54c.57-.23 1.12-.56 1.63-.98l2.39.96c.26.11.56.01.7-.24l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.76zM11 8a4 4 0 110 8 4 4 0 010-8z" />
+    </svg>
+  ),
+};
+
 const NAV_LINKS = [
-  { href: '/admin', label: 'Dashboard', icon: '📊', exact: true, i18n: 'dashboard' },
-  { href: '/admin/products', label: 'Products', icon: '🛍️', i18n: 'products' },
-  { href: '/admin/categories', label: 'Categories', icon: '📁', i18n: 'categories' },
-  { href: '/admin/orders', label: 'Orders', icon: '📦', i18n: 'orders' },
-  { href: '/admin/users', label: 'Users', icon: '👥', i18n: 'users' },
-  { href: '/admin/designs', label: 'Design Review', icon: '🎨', i18n: 'designReview' },
-  { href: '/admin/offline-orders', label: 'Production', icon: '🧵', i18n: 'production' }, // [2025-11-16 13:35:00] 生产管理
-  { href: '/admin/cost-management', label: 'Costs', icon: '💰', i18n: 'costs' }, // [2025-11-16 13:35:00] 成本管理
-  { href: '/admin/coupons', label: 'Coupons', icon: '🎫', i18n: 'coupons' },
-  { href: '/admin/promotions', label: 'Promotions', icon: '🎉', i18n: 'promotions' },
-  { href: '/admin/settings', label: 'Settings', icon: '⚙️', i18n: 'settings' },
+  { href: '/admin', label: 'Dashboard', icon: 'dashboard', exact: true, i18n: 'dashboard' },
+  { href: '/admin/products', label: 'Products', icon: 'products', i18n: 'products' },
+  { href: '/admin/categories', label: 'Categories', icon: 'categories', i18n: 'categories' },
+  { href: '/admin/orders', label: 'Orders', icon: 'orders', i18n: 'orders' },
+  { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
+  { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
+  { href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // [2025-11-16 13:35:00] 生产管理
+  { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costs' }, // [2025-11-16 13:35:00] 成本管理
+  { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
+  { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
+  { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];
 
 export default function AdminShell({ children }: { children: ReactNode }) {
@@ -262,7 +321,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                   data-i18n={link.i18n}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <span className="admin-nav-icon">{link.icon}</span>
+                  <span className="admin-nav-icon" aria-hidden="true">{ICONS[link.icon]}</span>
                   {!sidebarCollapsed && <span>{t(link.i18n)}</span>}
                 </Link>
               </li>
