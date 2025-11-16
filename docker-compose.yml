@@ -32,7 +32,7 @@ services:
       DB_USER: ${DB_USER:-postgres} # [2025-11-15 23:08:36] Provide database user for Sequelize config
       DB_PASSWORD: ${DB_PASSWORD:-postgres} # [2025-11-15 23:08:36] Provide password for Sequelize config
       JWT_SECRET: ${JWT_SECRET:-change_me_in_prod}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder} # [2025-11-16 18:22:30] Redacted default to avoid leaking secrets
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379} # [2025-11-14 06:28:00] 为 ioredis 提供容器内地址
     depends_on:
