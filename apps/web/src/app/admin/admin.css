@@ -160,8 +160,10 @@
 /* Actions Dropdown */
 .actions-dropdown { position: relative; overflow: visible; } /* [2025-11-16 13:35:00] 避免局部裁剪 */
 .actions-dropdown-btn { padding: 6px 10px; background: #fff; border: 1px solid var(--color-border); border-radius: 10px; cursor: pointer; }
-.actions-dropdown-menu { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 12px 24px rgba(2,6,23,0.12); z-index: 300; min-width: 160px; padding: 6px; }
+/* [2025-11-16 16:35:00] 修复鼠标移入时菜单消失：去掉间隙、增加 focus-within 触发、提高 z-index */
+.actions-dropdown-menu { display: none; position: absolute; right: 0; top: calc(100% + 1px); background: #fff; border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 12px 24px rgba(2,6,23,0.12); z-index: 500; min-width: 180px; padding: 6px; }
 .actions-dropdown:hover .actions-dropdown-menu { display: block; }
+.actions-dropdown:focus-within .actions-dropdown-menu { display: block; }
 .actions-dropdown-menu a { display: block; padding: 8px 12px; border-radius: 6px; color: var(--color-text); text-decoration: none; font-size: 13px; }
 .actions-dropdown-menu a:hover { background: var(--color-bg-subtle); }
 .actions-dropdown-menu button { display: block; width: 100%; text-align: left; padding: 8px 12px; border-radius: 6px; border: none; background: none; font-size: 13px; color: var(--color-text); cursor: pointer; }

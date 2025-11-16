@@ -397,30 +397,33 @@ export default function AdminProductsPage() {
                     {product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : '—'}
                   </td>
                   <td>
-                    <div className="actions-dropdown">
-                      <button type="button" className="actions-dropdown-btn" aria-haspopup="menu" aria-expanded="false">
-                        ⋯
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        className="btn btn--outline btn--xs"
+                        onClick={() => handleStatusChange(product)}
+                        data-i18n={product.isActive ? 'deactivateProduct' : 'activateProduct'}
+                        title={product.isActive ? t('deactivateProduct') : t('activateProduct')}
+                      >
+                        {product.isActive ? t('deactivateProduct') : t('activateProduct')}
                       </button>
-                      <div className="actions-dropdown-menu" role="menu">
-                        <Link href={`/admin/products/${product.id}`} role="menuitem" data-i18n="editProduct">
-                          {t('editProduct')}
-                        </Link>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleStatusChange(product)}
-                          data-i18n={product.isActive ? 'deactivateProduct' : 'activateProduct'}
-                        >
-                          {product.isActive ? t('deactivateProduct') : t('activateProduct')}
+                      <div className="actions-dropdown">
+                        <button type="button" className="actions-dropdown-btn" aria-haspopup="menu" aria-expanded="false">
+                          ⋯
                         </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => handleArchive(product)}
-                          data-i18n="archiveProduct"
-                        >
-                          {t('archiveProduct')}
-                        </button>
+                        <div className="actions-dropdown-menu" role="menu">
+                          <Link href={`/admin/products/${product.id}`} role="menuitem" data-i18n="editProduct">
+                            {t('editProduct')}
+                          </Link>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => handleArchive(product)}
+                            data-i18n="archiveProduct"
+                          >
+                            {t('archiveProduct')}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </td>
