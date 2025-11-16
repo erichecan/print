@@ -42,29 +42,43 @@ const config = {
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-const sequelize = new Sequelize(
-  dbConfig.database,
-  dbConfig.username,
-  dbConfig.password,
-  {
-    host: dbConfig.host,
-    port: dbConfig.port,
-    dialect: dbConfig.dialect,
+// [2025-11-16 16:40:00] 支持 DATABASE_URL 一键连接（Render/Neon/Heroku），否则回退到分字段配置
+let sequelize;
+if (process.env.DATABASE_URL) {
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
     logging: dbConfig.logging,
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
+    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+    define: { timestamps: true, underscored: true, freezeTableName: false },
+    dialectOptions: {
+      ssl: { require: true, rejectUnauthorized: false },
     },
-    define: {
-      timestamps: true,
-      underscored: true,
-      freezeTableName: false
-    },
-    ...(dbConfig.dialectOptions || {})
-  }
-);
+  });
+} else {
+  sequelize = new Sequelize(
+    dbConfig.database,
+    dbConfig.username,
+    dbConfig.password,
+    {
+      host: dbConfig.host,
+      port: dbConfig.port,
+      dialect: dbConfig.dialect,
+      logging: dbConfig.logging,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      define: {
+        timestamps: true,
+        underscored: true,
+        freezeTableName: false
+      },
+      ...(dbConfig.dialectOptions || {})
+    }
+  );
+}
 
 // Test connection
 const testConnection = async () => {
