@@ -5,6 +5,7 @@
  * [2025-11-11 23:22:48] 后台商品创建/编辑表单
  */
 import { useEffect, useMemo, useState, useRef } from 'react';
+import Image from 'next/image'; // [2025-11-16 13:20:00] 商品图片预览使用 Next Image
 import { useForm, useFieldArray } from 'react-hook-form';
 import useSWR from 'swr';
 import {
@@ -452,7 +453,14 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
               {/* [2025-01-27 15:10:00] Image Preview */}
               {preview && (
                 <div className="image-preview-container">
-                  <img src={preview} alt="Preview" className="image-preview" />
+                  <Image
+                    src={preview}
+                    alt="Preview"
+                    width={320}
+                    height={320}
+                    className="image-preview"
+                    unoptimized
+                  />{/* [2025-11-16 13:20:00] 使用 Next Image 统一预览行为 */}
                   {isUploading && (
                     <div className="upload-overlay">
                       <div className="upload-progress">
