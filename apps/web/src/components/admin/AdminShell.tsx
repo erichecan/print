@@ -29,6 +29,8 @@ const NAV_LINKS = [
   { href: '/admin/orders', label: 'Orders', icon: '📦', i18n: 'orders' },
   { href: '/admin/users', label: 'Users', icon: '👥', i18n: 'users' },
   { href: '/admin/designs', label: 'Design Review', icon: '🎨', i18n: 'designReview' },
+  { href: '/admin/offline-orders', label: 'Production', icon: '🧵', i18n: 'production' }, // [2025-11-16 13:35:00] 生产管理
+  { href: '/admin/cost-management', label: 'Costs', icon: '💰', i18n: 'costs' }, // [2025-11-16 13:35:00] 成本管理
   { href: '/admin/coupons', label: 'Coupons', icon: '🎫', i18n: 'coupons' },
   { href: '/admin/promotions', label: 'Promotions', icon: '🎉', i18n: 'promotions' },
   { href: '/admin/settings', label: 'Settings', icon: '⚙️', i18n: 'settings' },
@@ -108,9 +110,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     return NAV_LINKS.find((link) => isActive(link.href, link.exact));
   }, [isActive]);
 
-  const toggleSidebar = () => {
+  const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
-  };
+  }, []); // [2025-11-16 13:35:00] useCallback 防止事件绑定抖动
 
   const toggleSidebarMobile = () => {
     setSidebarOpen((prev) => !prev);

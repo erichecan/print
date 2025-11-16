@@ -114,7 +114,7 @@
 .stat-card-change.positive { color: var(--color-primary); }
 
 /* Tables */
-.admin-table-wrapper { background: #fff; border: 1px solid var(--color-border); border-radius: 14px; overflow: hidden; }
+.admin-table-wrapper { background: #fff; border: 1px solid var(--color-border); border-radius: 14px; overflow: visible; } /* [2025-11-16 13:35:00] 允许弹层溢出显示 */
 .admin-table { width: 100%; border-collapse: collapse; }
 .admin-table thead { background: var(--color-bg-subtle); }
 .admin-table th { text-align: left; padding: 14px 16px; font-weight: 700; font-size: 13px; color: var(--color-text); border-bottom: 1px solid var(--color-border); }
@@ -131,7 +131,7 @@
 .search-form input { min-width: 240px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--color-border); }
 .search-form button { padding: 10px 16px; border-radius: 8px; border: none; background: #1f2937; color: #fff; font-weight: 600; cursor: pointer; }
 .filter-selects { display: flex; align-items: center; gap: 16px; }
-.filter-selects select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--color-border); }
+.filter-selects select { padding: 10px 36px 10px 12px; border-radius: 10px; border: 1px solid var(--color-border); background: #fff; color: var(--color-text); appearance: none; -webkit-appearance: none; -moz-appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7l5 5 5-5' stroke='%2399A1B3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; } /* [2025-11-16 13:35:00] 统一下拉框视觉 */
 .table-card { background: #fff; border-radius: 12px; border: 1px solid var(--color-border); overflow: hidden; }
 .pagination { display: flex; gap: 8px; justify-content: flex-end; }
 .page-btn { min-width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--color-border); background: #fff; cursor: pointer; }
@@ -157,9 +157,9 @@
 .btn-icon { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-size: 13px; }
 
 /* Actions Dropdown */
-.actions-dropdown { position: relative; }
-.actions-dropdown-btn { padding: 4px 8px; background: #fff; border: 1px solid var(--color-border); border-radius: 6px; cursor: pointer; }
-.actions-dropdown-menu { display: none; position: absolute; right: 0; top: 100%; margin-top: 4px; background: #fff; border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 50; min-width: 140px; padding: 4px; }
+.actions-dropdown { position: relative; overflow: visible; } /* [2025-11-16 13:35:00] 避免局部裁剪 */
+.actions-dropdown-btn { padding: 6px 10px; background: #fff; border: 1px solid var(--color-border); border-radius: 10px; cursor: pointer; }
+.actions-dropdown-menu { display: none; position: absolute; right: 0; top: calc(100% + 6px); background: #fff; border: 1px solid var(--color-border); border-radius: 12px; box-shadow: 0 12px 24px rgba(2,6,23,0.12); z-index: 300; min-width: 160px; padding: 6px; }
 .actions-dropdown:hover .actions-dropdown-menu { display: block; }
 .actions-dropdown-menu a { display: block; padding: 8px 12px; border-radius: 6px; color: var(--color-text); text-decoration: none; font-size: 13px; }
 .actions-dropdown-menu a:hover { background: var(--color-bg-subtle); }
@@ -174,7 +174,7 @@
 .admin-search-form input { padding-left: 36px; }
 .admin-search-form .btn--xs { white-space: nowrap; }
 .bulk-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-.bulk-actions select { padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 8px; }
+.bulk-actions select { padding: 10px 36px 10px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: #fff; color: var(--color-text); appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7l5 5 5-5' stroke='%2399A1B3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
 .selection-meta { display: flex; align-items: center; gap: 8px; color: var(--color-text-muted); font-size: 14px; }
 
 /* Pagination */
@@ -188,7 +188,8 @@
 .admin-form { background: #fff; border: 1px solid var(--color-border); border-radius: 14px; padding: 24px; }
 .admin-form-group { margin-bottom: 20px; }
 .admin-form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
-.admin-form-group input, .admin-form-group select, .admin-form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 14px; }
+.admin-form-group input, .admin-form-group select, .admin-form-group textarea { width: 100%; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 10px; font-size: 14px; }
+.admin-form-group select { background: #fff; color: var(--color-text); appearance: none; padding-right: 40px; background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 20 20' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 7l5 5 5-5' stroke='%2399A1B3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; } /* [2025-11-16 13:35:00] 表单下拉一致化 */
 .admin-form-group textarea { resize: vertical; min-height: 100px; }
 .admin-form-actions { display: flex; gap: 12px; margin-top: 24px; }
 
