@@ -352,28 +352,28 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               {t(currentNav?.i18n || 'dashboard')}
             </h1>
           </div>
-          <div className="admin-lang-toggle" role="group" aria-label={t('languageLabel')}>
-            <button
-              type="button"
-              className={locale === 'en' ? 'is-active' : ''}
-              onClick={() => handleLocaleChange('en')}
-            >
-              {t('languageEnglish')}
-            </button>
-            <button
-              type="button"
-              className={locale === 'zh' ? 'is-active' : ''}
-              onClick={() => handleLocaleChange('zh')}
-            >
-              {t('languageChinese')}
-            </button>
-          </div>
           <div className="admin-user">
             <div className="admin-user-avatar" aria-hidden="true"></div>
             <span className="admin-user-name">{user.firstName || user.email}</span>
             <button type="button" onClick={handleLogout} className="admin-logout-link" data-i18n="logout">
               {t('logout')}
             </button>
+            <div className="admin-lang-toggle" role="group" aria-label={t('languageLabel')}>
+              <button
+                type="button"
+                className={locale === 'en' ? 'is-active' : ''}
+                onClick={() => handleLocaleChange('en')}
+              >
+                {t('languageEnglish')}
+              </button>
+              <button
+                type="button"
+                className={locale === 'zh' ? 'is-active' : ''}
+                onClick={() => handleLocaleChange('zh')}
+              >
+                {t('languageChinese')}
+              </button>
+            </div>
           </div>
         </header>
 
