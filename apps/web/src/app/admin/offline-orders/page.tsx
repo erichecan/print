@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useCallback, useMemo, useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useCallback, useMemo, useState, FormEvent, ChangeEvent, useEffect, DragEvent as ReactDragEvent } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import {
@@ -50,6 +50,10 @@ export default function AdminOfflineOrdersPage() {
   const [assigneeNameDraft, setAssigneeNameDraft] = useState('');
   const [uploading, setUploading] = useState(false);
   const [detailRevision, setDetailRevision] = useState('');
+  // [2025-11-16 15:05:00] Trello-style拖拽状态：追踪拖拽中的卡片与目标列
+  const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null);
+  const [draggingFromStage, setDraggingFromStage] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
   const listParams = useMemo(() => {
     const params: Record<string, any> = {};
@@ -143,6 +147,69 @@ export default function AdminOfflineOrdersPage() {
       }
     },
     [mutateBoard, mutateDetail, mutateMetrics]
+  );
+
+  // [2025-11-16 15:05:00] 拖拽辅助函数：统一重置状态，避免列高亮遗留
+  const resetDragState = useCallback(() => {
+    setDraggingOrderId(null);
+    setDraggingFromStage(null);
+    setDragOverStage(null);
+  }, []);
+
+  // [2025-11-16 15:05:00] 卡片拖拽起始：记录来源列并设置拖拽数据
+  const handleCardDragStart = useCallback(
+    (event: ReactDragEvent<HTMLDivElement>, order: AdminOfflineOrderSummary) => {
+      event.dataTransfer.setData('text/plain', order.id);
+      event.dataTransfer.effectAllowed = 'move';
+      setDraggingOrderId(order.id);
+      setDraggingFromStage(order.stage?.key || null);
+      setDragOverStage(order.stage?.key || null);
+    },
+    []
+  );
+
+  // [2025-11-16 15:05:00] 拖拽结束：无论成功与否都清理状态
+  const handleCardDragEnd = useCallback(() => {
+    resetDragState();
+  }, [resetDragState]);
+
+  // [2025-11-16 15:05:00] 列上方拖拽：允许放置并实时更新高亮列
+  const handleColumnDragOver = useCallback(
+    (event: ReactDragEvent<HTMLElement>, stageKey: string) => {
+      if (!draggingOrderId) {
+        return;
+      }
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+      if (dragOverStage !== stageKey) {
+        setDragOverStage(stageKey);
+      }
+    },
+    [draggingOrderId, dragOverStage]
+  );
+
+  // [2025-11-16 15:05:00] 列离开时移除高亮，避免闪烁
+  const handleColumnDragLeave = useCallback((event: ReactDragEvent<HTMLElement>, stageKey: string) => {
+    if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node)) {
+      setDragOverStage((current) => (current === stageKey ? null : current));
+    }
+  }, []);
+
+  // [2025-11-16 15:05:00] 放置卡片：仅当目标列不同才触发 stage 更新
+  const handleColumnDrop = useCallback(
+    async (event: ReactDragEvent<HTMLElement>, stageKey: string) => {
+      event.preventDefault();
+      const orderId = draggingOrderId || event.dataTransfer.getData('text/plain');
+      if (!orderId) {
+        resetDragState();
+        return;
+      }
+      if (stageKey !== draggingFromStage) {
+        await handleStageChange(orderId, stageKey);
+      }
+      resetDragState();
+    },
+    [draggingOrderId, draggingFromStage, handleStageChange, resetDragState]
   );
 
   const handleAddNote = useCallback(
@@ -386,8 +453,17 @@ export default function AdminOfflineOrdersPage() {
           <section className="kanban-board" id="offlineBoard" aria-label="Offline order workflow board">
             {stages.map((stage) => {
               const cards = groupedOrders.get(stage.key) || [];
+              const columnClassName = `kanban-column${dragOverStage === stage.key ? ' is-drop-target' : ''}`;
               return (
-                <article key={stage.key} className="kanban-column" data-stage-column>
+                <article
+                  key={stage.key}
+                  className={columnClassName}
+                  data-stage-column
+                  onDragOver={(event) => handleColumnDragOver(event, stage.key)}
+                  onDrop={(event) => handleColumnDrop(event, stage.key)}
+                  onDragLeave={(event) => handleColumnDragLeave(event, stage.key)}
+                  aria-dropeffect={draggingOrderId ? 'move' : undefined}
+                >
                   <header className="kanban-column-header">
                     <h2>{stage.label}</h2>
                     <span className="kanban-column-count">{cards.length}</span>
@@ -399,11 +475,15 @@ export default function AdminOfflineOrdersPage() {
                       cards.map((order) => (
                         <div
                           key={order.id}
-                          className="kanban-card"
+                          className={`kanban-card${draggingOrderId === order.id ? ' is-dragging' : ''}`}
                           role="button"
                           tabIndex={0}
+                          draggable
+                          aria-grabbed={draggingOrderId === order.id}
                           onClick={() => handleSelectOrder(order)}
                           onKeyDown={(event) => event.key === 'Enter' && handleSelectOrder(order)}
+                          onDragStart={(event) => handleCardDragStart(event, order)}
+                          onDragEnd={handleCardDragEnd}
                         >
                           <header className="kanban-card-header">
                             <span className="kanban-card-title">{order.projectName}</span>

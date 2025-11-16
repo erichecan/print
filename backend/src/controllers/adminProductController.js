@@ -305,6 +305,9 @@ exports.createProduct = async (req, res) => {
       return created;
     });
 
+    // [2025-11-16 14:15:00] 创建商品后立即清理缓存，确保前台可以看到最新商品
+    await invalidateProductCache(result.slug);
+
     return res.status(201).json(result);
   } catch (error) {
     console.error('[2025-11-11 23:18:42] createProduct error:', error);
@@ -448,6 +451,9 @@ exports.updateProduct = async (req, res) => {
       return refreshed;
     });
 
+    // [2025-11-16 14:15:00] 更新商品后同步刷新缓存，避免旧数据残留
+    await invalidateProductCache(result.slug);
+
     return res.json(result);
   } catch (error) {
     console.error('[2025-11-11 23:18:42] updateProduct error:', error);
@@ -465,7 +471,7 @@ exports.archiveProduct = async (req, res) => {
 
     const existing = await prisma.product.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, slug: true },
     });
 
     if (!existing) {
@@ -476,6 +482,9 @@ exports.archiveProduct = async (req, res) => {
       where: { id },
       data: { isActive: false },
     });
+
+    // [2025-11-16 14:15:00] 归档商品后清理缓存，防止前台继续展示
+    await invalidateProductCache(existing.slug);
 
     return res.json({ success: true });
   } catch (error) {
@@ -499,12 +508,19 @@ exports.updateProductStatus = async (req, res) => {
       data: { isActive },
       select: {
         id: true,
+        slug: true,
         isActive: true,
         updatedAt: true,
       },
     });
 
-    return res.json(updated);
+    // [2025-11-16 14:15:00] 状态变更也要刷新缓存，保证上架/下架即时生效
+    await invalidateProductCache(updated.slug);
+
+    // eslint-disable-next-line no-unused-vars
+    const { slug, ...payload } = updated;
+
+    return res.json(payload);
   } catch (error) {
     console.error('[2025-11-11 23:18:42] updateProductStatus error:', error);
     if (error.code === 'P2025') {

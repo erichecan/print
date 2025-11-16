@@ -12,6 +12,8 @@ RUN npm install
 ## Copy source and build assets [2025-11-10 23:55:03]
 COPY backend/src ./src
 COPY prisma ./prisma
+# [2025-11-15 23:07:58] Include server entrypoint for production container
+COPY backend/server.js ./server.js
 # [2025-11-14 06:12:00] 生成 Prisma 客户端以供运行阶段使用
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
@@ -20,5 +22,6 @@ ENV NODE_ENV=production
 EXPOSE 3001
 
 ## Launch application [2025-11-10 13:45:00]
-CMD ["node", "src/app.js"]
+# [2025-11-15 23:07:58] Use server bootstrap to bind HTTP listener
+CMD ["node", "server.js"]
 

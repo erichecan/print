@@ -26,6 +26,11 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/suvernireplus}
+      DB_HOST: ${DB_HOST:-postgres} # [2025-11-15 23:08:36] Ensure Sequelize connects via service hostname
+      DB_PORT: ${DB_PORT:-5432} # [2025-11-15 23:08:36] Keep port in sync with postgres service
+      DB_NAME: ${DB_NAME:-suvernireplus} # [2025-11-15 23:08:36] Provide database name fallback
+      DB_USER: ${DB_USER:-postgres} # [2025-11-15 23:08:36] Provide database user for Sequelize config
+      DB_PASSWORD: ${DB_PASSWORD:-postgres} # [2025-11-15 23:08:36] Provide password for Sequelize config
       JWT_SECRET: ${JWT_SECRET:-change_me_in_prod}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder}
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}

@@ -6,8 +6,19 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image'; // [2025-11-16 13:10:00] 使用 Next Image 优化缩略图
 import { v4 as uuidv4 } from 'uuid';
-import { authApi, designLabApi, templateApi, designCommentApi, type DesignDraft, type DesignCanvasSnapshot, type DesignTemplate, type DesignComment } from '@/lib/api';
+import {
+  authApi,
+  designLabApi,
+  templateApi,
+  designCommentApi,
+  productsApi,
+  type DesignDraft,
+  type DesignCanvasSnapshot,
+  type DesignTemplate,
+  type DesignComment,
+} from '@/lib/api';
 import { useDesignLabStore, type LayerInfo } from '@/contexts/designLabStore';
 
 type ToolKey = 'upload' | 'text' | 'art' | 'templates' | 'products' | 'colors' | 'names' | 'printArea' | 'comments';
@@ -17,6 +28,7 @@ const AUTO_SAVE_DELAY = 1200;
 const DesignLabClient = () => {
   const router = useRouter();
   const params = useSearchParams();
+  const paramsString = params?.toString() || '';
   const designIdParam = params?.get('designId');
   const variantIdParam = params?.get('variantId');
 
@@ -27,6 +39,9 @@ const DesignLabClient = () => {
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialSyncRef = useRef(true);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const defaultVariantIdRef = useRef<string | null>(
+    process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_VARIANT_ID || null
+  );
 
   const { draft, canvas, mode, mobileLocked, layers, currentView, viewCanvases } = useDesignLabStore((state) => ({
     draft: state.draft,
@@ -698,13 +713,24 @@ const DesignLabClient = () => {
           const response = await designLabApi.createDraft({ productVariantId: variantIdParam }) as any;
           draftData = response.data;
           if (draftData) {
-            const nextParams = new URLSearchParams(params?.toString() || '');
+            const nextParams = new URLSearchParams(paramsString);
             nextParams.set('designId', draftData.id);
             router.replace(`/design-lab?${nextParams.toString()}`);
           }
         } else {
-          setError('请通过产品详情页选择定制变体进入 Design Lab。');
-          return;
+          const fallbackVariantId = await resolveDefaultVariantId();
+          if (!fallbackVariantId) {
+            setError('请通过产品详情页选择定制变体进入 Design Lab。');
+            return;
+          }
+          const response = await designLabApi.createDraft({ productVariantId: fallbackVariantId }) as any;
+          draftData = response.data;
+          if (draftData) {
+            const nextParams = new URLSearchParams(paramsString);
+            nextParams.set('designId', draftData.id);
+            nextParams.set('variantId', fallbackVariantId);
+            router.replace(`/design-lab?${nextParams.toString()}`);
+          }
         }
 
         if (draftData) {
@@ -721,7 +747,7 @@ const DesignLabClient = () => {
 
     loadDraft();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [designIdParam, variantIdParam]);
+  }, [designIdParam, variantIdParam, paramsString, resolveDefaultVariantId, router]);
 
   useEffect(() => {
     const setupFabricEvents = async () => {
@@ -1076,7 +1102,7 @@ const DesignLabClient = () => {
           break;
       }
     },
-    [handleAddText, handleUploadAsset, router, togglePrintArea]
+    [handleAddText, handleUploadAsset, handleBatchNames, handleOpenComments, handleOpenTemplates, router, togglePrintArea] // [2025-11-16 13:10:00] 补齐依赖，避免 stale handler
   );
 
   const handleGuideActionTrigger = useCallback(
@@ -1142,6 +1168,30 @@ const DesignLabClient = () => {
       handleCanvasChange();
     }
   }, [handleCanvasChange]);
+
+  const resolveDefaultVariantId = useCallback(async (): Promise<string | null> => {
+    if (defaultVariantIdRef.current) {
+      return defaultVariantIdRef.current;
+    }
+    const fallbackVariantIdFromEnv = process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_VARIANT_ID;
+    if (fallbackVariantIdFromEnv) {
+      defaultVariantIdRef.current = fallbackVariantIdFromEnv;
+      return fallbackVariantIdFromEnv;
+    }
+    const fallbackProductSlug =
+      process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_PRODUCT_SLUG || 'gildan-midweight-50-50-pullover-hoodie';
+    try {
+      const product = await productsApi.getBySlug(fallbackProductSlug);
+      const variantId = product?.variants?.[0]?.id || null;
+      if (variantId) {
+        defaultVariantIdRef.current = variantId;
+        return variantId;
+      }
+    } catch (resolveError) {
+      console.error('[2025-11-15 16:22:10] resolveDefaultVariantId error:', resolveError);
+    }
+    return null;
+  }, []);
 
   const handleProductColorSelect = useCallback((colorKey: string) => {
     // [2025-11-15 16:07:58] Inspector 色板切换
@@ -1616,7 +1666,15 @@ const DesignLabClient = () => {
                   onClick={() => handleViewSwitch(option.key)}
                   disabled={mobileLocked && option.key !== 'front'}
                 >
-                  <img src={option.thumbnail} alt={`${option.label} preview`} loading="lazy" />
+                  <Image
+                    src={option.thumbnail}
+                    alt={`${option.label} preview`}
+                    width={96}
+                    height={96}
+                    loading="lazy"
+                    unoptimized
+                    style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
+                  />{/* [2025-11-16 13:10:00] 使用 Next Image 优化缩略图 */}
                   <span>{option.label}</span>
                 </button>
               );
@@ -1628,7 +1686,7 @@ const DesignLabClient = () => {
         <aside className="lab__inspector" aria-label="产品信息">
           <div className="inspector__card">
             <div className="inspector__product">
-              <img src="/assets/cat-sweatshirt.webp" alt="当前产品" width={56} height={56} />
+              <Image src="/assets/cat-sweatshirt.webp" alt="当前产品" width={56} height={56} />
               <div>
                 <strong>Gildan Softstyle Jersey T-shirt</strong>
                 <p className="lab__hint">支持数码直喷、丝网印、刺绣</p>
@@ -1660,7 +1718,15 @@ const DesignLabClient = () => {
                 >
                   <div className="lab__art-thumb" aria-hidden="true">
                     {preset.type === 'image' ? (
-                      <img src={preset.src} alt={preset.label} loading="lazy" />
+                      <Image
+                        src={preset.src}
+                        alt={preset.label}
+                        width={72}
+                        height={72}
+                        loading="lazy"
+                        unoptimized
+                        style={{ width: '72px', height: '72px', objectFit: 'cover', borderRadius: '6px' }}
+                      />
                     ) : (
                       <span>{preset.type === 'text' ? preset.text : '★'}</span>
                     )}
@@ -1717,10 +1783,13 @@ const DesignLabClient = () => {
                         }}
                       >
                         {template.thumbnailUrl ? (
-                          <img
+                          <Image
                             src={template.thumbnailUrl}
                             alt={template.name}
+                            width={200}
+                            height={120}
                             loading="lazy"
+                            unoptimized
                             style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '4px', marginBottom: '8px' }}
                           />
                         ) : (
@@ -2124,7 +2193,7 @@ const DesignLabClient = () => {
             添加产品
           </button>
           <div className="lab__product-pill">
-            <img src="/assets/cat-tshirt.webp" alt="当前产品" width={48} height={48} />
+            <Image src="/assets/cat-tshirt.webp" alt="当前产品" width={48} height={48} />
             <div>
               <p>Softstyle Jersey Tee</p>
               <small>颜色：{productColors.find((c) => c.key === selectedProductColor)?.label}</small>
@@ -2337,7 +2406,15 @@ const DesignLabClient = () => {
         <div className="lab__recos-grid">
           {recommendations.map((item) => (
             <article key={item.id} className="lab__reco-card">
-              <img src={item.image} alt={item.title} loading="lazy" />
+              <Image
+                src={item.image}
+                alt={item.title}
+                width={220}
+                height={160}
+                loading="lazy"
+                unoptimized
+                style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }}
+              />
               <div>
                 <h4>{item.title}</h4>
                 <p>{item.description}</p>

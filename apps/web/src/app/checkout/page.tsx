@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -1428,21 +1429,34 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container">
-      <div className="checkout-grid">
-        <Elements stripe={stripePromise}>
-          <CheckoutForm 
-            cart={cart} 
-            onTotalsChange={setCheckoutTotals}
-            onCouponChange={setAppliedCoupon} // [2025-01-27 20:20:00] 接收优惠券状态
+    <section className="checkout">
+      <div className="container">
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link href="/">Home</Link>
+            </li>
+            <li>
+              <Link href="/cart">Cart</Link>
+            </li>
+            <li aria-current="page">Checkout</li>
+          </ol>
+        </nav>
+        <div className="checkout__grid">
+          <Elements stripe={stripePromise}>
+            <CheckoutForm
+              cart={cart}
+              onTotalsChange={setCheckoutTotals}
+              onCouponChange={setAppliedCoupon} // [2025-01-27 20:20:00] 接收优惠券状态
+            />
+          </Elements>
+          <CheckoutSummary
+            cart={cart}
+            totals={checkoutTotals}
+            appliedCoupon={appliedCoupon} // [2025-01-27 20:20:00] 传递优惠券状态
           />
-        </Elements>
-        <CheckoutSummary 
-          cart={cart} 
-          totals={checkoutTotals}
-          appliedCoupon={appliedCoupon} // [2025-01-27 20:20:00] 传递优惠券状态
-        />
+        </div>
       </div>
-    </div>
+    </section>
   );
 }

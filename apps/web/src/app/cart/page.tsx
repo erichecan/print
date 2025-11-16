@@ -2,14 +2,15 @@
  * Cart Page
  * [2025-11-05 00:25:00]
  * [2025-01-27 20:00:00] 添加优惠券功能
+ * [2025-11-16 12:32:00] 对齐原型化购物车布局与摘要
  */
 'use client';
 
+import Image from 'next/image';
+import Link from 'next/link';
+import { useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { couponApi } from '@/lib/api';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useState } from 'react';
 
 interface AppliedCoupon {
   code: string;
@@ -41,7 +42,6 @@ export default function CartPage() {
     setUpdating(itemId);
     try {
       await removeItem(itemId);
-      // [2025-01-27 20:00:00] 如果购物车变化，重新验证优惠券
       if (appliedCoupon) {
         handleApplyCoupon();
       }
@@ -50,13 +50,10 @@ export default function CartPage() {
     }
   };
 
-  // [2025-01-27 20:00:00] 应用优惠券
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !cart) return;
-    
     setApplyingCoupon(true);
     setCouponError(null);
-    
     try {
       const result = await couponApi.validate(couponCode.trim().toUpperCase(), cart.subtotal);
       setAppliedCoupon({
@@ -74,343 +71,210 @@ export default function CartPage() {
     }
   };
 
-  // [2025-01-27 20:00:00] 移除优惠券
   const handleRemoveCoupon = () => {
     setAppliedCoupon(null);
     setCouponCode('');
     setCouponError(null);
   };
 
-  // [2025-01-27 20:00:00] 计算总价（含折扣）
   const calculateTotal = () => {
     if (!cart) return 0;
     const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
     return Math.max(0, cart.total - discount);
   };
 
+  const renderEmptyState = () => (
+    <section className="cart">
+      <div className="container">
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link href="/">Home</Link>
+            </li>
+            <li aria-current="page">Shopping Cart</li>
+          </ol>
+        </nav>
+          <div className="cart__grid">
+            <div className="cart__items">
+              <h1>Shopping Cart</h1>
+              <div className="no-reviews cart-empty">
+              <p>Your cart is empty.</p>
+              <Link href="/products" className="btn btn--outline">
+                Continue Shopping
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+
   if (isLoading) {
     return (
-      <div className="container">
-        <p>Loading cart...</p>
-      </div>
+      <section className="cart">
+        <div className="container">
+          <p>Loading cart...</p>
+        </div>
+      </section>
     );
   }
 
   if (!cart || cart.items.length === 0) {
-    return (
-      <div className="container">
-        <h1>Shopping Cart</h1>
-        <p>Your cart is empty.</p>
-        <Link href="/products">Continue Shopping</Link>
-      </div>
-    );
+    return renderEmptyState();
   }
 
   return (
-    <div className="container">
-      <h1>Shopping Cart</h1>
-      <div className="cart-grid">
-        <div className="cart-items">
-          <table className="cart-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Color/Size</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+    <section className="cart">
+      <div className="container">
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link href="/">Home</Link>
+            </li>
+            <li aria-current="page">Shopping Cart</li>
+          </ol>
+        </nav>
+
+        <div className="cart__grid">
+          <div className="cart__items">
+            <h1>Shopping Cart</h1>
+            <div className="cart-table">
+              <div className="cart-row header">
+                <span>Product</span>
+                <span>Color/Size</span>
+                <span>Quantity</span>
+                <span>Price</span>
+                <span aria-hidden="true" />
+              </div>
               {cart.items.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    <div className="cart-item-info">
-                      {item.thumbnail && (
-                        <Image
-                          src={item.thumbnail}
-                          alt={item.productName}
-                          width={80}
-                          height={80}
-                          className="cart-item-thumb"
-                        />
-                      )}
-                      <div>
-                        <strong>{item.productName}</strong>
-                      </div>
+                <div key={item.id} className="cart-row">
+                  <div className="item-info">
+                    {item.thumbnail && (
+                      <Image src={item.thumbnail} alt={item.productName} width={80} height={80} className="item-img" />
+                    )}
+                    <div className="item-details">
+                      <strong>{item.productName}</strong>
+                      <p>{item.variantDescription || 'Custom configuration'}</p>
                     </div>
-                  </td>
-                  <td>
+                  </div>
+                  <div className="item-variants">
                     <small>{item.variantDescription || 'N/A'}</small>
-                  </td>
-                  <td>
-                    <div className="quantity-controls">
-                      <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                        disabled={updating === item.id || item.quantity <= 1}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        value={item.quantity}
-                        min="1"
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value) || 1;
-                          handleUpdateQuantity(item.id, val);
-                        }}
-                        disabled={updating === item.id}
-                      />
-                      <button
-                        onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                        disabled={updating === item.id}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </td>
-                  <td>
-                    <div>
-                      <div>${item.unitPrice.toFixed(2)}</div>
-                      <small>Subtotal: ${item.subtotal.toFixed(2)}</small>
-                    </div>
-                  </td>
-                  <td>
+                  </div>
+                  <div className="item-qty">
                     <button
-                      onClick={() => handleRemove(item.id)}
-                      disabled={updating === item.id}
-                      aria-label="Remove item"
+                      type="button"
+                      className="qty-btn"
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                      disabled={updating === item.id || item.quantity <= 1}
+                      aria-label="Decrease quantity"
                     >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={item.quantity}
+                      onChange={(event) => {
+                        const nextValue = parseInt(event.target.value, 10) || 1;
+                        handleUpdateQuantity(item.id, nextValue);
+                      }}
+                      disabled={updating === item.id}
+                      aria-label="Quantity"
+                    />
+                    <button
+                      type="button"
+                      className="qty-btn"
+                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                      disabled={updating === item.id}
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="item-price">
+                    <div>${item.unitPrice.toFixed(2)}</div>
+                    <small>Subtotal: ${item.subtotal.toFixed(2)}</small>
+                  </div>
+                  <div className="item-remove">
+                    <button type="button" onClick={() => handleRemove(item.id)} disabled={updating === item.id}>
                       ×
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <aside className="cart-summary">
-          <div className="summary-card">
-            <h2>Order Summary</h2>
-            <div className="summary-row">
-              <span>Subtotal</span>
-              <span>${cart.subtotal.toFixed(2)}</span>
-            </div>
-            
-            {/* [2025-01-27 20:00:00] 优惠券输入 */}
-            <div className="coupon-section">
-              {appliedCoupon ? (
-                <div className="coupon-applied">
-                  <div className="coupon-info">
-                    <strong>Coupon: {appliedCoupon.code}</strong>
-                    <span>-${appliedCoupon.discountAmount.toFixed(2)}</span>
                   </div>
-                  <button onClick={handleRemoveCoupon} className="remove-coupon">Remove</button>
                 </div>
-              ) : (
-                <div className="coupon-input-group">
-                  <input
-                    type="text"
-                    placeholder="Coupon code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    onKeyPress={(e) => e.key === 'Enter' && handleApplyCoupon()}
-                    className="coupon-input"
-                  />
-                  <button
-                    onClick={handleApplyCoupon}
-                    disabled={applyingCoupon || !couponCode.trim()}
-                    className="coupon-apply-btn"
-                  >
-                    {applyingCoupon ? '...' : 'Apply'}
+              ))}
+            </div>
+
+            <div className="promo">
+              <label htmlFor="promo-code">Promo Code</label>
+              <div className="promo-input">
+                <input
+                  id="promo-code"
+                  type="text"
+                  placeholder="Enter code"
+                  value={couponCode}
+                  onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
+                  onKeyPress={(event) => event.key === 'Enter' && handleApplyCoupon()}
+                />
+                <button type="button" onClick={handleApplyCoupon} disabled={applyingCoupon || !couponCode.trim()}>
+                  {applyingCoupon ? 'Applying…' : 'Apply'}
+                </button>
+              </div>
+              {appliedCoupon && (
+                <div className="coupon-applied">
+                  <p>
+                    Coupon <strong>{appliedCoupon.code}</strong> applied — saved ${appliedCoupon.discountAmount.toFixed(2)}
+                  </p>
+                  <button type="button" onClick={handleRemoveCoupon}>
+                    Remove
                   </button>
                 </div>
               )}
-              {couponError && (
-                <div className="coupon-error">{couponError}</div>
-              )}
+              {couponError && <div className="coupon-error">{couponError}</div>}
             </div>
-
-            <div className="summary-row">
-              <span>Shipping</span>
-              <span>{cart.shipping === 0 ? 'Free' : `$${cart.shipping.toFixed(2)}`}</span>
-            </div>
-            <div className="summary-row">
-              <span>Tax</span>
-              <span>Calculated at checkout</span>
-            </div>
-            <hr />
-            <div className="summary-row total">
-              <span>Total</span>
-              <span>${calculateTotal().toFixed(2)}</span>
-            </div>
-            <Link href="/checkout" className="btn btn-primary">
-              Proceed to Checkout
-            </Link>
-            <Link href="/products" className="btn btn-outline">
-              Continue Shopping
-            </Link>
           </div>
-        </aside>
-      </div>
 
-      <style jsx>{`
-        .container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 2rem 1rem;
-        }
-        .cart-grid {
-          display: grid;
-          grid-template-columns: 1fr 350px;
-          gap: 2rem;
-          margin-top: 2rem;
-        }
-        .cart-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .cart-table th,
-        .cart-table td {
-          padding: 1rem;
-          text-align: left;
-          border-bottom: 1px solid #eee;
-        }
-        .cart-item-info {
-          display: flex;
-          gap: 1rem;
-          align-items: center;
-        }
-        .quantity-controls {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .quantity-controls button {
-          width: 32px;
-          height: 32px;
-          border: 1px solid #ddd;
-          background: white;
-          cursor: pointer;
-        }
-        .quantity-controls input {
-          width: 60px;
-          text-align: center;
-          padding: 0.25rem;
-          border: 1px solid #ddd;
-        }
-        .summary-card {
-          background: #f9f9f9;
-          padding: 1.5rem;
-          border-radius: 8px;
-        }
-        .summary-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 0.5rem 0;
-        }
-        .summary-row.total {
-          font-weight: bold;
-          font-size: 1.2em;
-          margin-top: 1rem;
-        }
-        .btn {
-          display: block;
-          width: 100%;
-          padding: 0.75rem;
-          text-align: center;
-          text-decoration: none;
-          border-radius: 4px;
-          margin-top: 1rem;
-        }
-        .btn-primary {
-          background: #ff1f3d;
-          color: white;
-        }
-        .btn-outline {
-          border: 1px solid #ddd;
-          color: #333;
-        }
-        .coupon-section {
-          margin: 1rem 0;
-          padding: 1rem 0;
-          border-top: 1px solid #eee;
-          border-bottom: 1px solid #eee;
-        }
-        .coupon-input-group {
-          display: flex;
-          gap: 0.5rem;
-        }
-        .coupon-input {
-          flex: 1;
-          padding: 0.5rem;
-          border: 1px solid #ddd;
-          border-radius: 4px;
-          font-size: 14px;
-        }
-        .coupon-apply-btn {
-          padding: 0.5rem 1rem;
-          background: #007bff;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-        }
-        .coupon-apply-btn:hover:not(:disabled) {
-          background: #0056b3;
-        }
-        .coupon-apply-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .coupon-applied {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 0.75rem;
-          background: #e8f5e9;
-          border-radius: 4px;
-        }
-        .coupon-info {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex: 1;
-          gap: 0.5rem;
-        }
-        .coupon-info strong {
-          color: #2e7d32;
-        }
-        .coupon-info span {
-          color: #2e7d32;
-          font-weight: 600;
-        }
-        .remove-coupon {
-          padding: 0.25rem 0.5rem;
-          background: transparent;
-          border: 1px solid #2e7d32;
-          color: #2e7d32;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 12px;
-        }
-        .remove-coupon:hover {
-          background: #2e7d32;
-          color: white;
-        }
-        .coupon-error {
-          margin-top: 0.5rem;
-          color: #d32f2f;
-          font-size: 12px;
-        }
-        @media (max-width: 968px) {
-          .cart-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
-    </div>
+          <aside className="cart-summary">
+            <div className="summary-card">
+              <h2>Order Summary</h2>
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <span>${cart.subtotal.toFixed(2)}</span>
+              </div>
+              {appliedCoupon && (
+                <div className="summary-row">
+                  <span>Coupon ({appliedCoupon.code})</span>
+                  <span>- ${appliedCoupon.discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="summary-row">
+                <span>Shipping</span>
+                <span>{cart.shipping === 0 ? 'Free' : `$${cart.shipping.toFixed(2)}`}</span>
+              </div>
+              <div className="summary-row">
+                <span>Tax</span>
+                <span>Calculated at checkout</span>
+              </div>
+              <div className="summary-row total">
+                <span>Total</span>
+                <span>${calculateTotal().toFixed(2)}</span>
+              </div>
+              <Link href="/checkout" className="btn btn-primary">
+                Proceed to Checkout
+              </Link>
+              <Link href="/products" className="btn btn-outline">
+                Continue Shopping
+              </Link>
+            </div>
+
+            <div className="trust-badges">
+              <p>✓ Free shipping on $50+</p>
+              <p>✓ 100% satisfaction guarantee</p>
+              <p>✓ Secure checkout</p>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
   );
 }

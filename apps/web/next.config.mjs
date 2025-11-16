@@ -5,6 +5,37 @@
  * [2025-01-27 14:10:00] 移除 Sentry 配置，使用简单的错误处理方案
  */
 
+const remotePatterns = [
+  {
+    protocol: 'http',
+    hostname: 'localhost',
+    port: '3001',
+    pathname: '/**',
+  },
+  {
+    protocol: 'http',
+    hostname: '127.0.0.1',
+    port: '3001',
+    pathname: '/**',
+  },
+];
+
+// [2025-11-15 23:09:50] Allow image optimizer to proxy the configured API host
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+if (apiBaseUrl) {
+  try {
+    const parsed = new URL(apiBaseUrl);
+    remotePatterns.push({
+      protocol: parsed.protocol.replace(':', ''),
+      hostname: parsed.hostname,
+      port: parsed.port || '',
+      pathname: '/**',
+    });
+  } catch (error) {
+    console.warn('[next.config] Failed to parse NEXT_PUBLIC_API_URL for image remotePatterns', error);
+  }
+}
+
 const nextConfig = {
   reactStrictMode: true,
   // [2025-01-27 15:30:00] 临时禁用类型检查以避免 Next.js 15 类型生成问题
@@ -18,6 +49,7 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'], // [2025-01-27 14:20:00] 支持现代图片格式
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // [2025-01-27 14:20:00] 响应式图片尺寸
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // [2025-01-27 14:20:00] 图片尺寸配置
+    remotePatterns,
   },
   // [2025-01-27 14:20:00] 性能优化配置
   compress: true, // 启用 gzip 压缩

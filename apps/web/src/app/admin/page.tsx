@@ -31,30 +31,38 @@ const PENDING_DESIGN_REVIEWS = [
   {
     name: 'Conference Backpack',
     user: 'alex.brown',
-    status: 'Pending',
+    statusKey: 'designStatusPending',
+    statusLabel: 'Pending',
     date: 'Oct 31',
-    action: 'Review',
+    actionKey: 'designReviewAction',
+    actionLabel: 'Review',
   },
   {
     name: 'Team Jerseys',
     user: 'sports.club',
-    status: 'Pending',
+    statusKey: 'designStatusPending',
+    statusLabel: 'Pending',
     date: 'Oct 31',
-    action: 'Review',
+    actionKey: 'designReviewAction',
+    actionLabel: 'Review',
   },
   {
     name: 'Holiday Swag',
     user: 'marketing.dept',
-    status: 'Pending',
+    statusKey: 'designStatusPending',
+    statusLabel: 'Pending',
     date: 'Oct 30',
-    action: 'Review',
+    actionKey: 'designReviewAction',
+    actionLabel: 'Review',
   },
   {
     name: 'Welcome Kit',
     user: 'hr.team',
-    status: 'Approved',
+    statusKey: 'designStatusApproved',
+    statusLabel: 'Approved',
     date: 'Oct 30',
-    action: 'View',
+    actionKey: 'designViewAction',
+    actionLabel: 'View',
   },
 ];
 
@@ -121,7 +129,7 @@ export default function AdminDashboardPage() {
           color: '#ef4444',
         }}
       >
-        Failed to load dashboard data.
+        <span data-i18n="failedDashboard">Failed to load dashboard data.</span>
       </div>
     );
   }
@@ -215,7 +223,9 @@ export default function AdminDashboardPage() {
                   <td data-field="customerName">
                     {order.user
                       ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() || order.user.email
-                      : 'Guest'}
+                      : (
+                          <span data-i18n="guest">Guest</span>
+                        )}
                   </td>
                   <td data-field="total">${Number(order.total || 0).toFixed(2)}</td>
                   <td>
@@ -228,7 +238,11 @@ export default function AdminDashboardPage() {
               ))}
               {!recentOrders.length && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', color: '#6b7280', padding: 24 }}>
+                  <td
+                    colSpan={5}
+                    style={{ textAlign: 'center', color: '#6b7280', padding: 24 }}
+                    data-i18n="emptyOrders"
+                  >
                     No orders yet.
                   </td>
                 </tr>
@@ -250,7 +264,7 @@ export default function AdminDashboardPage() {
             <thead>
               <tr>
                 <th data-i18n="designName">Design</th>
-                <th>User</th>
+                <th data-i18n="designUserColumn">User</th>
                 <th data-i18n="status">Status</th>
                 <th data-i18n="date">Date</th>
                 <th data-i18n="actions">Actions</th>
@@ -262,8 +276,11 @@ export default function AdminDashboardPage() {
                   <td>{design.name}</td>
                   <td>{design.user}</td>
                   <td>
-                    <span className={`badge ${design.status === 'Approved' ? 'badge-success' : 'badge-pending'}`}>
-                      {design.status}
+                    <span
+                      className={`badge ${design.statusKey === 'designStatusApproved' ? 'badge-success' : 'badge-pending'}`}
+                      data-i18n={design.statusKey}
+                    >
+                      {design.statusLabel}
                     </span>
                   </td>
                   <td>{design.date}</td>
@@ -273,8 +290,9 @@ export default function AdminDashboardPage() {
                       className="btn-icon btn--outline"
                       style={{ fontSize: 12 }}
                       data-action="review-design"
+                      data-i18n={design.actionKey}
                     >
-                      {design.action}
+                      {design.actionLabel}
                     </Link>
                   </td>
                 </tr>

@@ -6,10 +6,11 @@
  */
 'use client';
 
-import { useEffect, useMemo, useState, ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { authApi } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 interface AdminUser {
   id: string;
@@ -41,6 +42,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   const [authMessage, setAuthMessage] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { locale, setLocale, t } = useAdminI18n();
 
   useEffect(() => {
     let mounted = true;
@@ -62,38 +64,49 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         if (!mounted) return;
         setAuthState('unauthenticated');
         const message =
-          error instanceof Error && error.message
-            ? error.message
-            : '请先登录后再访问后台。';
+          error instanceof Error && error.message ? error.message : t('loginRedirectMessage');
         setAuthMessage(message);
       });
 
     return () => {
       mounted = false;
     };
-  }, [router]);
+  }, [router, pathname, t]);
+
+  // [2025-11-16 14:05:00] 未登录时直接跳转到登录页，避免出现中间提示页
+  useEffect(() => {
+    if (authState !== 'unauthenticated') {
+      return;
+    }
+    const redirectTarget = pathname && pathname.startsWith('/admin') ? pathname : '/admin';
+    router.replace(`/login?redirect=${encodeURIComponent(redirectTarget)}`);
+  }, [authState, pathname, router]);
 
   const handleLogout = async () => {
     await authApi.logout();
     setUser(null);
     setAuthState('unauthenticated');
-    setAuthMessage('会话已退出，请重新登录。');
+    // [2025-11-16 14:30:00] 使用 i18n 消息提示退出状态
+    setAuthMessage(t('logoutMessage'));
     router.push('/login');
   };
 
-  const isActive = (href: string, exact?: boolean) => {
-    if (!pathname) {
-      return false;
-    }
-    if (exact) {
-      return pathname === href;
-    }
-    return pathname === href || pathname.startsWith(`${href}/`);
-  };
+  const isActive = useCallback(
+    (href: string, exact?: boolean) => {
+      if (!pathname) {
+        return false;
+      }
+      if (exact) {
+        return pathname === href;
+      }
+      return pathname === href || pathname.startsWith(`${href}/`);
+    },
+    [pathname],
+  ); // [2025-11-16 12:55:00] useCallback 保持导航判定引用稳定
 
   const currentNav = useMemo(() => {
     return NAV_LINKS.find((link) => isActive(link.href, link.exact));
-  }, [pathname]);
+  }, [isActive]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((prev) => !prev);
@@ -103,10 +116,18 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     setSidebarOpen((prev) => !prev);
   };
 
+  // [2025-11-16 14:29:00] 语言切换按钮，写入本地偏好
+  const handleLocaleChange = (nextLocale: 'en' | 'zh') => {
+    if (nextLocale === locale) {
+      return;
+    }
+    setLocale(nextLocale);
+  };
+
   if (authState === 'loading') {
     return (
       <div className="admin-shell__container">
-        <div className="admin-shell__loading">Loading admin workspace…</div>
+        <div className="admin-shell__loading">{t('loadingAdmin')}</div>
         <style jsx>{`
           .admin-shell__container {
             min-height: 100vh;
@@ -122,21 +143,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     );
   }
 
+  // [2025-11-16 14:05:00] 保留占位提示，但展示为自动跳转状态
   if (authState === 'unauthenticated') {
     return (
       <div className="admin-shell__container">
         <div className="admin-shell__guard">
-          <h1>需要登录</h1>
-          <p>{authMessage || '请先登录后再访问后台管理页面。'}</p>
-          <div className="admin-shell__guard-actions">
-            <button
-              type="button"
-              onClick={() => router.push('/login?redirect=/admin')}
-              className="admin-shell__guard-button"
-            >
-              前往登录
-            </button>
-          </div>
+          <h1>{t('loginRedirectTitle')}</h1>
+          <p>{authMessage || t('loginRedirectMessage')}</p>
         </div>
         <style jsx>{`
           .admin-shell__container {
@@ -155,22 +168,6 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
             text-align: center;
           }
-          .admin-shell__guard-actions {
-            display: flex;
-            justify-content: center;
-          }
-          .admin-shell__guard-button {
-            padding: 12px 24px;
-            background: #ff1f3d;
-            color: #fff;
-            border: none;
-            border-radius: 999px;
-            font-weight: 600;
-            cursor: pointer;
-          }
-          .admin-shell__guard-button:hover {
-            background: #e3002b;
-          }
         `}</style>
       </div>
     );
@@ -180,15 +177,15 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     return (
       <div className="admin-shell__container">
         <div className="admin-shell__guard">
-          <h1>权限不足</h1>
-          <p>{authMessage || '当前账号无管理员权限，请联系系统管理员。'}</p>
+          <h1>{t('forbiddenTitle')}</h1>
+          <p>{authMessage || t('forbiddenMessage')}</p>
           <div className="admin-shell__guard-actions">
             <button
               type="button"
               onClick={() => router.push('/')}
               className="admin-shell__guard-button admin-shell__guard-button--outline"
             >
-              返回首页
+              {t('backToSite')}
             </button>
           </div>
         </div>
@@ -264,7 +261,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                   onClick={() => setSidebarOpen(false)}
                 >
                   <span className="admin-nav-icon">{link.icon}</span>
-                  {!sidebarCollapsed && <span>{link.label}</span>}
+                  {!sidebarCollapsed && <span>{t(link.i18n)}</span>}
                 </Link>
               </li>
             ))}
@@ -272,7 +269,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           {!sidebarCollapsed && (
             <div className="admin-nav__footer">
               <Link href="/" className="admin-nav__back-link" data-i18n="backToSite">
-                ← Back to Site
+                {t('backToSite')}
               </Link>
             </div>
           )}
@@ -291,14 +288,30 @@ export default function AdminShell({ children }: { children: ReactNode }) {
               ☰
             </button>
             <h1 data-i18n={currentNav?.i18n || 'dashboard'}>
-              {currentNav?.label ?? 'Dashboard'}
+              {t(currentNav?.i18n || 'dashboard')}
             </h1>
+          </div>
+          <div className="admin-lang-toggle" role="group" aria-label={t('languageLabel')}>
+            <button
+              type="button"
+              className={locale === 'en' ? 'is-active' : ''}
+              onClick={() => handleLocaleChange('en')}
+            >
+              {t('languageEnglish')}
+            </button>
+            <button
+              type="button"
+              className={locale === 'zh' ? 'is-active' : ''}
+              onClick={() => handleLocaleChange('zh')}
+            >
+              {t('languageChinese')}
+            </button>
           </div>
           <div className="admin-user">
             <div className="admin-user-avatar" aria-hidden="true"></div>
             <span className="admin-user-name">{user.firstName || user.email}</span>
             <button type="button" onClick={handleLogout} className="admin-logout-link" data-i18n="logout">
-              Logout
+              {t('logout')}
             </button>
           </div>
         </header>

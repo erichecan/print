@@ -14,6 +14,7 @@ import {
   adminCategoriesApi,
   AdminCategorySummary,
 } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 type RemoteFilters = {
   page: number;
@@ -30,14 +31,15 @@ const remoteDefaults: RemoteFilters = {
   status: 'all',
 };
 
-const statusOptions: Array<{ value: StatusFilter; label: string }> = [
-  { value: 'all', label: 'All Status' },
-  { value: 'active', label: 'Active' },
-  { value: 'out_of_stock', label: 'Out of Stock' },
-  { value: 'archived', label: 'Archived' },
+const statusOptions: Array<{ value: StatusFilter; labelKey: string; fallback: string }> = [
+  { value: 'all', labelKey: 'statusFilterAll', fallback: 'All Status' },
+  { value: 'active', labelKey: 'statusFilterActive', fallback: 'Active' },
+  { value: 'out_of_stock', labelKey: 'statusFilterOutOfStock', fallback: 'Out of Stock' },
+  { value: 'archived', labelKey: 'statusFilterArchived', fallback: 'Archived' },
 ];
 
 export default function AdminProductsPage() {
+  const { t } = useAdminI18n();
   const [remoteFilters, setRemoteFilters] = useState<RemoteFilters>(remoteDefaults);
   const [searchDraft, setSearchDraft] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -149,7 +151,8 @@ export default function AdminProductsPage() {
   };
 
   const handleArchive = async (product: AdminProductSummary) => {
-    const confirmed = window.confirm(`确定要将商品「${product.name}」下架并归档吗？`);
+    // [2025-11-16 14:35:00] 使用 i18n 文案提示归档确认
+    const confirmed = window.confirm(t('confirmArchiveProduct', { name: product.name }));
     if (!confirmed) {
       return;
     }
@@ -179,7 +182,7 @@ export default function AdminProductsPage() {
       mutate();
     } catch (apiError) {
       console.error('[AdminProductsPage] bulk action error', apiError);
-      alert((apiError as Error).message || 'Bulk action failed');
+      alert((apiError as Error).message || t('bulkActionError'));
     } finally {
       setProcessingBulk(false);
     }
@@ -190,14 +193,14 @@ export default function AdminProductsPage() {
     return `$${numeric.toFixed(2)}`;
   };
 
-  const statusLabel = (product: AdminProductSummary) => {
+  const getStatusLabelKey = (product: AdminProductSummary) => {
     if (!product.isActive) {
-      return 'Archived';
+      return 'statusLabelArchived';
     }
     if ((product.stockQuantity ?? 0) === 0) {
-      return 'Out of Stock';
+      return 'statusLabelOutOfStock';
     }
-    return 'Active';
+    return 'statusLabelActive';
   };
 
   const statusClass = (product: AdminProductSummary) => {
@@ -219,7 +222,9 @@ export default function AdminProductsPage() {
       <div className="admin-page-header">
         <div>
           <h1 data-i18n="products">Products</h1>
-          <p className="text-muted">Manage product catalog, status, inventory, and pricing</p>
+          <p className="text-muted" data-i18n="productsSubtitle">
+            Manage product catalog, status, inventory, and pricing
+          </p>
         </div>
         <div className="admin-btn-group">
           <Link href="/admin/products/new" className="btn btn--primary" data-i18n="newProduct">
@@ -233,12 +238,14 @@ export default function AdminProductsPage() {
           <input
             type="search"
             placeholder="Search products..."
+            data-i18n-placeholder="searchProducts"
+            data-i18n-aria-label="searchProducts"
             aria-label="Search products"
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
             data-field="searchQuery"
           />
-          <button type="submit" className="btn btn--outline btn--xs">
+          <button type="submit" className="btn btn--outline btn--xs" data-i18n="search">
             Search
           </button>
         </form>
@@ -248,7 +255,9 @@ export default function AdminProductsPage() {
           aria-label="Filter by category"
           data-field="categoryFilter"
         >
-          <option value="">All Categories</option>
+          <option value="" data-i18n="allCategories">
+            All Categories
+          </option>
           {categoryOptions.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -262,30 +271,39 @@ export default function AdminProductsPage() {
           data-field="statusFilter"
         >
           {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
+            <option key={option.value} value={option.value} data-i18n={option.labelKey}>
+              {t(option.labelKey) || option.fallback}
             </option>
           ))}
         </select>
         <div className="bulk-actions">
           <span>
-            Selected:&nbsp;<strong>{selectedIds.size}</strong>
+            <span data-i18n="selectedLabel">{t('selectedLabel')}</span>:&nbsp;<strong>{selectedIds.size}</strong>
           </span>
           <select
             value={bulkAction}
             onChange={(event) => setBulkAction(event.target.value)}
             disabled={selectedIds.size === 0 || processingBulk}
           >
-            <option value="">Bulk action…</option>
-            <option value="activate">Activate</option>
-            <option value="deactivate">Disable</option>
-            <option value="archive">Archive</option>
+            <option value="" data-i18n="bulkActionPlaceholder">
+              Bulk action…
+            </option>
+            <option value="activate" data-i18n="bulkActivate">
+              Activate
+            </option>
+            <option value="deactivate" data-i18n="bulkDeactivate">
+              Disable
+            </option>
+            <option value="archive" data-i18n="bulkArchive">
+              Archive
+            </option>
           </select>
           <button
             type="button"
             className="btn btn--outline btn--xs"
             onClick={handleBulkAction}
             disabled={!bulkAction || selectedIds.size === 0 || processingBulk}
+            data-i18n="bulkApply"
           >
             Apply
           </button>
@@ -294,11 +312,17 @@ export default function AdminProductsPage() {
 
       <div className="admin-table-wrapper" data-api="/api/admin/products" data-method="GET">
         {isLoading ? (
-          <div className="admin-table-placeholder">Loading products…</div>
+          <div className="admin-table-placeholder" data-i18n="loadingProducts">
+            Loading products…
+          </div>
         ) : error ? (
-          <div className="admin-table-placeholder error">Failed to load products.</div>
+          <div className="admin-table-placeholder error" data-i18n="failedProducts">
+            Failed to load products.
+          </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="admin-table-placeholder">No products match current filters.</div>
+          <div className="admin-table-placeholder" data-i18n="emptyProducts">
+            No products match current filters.
+          </div>
         ) : (
           <table className="admin-table">
             <thead>
@@ -307,18 +331,19 @@ export default function AdminProductsPage() {
                   <input
                     type="checkbox"
                     aria-label="Select all products"
+                    data-i18n-aria-label="selectAllProducts"
                     checked={allSelected}
                     onChange={(event) => handleToggleAll(event.target.checked)}
                   />
                 </th>
-                <th>Product</th>
-                <th>SKU</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Inventory</th>
-                <th>Status</th>
-                <th>Updated</th>
-                <th>Actions</th>
+                <th data-i18n="productColumn">Product</th>
+                <th data-i18n="skuColumn">SKU</th>
+                <th data-i18n="categoryColumn">Category</th>
+                <th data-i18n="priceColumn">Price</th>
+                <th data-i18n="inventoryColumn">Inventory</th>
+                <th data-i18n="statusColumn">Status</th>
+                <th data-i18n="updatedColumn">Updated</th>
+                <th data-i18n="actionsColumn">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -353,13 +378,20 @@ export default function AdminProductsPage() {
                     </div>
                   </td>
                   <td data-field="sku">{product.sku || '—'}</td>
-                  <td data-field="category">{product.category?.name || 'Unassigned'}</td>
+                  <td data-field="category">
+                    {product.category?.name || <span data-i18n="categoryUnassigned">Unassigned</span>}
+                  </td>
                   <td data-field="price">{formatCurrency(product.salePrice ?? product.basePrice)}</td>
                   <td data-field="inventory">{product.stockQuantity ?? 0}</td>
                   <td>
-                    <span className={statusClass(product)} data-field="status">
-                      {statusLabel(product)}
-                    </span>
+                    {(() => {
+                      const statusKey = getStatusLabelKey(product);
+                      return (
+                        <span className={statusClass(product)} data-field="status" data-i18n={statusKey}>
+                          {t(statusKey)}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td data-field="updatedAt">
                     {product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : '—'}
@@ -370,14 +402,24 @@ export default function AdminProductsPage() {
                         ⋯
                       </button>
                       <div className="actions-dropdown-menu" role="menu">
-                        <Link href={`/admin/products/${product.id}`} role="menuitem">
-                          Edit
+                        <Link href={`/admin/products/${product.id}`} role="menuitem" data-i18n="editProduct">
+                          {t('editProduct')}
                         </Link>
-                        <button type="button" role="menuitem" onClick={() => handleStatusChange(product)}>
-                          {product.isActive ? 'Disable' : 'Activate'}
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleStatusChange(product)}
+                          data-i18n={product.isActive ? 'deactivateProduct' : 'activateProduct'}
+                        >
+                          {product.isActive ? t('deactivateProduct') : t('activateProduct')}
                         </button>
-                        <button type="button" role="menuitem" onClick={() => handleArchive(product)}>
-                          Archive
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => handleArchive(product)}
+                          data-i18n="archiveProduct"
+                        >
+                          {t('archiveProduct')}
                         </button>
                       </div>
                     </div>
@@ -391,7 +433,12 @@ export default function AdminProductsPage() {
 
       {pagination && (
         <div className="admin-pagination">
-          <button type="button" disabled={!canPrev} onClick={() => canPrev && goToPage(remoteFilters.page - 1)}>
+          <button
+            type="button"
+            disabled={!canPrev}
+            onClick={() => canPrev && goToPage(remoteFilters.page - 1)}
+            data-i18n="paginationPrevious"
+          >
             Previous
           </button>
           {Array.from({ length: totalPages }).map((_, index) => {
@@ -407,7 +454,12 @@ export default function AdminProductsPage() {
               </button>
             );
           })}
-          <button type="button" disabled={!canNext} onClick={() => canNext && goToPage(remoteFilters.page + 1)}>
+          <button
+            type="button"
+            disabled={!canNext}
+            onClick={() => canNext && goToPage(remoteFilters.page + 1)}
+            data-i18n="paginationNext"
+          >
             Next
           </button>
         </div>

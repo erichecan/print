@@ -258,13 +258,23 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
 
 // Products API
 export const productsApi = {
-  list: (params?: { page?: number; limit?: number; category?: string; search?: string; sort?: string }) => {
+  list: (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    search?: string;
+    sort?: string;
+    includeOutOfStock?: boolean;
+  }) => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.category) query.append('category', params.category);
     if (params?.search) query.append('search', params.search);
     if (params?.sort) query.append('sort', params.sort);
+    if (params?.includeOutOfStock !== undefined) {
+      query.append('includeOutOfStock', params.includeOutOfStock ? 'true' : 'false');
+    }
     const queryString = query.toString();
     return api(`/products${queryString ? `?${queryString}` : ''}`);
   },

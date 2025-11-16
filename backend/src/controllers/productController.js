@@ -31,40 +31,69 @@ exports.getProducts = async (req, res) => {
     const where = {
       isActive: true,
     };
+    const andConditions = [];
 
     // Filter out products with no available variants (optional, can be controlled by query param)
     // [2025-01-27 13:55:00] Out-of-stock filtering
+    // [2025-11-16 14:12:00] 支持仅使用产品库存的简单商品，避免前端看不到新建商品
     const includeOutOfStock = req.query.includeOutOfStock === 'true';
     if (!includeOutOfStock) {
-      // Only show products that have at least one variant with stock > 0
-      where.variants = {
-        some: {
-          stockQuantity: {
-            gt: 0,
+      andConditions.push({
+        OR: [
+          {
+            variants: {
+              some: {
+                stockQuantity: {
+                  gt: 0,
+                },
+              },
+            },
           },
-        },
-      };
+          {
+            AND: [
+              {
+                variants: {
+                  none: {},
+                },
+              },
+              {
+                stockQuantity: {
+                  gt: 0,
+                },
+              },
+            ],
+          },
+        ],
+      });
     }
 
     // Filter by collection
     if (collectionSlug) {
-      where.collectionProducts = {
-        some: {
-          collection: {
-            slug: collectionSlug,
-            isActive: true,
+      andConditions.push({
+        collectionProducts: {
+          some: {
+            collection: {
+              slug: collectionSlug,
+              isActive: true,
+            },
           },
         },
-      };
+      });
     }
 
     // Search by name, description, or SKU
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } },
-      ];
+      andConditions.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (andConditions.length) {
+      where.AND = andConditions;
     }
 
     const cacheKey = `products:list:${page}:${limit}:${collectionSlug || 'all'}:${search || 'all'}:${sortBy}:${sortOrder}:${includeOutOfStock}`;
@@ -87,6 +116,7 @@ exports.getProducts = async (req, res) => {
           slug: true,
           basePrice: true,
           salePrice: true,
+          stockQuantity: true,
           createdAt: true,
           updatedAt: true,
           category: {
@@ -129,7 +159,9 @@ exports.getProducts = async (req, res) => {
       const basePrice = Number(product.basePrice || 0);
       const salePrice = Number(product.salePrice || product.basePrice || 0);
       const topVariant = product.variants?.[0];
-      const stockQuantity = topVariant?.stockQuantity || 0;
+      const variantStock = Number(topVariant?.stockQuantity || 0);
+      const fallbackProductStock = Number(product.stockQuantity || 0);
+      const stockQuantity = topVariant ? variantStock : fallbackProductStock; // [2025-11-16 14:12:00] 支持无变体商品读取产品级库存
 
       // [2025-01-27 15:02:55] Normalize image payloads with optimized CDN parameters
       const images = (product.images || []).map((image) => ({

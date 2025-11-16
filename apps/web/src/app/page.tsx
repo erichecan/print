@@ -79,8 +79,20 @@ const enterprisePanels = [
 ];
 
 export default function Home() {
+  const websiteSchema = generateWebsiteSchema();
+  const organizationSchema = generateOrganizationSchema();
+
   return (
-    <div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />{/* [2025-11-16 11:55:00] Website schema */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />{/* [2025-11-16 11:55:00] Organization schema */}
+      <div>
       <section className="hero" aria-labelledby="hero-heading">
         <div className="container hero__grid">
           <div>
@@ -205,5 +217,6 @@ export default function Home() {
         </div>
       </section>
     </div>
+    </>
   );
 }

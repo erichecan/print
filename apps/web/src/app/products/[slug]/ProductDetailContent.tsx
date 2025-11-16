@@ -45,6 +45,11 @@ interface Product {
   };
 }
 
+const currencyFormatter = new Intl.NumberFormat('en-CA', {
+  style: 'currency',
+  currency: 'CAD',
+}); // [2025-11-16 11:32:00] Prototype-aligned currency formatting
+
 export function ProductDetailContent() {
   const params = useParams();
   const router = useRouter();
@@ -275,30 +280,72 @@ export function ProductDetailContent() {
   const price = selectedVariant
     ? Number(product.basePrice) + Number(selectedVariant.priceAdjustment || 0)
     : Number(product.basePrice);
+  const productHighlights = [
+    `${product.variants.length || 1}+ styles & colors`,
+    'Free art clean-up and unlimited proofs',
+    'Rush delivery available when you need it',
+  ]; // [2025-11-16 11:40:00] Prototype-style highlight items
+  const availability =
+    selectedVariant && selectedVariant.stockQuantity === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock';
+  const productSchema: Record<string, any> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description ?? 'Custom apparel and promotional products from Suvernire Plus.',
+    sku: selectedVariant?.sku || product.sku,
+    image: product.images.length ? product.images.map((img) => img.url) : ['/placeholder-product.jpg'],
+    brand: {
+      '@type': 'Brand',
+      name: 'suvernire plus',
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `https://suvernireplus.com/products/${product.slug}`,
+      priceCurrency: 'CAD',
+      price: price.toFixed(2),
+      availability,
+    },
+  }; // [2025-11-16 11:40:00] Structured data for SEO
+
+  if (product.rating.count > 0) {
+    productSchema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: product.rating.average.toFixed(1),
+      reviewCount: product.rating.count,
+    };
+  }
 
   return (
-    <div className="product-detail-page">
-      <nav className="breadcrumb">
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />{/* [2025-11-16 11:40:00] Product schema for search engines */}
+      <nav className="breadcrumb" aria-label="Breadcrumb">
         <div className="container">
           <ol>
-            <li><Link href="/">Home</Link></li>
-            <li><Link href="/products">Products</Link></li>
+            <li>
+              <Link href="/">Home</Link>
+            </li>
+            <li>
+              <Link href="/products">Products</Link>
+            </li>
             <li aria-current="page">{product.name}</li>
           </ol>
         </div>
       </nav>
 
-      <div className="container product-detail-grid">
+      <div className="container">
+        <div className="pdp__grid">
         {/* Image Gallery */}
-        <section className="product-gallery">
-          <div className="gallery-main">
+        <section className="gallery" aria-label={`${product.name} gallery`}>
+          <div className="gallery__stage">
             {product.images.length > 0 ? (
               <Image
                 src={currentImage}
                 alt={product.images[selectedImageIndex]?.alt || product.name}
                 width={600}
                 height={600}
-                className="main-image"
                 priority
               />
             ) : (
@@ -306,7 +353,7 @@ export function ProductDetailContent() {
             )}
           </div>
           {product.images.length > 1 && (
-            <div className="gallery-thumbs">
+            <div className="gallery__thumbs">
               {product.images.map((img, index) => (
                 <button
                   key={img.id}
@@ -327,52 +374,50 @@ export function ProductDetailContent() {
         </section>
 
         {/* Product Info */}
-        <aside className="product-info">
-          <h1 className="product-title">{product.name}</h1>
+        <aside className="buy">
+          <h1 className="pdp__title">{product.name}</h1>
 
-          <div className="product-meta">
+          <div className="pdp__meta">
             {product.rating.count > 0 && (
-              <div className="rating">
+              <div className="rating-summary">
                 <span className="stars">
                   {'★'.repeat(Math.round(product.rating.average))}
                   {'☆'.repeat(5 - Math.round(product.rating.average))}
                 </span>
-                <small>{product.rating.average.toFixed(1)} ({product.rating.count} reviews)</small>
+                <small>
+                  {product.rating.average.toFixed(1)} ({product.rating.count} reviews)
+                </small>
               </div>
             )}
-            <div className="sku">SKU: {selectedVariant?.sku || product.sku}</div>
+            <span>SKU: {selectedVariant?.sku || product.sku}</span>
           </div>
 
-          <p className="product-price">
-            <strong>${price.toFixed(2)} CAD</strong>
-            {product.variants.length > 0 && <span className="price-note">From ${Number(product.basePrice).toFixed(2)}</span>}
+          <p className="pdp__price">
+            <strong>{currencyFormatter.format(price)}</strong>{' '}
+            {product.variants.length > 0 && (
+              <span className="price-note">From {currencyFormatter.format(Number(product.basePrice))}</span>
+            )}
           </p>
 
-          {product.description && (
-            <p className="product-description">{product.description}</p>
-          )}
+          {product.description && <p className="product-description">{product.description}</p>}
 
           {/* Color Selector */}
           {colors.length > 0 && (
-            <div className="variant-section">
-              <label className="variant-label">Color</label>
+            <div className="pdp__section">
+              <span className="pdp__label">Color</span>
               <div className="color-swatches">
                 {colors.map((color) => {
-                  const variant = product.variants.find(v => v.color === color);
+                  const variant = product.variants.find((v) => v.color === color);
                   return (
                     <button
                       key={color}
                       type="button"
                       className={`color-swatch ${selectedColor === color ? 'is-active' : ''}`}
-                      style={{
-                        backgroundColor: variant?.colorHex || '#ccc',
-                      }}
+                      style={{ backgroundColor: variant?.colorHex || '#d1d5db' }}
                       onClick={() => setSelectedColor(color)}
                       aria-label={`Select color ${color}`}
                       aria-pressed={selectedColor === color}
-                    >
-                      <span className="sr-only">{color}</span>
-                    </button>
+                    />
                   );
                 })}
               </div>
@@ -381,8 +426,8 @@ export function ProductDetailContent() {
 
           {/* Size Selector */}
           {sizes.length > 0 && (
-            <div className="variant-section">
-              <label className="variant-label">Size</label>
+            <div className="pdp__section">
+              <span className="pdp__label">Size</span>
               <div className="size-buttons">
                 {sizes.map((size) => (
                   <button
@@ -403,26 +448,23 @@ export function ProductDetailContent() {
           )}
 
           {/* Quantity Selector */}
-          <div className="quantity-section">
-            <label htmlFor="quantity" className="variant-label">Quantity</label>
-            <div className="quantity-controls">
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                aria-label="Decrease quantity"
-              >
+          <div className="pdp__section">
+            <span className="pdp__label">Quantity</span>
+            <div className="qty__ctrl">
+              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity">
                 −
               </button>
               <input
                 id="quantity"
                 type="number"
-                min="1"
+                min={1}
                 max={selectedVariant?.stockQuantity || 999}
                 value={quantity}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value) || 1;
+                onChange={(event) => {
+                  const val = parseInt(event.target.value, 10) || 1;
                   setQuantity(Math.max(1, Math.min(val, selectedVariant?.stockQuantity || 999)));
                 }}
+                aria-label="Quantity"
               />
               <button
                 type="button"
@@ -433,18 +475,13 @@ export function ProductDetailContent() {
               </button>
             </div>
             {selectedVariant && (
-              <div className="stock-info-wrapper">
-                <small className={`stock-info ${selectedVariant.stockQuantity === 0 ? 'stock-out' : selectedVariant.stockQuantity <= 5 ? 'stock-low' : ''}`}>
-                  {selectedVariant.stockQuantity === 0
-                    ? 'Out of stock'
-                    : selectedVariant.stockQuantity <= 5
-                    ? `Only ${selectedVariant.stockQuantity} left in stock`
-                    : `${selectedVariant.stockQuantity} in stock`}
-                </small>
-                {selectedVariant.stockQuantity > 0 && selectedVariant.stockQuantity <= 5 && (
-                  <small className="stock-warning">⚠️ Low stock - Order soon!</small>
-                )}
-              </div>
+              <small className="stock-info">
+                {selectedVariant.stockQuantity === 0
+                  ? 'Out of stock'
+                  : selectedVariant.stockQuantity <= 5
+                  ? `Only ${selectedVariant.stockQuantity} left`
+                  : `${selectedVariant.stockQuantity} in stock`}
+              </small>
             )}
           </div>
 
@@ -458,202 +495,173 @@ export function ProductDetailContent() {
           </button>
 
           {/* Additional Info */}
-          <div className="product-highlights">
-            <p><strong>Free Shipping</strong> • Standard 2-week delivery</p>
-            <p><strong>Rush Available</strong> • As fast as 3 days</p>
-            <p><strong>100% Satisfaction</strong> • We will make it right</p>
-          </div>
+          <ul className="highlights">
+            {productHighlights.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
         </aside>
+        </div>
       </div>
 
-      {/* [2025-01-27 13:40:00] Product Reviews Section */}
-      <section className="product-reviews">
-        <div className="container">
-          <h2 className="reviews-title">Customer Reviews</h2>
+      {/* [2025-11-16 11:45:00] Product Reviews Section aligned with prototype */}
+      <section className="pdp-reviews" aria-labelledby="reviews-heading">
+        <div className="container reviews__grid">
+          <h2 id="reviews-heading" className="visually-hidden">
+            Customer Reviews
+          </h2>
 
           {reviewStats && reviewStats.count > 0 && (
-            <div className="reviews-summary">
-              <div className="summary-rating">
-                <div className="summary-average">{reviewStats.average.toFixed(1)}</div>
-                <div className="summary-stars">
-                  {'★'.repeat(Math.round(reviewStats.average))}
-                  {'☆'.repeat(5 - Math.round(reviewStats.average))}
-                </div>
-                <div className="summary-count">{reviewStats.count} reviews</div>
+            <div className="reviews__summary">
+              <div className="reviews__score">{reviewStats.average.toFixed(1)}</div>
+              <div className="reviews__stars">
+                {'★'.repeat(Math.round(reviewStats.average))}
+                {'☆'.repeat(5 - Math.round(reviewStats.average))}
               </div>
-              <div className="summary-breakdown">
+              <p>{reviewStats.count} reviews</p>
+              <ul className="reviews__bars">
                 {[5, 4, 3, 2, 1].map((rating) => {
                   const count = reviewStats.distribution[rating as keyof typeof reviewStats.distribution] || 0;
-                  const percentage = reviewStats.count > 0 ? (count / reviewStats.count) * 100 : 0;
+                  const percentage = reviewStats.count ? (count / reviewStats.count) * 100 : 0;
                   return (
-                    <div key={rating} className="breakdown-row">
-                      <span className="breakdown-rating">{rating}★</span>
-                      <div className="breakdown-bar">
-                        <div className="breakdown-fill" style={{ width: `${percentage}%` }}></div>
-                      </div>
-                      <span className="breakdown-count">{count}</span>
-                    </div>
+                    <li key={rating}>
+                      <span>{rating}★</span>
+                      <span className="bar">
+                        <i style={{ width: `${percentage}%` }} />
+                      </span>
+                      <span>{count}</span>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
           )}
 
-          {isAuthenticated && !showReviewForm && (
-            <button
-              type="button"
-              onClick={() => setShowReviewForm(true)}
-              className="btn-write-review"
-            >
-              Write a Review
-            </button>
-          )}
+          <div className="reviews__list">
+            {isAuthenticated && !showReviewForm && (
+              <button type="button" className="btn-write-review" onClick={() => setShowReviewForm(true)}>
+                Write a Review
+              </button>
+            )}
 
-          {showReviewForm && (
-            <form onSubmit={handleSubmitReview} className="review-form">
-              <h3>Write a Review</h3>
-              <div className="form-group">
-                <label>Rating *</label>
-                <div className="rating-input">
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <button
-                      key={rating}
-                      type="button"
-                      onClick={() => setReviewForm({ ...reviewForm, rating })}
-                      className={`rating-btn ${reviewForm.rating >= rating ? 'active' : ''}`}
-                    >
-                      ★
-                    </button>
-                  ))}
+            {showReviewForm && (
+              <form onSubmit={handleSubmitReview} className="review-form">
+                <h3>Share your experience</h3>
+                <div className="form-group">
+                  <label>Rating *</label>
+                  <div className="rating-input">
+                    {[5, 4, 3, 2, 1].map((rating) => (
+                      <button
+                        key={rating}
+                        type="button"
+                        onClick={() => setReviewForm({ ...reviewForm, rating })}
+                        className={`rating-btn ${reviewForm.rating >= rating ? 'active' : ''}`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="form-group">
-                <label htmlFor="review-title">Title *</label>
-                <input
-                  id="review-title"
-                  type="text"
-                  required
-                  value={reviewForm.title}
-                  onChange={(e) => setReviewForm({ ...reviewForm, title: e.target.value })}
-                  placeholder="Summarize your review"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="review-comment">Comment *</label>
-                <textarea
-                  id="review-comment"
-                  required
-                  rows={5}
-                  value={reviewForm.comment}
-                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  placeholder="Share your experience with this product"
-                />
-              </div>
-              <div className="form-actions">
-                <button type="submit" disabled={submittingReview} className="btn-submit-review">
-                  {submittingReview ? 'Submitting...' : 'Submit Review'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowReviewForm(false);
-                    setReviewForm({ rating: 5, title: '', comment: '' });
-                  }}
-                  className="btn-cancel-review"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
+                <div className="form-group">
+                  <label htmlFor="review-title">Title *</label>
+                  <input
+                    id="review-title"
+                    type="text"
+                    required
+                    value={reviewForm.title}
+                    onChange={(event) => setReviewForm({ ...reviewForm, title: event.target.value })}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="review-comment">Comment *</label>
+                  <textarea
+                    id="review-comment"
+                    rows={5}
+                    required
+                    value={reviewForm.comment}
+                    onChange={(event) => setReviewForm({ ...reviewForm, comment: event.target.value })}
+                  />
+                </div>
+                <div className="form-actions">
+                  <button type="submit" className="btn-submit-review" disabled={submittingReview}>
+                    {submittingReview ? 'Submitting…' : 'Submit review'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-cancel-review"
+                    onClick={() => {
+                      setShowReviewForm(false);
+                      setReviewForm({ rating: 5, title: '', comment: '' });
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
 
-          {loadingReviews ? (
-            <p>Loading reviews...</p>
-          ) : reviews.length === 0 ? (
-            <div className="no-reviews">
-              <p>No reviews yet. Be the first to review this product!</p>
-              {!isAuthenticated && (
-                <Link href={`/login?redirect=${encodeURIComponent(`/products/${slug}`)}`} className="btn-login-to-review">
-                  Sign in to write a review
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="reviews-list">
-              {reviews.map((review) => (
-                <div key={review.id} className="review-item">
-                  <div className="review-header">
+            {loadingReviews ? (
+              <p>Loading reviews…</p>
+            ) : reviews.length === 0 ? (
+              <div className="no-reviews">
+                <p>No reviews yet. Be the first to review this product.</p>
+                {!isAuthenticated && (
+                  <Link href={`/login?redirect=${encodeURIComponent(`/products/${slug}`)}`} className="btn-login-to-review">
+                    Sign in to review
+                  </Link>
+                )}
+              </div>
+            ) : (
+              reviews.map((review) => (
+                <article key={review.id} className="review">
+                  <header>
                     <div className="review-rating">
                       {'★'.repeat(review.rating)}
                       {'☆'.repeat(5 - review.rating)}
                     </div>
-                    <div className="review-meta">
-                      <strong className="review-author">
+                    <div className="audit-meta">
+                      <span>
                         {review.user?.firstName || review.user?.lastName
                           ? `${review.user.firstName || ''} ${review.user.lastName || ''}`.trim()
                           : 'Anonymous'}
-                      </strong>
-                      {review.isVerifiedPurchase && (
-                        <span className="verified-badge">✓ Verified Purchase</span>
-                      )}
-                      <span className="review-date">
-                        {new Date(review.createdAt).toLocaleDateString()}
                       </span>
+                      <span>{new Date(review.createdAt).toLocaleDateString()}</span>
                     </div>
-                  </div>
-                  <h4 className="review-title">{review.title}</h4>
-                  <p className="review-comment">{review.comment}</p>
-                  {/* [2025-01-27 21:50:00] 添加"有用"按钮 */}
-                  <div className="review-actions">
-                    <button
-                      type="button"
-                      onClick={() => handleMarkHelpful(review.id)}
-                      disabled={helpfulReviews.has(review.id)}
-                      className="btn-helpful"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#666',
-                        cursor: helpfulReviews.has(review.id) ? 'default' : 'pointer',
-                        fontSize: '14px',
-                        padding: '8px 0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      <span>{helpfulReviews.has(review.id) ? '✓' : 'Helpful'}</span>
-                      {review.helpfulCount > 0 && <span>({review.helpfulCount})</span>}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+                  </header>
+                  <h4>{review.title}</h4>
+                  <p>{review.comment}</p>
+                  <button
+                    type="button"
+                    className="btn-helpful"
+                    onClick={() => handleMarkHelpful(review.id)}
+                    disabled={helpfulReviews.has(review.id)}
+                  >
+                    {helpfulReviews.has(review.id) ? 'Marked helpful' : 'Helpful'}
+                    {review.helpfulCount > 0 && <span> ({review.helpfulCount})</span>}
+                  </button>
+                </article>
+              ))
+            )}
+          </div>
         </div>
       </section>
 
       {/* [2025-11-12 03:05:00] Related Products Section */}
       {relatedProducts.length > 0 && (
-        <section className="related-products">
+        <section className="pdp-related">
           <div className="container">
-            <h2 className="related-products-title">You may also like</h2>
-            <div className="related-products-grid">
+            <h2>You may also like</h2>
+            <div className="related-grid">
               {relatedProducts.map((related) => {
                 const relatedImage = related.images?.[0]?.url || '/placeholder-product.jpg';
                 const relatedPrice = Number(related.basePrice);
                 return (
-                  <Link key={related.id} href={`/products/${related.slug}`} className="related-product-card">
-                    <div className="related-product-image">
-                      <Image
-                        src={relatedImage}
-                        alt={related.name}
-                        width={280}
-                        height={280}
-                      />
+                  <Link key={related.id} href={`/products/${related.slug}`} className="product">
+                    <div className="product__image">
+                      <Image src={relatedImage} alt={related.name} width={280} height={280} />
                     </div>
-                    <h3 className="related-product-name">{related.name}</h3>
-                    <p className="related-product-price">${relatedPrice.toFixed(2)} CAD</p>
+                    <h3 className="product__title">{related.name}</h3>
+                    <p className="product__price">{currencyFormatter.format(relatedPrice)}</p>
                   </Link>
                 );
               })}
@@ -1221,7 +1229,7 @@ export function ProductDetailContent() {
           }
         }
       `}</style>
-    </div>
+    </>
   );
 }
 
