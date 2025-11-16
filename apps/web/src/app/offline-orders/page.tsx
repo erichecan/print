@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, ChangeEvent, FormEvent, DragEvent } from 'react';
+import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -214,7 +215,8 @@ export default function OfflineOrdersIntakePage() {
         );
         files.forEach((file) => payload.append('assets', file, file.name));
 
-        const response = await fetch('/api/offline-orders', {
+        // [2025-11-16 09:50:00] 指向后端 API_BASE_URL，避免 Netlify 返回 HTML 404
+        const response = await fetch(`${API_BASE_URL}/offline-orders`, {
           method: 'POST',
           body: payload,
           credentials: 'include',
