@@ -11,7 +11,7 @@ export interface SEOMetadata {
   keywords?: string[];
   image?: string;
   url?: string;
-  type?: 'website' | 'article' | 'product';
+  type?: 'website' | 'article'; // [2025-11-16 16:58:00] Next Metadata 不支持 'product'，统一用 article/website
   publishedTime?: string;
   modifiedTime?: string;
 }

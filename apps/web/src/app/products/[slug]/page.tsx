@@ -16,7 +16,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     keywords: ['product', 'custom merchandise', 't-shirt', 'hoodie', 'apparel'],
     url: `https://suvernireplus.com/products/${params.slug}`,
     image: 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
-    type: 'product',
+    type: 'article', // [2025-11-16 16:58:00] 避免 Next OpenGraph 类型报错
   });
 }
 

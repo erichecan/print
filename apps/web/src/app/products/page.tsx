@@ -4,6 +4,7 @@
  * [2025-11-12 00:00:20] Connected to products API with filters, search, and pagination
  * [2025-01-27 13:20:00] Removed TODO marker, page is production-ready
  * [2025-01-27 17:00:00] 补充 SEO 元数据
+ * [2025-01-27 18:30:00] 完全重新设计布局以匹配参考设计，包含完整的筛选器和产品卡片
  */
 
 import Link from 'next/link';
@@ -12,6 +13,8 @@ import Image from 'next/image'; // [2025-11-11 06:07:23] 使用 Next Image 组�
 import { API_BASE_URL } from '@/lib/api-config';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
+import SortSelect from './SortSelect';
 
 // [2025-01-27 17:00:00] 生成产品列表页 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
@@ -80,11 +83,118 @@ const currencyFormatter = new Intl.NumberFormat('en-CA', {
 });
 
 const SORT_OPTIONS = [
-  { label: 'Featured', value: '' },
+  { label: 'Recommended', value: '' },
   { label: 'Price: Low to High', value: 'price_asc' },
   { label: 'Price: High to Low', value: 'price_desc' },
   { label: 'Name: A to Z', value: 'name_asc' },
   { label: 'Name: Z to A', value: 'name_desc' },
+];
+
+// [2025-01-27 18:30:00] T-shirt分类列表
+const TSHIRT_CATEGORIES = [
+  { name: 'Short Sleeve T-shirts', slug: 'short-sleeve-t-shirts', active: true },
+  { name: 'Long Sleeve T-shirts', slug: 'long-sleeve-t-shirts', active: false },
+  { name: 'Soft Tri-Blend T-shirts', slug: 'soft-tri-blend-t-shirts', active: false },
+  { name: 'Performance Shirts', slug: 'performance-shirts', active: false },
+  { name: "Women's T-shirts", slug: 'womens-t-shirts', active: false },
+];
+
+// [2025-01-27 18:30:00] 筛选选项数据
+const FIT_OPTIONS = [
+  { name: 'Standard Fit', count: 156 },
+  { name: 'Relaxed Fit', count: 44 },
+  { name: 'Semi-Fitted', count: 38 },
+  { name: 'Slim Fit', count: 16 },
+];
+
+const DECORATION_OPTIONS = [
+  { name: 'Printed', count: 250 },
+  { name: 'Embroidered', count: 9 },
+];
+
+const COLOR_FAMILIES = [
+  { name: 'Black', hex: '#000000' },
+  { name: 'Blue', hex: '#0066CC' },
+  { name: 'White', hex: '#FFFFFF' },
+  { name: 'Grey', hex: '#808080' },
+  { name: 'Green', hex: '#00CC00' },
+  { name: 'Red', hex: '#CC0000' },
+  { name: 'Pink', hex: '#FF99CC' },
+  { name: 'Purple', hex: '#9933CC' },
+  { name: 'Yellow', hex: '#FFCC00' },
+  { name: 'Orange', hex: '#FF9900' },
+  { name: 'Brown', hex: '#996633' },
+  { name: 'Heather', hex: '#CCCCCC', pattern: true },
+  { name: 'Camo', hex: '#4A5D23', pattern: true },
+  { name: 'Tie-Dye', hex: '#FF00FF', pattern: true },
+];
+
+const RUSH_DELIVERY_OPTIONS = [
+  { days: '3 days', label: 'Super Rush', icon: '⚡' },
+  { days: '1 week', label: 'Rush' },
+  { days: '10 days', label: 'Rush' },
+  { days: '12 days', label: 'Rush' },
+];
+
+const MATERIAL_OPTIONS = [
+  { name: '100% Cotton', count: 120 },
+  { name: 'Cotton/Poly', count: 72 },
+  { name: '100% Polyester', count: 50 },
+  { name: 'Recycled Material', count: 30 },
+  { name: 'Tri-Blend (Poly/Cotton/Rayon)', count: 28 },
+  { name: 'Performance Blend', count: 4 },
+  { name: 'Poly/Cotton/Spandex', count: 2 },
+];
+
+const TYPE_OPTIONS = [
+  { name: 'Unisex', count: 180 },
+  { name: "Women's", count: 71 },
+  { name: 'Youth', count: 67 },
+  { name: 'Tall', count: 6 },
+];
+
+const SIZE_OPTIONS = [
+  { name: '2XS', count: 4 },
+  { name: 'XS', count: 125 },
+  { name: 'S', count: 248 },
+  { name: 'M', count: 249 },
+  { name: 'L', count: 245 },
+  { name: 'XL', count: 220 },
+  { name: '2XL', count: 180 },
+  { name: '3XL', count: 120 },
+];
+
+const STYLE_OPTIONS = [
+  { name: 'Performance', count: 51 },
+  { name: 'Pocket', count: 22 },
+  { name: 'Workwear', count: 16 },
+  { name: 'Cropped', count: 9 },
+  { name: 'Ringer', count: 3 },
+  { name: 'Henley', count: 2 },
+  { name: 'Raglan', count: 1 },
+];
+
+const NECKLINE_OPTIONS = [
+  { name: 'Crew Neck', count: 224 },
+  { name: 'V-Neck', count: 25 },
+  { name: 'Scoop Neck', count: 7 },
+  { name: 'Henley', count: 2 },
+];
+
+const PRODUCT_FEATURES_OPTIONS = [
+  { name: 'Tear Away Tag', count: 144 },
+  { name: 'Eco-friendly', count: 91 },
+  { name: 'Moisture-Wicking', count: 62 },
+  { name: 'Tagless', count: 34 },
+  { name: 'UV Protection', count: 26 },
+  { name: 'Pocket', count: 23 },
+  { name: 'ANSI Compliant', count: 12 },
+];
+
+const PRICE_OPTIONS = [
+  { name: '$', count: 117 },
+  { name: '$$', count: 109 },
+  { name: '$$$', count: 33 },
 ];
 
 function mapSortValue(value: string | undefined) {
@@ -198,15 +308,14 @@ export default async function ProductsPage({
   let productsResponse: ProductsResponse | null = null;
   let fetchError: string | null = null;
 
-  try {
-    [productsResponse, collections] = await Promise.all([
-      fetchProducts(normalizedParams),
-      fetchCollections(),
-    ]);
-  } catch (error: unknown) {
+  // [2025-11-16 16:28:00] 解耦列表与集合请求，避免 /collections 404 影响产品渲染
+  const productsPromise = fetchProducts(normalizedParams).catch((error: unknown) => {
     fetchError = error instanceof Error ? error.message : 'Unexpected error loading products.';
-    collections = await fetchCollections().catch(() => []);
-  }
+    return null;
+  });
+  const collectionsPromise = fetchCollections().catch(() => [] as Collection[]);
+
+  [productsResponse, collections] = await Promise.all([productsPromise, collectionsPromise]);
 
   const products = productsResponse?.data ?? [];
   const pagination = productsResponse?.pagination ?? {
@@ -240,195 +349,324 @@ export default async function ProductsPage({
       ? buildRoute(normalizedParams, { page: String(pagination.page + 1) })
       : null;
 
+  // [2025-11-16 16:45:00] 使用动态导入的客户端组件，禁用 SSR，避免服务端报错影响页面渲染
+  const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false });
+
+  // [2025-01-27 18:30:00] 获取当前分类名称用于面包屑
+  const currentCategoryName = currentCollection 
+    ? collections.find(c => c.slug === currentCollection)?.name || 'T-shirts'
+    : 'T-shirts';
+
   return (
     <div className="catalog-page">
-      <div className="plp-head">
-        <div className="container plp-head__bar">
-          <div>
-            <p className="eyebrow">Shop the catalog</p>
-            <h1>Custom apparel & promo gear</h1>
-            <p className="plp-head__meta">
-              <span>
-                {pagination.total} items · Page {pagination.page} of {pagination.totalPages}
-              </span>
-            </p>
-          </div>
-          <div className="plp-head__actions">
-            <Link href="/design-lab" className="btn">
-              Start Designing
-            </Link>
-            <Link href="/contact" className="btn btn--outline">
-              Get a Quote
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* [2025-11-16 11:15:00] Prototype-aligned PLP layout */}
-      <section className="plp">
-        <div className="container plp__grid">
-          <aside>
-            <form className="filters" method="get">
-              <details open>
-                <summary>Search catalog</summary>
-                <div className="filters__body">
-                  <input
-                    type="search"
-                    name="search"
-                    placeholder="Search tees, hoodies, drinkware..."
-                    defaultValue={currentSearch}
-                  />
-                </div>
-              </details>
-
-              <details open>
-                <summary>Category</summary>
-                <div className="filters__body">
-                  <select name="collection" defaultValue={currentCollection}>
-                    <option value="">All categories</option>
-                    {collections.map((collection) => (
-                      <option key={collection.slug} value={collection.slug}>
-                        {collection.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </details>
-
-              {brands.length > 0 && (
-                <details>
-                  <summary>Brand</summary>
-                  <div className="filters__body">
-                    <select name="brand" defaultValue={currentBrand}>
-                      <option value="">All brands</option>
-                      {brands.map((brand) => (
-                        <option key={brand.slug || brand.name} value={brand.name}>
-                          {brand.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </details>
-              )}
-
-              <details>
-                <summary>Price range (CAD)</summary>
-                <div className="filters__body">
-                  <div className="price-inputs">
-                    <input
-                      type="number"
-                      name="minPrice"
-                      placeholder="Min"
-                      min="0"
-                      step="0.01"
-                      defaultValue={currentMinPrice}
-                    />
-                    <span>to</span>
-                    <input
-                      type="number"
-                      name="maxPrice"
-                      placeholder="Max"
-                      min="0"
-                      step="0.01"
-                      defaultValue={currentMaxPrice}
-                    />
-                  </div>
-                </div>
-              </details>
-
-              <details>
-                <summary>Sort by</summary>
-                <div className="filters__body">
-                  <select name="sort" defaultValue={currentSort}>
-                    {SORT_OPTIONS.map((option) => (
-                      <option key={option.value || 'featured'} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </details>
-
-              <div className="filters__actions">
-                <button type="submit" className="btn">
-                  Apply Filters
-                </button>
-                <Link href="/products" className="btn btn--outline">
-                  Reset
-                </Link>
+      {/* [2025-01-27 18:30:00] 完全重新设计的布局以匹配参考设计 */}
+      <section className="plp-new">
+        <div className="container plp-new__grid">
+          {/* 左侧筛选器 */}
+          <aside className="plp-new__sidebar">
+            <form id="filters-form" className="filters-new" method="get" action="/products">
+              {/* T-shirts分类列表 */}
+              <div className="filter-section">
+                <h3 className="filter-section__title">T-shirts</h3>
+                <ul className="filter-category-list">
+                  {TSHIRT_CATEGORIES.map((cat) => (
+                    <li key={cat.slug}>
+                      <Link 
+                        href={`/products?collection=${cat.slug}`}
+                        className={`filter-category-link ${cat.active ? 'is-active' : ''}`}
+                      >
+                        {cat.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <button type="button" className="filter-show-more">Show more ↓</button>
               </div>
+
+              {/* Fit筛选 */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Fit
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {FIT_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="fit" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              {/* Decoration筛选 */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Decoration
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {DECORATION_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="decoration" value={option.name.toLowerCase()} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              {/* Delivery Options */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Delivery Options
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  <p className="filter-question">Available to ship to multiple addresses?</p>
+                  <label className="filter-toggle">
+                    <input type="checkbox" name="multiAddress" />
+                    <span className="filter-toggle__slider">
+                      <span className="filter-toggle__label filter-toggle__label--no">No</span>
+                      <span className="filter-toggle__label filter-toggle__label--yes">Yes</span>
+                    </span>
+                  </label>
+                </div>
+              </details>
+
+              {/* No Minimum */}
+              <div className="filter-section">
+                <div className="filter-section__header">
+                  <span className="filter-section__title">No Minimum</span>
+                  <label className="filter-toggle">
+                    <input type="checkbox" name="noMinimum" />
+                    <span className="filter-toggle__slider">
+                      <span className="filter-toggle__label filter-toggle__label--no">No</span>
+                      <span className="filter-toggle__label filter-toggle__label--yes">Yes</span>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Color Family */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Color Family
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  <div className="color-grid">
+                    {COLOR_FAMILIES.map((color) => (
+                      <label key={color.name} className="color-swatch">
+                        <input type="checkbox" name="color" value={color.name.toLowerCase()} />
+                        <span 
+                          className="color-swatch__circle"
+                          style={{ 
+                            backgroundColor: color.hex,
+                            backgroundImage: color.pattern ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zM10 10h10v10H10z\' fill=\'%23fff\' opacity=\'.1\'/%3E%3C/svg%3E")' : undefined
+                          }}
+                          title={color.name}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </details>
+
+              {/* Rush Delivery Available */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Rush Delivery Available
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {RUSH_DELIVERY_OPTIONS.map((option) => (
+                    <label key={option.days} className="filter-checkbox">
+                      <input type="checkbox" name="rushDelivery" value={option.days} />
+                      <span className="filter-checkbox__label">
+                        {option.days}
+                        <span className="rush-badge">
+                          {option.icon && <span>{option.icon}</span>}
+                          {option.label}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              {/* Brands */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Brands
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {brands.slice(0, 7).map((brand) => (
+                    <label key={brand.slug || brand.name} className="filter-checkbox">
+                      <input type="checkbox" name="brand" value={brand.name} />
+                      <span className="filter-checkbox__label">{brand.name}</span>
+                    </label>
+                  ))}
+                  {brands.length > 7 && (
+                    <button type="button" className="filter-show-more">Show more</button>
+                  )}
+                </div>
+              </details>
+
+              {/* Material */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Material
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {MATERIAL_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="material" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                  <button type="button" className="filter-show-more">Show more</button>
+                </div>
+              </details>
+
+              {/* Type */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Type
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {TYPE_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="type" value={option.name.toLowerCase()} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              {/* Sizes */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Sizes
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {SIZE_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="size" value={option.name} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              {/* Style */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Style
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {STYLE_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="style" value={option.name.toLowerCase()} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              {/* Neckline */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Neckline
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {NECKLINE_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="neckline" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
+
+              {/* Product Features */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Product Features
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {PRODUCT_FEATURES_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="feature" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                  <button type="button" className="filter-show-more">Show more</button>
+                </div>
+              </details>
+
+              {/* Price */}
+              <details className="filter-section" open>
+                <summary className="filter-section__title">
+                  Price
+                  <span className="filter-toggle-icon">−</span>
+                </summary>
+                <div className="filter-section__body">
+                  {PRICE_OPTIONS.map((option) => (
+                    <label key={option.name} className="filter-checkbox">
+                      <input type="checkbox" name="price" value={option.name} />
+                      <span className="filter-checkbox__label">
+                        {option.name} <span className="filter-count">({option.count})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </details>
             </form>
           </aside>
 
-          <div className="products">
-            <div className="results-meta">
-              <span>
-                Showing {products.length} of {pagination.total} products
-              </span>
-              <span>
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
-            </div>
+          {/* 主内容区 */}
+          <div className="plp-new__main">
+            {/* 面包屑和标题 */}
+            <nav className="breadcrumb-nav">
+              <ol>
+                <li><Link href="/products">All Products</Link></li>
+                <li>›</li>
+                <li><Link href="/products?collection=t-shirts">T-shirts</Link></li>
+                <li>›</li>
+                <li>{currentCategoryName}</li>
+              </ol>
+            </nav>
 
-            {fetchError ? (
-              <div className="results-empty">
-                <h2>We hit a snag loading products</h2>
-                <p>{fetchError}</p>
-                <p>Refresh the page or adjust your filters and try again.</p>
-              </div>
-            ) : products.length === 0 ? (
-              <div className="results-empty">
-                <h2>No products found</h2>
-                <p>Try expanding your filters or enter a different search.</p>
-              </div>
-            ) : (
-              <div className="product-grid">
-                {products.map((product) => {
-                  const price = product.price ?? product.basePrice ?? 0;
-                  return (
-                    <article key={product.id} className="product">
-                      <Link href={`/products/${product.slug}`} className="product__image">
-                        {product.primaryImage?.url ? (
-                          <Image
-                            src={product.primaryImage.url}
-                            alt={product.primaryImage.alt ?? product.name}
-                            width={480}
-                            height={480}
-                            sizes="(max-width: 768px) 100vw, 320px"
-                          />
-                        ) : (
-                          <div className="product-card__placeholder">Image coming soon</div>
-                        )}
-                      </Link>
-                      <h3 className="product__title">{product.name}</h3>
-                      <p className="product__meta">
-                        {product.category?.name ?? 'All categories'} ·{' '}
-                        {product.brand?.name ?? 'Multiple brands'}
-                      </p>
-                      <p className="product__description">
-                        {product.description ??
-                          'Suvernire Plus staples ready for screen-print, embroidery, or rush delivery.'}
-                      </p>
-                      <p className="product__price">{currencyFormatter.format(Number(price))}</p>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
+            <h1 className="plp-new__title">{currentCategoryName}</h1>
 
-            <div className="pagination">
-              <div className="pagination__controls">
-                <Link href={prevLink ?? '#'} className="btn btn--outline" aria-disabled={!prevLink}>
-                  Previous
-                </Link>
-                <Link href={nextLink ?? '#'} className="btn" aria-disabled={!nextLink}>
-                  Next
-                </Link>
-              </div>
-              <p>
-                Page {pagination.page} of {pagination.totalPages}
-              </p>
-            </div>
+            {/* 排序 */}
+            <SortSelect defaultValue={currentSort} />
+
+            {/* 产品网格 */}
+            <ProductsClient />
           </div>
         </div>
       </section>

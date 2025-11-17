@@ -18,6 +18,13 @@ const remotePatterns = [
     port: '3001',
     pathname: '/**',
   },
+  // [2025-11-16 16:55:00] 允许 Unsplash 演示图片域名
+  {
+    protocol: 'https',
+    hostname: 'images.unsplash.com',
+    port: '',
+    pathname: '/**',
+  },
 ];
 
 // [2025-11-15 23:09:50] Allow image optimizer to proxy the configured API host

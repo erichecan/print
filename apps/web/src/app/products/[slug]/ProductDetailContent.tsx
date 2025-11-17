@@ -2,6 +2,7 @@
  * Product Detail Page
  * [2025-11-05 01:10:00]
  * [2025-11-12 03:05:00] Enhanced with inventory messaging, related products, and SEO metadata
+ * [2025-01-27 19:00:00] 完全重新设计以100%匹配参考设计，包含所有模块和样式
  */
 'use client';
 
@@ -79,10 +80,15 @@ export function ProductDetailContent() {
   });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [helpfulReviews, setHelpfulReviews] = useState<Set<string>>(new Set()); // [2025-01-27 21:50:00] 已标记为有用的评价
+  const [noMinimum, setNoMinimum] = useState(false); // [2025-01-27 19:00:00] No Minimum切换状态
+  const [recommendedTab, setRecommendedTab] = useState('you-may-also-like'); // [2025-01-27 19:00:00] 推荐产品标签页
 
   // Get unique colors and sizes from variants
   const colors = Array.from(new Set(product?.variants.map(v => v.color).filter(Boolean))) as string[];
   const sizes = Array.from(new Set(product?.variants.map(v => v.size).filter(Boolean))) as string[];
+  
+  // [2025-01-27 19:00:00] 获取所有颜色变体（包含colorHex）
+  const colorVariants = product?.variants.filter(v => v.color && v.colorHex) || [];
 
   // Find selected variant
   const selectedVariant = product?.variants.find(
@@ -164,6 +170,7 @@ export function ProductDetailContent() {
     if (!productId) return;
 
     async function fetchReviews() {
+      if (!productId) return;
       try {
         setLoadingReviews(true);
         // [2025-01-27 21:50:00] 使用新的 productReviewApi
@@ -196,6 +203,7 @@ export function ProductDetailContent() {
     setSubmittingReview(true);
     try {
       // [2025-01-27 21:50:00] 使用新的 productReviewApi
+      if (!product.id) throw new Error('Product ID is required');
       await productReviewApi.create(product.id, {
         rating: reviewForm.rating,
         title: reviewForm.title.trim(),
@@ -227,7 +235,7 @@ export function ProductDetailContent() {
       // 更新本地评价数据
       setReviews(reviews.map((review) =>
         review.id === reviewId
-          ? { ...review, helpfulCount: review.helpfulCount + 1 }
+          ? { ...review, helpfulCount: (review.helpfulCount || 0) + 1 }
           : review
       ));
     } catch (err: any) {
@@ -321,221 +329,351 @@ export function ProductDetailContent() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
       />{/* [2025-11-16 11:40:00] Product schema for search engines */}
-      <nav className="breadcrumb" aria-label="Breadcrumb">
+      {/* [2025-01-27 19:00:00] 面包屑导航 - 匹配参考设计 */}
+      <nav className="pdp-breadcrumb" aria-label="Breadcrumb">
         <div className="container">
           <ol>
-            <li>
-              <Link href="/">Home</Link>
-            </li>
-            <li>
-              <Link href="/products">Products</Link>
-            </li>
+            <li><Link href="/products">All Products</Link></li>
+            <li>›</li>
+            <li><Link href="/products?collection=t-shirts">T-shirts</Link></li>
+            <li>›</li>
+            <li><Link href="/products?collection=short-sleeve-t-shirts">Short Sleeve T-shirts</Link></li>
+            <li>›</li>
             <li aria-current="page">{product.name}</li>
           </ol>
         </div>
       </nav>
 
-      <div className="container">
-        <div className="pdp__grid">
-        {/* Image Gallery */}
-        <section className="gallery" aria-label={`${product.name} gallery`}>
-          <div className="gallery__stage">
-            {product.images.length > 0 ? (
-              <Image
-                src={currentImage}
-                alt={product.images[selectedImageIndex]?.alt || product.name}
-                width={600}
-                height={600}
-                priority
-              />
-            ) : (
-              <div className="main-image-placeholder">No Image</div>
-            )}
-          </div>
-          {product.images.length > 1 && (
-            <div className="gallery__thumbs">
-              {product.images.map((img, index) => (
-                <button
-                  key={img.id}
-                  className={`thumb ${index === selectedImageIndex ? 'is-active' : ''}`}
-                  onClick={() => setSelectedImageIndex(index)}
-                  aria-label={`View image ${index + 1}`}
-                >
-                  <Image
-                    src={img.url}
-                    alt={img.alt || `${product.name} view ${index + 1}`}
-                    width={80}
-                    height={80}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Product Info */}
-        <aside className="buy">
-          <h1 className="pdp__title">{product.name}</h1>
-
-          <div className="pdp__meta">
-            {product.rating.count > 0 && (
-              <div className="rating-summary">
-                <span className="stars">
-                  {'★'.repeat(Math.round(product.rating.average))}
-                  {'☆'.repeat(5 - Math.round(product.rating.average))}
-                </span>
-                <small>
-                  {product.rating.average.toFixed(1)} ({product.rating.count} reviews)
-                </small>
-              </div>
-            )}
-            <span>SKU: {selectedVariant?.sku || product.sku}</span>
-          </div>
-
-          <p className="pdp__price">
-            <strong>{currencyFormatter.format(price)}</strong>{' '}
-            {product.variants.length > 0 && (
-              <span className="price-note">From {currencyFormatter.format(Number(product.basePrice))}</span>
-            )}
-          </p>
-
-          {product.description && <p className="product-description">{product.description}</p>}
-
-          {/* Color Selector */}
-          {colors.length > 0 && (
-            <div className="pdp__section">
-              <span className="pdp__label">Color</span>
-              <div className="color-swatches">
-                {colors.map((color) => {
-                  const variant = product.variants.find((v) => v.color === color);
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      className={`color-swatch ${selectedColor === color ? 'is-active' : ''}`}
-                      style={{ backgroundColor: variant?.colorHex || '#d1d5db' }}
-                      onClick={() => setSelectedColor(color)}
-                      aria-label={`Select color ${color}`}
-                      aria-pressed={selectedColor === color}
+      {/* [2025-01-27 19:00:00] 主产品展示区域 - 完全匹配参考设计 */}
+      <div className="pdp-main">
+        <div className="container">
+          <div className="pdp-main__grid">
+            {/* 左侧图片画廊 */}
+            <section className="pdp-gallery" aria-label={`${product.name} gallery`}>
+              <div className="pdp-gallery__main">
+                {product.images.length > 0 ? (
+                  <>
+                    <Image
+                      src={currentImage}
+                      alt={product.images[selectedImageIndex]?.alt || product.name}
+                      width={600}
+                      height={800}
+                      priority
+                      className="pdp-gallery__main-image"
                     />
-                  );
-                })}
+                    <button className="pdp-gallery__nav pdp-gallery__nav--prev" onClick={() => setSelectedImageIndex(Math.max(0, selectedImageIndex - 1))}>
+                      ‹
+                    </button>
+                    <button className="pdp-gallery__nav pdp-gallery__nav--next" onClick={() => setSelectedImageIndex(Math.min(product.images.length - 1, selectedImageIndex + 1))}>
+                      ›
+                    </button>
+                  </>
+                ) : (
+                  <div className="pdp-gallery__placeholder">No Image</div>
+                )}
               </div>
-            </div>
-          )}
+              {product.images.length > 1 && (
+                <div className="pdp-gallery__thumbs">
+                  {product.images.map((img, index) => (
+                    <button
+                      key={img.id}
+                      className={`pdp-gallery__thumb ${index === selectedImageIndex ? 'is-active' : ''}`}
+                      onClick={() => setSelectedImageIndex(index)}
+                      aria-label={`View image ${index + 1}`}
+                    >
+                      <Image
+                        src={img.url}
+                        alt={img.alt || `${product.name} view ${index + 1}`}
+                        width={80}
+                        height={80}
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
 
-          {/* Size Selector */}
-          {sizes.length > 0 && (
-            <div className="pdp__section">
-              <span className="pdp__label">Size</span>
-              <div className="size-buttons">
-                {sizes.map((size) => (
-                  <button
-                    key={size}
-                    type="button"
-                    className={`size-button ${selectedSize === size ? 'is-active' : ''}`}
-                    onClick={() => setSelectedSize(size)}
-                    aria-pressed={selectedSize === size}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {/* 右侧产品详情 */}
+            <aside className="pdp-details">
+              {/* Best Seller标签 */}
+              <span className="pdp-badge pdp-badge--best-seller">Best Seller</span>
+              
+              <h1 className="pdp-details__title">{product.name}</h1>
+
+              {/* 评分 */}
+              {product.rating.count > 0 && (
+                <div className="pdp-details__rating">
+                  <span className="pdp-rating__stars">
+                    {'★'.repeat(Math.floor(product.rating.average))}
+                    {'☆'.repeat(5 - Math.floor(product.rating.average))}
+                  </span>
+                  <span className="pdp-rating__value">{product.rating.average.toFixed(1)}/5</span>
+                  <span className="pdp-rating__count">({product.rating.count >= 10000 ? '10,000+' : product.rating.count.toLocaleString()} ratings)</span>
+                  <span className="pdp-rating__reviews">{product.rating.count.toLocaleString()} reviews</span>
+                </div>
+              )}
+
+              {/* 配送选项 */}
+              <div className="pdp-details__delivery">
+                <div className="pdp-delivery__option pdp-delivery__option--free">
+                  <span className="pdp-delivery__label">FREE Delivery</span>
+                  <span className="pdp-delivery__date">Mon, Dec 1</span>
+                </div>
+                <div className="pdp-delivery__option pdp-delivery__option--rush">
+                  <span className="pdp-delivery__label">Rush Delivery</span>
+                  <span className="pdp-delivery__date">Fri, Nov 21</span>
+                </div>
+                <div className="pdp-delivery__option pdp-delivery__option--super-rush">
+                  <span className="pdp-delivery__label">Super Rush</span>
+                  <span className="pdp-delivery__date">Wed, Nov 19</span>
+                </div>
               </div>
-              <Link href="/size-guide" className="size-guide-link">
-                Size guide
-              </Link>
-            </div>
-          )}
 
-          {/* Quantity Selector */}
-          <div className="pdp__section">
-            <span className="pdp__label">Quantity</span>
-            <div className="qty__ctrl">
-              <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} aria-label="Decrease quantity">
-                −
-              </button>
-              <input
-                id="quantity"
-                type="number"
-                min={1}
-                max={selectedVariant?.stockQuantity || 999}
-                value={quantity}
-                onChange={(event) => {
-                  const val = parseInt(event.target.value, 10) || 1;
-                  setQuantity(Math.max(1, Math.min(val, selectedVariant?.stockQuantity || 999)));
-                }}
-                aria-label="Quantity"
-              />
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.min(selectedVariant?.stockQuantity || 999, quantity + 1))}
-                aria-label="Increase quantity"
-              >
-                +
-              </button>
-            </div>
-            {selectedVariant && (
-              <small className="stock-info">
-                {selectedVariant.stockQuantity === 0
-                  ? 'Out of stock'
-                  : selectedVariant.stockQuantity <= 5
-                  ? `Only ${selectedVariant.stockQuantity} left`
-                  : `${selectedVariant.stockQuantity} in stock`}
-              </small>
-            )}
+              {/* 装饰类型 */}
+              <div className="pdp-details__decoration">
+                <span className="pdp-decoration__icon">🎨</span>
+                <span className="pdp-decoration__label">Printing</span>
+              </div>
+
+              {/* 颜色选择 */}
+              {colorVariants.length > 0 && (
+                <div className="pdp-details__colors">
+                  <div className="pdp-colors__header">
+                    <span className="pdp-colors__label">Colors</span>
+                    <label className="pdp-toggle">
+                      <input type="checkbox" checked={noMinimum} onChange={(e) => setNoMinimum(e.target.checked)} />
+                      <span className="pdp-toggle__slider">
+                        <span className="pdp-toggle__label pdp-toggle__label--no">No</span>
+                        <span className="pdp-toggle__label pdp-toggle__label--yes">Yes</span>
+                      </span>
+                      <span className="pdp-toggle__text">No Minimum</span>
+                    </label>
+                  </div>
+                  <div className="pdp-colors__grid">
+                    {colorVariants.slice(0, 60).map((variant, index) => (
+                      <button
+                        key={variant.id || index}
+                        type="button"
+                        className={`pdp-color-swatch ${selectedColor === variant.color ? 'is-selected' : ''}`}
+                        style={{ backgroundColor: variant.colorHex || '#d1d5db' }}
+                        onClick={() => setSelectedColor(variant.color || null)}
+                        aria-label={`Select color ${variant.color}`}
+                        title={variant.color || ''}
+                      >
+                        {selectedColor === variant.color && <span className="pdp-color-swatch__check">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                  {selectedColor && (
+                    <div className="pdp-colors__selected">
+                      <span>{selectedColor} YS-5XL</span>
+                      <Link href="#sizes" className="pdp-colors__check-link">Check sizes for all colors</Link>
+                    </div>
+                  )}
+                  <div className="pdp-colors__minimum">
+                    <span>Minimum Quantity 1</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 主要操作按钮 */}
+              <div className="pdp-details__actions">
+                <Link href="/design-lab" className="pdp-btn pdp-btn--primary">
+                  Start Designing &gt;
+                </Link>
+                <div className="pdp-details__secondary-actions">
+                  <Link href="/request-sample" className="pdp-link">Request a Sample</Link>
+                  <Link href="/contact" className="pdp-link">Get a Quote</Link>
+                </div>
+              </div>
+            </aside>
           </div>
-
-          {/* Add to Cart Button */}
-          <button
-            className="add-to-cart-button"
-            onClick={handleAddToCart}
-            disabled={!selectedVariant || addingToCart || (selectedVariant?.stockQuantity || 0) < quantity}
-          >
-            {addingToCart ? 'Adding...' : 'Add to Cart'}
-          </button>
-
-          {/* Additional Info */}
-          <ul className="highlights">
-            {productHighlights.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </aside>
         </div>
       </div>
 
-      {/* [2025-11-16 11:45:00] Product Reviews Section aligned with prototype */}
-      <section className="pdp-reviews" aria-labelledby="reviews-heading">
-        <div className="container reviews__grid">
-          <h2 id="reviews-heading" className="visually-hidden">
-            Customer Reviews
+      {/* [2025-01-27 19:00:00] 描述和特性部分 */}
+      <section className="pdp-description">
+        <div className="container">
+          <div className="pdp-description__grid">
+            <div className="pdp-description__left">
+              <h2>Description</h2>
+              <p>{product.description || 'This comfortable t-shirt is perfect for custom printing. Made with high-quality materials, it offers great value and a modern fit.'}</p>
+              <Link href="/fit-sizing-guide" className="pdp-description__link">Fit & Sizing Guide</Link>
+            </div>
+            <div className="pdp-description__right">
+              <h3>Features & Specifications</h3>
+              <ul className="pdp-specs">
+                <li>100% ring spun cotton</li>
+                <li>Poly blend for durability</li>
+                <li>Narrow width, rib collar</li>
+                <li>Modern fit</li>
+                <li>Recycled tear-away label</li>
+                <li>Better Cotton</li>
+                <li>OEKO-TEX certified</li>
+                <li>Reduced plastic waste</li>
+                <li>Fair Labor Association</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* [2025-01-27 19:00:00] 配送选项详细说明 */}
+      <section className="pdp-delivery-info">
+        <div className="container">
+          <h2>Delivery Options</h2>
+          <ul className="pdp-delivery-info__list">
+            <li><strong>Free Delivery</strong> - Standard shipping at no extra cost</li>
+            <li><strong>Rush or Super Rush</strong> - Get your order faster with expedited shipping</li>
+            <li><strong>SHIP TO MULTIPLE ADDRESSES</strong> - Flat rate shipping per address. <Link href="/shipping-info">Learn More</Link></li>
+          </ul>
+        </div>
+      </section>
+
+      {/* [2025-01-27 19:00:00] 推荐产品部分 */}
+      {relatedProducts.length > 0 && (
+        <section className="pdp-recommended">
+          <div className="container">
+            <div className="pdp-recommended__tabs">
+              <button 
+                className={`pdp-tab ${recommendedTab === 'you-may-also-like' ? 'is-active' : ''}`}
+                onClick={() => setRecommendedTab('you-may-also-like')}
+              >
+                You May Also Like
+              </button>
+              <button 
+                className={`pdp-tab ${recommendedTab === 'budget-friendly' ? 'is-active' : ''}`}
+                onClick={() => setRecommendedTab('budget-friendly')}
+              >
+                Budget Friendly
+              </button>
+              <button 
+                className={`pdp-tab ${recommendedTab === 'more-from-brand' ? 'is-active' : ''}`}
+                onClick={() => setRecommendedTab('more-from-brand')}
+              >
+                More From This Brand
+              </button>
+              <button 
+                className={`pdp-tab ${recommendedTab === 'coordinating' ? 'is-active' : ''}`}
+                onClick={() => setRecommendedTab('coordinating')}
+              >
+                Coordinating Styles
+              </button>
+            </div>
+            <div className="pdp-recommended__grid">
+              {relatedProducts.map((related) => {
+                const relatedImage = related.images?.[0]?.url || '/placeholder-product.jpg';
+                const relatedPrice = Number(related.basePrice);
+                return (
+                  <Link key={related.id} href={`/products/${related.slug}`} className="pdp-recommended__card">
+                    <div className="pdp-recommended__image">
+                      <Image src={relatedImage} alt={related.name} width={280} height={350} />
+                    </div>
+                    <h3 className="pdp-recommended__title">{related.name}</h3>
+                    <div className="pdp-recommended__rating">
+                      <span className="pdp-recommended__stars">
+                        {'★'.repeat(Math.floor(related.rating?.average || 4.5))}
+                        {'☆'.repeat(5 - Math.floor(related.rating?.average || 4.5))}
+                      </span>
+                      <span className="pdp-recommended__rating-value">{(related.rating?.average || 4.5).toFixed(1)}</span>
+                    </div>
+                    <p className="pdp-recommended__price">{currencyFormatter.format(relatedPrice)}</p>
+                    <span className="pdp-recommended__minimum">No Minimum</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* [2025-01-27 19:00:00] 评论部分 - 完全匹配参考设计 */}
+      <section className="pdp-reviews-new" aria-labelledby="reviews-heading">
+        <div className="container">
+          <h2 id="reviews-heading" className="pdp-reviews-new__title">
+            Reviews for {product.name}
           </h2>
 
           {reviewStats && reviewStats.count > 0 && (
-            <div className="reviews__summary">
-              <div className="reviews__score">{reviewStats.average.toFixed(1)}</div>
-              <div className="reviews__stars">
-                {'★'.repeat(Math.round(reviewStats.average))}
-                {'☆'.repeat(5 - Math.round(reviewStats.average))}
+            <div className="pdp-reviews-new__summary">
+              <div className="pdp-reviews-new__overall">
+                <div className="pdp-reviews-new__score">{reviewStats.average.toFixed(1)}</div>
+                <div className="pdp-reviews-new__stars">
+                  {'★'.repeat(Math.floor(reviewStats.average))}
+                  {'☆'.repeat(5 - Math.floor(reviewStats.average))}
+                </div>
+                <p className="pdp-reviews-new__count">{reviewStats.count.toLocaleString()} reviews</p>
+                <div className="pdp-reviews-new__badge">
+                  <span>Trustpilot</span>
+                </div>
               </div>
-              <p>{reviewStats.count} reviews</p>
-              <ul className="reviews__bars">
-                {[5, 4, 3, 2, 1].map((rating) => {
-                  const count = reviewStats.distribution[rating as keyof typeof reviewStats.distribution] || 0;
-                  const percentage = reviewStats.count ? (count / reviewStats.count) * 100 : 0;
-                  return (
-                    <li key={rating}>
-                      <span>{rating}★</span>
-                      <span className="bar">
-                        <i style={{ width: `${percentage}%` }} />
-                      </span>
-                      <span>{count}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="pdp-reviews-new__breakdown">
+                <div className="pdp-reviews-new__bars">
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const count = reviewStats.distribution[rating as keyof typeof reviewStats.distribution] || 0;
+                    const percentage = reviewStats.count ? (count / reviewStats.count) * 100 : 0;
+                    const labels = ['Excellent', 'Great', 'Average', 'Poor', 'Bad'];
+                    return (
+                      <div key={rating} className="pdp-reviews-new__bar-row">
+                        <span className="pdp-reviews-new__bar-label">{labels[5 - rating]}</span>
+                        <div className="pdp-reviews-new__bar">
+                          <div className="pdp-reviews-new__bar-fill" style={{ width: `${percentage}%` }} />
+                        </div>
+                        <span className="pdp-reviews-new__bar-count">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="pdp-reviews-new__attributes">
+                  <div className="pdp-reviews-new__attr">
+                    <span className="pdp-reviews-new__attr-label">Fit</span>
+                    <span className="pdp-reviews-new__attr-stars">★★★★★</span>
+                    <span className="pdp-reviews-new__attr-value">4.8</span>
+                  </div>
+                  <div className="pdp-reviews-new__attr">
+                    <span className="pdp-reviews-new__attr-label">Materials</span>
+                    <span className="pdp-reviews-new__attr-stars">★★★★★</span>
+                    <span className="pdp-reviews-new__attr-value">4.7</span>
+                  </div>
+                  <div className="pdp-reviews-new__attr">
+                    <span className="pdp-reviews-new__attr-label">Quality</span>
+                    <span className="pdp-reviews-new__attr-stars">★★★★★</span>
+                    <span className="pdp-reviews-new__attr-value">4.5</span>
+                  </div>
+                  <div className="pdp-reviews-new__attr">
+                    <span className="pdp-reviews-new__attr-label">Style</span>
+                    <span className="pdp-reviews-new__attr-stars">★★★★★</span>
+                    <span className="pdp-reviews-new__attr-value">4.7</span>
+                  </div>
+                  <div className="pdp-reviews-new__attr">
+                    <span className="pdp-reviews-new__attr-label">Value for money</span>
+                    <span className="pdp-reviews-new__attr-stars">★★★★★</span>
+                    <span className="pdp-reviews-new__attr-value">4.4</span>
+                  </div>
+                  <div className="pdp-reviews-new__attr">
+                    <span className="pdp-reviews-new__attr-label">Size</span>
+                    <span className="pdp-reviews-new__attr-stars">★★★★★</span>
+                    <span className="pdp-reviews-new__attr-value">4.6</span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
+
+          {/* 用户生成内容 */}
+          <div className="pdp-reviews-new__ugc">
+            <div className="pdp-reviews-new__ugc-grid">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="pdp-reviews-new__ugc-item">
+                  <div className="pdp-reviews-new__ugc-placeholder">Photo {i}</div>
+                </div>
+              ))}
+              <div className="pdp-reviews-new__ugc-item pdp-reviews-new__ugc-item--video">
+                <div className="pdp-reviews-new__ugc-placeholder">Video</div>
+              </div>
+            </div>
+            <Link href="#all-photos" className="pdp-reviews-new__ugc-link">Show all photos</Link>
+          </div>
 
           <div className="reviews__list">
             {isAuthenticated && !showReviewForm && (
@@ -637,7 +775,7 @@ export function ProductDetailContent() {
                     disabled={helpfulReviews.has(review.id)}
                   >
                     {helpfulReviews.has(review.id) ? 'Marked helpful' : 'Helpful'}
-                    {review.helpfulCount > 0 && <span> ({review.helpfulCount})</span>}
+                    {(review.helpfulCount || 0) > 0 && <span> ({review.helpfulCount})</span>}
                   </button>
                 </article>
               ))
@@ -646,29 +784,24 @@ export function ProductDetailContent() {
         </div>
       </section>
 
-      {/* [2025-11-12 03:05:00] Related Products Section */}
-      {relatedProducts.length > 0 && (
-        <section className="pdp-related">
-          <div className="container">
-            <h2>You may also like</h2>
-            <div className="related-grid">
-              {relatedProducts.map((related) => {
-                const relatedImage = related.images?.[0]?.url || '/placeholder-product.jpg';
-                const relatedPrice = Number(related.basePrice);
-                return (
-                  <Link key={related.id} href={`/products/${related.slug}`} className="product">
-                    <div className="product__image">
-                      <Image src={relatedImage} alt={related.name} width={280} height={280} />
-                    </div>
-                    <h3 className="product__title">{related.name}</h3>
-                    <p className="product__price">{currencyFormatter.format(relatedPrice)}</p>
-                  </Link>
-                );
-              })}
+      {/* [2025-01-27 19:00:00] 产品专家部分 */}
+      <section className="pdp-experts">
+        <div className="container">
+          <div className="pdp-experts__content">
+            <div className="pdp-experts__image">
+              <div className="pdp-experts__placeholder">Product Experts</div>
+            </div>
+            <div className="pdp-experts__text">
+              <h2>Product Experts Available 7 Days a Week</h2>
+              <p>Not sure what to buy? We&apos;ll point you to the right product!</p>
+              <div className="pdp-experts__contact">
+                <a href="tel:8552712660" className="pdp-experts__phone">855-271-2660</a>
+                <Link href="/chat" className="pdp-btn pdp-btn--secondary">Chat Now</Link>
+              </div>
             </div>
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       <style jsx>{`
         .product-detail-page {
