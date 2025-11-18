@@ -15,7 +15,7 @@ interface CartContextType {
   cart: Cart | null;
   isLoading: boolean;
   error: Error | null;
-  addItem: (variantId: string, quantity?: number) => Promise<void>;
+  addItem: (variantId: string, quantity?: number, designId?: string) => Promise<void>;
   updateItem: (itemId: string, quantity: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -31,9 +31,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
     refreshInterval: 0,
   });
 
-  const addItem = async (variantId: string, quantity: number = 1) => {
+  const addItem = async (variantId: string, quantity: number = 1, designId?: string) => {
     try {
-      await cartApi.addItem(variantId, quantity);
+      await cartApi.addItem(variantId, quantity, designId);
       await mutate(); // Refresh cart
     } catch (err) {
       console.error('Error adding item to cart:', err);

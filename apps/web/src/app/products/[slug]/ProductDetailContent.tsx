@@ -479,7 +479,36 @@ export function ProductDetailContent() {
 
               {/* 主要操作按钮 */}
               <div className="pdp-details__actions">
-                <Link href="/design-lab" className="pdp-btn pdp-btn--primary">
+                <div className="pdp-details__primary-buttons">
+                  <button
+                    type="button"
+                    className="pdp-btn pdp-btn--primary"
+                    onClick={handleAddToCart}
+                    disabled={addingToCart || !selectedVariant}
+                  >
+                    {addingToCart ? 'Adding...' : 'Add to Cart'}
+                  </button>
+                  <button
+                    type="button"
+                    className="pdp-btn pdp-btn--secondary"
+                    onClick={async () => {
+                      if (!selectedVariant) {
+                        alert('Please select a variant (color/size)');
+                        return;
+                      }
+                      try {
+                        await handleAddToCart();
+                        router.push('/cart');
+                      } catch (err: any) {
+                        // Error already handled in handleAddToCart
+                      }
+                    }}
+                    disabled={addingToCart || !selectedVariant}
+                  >
+                    Buy Now
+                  </button>
+                </div>
+                <Link href={`/design-lab?variantId=${selectedVariant?.id || ''}`} className="pdp-btn pdp-btn--outline">
                   Start Designing &gt;
                 </Link>
                 <div className="pdp-details__secondary-actions">
@@ -890,6 +919,53 @@ export function ProductDetailContent() {
           display: grid;
           gap: 20px;
           align-content: start;
+        }
+        .pdp-details__actions {
+          display: grid;
+          gap: 12px;
+        }
+        .pdp-details__primary-buttons {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+        }
+        .pdp-btn {
+          padding: 14px 24px;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          text-align: center;
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: none;
+          display: inline-block;
+        }
+        .pdp-btn--primary {
+          background: #ff1f3d;
+          color: white;
+        }
+        .pdp-btn--primary:hover:not(:disabled) {
+          background: #e3002b;
+        }
+        .pdp-btn--secondary {
+          background: #333;
+          color: white;
+        }
+        .pdp-btn--secondary:hover:not(:disabled) {
+          background: #000;
+        }
+        .pdp-btn--outline {
+          background: transparent;
+          color: #ff1f3d;
+          border: 2px solid #ff1f3d;
+        }
+        .pdp-btn--outline:hover {
+          background: rgba(255, 31, 61, 0.1);
+        }
+        .pdp-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         .product-title {
           font-size: 28px;

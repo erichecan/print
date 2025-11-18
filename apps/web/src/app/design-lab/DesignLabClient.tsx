@@ -4284,22 +4284,42 @@ const DesignLabClient = () => {
                         setError('Please fill in all required fields');
                         return;
                       }
+                      if (!draft?.id) {
+                        setError('Design draft not found. Please create a design first.');
+                        return;
+                      }
+                      if (!draft.variantId) {
+                        setError('Product variant not found. Please select a product.');
+                        return;
+                      }
                       try {
                         setSaving(true);
-                        // TODO: 调用API保存设计并添加到购物车
-                        // await designLabApi.saveAndAddToCart(...);
+                        setError(null);
+                        
+                        // 1. 更新设计草稿（保存名称和状态）
+                        await designLabApi.updateDraft(draft.id, {
+                          name: saveDesignName.trim(),
+                          status: 'saved',
+                          summary: `Design saved by ${saveEmail}`,
+                        });
+                        
+                        // 2. 添加到购物车（使用 designId 和 variantId）
+                        const { cartApi } = await import('@/lib/api');
+                        await cartApi.addItem(draft.variantId, quantity, draft.id);
+                        
                         setShowSaveCartModal(false);
                         // 跳转到购物车页面
                         router.push('/cart');
                       } catch (err: any) {
-                        setError(err.message || '保存失败');
+                        console.error('Error saving design and adding to cart:', err);
+                        setError(err.message || '保存失败，请重试');
                       } finally {
                         setSaving(false);
                       }
                     }}
-                    disabled={saving || !saveDesignName.trim() || !saveEmail.trim()}
+                    disabled={saving || !saveDesignName.trim() || !saveEmail.trim() || !draft?.id}
                   >
-                    Save & Add to Cart
+                    {saving ? 'Saving...' : 'Save & Add to Cart'}
                   </button>
                 </div>
 

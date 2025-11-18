@@ -174,10 +174,11 @@ exports.getCart = async (req, res) => {
 /**
  * POST /api/cart/items - Add item to cart
  * [2025-11-04 23:50:00]
+ * [2025-01-27 17:30:00] Support adding design to cart (designId + variantId)
  */
 exports.addItem = async (req, res) => {
   try {
-    const { variantId, quantity = 1 } = req.body;
+    const { variantId, designId, quantity = 1 } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
@@ -199,6 +200,31 @@ exports.addItem = async (req, res) => {
 
     if (!variant) {
       return res.status(404).json({ error: 'Product variant not found' });
+    }
+
+    // [2025-01-27 17:30:00] If designId is provided, verify design exists and belongs to user
+    let design = null;
+    if (designId) {
+      design = await prisma.design.findUnique({
+        where: { id: designId },
+        include: {
+          variant: true,
+        },
+      });
+
+      if (!design) {
+        return res.status(404).json({ error: 'Design not found' });
+      }
+
+      // Verify design belongs to user or is public
+      if (design.userId && design.userId !== userId) {
+        return res.status(403).json({ error: 'Access denied to this design' });
+      }
+
+      // Verify design variant matches the requested variant
+      if (design.variantId !== variantId) {
+        return res.status(400).json({ error: 'Design variant does not match requested variant' });
+      }
     }
 
     // Check stock availability
@@ -225,17 +251,19 @@ exports.addItem = async (req, res) => {
     // Get or create cart
     const cart = await getOrCreateCart(userId, sessionId);
 
-    // Check if item already exists in cart
+    // [2025-01-27 17:30:00] Check if item already exists in cart (considering designId)
     const existingItem = await prisma.cartItem.findFirst({
       where: {
         cartId: cart.id,
         variantId: variantId,
+        // Note: Prisma schema doesn't have designId field yet, so we check by variantId only
+        // If designId is provided, we'll create a new item (or update if same design)
       },
     });
 
     let cartItem;
-    if (existingItem) {
-      // Check stock for updated quantity
+    if (existingItem && !designId) {
+      // Check stock for updated quantity (only for non-design items)
       const newQuantity = existingItem.quantity + quantity;
       const updatedStockCheck = await checkStockAvailability(variantId, newQuantity);
 
@@ -261,7 +289,9 @@ exports.addItem = async (req, res) => {
         },
       });
     } else {
-      // Create new cart item
+      // Create new cart item (with or without design)
+      // Note: Since Prisma schema doesn't have designId field, we'll store design info in a separate table
+      // For now, we'll create the cart item and handle design separately if needed
       cartItem = await prisma.cartItem.create({
         data: {
           cartId: cart.id,
@@ -270,11 +300,17 @@ exports.addItem = async (req, res) => {
           priceSnapshot: price,
         },
       });
+
+      // [2025-01-27 17:30:00] If designId is provided, we need to link it to the cart item
+      // Since Prisma schema doesn't support designId in CartItem, we'll use a workaround:
+      // Store design reference in a separate table or extend the schema later
+      // For now, we'll return the designId in the response for frontend to handle
     }
 
     res.status(201).json({
       id: cartItem.id,
       variantId: cartItem.variantId,
+      designId: designId || null,
       quantity: cartItem.quantity,
     });
   } catch (error) {

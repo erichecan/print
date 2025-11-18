@@ -333,8 +333,8 @@ export const collectionsApi = {
 // Cart API
 export const cartApi = {
   get: () => api<CartResponse>('/cart'),
-  addItem: (variantId: string, quantity: number = 1) =>
-    api('/cart/items', { method: 'POST', body: { variantId, quantity } }),
+  addItem: (variantId: string, quantity: number = 1, designId?: string) =>
+    api('/cart/items', { method: 'POST', body: { variantId, quantity, ...(designId && { designId }) } }),
   updateItem: (itemId: string, quantity: number) =>
     api(`/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } }),
   removeItem: (itemId: string) =>
