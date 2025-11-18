@@ -8,7 +8,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { couponApi } from '@/lib/api';
 
@@ -26,6 +26,23 @@ export default function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [postalCode, setPostalCode] = useState('');
+  const [postalError, setPostalError] = useState('Please enter a postal code to get your price.');
+  const [showCouponForm, setShowCouponForm] = useState(false);
+
+  const recommendedProducts = useMemo(
+    () => [
+      { id: 'rec-1', name: 'Gildan Midweight 50/50 Pullover Hoodie', image: '/assets/cat-sweatshirt.webp' },
+      { id: 'rec-2', name: "Gildan Women's Softstyle V-Neck T-shirt", image: '/assets/cat-tshirt.webp' },
+      { id: 'rec-3', name: 'Gildan Ultra Cotton Long Sleeve Jersey T-shirt', image: '/assets/cat-tshirt.webp' },
+      { id: 'rec-4', name: 'Gildan Softstyle Long Sleeve Jersey T-shirt', image: '/assets/cat-tshirt.webp' },
+      { id: 'rec-5', name: 'Gildan Softstyle Hoodie', image: '/assets/cat-sweatshirt.webp' },
+      { id: 'rec-6', name: 'Gildan Women’s Slim Fit Softstyle Jersey', image: '/assets/cat-tshirt.webp' },
+      { id: 'rec-7', name: 'Gildan Youth Softstyle Jersey T-shirt', image: '/assets/cat-tshirt.webp' },
+      { id: 'rec-8', name: 'Gildan Softstyle Eco Crewneck Sweatshirt', image: '/assets/cat-sweatshirt.webp' },
+    ],
+    []
+  );
 
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -77,6 +94,14 @@ export default function CartPage() {
     setCouponError(null);
   };
 
+  const handlePostalUpdate = () => {
+    if (!postalCode.trim() || postalCode.trim().length < 5) {
+      setPostalError('Please enter a valid zip/postal code.');
+      return;
+    }
+    setPostalError(null);
+  };
+
   const calculateTotal = () => {
     if (!cart) return 0;
     const discount = appliedCoupon ? appliedCoupon.discountAmount : 0;
@@ -124,155 +149,249 @@ export default function CartPage() {
   }
 
   return (
-    <section className="cart">
-      <div className="container">
-        <nav className="breadcrumb" aria-label="Breadcrumb">
-          <ol>
-            <li>
-              <Link href="/">Home</Link>
-            </li>
-            <li aria-current="page">Shopping Cart</li>
-          </ol>
-        </nav>
+    <section className="cart-new">
+      <div className="cart-new__top">
+        <div className="cart-new__breadcrumbs">
+          <Link href="/">Custom T-shirts</Link>
+          <span>My Cart</span>
+        </div>
+        <div className="cart-new__actions">
+          <a href="tel:8552712660">Talk to a Real Person 855-271-2660</a>
+          <Link href="/chat">Chat with a Real Person</Link>
+        </div>
+      </div>
 
-        <div className="cart__grid">
-          <div className="cart__items">
-            <h1>Shopping Cart</h1>
-            <div className="cart-table">
-              <div className="cart-row header">
-                <span>Product</span>
-                <span>Color/Size</span>
-                <span>Quantity</span>
-                <span>Price</span>
-                <span aria-hidden="true" />
+      <div className="cart-new__hero">
+        <h1>My Cart</h1>
+        <p className="cart-new__subtitle">Please enter a postal code to get your price.</p>
+      </div>
+
+      <div className={`cart-new__alert ${postalError ? 'has-error' : ''}`}>
+        <div className="cart-new__alert-icon">!</div>
+        <div className="cart-new__alert-content">
+          <p>{postalError || 'Great! We\'ll keep this ZIP on file for delivery estimates.'}</p>
+          <div className="cart-new__alert-form">
+            <label htmlFor="cart-zip" className="sr-only">
+              Enter postal code
+            </label>
+            <input
+              id="cart-zip"
+              type="text"
+              value={postalCode}
+              placeholder="Enter postal code"
+              onChange={(event) => setPostalCode(event.target.value)}
+            />
+            <button type="button" onClick={handlePostalUpdate}>
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="cart-new__grid">
+        <div className="cart-new__main">
+          {cart.items.map((item) => (
+            <article key={item.id} className="cart-card">
+              <div className="cart-card__media">
+                {item.thumbnail ? (
+                  <Image src={item.thumbnail} alt={item.productName} width={144} height={144} />
+                ) : (
+                  <div className="cart-card__placeholder">Design Preview</div>
+                )}
               </div>
-              {cart.items.map((item) => (
-                <div key={item.id} className="cart-row">
-                  <div className="item-info">
-                    {item.thumbnail && (
-                      <Image src={item.thumbnail} alt={item.productName} width={80} height={80} className="item-img" />
-                    )}
-                    <div className="item-details">
-                      <strong>{item.productName}</strong>
-                      <p>{item.variantDescription || 'Custom configuration'}</p>
-                    </div>
+              <div className="cart-card__body">
+                <div className="cart-card__top">
+                  <div>
+                    <p className="cart-card__design-name">{item.productName}</p>
+                    <button type="button" className="cart-card__link">
+                      Edit Design
+                    </button>
                   </div>
-                  <div className="item-variants">
-                    <small>{item.variantDescription || 'N/A'}</small>
-                  </div>
-                  <div className="item-qty">
+                  <button
+                    type="button"
+                    className="cart-card__remove"
+                    onClick={() => handleRemove(item.id)}
+                    disabled={updating === item.id}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="cart-card__product">
+                  {item.productName}
+                  <span>{item.variantDescription || 'Heather Dark Grey | Printing'}</span>
+                </p>
+                <p className="cart-card__meta">
+                  Qty {item.quantity}+ <span>XS | 1 |</span>{' '}
+                  <button type="button" className="cart-card__link">
+                    Edit Sizes
+                  </button>{' '}
+                  <span>|</span>{' '}
+                  <button type="button" className="cart-card__link">
+                    Add Another Color
+                  </button>
+                </p>
+
+                <div className="cart-card__controls">
+                  <div className="cart-card__qty">
                     <button
                       type="button"
-                      className="qty-btn"
                       onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                       disabled={updating === item.id || item.quantity <= 1}
-                      aria-label="Decrease quantity"
                     >
                       −
                     </button>
                     <input
                       type="number"
                       min={1}
-                      max={999}
                       value={item.quantity}
                       onChange={(event) => {
                         const nextValue = parseInt(event.target.value, 10) || 1;
                         handleUpdateQuantity(item.id, nextValue);
                       }}
                       disabled={updating === item.id}
-                      aria-label="Quantity"
                     />
-                    <button
-                      type="button"
-                      className="qty-btn"
-                      onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                      disabled={updating === item.id}
-                      aria-label="Increase quantity"
-                    >
+                    <button type="button" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)} disabled={updating === item.id}>
                       +
                     </button>
                   </div>
-                  <div className="item-price">
-                    <div>${item.unitPrice.toFixed(2)}</div>
-                    <small>Subtotal: ${item.subtotal.toFixed(2)}</small>
+                  <div className="cart-card__price">
+                    <span>${item.subtotal.toFixed(2)}</span>
+                    <small>${item.unitPrice.toFixed(2)} each</small>
                   </div>
-                  <div className="item-remove">
-                    <button type="button" onClick={() => handleRemove(item.id)} disabled={updating === item.id}>
-                      ×
-                    </button>
-                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+
+          <section className="cart-delivery">
+            <h3>Delivery Options</h3>
+            <div className="cart-delivery__options">
+              <div className="cart-delivery__card is-disabled">
+                <span>Ship to multiple addresses</span>
+              </div>
+              <div className="cart-delivery__card is-disabled">
+                <span>Only available for orders of 6 or more items</span>
+              </div>
+            </div>
+          </section>
+
+          <section className="cart-upsell">
+            <div className="cart-upsell__header">
+              <h3>Add Your Design to More Styles</h3>
+              <p>Only available for orders of 6 or more items.</p>
+            </div>
+            <div className="cart-upsell__grid">
+              {recommendedProducts.map((product) => (
+                <div key={product.id} className="cart-upsell__card">
+                  <Image src={product.image} alt={product.name} width={96} height={120} />
+                  <p>{product.name}</p>
+                  <button type="button">Add product</button>
                 </div>
               ))}
-            </div>
-
-            <div className="promo">
-              <label htmlFor="promo-code">Promo Code</label>
-              <div className="promo-input">
-                <input
-                  id="promo-code"
-                  type="text"
-                  placeholder="Enter code"
-                  value={couponCode}
-                  onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
-                  onKeyPress={(event) => event.key === 'Enter' && handleApplyCoupon()}
-                />
-                <button type="button" onClick={handleApplyCoupon} disabled={applyingCoupon || !couponCode.trim()}>
-                  {applyingCoupon ? 'Applying…' : 'Apply'}
-                </button>
+              <div className="cart-upsell__cta">
+                <div>
+                  <p>View more items that your group will love</p>
+                  <button type="button">Take a look</button>
+                </div>
               </div>
-              {appliedCoupon && (
-                <div className="coupon-applied">
-                  <p>
-                    Coupon <strong>{appliedCoupon.code}</strong> applied — saved ${appliedCoupon.discountAmount.toFixed(2)}
-                  </p>
-                  <button type="button" onClick={handleRemoveCoupon}>
-                    Remove
+            </div>
+          </section>
+        </div>
+
+        <aside className="cart-new__summary">
+          <div className="summary-panel">
+            <div className="summary-panel__row">
+              <span>Subtotal ({cart.itemCount} items)</span>
+              <span>${cart.subtotal.toFixed(2)}</span>
+            </div>
+            {appliedCoupon && (
+              <div className="summary-panel__row">
+                <span>Coupon ({appliedCoupon.code})</span>
+                <span>- ${appliedCoupon.discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="summary-panel__row">
+              <span>Delivery</span>
+              <span>{cart.shipping === 0 ? 'FREE' : `$${cart.shipping.toFixed(2)}`}</span>
+            </div>
+            <div className="summary-panel__row summary-panel__zip">
+              <div>
+                <span>Change postal code</span>
+                <label htmlFor="summary-zip" className="sr-only">
+                  Enter postal code
+                </label>
+                <input
+                  id="summary-zip"
+                  type="text"
+                  value={postalCode}
+                  placeholder="Enter postal code"
+                  onChange={(event) => setPostalCode(event.target.value)}
+                />
+              </div>
+              <button type="button" onClick={handlePostalUpdate}>
+                Update
+              </button>
+            </div>
+            {postalError && <p className="summary-panel__zip-error">Please enter a valid zip/postal code.</p>}
+            <div className="summary-panel__row">
+              <span>Tax</span>
+              <span>Calculated at checkout</span>
+            </div>
+            <div className="summary-panel__row summary-panel__total">
+              <span>Total</span>
+              <span>${calculateTotal().toFixed(2)}</span>
+            </div>
+            <Link href="/checkout" className="summary-panel__primary">
+              Proceed to Checkout
+            </Link>
+            <button type="button" className="summary-panel__secondary" onClick={() => setShowCouponForm(!showCouponForm)}>
+              {showCouponForm ? 'Hide discount code' : 'Add discount code'}
+            </button>
+            {showCouponForm && (
+              <div className="summary-panel__coupon">
+                <label htmlFor="summary-coupon">Enter discount code</label>
+                <div>
+                  <input
+                    id="summary-coupon"
+                    type="text"
+                    value={couponCode}
+                    placeholder="Enter code"
+                    onChange={(event) => setCouponCode(event.target.value.toUpperCase())}
+                  />
+                  <button type="button" onClick={handleApplyCoupon} disabled={applyingCoupon || !couponCode.trim()}>
+                    {applyingCoupon ? 'Applying…' : 'Apply'}
                   </button>
                 </div>
-              )}
-              {couponError && <div className="coupon-error">{couponError}</div>}
-            </div>
+                {appliedCoupon && (
+                  <p>
+                    Coupon <strong>{appliedCoupon.code}</strong> applied — saved ${appliedCoupon.discountAmount.toFixed(2)}
+                    <button type="button" onClick={handleRemoveCoupon}>
+                      Remove
+                    </button>
+                  </p>
+                )}
+                {couponError && <p className="summary-panel__coupon-error">{couponError}</p>}
+              </div>
+            )}
           </div>
 
-          <aside className="cart-summary">
-            <div className="summary-card">
-              <h2>Order Summary</h2>
-              <div className="summary-row">
-                <span>Subtotal</span>
-                <span>${cart.subtotal.toFixed(2)}</span>
-              </div>
-              {appliedCoupon && (
-                <div className="summary-row">
-                  <span>Coupon ({appliedCoupon.code})</span>
-                  <span>- ${appliedCoupon.discountAmount.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="summary-row">
-                <span>Shipping</span>
-                <span>{cart.shipping === 0 ? 'Free' : `$${cart.shipping.toFixed(2)}`}</span>
-              </div>
-              <div className="summary-row">
-                <span>Tax</span>
-                <span>Calculated at checkout</span>
-              </div>
-              <div className="summary-row total">
-                <span>Total</span>
-                <span>${calculateTotal().toFixed(2)}</span>
-              </div>
-              <Link href="/checkout" className="btn btn-primary">
-                Proceed to Checkout
-              </Link>
-              <Link href="/products" className="btn btn-outline">
-                Continue Shopping
-              </Link>
-            </div>
+          <div className="summary-panel__badge">
+            <p>FREE design review</p>
+            <p>FREE standard shipping</p>
+            <p>No setup fees</p>
+            <p>100% satisfaction guaranteed</p>
+          </div>
+        </aside>
+      </div>
 
-            <div className="trust-badges">
-              <p>✓ Free shipping on $50+</p>
-              <p>✓ 100% satisfaction guarantee</p>
-              <p>✓ Secure checkout</p>
-            </div>
-          </aside>
+      <div className="cart-new__footer">
+        <div>
+          <h4>Talk to a Real Person 7 Days a Week</h4>
+          <p>8am–Midnight ET Mon-Fri | 10am–6pm ET Saturday | 10am–6pm ET Sunday</p>
+        </div>
+        <div className="cart-new__footer-contact">
+          <a href="tel:8552712660">855-271-2660</a>
+          <a href="mailto:service@customink.com">Send us an Email</a>
         </div>
       </div>
     </section>
