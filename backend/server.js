@@ -23,18 +23,32 @@ const ensurePrismaClient = () => {
   }
 };
 
+// [2025-01-27 17:15:00] 改进迁移执行，失败时不阻止服务器启动
 const runMigrationsIfEnabled = () => {
   try {
     if (process.env.AUTO_MIGRATE === 'true') {
       logger.info('🔧 AUTO_MIGRATE=true detected. Running database migrations...');
-      execSync('node scripts/run-migrations.js', { stdio: 'inherit' });
-      logger.info('✅ Database migrations completed.');
+      try {
+        execSync('node scripts/run-migrations.js', { 
+          stdio: 'inherit',
+          timeout: 60000, // 60秒超时
+        });
+        logger.info('✅ Database migrations completed.');
+      } catch (migrationError) {
+        // [2025-01-27 17:15:00] 迁移失败时不退出服务器
+        // 如果数据库已经是最新的，迁移失败不应该阻止服务器启动
+        logger.warn('⚠️  Database migrations failed, but server will continue to start');
+        logger.warn('   如果数据库已经是最新状态，可以忽略此错误');
+        logger.warn('   错误详情:', migrationError.message);
+        // 不退出，让服务器继续启动
+      }
     } else {
       logger.info('ℹ️  AUTO_MIGRATE not enabled. Skipping migrations.');
     }
   } catch (error) {
     logger.error('❌ Failed to run migrations:', error);
-    process.exit(1);
+    // [2025-01-27 17:15:00] 即使迁移失败，也继续启动服务器
+    logger.warn('⚠️  Server will continue to start despite migration failure');
   }
 };
 
