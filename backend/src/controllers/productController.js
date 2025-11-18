@@ -11,6 +11,21 @@ const { optimizeImageUrl } = require('../utils/imageHelper');
 const PRODUCT_LIST_CACHE_TTL = 300; // 5 minutes
 const PRODUCT_DETAIL_CACHE_TTL = 600; // 10 minutes
 
+// [2025-01-27 16:40:00] 辅助函数：安全地将 Prisma.Decimal 或数字转换为 Number
+const toNumber = (value, defaultValue = 0) => {
+  if (value === null || value === undefined) {
+    return defaultValue;
+  }
+  if (typeof value === 'number') {
+    return value;
+  }
+  if (typeof value === 'object' && value.toNumber && typeof value.toNumber === 'function') {
+    return value.toNumber();
+  }
+  const parsed = Number(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+};
+
 /**
  * Get products list with pagination, filtering, and sorting
  * GET /api/products?page=1&limit=20&collection=&search=&sort=
@@ -156,8 +171,9 @@ exports.getProducts = async (req, res) => {
     ]);
 
     const normalizedProducts = products.map((product) => {
-      const basePrice = Number(product.basePrice || 0);
-      const salePrice = Number(product.salePrice || product.basePrice || 0);
+      // [2025-01-27 16:40:00] basePrice 是 Int (cents)，salePrice 是 Decimal，需要正确处理类型转换
+      const basePrice = toNumber(product.basePrice, 0);
+      const salePrice = toNumber(product.salePrice, basePrice);
       const topVariant = product.variants?.[0];
       const variantStock = Number(topVariant?.stockQuantity || 0);
       const fallbackProductStock = Number(product.stockQuantity || 0);
@@ -344,11 +360,15 @@ exports.getProductBySlug = async (req, res) => {
       description: product.description,
       longDescription: product.longDescription,
       price: {
-        base: Number(product.basePrice || 0),
-        sale: Number(product.salePrice || product.basePrice || 0),
+        // [2025-01-27 16:40:00] basePrice 是 Int (cents)，salePrice 是 Decimal，需要正确处理类型转换
+        base: toNumber(product.basePrice, 0),
+        sale: toNumber(product.salePrice, toNumber(product.basePrice, 0)),
         currency: 'CAD',
-        onSale:
-          Number(product.salePrice || 0) > 0 && Number(product.salePrice || 0) !== Number(product.basePrice || 0),
+        onSale: (() => {
+          const sale = toNumber(product.salePrice, 0);
+          const base = toNumber(product.basePrice, 0);
+          return sale > 0 && sale !== base;
+        })(),
       },
       category: product.category,
       brand: product.brand,
@@ -366,7 +386,7 @@ exports.getProductBySlug = async (req, res) => {
         color: variant.color,
         size: variant.size,
         stockQuantity: variant.stockQuantity,
-        price: Number(product.basePrice || 0) + Number(variant.priceAdjustment || 0),
+        price: toNumber(product.basePrice, 0) + toNumber(variant.priceAdjustment, 0),
         // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
         // [2025-01-27 16:35:00] 添加空值检查，避免处理 null/undefined 时出错
         imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl) : null,
