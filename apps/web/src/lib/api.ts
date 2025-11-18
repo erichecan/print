@@ -246,14 +246,41 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     config.body = isFormData ? body : JSON.stringify(body);
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: response.statusText }));
-    throw new Error(error.error || `API Error: ${response.status}`);
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  } catch (error: unknown) {
+    // [2025-01-27 16:10:00] 处理网络错误（连接被拒绝、空响应等）
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Network error: Unable to connect to server. Please check if the backend server is running.');
+    }
+    throw error;
   }
 
-  return response.json();
+  // [2025-01-27 16:10:00] 处理空响应
+  if (!response || !response.ok) {
+    let errorMessage = `API Error: ${response?.status || 'Unknown'}`;
+    try {
+      const error = await response.json().catch(() => ({ error: response?.statusText || 'Unknown error' }));
+      errorMessage = error.error || errorMessage;
+    } catch {
+      // 如果无法解析JSON，使用状态文本
+      errorMessage = response?.statusText || 'Network error: Empty response from server';
+    }
+    throw new Error(errorMessage);
+  }
+
+  // [2025-01-27 16:10:00] 处理空响应体
+  const text = await response.text();
+  if (!text || text.trim() === '') {
+    throw new Error('Empty response from server');
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Invalid JSON response: ${text.substring(0, 100)}`);
+  }
 }
 
 // Products API
@@ -982,7 +1009,7 @@ export const designLabApi = {
   getDraft: (id: string) => api<{ data: DesignDraft }>(`/designs/${id}`),
   updateDraft: (id: string, payload: UpdateDesignDraftPayload) =>
     api<{ data: DesignDraft }>(`/designs/${id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: payload,
     }),
   deleteDraft: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),

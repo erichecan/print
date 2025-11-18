@@ -469,7 +469,11 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         )}
         {imageFields.map((field, index) => {
           const imageUrl = watch(`images.${index}.url` as any) || '';
-          const preview = imagePreviews[index] || (imageUrl ? imageUrl : null);
+          // [2025-01-27 16:00:00] 过滤掉 file:// URL，避免浏览器报错
+          const validImageUrl = imageUrl && !imageUrl.startsWith('file://') 
+            ? (imageUrl.startsWith('http') || imageUrl.startsWith('/') ? imageUrl : null)
+            : null;
+          const preview = imagePreviews[index] || validImageUrl;
           const isUploading = uploadingImages[index] || false;
           const progress = uploadProgress[index] || 0;
 

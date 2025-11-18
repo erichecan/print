@@ -11,7 +11,7 @@ const fetchOwnedDesign = async (designId, { user, sessionId }) => {
   const design = await prisma.design.findUnique({
     where: { id: designId },
     include: {
-      productVariant: {
+      variant: {
         include: {
           product: true
         }
@@ -44,7 +44,8 @@ exports.createDesignDraft = async (req, res) => {
       return res.status(400).json({ error: 'productVariantId is required' });
     }
 
-    const variant = await prisma.productVariant.findUnique({
+    // [2025-11-18 14:30:00] Updated for Variant model rename
+    const variant = await prisma.variant.findUnique({
       where: { id: productVariantId },
       include: {
         product: {
@@ -68,17 +69,26 @@ exports.createDesignDraft = async (req, res) => {
     };
 
     const draft = await prisma.$transaction(async (tx) => {
+      const baseDesignData = {
+        sessionId,
+        variant: { connect: { id: productVariantId } },
+        name: name || `${variant.product.name} Design`,
+        status: 'DRAFT',
+        currentVersion: 1,
+        canvasSnapshot: initialCanvas,
+        pricingSnapshot: pricing || null
+      };
+
+      const designData = userId
+        ? {
+            ...baseDesignData,
+            sessionId: null,
+            user: { connect: { id: userId } },
+          }
+        : baseDesignData;
+
       const createdDesign = await tx.design.create({
-        data: {
-          userId,
-          sessionId,
-          productVariantId,
-          name: name || `${variant.product.name} Design`,
-          status: 'DRAFT',
-          currentVersion: 1,
-          canvasSnapshot: initialCanvas,
-          pricingSnapshot: pricing || null
-        }
+        data: designData
       });
 
       await tx.designVersion.create({
@@ -239,8 +249,8 @@ exports.requestQuote = async (req, res) => {
       return res.status(result.error.status).json({ error: result.error.message });
     }
 
-    const variant = result.design.productVariant;
-    const basePrice = Number(variant.product.basePrice);
+    const variant = result.design.variant;
+    const basePrice = Number(variant.product.basePrice || 0);
     const adjustment = Number(variant.priceAdjustment || 0);
     const unitPrice = Math.max(basePrice + adjustment, 0);
     const total = unitPrice * quantity;

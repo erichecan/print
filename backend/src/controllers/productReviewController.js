@@ -38,22 +38,13 @@ exports.getProductReviews = async (req, res) => {
       return res.json(cached);
     }
     
+    // [2025-11-18 14:30:00] Removed user include due to missing relation; frontend handles anonymous data
     const [reviews, total] = await Promise.all([
       prisma.productReview.findMany({
         where,
         take,
         skip,
         orderBy,
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
       }),
       prisma.productReview.count({ where }),
     ]);
@@ -170,6 +161,7 @@ exports.createProductReview = async (req, res) => {
       }
     }
     
+    // [2025-11-18 14:30:00] Create review without eager-loading user relation
     const review = await prisma.productReview.create({
       data: {
         productId,
@@ -179,16 +171,6 @@ exports.createProductReview = async (req, res) => {
         title: title.trim(),
         comment: comment.trim(),
         isVerifiedPurchase,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
       },
     });
     

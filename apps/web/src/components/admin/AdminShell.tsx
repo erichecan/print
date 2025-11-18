@@ -123,6 +123,27 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         if (!mounted) return;
+        
+        // [2025-01-27 16:10:00] 区分网络错误和认证错误
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const isNetworkError = errorMessage.includes('Network error') || 
+                              errorMessage.includes('connect to server') ||
+                              errorMessage.includes('Empty response');
+        
+        if (isNetworkError) {
+          // 网络错误：可能是后端服务器崩溃或重启，不要立即跳转，给用户提示
+          console.error('[AdminShell] Network error checking auth:', errorMessage);
+          setAuthMessage('无法连接到服务器，请稍后重试。如果问题持续，请检查后端服务是否正常运行。');
+          // 延迟重试而不是立即跳转
+          setTimeout(() => {
+            if (mounted) {
+              setAuthState('unauthenticated');
+            }
+          }, 3000);
+          return;
+        }
+        
+        // 认证错误：用户未登录或token无效，立即跳转
         setAuthState('unauthenticated');
         const message =
           error instanceof Error && error.message ? error.message : t('loginRedirectMessage');

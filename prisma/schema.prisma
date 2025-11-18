@@ -29,6 +29,8 @@ model User {
   orders    Order[]
   sessions  Session[]
   designs   Design[]
+  // [2025-11-18 10:45:12] Users can own design projects synced to storefront
+  projects  Project[]
 
   @@index([email])
   @@index([role])
@@ -109,7 +111,8 @@ model Product {
   slug            String   @unique
   description     String?  @db.Text
   longDescription String?  @map("long_description") @db.Text
-  basePrice       Decimal  @map("base_price") @db.Decimal(10, 2)
+  // [2025-11-18 10:45:12] Store base price in cents to align backend/frontend calculations
+  basePrice       Int      @map("base_price_cents")
   // [2025-11-10 10:30:00] Added cost management fields
   unitCost        Decimal  @default(0) @map("unit_cost") @db.Decimal(10, 2)
   salePrice       Decimal  @default(0) @map("sale_price") @db.Decimal(10, 2)
@@ -119,6 +122,8 @@ model Product {
   stockQuantity   Int      @default(0) @map("stock_quantity")
   weight          Decimal? @db.Decimal(8, 2)
   dimensions      String?
+  // [2025-11-18 10:45:12] Printable areas capture front safe-zone metadata for editors
+  printableAreas  Json?    @map("printable_areas")
   isActive        Boolean  @default(true) @map("is_active")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
@@ -128,10 +133,11 @@ model Product {
   brandId    String?  @map("brand_id")
   brand      Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
 
-  variants           ProductVariant[]
+  variants           Variant[]
   images             ProductImage[]
   reviews            ProductReview[]
   collectionProducts CollectionProduct[]
+  projects           Project[]
 
   @@index([slug])
   @@index([categoryId])
@@ -140,27 +146,30 @@ model Product {
   @@map("products")
 }
 
-model ProductVariant {
+// [2025-11-18 10:45:12] Variant model powers color/size level inventory
+model Variant {
   id              String   @id @default(uuid())
   productId       String   @map("product_id")
   product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  color           String?
+  color           String
   colorHex        String?  @map("color_hex")
-  size            String?
+  size            String
   sku             String   @unique
   priceAdjustment Decimal  @default(0) @map("price_adjustment") @db.Decimal(10, 2)
+  // [2025-11-18 10:45:12] Keep stockQuantity naming for legacy controllers
   stockQuantity   Int      @default(0) @map("stock_quantity")
   imageUrl        String?  @map("image_url")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  cartItems  CartItem[]
+  cartItems CartItem[]
   orderItems OrderItem[]
-  designs    Design[]
+  designs   Design[]
+  projects  Project[]
 
   @@index([productId])
   @@index([sku])
-  @@map("product_variants")
+  @@map("variants")
 }
 
 model ProductImage {
@@ -238,15 +247,16 @@ model Cart {
 }
 
 model CartItem {
-  id            String         @id @default(uuid())
-  cartId        String         @map("cart_id")
-  cart          Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  variantId     String         @map("variant_id")
-  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  id            String   @id @default(uuid())
+  cartId        String   @map("cart_id")
+  cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  // [2025-11-18 10:45:12] Cart items now reference Variant model
+  variantId     String   @map("variant_id")
+  variant       Variant  @relation(fields: [variantId], references: [id])
   quantity      Int
-  priceSnapshot Decimal        @map("price_snapshot") @db.Decimal(10, 2)
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+  priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   @@index([cartId])
   @@index([variantId])
@@ -279,6 +289,8 @@ model Order {
 
   items     OrderItem[]
   shipments Shipment[]
+  // [2025-11-18 10:45:12] Projects submitted through the storefront for this order
+  projects  Project[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -305,14 +317,15 @@ enum PaymentStatus {
 }
 
 model OrderItem {
-  id            String         @id @default(uuid())
-  orderId       String         @map("order_id")
-  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  variantId     String         @map("variant_id")
-  variant       ProductVariant @relation(fields: [variantId], references: [id])
+  id            String   @id @default(uuid())
+  orderId       String   @map("order_id")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // [2025-11-18 10:45:12] Order items reference the Variant model for fulfillment
+  variantId     String   @map("variant_id")
+  variant       Variant  @relation(fields: [variantId], references: [id])
   quantity      Int
-  priceSnapshot Decimal        @map("price_snapshot") @db.Decimal(10, 2)
-  createdAt     DateTime       @default(now()) @map("created_at")
+  priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
 
   @@index([orderId])
   @@index([variantId])
@@ -486,8 +499,9 @@ model Design {
   userId           String?        @map("user_id")
   user             User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   sessionId        String?        @map("session_id")
-  productVariantId String         @map("product_variant_id")
-  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  // [2025-11-18 10:45:12] Design records bind to Variant for synchronized stock
+  variantId        String         @map("variant_id")
+  variant          Variant        @relation(fields: [variantId], references: [id])
   name             String
   status           DesignStatus   @default(DRAFT)
   currentVersion   Int            @default(1) @map("current_version")
@@ -505,7 +519,7 @@ model Design {
 
   @@index([userId])
   @@index([sessionId])
-  @@index([productVariantId])
+  @@index([variantId])
   @@index([status])
   @@map("designs")
 }
@@ -551,6 +565,41 @@ enum DesignStatus {
   LOCKED
   ORDERED
   ARCHIVED
+}
+
+// [2025-11-18 10:45:12] Project lifecycle for storefront editor
+enum ProjectStatus {
+  DRAFT
+  READY_FOR_UPLOAD
+  SUBMITTED
+  ORDERED
+  ARCHIVED
+}
+
+// [2025-11-18 10:45:12] Project captures customizable canvas/output previews
+model Project {
+  id          String        @id @default(uuid())
+  userId      String?       @map("user_id")
+  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId   String        @map("product_id")
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   String?       @map("variant_id")
+  variant     Variant?      @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  orderId     String?       @map("order_id")
+  order       Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  name        String
+  status      ProjectStatus @default(DRAFT)
+  canvasState Json          @map("canvas_state")
+  previewUrls String[]      @default([]) @map("preview_urls")
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([productId])
+  @@index([variantId])
+  @@index([orderId])
+  @@map("projects")
 }
 
 // [2025-01-27 21:30:00] Design Template model - 设计模板

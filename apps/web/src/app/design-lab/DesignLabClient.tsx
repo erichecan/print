@@ -1014,6 +1014,15 @@ const DesignLabClient = () => {
     }
   }, [handleCanvasChange, updateLayersFromCanvas]);
 
+  const sendObjectToCanvasBack = useCallback((canvasInstance: any, obj: any) => {
+    if (!canvasInstance || !obj) return;
+    if (typeof canvasInstance.sendToBack === 'function') {
+      canvasInstance.sendToBack(obj);
+    } else if (typeof canvasInstance.moveTo === 'function') {
+      canvasInstance.moveTo(obj, 0);
+    }
+  }, []);
+
   // [2025-01-27 16:00:00] Initialize print area visualization
   const initializePrintArea = useCallback(async (fabric: any, canvasInstance: any) => {
     if (!canvasInstance) return;
@@ -1051,7 +1060,7 @@ const DesignLabClient = () => {
       });
       printAreaRef.current = printAreaRect;
       canvasInstance.add(printAreaRect);
-      canvasInstance.sendToBack(printAreaRect);
+      sendObjectToCanvasBack(canvasInstance, printAreaRect);
     }
 
     // Create safe area rectangle (dotted border)
@@ -1073,19 +1082,19 @@ const DesignLabClient = () => {
       });
       safeAreaRef.current = safeAreaRect;
       canvasInstance.add(safeAreaRect);
-      canvasInstance.sendToBack(safeAreaRect);
+      sendObjectToCanvasBack(canvasInstance, safeAreaRect);
     }
 
     // Ensure print area indicators are always at the back
     if (printAreaRef.current) {
-      canvasInstance.sendToBack(printAreaRef.current);
+      sendObjectToCanvasBack(canvasInstance, printAreaRef.current);
     }
     if (safeAreaRef.current) {
-      canvasInstance.sendToBack(safeAreaRef.current);
+      sendObjectToCanvasBack(canvasInstance, safeAreaRef.current);
     }
 
     canvasInstance.renderAll();
-  }, [canvas]);
+  }, [canvas, sendObjectToCanvasBack]);
 
   // [2025-01-27 16:00:00] Toggle print area visibility
   const togglePrintArea = useCallback(() => {
@@ -1238,6 +1247,32 @@ const DesignLabClient = () => {
     }
     applySnapshotToCanvas(canvas);
   }, [canvas, applySnapshotToCanvas]);
+
+  // [2025-11-18 14:05:00] Hoist resolver before effects to avoid TDZ runtime errors
+  const resolveDefaultVariantId = useCallback(async (): Promise<string | null> => {
+    if (defaultVariantIdRef.current) {
+      return defaultVariantIdRef.current;
+    }
+    const fallbackVariantIdFromEnv = process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_VARIANT_ID;
+    if (fallbackVariantIdFromEnv) {
+      defaultVariantIdRef.current = fallbackVariantIdFromEnv;
+      return fallbackVariantIdFromEnv;
+    }
+    const fallbackProductSlug =
+      process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_PRODUCT_SLUG || 'classic-crew-tee';
+    try {
+      const product = await productsApi.getBySlug(fallbackProductSlug);
+      const variantId = product?.variants?.[0]?.id || null;
+      if (variantId) {
+        defaultVariantIdRef.current = variantId;
+        return variantId;
+      }
+    } catch (resolveError) {
+      console.error('[2025-11-15 16:22:10] resolveDefaultVariantId error:', resolveError);
+      setError('无法加载默认产品，请从商品详情页进入 Design Lab。');
+    }
+    return null;
+  }, [setError]);
 
   useEffect(() => {
     const loadDraft = async () => {
@@ -1720,17 +1755,14 @@ const DesignLabClient = () => {
           break;
         case 'templates':
           // [2025-01-27 21:55:00] 打开模板库
-          handleOpenTemplates();
+          setShowTemplates(true);
           break;
         case 'comments':
           // [2025-01-27 21:55:00] 打开评论面板
-          handleOpenComments();
+          setShowComments(true);
           break;
         case 'products':
           router.push('/products');
-          break;
-        case 'names':
-          setShowAddNamesModal(true);
           break;
         case 'printArea':
           togglePrintArea();
@@ -1739,7 +1771,7 @@ const DesignLabClient = () => {
           break;
       }
     },
-    [handleOpenComments, handleOpenTemplates, router, togglePrintArea] // [2025-11-16 13:10:00] 补齐依赖，避免 stale handler
+    [router, togglePrintArea] // [2025-11-16 13:10:00] 补齐依赖，避免 stale handler
   );
 
   const handleGuideActionTrigger = useCallback(
@@ -1824,30 +1856,6 @@ const DesignLabClient = () => {
       handleCanvasChange();
     }
   }, [handleCanvasChange]);
-
-  const resolveDefaultVariantId = useCallback(async (): Promise<string | null> => {
-    if (defaultVariantIdRef.current) {
-      return defaultVariantIdRef.current;
-    }
-    const fallbackVariantIdFromEnv = process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_VARIANT_ID;
-    if (fallbackVariantIdFromEnv) {
-      defaultVariantIdRef.current = fallbackVariantIdFromEnv;
-      return fallbackVariantIdFromEnv;
-    }
-    const fallbackProductSlug =
-      process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_PRODUCT_SLUG || 'gildan-midweight-50-50-pullover-hoodie';
-    try {
-      const product = await productsApi.getBySlug(fallbackProductSlug);
-      const variantId = product?.variants?.[0]?.id || null;
-      if (variantId) {
-        defaultVariantIdRef.current = variantId;
-        return variantId;
-      }
-    } catch (resolveError) {
-      console.error('[2025-11-15 16:22:10] resolveDefaultVariantId error:', resolveError);
-    }
-    return null;
-  }, []);
 
   const handleProductColorSelect = useCallback((colorKey: string) => {
     // [2025-11-15 16:07:58] Inspector 色板切换

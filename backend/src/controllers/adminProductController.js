@@ -5,6 +5,7 @@
 const path = require('path');
 const fs = require('fs');
 const prisma = require('../lib/prisma');
+const { Prisma } = require('@prisma/client');
 const { redis, deleteCache, getRedisKeys } = require('../config/redis');
 const {
   PRODUCT_UPLOAD_DIR,
@@ -148,8 +149,22 @@ exports.listProducts = async (req, res) => {
       prisma.product.count({ where }),
     ]);
 
+    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    const { optimizeImageUrl } = require('../utils/imageHelper');
+    const normalizedProducts = products.map((product) => ({
+      ...product,
+      images: product.images.map((image) => ({
+        ...image,
+        url: optimizeImageUrl(image.url, { req }) || image.url,
+      })),
+      variants: product.variants.map((variant) => ({
+        ...variant,
+        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+      })),
+    }));
+
     res.json({
-      data: products,
+      data: normalizedProducts,
       pagination: {
         page,
         limit,
@@ -191,7 +206,21 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    return res.json(product);
+    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    const { optimizeImageUrl } = require('../utils/imageHelper');
+    const normalizedProduct = {
+      ...product,
+      images: product.images.map((image) => ({
+        ...image,
+        url: optimizeImageUrl(image.url, { req }) || image.url,
+      })),
+      variants: product.variants.map((variant) => ({
+        ...variant,
+        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+      })),
+    };
+
+    return res.json(normalizedProduct);
   } catch (error) {
     console.error('[2025-11-11 23:18:42] getProductById error:', error);
     return res.status(500).json({ error: 'Failed to load product' });
@@ -223,9 +252,43 @@ exports.createProduct = async (req, res) => {
       collections = [],
     } = req.body || {};
 
-    if (!name || !categoryId || !sku || typeof basePrice === 'undefined') {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!name || !categoryId || !sku || typeof basePrice === 'undefined' || basePrice === null) {
+      return res.status(400).json({ error: 'Missing required fields: name, categoryId, sku, or basePrice' });
     }
+
+    // [2025-01-27 16:05:00] 类型转换：basePrice 需要转换为分（整数）
+    // basePrice 在 schema 中是 Int 类型（base_price_cents），前端可能发送美元金额
+    let basePriceCents;
+    if (typeof basePrice === 'number') {
+      // 如果是美元金额（通常小于 10000），转换为分
+      // 如果已经是分（通常大于 1000），直接使用
+      basePriceCents = basePrice < 1000 ? Math.round(basePrice * 100) : Math.round(basePrice);
+    } else if (typeof basePrice === 'string') {
+      const parsed = parseFloat(basePrice);
+      if (isNaN(parsed)) {
+        return res.status(400).json({ error: 'Invalid basePrice format' });
+      }
+      basePriceCents = parsed < 1000 ? Math.round(parsed * 100) : Math.round(parsed);
+    } else {
+      const parsed = parseInt(basePrice, 10);
+      if (isNaN(parsed)) {
+        return res.status(400).json({ error: 'Invalid basePrice format' });
+      }
+      basePriceCents = parsed;
+    }
+    
+    // [2025-01-27 16:05:00] 确保 basePriceCents 是有效的整数
+    if (!Number.isInteger(basePriceCents) || basePriceCents < 0) {
+      return res.status(400).json({ error: 'basePrice must be a positive number' });
+    }
+
+    // [2025-01-27 15:50:00] 确保其他价格字段为 Decimal 类型（使用 Prisma.Decimal）
+    const convertToDecimal = (value) => {
+      if (value === undefined || value === null) return undefined;
+      if (typeof value === 'string') return new Prisma.Decimal(value);
+      if (typeof value === 'number') return new Prisma.Decimal(value);
+      return value;
+    };
 
     const result = await prisma.$transaction(async (tx) => {
       const finalSlug = await ensureUniqueSlug(
@@ -240,41 +303,58 @@ exports.createProduct = async (req, res) => {
           slug: finalSlug,
           categoryId,
           brandId: brandId || null,
-          basePrice,
-          unitCost: typeof unitCost === 'undefined' ? 0 : unitCost,
-          salePrice: typeof salePrice === 'undefined' ? basePrice : salePrice,
-          grossProfit: typeof grossProfit === 'undefined' ? 0 : grossProfit,
+          basePrice: basePriceCents,
+          unitCost: convertToDecimal(unitCost) || new Prisma.Decimal(0),
+          salePrice: convertToDecimal(salePrice) || new Prisma.Decimal(basePriceCents).dividedBy(100),
+          grossProfit: convertToDecimal(grossProfit) || new Prisma.Decimal(0),
           sku,
           stockQuantity: stockQuantity || 0,
           description: description || null,
           longDescription: longDescription || null,
           isActive,
           isCustomizable,
-          weight: weight || null,
+          weight: weight ? convertToDecimal(weight) : null,
           dimensions: dimensions || null,
-          variants: variants.length
+          variants: variants && variants.length > 0
             ? {
-                create: variants.map((variant) => ({
-                  color: variant.color || null,
-                  colorHex: variant.colorHex || null,
-                  size: variant.size || null,
-                  sku: variant.sku,
-                  priceAdjustment: variant.priceAdjustment || 0,
-                  stockQuantity: variant.stockQuantity || 0,
-                  imageUrl: variant.imageUrl || null,
-                })),
+                create: variants
+                  // [2025-01-27 16:05:00] 过滤掉无效的变体（缺少必需字段）
+                  .filter((variant) => {
+                    return variant && variant.sku && variant.color && variant.size;
+                  })
+                  .map((variant) => ({
+                    color: variant.color.trim() || 'UNSET',
+                    colorHex: variant.colorHex ? variant.colorHex.trim() : null,
+                    size: variant.size.trim() || 'ONE',
+                    sku: variant.sku.trim(),
+                    priceAdjustment: variant.priceAdjustment 
+                      ? convertToDecimal(variant.priceAdjustment) 
+                      : new Prisma.Decimal(0),
+                    stockQuantity: typeof variant.stockQuantity === 'number' 
+                      ? Math.max(0, Math.floor(variant.stockQuantity)) 
+                      : 0,
+                    imageUrl: variant.imageUrl ? variant.imageUrl.trim() : null,
+                  })),
               }
             : undefined,
-          images: images.length
+          images: images && images.length > 0
             ? {
-                create: images.map((image, index) => ({
-                  url: image.url,
-                  alt: image.alt || null,
-                  sortOrder:
-                    typeof image.sortOrder === 'number'
-                      ? image.sortOrder
-                      : index,
-                })),
+                create: images
+                  // [2025-01-27 16:00:00] 过滤掉无效的URL（如file://协议）
+                  .filter((image) => {
+                    if (!image || !image.url) return false;
+                    const url = image.url.trim();
+                    // 只允许 http、https 或相对路径
+                    return url.startsWith('http') || url.startsWith('/');
+                  })
+                  .map((image, index) => ({
+                    url: image.url.trim(),
+                    alt: image.alt ? image.alt.trim() : null,
+                    sortOrder:
+                      typeof image.sortOrder === 'number'
+                        ? image.sortOrder
+                        : index,
+                  })),
               }
             : undefined,
           collectionProducts: collections.length
@@ -305,15 +385,66 @@ exports.createProduct = async (req, res) => {
       return created;
     });
 
-    // [2025-11-16 14:15:00] 创建商品后立即清理缓存，确保前台可以看到最新商品
-    await invalidateProductCache(result.slug);
+    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    const { optimizeImageUrl } = require('../utils/imageHelper');
+    const normalizedResult = {
+      ...result,
+      images: result.images.map((image) => ({
+        ...image,
+        url: optimizeImageUrl(image.url, { req }) || image.url,
+      })),
+      variants: result.variants.map((variant) => ({
+        ...variant,
+        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+      })),
+    };
 
-    return res.status(201).json(result);
-  } catch (error) {
-    console.error('[2025-11-11 23:18:42] createProduct error:', error);
-    if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'SKU or slug already exists' });
+    // [2025-11-16 14:15:00] 创建商品后立即清理缓存，确保前台可以看到最新商品
+    // [2025-01-27 16:10:00] 缓存清理失败不应该影响商品创建成功
+    try {
+      await invalidateProductCache(result.slug);
+    } catch (cacheError) {
+      console.warn('[2025-11-11 23:18:42] Failed to invalidate cache:', cacheError);
+      // 缓存清理失败不影响商品创建成功
     }
+
+    return res.status(201).json(normalizedResult);
+  } catch (error) {
+    // [2025-01-27 16:05:00] 增强错误日志，输出详细错误信息
+    console.error('[2025-11-11 23:18:42] createProduct error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      name: error.name,
+      stack: error.stack?.split('\n').slice(0, 10).join('\n'), // 只输出前10行堆栈
+    });
+    console.error('Request body:', JSON.stringify(req.body, null, 2));
+    
+    if (error.code === 'P2002') {
+      return res.status(409).json({ 
+        error: 'SKU or slug already exists',
+        details: error.meta?.target || 'Unknown field',
+      });
+    }
+    
+    if (error.code === 'P2003') {
+      return res.status(400).json({ 
+        error: 'Invalid foreign key reference',
+        details: error.meta?.field_name || 'Unknown field',
+      });
+    }
+    
+    // [2025-01-27 16:05:00] 返回更详细的错误信息（开发环境）
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({ 
+        error: 'Failed to create product',
+        details: error.message,
+        code: error.code,
+        meta: error.meta,
+      });
+    }
+    
     return res.status(500).json({ error: 'Failed to create product' });
   }
 };
@@ -451,10 +582,24 @@ exports.updateProduct = async (req, res) => {
       return refreshed;
     });
 
+    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    const { optimizeImageUrl } = require('../utils/imageHelper');
+    const normalizedResult = {
+      ...result,
+      images: result.images.map((image) => ({
+        ...image,
+        url: optimizeImageUrl(image.url, { req }) || image.url,
+      })),
+      variants: result.variants.map((variant) => ({
+        ...variant,
+        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+      })),
+    };
+
     // [2025-11-16 14:15:00] 更新商品后同步刷新缓存，避免旧数据残留
     await invalidateProductCache(result.slug);
 
-    return res.json(result);
+    return res.json(normalizedResult);
   } catch (error) {
     console.error('[2025-11-11 23:18:42] updateProduct error:', error);
     if (error.code === 'P2002') {
@@ -557,7 +702,8 @@ exports.uploadProductImages = async (req, res) => {
 
     const createPayload = files.map((file, index) => {
       const storageKey = buildStorageKey(file.filename);
-      const publicUrl = buildPublicUrl(storageKey);
+      // [2025-01-27 16:15:00] 传递req对象以生成完整的后端服务器URL
+      const publicUrl = buildPublicUrl(storageKey, req);
       const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
       const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
 
@@ -578,11 +724,18 @@ exports.uploadProductImages = async (req, res) => {
       });
     });
 
+    // [2025-01-27 16:25:00] 将图片URL转换为完整的后端服务器URL
+    const { optimizeImageUrl } = require('../utils/imageHelper');
+    const normalizedImages = images.map((image) => ({
+      ...image,
+      url: optimizeImageUrl(image.url, { req }) || image.url,
+    }));
+
     await invalidateProductCache(product.slug);
 
     res.status(201).json({
       message: 'Images uploaded successfully',
-      images,
+      images: normalizedImages,
     });
   } catch (error) {
     console.error('[adminProductController] uploadProductImages error:', error);

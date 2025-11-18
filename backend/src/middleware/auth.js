@@ -89,7 +89,8 @@ exports.authenticate = async (req, res, next) => {
       null;
 
     if (!token) {
-      throw new UnauthorizedError('Please login to access this resource');
+      // [2025-11-18 11:58:00] Avoid crashing server when auth is missing
+      return next(new UnauthorizedError('Please login to access this resource'));
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production');
@@ -106,7 +107,8 @@ exports.authenticate = async (req, res, next) => {
     });
 
     if (!user) {
-      throw new UnauthorizedError('Invalid token');
+      // [2025-11-18 11:58:00] Surface invalid token as handled error
+      return next(new UnauthorizedError('Invalid token'));
     }
 
     req.user = user;
@@ -114,16 +116,17 @@ exports.authenticate = async (req, res, next) => {
   } catch (error) {
     // If it's already an AppError, pass it through
     if (error.isOperational) {
-      throw error;
+      // [2025-11-18 11:58:00] Pass operational auth errors to Express error handler
+      return next(error);
     }
     
     // Handle JWT errors
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
-      throw new UnauthorizedError('Invalid or expired token');
+      return next(new UnauthorizedError('Invalid or expired token'));
     }
     
     logger.error('Authentication error:', error);
-    throw new UnauthorizedError('Authentication failed');
+    return next(new UnauthorizedError('Authentication failed'));
   }
 };
 

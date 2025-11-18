@@ -284,7 +284,8 @@ export function ProductDetailContent() {
     );
   }
 
-  const currentImage = product.images[selectedImageIndex]?.url || product.images[0]?.url || '/placeholder-product.jpg';
+  const fallbackImage = '/assets/hero/hero-card-tee.jpg';
+  const currentImage = product.images[selectedImageIndex]?.url || product.images[0]?.url || fallbackImage;
   const price = selectedVariant
     ? Number(product.basePrice) + Number(selectedVariant.priceAdjustment || 0)
     : Number(product.basePrice);
@@ -301,7 +302,7 @@ export function ProductDetailContent() {
     name: product.name,
     description: product.description ?? 'Custom apparel and promotional products from Suvernire Plus.',
     sku: selectedVariant?.sku || product.sku,
-    image: product.images.length ? product.images.map((img) => img.url) : ['/placeholder-product.jpg'],
+    image: product.images.length ? product.images.map((img) => img.url) : [fallbackImage],
     brand: {
       '@type': 'Brand',
       name: 'suvernire plus',
@@ -562,7 +563,7 @@ export function ProductDetailContent() {
             </div>
             <div className="pdp-recommended__grid">
               {relatedProducts.map((related) => {
-                const relatedImage = related.images?.[0]?.url || '/placeholder-product.jpg';
+                const relatedImage = related.images?.[0]?.url || fallbackImage;
                 const relatedPrice = Number(related.basePrice);
                 return (
                   <Link key={related.id} href={`/products/${related.slug}`} className="pdp-recommended__card">

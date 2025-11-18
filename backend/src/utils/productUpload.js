@@ -40,8 +40,35 @@ const isImageExtensionAllowed = (fileName) => {
 // [2025-01-27 14:58:00] Build the storage key (relative path) for persisted assets
 const buildStorageKey = (fileName) => path.join('products', fileName).replace(/\\/g, '/');
 
-// [2025-01-27 14:58:00] Construct the public URL served from express static middleware
-const buildPublicUrl = (storageKey) => `${UPLOADS_PUBLIC_PREFIX}/${storageKey}`;
+// [2025-01-27 16:15:00] Construct the public URL served from express static middleware
+// [2025-01-27 16:15:00] 支持返回完整的后端服务器URL，以便Next.js Image组件可以访问
+const buildPublicUrl = (storageKey, req = null) => {
+  const relativeUrl = `${UPLOADS_PUBLIC_PREFIX}/${storageKey}`;
+  
+  // [2025-01-27 16:15:00] 如果提供了请求对象，返回完整的后端服务器URL
+  if (req) {
+    const protocol = req.protocol || 'http';
+    const host = req.get('host') || 'localhost:3001';
+    return `${protocol}://${host}${relativeUrl}`;
+  }
+  
+  // [2025-01-27 16:15:00] 如果有环境变量配置的后端URL，使用它
+  const backendUrl = process.env.BACKEND_URL || process.env.API_BASE_URL || process.env.FRONTEND_URL;
+  if (backendUrl) {
+    try {
+      const url = new URL(backendUrl);
+      // 如果后端URL包含 /api，去掉它（因为图片服务在根路径）
+      const baseUrl = backendUrl.replace(/\/api\/?$/, '');
+      return `${baseUrl}${relativeUrl}`;
+    } catch {
+      // URL解析失败，返回相对路径
+    }
+  }
+  
+  // [2025-01-27 16:15:00] 默认返回完整的本地开发URL
+  const defaultHost = process.env.PORT ? `localhost:${process.env.PORT}` : 'localhost:3001';
+  return `http://${defaultHost}${relativeUrl}`;
+};
 
 // [2025-01-27 14:58:00] Translate a public asset URL back to its storage key
 const extractStorageKeyFromUrl = (url) => {

@@ -164,8 +164,9 @@ exports.getProducts = async (req, res) => {
       const stockQuantity = topVariant ? variantStock : fallbackProductStock; // [2025-11-16 14:12:00] 支持无变体商品读取产品级库存
 
       // [2025-01-27 15:02:55] Normalize image payloads with optimized CDN parameters
+      // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL，以便Next.js Image组件访问
       const images = (product.images || []).map((image) => ({
-        url: optimizeImageUrl(image.url, { width: 640, quality: 80 }) || image.url,
+        url: optimizeImageUrl(image.url, { width: 640, quality: 80, req }) || image.url,
         alt: image.alt || product.name,
         sortOrder: image.sortOrder,
       }));
@@ -339,7 +340,8 @@ exports.getProductBySlug = async (req, res) => {
       brand: product.brand,
       images: product.images.map((image) => ({
         id: image.id,
-        url: optimizeImageUrl(image.url, { width: 1280, quality: 85 }) || image.url,
+        // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
+        url: optimizeImageUrl(image.url, { width: 1280, quality: 85, req }) || image.url,
         alt: image.alt || product.name,
         sortOrder: image.sortOrder,
       })),
@@ -350,7 +352,8 @@ exports.getProductBySlug = async (req, res) => {
         size: variant.size,
         stockQuantity: variant.stockQuantity,
         price: Number(product.basePrice || 0) + Number(variant.priceAdjustment || 0),
-        imageUrl: optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80 }) || variant.imageUrl,
+        // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
+        imageUrl: optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl,
       })),
       rating: {
         average: Number(avgRating._avg.rating || 0),
@@ -507,7 +510,8 @@ exports.getRelatedProducts = async (req, res) => {
 
     const formattedRelated = topProducts.map((product) => {
       const images = (product.images || []).map((image) => ({
-        url: optimizeImageUrl(image.url, { width: 480, quality: 80 }) || image.url,
+        // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
+        url: optimizeImageUrl(image.url, { width: 480, quality: 80, req }) || image.url,
         alt: image.alt || product.name,
         sortOrder: image.sortOrder,
       }));

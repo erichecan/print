@@ -1,0 +1,8 @@
+{
+  "_comment": "ts-node seed compiler config [2025-11-18 11:18:45]",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node"
+  }
+}
+

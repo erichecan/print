@@ -88,7 +88,8 @@ export default function ProductsClient() {
   return (
     <div className="product-grid-new">
       {products.map((product, index) => {
-        const img = product.primaryImage?.url || product.images?.[0]?.url || '/placeholder-product.jpg';
+        const fallbackImage = '/assets/hero/hero-card-tee.jpg';
+        const img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
         const alt = product.primaryImage?.alt || product.name;
         const price = product.price?.sale || product.price?.base || 0;
         const badge = index < 3 ? getProductBadge(index) : null;
