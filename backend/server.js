@@ -34,6 +34,20 @@ const runMigrationsIfEnabled = () => {
           timeout: 60000, // 60秒超时
         });
         logger.info('✅ Database migrations completed.');
+        
+        // [2025-01-11 14:52:00] 迁移后自动修复 base_price 列问题
+        try {
+          logger.info('🔧 Running database column fix...');
+          execSync('node scripts/fix-base-price-column.js', { 
+            stdio: 'inherit',
+            timeout: 30000, // 30秒超时
+          });
+          logger.info('✅ Database column fix completed.');
+        } catch (fixError) {
+          logger.warn('⚠️  Database column fix failed, but server will continue to start');
+          logger.warn('   错误详情:', fixError.message);
+          // 不退出，让服务器继续启动
+        }
       } catch (migrationError) {
         // [2025-01-27 17:15:00] 迁移失败时不退出服务器
         // 如果数据库已经是最新的，迁移失败不应该阻止服务器启动
