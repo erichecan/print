@@ -2,11 +2,24 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Product base price stored in cents + printable areas JSON
+-- [2025-01-11 14:47:00] 修复：安全地迁移 base_price 到 base_price_cents
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "base_price_cents" INTEGER NOT NULL DEFAULT 0;
-UPDATE "products"
-SET "base_price_cents" = COALESCE(ROUND("base_price" * 100)::INTEGER, 0)
-WHERE "base_price_cents" = 0;
-ALTER TABLE "products" DROP COLUMN IF EXISTS "base_price";
+
+-- 只有在 base_price 列存在时才迁移数据
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'products' AND column_name = 'base_price'
+  ) THEN
+    UPDATE "products"
+    SET "base_price_cents" = COALESCE(ROUND("base_price" * 100)::INTEGER, 0)
+    WHERE "base_price_cents" = 0;
+    
+    ALTER TABLE "products" DROP COLUMN IF EXISTS "base_price";
+  END IF;
+END $$;
+
 ALTER TABLE "products" ALTER COLUMN "base_price_cents" DROP DEFAULT;
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "printable_areas" JSONB;
 
