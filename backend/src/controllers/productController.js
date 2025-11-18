@@ -37,7 +37,8 @@ exports.getProducts = async (req, res) => {
     const skip = (page - 1) * limit;
     const collectionSlug = req.query.collection;
     const search = req.query.search;
-    const allowedSortFields = ['createdAt', 'name', 'basePrice', 'salePrice'];
+    // [2025-01-27 16:45:00] 只使用数据库中实际存在的列名，避免 Prisma 映射问题
+    const allowedSortFields = ['createdAt', 'name', 'updatedAt'];
     const requestedSort = req.query.sort || 'createdAt';
     const sortBy = allowedSortFields.includes(requestedSort) ? requestedSort : 'createdAt';
     const sortOrder = req.query.order === 'asc' ? 'asc' : 'desc';
@@ -181,8 +182,9 @@ exports.getProducts = async (req, res) => {
 
       // [2025-01-27 15:02:55] Normalize image payloads with optimized CDN parameters
       // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL，以便Next.js Image组件访问
+      // [2025-01-27 16:45:00] 添加空值检查，避免处理 null/undefined 的图片 URL
       const images = (product.images || []).map((image) => ({
-        url: optimizeImageUrl(image.url, { width: 640, quality: 80, req }) || image.url,
+        url: image.url ? (optimizeImageUrl(image.url, { width: 640, quality: 80, req }) || image.url) : null,
         alt: image.alt || product.name,
         sortOrder: image.sortOrder,
       }));
