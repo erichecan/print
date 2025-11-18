@@ -352,14 +352,15 @@ exports.getProductBySlug = async (req, res) => {
       },
       category: product.category,
       brand: product.brand,
-      images: product.images.map((image) => ({
+      images: (product.images || []).map((image) => ({
         id: image.id,
         // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
-        url: optimizeImageUrl(image.url, { width: 1280, quality: 85, req }) || image.url,
+        // [2025-01-27 16:35:00] 添加空值检查，避免处理 null/undefined 时出错
+        url: image.url ? (optimizeImageUrl(image.url, { width: 1280, quality: 85, req }) || image.url) : null,
         alt: image.alt || product.name,
         sortOrder: image.sortOrder,
       })),
-      variants: product.variants.map((variant) => ({
+      variants: (product.variants || []).map((variant) => ({
         id: variant.id,
         sku: variant.sku,
         color: variant.color,
@@ -367,14 +368,15 @@ exports.getProductBySlug = async (req, res) => {
         stockQuantity: variant.stockQuantity,
         price: Number(product.basePrice || 0) + Number(variant.priceAdjustment || 0),
         // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
-        imageUrl: optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl,
+        // [2025-01-27 16:35:00] 添加空值检查，避免处理 null/undefined 时出错
+        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl) : null,
       })),
       rating: {
         average: Number(avgRating._avg.rating || 0),
         count: Number(avgRating._count.rating || 0),
       },
       reviews: product.reviews,
-      collections: product.collectionProducts.map((item) => item.collection),
+      collections: (product.collectionProducts || []).map((item) => item.collection),
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
@@ -387,8 +389,22 @@ exports.getProductBySlug = async (req, res) => {
 
     res.json(formattedProduct);
   } catch (error) {
-    console.error('Error fetching product:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    console.error('[Product Controller] Error fetching product by slug:', error);
+    console.error('[Product Controller] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      slug: req.params.slug,
+    });
+    logger.error('Failed to fetch product by slug', { 
+      error: error.message, 
+      stack: error.stack,
+      slug: req.params.slug,
+    });
+    res.status(500).json({ 
+      error: 'Failed to fetch product',
+      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+    });
   }
 };
 
