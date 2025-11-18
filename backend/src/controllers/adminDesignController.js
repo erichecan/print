@@ -17,37 +17,42 @@ const STATUS_FILTERS = {
   rejected: ['ARCHIVED'],
 };
 
-const mapDesignSummary = (design) => ({
-  id: design.id,
-  name: design.name,
-  status: design.status,
-  reviewStatus: STATUS_LABELS[design.status] || design.status,
-  createdAt: design.createdAt,
-  updatedAt: design.updatedAt,
-  thumbnailUrl: design.thumbnailUrl,
-  user: design.user
-    ? {
-        id: design.user.id,
-        email: design.user.email,
-        firstName: design.user.firstName,
-        lastName: design.user.lastName,
-      }
-    : null,
-  productVariant: design.productVariant
-    ? {
-        id: design.productVariant.id,
-        sku: design.productVariant.sku,
-        color: design.productVariant.color,
-        size: design.productVariant.size,
-        product: design.productVariant.product
-          ? {
-              id: design.productVariant.product.id,
-              name: design.productVariant.product.name,
-            }
-          : null,
-      }
-    : null,
-});
+// [2025-01-27 16:30:00] 添加空值检查，避免访问 null 对象的属性时出错
+const mapDesignSummary = (design) => {
+  if (!design) return null;
+  
+  return {
+    id: design.id,
+    name: design.name || null,
+    status: design.status || null,
+    reviewStatus: STATUS_LABELS[design.status] || design.status || null,
+    createdAt: design.createdAt,
+    updatedAt: design.updatedAt,
+    thumbnailUrl: design.thumbnailUrl || null,
+    user: design.user
+      ? {
+          id: design.user.id || null,
+          email: design.user.email || null,
+          firstName: design.user.firstName || null,
+          lastName: design.user.lastName || null,
+        }
+      : null,
+    productVariant: design.productVariant
+      ? {
+          id: design.productVariant.id || null,
+          sku: design.productVariant.sku || null,
+          color: design.productVariant.color || null,
+          size: design.productVariant.size || null,
+          product: design.productVariant.product
+            ? {
+                id: design.productVariant.product.id || null,
+                name: design.productVariant.product.name || null,
+              }
+            : null,
+        }
+      : null,
+  };
+};
 
 exports.listDesigns = async (req, res) => {
   try {
@@ -90,7 +95,7 @@ exports.listDesigns = async (req, res) => {
     ]);
 
     res.json({
-      data: designs.map(mapDesignSummary),
+      data: designs.map(mapDesignSummary).filter(Boolean), // [2025-01-27 16:30:00] 过滤掉 null 值
       pagination: {
         page,
         limit,
@@ -100,7 +105,15 @@ exports.listDesigns = async (req, res) => {
     });
   } catch (error) {
     console.error('[adminDesignController] listDesigns error:', error);
-    res.status(500).json({ error: 'Failed to load designs' });
+    console.error('[adminDesignController] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+    });
+    res.status(500).json({ 
+      error: 'Failed to load designs',
+      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+    });
   }
 };
 

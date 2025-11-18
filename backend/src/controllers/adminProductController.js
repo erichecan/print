@@ -150,16 +150,17 @@ exports.listProducts = async (req, res) => {
     ]);
 
     // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedProducts = products.map((product) => ({
       ...product,
-      images: product.images.map((image) => ({
+      images: (product.images || []).map((image) => ({
         ...image,
-        url: optimizeImageUrl(image.url, { req }) || image.url,
+        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
       })),
-      variants: product.variants.map((variant) => ({
+      variants: (product.variants || []).map((variant) => ({
         ...variant,
-        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
       })),
     }));
 
@@ -174,7 +175,15 @@ exports.listProducts = async (req, res) => {
     });
   } catch (error) {
     console.error('[2025-11-11 23:18:42] listProducts error:', error);
-    res.status(500).json({ error: 'Failed to load products' });
+    console.error('[2025-11-11 23:18:42] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+    });
+    res.status(500).json({ 
+      error: 'Failed to load products',
+      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+    });
   }
 };
 
@@ -207,16 +216,17 @@ exports.getProductById = async (req, res) => {
     }
 
     // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedProduct = {
       ...product,
-      images: product.images.map((image) => ({
+      images: (product.images || []).map((image) => ({
         ...image,
-        url: optimizeImageUrl(image.url, { req }) || image.url,
+        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
       })),
-      variants: product.variants.map((variant) => ({
+      variants: (product.variants || []).map((variant) => ({
         ...variant,
-        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
       })),
     };
 
@@ -386,16 +396,17 @@ exports.createProduct = async (req, res) => {
     });
 
     // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedResult = {
       ...result,
-      images: result.images.map((image) => ({
+      images: (result.images || []).map((image) => ({
         ...image,
-        url: optimizeImageUrl(image.url, { req }) || image.url,
+        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
       })),
-      variants: result.variants.map((variant) => ({
+      variants: (result.variants || []).map((variant) => ({
         ...variant,
-        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
       })),
     };
 
@@ -583,16 +594,17 @@ exports.updateProduct = async (req, res) => {
     });
 
     // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedResult = {
       ...result,
-      images: result.images.map((image) => ({
+      images: (result.images || []).map((image) => ({
         ...image,
-        url: optimizeImageUrl(image.url, { req }) || image.url,
+        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
       })),
-      variants: result.variants.map((variant) => ({
+      variants: (result.variants || []).map((variant) => ({
         ...variant,
-        imageUrl: variant.imageUrl ? optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl : null,
+        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
       })),
     };
 
@@ -725,10 +737,11 @@ exports.uploadProductImages = async (req, res) => {
     });
 
     // [2025-01-27 16:25:00] 将图片URL转换为完整的后端服务器URL
+    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
-    const normalizedImages = images.map((image) => ({
+    const normalizedImages = (images || []).map((image) => ({
       ...image,
-      url: optimizeImageUrl(image.url, { req }) || image.url,
+      url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
     }));
 
     await invalidateProductCache(product.slug);

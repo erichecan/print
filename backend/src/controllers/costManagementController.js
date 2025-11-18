@@ -143,8 +143,14 @@ exports.listProductCosts = async (req, res) => {
     });
   } catch (error) {
     logger.error('[CostManagement] Failed to list product costs', error);
+    logger.error('[CostManagement] Error details:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+    });
     res.status(500).json({
-      error: 'Failed to load product cost data'
+      error: 'Failed to load product cost data',
+      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
     });
   }
 };
