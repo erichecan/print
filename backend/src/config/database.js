@@ -1,6 +1,29 @@
 // [2025-11-02 20:52:00] Database configuration using Sequelize
 const { Sequelize } = require('sequelize');
+const { URL } = require('url');
 require('dotenv').config();
+
+// [2025-01-11 14:05:00] 从 DATABASE_URL 解析数据库连接参数（用于 Sequelize CLI）
+function parseDatabaseUrl(databaseUrl) {
+  if (!databaseUrl) return null;
+  
+  try {
+    const url = new URL(databaseUrl);
+    return {
+      username: url.username || '',
+      password: url.password || '',
+      host: url.hostname || '',
+      port: url.port || '5432',
+      database: url.pathname ? url.pathname.slice(1) : '', // 移除前导斜杠
+    };
+  } catch (error) {
+    console.warn('⚠️  Failed to parse DATABASE_URL:', error.message);
+    return null;
+  }
+}
+
+// [2025-01-11 14:05:00] 解析 DATABASE_URL（如果存在）以支持 Render/Neon 等平台
+const dbUrlParts = parseDatabaseUrl(process.env.DATABASE_URL);
 
 // Configuration for Sequelize CLI
 const config = {
@@ -23,11 +46,12 @@ const config = {
     logging: false
   },
   production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 5432,
+    // [2025-01-11 14:05:00] 优先使用 DATABASE_URL 解析的值，否则使用单独的环境变量
+    username: dbUrlParts?.username || process.env.DB_USER,
+    password: dbUrlParts?.password || process.env.DB_PASSWORD,
+    database: dbUrlParts?.database || process.env.DB_NAME,
+    host: dbUrlParts?.host || process.env.DB_HOST,
+    port: parseInt(dbUrlParts?.port || process.env.DB_PORT || '5432', 10),
     dialect: 'postgres',
     logging: false,
     dialectOptions: {

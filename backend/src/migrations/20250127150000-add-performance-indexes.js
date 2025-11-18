@@ -1,35 +1,77 @@
 /**
  * Migration: Add performance indexes for frequently queried fields
  * [2025-01-27 14:55:00]
+ * [2025-01-11 14:10:00] 添加重复索引检查，防止迁移失败
  */
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addIndex('products', ['created_at'], {
-      name: 'idx_products_created_at',
-    });
+    const transaction = await queryInterface.sequelize.transaction();
+    
+    try {
+      // [2025-01-11 14:10:00] 检查索引是否存在，避免重复创建导致迁移失败
+      const checkIndex = async (tableName, indexName) => {
+        const [results] = await queryInterface.sequelize.query(
+          `SELECT indexname FROM pg_indexes WHERE tablename = $1 AND indexname = $2;`,
+          {
+            bind: [tableName, indexName],
+            type: Sequelize.QueryTypes.SELECT,
+            transaction
+          }
+        );
+        return results.length > 0;
+      };
 
-    // Ensure pg_trgm extension exists for trigram search
-    await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;');
-    await queryInterface.sequelize.query(
-      'CREATE INDEX IF NOT EXISTS idx_products_name_trgm ON products USING gin (name gin_trgm_ops);'
-    );
+      // Ensure pg_trgm extension exists for trigram search
+      await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm;', { transaction });
+      
+      // Create trigram index with IF NOT EXISTS (native SQL)
+      await queryInterface.sequelize.query(
+        'CREATE INDEX IF NOT EXISTS idx_products_name_trgm ON products USING gin (name gin_trgm_ops);',
+        { transaction }
+      );
 
-    await queryInterface.addIndex('products', ['base_price'], {
-      name: 'idx_products_base_price',
-    });
+      // Add other indexes with existence check
+      if (!(await checkIndex('products', 'idx_products_created_at'))) {
+        await queryInterface.addIndex('products', ['created_at'], {
+          name: 'idx_products_created_at',
+          transaction,
+        });
+      }
 
-    await queryInterface.addIndex('orders', ['created_at'], {
-      name: 'idx_orders_created_at',
-    });
+      if (!(await checkIndex('products', 'idx_products_base_price'))) {
+        await queryInterface.addIndex('products', ['base_price'], {
+          name: 'idx_products_base_price',
+          transaction,
+        });
+      }
 
-    await queryInterface.addIndex('orders', ['status'], {
-      name: 'idx_orders_status',
-    });
+      if (!(await checkIndex('orders', 'idx_orders_created_at'))) {
+        await queryInterface.addIndex('orders', ['created_at'], {
+          name: 'idx_orders_created_at',
+          transaction,
+        });
+      }
 
-    await queryInterface.addIndex('product_variants', ['stock_quantity'], {
-      name: 'idx_product_variants_stock_quantity',
-    });
+      if (!(await checkIndex('orders', 'idx_orders_status'))) {
+        await queryInterface.addIndex('orders', ['status'], {
+          name: 'idx_orders_status',
+          transaction,
+        });
+      }
+
+      if (!(await checkIndex('product_variants', 'idx_product_variants_stock_quantity'))) {
+        await queryInterface.addIndex('product_variants', ['stock_quantity'], {
+          name: 'idx_product_variants_stock_quantity',
+          transaction,
+        });
+      }
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   },
 
   down: async (queryInterface, Sequelize) => {
