@@ -36,13 +36,24 @@ const runMigrationsIfEnabled = () => {
         logger.info('✅ Database migrations completed.');
         
         // [2025-01-11 14:52:00] 迁移后自动修复 base_price 列问题
+        // [2025-01-11 14:58:00] 使用直接 SQL 脚本，不依赖 Prisma Client
         try {
-          logger.info('🔧 Running database column fix...');
-          execSync('node scripts/fix-base-price-column.js', { 
+          logger.info('🔧 Running database column fix (direct SQL)...');
+          execSync('node scripts/fix-base-price-direct-sql.js', { 
             stdio: 'inherit',
             timeout: 30000, // 30秒超时
+            cwd: __dirname,
           });
           logger.info('✅ Database column fix completed.');
+          
+          // [2025-01-11 14:55:00] 修复后重新生成 Prisma Client 以确保使用正确的 schema
+          logger.info('🔧 Regenerating Prisma Client after column fix...');
+          execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
+            stdio: 'inherit',
+            timeout: 30000,
+            cwd: __dirname,
+          });
+          logger.info('✅ Prisma Client regenerated.');
         } catch (fixError) {
           logger.warn('⚠️  Database column fix failed, but server will continue to start');
           logger.warn('   错误详情:', fixError.message);

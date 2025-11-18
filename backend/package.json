@@ -19,7 +19,8 @@
     "prisma:migrate": "prisma migrate dev --schema=../prisma/schema.prisma",
     "prisma:studio": "prisma studio --schema=../prisma/schema.prisma",
     "migrate:deploy": "node scripts/run-migrations.js",
-    "fix:base-price": "node scripts/fix-base-price-column.js"
+    "fix:base-price": "node scripts/fix-base-price-column.js",
+    "fix:base-price-sql": "node scripts/fix-base-price-direct-sql.js"
   },
   "keywords": [
     "ecommerce",
