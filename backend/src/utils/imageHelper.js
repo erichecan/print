@@ -8,6 +8,7 @@ const DEFAULT_QUALITY = 85;
 
 /**
  * [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
+ * [2025-01-27 17:10:00] 智能处理：自动检测环境，本地开发使用 localhost:3001，生产环境使用配置的 URL
  * @param {string} url - 图片URL（可能是相对路径或完整URL）
  * @param {Object} req - Express请求对象（可选）
  * @returns {string} 完整的图片URL
@@ -15,6 +16,24 @@ const DEFAULT_QUALITY = 85;
 function normalizeImageUrl(url, req = null) {
   if (!url || typeof url !== 'string') {
     return url;
+  }
+
+  // [2025-01-27 17:10:00] 如果包含 localhost，根据环境决定是否替换
+  // 生产环境：替换 localhost 为实际的后端 URL
+  // 本地开发：保持 localhost
+  if (url.includes('localhost')) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isProduction && req) {
+      // 生产环境：使用请求的实际 host
+      const protocol = req.protocol || 'https';
+      const host = req.get('host') || process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com';
+      return url.replace(/http:\/\/localhost:\d+/, `${protocol}://${host}`);
+    }
+    // 本地开发：保持 localhost，但确保端口正确
+    if (!isProduction) {
+      const port = process.env.PORT || '3001';
+      return url.replace(/http:\/\/localhost:\d+/, `http://localhost:${port}`);
+    }
   }
 
   // [2025-01-27 16:15:00] 如果已经是完整URL（http:// 或 https://），直接返回
@@ -25,25 +44,33 @@ function normalizeImageUrl(url, req = null) {
   // [2025-01-27 16:15:00] 如果是相对路径（以 / 开头），转换为完整的后端服务器URL
   if (url.startsWith('/')) {
     if (req) {
-      const protocol = req.protocol || 'http';
-      const host = req.get('host') || 'localhost:3001';
+      // [2025-01-27 17:10:00] 优先使用请求的实际 host（自动适配环境）
+      const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+      const host = req.get('host') || (process.env.NODE_ENV === 'production' 
+        ? (process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com')
+        : `localhost:${process.env.PORT || '3001'}`);
       return `${protocol}://${host}${url}`;
     }
 
-    // [2025-01-27 16:15:00] 从环境变量获取后端URL
-    const backendUrl = process.env.BACKEND_URL || process.env.API_BASE_URL || process.env.FRONTEND_URL;
-    if (backendUrl) {
-      try {
-        const baseUrl = backendUrl.replace(/\/api\/?$/, '');
-        return `${baseUrl}${url}`;
-      } catch {
-        // URL解析失败，使用默认值
+    // [2025-01-27 17:10:00] 从环境变量获取后端URL（生产环境）
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isProduction) {
+      const backendUrl = process.env.BACKEND_URL || process.env.API_BASE_URL;
+      if (backendUrl) {
+        try {
+          const baseUrl = backendUrl.replace(/\/api\/?$/, '');
+          return `${baseUrl}${url}`;
+        } catch {
+          // URL解析失败，使用默认值
+        }
       }
+      // 生产环境默认 URL
+      return `https://print-mnmz.onrender.com${url}`;
     }
 
-    // [2025-01-27 16:15:00] 默认使用本地开发服务器
-    const defaultHost = process.env.PORT ? `localhost:${process.env.PORT}` : 'localhost:3001';
-    return `http://${defaultHost}${url}`;
+    // [2025-01-27 17:10:00] 本地开发：使用 localhost 和配置的端口
+    const port = process.env.PORT || '3001';
+    return `http://localhost:${port}${url}`;
   }
 
   return url;
