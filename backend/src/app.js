@@ -22,10 +22,12 @@ app.set('trust proxy', 1);
 // [2025-11-15 11:10:00] 支持多个前端域名（本地开发 + Netlify 部署）
 // [2025-11-15 12:05:00] 修复 CORS 配置，确保正确处理所有请求
 // [2025-11-15 12:15:00] CORS 必须在 Helmet 之前，确保 CORS 头不被覆盖
+// [2025-01-27 16:50:00] 添加 printm.netlify.app 到允许列表
 const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:3000',
   'https://souvenirplus.netlify.app',
+  'https://printm.netlify.app', // [2025-01-27 16:50:00] 添加生产环境前端域名
   process.env.FRONTEND_URL,
 ].filter(Boolean); // 移除 undefined 值
 

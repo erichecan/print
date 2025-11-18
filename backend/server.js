@@ -8,6 +8,21 @@ const { execSync } = require('child_process');
 const PORT = process.env.PORT || 3000;
 
 // [2025-11-16 16:18:00] Optionally run DB migrations before starting the server in production
+// [2025-01-27 16:50:00] 确保 Prisma Client 已生成
+const ensurePrismaClient = () => {
+  try {
+    logger.info('🔧 Ensuring Prisma Client is generated...');
+    execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
+      stdio: 'inherit',
+      cwd: __dirname,
+    });
+    logger.info('✅ Prisma Client generated.');
+  } catch (error) {
+    logger.warn('⚠️  Failed to generate Prisma Client (may already be generated):', error.message);
+    // 不退出，因为可能已经生成了
+  }
+};
+
 const runMigrationsIfEnabled = () => {
   try {
     if (process.env.AUTO_MIGRATE === 'true') {
@@ -25,6 +40,7 @@ const runMigrationsIfEnabled = () => {
 
 // Test database connection before starting server
 testConnection().then(() => {
+  ensurePrismaClient(); // [2025-01-27 16:50:00] 确保 Prisma Client 已生成
   runMigrationsIfEnabled();
   app.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT}`);
