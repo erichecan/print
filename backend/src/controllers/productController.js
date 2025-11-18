@@ -220,8 +220,22 @@ exports.getProducts = async (req, res) => {
 
     res.json(responsePayload);
   } catch (error) {
-    console.error('Error fetching products:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    // [2025-01-11 14:20:00] 输出详细错误信息以便调试
+    console.error('[Product Controller] Error fetching products:', error);
+    console.error('[Product Controller] Error stack:', error.stack);
+    console.error('[Product Controller] Error message:', error.message);
+    logger.error('Failed to fetch products', { error: error.message, stack: error.stack });
+    
+    // [2025-01-11 14:20:00] 在生产环境隐藏详细错误信息，但记录到日志
+    const errorResponse = {
+      error: 'Failed to fetch products',
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error.message,
+        stack: error.stack 
+      })
+    };
+    
+    res.status(500).json(errorResponse);
   }
 };
 
