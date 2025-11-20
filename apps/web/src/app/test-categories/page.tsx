@@ -23,7 +23,7 @@ export default function TestCategoriesPage() {
             <li>✅ Images should load from <code>/assets/categories/</code></li>
             <li>✅ Data should come from <code>/api/categories</code> endpoint</li>
             <li>✅ Each category should map to appropriate image</li>
-            <li>✅ Clicking should navigate to <code>/products?category={slug}</code></li>
+            <li>✅ Clicking should navigate to <code>/products?category=category-slug</code></li>
             <li>✅ Responsive layout should adapt to screen size</li>
           </ul>
         </div>
