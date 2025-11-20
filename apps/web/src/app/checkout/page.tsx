@@ -24,6 +24,7 @@ import {
   couponApi,
 } from '@/lib/api';
 import { validateAddressForm, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
+import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:55:00] Toast 通知
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
@@ -203,6 +204,7 @@ function CheckoutForm({
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
+  const { error: showError, warning: showWarning } = useToast(); // [2025-01-27 16:55:00] Toast 通知
 
   const [address, setAddress] = useState<ShippingAddressForm>({
     fullName: '',
@@ -500,7 +502,9 @@ function CheckoutForm({
     if (validationErrors.length > 0) {
       setFormErrors(validationErrors);
       setMissingFields(missing);
-      setSubmitError('Please correct the highlighted fields before continuing.');
+      const errorMsg = 'Please correct the highlighted fields before continuing.';
+      setSubmitError(errorMsg);
+      showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
       return;
     }
 
@@ -512,9 +516,11 @@ function CheckoutForm({
 
     // [2025-01-27 11:10:00] 验证卡片是否完整
     if (!cardComplete) {
-      setCardError('Please complete your card details');
+      const errorMsg = 'Please complete your card details';
+      setCardError(errorMsg);
       setIsSubmitting(false);
       setPaymentStep('form');
+      showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
       return;
     }
 
@@ -562,15 +568,19 @@ function CheckoutForm({
 
       if (stripeError) {
         // [2025-01-27 10:30:00] 支付错误处理：不跳转页面，显示错误让用户重试
-        setSubmitError(stripeError.message || 'Payment failed. Please check your card details and try again.');
+        const errorMsg = stripeError.message || 'Payment failed. Please check your card details and try again.';
+        setSubmitError(errorMsg);
         setCardError(stripeError.message || 'Card payment failed');
         setPaymentStep('form');
+        showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
         return; // 不跳转，让用户有机会重试
       }
 
       if (paymentIntent?.status !== 'succeeded') {
-        setSubmitError('Payment was not completed. Please verify details and retry.');
+        const errorMsg = 'Payment was not completed. Please verify details and retry.';
+        setSubmitError(errorMsg);
         setPaymentStep('form');
+        showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
         return; // 不跳转，让用户有机会重试
       }
 

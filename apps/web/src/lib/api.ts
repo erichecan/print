@@ -283,6 +283,52 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   }
 }
 
+// [2025-01-27 17:00:00] Filter options types
+export interface FilterOptions {
+  categories: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    count: number;
+    children: Array<{
+      id: string;
+      name: string;
+      slug: string;
+      count: number;
+    }>;
+  }>;
+  brands: Array<{
+    name: string;
+    slug: string;
+    count: number;
+  }>;
+  colors: Array<{
+    name: string;
+    hex: string;
+    count: number;
+  }>;
+  sizes: Array<{
+    name: string;
+    count: number;
+  }>;
+  priceRanges: Array<{
+    name: string;
+    count: number;
+  }>;
+  priceRange: {
+    min: number;
+    max: number;
+  };
+  fit: Array<{ name: string; count: number }>;
+  decoration: Array<{ name: string; count: number }>;
+  material: Array<{ name: string; count: number }>;
+  type: Array<{ name: string; count: number }>;
+  style: Array<{ name: string; count: number }>;
+  neckline: Array<{ name: string; count: number }>;
+  features: Array<{ name: string; count: number }>;
+  rushDelivery: Array<{ name: string; count: number }>;
+}
+
 // Products API
 export const productsApi = {
   list: (params?: {
@@ -292,6 +338,7 @@ export const productsApi = {
     search?: string;
     sort?: string;
     includeOutOfStock?: boolean;
+    collection?: string;
   }) => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
@@ -299,11 +346,20 @@ export const productsApi = {
     if (params?.category) query.append('category', params.category);
     if (params?.search) query.append('search', params.search);
     if (params?.sort) query.append('sort', params.sort);
+    if (params?.collection) query.append('collection', params.collection);
     if (params?.includeOutOfStock !== undefined) {
       query.append('includeOutOfStock', params.includeOutOfStock ? 'true' : 'false');
     }
     const queryString = query.toString();
     return api(`/products${queryString ? `?${queryString}` : ''}`);
+  },
+  // [2025-01-27 17:00:00] 获取筛选选项统计数据
+  getFilterOptions: (params?: { collection?: string; search?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.collection) query.append('collection', params.collection);
+    if (params?.search) query.append('search', params.search);
+    const queryString = query.toString();
+    return api<FilterOptions>(`/products/filters/options${queryString ? `?${queryString}` : ''}`);
   },
   getBySlug: (slug: string) => api(`/products/${slug}`),
   getRelated: (slug: string, limit?: number) => {
@@ -328,6 +384,21 @@ export const productsApi = {
 export const collectionsApi = {
   list: () => api('/collections'),
   getBySlug: (slug: string) => api(`/collections/${slug}`),
+};
+
+// [2025-01-27 18:50:00] Categories API (Public)
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  sortOrder: number;
+}
+
+export const categoriesApi = {
+  list: () => api<{ data: Category[] }>('/categories'),
+  getBySlug: (slug: string) => api<Category>(`/categories/${slug}`),
 };
 
 // Cart API

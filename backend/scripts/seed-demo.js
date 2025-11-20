@@ -2,6 +2,11 @@
 const { Client } = require('pg');
 const { randomUUID } = require('crypto');
 
+// [2025-11-19 07:35:00] Convert dollar amounts to integer cents for base_price_cents column
+function toCents(amount) {
+  return Math.round((amount ?? 0) * 100);
+}
+
 async function run() {
   const url = process.env.DATABASE_URL;
   if (!url) {
@@ -110,9 +115,23 @@ async function ensureProduct(client, p) {
   const id = randomUUID();
   await client.query(
     `INSERT INTO products
-     (id,name,slug,description,long_description,base_price,unit_cost,sale_price,gross_profit,sku,is_customizable,stock_quantity,is_active,category_id,brand_id,created_at,updated_at)
+     (id,name,slug,description,long_description,base_price_cents,unit_cost,sale_price,gross_profit,sku,is_customizable,stock_quantity,is_active,category_id,brand_id,created_at,updated_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,true,$11,true,$12,$13,now(),now())`,
-    [id, p.name, p.slug, p.description, p.long_description, p.base_price, p.unit_cost, p.sale_price, p.gross_profit, p.sku, p.stock_quantity, p.category_id, p.brand_id]
+    [
+      id,
+      p.name,
+      p.slug,
+      p.description,
+      p.long_description,
+      toCents(p.base_price),
+      p.unit_cost,
+      p.sale_price,
+      p.gross_profit,
+      p.sku,
+      p.stock_quantity,
+      p.category_id,
+      p.brand_id,
+    ]
   );
   return id;
 }

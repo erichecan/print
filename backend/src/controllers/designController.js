@@ -311,4 +311,30 @@ exports.submitDesignOrder = async (req, res) => {
   }
 };
 
+// [新增] 处理直接文件上传（例如，用于签名）
+exports.uploadSignature = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded.' });
+    }
 
+    // 构建文件的公开访问 URL
+    // req.protocol: http 或 https
+    // req.get('host'): localhost:3001
+    // /uploads/: 在 app.js 中定义的静态路径
+    // req.file.filename: multer 生成的文件名
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    
+    // 实际应用中，你可能会将这个 URL 保存到数据库
+    // await prisma.design.update(...);
+
+    res.status(200).json({
+      message: 'File uploaded successfully',
+      filePath: fileUrl
+    });
+
+  } catch (error) {
+    console.error('[新增] uploadSignature error:', error);
+    res.status(500).json({ error: 'Failed to process file upload.' });
+  }
+};

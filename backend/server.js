@@ -5,7 +5,7 @@ const { testConnection } = require('./src/config/database');
 const logger = require('./src/utils/logger');
 const { execSync } = require('child_process');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001; // [2025-01-27 17:05:00] 默认端口改为3001，避免与前端冲突
 
 // [2025-11-16 16:18:00] Optionally run DB migrations before starting the server in production
 // [2025-01-27 16:50:00] 确保 Prisma Client 已生成

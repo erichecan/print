@@ -10,6 +10,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api-config';
 import { useSearchParams } from 'next/navigation';
+import { Pagination } from '@/components/ui/Pagination'; // [2025-01-27 16:40:00] 分页组件
 
 type Product = {
   id: string;
@@ -42,13 +43,24 @@ export default function ProductsClient() {
   const collection = params.get('collection') || '';
   const sort = params.get('sort') || '';
 
+  // [2025-01-27 16:55:00] 解析排序参数（sort=price_asc -> sort=price&order=asc）
+  const parseSort = (sortValue: string) => {
+    if (!sortValue) return { sort: undefined, order: undefined };
+    const parts = sortValue.split('_');
+    if (parts.length !== 2) return { sort: undefined, order: undefined };
+    return { sort: parts[0], order: parts[1] };
+  };
+
+  const { sort: sortField, order: sortOrder } = parseSort(sort);
+
   const apiUrl = new URL(`${API_BASE_URL}/products`);
   apiUrl.searchParams.set('page', page);
   apiUrl.searchParams.set('limit', limit);
   if (search) apiUrl.searchParams.set('search', search);
   if (collection) apiUrl.searchParams.set('collection', collection);
-  if (sort) apiUrl.searchParams.set('sort', sort);
-  // 开发阶段允许无库存商品也显示
+  if (sortField) apiUrl.searchParams.set('sort', sortField);
+  if (sortOrder) apiUrl.searchParams.set('order', sortOrder);
+  // [2025-01-27 16:55:00] 开发阶段允许无库存商品也显示
   apiUrl.searchParams.set('includeOutOfStock', 'true');
 
   const { data, error, isLoading } = useSWR<ProductsResponse>(apiUrl.toString(), fetcher);
@@ -65,19 +77,25 @@ export default function ProductsClient() {
     return <div className="results-empty"><h2>No products found</h2><p>Try expanding your filters or enter a different search.</p></div>;
   }
 
-  // [2025-01-27 18:30:00] 示例颜色数据（实际应从产品variants获取）
-  const sampleColors = [
-    { name: 'Purple', hex: '#9933CC' },
-    { name: 'Green', hex: '#00CC00' },
-    { name: 'Yellow', hex: '#FFCC00' },
-    { name: 'Orange', hex: '#FF9900' },
-    { name: 'Brown', hex: '#996633' },
-    { name: 'Black', hex: '#000000' },
-    { name: 'White', hex: '#FFFFFF' },
-    { name: 'Grey', hex: '#808080' },
-    { name: 'Pink', hex: '#FF99CC' },
-    { name: 'Red', hex: '#CC0000' },
-  ];
+  // [2025-01-27 17:05:00] 颜色映射表（用于将颜色名称映射到hex值，如果没有colorHex）
+  const COLOR_MAP: Record<string, string> = {
+    'black': '#000000',
+    'blue': '#0066CC',
+    'white': '#FFFFFF',
+    'grey': '#808080',
+    'gray': '#808080',
+    'green': '#00CC00',
+    'red': '#CC0000',
+    'pink': '#FF99CC',
+    'purple': '#9933CC',
+    'yellow': '#FFCC00',
+    'orange': '#FF9900',
+    'brown': '#996633',
+    'heather': '#CCCCCC',
+    'camo': '#4A5D23',
+    'tie-dye': '#FF00FF',
+    'sand': '#D7C6A4',
+  };
 
   // [2025-01-27 18:30:00] 生成产品标签（示例数据）
   const getProductBadge = (index: number) => {
@@ -85,9 +103,12 @@ export default function ProductsClient() {
     return badges[index % badges.length];
   };
 
+  const pagination = data?.pagination || { page: 1, limit: 12, total: 0, totalPages: 1 };
+
   return (
-    <div className="product-grid-new">
-      {products.map((product, index) => {
+    <>
+      <div className="product-grid-new">
+        {products.map((product, index) => {
         const fallbackImage = '/assets/hero/hero-card-tee.jpg';
         const img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
         const alt = product.primaryImage?.alt || product.name;
@@ -95,16 +116,21 @@ export default function ProductsClient() {
         const badge = index < 3 ? getProductBadge(index) : null;
         const rating = product.rating?.average || 4.5;
         const reviewCount = product.rating?.count || 10000;
-        // [2025-01-27 18:30:00] 使用产品variants中的颜色，如果没有则使用示例颜色
-        const productColors = product.variants?.filter(v => v.colorHex || v.color) || [];
+        // [2025-01-27 17:05:00] 从产品variants中获取颜色信息，如果没有则显示白色圆圈
+        const productColors = product.variants?.filter(v => v.color && v.color.trim() !== '') || [];
         const colors = productColors.length > 0 
-          ? productColors.slice(0, 10).map(v => ({ 
-              name: v.color || 'Color', 
-              hex: v.colorHex || sampleColors[0].hex 
-            }))
-          : sampleColors.slice(0, 10);
-        const totalColorCount = product.variants?.length || 10;
-        const moreColors = totalColorCount > colors.length ? totalColorCount - colors.length : 0;
+          ? productColors.slice(0, 10).map(v => {
+              const colorName = (v.color || '').toLowerCase().trim();
+              // [2025-01-27 17:05:00] 如果colorHex存在则使用，否则从COLOR_MAP查找，最后默认白色
+              const hex = v.colorHex || COLOR_MAP[colorName] || '#FFFFFF';
+              return { 
+                name: v.color || 'Color', 
+                hex
+              };
+            })
+          : [{ name: 'Default', hex: '#FFFFFF' }]; // [2025-01-27 17:05:00] 如果没有颜色，显示白色圆圈
+        const totalColorCount = productColors.length;
+        const moreColors = totalColorCount > 10 ? totalColorCount - 10 : 0;
 
         return (
           <article key={product.id} className="product-card-new">
@@ -165,7 +191,18 @@ export default function ProductsClient() {
           </article>
         );
       })}
-    </div>
+      </div>
+      
+      {/* [2025-01-27 16:40:00] 分页组件 */}
+      {pagination.totalPages > 1 && (
+        <Pagination 
+          currentPage={pagination.page} 
+          totalPages={pagination.totalPages}
+          baseUrl="/products"
+          preserveParams={true}
+        />
+      )}
+    </>
   );
 }
 

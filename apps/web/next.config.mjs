@@ -45,6 +45,12 @@ if (apiBaseUrl) {
 
 const nextConfig = {
   reactStrictMode: true,
+  // [2025-11-19 07:39:00] Ensure API URLs have sane defaults during local dev
+  env: {
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+    API_BASE_URL: process.env.API_BASE_URL || 'http://localhost:3001',
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/api',
+  },
   // [2025-01-27 15:30:00] 临时禁用类型检查以避免 Next.js 15 类型生成问题
   typescript: {
     ignoreBuildErrors: true, // 临时方案，等待 Next.js 修复类型生成问题

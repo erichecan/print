@@ -6,6 +6,9 @@ const { authenticateOptional, authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
+// [2025-01-27 17:00:00] 筛选选项API（必须在 / 之前，避免被 :slug 匹配）
+router.get('/filters/options', productController.getFilterOptions);
+
 // [2025-11-10 14:05:30] 产品列表
 router.get('/', productController.getProducts);
 

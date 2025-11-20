@@ -6,6 +6,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { generateSEOMetadata, generateWebsiteSchema, generateOrganizationSchema } from '@/lib/seo';
+import { CategoriesSection } from '@/components/home/CategoriesSection';
+import { DatabaseCategoriesSection } from '@/components/home/DatabaseCategoriesSection';
 import type { Metadata } from 'next';
 
 // [2025-01-27 16:40:00] 生成首页 SEO 元数据
@@ -31,17 +33,7 @@ const servicePromises = [
   { title: 'Rush Options', detail: 'As fast as 3 days' },
 ];
 
-const categories = [
-  { slug: 't-shirts', label: 'T-Shirts', image: '/assets/categories/cat-tshirt.png' },
-  { slug: 'sweatshirts', label: 'Sweatshirts', image: '/assets/categories/cat-sweatshirt.png' },
-  { slug: 'hats', label: 'Hats', image: '/assets/categories/cat-hat.png' },
-  { slug: 'bags', label: 'Bags', image: '/assets/categories/cat-bag.png' },
-  { slug: 'drinkware', label: 'Drinkware', image: '/assets/categories/cat-drinkware.png' },
-  { slug: 'polos', label: 'Polos & Business', image: '/assets/categories/cat-tshirt.png' },
-  { slug: 'workwear', label: 'Workwear', image: '/assets/categories/cat-workwear.png' },
-  { slug: 'office', label: 'Office Supplies', image: '/assets/categories/cat-office.png' },
-  { slug: 'tech', label: 'Technology', image: '/assets/categories/cat-tech.png' },
-];
+// [2025-01-27 18:50:00] Categories are now loaded from API in CategoriesSection component
 
 const brandLogos = [
   { name: 'Nike', src: '/assets/brands/nike.svg' },
@@ -139,28 +131,8 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="categories" aria-labelledby="categories-heading">
-        <div className="container">
-          <h2 id="categories-heading" style={{ textAlign: 'center', marginBottom: '24px' }}>
-            Shop by Category
-          </h2>
-          <div className="categories__grid">
-            {categories.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/collections/${category.slug}`}
-                className="category-card"
-                aria-label={`Browse ${category.label}`}
-              >
-                <div className="category-card__image">
-                  <Image src={category.image} alt={category.label} width={72} height={72} />
-                </div>
-                <div className="category-card__label">{category.label}</div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* [2025-11-19 08:35:00] 数据库驱动的分类板块，使用数据库中的分类数据，桌面端一行显示4个 */}
+      <DatabaseCategoriesSection />
 
       <section className="brands" aria-labelledby="brands-heading">
         <div className="container">

@@ -10,13 +10,23 @@ function normalizeApiUrl(base: string): string {
 }
 
 function getApiBaseUrl(): string {
+  // [2025-01-27 18:30:00] 优先使用环境变量
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL;
   if (envUrl) {
     return normalizeApiUrl(envUrl);
   }
 
-  // Browser runtime: use same-origin by default to避免线上错误指向 localhost
+  // [2025-01-27 18:30:00] 浏览器环境：开发环境时明确指向后端服务器
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    // 开发环境且是 localhost，直接指向后端服务器
+    if (isLocalhost && isDevelopment) {
+      return 'http://localhost:3001/api';
+    }
+    
+    // 生产环境或其他情况，使用同源 URL
     return normalizeApiUrl(window.location.origin);
   }
 

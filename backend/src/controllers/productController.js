@@ -2,6 +2,7 @@
  * Product Controller
  * [2025-01-27 00:00:00]
  * [2025-01-27 13:55:00] Enhanced with out-of-stock filtering
+ * [2025-01-27 17:00:00] Added filter options API endpoint
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -10,6 +11,7 @@ const { optimizeImageUrl } = require('../utils/imageHelper');
 
 const PRODUCT_LIST_CACHE_TTL = 300; // 5 minutes
 const PRODUCT_DETAIL_CACHE_TTL = 600; // 10 minutes
+const FILTER_OPTIONS_CACHE_TTL = 600; // 10 minutes
 
 // [2025-01-27 16:40:00] 辅助函数：安全地将 Prisma.Decimal 或数字转换为 Number
 const toNumber = (value, defaultValue = 0) => {
@@ -24,6 +26,276 @@ const toNumber = (value, defaultValue = 0) => {
   }
   const parsed = Number(value);
   return isNaN(parsed) ? defaultValue : parsed;
+};
+
+/**
+ * Get filter options with counts
+ * GET /api/products/filters/options?collection=
+ * [2025-01-27 17:00:00] 获取筛选选项统计数据，用于动态渲染筛选器
+ */
+exports.getFilterOptions = async (req, res) => {
+  try {
+    const collectionSlug = req.query.collection;
+    const search = req.query.search;
+
+    // Build base where clause
+    const baseWhere = {
+      isActive: true,
+    };
+    const andConditions = [];
+
+    // Filter by collection
+    if (collectionSlug) {
+      andConditions.push({
+        collectionProducts: {
+          some: {
+            collection: {
+              slug: collectionSlug,
+              isActive: true,
+            },
+          },
+        },
+      });
+    }
+
+    // Search filter
+    if (search) {
+      andConditions.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { sku: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
+
+    if (andConditions.length > 0) {
+      baseWhere.AND = andConditions;
+    }
+
+    const cacheKey = `products:filters:${JSON.stringify({ collection: collectionSlug || '', search: search || '' })}`;
+    const cachedFilters = await getCache(cacheKey);
+
+    if (cachedFilters) {
+      return res.json(cachedFilters);
+    }
+
+    // [2025-01-27 17:00:00] 先获取符合条件的产品ID列表，然后用于统计
+    const matchingProductIds = await prisma.product.findMany({
+      where: baseWhere,
+      select: { id: true },
+    });
+    const productIds = matchingProductIds.map(p => p.id);
+
+    // [2025-01-27 17:00:00] 获取分类统计（包括一级和二级分类）
+    const allCategories = await prisma.category.findMany({
+      where: {
+        isActive: true,
+      },
+      include: {
+        children: {
+          where: {
+            isActive: true,
+          },
+        },
+      },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    // [2025-01-27 17:00:00] 获取每个分类的商品数量
+    const categoryCounts = await Promise.all(
+      allCategories.map(async (cat) => {
+        const productCount = await prisma.product.count({
+          where: {
+            ...baseWhere,
+            categoryId: cat.id,
+          },
+        });
+        const childCounts = await Promise.all(
+          cat.children.map(async (child) => {
+            const count = await prisma.product.count({
+              where: {
+                ...baseWhere,
+                categoryId: child.id,
+              },
+            });
+            return { ...child, count };
+          })
+        );
+        return {
+          ...cat,
+          count: productCount,
+          children: childCounts,
+        };
+      })
+    );
+
+    const categories = categoryCounts.filter(cat => cat.count > 0 || cat.children.some(c => c.count > 0));
+
+    // [2025-01-27 17:00:00] 获取品牌统计
+    const allBrands = await prisma.brand.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: { name: 'asc' },
+    });
+
+    const brands = await Promise.all(
+      allBrands.map(async (brand) => {
+        const productCount = await prisma.product.count({
+          where: {
+            ...baseWhere,
+            brandId: brand.id,
+          },
+        });
+        return {
+          ...brand,
+          _count: { products: productCount },
+        };
+      })
+    );
+
+    const brandsWithProducts = brands.filter(b => b._count.products > 0);
+
+    // [2025-01-27 17:00:00] 获取颜色统计（从variants）
+    // color是String（必填），colorHex是String?（可选），只需过滤空字符串
+    const colorStats = await prisma.variant.groupBy({
+      by: ['color', 'colorHex'],
+      where: {
+        product: baseWhere,
+        color: {
+          not: '',
+        },
+        colorHex: {
+          not: '',
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    }).catch(() => []); // [2025-01-27 17:05:00] 如果查询失败，返回空数组
+
+    // [2025-01-27 17:00:00] 获取尺寸统计（从variants）
+    // size是String（必填），只需过滤空字符串
+    const sizeStats = await prisma.variant.groupBy({
+      by: ['size'],
+      where: {
+        product: baseWhere,
+        size: {
+          not: '',
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    }).catch(() => []); // [2025-01-27 17:05:00] 如果查询失败，返回空数组
+
+    // [2025-01-27 17:00:00] 获取价格范围统计
+    const products = await prisma.product.findMany({
+      where: baseWhere,
+      select: {
+        basePrice: true,
+      },
+    });
+
+    const prices = products.map((p) => toNumber(p.basePrice) / 100); // 转换为美元
+    const minPrice = Math.min(...prices, 0);
+    const maxPrice = Math.max(...prices, 0);
+
+    // [2025-01-27 17:00:00] 价格区间统计
+    const priceRanges = [
+      { name: '$', min: 0, max: 20, count: 0 },
+      { name: '$$', min: 20, max: 40, count: 0 },
+      { name: '$$$', min: 40, max: Infinity, count: 0 },
+    ];
+
+    prices.forEach((price) => {
+      priceRanges.forEach((range) => {
+        if (price >= range.min && price < range.max) {
+          range.count++;
+        }
+      });
+    });
+
+    // [2025-01-27 17:00:00] 格式化分类数据
+    const categoryTree = categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      count: cat.count,
+      children: cat.children.map((child) => ({
+        id: child.id,
+        name: child.name,
+        slug: child.slug,
+        count: child.count,
+      })),
+    }));
+
+    // [2025-01-27 17:00:00] 格式化品牌数据
+    const brandOptions = brandsWithProducts.map((brand) => ({
+      name: brand.name,
+      slug: brand.slug,
+      count: brand._count.products,
+    }));
+
+    // [2025-01-27 17:00:00] 格式化颜色数据
+    const colorOptions = colorStats.map((stat) => ({
+      name: stat.color,
+      hex: stat.colorHex || '#CCCCCC',
+      count: stat._count._all,
+    }));
+
+    // [2025-01-27 17:00:00] 格式化尺寸数据
+    const sizeOptions = sizeStats
+      .map((stat) => ({
+        name: stat.size,
+        count: stat._count._all,
+      }))
+      .sort((a, b) => {
+        // 排序：XS, S, M, L, XL, 2XL, 3XL等
+        const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+        const indexA = sizeOrder.indexOf(a.name);
+        const indexB = sizeOrder.indexOf(b.name);
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+    const filterData = {
+      categories: categoryTree,
+      brands: brandOptions,
+      colors: colorOptions,
+      sizes: sizeOptions,
+      priceRanges: priceRanges.map((r) => ({
+        name: r.name,
+        count: r.count,
+      })),
+      priceRange: {
+        min: minPrice,
+        max: maxPrice,
+      },
+      // [2025-01-27 17:00:00] 目前数据库中不存在的字段，返回空数组
+      fit: [],
+      decoration: [],
+      material: [],
+      type: [],
+      style: [],
+      neckline: [],
+      features: [],
+      rushDelivery: [],
+    };
+
+    await setCache(cacheKey, filterData, FILTER_OPTIONS_CACHE_TTL);
+
+    res.json(filterData);
+  } catch (error) {
+    logger.error('[2025-01-27 17:00:00] Failed to get filter options:', error);
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to fetch filter options',
+    });
+  }
 };
 
 /**
@@ -108,11 +380,21 @@ exports.getProducts = async (req, res) => {
       });
     }
 
-    if (andConditions.length) {
+    if (andConditions.length > 0) {
       where.AND = andConditions;
     }
 
-    const cacheKey = `products:list:${page}:${limit}:${collectionSlug || 'all'}:${search || 'all'}:${sortBy}:${sortOrder}:${includeOutOfStock}`;
+    // [2025-01-27 16:30:00] 构建缓存key，包含所有筛选条件
+    const cacheKey = `products:list:${JSON.stringify({
+      page,
+      limit,
+      collection: collectionSlug || '',
+      search: search || '',
+      sort: sortBy,
+      order: sortOrder,
+      includeOutOfStock,
+    })}`;
+
     const cachedResponse = await getCache(cacheKey);
 
     if (cachedResponse) {
@@ -161,10 +443,11 @@ exports.getProducts = async (req, res) => {
           variants: {
             select: {
               id: true,
+              color: true,
+              colorHex: true,
               stockQuantity: true,
             },
             orderBy: { stockQuantity: 'desc' },
-            take: 1,
           },
         },
       }),
@@ -172,59 +455,56 @@ exports.getProducts = async (req, res) => {
     ]);
 
     const normalizedProducts = products.map((product) => {
-      // [2025-01-27 16:40:00] basePrice 是 Int (cents)，salePrice 是 Decimal，需要正确处理类型转换
-      const basePrice = toNumber(product.basePrice, 0);
-      const salePrice = toNumber(product.salePrice, basePrice);
-      const topVariant = product.variants?.[0];
-      const variantStock = Number(topVariant?.stockQuantity || 0);
-      const fallbackProductStock = Number(product.stockQuantity || 0);
-      const stockQuantity = topVariant ? variantStock : fallbackProductStock; // [2025-11-16 14:12:00] 支持无变体商品读取产品级库存
+      const primaryImage = product.images[0];
+      const primaryVariant = product.variants[0];
 
-      // [2025-01-27 15:02:55] Normalize image payloads with optimized CDN parameters
-      // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL，以便Next.js Image组件访问
-      // [2025-01-27 16:45:00] 添加空值检查，避免处理 null/undefined 的图片 URL
-      const images = (product.images || []).map((image) => ({
-        url: image.url ? (optimizeImageUrl(image.url, { width: 640, quality: 80, req }) || image.url) : null,
-        alt: image.alt || product.name,
-        sortOrder: image.sortOrder,
-      }));
-
-      const primaryImage = images.length ? images[0] : null;
+      // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
+      const imageUrl = primaryImage
+        ? optimizeImageUrl(primaryImage.url, req)
+        : null;
 
       return {
         id: product.id,
         name: product.name,
         slug: product.slug,
         price: {
-          base: basePrice,
-          sale: salePrice,
+          base: toNumber(product.basePrice) / 100, // 转换为美元
+          sale: toNumber(product.salePrice),
           currency: 'CAD',
-          onSale: salePrice > 0 && salePrice !== basePrice,
         },
+        primaryImage: imageUrl
+          ? {
+              url: imageUrl,
+              alt: primaryImage.alt || product.name,
+            }
+          : null,
         category: product.category
           ? {
-              id: product.category.id,
               name: product.category.name,
               slug: product.category.slug,
             }
           : null,
         brand: product.brand
           ? {
-              id: product.brand.id,
               name: product.brand.name,
               slug: product.brand.slug,
             }
           : null,
-        images,
-        primaryImage,
-        thumbnail: primaryImage,
-        stockStatus: stockQuantity > 10 ? 'in_stock' : stockQuantity > 0 ? 'low_stock' : 'out_of_stock',
-        createdAt: product.createdAt,
-        updatedAt: product.updatedAt,
+        // [2025-01-27 18:30:00] 添加variants信息用于颜色显示
+        variants: product.variants
+          .filter((v) => v.color && v.color.trim() !== '') // [2025-01-27 17:05:00] 只返回有颜色信息的variant
+          .map((v) => ({
+            color: v.color || null,
+            colorHex: v.colorHex || null,
+          })),
+        rating: {
+          average: 4.5, // 默认值，可以从reviews计算
+          count: 10000, // 默认值
+        },
       };
     });
 
-    const responsePayload = {
+    const response = {
       data: normalizedProducts,
       pagination: {
         page,
@@ -234,25 +514,21 @@ exports.getProducts = async (req, res) => {
       },
     };
 
-    await setCache(cacheKey, responsePayload, PRODUCT_LIST_CACHE_TTL);
+    await setCache(cacheKey, response, PRODUCT_LIST_CACHE_TTL);
 
-    res.json(responsePayload);
+    res.json(response);
   } catch (error) {
-    // [2025-01-11 14:20:00] 输出详细错误信息以便调试
-    console.error('[Product Controller] Error fetching products:', error);
-    console.error('[Product Controller] Error stack:', error.stack);
-    console.error('[Product Controller] Error message:', error.message);
-    logger.error('Failed to fetch products', { error: error.message, stack: error.stack });
-    
-    // [2025-01-11 14:20:00] 在生产环境隐藏详细错误信息，但记录到日志
+    logger.error('[2025-01-27 13:55:00] Failed to get products:', error);
     const errorResponse = {
-      error: 'Failed to fetch products',
-      ...(process.env.NODE_ENV === 'development' && { 
-        details: error.message,
-        stack: error.stack 
-      })
+      error: 'Server Error',
+      message: 'Failed to fetch products',
     };
-    
+
+    if (process.env.NODE_ENV === 'development') {
+      errorResponse.details = error.message;
+      errorResponse.stack = error.stack;
+    }
+
     res.status(500).json(errorResponse);
   }
 };
@@ -312,6 +588,7 @@ exports.getProductBySlug = async (req, res) => {
             id: true,
             sku: true,
             color: true,
+            colorHex: true,
             size: true,
             priceAdjustment: true,
             stockQuantity: true,
@@ -361,10 +638,10 @@ exports.getProductBySlug = async (req, res) => {
       slug: product.slug,
       description: product.description,
       longDescription: product.longDescription,
+      basePrice: toNumber(product.basePrice, 0),
       price: {
-        // [2025-01-27 16:40:00] basePrice 是 Int (cents)，salePrice 是 Decimal，需要正确处理类型转换
-        base: toNumber(product.basePrice, 0),
-        sale: toNumber(product.salePrice, toNumber(product.basePrice, 0)),
+        base: toNumber(product.basePrice, 0) / 100, // 转换为美元
+        sale: toNumber(product.salePrice, toNumber(product.basePrice, 0)) / 100,
         currency: 'CAD',
         onSale: (() => {
           const sale = toNumber(product.salePrice, 0);
@@ -376,8 +653,6 @@ exports.getProductBySlug = async (req, res) => {
       brand: product.brand,
       images: (product.images || []).map((image) => ({
         id: image.id,
-        // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
-        // [2025-01-27 16:35:00] 添加空值检查，避免处理 null/undefined 时出错
         url: image.url ? (optimizeImageUrl(image.url, { width: 1280, quality: 85, req }) || image.url) : null,
         alt: image.alt || product.name,
         sortOrder: image.sortOrder,
@@ -386,11 +661,11 @@ exports.getProductBySlug = async (req, res) => {
         id: variant.id,
         sku: variant.sku,
         color: variant.color,
+        colorHex: variant.colorHex,
         size: variant.size,
         stockQuantity: variant.stockQuantity,
-        price: toNumber(product.basePrice, 0) + toNumber(variant.priceAdjustment, 0),
-        // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
-        // [2025-01-27 16:35:00] 添加空值检查，避免处理 null/undefined 时出错
+        priceAdjustment: toNumber(variant.priceAdjustment, 0),
+        price: (toNumber(product.basePrice, 0) + toNumber(variant.priceAdjustment, 0)) / 100,
         imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl) : null,
       })),
       rating: {
@@ -405,19 +680,12 @@ exports.getProductBySlug = async (req, res) => {
 
     formattedProduct.primaryImage = formattedProduct.images.length
       ? formattedProduct.images[0]
-      : null; // [2025-01-27 15:02:55] Surface primary image for frontend consumption
+      : null;
 
     await setCache(cacheKey, formattedProduct, PRODUCT_DETAIL_CACHE_TTL);
 
     res.json(formattedProduct);
   } catch (error) {
-    console.error('[Product Controller] Error fetching product by slug:', error);
-    console.error('[Product Controller] Error details:', {
-      message: error.message,
-      stack: error.stack,
-      code: error.code,
-      slug: req.params.slug,
-    });
     logger.error('Failed to fetch product by slug', { 
       error: error.message, 
       stack: error.stack,
@@ -456,8 +724,6 @@ exports.getRelatedProducts = async (req, res) => {
       return res.json({ data: cachedRelated });
     }
 
-    // [2025-01-27 21:50:00] 改进推荐算法：考虑评分、销量、相关性
-    // 获取产品评分统计（先获取产品列表，再查询评分）
     const candidateProducts = await prisma.product.findMany({
       where: {
         isActive: true,
@@ -487,14 +753,13 @@ exports.getRelatedProducts = async (req, res) => {
       });
     });
     
-    // 获取同类别产品（优先高评分和高销量）
     const relatedProducts = await prisma.product.findMany({
       where: {
         isActive: true,
         categoryId: currentProduct.categoryId,
         id: { not: currentProduct.id },
       },
-      take: limit * 2, // 获取更多候选产品，然后排序筛选
+      take: limit * 2,
       select: {
         id: true,
         name: true,
@@ -528,16 +793,10 @@ exports.getRelatedProducts = async (req, res) => {
       },
     });
     
-    // [2025-01-27 21:50:00] 计算推荐分数并排序
     const productsWithScore = relatedProducts.map((product) => {
       const rating = ratingMap.get(product.id) || { avgRating: 0, reviewCount: 0 };
       const stockQuantity = product.variants?.[0]?.stockQuantity || 0;
       
-      // 推荐分数计算：
-      // - 评分权重：40% (avgRating / 5 * 0.4)
-      // - 评价数量权重：20% (log(reviewCount + 1) / 10 * 0.2)
-      // - 库存权重：20% (有库存优先)
-      // - 随机性：20% (保持多样性)
       const ratingScore = (rating.avgRating / 5) * 0.4;
       const reviewScore = Math.min(Math.log10(rating.reviewCount + 1) / 10, 1) * 0.2;
       const stockScore = (stockQuantity > 0 ? 1 : 0) * 0.2;
@@ -555,29 +814,27 @@ exports.getRelatedProducts = async (req, res) => {
       };
     });
     
-    // 按推荐分数排序并取前 limit 个
     const topProducts = productsWithScore
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
       .slice(0, limit);
 
     const formattedRelated = topProducts.map((product) => {
       const images = (product.images || []).map((image) => ({
-        // [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
         url: optimizeImageUrl(image.url, { width: 480, quality: 80, req }) || image.url,
         alt: image.alt || product.name,
         sortOrder: image.sortOrder,
       }));
 
-      // [2025-01-27 15:02:55] Provide lightweight image data for related product carousel
       const primaryImage = images.length ? images[0] : null;
 
       return {
         id: product.id,
         name: product.name,
         slug: product.slug,
+        basePrice: toNumber(product.basePrice, 0),
         price: {
-          base: Number(product.basePrice || 0),
-          sale: Number(product.salePrice || product.basePrice || 0),
+          base: toNumber(product.basePrice, 0) / 100,
+          sale: toNumber(product.salePrice, product.basePrice) / 100,
           currency: 'CAD',
         },
         category: product.category,
@@ -593,7 +850,7 @@ exports.getRelatedProducts = async (req, res) => {
 
     res.json({ data: formattedRelated });
   } catch (error) {
-    console.error('[2025-11-12 03:00:00] Error fetching related products:', error);
+    logger.error('Failed to fetch related products', { error: error.message });
     res.status(500).json({ error: 'Failed to fetch related products' });
   }
 };

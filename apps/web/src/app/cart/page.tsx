@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { couponApi } from '@/lib/api';
+import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:50:00] Toast 通知
 
 interface AppliedCoupon {
   code: string;
@@ -21,6 +22,7 @@ interface AppliedCoupon {
 
 export default function CartPage() {
   const { cart, isLoading, updateItem, removeItem } = useCart();
+  const { success, error: showError, info } = useToast(); // [2025-01-27 16:50:00] Toast 通知
   const [updating, setUpdating] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
@@ -44,31 +46,51 @@ export default function CartPage() {
     []
   );
 
+  // [2025-01-27 16:50:00] 优化数量更新交互反馈
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
+    if (newQuantity < 1) {
+      showError('Quantity must be at least 1');
+      return;
+    }
     setUpdating(itemId);
     try {
       await updateItem(itemId, newQuantity);
+      info('Cart updated');
+    } catch (err: any) {
+      showError(err.message || 'Failed to update quantity');
     } finally {
       setUpdating(null);
     }
   };
 
+  // [2025-01-27 16:50:00] 优化删除交互反馈
   const handleRemove = async (itemId: string) => {
-    if (!confirm('Remove this item from cart?')) return;
+    const item = cart?.items.find(i => i.id === itemId);
+    const confirmMessage = `Remove "${item?.productName || 'this item'}" from cart?`;
+    
+    if (!window.confirm(confirmMessage)) return;
+    
     setUpdating(itemId);
     try {
       await removeItem(itemId);
+      success('Item removed from cart');
+      // [2025-01-27 16:50:00] 如果应用了优惠券，重新验证
       if (appliedCoupon) {
         handleApplyCoupon();
       }
+    } catch (err: any) {
+      showError(err.message || 'Failed to remove item');
     } finally {
       setUpdating(null);
     }
   };
 
+  // [2025-01-27 16:50:00] 优化优惠券应用交互反馈
   const handleApplyCoupon = async () => {
-    if (!couponCode.trim() || !cart) return;
+    if (!couponCode.trim() || !cart) {
+      showError('Please enter a coupon code');
+      return;
+    }
     setApplyingCoupon(true);
     setCouponError(null);
     try {
@@ -80,26 +102,38 @@ export default function CartPage() {
         value: result.coupon.value,
       });
       setCouponCode('');
+      success(`Coupon "${result.coupon.code}" applied! Saved $${result.coupon.discountAmount.toFixed(2)}`);
     } catch (err: any) {
-      setCouponError(err.message || 'Invalid coupon code');
+      const errorMsg = err.message || 'Invalid coupon code';
+      setCouponError(errorMsg);
       setAppliedCoupon(null);
+      showError(errorMsg);
     } finally {
       setApplyingCoupon(false);
     }
   };
 
+  // [2025-01-27 16:50:00] 优化移除优惠券交互反馈
   const handleRemoveCoupon = () => {
+    const code = appliedCoupon?.code;
     setAppliedCoupon(null);
     setCouponCode('');
     setCouponError(null);
+    if (code) {
+      info(`Coupon "${code}" removed`);
+    }
   };
 
+  // [2025-01-27 16:50:00] 优化邮政编码更新交互反馈
   const handlePostalUpdate = () => {
     if (!postalCode.trim() || postalCode.trim().length < 5) {
-      setPostalError('Please enter a valid zip/postal code.');
+      const errorMsg = 'Please enter a valid zip/postal code.';
+      setPostalError(errorMsg);
+      showError(errorMsg);
       return;
     }
     setPostalError(null);
+    success('Postal code updated. Prices will be calculated at checkout.');
   };
 
   const calculateTotal = () => {

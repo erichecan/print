@@ -144,6 +144,7 @@ app.get('/health', async (req, res) => {
 
 // API routes
 app.use('/api/products', require('./routes/products'));
+app.use('/api/categories', require('./routes/categories')); // [2025-01-27 18:50:00] Public category routes
 app.use('/api/collections', require('./routes/collections'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/checkout', require('./routes/checkout'));

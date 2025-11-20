@@ -1,0 +1,56 @@
+/* [2025-11-19 09:10:00] DeliveryReturns Component Styles */
+
+.deliveryReturns {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.deliveryReturnsDelivery {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.deliveryReturnsLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.deliveryReturnsContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.deliveryReturnsFlag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.deliveryReturnsDate {
+  font-weight: 500;
+}
+
+.deliveryReturnsReturns {
+  font-size: 14px;
+}
+
+.deliveryReturnsLink {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.deliveryReturnsLink:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+

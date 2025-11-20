@@ -28,25 +28,25 @@ type ToolKey = 'upload' | 'text' | 'art' | 'templates' | 'products' | 'colors' |
 const AUTO_SAVE_DELAY = 1200;
 
 const RECOMMENDED_PRODUCTS = [
-  { id: '1', name: 'Gildan Softstyle Jersey T-shirt', color: 'Heather Dark Grey', action: 'Add another color', image: '/assets/cat-tshirt.webp' },
-  { id: '2', name: "Gildan Women's Midweight Softstyle Jersey T-shirt", color: 'Blue', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
-  { id: '3', name: 'Gildan Midweight 50/50 Pullover Hoodie', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-sweatshirt.webp' },
-  { id: '4', name: 'Gildan Midweight 50/50 Crewneck Sweatshirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-sweatshirt.webp' },
-  { id: '5', name: 'Gildan Ultra Cotton Long Sleeve T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
-  { id: '6', name: 'Gildan Softstyle Long Sleeve Jersey T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
-  { id: '7', name: 'Gildan Softstyle Jersey V-Neck T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
-  { id: '8', name: 'Gildan Youth Softstyle Jersey T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
-  { id: '9', name: "Gildan Women's Slim Fit Softstyle Jersey T-shirt", color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
-  { id: '10', name: 'Gildan Softstyle Eco Crewneck Sweatshirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-sweatshirt.webp' },
-  { id: '11', name: "Gildan Women's Slim Fit Softstyle V-Neck Jersey T-shirt", color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
-  { id: '12', name: 'Gildan Youth Softstyle Jersey Blend T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/cat-tshirt.webp' },
+  { id: '1', name: 'Gildan Softstyle Jersey T-shirt', color: 'Heather Dark Grey', action: 'Add another color', image: '/assets/categories/cat-tshirt.png' },
+  { id: '2', name: "Gildan Women's Midweight Softstyle Jersey T-shirt", color: 'Blue', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
+  { id: '3', name: 'Gildan Midweight 50/50 Pullover Hoodie', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-sweatshirt.png' },
+  { id: '4', name: 'Gildan Midweight 50/50 Crewneck Sweatshirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-sweatshirt.png' },
+  { id: '5', name: 'Gildan Ultra Cotton Long Sleeve T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
+  { id: '6', name: 'Gildan Softstyle Long Sleeve Jersey T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
+  { id: '7', name: 'Gildan Softstyle Jersey V-Neck T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
+  { id: '8', name: 'Gildan Youth Softstyle Jersey T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
+  { id: '9', name: "Gildan Women's Slim Fit Softstyle Jersey T-shirt", color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
+  { id: '10', name: 'Gildan Softstyle Eco Crewneck Sweatshirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-sweatshirt.png' },
+  { id: '11', name: "Gildan Women's Slim Fit Softstyle V-Neck Jersey T-shirt", color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
+  { id: '12', name: 'Gildan Youth Softstyle Jersey Blend T-shirt', color: 'Heather Dark Grey', action: 'Add this product', image: '/assets/categories/cat-tshirt.png' },
 ];
 
 const PRODUCT_IMAGES = [
-  '/assets/cat-tshirt.webp',
-  '/assets/cat-tshirt.webp',
-  '/assets/cat-tshirt.webp',
-  '/assets/cat-tshirt.webp',
+  '/assets/categories/cat-tshirt.png',
+  '/assets/categories/cat-tshirt.png',
+  '/assets/categories/cat-tshirt.png',
+  '/assets/categories/cat-tshirt.png',
 ];
 
 const DesignLabClient = () => {
@@ -258,25 +258,25 @@ const DesignLabClient = () => {
         id: 'rec-hoodie',
         title: 'Gildan Midweight Hoodie',
         description: '经典 50/50 抓绒，适合团建发放。',
-        image: '/assets/cat-sweatshirt.webp',
+        image: '/assets/categories/cat-sweatshirt.png',
       },
       {
         id: 'rec-tee',
         title: 'Softstyle Jersey Tee',
         description: '最低 MOQ 12 件，支持混色。',
-        image: '/assets/cat-tshirt.webp',
+        image: '/assets/categories/cat-tshirt.png',
       },
       {
         id: 'rec-hat',
         title: 'Structured Trucker Hat',
         description: '刺绣工艺，提供预设色板。',
-        image: '/assets/cat-hat.webp',
+        image: '/assets/categories/cat-hat.png',
       },
       {
         id: 'rec-bottle',
         title: 'Vacuum Bottle',
         description: '双层不锈钢，礼品场景佳选。',
-        image: '/assets/cat-drinkware.webp',
+        image: '/assets/categories/cat-drinkware.png',
       },
     ],
     []
@@ -1204,7 +1204,9 @@ const DesignLabClient = () => {
         const current = await authApi.me();
         setUser(current as any);
       } catch (err) {
+        // [2025-11-19 11:00:00] Design Lab 允许未登录用户使用，静默处理 401 错误
         setUser(null);
+        console.log('[Design Lab] User not authenticated, continuing as guest');
       }
     };
     detectUser();
@@ -2363,7 +2365,7 @@ const DesignLabClient = () => {
             <div className="dl-product-selector">
               <button type="button" className="dl-product-selector__add-btn">+ Add Products</button>
               <div className="dl-product-selector__current">
-                <Image src="/assets/cat-tshirt.webp" alt="Current product" width={48} height={48} className="dl-product-selector__thumb" />
+                <Image src="/assets/categories/cat-tshirt.png" alt="Current product" width={48} height={48} className="dl-product-selector__thumb" />
                 <div className="dl-product-selector__info">
                   <div className="dl-product-selector__name">
                     Gildan Softstyle Jersey T-shirt
@@ -2424,7 +2426,7 @@ const DesignLabClient = () => {
               {/* 产品大图 */}
               <div className="dl-visualization__image">
                 <Image
-                  src="/assets/cat-tshirt.webp"
+                  src="/assets/categories/cat-tshirt.png"
                   alt="Product visualization"
                   width={600}
                   height={800}
@@ -2450,7 +2452,7 @@ const DesignLabClient = () => {
                   }}
                 >
                   <div className="dl-view-btn__thumb">
-                    <Image src="/assets/cat-tshirt.webp" alt="Front" width={40} height={40} />
+                    <Image src="/assets/categories/cat-tshirt.png" alt="Front" width={40} height={40} />
                   </div>
                   <span className="dl-view-btn__label">Front</span>
                 </button>
@@ -2463,7 +2465,7 @@ const DesignLabClient = () => {
                   }}
                 >
                   <div className="dl-view-btn__thumb">
-                    <Image src="/assets/cat-tshirt.webp" alt="Back" width={40} height={40} />
+                    <Image src="/assets/categories/cat-tshirt.png" alt="Back" width={40} height={40} />
                   </div>
                   <span className="dl-view-btn__label">Back</span>
                 </button>
@@ -2476,7 +2478,7 @@ const DesignLabClient = () => {
                   }}
                 >
                   <div className="dl-view-btn__thumb">
-                    <Image src="/assets/cat-tshirt.webp" alt="Sleeve" width={40} height={40} />
+                    <Image src="/assets/categories/cat-tshirt.png" alt="Sleeve" width={40} height={40} />
                   </div>
                   <span className="dl-view-btn__label">Sleeve Design</span>
                 </button>
@@ -3646,7 +3648,7 @@ const DesignLabClient = () => {
             </div>
             <div className="dl-modal__body">
               <div className="dl-names-image">
-                <Image src="/assets/cat-tshirt.webp" alt="Team jerseys" width={600} height={400} />
+                <Image src="/assets/categories/cat-tshirt.png" alt="Team jerseys" width={600} height={400} />
               </div>
               <p className="dl-names-description">
                 Use personalized Names & Numbers for projects like team jerseys where you need a unique name and/or number for each item.
@@ -3945,7 +3947,7 @@ const DesignLabClient = () => {
 
                   {/* 产品详情 */}
                   <div className="dl-quantity-product">
-                    <Image src="/assets/cat-tshirt.webp" alt="Product" width={64} height={80} className="dl-quantity-product__image" />
+                    <Image src="/assets/categories/cat-tshirt.png" alt="Product" width={64} height={80} className="dl-quantity-product__image" />
                     <div className="dl-quantity-product__info">
                       <h4 className="dl-quantity-product__name">Gildan Softstyle Jersey T-shirt</h4>
                       <p className="dl-quantity-product__color">Color: Heather Dark Grey <Link href="#" className="dl-quantity-product__link">Add another color</Link></p>
@@ -4017,10 +4019,10 @@ const DesignLabClient = () => {
 
                   <div className="dl-quantity-recommended">
                     {[
-                      { name: "Gildan Women's Midweight Softstyle Jersey T-shirt", colors: "10 Colors Available", image: '/assets/cat-tshirt.webp', action: 'Add style', badge: 'WOMEN\'S' },
-                      { name: 'Gildan Midweight 50/50 Pullover Hoodie', colors: '42 Colors Available', image: '/assets/cat-sweatshirt.webp', action: 'Add style', badge: 'RECOMMENDED' },
-                      { name: 'Gildan Midweight 50/50 Crewneck Sweatshirt', colors: '37 Colors Available', image: '/assets/cat-sweatshirt.webp', action: 'Add style', badge: 'RECOMMENDED' },
-                      { name: 'Gildan Softstyle Jersey T-shirt', colors: '63 Colors Available', image: '/assets/cat-tshirt.webp', action: 'Add another color', badge: '' },
+                      { name: "Gildan Women's Midweight Softstyle Jersey T-shirt", colors: "10 Colors Available", image: '/assets/categories/cat-tshirt.png', action: 'Add style', badge: 'WOMEN\'S' },
+                      { name: 'Gildan Midweight 50/50 Pullover Hoodie', colors: '42 Colors Available', image: '/assets/categories/cat-sweatshirt.png', action: 'Add style', badge: 'RECOMMENDED' },
+                      { name: 'Gildan Midweight 50/50 Crewneck Sweatshirt', colors: '37 Colors Available', image: '/assets/categories/cat-sweatshirt.png', action: 'Add style', badge: 'RECOMMENDED' },
+                      { name: 'Gildan Softstyle Jersey T-shirt', colors: '63 Colors Available', image: '/assets/categories/cat-tshirt.png', action: 'Add another color', badge: '' },
                     ].map((product, index) => (
                       <div key={index} className="dl-quantity-recommended-item">
                         <Image src={product.image} alt={product.name} width={80} height={100} className="dl-quantity-recommended-item__image" />
@@ -4155,7 +4157,7 @@ const DesignLabClient = () => {
               <div className="dl-order-summary__product">
                 <div className="dl-order-summary__thumbnails">
                   {[1, 2, 3, 4].map((i) => (
-                    <Image key={i} src="/assets/cat-tshirt.webp" alt={`View ${i}`} width={60} height={75} className="dl-order-summary__thumb" />
+                    <Image key={i} src="/assets/categories/cat-tshirt.png" alt={`View ${i}`} width={60} height={75} className="dl-order-summary__thumb" />
                   ))}
                 </div>
                 <div className="dl-order-summary__details">
@@ -4344,7 +4346,7 @@ const DesignLabClient = () => {
       <aside className="lab__inspector" aria-label="产品信息" style={{ display: 'none' }}>
           <div className="inspector__card">
             <div className="inspector__product">
-              <Image src="/assets/cat-sweatshirt.webp" alt="当前产品" width={56} height={56} />
+              <Image src="/assets/categories/cat-sweatshirt.png" alt="当前产品" width={56} height={56} />
               <div>
                 <strong>Gildan Softstyle Jersey T-shirt</strong>
                 <p className="lab__hint">支持数码直喷、丝网印、刺绣</p>
@@ -4851,7 +4853,7 @@ const DesignLabClient = () => {
             添加产品
           </button>
           <div className="lab__product-pill">
-            <Image src="/assets/cat-tshirt.webp" alt="当前产品" width={48} height={48} />
+            <Image src="/assets/categories/cat-tshirt.png" alt="当前产品" width={48} height={48} />
             <div>
               <p>Softstyle Jersey Tee</p>
               <small>颜色：{productColors.find((c) => c.key === selectedProductColor)?.label}</small>

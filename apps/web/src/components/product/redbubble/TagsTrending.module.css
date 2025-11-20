@@ -1,0 +1,112 @@
+/* [2025-11-19 09:22:00] TagsTrending Component Styles */
+
+.tagsTrending {
+  padding: 40px 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* [2025-11-19 09:22:00] 参考图一位置：搜索条 */
+.tagsTrendingSearch {
+  margin-bottom: 24px;
+}
+
+.tagsTrendingSearchForm {
+  display: flex;
+  max-width: 500px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.tagsTrendingSearchInput {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  font-size: 14px;
+  color: #1f2937;
+  outline: none;
+}
+
+.tagsTrendingSearchInput::placeholder {
+  color: #9ca3af;
+}
+
+.tagsTrendingSearchButton {
+  padding: 12px 16px;
+  border: none;
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tagsTrendingSearchButton:hover {
+  background: #e5e7eb;
+}
+
+/* [2025-11-19 09:22:00] 参考图一位置：主题词 Chips */
+.tagsTrendingTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.tagsTrendingTag {
+  padding: 6px 12px;
+  background: #f3f4f6;
+  color: #374151;
+  border-radius: 20px;
+  font-size: 13px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.tagsTrendingTag:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+/* [2025-11-19 09:22:00] 参考图一位置：Trending topics */
+.tagsTrendingTrending {
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.tagsTrendingTrendingTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 12px 0;
+}
+
+.tagsTrendingTrendingList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tagsTrendingTrendingItem {
+  padding: 8px 16px;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: 1px solid #bfdbfe;
+}
+
+.tagsTrendingTrendingItem:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+

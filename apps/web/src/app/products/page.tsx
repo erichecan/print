@@ -16,6 +16,12 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import SortSelect from './SortSelect';
 
+// [2025-01-27 16:45:00] 客户端筛选组件
+const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
+const ClearFiltersButton = dynamic(() => import('@/components/products/ClearFiltersButton').then(mod => ({ default: mod.ClearFiltersButton })), { ssr: false });
+// [2025-01-27 17:00:00] 动态筛选器组件（从API获取筛选选项和数量）
+const DynamicFilters = dynamic(() => import('@/components/products/DynamicFilters').then(mod => mod.DynamicFilters), { ssr: false });
+
 // [2025-01-27 17:00:00] 生成产品列表页 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Browse All Products - Custom T-Shirts, Hoodies & More',
@@ -304,6 +310,8 @@ export default async function ProductsPage({
 }) {
   const resolvedSearchParams = await (searchParams ?? Promise.resolve({}));
   const normalizedParams = normalizeSearchParams(resolvedSearchParams);
+  
+  // [2025-01-27 16:45:00] 创建客户端筛选器包装组件（必须在服务器组件中处理）
   let collections: Collection[] = [];
   let productsResponse: ProductsResponse | null = null;
   let fetchError: string | null = null;
@@ -364,286 +372,19 @@ export default async function ProductsPage({
         <div className="container plp-new__grid">
           {/* 左侧筛选器 */}
           <aside className="plp-new__sidebar">
+            {/* [2025-01-27 16:45:00] 使用客户端筛选组件处理筛选逻辑 */}
+            <ProductFiltersClient currentCollection={currentCollection} currentBrand={currentBrand} brands={brands} />
             <form id="filters-form" className="filters-new" method="get" action="/products">
-              {/* T-shirts分类列表 */}
-              <div className="filter-section">
-                <h3 className="filter-section__title">T-shirts</h3>
-                <ul className="filter-category-list">
-                  {TSHIRT_CATEGORIES.map((cat) => (
-                    <li key={cat.slug}>
-                      <Link 
-                        href={`/products?collection=${cat.slug}`}
-                        className={`filter-category-link ${cat.active ? 'is-active' : ''}`}
-                      >
-                        {cat.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <button type="button" className="filter-show-more">Show more ↓</button>
+              {/* [2025-01-27 17:00:00] 使用动态筛选器组件（从API获取筛选选项和数量） */}
+              <DynamicFilters currentCollection={currentCollection} />
+
+              {/* [2025-01-27 16:45:00] 筛选应用按钮 */}
+              <div className="filter-actions">
+                <button type="submit" className="filter-apply-btn">
+                  Apply Filters
+                </button>
+                <ClearFiltersButton />
               </div>
-
-              {/* Fit筛选 */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Fit
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {FIT_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="fit" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              {/* Decoration筛选 */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Decoration
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {DECORATION_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="decoration" value={option.name.toLowerCase()} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              {/* Delivery Options */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Delivery Options
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  <p className="filter-question">Available to ship to multiple addresses?</p>
-                  <label className="filter-toggle">
-                    <input type="checkbox" name="multiAddress" />
-                    <span className="filter-toggle__slider">
-                      <span className="filter-toggle__label filter-toggle__label--no">No</span>
-                      <span className="filter-toggle__label filter-toggle__label--yes">Yes</span>
-                    </span>
-                  </label>
-                </div>
-              </details>
-
-              {/* No Minimum */}
-              <div className="filter-section">
-                <div className="filter-section__header">
-                  <span className="filter-section__title">No Minimum</span>
-                  <label className="filter-toggle">
-                    <input type="checkbox" name="noMinimum" />
-                    <span className="filter-toggle__slider">
-                      <span className="filter-toggle__label filter-toggle__label--no">No</span>
-                      <span className="filter-toggle__label filter-toggle__label--yes">Yes</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Color Family */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Color Family
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  <div className="color-grid">
-                    {COLOR_FAMILIES.map((color) => (
-                      <label key={color.name} className="color-swatch">
-                        <input type="checkbox" name="color" value={color.name.toLowerCase()} />
-                        <span 
-                          className="color-swatch__circle"
-                          style={{ 
-                            backgroundColor: color.hex,
-                            backgroundImage: color.pattern ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zM10 10h10v10H10z\' fill=\'%23fff\' opacity=\'.1\'/%3E%3C/svg%3E")' : undefined
-                          }}
-                          title={color.name}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </details>
-
-              {/* Rush Delivery Available */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Rush Delivery Available
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {RUSH_DELIVERY_OPTIONS.map((option) => (
-                    <label key={option.days} className="filter-checkbox">
-                      <input type="checkbox" name="rushDelivery" value={option.days} />
-                      <span className="filter-checkbox__label">
-                        {option.days}
-                        <span className="rush-badge">
-                          {option.icon && <span>{option.icon}</span>}
-                          {option.label}
-                        </span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              {/* Brands */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Brands
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {brands.slice(0, 7).map((brand) => (
-                    <label key={brand.slug || brand.name} className="filter-checkbox">
-                      <input type="checkbox" name="brand" value={brand.name} />
-                      <span className="filter-checkbox__label">{brand.name}</span>
-                    </label>
-                  ))}
-                  {brands.length > 7 && (
-                    <button type="button" className="filter-show-more">Show more</button>
-                  )}
-                </div>
-              </details>
-
-              {/* Material */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Material
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {MATERIAL_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="material" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                  <button type="button" className="filter-show-more">Show more</button>
-                </div>
-              </details>
-
-              {/* Type */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Type
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {TYPE_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="type" value={option.name.toLowerCase()} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              {/* Sizes */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Sizes
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {SIZE_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="size" value={option.name} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              {/* Style */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Style
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {STYLE_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="style" value={option.name.toLowerCase()} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              {/* Neckline */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Neckline
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {NECKLINE_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="neckline" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
-
-              {/* Product Features */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Product Features
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {PRODUCT_FEATURES_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="feature" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                  <button type="button" className="filter-show-more">Show more</button>
-                </div>
-              </details>
-
-              {/* Price */}
-              <details className="filter-section" open>
-                <summary className="filter-section__title">
-                  Price
-                  <span className="filter-toggle-icon">−</span>
-                </summary>
-                <div className="filter-section__body">
-                  {PRICE_OPTIONS.map((option) => (
-                    <label key={option.name} className="filter-checkbox">
-                      <input type="checkbox" name="price" value={option.name} />
-                      <span className="filter-checkbox__label">
-                        {option.name} <span className="filter-count">({option.count})</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </details>
             </form>
           </aside>
 
