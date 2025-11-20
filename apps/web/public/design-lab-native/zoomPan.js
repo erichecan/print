@@ -17,31 +17,17 @@
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
 
-    // [2025-11-19 10:30:00] 鼠标滚轮缩放
+      // [2025-11-19 11:30:00] 鼠标滚轮缩放（以指针为中心，10%-400%）
     canvas.on('mouse:wheel', (opt) => {
-      const delta = opt.e.deltaY;
-      let zoom = canvas.getZoom();
-      zoom *= 0.999 ** delta;
-      zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
-      
-      const point = new window.fabric.Point(opt.e.offsetX, opt.e.offsetY);
-      canvas.zoomToPoint(point, zoom);
-      currentZoom = zoom;
-      updateZoomDisplay();
-      opt.e.preventDefault();
-      opt.e.stopPropagation();
-    });
-
-    // [2025-11-19 10:30:00] Ctrl/Cmd + 滚轮缩放
-    canvas.on('mouse:wheel', (opt) => {
-      if (opt.e.ctrlKey || opt.e.metaKey) {
+      if (isZoomMode || opt.e.ctrlKey || opt.e.metaKey) {
         const delta = opt.e.deltaY;
         let zoom = canvas.getZoom();
         zoom *= 0.999 ** delta;
-        zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
+        zoom = Math.max(0.1, Math.min(4.0, zoom)); // 10%-400%
         
-        const point = new window.fabric.Point(opt.e.offsetX, opt.e.offsetY);
-        canvas.zoomToPoint(point, zoom);
+        // [2025-11-19 11:30:00] 以指针为中心缩放
+        const pointer = canvas.getPointer(opt.e);
+        canvas.zoomToPoint(pointer, zoom);
         currentZoom = zoom;
         updateZoomDisplay();
         opt.e.preventDefault();
@@ -49,7 +35,7 @@
       }
     });
 
-    // [2025-11-19 10:30:00] 平移模式（拖拽空白处）
+    // [2025-11-19 11:30:00] 平移模式（Hand 工具：拖拽空白处平移）
     canvas.on('mouse:down', (opt) => {
       if (isPanMode && opt.target === null) {
         canvas.isDragging = true;
@@ -61,6 +47,7 @@
 
     canvas.on('mouse:move', (opt) => {
       if (canvas.isDragging && isPanMode) {
+        // [2025-11-19 11:30:00] 使用 viewportTransform 平移（不影响对象几何）
         const vpt = canvas.viewportTransform;
         vpt[4] += opt.e.clientX - canvas.lastPosX;
         vpt[5] += opt.e.clientY - canvas.lastPosY;
@@ -75,20 +62,25 @@
       canvas.selection = true;
     });
 
-    // [2025-11-19 10:30:00] Esc 退出平移模式
+    // [2025-11-19 12:00:00] Esc 退出 Hand 模式
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && isPanMode) {
-        setPanMode(false);
+      if (e.key === 'Escape') {
+        if (isPanMode || isZoomMode) {
+          setPanMode(false);
+          setZoomMode(false);
+          e.preventDefault();
+          e.stopPropagation();
+        }
       }
     });
   }
 
-  // [2025-11-19 10:30:00] 设置缩放值
+  // [2025-11-19 11:30:00] 设置缩放值（视图缩放仅改变 viewportTransform，不影响对象几何及导出）
   function zoomTo(percent) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
 
-    const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, percent / 100));
+    const zoom = Math.max(0.1, Math.min(4.0, percent / 100)); // 10%-400%
     const center = canvas.getCenter();
     canvas.zoomToPoint(center, zoom);
     currentZoom = zoom;
@@ -149,7 +141,7 @@
     zoomTo(100);
   }
 
-  // [2025-11-19 10:30:00] 设置平移模式
+  // [2025-11-19 11:30:00] 设置平移模式（Hand 工具）
   function setPanMode(enabled) {
     isPanMode = enabled;
     const canvas = window.DesignLabCanvas.getCanvas();
@@ -157,18 +149,29 @@
       canvas.defaultCursor = enabled ? 'grab' : 'default';
       canvas.hoverCursor = enabled ? 'grab' : 'move';
       canvas.moveCursor = enabled ? 'grabbing' : 'move';
-    }
-    
-    const btn = document.getElementById('btn-zoom');
-    if (btn) {
-      btn.classList.toggle('is-active', enabled);
-      btn.setAttribute('aria-pressed', enabled);
+      canvas.selection = !enabled;
     }
   }
-
-  // [2025-11-19 10:30:00] 切换平移模式
+  
+  // [2025-11-19 11:30:00] 设置缩放模式
+  function setZoomMode(enabled) {
+    isZoomMode = enabled;
+  }
+  
+  // [2025-11-19 11:30:00] 切换缩放/平移模式（Zoom 按钮）
+  function toggleZoomPanMode() {
+    if (isPanMode) {
+      setPanMode(false);
+      setZoomMode(false);
+    } else {
+      setPanMode(true);
+      setZoomMode(true);
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 切换平移模式（兼容旧 API）
   function togglePanMode() {
-    setPanMode(!isPanMode);
+    toggleZoomPanMode();
   }
 
   // [2025-11-19 10:30:00] 更新缩放显示
@@ -184,7 +187,7 @@
     return currentZoom;
   }
 
-  // [2025-11-19 10:30:00] 导出全局 API
+  // [2025-11-19 11:30:00] 导出全局 API
   window.DesignLabZoom = {
     init,
     zoomTo,
@@ -193,8 +196,11 @@
     fitToScreen,
     resetZoom,
     setPanMode,
+    setZoomMode,
+    toggleZoomPanMode,
     togglePanMode,
-    getZoom,
+    getZoom: () => currentZoom,
+    getCurrentZoom: () => currentZoom,
     updateZoomDisplay
   };
 })();

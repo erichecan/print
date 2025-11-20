@@ -18,44 +18,63 @@
 
   // [2025-11-19 10:45:00] 初始化应用
   function init() {
-    waitForFabric(() => {
-      // [2025-11-19 11:00:00] 从 URL 参数获取 variantId
-      const urlParams = new URLSearchParams(window.location.search);
-      const variantId = urlParams.get('variantId');
-      if (variantId) {
-        console.log('[App] variantId from URL:', variantId);
-        // [2025-11-19 11:00:00] 可以在这里加载对应的产品信息
-        // TODO: 根据 variantId 加载产品数据并设置到 store
-      }
+      waitForFabric(() => {
+        // [2025-11-19 11:00:00] 从 URL 参数获取 variantId
+        const urlParamsInit = new URLSearchParams(window.location.search);
+        const variantIdInit = urlParamsInit.get('variantId');
+        if (variantIdInit) {
+          console.log('[App] variantId from URL:', variantIdInit);
+          // [2025-11-19 11:00:00] 可以在这里加载对应的产品信息
+          // TODO: 根据 variantId 加载产品数据并设置到 store
+        }
       
       // [2025-11-19 10:45:00] 初始化画布
       const canvasElement = document.getElementById('main-canvas');
+      let canvasInitialized = false;
       if (canvasElement && window.DesignLabCanvas) {
-        window.DesignLabCanvas.init(canvasElement);
+        canvasInitialized = window.DesignLabCanvas.init(canvasElement);
       }
 
-      // [2025-11-19 10:45:00] 初始化各个模块
+      // [2025-11-19 12:00:00] 初始化各个模块（面板管理器优先，确保面板切换可用）
+      if (window.DesignLabPanel) window.DesignLabPanel.init();
       if (window.DesignLabZoom) window.DesignLabZoom.init();
       if (window.DesignLabLayers) window.DesignLabLayers.init();
       if (window.DesignLabToolbar) window.DesignLabToolbar.init();
+      
+      // [2025-11-19 12:00:00] 初始化颜色面板
+      if (window.DesignLabToolbar && window.DesignLabToolbar.initColorPanel) {
+        window.DesignLabToolbar.initColorPanel();
+      }
 
-      // [2025-11-19 10:45:00] 绑定画布面切换（从右侧竖向按钮）
+      if (canvasInitialized && window.__DesignLabNeedsBackgroundRefresh && window.DesignLabCanvas) {
+        window.DesignLabCanvas.loadBackgroundForCurrentSide();
+        window.__DesignLabNeedsBackgroundRefresh = false;
+      }
+
+      // [2025-11-19 11:30:00] 绑定画布面切换（从右侧竖向按钮）
       const sideButtons = document.querySelectorAll('.dl-side-button[data-side]');
       sideButtons.forEach(btn => {
         btn.addEventListener('click', () => {
           const side = btn.getAttribute('data-side');
           if (side === 'zoom') {
-            // [2025-11-19 11:15:00] Zoom 功能
+            // [2025-11-19 11:30:00] Zoom 按钮：进入视图缩放/平移模式
             if (window.DesignLabZoom) {
-              window.DesignLabZoom.fitToScreen();
+              window.DesignLabZoom.toggleZoomPanMode();
+              // [2025-11-19 11:30:00] 更新按钮状态（Zoom 模式）
+              btn.classList.toggle('is-active');
             }
           } else {
+            // [2025-11-19 11:30:00] Front/Back/Sleeve：切换面
             switchSide(side);
             console.log('[App] side:', side);
+            
+            // [2025-11-19 11:30:00] 更新按钮状态
+            sideButtons.forEach(b => {
+              if (b.getAttribute('data-side') !== 'zoom') {
+                b.classList.toggle('is-active', b === btn);
+              }
+            });
           }
-          
-          // [2025-11-19 10:45:00] 更新按钮状态
-          sideButtons.forEach(b => b.classList.toggle('is-active', b === btn));
         });
       });
 
@@ -77,18 +96,11 @@
         });
       }
 
-      // [2025-11-19 10:45:00] 绑定缩放控制
-      const zoomBtn = document.getElementById('btn-zoom');
-      const fitBtn = document.getElementById('btn-fit');
-      const btn100 = document.getElementById('btn-100');
+      // [2025-11-19 11:30:00] 绑定缩放控制（Fit to screen / 100% 快捷）
+      const fitBtn = document.getElementById('btn-fit-screen');
+      const btn100 = document.getElementById('btn-zoom-100');
       const zoomInBtn = document.getElementById('btn-zoom-in');
       const zoomOutBtn = document.getElementById('btn-zoom-out');
-
-      if (zoomBtn && window.DesignLabZoom) {
-        zoomBtn.addEventListener('click', () => {
-          window.DesignLabZoom.togglePanMode();
-        });
-      }
 
       if (fitBtn && window.DesignLabZoom) {
         fitBtn.addEventListener('click', () => {
@@ -98,7 +110,7 @@
 
       if (btn100 && window.DesignLabZoom) {
         btn100.addEventListener('click', () => {
-          window.DesignLabZoom.resetZoom();
+          window.DesignLabZoom.zoomTo(100);
         });
       }
 
@@ -158,16 +170,38 @@
         });
       }
       
-      // [2025-11-19 11:15:00] 绑定 Change Color 链接
+      // [2025-11-19 11:30:00] 绑定 Add Products 按钮
+      const addProductsBtn = document.getElementById('btn-add-products');
+      if (addProductsBtn) {
+        addProductsBtn.addEventListener('click', () => {
+          console.log('[App] open-add-products');
+          showProductModal();
+        });
+      }
+      
+      // [2025-11-19 11:30:00] 绑定 Change Product 链接
+      const changeProductLink = document.getElementById('link-change-product');
+      if (changeProductLink) {
+        changeProductLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          console.log('[App] open-add-products');
+          showProductModal();
+        });
+      }
+      
+      // [2025-11-19 12:00:00] 绑定 Change Color 链接（打开 product-colors 面板）
       const changeColorLink = document.getElementById('link-change-color');
       if (changeColorLink) {
         changeColorLink.addEventListener('click', (e) => {
           e.preventDefault();
-          if (window.DesignLabToolbar) {
-            window.DesignLabToolbar.showColorModal();
+          if (window.DesignLabPanel) {
+            window.DesignLabPanel.openPanel('product-colors');
           }
         });
       }
+      
+      // [2025-11-19 11:30:00] 绑定 Text 控制条
+      initTextControls();
 
       // [2025-11-19 10:55:00] 初始化导入功能
       initImportInput();
@@ -179,31 +213,34 @@
       const store = window.DesignLabStore.getStore();
       switchSide(store.currentSide);
       
-      // [2025-11-19 11:00:00] 如果 URL 中有 variantId，更新产品信息显示
-      const urlParams = new URLSearchParams(window.location.search);
-      const variantId = urlParams.get('variantId');
-      if (variantId && window.DesignLabToolbar) {
-        // TODO: 可以在这里调用 API 获取产品信息并更新显示
-        console.log('[App] Loaded with variantId:', variantId);
-      }
+        // [2025-11-19 11:00:00] 如果 URL 中有 variantId，更新产品信息显示
+        const urlParamsFinal = new URLSearchParams(window.location.search);
+        const variantIdFinal = urlParamsFinal.get('variantId');
+        if (variantIdFinal && window.DesignLabToolbar) {
+          // TODO: 可以在这里调用 API 获取产品信息并更新显示
+          console.log('[App] Loaded with variantId:', variantIdFinal);
+        }
       
-      // [2025-11-19 11:15:00] 初始化右侧竖向按钮状态
+      // [2025-11-19 11:30:00] 初始化右侧竖向按钮状态
       const currentView = store.currentSide === 'sleeve' ? 'sleeve' : store.currentSide;
       const activeSideBtn = document.querySelector(`.dl-side-button[data-side="${currentView}"]`);
       if (activeSideBtn) {
         activeSideBtn.classList.add('is-active');
       }
       
-      // [2025-11-19 11:15:00] 初始化设计名称
+      // [2025-11-19 11:30:00] 初始化设计名称
       const designNameEl = document.getElementById('design-name');
       if (designNameEl) {
         designNameEl.textContent = 'Untitled Design';
         designNameEl.setAttribute('contenteditable', 'true');
         designNameEl.addEventListener('blur', () => {
-          // [2025-11-19 11:15:00] 保存设计名称（TODO: 保存到 store）
+          // [2025-11-19 11:30:00] 保存设计名称（TODO: 保存到 store）
           console.log('[App] Design name changed:', designNameEl.textContent);
         });
       }
+      
+      // [2025-11-19 11:30:00] 初始化产品信息显示
+      updateProductInfo();
 
       console.log('[App] Design Lab initialized');
     });
@@ -225,16 +262,34 @@
     }
   }
 
-  // [2025-11-19 10:45:00] 保存设计
+  // [2025-11-19 11:30:00] 保存设计（导出 JSON + 当前面 2× PNG 预览）
   function saveDesign() {
     if (window.DesignLabCanvas) {
       window.DesignLabCanvas.saveCurrentSide();
     }
     
-    const designData = window.DesignLabStore.exportDesign();
+    const store = window.DesignLabStore.getStore();
+    const currentSide = store.currentSide;
+    
+    // [2025-11-19 11:30:00] 导出 JSON（包含 store、三面 dataless JSON、版本与时间戳）
+    const designData = {
+      store: {
+        product: store.product,
+        colors: store.product.colors,
+        currentSide: currentSide
+      },
+      sides: {
+        front: store.sides.front.canvasJSON,
+        back: store.sides.back.canvasJSON,
+        sleeve: store.sides.sleeve.canvasJSON
+      },
+      version: store.version || '1.0.0',
+      timestamp: new Date().toISOString()
+    };
+    
     const jsonStr = JSON.stringify(designData, null, 2);
     
-    // [2025-11-19 10:45:00] 下载 JSON 文件
+    // [2025-11-19 11:30:00] 下载 JSON 文件
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -243,22 +298,86 @@
     a.click();
     URL.revokeObjectURL(url);
     
-    const currentSide = window.DesignLabStore.getCurrentSide();
+    // [2025-11-19 11:30:00] 导出当前面 2× PNG 预览
+    if (window.DesignLabCanvas) {
+      const preview = window.DesignLabCanvas.exportCanvas('png', null, { multiplier: 2 });
+      if (preview) {
+        const previewBlob = dataURLToBlob(preview);
+        const previewUrl = URL.createObjectURL(previewBlob);
+        const previewA = document.createElement('a');
+        previewA.href = previewUrl;
+        previewA.download = `design-${currentSide}-${Date.now()}.png`;
+        previewA.click();
+        URL.revokeObjectURL(previewUrl);
+      }
+    }
+    
     console.log('[App] export:', { format: 'json', side: currentSide, size: jsonStr.length });
   }
+  
+  // [2025-11-19 11:30:00] 将 dataURL 转换为 Blob
+  function dataURLToBlob(dataURL) {
+    const arr = dataURL.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+  }
+  
+  // [2025-11-19 11:30:00] 将 dataURL 转换为 Blob（Promise 版本，用于剪贴板）
+  function dataURLToBlobAsync(dataURL) {
+    return new Promise((resolve, reject) => {
+      try {
+        const blob = dataURLToBlob(dataURL);
+        resolve(blob);
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
 
-  // [2025-11-19 10:45:00] 分享设计
+  // [2025-11-19 11:30:00] 分享设计（导出 PNG）
   function shareDesign() {
-    // [2025-11-19 10:45:00] 生成预览图
     if (window.DesignLabCanvas) {
       const currentSide = window.DesignLabStore.getCurrentSide();
       const preview = window.DesignLabCanvas.exportCanvas('png', null, { multiplier: 2 });
       if (preview) {
-        // [2025-11-19 10:45:00] 复制到剪贴板或显示分享链接
-        console.log('[App] export:', { format: 'png', side: currentSide, size: preview.length });
-        alert('Share functionality - preview generated');
+        // [2025-11-19 11:30:00] 尝试复制到剪贴板
+        if (navigator.clipboard && navigator.clipboard.write) {
+          dataURLToBlobAsync(preview).then(blob => {
+            const item = new ClipboardItem({ 'image/png': blob });
+            navigator.clipboard.write([item]).then(() => {
+              console.log('[App] export:', { format: 'png', side: currentSide, size: preview.length });
+              alert('Design copied to clipboard!');
+            }).catch(() => {
+              // [2025-11-19 11:30:00] 如果复制失败，下载文件
+              downloadPreview(preview, currentSide);
+            });
+          }).catch(() => {
+            downloadPreview(preview, currentSide);
+          });
+        } else {
+          // [2025-11-19 11:30:00] 不支持剪贴板，直接下载
+          downloadPreview(preview, currentSide);
+        }
       }
     }
+  }
+  
+  // [2025-11-19 11:30:00] 下载预览图
+  function downloadPreview(dataURL, side) {
+    const blob = dataURLToBlob(dataURL);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `design-${side}-${Date.now()}.png`;
+    a.click();
+    URL.revokeObjectURL(url);
+    console.log('[App] export:', { format: 'png', side: side, size: dataURL.length });
   }
 
   // [2025-11-19 10:45:00] 显示导出菜单
@@ -377,7 +496,7 @@
     }
   }
 
-  // [2025-11-19 10:45:00] 获取价格
+  // [2025-11-19 11:30:00] 获取价格（输出日志）
   function getPrice() {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
@@ -398,7 +517,281 @@
     };
 
     console.log('[App]', priceData);
-    alert(`Price calculation:\n${JSON.stringify(priceData, null, 2)}`);
+    // [2025-11-19 11:30:00] 后续对接接口时复用此数据结构
+  }
+  
+  // [2025-11-19 11:30:00] 显示产品选择模态框
+  function showProductModal() {
+    const modal = document.getElementById('product-modal');
+    if (!modal) return;
+    
+    // [2025-11-19 11:30:00] TODO: 加载产品列表（占位）
+    const productsGrid = document.getElementById('products-grid');
+    if (productsGrid) {
+      productsGrid.innerHTML = '<p>Product selection (placeholder)</p>';
+    }
+    
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    
+    // [2025-11-19 11:30:00] 绑定关闭按钮
+    const closeBtn = modal.querySelector('.dl-modal__close');
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        modal.classList.remove('is-open');
+        modal.setAttribute('aria-hidden', 'true');
+      };
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 导出 showProductModal 供外部调用
+  window.showProductModal = showProductModal;
+  
+  // [2025-11-19 11:30:00] 切换产品
+  function changeProduct(productId, productName, baseImages) {
+    const store = window.DesignLabStore.getStore();
+    store.product.id = productId;
+    store.product.name = productName;
+    store.product.baseImages = baseImages;
+    
+    // [2025-11-19 11:30:00] 刷新三面底图
+    if (window.DesignLabCanvas) {
+      window.DesignLabCanvas.loadBackgroundForCurrentSide();
+    }
+    
+    // [2025-11-19 11:30:00] 更新产品信息显示
+    updateProductInfo();
+    
+    console.log('[App] product:', { id: productId, name: productName, baseImages });
+  }
+  
+  // [2025-11-19 11:30:00] 切换颜色（只切换当前 product 颜色或底图着色层，更新当前与其他面的底图）
+  function changeColor(color) {
+    const store = window.DesignLabStore.getStore();
+    store.product.color = color;
+    
+    // [2025-11-19 11:30:00] 更新当前面和其他面的底图
+    if (window.DesignLabCanvas) {
+      // [2025-11-19 11:30:00] 更新所有面的底图
+      ['front', 'back', 'sleeve'].forEach(side => {
+        const currentSide = store.currentSide;
+        if (side === currentSide) {
+          window.DesignLabCanvas.loadBackgroundForCurrentSide();
+        } else {
+          // [2025-11-19 11:30:00] TODO: 更新其他面的底图（需要保存当前面，切换面，更新，再切回）
+        }
+      });
+    }
+    
+    // [2025-11-19 11:30:00] 更新产品信息显示
+    updateProductInfo();
+    
+    console.log('[App] product:', { color: color });
+  }
+  
+  // [2025-11-19 11:30:00] 导出 changeColor 供外部调用
+  window.changeColor = changeColor;
+  
+  // [2025-11-19 11:30:00] 更新产品信息显示（导出供外部调用）
+  function updateProductInfo() {
+    const store = window.DesignLabStore.getStore();
+    const productNameEl = document.getElementById('product-name');
+    const productColorEl = document.getElementById('product-color');
+    const productThumbImg = document.getElementById('product-thumb-img');
+    
+    if (productNameEl) {
+      productNameEl.textContent = store.product.name || 'Gildan Softstyle T-shirt';
+    }
+    if (productColorEl) {
+      productColorEl.textContent = store.product.color || 'Heather Dark Grey';
+    }
+    if (productThumbImg && store.product.baseImages) {
+      const currentSide = store.currentSide;
+      productThumbImg.src = store.product.baseImages[currentSide] || store.product.baseImages.front || 'https://picsum.photos/seed/product/60/60';
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 导出 updateProductInfo 供外部调用
+  window.updateProductInfo = updateProductInfo;
+  
+  // [2025-11-19 11:30:00] 初始化 Text 控制条
+  function initTextControls() {
+    const textControls = document.getElementById('text-controls');
+    if (!textControls) return;
+    
+    // [2025-11-19 11:30:00] 监听画布选择变化
+    const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
+    if (canvas) {
+      canvas.on('selection:created', () => updateTextControls());
+      canvas.on('selection:updated', () => updateTextControls());
+      canvas.on('selection:cleared', () => {
+        textControls.style.display = 'none';
+      });
+    }
+    
+    // [2025-11-19 11:30:00] 绑定 Text 控制条按钮
+    const boldBtn = document.getElementById('text-control-bold');
+    const italicBtn = document.getElementById('text-control-italic');
+    const underlineBtn = document.getElementById('text-control-underline');
+    const alignLeftBtn = document.getElementById('text-control-align-left');
+    const alignCenterBtn = document.getElementById('text-control-align-center');
+    const alignRightBtn = document.getElementById('text-control-align-right');
+    const duplicateBtn = document.getElementById('text-control-duplicate');
+    const sizeRange = document.getElementById('text-control-size');
+    const sizeValue = document.getElementById('text-control-size-value');
+    
+    if (boldBtn) {
+      boldBtn.addEventListener('click', () => toggleTextStyle('bold'));
+    }
+    if (italicBtn) {
+      italicBtn.addEventListener('click', () => toggleTextStyle('italic'));
+    }
+    if (underlineBtn) {
+      underlineBtn.addEventListener('click', () => toggleTextStyle('underline'));
+    }
+    if (alignLeftBtn) {
+      alignLeftBtn.addEventListener('click', () => setTextAlign('left'));
+    }
+    if (alignCenterBtn) {
+      alignCenterBtn.addEventListener('click', () => setTextAlign('center'));
+    }
+    if (alignRightBtn) {
+      alignRightBtn.addEventListener('click', () => setTextAlign('right'));
+    }
+    if (duplicateBtn) {
+      duplicateBtn.addEventListener('click', () => duplicateSelected());
+    }
+    if (sizeRange && sizeValue) {
+      sizeRange.addEventListener('input', (e) => {
+        const size = parseInt(e.target.value);
+        sizeValue.textContent = size;
+        setTextSize(size);
+      });
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 更新 Text 控制条显示
+  function updateTextControls() {
+    const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
+    if (!canvas) return;
+    
+    const activeObj = canvas.getActiveObject();
+    const textControls = document.getElementById('text-controls');
+    
+    if (activeObj && (activeObj.type === 'i-text' || activeObj.type === 'text')) {
+      if (textControls) textControls.style.display = 'flex';
+      
+      // [2025-11-19 11:30:00] 更新控制条状态
+      const boldBtn = document.getElementById('text-control-bold');
+      const italicBtn = document.getElementById('text-control-italic');
+      const underlineBtn = document.getElementById('text-control-underline');
+      const sizeRange = document.getElementById('text-control-size');
+      const sizeValue = document.getElementById('text-control-size-value');
+      
+      if (boldBtn) {
+        boldBtn.setAttribute('aria-pressed', activeObj.fontWeight === 'bold' ? 'true' : 'false');
+        boldBtn.classList.toggle('is-active', activeObj.fontWeight === 'bold');
+      }
+      if (italicBtn) {
+        italicBtn.setAttribute('aria-pressed', activeObj.fontStyle === 'italic' ? 'true' : 'false');
+        italicBtn.classList.toggle('is-active', activeObj.fontStyle === 'italic');
+      }
+      if (underlineBtn) {
+        underlineBtn.setAttribute('aria-pressed', activeObj.underline ? 'true' : 'false');
+        underlineBtn.classList.toggle('is-active', activeObj.underline);
+      }
+      if (sizeRange && sizeValue) {
+        sizeRange.value = activeObj.fontSize || 48;
+        sizeValue.textContent = Math.round(activeObj.fontSize || 48);
+      }
+    } else {
+      if (textControls) textControls.style.display = 'none';
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 切换文本样式
+  function toggleTextStyle(style) {
+    const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
+    if (!canvas) return;
+    
+    const activeObj = canvas.getActiveObject();
+    if (!activeObj || (activeObj.type !== 'i-text' && activeObj.type !== 'text')) return;
+    
+    if (style === 'bold') {
+      activeObj.set('fontWeight', activeObj.fontWeight === 'bold' ? 'normal' : 'bold');
+    } else if (style === 'italic') {
+      activeObj.set('fontStyle', activeObj.fontStyle === 'italic' ? 'normal' : 'italic');
+    } else if (style === 'underline') {
+      activeObj.set('underline', !activeObj.underline);
+    }
+    
+    canvas.renderAll();
+    updateTextControls();
+    
+    if (window.DesignLabHistory) {
+      window.DesignLabHistory.saveState();
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 设置文本对齐
+  function setTextAlign(align) {
+    const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
+    if (!canvas) return;
+    
+    const activeObj = canvas.getActiveObject();
+    if (!activeObj || (activeObj.type !== 'i-text' && activeObj.type !== 'text')) return;
+    
+    activeObj.set('textAlign', align);
+    canvas.renderAll();
+    updateTextControls();
+    
+    if (window.DesignLabHistory) {
+      window.DesignLabHistory.saveState();
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 设置文本大小
+  function setTextSize(size) {
+    const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
+    if (!canvas) return;
+    
+    const activeObj = canvas.getActiveObject();
+    if (!activeObj || (activeObj.type !== 'i-text' && activeObj.type !== 'text')) return;
+    
+    activeObj.set('fontSize', size);
+    canvas.renderAll();
+    updateTextControls();
+    
+    if (window.DesignLabHistory) {
+      window.DesignLabHistory.saveState();
+    }
+  }
+  
+  // [2025-11-19 11:30:00] 复制选中对象
+  function duplicateSelected() {
+    const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
+    if (!canvas) return;
+    
+    const activeObj = canvas.getActiveObject();
+    if (!activeObj) return;
+    
+    activeObj.clone((cloned) => {
+      cloned.set({
+        left: cloned.left + 10,
+        top: cloned.top + 10
+      });
+      cloned.set('name', cloned.name + ' Copy');
+      canvas.add(cloned);
+      canvas.setActiveObject(cloned);
+      canvas.renderAll();
+      
+      if (window.DesignLabLayers) {
+        window.DesignLabLayers.updateLayers();
+      }
+      if (window.DesignLabHistory) {
+        window.DesignLabHistory.saveState();
+      }
+    });
   }
 
   // [2025-11-19 10:45:00] 绑定键盘快捷键

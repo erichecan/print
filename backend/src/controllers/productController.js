@@ -854,3 +854,75 @@ exports.getRelatedProducts = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch related products' });
   }
 };
+
+/**
+ * [2025-11-20 12:45:00] Provide product base images via variantId for Design Lab
+ * GET /api/products/variant/:variantId
+ */
+exports.getProductByVariantId = async (req, res) => {
+  const { variantId } = req.params;
+
+  if (!variantId) {
+    return res.status(400).json({ error: 'variantId is required' });
+  }
+
+  try {
+    const variant = await prisma.variant.findUnique({
+      where: { id: variantId },
+      include: {
+        product: {
+          include: {
+            images: {
+              orderBy: { sortOrder: 'asc' },
+            },
+            variants: true,
+          },
+        },
+      },
+    });
+
+    if (!variant || !variant.product) {
+      return res.status(404).json({ error: 'Variant not found' });
+    }
+
+    const product = variant.product;
+    const optimizedImages = (product.images || [])
+      .map((img) => (img?.url ? optimizeImageUrl(img.url, req) : null))
+      .filter(Boolean);
+
+    const fallbackImage =
+      variant.imageUrl ||
+      optimizedImages[0] ||
+      '/assets/hero/hero-card-tee.jpg';
+
+    const baseImages = {
+      front: fallbackImage,
+      back: optimizedImages[1] || fallbackImage,
+      sleeve: optimizedImages[2] || fallbackImage,
+    };
+
+    const colors = Array.from(
+      new Set(
+        (product.variants || [])
+          .map((v) => v.color)
+          .filter((color) => color && color.trim() !== '')
+      )
+    );
+
+    res.json({
+      productId: product.id,
+      productName: product.name,
+      variantId: variant.id,
+      color: variant.color || null,
+      colors,
+      baseImages,
+      gallery: optimizedImages,
+    });
+  } catch (error) {
+    logger.error('Failed to fetch product by variantId', {
+      error: error.message,
+      variantId,
+    });
+    res.status(500).json({ error: 'Failed to fetch product by variantId' });
+  }
+};

@@ -21,6 +21,8 @@ import { adaptProductData } from './dataAdapter';
 import { ProductData } from './types';
 import styles from './RedbubbleProductDetail.module.css';
 
+const DESIGN_LAB_PAYLOAD_KEY = 'designLab:productPayload';
+
 export function RedbubbleProductDetail() {
   const params = useParams();
   const router = useRouter();
@@ -62,6 +64,40 @@ export function RedbubbleProductDetail() {
     router.push('/checkout');
   }, [router]);
 
+  const persistDesignLabPayload = useCallback((variant: any) => {
+    if (typeof window === 'undefined' || !apiProduct) return;
+    try {
+      const galleryUrls = (apiProduct.images || []).map((img: any) => img.url).filter(Boolean);
+      const fallbackImage = variant?.imageUrl || galleryUrls[0] || '/assets/hero/hero-card-tee.jpg';
+      const baseImages = {
+        front: variant?.imageUrl || fallbackImage,
+        back: galleryUrls[1] || fallbackImage,
+        sleeve: galleryUrls[2] || fallbackImage,
+      };
+      const colorOptions = Array.from(
+        new Set(
+          (apiProduct.variants || [])
+            .map((v: any) => v.color)
+            .filter((color: string | null): color is string => Boolean(color))
+        )
+      );
+
+      const payload = {
+        productId: apiProduct.id,
+        productName: apiProduct.name,
+        variantId: variant?.id || null,
+        color: variant?.color || null,
+        colors: colorOptions,
+        baseImages,
+        gallery: galleryUrls,
+      };
+
+      window.localStorage.setItem(DESIGN_LAB_PAYLOAD_KEY, JSON.stringify(payload));
+    } catch (err) {
+      console.warn('[RedbubbleProductDetail] Failed to persist Design Lab payload', err);
+    }
+  }, [apiProduct]);
+
   // [2025-11-19 09:30:00] 搜索处理函数
   const handleSearch = useCallback((query: string) => {
     console.log('[Search]', query);
@@ -81,6 +117,7 @@ export function RedbubbleProductDetail() {
       });
       
       if (matchingVariant && matchingVariant.id) {
+        persistDesignLabPayload(matchingVariant);
         // [2025-11-19 11:00:00] 跳转到纯原生 Design Lab，传递 variantId
         window.location.href = `/design-lab-native.html?variantId=${matchingVariant.id}`;
         return;
@@ -90,12 +127,13 @@ export function RedbubbleProductDetail() {
     // [2025-11-19 11:00:00] 如果没有找到 variant，使用第一个可用的 variant 或跳转到默认页面
     if (apiProduct && apiProduct.variants && apiProduct.variants.length > 0) {
       const firstVariant = apiProduct.variants[0];
+      persistDesignLabPayload(firstVariant);
       window.location.href = `/design-lab-native.html?variantId=${firstVariant.id}`;
     } else {
       // [2025-11-19 11:00:00] 如果没有 variant，跳转到纯原生 Design Lab
       window.location.href = '/design-lab-native.html';
     }
-  }, [router, apiProduct]);
+  }, [router, apiProduct, persistDesignLabPayload]);
 
   // [2025-11-19 09:45:00] 加载状态
   if (isLoading) {

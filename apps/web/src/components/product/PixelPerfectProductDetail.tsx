@@ -64,6 +64,8 @@ interface LoadingState {
   stage: 'fetching' | 'processing' | 'ready';
 }
 
+const DESIGN_LAB_PAYLOAD_KEY = 'designLab:productPayload';
+
 const currencyFormatter = new Intl.NumberFormat('zh-CN', {
   style: 'currency',
   currency: 'CNY',
@@ -243,6 +245,40 @@ export function PixelPerfectProductDetail() {
     fetchRelated();
   }, [slug, product]);
 
+  const persistDesignLabPayload = useCallback((variant: ProductVariant) => {
+    if (typeof window === 'undefined' || !product) return;
+    try {
+      const galleryUrls = (product.images || []).map((img) => img.url).filter(Boolean);
+      const fallbackImage = variant.imageUrl || galleryUrls[0] || '/assets/hero/hero-card-tee.jpg';
+      const baseImages = {
+        front: variant.imageUrl || fallbackImage,
+        back: galleryUrls[1] || fallbackImage,
+        sleeve: galleryUrls[2] || fallbackImage,
+      };
+      const colorOptions = Array.from(
+        new Set(
+          (product.variants || [])
+            .map((v) => v.color)
+            .filter((color): color is string => Boolean(color))
+        )
+      );
+
+      const payload = {
+        productId: product.id,
+        productName: product.name,
+        variantId: variant.id,
+        color: variant.color || null,
+        colors: colorOptions,
+        baseImages,
+        gallery: galleryUrls,
+      };
+
+      window.localStorage.setItem(DESIGN_LAB_PAYLOAD_KEY, JSON.stringify(payload));
+    } catch (err) {
+      console.warn('[ProductDetail] Failed to persist Design Lab payload', err);
+    }
+  }, [product]);
+
   // 添加到购物车
   const handleAddToCart = useCallback(async () => {
     if (!selectedVariant) {
@@ -267,9 +303,10 @@ export function PixelPerfectProductDetail() {
       showError('请选择颜色和尺寸');
       return;
     }
+    persistDesignLabPayload(selectedVariant);
     // [2025-11-19 11:00:00] 跳转到纯原生 Design Lab
     window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
-  }, [selectedVariant, showError]);
+  }, [selectedVariant, showError, persistDesignLabPayload]);
 
   // 加载状态
   if (loadingState.isLoading) {

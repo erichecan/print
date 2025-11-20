@@ -12,6 +12,9 @@ router.get('/filters/options', productController.getFilterOptions);
 // [2025-11-10 14:05:30] 产品列表
 router.get('/', productController.getProducts);
 
+// [2025-11-20 12:45:00] 根据 variantId 获取产品基础信息（Design Lab）
+router.get('/variant/:variantId', productController.getProductByVariantId);
+
 // [2025-11-12 03:00:00] 相关产品（必须在 :slug 之前）
 router.get('/:slug/related', productController.getRelatedProducts);
 

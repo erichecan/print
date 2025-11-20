@@ -128,39 +128,44 @@
     }, { crossOrigin: 'anonymous' });
   }
 
-  // [2025-11-19 10:20:00] 切换画布面
+  // [2025-11-19 11:30:00] 切换画布面（保存当前面 canvas.toDatalessJSON() + 缩略图 toDataURL({multiplier:0.2})）
   function switchSide(side) {
     if (!canvas) return false;
 
     const store = window.DesignLabStore;
     const currentSide = store.getCurrentSide();
 
-    // [2025-11-19 10:20:00] 保存当前面的数据
+    // [2025-11-19 11:30:00] 保存当前面的数据
     if (currentSide !== side) {
-      // [2025-11-19 10:55:00] 保存当前面数据（在切换前）
+      // [2025-11-19 11:30:00] 保存当前面数据（在切换前）：canvas.toDatalessJSON() + 缩略图
       const currentObjects = canvas.getObjects().filter(obj => obj.name !== 'background');
       const currentData = canvas.toDatalessJSON(currentObjects);
       const currentThumb = canvas.toDataURL({ multiplier: 0.2, format: 'png' });
       store.setCurrentSideData(currentData, currentThumb);
       
-      // [2025-11-19 10:20:00] 切换面
+      // [2025-11-19 11:30:00] 切换面
       if (store.setActiveSide(side)) {
-        // [2025-11-19 10:20:00] 清空画布
+        // [2025-11-19 11:30:00] 清空画布
         canvas.clear();
         backgroundImage = null;
         
-        // [2025-11-19 10:20:00] 加载新面的背景
+        // [2025-11-19 11:30:00] 加载新面的背景（产品底图，selectable=false, evented=false, excludeFromExport=true）
         loadBackgroundForCurrentSide();
         
-        // [2025-11-19 10:20:00] 加载新面的数据
+        // [2025-11-19 11:30:00] 加载新面的数据（若空，仅展示对应颜色的产品底图）
         loadSide(side);
         
-        // [2025-11-19 10:20:00] 通知历史管理器切换面
+        // [2025-11-19 11:30:00] 通知历史管理器切换面
         if (window.DesignLabHistory) {
           window.DesignLabHistory.switchSide(side);
         }
         
-        // [2025-11-19 10:55:00] 隐藏参考线
+        // [2025-11-19 11:30:00] 通知图层面板更新
+        if (window.DesignLabLayers) {
+          window.DesignLabLayers.updateLayers();
+        }
+        
+        // [2025-11-19 11:30:00] 隐藏参考线
         hideGuideLines();
         
         return true;
@@ -249,46 +254,49 @@
       originY: 'center'
     });
 
-    canvas.add(textObj);
-    canvas.setActiveObject(textObj);
-    canvas.renderAll();
-    
-    // [2025-11-19 10:20:00] 通知图层面板
-    if (window.DesignLabLayers) {
-      window.DesignLabLayers.updateLayers();
-    }
-    
-    // [2025-11-19 10:20:00] 记录历史
-    if (window.DesignLabHistory) {
-      window.DesignLabHistory.saveState();
-    }
-    
-    // [2025-11-19 11:15:00] 隐藏启动面板，显示工具面板
-    const guidePanel = document.getElementById('guide-panel');
-    const toolsPanel = document.getElementById('tools-panel');
-    if (guidePanel) guidePanel.style.display = 'none';
-    if (toolsPanel) toolsPanel.style.display = 'flex';
-    
-    const currentSide = window.DesignLabStore.getCurrentSide();
-    console.log('[CanvasManager] add:', { id: textObj.name, type: 'text', side: currentSide });
-    return textObj;
+      canvas.add(textObj);
+      canvas.setActiveObject(textObj);
+      canvas.renderAll();
+      
+      // [2025-11-19 11:30:00] 通知图层面板
+      if (window.DesignLabLayers) {
+        window.DesignLabLayers.updateLayers();
+      }
+      
+      // [2025-11-19 12:00:00] 记录历史
+      if (window.DesignLabHistory) {
+        window.DesignLabHistory.saveState();
+      }
+      
+      const currentSide = window.DesignLabStore.getCurrentSide();
+      console.log('[CanvasManager] add:', { id: textObj.name, type: 'text', side: currentSide });
+      return textObj;
   }
 
-  // [2025-11-19 10:20:00] 添加图片对象
+  // [2025-11-19 12:00:00] 添加图片对象（文件 > 4000px 等比压至最长边 2000px；添加到当前面 canvas，位置居中）
   function addImage(imageUrl, options = {}) {
     if (!canvas) return null;
 
+    const fromUrlOptions = {};
+    if (/^https?:/i.test(imageUrl)) {
+      fromUrlOptions.crossOrigin = 'anonymous';
+    }
+
     window.fabric.Image.fromURL(imageUrl, (img) => {
-      // [2025-11-19 10:20:00] 大图压缩
+      // [2025-11-19 12:00:00] 大图压缩：> 4000px 等比压至最长边 2000px
       if (img.width > 4000 || img.height > 4000) {
         const maxSize = 2000;
         const scale = Math.min(maxSize / img.width, maxSize / img.height);
         img.scale(scale);
       }
 
+      // [2025-11-19 12:00:00] 位置居中
+      const left = options.left !== undefined ? options.left : CANVAS_WIDTH / 2;
+      const top = options.top !== undefined ? options.top : CANVAS_HEIGHT / 2;
+
       img.set({
-        left: options.left || CANVAS_WIDTH / 2,
-        top: options.top || CANVAS_HEIGHT / 2,
+        left: left,
+        top: top,
         originX: 'center',
         originY: 'center',
         name: `image_${Date.now()}`
@@ -298,25 +306,19 @@
       canvas.setActiveObject(img);
       canvas.renderAll();
       
-      // [2025-11-19 10:20:00] 通知图层面板
+      // [2025-11-19 12:00:00] 通知图层面板
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
       
-      // [2025-11-19 10:20:00] 记录历史
+      // [2025-11-19 12:00:00] 记录历史
       if (window.DesignLabHistory) {
         window.DesignLabHistory.saveState();
       }
       
-      // [2025-11-19 11:15:00] 隐藏启动面板，显示工具面板
-      const guidePanel = document.getElementById('guide-panel');
-      const toolsPanel = document.getElementById('tools-panel');
-      if (guidePanel) guidePanel.style.display = 'none';
-      if (toolsPanel) toolsPanel.style.display = 'flex';
-      
       const currentSide = window.DesignLabStore.getCurrentSide();
       console.log('[CanvasManager] add:', { id: img.name, type: 'image', side: currentSide });
-    }, { crossOrigin: 'anonymous' });
+    }, fromUrlOptions);
   }
 
   // [2025-11-19 10:20:00] 添加形状对象
@@ -380,12 +382,6 @@
       if (window.DesignLabHistory) {
         window.DesignLabHistory.saveState();
       }
-      
-      // [2025-11-19 11:15:00] 隐藏启动面板，显示工具面板
-      const guidePanel = document.getElementById('guide-panel');
-      const toolsPanel = document.getElementById('tools-panel');
-      if (guidePanel) guidePanel.style.display = 'none';
-      if (toolsPanel) toolsPanel.style.display = 'flex';
       
       const currentSide = window.DesignLabStore.getCurrentSide();
       console.log('[CanvasManager] add:', { id: shape.name, type: 'shape', side: currentSide });

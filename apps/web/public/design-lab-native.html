@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/design-lab-native.css">
 </head>
 <body>
-  <!-- [2025-11-19 11:10:00] Design Lab - 重构为与图一一致的布局，基于 Fabric.js 6.0.0 -->
+  <!-- [2025-11-19 11:30:00] Design Lab - 根据参考截图4个红框重构，基于 Fabric.js 6.0.0 -->
   
   <!-- 顶部导航栏 -->
   <header class="dl-header" role="banner">
@@ -17,7 +17,7 @@
         <nav class="dl-header__breadcrumb" aria-label="Breadcrumb">
           <a href="#" class="dl-header__breadcrumb-link">My Designs</a>
           <span class="dl-header__breadcrumb-separator">></span>
-          <span class="dl-header__breadcrumb-current" id="design-name">Untitled Design</span>
+          <span class="dl-header__breadcrumb-current" id="design-name" contenteditable="true">Untitled Design</span>
         </nav>
       </div>
       <div class="dl-header__right">
@@ -30,11 +30,11 @@
 
   <!-- 主内容区域 -->
   <div class="dl-main" role="main">
-    <!-- 左侧区域：工具条 + 面板卡 -->
+    <!-- 红框1：左侧区域：工具条 + 面板卡 -->
     <div class="dl-left-panel">
       <!-- 左侧深灰色垂直工具栏 (Rail) - 72px -->
       <nav class="dl-rail" aria-label="编辑工具">
-        <button id="tool-upload" class="dl-rail__btn" data-tool="upload" aria-label="Upload image" aria-pressed="false">
+        <button id="tool-upload" class="dl-rail__btn" data-tool="upload" aria-label="Upload image" aria-pressed="false" tabindex="0">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -45,12 +45,12 @@
           <span class="dl-rail__label">Upload</span>
         </button>
         
-        <button id="tool-text" class="dl-rail__btn" data-tool="text" aria-label="Add text" aria-pressed="false">
+        <button id="tool-text" class="dl-rail__btn" data-tool="text" aria-label="Add text" aria-pressed="false" tabindex="0">
           <span class="dl-rail__icon dl-rail__icon--text">T</span>
           <span class="dl-rail__label">Add Text</span>
         </button>
         
-        <button id="tool-art" class="dl-rail__btn" data-tool="art" aria-label="Add art" aria-pressed="false">
+        <button id="tool-art" class="dl-rail__btn" data-tool="art" aria-label="Add art" aria-pressed="false" tabindex="0">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -61,7 +61,7 @@
           <span class="dl-rail__label">Add Art</span>
         </button>
         
-        <button id="tool-colors" class="dl-rail__btn" data-tool="colors" aria-label="Product colors" aria-pressed="false">
+        <button id="tool-colors" class="dl-rail__btn" data-tool="colors" aria-label="Product colors" aria-pressed="false" tabindex="0">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
@@ -74,7 +74,7 @@
           <span class="dl-rail__label">Colors</span>
         </button>
         
-        <button id="tool-names" class="dl-rail__btn" data-tool="names" aria-label="Add names" aria-pressed="false">
+        <button id="tool-names" class="dl-rail__btn" data-tool="names" aria-label="Add names" aria-pressed="false" tabindex="0">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -88,7 +88,7 @@
         
         <div class="dl-rail__divider"></div>
         
-        <button id="btn-undo" class="dl-rail__btn" aria-label="Undo" title="Undo (Ctrl+Z)">
+        <button id="btn-undo" class="dl-rail__btn" aria-label="Undo" title="Undo (Ctrl+Z)" tabindex="0">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 7v6h6" />
@@ -98,7 +98,7 @@
           <span class="dl-rail__label">Undo</span>
         </button>
         
-        <button id="btn-redo" class="dl-rail__btn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)">
+        <button id="btn-redo" class="dl-rail__btn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" tabindex="0">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 7v6h-6" />
@@ -109,188 +109,302 @@
         </button>
       </nav>
 
-      <!-- 左侧白色面板卡 (280px) -->
-      <aside class="dl-panel-card" aria-label="工具与图层">
-        <!-- 启动面板（四宫格）- 默认显示 -->
-        <div class="dl-guide-panel" id="guide-panel">
-          <h3 class="dl-guide-panel__title">What's next for you?</h3>
-          <div class="dl-guide-panel__actions">
-            <button class="dl-guide-action" data-action="upload" aria-label="Upload">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
+      <!-- [2025-11-19 12:00:00] 左侧固定操作区容器（单一容器 + 面板切换） -->
+      <aside class="side-panel" aria-label="工具操作区">
+        <!-- home 面板（启动卡）- 默认显示 -->
+        <div class="panel panel--active" data-panel="home" aria-selected="true" aria-hidden="false">
+          <div class="side-panel__body">
+            <h3 class="panel__title">What's next for you?</h3>
+            <div class="panel__grid">
+              <button class="panel__guide-action" data-action="upload" aria-label="Upload" tabindex="0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <span>Uploads</span>
+              </button>
+              <button class="panel__guide-action" data-action="text" aria-label="Add Text" tabindex="0">
+                <span class="panel__guide-action-icon">abc</span>
+                <span>Add Text</span>
+              </button>
+              <button class="panel__guide-action" data-action="art" aria-label="Add Art" tabindex="0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+                <span>Add Art</span>
+              </button>
+              <button class="panel__guide-action" data-action="products" aria-label="Change Products" tabindex="0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+                <span>Change Products</span>
+              </button>
+            </div>
+            <p class="panel__hint">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
               </svg>
-              <span>Upload</span>
-            </button>
-            <button class="dl-guide-action" data-action="text" aria-label="Add Text">
-              <span class="dl-guide-action__text-icon">T</span>
-              <span>Add Text</span>
-            </button>
-            <button class="dl-guide-action" data-action="art" aria-label="Add Art">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <span>Add Art</span>
-            </button>
-            <button class="dl-guide-action" data-action="products" aria-label="Change Products">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 0 1-8 0" />
-              </svg>
-              <span>Change Products</span>
-            </button>
+              Drag & drop a file anywhere to upload
+            </p>
           </div>
-          <p class="dl-guide-panel__hint">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            Drag & drop a file anywhere to upload
-          </p>
         </div>
 
-        <!-- 工具面板（Tabs） -->
-        <div class="dl-tools" id="tools-panel" style="display: none;">
-          <div class="dl-tools__tabs">
-            <button class="dl-tabs__btn is-active" data-tab="upload">Upload</button>
-            <button class="dl-tabs__btn" data-tab="text">Text</button>
-            <button class="dl-tabs__btn" data-tab="art">Art</button>
-            <button class="dl-tabs__btn" data-tab="layers">Layers</button>
-            <button class="dl-tabs__btn" data-tab="edit">Edit</button>
+        <!-- upload 面板 -->
+        <div class="panel" data-panel="upload" aria-selected="false" aria-hidden="true">
+          <div class="side-panel__header">
+            <button class="side-panel__back" aria-label="返回启动卡" title="返回" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h3 class="side-panel__title">Choose File To Upload</h3>
+            <button class="side-panel__close" aria-label="关闭面板" title="关闭" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
-          
-          <div class="dl-tools__content">
-            <!-- Upload 面板 -->
-            <div id="panel-upload" class="dl-panel is-active">
-              <div class="dl-panel__section">
-                <h3 class="dl-panel__title">Upload Image</h3>
-                <div class="dl-upload-area" id="upload-area">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  <p>Drag & drop or click to upload</p>
-                  <input type="file" id="file-input" accept="image/*" style="display: none;">
-                </div>
-              </div>
-            </div>
-            
-            <!-- Text 面板 -->
-            <div id="panel-text" class="dl-panel">
-              <div class="dl-panel__section">
-                <h3 class="dl-panel__title">Add Text</h3>
-                <button id="btn-add-text" class="dl-btn dl-btn--primary dl-btn--block">Add Text</button>
-                <div class="dl-panel__section">
-                  <label class="dl-label">Font</label>
-                  <select id="text-font" class="dl-select">
-                    <option value="Arial">Arial</option>
-                    <option value="Helvetica">Helvetica</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Courier New">Courier New</option>
-                    <option value="Georgia">Georgia</option>
-                  </select>
-                </div>
-                <div class="dl-panel__section">
-                  <label class="dl-label">Size</label>
-                  <input type="range" id="text-size" class="dl-range" min="12" max="200" value="48">
-                  <span id="text-size-value">48</span>
-                </div>
-                <div class="dl-panel__section">
-                  <label class="dl-label">Color</label>
-                  <input type="color" id="text-color" class="dl-color" value="#000000">
-                </div>
-                <div class="dl-panel__section">
-                  <label class="dl-checkbox">
-                    <input type="checkbox" id="text-bold"> Bold
-                  </label>
-                  <label class="dl-checkbox">
-                    <input type="checkbox" id="text-italic"> Italic
-                  </label>
-                  <label class="dl-checkbox">
-                    <input type="checkbox" id="text-underline"> Underline
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Art 面板 -->
-            <div id="panel-art" class="dl-panel">
-              <div class="dl-panel__section">
-                <h3 class="dl-panel__title">Add Art</h3>
-                <div class="dl-art-grid">
-                  <button class="dl-art-item" data-art="star">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  </button>
-                  <button class="dl-art-item" data-art="heart">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                    </svg>
-                  </button>
-                  <button class="dl-art-item" data-art="circle">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Layers 面板（默认展开） -->
-            <div id="panel-layers" class="dl-panel">
-              <div class="dl-panel__section">
-                <h3 class="dl-panel__title">Layers</h3>
-                <div class="dl-layers__list" id="layers-list" role="list">
-                  <!-- 图层项将通过 JS 动态生成 -->
-                </div>
-              </div>
-            </div>
-            
-            <!-- Edit 面板 -->
-            <div id="panel-edit" class="dl-panel">
-              <div class="dl-panel__section">
-                <h3 class="dl-panel__title">Edit</h3>
-                <div class="dl-panel__section">
-                  <label class="dl-label">Position X</label>
-                  <input type="range" id="edit-pos-x" class="dl-range" min="0" max="900" value="450">
-                  <span id="edit-pos-x-value">450</span>
-                </div>
-                <div class="dl-panel__section">
-                  <label class="dl-label">Position Y</label>
-                  <input type="range" id="edit-pos-y" class="dl-range" min="0" max="700" value="350">
-                  <span id="edit-pos-y-value">350</span>
-                </div>
-                <div class="dl-panel__section">
-                  <label class="dl-label">Scale</label>
-                  <input type="range" id="edit-scale" class="dl-range" min="10" max="200" value="100">
-                  <span id="edit-scale-value">100%</span>
-                </div>
-                <div class="dl-panel__section">
-                  <label class="dl-label">Rotation</label>
-                  <input type="range" id="edit-rotation" class="dl-range" min="-180" max="180" value="0">
-                  <span id="edit-rotation-value">0°</span>
-                </div>
-              </div>
+          <div class="side-panel__body">
+            <div class="panel__upload-area" id="upload-area">
+              <button class="btn btn--primary btn--block" id="btn-browse-computer" aria-label="Browse your computer" tabindex="0">Browse Your Computer</button>
+              <p class="panel__hint">or Drag & Drop Anywhere</p>
+              <p class="panel__info">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                Vector or high resolution artwork of 300 DPI or more will look the best. Max size of 20 MB.
+              </p>
+              <input type="file" id="file-input" accept="image/*" style="display: none;">
             </div>
           </div>
         </div>
 
-        <!-- 左下产品卡 -->
+        <!-- text 面板 -->
+        <div class="panel" data-panel="text" aria-selected="false" aria-hidden="true">
+          <div class="side-panel__header">
+            <button class="side-panel__back" aria-label="返回启动卡" title="返回" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h3 class="side-panel__title">Add Text</h3>
+            <button class="side-panel__close" aria-label="关闭面板" title="关闭" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="side-panel__body">
+            <div class="panel__input-group">
+              <input type="text" id="text-input" class="panel__input" placeholder="Enter text here" value="Your Text">
+              <button id="btn-add-text-to-design" class="btn btn--primary btn--block">Add To Design</button>
+            </div>
+            <div class="panel__section">
+              <label class="panel__label">Change Font</label>
+              <select id="text-font" class="panel__select">
+                <option value="Arial">Arial</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Georgia">Georgia</option>
+              </select>
+            </div>
+            <div class="panel__section">
+              <label class="panel__label">Edit Color</label>
+              <input type="color" id="text-color" class="panel__color" value="#000000">
+            </div>
+            <div class="panel__section">
+              <label class="panel__label">Text Size</label>
+              <input type="range" id="text-size" class="panel__range" min="12" max="200" value="48">
+              <span id="text-size-value" class="panel__value">48</span>
+            </div>
+            <div class="panel__section">
+              <label class="panel__label">Rotation</label>
+              <input type="range" id="text-rotation" class="panel__range" min="-180" max="180" value="0">
+              <span id="text-rotation-value" class="panel__value">0</span>
+            </div>
+          </div>
+          <div class="side-panel__footer">
+            <button class="panel__footer-btn" id="text-control-center" aria-label="Center">Center</button>
+            <button class="panel__footer-btn" id="text-control-layering" aria-label="Layering">Layering</button>
+            <button class="panel__footer-btn" id="text-control-alignment" aria-label="Text Alignment">Text Alignment</button>
+            <button class="panel__footer-btn" id="text-control-duplicate" aria-label="Duplicate">Duplicate</button>
+          </div>
+        </div>
+
+        <!-- art 面板 -->
+        <div class="panel" data-panel="art" aria-selected="false" aria-hidden="true">
+          <div class="side-panel__header">
+            <button class="side-panel__back" aria-label="返回启动卡" title="返回" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h3 class="side-panel__title">Add Art</h3>
+            <button class="side-panel__close" aria-label="关闭面板" title="关闭" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="side-panel__body">
+            <div class="panel__art-grid">
+              <button class="panel__art-item" data-art="star" aria-label="Star">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              </button>
+              <button class="panel__art-item" data-art="heart" aria-label="Heart">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </button>
+              <button class="panel__art-item" data-art="circle" aria-label="Circle">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
+              </button>
+              <button class="panel__art-item" data-art="triangle" aria-label="Triangle">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L2 22h20L12 2z" />
+                </svg>
+              </button>
+              <button class="panel__art-item" data-art="square" aria-label="Square">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="3" y="3" width="18" height="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="side-panel__footer">
+            <button class="panel__footer-btn" id="art-control-flip" aria-label="Flip">Flip</button>
+            <button class="panel__footer-btn" id="art-control-duplicate" aria-label="Duplicate">Duplicate</button>
+            <button class="panel__footer-btn" id="art-control-rotate" aria-label="Rotate">Rotate</button>
+          </div>
+        </div>
+
+        <!-- product-colors 面板 -->
+        <div class="panel" data-panel="product-colors" aria-selected="false" aria-hidden="true">
+          <div class="side-panel__header">
+            <button class="side-panel__back" aria-label="返回启动卡" title="返回" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h3 class="side-panel__title">Choose Your Product Color</h3>
+            <button class="side-panel__close" aria-label="关闭面板" title="关闭" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="side-panel__body">
+            <div class="panel__section">
+              <label class="panel__label">Colors:</label>
+              <div class="panel__colors-grid" id="product-colors-grid">
+                <!-- 颜色选项将通过 JS 动态生成 -->
+              </div>
+            </div>
+            <div class="panel__section">
+              <p class="panel__info">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                Ordering fewer than 6?
+              </p>
+            </div>
+            <div class="panel__section">
+              <label class="panel__label">Sizes Available in: <span id="current-color-display">Red</span></label>
+              <p class="panel__text">YS | YM | YL</p>
+              <p class="panel__text">XS | S | M | L | XL | 2XL | 3XL | 4XL | 5XL</p>
+            </div>
+            <div class="panel__section">
+              <button class="btn btn--secondary btn--block" id="btn-pick-another-color">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+                Add this product in another color
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- names 面板 -->
+        <div class="panel" data-panel="names" aria-selected="false" aria-hidden="true">
+          <div class="side-panel__header">
+            <button class="side-panel__back" aria-label="返回启动卡" title="返回" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <h3 class="side-panel__title">Names and Numbers</h3>
+            <button class="side-panel__close" aria-label="关闭面板" title="关闭" tabindex="0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <div class="side-panel__body">
+            <div class="panel__section">
+              <img src="https://picsum.photos/seed/team/300/200" alt="Team example" class="panel__image">
+              <p class="panel__text">
+                Use personalized Names & Numbers for projects like team jerseys where you need a unique name and/or number for each item.
+              </p>
+              <button id="btn-add-names-numbers" class="btn btn--primary btn--block">Add Names and Numbers</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layers 图层面板（始终显示在底部） -->
+        <div class="side-panel__layers">
+          <div class="side-panel__layers-header">
+            <h3 class="side-panel__layers-title">Layers</h3>
+          </div>
+          <div class="side-panel__layers-list" id="layers-list" role="list">
+            <!-- 图层项将通过 JS 动态生成 -->
+          </div>
+        </div>
+
+        <!-- 红框3：左下产品卡（固定吸底） -->
         <div class="dl-product-card">
+          <button id="btn-add-products" class="dl-product-card__add-btn" aria-label="Add Products" tabindex="0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>Add Products</span>
+          </button>
           <div class="dl-product-card__info">
-            <div class="dl-product-card__name" id="product-name">Gildan Softstyle T-shirt</div>
-            <div class="dl-product-card__color" id="product-color">Heather Dark Grey</div>
+            <div class="dl-product-card__thumb" id="product-thumb">
+              <img src="https://picsum.photos/seed/product/60/60" alt="Product" id="product-thumb-img">
+            </div>
+            <div class="dl-product-card__details">
+              <div class="dl-product-card__name" id="product-name">Gildan Softstyle T-shirt</div>
+              <a href="#change-product" class="dl-product-card__link" id="link-change-product" tabindex="0">Change Product</a>
+            </div>
           </div>
-          <div class="dl-product-card__actions">
-            <a href="#change-product" class="dl-product-card__link">Change Product</a>
-            <a href="#change-color" class="dl-product-card__link" id="link-change-color">Change Color</a>
+          <div class="dl-product-card__color-row">
+            <span class="dl-product-card__color-label">Color:</span>
+            <span class="dl-product-card__color-value" id="product-color">Heather Dark Grey</span>
+            <a href="#change-color" class="dl-product-card__link" id="link-change-color" tabindex="0">Change Color</a>
           </div>
         </div>
       </aside>
@@ -303,61 +417,53 @@
         <div class="dl-print-area" id="print-area"></div>
         <div class="dl-grid-overlay" id="grid-overlay"></div>
         
-        <!-- 右侧竖向按钮：Front / Back / Sleeve Design / Zoom -->
+        <!-- 红框2：右侧竖向按钮：Front / Back / Sleeve Design / Zoom -->
         <div class="dl-canvas-side-buttons">
-          <button class="dl-side-button is-active" data-side="front" aria-label="Front view" title="Front">
+          <button class="dl-side-button is-active" data-side="front" aria-label="Front view" title="Front" tabindex="0">
             <span class="dl-side-button__label">Front</span>
           </button>
-          <button class="dl-side-button" data-side="back" aria-label="Back view" title="Back">
+          <button class="dl-side-button" data-side="back" aria-label="Back view" title="Back" tabindex="0">
             <span class="dl-side-button__label">Back</span>
           </button>
-          <button class="dl-side-button" data-side="sleeve" aria-label="Sleeve Design" title="Sleeve Design">
+          <button class="dl-side-button" data-side="sleeve" aria-label="Sleeve Design" title="Sleeve Design" tabindex="0">
             <span class="dl-side-button__label">Sleeve Design</span>
           </button>
-          <button class="dl-side-button" data-side="zoom" aria-label="Zoom view" title="Zoom">
+          <button class="dl-side-button" data-side="zoom" aria-label="Zoom view" title="Zoom" tabindex="0">
             <span class="dl-side-button__label">Zoom</span>
           </button>
         </div>
       </div>
       
       <div class="dl-zoom-controls" id="zoom-controls">
+        <button id="btn-fit-screen" class="dl-zoom-btn" aria-label="Fit to screen">Fit</button>
+        <button id="btn-zoom-100" class="dl-zoom-btn" aria-label="100% zoom">100%</button>
         <button id="btn-zoom-in" class="dl-zoom-btn" aria-label="Zoom in">+</button>
         <span id="zoom-value">100%</span>
         <button id="btn-zoom-out" class="dl-zoom-btn" aria-label="Zoom out">−</button>
       </div>
     </section>
 
-    <!-- 右侧可选信息面板（默认隐藏，≥1280px 可显示） -->
-    <aside class="dl-info-sidebar" aria-label="可选信息" id="info-sidebar" style="display: none;">
-      <div class="dl-info-sidebar__header">
-        <h3 class="dl-info-sidebar__title">Info</h3>
-        <button class="dl-info-sidebar__toggle" aria-label="Toggle sidebar" aria-expanded="false">×</button>
-      </div>
-      <div class="dl-info-sidebar__content">
-        <p>Optional information panel</p>
-      </div>
-    </aside>
   </div>
 
-  <!-- 底部操作条 -->
+  <!-- 红框4：底部操作条（固定在右下角） -->
   <footer class="dl-bottom-bar" role="contentinfo">
     <div class="dl-bottom-bar__content">
       <div class="dl-bottom-bar__left">
         <!-- 左侧可放置其他操作 -->
       </div>
       <div class="dl-bottom-bar__right">
-        <button id="btn-save" class="dl-btn dl-btn--secondary" aria-label="Save design">Save</button>
-        <button id="btn-share" class="dl-btn dl-btn--secondary" aria-label="Share design">Share</button>
-        <button id="btn-get-price" class="dl-btn dl-btn--primary" aria-label="Get price">Get Price</button>
+        <button id="btn-save" class="dl-btn dl-btn--secondary" aria-label="Save design" tabindex="0">Save</button>
+        <button id="btn-share" class="dl-btn dl-btn--secondary" aria-label="Share design" tabindex="0">Share</button>
+        <button id="btn-get-price" class="dl-btn dl-btn--primary" aria-label="Get price" tabindex="0">Get Price</button>
       </div>
     </div>
   </footer>
 
   <!-- 颜色选择弹层 -->
-  <div id="color-modal" class="dl-modal" role="dialog" aria-hidden="true">
+  <div id="color-modal" class="dl-modal" role="dialog" aria-hidden="true" aria-labelledby="color-modal-title">
     <div class="dl-modal__content">
       <div class="dl-modal__header">
-        <h3>Product Colors</h3>
+        <h3 id="color-modal-title">Product Colors</h3>
         <button class="dl-modal__close" aria-label="Close">×</button>
       </div>
       <div class="dl-modal__body">
@@ -368,16 +474,36 @@
     </div>
   </div>
 
-  <!-- 加载 Fabric.js 6.0.0 from CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/fabric@6.0.0/dist/fabric.min.js"></script>
+  <!-- 产品选择弹层 -->
+  <div id="product-modal" class="dl-modal" role="dialog" aria-hidden="true" aria-labelledby="product-modal-title">
+    <div class="dl-modal__content">
+      <div class="dl-modal__header">
+        <h3 id="product-modal-title">Select Product</h3>
+        <button class="dl-modal__close" aria-label="Close">×</button>
+      </div>
+      <div class="dl-modal__body">
+        <div class="dl-products-grid" id="products-grid">
+          <!-- 产品选项将通过 JS 动态生成 -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加载 Fabric.js 6.0.0 (ESM) 并挂载到 window.fabric -->
+  <script type="module">
+    import * as FabricNS from 'https://cdn.jsdelivr.net/npm/fabric@6.0.0/dist/index.min.mjs';
+    window.fabric = FabricNS.fabric || FabricNS.default || FabricNS;
+    window.dispatchEvent(new CustomEvent('fabric:ready'));
+  </script>
   
-  <!-- 模块化 JS 文件 -->
-  <script src="/design-lab-native/store.js"></script>
-  <script src="/design-lab-native/canvasManager.js"></script>
-  <script src="/design-lab-native/history.js"></script>
-  <script src="/design-lab-native/zoomPan.js"></script>
-  <script src="/design-lab-native/layersPanel.js"></script>
-  <script src="/design-lab-native/toolbar.js"></script>
-  <script src="/design-lab-native/app.js"></script>
+  <!-- 模块化 JS 文件（延迟执行） -->
+  <script src="/design-lab-native/store.js" defer></script>
+  <script src="/design-lab-native/canvasManager.js" defer></script>
+  <script src="/design-lab-native/history.js" defer></script>
+  <script src="/design-lab-native/zoomPan.js" defer></script>
+  <script src="/design-lab-native/layersPanel.js" defer></script>
+  <script src="/design-lab-native/panelManager.js" defer></script>
+  <script src="/design-lab-native/toolbar.js" defer></script>
+  <script src="/design-lab-native/app.js" defer></script>
 </body>
 </html>

@@ -6,6 +6,8 @@
   'use strict';
 
   // [2025-11-19 10:15:00] 数据 store 结构
+  const PRODUCT_PAYLOAD_KEY = 'designLab:productPayload';
+
   const store = {
     currentSide: 'front', // 'front' | 'back' | 'sleeve'
     sides: {
@@ -23,12 +25,13 @@
         back: 'https://picsum.photos/seed/tshirt-back/900/700',
         sleeve: 'https://picsum.photos/seed/tshirt-sleeve/900/700'
       },
+      gallery: [],
       variantId: null // [2025-11-19 11:00:00] 从 URL 参数获取的 variantId
     },
     version: '1.0.0',
     timestamp: null
   };
-
+  
   // [2025-11-19 11:00:00] 从 URL 参数初始化 variantId
   function initFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -38,9 +41,6 @@
       console.log('[Store] variantId from URL:', variantId);
     }
   }
-
-  // [2025-11-19 11:00:00] 初始化时从 URL 读取
-  initFromURL();
 
   // [2025-11-19 10:15:00] 从 localStorage 恢复状态
   function loadFromStorage() {
@@ -64,6 +64,93 @@
       console.log('[Store] Saved to localStorage');
     } catch (e) {
       console.warn('[Store] Failed to save to localStorage:', e);
+    }
+  }
+
+  // [2025-11-20 12:30:00] 从商品详情写入的 payload 中恢复产品信息
+  function requestVisualRefresh() {
+    if (window.DesignLabCanvas && window.DesignLabCanvas.loadBackgroundForCurrentSide) {
+      window.DesignLabCanvas.loadBackgroundForCurrentSide();
+      window.__DesignLabNeedsBackgroundRefresh = false;
+    } else {
+      window.__DesignLabNeedsBackgroundRefresh = true;
+    }
+    if (typeof window.updateProductInfo === 'function') {
+      window.updateProductInfo();
+    }
+  }
+
+  function hydrateProductFromPayload() {
+    try {
+      const payloadRaw = localStorage.getItem(PRODUCT_PAYLOAD_KEY);
+      if (!payloadRaw) return;
+      const payload = JSON.parse(payloadRaw);
+      if (!payload || typeof payload !== 'object') return;
+
+      const nextBaseImages = {
+        front: payload.baseImages?.front || store.product.baseImages.front,
+        back: payload.baseImages?.back || payload.baseImages?.front || store.product.baseImages.back,
+        sleeve: payload.baseImages?.sleeve || payload.baseImages?.front || store.product.baseImages.sleeve,
+      };
+
+      store.product = {
+        ...store.product,
+        id: payload.productId || store.product.id,
+        name: payload.productName || store.product.name,
+        color: payload.color || store.product.color,
+        colors: Array.isArray(payload.colors) && payload.colors.length ? payload.colors : store.product.colors,
+        baseImages: nextBaseImages,
+        variantId: payload.variantId || store.product.variantId,
+        gallery: Array.isArray(payload.gallery) ? payload.gallery : store.product.gallery
+      };
+
+      saveToStorage();
+      requestVisualRefresh();
+      localStorage.removeItem(PRODUCT_PAYLOAD_KEY);
+      console.log('[Store] Hydrated product from payload');
+    } catch (e) {
+      console.warn('[Store] Failed to hydrate product payload:', e);
+    }
+  }
+
+  function needsVariantHydration() {
+    const base = store.product.baseImages || {};
+    const isPlaceholder =
+      !base.front ||
+      base.front.includes('picsum.photos') ||
+      base.front.includes('hero-card-tee');
+    return !!store.product.variantId && isPlaceholder;
+  }
+
+  async function hydrateProductFromVariantId() {
+    if (!needsVariantHydration()) return;
+    const variantId = store.product.variantId;
+    if (!variantId) return;
+
+    try {
+      const response = await fetch(`/api/products/variant/${variantId}`);
+      if (!response.ok) {
+        console.warn('[Store] Failed to fetch variant payload:', response.status);
+        return;
+      }
+      const data = await response.json();
+      if (!data) return;
+
+      store.product = {
+        ...store.product,
+        id: data.productId || store.product.id,
+        name: data.productName || store.product.name,
+        color: data.color || store.product.color,
+        colors: Array.isArray(data.colors) && data.colors.length ? data.colors : store.product.colors,
+        baseImages: data.baseImages || store.product.baseImages,
+        gallery: Array.isArray(data.gallery) ? data.gallery : store.product.gallery,
+      };
+
+      saveToStorage();
+      requestVisualRefresh();
+      console.log('[Store] Hydrated product from variant API');
+    } catch (e) {
+      console.warn('[Store] Failed to hydrate product via API:', e);
     }
   }
 
@@ -140,9 +227,9 @@
 
   // [2025-11-19 10:15:00] 初始化：从 localStorage 加载
   loadFromStorage();
-  
-  // [2025-11-19 11:00:00] 如果 URL 中有 variantId，优先使用 URL 参数
+  hydrateProductFromPayload();
   initFromURL();
+  hydrateProductFromVariantId();
 
   // [2025-11-19 10:15:00] 页面卸载前保存
   window.addEventListener('beforeunload', saveToStorage);

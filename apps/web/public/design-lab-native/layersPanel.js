@@ -71,27 +71,45 @@
       item.classList.add('is-selected');
     }
 
-    // [2025-11-19 10:35:00] 缩略图
+    // [2025-11-19 11:30:00] 缩略图（生成真实缩略图或显示类型图标）
     const thumb = document.createElement('div');
     thumb.className = 'dl-layer-item__thumb';
     
-    // [2025-11-19 10:35:00] 生成缩略图（小型 toDataURL）
+    // [2025-11-19 11:30:00] 尝试生成真实缩略图
     try {
-      const thumbCanvas = document.createElement('canvas');
-      thumbCanvas.width = 40;
-      thumbCanvas.height = 40;
-      const ctx = thumbCanvas.getContext('2d');
-      
-      // [2025-11-19 10:35:00] 根据对象类型显示图标
-      if (obj.type === 'i-text' || obj.type === 'text') {
-        thumb.innerHTML = '<span class="dl-layer-icon">T</span>';
-      } else if (obj.type === 'image') {
-        thumb.innerHTML = '<span class="dl-layer-icon">🖼️</span>';
+      const canvas = window.DesignLabCanvas.getCanvas();
+      if (canvas && obj.type === 'image' && obj._element) {
+        // [2025-11-19 11:30:00] 图片对象：使用实际图片
+        const img = document.createElement('img');
+        img.src = obj._element.src || obj.getSrc();
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        thumb.appendChild(img);
       } else {
-        thumb.innerHTML = '<span class="dl-layer-icon">▢</span>';
+        // [2025-11-19 11:30:00] 其他对象：显示类型图标
+        const icon = document.createElement('span');
+        icon.className = 'dl-layer-icon';
+        if (obj.type === 'i-text' || obj.type === 'text') {
+          icon.textContent = 'T';
+        } else if (obj.type === 'image') {
+          icon.textContent = '🖼️';
+        } else if (obj.type === 'rect') {
+          icon.textContent = '▢';
+        } else if (obj.type === 'circle') {
+          icon.textContent = '○';
+        } else if (obj.type === 'triangle') {
+          icon.textContent = '△';
+        } else {
+          icon.textContent = '▢';
+        }
+        thumb.appendChild(icon);
       }
     } catch (e) {
-      thumb.innerHTML = '<span class="dl-layer-icon">?</span>';
+      const icon = document.createElement('span');
+      icon.className = 'dl-layer-icon';
+      icon.textContent = '?';
+      thumb.appendChild(icon);
     }
     
     // [2025-11-19 10:35:00] 名称（可编辑）
@@ -118,21 +136,26 @@
     const controls = document.createElement('div');
     controls.className = 'dl-layer-item__controls';
     
-    // [2025-11-19 10:35:00] 可见性按钮
+    // [2025-11-19 11:30:00] 可见性按钮
     const visibilityBtn = document.createElement('button');
     visibilityBtn.className = 'dl-layer-control';
-    visibilityBtn.setAttribute('aria-label', 'Toggle visibility');
+    visibilityBtn.setAttribute('aria-label', obj.visible ? 'Hide layer' : 'Show layer');
+    visibilityBtn.setAttribute('aria-pressed', obj.visible ? 'true' : 'false');
     visibilityBtn.innerHTML = obj.visible ? '👁️' : '👁️‍🗨️';
+    if (!obj.visible) visibilityBtn.classList.add('is-active');
     visibilityBtn.onclick = (e) => {
       e.stopPropagation();
       toggleVisibility(obj.name);
     };
     
-    // [2025-11-19 10:35:00] 锁定按钮
+    // [2025-11-19 11:30:00] 锁定按钮
     const lockBtn = document.createElement('button');
     lockBtn.className = 'dl-layer-control';
-    lockBtn.setAttribute('aria-label', 'Toggle lock');
-    lockBtn.innerHTML = obj.lockMovementX ? '🔒' : '🔓';
+    const isLocked = obj.lockMovementX;
+    lockBtn.setAttribute('aria-label', isLocked ? 'Unlock layer' : 'Lock layer');
+    lockBtn.setAttribute('aria-pressed', isLocked ? 'true' : 'false');
+    lockBtn.innerHTML = isLocked ? '🔒' : '🔓';
+    if (isLocked) lockBtn.classList.add('is-active');
     lockBtn.onclick = (e) => {
       e.stopPropagation();
       toggleLock(obj.name);
@@ -233,25 +256,26 @@
     updateLayers();
   }
 
-  // [2025-11-19 10:35:00] 切换可见性
+  // [2025-11-19 11:30:00] 切换可见性（双向同步）
   function toggleVisibility(layerId) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
 
     const obj = canvas.getObjects().find(o => o.name === layerId);
     if (obj) {
-      obj.set('visible', !obj.visible);
+      const newVisible = !obj.visible;
+      obj.set('visible', newVisible);
       canvas.renderAll();
       updateLayers();
       
-      // [2025-11-19 10:35:00] 记录历史
+      // [2025-11-19 11:30:00] 记录历史
       if (window.DesignLabHistory) {
         window.DesignLabHistory.saveState();
       }
     }
   }
 
-  // [2025-11-19 10:35:00] 切换锁定
+  // [2025-11-19 11:30:00] 切换锁定（双向同步）
   function toggleLock(layerId) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
@@ -269,7 +293,7 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-11-19 10:35:00] 记录历史
+      // [2025-11-19 11:30:00] 记录历史
       if (window.DesignLabHistory) {
         window.DesignLabHistory.saveState();
       }
@@ -309,18 +333,21 @@
     }
   }
 
-  // [2025-11-19 10:35:00] 删除图层
+  // [2025-11-19 11:30:00] 删除图层（带日志）
   function removeLayer(layerId) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
 
     const obj = canvas.getObjects().find(o => o.name === layerId);
     if (obj) {
+      const currentSide = window.DesignLabStore ? window.DesignLabStore.getCurrentSide() : 'front';
+      console.log('[LayersPanel] remove:', { id: layerId, side: currentSide });
+      
       canvas.remove(obj);
       canvas.renderAll();
       updateLayers();
       
-      // [2025-11-19 10:35:00] 记录历史
+      // [2025-11-19 11:30:00] 记录历史
       if (window.DesignLabHistory) {
         window.DesignLabHistory.saveState();
       }
