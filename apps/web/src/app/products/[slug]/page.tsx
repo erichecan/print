@@ -1,5 +1,5 @@
-// [2025-11-19 09:50:00] Redbubble 风格的商品详情页面包装器
-import { RedbubbleProductDetail } from '@/components/product/redbubble/RedbubbleProductDetail';
+// [2025-11-19 09:50:00] 商品详情页面包装器
+import { ProductDetail } from '@/components/product/detail/ProductDetail';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
@@ -23,5 +23,5 @@ export async function generateStaticParams() {
 
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
   void params; // 满足静态导出要求，实际 slug 由组件内部解析
-  return <RedbubbleProductDetail />;
+  return <ProductDetail />;
 }

@@ -6,7 +6,14 @@
  */
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
+// [2025-11-21 10:55:00] 延迟初始化 Stripe，确保环境变量已加载
+const getStripe = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey || secretKey.trim() === '') {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return Stripe(secretKey);
+};
 const logger = require('../utils/logger');
 const { sendOrderConfirmation } = require('../services/emailService');
 const { checkMultipleStockAvailability, decreaseInventory } = require('../services/inventoryService');
@@ -252,9 +259,24 @@ exports.createPaymentIntent = async (req, res) => {
     const total = subtotal + shippingCost + tax;
 
     // Create PaymentIntent with Stripe
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: 'Stripe is not configured' });
+    // [2025-11-21 10:55:00] 检查 Stripe 配置
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.trim() === '') {
+      logger.error('Stripe Secret Key is missing!');
+      return res.status(500).json({ error: 'Stripe is not configured', details: 'Please configure STRIPE_SECRET_KEY in environment variables' });
     }
+
+    // [2025-11-21 10:55:00] 延迟初始化 Stripe 客户端
+    const stripe = getStripe();
+
+    logger.info('Creating PaymentIntent with:', {
+      amount: Math.round(total * 100),
+      currency: 'cad',
+      metadata: {
+        userId: userId || '',
+        sessionId: sessionId || '',
+        itemCount: cart.items.length.toString(),
+      },
+    });
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(total * 100), // Convert to cents
@@ -279,7 +301,30 @@ exports.createPaymentIntent = async (req, res) => {
       }, // [2025-11-12 00:45:10] 返回费用明细供前端展示
     });
   } catch (error) {
-    console.error('Error creating payment intent:', error);
+    // [2025-11-21 10:55:00] 改进错误处理和日志记录
+    logger.error('Error creating payment intent:', {
+      error: error.message,
+      stack: error.stack,
+      stripeError: error.raw || error.type || null,
+    });
+    
+    // 如果是 Stripe 配置错误，返回更明确的错误信息
+    if (error.message.includes('STRIPE_SECRET_KEY is not configured')) {
+      return res.status(500).json({ 
+        error: 'Stripe is not configured', 
+        details: 'Please configure STRIPE_SECRET_KEY in environment variables' 
+      });
+    }
+    
+    // 如果是 Stripe API 错误，返回更详细的错误信息
+    if (error.type && error.raw) {
+      return res.status(500).json({ 
+        error: 'Failed to create payment intent', 
+        details: error.message,
+        stripeError: error.type,
+      });
+    }
+    
     res.status(500).json({ error: 'Failed to create payment intent', details: error.message });
   }
 };
@@ -367,10 +412,13 @@ exports.confirmOrder = async (req, res) => {
     }
 
     // Verify PaymentIntent with Stripe
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return res.status(500).json({ error: 'Stripe is not configured' });
+    // [2025-11-21 10:55:00] 检查 Stripe 配置并使用延迟初始化
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.trim() === '') {
+      logger.error('Stripe Secret Key is missing in confirmOrder!');
+      return res.status(500).json({ error: 'Stripe is not configured', details: 'Please configure STRIPE_SECRET_KEY in environment variables' });
     }
 
+    const stripe = getStripe();
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (paymentIntent.status !== 'succeeded') {

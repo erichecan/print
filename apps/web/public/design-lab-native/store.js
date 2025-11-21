@@ -118,23 +118,47 @@
     const isPlaceholder =
       !base.front ||
       base.front.includes('picsum.photos') ||
-      base.front.includes('hero-card-tee');
-    return !!store.product.variantId && isPlaceholder;
+      base.front.includes('hero-card-tee') ||
+      base.front.includes('cat-tshirt.png');
+    const needs = !!store.product.variantId && isPlaceholder;
+    console.log('[Store] needsVariantHydration check:', {
+      hasVariantId: !!store.product.variantId,
+      isPlaceholder: isPlaceholder,
+      baseFront: base.front,
+      needs: needs
+    });
+    return needs;
   }
 
   async function hydrateProductFromVariantId() {
-    if (!needsVariantHydration()) return;
+    console.log('[Store] hydrateProductFromVariantId called');
+    if (!needsVariantHydration()) {
+      console.log('[Store] Skipping hydration - not needed');
+      return;
+    }
     const variantId = store.product.variantId;
-    if (!variantId) return;
+    if (!variantId) {
+      console.warn('[Store] No variantId available for hydration');
+      return;
+    }
 
+    console.log('[Store] Fetching product data for variantId:', variantId);
     try {
-      const response = await fetch(`/api/products/variant/${variantId}`);
+      const apiUrl = `/api/products/variant/${variantId}`;
+      console.log('[Store] API URL:', apiUrl);
+      const response = await fetch(apiUrl);
+      console.log('[Store] API response status:', response.status, response.ok);
       if (!response.ok) {
-        console.warn('[Store] Failed to fetch variant payload:', response.status);
+        const errorText = await response.text();
+        console.error('[Store] Failed to fetch variant payload:', response.status, errorText);
         return;
       }
       const data = await response.json();
-      if (!data) return;
+      console.log('[Store] API response data:', data);
+      if (!data) {
+        console.warn('[Store] API returned empty data');
+        return;
+      }
 
       store.product = {
         ...store.product,
@@ -146,11 +170,18 @@
         gallery: Array.isArray(data.gallery) ? data.gallery : store.product.gallery,
       };
 
+      console.log('[Store] Updated product data:', {
+        id: store.product.id,
+        name: store.product.name,
+        baseImages: store.product.baseImages
+      });
+
       saveToStorage();
       requestVisualRefresh();
-      console.log('[Store] Hydrated product from variant API');
+      console.log('[Store] Hydrated product from variant API - SUCCESS');
     } catch (e) {
-      console.warn('[Store] Failed to hydrate product via API:', e);
+      console.error('[Store] Failed to hydrate product via API:', e);
+      console.error('[Store] Error details:', e.message, e.stack);
     }
   }
 
@@ -229,7 +260,10 @@
   loadFromStorage();
   hydrateProductFromPayload();
   initFromURL();
-  hydrateProductFromVariantId();
+  // [2025-11-21 11:20:00] 异步加载产品数据，确保在初始化完成后执行
+  setTimeout(() => {
+    hydrateProductFromVariantId();
+  }, 100);
 
   // [2025-11-19 10:15:00] 页面卸载前保存
   window.addEventListener('beforeunload', saveToStorage);

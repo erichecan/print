@@ -249,7 +249,7 @@ function CheckoutForm({
   const [cardError, setCardError] = useState<string | null>(null);
   const [cardComplete, setCardComplete] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'confirming'>('form');
-  
+
   // [2025-01-27 20:15:00] 优惠券状态
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
@@ -337,14 +337,14 @@ function CheckoutForm({
   // [2025-01-27 20:15:00] 应用优惠券
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !addressReady) return;
-    
+
     setApplyingCoupon(true);
     setCouponError(null);
-    
+
     try {
       const subtotalForCoupon = totals.subtotal || cart.subtotal;
       const result = await couponApi.validate(couponCode.trim().toUpperCase(), subtotalForCoupon);
-      
+
       const discountAmount = result.coupon.discountAmount;
       const applied = {
         code: result.coupon.code,
@@ -353,7 +353,7 @@ function CheckoutForm({
       setAppliedCoupon(applied);
       setCouponCode('');
       onCouponChange?.(applied); // [2025-01-27 20:20:00] 通知父组件
-      
+
       // [2025-01-27 20:15:00] 更新总计以包含折扣
       const newTotal = Math.max(0, totals.total - discountAmount);
       notifyTotals({
@@ -376,7 +376,7 @@ function CheckoutForm({
     setCouponCode('');
     setCouponError(null);
     onCouponChange?.(null); // [2025-01-27 20:20:00] 通知父组件
-    
+
     // [2025-01-27 20:15:00] 更新总计（移除折扣）
     const newTotal = totals.total + discountToRemove;
     notifyTotals({
@@ -396,11 +396,11 @@ function CheckoutForm({
           shippingAddress: mapAddressForApi(address),
           shippingMethod,
         });
-        
+
         // [2025-01-27 20:15:00] 重新计算时保留折扣
         const discount = appliedCoupon?.discountAmount || 0;
         const baseTotal = (result.subtotal ?? cart.subtotal) + (result.shipping ?? 0) + (result.tax ?? 0);
-        
+
         notifyTotals({
           subtotal: result.subtotal ?? cart.subtotal,
           shipping: result.shipping ?? 0,
@@ -543,7 +543,7 @@ function CheckoutForm({
       }
 
       setPaymentStep('confirming');
-      
+
       const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
         paymentIntentResponse.clientSecret,
         {
@@ -611,7 +611,7 @@ function CheckoutForm({
         error instanceof Error
           ? error.message
           : 'Payment failed. Please try again later.';
-      
+
       // 如果是网络错误或服务器错误，允许重试
       if (error instanceof Error && (error.message.includes('network') || error.message.includes('timeout'))) {
         setSubmitError(`${message} Please try again.`);
@@ -679,27 +679,27 @@ function CheckoutForm({
 
       <div className="form-group">
         <label htmlFor="phone">Phone *</label>
-          <input
-            id="phone"
-            type="tel"
-            required
-            placeholder="(123) 456-7890"
-            className={`field-input${missingFields.includes('shipping.phone') ? ' is-error' : ''}`}
-            value={address.phone}
-            onChange={(event) => {
-              let value = event.target.value;
-              // [2025-01-27 11:25:00] 自动格式化电话号码（可选，用户输入时保持灵活）
-              // 只在失去焦点时格式化
-              setAddress({ ...address, phone: value });
-            }}
-            onBlur={(event) => {
-              // [2025-01-27 11:25:00] 失去焦点时格式化电话号码
-              const formatted = formatPhoneNumber(event.target.value);
-              if (formatted !== event.target.value) {
-                setAddress({ ...address, phone: formatted });
-              }
-            }}
-          />
+        <input
+          id="phone"
+          type="tel"
+          required
+          placeholder="(123) 456-7890"
+          className={`field-input${missingFields.includes('shipping.phone') ? ' is-error' : ''}`}
+          value={address.phone}
+          onChange={(event) => {
+            let value = event.target.value;
+            // [2025-01-27 11:25:00] 自动格式化电话号码（可选，用户输入时保持灵活）
+            // 只在失去焦点时格式化
+            setAddress({ ...address, phone: value });
+          }}
+          onBlur={(event) => {
+            // [2025-01-27 11:25:00] 失去焦点时格式化电话号码
+            const formatted = formatPhoneNumber(event.target.value);
+            if (formatted !== event.target.value) {
+              setAddress({ ...address, phone: formatted });
+            }
+          }}
+        />
       </div>
 
       <div className="form-group">
@@ -839,8 +839,8 @@ function CheckoutForm({
       <h2>Payment Information</h2>
       <div className="payment-card">
         <label htmlFor="card-element">Card Details *</label>
-        <div 
-          id="card-element" 
+        <div
+          id="card-element"
           className={`card-element${cardError ? ' is-error' : ''}${cardComplete ? ' is-complete' : ''}`}
         >
           <CardElement

@@ -49,6 +49,18 @@ const PRODUCT_IMAGES = [
   '/assets/categories/cat-tshirt.png',
 ];
 
+// [2025-11-20 22:30:00] Art Assets
+const ART_ASSETS: Record<string, string[]> = {
+  'Emojis': ['😀', '😎', '😍', '🤔', '👍', '👎', '🔥', '⭐', '❤️', '🎉'],
+  'Shapes & Symbols': ['★', '●', '■', '▲', '◆', '❤', '☁', '☀', '☾', '⚡'],
+  'Sports & Games': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🎮', '🎲', '🏆'],
+  'Letters & Numbers': ['A', 'B', 'C', '1', '2', '3', '#', '&', '@', '!'],
+  'Animals': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯'],
+  'Mascots': ['🦁', '🦅', '🦈', '🐺', '🐗', '🐴', '🦄', '🐲', '🦖', '🦕'],
+  'Nature': ['🌲', '🌳', '🌴', '🌵', '🌷', '🌸', '🌹', '🌻', '🌼', '🍁'],
+  'America': ['🇺🇸', '🗽', '🦅', '🎆', '🌭', '🍔', '🍟', '⚾', '🏈', '🏀'],
+};
+
 const DesignLabClient = () => {
   const router = useRouter();
   const params = useSearchParams();
@@ -110,18 +122,18 @@ const DesignLabClient = () => {
   const [guideCollapsed, setGuideCollapsed] = useState(false);
   const [hasArtwork, setHasArtwork] = useState(false);
   const [selectedProductColor, setSelectedProductColor] = useState('navy');
-  
+
   // [2025-01-27 21:05:00] 批量命名功能状态
   const [showBatchNames, setShowBatchNames] = useState(false);
   const [batchNames, setBatchNames] = useState('');
   const [exporting, setExporting] = useState(false);
-  
+
   // [2025-01-27 21:05:00] 设计模板库状态
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState<DesignTemplate[]>([]);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [templateCategory, setTemplateCategory] = useState<string | null>(null);
-  
+
   // [2025-01-27 21:55:00] 设计评论状态
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<DesignComment[]>([]);
@@ -129,7 +141,7 @@ const DesignLabClient = () => {
   const [newComment, setNewComment] = useState('');
   const [newCommentAuthor, setNewCommentAuthor] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
-  
+
   // [2025-01-27 20:00:00] 新增状态以匹配参考设计
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     sizeFit: false,
@@ -139,22 +151,23 @@ const DesignLabClient = () => {
   });
   const [selectedView, setSelectedView] = useState<'front' | 'back' | 'sleeve' | 'zoom'>('front');
   const [productImageIndex, setProductImageIndex] = useState(0);
-  
+
   // [2025-01-27 21:00:00] 模态框状态
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAddTextModal, setShowAddTextModal] = useState(false);
   const [showAddArtModal, setShowAddArtModal] = useState(false);
+  const [selectedArtCategory, setSelectedArtCategory] = useState<string | null>(null); // [2025-11-20 22:30:00] Art category state
   const [showProductColorsModal, setShowProductColorsModal] = useState(false);
   const [showAddNamesModal, setShowAddNamesModal] = useState(false);
   const [showNamesToolsModal, setShowNamesToolsModal] = useState(false);
-  
+
   // [2025-01-27 21:00:00] 添加文本状态
   const [textInput, setTextInput] = useState('');
-  
+
   // [2025-01-27 21:00:00] 产品颜色选择状态
   const [selectedColor, setSelectedColor] = useState('Heather Dark Grey');
   const [orderFewerThan6, setOrderFewerThan6] = useState(false);
-  
+
   // [2025-01-27 21:00:00] 名称和数字工具状态
   const [addNames, setAddNames] = useState(false);
   const [addNumbers, setAddNumbers] = useState(false);
@@ -164,7 +177,7 @@ const DesignLabClient = () => {
   const [numberHeight, setNumberHeight] = useState('8 In');
   const [nameColor, setNameColor] = useState('Black');
   const [numberColor, setNumberColor] = useState('Black');
-  
+
   // [2025-01-27 22:00:00] Get Price流程状态
   const [showDesignActionModal, setShowDesignActionModal] = useState(false);
   const [showOrderingOptionsModal, setShowOrderingOptionsModal] = useState(false);
@@ -178,25 +191,87 @@ const DesignLabClient = () => {
     XS: 0, S: 0, M: 0, L: 0, XL: 0, '2XL': 0, '3XL': 0, '4XL': 0, '5XL': 0
   });
   const [showBuyMoreView, setShowBuyMoreView] = useState(false);
-  
+
   // [2025-01-27 23:00:00] 图层编辑状态
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [selectedImageObject, setSelectedImageObject] = useState<any>(null);
-  
+
   // [2025-01-27 23:50:00] 批量操作状态
   const [selectedLayerIds, setSelectedLayerIds] = useState<Set<string>>(new Set());
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
-  
+
   // [2025-01-27 23:45:00] Save & Add to Cart状态
   const [showSaveCartModal, setShowSaveCartModal] = useState(false);
   const [saveDesignName, setSaveDesignName] = useState('');
   const [saveEmail, setSaveEmail] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [zipCodeError, setZipCodeError] = useState(false);
-  
+
   // [2025-01-27 23:45:00] 价格计算
   const [calculatedPrice, setCalculatedPrice] = useState(32.25);
   const [pricePerItem, setPricePerItem] = useState(32.25);
+
+  // [2025-11-20 22:00:00] Dynamic Product Loading
+  const [currentProduct, setCurrentProduct] = useState<any>(null);
+  const [currentVariant, setCurrentVariant] = useState<any>(null);
+
+  // [2025-11-21 11:00:00] 从 API 获取产品详情并显示主图
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      if (!variantIdParam) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // [2025-11-21 11:00:00] 调用 API 获取真实的产品数据
+        const productData = await productsApi.getByVariant(variantIdParam);
+
+        setCurrentProduct({
+          id: productData.productId,
+          name: productData.productName,
+          image: productData.baseImages.front || productData.gallery[0] || '/assets/categories/cat-tshirt.png'
+        });
+        
+        const productImage = productData.baseImages.front || productData.gallery[0] || '/assets/categories/cat-tshirt.png';
+        console.log('[Design Lab] Product data loaded:', {
+          productId: productData.productId,
+          variantId: productData.variantId,
+          imageUrl: productImage,
+          baseImages: productData.baseImages,
+          gallery: productData.gallery
+        });
+        
+        setCurrentVariant({
+          id: productData.variantId,
+          color: productData.color || 'White',
+          image: productImage,
+          baseImages: productData.baseImages,
+          gallery: productData.gallery
+        });
+
+        // [2025-11-21 11:00:00] 更新产品颜色选择器
+        if (productData.color) {
+          setSelectedProductColor(productData.color);
+        }
+
+        setLoading(false);
+      } catch (err: any) {
+        console.error('Failed to fetch product details:', err);
+        setError(err.message || 'Failed to load product details');
+        // [2025-11-21 11:00:00] 失败时使用默认图片
+        setCurrentVariant({
+          id: variantIdParam,
+          color: 'White',
+          image: '/assets/categories/cat-tshirt.png'
+        });
+        setLoading(false);
+      }
+    };
+
+    fetchProductDetails();
+  }, [variantIdParam]);
 
   // [2025-11-15 16:06:02] 视图缩略图、产品配色、预设素材与推荐产品数据
   const viewOptions = useMemo(
@@ -332,6 +407,7 @@ const DesignLabClient = () => {
         fabricCanvasRef.current = new fabric.Canvas(element, {
           preserveObjectStacking: true,
           selection: true,
+          backgroundColor: 'transparent', // [2025-11-21 11:15:00] 确保画布背景透明，不遮挡产品图片
         });
       }
 
@@ -364,43 +440,6 @@ const DesignLabClient = () => {
     },
     [ensureFabric, ensureObjectIds]
   );
-
-  const handleCanvasChange = useCallback(() => {
-    if (!fabricCanvasRef.current || applyingSnapshotRef.current) {
-      return;
-    }
-    const snapshot = fabricCanvasRef.current.toJSON(['id']);
-    setCanvas(snapshot, { pushHistory: true });
-  }, [setCanvas]);
-
-  const handleSelectionChange = useCallback(() => {
-      const selected = fabricCanvasRef.current?.getActiveObject() as (Record<string, any> & { id?: string }) | undefined;
-    if (selected?.id) {
-      setActiveObjectId(selected.id);
-      setShowEditPanel(true);
-      // [2025-01-27 15:50:00] Check if selected object is a text object
-      if (selected.type === 'textbox' || selected.type === 'i-text' || selected.type === 'text') {
-        setSelectedTextObject(selected);
-        setSelectedImageObject(null);
-      } else if (selected.type === 'image') {
-        setSelectedImageObject(selected);
-        setSelectedTextObject(null);
-      } else if (selected.type === 'group') {
-        // [2025-01-27 23:50:00] 组对象不显示编辑面板，但保持选中状态
-        setSelectedTextObject(null);
-        setSelectedImageObject(null);
-        setShowEditPanel(false);
-      } else {
-        setSelectedTextObject(null);
-        setSelectedImageObject(null);
-      }
-    } else {
-      setActiveObjectId(null);
-      setSelectedTextObject(null);
-      setSelectedImageObject(null);
-      setShowEditPanel(false);
-    }
-  }, []);
 
   // [2025-01-27 15:40:00] Update layers list from canvas objects
   const updateLayersFromCanvas = useCallback(() => {
@@ -441,6 +480,45 @@ const DesignLabClient = () => {
     // Reverse to show top layer first (like Custom Ink)
     updateLayers(layerInfos.reverse());
   }, [updateLayers]);
+
+  const handleCanvasChange = useCallback(() => {
+    if (!fabricCanvasRef.current || applyingSnapshotRef.current) {
+      return;
+    }
+    const snapshot = fabricCanvasRef.current.toJSON(['id']);
+    setCanvas(snapshot, { pushHistory: true });
+    updateLayersFromCanvas();
+  }, [setCanvas, updateLayersFromCanvas]);
+
+  const handleSelectionChange = useCallback(() => {
+    const selected = fabricCanvasRef.current?.getActiveObject() as (Record<string, any> & { id?: string }) | undefined;
+    if (selected?.id) {
+      setActiveObjectId(selected.id);
+      setShowEditPanel(true);
+      // [2025-01-27 15:50:00] Check if selected object is a text object
+      if (selected.type === 'textbox' || selected.type === 'i-text' || selected.type === 'text') {
+        setSelectedTextObject(selected);
+        setSelectedImageObject(null);
+      } else if (selected.type === 'image') {
+        setSelectedImageObject(selected);
+        setSelectedTextObject(null);
+      } else if (selected.type === 'group') {
+        // [2025-01-27 23:50:00] 组对象不显示编辑面板，但保持选中状态
+        setSelectedTextObject(null);
+        setSelectedImageObject(null);
+        setShowEditPanel(false);
+      } else {
+        setSelectedTextObject(null);
+        setSelectedImageObject(null);
+      }
+    } else {
+      setActiveObjectId(null);
+      setSelectedTextObject(null);
+      setSelectedImageObject(null);
+      setShowEditPanel(false);
+    }
+  }, []);
+
 
   // [2025-01-27 15:40:00] Handle layer selection
   const handleLayerSelect = useCallback(
@@ -635,7 +713,7 @@ const DesignLabClient = () => {
     if (!fabricCanvasRef.current || !activeObjectId) return;
     const activeObj = fabricCanvasRef.current.getActiveObject();
     if (!activeObj) return;
-    
+
     activeObj.clone((cloned: any) => {
       cloned.set({
         left: (cloned.left || 0) + 20,
@@ -748,8 +826,8 @@ const DesignLabClient = () => {
       const activeObj = fabricCanvasRef.current.getActiveObject();
       if (!activeObj) return;
 
-      const objects = activeObj.type === 'activeSelection' 
-        ? (activeObj as any)._objects 
+      const objects = activeObj.type === 'activeSelection'
+        ? (activeObj as any)._objects
         : [activeObj];
 
       if (objects.length < 2) return;
@@ -818,7 +896,7 @@ const DesignLabClient = () => {
         const last = objects[objects.length - 1];
         const totalGap = last.left - first.left;
         const gap = totalGap / (objects.length - 1);
-        
+
         objects.forEach((obj: any, index: number) => {
           if (index > 0 && index < objects.length - 1) {
             obj.set('left', first.left + gap * index);
@@ -830,7 +908,7 @@ const DesignLabClient = () => {
         const last = objects[objects.length - 1];
         const totalGap = last.top - first.top;
         const gap = totalGap / (objects.length - 1);
-        
+
         objects.forEach((obj: any, index: number) => {
           if (index > 0 && index < objects.length - 1) {
             obj.set('top', first.top + gap * index);
@@ -850,7 +928,7 @@ const DesignLabClient = () => {
       if (!fabricCanvasRef.current) return;
       const obj = fabricCanvasRef.current.getObjects().find((o: any) => o.id === layerId);
       if (!obj) return;
-      
+
       const objects = fabricCanvasRef.current.getObjects();
       const currentIndex = objects.indexOf(obj);
       if (currentIndex < objects.length - 1) {
@@ -868,7 +946,7 @@ const DesignLabClient = () => {
       if (!fabricCanvasRef.current) return;
       const obj = fabricCanvasRef.current.getObjects().find((o: any) => o.id === layerId);
       if (!obj) return;
-      
+
       const objects = fabricCanvasRef.current.getObjects();
       const currentIndex = objects.indexOf(obj);
       if (currentIndex > 0) {
@@ -904,14 +982,14 @@ const DesignLabClient = () => {
 
   const handleBatchDelete = useCallback(() => {
     if (!fabricCanvasRef.current || selectedLayerIds.size === 0) return;
-    
+
     selectedLayerIds.forEach(layerId => {
       const obj = fabricCanvasRef.current?.getObjects().find((o: any) => o.id === layerId);
       if (obj) {
         fabricCanvasRef.current?.remove(obj);
       }
     });
-    
+
     fabricCanvasRef.current?.discardActiveObject();
     fabricCanvasRef.current?.renderAll();
     setSelectedLayerIds(new Set());
@@ -921,12 +999,12 @@ const DesignLabClient = () => {
 
   const handleBatchLock = useCallback(() => {
     if (!fabricCanvasRef.current || selectedLayerIds.size === 0) return;
-    
+
     const allLocked = Array.from(selectedLayerIds).every(layerId => {
       const layer = layers.find(l => l.id === layerId);
       return layer?.locked;
     });
-    
+
     selectedLayerIds.forEach(layerId => {
       const obj = fabricCanvasRef.current?.getObjects().find((o: any) => o.id === layerId);
       if (obj) {
@@ -935,7 +1013,7 @@ const DesignLabClient = () => {
         toggleLayerLock(layerId);
       }
     });
-    
+
     fabricCanvasRef.current?.renderAll();
     handleCanvasChange();
     updateLayersFromCanvas();
@@ -943,12 +1021,12 @@ const DesignLabClient = () => {
 
   const handleBatchVisibility = useCallback(() => {
     if (!fabricCanvasRef.current || selectedLayerIds.size === 0) return;
-    
+
     const allVisible = Array.from(selectedLayerIds).every(layerId => {
       const layer = layers.find(l => l.id === layerId);
       return layer?.visible;
     });
-    
+
     selectedLayerIds.forEach(layerId => {
       const obj = fabricCanvasRef.current?.getObjects().find((o: any) => o.id === layerId);
       if (obj) {
@@ -956,7 +1034,7 @@ const DesignLabClient = () => {
         toggleLayerVisibility(layerId);
       }
     });
-    
+
     fabricCanvasRef.current?.renderAll();
     handleCanvasChange();
     updateLayersFromCanvas();
@@ -965,26 +1043,26 @@ const DesignLabClient = () => {
   // [2025-01-27 23:50:00] 图层分组功能
   const handleCreateGroup = useCallback(async () => {
     if (!fabricCanvasRef.current || selectedLayerIds.size < 2) return;
-    
+
     const fabric = await ensureFabric();
     const objects = Array.from(selectedLayerIds)
       .map(layerId => fabricCanvasRef.current?.getObjects().find((o: any) => o.id === layerId))
       .filter(Boolean);
-    
+
     if (objects.length < 2) return;
-    
+
     const group = new fabric.Group(objects as any[], {
       id: uuidv4(),
     });
-    
+
     // 移除原对象
     objects.forEach(obj => fabricCanvasRef.current?.remove(obj));
-    
+
     // 添加组
     fabricCanvasRef.current?.add(group);
     fabricCanvasRef.current?.setActiveObject(group);
     fabricCanvasRef.current?.renderAll();
-    
+
     setSelectedLayerIds(new Set());
     handleCanvasChange();
     updateLayersFromCanvas();
@@ -993,20 +1071,20 @@ const DesignLabClient = () => {
   const handleUngroup = useCallback(() => {
     if (!fabricCanvasRef.current) return;
     const activeObj = fabricCanvasRef.current.getActiveObject();
-    
+
     if (activeObj && activeObj.type === 'group') {
       const group = activeObj as any;
       const objects = group.getObjects();
-      
+
       // 移除组
       fabricCanvasRef.current.remove(group);
-      
+
       // 添加回原对象
       objects.forEach((obj: any) => {
         obj.setCoords();
         fabricCanvasRef.current?.add(obj);
       });
-      
+
       fabricCanvasRef.current.discardActiveObject();
       fabricCanvasRef.current.renderAll();
       handleCanvasChange();
@@ -1158,21 +1236,21 @@ const DesignLabClient = () => {
         handleZoomChange(150); // 放大到 150%
         return;
       }
-      
+
       // 保存当前画布状态到 store
       if (fabricCanvasRef.current && (currentView === 'front' || currentView === 'back' || currentView === 'sleeve')) {
         const snapshot = fabricCanvasRef.current.toJSON(['id']);
         setCanvas(snapshot, { pushHistory: false });
       }
-      
+
       // 切换视图
       setView(view as 'front' | 'back' | 'sleeve');
-      
+
       // 加载新视图的画布
       const viewCanvas = viewCanvases[view as 'front' | 'back' | 'sleeve'];
       if (viewCanvas) {
         await applySnapshotToCanvas(viewCanvas);
-        
+
         // [2025-01-27 21:00:00] 根据视图调整画布尺寸
         if (view === 'sleeve') {
           // 袖子区域较小（200x600）
@@ -1187,7 +1265,7 @@ const DesignLabClient = () => {
             fabricCanvasRef.current.setHeight(600);
           }
         }
-        
+
         // 重新初始化打印区域
         if (fabricCanvasRef.current) {
           const fabric = await ensureFabric();
@@ -1263,7 +1341,7 @@ const DesignLabClient = () => {
     const fallbackProductSlug =
       process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_PRODUCT_SLUG || 'classic-crew-tee';
     try {
-      const product = await productsApi.getBySlug(fallbackProductSlug);
+      const product = await productsApi.getBySlug(fallbackProductSlug) as any;
       const variantId = product?.variants?.[0]?.id || null;
       if (variantId) {
         defaultVariantIdRef.current = variantId;
@@ -1425,25 +1503,17 @@ const DesignLabClient = () => {
         fabricCanvasRef.current = new fabric.Canvas(canvasElementRef.current, {
           preserveObjectStacking: true,
           selection: true,
+          backgroundColor: 'transparent', // [2025-11-21 11:15:00] 确保画布背景透明，不遮挡产品图片
         });
       }
 
       const canvasInstance = fabricCanvasRef.current;
-      canvasInstance.on('object:added', () => {
-        handleCanvasChange();
-        updateLayersFromCanvas();
-      });
+      canvasInstance.on('object:added', handleCanvasChange);
       canvasInstance.on('object:modified', handleCanvasChange);
-      canvasInstance.on('object:removed', () => {
-        handleCanvasChange();
-        updateLayersFromCanvas();
-      });
+      canvasInstance.on('object:removed', handleCanvasChange);
       canvasInstance.on('selection:created', handleSelectionChange);
       canvasInstance.on('selection:updated', handleSelectionChange);
       canvasInstance.on('selection:cleared', handleSelectionChange);
-      canvasInstance.on('object:moving', () => {
-        updateLayersFromCanvas();
-      });
 
       // [2025-01-27 16:00:00] Initialize print area visualization
       initializePrintArea(fabric, canvasInstance);
@@ -1542,12 +1612,12 @@ const DesignLabClient = () => {
     }
   }, [draft, designName, patchDraft]);
 
-  const handleAddText = useCallback(async () => {
+  const handleAddText = useCallback(async (text: string = 'Double click to edit') => {
     const fabric = await ensureFabric();
     if (!fabricCanvasRef.current) {
       return;
     }
-    const textbox = new fabric.Textbox('双击编辑文字', {
+    const textbox = new fabric.Textbox(text, {
       left: 120,
       top: 160,
       fill: '#ffffff',
@@ -1800,14 +1870,14 @@ const DesignLabClient = () => {
   useEffect(() => {
     const totalQty = totalQuantity || 1;
     let basePrice = 32.25;
-    
+
     // 根据数量计算折扣
     if (totalQty >= 20) {
       basePrice = 13.65;
     } else if (totalQty >= 10) {
       basePrice = 19.45;
     }
-    
+
     setPricePerItem(basePrice);
     setCalculatedPrice(basePrice * totalQty);
   }, [totalQuantity]);
@@ -1894,7 +1964,7 @@ const DesignLabClient = () => {
     }
 
     const textObjects = fabricCanvasRef.current.getObjects('textbox') as Array<any & { id?: string; text?: string }>;
-    
+
     if (textObjects.length === 0) {
       setError('画布上没有文字对象。请先添加文字。');
       setShowBatchNames(false);
@@ -1924,7 +1994,7 @@ const DesignLabClient = () => {
     setExporting(true);
     try {
       const canvasInstance = fabricCanvasRef.current;
-      
+
       if (format === 'png') {
         // 导出为 PNG
         const dataURL = canvasInstance.toDataURL({
@@ -1932,7 +2002,7 @@ const DesignLabClient = () => {
           quality: 1.0,
           multiplier: 2, // 2x resolution for better quality
         });
-        
+
         const link = document.createElement('a');
         link.download = `${designName || 'design'}-${Date.now()}.png`;
         link.href = dataURL;
@@ -1942,12 +2012,12 @@ const DesignLabClient = () => {
         const svgData = canvasInstance.toSVG();
         const blob = new Blob([svgData], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
-        
+
         const link = document.createElement('a');
         link.download = `${designName || 'design'}-${Date.now()}.svg`;
         link.href = url;
         link.click();
-        
+
         URL.revokeObjectURL(url);
       } else if (format === 'pdf') {
         // [2025-01-27 21:15:00] 导出为 PDF（使用 canvas toDataURL + jsPDF）
@@ -1959,7 +2029,7 @@ const DesignLabClient = () => {
             setError('PDF 导出需要安装 jsPDF 库。请使用 PNG 或 SVG 格式。');
             return;
           }
-          
+
           // @ts-ignore - jsPDF types may not be available
           const { default: jsPDF } = jsPDFModule;
           const dataURL = canvasInstance.toDataURL({
@@ -1967,16 +2037,16 @@ const DesignLabClient = () => {
             quality: 1.0,
             multiplier: 2,
           });
-          
+
           const pdf = new jsPDF({
             orientation: canvasInstance.width > canvasInstance.height ? 'landscape' : 'portrait',
             unit: 'mm',
             format: [canvasInstance.width * 0.264583, canvasInstance.height * 0.264583], // Convert pixels to mm
           });
-          
+
           const imgWidth = pdf.internal.pageSize.getWidth();
           const imgHeight = (canvasInstance.height * imgWidth) / canvasInstance.width;
-          
+
           pdf.addImage(dataURL, 'PNG', 0, 0, imgWidth, imgHeight);
           pdf.save(`${designName || 'design'}-${Date.now()}.pdf`);
         } catch (err: any) {
@@ -2000,7 +2070,7 @@ const DesignLabClient = () => {
     try {
       // 生成分享链接
       const shareUrl = `${window.location.origin}/design-lab?designId=${draft.id}&view=shared`;
-      
+
       // 尝试使用 Web Share API（如果支持）
       if (navigator.share) {
         await navigator.share({
@@ -2049,16 +2119,16 @@ const DesignLabClient = () => {
 
     try {
       const fabric = await ensureFabric();
-      
+
       // 清空当前画布
       fabricCanvasRef.current.clear();
-      
+
       // 加载模板数据
       await applySnapshotToCanvas(template.designData);
-      
+
       // 增加模板使用次数
       await templateApi.like(template.id);
-      
+
       setShowTemplates(false);
       setError(null);
     } catch (err: any) {
@@ -2103,11 +2173,11 @@ const DesignLabClient = () => {
         content: newComment.trim(),
         authorName: user ? undefined : (newCommentAuthor.trim() || 'Anonymous'),
       });
-      
+
       // 重新加载评论
       const response = await designCommentApi.list(draft.id, { limit: 50 });
       setComments(response.data || []);
-      
+
       setNewComment('');
       setNewCommentAuthor('');
       setError(null);
@@ -2122,7 +2192,7 @@ const DesignLabClient = () => {
   const handleLikeComment = useCallback(async (commentId: string) => {
     try {
       await designCommentApi.like(commentId);
-      
+
       // 更新本地评论数据
       setComments(comments.map((comment) =>
         comment.id === commentId
@@ -2174,832 +2244,591 @@ const DesignLabClient = () => {
   return (
     <>
       <div className="design-lab-new">
-      {/* [2025-01-27 20:00:00] 顶部深蓝色导航栏 - 完全匹配参考设计 */}
-      <header className="dl-header">
-        <div className="dl-header__content">
-          <div className="dl-header__left">
-            <Link href="/" className="dl-header__logo">CUSTOM INK</Link>
-            <Link href="/account/designs" className="dl-header__link">My Designs</Link>
-            <span className="dl-header__design-name">{designName || 'Untitled design'}</span>
+        {/* [2025-01-27 20:00:00] 顶部深蓝色导航栏 - 完全匹配参考设计 */}
+        <header className="dl-header">
+          <div className="dl-header__content">
+            <div className="dl-header__left">
+              <Link href="/" className="dl-header__logo">CUSTOM INK</Link>
+              <Link href="/account/designs" className="dl-header__link">My Designs</Link>
+              <span className="dl-header__design-name">{designName || 'Untitled design'}</span>
+            </div>
+            <div className="dl-header__right">
+              <div className="dl-header__contact">
+                <span className="dl-header__contact-text">Talk to a Real Person</span>
+                <a href="tel:8552712660" className="dl-header__phone">855-271-2660</a>
+              </div>
+              <Link href="/chat" className="dl-header__chat">
+                Chat with a Real Person
+                <button className="dl-header__chat-btn">Chat Now</button>
+              </Link>
+              <Link href="/account" className="dl-header__icon-btn" title="Sign In">
+                <span>👤</span>
+              </Link>
+              <Link href="/cart" className="dl-header__icon-btn" title="Cart">
+                <span>🛒</span>
+              </Link>
+            </div>
           </div>
-          <div className="dl-header__right">
-            <div className="dl-header__contact">
-              <span className="dl-header__contact-text">Talk to a Real Person</span>
-              <a href="tel:8552712660" className="dl-header__phone">855-271-2660</a>
-            </div>
-            <Link href="/chat" className="dl-header__chat">
-              Chat with a Real Person
-              <button className="dl-header__chat-btn">Chat Now</button>
-            </Link>
-            <Link href="/account" className="dl-header__icon-btn" title="Sign In">
-              <span>👤</span>
-            </Link>
-            <Link href="/cart" className="dl-header__icon-btn" title="Cart">
-              <span>🛒</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+        </header>
 
-      {/* [2025-01-27 20:00:00] 主内容区域 */}
-      <div className="dl-main">
-        <div className={`dl-main__grid ${showOrderOptionsPanel ? 'has-order-panel' : ''} ${showEditPanel ? 'has-edit-panel' : ''} ${showEditPanel && layers.length > 0 ? 'has-layers-panel' : ''}`}>
-          {/* 左侧深灰色垂直导航栏 */}
-          <nav className="dl-sidebar" aria-label="编辑工具">
-            <button
-              type="button"
-              className={`dl-sidebar__btn ${selectedTool === 'upload' ? 'is-active' : ''}`}
-              onClick={() => triggerToolAction('upload')}
-            >
-              <span className="dl-sidebar__icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="17 8 12 3 7 8" />
-                  <line x1="12" y1="3" x2="12" y2="15" />
-                </svg>
-              </span>
-              <span className="dl-sidebar__label">Upload</span>
-            </button>
-            <button
-              type="button"
-              className={`dl-sidebar__btn ${selectedTool === 'text' ? 'is-active' : ''}`}
-              onClick={() => triggerToolAction('text')}
-            >
-              <span className="dl-sidebar__icon dl-sidebar__icon--text">T</span>
-              <span className="dl-sidebar__label">Add Text</span>
-            </button>
-            <button
-              type="button"
-              className={`dl-sidebar__btn ${selectedTool === 'art' ? 'is-active' : ''}`}
-              onClick={() => triggerToolAction('art')}
-            >
-              <span className="dl-sidebar__icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </span>
-              <span className="dl-sidebar__label">Add Art</span>
-            </button>
-            <button
-              type="button"
-              className={`dl-sidebar__btn ${selectedTool === 'colors' ? 'is-active' : ''}`}
-              onClick={() => triggerToolAction('colors')}
-            >
-              <span className="dl-sidebar__icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-                </svg>
-              </span>
-              <span className="dl-sidebar__label">Product Colors</span>
-            </button>
-            <button
-              type="button"
-              className={`dl-sidebar__btn ${selectedTool === 'names' ? 'is-active' : ''}`}
-              onClick={() => triggerToolAction('names')}
-            >
-              <span className="dl-sidebar__icon dl-sidebar__icon--names">
-                <span className="dl-sidebar__names-top">SMITH</span>
-                <span className="dl-sidebar__names-bottom">00</span>
-              </span>
-              <span className="dl-sidebar__label">Add Names</span>
-            </button>
-            <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
-          </nav>
+        {/* [2025-01-27 20:00:00] 主内容区域 */}
+        <div className="dl-main">
+          <div className={`dl-main__grid ${showOrderOptionsPanel ? 'has-order-panel' : ''} ${showEditPanel ? 'has-edit-panel' : ''} ${showEditPanel && layers.length > 0 ? 'has-layers-panel' : ''}`}>
+            {/* 左侧深灰色垂直导航栏 */}
+            <nav className="dl-sidebar" aria-label="编辑工具">
+              <button
+                type="button"
+                className={`dl-sidebar__btn ${selectedTool === 'upload' ? 'is-active' : ''}`}
+                onClick={() => triggerToolAction('upload')}
+              >
+                <span className="dl-sidebar__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                </span>
+                <span className="dl-sidebar__label">Upload</span>
+              </button>
+              <button
+                type="button"
+                className={`dl-sidebar__btn ${selectedTool === 'text' ? 'is-active' : ''}`}
+                onClick={() => triggerToolAction('text')}
+              >
+                <span className="dl-sidebar__icon dl-sidebar__icon--text">T</span>
+                <span className="dl-sidebar__label">Add Text</span>
+              </button>
+              <button
+                type="button"
+                className={`dl-sidebar__btn ${selectedTool === 'art' ? 'is-active' : ''}`}
+                onClick={() => triggerToolAction('art')}
+              >
+                <span className="dl-sidebar__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                </span>
+                <span className="dl-sidebar__label">Add Art</span>
+              </button>
+              <button
+                type="button"
+                className={`dl-sidebar__btn ${selectedTool === 'colors' ? 'is-active' : ''}`}
+                onClick={() => triggerToolAction('colors')}
+              >
+                <span className="dl-sidebar__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+                  </svg>
+                </span>
+                <span className="dl-sidebar__label">Product Colors</span>
+              </button>
+              <button
+                type="button"
+                className={`dl-sidebar__btn ${selectedTool === 'names' ? 'is-active' : ''}`}
+                onClick={() => triggerToolAction('names')}
+              >
+                <span className="dl-sidebar__icon dl-sidebar__icon--names">
+                  <span className="dl-sidebar__names-top">SMITH</span>
+                  <span className="dl-sidebar__names-bottom">00</span>
+                </span>
+                <span className="dl-sidebar__label">Add Names</span>
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+            </nav>
 
-          {/* 左侧设计工具区域 */}
-          <aside className="dl-tools">
-            {/* 警告提示 */}
-            {showOrderOptionsPanel && (
-              <div className="dl-tools-alert">
-                <span className="dl-tools-alert__icon">⚠</span>
-                <p className="dl-tools-alert__text">Your design is blank! Create a design first for a more accurate price quote.</p>
-              </div>
-            )}
-            
-            {/* "What's next for you?" 卡片 */}
-            {!guideCollapsed && (
-              <div className="dl-whats-next">
-                <h2 className="dl-whats-next__title">What&apos;s next for you?</h2>
-                <div className="dl-whats-next__grid">
-                  <button
-                    type="button"
-                    className="dl-whats-next__card"
-                    onClick={() => triggerToolAction('upload')}
-                  >
-                    <span className="dl-whats-next__icon">
-                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
-                        <path d="M24 8v32M8 24h32" />
-                        <path d="M24 8l-8 8h16l-8-8z" />
-                        <path d="M24 8l8 8h-16l8-8z" />
-                        <ellipse cx="24" cy="20" rx="12" ry="8" />
-                      </svg>
-                    </span>
-                    <span className="dl-whats-next__label">Upload</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="dl-whats-next__card"
-                    onClick={() => triggerToolAction('text')}
-                  >
-                    <span className="dl-whats-next__icon dl-whats-next__icon--text">
-                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
-                        <rect x="12" y="12" width="24" height="24" rx="2" />
-                        <line x1="18" y1="24" x2="30" y2="24" />
-                        <line x1="18" y1="28" x2="26" y2="28" />
-                        <line x1="24" y1="20" x2="24" y2="32" strokeWidth="1.5" />
-                      </svg>
-                    </span>
-                    <span className="dl-whats-next__label">Add Text</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="dl-whats-next__card"
-                    onClick={() => triggerToolAction('art')}
-                  >
-                    <span className="dl-whats-next__icon">
-                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
-                        <rect x="8" y="8" width="32" height="32" rx="2" />
-                        <path d="M8 24 L16 16 L24 20 L32 12 L40 20" />
-                        <circle cx="12" cy="28" r="2" />
-                        <circle cx="36" cy="28" r="2" />
-                      </svg>
-                    </span>
-                    <span className="dl-whats-next__label">Add Art</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="dl-whats-next__card"
-                    onClick={() => triggerToolAction('products')}
-                  >
-                    <span className="dl-whats-next__icon">
-                      <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
-                        <path d="M16 12 L12 16 L12 36 L36 36 L36 16 L32 12 Z" />
-                        <path d="M16 12 L24 8 L32 12" />
-                        <circle cx="18" cy="24" r="1.5" />
-                        <circle cx="24" cy="24" r="1.5" />
-                        <circle cx="30" cy="24" r="1.5" />
-                        <path d="M20 32 L20 28 L28 28 L28 32" />
-                        <circle cx="24" cy="36" r="2" />
-                        <circle cx="32" cy="36" r="2" />
-                        <circle cx="36" cy="36" r="2" />
-                        <circle cx="40" cy="36" r="2" />
-                        <circle cx="44" cy="36" r="2" />
-                      </svg>
-                    </span>
-                    <span className="dl-whats-next__label">Change Products</span>
-                  </button>
-                </div>
-                <p className="dl-whats-next__hint">
-                  <span className="dl-whats-next__hint-icon">💡</span>
-                  Drag & drop a file anywhere to upload.
-                </p>
-                <p className="dl-whats-next__help">
-                  Need help? We&apos;re here for you. <Link href="/chat" className="dl-whats-next__help-link">Chat Now</Link>
-                </p>
-              </div>
-            )}
-
-            {/* 产品选择栏 */}
-            <div className="dl-product-selector">
-              <button type="button" className="dl-product-selector__add-btn">+ Add Products</button>
-              <div className="dl-product-selector__current">
-                <Image src="/assets/categories/cat-tshirt.png" alt="Current product" width={48} height={48} className="dl-product-selector__thumb" />
-                <div className="dl-product-selector__info">
-                  <div className="dl-product-selector__name">
-                    Gildan Softstyle Jersey T-shirt
-                    <Link href="#change-product" className="dl-product-selector__change">Change Product</Link>
-                  </div>
-                  <div className="dl-product-selector__color">
-                    Heather Dark Grey
-                    <Link href="#change-color" className="dl-product-selector__change">Change Color</Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          {/* 中间产品可视化区域 */}
-          <section className="dl-visualization">
-            <div className="dl-visualization__main">
-              {/* 撤销/重做按钮 */}
-              <div className="dl-undo-redo">
-                <button
-                  type="button"
-                  className="dl-undo-redo__btn"
-                  onClick={() => {
-                    const currentHistory = useDesignLabStore.getState().history;
-                    if (currentHistory.length > 0) {
-                      undo();
-                      setTimeout(() => {
-                        const newCanvas = useDesignLabStore.getState().canvas;
-                        applySnapshotToCanvas(newCanvas);
-                      }, 0);
-                    }
-                  }}
-                  disabled={history.length === 0}
-                  title="Undo (Ctrl+Z)"
-                >
-                  ↶ Undo
-                </button>
-                <button
-                  type="button"
-                  className="dl-undo-redo__btn"
-                  onClick={() => {
-                    const currentFuture = useDesignLabStore.getState().future;
-                    if (currentFuture.length > 0) {
-                      redo();
-                      setTimeout(() => {
-                        const newCanvas = useDesignLabStore.getState().canvas;
-                        applySnapshotToCanvas(newCanvas);
-                      }, 0);
-                    }
-                  }}
-                  disabled={future.length === 0}
-                  title="Redo (Ctrl+Shift+Z)"
-                >
-                  ↷ Redo
-                </button>
-              </div>
-
-              {/* 产品大图 */}
-              <div className="dl-visualization__image">
-                <Image
-                  src="/assets/categories/cat-tshirt.png"
-                  alt="Product visualization"
-                  width={600}
-                  height={800}
-                  className="dl-visualization__img"
-                />
-                {/* 画布覆盖层 */}
-                <canvas 
-                  ref={canvasElementRef} 
-                  width={canvas?.size?.width || 500} 
-                  height={canvas?.size?.height || 600}
-                  className="dl-visualization__canvas"
-                />
-              </div>
-
-              {/* 右侧垂直按钮栏 */}
-              <div className="dl-view-buttons">
-                <button
-                  type="button"
-                  className={`dl-view-btn ${selectedView === 'front' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setSelectedView('front');
-                    handleViewSwitch('front');
-                  }}
-                >
-                  <div className="dl-view-btn__thumb">
-                    <Image src="/assets/categories/cat-tshirt.png" alt="Front" width={40} height={40} />
-                  </div>
-                  <span className="dl-view-btn__label">Front</span>
-                </button>
-                <button
-                  type="button"
-                  className={`dl-view-btn ${selectedView === 'back' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setSelectedView('back');
-                    handleViewSwitch('back');
-                  }}
-                >
-                  <div className="dl-view-btn__thumb">
-                    <Image src="/assets/categories/cat-tshirt.png" alt="Back" width={40} height={40} />
-                  </div>
-                  <span className="dl-view-btn__label">Back</span>
-                </button>
-                <button
-                  type="button"
-                  className={`dl-view-btn ${selectedView === 'sleeve' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setSelectedView('sleeve');
-                    handleViewSwitch('sleeve');
-                  }}
-                >
-                  <div className="dl-view-btn__thumb">
-                    <Image src="/assets/categories/cat-tshirt.png" alt="Sleeve" width={40} height={40} />
-                  </div>
-                  <span className="dl-view-btn__label">Sleeve Design</span>
-                </button>
-                <button
-                  type="button"
-                  className={`dl-view-btn ${selectedView === 'zoom' ? 'is-active' : ''}`}
-                  onClick={() => {
-                    setSelectedView('zoom');
-                    handleViewSwitch('zoom');
-                  }}
-                >
-                  <div className="dl-view-btn__thumb">
-                    <span className="dl-view-btn__icon">🔍</span>
-                  </div>
-                  <span className="dl-view-btn__label">Zoom</span>
-                </button>
-              </div>
-
-              {/* 底部操作栏 */}
-              <div className="dl-actions-bar">
-                <button type="button" className="dl-actions-bar__save-share" onClick={handleShareDesign}>
-                  <span>💾</span> Save | Share
-                </button>
-                <div className="dl-actions-bar__export">
-                  <button
-                    type="button"
-                    className="dl-actions-bar__export-btn"
-                    onClick={() => handleExportCanvas('png')}
-                    disabled={exporting}
-                    title="Export as PNG"
-                  >
-                    PNG
-                  </button>
-                  <button
-                    type="button"
-                    className="dl-actions-bar__export-btn"
-                    onClick={() => handleExportCanvas('jpg')}
-                    disabled={exporting}
-                    title="Export as JPG"
-                  >
-                    JPG
-                  </button>
-                  <button
-                    type="button"
-                    className="dl-actions-bar__export-btn"
-                    onClick={() => handleExportCanvas('svg')}
-                    disabled={exporting}
-                    title="Export as SVG"
-                  >
-                    SVG
-                  </button>
-                </div>
-                <button type="button" className="dl-actions-bar__get-price" onClick={handleRequestQuote}>
-                  Get Price
-                </button>
-              </div>
-            </div>
-          </section>
-
-          {/* [2025-01-27 23:00:00] 右侧编辑面板 */}
-          {showEditPanel && (
-            <aside className="dl-edit-panel">
-              {selectedTextObject && (
-                <div className="dl-edit-panel__content">
-                  <div className="dl-edit-panel__header">
-                    <h3 className="dl-edit-panel__title">Edit Text</h3>
-                    <button 
-                      type="button" 
-                      className="dl-edit-panel__close"
-                      onClick={() => {
-                        if (fabricCanvasRef.current) {
-                          fabricCanvasRef.current.discardActiveObject();
-                          fabricCanvasRef.current.renderAll();
-                        }
-                        setShowEditPanel(false);
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  
-                  {/* 文本输入 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Text</label>
-                    <input
-                      type="text"
-                      className="dl-edit-field__input"
-                      value={selectedTextObject?.text || ''}
-                      onChange={(e) => handleTextChange(e.target.value)}
-                    />
-                  </div>
-
-                  {/* 字体选择 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Change Font</label>
-                    <select
-                      className="dl-edit-field__select"
-                      value={selectedTextObject?.fontFamily || 'Arial'}
-                      onChange={(e) => handleTextFontChange(e.target.value)}
-                    >
-                      <option value="Arial">Arial</option>
-                      <option value="Avenir Bold Condensed">Avenir Bold Condensed</option>
-                      <option value="Helvetica">Helvetica</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Georgia">Georgia</option>
-                      <option value="Courier New">Courier New</option>
-                    </select>
-                  </div>
-
-                  {/* 颜色选择 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Edit Color</label>
-                    <div className="dl-edit-color">
-                      <input
-                        type="color"
-                        className="dl-edit-color__input"
-                        value={selectedTextObject?.fill || '#000000'}
-                        onChange={(e) => handleTextColorChange(e.target.value)}
-                      />
-                      <span className="dl-edit-color__text">{selectedTextObject?.fill || 'White'}</span>
-                      <span className="dl-edit-color__arrow">›</span>
-                    </div>
-                  </div>
-
-                  {/* 旋转 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Rotation</label>
-                    <div className="dl-edit-slider">
-                      <input
-                        type="range"
-                        className="dl-edit-slider__input"
-                        min="0"
-                        max="360"
-                        value={selectedTextObject?.angle || 0}
-                        onChange={(e) => handleTextRotationChange(Number(e.target.value))}
-                      />
-                      <input
-                        type="number"
-                        className="dl-edit-slider__value"
-                        value={selectedTextObject?.angle || 0}
-                        onChange={(e) => handleTextRotationChange(Number(e.target.value))}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 轮廓 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Outline</label>
-                    <div className="dl-edit-outline">
-                      <input
-                        type="color"
-                        className="dl-edit-outline__color"
-                        value={selectedTextObject?.stroke || '#000000'}
-                        onChange={(e) => {
-                          if (selectedTextObject) {
-                            selectedTextObject.set('stroke', e.target.value);
-                            selectedTextObject.set('strokeWidth', selectedTextObject.strokeWidth || 1);
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                      />
-                      <input
-                        type="number"
-                        className="dl-edit-outline__width"
-                        min="0"
-                        max="20"
-                        value={selectedTextObject?.strokeWidth || 0}
-                        onChange={(e) => {
-                          if (selectedTextObject) {
-                            const width = Number(e.target.value);
-                            selectedTextObject.set('strokeWidth', width);
-                            if (width > 0 && !selectedTextObject.stroke) {
-                              selectedTextObject.set('stroke', '#000000');
-                            }
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                        placeholder="Width"
-                      />
-                    </div>
-                  </div>
-
-                  {/* 字间距 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Character Spacing</label>
-                    <div className="dl-edit-slider">
-                      <input
-                        type="range"
-                        className="dl-edit-slider__input"
-                        min="-10"
-                        max="50"
-                        value={selectedTextObject?.charSpacing || 0}
-                        onChange={(e) => {
-                          if (selectedTextObject) {
-                            selectedTextObject.set('charSpacing', Number(e.target.value));
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                      />
-                      <input
-                        type="number"
-                        className="dl-edit-slider__value"
-                        value={selectedTextObject?.charSpacing || 0}
-                        onChange={(e) => {
-                          if (selectedTextObject) {
-                            selectedTextObject.set('charSpacing', Number(e.target.value));
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 行间距 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Line Height</label>
-                    <div className="dl-edit-slider">
-                      <input
-                        type="range"
-                        className="dl-edit-slider__input"
-                        min="0.5"
-                        max="3"
-                        step="0.1"
-                        value={selectedTextObject?.lineHeight || 1.2}
-                        onChange={(e) => {
-                          if (selectedTextObject) {
-                            selectedTextObject.set('lineHeight', Number(e.target.value));
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                      />
-                      <input
-                        type="number"
-                        className="dl-edit-slider__value"
-                        min="0.5"
-                        max="3"
-                        step="0.1"
-                        value={selectedTextObject?.lineHeight || 1.2}
-                        onChange={(e) => {
-                          if (selectedTextObject) {
-                            selectedTextObject.set('lineHeight', Number(e.target.value));
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* 文字形状 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Text Shape</label>
-                    <button
-                      type="button"
-                      className="dl-edit-field__button"
-                      onClick={async () => {
-                        if (!selectedTextObject || !fabricCanvasRef.current) return;
-                        const fabric = await ensureFabric();
-                        // 创建弧形路径
-                        const width = selectedTextObject.width || 200;
-                        const height = 50;
-                        const path = `M 0 ${height} Q ${width / 2} 0 ${width} ${height}`;
-                        const pathObject = new fabric.Path(path, {
-                          fill: '',
-                          stroke: '',
-                          strokeWidth: 0,
-                          visible: false,
-                        });
-                        // 将文字转换为路径文字（简化实现）
-                        // 实际实现需要更复杂的逻辑
-                        alert('Text shape feature: This will convert text to follow a path. Advanced implementation required.');
-                      }}
-                    >
-                      select shape ›
-                    </button>
-                  </div>
-
-                  {/* 文字大小 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Text Size</label>
-                    <input
-                      type="number"
-                      className="dl-edit-field__input"
-                      value={selectedTextObject?.fontSize || 28}
-                      onChange={(e) => handleTextSizeChange(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* 精确位置控制 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Position</label>
-                    <div className="dl-edit-position">
-                      <div className="dl-edit-position__row">
-                        <label className="dl-edit-position__label">X:</label>
-                        <input
-                          type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round(selectedTextObject?.left || 0)}
-                          onChange={(e) => {
-                            if (selectedTextObject) {
-                              selectedTextObject.set('left', Number(e.target.value));
-                              fabricCanvasRef.current?.renderAll();
-                              handleCanvasChange();
-                            }
-                          }}
-                        />
-                        <label className="dl-edit-position__label">Y:</label>
-                        <input
-                          type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round(selectedTextObject?.top || 0)}
-                          onChange={(e) => {
-                            if (selectedTextObject) {
-                              selectedTextObject.set('top', Number(e.target.value));
-                              fabricCanvasRef.current?.renderAll();
-                              handleCanvasChange();
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="dl-edit-position__row">
-                        <label className="dl-edit-position__label">W:</label>
-                        <input
-                          type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round((selectedTextObject?.width || 0) * (selectedTextObject?.scaleX || 1))}
-                          onChange={(e) => {
-                            if (selectedTextObject) {
-                              const newScale = Number(e.target.value) / (selectedTextObject.width || 1);
-                              selectedTextObject.set('scaleX', newScale);
-                              fabricCanvasRef.current?.renderAll();
-                              handleCanvasChange();
-                            }
-                          }}
-                        />
-                        <label className="dl-edit-position__label">H:</label>
-                        <input
-                          type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round((selectedTextObject?.height || 0) * (selectedTextObject?.scaleY || 1))}
-                          onChange={(e) => {
-                            if (selectedTextObject) {
-                              const newScale = Number(e.target.value) / (selectedTextObject.height || 1);
-                              selectedTextObject.set('scaleY', newScale);
-                              fabricCanvasRef.current?.renderAll();
-                              handleCanvasChange();
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 格式化按钮 */}
-                  <div className="dl-edit-actions">
-                    <button
-                      type="button"
-                      className="dl-edit-action-btn"
-                      onClick={() => handleTextAlign('left')}
-                      title="Left Align"
-                    >
-                      ⬅
-                    </button>
-                    <button
-                      type="button"
-                      className="dl-edit-action-btn"
-                      onClick={() => handleTextAlign('center')}
-                      title="Center Align"
-                    >
-                      ⚬
-                    </button>
-                    <button
-                      type="button"
-                      className="dl-edit-action-btn"
-                      onClick={() => handleTextAlign('right')}
-                      title="Right Align"
-                    >
-                      ➡
-                    </button>
-                    <button
-                      type="button"
-                      className="dl-edit-action-btn"
-                      onClick={handleDuplicateObject}
-                      title="Duplicate (Ctrl+D)"
-                    >
-                      📋
-                    </button>
-                    <button
-                      type="button"
-                      className="dl-edit-action-btn dl-edit-action-btn--danger"
-                      onClick={handleDeleteObject}
-                      title="Delete (Del)"
-                    >
-                      ×
-                    </button>
-                  </div>
+            {/* 左侧设计工具区域 */}
+            <aside className="dl-tools">
+              {/* 警告提示 */}
+              {showOrderOptionsPanel && (
+                <div className="dl-tools-alert">
+                  <span className="dl-tools-alert__icon">⚠</span>
+                  <p className="dl-tools-alert__text">Your design is blank! Create a design first for a more accurate price quote.</p>
                 </div>
               )}
 
-              {selectedImageObject && (
-                <div className="dl-edit-panel__content">
-                  <div className="dl-edit-panel__header">
-                    <h3 className="dl-edit-panel__title">Edit Image</h3>
-                    <button 
-                      type="button" 
-                      className="dl-edit-panel__close"
-                      onClick={() => {
-                        if (fabricCanvasRef.current) {
-                          fabricCanvasRef.current.discardActiveObject();
-                          fabricCanvasRef.current.renderAll();
-                        }
-                        setShowEditPanel(false);
-                      }}
+              {/* "What's next for you?" 卡片 */}
+              {!guideCollapsed && (
+                <div className="dl-whats-next">
+                  <h2 className="dl-whats-next__title">What&apos;s next for you?</h2>
+                  <div className="dl-whats-next__grid">
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={() => triggerToolAction('upload')}
                     >
-                      ×
+                      <span className="dl-whats-next__icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <path d="M24 8v32M8 24h32" />
+                          <path d="M24 8l-8 8h16l-8-8z" />
+                          <path d="M24 8l8 8h-16l8-8z" />
+                          <ellipse cx="24" cy="20" rx="12" ry="8" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Upload</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={() => triggerToolAction('text')}
+                    >
+                      <span className="dl-whats-next__icon dl-whats-next__icon--text">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <rect x="12" y="12" width="24" height="24" rx="2" />
+                          <line x1="18" y1="24" x2="30" y2="24" />
+                          <line x1="18" y1="28" x2="26" y2="28" />
+                          <line x1="24" y1="20" x2="24" y2="32" strokeWidth="1.5" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Add Text</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={() => triggerToolAction('art')}
+                    >
+                      <span className="dl-whats-next__icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <rect x="8" y="8" width="32" height="32" rx="2" />
+                          <path d="M8 24 L16 16 L24 20 L32 12 L40 20" />
+                          <circle cx="12" cy="28" r="2" />
+                          <circle cx="36" cy="28" r="2" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Add Art</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={() => triggerToolAction('products')}
+                    >
+                      <span className="dl-whats-next__icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <path d="M16 12 L12 16 L12 36 L36 36 L36 16 L32 12 Z" />
+                          <path d="M16 12 L24 8 L32 12" />
+                          <circle cx="18" cy="24" r="1.5" />
+                          <circle cx="24" cy="24" r="1.5" />
+                          <circle cx="30" cy="24" r="1.5" />
+                          <path d="M20 32 L20 28 L28 28 L28 32" />
+                          <circle cx="24" cy="36" r="2" />
+                          <circle cx="32" cy="36" r="2" />
+                          <circle cx="36" cy="36" r="2" />
+                          <circle cx="40" cy="36" r="2" />
+                          <circle cx="44" cy="36" r="2" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Change Products</span>
                     </button>
                   </div>
+                  <p className="dl-whats-next__hint">
+                    <span className="dl-whats-next__hint-icon">💡</span>
+                    Drag & drop a file anywhere to upload.
+                  </p>
+                  <p className="dl-whats-next__help">
+                    Need help? We&apos;re here for you. <Link href="/chat" className="dl-whats-next__help-link">Chat Now</Link>
+                  </p>
+                </div>
+              )}
 
-                  {/* 透明度 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Opacity</label>
-                    <div className="dl-edit-slider">
-                      <input
-                        type="range"
-                        className="dl-edit-slider__input"
-                        min="0"
-                        max="100"
-                        value={(selectedImageObject?.opacity || 1) * 100}
-                        onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
-                      />
-                      <input
-                        type="number"
-                        className="dl-edit-slider__value"
-                        value={Math.round((selectedImageObject?.opacity || 1) * 100)}
-                        onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
-                      />
+              {/* 产品选择栏 */}
+              <div className="dl-product-selector">
+                <button type="button" className="dl-product-selector__add-btn">+ Add Products</button>
+                <div className="dl-product-selector__current">
+                  <Image 
+                    src={currentVariant?.image || currentVariant?.baseImages?.front || currentVariant?.gallery?.[0] || "/assets/categories/cat-tshirt.png"} 
+                    alt={currentProduct?.name || "Current product"} 
+                    width={48} 
+                    height={48} 
+                    className="dl-product-selector__thumb" 
+                  />
+                  <div className="dl-product-selector__info">
+                    <div className="dl-product-selector__name">
+                      {currentProduct?.name || 'Gildan Softstyle Jersey T-shirt'}
+                      <Link href="#change-product" className="dl-product-selector__change">Change Product</Link>
+                    </div>
+                    <div className="dl-product-selector__color">
+                      {currentVariant?.color || 'Heather Dark Grey'}
+                      <Link href="#change-color" className="dl-product-selector__change">Change Color</Link>
                     </div>
                   </div>
+                </div>
+              </div>
+            </aside>
 
-                  {/* 旋转 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Rotation</label>
-                    <div className="dl-edit-slider">
+            {/* 中间产品可视化区域 */}
+            <section className="dl-visualization">
+              <div className="dl-visualization__main">
+                {/* 撤销/重做按钮 */}
+                <div className="dl-undo-redo">
+                  <button
+                    type="button"
+                    className="dl-undo-redo__btn"
+                    onClick={() => {
+                      const currentHistory = useDesignLabStore.getState().history;
+                      if (currentHistory.length > 0) {
+                        undo();
+                        setTimeout(() => {
+                          const newCanvas = useDesignLabStore.getState().canvas;
+                          applySnapshotToCanvas(newCanvas);
+                        }, 0);
+                      }
+                    }}
+                    disabled={history.length === 0}
+                    title="Undo (Ctrl+Z)"
+                  >
+                    ↶ Undo
+                  </button>
+                  <button
+                    type="button"
+                    className="dl-undo-redo__btn"
+                    onClick={() => {
+                      const currentFuture = useDesignLabStore.getState().future;
+                      if (currentFuture.length > 0) {
+                        redo();
+                        setTimeout(() => {
+                          const newCanvas = useDesignLabStore.getState().canvas;
+                          applySnapshotToCanvas(newCanvas);
+                        }, 0);
+                      }
+                    }}
+                    disabled={future.length === 0}
+                    title="Redo (Ctrl+Shift+Z)"
+                  >
+                    ↷ Redo
+                  </button>
+                </div>
+
+                {/* 产品大图 */}
+                <div className="dl-visualization__image" style={{ position: 'relative' }}>
+                  {/* [2025-11-21 11:15:00] 产品图片 - 确保显示在最底层 */}
+                  <Image
+                    src={currentVariant?.image || currentVariant?.baseImages?.front || currentVariant?.gallery?.[0] || "/assets/categories/cat-tshirt.png"}
+                    alt={currentProduct?.name || "Product visualization"}
+                    width={600}
+                    height={800}
+                    className="dl-visualization__img"
+                    priority
+                    onLoad={() => {
+                      console.log('[Design Lab] Product image loaded:', currentVariant?.image || currentVariant?.baseImages?.front);
+                    }}
+                    onError={(e) => {
+                      console.error('[Design Lab] Failed to load product image:', e);
+                    }}
+                    style={{ 
+                      zIndex: 1,
+                      position: 'relative',
+                      display: 'block'
+                    }}
+                  />
+                  {/* [2025-11-21 11:15:00] 画布覆盖层 - 透明背景，不遮挡产品图片 */}
+                  <div className="dl-visualization__canvas-wrapper" style={{
+                    position: 'absolute',
+                    top: '20%', // Adjust based on product print area
+                    left: '25%', // Adjust based on product print area
+                    width: '50%', // Adjust based on product print area
+                    height: '60%', // Adjust based on product print area
+                    border: showPrintArea ? '1px dashed rgba(0,0,0,0.2)' : 'none',
+                    pointerEvents: 'auto', // Ensure canvas receives events
+                    backgroundColor: 'transparent', // [2025-11-21 11:15:00] 确保背景透明，不遮挡产品图片
+                    zIndex: 2 // [2025-11-21 11:15:00] 画布在图片上方，但背景透明
+                  }}>
+                    <canvas
+                      ref={canvasElementRef}
+                      className="dl-visualization__canvas"
+                      style={{ 
+                        width: '100%', 
+                        height: '100%',
+                        backgroundColor: 'transparent' // [2025-11-21 11:15:00] 确保画布背景透明
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* 右侧垂直按钮栏 */}
+                <div className="dl-view-buttons">
+                  <button
+                    type="button"
+                    className={`dl-view-btn ${selectedView === 'front' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setSelectedView('front');
+                      handleViewSwitch('front');
+                    }}
+                  >
+                    <div className="dl-view-btn__thumb">
+                      <Image src="/assets/categories/cat-tshirt.png" alt="Front" width={40} height={40} />
+                    </div>
+                    <span className="dl-view-btn__label">Front</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`dl-view-btn ${selectedView === 'back' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setSelectedView('back');
+                      handleViewSwitch('back');
+                    }}
+                  >
+                    <div className="dl-view-btn__thumb">
+                      <Image src="/assets/categories/cat-tshirt.png" alt="Back" width={40} height={40} />
+                    </div>
+                    <span className="dl-view-btn__label">Back</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`dl-view-btn ${selectedView === 'sleeve' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setSelectedView('sleeve');
+                      handleViewSwitch('sleeve');
+                    }}
+                  >
+                    <div className="dl-view-btn__thumb">
+                      <Image src="/assets/categories/cat-tshirt.png" alt="Sleeve" width={40} height={40} />
+                    </div>
+                    <span className="dl-view-btn__label">Sleeve Design</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`dl-view-btn ${selectedView === 'zoom' ? 'is-active' : ''}`}
+                    onClick={() => {
+                      setSelectedView('zoom');
+                      handleViewSwitch('zoom');
+                    }}
+                  >
+                    <div className="dl-view-btn__thumb">
+                      <span className="dl-view-btn__icon">🔍</span>
+                    </div>
+                    <span className="dl-view-btn__label">Zoom</span>
+                  </button>
+                </div>
+
+                {/* 底部操作栏 */}
+                <div className="dl-actions-bar">
+                  <button type="button" className="dl-actions-bar__save-share" onClick={handleShareDesign}>
+                    <span>💾</span> Save | Share
+                  </button>
+                  <div className="dl-actions-bar__export">
+                    <button
+                      type="button"
+                      className="dl-actions-bar__export-btn"
+                      onClick={() => handleExportCanvas('png')}
+                      disabled={exporting}
+                      title="Export as PNG"
+                    >
+                      PNG
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-actions-bar__export-btn"
+                      onClick={() => handleExportCanvas('jpg')}
+                      disabled={exporting}
+                      title="Export as JPG"
+                    >
+                      JPG
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-actions-bar__export-btn"
+                      onClick={() => handleExportCanvas('svg')}
+                      disabled={exporting}
+                      title="Export as SVG"
+                    >
+                      SVG
+                    </button>
+                  </div>
+                  <button type="button" className="dl-actions-bar__get-price" onClick={handleRequestQuote}>
+                    Get Price
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            {/* [2025-01-27 23:00:00] 右侧编辑面板 */}
+            {showEditPanel && (
+              <aside className="dl-edit-panel">
+                {selectedTextObject && (
+                  <div className="dl-edit-panel__content">
+                    <div className="dl-edit-panel__header">
+                      <h3 className="dl-edit-panel__title">Edit Text</h3>
+                      <button
+                        type="button"
+                        className="dl-edit-panel__close"
+                        onClick={() => {
+                          if (fabricCanvasRef.current) {
+                            fabricCanvasRef.current.discardActiveObject();
+                            fabricCanvasRef.current.renderAll();
+                          }
+                          setShowEditPanel(false);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    {/* 文本输入 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Text</label>
                       <input
-                        type="range"
-                        className="dl-edit-slider__input"
-                        min="0"
-                        max="360"
-                        value={selectedImageObject?.angle || 0}
-                        onChange={(e) => handleImageRotationChange(Number(e.target.value))}
-                      />
-                      <input
-                        type="number"
-                        className="dl-edit-slider__value"
-                        value={selectedImageObject?.angle || 0}
-                        onChange={(e) => handleImageRotationChange(Number(e.target.value))}
+                        type="text"
+                        className="dl-edit-field__input"
+                        value={selectedTextObject?.text || ''}
+                        onChange={(e) => handleTextChange(e.target.value)}
                       />
                     </div>
-                  </div>
 
-                  {/* 精确位置控制 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Position</label>
-                    <div className="dl-edit-position">
-                      <div className="dl-edit-position__row">
-                        <label className="dl-edit-position__label">X:</label>
+                    {/* 字体选择 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Change Font</label>
+                      <select
+                        className="dl-edit-field__select"
+                        value={selectedTextObject?.fontFamily || 'Arial'}
+                        onChange={(e) => handleTextFontChange(e.target.value)}
+                      >
+                        <option value="Arial">Arial</option>
+                        <option value="Avenir Bold Condensed">Avenir Bold Condensed</option>
+                        <option value="Helvetica">Helvetica</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Courier New">Courier New</option>
+                      </select>
+                    </div>
+
+                    {/* 颜色选择 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Edit Color</label>
+                      <div className="dl-edit-color">
+                        <input
+                          type="color"
+                          className="dl-edit-color__input"
+                          value={selectedTextObject?.fill || '#000000'}
+                          onChange={(e) => handleTextColorChange(e.target.value)}
+                        />
+                        <span className="dl-edit-color__text">{selectedTextObject?.fill || 'White'}</span>
+                        <span className="dl-edit-color__arrow">›</span>
+                      </div>
+                    </div>
+
+                    {/* 旋转 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Rotation</label>
+                      <div className="dl-edit-slider">
+                        <input
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="0"
+                          max="360"
+                          value={selectedTextObject?.angle || 0}
+                          onChange={(e) => handleTextRotationChange(Number(e.target.value))}
+                        />
                         <input
                           type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round(selectedImageObject?.left || 0)}
+                          className="dl-edit-slider__value"
+                          value={selectedTextObject?.angle || 0}
+                          onChange={(e) => handleTextRotationChange(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* 轮廓 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Outline</label>
+                      <div className="dl-edit-outline">
+                        <input
+                          type="color"
+                          className="dl-edit-outline__color"
+                          value={selectedTextObject?.stroke || '#000000'}
                           onChange={(e) => {
-                            if (selectedImageObject) {
-                              selectedImageObject.set('left', Number(e.target.value));
+                            if (selectedTextObject) {
+                              selectedTextObject.set('stroke', e.target.value);
+                              selectedTextObject.set('strokeWidth', selectedTextObject.strokeWidth || 1);
                               fabricCanvasRef.current?.renderAll();
                               handleCanvasChange();
                             }
                           }}
                         />
-                        <label className="dl-edit-position__label">Y:</label>
                         <input
                           type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round(selectedImageObject?.top || 0)}
+                          className="dl-edit-outline__width"
+                          min="0"
+                          max="20"
+                          value={selectedTextObject?.strokeWidth || 0}
                           onChange={(e) => {
-                            if (selectedImageObject) {
-                              selectedImageObject.set('top', Number(e.target.value));
+                            if (selectedTextObject) {
+                              const width = Number(e.target.value);
+                              selectedTextObject.set('strokeWidth', width);
+                              if (width > 0 && !selectedTextObject.stroke) {
+                                selectedTextObject.set('stroke', '#000000');
+                              }
+                              fabricCanvasRef.current?.renderAll();
+                              handleCanvasChange();
+                            }
+                          }}
+                          placeholder="Width"
+                        />
+                      </div>
+                    </div>
+
+                    {/* 字间距 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Character Spacing</label>
+                      <div className="dl-edit-slider">
+                        <input
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="-10"
+                          max="50"
+                          value={selectedTextObject?.charSpacing || 0}
+                          onChange={(e) => {
+                            if (selectedTextObject) {
+                              selectedTextObject.set('charSpacing', Number(e.target.value));
+                              fabricCanvasRef.current?.renderAll();
+                              handleCanvasChange();
+                            }
+                          }}
+                        />
+                        <input
+                          type="number"
+                          className="dl-edit-slider__value"
+                          value={selectedTextObject?.charSpacing || 0}
+                          onChange={(e) => {
+                            if (selectedTextObject) {
+                              selectedTextObject.set('charSpacing', Number(e.target.value));
                               fabricCanvasRef.current?.renderAll();
                               handleCanvasChange();
                             }
                           }}
                         />
                       </div>
-                      <div className="dl-edit-position__row">
-                        <label className="dl-edit-position__label">W:</label>
+                    </div>
+
+                    {/* 行间距 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Line Height</label>
+                      <div className="dl-edit-slider">
                         <input
-                          type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round((selectedImageObject?.width || 0) * (selectedImageObject?.scaleX || 1))}
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="0.5"
+                          max="3"
+                          step="0.1"
+                          value={selectedTextObject?.lineHeight || 1.2}
                           onChange={(e) => {
-                            if (selectedImageObject) {
-                              const newScale = Number(e.target.value) / (selectedImageObject.width || 1);
-                              selectedImageObject.set('scaleX', newScale);
+                            if (selectedTextObject) {
+                              selectedTextObject.set('lineHeight', Number(e.target.value));
                               fabricCanvasRef.current?.renderAll();
                               handleCanvasChange();
                             }
                           }}
                         />
-                        <label className="dl-edit-position__label">H:</label>
                         <input
                           type="number"
-                          className="dl-edit-position__input"
-                          value={Math.round((selectedImageObject?.height || 0) * (selectedImageObject?.scaleY || 1))}
+                          className="dl-edit-slider__value"
+                          min="0.5"
+                          max="3"
+                          step="0.1"
+                          value={selectedTextObject?.lineHeight || 1.2}
                           onChange={(e) => {
-                            if (selectedImageObject) {
-                              const newScale = Number(e.target.value) / (selectedImageObject.height || 1);
-                              selectedImageObject.set('scaleY', newScale);
+                            if (selectedTextObject) {
+                              selectedTextObject.set('lineHeight', Number(e.target.value));
                               fabricCanvasRef.current?.renderAll();
                               handleCanvasChange();
                             }
@@ -3007,1343 +2836,1657 @@ const DesignLabClient = () => {
                         />
                       </div>
                     </div>
-                  </div>
 
-                  {/* 翻转 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Flip</label>
+                    {/* 文字形状 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Text Shape</label>
+                      <button
+                        type="button"
+                        className="dl-edit-field__button"
+                        onClick={async () => {
+                          if (!selectedTextObject || !fabricCanvasRef.current) return;
+                          const fabric = await ensureFabric();
+                          // 创建弧形路径
+                          const width = selectedTextObject.width || 200;
+                          const height = 50;
+                          const path = `M 0 ${height} Q ${width / 2} 0 ${width} ${height}`;
+                          const pathObject = new fabric.Path(path, {
+                            fill: '',
+                            stroke: '',
+                            strokeWidth: 0,
+                            visible: false,
+                          });
+                          // 将文字转换为路径文字（简化实现）
+                          // 实际实现需要更复杂的逻辑
+                          alert('Text shape feature: This will convert text to follow a path. Advanced implementation required.');
+                        }}
+                      >
+                        select shape ›
+                      </button>
+                    </div>
+
+                    {/* 文字大小 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Text Size</label>
+                      <input
+                        type="number"
+                        className="dl-edit-field__input"
+                        value={selectedTextObject?.fontSize || 28}
+                        onChange={(e) => handleTextSizeChange(Number(e.target.value))}
+                      />
+                    </div>
+
+                    {/* 精确位置控制 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Position</label>
+                      <div className="dl-edit-position">
+                        <div className="dl-edit-position__row">
+                          <label className="dl-edit-position__label">X:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round(selectedTextObject?.left || 0)}
+                            onChange={(e) => {
+                              if (selectedTextObject) {
+                                selectedTextObject.set('left', Number(e.target.value));
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                          <label className="dl-edit-position__label">Y:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round(selectedTextObject?.top || 0)}
+                            onChange={(e) => {
+                              if (selectedTextObject) {
+                                selectedTextObject.set('top', Number(e.target.value));
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="dl-edit-position__row">
+                          <label className="dl-edit-position__label">W:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round((selectedTextObject?.width || 0) * (selectedTextObject?.scaleX || 1))}
+                            onChange={(e) => {
+                              if (selectedTextObject) {
+                                const newScale = Number(e.target.value) / (selectedTextObject.width || 1);
+                                selectedTextObject.set('scaleX', newScale);
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                          <label className="dl-edit-position__label">H:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round((selectedTextObject?.height || 0) * (selectedTextObject?.scaleY || 1))}
+                            onChange={(e) => {
+                              if (selectedTextObject) {
+                                const newScale = Number(e.target.value) / (selectedTextObject.height || 1);
+                                selectedTextObject.set('scaleY', newScale);
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 格式化按钮 */}
                     <div className="dl-edit-actions">
                       <button
                         type="button"
                         className="dl-edit-action-btn"
-                        onClick={() => {
-                          if (selectedImageObject) {
-                            selectedImageObject.set('flipX', !selectedImageObject.flipX);
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                        title="Flip Horizontal"
+                        onClick={() => handleTextAlign('left')}
+                        title="Left Align"
                       >
-                        ↔
+                        ⬅
                       </button>
                       <button
                         type="button"
                         className="dl-edit-action-btn"
-                        onClick={() => {
-                          if (selectedImageObject) {
-                            selectedImageObject.set('flipY', !selectedImageObject.flipY);
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }
-                        }}
-                        title="Flip Vertical"
+                        onClick={() => handleTextAlign('center')}
+                        title="Center Align"
                       >
-                        ↕
+                        ⚬
+                      </button>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={() => handleTextAlign('right')}
+                        title="Right Align"
+                      >
+                        ➡
+                      </button>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={handleDuplicateObject}
+                        title="Duplicate (Ctrl+D)"
+                      >
+                        📋
+                      </button>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn dl-edit-action-btn--danger"
+                        onClick={handleDeleteObject}
+                        title="Delete (Del)"
+                      >
+                        ×
                       </button>
                     </div>
                   </div>
+                )}
 
-                  {/* 滤镜 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Filters</label>
-                    <div className="dl-edit-filters">
+                {selectedImageObject && (
+                  <div className="dl-edit-panel__content">
+                    <div className="dl-edit-panel__header">
+                      <h3 className="dl-edit-panel__title">Edit Image</h3>
                       <button
                         type="button"
-                        className="dl-edit-filter-btn"
-                        onClick={async () => {
-                          if (!selectedImageObject) return;
-                          const fabric = await ensureFabric();
-                          selectedImageObject.filters = selectedImageObject.filters || [];
-                          const brightness = new fabric.filters.Brightness({ brightness: 0.1 });
-                          selectedImageObject.filters.push(brightness);
-                          selectedImageObject.applyFilters();
-                          fabricCanvasRef.current?.renderAll();
-                          handleCanvasChange();
-                        }}
-                        title="Brightness"
-                      >
-                        ☀️ Brightness
-                      </button>
-                      <button
-                        type="button"
-                        className="dl-edit-filter-btn"
-                        onClick={async () => {
-                          if (!selectedImageObject) return;
-                          const fabric = await ensureFabric();
-                          selectedImageObject.filters = selectedImageObject.filters || [];
-                          const contrast = new fabric.filters.Contrast({ contrast: 0.1 });
-                          selectedImageObject.filters.push(contrast);
-                          selectedImageObject.applyFilters();
-                          fabricCanvasRef.current?.renderAll();
-                          handleCanvasChange();
-                        }}
-                        title="Contrast"
-                      >
-                        🎨 Contrast
-                      </button>
-                      <button
-                        type="button"
-                        className="dl-edit-filter-btn"
-                        onClick={async () => {
-                          if (!selectedImageObject) return;
-                          const fabric = await ensureFabric();
-                          selectedImageObject.filters = selectedImageObject.filters || [];
-                          const saturation = new fabric.filters.Saturation({ saturation: 0.1 });
-                          selectedImageObject.filters.push(saturation);
-                          selectedImageObject.applyFilters();
-                          fabricCanvasRef.current?.renderAll();
-                          handleCanvasChange();
-                        }}
-                        title="Saturation"
-                      >
-                        🌈 Saturation
-                      </button>
-                      <button
-                        type="button"
-                        className="dl-edit-filter-btn"
+                        className="dl-edit-panel__close"
                         onClick={() => {
-                          if (selectedImageObject) {
-                            selectedImageObject.filters = [];
+                          if (fabricCanvasRef.current) {
+                            fabricCanvasRef.current.discardActiveObject();
+                            fabricCanvasRef.current.renderAll();
+                          }
+                          setShowEditPanel(false);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    {/* 透明度 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Opacity</label>
+                      <div className="dl-edit-slider">
+                        <input
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="0"
+                          max="100"
+                          value={(selectedImageObject?.opacity || 1) * 100}
+                          onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
+                        />
+                        <input
+                          type="number"
+                          className="dl-edit-slider__value"
+                          value={Math.round((selectedImageObject?.opacity || 1) * 100)}
+                          onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* 旋转 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Rotation</label>
+                      <div className="dl-edit-slider">
+                        <input
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="0"
+                          max="360"
+                          value={selectedImageObject?.angle || 0}
+                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
+                        />
+                        <input
+                          type="number"
+                          className="dl-edit-slider__value"
+                          value={selectedImageObject?.angle || 0}
+                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* 精确位置控制 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Position</label>
+                      <div className="dl-edit-position">
+                        <div className="dl-edit-position__row">
+                          <label className="dl-edit-position__label">X:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round(selectedImageObject?.left || 0)}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                selectedImageObject.set('left', Number(e.target.value));
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                          <label className="dl-edit-position__label">Y:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round(selectedImageObject?.top || 0)}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                selectedImageObject.set('top', Number(e.target.value));
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="dl-edit-position__row">
+                          <label className="dl-edit-position__label">W:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round((selectedImageObject?.width || 0) * (selectedImageObject?.scaleX || 1))}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                const newScale = Number(e.target.value) / (selectedImageObject.width || 1);
+                                selectedImageObject.set('scaleX', newScale);
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                          <label className="dl-edit-position__label">H:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round((selectedImageObject?.height || 0) * (selectedImageObject?.scaleY || 1))}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                const newScale = Number(e.target.value) / (selectedImageObject.height || 1);
+                                selectedImageObject.set('scaleY', newScale);
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 翻转 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Flip</label>
+                      <div className="dl-edit-actions">
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={() => {
+                            if (selectedImageObject) {
+                              selectedImageObject.set('flipX', !selectedImageObject.flipX);
+                              fabricCanvasRef.current?.renderAll();
+                              handleCanvasChange();
+                            }
+                          }}
+                          title="Flip Horizontal"
+                        >
+                          ↔
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={() => {
+                            if (selectedImageObject) {
+                              selectedImageObject.set('flipY', !selectedImageObject.flipY);
+                              fabricCanvasRef.current?.renderAll();
+                              handleCanvasChange();
+                            }
+                          }}
+                          title="Flip Vertical"
+                        >
+                          ↕
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 滤镜 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Filters</label>
+                      <div className="dl-edit-filters">
+                        <button
+                          type="button"
+                          className="dl-edit-filter-btn"
+                          onClick={async () => {
+                            if (!selectedImageObject) return;
+                            const fabric = await ensureFabric();
+                            selectedImageObject.filters = selectedImageObject.filters || [];
+                            const brightness = new fabric.filters.Brightness({ brightness: 0.1 });
+                            selectedImageObject.filters.push(brightness);
                             selectedImageObject.applyFilters();
                             fabricCanvasRef.current?.renderAll();
                             handleCanvasChange();
+                          }}
+                          title="Brightness"
+                        >
+                          ☀️ Brightness
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-filter-btn"
+                          onClick={async () => {
+                            if (!selectedImageObject) return;
+                            const fabric = await ensureFabric();
+                            selectedImageObject.filters = selectedImageObject.filters || [];
+                            const contrast = new fabric.filters.Contrast({ contrast: 0.1 });
+                            selectedImageObject.filters.push(contrast);
+                            selectedImageObject.applyFilters();
+                            fabricCanvasRef.current?.renderAll();
+                            handleCanvasChange();
+                          }}
+                          title="Contrast"
+                        >
+                          🎨 Contrast
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-filter-btn"
+                          onClick={async () => {
+                            if (!selectedImageObject) return;
+                            const fabric = await ensureFabric();
+                            selectedImageObject.filters = selectedImageObject.filters || [];
+                            const saturation = new fabric.filters.Saturation({ saturation: 0.1 });
+                            selectedImageObject.filters.push(saturation);
+                            selectedImageObject.applyFilters();
+                            fabricCanvasRef.current?.renderAll();
+                            handleCanvasChange();
+                          }}
+                          title="Saturation"
+                        >
+                          🌈 Saturation
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-filter-btn"
+                          onClick={() => {
+                            if (selectedImageObject) {
+                              selectedImageObject.filters = [];
+                              selectedImageObject.applyFilters();
+                              fabricCanvasRef.current?.renderAll();
+                              handleCanvasChange();
+                            }
+                          }}
+                          title="Remove Filters"
+                        >
+                          ✕ Remove Filters
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 裁剪 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Crop</label>
+                      <button
+                        type="button"
+                        className="dl-edit-field__button"
+                        onClick={() => {
+                          if (selectedImageObject && fabricCanvasRef.current) {
+                            // 启用裁剪模式
+                            selectedImageObject.set('selectable', true);
+                            selectedImageObject.set('hasControls', true);
+                            selectedImageObject.set('hasBorders', true);
+                            fabricCanvasRef.current.setActiveObject(selectedImageObject);
+                            fabricCanvasRef.current.renderAll();
+                            // 提示用户可以通过调整控制点来裁剪
+                            alert('Use the corner handles to crop the image. The image will be cropped when you finish adjusting.');
                           }
                         }}
-                        title="Remove Filters"
                       >
-                        ✕ Remove Filters
+                        Enable Crop Mode
                       </button>
                     </div>
-                  </div>
 
-                  {/* 裁剪 */}
-                  <div className="dl-edit-field">
-                    <label className="dl-edit-field__label">Crop</label>
-                    <button
-                      type="button"
-                      className="dl-edit-field__button"
-                      onClick={() => {
-                        if (selectedImageObject && fabricCanvasRef.current) {
-                          // 启用裁剪模式
-                          selectedImageObject.set('selectable', true);
-                          selectedImageObject.set('hasControls', true);
-                          selectedImageObject.set('hasBorders', true);
-                          fabricCanvasRef.current.setActiveObject(selectedImageObject);
-                          fabricCanvasRef.current.renderAll();
-                          // 提示用户可以通过调整控制点来裁剪
-                          alert('Use the corner handles to crop the image. The image will be cropped when you finish adjusting.');
-                        }
-                      }}
-                    >
-                      Enable Crop Mode
-                    </button>
-                  </div>
-
-                  {/* 操作按钮 */}
-                  <div className="dl-edit-actions">
-                    <button
-                      type="button"
-                      className="dl-edit-action-btn"
-                      onClick={handleDuplicateObject}
-                      title="Duplicate (Ctrl+D)"
-                    >
-                      📋
-                    </button>
-                    {fabricCanvasRef.current?.getActiveObject()?.type === 'group' && (
+                    {/* 操作按钮 */}
+                    <div className="dl-edit-actions">
                       <button
                         type="button"
                         className="dl-edit-action-btn"
-                        onClick={handleUngroup}
-                        title="Ungroup"
+                        onClick={handleDuplicateObject}
+                        title="Duplicate (Ctrl+D)"
                       >
-                        📦
+                        📋
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      className="dl-edit-action-btn dl-edit-action-btn--danger"
-                      onClick={handleDeleteObject}
-                      title="Delete (Del)"
-                    >
-                      ×
-                    </button>
+                      {fabricCanvasRef.current?.getActiveObject()?.type === 'group' && (
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={handleUngroup}
+                          title="Ungroup"
+                        >
+                          📦
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn dl-edit-action-btn--danger"
+                        onClick={handleDeleteObject}
+                        title="Delete (Del)"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </aside>
-          )}
+                )}
+              </aside>
+            )}
 
-          {/* [2025-01-27 23:00:00] 右侧图层列表面板 */}
-          <aside className="dl-layers-panel">
-            <div className="dl-layers-panel__header">
-              <h3 className="dl-layers-panel__title">Layers</h3>
-              <div className="dl-layers-panel__actions">
-                <button
-                  type="button"
-                  className={`dl-layers-panel__action-btn ${isMultiSelectMode ? 'is-active' : ''}`}
-                  onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
-                  title="Multi-select mode"
-                >
-                  ☑
-                </button>
-                {selectedLayerIds.size > 0 && (
-                  <>
-                    {selectedLayerIds.size >= 2 && (
+            {/* [2025-01-27 23:00:00] 右侧图层列表面板 */}
+            <aside className="dl-layers-panel">
+              <div className="dl-layers-panel__header">
+                <h3 className="dl-layers-panel__title">Layers</h3>
+                <div className="dl-layers-panel__actions">
+                  <button
+                    type="button"
+                    className={`dl-layers-panel__action-btn ${isMultiSelectMode ? 'is-active' : ''}`}
+                    onClick={() => setIsMultiSelectMode(!isMultiSelectMode)}
+                    title="Multi-select mode"
+                  >
+                    ☑
+                  </button>
+                  {selectedLayerIds.size > 0 && (
+                    <>
+                      {selectedLayerIds.size >= 2 && (
+                        <button
+                          type="button"
+                          className="dl-layers-panel__action-btn"
+                          onClick={handleCreateGroup}
+                          title="Group selected"
+                        >
+                          📦
+                        </button>
+                      )}
                       <button
                         type="button"
                         className="dl-layers-panel__action-btn"
-                        onClick={handleCreateGroup}
-                        title="Group selected"
+                        onClick={handleBatchDelete}
+                        title="Delete selected"
                       >
-                        📦
+                        🗑️
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      className="dl-layers-panel__action-btn"
-                      onClick={handleBatchDelete}
-                      title="Delete selected"
-                    >
-                      🗑️
-                    </button>
-                    <button
-                      type="button"
-                      className="dl-layers-panel__action-btn"
-                      onClick={handleBatchLock}
-                      title="Lock/Unlock selected"
-                    >
-                      🔒
-                    </button>
-                    <button
-                      type="button"
-                      className="dl-layers-panel__action-btn"
-                      onClick={handleBatchVisibility}
-                      title="Show/Hide selected"
-                    >
-                      👁️
-                    </button>
-                  </>
-                )}
+                      <button
+                        type="button"
+                        className="dl-layers-panel__action-btn"
+                        onClick={handleBatchLock}
+                        title="Lock/Unlock selected"
+                      >
+                        🔒
+                      </button>
+                      <button
+                        type="button"
+                        className="dl-layers-panel__action-btn"
+                        onClick={handleBatchVisibility}
+                        title="Show/Hide selected"
+                      >
+                        👁️
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="dl-layers-panel__list">
-              {layers.length === 0 ? (
-                <div className="dl-layers-panel__empty">No layers yet</div>
-              ) : (
-                layers.map((layer) => {
-                  const isActive = layer.id === activeObjectId;
-                  const isSelected = selectedLayerIds.has(layer.id);
-                  return (
-                    <div
-                      key={layer.id}
-                      className={`dl-layer-item ${isActive ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`}
-                      onClick={(e) => handleLayerMultiSelect(layer.id, e)}
-                    >
-                      {isMultiSelectMode && (
-                        <input
-                          type="checkbox"
-                          className="dl-layer-item__checkbox"
-                          checked={isSelected}
-                          onChange={() => handleLayerMultiSelect(layer.id, { ctrlKey: true } as any)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      )}
-                      <div className="dl-layer-item__icon">
-                        {layer.type === 'group' ? '📦' : layer.type === 'textbox' || layer.type === 'i-text' || layer.type === 'text' ? 'T' : '🖼️'}
-                      </div>
-                      <div className="dl-layer-item__info">
-                        <div className="dl-layer-item__name">{layer.name}</div>
-                        <div className="dl-layer-item__type">{layer.type}</div>
-                      </div>
-                      <div className="dl-layer-item__actions">
-                        <button
-                          type="button"
-                          className="dl-layer-item__action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveLayerUp(layer.id);
-                          }}
-                          title="Move Up"
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          className="dl-layer-item__action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleMoveLayerDown(layer.id);
-                          }}
-                          title="Move Down"
-                        >
-                          ↓
-                        </button>
-                        <button
-                          type="button"
-                          className="dl-layer-item__action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLayerVisibilityToggle(layer.id);
-                          }}
-                          title={layer.visible ? 'Hide' : 'Show'}
-                        >
-                          {layer.visible ? '👁️' : '👁️‍🗨️'}
-                        </button>
-                        <button
-                          type="button"
-                          className="dl-layer-item__action"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleLayerLockToggle(layer.id);
-                          }}
-                          title={layer.locked ? 'Unlock' : 'Lock'}
-                        >
-                          {layer.locked ? '🔒' : '🔓'}
-                        </button>
-                        {layer.type === 'group' && (
+              <div className="dl-layers-panel__list">
+                {layers.length === 0 ? (
+                  <div className="dl-layers-panel__empty">No layers yet</div>
+                ) : (
+                  layers.map((layer) => {
+                    const isActive = layer.id === activeObjectId;
+                    const isSelected = selectedLayerIds.has(layer.id);
+                    return (
+                      <div
+                        key={layer.id}
+                        className={`dl-layer-item ${isActive ? 'is-active' : ''} ${isSelected ? 'is-selected' : ''}`}
+                        onClick={(e) => handleLayerMultiSelect(layer.id, e)}
+                      >
+                        {isMultiSelectMode && (
+                          <input
+                            type="checkbox"
+                            className="dl-layer-item__checkbox"
+                            checked={isSelected}
+                            onChange={() => handleLayerMultiSelect(layer.id, { ctrlKey: true } as any)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                        <div className="dl-layer-item__icon">
+                          {layer.type === 'group' ? '📦' : layer.type === 'textbox' || layer.type === 'i-text' || layer.type === 'text' ? 'T' : '🖼️'}
+                        </div>
+                        <div className="dl-layer-item__info">
+                          <div className="dl-layer-item__name">{layer.name}</div>
+                          <div className="dl-layer-item__type">{layer.type}</div>
+                        </div>
+                        <div className="dl-layer-item__actions">
                           <button
                             type="button"
                             className="dl-layer-item__action"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleLayerSelect(layer.id);
-                              handleUngroup();
+                              handleMoveLayerUp(layer.id);
                             }}
-                            title="Ungroup"
+                            title="Move Up"
                           >
-                            📦
+                            ↑
                           </button>
-                        )}
+                          <button
+                            type="button"
+                            className="dl-layer-item__action"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleMoveLayerDown(layer.id);
+                            }}
+                            title="Move Down"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            className="dl-layer-item__action"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLayerVisibilityToggle(layer.id);
+                            }}
+                            title={layer.visible ? 'Hide' : 'Show'}
+                          >
+                            {layer.visible ? '👁️' : '👁️‍🗨️'}
+                          </button>
+                          <button
+                            type="button"
+                            className="dl-layer-item__action"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleLayerLockToggle(layer.id);
+                            }}
+                            title={layer.locked ? 'Unlock' : 'Lock'}
+                          >
+                            {layer.locked ? '🔒' : '🔓'}
+                          </button>
+                          {layer.type === 'group' && (
+                            <button
+                              type="button"
+                              className="dl-layer-item__action"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleLayerSelect(layer.id);
+                                handleUngroup();
+                              }}
+                              title="Ungroup"
+                            >
+                              📦
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </aside>
-
-          {/* 产品详情部分 */}
-          <section className="dl-product-details">
-            <div className="dl-product-details__content">
-              <h1 className="dl-product-details__title">Gildan Softstyle Jersey T-shirt</h1>
-              <p className="dl-product-details__description">
-                Trendy and budget-friendly - what&apos;s not to love about this style? Try this on for size: a lightweight and comfortable fabric with an exciting color palette, all at an affordable price. An excellent choice for your next event!
-              </p>
-
-              {/* Size & Fit Guide */}
-              <div className="dl-product-details__section">
-                <div className="dl-product-details__section-header" onClick={() => toggleSection('sizeFit')}>
-                  <h3 className="dl-product-details__section-title">Size & Fit Guide</h3>
-                  <button 
-                    type="button" 
-                    className="dl-product-details__toggle"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleSection('sizeFit');
-                    }}
-                  >
-                    {expandedSections.sizeFit ? '×' : '+'}
-                  </button>
-                </div>
-                {expandedSections.sizeFit && (
-                  <div className="dl-product-details__section-content">
-                    <p className="dl-product-details__sizes">Adult Sizes: XS | S | M | L | XL | 2XL | 3XL | 5XL</p>
-                    <p className="dl-product-details__fit">Fit: Semi-fitted: closer fit; skims body, chest, & arms</p>
-                    <Link href="/size-guide" className="dl-product-details__link">
-                      <span>👥</span> View Sizing Guide
-                    </Link>
-                  </div>
+                    );
+                  })
                 )}
               </div>
+            </aside>
 
-              {/* 额外产品视图 */}
-              <div className="dl-product-details__views">
-                <div className="dl-product-details__main-view">
-                  <Image
-                    src={productImages[productImageIndex]}
-                    alt="Product view"
-                    width={600}
-                    height={800}
-                    className="dl-product-details__main-image"
-                  />
+            {/* 产品详情部分 */}
+            <section className="dl-product-details">
+              <div className="dl-product-details__content">
+                <h1 className="dl-product-details__title">Gildan Softstyle Jersey T-shirt</h1>
+                <p className="dl-product-details__description">
+                  Trendy and budget-friendly - what&apos;s not to love about this style? Try this on for size: a lightweight and comfortable fabric with an exciting color palette, all at an affordable price. An excellent choice for your next event!
+                </p>
+
+                {/* Size & Fit Guide */}
+                <div className="dl-product-details__section">
+                  <div className="dl-product-details__section-header" onClick={() => toggleSection('sizeFit')}>
+                    <h3 className="dl-product-details__section-title">Size & Fit Guide</h3>
+                    <button
+                      type="button"
+                      className="dl-product-details__toggle"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSection('sizeFit');
+                      }}
+                    >
+                      {expandedSections.sizeFit ? '×' : '+'}
+                    </button>
+                  </div>
+                  {expandedSections.sizeFit && (
+                    <div className="dl-product-details__section-content">
+                      <p className="dl-product-details__sizes">Adult Sizes: XS | S | M | L | XL | 2XL | 3XL | 5XL</p>
+                      <p className="dl-product-details__fit">Fit: Semi-fitted: closer fit; skims body, chest, & arms</p>
+                      <Link href="/size-guide" className="dl-product-details__link">
+                        <span>👥</span> View Sizing Guide
+                      </Link>
+                    </div>
+                  )}
                 </div>
-                <div className="dl-product-details__thumbnails">
-                  <button
-                    type="button"
-                    className="dl-product-details__thumb-nav dl-product-details__thumb-nav--prev"
-                    onClick={() => setProductImageIndex(Math.max(0, productImageIndex - 1))}
-                  >
-                    ‹
+
+                {/* 额外产品视图 */}
+                <div className="dl-product-details__views">
+                  <div className="dl-product-details__main-view">
+                    <Image
+                      src={productImages[productImageIndex]}
+                      alt="Product view"
+                      width={600}
+                      height={800}
+                      className="dl-product-details__main-image"
+                    />
+                  </div>
+                  <div className="dl-product-details__thumbnails">
+                    <button
+                      type="button"
+                      className="dl-product-details__thumb-nav dl-product-details__thumb-nav--prev"
+                      onClick={() => setProductImageIndex(Math.max(0, productImageIndex - 1))}
+                    >
+                      ‹
+                    </button>
+                    <div className="dl-product-details__thumb-grid">
+                      {productImages.map((img, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className={`dl-product-details__thumb ${index === productImageIndex ? 'is-active' : ''}`}
+                          onClick={() => setProductImageIndex(index)}
+                        >
+                          <Image src={img} alt={`View ${index + 1}`} width={80} height={100} />
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="dl-product-details__thumb-nav dl-product-details__thumb-nav--next"
+                      onClick={() => setProductImageIndex(Math.min(productImages.length - 1, productImageIndex + 1))}
+                    >
+                      ›
+                    </button>
+                  </div>
+                </div>
+
+                {/* 可展开部分 */}
+                <div className="dl-product-details__expandable">
+                  <div className="dl-product-details__expandable-item">
+                    <div className="dl-product-details__expandable-header" onClick={() => toggleSection('shipping')}>
+                      <h4 className="dl-product-details__expandable-title">Shipping</h4>
+                      <span className="dl-product-details__expandable-icon">{expandedSections.shipping ? '−' : '+'}</span>
+                    </div>
+                    {expandedSections.shipping && (
+                      <div className="dl-product-details__expandable-content">
+                        <p>Shipping information and delivery options...</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="dl-product-details__expandable-item">
+                    <div className="dl-product-details__expandable-header" onClick={() => toggleSection('moreDetails')}>
+                      <h4 className="dl-product-details__expandable-title">More Details</h4>
+                      <span className="dl-product-details__expandable-icon">{expandedSections.moreDetails ? '−' : '+'}</span>
+                    </div>
+                    {expandedSections.moreDetails && (
+                      <div className="dl-product-details__expandable-content">
+                        <p>Additional product details...</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="dl-product-details__expandable-item">
+                    <div className="dl-product-details__expandable-header" onClick={() => toggleSection('printAreas')}>
+                      <h4 className="dl-product-details__expandable-title">Special Print Areas</h4>
+                      <span className="dl-product-details__expandable-icon">{expandedSections.printAreas ? '−' : '+'}</span>
+                    </div>
+                    {expandedSections.printAreas && (
+                      <div className="dl-product-details__expandable-content">
+                        <p>Information about special print areas...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        {/* [2025-01-27 20:00:00] Buy more, save more 部分 */}
+        <section className="dl-buy-more">
+          <div className="container">
+            <h2 className="dl-buy-more__title">Buy more, save more</h2>
+            <p className="dl-buy-more__description">Add your design to more styles and colors that work for everyone and boost your volume discount.</p>
+
+            <div className="dl-buy-more__grid">
+              {recommendedProducts.map((product) => (
+                <div key={product.id} className="dl-buy-more__card">
+                  <Image src={product.image} alt={product.name} width={200} height={250} className="dl-buy-more__card-image" />
+                  <h3 className="dl-buy-more__card-title">{product.name}</h3>
+                  <p className="dl-buy-more__card-color">{product.color}</p>
+                  <button type="button" className="dl-buy-more__card-btn">{product.action}</button>
+                </div>
+              ))}
+              {/* "More products that your group will love" 卡片 */}
+              <div className="dl-buy-more__special-card">
+                <div className="dl-buy-more__special-icons">
+                  <span className="dl-buy-more__special-icon">👕</span>
+                  <span className="dl-buy-more__special-icon">🧥</span>
+                  <span className="dl-buy-more__special-icon">👔</span>
+                </div>
+                <button type="button" className="dl-buy-more__special-btn">Browse More</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* [2025-01-27 20:00:00] 底部行动号召 */}
+        <section className="dl-footer-cta">
+          <div className="container">
+            <p className="dl-footer-cta__text">We&apos;ve got even more styles to suit your group and your budget.</p>
+            <button type="button" className="dl-footer-cta__btn">Browse more styles</button>
+          </div>
+        </section>
+
+        {/* [2025-01-27 21:00:00] 上传文件模态框 */}
+        {showUploadModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowUploadModal(false)}>
+            <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <button type="button" className="dl-modal__back" onClick={() => setShowUploadModal(false)}>←</button>
+                <h2 className="dl-modal__title">Choose File To Upload</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowUploadModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                <div className="dl-upload-area">
+                  <button type="button" className="dl-upload-btn" onClick={() => fileInputRef.current?.click()}>
+                    Browse Your Computer
                   </button>
-                  <div className="dl-product-details__thumb-grid">
-                    {productImages.map((img, index) => (
+                  <div className="dl-upload-divider">
+                    <span>or</span>
+                  </div>
+                  <p className="dl-upload-drag">Drag & Drop Anywhere</p>
+                </div>
+                <div className="dl-upload-info">
+                  <span className="dl-upload-info__icon">💡</span>
+                  <p className="dl-upload-info__text">Vector or high resolution artwork of 300 DPI or more will look the best. Max size of 20 MB.</p>
+                  <span className="dl-upload-info__info">ℹ</span>
+                </div>
+                <div className="dl-upload-help">
+                  <p>Need help with your upload?</p>
+                  <p>
+                    <Link href="/chat" className="dl-upload-help__link">Chat now</Link> or email <Link href="mailto:service@customink.com" className="dl-upload-help__link">service@customink.com</Link>
+                  </p>
+                </div>
+                <div className="dl-upload-feedback">
+                  <p>How would you <Link href="#" className="dl-upload-feedback__link">rate our upload experience?</Link></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-01-27 21:00:00] 添加文本模态框 */}
+        {showAddTextModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowAddTextModal(false)}>
+            <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <h2 className="dl-modal__title">Add Text</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowAddTextModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                <input
+                  type="text"
+                  className="dl-text-input"
+                  placeholder="Enter text here"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="dl-add-btn"
+                  onClick={() => {
+                    if (textInput.trim()) {
+                      handleAddText(textInput);
+                      setShowAddTextModal(false);
+                      setTextInput('');
+                    }
+                  }}
+                >
+                  Add To Design
+                </button>
+                <div className="dl-modal-feedback">
+                  <p>How would you <Link href="#" className="dl-modal-feedback__link">rate our editing tools?</Link></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-01-27 21:00:00] 添加艺术模态框 */}
+        {showAddArtModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowAddArtModal(false)}>
+            <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <h2 className="dl-modal__title">Artwork Categories</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowAddArtModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                {selectedArtCategory ? (
+                  <div>
+                    <button
+                      className="dl-back-btn"
+                      onClick={() => setSelectedArtCategory(null)}
+                      style={{ marginBottom: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#666' }}
+                    >
+                      ← Back to Categories
+                    </button>
+                    <h3 style={{ marginBottom: '12px' }}>{selectedArtCategory}</h3>
+                    <div className="dl-art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+                      {ART_ASSETS[selectedArtCategory]?.map((art, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="dl-art-item"
+                          style={{ fontSize: '32px', padding: '12px', border: '1px solid #eee', borderRadius: '8px', background: 'white', cursor: 'pointer' }}
+                          onClick={() => {
+                            handleAddText(art);
+                            setShowAddArtModal(false);
+                            setSelectedArtCategory(null);
+                          }}
+                        >
+                          {art}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="dl-search-box">
+                      <span className="dl-search-box__icon">🔍</span>
+                      <input type="text" className="dl-search-box__input" placeholder="Search For Artwork" />
+                    </div>
+                    <div className="dl-artwork-categories">
+                      {Object.keys(ART_ASSETS).map((category) => (
+                        <button
+                          key={category}
+                          type="button"
+                          className="dl-artwork-category"
+                          onClick={() => setSelectedArtCategory(category)}
+                        >
+                          <span className="dl-artwork-category__icon">
+                            {category === 'Emojis' ? '😊' : category === 'Shapes & Symbols' ? '⭐' : category === 'Sports & Games' ? '⚽' : category === 'Letters & Numbers' ? 'ABC' : category === 'Animals' ? '🐱' : category === 'Mascots' ? '🐾' : category === 'Nature' ? '🌲' : '🇺🇸'}
+                          </span>
+                          <span className="dl-artwork-category__name">{category}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-01-27 21:00:00] 产品颜色选择模态框 */}
+        {showProductColorsModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowProductColorsModal(false)}>
+            <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <h2 className="dl-modal__title">Choose Your Product Color</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowProductColorsModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                <div className="dl-colors-section">
+                  <div className="dl-colors-section__header">
+                    <h3 className="dl-colors-section__title">Colors:</h3>
+                    <div className="dl-colors-section__toggle">
+                      <span>Ordering fewer than 6?</span>
+                      <label className="dl-toggle">
+                        <input type="checkbox" checked={orderFewerThan6} onChange={(e) => setOrderFewerThan6(e.target.checked)} />
+                        <span className="dl-toggle__slider"></span>
+                      </label>
+                      <span className="dl-info-icon">ℹ</span>
+                    </div>
+                  </div>
+                  <div className="dl-colors-grid">
+                    {['#FFFFFF', '#F5F5DC', '#C0C0C0', '#808080', '#000000', '#000080', '#4169E1', '#00CED1', '#800080', '#800020', '#FFC0CB', '#FF0000', '#FFA500', '#FFFF00', '#808000', '#008000', '#8B4513'].map((color, index) => (
                       <button
                         key={index}
                         type="button"
-                        className={`dl-product-details__thumb ${index === productImageIndex ? 'is-active' : ''}`}
-                        onClick={() => setProductImageIndex(index)}
+                        className={`dl-color-swatch ${selectedColor === color ? 'is-selected' : ''}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setSelectedColor(color)}
                       >
-                        <Image src={img} alt={`View ${index + 1}`} width={80} height={100} />
+                        {selectedColor === color && <span className="dl-color-swatch__check">✓</span>}
                       </button>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    className="dl-product-details__thumb-nav dl-product-details__thumb-nav--next"
-                    onClick={() => setProductImageIndex(Math.min(productImages.length - 1, productImageIndex + 1))}
-                  >
-                    ›
-                  </button>
                 </div>
-              </div>
-
-              {/* 可展开部分 */}
-              <div className="dl-product-details__expandable">
-                <div className="dl-product-details__expandable-item">
-                  <div className="dl-product-details__expandable-header" onClick={() => toggleSection('shipping')}>
-                    <h4 className="dl-product-details__expandable-title">Shipping</h4>
-                    <span className="dl-product-details__expandable-icon">{expandedSections.shipping ? '−' : '+'}</span>
+                <div className="dl-sizes-section">
+                  <h3 className="dl-sizes-section__title">Sizes Available in:</h3>
+                  <div className="dl-sizes-section__color">
+                    <div className="dl-sizes-section__swatch" style={{ backgroundColor: '#808080' }}></div>
+                    <span>Heather Dark Grey</span>
                   </div>
-                  {expandedSections.shipping && (
-                    <div className="dl-product-details__expandable-content">
-                      <p>Shipping information and delivery options...</p>
-                    </div>
-                  )}
-                </div>
-                <div className="dl-product-details__expandable-item">
-                  <div className="dl-product-details__expandable-header" onClick={() => toggleSection('moreDetails')}>
-                    <h4 className="dl-product-details__expandable-title">More Details</h4>
-                    <span className="dl-product-details__expandable-icon">{expandedSections.moreDetails ? '−' : '+'}</span>
-                  </div>
-                  {expandedSections.moreDetails && (
-                    <div className="dl-product-details__expandable-content">
-                      <p>Additional product details...</p>
-                    </div>
-                  )}
-                </div>
-                <div className="dl-product-details__expandable-item">
-                  <div className="dl-product-details__expandable-header" onClick={() => toggleSection('printAreas')}>
-                    <h4 className="dl-product-details__expandable-title">Special Print Areas</h4>
-                    <span className="dl-product-details__expandable-icon">{expandedSections.printAreas ? '−' : '+'}</span>
-                  </div>
-                  {expandedSections.printAreas && (
-                    <div className="dl-product-details__expandable-content">
-                      <p>Information about special print areas...</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
-
-      {/* [2025-01-27 20:00:00] Buy more, save more 部分 */}
-      <section className="dl-buy-more">
-        <div className="container">
-          <h2 className="dl-buy-more__title">Buy more, save more</h2>
-          <p className="dl-buy-more__description">Add your design to more styles and colors that work for everyone and boost your volume discount.</p>
-          
-          <div className="dl-buy-more__grid">
-            {recommendedProducts.map((product) => (
-              <div key={product.id} className="dl-buy-more__card">
-                <Image src={product.image} alt={product.name} width={200} height={250} className="dl-buy-more__card-image" />
-                <h3 className="dl-buy-more__card-title">{product.name}</h3>
-                <p className="dl-buy-more__card-color">{product.color}</p>
-                <button type="button" className="dl-buy-more__card-btn">{product.action}</button>
-              </div>
-            ))}
-            {/* "More products that your group will love" 卡片 */}
-            <div className="dl-buy-more__special-card">
-              <div className="dl-buy-more__special-icons">
-                <span className="dl-buy-more__special-icon">👕</span>
-                <span className="dl-buy-more__special-icon">🧥</span>
-                <span className="dl-buy-more__special-icon">👔</span>
-              </div>
-              <button type="button" className="dl-buy-more__special-btn">Browse More</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* [2025-01-27 20:00:00] 底部行动号召 */}
-      <section className="dl-footer-cta">
-        <div className="container">
-          <p className="dl-footer-cta__text">We&apos;ve got even more styles to suit your group and your budget.</p>
-          <button type="button" className="dl-footer-cta__btn">Browse more styles</button>
-        </div>
-      </section>
-
-      {/* [2025-01-27 21:00:00] 上传文件模态框 */}
-      {showUploadModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowUploadModal(false)}>
-          <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <button type="button" className="dl-modal__back" onClick={() => setShowUploadModal(false)}>←</button>
-              <h2 className="dl-modal__title">Choose File To Upload</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowUploadModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <div className="dl-upload-area">
-                <button type="button" className="dl-upload-btn" onClick={() => fileInputRef.current?.click()}>
-                  Browse Your Computer
-                </button>
-                <div className="dl-upload-divider">
-                  <span>or</span>
-                </div>
-                <p className="dl-upload-drag">Drag & Drop Anywhere</p>
-              </div>
-              <div className="dl-upload-info">
-                <span className="dl-upload-info__icon">💡</span>
-                <p className="dl-upload-info__text">Vector or high resolution artwork of 300 DPI or more will look the best. Max size of 20 MB.</p>
-                <span className="dl-upload-info__info">ℹ</span>
-              </div>
-              <div className="dl-upload-help">
-                <p>Need help with your upload?</p>
-                <p>
-                  <Link href="/chat" className="dl-upload-help__link">Chat now</Link> or email <Link href="mailto:service@customink.com" className="dl-upload-help__link">service@customink.com</Link>
-                </p>
-              </div>
-              <div className="dl-upload-feedback">
-                <p>How would you <Link href="#" className="dl-upload-feedback__link">rate our upload experience?</Link></p>
-              </div>
-          </div>
-        </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 21:00:00] 添加文本模态框 */}
-      {showAddTextModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowAddTextModal(false)}>
-          <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <h2 className="dl-modal__title">Add Text</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowAddTextModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <input
-                type="text"
-                className="dl-text-input"
-                placeholder="Enter text here"
-                value={textInput}
-                onChange={(e) => setTextInput(e.target.value)}
-                autoFocus
-              />
-              <button
-                type="button"
-                className="dl-add-btn"
-                onClick={() => {
-                  if (textInput.trim()) {
-                    handleAddText();
-                    setShowAddTextModal(false);
-                    setTextInput('');
-                  }
-                }}
-              >
-                Add To Design
-              </button>
-              <div className="dl-modal-feedback">
-                <p>How would you <Link href="#" className="dl-modal-feedback__link">rate our editing tools?</Link></p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 21:00:00] 添加艺术模态框 */}
-      {showAddArtModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowAddArtModal(false)}>
-          <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <h2 className="dl-modal__title">Artwork Categories</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowAddArtModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <div className="dl-search-box">
-                <span className="dl-search-box__icon">🔍</span>
-                <input type="text" className="dl-search-box__input" placeholder="Search For Artwork" />
-              </div>
-              <div className="dl-artwork-categories">
-                {['Emojis', 'Shapes & Symbols', 'Sports & Games', 'Letters & Numbers', 'Animals', 'Mascots', 'Nature', 'America'].map((category) => (
-                  <button key={category} type="button" className="dl-artwork-category">
-                    <span className="dl-artwork-category__icon">{category === 'Emojis' ? '😊' : category === 'Shapes & Symbols' ? '⭐' : category === 'Sports & Games' ? '⚽' : category === 'Letters & Numbers' ? 'ABC' : category === 'Animals' ? '🐱' : category === 'Mascots' ? '🐾' : category === 'Nature' ? '🌲' : '🇺🇸'}</span>
-                    <span className="dl-artwork-category__name">{category}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 21:00:00] 产品颜色选择模态框 */}
-      {showProductColorsModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowProductColorsModal(false)}>
-          <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <h2 className="dl-modal__title">Choose Your Product Color</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowProductColorsModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <div className="dl-colors-section">
-                <div className="dl-colors-section__header">
-                  <h3 className="dl-colors-section__title">Colors:</h3>
-                  <div className="dl-colors-section__toggle">
-                    <span>Ordering fewer than 6?</span>
-                    <label className="dl-toggle">
-                      <input type="checkbox" checked={orderFewerThan6} onChange={(e) => setOrderFewerThan6(e.target.checked)} />
-                      <span className="dl-toggle__slider"></span>
-                    </label>
-                    <span className="dl-info-icon">ℹ</span>
-                  </div>
-                </div>
-                <div className="dl-colors-grid">
-                  {['#FFFFFF', '#F5F5DC', '#C0C0C0', '#808080', '#000000', '#000080', '#4169E1', '#00CED1', '#800080', '#800020', '#FFC0CB', '#FF0000', '#FFA500', '#FFFF00', '#808000', '#008000', '#8B4513'].map((color, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      className={`dl-color-swatch ${selectedColor === color ? 'is-selected' : ''}`}
-                      style={{ backgroundColor: color }}
-                      onClick={() => setSelectedColor(color)}
-                    >
-                      {selectedColor === color && <span className="dl-color-swatch__check">✓</span>}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="dl-sizes-section">
-                <h3 className="dl-sizes-section__title">Sizes Available in:</h3>
-                <div className="dl-sizes-section__color">
-                  <div className="dl-sizes-section__swatch" style={{ backgroundColor: '#808080' }}></div>
-                  <span>Heather Dark Grey</span>
-                </div>
-                <div className="dl-sizes-list">
-                  {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((size) => (
-                    <span key={size} className={`dl-size ${size === '4XL' ? 'is-unavailable' : ''}`}>
-                      {size}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="dl-add-color-section">
-                <span className="dl-add-color-section__icon">👕</span>
-                <div>
-                  <p className="dl-add-color-section__text">Add this product in another color</p>
-                  <Link href="#" className="dl-add-color-section__link">Pick another color</Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 21:00:00] 添加名称模态框 */}
-      {showAddNamesModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowAddNamesModal(false)}>
-          <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <h2 className="dl-modal__title">Names and Numbers</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowAddNamesModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <div className="dl-names-image">
-                <Image src="/assets/categories/cat-tshirt.png" alt="Team jerseys" width={600} height={400} />
-              </div>
-              <p className="dl-names-description">
-                Use personalized Names & Numbers for projects like team jerseys where you need a unique name and/or number for each item.
-              </p>
-              <button
-                type="button"
-                className="dl-add-btn"
-                onClick={() => {
-                  setShowAddNamesModal(false);
-                  setShowNamesToolsModal(true);
-                }}
-              >
-                Add Names and Numbers
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 21:00:00] 名称和数字工具模态框 */}
-      {showNamesToolsModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowNamesToolsModal(false)}>
-          <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <h2 className="dl-modal__title">Names and Numbers Tools</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowNamesToolsModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <div className="dl-names-tools-step">
-                <h3 className="dl-names-tools-step__title">Step 1:</h3>
-                <div className="dl-names-tools-options">
-                  <label className="dl-checkbox">
-                    <input type="checkbox" checked={addNames} onChange={(e) => setAddNames(e.target.checked)} />
-                    <span>Add Names</span>
-                  </label>
-                  <label className="dl-checkbox">
-                    <input type="checkbox" checked={addNumbers} onChange={(e) => setAddNumbers(e.target.checked)} />
-                    <span>Add Numbers</span>
-                  </label>
-                </div>
-                <div className="dl-names-tools-row">
-                  <label className="dl-names-tools-label">Side:</label>
-                  <select className="dl-select" value={nameSide} onChange={(e) => setNameSide(e.target.value)}>
-                    <option>Front</option>
-                    <option>Back</option>
-                  </select>
-                  <select className="dl-select" value={numberSide} onChange={(e) => setNumberSide(e.target.value)}>
-                    <option>Front</option>
-                    <option>Back</option>
-                  </select>
-                </div>
-                <div className="dl-names-tools-row">
-                  <label className="dl-names-tools-label">Height:</label>
-                  <select className="dl-select" value={nameHeight} onChange={(e) => setNameHeight(e.target.value)}>
-                    <option>2 In</option>
-                    <option>3 In</option>
-                    <option>4 In</option>
-                  </select>
-                  <select className="dl-select" value={numberHeight} onChange={(e) => setNumberHeight(e.target.value)}>
-                    <option>6 In</option>
-                    <option>8 In</option>
-                    <option>10 In</option>
-                  </select>
-                </div>
-                <div className="dl-names-tools-row">
-                  <label className="dl-names-tools-label">Color:</label>
-                  <div className="dl-color-selector">
-                    <span>{nameColor}</span>
-                    <div className="dl-color-selector__swatch" style={{ backgroundColor: '#000000' }}></div>
-                  </div>
-                  <div className="dl-color-selector">
-                    <span>{numberColor}</span>
-                    <div className="dl-color-selector__swatch" style={{ backgroundColor: '#000000' }}></div>
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="dl-add-btn dl-add-btn--full"
-                onClick={() => {
-                  // Handle step 2
-                }}
-              >
-                Step 2: Enter Names/Numbers
-              </button>
-              <div className="dl-pricing-info">
-                <p className="dl-pricing-info__title">Full list required for accurate pricing</p>
-                <p>Names: $5.50 each item</p>
-                <p>Numbers: $3.50 each item</p>
-              </div>
-              <div className="dl-pricing-notes">
-                <p>• &apos;EXAMPLE&apos; and &apos;00&apos; are sample placeholders</p>
-                <p>• Our artists will expertly place each name/number from your list</p>
-                <p>• Names/numbers may be printed or vinyl</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 22:00:00] "What do you want to do with your design?" 模态框 */}
-      {showDesignActionModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowDesignActionModal(false)}>
-          <div className="dl-modal dl-modal--medium" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <button type="button" className="dl-modal__back" onClick={() => setShowDesignActionModal(false)}>←</button>
-              <h2 className="dl-modal__title">What do you want to do with your design?</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowDesignActionModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <div className="dl-design-action-options">
-                <button
-                  type="button"
-                  className={`dl-design-action-card ${designAction === 'buy-ship' ? 'is-selected' : ''}`}
-                  onClick={() => setDesignAction('buy-ship')}
-                >
-                  {designAction === 'buy-ship' && (
-                    <span className="dl-design-action-card__check">✓</span>
-                  )}
-                  <h3 className="dl-design-action-card__title">Buy & Ship</h3>
-                  <p className="dl-design-action-card__description">
-                    Enter your order details and ship to one or multiple addresses right away. You can also collect sizes, addresses, and payments from your group.
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  className={`dl-design-action-card ${designAction === 'fundraiser' ? 'is-selected' : ''}`}
-                  onClick={() => setDesignAction('fundraiser')}
-                >
-                  {designAction === 'fundraiser' && (
-                    <span className="dl-design-action-card__check">✓</span>
-                  )}
-                  <h3 className="dl-design-action-card__title">Start a Fundraiser</h3>
-                  <p className="dl-design-action-card__description">
-                    Sell your designs online to raise money and spread awareness for your cause. You can build your own campaign page and even accept donations.
-                  </p>
-                </button>
-              </div>
-              <div className="dl-modal__footer">
-                <button
-                  type="button"
-                  className="dl-continue-btn"
-                  onClick={() => {
-                    setShowDesignActionModal(false);
-                    setShowOrderingOptionsModal(true);
-                  }}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 22:00:00] "Ordering Options" 模态框 */}
-      {showOrderingOptionsModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowOrderingOptionsModal(false)}>
-          <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <button type="button" className="dl-modal__back" onClick={() => {
-                setShowOrderingOptionsModal(false);
-                setShowDesignActionModal(true);
-              }}>←</button>
-              <h2 className="dl-modal__title">Ordering Options</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowOrderingOptionsModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              {/* 1. Shipping */}
-              <div className="dl-ordering-section">
-                <h3 className="dl-ordering-section__number">1.</h3>
-                <div className="dl-ordering-section__content">
-                  <h4 className="dl-ordering-section__title">Shipping:</h4>
-                  <div className="dl-ordering-options">
-                    <button
-                      type="button"
-                      className={`dl-ordering-option ${shippingOption === 'single' ? 'is-selected' : ''}`}
-                      onClick={() => setShippingOption('single')}
-                    >
-                      {shippingOption === 'single' && <span className="dl-ordering-option__check">✓</span>}
-                      <span className="dl-ordering-option__text">Ship to single address</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`dl-ordering-option ${shippingOption === 'multiple' ? 'is-selected' : ''}`}
-                      onClick={() => setShippingOption('multiple')}
-                    >
-                      {shippingOption === 'multiple' && <span className="dl-ordering-option__check">✓</span>}
-                      <span className="dl-ordering-option__text">Ship to multiple addresses</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. Sizes and Quantities */}
-              <div className="dl-ordering-section">
-                <h3 className="dl-ordering-section__number">2.</h3>
-                <div className="dl-ordering-section__content">
-                  <h4 className="dl-ordering-section__title">Sizes and Quantities:</h4>
-                  <div className="dl-ordering-options">
-                    <button
-                      type="button"
-                      className={`dl-ordering-option ${sizesOption === 'know' ? 'is-selected' : ''}`}
-                      onClick={() => setSizesOption('know')}
-                    >
-                      {sizesOption === 'know' && <span className="dl-ordering-option__check">✓</span>}
-                      <span className="dl-ordering-option__text">I know the sizes I need</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`dl-ordering-option ${sizesOption === 'invite' ? 'is-selected' : ''}`}
-                      onClick={() => setSizesOption('invite')}
-                    >
-                      {sizesOption === 'invite' && <span className="dl-ordering-option__check">✓</span>}
-                      <span className="dl-ordering-option__text">Invite my group to choose their sizes</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Payment */}
-              <div className="dl-ordering-section">
-                <h3 className="dl-ordering-section__number">3.</h3>
-                <div className="dl-ordering-section__content">
-                  <h4 className="dl-ordering-section__title">Payment:</h4>
-                  <div className="dl-ordering-options">
-                    <button
-                      type="button"
-                      className={`dl-ordering-option ${paymentOption === 'pay-all' ? 'is-selected' : ''}`}
-                      onClick={() => setPaymentOption('pay-all')}
-                    >
-                      {paymentOption === 'pay-all' && <span className="dl-ordering-option__check">✓</span>}
-                      <span className="dl-ordering-option__text">I will pay for the entire order</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`dl-ordering-option ${paymentOption === 'invite-pay' ? 'is-selected' : ''}`}
-                      onClick={() => setPaymentOption('invite-pay')}
-                    >
-                      {paymentOption === 'invite-pay' && <span className="dl-ordering-option__check">✓</span>}
-                      <span className="dl-ordering-option__text">Invite my group to pay for their order</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Delivery Info */}
-              <div className="dl-delivery-info">
-                <p className="dl-delivery-info__text">
-                  Get it by <strong>Tue, Dec. 2nd</strong> with <strong>FREE delivery</strong>
-                </p>
-                <p className="dl-delivery-info__text">
-                  or as soon as <strong>Thursday, Nov. 20th</strong> with <strong>Super Rush delivery</strong> (select options in cart)
-                </p>
-              </div>
-
-              <div className="dl-modal__footer">
-                <button
-                  type="button"
-                  className="dl-continue-btn"
-                  onClick={() => {
-                    setShowOrderingOptionsModal(false);
-                    setShowQuantityModal(true);
-                  }}
-                >
-                  Continue to Sizes
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* [2025-01-27 22:00:00] "Quantity" 模态框 */}
-      {showQuantityModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowQuantityModal(false)}>
-          <div className="dl-modal dl-modal--extra-large" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <button type="button" className="dl-modal__back" onClick={() => {
-                setShowQuantityModal(false);
-                setShowOrderingOptionsModal(true);
-              }}>←</button>
-              <h2 className="dl-modal__title">{showBuyMoreView ? 'Buy more, save more' : 'Quantity'}</h2>
-              <button type="button" className="dl-modal__close" onClick={() => {
-                setShowQuantityModal(false);
-                setShowBuyMoreView(false);
-              }}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              {!showBuyMoreView ? (
-                <>
-                  <h3 className="dl-quantity-title">How many do you need?</h3>
-                  <p className="dl-quantity-description">
-                    Don&apos;t know exact sizes yet? Estimate a total quantity for a more accurate price.
-                  </p>
-
-                  {/* 产品详情 */}
-                  <div className="dl-quantity-product">
-                    <Image src="/assets/categories/cat-tshirt.png" alt="Product" width={64} height={80} className="dl-quantity-product__image" />
-                    <div className="dl-quantity-product__info">
-                      <h4 className="dl-quantity-product__name">Gildan Softstyle Jersey T-shirt</h4>
-                      <p className="dl-quantity-product__color">Color: Heather Dark Grey <Link href="#" className="dl-quantity-product__link">Add another color</Link></p>
-                      <Link href="#" className="dl-quantity-product__link">View Sizing Guide</Link>
-                    </div>
-                  </div>
-
-                  {/* 尺寸选择 */}
-                  <div className="dl-quantity-sizes">
-                    <h4 className="dl-quantity-sizes__label">ADULT</h4>
-                    <div className="dl-quantity-sizes__grid">
-                      {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((size) => (
-                        <div key={size} className="dl-quantity-size-item">
-                          <label className="dl-quantity-size-item__label">{size}</label>
-                          <input
-                            type="number"
-                            className="dl-quantity-size-item__input"
-                            min="0"
-                            value={sizeQuantities[size] || 0}
-                            onChange={(e) => handleSizeQuantityChange(size, parseInt(e.target.value) || 0)}
-                          />
-                          {size === 'XL' && <span className="dl-quantity-size-item__upcharge">+$2.50</span>}
-                          {size === '2XL' && <span className="dl-quantity-size-item__upcharge">+$3.50</span>}
-                          {size === '3XL' && <span className="dl-quantity-size-item__upcharge">+$4.50</span>}
-                          {size === '4XL' && <span className="dl-quantity-size-item__upcharge">+$5.50</span>}
-                          {size === '5XL' && <span className="dl-quantity-size-item__upcharge">+$5.50</span>}
-                        </div>
-                      ))}
-                    </div>
-                    <button type="button" className="dl-add-womens-btn">+ Add Women&apos;s</button>
-                  </div>
-
-                  {/* Buy more, save more */}
-                  <div className="dl-quantity-buy-more">
-                    <h4 className="dl-quantity-buy-more__title">Buy more, save more</h4>
-                    <p className="dl-quantity-buy-more__description">
-                      Add your design to more styles and colors that work for everyone and boost your volume discount.
-                    </p>
-                    <button
-                      type="button"
-                      className="dl-quantity-buy-more__toggle"
-                      onClick={() => setShowBuyMoreView(true)}
-                    >
-                      View recommended products
-                    </button>
-                  </div>
-
-                  {/* Total and Continue */}
-                  <div className="dl-quantity-footer">
-                    <span className="dl-quantity-footer__total">Total Quantity: {totalQuantity}</span>
-                    <button
-                      type="button"
-                      className="dl-continue-btn"
-                      onClick={() => {
-                        setShowQuantityModal(false);
-                        setShowOrderOptionsPanel(true);
-                      }}
-                    >
-                      Continue
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h3 className="dl-quantity-title">Buy more, save more</h3>
-                  <p className="dl-quantity-description">
-                    Add your design to more styles and colors that work for everyone and boost your volume discount.
-                  </p>
-
-                  <div className="dl-quantity-recommended">
-                    {[
-                      { name: "Gildan Women's Midweight Softstyle Jersey T-shirt", colors: "10 Colors Available", image: '/assets/categories/cat-tshirt.png', action: 'Add style', badge: 'WOMEN\'S' },
-                      { name: 'Gildan Midweight 50/50 Pullover Hoodie', colors: '42 Colors Available', image: '/assets/categories/cat-sweatshirt.png', action: 'Add style', badge: 'RECOMMENDED' },
-                      { name: 'Gildan Midweight 50/50 Crewneck Sweatshirt', colors: '37 Colors Available', image: '/assets/categories/cat-sweatshirt.png', action: 'Add style', badge: 'RECOMMENDED' },
-                      { name: 'Gildan Softstyle Jersey T-shirt', colors: '63 Colors Available', image: '/assets/categories/cat-tshirt.png', action: 'Add another color', badge: '' },
-                    ].map((product, index) => (
-                      <div key={index} className="dl-quantity-recommended-item">
-                        <Image src={product.image} alt={product.name} width={80} height={100} className="dl-quantity-recommended-item__image" />
-                        <div className="dl-quantity-recommended-item__info">
-                          {product.badge && (
-                            <span className="dl-quantity-recommended-item__badge">
-                              {product.badge}
-                            </span>
-                          )}
-                          <h4 className="dl-quantity-recommended-item__name">{product.name}</h4>
-                          <p className="dl-quantity-recommended-item__colors">{product.colors}</p>
-                          <button type="button" className="dl-quantity-recommended-item__btn">{product.action}</button>
-                        </div>
-                      </div>
+                  <div className="dl-sizes-list">
+                    {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((size) => (
+                      <span key={size} className={`dl-size ${size === '4XL' ? 'is-unavailable' : ''}`}>
+                        {size}
+                      </span>
                     ))}
                   </div>
+                </div>
+                <div className="dl-add-color-section">
+                  <span className="dl-add-color-section__icon">👕</span>
+                  <div>
+                    <p className="dl-add-color-section__text">Add this product in another color</p>
+                    <Link href="#" className="dl-add-color-section__link">Pick another color</Link>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
-                  <div className="dl-quantity-footer">
-                    <button
-                      type="button"
-                      className="dl-quantity-buy-more__toggle"
-                      onClick={() => setShowBuyMoreView(false)}
-                    >
-                      ← Back to sizes
-                    </button>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* [2025-01-27 21:00:00] 添加名称模态框 */}
+        {showAddNamesModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowAddNamesModal(false)}>
+            <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <h2 className="dl-modal__title">Names and Numbers</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowAddNamesModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                <div className="dl-names-image">
+                  <Image src="/assets/categories/cat-tshirt.png" alt="Team jerseys" width={600} height={400} />
+                </div>
+                <p className="dl-names-description">
+                  Use personalized Names & Numbers for projects like team jerseys where you need a unique name and/or number for each item.
+                </p>
+                <button
+                  type="button"
+                  className="dl-add-btn"
+                  onClick={() => {
+                    setShowAddNamesModal(false);
+                    setShowNamesToolsModal(true);
+                  }}
+                >
+                  Add Names and Numbers
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-01-27 21:00:00] 名称和数字工具模态框 */}
+        {showNamesToolsModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowNamesToolsModal(false)}>
+            <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <h2 className="dl-modal__title">Names and Numbers Tools</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowNamesToolsModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                <div className="dl-names-tools-step">
+                  <h3 className="dl-names-tools-step__title">Step 1:</h3>
+                  <div className="dl-names-tools-options">
+                    <label className="dl-checkbox">
+                      <input type="checkbox" checked={addNames} onChange={(e) => setAddNames(e.target.checked)} />
+                      <span>Add Names</span>
+                    </label>
+                    <label className="dl-checkbox">
+                      <input type="checkbox" checked={addNumbers} onChange={(e) => setAddNumbers(e.target.checked)} />
+                      <span>Add Numbers</span>
+                    </label>
+                  </div>
+                  <div className="dl-names-tools-row">
+                    <label className="dl-names-tools-label">Side:</label>
+                    <select className="dl-select" value={nameSide} onChange={(e) => setNameSide(e.target.value)}>
+                      <option>Front</option>
+                      <option>Back</option>
+                    </select>
+                    <select className="dl-select" value={numberSide} onChange={(e) => setNumberSide(e.target.value)}>
+                      <option>Front</option>
+                      <option>Back</option>
+                    </select>
+                  </div>
+                  <div className="dl-names-tools-row">
+                    <label className="dl-names-tools-label">Height:</label>
+                    <select className="dl-select" value={nameHeight} onChange={(e) => setNameHeight(e.target.value)}>
+                      <option>2 In</option>
+                      <option>3 In</option>
+                      <option>4 In</option>
+                    </select>
+                    <select className="dl-select" value={numberHeight} onChange={(e) => setNumberHeight(e.target.value)}>
+                      <option>6 In</option>
+                      <option>8 In</option>
+                      <option>10 In</option>
+                    </select>
+                  </div>
+                  <div className="dl-names-tools-row">
+                    <label className="dl-names-tools-label">Color:</label>
+                    <div className="dl-color-selector">
+                      <span>{nameColor}</span>
+                      <div className="dl-color-selector__swatch" style={{ backgroundColor: '#000000' }}></div>
+                    </div>
+                    <div className="dl-color-selector">
+                      <span>{numberColor}</span>
+                      <div className="dl-color-selector__swatch" style={{ backgroundColor: '#000000' }}></div>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="dl-add-btn dl-add-btn--full"
+                  onClick={() => {
+                    // Handle step 2
+                  }}
+                >
+                  Step 2: Enter Names/Numbers
+                </button>
+                <div className="dl-pricing-info">
+                  <p className="dl-pricing-info__title">Full list required for accurate pricing</p>
+                  <p>Names: $5.50 each item</p>
+                  <p>Numbers: $3.50 each item</p>
+                </div>
+                <div className="dl-pricing-notes">
+                  <p>• &apos;EXAMPLE&apos; and &apos;00&apos; are sample placeholders</p>
+                  <p>• Our artists will expertly place each name/number from your list</p>
+                  <p>• Names/numbers may be printed or vinyl</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-01-27 22:00:00] "What do you want to do with your design?" 模态框 */}
+        {showDesignActionModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowDesignActionModal(false)}>
+            <div className="dl-modal dl-modal--medium" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <button type="button" className="dl-modal__back" onClick={() => setShowDesignActionModal(false)}>←</button>
+                <h2 className="dl-modal__title">What do you want to do with your design?</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowDesignActionModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                <div className="dl-design-action-options">
+                  <button
+                    type="button"
+                    className={`dl-design-action-card ${designAction === 'buy-ship' ? 'is-selected' : ''}`}
+                    onClick={() => setDesignAction('buy-ship')}
+                  >
+                    {designAction === 'buy-ship' && (
+                      <span className="dl-design-action-card__check">✓</span>
+                    )}
+                    <h3 className="dl-design-action-card__title">Buy & Ship</h3>
+                    <p className="dl-design-action-card__description">
+                      Enter your order details and ship to one or multiple addresses right away. You can also collect sizes, addresses, and payments from your group.
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    className={`dl-design-action-card ${designAction === 'fundraiser' ? 'is-selected' : ''}`}
+                    onClick={() => setDesignAction('fundraiser')}
+                  >
+                    {designAction === 'fundraiser' && (
+                      <span className="dl-design-action-card__check">✓</span>
+                    )}
+                    <h3 className="dl-design-action-card__title">Start a Fundraiser</h3>
+                    <p className="dl-design-action-card__description">
+                      Sell your designs online to raise money and spread awareness for your cause. You can build your own campaign page and even accept donations.
+                    </p>
+                  </button>
+                </div>
+                <div className="dl-modal__footer">
+                  <button
+                    type="button"
+                    className="dl-continue-btn"
+                    onClick={() => {
+                      setShowDesignActionModal(false);
+                      setShowOrderingOptionsModal(true);
+                    }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-01-27 22:00:00] "Ordering Options" 模态框 */}
+        {showOrderingOptionsModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowOrderingOptionsModal(false)}>
+            <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <button type="button" className="dl-modal__back" onClick={() => {
+                  setShowOrderingOptionsModal(false);
+                  setShowDesignActionModal(true);
+                }}>←</button>
+                <h2 className="dl-modal__title">Ordering Options</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowOrderingOptionsModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                {/* 1. Shipping */}
+                <div className="dl-ordering-section">
+                  <h3 className="dl-ordering-section__number">1.</h3>
+                  <div className="dl-ordering-section__content">
+                    <h4 className="dl-ordering-section__title">Shipping:</h4>
+                    <div className="dl-ordering-options">
+                      <button
+                        type="button"
+                        className={`dl-ordering-option ${shippingOption === 'single' ? 'is-selected' : ''}`}
+                        onClick={() => setShippingOption('single')}
+                      >
+                        {shippingOption === 'single' && <span className="dl-ordering-option__check">✓</span>}
+                        <span className="dl-ordering-option__text">Ship to single address</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`dl-ordering-option ${shippingOption === 'multiple' ? 'is-selected' : ''}`}
+                        onClick={() => setShippingOption('multiple')}
+                      >
+                        {shippingOption === 'multiple' && <span className="dl-ordering-option__check">✓</span>}
+                        <span className="dl-ordering-option__text">Ship to multiple addresses</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Sizes and Quantities */}
+                <div className="dl-ordering-section">
+                  <h3 className="dl-ordering-section__number">2.</h3>
+                  <div className="dl-ordering-section__content">
+                    <h4 className="dl-ordering-section__title">Sizes and Quantities:</h4>
+                    <div className="dl-ordering-options">
+                      <button
+                        type="button"
+                        className={`dl-ordering-option ${sizesOption === 'know' ? 'is-selected' : ''}`}
+                        onClick={() => setSizesOption('know')}
+                      >
+                        {sizesOption === 'know' && <span className="dl-ordering-option__check">✓</span>}
+                        <span className="dl-ordering-option__text">I know the sizes I need</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`dl-ordering-option ${sizesOption === 'invite' ? 'is-selected' : ''}`}
+                        onClick={() => setSizesOption('invite')}
+                      >
+                        {sizesOption === 'invite' && <span className="dl-ordering-option__check">✓</span>}
+                        <span className="dl-ordering-option__text">Invite my group to choose their sizes</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Payment */}
+                <div className="dl-ordering-section">
+                  <h3 className="dl-ordering-section__number">3.</h3>
+                  <div className="dl-ordering-section__content">
+                    <h4 className="dl-ordering-section__title">Payment:</h4>
+                    <div className="dl-ordering-options">
+                      <button
+                        type="button"
+                        className={`dl-ordering-option ${paymentOption === 'pay-all' ? 'is-selected' : ''}`}
+                        onClick={() => setPaymentOption('pay-all')}
+                      >
+                        {paymentOption === 'pay-all' && <span className="dl-ordering-option__check">✓</span>}
+                        <span className="dl-ordering-option__text">I will pay for the entire order</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`dl-ordering-option ${paymentOption === 'invite-pay' ? 'is-selected' : ''}`}
+                        onClick={() => setPaymentOption('invite-pay')}
+                      >
+                        {paymentOption === 'invite-pay' && <span className="dl-ordering-option__check">✓</span>}
+                        <span className="dl-ordering-option__text">Invite my group to pay for their order</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Info */}
+                <div className="dl-delivery-info">
+                  <p className="dl-delivery-info__text">
+                    Get it by <strong>Tue, Dec. 2nd</strong> with <strong>FREE delivery</strong>
+                  </p>
+                  <p className="dl-delivery-info__text">
+                    or as soon as <strong>Thursday, Nov. 20th</strong> with <strong>Super Rush delivery</strong> (select options in cart)
+                  </p>
+                </div>
+
+                <div className="dl-modal__footer">
+                  <button
+                    type="button"
+                    className="dl-continue-btn"
+                    onClick={() => {
+                      setShowOrderingOptionsModal(false);
+                      setShowQuantityModal(true);
+                    }}
+                  >
+                    Continue to Sizes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-01-27 22:00:00] "Quantity" 模态框 */}
+        {showQuantityModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowQuantityModal(false)}>
+            <div className="dl-modal dl-modal--extra-large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <button type="button" className="dl-modal__back" onClick={() => {
+                  setShowQuantityModal(false);
+                  setShowOrderingOptionsModal(true);
+                }}>←</button>
+                <h2 className="dl-modal__title">{showBuyMoreView ? 'Buy more, save more' : 'Quantity'}</h2>
+                <button type="button" className="dl-modal__close" onClick={() => {
+                  setShowQuantityModal(false);
+                  setShowBuyMoreView(false);
+                }}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                {!showBuyMoreView ? (
+                  <>
+                    <h3 className="dl-quantity-title">How many do you need?</h3>
+                    <p className="dl-quantity-description">
+                      Don&apos;t know exact sizes yet? Estimate a total quantity for a more accurate price.
+                    </p>
+
+                    {/* 产品详情 */}
+                    <div className="dl-quantity-product">
+                      <Image src="/assets/categories/cat-tshirt.png" alt="Product" width={64} height={80} className="dl-quantity-product__image" />
+                      <div className="dl-quantity-product__info">
+                        <h4 className="dl-quantity-product__name">Gildan Softstyle Jersey T-shirt</h4>
+                        <p className="dl-quantity-product__color">Color: Heather Dark Grey <Link href="#" className="dl-quantity-product__link">Add another color</Link></p>
+                        <Link href="#" className="dl-quantity-product__link">View Sizing Guide</Link>
+                      </div>
+                    </div>
+
+                    {/* 尺寸选择 */}
+                    <div className="dl-quantity-sizes">
+                      <h4 className="dl-quantity-sizes__label">ADULT</h4>
+                      <div className="dl-quantity-sizes__grid">
+                        {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'].map((size) => (
+                          <div key={size} className="dl-quantity-size-item">
+                            <label className="dl-quantity-size-item__label">{size}</label>
+                            <input
+                              type="number"
+                              className="dl-quantity-size-item__input"
+                              min="0"
+                              value={sizeQuantities[size] || 0}
+                              onChange={(e) => handleSizeQuantityChange(size, parseInt(e.target.value) || 0)}
+                            />
+                            {size === 'XL' && <span className="dl-quantity-size-item__upcharge">+$2.50</span>}
+                            {size === '2XL' && <span className="dl-quantity-size-item__upcharge">+$3.50</span>}
+                            {size === '3XL' && <span className="dl-quantity-size-item__upcharge">+$4.50</span>}
+                            {size === '4XL' && <span className="dl-quantity-size-item__upcharge">+$5.50</span>}
+                            {size === '5XL' && <span className="dl-quantity-size-item__upcharge">+$5.50</span>}
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" className="dl-add-womens-btn">+ Add Women&apos;s</button>
+                    </div>
+
+                    {/* Buy more, save more */}
+                    <div className="dl-quantity-buy-more">
+                      <h4 className="dl-quantity-buy-more__title">Buy more, save more</h4>
+                      <p className="dl-quantity-buy-more__description">
+                        Add your design to more styles and colors that work for everyone and boost your volume discount.
+                      </p>
+                      <button
+                        type="button"
+                        className="dl-quantity-buy-more__toggle"
+                        onClick={() => setShowBuyMoreView(true)}
+                      >
+                        View recommended products
+                      </button>
+                    </div>
+
+                    {/* Total and Continue */}
+                    <div className="dl-quantity-footer">
                       <span className="dl-quantity-footer__total">Total Quantity: {totalQuantity}</span>
                       <button
                         type="button"
                         className="dl-continue-btn"
                         onClick={() => {
                           setShowQuantityModal(false);
-                          setShowBuyMoreView(false);
                           setShowOrderOptionsPanel(true);
                         }}
                       >
                         Continue
                       </button>
                     </div>
-                  </div>
-                </>
-              )}
+                  </>
+                ) : (
+                  <>
+                    <h3 className="dl-quantity-title">Buy more, save more</h3>
+                    <p className="dl-quantity-description">
+                      Add your design to more styles and colors that work for everyone and boost your volume discount.
+                    </p>
+
+                    <div className="dl-quantity-recommended">
+                      {[
+                        { name: "Gildan Women's Midweight Softstyle Jersey T-shirt", colors: "10 Colors Available", image: '/assets/categories/cat-tshirt.png', action: 'Add style', badge: 'WOMEN\'S' },
+                        { name: 'Gildan Midweight 50/50 Pullover Hoodie', colors: '42 Colors Available', image: '/assets/categories/cat-sweatshirt.png', action: 'Add style', badge: 'RECOMMENDED' },
+                        { name: 'Gildan Midweight 50/50 Crewneck Sweatshirt', colors: '37 Colors Available', image: '/assets/categories/cat-sweatshirt.png', action: 'Add style', badge: 'RECOMMENDED' },
+                        { name: 'Gildan Softstyle Jersey T-shirt', colors: '63 Colors Available', image: '/assets/categories/cat-tshirt.png', action: 'Add another color', badge: '' },
+                      ].map((product, index) => (
+                        <div key={index} className="dl-quantity-recommended-item">
+                          <Image src={product.image} alt={product.name} width={80} height={100} className="dl-quantity-recommended-item__image" />
+                          <div className="dl-quantity-recommended-item__info">
+                            {product.badge && (
+                              <span className="dl-quantity-recommended-item__badge">
+                                {product.badge}
+                              </span>
+                            )}
+                            <h4 className="dl-quantity-recommended-item__name">{product.name}</h4>
+                            <p className="dl-quantity-recommended-item__colors">{product.colors}</p>
+                            <button type="button" className="dl-quantity-recommended-item__btn">{product.action}</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="dl-quantity-footer">
+                      <button
+                        type="button"
+                        className="dl-quantity-buy-more__toggle"
+                        onClick={() => setShowBuyMoreView(false)}
+                      >
+                        ← Back to sizes
+                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <span className="dl-quantity-footer__total">Total Quantity: {totalQuantity}</span>
+                        <button
+                          type="button"
+                          className="dl-continue-btn"
+                          onClick={() => {
+                            setShowQuantityModal(false);
+                            setShowBuyMoreView(false);
+                            setShowOrderOptionsPanel(true);
+                          }}
+                        >
+                          Continue
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-          {/* [2025-01-27 22:00:00] "Order Options" 面板 */}
-          {showOrderOptionsPanel && (
-            <div className="dl-order-options-panel">
-          <div className="dl-order-options-panel__header">
-            <button type="button" className="dl-order-options-panel__back" onClick={() => {
-              setShowOrderOptionsPanel(false);
-              setShowQuantityModal(true);
-            }}>←</button>
-            <h2 className="dl-order-options-panel__title">Order Options</h2>
-            <button type="button" className="dl-order-options-panel__close" onClick={() => setShowOrderOptionsPanel(false)}>×</button>
-          </div>
-          <div className="dl-order-options-panel__body">
-            {/* 价格摘要 */}
-            <div className="dl-price-summary">
-              <div className="dl-price-summary__main">
-                <span className="dl-price-summary__amount">${calculatedPrice.toFixed(2)}</span>
-              </div>
-              <p className="dl-price-summary__total">${calculatedPrice.toFixed(2)} total</p>
-              <div className="dl-price-summary__badges">
-                <span className="dl-price-badge">1 color front</span>
-                <span className="dl-price-badge">1 design area</span>
-                <span className="dl-price-badge">{totalQuantity || 1} total items</span>
-              </div>
+        {/* [2025-01-27 22:00:00] "Order Options" 面板 */}
+        {showOrderOptionsPanel && (
+          <div className="dl-order-options-panel">
+            <div className="dl-order-options-panel__header">
+              <button type="button" className="dl-order-options-panel__back" onClick={() => {
+                setShowOrderOptionsPanel(false);
+                setShowQuantityModal(true);
+              }}>←</button>
+              <h2 className="dl-order-options-panel__title">Order Options</h2>
+              <button type="button" className="dl-order-options-panel__close" onClick={() => setShowOrderOptionsPanel(false)}>×</button>
             </div>
-
-            {/* 批量折扣信息 */}
-            <div className="dl-bulk-discount">
-              <h4 className="dl-bulk-discount__title">BUY MORE, SAVE MORE!</h4>
-              <p className="dl-bulk-discount__text">Get 10 items for $19.45 each, or 20 items for $13.65 each.</p>
-              <Link href="#" className="dl-bulk-discount__link">Money Saving Tips</Link>
-            </div>
-
-            {/* 配送选项 */}
-            <div className="dl-delivery-section">
-              <div className="dl-delivery-standard">
-                <h4 className="dl-delivery-standard__title">FREE Standard Delivery</h4>
-                <p className="dl-delivery-standard__date">Get it by Tuesday, Dec. 2nd</p>
-                <div className="dl-delivery-zip">
-                  <span className="dl-delivery-zip__icon">📍</span>
-                  <span className={`dl-delivery-zip__text ${zipCodeError ? 'has-error' : ''}`}>
-                    {zipCodeError ? 'Unrecognized ZIP Code' : zipCode || 'Enter ZIP Code'}
-                  </span>
-                  <button
-                    type="button"
-                    className="dl-delivery-zip__edit"
-                    onClick={() => {
-                      const zip = prompt('Enter ZIP Code:');
-                      if (zip) {
-                        setZipCode(zip);
-                        setZipCodeError(zip.length !== 5);
-                      }
-                    }}
-                  >
-                    Edit
-                  </button>
+            <div className="dl-order-options-panel__body">
+              {/* 价格摘要 */}
+              <div className="dl-price-summary">
+                <div className="dl-price-summary__main">
+                  <span className="dl-price-summary__amount">${calculatedPrice.toFixed(2)}</span>
+                </div>
+                <p className="dl-price-summary__total">${calculatedPrice.toFixed(2)} total</p>
+                <div className="dl-price-summary__badges">
+                  <span className="dl-price-badge">1 color front</span>
+                  <span className="dl-price-badge">1 design area</span>
+                  <span className="dl-price-badge">{totalQuantity || 1} total items</span>
                 </div>
               </div>
-              <div className="dl-delivery-faster">
-                <h4 className="dl-delivery-faster__title">Faster delivery options available at checkout</h4>
-                <div className="dl-delivery-options">
-                  <div className="dl-delivery-option">
-                    <span className="dl-delivery-option__icon">⚡</span>
-                    <span className="dl-delivery-option__text">Super Rush - get it by Thu., Nov. 20th</span>
-                  </div>
-                  <div className="dl-delivery-option">
-                    <span className="dl-delivery-option__icon">🚚</span>
-                    <span className="dl-delivery-option__text">Rush - get it by Mon., Nov. 24th</span>
+
+              {/* 批量折扣信息 */}
+              <div className="dl-bulk-discount">
+                <h4 className="dl-bulk-discount__title">BUY MORE, SAVE MORE!</h4>
+                <p className="dl-bulk-discount__text">Get 10 items for $19.45 each, or 20 items for $13.65 each.</p>
+                <Link href="#" className="dl-bulk-discount__link">Money Saving Tips</Link>
+              </div>
+
+              {/* 配送选项 */}
+              <div className="dl-delivery-section">
+                <div className="dl-delivery-standard">
+                  <h4 className="dl-delivery-standard__title">FREE Standard Delivery</h4>
+                  <p className="dl-delivery-standard__date">Get it by Tuesday, Dec. 2nd</p>
+                  <div className="dl-delivery-zip">
+                    <span className="dl-delivery-zip__icon">📍</span>
+                    <span className={`dl-delivery-zip__text ${zipCodeError ? 'has-error' : ''}`}>
+                      {zipCodeError ? 'Unrecognized ZIP Code' : zipCode || 'Enter ZIP Code'}
+                    </span>
+                    <button
+                      type="button"
+                      className="dl-delivery-zip__edit"
+                      onClick={() => {
+                        const zip = prompt('Enter ZIP Code:');
+                        if (zip) {
+                          setZipCode(zip);
+                          setZipCodeError(zip.length !== 5);
+                        }
+                      }}
+                    >
+                      Edit
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* 满意度保证 */}
-            <div className="dl-satisfaction-guarantee">
-              <div className="dl-satisfaction-guarantee__icon">🌸</div>
-              <div className="dl-satisfaction-guarantee__content">
-                <h4 className="dl-satisfaction-guarantee__title">100% SATISFACTION GUARANTEED</h4>
-                <p className="dl-satisfaction-guarantee__text">We&apos;ll make it right or we&apos;ll make it right.</p>
-              </div>
-            </div>
-
-            {/* 订单详情 */}
-            <div className="dl-order-summary">
-              <h3 className="dl-order-summary__title">YOUR ORDER - 1 product</h3>
-              <div className="dl-order-summary__product">
-                <div className="dl-order-summary__thumbnails">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Image key={i} src="/assets/categories/cat-tshirt.png" alt={`View ${i}`} width={60} height={75} className="dl-order-summary__thumb" />
-                  ))}
+                <div className="dl-delivery-faster">
+                  <h4 className="dl-delivery-faster__title">Faster delivery options available at checkout</h4>
+                  <div className="dl-delivery-options">
+                    <div className="dl-delivery-option">
+                      <span className="dl-delivery-option__icon">⚡</span>
+                      <span className="dl-delivery-option__text">Super Rush - get it by Thu., Nov. 20th</span>
+                    </div>
+                    <div className="dl-delivery-option">
+                      <span className="dl-delivery-option__icon">🚚</span>
+                      <span className="dl-delivery-option__text">Rush - get it by Mon., Nov. 24th</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="dl-order-summary__details">
-                  <h4 className="dl-order-summary__name">Gildan Softstyle Jersey T-shirt</h4>
-                  <p className="dl-order-summary__specs">Heather Dark Grey | Qty: {totalQuantity || 1}</p>
-                  <p className="dl-order-summary__size">
-                    {totalQuantity > 0 
-                      ? Object.entries(sizeQuantities)
+              </div>
+
+              {/* 满意度保证 */}
+              <div className="dl-satisfaction-guarantee">
+                <div className="dl-satisfaction-guarantee__icon">🌸</div>
+                <div className="dl-satisfaction-guarantee__content">
+                  <h4 className="dl-satisfaction-guarantee__title">100% SATISFACTION GUARANTEED</h4>
+                  <p className="dl-satisfaction-guarantee__text">We&apos;ll make it right or we&apos;ll make it right.</p>
+                </div>
+              </div>
+
+              {/* 订单详情 */}
+              <div className="dl-order-summary">
+                <h3 className="dl-order-summary__title">YOUR ORDER - 1 product</h3>
+                <div className="dl-order-summary__product">
+                  <div className="dl-order-summary__thumbnails">
+                    {[1, 2, 3, 4].map((i) => (
+                      <Image key={i} src="/assets/categories/cat-tshirt.png" alt={`View ${i}`} width={60} height={75} className="dl-order-summary__thumb" />
+                    ))}
+                  </div>
+                  <div className="dl-order-summary__details">
+                    <h4 className="dl-order-summary__name">Gildan Softstyle Jersey T-shirt</h4>
+                    <p className="dl-order-summary__specs">Heather Dark Grey | Qty: {totalQuantity || 1}</p>
+                    <p className="dl-order-summary__size">
+                      {totalQuantity > 0
+                        ? Object.entries(sizeQuantities)
                           .filter(([_, qty]) => qty > 0)
                           .map(([size, qty]) => `${qty}${size}`)
                           .join(', ')
-                      : '1 XS'}
-                    {' '}
-                    <Link href="#" className="dl-order-summary__edit" onClick={(e) => {
-                      e.preventDefault();
-                      setShowOrderOptionsPanel(false);
-                      setShowQuantityModal(true);
-                    }}>Edit</Link>
-                  </p>
-                  <p className="dl-order-summary__price">${pricePerItem.toFixed(2)} each</p>
+                        : '1 XS'}
+                      {' '}
+                      <Link href="#" className="dl-order-summary__edit" onClick={(e) => {
+                        e.preventDefault();
+                        setShowOrderOptionsPanel(false);
+                        setShowQuantityModal(true);
+                      }}>Edit</Link>
+                    </p>
+                    <p className="dl-order-summary__price">${pricePerItem.toFixed(2)} each</p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 操作按钮 */}
-            <div className="dl-order-actions">
-              <button
-                type="button"
-                className="dl-order-actions__change"
-                onClick={() => {
-                  setShowOrderOptionsPanel(false);
-                  setShowOrderingOptionsModal(true);
-                }}
-              >
-                ← Change your order options
-              </button>
-              <div className="dl-order-actions__main">
+              {/* 操作按钮 */}
+              <div className="dl-order-actions">
                 <button
                   type="button"
-                  className="dl-order-actions__save"
+                  className="dl-order-actions__change"
                   onClick={() => {
                     setShowOrderOptionsPanel(false);
-                    setShowSaveCartModal(true);
+                    setShowOrderingOptionsModal(true);
                   }}
                 >
-                  Save & Continue Designing
+                  ← Change your order options
                 </button>
-                <button
-                  type="button"
-                  className="dl-order-actions__add-cart"
-                  onClick={() => {
-                    setShowOrderOptionsPanel(false);
-                    setShowSaveCartModal(true);
-                  }}
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </div>
-      </div>
-      )}
-
-      {/* [2025-01-27 23:45:00] Save & Add to Cart 模态框 */}
-      {showSaveCartModal && (
-        <div className="dl-modal-overlay" onClick={() => setShowSaveCartModal(false)}>
-          <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
-            <div className="dl-modal__header">
-              <button type="button" className="dl-modal__back" onClick={() => {
-                setShowSaveCartModal(false);
-                setShowOrderOptionsPanel(true);
-              }}>←</button>
-              <h2 className="dl-modal__title">Save & Add to Cart</h2>
-              <button type="button" className="dl-modal__close" onClick={() => setShowSaveCartModal(false)}>×</button>
-            </div>
-            <div className="dl-modal__body">
-              <div className="dl-save-cart-content">
-                {/* 左侧：表单 */}
-                <div className="dl-save-cart-form">
-                  <h3 className="dl-save-cart-form__title">Save & Add to Cart</h3>
-                  <p className="dl-save-cart-form__subtitle">Save a final version of your design before you add to cart.</p>
-                  
-                  <div className="dl-save-cart-field">
-                    <label className="dl-save-cart-field__label">Design Name</label>
-                    <input
-                      type="text"
-                      className="dl-save-cart-field__input"
-                      placeholder="Design Name"
-                      value={saveDesignName}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value.length <= 25) {
-                          setSaveDesignName(value);
-                        }
-                      }}
-                      maxLength={25}
-                    />
-                    <p className="dl-save-cart-field__hint">
-                      25 characters max including @ # $ % & - _ [ ] ( )
-                    </p>
-                  </div>
-
-                  <div className="dl-save-cart-field">
-                    <label className="dl-save-cart-field__label">Email</label>
-                    <input
-                      type="email"
-                      className="dl-save-cart-field__input"
-                      placeholder="Email"
-                      value={saveEmail}
-                      onChange={(e) => setSaveEmail(e.target.value)}
-                    />
-                  </div>
-
-                  <p className="dl-save-cart-terms">
-                    By clicking &apos;Save Design&apos;, I agree to the{' '}
-                    <Link href="/terms" className="dl-save-cart-terms__link">terms of service</Link>
-                    {' '}and{' '}
-                    <Link href="/privacy" className="dl-save-cart-terms__link">Privacy Policy</Link>.
-                  </p>
-
+                <div className="dl-order-actions__main">
                   <button
                     type="button"
-                    className="dl-save-cart-btn"
-                    onClick={async () => {
-                      if (!saveDesignName.trim() || !saveEmail.trim()) {
-                        setError('Please fill in all required fields');
-                        return;
-                      }
-                      if (!draft?.id) {
-                        setError('Design draft not found. Please create a design first.');
-                        return;
-                      }
-                      if (!draft.variantId) {
-                        setError('Product variant not found. Please select a product.');
-                        return;
-                      }
-                      try {
-                        setSaving(true);
-                        setError(null);
-                        
-                        // 1. 更新设计草稿（保存名称和状态）
-                        await designLabApi.updateDraft(draft.id, {
-                          name: saveDesignName.trim(),
-                          status: 'saved',
-                          summary: `Design saved by ${saveEmail}`,
-                        });
-                        
-                        // 2. 添加到购物车（使用 designId 和 variantId）
-                        const { cartApi } = await import('@/lib/api');
-                        await cartApi.addItem(draft.variantId, quantity, draft.id);
-                        
-                        setShowSaveCartModal(false);
-                        // 跳转到购物车页面
-                        router.push('/cart');
-                      } catch (err: any) {
-                        console.error('Error saving design and adding to cart:', err);
-                        setError(err.message || '保存失败，请重试');
-                      } finally {
-                        setSaving(false);
-                      }
+                    className="dl-order-actions__save"
+                    onClick={() => {
+                      setShowOrderOptionsPanel(false);
+                      setShowSaveCartModal(true);
                     }}
-                    disabled={saving || !saveDesignName.trim() || !saveEmail.trim() || !draft?.id}
                   >
-                    {saving ? 'Saving...' : 'Save & Add to Cart'}
+                    Save & Continue Designing
                   </button>
-                </div>
-
-                {/* 右侧：Ship to Everyone */}
-                <div className="dl-ship-everyone">
-                  <div className="dl-ship-everyone__badge">SHIP TO EVERYONE</div>
-                  <div className="dl-ship-everyone__logo">
-                    <Image src="/assets/custom-ink-logo.png" alt="Custom Ink" width={120} height={120} />
-                  </div>
-                  <h3 className="dl-ship-everyone__title">Get your gear where it needs to go</h3>
-                  <p className="dl-ship-everyone__text">
-                    Ship to several locations or directly to everyone in your group. Just choose ship to multiple addresses in your cart.
-                  </p>
+                  <button
+                    type="button"
+                    className="dl-order-actions__add-cart"
+                    onClick={() => {
+                      setShowOrderOptionsPanel(false);
+                      setShowSaveCartModal(true);
+                    }}
+                  >
+                    Add to Cart
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 保留原有的inspector面板用于功能 */}
-      <aside className="lab__inspector" aria-label="产品信息" style={{ display: 'none' }}>
+        {/* [2025-01-27 23:45:00] Save & Add to Cart 模态框 */}
+        {showSaveCartModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowSaveCartModal(false)}>
+            <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <button type="button" className="dl-modal__back" onClick={() => {
+                  setShowSaveCartModal(false);
+                  setShowOrderOptionsPanel(true);
+                }}>←</button>
+                <h2 className="dl-modal__title">Save & Add to Cart</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowSaveCartModal(false)}>×</button>
+              </div>
+              <div className="dl-modal__body">
+                <div className="dl-save-cart-content">
+                  {/* 左侧：表单 */}
+                  <div className="dl-save-cart-form">
+                    <h3 className="dl-save-cart-form__title">Save & Add to Cart</h3>
+                    <p className="dl-save-cart-form__subtitle">Save a final version of your design before you add to cart.</p>
+
+                    <div className="dl-save-cart-field">
+                      <label className="dl-save-cart-field__label">Design Name</label>
+                      <input
+                        type="text"
+                        className="dl-save-cart-field__input"
+                        placeholder="Design Name"
+                        value={saveDesignName}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.length <= 25) {
+                            setSaveDesignName(value);
+                          }
+                        }}
+                        maxLength={25}
+                      />
+                      <p className="dl-save-cart-field__hint">
+                        25 characters max including @ # $ % & - _ [ ] ( )
+                      </p>
+                    </div>
+
+                    <div className="dl-save-cart-field">
+                      <label className="dl-save-cart-field__label">Email</label>
+                      <input
+                        type="email"
+                        className="dl-save-cart-field__input"
+                        placeholder="Email"
+                        value={saveEmail}
+                        onChange={(e) => setSaveEmail(e.target.value)}
+                      />
+                    </div>
+
+                    <p className="dl-save-cart-terms">
+                      By clicking &apos;Save Design&apos;, I agree to the{' '}
+                      <Link href="/terms" className="dl-save-cart-terms__link">terms of service</Link>
+                      {' '}and{' '}
+                      <Link href="/privacy" className="dl-save-cart-terms__link">Privacy Policy</Link>.
+                    </p>
+
+                    <button
+                      type="button"
+                      className="dl-save-cart-btn"
+                      onClick={async () => {
+                        if (!saveDesignName.trim() || !saveEmail.trim()) {
+                          setError('Please fill in all required fields');
+                          return;
+                        }
+                        if (!draft?.id) {
+                          setError('Design draft not found. Please create a design first.');
+                          return;
+                        }
+                        if (!draft.productVariantId) {
+                          setError('Product variant not found. Please select a product.');
+                          return;
+                        }
+                        try {
+                          setSaving(true);
+                          setError(null);
+
+                          // 1. 更新设计草稿（保存名称和状态）
+                          await designLabApi.updateDraft(draft.id, {
+                            name: saveDesignName.trim(),
+                            // status: 'saved', // Removed as it's not in the type definition
+                            summary: `Design saved by ${saveEmail}`,
+                          });
+
+                          // 2. 添加到购物车（使用 designId 和 variantId）
+                          const { cartApi } = await import('@/lib/api');
+                          await cartApi.addItem(draft.productVariantId, quantity, draft.id);
+
+                          setShowSaveCartModal(false);
+                          // 跳转到购物车页面
+                          router.push('/cart');
+                        } catch (err: any) {
+                          console.error('Error saving design and adding to cart:', err);
+                          setError(err.message || '保存失败，请重试');
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      disabled={saving || !saveDesignName.trim() || !saveEmail.trim() || !draft?.id}
+                    >
+                      {saving ? 'Saving...' : 'Save & Add to Cart'}
+                    </button>
+                  </div>
+
+                  {/* 右侧：Ship to Everyone */}
+                  <div className="dl-ship-everyone">
+                    <div className="dl-ship-everyone__badge">SHIP TO EVERYONE</div>
+                    <div className="dl-ship-everyone__logo">
+                      <Image src="/assets/custom-ink-logo.png" alt="Custom Ink" width={120} height={120} />
+                    </div>
+                    <h3 className="dl-ship-everyone__title">Get your gear where it needs to go</h3>
+                    <p className="dl-ship-everyone__text">
+                      Ship to several locations or directly to everyone in your group. Just choose ship to multiple addresses in your cart.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 保留原有的inspector面板用于功能 */}
+        <aside className="lab__inspector" aria-label="产品信息" style={{ display: 'none' }}>
           <div className="inspector__card">
             <div className="inspector__product">
               <Image src="/assets/categories/cat-sweatshirt.png" alt="当前产品" width={56} height={56} />
@@ -4396,7 +4539,7 @@ const DesignLabClient = () => {
               ))}
             </div>
           </div>
-          
+
           {/* [2025-01-27 21:55:00] 设计模板库 */}
           <div className="inspector__section">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -4689,7 +4832,7 @@ const DesignLabClient = () => {
               </div>
             )}
           </div>
-          
+
           {/* [2025-01-27 21:55:00] 设计评论面板 */}
           {draft && (
             <div className="inspector__section">
@@ -4822,7 +4965,7 @@ const DesignLabClient = () => {
               )}
             </div>
           )}
-          
+
           <details open>
             <summary>尺码 & 版型</summary>
             <div className="panel">

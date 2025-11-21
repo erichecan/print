@@ -12,16 +12,16 @@
   const devicePixelRatio = window.devicePixelRatio || 1;
 
   // [2025-11-19 10:20:00] 初始化画布
-  function initCanvas(canvasElement) {
+  function initCanvas(canvasElementParam) {
     if (!window.fabric) {
       console.error('[CanvasManager] Fabric.js not loaded');
       return false;
     }
 
-    canvas = new window.fabric.Canvas(canvasElement, {
+    canvas = new window.fabric.Canvas(canvasElementParam, {
       width: CANVAS_WIDTH,
       height: CANVAS_HEIGHT,
-      backgroundColor: '#f5f5f5',
+      backgroundColor: 'transparent', // [2025-11-21 11:30:00] 改为透明，不遮挡产品图片
       preserveObjectStacking: true,
       selection: true,
       stateful: true
@@ -29,11 +29,59 @@
 
     // [2025-11-19 10:20:00] 高 DPI 适配
     const scale = devicePixelRatio;
-    canvas.setDimensions({
-      width: CANVAS_WIDTH * scale,
-      height: CANVAS_HEIGHT * scale
-    }, { cssOnly: true });
-    canvas.setZoom(scale);
+    
+    // [2025-11-21 12:40:00] 设置画布实际尺寸（像素尺寸）和 CSS 尺寸
+    // 实际尺寸 = 逻辑尺寸 * devicePixelRatio（用于高 DPI 渲染）
+    // CSS 尺寸 = 逻辑尺寸（用于布局）
+    canvas.setWidth(CANVAS_WIDTH * scale);
+    canvas.setHeight(CANVAS_HEIGHT * scale);
+    
+    // [2025-11-21 12:40:00] 设置 CSS 尺寸为逻辑尺寸
+    const canvasElement = canvas.getElement();
+    if (canvasElement) {
+      canvasElement.style.width = CANVAS_WIDTH + 'px';
+      canvasElement.style.height = CANVAS_HEIGHT + 'px';
+    }
+    
+    // [2025-11-21 12:50:00] 重要：不要设置 zoom，因为这会改变坐标系统
+    // 高 DPI 适配应该通过 setWidth/setHeight 和 CSS 来实现，而不是 zoom
+    // canvas.setZoom(scale); // 注释掉，避免坐标系统混乱
+    
+    // [2025-11-21 12:50:00] viewportTransform 应该初始化为单位矩阵，然后通过 CSS 处理高 DPI
+    // 或者，如果需要 zoom，应该设置为 1，然后通过其他方式处理高 DPI
+    canvas.setZoom(1); // [2025-11-21 12:50:00] 设置为 1，使用逻辑坐标系统
+    
+    // [2025-11-21 12:50:00] viewportTransform 初始化为单位矩阵 [1, 0, 0, 1, 0, 0]
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    
+    // [2025-11-21 12:50:00] 验证尺寸设置
+    const actualWidth = canvas.width;
+    const actualHeight = canvas.height;
+    const expectedWidth = CANVAS_WIDTH;
+    const expectedHeight = CANVAS_HEIGHT;
+    
+    console.log('[CanvasManager] ===== CANVAS INITIALIZATION =====');
+    console.log('[CanvasManager] Logical size:', 'width=' + CANVAS_WIDTH + ', height=' + CANVAS_HEIGHT);
+    console.log('[CanvasManager] Device pixel ratio:', devicePixelRatio);
+    console.log('[CanvasManager] Expected canvas size:', 'width=' + expectedWidth + ', height=' + expectedHeight);
+    console.log('[CanvasManager] Actual canvas size:', 'width=' + actualWidth + ', height=' + actualHeight);
+    console.log('[CanvasManager] Size match:', (actualWidth === expectedWidth && actualHeight === expectedHeight) ? 'YES ✓' : 'NO ✗');
+    console.log('[CanvasManager] CSS size:', 'width=' + (canvasElement?.style.width || 'N/A') + ', height=' + (canvasElement?.style.height || 'N/A'));
+    console.log('[CanvasManager] Canvas zoom:', canvas.getZoom(), '(should be 1)');
+    console.log('[CanvasManager] ViewportTransform:', canvas.viewportTransform, '(should be [1,0,0,1,0,0])');
+    console.log('[CanvasManager] ===================================');
+    
+    // [2025-11-21 12:50:00] 如果尺寸不匹配，强制设置
+    if (actualWidth !== expectedWidth || actualHeight !== expectedHeight) {
+      console.warn('[CanvasManager] Canvas size mismatch! Forcing correct size...');
+      canvas.setWidth(expectedWidth);
+      canvas.setHeight(expectedHeight);
+      if (canvasElement) {
+        canvasElement.style.width = CANVAS_WIDTH + 'px';
+        canvasElement.style.height = CANVAS_HEIGHT + 'px';
+      }
+      console.log('[CanvasManager] After force set:', 'width=' + canvas.width + ', height=' + canvas.height);
+    }
 
     // [2025-11-19 10:20:00] 设置对象默认属性
     window.fabric.Object.prototype.set({
@@ -97,35 +145,297 @@
     return true;
   }
 
-  // [2025-11-19 10:20:00] 加载当前面的背景图（导出为全局函数）
+  // [2025-11-21 11:20:00] 加载当前面的背景图（导出为全局函数）
   function loadBackgroundForCurrentSide() {
+    if (!canvas) {
+      console.warn('[CanvasManager] Cannot load background - canvas not initialized');
+      return;
+    }
     const store = window.DesignLabStore.getStore();
     const side = store.currentSide;
     const imageUrl = store.product.baseImages[side];
+
+    console.log('[CanvasManager] loadBackgroundForCurrentSide called:', {
+      side: side,
+      imageUrl: imageUrl,
+      hasBaseImages: !!store.product.baseImages,
+      allBaseImages: store.product.baseImages
+    });
+
+    if (!imageUrl) {
+      console.warn('[CanvasManager] No image URL for side:', side);
+      return;
+    }
 
     // [2025-11-19 10:20:00] 移除旧背景
     if (backgroundImage) {
       canvas.remove(backgroundImage);
       backgroundImage = null;
+      console.log('[CanvasManager] Removed old background image');
     }
 
-    // [2025-11-19 10:20:00] 加载新背景
-    window.fabric.Image.fromURL(imageUrl, (img) => {
-      img.set({
-        left: 0,
-        top: 0,
+    // [2025-11-21 11:40:00] 使用原生 Image 对象加载，更可靠
+    console.log('[CanvasManager] Loading image from URL:', imageUrl);
+    console.log('[CanvasManager] Canvas state before loading:', {
+      width: canvas.width,
+      height: canvas.height,
+      backgroundColor: canvas.backgroundColor
+    });
+    
+    // [2025-11-21 11:40:00] 先使用原生 Image 对象加载图片
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    // [2025-11-21 11:40:00] 设置超时
+    let timeoutId = setTimeout(() => {
+      console.error('[CanvasManager] Image load timeout after 15 seconds');
+      img.onload = null;
+      img.onerror = null;
+    }, 15000);
+    
+    img.onload = () => {
+      clearTimeout(timeoutId);
+      console.log('[CanvasManager] Native image loaded:', {
+        width: img.width,
+        height: img.height,
+        url: imageUrl
+      });
+      
+      // [2025-11-21 12:00:00] 将原生 Image 转换为 Fabric Image
+      // 使用 left/top origin 更可靠，避免坐标计算问题
+      const fabricImg = new window.fabric.Image(img, {
         selectable: false,
         evented: false,
         excludeFromExport: true,
-        name: 'background'
+        name: 'background',
+        originX: 'left',
+        originY: 'top'
       });
-      img.scaleToWidth(CANVAS_WIDTH);
-      img.scaleToHeight(CANVAS_HEIGHT);
-      canvas.add(img);
-      canvas.sendToBack(img);
-      backgroundImage = img;
+      
+      // [2025-11-21 12:00:00] 参考目标网站，产品图片应该占据画布中间约 60-70% 的区域
+      // 而不是填满整个画布，这样更符合实际产品展示效果
+      const targetWidth = CANVAS_WIDTH * 0.65; // 画布宽度的 65%
+      const targetHeight = CANVAS_HEIGHT * 0.75; // 画布高度的 75%
+      
+      // [2025-11-21 12:00:00] 计算缩放比例，保持宽高比，适应目标区域
+      const scaleX = targetWidth / fabricImg.width;
+      const scaleY = targetHeight / fabricImg.height;
+      const scale = Math.min(scaleX, scaleY);
+      fabricImg.scale(scale);
+      
+      // [2025-11-21 12:30:00] 居中图片（使用 left/top origin，计算左上角位置）
+      // 注意：Fabric.js 的坐标系统是基于逻辑尺寸的，不需要考虑 devicePixelRatio
+      const scaledWidth = fabricImg.width * scale;
+      const scaledHeight = fabricImg.height * scale;
+      const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
+      const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
+      
+      console.log('[CanvasManager] ===== IMAGE POSITIONING CALCULATION =====');
+      console.log('[CanvasManager] Original image size:', 'width=' + img.width + ', height=' + img.height);
+      console.log('[CanvasManager] Fabric image size:', 'width=' + fabricImg.width + ', height=' + fabricImg.height);
+      console.log('[CanvasManager] Scale factor:', scale);
+      console.log('[CanvasManager] Scaled size:', 'width=' + scaledWidth.toFixed(2) + ', height=' + scaledHeight.toFixed(2));
+      console.log('[CanvasManager] Canvas size (logical):', 'width=' + CANVAS_WIDTH + ', height=' + CANVAS_HEIGHT);
+      console.log('[CanvasManager] Canvas center:', 'x=' + (CANVAS_WIDTH / 2) + ', y=' + (CANVAS_HEIGHT / 2));
+      console.log('[CanvasManager] Calculated position:', 'left=' + left.toFixed(2) + ', top=' + top.toFixed(2));
+      console.log('[CanvasManager] Expected center check:', 'left + width/2 = ' + (left + scaledWidth / 2).toFixed(2) + ' (should be ' + (CANVAS_WIDTH / 2) + ')');
+      console.log('[CanvasManager] Expected center check:', 'top + height/2 = ' + (top + scaledHeight / 2).toFixed(2) + ' (should be ' + (CANVAS_HEIGHT / 2) + ')');
+      
+      fabricImg.set({
+        left: left,
+        top: top
+      });
+      
+      // [2025-11-21 12:20:00] 确保图片坐标已更新
+      fabricImg.setCoords();
+      
+      // [2025-11-21 12:30:00] 验证实际设置的位置
+      console.log('[CanvasManager] Actual image position after set:', 'left=' + fabricImg.left + ', top=' + fabricImg.top);
+      console.log('[CanvasManager] Image bounds:', {
+        left: fabricImg.left,
+        top: fabricImg.top,
+        right: fabricImg.left + scaledWidth,
+        bottom: fabricImg.top + scaledHeight,
+        centerX: fabricImg.left + scaledWidth / 2,
+        centerY: fabricImg.top + scaledHeight / 2
+      });
+      console.log('[CanvasManager] Canvas actual size:', 'width=' + canvas.width + ', height=' + canvas.height);
+      console.log('[CanvasManager] Canvas zoom:', canvas.getZoom());
+      console.log('[CanvasManager] Device pixel ratio:', devicePixelRatio);
+      console.log('[CanvasManager] ===========================================');
+      
+      // [2025-11-19 10:20:00] 移除旧背景
+      if (backgroundImage) {
+        canvas.remove(backgroundImage);
+        backgroundImage = null;
+      }
+      
+      // [2025-11-21 11:50:00] 先添加到画布
+      canvas.add(fabricImg);
+      
+      // [2025-11-21 11:50:00] 移动到最底层（兼容不同版本的 Fabric.js）
+      try {
+        if (typeof canvas.sendToBack === 'function') {
+          canvas.sendToBack(fabricImg);
+        } else if (typeof canvas.sendObjectToBack === 'function') {
+          canvas.sendObjectToBack(fabricImg);
+        } else if (typeof canvas.moveTo === 'function') {
+          canvas.moveTo(fabricImg, 0);
+        } else {
+          // [2025-11-21 11:50:00] 如果都没有，手动移动到最底层
+          const objects = canvas.getObjects();
+          const index = objects.indexOf(fabricImg);
+          if (index > 0) {
+            objects.splice(index, 1);
+            objects.unshift(fabricImg);
+            canvas.renderAll();
+          }
+        }
+      } catch (e) {
+        console.warn('[CanvasManager] Failed to send image to back:', e);
+        // 即使失败也继续，因为图片已经添加了
+      }
+      
+      backgroundImage = fabricImg;
+      
+      // [2025-11-21 12:30:00] 再次验证位置（在添加到画布后）
+      fabricImg.setCoords();
+      const bounds = fabricImg.getBoundingRect();
+      
+      // [2025-11-21 12:45:00] 获取画布在屏幕上的实际位置和 viewportTransform
+      const canvasElement = canvas.getElement();
+      const canvasRect = canvasElement ? canvasElement.getBoundingClientRect() : null;
+      const vpt = canvas.viewportTransform;
+      
+      // [2025-11-21 12:45:00] 计算图片在屏幕上的实际位置（考虑 viewportTransform）
+      // viewportTransform = [scaleX, skewY, skewX, scaleY, translateX, translateY]
+      // 屏幕坐标 = (逻辑坐标 * scale) + translate
+      const imageScreenCenterX = (bounds.left + bounds.width / 2) * vpt[0] + vpt[4];
+      const imageScreenCenterY = (bounds.top + bounds.height / 2) * vpt[3] + vpt[5];
+      const canvasScreenCenterX = (CANVAS_WIDTH / 2) * vpt[0] + vpt[4];
+      const canvasScreenCenterY = (CANVAS_HEIGHT / 2) * vpt[3] + vpt[5];
+      
+      console.log('[CanvasManager] ===== AFTER ADDING TO CANVAS =====');
+      console.log('[CanvasManager] Image bounding rect (logical coords):', {
+        left: bounds.left.toFixed(2),
+        top: bounds.top.toFixed(2),
+        width: bounds.width.toFixed(2),
+        height: bounds.height.toFixed(2),
+        centerX: (bounds.left + bounds.width / 2).toFixed(2),
+        centerY: (bounds.top + bounds.height / 2).toFixed(2)
+      });
+      console.log('[CanvasManager] Canvas center (logical):', 'x=' + (CANVAS_WIDTH / 2) + ', y=' + (CANVAS_HEIGHT / 2));
+      console.log('[CanvasManager] Center offset (logical):', {
+        x: ((bounds.left + bounds.width / 2) - CANVAS_WIDTH / 2).toFixed(2),
+        y: ((bounds.top + bounds.height / 2) - CANVAS_HEIGHT / 2).toFixed(2)
+      });
+      console.log('[CanvasManager] ViewportTransform:', '[' + vpt.map(v => v.toFixed(2)).join(', ') + ']');
+      console.log('[CanvasManager] Image screen center:', 'x=' + imageScreenCenterX.toFixed(2) + ', y=' + imageScreenCenterY.toFixed(2));
+      console.log('[CanvasManager] Canvas screen center:', 'x=' + canvasScreenCenterX.toFixed(2) + ', y=' + canvasScreenCenterY.toFixed(2));
+      console.log('[CanvasManager] Screen center offset:', {
+        x: (imageScreenCenterX - canvasScreenCenterX).toFixed(2),
+        y: (imageScreenCenterY - canvasScreenCenterY).toFixed(2)
+      });
+      console.log('[CanvasManager] Canvas actual pixel size:', 'width=' + canvas.width + ', height=' + canvas.height);
+      console.log('[CanvasManager] Canvas CSS size:', 'width=' + (canvasElement?.style.width || 'N/A') + ', height=' + (canvasElement?.style.height || 'N/A'));
+      console.log('[CanvasManager] Canvas element rect:', canvasRect ? {
+        width: canvasRect.width.toFixed(2),
+        height: canvasRect.height.toFixed(2),
+        left: canvasRect.left.toFixed(2),
+        top: canvasRect.top.toFixed(2),
+        centerX: (canvasRect.left + canvasRect.width / 2).toFixed(2),
+        centerY: (canvasRect.top + canvasRect.height / 2).toFixed(2)
+      } : 'N/A');
+      console.log('[CanvasManager] Canvas zoom:', canvas.getZoom());
+      console.log('[CanvasManager] Device pixel ratio:', devicePixelRatio);
+      
+      // [2025-11-21 12:45:00] 验证：逻辑坐标和屏幕坐标
+      const logicalCenterX = CANVAS_WIDTH / 2;
+      const logicalCenterY = CANVAS_HEIGHT / 2;
+      const imageLogicalCenterX = bounds.left + bounds.width / 2;
+      const imageLogicalCenterY = bounds.top + bounds.height / 2;
+      const logicalMatch = (Math.abs(imageLogicalCenterX - logicalCenterX) < 0.01 && Math.abs(imageLogicalCenterY - logicalCenterY) < 0.01);
+      const screenMatch = (Math.abs(imageScreenCenterX - canvasScreenCenterX) < 1 && Math.abs(imageScreenCenterY - canvasScreenCenterY) < 1);
+      
+      console.log('[CanvasManager] Position verification:', {
+        logicalMatch: logicalMatch ? 'YES ✓' : 'NO ✗',
+        screenMatch: screenMatch ? 'YES ✓' : 'NO ✗',
+        logicalCenter: { x: logicalCenterX, y: logicalCenterY },
+        imageLogicalCenter: { x: imageLogicalCenterX.toFixed(2), y: imageLogicalCenterY.toFixed(2) }
+      });
+      console.log('[CanvasManager] ===================================');
+      
       canvas.renderAll();
-    }, { crossOrigin: 'anonymous' });
+    };
+    
+    img.onerror = (error) => {
+      clearTimeout(timeoutId);
+      console.error('[CanvasManager] Failed to load background image:', error);
+      console.error('[CanvasManager] Image URL:', imageUrl);
+      console.error('[CanvasManager] This might be a CORS issue or invalid URL');
+      
+      // [2025-11-21 11:40:00] 尝试不使用 CORS 重新加载
+      console.log('[CanvasManager] Retrying without CORS...');
+      const imgRetry = new Image();
+      imgRetry.onload = () => {
+        const fabricImg = new window.fabric.Image(imgRetry, {
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          name: 'background',
+          originX: 'left',
+          originY: 'top'
+        });
+        
+        // [2025-11-21 12:00:00] 使用相同的缩放逻辑
+        const targetWidth = CANVAS_WIDTH * 0.65;
+        const targetHeight = CANVAS_HEIGHT * 0.75;
+        const scaleX = targetWidth / fabricImg.width;
+        const scaleY = targetHeight / fabricImg.height;
+        const scale = Math.min(scaleX, scaleY);
+        fabricImg.scale(scale);
+        
+        // [2025-11-21 12:00:00] 居中图片（使用 left/top origin）
+        const scaledWidth = fabricImg.width * scale;
+        const scaledHeight = fabricImg.height * scale;
+        const left = (CANVAS_WIDTH - scaledWidth) / 2;
+        const top = (CANVAS_HEIGHT - scaledHeight) / 2;
+        
+        fabricImg.set({
+          left: left,
+          top: top
+        });
+        
+        if (backgroundImage) {
+          canvas.remove(backgroundImage);
+        }
+        canvas.add(fabricImg);
+        
+        // [2025-11-21 11:50:00] 兼容不同版本的 Fabric.js
+        try {
+          if (typeof canvas.sendToBack === 'function') {
+            canvas.sendToBack(fabricImg);
+          } else if (typeof canvas.sendObjectToBack === 'function') {
+            canvas.sendObjectToBack(fabricImg);
+          } else if (typeof canvas.moveTo === 'function') {
+            canvas.moveTo(fabricImg, 0);
+          }
+        } catch (e) {
+          console.warn('[CanvasManager] Failed to send image to back (retry):', e);
+        }
+        
+        backgroundImage = fabricImg;
+        canvas.renderAll();
+        console.log('[CanvasManager] Image loaded successfully without CORS');
+      };
+      imgRetry.onerror = () => {
+        console.error('[CanvasManager] Retry also failed. Image URL may be invalid or blocked.');
+      };
+      imgRetry.src = imageUrl;
+    };
+    
+    // [2025-11-21 11:40:00] 开始加载图片
+    img.src = imageUrl;
   }
 
   // [2025-11-19 11:30:00] 切换画布面（保存当前面 canvas.toDatalessJSON() + 缩略图 toDataURL({multiplier:0.2})）
@@ -219,7 +529,18 @@
         // [2025-11-19 10:55:00] 恢复背景
         if (bg) {
           canvas.add(bg);
-          canvas.sendToBack(bg);
+          // [2025-11-21 11:50:00] 兼容不同版本的 Fabric.js
+          try {
+            if (typeof canvas.sendToBack === 'function') {
+              canvas.sendToBack(bg);
+            } else if (typeof canvas.sendObjectToBack === 'function') {
+              canvas.sendObjectToBack(bg);
+            } else if (typeof canvas.moveTo === 'function') {
+              canvas.moveTo(bg, 0);
+            }
+          } catch (e) {
+            console.warn('[CanvasManager] Failed to send background to back:', e);
+          }
           backgroundImage = bg;
         }
         canvas.renderAll();

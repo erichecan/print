@@ -34,14 +34,14 @@ export default function CartPage() {
 
   const recommendedProducts = useMemo(
     () => [
-      { id: 'rec-1', name: 'Gildan Midweight 50/50 Pullover Hoodie', image: '/assets/cat-sweatshirt.webp' },
-      { id: 'rec-2', name: "Gildan Women's Softstyle V-Neck T-shirt", image: '/assets/cat-tshirt.webp' },
-      { id: 'rec-3', name: 'Gildan Ultra Cotton Long Sleeve Jersey T-shirt', image: '/assets/cat-tshirt.webp' },
-      { id: 'rec-4', name: 'Gildan Softstyle Long Sleeve Jersey T-shirt', image: '/assets/cat-tshirt.webp' },
-      { id: 'rec-5', name: 'Gildan Softstyle Hoodie', image: '/assets/cat-sweatshirt.webp' },
-      { id: 'rec-6', name: 'Gildan Women’s Slim Fit Softstyle Jersey', image: '/assets/cat-tshirt.webp' },
-      { id: 'rec-7', name: 'Gildan Youth Softstyle Jersey T-shirt', image: '/assets/cat-tshirt.webp' },
-      { id: 'rec-8', name: 'Gildan Softstyle Eco Crewneck Sweatshirt', image: '/assets/cat-sweatshirt.webp' },
+      { id: 'rec-1', name: 'Gildan Midweight 50/50 Pullover Hoodie', image: '/assets/categories/cat-sweatshirt.png' },
+      { id: 'rec-2', name: "Gildan Women's Softstyle V-Neck T-shirt", image: '/assets/categories/cat-tshirt.png' },
+      { id: 'rec-3', name: 'Gildan Ultra Cotton Long Sleeve Jersey T-shirt', image: '/assets/categories/cat-tshirt.png' },
+      { id: 'rec-4', name: 'Gildan Softstyle Long Sleeve Jersey T-shirt', image: '/assets/categories/cat-tshirt.png' },
+      { id: 'rec-5', name: 'Gildan Softstyle Hoodie', image: '/assets/categories/cat-sweatshirt.png' },
+      { id: 'rec-6', name: 'Gildan Women’s Slim Fit Softstyle Jersey', image: '/assets/categories/cat-tshirt.png' },
+      { id: 'rec-7', name: 'Gildan Youth Softstyle Jersey T-shirt', image: '/assets/categories/cat-tshirt.png' },
+      { id: 'rec-8', name: 'Gildan Softstyle Eco Crewneck Sweatshirt', image: '/assets/categories/cat-sweatshirt.png' },
     ],
     []
   );
@@ -67,9 +67,9 @@ export default function CartPage() {
   const handleRemove = async (itemId: string) => {
     const item = cart?.items.find(i => i.id === itemId);
     const confirmMessage = `Remove "${item?.productName || 'this item'}" from cart?`;
-    
+
     if (!window.confirm(confirmMessage)) return;
-    
+
     setUpdating(itemId);
     try {
       await removeItem(itemId);
@@ -153,10 +153,10 @@ export default function CartPage() {
             <li aria-current="page">Shopping Cart</li>
           </ol>
         </nav>
-          <div className="cart__grid">
-            <div className="cart__items">
-              <h1>Shopping Cart</h1>
-              <div className="no-reviews cart-empty">
+        <div className="cart__grid">
+          <div className="cart__items">
+            <h1>Shopping Cart</h1>
+            <div className="no-reviews cart-empty">
               <p>Your cart is empty.</p>
               <Link href="/products" className="btn btn--outline">
                 Continue Shopping

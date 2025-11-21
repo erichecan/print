@@ -242,6 +242,14 @@
       // [2025-11-19 11:30:00] 初始化产品信息显示
       updateProductInfo();
 
+      // [2025-11-21 11:30:00] 确保加载背景图
+      if (window.DesignLabCanvas && window.DesignLabCanvas.loadBackgroundForCurrentSide) {
+        console.log('[App] Loading background image after initialization');
+        setTimeout(() => {
+          window.DesignLabCanvas.loadBackgroundForCurrentSide();
+        }, 200);
+      }
+
       console.log('[App] Design Lab initialized');
     });
   }

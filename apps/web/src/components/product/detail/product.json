@@ -1,0 +1,333 @@
+{
+  "id": "prod-001",
+  "title": "Tag, You're It Oversized T-Shirt",
+  "slug": "tag-youre-it-oversized-tee",
+  "artist": {
+    "name": "Placeholder Artist Name",
+    "slug": "placeholder-artist",
+    "avatar": "https://picsum.photos/seed/artist/64/64",
+    "designCount": 100,
+    "shopUrl": "/artists/placeholder-artist"
+  },
+  "price": {
+    "original": 45.50,
+    "sale": 34.13,
+    "currency": "CAD",
+    "discountPercent": 25,
+    "endsSoon": true,
+    "endsSoonText": "25% off ends soon"
+  },
+  "style": {
+    "name": "Oversized T-Shirt",
+    "description": "Heavyweight tee, unisex fit",
+    "options": [
+      {
+        "value": "oversized-tee",
+        "label": "Oversized T-Shirt",
+        "description": "Heavyweight tee, unisex fit"
+      },
+      {
+        "value": "classic-tee",
+        "label": "Classic T-Shirt",
+        "description": "Standard fit, 100% cotton"
+      },
+      {
+        "value": "v-neck",
+        "label": "V-Neck T-Shirt",
+        "description": "Classic v-neck style"
+      }
+    ]
+  },
+  "colors": [
+    {
+      "name": "Navy",
+      "hex": "#001f3f",
+      "available": true,
+      "imageUrl": "https://picsum.photos/seed/navy/400/500"
+    },
+    {
+      "name": "Black",
+      "hex": "#000000",
+      "available": true,
+      "imageUrl": "https://picsum.photos/seed/black/400/500"
+    },
+    {
+      "name": "White",
+      "hex": "#FFFFFF",
+      "available": true,
+      "imageUrl": "https://picsum.photos/seed/white/400/500"
+    },
+    {
+      "name": "Gray",
+      "hex": "#808080",
+      "available": true,
+      "imageUrl": "https://picsum.photos/seed/gray/400/500"
+    },
+    {
+      "name": "Red",
+      "hex": "#CC0000",
+      "available": true,
+      "imageUrl": "https://picsum.photos/seed/red/400/500"
+    },
+    {
+      "name": "Green",
+      "hex": "#00CC00",
+      "available": true,
+      "imageUrl": "https://picsum.photos/seed/green/400/500"
+    },
+    {
+      "name": "Brown",
+      "hex": "#996633",
+      "available": false,
+      "imageUrl": "https://picsum.photos/seed/brown/400/500"
+    }
+  ],
+  "sizes": [
+    { "value": "S", "label": "S", "stock": 15, "available": true },
+    { "value": "M", "label": "M", "stock": 25, "available": true },
+    { "value": "L", "label": "L", "stock": 20, "available": true },
+    { "value": "XL", "label": "XL", "stock": 18, "available": true },
+    { "value": "2XL", "label": "2XL", "stock": 12, "available": true },
+    { "value": "3XL", "label": "3XL", "stock": 0, "available": false }
+  ],
+  "printLocations": [
+    { "value": "front", "label": "Front" },
+    { "value": "back", "label": "Back" },
+    { "value": "both", "label": "Front & Back" }
+  ],
+  "images": [
+    {
+      "id": "img-001",
+      "url": "https://picsum.photos/seed/product-main/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Main view",
+      "thumbnail": "https://picsum.photos/seed/product-main/100/100"
+    },
+    {
+      "id": "img-002",
+      "url": "https://picsum.photos/seed/product-side/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Side view",
+      "thumbnail": "https://picsum.photos/seed/product-side/100/100"
+    },
+    {
+      "id": "img-003",
+      "url": "https://picsum.photos/seed/product-back/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Back view",
+      "thumbnail": "https://picsum.photos/seed/product-back/100/100"
+    },
+    {
+      "id": "img-004",
+      "url": "https://picsum.photos/seed/product-detail/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Detail view",
+      "thumbnail": "https://picsum.photos/seed/product-detail/100/100"
+    },
+    {
+      "id": "img-005",
+      "url": "https://picsum.photos/seed/product-model1/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Model view 1",
+      "thumbnail": "https://picsum.photos/seed/product-model1/100/100"
+    },
+    {
+      "id": "img-006",
+      "url": "https://picsum.photos/seed/product-model2/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Model view 2",
+      "thumbnail": "https://picsum.photos/seed/product-model2/100/100"
+    },
+    {
+      "id": "img-007",
+      "url": "https://picsum.photos/seed/product-model3/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Model view 3",
+      "thumbnail": "https://picsum.photos/seed/product-model3/100/100"
+    },
+    {
+      "id": "img-008",
+      "url": "https://picsum.photos/seed/product-model4/800/1000",
+      "alt": "Tag, You're It Oversized T-Shirt - Model view 4",
+      "thumbnail": "https://picsum.photos/seed/product-model4/100/100"
+    }
+  ],
+  "rating": {
+    "average": 4.95,
+    "count": 22,
+    "breakdown": {
+      "5": 18,
+      "4": 3,
+      "3": 1,
+      "2": 0,
+      "1": 0
+    }
+  },
+  "delivery": {
+    "estimatedDate": "by 25 November",
+    "country": "CA",
+    "countryFlag": "🇨🇦",
+    "shippingOptions": [
+      {
+        "name": "Standard",
+        "days": "7-14",
+        "price": 0,
+        "free": true
+      },
+      {
+        "name": "Express",
+        "days": "3-5",
+        "price": 9.99,
+        "free": false
+      }
+    ]
+  },
+  "returns": {
+    "policy": "Super-easy returns",
+    "url": "/returns"
+  },
+  "features": [
+    "Premium oversized crewneck in a relaxed fit",
+    "Versatile unisex silhouette for your everyday needs",
+    "Tag-free for comfort",
+    "Made from 100% combed and ring-spun cotton",
+    "Double-needle stitched for durability",
+    "Pre-shrunk fabric"
+  ],
+  "alsoAvailableOn": [
+    {
+      "id": "alt-001",
+      "type": "Hoodie",
+      "url": "https://picsum.photos/seed/hoodie/300/300",
+      "price": 45.50,
+      "salePrice": 34.13,
+      "discountPercent": 25,
+      "link": "/products/tag-youre-it-hoodie"
+    },
+    {
+      "id": "alt-002",
+      "type": "Long Sleeve",
+      "url": "https://picsum.photos/seed/longsleeve/300/300",
+      "price": 42.00,
+      "salePrice": 31.50,
+      "discountPercent": 25,
+      "link": "/products/tag-youre-it-longsleeve"
+    },
+    {
+      "id": "alt-003",
+      "type": "Tank Top",
+      "url": "https://picsum.photos/seed/tank/300/300",
+      "price": 28.00,
+      "salePrice": 21.00,
+      "discountPercent": 25,
+      "link": "/products/tag-youre-it-tank"
+    },
+    {
+      "id": "alt-004",
+      "type": "Sweatshirt",
+      "url": "https://picsum.photos/seed/sweatshirt/300/300",
+      "price": 48.00,
+      "salePrice": 36.00,
+      "discountPercent": 25,
+      "link": "/products/tag-youre-it-sweatshirt"
+    }
+  ],
+  "moreByArtist": [
+    {
+      "id": "artist-001",
+      "title": "Retro Gaming T-Shirt",
+      "url": "https://picsum.photos/seed/retro/300/300",
+      "price": 34.13,
+      "link": "/products/retro-gaming-tee"
+    },
+    {
+      "id": "artist-002",
+      "title": "Vintage Horror T-Shirt",
+      "url": "https://picsum.photos/seed/horror/300/300",
+      "price": 34.13,
+      "link": "/products/vintage-horror-tee"
+    },
+    {
+      "id": "artist-003",
+      "title": "Sci-Fi Adventure T-Shirt",
+      "url": "https://picsum.photos/seed/scifi/300/300",
+      "price": 34.13,
+      "link": "/products/scifi-adventure-tee"
+    },
+    {
+      "id": "artist-004",
+      "title": "80s Nostalgia T-Shirt",
+      "url": "https://picsum.photos/seed/80s/300/300",
+      "price": 34.13,
+      "link": "/products/80s-nostalgia-tee"
+    },
+    {
+      "id": "artist-005",
+      "title": "Comic Book Style T-Shirt",
+      "url": "https://picsum.photos/seed/comic/300/300",
+      "price": 34.13,
+      "link": "/products/comic-book-tee"
+    },
+    {
+      "id": "artist-006",
+      "title": "Pop Culture T-Shirt",
+      "url": "https://picsum.photos/seed/pop/300/300",
+      "price": 34.13,
+      "link": "/products/pop-culture-tee"
+    }
+  ],
+  "youMightLike": [
+    {
+      "id": "like-001",
+      "title": "Retro T-Shirt Collection",
+      "url": "https://picsum.photos/seed/retro2/300/300",
+      "price": 34.13,
+      "link": "/products/retro-collection-tee"
+    },
+    {
+      "id": "like-002",
+      "title": "Vintage T-Shirt Design",
+      "url": "https://picsum.photos/seed/vintage2/300/300",
+      "price": 34.13,
+      "link": "/products/vintage-design-tee"
+    },
+    {
+      "id": "like-003",
+      "title": "Horror T-Shirt Series",
+      "url": "https://picsum.photos/seed/horror2/300/300",
+      "price": 34.13,
+      "link": "/products/horror-series-tee"
+    },
+    {
+      "id": "like-004",
+      "title": "Nostalgic T-Shirt",
+      "url": "https://picsum.photos/seed/nostalgic/300/300",
+      "price": 34.13,
+      "link": "/products/nostalgic-tee"
+    },
+    {
+      "id": "like-005",
+      "title": "Classic Style T-Shirt",
+      "url": "https://picsum.photos/seed/classic/300/300",
+      "price": 34.13,
+      "link": "/products/classic-style-tee"
+    },
+    {
+      "id": "like-006",
+      "title": "Artistic T-Shirt",
+      "url": "https://picsum.photos/seed/artistic/300/300",
+      "price": 34.13,
+      "link": "/products/artistic-tee"
+    }
+  ],
+  "tags": [
+    "retro t-shirts",
+    "vintage t-shirts",
+    "horror t-shirts",
+    "nostalgic t-shirts",
+    "pop culture",
+    "80s style",
+    "comic book style",
+    "gaming t-shirts"
+  ],
+  "trending": [
+    "retro designs",
+    "vintage aesthetic",
+    "horror themes",
+    "pop culture references"
+  ]
+}
+

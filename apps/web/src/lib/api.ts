@@ -362,6 +362,20 @@ export const productsApi = {
     return api<FilterOptions>(`/products/filters/options${queryString ? `?${queryString}` : ''}`);
   },
   getBySlug: (slug: string) => api(`/products/${slug}`),
+  // [2025-11-21 11:00:00] 根据 variantId 获取产品信息（用于 Design Lab）
+  getByVariant: (variantId: string) => api<{
+    productId: string;
+    productName: string;
+    variantId: string;
+    color: string | null;
+    colors: string[];
+    baseImages: {
+      front: string;
+      back: string;
+      sleeve: string;
+    };
+    gallery: string[];
+  }>(`/products/variant/${variantId}`),
   getRelated: (slug: string, limit?: number) => {
     const query = limit ? `?limit=${limit}` : '';
     return api<{ data: Product[] }>(`/products/${slug}/related${query}`);
