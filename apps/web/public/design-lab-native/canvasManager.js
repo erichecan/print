@@ -649,18 +649,65 @@
           timestamp: new Date().toISOString()
         });
 
-        // [2025-11-19 12:00:00] 大图压缩：> 4000px 等比压至最长边 2000px
-        if (fabricImage.width > 4000 || fabricImage.height > 4000) {
-          const maxSize = 2000;
-          const scale = Math.min(maxSize / fabricImage.width, maxSize / fabricImage.height);
-          fabricImage.scale(scale);
-          console.log('[CanvasManager] 📐 Image scaled down:', {
-            originalSize: `${fabricImage.width / scale}x${fabricImage.height / scale}`,
-            scaledSize: `${fabricImage.width}x${fabricImage.height}`,
-            scale,
-            timestamp: new Date().toISOString()
-          });
-        }
+        // [2025-01-28 04:30:00] 智能缩放：确保图片适合画布大小，与画布比例相当
+        // [2025-01-28 04:35:00] 缩放比例改为 30%
+        // 画布尺寸：1000x1200，比例约 5:6
+        // 目标：图片缩放到画布的 30%，既能看清又不会太大
+        
+        const originalWidth = fabricImage.width;
+        const originalHeight = fabricImage.height;
+        
+        console.log('[CanvasManager] ===== IMAGE SCALING CALCULATION START =====', {
+          originalWidth,
+          originalHeight,
+          canvasWidth: CANVAS_WIDTH,
+          canvasHeight: CANVAS_HEIGHT,
+          timestamp: new Date().toISOString()
+        });
+        
+        // [2025-01-28 04:35:00] 计算画布的可用区域（30% 的画布大小，留边距）
+        const SCALE_RATIO = 0.3; // 30%
+        const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;  // 300px
+        const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO; // 360px
+        
+        console.log('[CanvasManager] 📐 Target size calculation:', {
+          scaleRatio: SCALE_RATIO,
+          targetMaxWidth,
+          targetMaxHeight,
+          timestamp: new Date().toISOString()
+        });
+        
+        // [2025-01-28 04:30:00] 计算缩放比例，确保图片既能完整显示，又不会超出目标区域
+        const scaleX = targetMaxWidth / originalWidth;
+        const scaleY = targetMaxHeight / originalHeight;
+        const scale = Math.min(scaleX, scaleY, 1); // 不超过原始大小，只缩小不放大
+        
+        console.log('[CanvasManager] 📐 Scale calculation:', {
+          scaleX: scaleX.toFixed(4),
+          scaleY: scaleY.toFixed(4),
+          finalScale: scale.toFixed(4),
+          willScale: scale < 1 ? 'YES (downscale)' : 'NO (keep original)',
+          timestamp: new Date().toISOString()
+        });
+        
+        // [2025-01-28 04:30:00] 应用缩放
+        fabricImage.scale(scale);
+        
+        const scaledWidth = originalWidth * scale;
+        const scaledHeight = originalHeight * scale;
+        
+        console.log('[CanvasManager] ✅ Image scaled to fit canvas:', {
+          originalSize: `${originalWidth}x${originalHeight}`,
+          scaledSize: `${scaledWidth.toFixed(2)}x${scaledHeight.toFixed(2)}`,
+          scale: scale.toFixed(4),
+          scalePercentage: `${(scale * 100).toFixed(2)}%`,
+          targetMaxSize: `${targetMaxWidth}x${targetMaxHeight}`,
+          canvasSize: `${CANVAS_WIDTH}x${CANVAS_HEIGHT}`,
+          sizeReduction: scale < 1 ? `${((1 - scale) * 100).toFixed(2)}% smaller` : 'no change',
+          timestamp: new Date().toISOString()
+        });
+        
+        console.log('[CanvasManager] ===== IMAGE SCALING CALCULATION END =====');
 
         // [2025-11-19 12:00:00] 位置居中
         const left = options.left !== undefined ? options.left : CANVAS_WIDTH / 2;
@@ -671,6 +718,7 @@
           top,
           canvasWidth: CANVAS_WIDTH,
           canvasHeight: CANVAS_HEIGHT,
+          canvasCenter: `${CANVAS_WIDTH / 2}, ${CANVAS_HEIGHT / 2}`,
           timestamp: new Date().toISOString()
         });
 
@@ -682,6 +730,18 @@
           name: `image_${Date.now()}`
         });
 
+        console.log('[CanvasManager] 📋 Image properties after setting:', {
+          left: fabricImage.left,
+          top: fabricImage.top,
+          width: fabricImage.width,
+          height: fabricImage.height,
+          scaleX: fabricImage.scaleX,
+          scaleY: fabricImage.scaleY,
+          originX: fabricImage.originX,
+          originY: fabricImage.originY,
+          timestamp: new Date().toISOString()
+        });
+
         console.log('[CanvasManager] 📋 Adding image to canvas...', {
           timestamp: new Date().toISOString()
         });
@@ -690,9 +750,25 @@
         canvas.setActiveObject(fabricImage);
         canvas.renderAll();
         
+        // [2025-01-28 04:35:00] 验证图片是否在画布内
+        const imageBounds = fabricImage.getBoundingRect();
+        const isWithinCanvas = 
+          imageBounds.left >= 0 && 
+          imageBounds.top >= 0 && 
+          imageBounds.left + imageBounds.width <= CANVAS_WIDTH &&
+          imageBounds.top + imageBounds.height <= CANVAS_HEIGHT;
+        
         console.log('[CanvasManager] ✅ Image added to canvas successfully:', {
           imageName: fabricImage.name,
           canvasObjectsCount: canvas.getObjects().length,
+          imageBounds: {
+            left: imageBounds.left.toFixed(2),
+            top: imageBounds.top.toFixed(2),
+            width: imageBounds.width.toFixed(2),
+            height: imageBounds.height.toFixed(2)
+          },
+          isWithinCanvas: isWithinCanvas ? 'YES ✅' : 'NO ⚠️ (may extend beyond canvas)',
+          canvasSize: `${CANVAS_WIDTH}x${CANVAS_HEIGHT}`,
           timestamp: new Date().toISOString()
         });
         

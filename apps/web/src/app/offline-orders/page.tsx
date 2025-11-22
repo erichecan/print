@@ -1442,7 +1442,7 @@ export default function OfflineOrdersIntakePage() {
           margin-bottom: 8px;
         }
         main {
-          max-width: 960px;
+          max-width: 1400px;
           margin: -48px auto 40px;
           padding: 0 24px 24px;
         }
@@ -1483,21 +1483,21 @@ export default function OfflineOrdersIntakePage() {
         /* [2025-01-27 18:00:00] 步骤导航栏样式 */
         .step-navigation {
           display: flex;
-          gap: 16px;
+          gap: 12px;
           padding-bottom: 24px;
           border-bottom: 2px solid #e5e7eb;
-          overflow-x: auto;
+          overflow-x: visible;
         }
         .step-nav-item {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
+          gap: 10px;
+          padding: 12px 14px;
           border-radius: 8px;
           cursor: pointer;
           transition: all 0.2s;
           flex: 1;
-          min-width: 180px;
+          min-width: 0;
         }
         .step-nav-item:hover {
           background: #f9fafb;
@@ -1535,8 +1535,9 @@ export default function OfflineOrdersIntakePage() {
           margin-bottom: 4px;
         }
         .step-nav-description {
-          font-size: 12px;
+          font-size: 11px;
           color: #6b7280;
+          line-height: 1.3;
         }
         
         /* [2025-01-27 18:00:00] 步骤内容区域样式 */
