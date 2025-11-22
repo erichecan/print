@@ -204,15 +204,77 @@
 
   // [2025-11-19 10:40:00] 处理文件上传
   function handleFileUpload(file) {
+    const timestamp = new Date().toISOString();
+    console.log('[Upload] ===== handleFileUpload CALLED =====', {
+      timestamp,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    });
+    
     if (!file.type.startsWith('image/')) {
+      console.error('[Upload] ❌ Invalid file type:', {
+        fileType: file.type,
+        timestamp
+      });
       alert('Please upload an image file');
       return;
     }
 
+    console.log('[Upload] 📋 Reading file with FileReader...', { timestamp });
     const reader = new FileReader();
     reader.onload = (e) => {
       const imageUrl = e.target.result;
-      window.DesignLabCanvas.addImage(imageUrl);
+      console.log('[Upload] ✅ File read successfully:', {
+        dataURLLength: imageUrl?.length || 0,
+        dataURLPreview: imageUrl?.substring(0, 50) + '...',
+        timestamp: new Date().toISOString()
+      });
+      
+      // [2025-01-28 00:25:00] 检查 DesignLabCanvas 是否可用
+      if (!window.DesignLabCanvas) {
+        console.error('[Upload] ❌ DesignLabCanvas is not available:', {
+          timestamp: new Date().toISOString()
+        });
+        alert('画布未初始化，请刷新页面重试');
+        return;
+      }
+      
+      if (typeof window.DesignLabCanvas.addImage !== 'function') {
+        console.error('[Upload] ❌ DesignLabCanvas.addImage is not a function:', {
+          addImageType: typeof window.DesignLabCanvas.addImage,
+          timestamp: new Date().toISOString()
+        });
+        alert('画布功能未加载，请刷新页面重试');
+        return;
+      }
+      
+      console.log('[Upload] 📋 Calling DesignLabCanvas.addImage...', {
+        imageUrlLength: imageUrl?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+      
+      try {
+        const result = window.DesignLabCanvas.addImage(imageUrl);
+        console.log('[Upload] ✅ DesignLabCanvas.addImage called successfully:', {
+          result: result !== null ? 'image object created' : 'null returned',
+          timestamp: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error('[Upload] ❌ Error calling DesignLabCanvas.addImage:', {
+          error: err.message,
+          stack: err.stack,
+          timestamp: new Date().toISOString()
+        });
+        alert('添加图片失败：' + err.message);
+      }
+    };
+    reader.onerror = (e) => {
+      console.error('[Upload] ❌ FileReader error:', {
+        error: e,
+        timestamp: new Date().toISOString()
+      });
+      alert('读取文件失败，请重试');
     };
     reader.readAsDataURL(file);
   }

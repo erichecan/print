@@ -859,14 +859,25 @@ exports.getRelatedProducts = async (req, res) => {
  * [2025-11-20 12:45:00] Provide product base images via variantId for Design Lab
  * GET /api/products/variant/:variantId
  */
+// [2025-01-27 23:00:00] 添加详细日志用于调试
 exports.getProductByVariantId = async (req, res) => {
+  const timestamp = new Date().toISOString();
   const { variantId } = req.params;
 
+  console.log('[Backend] ===== getProductByVariantId START =====', {
+    variantId,
+    timestamp,
+    url: req.url,
+    method: req.method
+  });
+
   if (!variantId) {
+    console.warn('[Backend] Missing variantId', { timestamp });
     return res.status(400).json({ error: 'variantId is required' });
   }
 
   try {
+    console.log('[Backend] Querying database for variant:', { variantId, timestamp });
     const variant = await prisma.variant.findUnique({
       where: { id: variantId },
       include: {
@@ -882,8 +893,21 @@ exports.getProductByVariantId = async (req, res) => {
     });
 
     if (!variant || !variant.product) {
+      console.warn('[Backend] Variant not found in database:', {
+        variantId,
+        variantExists: !!variant,
+        productExists: variant ? !!variant.product : false,
+        timestamp
+      });
       return res.status(404).json({ error: 'Variant not found' });
     }
+
+    console.log('[Backend] Variant found:', {
+      variantId: variant.id,
+      productId: variant.product.id,
+      productName: variant.product.name,
+      timestamp
+    });
 
     const product = variant.product;
     const optimizedImages = (product.images || [])
@@ -909,7 +933,7 @@ exports.getProductByVariantId = async (req, res) => {
       )
     );
 
-    res.json({
+    const response = {
       productId: product.id,
       productName: product.name,
       variantId: variant.id,
@@ -917,8 +941,26 @@ exports.getProductByVariantId = async (req, res) => {
       colors,
       baseImages,
       gallery: optimizedImages,
+    };
+
+    console.log('[Backend] Sending response:', {
+      productId: response.productId,
+      productName: response.productName,
+      variantId: response.variantId,
+      colorsCount: response.colors.length,
+      galleryCount: response.gallery.length,
+      timestamp
     });
+
+    console.log('[Backend] ===== getProductByVariantId SUCCESS =====', { timestamp });
+    res.json(response);
   } catch (error) {
+    console.error('[Backend] ===== getProductByVariantId ERROR =====', {
+      error: error.message,
+      stack: error.stack,
+      variantId,
+      timestamp
+    });
     logger.error('Failed to fetch product by variantId', {
       error: error.message,
       variantId,

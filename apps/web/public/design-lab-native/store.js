@@ -130,36 +130,97 @@
     return needs;
   }
 
+  // [2025-01-27 21:55:00] 增强日志记录，用于调试图片尺寸和 API 调用
   async function hydrateProductFromVariantId() {
-    console.log('[Store] hydrateProductFromVariantId called');
+    const timestamp = new Date().toISOString();
+    console.log('[Store] ===== hydrateProductFromVariantId START =====', { timestamp });
+    
     if (!needsVariantHydration()) {
-      console.log('[Store] Skipping hydration - not needed');
+      console.log('[Store] Skipping hydration - not needed', { timestamp });
       return;
     }
+    
     const variantId = store.product.variantId;
     if (!variantId) {
-      console.warn('[Store] No variantId available for hydration');
+      console.warn('[Store] No variantId available for hydration', { 
+        currentProduct: store.product,
+        timestamp 
+      });
       return;
     }
 
-    console.log('[Store] Fetching product data for variantId:', variantId);
+    console.log('[Store] Fetching product data for variantId:', {
+      variantId,
+      currentProduct: {
+        id: store.product.id,
+        name: store.product.name,
+        color: store.product.color
+      },
+      timestamp
+    });
+    
     try {
       const apiUrl = `/api/products/variant/${variantId}`;
-      console.log('[Store] API URL:', apiUrl);
+      console.log('[Store] API Request:', {
+        url: apiUrl,
+        method: 'GET',
+        timestamp
+      });
+      
+      const startTime = performance.now();
       const response = await fetch(apiUrl);
-      console.log('[Store] API response status:', response.status, response.ok);
+      const endTime = performance.now();
+      const duration = Math.round(endTime - startTime);
+      
+      console.log('[Store] API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        duration: `${duration}ms`,
+        headers: {
+          contentType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length')
+        },
+        timestamp
+      });
+      
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[Store] Failed to fetch variant payload:', response.status, errorText);
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = errorText;
+        }
+        
+        console.error('[Store] API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          url: apiUrl,
+          timestamp
+        });
         return;
       }
+      
       const data = await response.json();
-      console.log('[Store] API response data:', data);
+      console.log('[Store] API Success - Response Data:', {
+        productId: data.productId,
+        productName: data.productName,
+        variantId: data.variantId,
+        color: data.color,
+        colors: data.colors,
+        baseImages: data.baseImages,
+        galleryCount: data.gallery?.length || 0,
+        timestamp
+      });
+      
       if (!data) {
-        console.warn('[Store] API returned empty data');
+        console.warn('[Store] API returned empty data', { timestamp });
         return;
       }
 
+      const previousProduct = { ...store.product };
       store.product = {
         ...store.product,
         id: data.productId || store.product.id,
@@ -170,15 +231,25 @@
         gallery: Array.isArray(data.gallery) ? data.gallery : store.product.gallery,
       };
 
-      console.log('[Store] Updated product data:', {
-        id: store.product.id,
-        name: store.product.name,
-        baseImages: store.product.baseImages
+      console.log('[Store] Product Data Updated:', {
+        previous: {
+          id: previousProduct.id,
+          name: previousProduct.name,
+          baseImages: previousProduct.baseImages
+        },
+        current: {
+          id: store.product.id,
+          name: store.product.name,
+          color: store.product.color,
+          baseImages: store.product.baseImages,
+          galleryCount: store.product.gallery?.length || 0
+        },
+        timestamp
       });
 
       saveToStorage();
       requestVisualRefresh();
-      console.log('[Store] Hydrated product from variant API - SUCCESS');
+      console.log('[Store] ===== hydrateProductFromVariantId SUCCESS =====', { timestamp });
     } catch (e) {
       console.error('[Store] Failed to hydrate product via API:', e);
       console.error('[Store] Error details:', e.message, e.stack);

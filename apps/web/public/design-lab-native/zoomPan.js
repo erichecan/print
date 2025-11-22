@@ -105,8 +105,9 @@
     const userZoom = Math.max(0.1, Math.min(4.0, percent / 100)); // 10%-400%
     
     // [2025-11-21 12:20:00] 使用逻辑中心点
-    const CANVAS_WIDTH = 900;
-    const CANVAS_HEIGHT = 700;
+    // [2025-01-27 22:20:00] 将画布尺寸从 900x700 调整为 1000x1200
+    const CANVAS_WIDTH = 1000;
+    const CANVAS_HEIGHT = 1200;
     const center = {
       x: CANVAS_WIDTH / 2,
       y: CANVAS_HEIGHT / 2
@@ -128,8 +129,9 @@
     userZoom = Math.min(MAX_ZOOM, userZoom + ZOOM_STEP);
     
     // [2025-11-21 12:20:00] 使用逻辑中心点
-    const CANVAS_WIDTH = 900;
-    const CANVAS_HEIGHT = 700;
+    // [2025-01-27 22:20:00] 将画布尺寸从 900x700 调整为 1000x1200
+    const CANVAS_WIDTH = 1000;
+    const CANVAS_HEIGHT = 1200;
     const center = {
       x: CANVAS_WIDTH / 2,
       y: CANVAS_HEIGHT / 2
@@ -151,8 +153,9 @@
     userZoom = Math.max(MIN_ZOOM, userZoom - ZOOM_STEP);
     
     // [2025-11-21 12:20:00] 使用逻辑中心点
-    const CANVAS_WIDTH = 900;
-    const CANVAS_HEIGHT = 700;
+    // [2025-01-27 22:20:00] 将画布尺寸从 900x700 调整为 1000x1200
+    const CANVAS_WIDTH = 1000;
+    const CANVAS_HEIGHT = 1200;
     const center = {
       x: CANVAS_WIDTH / 2,
       y: CANVAS_HEIGHT / 2

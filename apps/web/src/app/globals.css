@@ -62,6 +62,12 @@ svg {
   height: auto;
 }
 
+/* [2025-01-27 22:17:00] 覆盖全局 img 样式，强制 Design Lab 图片尺寸 */
+.dl-visualization__image img,
+.dl-visualization__image .dl-visualization__img {
+  max-width: none !important; /* 覆盖全局 max-width: 100% */
+}
+
 .container {
   max-width: var(--container-max-width);
   margin-inline: auto;
@@ -4147,45 +4153,66 @@ select {
 
 /* 左侧深灰色垂直导航栏 */
 .dl-sidebar {
-  background: #2d2d44;
-  padding: 24px 12px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
+/* [2025-01-27 22:45:00] 统一按钮样式，使用标准 .btn 样式 */
 .dl-sidebar__btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px 8px;
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  border-radius: 8px;
-  color: #ffffff;
+  gap: 10px;
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #94a3b8;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 12px;
+  font-weight: 600; /* [2025-01-27 22:45:00] 统一字体粗细 */
+  backdrop-filter: blur(8px);
 }
 
 .dl-sidebar__btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dl-sidebar__btn:active {
+  transform: scale(0.98);
 }
 
 .dl-sidebar__btn.is-active {
-  background: rgba(255, 255, 255, 0.15);
-  border-left: 3px solid #0066cc;
-  padding-left: 9px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  color: #ffffff;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);
+  padding-left: 12px; /* Reset padding */
+  border-left: 1px solid rgba(59, 130, 246, 0.5); /* Reset border */
 }
 
 .dl-sidebar__icon {
-  font-size: 20px;
+  font-size: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
+  transition: transform 0.3s ease;
+}
+
+.dl-sidebar__btn:hover .dl-sidebar__icon {
+  transform: scale(1.1);
 }
 
 .dl-sidebar__icon svg {
@@ -4254,21 +4281,55 @@ select {
   margin-bottom: 16px;
 }
 
+/* [2025-01-27 23:10:00] 统一按钮样式，使用标准 .btn 样式，增强视觉效果 */
 .dl-whats-next__card {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 16px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  padding: 20px 16px;
+  background: #ffffff;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  /* [2025-01-27 23:10:00] 统一按钮样式，与其他页面保持一致 */
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.dl-whats-next__card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 31, 61, 0.05) 0%, rgba(255, 31, 61, 0.02) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
 }
 
 .dl-whats-next__card:hover {
-  background: #f3f4f6;
+  background: #ffffff;
+  border-color: var(--color-primary);
+  border-width: 2px;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 31, 61, 0.15);
+}
+
+.dl-whats-next__card:hover::before {
+  opacity: 1;
+}
+
+.dl-whats-next__card:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 6px rgba(255, 31, 61, 0.1);
 }
 
 .dl-whats-next__icon {
@@ -4431,19 +4492,60 @@ select {
   gap: 24px;
 }
 
+/* [2025-01-27 21:55:00] 调整图片容器尺寸为 1000x1200px，响应式布局 */
 .dl-visualization__image {
   position: relative;
-  width: 100%;
-  max-width: 600px;
+  width: 1000px; /* [2025-01-27 22:15:00] 固定宽度为 1000px */
+  max-width: 1000px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.dl-visualization__img {
-  width: 100%;
-  height: auto;
+/* 响应式：移动端和中等屏幕 */
+@media (max-width: 1200px) {
+  .dl-visualization__image {
+    width: 100%; /* 小屏幕上使用 100% 宽度 */
+    max-width: 100%;
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dl-visualization__image {
+    max-width: 100%;
+    padding: 0 12px;
+  }
+}
+
+/* [2025-01-27 22:17:00] 强制设置图片尺寸为 1000x1200px - 使用更具体的选择器 */
+.dl-visualization__image .dl-visualization__img,
+.dl-visualization__image img.dl-visualization__img,
+.dl-visualization__img[width="1000"] {
+  width: 1000px !important;
+  height: 1200px !important;
+  min-width: 1000px !important;
+  min-height: 1200px !important;
+  max-width: 1000px !important;
+  max-height: 1200px !important;
   border-radius: 8px;
+  object-fit: contain !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+/* 响应式：确保图片在小屏幕上也能正确显示 */
+@media (max-width: 1200px) {
+  .dl-visualization__image .dl-visualization__img,
+  .dl-visualization__image img.dl-visualization__img,
+  .dl-visualization__img[width="1000"] {
+    width: 100% !important; /* 小屏幕上使用 100% 宽度 */
+    height: auto !important; /* 保持宽高比 */
+    min-width: unset !important;
+    min-height: unset !important;
+    max-width: 100% !important;
+    max-height: none !important;
+  }
 }
 
 .dl-visualization__canvas {

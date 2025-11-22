@@ -7,8 +7,9 @@
 
   let canvas = null;
   let backgroundImage = null;
-  const CANVAS_WIDTH = 900;
-  const CANVAS_HEIGHT = 700;
+  // [2025-01-27 22:20:00] 将画布尺寸从 900x700 调整为 1000x1200
+  const CANVAS_WIDTH = 1000;
+  const CANVAS_HEIGHT = 1200;
   const devicePixelRatio = window.devicePixelRatio || 1;
 
   // [2025-11-19 10:20:00] 初始化画布
@@ -596,50 +597,159 @@
 
   // [2025-11-19 12:00:00] 添加图片对象（文件 > 4000px 等比压至最长边 2000px；添加到当前面 canvas，位置居中）
   function addImage(imageUrl, options = {}) {
-    if (!canvas) return null;
+    const timestamp = new Date().toISOString();
+    console.log('[CanvasManager] ===== addImage CALLED =====', {
+      timestamp,
+      imageUrlLength: imageUrl?.length || 0,
+      imageUrlPreview: imageUrl?.substring(0, 50) + '...',
+      canvasExists: !!canvas,
+      options
+    });
+    
+    if (!canvas) {
+      console.error('[CanvasManager] ❌ Canvas is not initialized', { timestamp });
+      return null;
+    }
 
     const fromUrlOptions = {};
     if (/^https?:/i.test(imageUrl)) {
       fromUrlOptions.crossOrigin = 'anonymous';
     }
 
-    window.fabric.Image.fromURL(imageUrl, (img) => {
-      // [2025-11-19 12:00:00] 大图压缩：> 4000px 等比压至最长边 2000px
-      if (img.width > 4000 || img.height > 4000) {
-        const maxSize = 2000;
-        const scale = Math.min(maxSize / img.width, maxSize / img.height);
-        img.scale(scale);
-      }
+    console.log('[CanvasManager] 📋 Loading image...', {
+      timestamp: new Date().toISOString(),
+      hasCrossOrigin: !!fromUrlOptions.crossOrigin,
+      imageUrlType: imageUrl.startsWith('data:') ? 'data URL' : imageUrl.startsWith('http') ? 'HTTP URL' : 'other'
+    });
 
-      // [2025-11-19 12:00:00] 位置居中
-      const left = options.left !== undefined ? options.left : CANVAS_WIDTH / 2;
-      const top = options.top !== undefined ? options.top : CANVAS_HEIGHT / 2;
+    // [2025-01-28 00:35:00] 使用原生 Image 对象加载，然后转换为 Fabric Image
+    // 这样可以更好地控制加载过程和错误处理
+    const imgElement = new Image();
+    
+    // [2025-01-28 00:35:00] 设置 crossOrigin（如果需要）
+    if (fromUrlOptions.crossOrigin) {
+      imgElement.crossOrigin = fromUrlOptions.crossOrigin;
+    }
 
-      img.set({
-        left: left,
-        top: top,
-        originX: 'center',
-        originY: 'center',
-        name: `image_${Date.now()}`
+    imgElement.onload = () => {
+      const callbackTimestamp = new Date().toISOString();
+      console.log('[CanvasManager] ✅ Native image loaded:', {
+        width: imgElement.width,
+        height: imgElement.height,
+        timestamp: callbackTimestamp
       });
 
-      canvas.add(img);
-      canvas.setActiveObject(img);
-      canvas.renderAll();
-      
-      // [2025-11-19 12:00:00] 通知图层面板
-      if (window.DesignLabLayers) {
-        window.DesignLabLayers.updateLayers();
+      try {
+        // [2025-01-28 00:35:00] 将原生 Image 转换为 Fabric Image
+        const fabricImage = new window.fabric.Image(imgElement);
+        
+        console.log('[CanvasManager] ✅ Fabric image created:', {
+          width: fabricImage.width,
+          height: fabricImage.height,
+          timestamp: new Date().toISOString()
+        });
+
+        // [2025-11-19 12:00:00] 大图压缩：> 4000px 等比压至最长边 2000px
+        if (fabricImage.width > 4000 || fabricImage.height > 4000) {
+          const maxSize = 2000;
+          const scale = Math.min(maxSize / fabricImage.width, maxSize / fabricImage.height);
+          fabricImage.scale(scale);
+          console.log('[CanvasManager] 📐 Image scaled down:', {
+            originalSize: `${fabricImage.width / scale}x${fabricImage.height / scale}`,
+            scaledSize: `${fabricImage.width}x${fabricImage.height}`,
+            scale,
+            timestamp: new Date().toISOString()
+          });
+        }
+
+        // [2025-11-19 12:00:00] 位置居中
+        const left = options.left !== undefined ? options.left : CANVAS_WIDTH / 2;
+        const top = options.top !== undefined ? options.top : CANVAS_HEIGHT / 2;
+
+        console.log('[CanvasManager] 📍 Setting image position:', {
+          left,
+          top,
+          canvasWidth: CANVAS_WIDTH,
+          canvasHeight: CANVAS_HEIGHT,
+          timestamp: new Date().toISOString()
+        });
+
+        fabricImage.set({
+          left: left,
+          top: top,
+          originX: 'center',
+          originY: 'center',
+          name: `image_${Date.now()}`
+        });
+
+        console.log('[CanvasManager] 📋 Adding image to canvas...', {
+          timestamp: new Date().toISOString()
+        });
+        
+        canvas.add(fabricImage);
+        canvas.setActiveObject(fabricImage);
+        canvas.renderAll();
+        
+        console.log('[CanvasManager] ✅ Image added to canvas successfully:', {
+          imageName: fabricImage.name,
+          canvasObjectsCount: canvas.getObjects().length,
+          timestamp: new Date().toISOString()
+        });
+        
+        // [2025-11-19 12:00:00] 通知图层面板
+        if (window.DesignLabLayers) {
+          window.DesignLabLayers.updateLayers();
+          console.log('[CanvasManager] ✅ Layers panel updated', {
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          console.warn('[CanvasManager] ⚠️ DesignLabLayers not available', {
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // [2025-11-19 12:00:00] 记录历史
+        if (window.DesignLabHistory) {
+          window.DesignLabHistory.saveState();
+          console.log('[CanvasManager] ✅ History state saved', {
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          console.warn('[CanvasManager] ⚠️ DesignLabHistory not available', {
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        const currentSide = window.DesignLabStore ? window.DesignLabStore.getCurrentSide() : 'front';
+        console.log('[CanvasManager] ===== addImage SUCCESS =====', {
+          id: fabricImage.name,
+          type: 'image',
+          side: currentSide,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        console.error('[CanvasManager] ❌ Error creating Fabric image:', {
+          error: error.message,
+          stack: error.stack,
+          timestamp: new Date().toISOString()
+        });
+        alert('创建图片对象失败：' + error.message);
       }
-      
-      // [2025-11-19 12:00:00] 记录历史
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
-      
-      const currentSide = window.DesignLabStore.getCurrentSide();
-      console.log('[CanvasManager] add:', { id: img.name, type: 'image', side: currentSide });
-    }, fromUrlOptions);
+    };
+
+    imgElement.onerror = (error) => {
+      console.error('[CanvasManager] ❌ Error loading image:', {
+        error: error,
+        imageUrl: imageUrl.substring(0, 100) + '...',
+        timestamp: new Date().toISOString()
+      });
+      alert('加载图片失败，请检查图片格式或重试');
+    };
+
+    // [2025-01-28 00:35:00] 开始加载图片
+    imgElement.src = imageUrl;
+    
+    return null; // [2025-01-28 00:25:00] 异步函数，返回 null
   }
 
   // [2025-11-19 10:20:00] 添加形状对象

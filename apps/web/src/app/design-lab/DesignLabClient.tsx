@@ -50,23 +50,42 @@ const PRODUCT_IMAGES = [
 ];
 
 // [2025-11-20 22:30:00] Art Assets
+// [2025-01-27 22:35:00] 扩展素材库，添加更多分类和素材
 const ART_ASSETS: Record<string, string[]> = {
-  'Emojis': ['😀', '😎', '😍', '🤔', '👍', '👎', '🔥', '⭐', '❤️', '🎉'],
-  'Shapes & Symbols': ['★', '●', '■', '▲', '◆', '❤', '☁', '☀', '☾', '⚡'],
-  'Sports & Games': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🎮', '🎲', '🏆'],
-  'Letters & Numbers': ['A', 'B', 'C', '1', '2', '3', '#', '&', '@', '!'],
-  'Animals': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯'],
-  'Mascots': ['🦁', '🦅', '🦈', '🐺', '🐗', '🐴', '🦄', '🐲', '🦖', '🦕'],
-  'Nature': ['🌲', '🌳', '🌴', '🌵', '🌷', '🌸', '🌹', '🌻', '🌼', '🍁'],
-  'America': ['🇺🇸', '🗽', '🦅', '🎆', '🌭', '🍔', '🍟', '⚾', '🏈', '🏀'],
+  'Emojis': ['😀', '😎', '😍', '🤔', '👍', '👎', '🔥', '⭐', '❤️', '🎉', '😂', '🥳', '🤩', '😇', '🤠', '👻', '👽', '🤖', '💩', '😺', '😸', '😹', '😻', '😼', '😽', '🙀', '😿', '😾', '🙈', '🙉', '🙊'],
+  'Shapes & Symbols': ['★', '●', '■', '▲', '◆', '❤', '☁', '☀', '☾', '⚡', '❄️', '💧', '🔥', '✨', '🌈', '☂️', '🎈', '🎁', '🎀', '🎗️', '◉', '◎', '◐', '◑', '◒', '◓', '◔', '◕', '⬤', '⬥', '⬦', '⬧', '⬨', '⬩', '⬪', '⬫', '⬬', '⬭', '⬮', '⬯'],
+  'Sports & Games': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🎮', '🎲', '🏆', '🎳', '🥊', '🥋', '⛳', '⛸️', '🎣', '🎯', '🪀', '🪁', '🧩', '🏓', '🏸', '🏒', '🏑', '🏏', '🥍', '🏹', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎵', '🎶', '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🪕', '🎻'],
+  'Letters & Numbers': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '#', '&', '@', '!', '?', '$', '%', '+', '-', '=', '*', '(', ')', '[', ']', '{', '}', '<', '>', '/', '\\', '|', '~', '`', '^', '_'],
+  'Animals': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜', '🦟', '🦗', '🕷️', '🦂', '🐢', '🐍', '🦎', '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡', '🐠', '🐟', '🐬', '🐳', '🐋', '🦈'],
+  'Mascots': ['🦁', '🦅', '🦈', '🐺', '🐗', '🐴', '🦄', '🐲', '🦖', '🦕', '🦍', '🦏', '🦛', '🐘', '🦒', '🦓', '🦌', '🐂', '🐃', '🐄', '🐎', '🐖', '🐏', '🐑', '🐐', '🐪', '🐫', '🦘', '🦡', '🐀', '🐁', '🐿️', '🦔', '🦝', '🦨', '🦦', '🦥', '🦫', '🐾'],
+  'Nature': ['🌲', '🌳', '🌴', '🌵', '🌷', '🌸', '🌹', '🌻', '🌼', '🍁', '🍂', '🍃', '🍄', '🌾', '🌿', '☘️', '🍀', '🎍', '🎋', '🍃', '🌱', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰', '🌰'],
+  'America': ['🇺🇸', '🗽', '🦅', '🎆', '🌭', '🍔', '🍟', '⚾', '🏈', '🏀', '🥧', '🥤', '🍿', '🥓', '🥞', '🧇', '🥯', '🥨', '🥐', '🥖', '🎆', '🎇', '🎊', '🎉', '🎈', '🎁', '🎀', '🎗️', '🎟️', '🎫', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎵', '🎶', '🎼', '🎹'],
+  'Food & Drink': ['🍕', '🍔', '🍟', '🌭', '🍿', '🥓', '🥚', '🍳', '🧇', '🥞', '🧈', '🍞', '🥐', '🥨', '🥯', '🥖', '🧀', '🥗', '🥙', '🥪', '🌮', '🌯', '🫔', '🥫', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱', '🥟', '🦪', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮', '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰', '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪', '🌰', '🥜', '🍯', '🥛', '🍼', '🫖', '☕️', '🍵', '🧃', '🥤', '🧋', '🍶', '🍺', '🍻', '🥂', '🍷', '🥃', '🍸', '🍹', '🧉', '🍾', '🧊'],
+  'Travel': ['✈️', '🚗', '🚕', '🚙', '🚌', '🚎', '🏎️', '🚓', '🚑', '🚒', '🚐', '🚚', '🚛', '🚜', '🏍️', '🛵', '🚲', '🛴', '🛹', '🛼', '🚂', '🚆', '🚇', '🚊', '🚉', '🚞', '🚋', '🚃', '🚟', '🚠', '🚡', '⛵', '🚤', '🛥️', '🛳️', '⛴️', '🚢', '⚓', '⛽', '🚧', '🚦', '🚥', '🗺️', '🗿', '🗽', '🗼', '🏰', '🏯', '🏟️', '🎡', '🎢', '🎠', '⛲', '⛱️', '🏖️', '🏝️', '🏜️', '🌋', '⛰️', '🏔️', '🗻', '🏕️', '⛺', '🏠', '🏡', '🏘️', '🏚️', '🏗️', '🏭', '🏢', '🏬', '🏣', '🏤', '🏥', '🏦', '🏨', '🏪', '🏫', '🏩', '💒', '🏛️', '⛪', '🕌', '🛕', '🕍', '⛩️', '🕋', '⛲', '⛺', '🌁', '🌃', '🏙️', '🌄', '🌅', '🌆', '🌇', '🌉'],
+  'Objects': ['⌚', '📱', '📲', '💻', '⌨️', '🖥️', '🖨️', '🖱️', '🖲️', '🕹️', '🗜️', '💾', '💿', '📀', '📼', '📷', '📸', '📹', '🎥', '📽️', '🎞️', '📞', '☎️', '📟', '📠', '📺', '📻', '🎙️', '🎚️', '🎛️', '⏱️', '⏲️', '⏰', '🕰️', '⌛', '⏳', '📡', '🔋', '🔌', '💡', '🔦', '🕯️', '🧯', '🛢️', '💸', '💵', '💴', '💶', '💷', '💰', '💳', '💎', '⚖️', '🪜', '🧰', '🪛', '🔧', '🔨', '⚒️', '🛠️', '⛏️', '🪚', '🔩', '⚙️', '🪤', '🧱', '⛓️', '🧲', '🔫', '💣', '🧨', '🪓', '🔪', '🗡️', '⚔️', '🛡️', '🚬', '⚰️', '🪦', '⚱️', '🏺', '🔮', '📿', '🧿', '💈', '⚗️', '🔭', '🔬', '🕳️', '🩹', '🩺', '💊', '💉', '🩸', '🧬', '🦠', '🧫', '🧪', '🌡️', '🧹', '🪠', '🧺', '🧻', '🚽', '🚿', '🛁', '🛀', '🧼', '🪥', '🪒', '🧴', '🧷', '🧹', '🧺', '🧻', '🧼', '🧽', '🧯', '🛒', '🚬'],
+  'Clothing': ['👕', '👔', '👖', '🧣', '🧤', '🧥', '🧦', '👗', '👘', '🥻', '🩱', '🩲', '🩳', '👙', '👚', '👛', '👜', '👝', '🛍️', '🎒', '👞', '👟', '🥾', '🥿', '👠', '👡', '🩰', '👢', '👑', '👒', '🎩', '🎓', '🧢', '🪖', '⛑️', '📿', '💄', '💍', '💎', '🔇', '🔈', '🔉', '🔊', '📢', '📣', '📯', '🔔', '🔕'],
+  'Activities': ['🎯', '🎲', '🎮', '🕹️', '🎰', '🎨', '🖼️', '🖌️', '🖍️', '✏️', '✒️', '🖊️', '🖋️', '🖍️', '📝', '💼', '📁', '📂', '🗂️', '📅', '📆', '🗒️', '🗓️', '📇', '📈', '📉', '📊', '📋', '📌', '📍', '📎', '🖇️', '📏', '📐', '✂️', '🗃️', '🗄️', '🗑️', '🔒', '🔓', '🔏', '🔐', '🔑', '🗝️', '🔨', '🪓', '🪚', '🔧', '🪛', '🔩', '⚙️', '🪤', '🧰', '🧲', '🪜', '🛠️', '⚒️', '⛏️', '🪚', '🔫', '💣', '🧨', '🔪', '🗡️', '⚔️', '🛡️'],
 };
 
 const DesignLabClient = () => {
+  // [2025-01-27 23:55:00] 组件函数开始执行 - 最早期的日志
+  console.log('[Upload] ========================================');
+  console.log('[Upload] ===== DesignLabClient FUNCTION CALLED =====');
+  console.log('[Upload] Timestamp:', new Date().toISOString());
+  console.log('[Upload] ========================================');
+  
   const router = useRouter();
   const params = useSearchParams();
   const paramsString = params?.toString() || '';
   const designIdParam = params?.get('designId');
   const variantIdParam = params?.get('variantId');
+  
+  console.log('[Upload] Component initialized, params:', {
+    designIdParam,
+    variantIdParam,
+    paramsString,
+    timestamp: new Date().toISOString()
+  });
 
   const canvasElementRef = useRef<HTMLCanvasElement | null>(null);
   const fabricRef = useRef<any>(null);
@@ -215,10 +234,56 @@ const DesignLabClient = () => {
   const [currentProduct, setCurrentProduct] = useState<any>(null);
   const [currentVariant, setCurrentVariant] = useState<any>(null);
 
+  // [2025-11-18 14:05:00] Hoist resolver before effects to avoid TDZ runtime errors
+  const resolveDefaultVariantId = useCallback(async (): Promise<string | null> => {
+    if (defaultVariantIdRef.current) {
+      return defaultVariantIdRef.current;
+    }
+    const fallbackVariantIdFromEnv = process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_VARIANT_ID;
+    if (fallbackVariantIdFromEnv) {
+      defaultVariantIdRef.current = fallbackVariantIdFromEnv;
+      return fallbackVariantIdFromEnv;
+    }
+    const fallbackProductSlug =
+      process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_PRODUCT_SLUG || 'gildan-softstyle-jersey-tee';
+    try {
+      const product = await productsApi.getBySlug(fallbackProductSlug) as any;
+      const variantId = product?.variants?.[0]?.id || null;
+      if (variantId) {
+        defaultVariantIdRef.current = variantId;
+        return variantId;
+      }
+    } catch (resolveError) {
+      console.error('[2025-11-15 16:22:10] resolveDefaultVariantId error:', resolveError);
+      // Don't set error here to avoid blocking the UI if we can fallback to hardcoded defaults
+    }
+    return null;
+  }, []);
+
   // [2025-11-21 11:00:00] 从 API 获取产品详情并显示主图
   useEffect(() => {
     const fetchProductDetails = async () => {
-      if (!variantIdParam) {
+      let targetVariantId = variantIdParam;
+
+      if (!targetVariantId) {
+        // Try to get default variant ID
+        targetVariantId = await resolveDefaultVariantId();
+      }
+
+      if (!targetVariantId) {
+        // Fallback to a hardcoded default if everything fails, so the page doesn't crash or show empty
+        setCurrentProduct({
+          id: 'default-product',
+          name: 'Gildan Softstyle Jersey T-shirt',
+          image: '/assets/categories/cat-tshirt.png'
+        });
+        setCurrentVariant({
+          id: 'default-variant',
+          color: 'Heather Dark Grey',
+          image: '/assets/categories/cat-tshirt.png',
+          baseImages: { front: '/assets/categories/cat-tshirt.png' },
+          gallery: ['/assets/categories/cat-tshirt.png']
+        });
         setLoading(false);
         return;
       }
@@ -226,14 +291,14 @@ const DesignLabClient = () => {
       try {
         setLoading(true);
         // [2025-11-21 11:00:00] 调用 API 获取真实的产品数据
-        const productData = await productsApi.getByVariant(variantIdParam);
+        const productData = await productsApi.getByVariant(targetVariantId);
 
         setCurrentProduct({
           id: productData.productId,
           name: productData.productName,
           image: productData.baseImages.front || productData.gallery[0] || '/assets/categories/cat-tshirt.png'
         });
-        
+
         const productImage = productData.baseImages.front || productData.gallery[0] || '/assets/categories/cat-tshirt.png';
         console.log('[Design Lab] Product data loaded:', {
           productId: productData.productId,
@@ -242,7 +307,7 @@ const DesignLabClient = () => {
           baseImages: productData.baseImages,
           gallery: productData.gallery
         });
-        
+
         setCurrentVariant({
           id: productData.variantId,
           color: productData.color || 'White',
@@ -259,10 +324,10 @@ const DesignLabClient = () => {
         setLoading(false);
       } catch (err: any) {
         console.error('Failed to fetch product details:', err);
-        setError(err.message || 'Failed to load product details');
+        // setError(err.message || 'Failed to load product details'); // Don't block UI
         // [2025-11-21 11:00:00] 失败时使用默认图片
         setCurrentVariant({
-          id: variantIdParam,
+          id: targetVariantId,
           color: 'White',
           image: '/assets/categories/cat-tshirt.png'
         });
@@ -271,7 +336,7 @@ const DesignLabClient = () => {
     };
 
     fetchProductDetails();
-  }, [variantIdParam]);
+  }, [variantIdParam, resolveDefaultVariantId]);
 
   // [2025-11-15 16:06:02] 视图缩略图、产品配色、预设素材与推荐产品数据
   const viewOptions = useMemo(
@@ -1328,31 +1393,7 @@ const DesignLabClient = () => {
     applySnapshotToCanvas(canvas);
   }, [canvas, applySnapshotToCanvas]);
 
-  // [2025-11-18 14:05:00] Hoist resolver before effects to avoid TDZ runtime errors
-  const resolveDefaultVariantId = useCallback(async (): Promise<string | null> => {
-    if (defaultVariantIdRef.current) {
-      return defaultVariantIdRef.current;
-    }
-    const fallbackVariantIdFromEnv = process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_VARIANT_ID;
-    if (fallbackVariantIdFromEnv) {
-      defaultVariantIdRef.current = fallbackVariantIdFromEnv;
-      return fallbackVariantIdFromEnv;
-    }
-    const fallbackProductSlug =
-      process.env.NEXT_PUBLIC_DESIGN_LAB_DEFAULT_PRODUCT_SLUG || 'classic-crew-tee';
-    try {
-      const product = await productsApi.getBySlug(fallbackProductSlug) as any;
-      const variantId = product?.variants?.[0]?.id || null;
-      if (variantId) {
-        defaultVariantIdRef.current = variantId;
-        return variantId;
-      }
-    } catch (resolveError) {
-      console.error('[2025-11-15 16:22:10] resolveDefaultVariantId error:', resolveError);
-      setError('无法加载默认产品，请从商品详情页进入 Design Lab。');
-    }
-    return null;
-  }, [setError]);
+
 
   useEffect(() => {
     const loadDraft = async () => {
@@ -1643,68 +1684,369 @@ const DesignLabClient = () => {
     }
   }, []);
 
+  // [2025-01-27 23:30:00] 上传资源处理函数 - 添加详细日志
   const handleUploadAsset = useCallback(async () => {
+    const timestamp = new Date().toISOString();
+    console.log('[Upload] ===== handleUploadAsset CALLED =====', {
+      timestamp,
+      hasDraft: !!draft,
+      hasUser: !!user,
+      fileInputRefExists: !!fileInputRef.current
+    });
+
     if (!draft) {
+      console.warn('[Upload] ❌ No draft found', { timestamp });
       setError('尚未加载设计稿');
       return;
     }
     if (!user) {
+      console.warn('[Upload] ❌ No user found', { timestamp });
       setError('请先登录后再上传素材');
       return;
     }
-    fileInputRef.current?.click();
+
+    console.log('[Upload] 📋 Triggering file input click...', {
+      timestamp,
+      fileInputElement: fileInputRef.current ? 'exists' : 'null'
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+      console.log('[Upload] ✅ File input click triggered', { timestamp });
+    } else {
+      console.error('[Upload] ❌ File input ref is null!', { timestamp });
+      setError('文件输入框未初始化，请刷新页面重试');
+    }
   }, [draft, user]);
 
+  // [2025-01-27 23:40:00] 上传功能 - 完整的日志系统和错误处理
   const handleFileChange = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const timestamp = new Date().toISOString();
+      const sessionId = `upload-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('[Upload] ========================================');
+      console.log('[Upload] ===== handleFileChange FUNCTION CALLED =====');
+      console.log('[Upload] Session ID:', sessionId);
+      console.log('[Upload] Timestamp:', timestamp);
+      console.log('[Upload] Event type:', event.type);
+      console.log('[Upload] Event target:', event.target);
+      console.log('[Upload] Files in event:', event.target.files?.length || 0);
+      console.log('[Upload] ========================================');
+      console.log('[Upload] ===== UPLOAD SESSION START =====');
+      
       const file = event.target.files?.[0];
       event.target.value = '';
 
-      if (!file || !draft) {
+      if (!file) {
+        console.warn('[Upload] ❌ No file selected, exiting');
+        console.log('[Upload] ===== UPLOAD SESSION END (NO FILE) =====');
         return;
       }
 
-      setUploading(true);
-      try {
-        const response = await designLabApi.generateAssetUpload(draft.id, {
-          fileName: file.name,
-          fileSize: file.size,
-          contentType: file.type || 'application/octet-stream',
-        }) as any;
+      console.log('[Upload] ✅ File selected:', {
+        sessionId,
+        name: file.name,
+        size: `${(file.size / 1024 / 1024).toFixed(2)}MB (${file.size} bytes)`,
+        type: file.type,
+        lastModified: new Date(file.lastModified).toISOString(),
+        timestamp
+      });
 
-        await fetch(response.data.uploadUrl, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type || 'application/octet-stream',
-          },
+      // [2025-01-27 23:20:00] 步骤 1: 验证文件类型
+      console.log('[Upload] 📋 Step 1: Validating file type...');
+      if (!file.type.startsWith('image/')) {
+        const errorMsg = '请选择图片文件（PNG、JPG、GIF、SVG等）';
+        console.error('[Upload] ❌ Step 1 FAILED: Invalid file type', {
+          sessionId,
+          fileType: file.type,
+          expectedTypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp'],
+          timestamp
+        });
+        setError(errorMsg);
+        console.log('[Upload] ===== UPLOAD SESSION END (VALIDATION FAILED) =====');
+        return;
+      }
+      console.log('[Upload] ✅ Step 1 PASSED: File type is valid', { fileType: file.type, sessionId });
+
+      // [2025-01-27 23:20:00] 步骤 2: 验证文件大小（20MB限制）
+      console.log('[Upload] 📋 Step 2: Validating file size...');
+      const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+      if (file.size > MAX_FILE_SIZE) {
+        const errorMsg = `文件大小超过限制（最大 20MB），当前文件：${(file.size / 1024 / 1024).toFixed(2)}MB`;
+        console.error('[Upload] ❌ Step 2 FAILED: File too large', {
+          sessionId,
+          fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+          maxSize: `${(MAX_FILE_SIZE / 1024 / 1024).toFixed(2)}MB`,
+          exceedsBy: `${((file.size - MAX_FILE_SIZE) / 1024 / 1024).toFixed(2)}MB`,
+          timestamp
+        });
+        setError(errorMsg);
+        console.log('[Upload] ===== UPLOAD SESSION END (VALIDATION FAILED) =====');
+        return;
+      }
+      console.log('[Upload] ✅ Step 2 PASSED: File size is within limit', {
+        fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        maxSize: `${(MAX_FILE_SIZE / 1024 / 1024).toFixed(2)}MB`,
+        sessionId
+      });
+
+      // [2025-01-27 23:20:00] 步骤 3: 开始上传流程
+      console.log('[Upload] 📋 Step 3: Starting upload process...');
+      setUploading(true);
+      setError(null);
+      console.log('[Upload] ✅ Step 3: Upload state set (uploading=true, error=null)', { sessionId });
+
+      // Helper function to add image to canvas
+      const addToCanvas = async (url: string) => {
+        console.log('[Upload] 📋 Step 6: Adding image to canvas...', {
+          url: url.substring(0, 100) + (url.length > 100 ? '...' : ''),
+          urlLength: url.length,
+          sessionId,
+          timestamp
+        });
+        try {
+          console.log('[Upload] 📋 Step 6.1: Ensuring Fabric.js is loaded...', { sessionId });
+          const fabric = await ensureFabric();
+          console.log('[Upload] ✅ Step 6.1: Fabric.js loaded successfully', {
+            fabricVersion: fabric?.version || 'unknown',
+            sessionId
+          });
+          
+          console.log('[Upload] 📋 Step 6.2: Creating Fabric Image from URL...', { sessionId });
+          fabric.Image.fromURL(
+            url,
+            (img: any) => {
+              if (img) {
+                console.log('[Upload] ✅ Step 6.2: Image loaded successfully', {
+                  sessionId,
+                  originalWidth: img.width,
+                  originalHeight: img.height,
+                  aspectRatio: (img.width / img.height).toFixed(2),
+                  timestamp
+                });
+                
+                const imageObject = img as any & { id?: string };
+                imageObject.id = uuidv4();
+                
+                // [2025-01-27 22:30:00] 计算合适的缩放比例，确保图片适合画布
+                const canvasWidth = 1000; // 新的画布宽度
+                const canvasHeight = 1200; // 新的画布高度
+                const maxWidth = canvasWidth * 0.6; // 最大宽度为画布的60%
+                const maxHeight = canvasHeight * 0.6; // 最大高度为画布的60%
+                
+                const scaleX = Math.min(1, maxWidth / (img.width || 400));
+                const scaleY = Math.min(1, maxHeight / (img.height || 400));
+                const scale = Math.min(scaleX, scaleY); // 保持宽高比
+                
+                imageObject.set({
+                  left: canvasWidth / 2 - (img.width * scale) / 2, // 居中
+                  top: canvasHeight / 2 - (img.height * scale) / 2, // 居中
+                  scaleX: scale,
+                  scaleY: scale,
+                });
+                
+                console.log('[Design Lab] Image object configured:', {
+                  id: imageObject.id,
+                  left: imageObject.left,
+                  top: imageObject.top,
+                  scaleX: imageObject.scaleX,
+                  scaleY: imageObject.scaleY,
+                  timestamp
+                });
+                
+                fabricCanvasRef.current?.add(imageObject);
+                fabricCanvasRef.current?.setActiveObject(imageObject);
+                fabricCanvasRef.current?.renderAll();
+                
+                console.log('[Upload] ✅ Step 6.3: Image added to canvas successfully', {
+                  sessionId,
+                  canvasObjectsCount: fabricCanvasRef.current?.getObjects().length || 0,
+                  timestamp
+                });
+                setShowUploadModal(false); // Close modal on success
+                setError(null);
+                console.log('[Upload] ========================================');
+                console.log('[Upload] ===== UPLOAD SESSION SUCCESS =====');
+                console.log('[Upload] Session ID:', sessionId);
+                console.log('[Upload] Total duration:', `${((Date.now() - new Date(timestamp).getTime()) / 1000).toFixed(2)}s`);
+                console.log('[Upload] ========================================');
+              } else {
+                console.error('[Upload] ❌ Step 6.2 FAILED: Failed to create image object from URL', {
+                  sessionId,
+                  url: url.substring(0, 100),
+                  timestamp
+                });
+                setError('无法加载图片，请检查文件格式');
+                console.log('[Upload] ===== UPLOAD SESSION END (CANVAS ERROR) =====');
+              }
+            },
+            { crossOrigin: 'anonymous' }
+          );
+        } catch (canvasErr: any) {
+          console.error('[Design Lab] Error adding image to canvas:', {
+            error: canvasErr.message,
+            stack: canvasErr.stack,
+            timestamp
+          });
+          setError('添加图片到画布失败：' + (canvasErr.message || '未知错误'));
+        }
+      };
+
+      try {
+        // [2025-01-27 23:20:00] 步骤 4: 选择上传方式（API 或 FileReader）
+        console.log('[Upload] 📋 Step 4: Choosing upload method...', {
+          hasDraft: !!draft,
+          draftId: draft?.id || 'none',
+          sessionId
         });
 
-        const fabric = await ensureFabric();
-        fabric.Image.fromURL(
-          response.data.asset.url,
-          (img: any) => {
-            if (img) {
-              const imageObject = img as any & { id?: string };
-              imageObject.id = uuidv4();
-              imageObject.set({
-                left: 80,
-                top: 80,
-                scaleX: Math.min(1, 400 / (img.width || 400)),
-                scaleY: Math.min(1, 400 / (img.height || 400)),
-              });
-              fabricCanvasRef.current?.add(imageObject);
-              fabricCanvasRef.current?.setActiveObject(imageObject);
-              fabricCanvasRef.current?.renderAll();
+        // Try to use the API first if draft exists
+        if (draft) {
+          console.log('[Upload] 📋 Step 4.1: Attempting API upload...', {
+            draftId: draft.id,
+            sessionId,
+            timestamp
+          });
+          try {
+            console.log('[Upload] 📋 Step 4.1.1: Requesting upload signature...', {
+              fileName: file.name,
+              fileSize: file.size,
+              contentType: file.type,
+              sessionId
+            });
+            
+            const response = await designLabApi.generateAssetUpload(draft.id, {
+              fileName: file.name,
+              fileSize: file.size,
+              contentType: file.type || 'application/octet-stream',
+            }) as any;
+
+            console.log('[Upload] ✅ Step 4.1.1: Upload signature received', {
+              sessionId,
+              hasUploadUrl: !!response.data?.uploadUrl,
+              hasAssetUrl: !!response.data?.asset?.url,
+              uploadUrl: response.data?.uploadUrl ? response.data.uploadUrl.substring(0, 100) + '...' : 'none',
+              assetUrl: response.data?.asset?.url ? response.data.asset.url.substring(0, 100) + '...' : 'none',
+              timestamp
+            });
+
+            console.log('[Upload] 📋 Step 4.1.2: Uploading file to storage...', { sessionId });
+            const uploadStartTime = Date.now();
+            const uploadResponse = await fetch(response.data.uploadUrl, {
+              method: 'PUT',
+              body: file,
+              headers: {
+                'Content-Type': file.type || 'application/octet-stream',
+              },
+            });
+            const uploadDuration = Date.now() - uploadStartTime;
+
+            console.log('[Upload] ✅ Step 4.1.2: File uploaded to storage', {
+              sessionId,
+              status: uploadResponse.status,
+              statusText: uploadResponse.statusText,
+              duration: `${uploadDuration}ms`,
+              uploadSpeed: `${(file.size / 1024 / (uploadDuration / 1000)).toFixed(2)}KB/s`,
+              timestamp
+            });
+
+            if (!uploadResponse.ok) {
+              const errorText = await uploadResponse.text();
+              throw new Error(`Upload failed: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText.substring(0, 200)}`);
             }
-          },
-          { crossOrigin: 'anonymous' }
-        );
+
+            console.log('[Upload] 📋 Step 5: Adding uploaded image to canvas...', { sessionId });
+            await addToCanvas(response.data.asset.url);
+            console.log('[Upload] ===== UPLOAD SESSION SUCCESS (API) =====', {
+              sessionId,
+              method: 'API',
+              timestamp
+            });
+            return; // Success, exit
+          } catch (apiErr: any) {
+            console.warn('[Upload] ⚠️ Step 4.1 FAILED: API upload failed, falling back to FileReader', {
+              sessionId,
+              error: apiErr.message,
+              stack: apiErr.stack?.substring(0, 500),
+              timestamp
+            });
+            // Fallthrough to local reader
+          }
+        } else {
+          console.log('[Upload] 📋 Step 4: No draft exists, using FileReader fallback', {
+            sessionId,
+            reason: 'No draft found',
+            timestamp
+          });
+        }
+
+        // [2025-01-27 23:20:00] 步骤 5: 使用 FileReader 作为后备方案
+        console.log('[Upload] 📋 Step 5: Using FileReader fallback...', { sessionId });
+        const reader = new FileReader();
+        reader.onerror = (error) => {
+          console.error('[Upload] ❌ Step 5 FAILED: FileReader error', {
+            sessionId,
+            error: error,
+            timestamp
+          });
+          setError('读取文件失败，请重试');
+          console.log('[Upload] ===== UPLOAD SESSION END (FILEREADER ERROR) =====');
+        };
+        reader.onloadstart = () => {
+          console.log('[Upload] 📋 Step 5.1: FileReader started reading file...', { sessionId });
+        };
+        reader.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            console.log('[Upload] 📋 Step 5.1: FileReader progress', {
+              sessionId,
+              loaded: `${(e.loaded / 1024 / 1024).toFixed(2)}MB`,
+              total: `${(e.total / 1024 / 1024).toFixed(2)}MB`,
+              percent: `${percent}%`,
+              timestamp
+            });
+          }
+        };
+        reader.onload = async (f) => {
+          const data = f.target?.result as string;
+          if (data) {
+            console.log('[Upload] ✅ Step 5.1: FileReader loaded successfully', {
+              sessionId,
+              dataLength: `${(data.length / 1024 / 1024).toFixed(2)}MB (${data.length} chars)`,
+              dataPrefix: data.substring(0, 50) + '...',
+              timestamp
+            });
+            console.log('[Upload] 📋 Step 5.2: Adding image to canvas from FileReader data...', { sessionId });
+            await addToCanvas(data);
+            console.log('[Upload] ===== UPLOAD SESSION SUCCESS (FILEREADER) =====', {
+              sessionId,
+              method: 'FileReader',
+              timestamp
+            });
+          } else {
+            console.error('[Upload] ❌ Step 5.1 FAILED: FileReader result is empty', {
+              sessionId,
+              timestamp
+            });
+            setError('读取文件失败，文件可能已损坏');
+            console.log('[Upload] ===== UPLOAD SESSION END (EMPTY RESULT) =====');
+          }
+        };
+        reader.readAsDataURL(file);
+
       } catch (err: any) {
-        console.error('[2025-11-11 15:54:12] handleFileChange error:', err);
+        console.error('[Upload] ========================================');
+        console.error('[Upload] ===== UPLOAD SESSION ERROR =====');
+        console.error('[Upload] Session ID:', sessionId);
+        console.error('[Upload] Error:', err.message);
+        console.error('[Upload] Stack:', err.stack?.substring(0, 500));
+        console.error('[Upload] ========================================');
         setError(err.message || '上传素材失败');
+        console.log('[Upload] ===== UPLOAD SESSION END (ERROR) =====');
       } finally {
         setUploading(false);
+        console.log('[Upload] ✅ Upload state reset (uploading=false)', { sessionId });
       }
     },
     [draft, ensureFabric]
@@ -1806,42 +2148,92 @@ const DesignLabClient = () => {
     [addImageFromUrl, artPresets, ensureFabric]
   );
 
+  // [2025-01-27 23:30:00] 添加详细日志，包括上传按钮点击追踪
   const triggerToolAction = useCallback(
     (tool: ToolKey) => {
+      const timestamp = new Date().toISOString();
+      console.log('[Design Lab] ===== triggerToolAction =====', { tool, timestamp });
+      
       setSelectedTool(tool);
       switch (tool) {
         case 'upload':
-          setShowUploadModal(true);
+          console.log('[Upload] ========================================');
+          console.log('[Upload] ===== UPLOAD BUTTON CLICKED =====');
+          console.log('[Upload] Timestamp:', timestamp);
+          console.log('[Upload] fileInputRef exists:', !!fileInputRef.current);
+          console.log('[Upload] draft exists:', !!draft);
+          console.log('[Upload] user exists:', !!user);
+          console.log('[Upload] ========================================');
+          
+          // [2025-01-28 00:10:00] 直接触发文件选择器，而不是打开模态框
+          if (!draft) {
+            console.warn('[Upload] ❌ No draft found', { timestamp });
+            setError('请先创建设计草稿');
+            return;
+          }
+          if (!user) {
+            console.warn('[Upload] ❌ No user found', { timestamp });
+            setError('请先登录后再上传素材');
+            return;
+          }
+
+          if (fileInputRef.current) {
+            console.log('[Upload] 📋 Triggering file input click directly...', { timestamp });
+            try {
+              fileInputRef.current.click();
+              console.log('[Upload] ✅ File input click triggered successfully', { timestamp });
+            } catch (err: any) {
+              console.error('[Upload] ❌ Error triggering file input click:', {
+                error: err.message,
+                stack: err.stack,
+                timestamp
+              });
+              setError('无法打开文件选择器，请刷新页面重试');
+            }
+          } else {
+            console.error('[Upload] ❌ File input ref is null!', { timestamp });
+            setError('文件输入框未初始化，请刷新页面重试');
+          }
           break;
         case 'text':
+          console.log('[Design Lab] Opening add text modal', { timestamp });
           setShowAddTextModal(true);
           break;
         case 'art':
+          console.log('[Design Lab] Opening add art modal', { timestamp });
           setShowAddArtModal(true);
           break;
         case 'colors':
+          console.log('[Design Lab] Opening product colors modal', { timestamp });
           setShowProductColorsModal(true);
           break;
         case 'names':
+          console.log('[Design Lab] Opening add names modal', { timestamp });
           setShowAddNamesModal(true);
           break;
         case 'templates':
           // [2025-01-27 21:55:00] 打开模板库
+          console.log('[Design Lab] Opening templates library', { timestamp });
           setShowTemplates(true);
           break;
         case 'comments':
           // [2025-01-27 21:55:00] 打开评论面板
+          console.log('[Design Lab] Opening comments panel', { timestamp });
           setShowComments(true);
           break;
         case 'products':
+          console.log('[Design Lab] Navigating to products page', { timestamp });
           router.push('/products');
           break;
         case 'printArea':
+          console.log('[Design Lab] Toggling print area', { timestamp });
           togglePrintArea();
           break;
         default:
+          console.warn('[Design Lab] Unknown tool action', { tool, timestamp });
           break;
       }
+      console.log('[Design Lab] ===== triggerToolAction END =====', { tool, timestamp });
     },
     [router, togglePrintArea] // [2025-11-16 13:10:00] 补齐依赖，避免 stale handler
   );
@@ -2204,29 +2596,111 @@ const DesignLabClient = () => {
     }
   }, [comments]);
 
+  // [2025-01-28 00:00:00] 文件输入框 - 必须在所有条件渲染之前，确保始终在 DOM 中
+  const fileInputElement = (
+    <input 
+      id="design-lab-file-input"
+      key="design-lab-file-input-key"
+      ref={(el) => {
+        const timestamp = new Date().toISOString();
+        console.log('[Upload] ===== FILE INPUT REF CALLBACK (UNIVERSAL) =====', {
+          timestamp,
+          elementExists: !!el,
+          previousRefExists: !!fileInputRef.current,
+          elementId: el?.id || 'no-id',
+          elementType: el?.type || 'no-type',
+          isInDOM: el ? (document.body.contains(el) || el.isConnected) : false
+        });
+        
+        fileInputRef.current = el;
+        
+        if (el) {
+          // 立即验证元素
+          setTimeout(() => {
+            const foundById = document.getElementById('design-lab-file-input');
+            console.log('[Upload] File input verification:', {
+              timestamp: new Date().toISOString(),
+              foundById: !!foundById,
+              refMatchesId: fileInputRef.current?.id === 'design-lab-file-input',
+              refId: fileInputRef.current?.id || 'no-id'
+            });
+          }, 100);
+        }
+      }}
+      type="file" 
+      accept="image/*" 
+      style={{ 
+        position: 'fixed',
+        top: '-9999px',
+        left: '-9999px',
+        width: 0,
+        height: 0,
+        opacity: 0,
+        pointerEvents: 'none',
+        visibility: 'hidden',
+        zIndex: -1
+      }} 
+      onChange={(e) => {
+        const timestamp = new Date().toISOString();
+        console.log('[Upload] ========================================');
+        console.log('[Upload] ===== FILE INPUT onChange (UNIVERSAL) =====');
+        console.log('[Upload] Timestamp:', timestamp);
+        console.log('[Upload] Files count:', e.target.files?.length || 0);
+        console.log('[Upload] File name:', e.target.files?.[0]?.name || 'no file');
+        console.log('[Upload] handleFileChange type:', typeof handleFileChange);
+        console.log('[Upload] ========================================');
+        
+        if (typeof handleFileChange === 'function') {
+          console.log('[Upload] 📋 Calling handleFileChange...', { timestamp });
+          handleFileChange(e);
+        } else {
+          console.error('[Upload] ❌ handleFileChange is not a function!', {
+            handleFileChangeType: typeof handleFileChange,
+            timestamp
+          });
+        }
+      }}
+      onClick={(e) => {
+        console.log('[Upload] 📋 File input clicked', {
+          timestamp: new Date().toISOString()
+        });
+      }}
+    />
+  );
+
+  // [2025-01-27 23:45:00] 加载状态
   if (loading) {
+    console.log('[Upload] ⚠️ Component is in loading state', {
+      timestamp: new Date().toISOString(),
+      fileInputRefExists: !!fileInputRef.current
+    });
     return (
-      <section className="lab__loading">
-        <p>正在加载 Design Lab...</p>
-      </section>
+      <>
+        {fileInputElement}
+        <section className="lab__loading">
+          <p>正在加载 Design Lab...</p>
+        </section>
+      </>
     );
   }
 
-  if (error) {
+  // [2025-01-27 20:00:00] If no draft, we should still show the UI for a new design
+  // instead of showing an error. The loadDraft effect will handle creating a draft.
+  // Only show error if we really have a persistent error.
+  if (error && !draft) {
+    console.log('[Upload] ⚠️ Component is in error state', {
+      timestamp: new Date().toISOString(),
+      error,
+      fileInputRefExists: !!fileInputRef.current
+    });
     return (
-      <section className="lab__error">
-        <h1>Design Lab</h1>
-        <p>{error}</p>
-      </section>
-    );
-  }
-
-  if (!draft) {
-    return (
-      <section className="lab__error">
-        <h1>Design Lab</h1>
-        <p>未找到设计草稿，请返回产品页重新进入。</p>
-      </section>
+      <>
+        {fileInputElement}
+        <section className="lab__error">
+          <h1>Design Lab</h1>
+          <p>{error}</p>
+        </section>
+      </>
     );
   }
 
@@ -2241,8 +2715,78 @@ const DesignLabClient = () => {
   // [2025-01-27 20:00:00] 产品图片轮播数据
   const productImages = PRODUCT_IMAGES;
 
+  // [2025-01-27 23:55:00] 组件初始化日志 - 确保在组件挂载时执行
+  useEffect(() => {
+    const timestamp = new Date().toISOString();
+    console.log('[Upload] ========================================');
+    console.log('[Upload] ===== useEffect HOOK EXECUTED =====');
+    console.log('[Upload] Timestamp:', timestamp);
+    console.log('[Upload] Component mounted:', true);
+    console.log('[Upload] fileInputRef exists:', !!fileInputRef.current);
+    console.log('[Upload] triggerToolAction type:', typeof triggerToolAction);
+    console.log('[Upload] handleFileChange type:', typeof handleFileChange);
+    console.log('[Upload] showUploadModal:', showUploadModal);
+    console.log('[Upload] selectedTool:', selectedTool);
+    console.log('[Upload] ========================================');
+    
+    // 立即检查 fileInputRef
+    console.log('[Upload] Immediate fileInputRef check:', {
+      refExists: !!fileInputRef.current,
+      refId: fileInputRef.current?.id || 'no-id',
+      timestamp
+    });
+    
+    // 延迟检查 fileInputRef（等待 DOM 渲染）
+    setTimeout(() => {
+      const inputElement = document.getElementById('design-lab-file-input');
+      const inputElementLoading = document.getElementById('design-lab-file-input-loading');
+      console.log('[Upload] ===== FILE INPUT ELEMENT CHECK (1s delay) =====', {
+        timestamp: new Date().toISOString(),
+        foundById: !!inputElement,
+        foundByRef: !!fileInputRef.current,
+        foundLoadingInput: !!inputElementLoading,
+        refMatchesId: fileInputRef.current?.id === 'design-lab-file-input',
+        refId: fileInputRef.current?.id || 'no-id',
+        inputElementDetails: inputElement ? {
+          type: inputElement.type,
+          accept: inputElement.accept,
+          display: window.getComputedStyle(inputElement).display,
+          id: inputElement.id
+        } : 'not found',
+        loadingInputDetails: inputElementLoading ? {
+          type: inputElementLoading.type,
+          accept: inputElementLoading.accept,
+          display: window.getComputedStyle(inputElementLoading).display,
+          id: inputElementLoading.id
+        } : 'not found'
+      });
+    }, 1000);
+    
+    // [2025-01-27 23:55:00] 再次延迟检查（3秒后）
+    setTimeout(() => {
+      const inputElement = document.getElementById('design-lab-file-input');
+      console.log('[Upload] ===== FILE INPUT ELEMENT CHECK (3s delay) =====', {
+        timestamp: new Date().toISOString(),
+        foundById: !!inputElement,
+        foundByRef: !!fileInputRef.current
+      });
+    }, 3000);
+  }, [triggerToolAction, handleFileChange, showUploadModal, selectedTool]);
+
+  // [2025-01-27 23:55:00] 组件渲染前日志
+  console.log('[Upload] ===== Component about to render =====', {
+    timestamp: new Date().toISOString(),
+    loading,
+    error,
+    hasDraft: !!draft,
+    fileInputRefExists: !!fileInputRef.current
+  });
+
   return (
     <>
+      {/* [2025-01-28 00:00:00] 文件输入框 - 放在最外层，确保始终在 DOM 中 */}
+      {fileInputElement}
+      
       <div className="design-lab-new">
         {/* [2025-01-27 20:00:00] 顶部深蓝色导航栏 - 完全匹配参考设计 */}
         <header className="dl-header">
@@ -2279,7 +2823,26 @@ const DesignLabClient = () => {
               <button
                 type="button"
                 className={`dl-sidebar__btn ${selectedTool === 'upload' ? 'is-active' : ''}`}
-                onClick={() => triggerToolAction('upload')}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const timestamp = new Date().toISOString();
+                  console.log('[Upload] ===== SIDEBAR UPLOAD BUTTON CLICKED =====', {
+                    timestamp,
+                    triggerToolActionExists: typeof triggerToolAction === 'function',
+                    selectedTool
+                  });
+                  try {
+                    triggerToolAction('upload');
+                    console.log('[Upload] ✅ triggerToolAction("upload") called successfully', { timestamp });
+                  } catch (err: any) {
+                    console.error('[Upload] ❌ Error calling triggerToolAction:', {
+                      error: err.message,
+                      stack: err.stack,
+                      timestamp
+                    });
+                  }
+                }}
               >
                 <span className="dl-sidebar__icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2335,7 +2898,110 @@ const DesignLabClient = () => {
                 </span>
                 <span className="dl-sidebar__label">Add Names</span>
               </button>
-              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
+              {/* [2025-01-28 00:05:00] 文件输入框已移到组件最外层（fileInputElement），这里不再需要 */}
+              {/* [2025-01-27 23:20:00] 拖拽上传支持 - 全页面拖拽区域 */}
+              <div
+                className="dl-drag-drop-zone"
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  zIndex: 9999,
+                  pointerEvents: 'none',
+                  backgroundColor: 'transparent'
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // [2025-01-27 23:20:00] 显示拖拽提示
+                  const zone = e.currentTarget;
+                  zone.style.pointerEvents = 'auto';
+                  zone.style.backgroundColor = 'rgba(0, 102, 204, 0.1)';
+                }}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const timestamp = new Date().toISOString();
+                  console.log('[Upload] ===== DRAG ENTER =====', {
+                    timestamp,
+                    dataTransferTypes: Array.from(e.dataTransfer.types),
+                    filesCount: e.dataTransfer.files.length
+                  });
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const timestamp = new Date().toISOString();
+                  console.log('[Upload] ===== DRAG LEAVE =====', { timestamp });
+                  // [2025-01-27 23:20:00] 隐藏拖拽提示
+                  const zone = e.currentTarget;
+                  zone.style.pointerEvents = 'none';
+                  zone.style.backgroundColor = 'transparent';
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const timestamp = new Date().toISOString();
+                  const zone = e.currentTarget;
+                  zone.style.pointerEvents = 'none';
+                  zone.style.backgroundColor = 'transparent';
+                  
+                  console.log('[Upload] ===== FILE DROPPED =====', {
+                    timestamp,
+                    filesCount: e.dataTransfer.files.length,
+                    types: Array.from(e.dataTransfer.types)
+                  });
+                  
+                  const files = Array.from(e.dataTransfer.files);
+                  const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                  
+                  console.log('[Upload] File filtering:', {
+                    totalFiles: files.length,
+                    imageFiles: imageFiles.length,
+                    files: files.map(f => ({
+                      name: f.name,
+                      type: f.type,
+                      size: f.size,
+                      isImage: f.type.startsWith('image/')
+                    })),
+                    timestamp
+                  });
+                  
+                  if (imageFiles.length > 0) {
+                    console.log('[Upload] Processing dropped image files:', {
+                      count: imageFiles.length,
+                      files: imageFiles.map(f => ({
+                        name: f.name,
+                        size: `${(f.size / 1024 / 1024).toFixed(2)}MB`,
+                        type: f.type,
+                        lastModified: new Date(f.lastModified).toISOString()
+                      })),
+                      timestamp
+                    });
+                    
+                    // 创建模拟的 change 事件
+                    const syntheticEvent = {
+                      target: {
+                        files: imageFiles.slice(0, 1), // 只处理第一个文件
+                        value: ''
+                      }
+                    } as any;
+                    
+                    console.log('[Upload] Calling handleFileChange with dropped file', { timestamp });
+                    handleFileChange(syntheticEvent as React.ChangeEvent<HTMLInputElement>);
+                  } else {
+                    const errorMsg = '请拖拽图片文件（PNG、JPG、GIF、SVG等）';
+                    console.warn('[Upload] No image files in dropped files', {
+                      totalFiles: files.length,
+                      fileTypes: files.map(f => f.type),
+                      timestamp
+                    });
+                    setError(errorMsg);
+                  }
+                }}
+              />
             </nav>
 
             {/* 左侧设计工具区域 */}
@@ -2356,7 +3022,25 @@ const DesignLabClient = () => {
                     <button
                       type="button"
                       className="dl-whats-next__card"
-                      onClick={() => triggerToolAction('upload')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const timestamp = new Date().toISOString();
+                        console.log('[Upload] ===== WHATS-NEXT UPLOAD BUTTON CLICKED =====', {
+                          timestamp,
+                          triggerToolActionExists: typeof triggerToolAction === 'function'
+                        });
+                        try {
+                          triggerToolAction('upload');
+                          console.log('[Upload] ✅ triggerToolAction("upload") called successfully', { timestamp });
+                        } catch (err: any) {
+                          console.error('[Upload] ❌ Error calling triggerToolAction:', {
+                            error: err.message,
+                            stack: err.stack,
+                            timestamp
+                          });
+                        }
+                      }}
                     >
                       <span className="dl-whats-next__icon">
                         <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
@@ -2435,12 +3119,12 @@ const DesignLabClient = () => {
               <div className="dl-product-selector">
                 <button type="button" className="dl-product-selector__add-btn">+ Add Products</button>
                 <div className="dl-product-selector__current">
-                  <Image 
-                    src={currentVariant?.image || currentVariant?.baseImages?.front || currentVariant?.gallery?.[0] || "/assets/categories/cat-tshirt.png"} 
-                    alt={currentProduct?.name || "Current product"} 
-                    width={48} 
-                    height={48} 
-                    className="dl-product-selector__thumb" 
+                  <Image
+                    src={currentVariant?.image || currentVariant?.baseImages?.front || currentVariant?.gallery?.[0] || "/assets/categories/cat-tshirt.png"}
+                    alt={currentProduct?.name || "Current product"}
+                    width={48}
+                    height={48}
+                    className="dl-product-selector__thumb"
                   />
                   <div className="dl-product-selector__info">
                     <div className="dl-product-selector__name">
@@ -2500,26 +3184,52 @@ const DesignLabClient = () => {
                 </div>
 
                 {/* 产品大图 */}
+                {/* [2025-01-27 21:55:00] 调整图片尺寸为 1000x1200px，响应式布局 */}
                 <div className="dl-visualization__image" style={{ position: 'relative' }}>
                   {/* [2025-11-21 11:15:00] 产品图片 - 确保显示在最底层 */}
                   <Image
                     src={currentVariant?.image || currentVariant?.baseImages?.front || currentVariant?.gallery?.[0] || "/assets/categories/cat-tshirt.png"}
                     alt={currentProduct?.name || "Product visualization"}
-                    width={600}
-                    height={800}
+                    width={1000}
+                    height={1200}
                     className="dl-visualization__img"
                     priority
-                    onLoad={() => {
-                      console.log('[Design Lab] Product image loaded:', currentVariant?.image || currentVariant?.baseImages?.front);
+                    onLoad={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      const actualWidth = img.naturalWidth;
+                      const actualHeight = img.naturalHeight;
+                      const displayWidth = img.offsetWidth;
+                      const displayHeight = img.offsetHeight;
+                      console.log('[Design Lab] Product image loaded:', {
+                        src: currentVariant?.image || currentVariant?.baseImages?.front,
+                        naturalSize: `${actualWidth}x${actualHeight}`,
+                        displaySize: `${displayWidth}x${displayHeight}`,
+                        aspectRatio: (actualWidth / actualHeight).toFixed(2),
+                        timestamp: new Date().toISOString()
+                      });
                     }}
                     onError={(e) => {
-                      console.error('[Design Lab] Failed to load product image:', e);
+                      console.error('[Design Lab] Failed to load product image:', {
+                        error: e,
+                        src: currentVariant?.image || currentVariant?.baseImages?.front,
+                        fallback: "/assets/categories/cat-tshirt.png",
+                        timestamp: new Date().toISOString()
+                      });
                     }}
-                    style={{ 
+                    style={{
                       zIndex: 1,
                       position: 'relative',
-                      display: 'block'
-                    }}
+                      display: 'block',
+                      width: '1000px', /* [2025-01-27 22:17:00] 强制设置宽度为 1000px */
+                      height: '1200px', /* [2025-01-27 22:17:00] 强制设置高度为 1200px */
+                      minWidth: '1000px', /* 防止缩小 */
+                      minHeight: '1200px', /* 防止缩小 */
+                      maxWidth: '1000px',
+                      maxHeight: '1200px',
+                      objectFit: 'contain', /* 保持宽高比 */
+                      flexShrink: 0, /* 防止 flex 容器缩小 */
+                      boxSizing: 'border-box' /* 确保尺寸计算正确 */
+                    } as React.CSSProperties}
                   />
                   {/* [2025-11-21 11:15:00] 画布覆盖层 - 透明背景，不遮挡产品图片 */}
                   <div className="dl-visualization__canvas-wrapper" style={{
@@ -2536,8 +3246,8 @@ const DesignLabClient = () => {
                     <canvas
                       ref={canvasElementRef}
                       className="dl-visualization__canvas"
-                      style={{ 
-                        width: '100%', 
+                      style={{
+                        width: '100%',
                         height: '100%',
                         backgroundColor: 'transparent' // [2025-11-21 11:15:00] 确保画布背景透明
                       }}
@@ -3590,7 +4300,31 @@ const DesignLabClient = () => {
               </div>
               <div className="dl-modal__body">
                 <div className="dl-upload-area">
-                  <button type="button" className="dl-upload-btn" onClick={() => fileInputRef.current?.click()}>
+                  <button 
+                    type="button" 
+                    className="dl-upload-btn" 
+                    onClick={() => {
+                      const timestamp = new Date().toISOString();
+                      console.log('[Upload] ===== BROWSE BUTTON CLICKED =====', {
+                        timestamp,
+                        fileInputRefExists: !!fileInputRef.current,
+                        fileInputElement: fileInputRef.current ? {
+                          type: fileInputRef.current.type,
+                          accept: fileInputRef.current.accept,
+                          style: fileInputRef.current.style.display
+                        } : 'null'
+                      });
+                      
+                      if (fileInputRef.current) {
+                        console.log('[Upload] 📋 Calling fileInputRef.current.click()...', { timestamp });
+                        fileInputRef.current.click();
+                        console.log('[Upload] ✅ fileInputRef.current.click() called', { timestamp });
+                      } else {
+                        console.error('[Upload] ❌ fileInputRef.current is null!', { timestamp });
+                        setError('文件输入框未初始化，请刷新页面重试');
+                      }
+                    }}
+                  >
                     Browse Your Computer
                   </button>
                   <div className="dl-upload-divider">
