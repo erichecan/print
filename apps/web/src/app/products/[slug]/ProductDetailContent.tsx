@@ -140,13 +140,13 @@ export function ProductDetailContent() {
     fetchRelated();
   }, [slug, product]);
 
-  // [2025-01-27 18:45:00] 开始设计 - 跳转到设计实验室
+  // [2025-01-28 04:00:00] 开始设计 - 跳转到原生 HTML 版本的 Design Lab（功能完整）
   const handleStartDesign = () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
       return;
     }
-    router.push(`/design-lab?variantId=${selectedVariant.id}`);
+    window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
   };
 
   // [2025-01-27 18:45:00] 添加到购物车

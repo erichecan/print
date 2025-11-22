@@ -130,7 +130,7 @@ export function BuyBox({
     onBuyNow(payload);
   }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, quantity, price, onBuyNow]);
 
-  // [2025-11-19 10:00:00] 开始设计处理函数
+  // [2025-01-28 04:00:00] 开始设计处理函数 - 跳转到原生 HTML 版本（功能完整）
   const handleStartDesign = useCallback(() => {
     const payload = {
       productId: 'prod-001',
@@ -145,7 +145,7 @@ export function BuyBox({
     if (onStartDesign) {
       onStartDesign(payload);
     } else {
-      // [2025-11-19 11:00:00] 默认跳转到纯原生 Design Lab（如果没有传递 onStartDesign）
+      // [2025-01-28 04:00:00] 默认跳转到原生 HTML 版本的 Design Lab（功能完整）
       window.location.href = `/design-lab-native.html`;
     }
   }, [title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, onStartDesign]);

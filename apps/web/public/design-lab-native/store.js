@@ -185,6 +185,13 @@
       });
       
       if (!response.ok) {
+        // [2025-01-28 02:50:00] 静默处理 404 错误（variant 不存在是正常情况）
+        if (response.status === 404) {
+          console.debug('[Store] Variant not found (404):', variantId, '- This is normal if variant does not exist in database');
+          return;
+        }
+        
+        // [2025-01-28 02:50:00] 只记录非 404 的错误
         const errorText = await response.text();
         let errorData;
         try {

@@ -92,11 +92,21 @@
     }
 
     // [2025-11-19 12:00:00] Art 面板交互
+    // [2025-01-28 04:20:00] 支持基本形状（data-art）和 CMS 素材（data-art-url）
     const artItems = document.querySelectorAll('.panel__art-item');
     artItems.forEach(item => {
       item.addEventListener('click', () => {
-        const artType = item.getAttribute('data-art');
-        addArt(artType);
+        // [2025-01-28 04:20:00] 优先检查是否有 URL（CMS 素材）
+        const artUrl = item.getAttribute('data-art-url');
+        if (artUrl) {
+          addArt(artUrl);
+        } else {
+          // [2025-11-19 12:00:00] 基本形状（star, heart, circle, triangle, square）
+          const artType = item.getAttribute('data-art');
+          if (artType) {
+            addArt(artType);
+          }
+        }
       });
     });
 
@@ -327,8 +337,26 @@
   }
 
   // [2025-11-19 12:00:00] 添加 Art（使用 addShape 或 SVG）
+  // [2025-01-28 04:20:00] 支持从 CMS 加载的素材 URL
   function addArt(type) {
     if (window.DesignLabCanvas) {
+      // [2025-01-28 04:20:00] 如果 type 是 URL（从 CMS 加载的素材），直接使用 addImage
+      if (typeof type === 'string' && (type.startsWith('http://') || type.startsWith('https://') || type.startsWith('data:'))) {
+        console.log('[Toolbar] Adding art from URL:', type);
+        window.DesignLabCanvas.addImage(type);
+        
+        // [2025-11-19 12:00:00] 记录到历史栈
+        if (window.DesignLabHistory) {
+          window.DesignLabHistory.saveState();
+        }
+        
+        // [2025-11-19 12:00:00] 返回 home 面板
+        if (window.DesignLabPanel) {
+          window.DesignLabPanel.openPanel('home');
+        }
+        return;
+      }
+
       // [2025-11-19 12:00:00] 使用 addShape 添加基本形状
       if (type === 'circle' || type === 'square' || type === 'triangle') {
         const shapeType = type === 'square' ? 'rect' : type;

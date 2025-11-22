@@ -46,6 +46,11 @@
         window.DesignLabToolbar.initColorPanel();
       }
 
+      // [2025-01-28 04:15:00] 初始化 CMS 素材库加载器
+      if (window.DesignLabArtAssetsLoader) {
+        window.DesignLabArtAssetsLoader.init();
+      }
+
       if (canvasInitialized && window.__DesignLabNeedsBackgroundRefresh && window.DesignLabCanvas) {
         window.DesignLabCanvas.loadBackgroundForCurrentSide();
         window.__DesignLabNeedsBackgroundRefresh = false;

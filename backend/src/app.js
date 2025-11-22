@@ -78,7 +78,7 @@ app.use(cookieParser());
 app.use('/api/webhooks', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads'))); // [2025-01-28 00:55:00] Serve uploaded files including art assets
 app.use('/prototype/admin', express.static(path.join(prototypeRoot, 'admin'))); // [2025-11-11 22:05:10] Serve archived admin UI under prototype namespace
 app.use('/prototype/static', express.static(path.join(prototypeRoot, 'static-pages'))); // [2025-11-11 22:05:10] Serve archived static pages separately
 app.use('/assets', express.static(path.join(__dirname, '../assets'))); // [2025-11-11 22:07:22] Expose shared assets without legacy HTML
@@ -144,7 +144,8 @@ app.get('/health', async (req, res) => {
 
 // API routes
 app.use('/api/products', require('./routes/products'));
-app.use('/api/categories', require('./routes/categories')); // [2025-01-27 18:50:00] Public category routes
+app.use('/api/categories', require('./routes/categories'));
+app.use('/api/art-assets', require('./routes/artAssets')); // [2025-01-28 00:55:00] Art assets public API // [2025-01-27 18:50:00] Public category routes
 app.use('/api/collections', require('./routes/collections'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/checkout', require('./routes/checkout'));
@@ -164,6 +165,7 @@ app.use('/api/admin/coupons', require('./routes/adminCoupons')); // [2025-11-15 
 app.use('/api/admin/promotions', require('./routes/adminPromotions')); // [2025-11-15 15:20:00] Admin promotion management routes
 app.use('/api/admin/settings', require('./routes/adminSettings')); // [2025-11-15 15:30:00] Admin site/content settings routes
 app.use('/api/admin/designs', require('./routes/adminDesigns')); // [2025-11-15 15:05:00] Admin design review routes
+app.use('/api/admin/art-assets', require('./routes/adminArtAssets')); // [2025-01-28 00:55:00] Admin art assets management routes
 app.use('/api/designs', require('./routes/designs')); // [2025-11-11 15:33:45] Design Lab public routes
 app.use('/api/designs', require('./routes/designComments')); // [2025-01-27 21:40:00] Design comment routes
 app.use('/api/templates', require('./routes/templates')); // [2025-01-27 21:40:00] Design template routes

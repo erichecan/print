@@ -150,11 +150,11 @@ export function ProductDetail() {
     router.push(`/products?search=${encodeURIComponent(query)}`);
   }, [router]);
 
-  // [2025-11-19 10:00:00] 开始设计处理函数
+  // [2025-01-28 04:00:00] 开始设计处理函数 - 跳转到原生 HTML 版本（功能完整）
   const handleStartDesign = useCallback((payload: any) => {
     console.log('[Start Design]', payload);
 
-    // [2025-11-19 10:05:00] 根据选中的颜色和尺码找到对应的 variantId
+    // [2025-01-28 04:00:00] 根据选中的颜色和尺码找到对应的 variantId
     if (apiProduct && apiProduct.variants) {
       const matchingVariant = apiProduct.variants.find((v: any) => {
         const colorMatch = !payload.color || v.color === payload.color || !v.color;
@@ -164,22 +164,22 @@ export function ProductDetail() {
 
       if (matchingVariant && matchingVariant.id) {
         persistDesignLabPayload(matchingVariant);
-        // [2025-11-19 11:00:00] 跳转到纯原生 Design Lab，传递 variantId
+        // [2025-01-28 04:00:00] 跳转到原生 HTML 版本的 Design Lab，传递 variantId
         window.location.href = `/design-lab-native.html?variantId=${matchingVariant.id}`;
         return;
       }
     }
 
-    // [2025-11-19 11:00:00] 如果没有找到 variant，使用第一个可用的 variant 或跳转到默认页面
+    // [2025-01-28 04:00:00] 如果没有找到 variant，使用第一个可用的 variant 或跳转到默认页面
     if (apiProduct && apiProduct.variants && apiProduct.variants.length > 0) {
       const firstVariant = apiProduct.variants[0];
       persistDesignLabPayload(firstVariant);
       window.location.href = `/design-lab-native.html?variantId=${firstVariant.id}`;
     } else {
-      // [2025-11-19 11:00:00] 如果没有 variant，跳转到纯原生 Design Lab
+      // [2025-01-28 04:00:00] 如果没有 variant，跳转到原生 HTML 版本的 Design Lab
       window.location.href = '/design-lab-native.html';
     }
-  }, [router, apiProduct, persistDesignLabPayload]);
+  }, [apiProduct, persistDesignLabPayload]);
 
   // [2025-11-19 09:45:00] 加载状态
   if (isLoading) {

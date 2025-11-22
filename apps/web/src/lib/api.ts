@@ -1530,4 +1530,140 @@ export const productReviewApi = {
   markHelpful: (id: string) => api(`/reviews/${id}/helpful`, { method: 'POST' }),
 };
 
+// [2025-01-28 01:00:00] Art Assets API
+export interface ArtAsset {
+  id: string;
+  category: string;
+  name: string;
+  imageUrl: string;
+  thumbnailUrl?: string | null;
+  width?: number | null;
+  height?: number | null;
+  fileSize?: number | null;
+  mimeType?: string | null;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string | null;
+  creator?: {
+    id: string;
+    email: string;
+    name?: string | null;
+  } | null;
+}
+
+export interface ArtAssetsResponse {
+  success: boolean;
+  data: Record<string, ArtAsset[]>;
+  categories: string[];
+}
+
+export interface ArtAssetsByCategoryResponse {
+  success: boolean;
+  data: ArtAsset[];
+}
+
+export interface ArtAssetsListResponse {
+  success: boolean;
+  data: ArtAsset[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export const artAssetsApi = {
+  // [2025-01-28 01:00:00] Get all art assets grouped by category (public)
+  getAll: async (): Promise<ArtAssetsResponse> => {
+    return api<ArtAssetsResponse>('/art-assets');
+  },
+
+  // [2025-01-28 01:00:00] Get art assets by category (public)
+  getByCategory: async (category: string): Promise<ArtAssetsByCategoryResponse> => {
+    return api<ArtAssetsByCategoryResponse>(`/art-assets/category/${encodeURIComponent(category)}`);
+  },
+};
+
+// [2025-01-28 01:00:00] Admin Art Assets API
+export const adminArtAssetsApi = {
+  // [2025-01-28 01:00:00] List all art assets (admin)
+  list: async (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    isActive?: boolean;
+  }): Promise<ArtAssetsListResponse> => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.category) query.append('category', params.category);
+    if (params?.isActive !== undefined) query.append('isActive', params.isActive.toString());
+    
+    const queryString = query.toString();
+    return api<ArtAssetsListResponse>(`/admin/art-assets${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // [2025-01-28 01:00:00] Get single art asset (admin)
+  get: async (id: string): Promise<{ success: boolean; data: ArtAsset }> => {
+    return api<{ success: boolean; data: ArtAsset }>(`/admin/art-assets/${id}`);
+  },
+
+  // [2025-01-28 01:00:00] Create art asset (admin)
+  create: async (data: {
+    category: string;
+    name: string;
+    image: File;
+    sortOrder?: number;
+  }): Promise<{ success: boolean; data: ArtAsset }> => {
+    const formData = new FormData();
+    formData.append('category', data.category);
+    formData.append('name', data.name);
+    formData.append('image', data.image);
+    if (data.sortOrder !== undefined) {
+      formData.append('sortOrder', data.sortOrder.toString());
+    }
+
+    return api<{ success: boolean; data: ArtAsset }>('/admin/art-assets', {
+      method: 'POST',
+      body: formData,
+      headers: {}, // Let browser set Content-Type with boundary for FormData
+    });
+  },
+
+  // [2025-01-28 01:00:00] Update art asset (admin)
+  update: async (
+    id: string,
+    data: {
+      category?: string;
+      name?: string;
+      image?: File;
+      isActive?: boolean;
+      sortOrder?: number;
+    }
+  ): Promise<{ success: boolean; data: ArtAsset }> => {
+    const formData = new FormData();
+    if (data.category) formData.append('category', data.category);
+    if (data.name) formData.append('name', data.name);
+    if (data.image) formData.append('image', data.image);
+    if (data.isActive !== undefined) formData.append('isActive', data.isActive.toString());
+    if (data.sortOrder !== undefined) formData.append('sortOrder', data.sortOrder.toString());
+
+    return api<{ success: boolean; data: ArtAsset }>(`/admin/art-assets/${id}`, {
+      method: 'PUT',
+      body: formData,
+      headers: {}, // Let browser set Content-Type with boundary for FormData
+    });
+  },
+
+  // [2025-01-28 01:00:00] Delete art asset (admin)
+  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+    return api<{ success: boolean; message: string }>(`/admin/art-assets/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default api;

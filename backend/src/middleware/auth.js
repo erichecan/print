@@ -138,8 +138,10 @@ exports.authenticate = async (req, res, next) => {
 exports.requireAdmin = [
   exports.authenticate,
   (req, res, next) => {
-    if (req.user?.role !== 'ADMIN') {
-      throw new ForbiddenError('Admin access required');
+    // [2025-01-28 02:15:00] 支持大小写角色检查（ADMIN 或 admin）
+    const userRole = req.user?.role;
+    if (userRole !== 'ADMIN' && userRole !== 'admin') {
+      return next(new ForbiddenError('Admin access required'));
     }
     next();
   },

@@ -143,7 +143,8 @@ exports.login = async (req, res) => {
     });
   } catch (error) {
     console.error('Error logging in:', error);
-    res.status(500).json({ error: 'Failed to login' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Failed to login', details: error.message });
   }
 };
 

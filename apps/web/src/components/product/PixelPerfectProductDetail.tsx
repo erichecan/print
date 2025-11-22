@@ -135,7 +135,7 @@ const LoadingSkeleton = () => {
 
 export function PixelPerfectProductDetail() {
   const params = useParams();
-  const router = useRouter();
+  const router = useRouter(); // [2025-01-28 03:10:00] 添加 router 用于导航
   const slug = params?.slug as string;
   const { addItem } = useCart();
   const { success, error: showError } = useToast();
@@ -304,7 +304,7 @@ export function PixelPerfectProductDetail() {
       return;
     }
     persistDesignLabPayload(selectedVariant);
-    // [2025-11-19 11:00:00] 跳转到纯原生 Design Lab
+    // [2025-01-28 04:00:00] 跳转到原生 HTML 版本的 Design Lab（功能完整）
     window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
   }, [selectedVariant, showError, persistDesignLabPayload]);
 

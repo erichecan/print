@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 export function CartIcon() {
   const { cart, isLoading } = useCart();
+  // [2025-01-28 03:40:00] cart 现在保证不是 null，但为了安全仍然使用可选链
   const itemCount = cart?.itemCount || 0;
 
   return (

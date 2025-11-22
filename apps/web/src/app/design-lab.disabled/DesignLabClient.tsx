@@ -16,6 +16,7 @@ import {
   templateApi,
   designCommentApi,
   productsApi,
+  artAssetsApi,
   type DesignDraft,
   type DesignCanvasSnapshot,
   type DesignTemplate,
@@ -68,12 +69,13 @@ const ART_ASSETS: Record<string, string[]> = {
 };
 
 const DesignLabClient = () => {
-  // [2025-01-27 23:55:00] 组件函数开始执行 - 最早期的日志
+  // [2025-01-28 03:15:00] 组件函数开始执行 - 最早期的日志
   console.log('[Upload] ========================================');
   console.log('[Upload] ===== DesignLabClient FUNCTION CALLED =====');
   console.log('[Upload] Timestamp:', new Date().toISOString());
   console.log('[Upload] ========================================');
   
+  // [2025-01-28 03:20:00] React Hooks 必须在组件顶层调用
   const router = useRouter();
   const params = useSearchParams();
   const paramsString = params?.toString() || '';
@@ -176,6 +178,8 @@ const DesignLabClient = () => {
   const [showAddTextModal, setShowAddTextModal] = useState(false);
   const [showAddArtModal, setShowAddArtModal] = useState(false);
   const [selectedArtCategory, setSelectedArtCategory] = useState<string | null>(null); // [2025-11-20 22:30:00] Art category state
+  const [artAssetsFromApi, setArtAssetsFromApi] = useState<Record<string, any[]>>({}); // [2025-01-28 01:20:00] Art assets from API
+  const [loadingArtAssets, setLoadingArtAssets] = useState(false); // [2025-01-28 01:20:00] Loading state for art assets
   const [showProductColorsModal, setShowProductColorsModal] = useState(false);
   const [showAddNamesModal, setShowAddNamesModal] = useState(false);
   const [showNamesToolsModal, setShowNamesToolsModal] = useState(false);
@@ -337,6 +341,117 @@ const DesignLabClient = () => {
 
     fetchProductDetails();
   }, [variantIdParam, resolveDefaultVariantId]);
+
+  // [2025-01-28 01:20:00] 从 API 获取素材
+  useEffect(() => {
+    const fetchArtAssets = async () => {
+      try {
+        console.log('[Design Lab] ===== Fetching art assets from API =====');
+        setLoadingArtAssets(true);
+        const response = await artAssetsApi.getAll();
+        console.log('[Design Lab] API Response:', {
+          success: response.success,
+          hasData: !!response.data,
+          categories: response.categories,
+          dataKeys: response.data ? Object.keys(response.data) : [],
+          fullResponse: response
+        });
+        
+        if (response.success && response.data) {
+          // [2025-01-28 03:00:00] 详细记录每个分类的素材
+          Object.keys(response.data).forEach((category) => {
+            console.log(`[Design Lab] Category "${category}":`, {
+              count: response.data[category].length,
+              assets: response.data[category].map((a: any) => ({
+                id: a.id,
+                name: a.name,
+                imageUrl: a.imageUrl,
+                thumbnailUrl: a.thumbnailUrl
+              }))
+            });
+          });
+          
+          setArtAssetsFromApi(response.data);
+          console.log('[Design Lab] ✅ Art assets loaded from API:', {
+            categories: response.categories,
+            totalCategories: Object.keys(response.data).length,
+            totalAssets: Object.values(response.data).reduce((sum: number, arr: any) => sum + arr.length, 0)
+          });
+        } else {
+          console.warn('[Design Lab] ⚠️ API response missing data:', response);
+        }
+      } catch (err: any) {
+        console.error('[Design Lab] ❌ Failed to load art assets from API:', err);
+        console.error('[Design Lab] Error details:', {
+          message: err.message,
+          stack: err.stack
+        });
+        // 失败时继续使用硬编码的素材
+      } finally {
+        setLoadingArtAssets(false);
+      }
+    };
+
+    fetchArtAssets();
+  }, []);
+
+  // [2025-01-28 01:20:00] 合并硬编码的 emoji 素材和 API 返回的图片素材
+  const mergedArtAssets = useMemo(() => {
+    console.log('[Design Lab] ===== Merging art assets =====');
+    console.log('[Design Lab] API categories:', Object.keys(artAssetsFromApi));
+    console.log('[Design Lab] Hardcoded categories:', Object.keys(ART_ASSETS));
+    
+    const merged: Record<string, Array<{ type: 'emoji' | 'image'; content: string; id?: string; imageUrl?: string }>> = {};
+    
+    // 先添加硬编码的 emoji 素材
+    Object.keys(ART_ASSETS).forEach((category) => {
+      merged[category] = ART_ASSETS[category].map((emoji) => ({
+        type: 'emoji' as const,
+        content: emoji
+      }));
+    });
+
+    // 然后添加 API 返回的图片素材
+    Object.keys(artAssetsFromApi).forEach((category) => {
+      console.log(`[Design Lab] Processing API category "${category}":`, {
+        assetsCount: artAssetsFromApi[category].length,
+        categoryExists: !!merged[category]
+      });
+      
+      if (!merged[category]) {
+        merged[category] = [];
+        console.log(`[Design Lab] Created new category "${category}"`);
+      }
+      
+      artAssetsFromApi[category].forEach((asset: any) => {
+        const imageUrl = asset.imageUrl || asset.thumbnailUrl || asset.image_url;
+        console.log(`[Design Lab] Adding asset to "${category}":`, {
+          id: asset.id,
+          name: asset.name,
+          imageUrl: imageUrl
+        });
+        
+        merged[category].push({
+          type: 'image' as const,
+          content: asset.name,
+          id: asset.id,
+          imageUrl: imageUrl
+        });
+      });
+    });
+
+    console.log('[Design Lab] ✅ Merged art assets:', {
+      totalCategories: Object.keys(merged).length,
+      categoryCounts: Object.keys(merged).map(cat => ({
+        category: cat,
+        count: merged[cat].length,
+        emojiCount: merged[cat].filter(a => a.type === 'emoji').length,
+        imageCount: merged[cat].filter(a => a.type === 'image').length
+      }))
+    });
+
+    return merged;
+  }, [artAssetsFromApi]);
 
   // [2025-11-15 16:06:02] 视图缩略图、产品配色、预设素材与推荐产品数据
   const viewOptions = useMemo(
@@ -2668,42 +2783,6 @@ const DesignLabClient = () => {
     />
   );
 
-  // [2025-01-27 23:45:00] 加载状态
-  if (loading) {
-    console.log('[Upload] ⚠️ Component is in loading state', {
-      timestamp: new Date().toISOString(),
-      fileInputRefExists: !!fileInputRef.current
-    });
-    return (
-      <>
-        {fileInputElement}
-        <section className="lab__loading">
-          <p>正在加载 Design Lab...</p>
-        </section>
-      </>
-    );
-  }
-
-  // [2025-01-27 20:00:00] If no draft, we should still show the UI for a new design
-  // instead of showing an error. The loadDraft effect will handle creating a draft.
-  // Only show error if we really have a persistent error.
-  if (error && !draft) {
-    console.log('[Upload] ⚠️ Component is in error state', {
-      timestamp: new Date().toISOString(),
-      error,
-      fileInputRefExists: !!fileInputRef.current
-    });
-    return (
-      <>
-        {fileInputElement}
-        <section className="lab__error">
-          <h1>Design Lab</h1>
-          <p>{error}</p>
-        </section>
-      </>
-    );
-  }
-
   // [2025-01-27 20:00:00] 切换可展开部分
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
@@ -2716,6 +2795,7 @@ const DesignLabClient = () => {
   const productImages = PRODUCT_IMAGES;
 
   // [2025-01-27 23:55:00] 组件初始化日志 - 确保在组件挂载时执行
+  // [2025-01-28 03:50:00] 必须在条件返回之前调用，遵守 React Hooks 规则
   useEffect(() => {
     const timestamp = new Date().toISOString();
     console.log('[Upload] ========================================');
@@ -2781,6 +2861,43 @@ const DesignLabClient = () => {
     hasDraft: !!draft,
     fileInputRefExists: !!fileInputRef.current
   });
+
+  // [2025-01-28 03:50:00] 条件返回 - 必须在所有 hooks 之后
+  // [2025-01-27 23:45:00] 加载状态
+  if (loading) {
+    console.log('[Upload] ⚠️ Component is in loading state', {
+      timestamp: new Date().toISOString(),
+      fileInputRefExists: !!fileInputRef.current
+    });
+    return (
+      <>
+        {fileInputElement}
+        <section className="lab__loading">
+          <p>正在加载 Design Lab...</p>
+        </section>
+      </>
+    );
+  }
+
+  // [2025-01-27 20:00:00] If no draft, we should still show the UI for a new design
+  // instead of showing an error. The loadDraft effect will handle creating a draft.
+  // Only show error if we really have a persistent error.
+  if (error && !draft) {
+    console.log('[Upload] ⚠️ Component is in error state', {
+      timestamp: new Date().toISOString(),
+      error,
+      fileInputRefExists: !!fileInputRef.current
+    });
+    return (
+      <>
+        {fileInputElement}
+        <section className="lab__error">
+          <h1>Design Lab</h1>
+          <p>{error}</p>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
@@ -4408,22 +4525,58 @@ const DesignLabClient = () => {
                       ← Back to Categories
                     </button>
                     <h3 style={{ marginBottom: '12px' }}>{selectedArtCategory}</h3>
+                    {loadingArtAssets && (
+                      <div style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+                        Loading art assets...
+                      </div>
+                    )}
                     <div className="dl-art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
-                      {ART_ASSETS[selectedArtCategory]?.map((art, index) => (
+                      {mergedArtAssets[selectedArtCategory]?.map((art, index) => (
                         <button
-                          key={index}
+                          key={art.id || index}
                           type="button"
                           className="dl-art-item"
-                          style={{ fontSize: '32px', padding: '12px', border: '1px solid #eee', borderRadius: '8px', background: 'white', cursor: 'pointer' }}
-                          onClick={() => {
-                            handleAddText(art);
+                          style={{
+                            fontSize: art.type === 'emoji' ? '32px' : '14px',
+                            padding: '12px',
+                            border: '1px solid #eee',
+                            borderRadius: '8px',
+                            background: 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: art.type === 'image' ? '80px' : 'auto',
+                            position: 'relative'
+                          }}
+                          onClick={async () => {
+                            if (art.type === 'emoji') {
+                              handleAddText(art.content);
+                            } else if (art.type === 'image' && art.imageUrl) {
+                              await addImageFromUrl(art.imageUrl);
+                            }
                             setShowAddArtModal(false);
                             setSelectedArtCategory(null);
                           }}
                         >
-                          {art}
+                          {art.type === 'emoji' ? (
+                            art.content
+                          ) : (
+                            <Image
+                              src={art.imageUrl || ''}
+                              alt={art.content}
+                              width={60}
+                              height={60}
+                              style={{ objectFit: 'contain' }}
+                            />
+                          )}
                         </button>
                       ))}
+                      {(!mergedArtAssets[selectedArtCategory] || mergedArtAssets[selectedArtCategory].length === 0) && !loadingArtAssets && (
+                        <div style={{ gridColumn: '1 / -1', padding: '20px', textAlign: 'center', color: '#666' }}>
+                          No art assets in this category
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -4433,19 +4586,31 @@ const DesignLabClient = () => {
                       <input type="text" className="dl-search-box__input" placeholder="Search For Artwork" />
                     </div>
                     <div className="dl-artwork-categories">
-                      {Object.keys(ART_ASSETS).map((category) => (
-                        <button
-                          key={category}
-                          type="button"
-                          className="dl-artwork-category"
-                          onClick={() => setSelectedArtCategory(category)}
-                        >
-                          <span className="dl-artwork-category__icon">
-                            {category === 'Emojis' ? '😊' : category === 'Shapes & Symbols' ? '⭐' : category === 'Sports & Games' ? '⚽' : category === 'Letters & Numbers' ? 'ABC' : category === 'Animals' ? '🐱' : category === 'Mascots' ? '🐾' : category === 'Nature' ? '🌲' : '🇺🇸'}
-                          </span>
-                          <span className="dl-artwork-category__name">{category}</span>
-                        </button>
-                      ))}
+                      {Object.keys(mergedArtAssets).map((category) => {
+                        const categoryAssets = mergedArtAssets[category] || [];
+                        const emojiCount = categoryAssets.filter(a => a.type === 'emoji').length;
+                        const imageCount = categoryAssets.filter(a => a.type === 'image').length;
+                        return (
+                          <button
+                            key={category}
+                            type="button"
+                            className="dl-artwork-category"
+                            onClick={() => setSelectedArtCategory(category)}
+                          >
+                            <span className="dl-artwork-category__icon">
+                              {category === 'Emojis' ? '😊' : category === 'Shapes & Symbols' ? '⭐' : category === 'Sports & Games' ? '⚽' : category === 'Letters & Numbers' ? 'ABC' : category === 'Animals' ? '🐱' : category === 'Mascots' ? '🐾' : category === 'Nature' ? '🌲' : '🇺🇸'}
+                            </span>
+                            <span className="dl-artwork-category__name">
+                              {category}
+                              {imageCount > 0 && (
+                                <span style={{ fontSize: '12px', color: '#666', marginLeft: '4px' }}>
+                                  ({emojiCount} emojis, {imageCount} images)
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </>
                 )}

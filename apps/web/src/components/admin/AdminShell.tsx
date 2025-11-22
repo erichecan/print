@@ -79,6 +79,11 @@ const ICONS: Record<string, JSX.Element> = {
       <path fill="currentColor" d="M19.14 12.94a7.973 7.973 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.994 7.994 0 00-1.63-.95l-.36-2.54A.5.5 0 0012.9 1h-3.8a.5.5 0 00-.5.42l-.36 2.54c-.57.23-1.11.53-1.63.95l-2.39-.96a.5.5 0 00-.6.22L.8 7.03a.5.5 0 00.12.64l2.03 1.58c-.08.62-.08 1.26 0 1.88L.92 14.7a.5.5 0 00-.12.64l1.92 3.32c.14.25.44.35.7.24l2.39-.96c.5.42 1.06.75 1.63.98l.36 2.54c.05.26.26.44.5.44h3.8c.24 0 .45-.18.5-.44l.36-2.54c.57-.23 1.12-.56 1.63-.98l2.39.96c.26.11.56.01.7-.24l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.76zM11 8a4 4 0 110 8 4 4 0 010-8z" />
     </svg>
   ),
+  artAssets: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+    </svg>
+  ),
 };
 
 const NAV_LINKS = [
@@ -92,6 +97,7 @@ const NAV_LINKS = [
   { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costs' }, // [2025-11-16 13:35:00] 成本管理
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
+  { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // [2025-01-28 01:10:00] Design Lab art assets CMS
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];
 
