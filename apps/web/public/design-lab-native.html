@@ -727,8 +727,9 @@
   <script src="/design-lab-native/history.js" defer></script>
   <script src="/design-lab-native/zoomPan.js" defer></script>
   <script src="/design-lab-native/layersPanel.js" defer></script>
-  <script src="/design-lab-native/panelManager.js" defer></script>
+  <!-- [2025-01-27] toolbar.js 必须在 panelManager.js 之前加载，确保方法可用 -->
   <script src="/design-lab-native/toolbar.js" defer></script>
+  <script src="/design-lab-native/panelManager.js" defer></script>
   <!-- [2025-01-28 04:15:00] CMS 素材库加载器 - 必须在 app.js 之前加载 -->
   <script src="/design-lab-native/artAssetsLoader.js" defer></script>
   <script src="/design-lab-native/app.js" defer></script>

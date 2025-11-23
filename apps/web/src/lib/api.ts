@@ -20,9 +20,22 @@ interface CheckoutPaymentIntentResponse {
   currency: string;
   breakdown?: {
     subtotal: number;
+    promotionDiscount?: number; // [2025-01-28 12:30:00] 促销折扣
+    discount?: number; // [2025-01-28 11:35:00] 总折扣（促销+优惠券）
     shipping: number;
     tax: number;
     total: number;
+  };
+  promotions?: Array<{ // [2025-01-28 12:30:00] 促销活动信息
+    promotionId: string;
+    promotionTitle: string;
+    productId: string;
+    discountAmount: number;
+  }>;
+  coupon?: { // [2025-01-28 11:35:00] 添加优惠券信息
+    id: string;
+    code: string;
+    type: string;
   };
 }
 
@@ -76,6 +89,8 @@ export interface Product {
     sku: string;
     stockQuantity: number;
   }>;
+  // [2025-01-28 12:30:00] 促销活动信息
+  promotions?: Promotion[];
   category?: {
     id: string;
     name: string;
@@ -449,28 +464,45 @@ export const cartApi = {
 
 // Checkout API
 export const checkoutApi = {
-  prepare: (payload?: { shippingAddress?: CheckoutAddressPayload; shippingMethod?: string }) =>
+  prepare: (payload?: { shippingAddress?: CheckoutAddressPayload; shippingMethod?: string; couponCode?: string }) =>
     api('/checkout/prepare', {
       method: 'POST',
       ...(payload ? { body: payload } : {}),
     }),
   getShippingRates: (address: any) =>
     api('/checkout/shipping-rates', { method: 'POST', body: { address } }),
-  createPaymentIntent: (shippingAddress: CheckoutAddressPayload, shippingMethod: string = 'standard') =>
+  // [2025-01-28 11:35:00] 添加优惠券支持
+  createPaymentIntent: (
+    shippingAddress: CheckoutAddressPayload,
+    shippingMethod: string = 'standard',
+    couponCode?: string,
+    couponId?: string
+  ) =>
     api<CheckoutPaymentIntentResponse>('/checkout/create-payment-intent', {
       method: 'POST',
-      body: { shippingAddress, shippingMethod },
+      body: { shippingAddress, shippingMethod, ...(couponCode ? { couponCode } : {}), ...(couponId ? { couponId } : {}) },
     }),
+  // [2025-01-28 11:35:00] 添加优惠券支持
   confirm: (
     paymentIntentId: string,
     shippingAddress: CheckoutAddressPayload,
     billingAddress: CheckoutAddressPayload,
     shippingMethod: string,
-    email: string
+    email: string,
+    couponCode?: string,
+    couponId?: string
   ) =>
     api<CheckoutConfirmResponse>('/checkout/confirm', {
       method: 'POST',
-      body: { paymentIntentId, shippingAddress, billingAddress, shippingMethod, email },
+      body: {
+        paymentIntentId,
+        shippingAddress,
+        billingAddress,
+        shippingMethod,
+        email,
+        ...(couponCode ? { couponCode } : {}),
+        ...(couponId ? { couponId } : {}),
+      },
     }),
 };
 
@@ -989,12 +1021,38 @@ export interface AdminPromotion {
   description?: string | null;
   bannerImageUrl?: string | null;
   linkUrl?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
+  // [2025-01-28 12:30:00] 折扣相关字段
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderValue?: number | null;
+  maxDiscount?: number | null;
+  startDate: string;
+  endDate: string;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  // [2025-01-28 12:30:00] 关联数据
+  products?: Array<{ id: string; name: string; slug: string }>;
+  categories?: Array<{ id: string; name: string; slug: string }>;
+  coupon?: { id: string; code: string; type: string } | null;
+}
+
+// [2025-01-28 12:30:00] 公共促销活动接口
+export interface Promotion {
+  id: string;
+  title: string;
+  description?: string;
+  bannerImageUrl?: string;
+  linkUrl?: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderValue?: number | null;
+  maxDiscount?: number | null;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  sortOrder: number;
 }
 
 export const adminPromotionsApi = {
@@ -1005,11 +1063,36 @@ export const adminPromotionsApi = {
     const queryString = query.toString();
     return api<{ data: AdminPromotion[] }>(`/admin/promotions${queryString ? `?${queryString}` : ''}`);
   },
-  create: (data: Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt'>) =>
+  create: (data: Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt' | 'products' | 'categories' | 'coupon'>) =>
     api<{ data: AdminPromotion }>('/admin/promotions', { method: 'POST', body: data }),
-  update: (id: string, data: Partial<Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt'>>) =>
+  update: (id: string, data: Partial<Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt' | 'products' | 'categories' | 'coupon'>>) =>
     api<{ data: AdminPromotion }>(`/admin/promotions/${id}`, { method: 'PUT', body: data }),
   remove: (id: string) => api(`/admin/promotions/${id}`, { method: 'DELETE' }),
+  // [2025-01-28 12:30:00] 商品关联管理
+  addProducts: (id: string, productIds: string[]) =>
+    api<{ data: AdminPromotion }>(`/admin/promotions/${id}/products`, { method: 'POST', body: { productIds } }),
+  removeProduct: (id: string, productId: string) =>
+    api<{ data: AdminPromotion }>(`/admin/promotions/${id}/products/${productId}`, { method: 'DELETE' }),
+  // [2025-01-28 12:30:00] 类目关联管理
+  addCategories: (id: string, categoryIds: string[]) =>
+    api<{ data: AdminPromotion }>(`/admin/promotions/${id}/categories`, { method: 'POST', body: { categoryIds } }),
+  removeCategory: (id: string, categoryId: string) =>
+    api<{ data: AdminPromotion }>(`/admin/promotions/${id}/categories/${categoryId}`, { method: 'DELETE' }),
+  // [2025-01-28 12:30:00] 优惠券关联管理
+  setCoupon: (id: string, couponId: string | null) =>
+    api<{ data: AdminPromotion }>(`/admin/promotions/${id}/coupon`, { method: 'PUT', body: { couponId } }),
+};
+
+// [2025-01-28 12:30:00] 公共促销活动 API
+export const promotionApi = {
+  getActive: () => api<{ promotions: Promotion[] }>('/promotions'),
+  getForProduct: (productId: string) => api<{ promotions: Promotion[] }>(`/promotions/product/${productId}`),
+  getForCategory: (categoryId: string) => api<{ promotions: Promotion[] }>(`/promotions/category/${categoryId}`),
+  calculate: (data: { items: Array<{ productId: string; quantity: number; unitPrice: number }>; subtotal: number }) =>
+    api<{ discount: number; promotions: Array<{ promotionId: string; promotionTitle: string; productId: string; discountAmount: number }> }>(
+      '/promotions/calculate',
+      { method: 'POST', body: data }
+    ),
 };
 
 export interface SiteSettingsPayload {

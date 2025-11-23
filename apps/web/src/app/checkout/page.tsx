@@ -46,7 +46,8 @@ interface CheckoutTotals {
   subtotal: number;
   shipping: number;
   tax: number;
-  discount?: number; // [2025-01-27 20:10:00] 折扣金额
+  promotionDiscount?: number; // [2025-01-28 12:45:00] 促销折扣
+  discount?: number; // [2025-01-27 20:10:00] 总折扣（促销+优惠券）
   total: number;
 }
 
@@ -59,6 +60,7 @@ interface ShippingRate {
 
 const emptyTotals: CheckoutTotals = {
   subtotal: 0,
+  discount: 0, // [2025-01-28 11:35:00] 添加折扣字段
   shipping: 0,
   tax: 0,
   total: 0,
@@ -128,7 +130,7 @@ function CheckoutSummary({
 }: {
   cart: CartResponse;
   totals: CheckoutTotals;
-  appliedCoupon?: { code: string; discountAmount: number } | null; // [2025-01-27 20:10:00] 已应用的优惠券
+  appliedCoupon?: { code: string; discountAmount: number; id?: string } | null; // [2025-01-27 20:10:00] 已应用的优惠券 [2025-01-28 11:35:00] 添加 id 字段
 }) {
   const shippingText =
     totals.shipping > 0 ? `$${totals.shipping.toFixed(2)}` : 'Calculated at checkout';
@@ -164,6 +166,13 @@ function CheckoutSummary({
           <span>Subtotal</span>
           <span>${totals.subtotal.toFixed(2)}</span>
         </div>
+        {/* [2025-01-28 12:45:00] 显示促销折扣 */}
+        {totals.promotionDiscount && totals.promotionDiscount > 0 && (
+          <div className="summary-row discount" style={{ color: '#e74c3c' }}>
+            <span>Promotion Discount</span>
+            <span>-${totals.promotionDiscount.toFixed(2)}</span>
+          </div>
+        )}
         {/* [2025-01-27 20:10:00] 显示优惠券折扣 */}
         {appliedCoupon && (
           <div className="summary-row discount">
@@ -199,7 +208,7 @@ function CheckoutForm({
 }: {
   cart: CartResponse;
   onTotalsChange: (totals: CheckoutTotals) => void;
-  onCouponChange?: (coupon: { code: string; discountAmount: number } | null) => void; // [2025-01-27 20:20:00]
+  onCouponChange?: (coupon: { code: string; discountAmount: number; id?: string } | null) => void; // [2025-01-27 20:20:00] [2025-01-28 11:35:00] 添加 id 字段
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -252,7 +261,7 @@ function CheckoutForm({
 
   // [2025-01-27 20:15:00] 优惠券状态
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); // [2025-01-28 11:35:00] 添加 id 字段
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
 
@@ -377,13 +386,41 @@ function CheckoutForm({
     setCouponError(null);
     onCouponChange?.(null); // [2025-01-27 20:20:00] 通知父组件
 
-    // [2025-01-27 20:15:00] 更新总计（移除折扣）
-    const newTotal = totals.total + discountToRemove;
-    notifyTotals({
-      ...totals,
-      discount: 0,
-      total: newTotal,
-    });
+    // [2025-01-28 11:35:00] 重新计算总计（移除折扣）
+    if (addressReady) {
+      // 调用 prepare API 获取不包含折扣的完整费用明细
+      checkoutApi
+        .prepare({
+          shippingAddress: mapAddressForApi(address),
+          shippingMethod: selectedShipping,
+        })
+        .then((prepared: any) => {
+          notifyTotals({
+            subtotal: prepared.subtotal ?? totals.subtotal,
+            discount: 0,
+            shipping: prepared.shipping ?? totals.shipping,
+            tax: prepared.tax ?? totals.tax,
+            total: prepared.total ?? totals.total,
+          });
+        })
+        .catch(() => {
+          // 如果 prepare 失败，使用本地计算
+          const newTotal = totals.total + discountToRemove;
+          notifyTotals({
+            ...totals,
+            discount: 0,
+            total: newTotal,
+          });
+        });
+    } else {
+      // 如果地址未准备好，使用本地计算
+      const newTotal = totals.total + discountToRemove;
+      notifyTotals({
+        ...totals,
+        discount: 0,
+        total: newTotal,
+      });
+    }
   };
 
   const refreshTotals = useCallback(
@@ -392,21 +429,20 @@ function CheckoutForm({
       setIsCalculatingTotals(true);
       setRatesError(null);
       try {
+        // [2025-01-28 11:35:00] 传递优惠券代码到 prepare API
         const result: any = await checkoutApi.prepare({
           shippingAddress: mapAddressForApi(address),
           shippingMethod,
+          ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
         });
 
-        // [2025-01-27 20:15:00] 重新计算时保留折扣
-        const discount = appliedCoupon?.discountAmount || 0;
-        const baseTotal = (result.subtotal ?? cart.subtotal) + (result.shipping ?? 0) + (result.tax ?? 0);
-
+        // [2025-01-28 11:35:00] 使用 prepare API 返回的折扣（如果提供了优惠券代码）
         notifyTotals({
           subtotal: result.subtotal ?? cart.subtotal,
+          discount: result.discount ?? 0, // [2025-01-28 11:35:00] 使用 API 返回的折扣
           shipping: result.shipping ?? 0,
           tax: result.tax ?? 0,
-          discount,
-          total: Math.max(0, baseTotal - discount),
+          total: result.total ?? cart.subtotal,
         });
       } catch (error: unknown) {
         setRatesError(
@@ -528,10 +564,21 @@ function CheckoutForm({
       const shippingPayload = mapAddressForApi(address);
       const billingPayload = sameBilling ? shippingPayload : mapAddressForApi(billingAddress);
 
+      // [2025-01-28 11:35:00] 传递优惠券信息到 createPaymentIntent
       const paymentIntentResponse = await checkoutApi.createPaymentIntent(
         shippingPayload,
-        selectedShipping
+        selectedShipping,
+        appliedCoupon?.code,
+        appliedCoupon?.id // 如果前端有存储 couponId，可以传递
       );
+
+      // [2025-01-28 11:35:00] 更新优惠券状态（如果 paymentIntentResponse 包含优惠券信息）
+      if (paymentIntentResponse.coupon && appliedCoupon) {
+        setAppliedCoupon({
+          ...appliedCoupon,
+          id: paymentIntentResponse.coupon.id,
+        });
+      }
 
       if (paymentIntentResponse.breakdown) {
         notifyTotals(paymentIntentResponse.breakdown);
@@ -584,12 +631,15 @@ function CheckoutForm({
         return; // 不跳转，让用户有机会重试
       }
 
+      // [2025-01-28 11:35:00] 传递优惠券信息到 confirm API
       const order = await checkoutApi.confirm(
         paymentIntentResponse.paymentIntentId,
         shippingPayload,
         billingPayload,
         selectedShipping,
-        shippingPayload.email
+        shippingPayload.email,
+        appliedCoupon?.code,
+        appliedCoupon?.id || paymentIntentResponse.coupon?.id // 优先使用 appliedCoupon 的 id
       );
 
       // [2025-01-27 11:20:00] 支付成功后清除保存的地址信息
@@ -1426,13 +1476,21 @@ export default function CheckoutPage() {
   const { cart, isLoading } = useCart();
   const router = useRouter();
   const [checkoutTotals, setCheckoutTotals] = useState<CheckoutTotals>(emptyTotals);
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number } | null>(null); // [2025-01-27 20:20:00]
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); // [2025-01-27 20:20:00] [2025-01-28 11:35:00] 添加 id 字段
+  const [appliedPromotions, setAppliedPromotions] = useState<Array<{ promotionId: string; promotionTitle: string; productId: string; discountAmount: number }>>([]); // [2025-01-28 12:45:00] 应用的促销活动
 
   useEffect(() => {
     if (!isLoading && (!cart || cart.items.length === 0)) {
       router.push('/cart');
     }
   }, [cart, isLoading, router]);
+
+  // [2025-01-28 12:45:00] 初始化时获取促销活动信息
+  useEffect(() => {
+    if (cart && cart.items.length > 0) {
+      // 通过 prepareCheckout 获取促销信息（在 CheckoutForm 中处理）
+    }
+  }, [cart]);
 
   if (isLoading || !cart || cart.items.length === 0) {
     return <CheckoutSkeleton />;

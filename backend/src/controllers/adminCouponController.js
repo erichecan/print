@@ -1,46 +1,48 @@
 /**
  * Admin Coupon Controller
  * [2025-11-15 15:15:00] Coupon CRUD for admin console
+ * [2025-01-28 11:20:00] 迁移到 Prisma
  */
-const { Op } = require('sequelize');
-const { Coupon } = require('../models');
+const prisma = require('../lib/prisma');
 
 const toDecimal = (value) => (value === undefined || value === null ? null : Number(value));
 
+// [2025-01-28 11:20:00] Map Prisma coupon to API format
 const mapCoupon = (coupon) => ({
   id: coupon.id,
   code: coupon.code,
-  type: coupon.type,
+  type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed', // Map enum to string for API compatibility
   value: Number(coupon.value),
-  minOrderValue: coupon.min_order_value ? Number(coupon.min_order_value) : null,
-  maxDiscount: coupon.max_discount ? Number(coupon.max_discount) : null,
-  usageLimit: coupon.usage_limit,
-  userUsageLimit: coupon.user_usage_limit,
-  usedCount: coupon.used_count,
-  startDate: coupon.start_date,
-  endDate: coupon.end_date,
-  isActive: coupon.is_active,
-  createdAt: coupon.createdAt,
-  updatedAt: coupon.updatedAt,
+  minOrderValue: coupon.minOrderValue ? Number(coupon.minOrderValue) : null,
+  maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
+  usageLimit: coupon.usageLimit,
+  userUsageLimit: coupon.userUsageLimit,
+  usedCount: coupon.usedCount,
+  startDate: coupon.startDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+  endDate: coupon.endDate.toISOString().split('T')[0],
+  isActive: coupon.isActive,
+  createdAt: coupon.createdAt.toISOString(),
+  updatedAt: coupon.updatedAt.toISOString(),
 });
 
 exports.listCoupons = async (req, res) => {
   try {
     const { search, status = 'all' } = req.query;
 
+    // [2025-01-28 11:20:00] Build Prisma where clause
     const where = {};
     if (search) {
-      where.code = { [Op.iLike]: `%${search}%` };
+      where.code = { contains: search, mode: 'insensitive' };
     }
     if (status === 'active') {
-      where.is_active = true;
+      where.isActive = true;
     } else if (status === 'inactive') {
-      where.is_active = false;
+      where.isActive = false;
     }
 
-    const coupons = await Coupon.findAll({
+    const coupons = await prisma.coupon.findMany({
       where,
-      order: [['created_at', 'DESC']],
+      orderBy: { createdAt: 'desc' },
     });
 
     res.json({
@@ -71,23 +73,33 @@ exports.createCoupon = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const coupon = await Coupon.create({
-      code: code.toUpperCase().trim(),
-      type,
-      value: toDecimal(value),
-      min_order_value: toDecimal(minOrderValue),
-      max_discount: toDecimal(maxDiscount),
-      usage_limit: usageLimit || null,
-      user_usage_limit: userUsageLimit || null,
-      start_date: startDate,
-      end_date: endDate,
-      is_active: Boolean(isActive),
+    // [2025-01-28 11:20:00] Map type string to enum
+    const couponType = type.toUpperCase() === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED';
+
+    // [2025-01-28 11:20:00] Parse dates (expecting YYYY-MM-DD format)
+    const startDateObj = new Date(startDate);
+    const endDateObj = new Date(endDate);
+
+    const coupon = await prisma.coupon.create({
+      data: {
+        code: code.toUpperCase().trim(),
+        type: couponType,
+        value: toDecimal(value),
+        minOrderValue: toDecimal(minOrderValue),
+        maxDiscount: toDecimal(maxDiscount),
+        usageLimit: usageLimit || null,
+        userUsageLimit: userUsageLimit || null,
+        startDate: startDateObj,
+        endDate: endDateObj,
+        isActive: Boolean(isActive),
+      },
     });
 
     res.status(201).json({ data: mapCoupon(coupon) });
   } catch (error) {
     console.error('[adminCouponController] createCoupon error:', error);
-    if (error.name === 'SequelizeUniqueConstraintError') {
+    // [2025-01-28 11:20:00] Prisma unique constraint error code is P2002
+    if (error.code === 'P2002') {
       return res.status(409).json({ error: 'Coupon code already exists' });
     }
     res.status(500).json({ error: 'Failed to create coupon' });
@@ -99,26 +111,54 @@ exports.updateCoupon = async (req, res) => {
     const { id } = req.params;
     const payload = req.body || {};
 
-    const coupon = await Coupon.findByPk(id);
-    if (!coupon) {
+    // [2025-01-28 11:20:00] Check if coupon exists
+    const existingCoupon = await prisma.coupon.findUnique({ where: { id } });
+    if (!existingCoupon) {
       return res.status(404).json({ error: 'Coupon not found' });
     }
 
-    await coupon.update({
-      ...(payload.code ? { code: payload.code.toUpperCase().trim() } : {}),
-      ...(payload.type ? { type: payload.type } : {}),
-      ...(payload.value !== undefined ? { value: toDecimal(payload.value) } : {}),
-      ...(payload.minOrderValue !== undefined ? { min_order_value: toDecimal(payload.minOrderValue) } : {}),
-      ...(payload.maxDiscount !== undefined ? { max_discount: toDecimal(payload.maxDiscount) } : {}),
-      ...(payload.usageLimit !== undefined ? { usage_limit: payload.usageLimit || null } : {}),
-      ...(payload.userUsageLimit !== undefined ? { user_usage_limit: payload.userUsageLimit || null } : {}),
-      ...(payload.startDate ? { start_date: payload.startDate } : {}),
-      ...(payload.endDate ? { end_date: payload.endDate } : {}),
+    // [2025-01-28 11:20:00] Build update data
+    const updateData = {};
+    if (payload.code) {
+      updateData.code = payload.code.toUpperCase().trim();
+    }
+    if (payload.type) {
+      updateData.type = payload.type.toUpperCase() === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED';
+    }
+    if (payload.value !== undefined) {
+      updateData.value = toDecimal(payload.value);
+    }
+    if (payload.minOrderValue !== undefined) {
+      updateData.minOrderValue = toDecimal(payload.minOrderValue);
+    }
+    if (payload.maxDiscount !== undefined) {
+      updateData.maxDiscount = toDecimal(payload.maxDiscount);
+    }
+    if (payload.usageLimit !== undefined) {
+      updateData.usageLimit = payload.usageLimit || null;
+    }
+    if (payload.userUsageLimit !== undefined) {
+      updateData.userUsageLimit = payload.userUsageLimit || null;
+    }
+    if (payload.startDate) {
+      updateData.startDate = new Date(payload.startDate);
+    }
+    if (payload.endDate) {
+      updateData.endDate = new Date(payload.endDate);
+    }
+
+    const coupon = await prisma.coupon.update({
+      where: { id },
+      data: updateData,
     });
 
     res.json({ data: mapCoupon(coupon) });
   } catch (error) {
     console.error('[adminCouponController] updateCoupon error:', error);
+    if (error.code === 'P2025') {
+      // Prisma record not found error
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
     res.status(500).json({ error: 'Failed to update coupon' });
   }
 };
@@ -128,16 +168,18 @@ exports.toggleCoupon = async (req, res) => {
     const { id } = req.params;
     const { isActive } = req.body || {};
 
-    const coupon = await Coupon.findByPk(id);
-    if (!coupon) {
-      return res.status(404).json({ error: 'Coupon not found' });
-    }
-
-    await coupon.update({ is_active: Boolean(isActive) });
+    const coupon = await prisma.coupon.update({
+      where: { id },
+      data: { isActive: Boolean(isActive) },
+    });
 
     res.json({ data: mapCoupon(coupon) });
   } catch (error) {
     console.error('[adminCouponController] toggleCoupon error:', error);
+    if (error.code === 'P2025') {
+      // Prisma record not found error
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
     res.status(500).json({ error: 'Failed to update coupon status' });
   }
 };
@@ -145,13 +187,14 @@ exports.toggleCoupon = async (req, res) => {
 exports.deleteCoupon = async (req, res) => {
   try {
     const { id } = req.params;
-    const deleted = await Coupon.destroy({ where: { id } });
-    if (!deleted) {
-      return res.status(404).json({ error: 'Coupon not found' });
-    }
+    await prisma.coupon.delete({ where: { id } });
     res.status(204).end();
   } catch (error) {
     console.error('[adminCouponController] deleteCoupon error:', error);
+    if (error.code === 'P2025') {
+      // Prisma record not found error
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
     res.status(500).json({ error: 'Failed to delete coupon' });
   }
 };

@@ -16,7 +16,8 @@ export default function ContentManagerPage() {
   const { data, isLoading, error, mutate } = useSWR('admin-content-config', adminContentApi.get);
   const [content, setContent] = useState<ContentConfig | null>(null);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'navigation' | 'homepage' | 'about' | 'help' | 'static' | 'legacy'>('navigation');
+  // [2025-01-28 10:00:00] 移除 legacy tab，不再需要遗留内容
+  const [activeTab, setActiveTab] = useState<'navigation' | 'homepage' | 'about' | 'help' | 'static'>('navigation');
 
   useEffect(() => {
     if (data?.data) {
@@ -541,13 +542,13 @@ export default function ContentManagerPage() {
 
       {/* [2025-01-28 08:00:00] Tab Navigation - 按分类组织 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid #e5e7eb', flexWrap: 'wrap' }}>
+        {/* [2025-01-28 10:00:00] 移除 legacy tab */}
         {([
           { key: 'navigation', i18nKey: 'navigation' },
           { key: 'homepage', i18nKey: 'homepage' },
           { key: 'about', i18nKey: 'aboutPage' },
           { key: 'help', i18nKey: 'helpPage' },
           { key: 'static', i18nKey: 'staticTexts' },
-          { key: 'legacy', i18nKey: 'legacyContent' },
         ] as const).map((tab) => (
           <button
             key={tab.key}
@@ -1316,194 +1317,6 @@ export default function ContentManagerPage() {
             />
           </div>
         </section>
-      )}
-
-      {/* [2025-01-28 06:10:00] Legacy Content (保持向后兼容) */}
-      {activeTab === 'legacy' && (
-        <>
-          <section className="content-section">
-            <h2>{t('heroSectionImages')}</h2>
-            <p className="text-muted">{t('heroSectionImagesSubtitle')}</p>
-            <div className="image-grid">
-              {content.heroCards.map((card) => (
-                <div key={card.id} className="image-item">
-                  <label>{card.title || 'Hero Card'}</label>
-                  <div className="image-preview">
-                    {card.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={card.imageUrl} alt={card.title} />
-                    ) : (
-                      <div className="placeholder-preview">Upload preview</div>
-                    )}
-                  </div>
-                  <div className="image-info">
-                    <input
-                      type="text"
-                      className="image-url"
-                      placeholder={t('imageUrl')}
-                      value={card.imageUrl}
-                      onChange={(event) => {
-                        setContent((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                heroCards: prev.heroCards.map((c) => (c.id === card.id ? { ...c, imageUrl: event.target.value } : c)),
-                              }
-                            : prev
-                        );
-                      }}
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('title')}
-                      value={card.title}
-                      onChange={(event) => {
-                        setContent((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                heroCards: prev.heroCards.map((c) => (c.id === card.id ? { ...c, title: event.target.value } : c)),
-                              }
-                            : prev
-                        );
-                      }}
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('subtitle')}
-                      value={card.subtitle}
-                      onChange={(event) => {
-                        setContent((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                heroCards: prev.heroCards.map((c) => (c.id === card.id ? { ...c, subtitle: event.target.value } : c)),
-                              }
-                            : prev
-                        );
-                      }}
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('linkUrl')}
-                      value={card.linkUrl}
-                      onChange={(event) => {
-                        setContent((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                heroCards: prev.heroCards.map((c) => (c.id === card.id ? { ...c, linkUrl: event.target.value } : c)),
-                              }
-                            : prev
-                        );
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="content-section">
-            <h2>{t('brandLogos')} ({t('legacyContent')})</h2>
-            <p className="text-muted">{locale === 'zh' ? '首页显示的品牌标志' : 'Brand logos displayed on homepage'}</p>
-            <div className="image-grid">
-              {content.brandLogos.map((logo) => (
-                <div key={logo.id} className="image-item">
-                  <label>{logo.name}</label>
-                  <ImageUploader
-                    currentUrl={logo.imageUrl}
-                    onUploadComplete={(url) => {
-                      setContent((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              brandLogos: prev.brandLogos.map((l) => (l.id === logo.id ? { ...l, imageUrl: url } : l)),
-                            }
-                          : prev
-                      );
-                    }}
-                    onRemove={() => {
-                      setContent((prev) =>
-                        prev
-                          ? {
-                              ...prev,
-                              brandLogos: prev.brandLogos.map((l) => (l.id === logo.id ? { ...l, imageUrl: '' } : l)),
-                            }
-                          : prev
-                      );
-                    }}
-                  />
-                  <div className="image-info">
-                    <input
-                      type="text"
-                      placeholder={t('brandName')}
-                      value={logo.name}
-                      onChange={(event) => {
-                        setContent((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                brandLogos: prev.brandLogos.map((l) => (l.id === logo.id ? { ...l, name: event.target.value } : l)),
-                              }
-                            : prev
-                        );
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="content-section">
-            <h2>{locale === 'zh' ? '精选集合（遗留）' : 'Featured Collections (Legacy)'}</h2>
-            <p className="text-muted">{locale === 'zh' ? '首页精选内容' : 'Homepage featured content'}</p>
-            <div className="image-grid">
-              {content.featuredCollections.map((collection) => (
-                <div key={collection.id} className="image-item">
-                  <label>{collection.title}</label>
-                  <div className="image-info">
-                    <input
-                      type="text"
-                      placeholder={locale === 'zh' ? '集合标题' : 'Collection Title'}
-                      value={collection.title}
-                      onChange={(event) => {
-                        setContent((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                featuredCollections: prev.featuredCollections.map((c) =>
-                                  c.id === collection.id ? { ...c, title: event.target.value } : c
-                                ),
-                              }
-                            : prev
-                        );
-                      }}
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('linkUrl')}
-                      value={collection.linkUrl}
-                      onChange={(event) => {
-                        setContent((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                featuredCollections: prev.featuredCollections.map((c) =>
-                                  c.id === collection.id ? { ...c, linkUrl: event.target.value } : c
-                                ),
-                              }
-                            : prev
-                        );
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </>
       )}
 
       <div className="content-actions" style={{ marginTop: 24 }}>

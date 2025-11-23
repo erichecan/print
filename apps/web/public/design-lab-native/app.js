@@ -87,7 +87,28 @@
       }
       if (window.DesignLabZoom) window.DesignLabZoom.init();
       if (window.DesignLabLayers) window.DesignLabLayers.init();
-      if (window.DesignLabToolbar) window.DesignLabToolbar.init();
+      
+      // [2025-01-27] 检查 DesignLabToolbar 是否已正确导出
+      console.log('[App] Checking DesignLabToolbar before init:', {
+        exists: !!window.DesignLabToolbar,
+        type: typeof window.DesignLabToolbar,
+        hasInit: !!(window.DesignLabToolbar && typeof window.DesignLabToolbar.init === 'function'),
+        hasShowNamesNumbersModal: !!(window.DesignLabToolbar && typeof window.DesignLabToolbar.showNamesNumbersModal === 'function'),
+        allMethods: window.DesignLabToolbar ? Object.keys(window.DesignLabToolbar) : []
+      });
+      
+      if (window.DesignLabToolbar) {
+        if (typeof window.DesignLabToolbar.init === 'function') {
+          window.DesignLabToolbar.init();
+        } else {
+          console.error('[App] DesignLabToolbar.init is not a function!', {
+            type: typeof window.DesignLabToolbar.init,
+            availableMethods: Object.keys(window.DesignLabToolbar)
+          });
+        }
+      } else {
+        console.error('[App] DesignLabToolbar not found!');
+      }
       
       // [2025-01-27] 隐藏颜色功能，2期开发
       // if (window.DesignLabToolbar && window.DesignLabToolbar.initColorPanel) {

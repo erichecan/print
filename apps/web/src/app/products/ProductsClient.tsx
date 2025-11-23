@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { API_BASE_URL } from '@/lib/api-config';
 import { useSearchParams } from 'next/navigation';
 import { Pagination } from '@/components/ui/Pagination'; // [2025-01-27 16:40:00] 分页组件
+import { promotionApi, Promotion } from '@/lib/api'; // [2025-01-28 12:35:00] 促销活动 API
 
 type Product = {
   id: string;
@@ -23,6 +24,7 @@ type Product = {
   brand?: { name: string } | null;
   variants?: Array<{ color?: string; colorHex?: string }>;
   rating?: { average: number; count: number };
+  promotions?: Promotion[]; // [2025-01-28 12:35:00] 促销活动信息
 };
 
 type ProductsResponse = {
@@ -64,6 +66,36 @@ export default function ProductsClient() {
   apiUrl.searchParams.set('includeOutOfStock', 'true');
 
   const { data, error, isLoading } = useSWR<ProductsResponse>(apiUrl.toString(), fetcher);
+
+  // [2025-01-28 12:35:00] 为每个产品获取促销活动信息
+  const productIds = data?.data?.map((p) => p.id) || [];
+  const { data: promotionsData } = useSWR(
+    productIds.length > 0 ? ['product-promotions', productIds] : null,
+    async () => {
+      // 批量获取每个产品的促销活动
+      const promotionsMap: Record<string, Promotion[]> = {};
+      await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const result = await promotionApi.getForProduct(productId);
+            if (result.promotions && result.promotions.length > 0) {
+              // [2025-01-28 12:35:00] 选择折扣最大的促销活动
+              const bestPromotion = result.promotions.sort((a, b) => {
+                const aValue = a.discountType === 'percentage' ? a.discountValue : a.discountValue;
+                const bValue = b.discountType === 'percentage' ? b.discountValue : b.discountValue;
+                return bValue - aValue;
+              })[0];
+              promotionsMap[productId] = [bestPromotion];
+            }
+          } catch (err) {
+            // 忽略错误，继续处理其他产品
+            console.warn(`Failed to fetch promotions for product ${productId}:`, err);
+          }
+        })
+      );
+      return promotionsMap;
+    }
+  );
 
   if (isLoading) {
     return <div className="results-empty"><h2>Loading products…</h2></div>;
@@ -112,7 +144,26 @@ export default function ProductsClient() {
         const fallbackImage = '/assets/hero/hero-card-tee.jpg';
         const img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
         const alt = product.primaryImage?.alt || product.name;
-        const price = product.price?.sale || product.price?.base || 0;
+        const basePrice = Number(product.price?.sale || product.price?.base || 0);
+        // [2025-01-28 12:35:00] 获取该产品的促销活动
+        const productPromotions = promotionsData?.[product.id] || product.promotions || [];
+        const bestPromotion = productPromotions.length > 0 ? productPromotions[0] : null;
+        
+        // [2025-01-28 12:35:00] 计算促销后的价格
+        let finalPrice = basePrice;
+        let discountAmount = 0;
+        if (bestPromotion) {
+          if (bestPromotion.discountType === 'percentage') {
+            discountAmount = (basePrice * bestPromotion.discountValue) / 100;
+            if (bestPromotion.maxDiscount && discountAmount > bestPromotion.maxDiscount) {
+              discountAmount = bestPromotion.maxDiscount;
+            }
+          } else {
+            discountAmount = bestPromotion.discountValue;
+          }
+          finalPrice = Math.max(0, basePrice - discountAmount);
+        }
+        
         const badge = index < 3 ? getProductBadge(index) : null;
         const rating = product.rating?.average || 4.5;
         const reviewCount = product.rating?.count || 10000;
@@ -137,6 +188,14 @@ export default function ProductsClient() {
             <Link href={`/products/${product.slug}`} className="product-card-new__image-link">
               <div className="product-card-new__image">
                 <Image src={img} alt={alt || product.name} width={480} height={600} sizes="(max-width: 768px) 100vw, 320px" />
+                {/* [2025-01-28 12:35:00] 显示促销活动标签 */}
+                {bestPromotion && (
+                  <span className="product-badge product-badge--promotion" style={{ backgroundColor: '#e74c3c', color: 'white' }}>
+                    {bestPromotion.discountType === 'percentage' 
+                      ? `${bestPromotion.discountValue}% OFF` 
+                      : `$${bestPromotion.discountValue.toFixed(2)} OFF`}
+                  </span>
+                )}
                 {badge && (
                   <span className={`product-badge product-badge--${badge.toLowerCase().replace(/\s+/g, '-')}`}>
                     {badge}
@@ -176,7 +235,19 @@ export default function ProductsClient() {
             </div>
 
             <div className="product-card-new__price">
-              <span className="price-amount">${Number(price).toFixed(2)}/ea</span>
+              {/* [2025-01-28 12:35:00] 显示促销后的价格 */}
+              {bestPromotion && basePrice !== finalPrice ? (
+                <>
+                  <span className="price-amount" style={{ textDecoration: 'line-through', color: '#999', marginRight: '8px' }}>
+                    ${basePrice.toFixed(2)}
+                  </span>
+                  <span className="price-amount" style={{ color: '#e74c3c', fontWeight: 'bold' }}>
+                    ${finalPrice.toFixed(2)}/ea
+                  </span>
+                </>
+              ) : (
+                <span className="price-amount">${basePrice.toFixed(2)}/ea</span>
+              )}
               <span className="price-quantity">for 500 items</span>
               <Link href={`/products/${product.slug}`} className="price-details-link">Pricing Details</Link>
             </div>

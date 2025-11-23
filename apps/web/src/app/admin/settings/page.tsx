@@ -133,17 +133,6 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      {/* [2025-01-28 08:00:00] CMS 内容管理已移至独立的 /admin/content-manager 页面 */}
-      <div className="admin-form" style={{ marginBottom: 24, padding: 16, background: '#f9fafb', borderRadius: 8 }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 18 }}>Content Management</h3>
-        <p style={{ margin: '0 0 16px', color: '#6b7280' }}>
-          Content management has been moved to a dedicated page. 
-        </p>
-        <a href="/admin/content-manager" className="btn btn--primary">
-          Go to CMS Manager
-        </a>
-      </div>
-
       <div className="admin-form" style={{ marginBottom: 24 }}>
         <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Production Stage Templates</h3>
         {tplLoading && !templates.length && <div className="admin-table-placeholder">Loading templates…</div>}

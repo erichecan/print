@@ -8,10 +8,11 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import { couponApi } from '@/lib/api';
+import { couponApi, promotionApi, Promotion } from '@/lib/api'; // [2025-01-28 12:40:00] 添加促销活动 API
 import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:50:00] Toast 通知
+import useSWR from 'swr'; // [2025-01-28 12:40:00] 用于获取促销活动
 
 interface AppliedCoupon {
   code: string;
@@ -31,6 +32,60 @@ export default function CartPage() {
   const [postalCode, setPostalCode] = useState('');
   const [postalError, setPostalError] = useState('Please enter a postal code to get your price.');
   const [showCouponForm, setShowCouponForm] = useState(false);
+  
+  // [2025-01-28 12:40:00] 获取每个商品的促销活动信息
+  const productIds = cart?.items.map((item) => item.productId).filter(Boolean) || [];
+  const { data: promotionsData } = useSWR(
+    productIds.length > 0 ? ['cart-promotions', productIds] : null,
+    async () => {
+      const promotionsMap: Record<string, Promotion> = {};
+      await Promise.all(
+        productIds.map(async (productId) => {
+          try {
+            const result = await promotionApi.getForProduct(productId);
+            if (result.promotions && result.promotions.length > 0) {
+              // [2025-01-28 12:40:00] 选择折扣最大的促销活动
+              const bestPromotion = result.promotions.sort((a, b) => {
+                const aValue = a.discountType === 'percentage' ? a.discountValue : a.discountValue;
+                const bValue = b.discountType === 'percentage' ? b.discountValue : b.discountValue;
+                return bValue - aValue;
+              })[0];
+              promotionsMap[productId] = bestPromotion;
+            }
+          } catch (err) {
+            // 忽略错误
+          }
+        })
+      );
+      return promotionsMap;
+    }
+  );
+
+  // [2025-01-28 12:40:00] 计算促销折扣总额
+  const promotionDiscount = useMemo(() => {
+    if (!cart || !promotionsData) return 0;
+    let total = 0;
+    cart.items.forEach((item) => {
+      const promotion = promotionsData[item.productId];
+      if (promotion) {
+        const itemSubtotal = item.subtotal;
+        let discount = 0;
+        if (promotion.discountType === 'percentage') {
+          discount = (itemSubtotal * promotion.discountValue) / 100;
+          if (promotion.maxDiscount && discount > promotion.maxDiscount) {
+            discount = promotion.maxDiscount;
+          }
+        } else {
+          discount = promotion.discountValue * item.quantity;
+          if (discount > itemSubtotal) {
+            discount = itemSubtotal;
+          }
+        }
+        total += discount;
+      }
+    });
+    return Math.round(total * 100) / 100;
+  }, [cart, promotionsData]);
 
   const recommendedProducts = useMemo(
     () => [
@@ -253,6 +308,23 @@ export default function CartPage() {
                 <p className="cart-card__product">
                   {item.productName}
                   <span>{item.variantDescription || 'Heather Dark Grey | Printing'}</span>
+                  {/* [2025-01-28 12:40:00] 显示促销活动标签 */}
+                  {promotionsData?.[item.productId] && (
+                    <span style={{ 
+                      display: 'inline-block', 
+                      marginLeft: '8px', 
+                      padding: '2px 8px', 
+                      backgroundColor: '#e74c3c', 
+                      color: 'white', 
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      fontWeight: 'bold'
+                    }}>
+                      {promotionsData[item.productId].discountType === 'percentage'
+                        ? `${promotionsData[item.productId].discountValue}% OFF`
+                        : `$${promotionsData[item.productId].discountValue.toFixed(2)} OFF`}
+                    </span>
+                  )}
                 </p>
                 <p className="cart-card__meta">
                   Qty {item.quantity}+ <span>XS | 1 |</span>{' '}
@@ -338,6 +410,13 @@ export default function CartPage() {
               <span>Subtotal ({cart.itemCount} items)</span>
               <span>${cart.subtotal.toFixed(2)}</span>
             </div>
+            {/* [2025-01-28 12:40:00] 显示促销折扣 */}
+            {promotionDiscount > 0 && (
+              <div className="summary-panel__row" style={{ color: '#e74c3c' }}>
+                <span>Promotion Discount</span>
+                <span>- ${promotionDiscount.toFixed(2)}</span>
+              </div>
+            )}
             {appliedCoupon && (
               <div className="summary-panel__row">
                 <span>Coupon ({appliedCoupon.code})</span>

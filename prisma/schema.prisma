@@ -82,6 +82,8 @@ model Category {
 
   products       Product[]
   designTemplates DesignTemplate[]
+  // [2025-01-28 12:00:00] 促销活动关联
+  promotionCategories PromotionCategory[]
 
   @@index([slug])
   @@index([parentId])
@@ -138,6 +140,8 @@ model Product {
   reviews            ProductReview[]
   collectionProducts CollectionProduct[]
   projects           Project[]
+  // [2025-01-28 12:00:00] 促销活动关联
+  promotionProducts  PromotionProduct[]
 
   @@index([slug])
   @@index([categoryId])
@@ -291,6 +295,10 @@ model Order {
   shipments Shipment[]
   // [2025-11-18 10:45:12] Projects submitted through the storefront for this order
   projects  Project[]
+  // [2025-01-28 11:00:00] Coupons applied to this order
+  orderCoupons OrderCoupon[]
+  // [2025-01-28 12:00:00] Promotions applied to this order
+  orderPromotions OrderPromotion[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -653,4 +661,152 @@ model DesignComment {
   @@index([createdAt])
   @@index([isApproved])
   @@map("design_comments")
+}
+
+// [2025-01-28 11:00:00] Coupon model for promotional discounts
+model Coupon {
+  id              String      @id @default(uuid())
+  code            String      @unique
+  type            CouponType
+  value           Decimal     @db.Decimal(10, 2)
+  minOrderValue   Decimal?    @map("min_order_value") @db.Decimal(10, 2)
+  maxDiscount     Decimal?    @map("max_discount") @db.Decimal(10, 2)
+  usageLimit      Int?        @map("usage_limit")
+  userUsageLimit  Int?        @map("user_usage_limit")
+  usedCount       Int         @default(0) @map("used_count")
+  startDate       DateTime    @map("start_date")
+  endDate         DateTime    @map("end_date")
+  isActive        Boolean     @default(true) @map("is_active")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  orderCoupons    OrderCoupon[]
+  // [2025-01-28 12:00:00] 促销活动关联
+  promotionCoupon PromotionCoupon?
+
+  @@index([code])
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@map("coupons")
+}
+
+enum CouponType {
+  PERCENTAGE
+  FIXED
+}
+
+// [2025-01-28 11:00:00] Track coupon usage in orders
+model OrderCoupon {
+  id             String   @id @default(uuid())
+  orderId        String   @map("order_id")
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  couponId       String   @map("coupon_id")
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  userId         String?  @map("user_id")
+  discountAmount Decimal  @map("discount_amount") @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([orderId, couponId])
+  @@index([orderId])
+  @@index([couponId])
+  @@index([userId])
+  @@map("order_coupons")
+}
+
+// [2025-01-28 12:00:00] Promotion model for marketing campaigns
+model Promotion {
+  id              String          @id @default(uuid())
+  title           String
+  description     String?         @db.Text
+  bannerImageUrl  String?         @map("banner_image_url")
+  linkUrl         String?         @map("link_url")
+  // [2025-01-28 12:00:00] 促销折扣类型和值
+  discountType    PromotionDiscountType @map("discount_type")
+  discountValue   Decimal         @map("discount_value") @db.Decimal(10, 2)
+  minOrderValue  Decimal?        @map("min_order_value") @db.Decimal(10, 2)
+  maxDiscount    Decimal?        @map("max_discount") @db.Decimal(10, 2)
+  // [2025-01-28 12:00:00] 促销活动时间
+  startDate       DateTime        @map("start_date")
+  endDate         DateTime        @map("end_date")
+  // [2025-01-28 12:00:00] 促销活动状态和排序
+  isActive        Boolean         @default(true) @map("is_active")
+  sortOrder       Int             @default(0) @map("sort_order")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  // [2025-01-28 12:00:00] 关联关系
+  products        PromotionProduct[]
+  categories      PromotionCategory[]
+  coupon          PromotionCoupon? // 可选：关联特定优惠券
+  orderPromotions OrderPromotion[] // 跟踪促销活动使用情况
+
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@index([sortOrder])
+  @@map("promotions")
+}
+
+enum PromotionDiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+// [2025-01-28 12:00:00] 促销活动与商品的关联（多对多）
+model PromotionProduct {
+  id           String     @id @default(uuid())
+  promotionId  String     @map("promotion_id")
+  promotion    Promotion  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  productId    String     @map("product_id")
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@unique([promotionId, productId])
+  @@index([promotionId])
+  @@index([productId])
+  @@map("promotion_products")
+}
+
+// [2025-01-28 12:00:00] 促销活动与类目的关联（多对多）
+model PromotionCategory {
+  id           String     @id @default(uuid())
+  promotionId  String     @map("promotion_id")
+  promotion    Promotion  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  categoryId   String     @map("category_id")
+  category     Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@unique([promotionId, categoryId])
+  @@index([promotionId])
+  @@index([categoryId])
+  @@map("promotion_categories")
+}
+
+// [2025-01-28 12:00:00] 促销活动与优惠券的关联（一对一或可选）
+model PromotionCoupon {
+  id          String     @id @default(uuid())
+  promotionId String     @unique @map("promotion_id")
+  promotion   Promotion  @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  couponId    String     @unique @map("coupon_id") // [2025-01-28 12:05:00] 一对一关系需要 unique
+  coupon      Coupon     @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  @@index([promotionId])
+  @@index([couponId])
+  @@map("promotion_coupons")
+}
+
+// [2025-01-28 12:00:00] 跟踪订单中使用的促销活动
+model OrderPromotion {
+  id             String   @id @default(uuid())
+  orderId        String   @map("order_id")
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  promotionId    String   @map("promotion_id")
+  promotion      Promotion @relation(fields: [promotionId], references: [id])
+  discountAmount Decimal  @map("discount_amount") @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@unique([orderId, promotionId])
+  @@index([orderId])
+  @@index([promotionId])
+  @@map("order_promotions")
 }

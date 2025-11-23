@@ -12,6 +12,11 @@ export default function AdminPromotionsPage() {
     description: '',
     bannerImageUrl: '',
     linkUrl: '',
+    // [2025-01-28 12:50:00] 折扣相关字段
+    discountType: 'percentage' as 'percentage' | 'fixed',
+    discountValue: 0,
+    minOrderValue: '',
+    maxDiscount: '',
     startDate: '',
     endDate: '',
     sortOrder: 0,
@@ -32,12 +37,20 @@ export default function AdminPromotionsPage() {
     event.preventDefault();
     try {
       setSaving(true);
-      await adminPromotionsApi.create(form as Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt'>);
+      await adminPromotionsApi.create({
+        ...form,
+        minOrderValue: form.minOrderValue ? Number(form.minOrderValue) : undefined,
+        maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : undefined,
+      } as Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt' | 'products' | 'categories' | 'coupon'>);
       setForm({
         title: '',
         description: '',
         bannerImageUrl: '',
         linkUrl: '',
+        discountType: 'percentage',
+        discountValue: 0,
+        minOrderValue: '',
+        maxDiscount: '',
         startDate: '',
         endDate: '',
         sortOrder: 0,
@@ -116,6 +129,50 @@ export default function AdminPromotionsPage() {
               onChange={(event) => setForm((prev) => ({ ...prev, bannerImageUrl: event.target.value }))}
             />
           </div>
+          {/* [2025-01-28 12:50:00] 折扣类型和值 */}
+          <div className="admin-form-group">
+            <label>Discount Type</label>
+            <select
+              value={form.discountType}
+              onChange={(event) => setForm((prev) => ({ ...prev, discountType: event.target.value as 'percentage' | 'fixed' }))}
+            >
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed Amount</option>
+            </select>
+          </div>
+          <div className="admin-form-group">
+            <label>Discount Value {form.discountType === 'percentage' ? '(%)' : '($)'}</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.discountValue}
+              onChange={(event) => setForm((prev) => ({ ...prev, discountValue: Number(event.target.value) }))}
+              required
+            />
+          </div>
+          <div className="admin-form-group">
+            <label>Min Order Value ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.minOrderValue}
+              onChange={(event) => setForm((prev) => ({ ...prev, minOrderValue: event.target.value }))}
+              placeholder="Optional"
+            />
+          </div>
+          <div className="admin-form-group">
+            <label>Max Discount ($)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={form.maxDiscount}
+              onChange={(event) => setForm((prev) => ({ ...prev, maxDiscount: event.target.value }))}
+              placeholder="Optional (for percentage discounts)"
+            />
+          </div>
           <div className="admin-form-group">
             <label>Sort Order</label>
             <input
@@ -130,6 +187,7 @@ export default function AdminPromotionsPage() {
               type="date"
               value={form.startDate}
               onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
+              required
             />
           </div>
           <div className="admin-form-group">
@@ -138,6 +196,7 @@ export default function AdminPromotionsPage() {
               type="date"
               value={form.endDate}
               onChange={(event) => setForm((prev) => ({ ...prev, endDate: event.target.value }))}
+              required
             />
           </div>
           <div>
@@ -215,6 +274,26 @@ export default function AdminPromotionsPage() {
                         {promotion.description || '—'}
                       </span>
                     </div>
+                  </td>
+                  <td>
+                    {/* [2025-01-28 12:50:00] 显示折扣信息 */}
+                    {promotion.discountType && promotion.discountValue ? (
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <strong>
+                          {promotion.discountType === 'percentage'
+                            ? `${promotion.discountValue}% OFF`
+                            : `$${promotion.discountValue.toFixed(2)} OFF`}
+                        </strong>
+                        {promotion.minOrderValue && (
+                          <small className="text-muted">Min: ${Number(promotion.minOrderValue).toFixed(2)}</small>
+                        )}
+                        {promotion.maxDiscount && (
+                          <small className="text-muted">Max: ${Number(promotion.maxDiscount).toFixed(2)}</small>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
                   </td>
                   <td>
                     {promotion.linkUrl ? (

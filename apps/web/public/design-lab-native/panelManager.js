@@ -6,6 +6,24 @@
   'use strict';
 
   let currentPanel = 'home'; // 当前激活的面板
+  
+  // [2025-01-27] 监听 toolbar:ready 事件，确保 toolbar.js 已加载
+  let toolbarReady = false;
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('toolbar:ready', () => {
+      toolbarReady = true;
+      console.log('[PanelManager] ===== toolbar:ready event received =====', {
+        hasDesignLabToolbar: !!window.DesignLabToolbar,
+        methods: window.DesignLabToolbar ? Object.keys(window.DesignLabToolbar) : []
+      });
+    });
+    
+    // [2025-01-27] 如果 toolbar.js 已经加载完成，立即检查
+    if (window.DesignLabToolbar) {
+      toolbarReady = true;
+      console.log('[PanelManager] ===== DesignLabToolbar already available on init =====');
+    }
+  }
 
   // [2025-11-19 12:00:00] 初始化面板管理器
   function init() {
@@ -31,7 +49,43 @@
         } else if (tool === 'art') {
           openPanel('art');
         } else if (tool === 'names') {
-          openPanel('names');
+          // [2025-01-27] 直接打开 Names and Numbers 输入模态框，跳过 Step 1
+          console.log('[PanelManager] Processing names tool click...');
+          
+          // [2025-01-27] 如果 DesignLabToolbar 还没加载，等待并重试
+          const tryShowModal = (retryCount = 0) => {
+            if (window.DesignLabToolbar && typeof window.DesignLabToolbar.showNamesNumbersModal === 'function') {
+              console.log('[PanelManager] ✅ DesignLabToolbar.showNamesNumbersModal available, calling...', {
+                retryCount,
+                allMethods: Object.keys(window.DesignLabToolbar)
+              });
+              try {
+                window.DesignLabToolbar.showNamesNumbersModal();
+                console.log('[PanelManager] ✅ showNamesNumbersModal called successfully');
+              } catch (error) {
+                console.error('[PanelManager] ❌ Error calling showNamesNumbersModal:', error);
+                openPanel('names');
+              }
+            } else if (retryCount < 20) {
+              // [2025-01-27] 最多重试 20 次，每次等待 50ms（总共最多等待 1 秒）
+              console.log('[PanelManager] ⏳ Waiting for DesignLabToolbar...', {
+                retryCount,
+                hasDesignLabToolbar: !!window.DesignLabToolbar,
+                availableMethods: window.DesignLabToolbar ? Object.keys(window.DesignLabToolbar) : [],
+                windowKeys: Object.keys(window).filter(k => k.includes('Design'))
+              });
+              setTimeout(() => tryShowModal(retryCount + 1), 50);
+            } else {
+              console.error('[PanelManager] ❌ DesignLabToolbar.showNamesNumbersModal not available after 20 retries', {
+                hasDesignLabToolbar: !!window.DesignLabToolbar,
+                availableMethods: window.DesignLabToolbar ? Object.keys(window.DesignLabToolbar) : [],
+                windowKeys: Object.keys(window).filter(k => k.includes('Design')),
+                fallingBack: true
+              });
+              openPanel('names');
+            }
+          };
+          tryShowModal();
         // [2025-01-27] 隐藏颜色功能，2期开发
         // } else if (tool === 'colors') {
         //   openPanel('product-colors');

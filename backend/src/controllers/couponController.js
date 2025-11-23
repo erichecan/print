@@ -1,11 +1,10 @@
 /**
  * Coupon Controller
  * [2025-01-27 19:30:00] 优惠券验证和应用控制器
+ * [2025-01-28 11:15:00] 迁移到 Prisma
  */
-const models = require('../models');
-const { Coupon, CouponUsage } = models;
+const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
-const { Op } = require('sequelize');
 
 /**
  * Validate and apply coupon
@@ -25,13 +24,14 @@ exports.validateCoupon = async (req, res) => {
       });
     }
 
-    // Find active coupon
-    const coupon = await Coupon.findOne({
+    // [2025-01-28 11:15:00] Find active coupon using Prisma
+    const now = new Date();
+    const coupon = await prisma.coupon.findFirst({
       where: {
         code: code.toUpperCase().trim(),
-        is_active: true,
-        start_date: { [Op.lte]: new Date() },
-        end_date: { [Op.gte]: new Date() },
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
       },
     });
 
@@ -41,44 +41,46 @@ exports.validateCoupon = async (req, res) => {
       });
     }
 
-    // Check usage limit
-    if (coupon.usage_limit && coupon.used_count >= coupon.usage_limit) {
+    // [2025-01-28 11:15:00] Check usage limit
+    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
       return res.status(400).json({
         error: 'Coupon has reached its usage limit',
       });
     }
 
-    // Check user usage limit
-    if (userId && coupon.user_usage_limit) {
-      const userUsageCount = await CouponUsage.count({
+    // [2025-01-28 11:15:00] Check user usage limit (query OrderCoupon table)
+    if (userId && coupon.userUsageLimit) {
+      const userUsageCount = await prisma.orderCoupon.count({
         where: {
-          coupon_id: coupon.id,
-          user_id: userId,
+          couponId: coupon.id,
+          userId: userId,
         },
       });
 
-      if (userUsageCount >= coupon.user_usage_limit) {
+      if (userUsageCount >= coupon.userUsageLimit) {
         return res.status(400).json({
           error: 'You have already used this coupon the maximum number of times',
         });
       }
     }
 
-    // Check minimum order value
-    if (coupon.min_order_value && Number(subtotal) < Number(coupon.min_order_value)) {
+    // [2025-01-28 11:15:00] Check minimum order value
+    const minOrderValue = coupon.minOrderValue ? Number(coupon.minOrderValue) : null;
+    if (minOrderValue && Number(subtotal) < minOrderValue) {
       return res.status(400).json({
-        error: `Minimum order value of $${Number(coupon.min_order_value).toFixed(2)} required`,
-        minOrderValue: Number(coupon.min_order_value),
+        error: `Minimum order value of $${minOrderValue.toFixed(2)} required`,
+        minOrderValue: minOrderValue,
       });
     }
 
-    // Calculate discount
+    // [2025-01-28 11:15:00] Calculate discount
     let discountAmount = 0;
-    if (coupon.type === 'percentage') {
+    if (coupon.type === 'PERCENTAGE') {
       discountAmount = (Number(subtotal) * Number(coupon.value)) / 100;
       // Apply max discount limit
-      if (coupon.max_discount && discountAmount > Number(coupon.max_discount)) {
-        discountAmount = Number(coupon.max_discount);
+      const maxDiscount = coupon.maxDiscount ? Number(coupon.maxDiscount) : null;
+      if (maxDiscount && discountAmount > maxDiscount) {
+        discountAmount = maxDiscount;
       }
     } else {
       // Fixed discount
@@ -102,11 +104,11 @@ exports.validateCoupon = async (req, res) => {
       coupon: {
         id: coupon.id,
         code: coupon.code,
-        type: coupon.type,
+        type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed', // [2025-01-28 11:15:00] Map enum to string for API compatibility
         value: Number(coupon.value),
         discountAmount: Number(discountAmount.toFixed(2)),
-        minOrderValue: coupon.min_order_value ? Number(coupon.min_order_value) : null,
-        maxDiscount: coupon.max_discount ? Number(coupon.max_discount) : null,
+        minOrderValue: minOrderValue,
+        maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
       },
     });
   } catch (error) {
@@ -128,26 +130,37 @@ exports.validateCoupon = async (req, res) => {
  */
 exports.getActiveCoupons = async (req, res) => {
   try {
-    const coupons = await Coupon.findAll({
+    // [2025-01-28 11:15:00] Get active coupons using Prisma
+    const now = new Date();
+    const coupons = await prisma.coupon.findMany({
       where: {
-        is_active: true,
-        start_date: { [Op.lte]: new Date() },
-        end_date: { [Op.gte]: new Date() },
+        isActive: true,
+        startDate: { lte: now },
+        endDate: { gte: now },
       },
-      attributes: ['id', 'code', 'type', 'value', 'min_order_value', 'max_discount', 'start_date', 'end_date'],
-      order: [['created_at', 'DESC']],
+      select: {
+        id: true,
+        code: true,
+        type: true,
+        value: true,
+        minOrderValue: true,
+        maxDiscount: true,
+        startDate: true,
+        endDate: true,
+      },
+      orderBy: { createdAt: 'desc' },
     });
 
     res.status(200).json({
       coupons: coupons.map((coupon) => ({
         id: coupon.id,
         code: coupon.code,
-        type: coupon.type,
+        type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed', // [2025-01-28 11:15:00] Map enum to string for API compatibility
         value: Number(coupon.value),
-        minOrderValue: coupon.min_order_value ? Number(coupon.min_order_value) : null,
-        maxDiscount: coupon.max_discount ? Number(coupon.max_discount) : null,
-        startDate: coupon.start_date,
-        endDate: coupon.end_date,
+        minOrderValue: coupon.minOrderValue ? Number(coupon.minOrderValue) : null,
+        maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
+        startDate: coupon.startDate.toISOString().split('T')[0], // [2025-01-28 11:15:00] Format date as YYYY-MM-DD
+        endDate: coupon.endDate.toISOString().split('T')[0],
       })),
     });
   } catch (error) {

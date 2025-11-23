@@ -5,6 +5,25 @@
 (function() {
   'use strict';
 
+  // [2025-01-27] 立即初始化 window.DesignLabToolbar 对象，确保其他脚本可以检测到
+  console.log('[Toolbar] ===== SCRIPT LOADING =====', {
+    timestamp: new Date().toISOString(),
+    hasWindow: typeof window !== 'undefined',
+    existingDesignLabToolbar: !!window.DesignLabToolbar
+  });
+  
+  if (!window.DesignLabToolbar) {
+    window.DesignLabToolbar = {};
+    console.log('[Toolbar] ===== window.DesignLabToolbar initialized =====', {
+      timestamp: new Date().toISOString()
+    });
+  } else {
+    console.log('[Toolbar] ===== window.DesignLabToolbar already exists =====', {
+      timestamp: new Date().toISOString(),
+      methods: Object.keys(window.DesignLabToolbar)
+    });
+  }
+
   let currentTool = null;
   let fileInput = null;
 
@@ -666,11 +685,8 @@
   }
   
   // [2025-11-19 11:15:00] 导出 showColorModal 供外部调用
-  // [2025-01-27] 不要覆盖已有的 DesignLabToolbar 对象，只添加方法
-  if (!window.DesignLabToolbar) {
-    window.DesignLabToolbar = {};
-  }
-  window.DesignLabToolbar.showColorModal = showColorModal;
+  // [2025-01-27] 注意：不要在这里初始化 window.DesignLabToolbar，它会在文件末尾统一导出
+  // 如果需要提前使用，可以在导出对象中添加方法
 
   // [2025-11-19 10:40:00] 隐藏颜色模态框
   function hideColorModal() {
@@ -733,26 +749,78 @@
 
   // [2025-01-27] 显示 Names and Numbers 输入模态框
   function showNamesNumbersModal() {
-    console.log('[Toolbar] showNamesNumbersModal called');
+    // [2025-01-27] 立即导出到 window，确保在其他脚本初始化时可用
+    if (!window.DesignLabToolbar) {
+      window.DesignLabToolbar = {};
+    }
+    window.DesignLabToolbar.showNamesNumbersModal = showNamesNumbersModal;
+    console.log('[Toolbar] ===== showNamesNumbersModal CALLED =====', {
+      timestamp: new Date().toISOString(),
+      hasModal: !!document.getElementById('names-numbers-modal')
+    });
+    
     const modal = document.getElementById('names-numbers-modal');
     if (!modal) {
-      console.error('[Toolbar] Names/Numbers modal not found');
+      console.error('[Toolbar] ❌ Names/Numbers modal not found in DOM');
+      console.error('[Toolbar] Available modals:', {
+        priceModal: !!document.getElementById('price-modal'),
+        colorModal: !!document.getElementById('color-modal'),
+        namesModal: !!document.getElementById('names-numbers-modal')
+      });
       return;
     }
     
-    console.log('[Toolbar] Modal found, initializing...');
+    console.log('[Toolbar] ✅ Modal found in DOM', {
+      id: modal.id,
+      className: modal.className,
+      isOpen: modal.classList.contains('is-open'),
+      ariaHidden: modal.getAttribute('aria-hidden')
+    });
     
     // [2025-01-27] 初始化表单（如果还没有初始化）
     if (!modal.dataset.initialized) {
-      console.log('[Toolbar] Initializing form for first time...');
-      initNamesNumbersForm();
-      modal.dataset.initialized = 'true';
+      console.log('[Toolbar] 📝 Initializing form for first time...');
+      try {
+        initNamesNumbersForm();
+        modal.dataset.initialized = 'true';
+        console.log('[Toolbar] ✅ Form initialized');
+      } catch (error) {
+        console.error('[Toolbar] ❌ Error initializing form:', error);
+        return;
+      }
+    } else {
+      console.log('[Toolbar] 📝 Form already initialized');
     }
     
     // [2025-01-27] 显示模态框
+    console.log('[Toolbar] 🎬 Opening modal...');
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
-    console.log('[Toolbar] Modal opened');
+    
+    // [2025-01-27] 检查模态框是否真的显示了
+    setTimeout(() => {
+      const isActuallyOpen = modal.classList.contains('is-open');
+      const computedStyle = window.getComputedStyle(modal);
+      const display = computedStyle.display;
+      console.log('[Toolbar] Modal state after opening:', {
+        hasIsOpenClass: isActuallyOpen,
+        display: display,
+        ariaHidden: modal.getAttribute('aria-hidden'),
+        zIndex: computedStyle.zIndex,
+        visibility: computedStyle.visibility
+      });
+      
+      if (!isActuallyOpen || display === 'none') {
+        console.error('[Toolbar] ❌ Modal did not open properly!');
+        console.error('[Toolbar] Checking CSS...', {
+          hasIsOpenClass: modal.classList.contains('is-open'),
+          computedDisplay: display,
+          modalHTML: modal.outerHTML.substring(0, 200)
+        });
+      } else {
+        console.log('[Toolbar] ✅ Modal opened successfully');
+      }
+    }, 50);
     
     // [2025-01-27] 更新总计（确保显示最新数据）
     updateNamesNumbersTotals();
@@ -762,10 +830,19 @@
     if (firstInput) {
       setTimeout(() => {
         firstInput.focus();
-        console.log('[Toolbar] Focused on first input');
+        console.log('[Toolbar] ✅ Focused on first input');
       }, 100);
+    } else {
+      console.warn('[Toolbar] ⚠️ First input not found');
     }
   }
+  
+  // [2025-01-27] 立即导出 showNamesNumbersModal，确保在其他脚本初始化时可用
+  if (!window.DesignLabToolbar) {
+    window.DesignLabToolbar = {};
+  }
+  window.DesignLabToolbar.showNamesNumbersModal = showNamesNumbersModal;
+  console.log('[Toolbar] showNamesNumbersModal exported immediately after definition');
   
   // [2025-01-27] 隐藏 Names and Numbers 模态框
   function hideNamesNumbersModal() {
@@ -778,8 +855,20 @@
   
   // [2025-01-27] 初始化 Names and Numbers 模态框
   function initNamesNumbersModal() {
+    console.log('[Toolbar] ===== initNamesNumbersModal CALLED =====', {
+      timestamp: new Date().toISOString()
+    });
+    
     const modal = document.getElementById('names-numbers-modal');
-    if (!modal) return;
+    if (!modal) {
+      console.error('[Toolbar] ❌ Modal not found during initialization');
+      return;
+    }
+    
+    console.log('[Toolbar] ✅ Modal found during initialization', {
+      id: modal.id,
+      className: modal.className
+    });
     
     // [2025-01-27] 关闭按钮
     const closeBtn = modal.querySelector('#names-numbers-modal-close');
@@ -820,27 +909,48 @@
   
   // [2025-01-27] 初始化表单（创建初始5行）
   function initNamesNumbersForm() {
+    console.log('[Toolbar] ===== initNamesNumbersForm CALLED =====', {
+      timestamp: new Date().toISOString()
+    });
+    
     const rowsContainer = document.getElementById('names-numbers-rows');
-    if (!rowsContainer) return;
+    if (!rowsContainer) {
+      console.error('[Toolbar] ❌ Rows container not found:', 'names-numbers-rows');
+      console.error('[Toolbar] Available elements in modal:', {
+        modal: document.getElementById('names-numbers-modal') ? 'found' : 'not found',
+        header: document.getElementById('names-numbers-modal-title') ? 'found' : 'not found',
+        body: document.querySelector('#names-numbers-modal .dl-modal__body') ? 'found' : 'not found'
+      });
+      return;
+    }
+    
+    console.log('[Toolbar] ✅ Rows container found');
     
     // [2025-01-27] 清空容器
     rowsContainer.innerHTML = '';
     
     // [2025-01-27] 创建初始5行
+    console.log('[Toolbar] Creating 5 initial rows...');
     for (let i = 0; i < 5; i++) {
       addNamesNumbersRow();
     }
+    console.log('[Toolbar] ✅ Created 5 rows, total rows:', rowsContainer.children.length);
     
     // [2025-01-27] 绑定 Add More 按钮
     const addMoreBtn = document.getElementById('btn-add-more-rows');
     if (addMoreBtn) {
+      console.log('[Toolbar] ✅ Add More button found');
       addMoreBtn.addEventListener('click', () => {
+        console.log('[Toolbar] Add More button clicked');
         addNamesNumbersRow();
       });
+    } else {
+      console.warn('[Toolbar] ⚠️ Add More button not found');
     }
     
     // [2025-01-27] 更新总计
     updateNamesNumbersTotals();
+    console.log('[Toolbar] ✅ Form initialization completed');
   }
   
   // [2025-01-27] 添加一行输入
@@ -948,17 +1058,16 @@
       return;
     }
     
-    // [2025-01-27] 获取 Names 设置
-    const namesEnabled = document.getElementById('names-enabled')?.checked;
-    const namesSide = document.getElementById('names-side')?.value || 'back';
-    const namesHeight = parseFloat(document.getElementById('names-height')?.value || '2');
-    const namesColor = document.getElementById('names-color')?.value || '#ffff00';
+    // [2025-01-27] 使用默认设置（不再从 Step 1 获取，直接使用默认值）
+    const namesEnabled = true; // 默认启用
+    const namesSide = 'back'; // 默认背面
+    const namesHeight = 2; // 默认 2 英寸
+    const namesColor = '#ffff00'; // 默认黄色
     
-    // [2025-01-27] 获取 Numbers 设置
-    const numbersEnabled = document.getElementById('numbers-enabled')?.checked;
-    const numbersSide = document.getElementById('numbers-side')?.value || 'back';
-    const numbersHeight = parseFloat(document.getElementById('numbers-height')?.value || '8');
-    const numbersColor = document.getElementById('numbers-color')?.value || '#00ffff';
+    const numbersEnabled = true; // 默认启用
+    const numbersSide = 'back'; // 默认背面
+    const numbersHeight = 8; // 默认 8 英寸
+    const numbersColor = '#00ffff'; // 默认青色
     
     // [2025-01-27] 收集所有行的数据
     const rows = document.querySelectorAll('.names-numbers-table__row');
@@ -1061,7 +1170,8 @@
   }
 
   // [2025-11-19 12:00:00] 导出全局 API
-  window.DesignLabToolbar = {
+  // [2025-01-27] 确保不会覆盖已有的对象，合并所有方法
+  const exportedMethods = {
     init,
     addTextFromPanel,
     addArt,
@@ -1074,6 +1184,33 @@
     updateSizesDisplay,
     addShape,
     handleEnterNamesNumbers,
+    showNamesNumbersModal, // [2025-01-27] 导出供外部调用
+    showColorModal, // [2025-01-27] 导出 showColorModal
+    hideColorModal, // [2025-01-27] 导出 hideColorModal
   };
+  
+  // [2025-01-27] 合并到现有对象或创建新对象
+  if (window.DesignLabToolbar && typeof window.DesignLabToolbar === 'object') {
+    Object.assign(window.DesignLabToolbar, exportedMethods);
+  } else {
+    window.DesignLabToolbar = exportedMethods;
+  }
+  
+  console.log('[Toolbar] ===== DesignLabToolbar EXPORTED =====', {
+    methods: Object.keys(window.DesignLabToolbar),
+    hasShowNamesNumbersModal: typeof window.DesignLabToolbar.showNamesNumbersModal === 'function',
+    hasInit: typeof window.DesignLabToolbar.init === 'function',
+    hasAddTextFromPanel: typeof window.DesignLabToolbar.addTextFromPanel === 'function',
+    hasAddArt: typeof window.DesignLabToolbar.addArt === 'function',
+    timestamp: new Date().toISOString()
+  });
+  
+  // [2025-01-27] 触发自定义事件，通知其他脚本 toolbar.js 已加载完成
+  if (typeof window !== 'undefined' && window.dispatchEvent) {
+    window.dispatchEvent(new CustomEvent('toolbar:ready', {
+      detail: { methods: Object.keys(window.DesignLabToolbar) }
+    }));
+    console.log('[Toolbar] ===== toolbar:ready event dispatched =====');
+  }
 })();
 
