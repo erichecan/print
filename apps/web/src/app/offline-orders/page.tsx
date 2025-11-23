@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useState, ChangeEvent, FormEvent, Drag
 import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
 import { categoriesApi, Category } from '@/lib/api'; // [2025-01-27 18:00:00] 引入分类 API 和类型
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // [2025-01-27 20:00:00] 引入翻译
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
 const ACCEPTED_EXTENSIONS = ['.ai', '.eps', '.svg', '.pdf', '.png', '.jpg', '.jpeg', '.psd'];
 const DRAFT_STORAGE_KEY = 'offline-order-intake-draft';
+const LOCALE_STORAGE_KEY = 'offline-orders-locale'; // [2025-01-27 20:00:00] 语言偏好存储键
 
 const MAX_FILES =
   Number(process.env.NEXT_PUBLIC_OFFLINE_ORDER_MAX_FILES || DEFAULT_MAX_FILES) || DEFAULT_MAX_FILES;
@@ -18,25 +20,9 @@ const MAX_FILE_SIZE_MB =
 // [2025-01-27 18:00:00] 标准尺码选项
 const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
 
-// [2025-01-27 18:00:00] 步骤定义
-const STEPS = [
-  { id: 1, title: '产品选择', description: '多产品定制，选择产品类型、变体和数量' },
-  { id: 2, title: '印刷位置', description: '选择印刷位置和尺寸' },
-  { id: 3, title: '客人信息', description: '填写联系信息、交付日期和价格管理' },
-  { id: 4, title: '项目详情', description: '填写项目名称和备注' },
-  { id: 5, title: '文件上传', description: '上传设计文件和附件' },
-];
+// [2025-01-27 18:00:00] 步骤定义（将在组件中根据语言动态生成）
 
-// [2025-01-27 18:00:00] 印刷位置选项
-const PRINT_POSITION_OPTIONS = [
-  { value: 'front', label: '正面 (Front)' },
-  { value: 'back', label: '背面 (Back)' },
-  { value: 'chest', label: '胸前' },
-  { value: 'left_pocket', label: '左上衣口袋' },
-  { value: 'left_sleeve', label: '左臂' },
-  { value: 'right_sleeve', label: '右臂' },
-  { value: 'other', label: '其他位置' },
-];
+// [2025-01-27 18:00:00] 印刷位置选项（将在组件中根据语言动态生成）
 
 // [2025-01-27 18:00:00] 印刷位置数据类型
 type PrintPosition = {
@@ -46,10 +32,10 @@ type PrintPosition = {
   notes: string; // 备注
 };
 
-// [2025-01-27 18:00:00] 产品变体类型（尺码、颜色等）
+// [2025-01-27 18:00:00] 产品变体类型（尺码和颜色组合）
 type ProductVariant = {
-  variantType: 'size' | 'color' | 'other'; // 变体类型
-  variantValue: string; // 变体值，如 'M', 'L', 'White', 'Black'
+  size: string; // 尺码，如 'XS', 'S', 'M', 'L', 'XL'
+  color: string; // 颜色，如 'White', 'Black', 'Red'
   quantity: number; // 数量
   unitPrice: number; // 单价（CAD）
 };
@@ -111,7 +97,7 @@ const generateOrderCode = (): string => {
 };
 
 const initialFormState: FormState = {
-  orderCode: generateOrderCode(), // [2025-01-27 19:00:00] 初始化时生成订单编号
+  orderCode: '', // [2025-01-28 09:30:00] 订单编号在客户端生成，避免 hydration 错误
   productItems: [], // [2025-01-27 18:00:00] 初始为空，用户添加产品
   sideCount: 1, // [2025-01-27 18:00:00] 默认1个印刷位置
   printPositions: [{ position: '', width: '', height: '', notes: '' }], // [2025-01-27 18:00:00] 默认1个位置
@@ -144,14 +130,85 @@ const extensionIsAllowed = (fileName: string) => {
 };
 
 export default function OfflineOrdersIntakePage() {
+  // [2025-01-27 20:00:00] 语言切换状态 - 默认值，避免hydration错误
+  const [locale, setLocale] = useState<OfflineOrdersLocale>('zh');
+  const [isClient, setIsClient] = useState(false); // [2025-01-27 20:35:00] 标记是否在客户端
+  
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [files, setFiles] = useState<File[]>([]);
   const [currentStep, setCurrentStep] = useState<number>(1); // [2025-01-27 18:00:00] 当前步骤
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({
     type: 'idle',
   });
+  // [2025-01-28 09:35:00] 字段级别的错误状态，用于在对应输入框下方显示错误
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  // [2025-01-27 20:35:00] 确保客户端渲染后再读取localStorage，避免hydration错误
+  // [2025-01-28 09:30:00] 在客户端生成订单编号，避免 hydration 错误
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== 'undefined') {
+      const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+      if (stored === 'en' || stored === 'zh') {
+        setLocale(stored);
+      }
+      // [2025-01-28 09:30:00] 在客户端生成订单编号
+      setFormState((prev) => {
+        if (!prev.orderCode) {
+          return { ...prev, orderCode: generateOrderCode() };
+        }
+        return prev;
+      });
+    }
+  }, []);
+
+  // [2025-01-27 20:00:00] 翻译函数 - 只在客户端渲染时使用localStorage中的语言
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+    // [2025-01-27 20:35:00] 避免hydration错误，如果还没到客户端，使用默认语言
+    const currentLocale = isClient ? locale : 'zh';
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[currentLocale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
+    let text = translations[key] || fallback[key] || key;
+    
+    // 替换参数
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+      });
+    }
+    
+    return text;
+  }, [locale, isClient]);
+
+  // [2025-01-27 20:00:00] 切换语言
+  const handleLocaleChange = useCallback((newLocale: OfflineOrdersLocale) => {
+    setLocale(newLocale);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
+    }
+  }, []);
+
+  // [2025-01-27 20:00:00] 动态生成步骤定义 - 依赖isClient确保hydration一致性
+  const STEPS = useMemo(() => [
+    { id: 1, title: t('step1Title'), description: t('step1Description') },
+    { id: 2, title: t('step2Title'), description: t('step2Description') },
+    { id: 3, title: t('step3Title'), description: t('step3Description') },
+    { id: 4, title: t('step4Title'), description: t('step4Description') },
+    { id: 5, title: t('step5Title'), description: t('step5Description') },
+  ], [t, isClient]);
+
+  // [2025-01-27 20:00:00] 动态生成印刷位置选项 - 依赖isClient确保hydration一致性
+  const PRINT_POSITION_OPTIONS = useMemo(() => [
+    { value: 'front', label: t('positionFront') },
+    { value: 'back', label: t('positionBack') },
+    { value: 'chest', label: t('positionChest') },
+    { value: 'left_pocket', label: t('positionLeftPocket') },
+    { value: 'left_sleeve', label: t('positionLeftSleeve') },
+    { value: 'right_sleeve', label: t('positionRightSleeve') },
+    { value: 'other', label: t('positionOther') },
+  ], [t, isClient]);
 
   // [2025-01-27 18:00:00] 获取产品分类列表
   const { data: categoriesData, isLoading: categoriesLoading } = useSWR<{ data: Category[] }>(
@@ -236,12 +293,13 @@ export default function OfflineOrdersIntakePage() {
   }, []);
 
   const addVariant = useCallback(
-    (itemId: string, variantType: 'size' | 'color' | 'other', variantValue: string) => {
+    (itemId: string, size: string, color: string) => {
       setFormState((prev) => {
         const newItems = prev.productItems.map((item) => {
           if (item.id === itemId) {
+            // 检查是否已存在相同的尺码+颜色组合
             const variantExists = item.variants.some(
-              (v) => v.variantType === variantType && v.variantValue === variantValue
+              (v) => v.size === size && v.color === color
             );
             if (!variantExists) {
               return {
@@ -249,8 +307,8 @@ export default function OfflineOrdersIntakePage() {
                 variants: [
                   ...item.variants,
                   {
-                    variantType,
-                    variantValue,
+                    size,
+                    color,
                     quantity: 0,
                     unitPrice: 0,
                   },
@@ -499,8 +557,16 @@ export default function OfflineOrdersIntakePage() {
         return;
       }
       setField(name as keyof FormState, value as any);
+      // [2025-01-28 09:35:00] 清除对应字段的错误
+      if (fieldErrors[name]) {
+        setFieldErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
     },
-    [setField],
+    [setField, fieldErrors],
   );
 
   const addFiles = useCallback(
@@ -606,7 +672,7 @@ export default function OfflineOrdersIntakePage() {
       .map((item) => {
         const variantsText = item.variants
           .filter((v) => v.quantity > 0)
-          .map((v) => `${v.variantValue}: ${v.quantity}`)
+          .map((v) => `${v.size} ${v.color}: ${v.quantity}`)
           .join(', ');
         return `${item.categoryName}${variantsText ? ` (${variantsText})` : ''}`;
       })
@@ -633,6 +699,8 @@ export default function OfflineOrdersIntakePage() {
         payload.append('contactName', formState.contactName.trim());
         payload.append('email', formState.email.trim());
         payload.append('phone', formState.phone.trim());
+        // [2025-01-28 09:05:00] 添加 company 字段（从发票信息中获取，如果有）
+        payload.append('company', formState.requiresInvoice && formState.invoiceInfo.companyName ? formState.invoiceInfo.companyName.trim() : '');
         payload.append('artworkNotes', formState.artworkNotes);
         payload.append('requiresMockups', String(formState.requiresMockups));
         payload.append('requiresProof', String(formState.requiresProof));
@@ -705,140 +773,167 @@ export default function OfflineOrdersIntakePage() {
     const availableCategories = categories.filter((cat) => !addedCategoryIds.includes(cat.id));
 
     return (
-      <div className="step-content">
-        <div className="order-header">
-          <h2>多产品定制</h2>
-          <div className="order-code-display">
-            <span className="order-code-label">订单编号：</span>
-            <strong className="order-code-value">{formState.orderCode}</strong>
-          </div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-2 flex-wrap gap-4">
+          <h2 className="text-2xl font-bold text-gray-900 m-0">{t('step1Heading')}</h2>
         </div>
-        <p className="step-description">支持同时定制多种产品，每个产品可以选择不同的变体（尺码、颜色等）和数量</p>
+        <p className="text-gray-600 mb-6 text-sm">{t('step1Intro')}</p>
 
-        {/* 添加产品按钮 */}
-        {availableCategories.length > 0 && (
-          <div className="add-product-section">
-            <label>
-              <span>添加产品：</span>
+        {/* 添加产品区域 - 使用 Tailwind */}
+        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-2">{t('addProduct')}：</span>
+            {categoriesLoading ? (
               <select
-                value=""
-                onChange={(e) => {
-                  if (e.target.value) {
-                    const category = categories.find((c) => c.id === e.target.value);
-                    if (category) {
-                      addProductItem(category.id, category.name);
-                      e.target.value = '';
-                    }
-                  }
-                }}
-                className="product-select"
+                className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                disabled
               >
-                <option value="">选择产品类型...</option>
-                {availableCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
+                <option>加载产品分类中...</option>
               </select>
-            </label>
-          </div>
-        )}
+            ) : (
+              <>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const category = categories.find((c) => c.id === e.target.value);
+                      if (category) {
+                        addProductItem(category.id, category.name);
+                        e.target.value = '';
+                      }
+                    }
+                  }}
+                  className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  disabled={availableCategories.length === 0}
+                >
+                  <option value="">
+                    {availableCategories.length === 0 
+                      ? (categories.length === 0 
+                          ? '暂无产品分类，请先添加产品分类' 
+                          : '所有产品分类已添加')
+                      : t('selectProductType')}
+                  </option>
+                  {availableCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {availableCategories.length === 0 && categories.length > 0 && (
+                  <p className="mt-2 text-xs text-gray-600">
+                    所有产品分类已添加，如需添加更多，请先删除已添加的产品
+                  </p>
+                )}
+              </>
+            )}
+          </label>
+        </div>
 
-        {/* 产品列表 */}
+        {/* 产品列表 - 使用 Tailwind */}
         {formState.productItems.length > 0 ? (
-          <div className="product-items-list">
+          <div className="space-y-6 mb-8">
             {formState.productItems.map((item, itemIndex) => {
               const itemTotal = calculateItemTotal(item);
               const itemQuantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
 
               return (
-                <div key={item.id} className="product-item-card">
-                  <div className="product-item-header">
-                    <h3>
+                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white">
+                  <div className="mb-5 pb-3 border-b border-gray-200">
+                    <h3 className="text-xl font-semibold text-gray-900 m-0 flex justify-between items-center">
                       {item.categoryName}
                       <button
                         type="button"
-                        className="remove-item-btn"
+                        className="bg-red-600 text-white border-none rounded-md px-3 py-1.5 text-xs font-medium cursor-pointer hover:bg-red-700 transition-colors"
                         onClick={() => removeProductItem(item.id)}
                       >
-                        删除
+                        {t('delete')}
                       </button>
                     </h3>
                   </div>
 
-                  {/* 变体输入区域 */}
-                  <div className="variants-section">
-                    {/* 添加尺码变体 */}
-                    <div className="add-variant-section">
-                      <label>
-                        <span>添加变体：</span>
+                  {/* 变体输入区域 - 使用 Tailwind */}
+                  <div className="mt-4">
+                    {/* 添加变体 - 尺码和颜色组合 */}
+                    <div className="mb-4 grid grid-cols-2 gap-3 max-w-md">
+                      <label className="block">
+                        <span className="block text-sm font-medium text-gray-700 mb-2">{t('size')} *</span>
                         <select
-                          value=""
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              const [type, value] = e.target.value.split(':');
-                              if (type && value) {
-                                addVariant(item.id, type as 'size' | 'color' | 'other', value);
-                                e.target.value = '';
-                              }
-                            }
-                          }}
-                          className="variant-select"
+                          id={`size-select-${item.id}`}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                         >
-                          <option value="">选择变体...</option>
-                          <optgroup label="尺码">
-                            {SIZE_OPTIONS.filter(
-                              (size) => !item.variants.some((v) => v.variantType === 'size' && v.variantValue === size)
-                            ).map((size) => (
-                              <option key={`size:${size}`} value={`size:${size}`}>
-                                {size}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="颜色">
-                            {['White', 'Black', 'Red', 'Blue', 'Green', 'Yellow', 'Gray'].filter(
-                              (color) => !item.variants.some((v) => v.variantType === 'color' && v.variantValue === color)
-                            ).map((color) => (
-                              <option key={`color:${color}`} value={`color:${color}`}>
-                                {color}
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="其他">
-                            {['Default'].filter(
-                              (other) => !item.variants.some((v) => v.variantType === 'other' && v.variantValue === other)
-                            ).map((other) => (
-                              <option key={`other:${other}`} value={`other:${other}`}>
-                                {other}
-                              </option>
-                            ))}
-                          </optgroup>
+                          <option value="">{t('selectSize')}</option>
+                          {SIZE_OPTIONS.map((size) => (
+                            <option key={size} value={size}>
+                              {size}
+                            </option>
+                          ))}
                         </select>
                       </label>
+                      <label className="block">
+                        <span className="block text-sm font-medium text-gray-700 mb-2">{t('color')} *</span>
+                        <select
+                          id={`color-select-${item.id}`}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                        >
+                          <option value="">{t('selectColor')}</option>
+                          {['White', 'Black', 'Red', 'Blue', 'Green', 'Yellow', 'Gray'].map((color) => (
+                            <option key={color} value={color}>
+                              {color}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <div className="col-span-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sizeSelect = document.getElementById(`size-select-${item.id}`) as HTMLSelectElement;
+                            const colorSelect = document.getElementById(`color-select-${item.id}`) as HTMLSelectElement;
+                            const size = sizeSelect.value;
+                            const color = colorSelect.value;
+                            if (size && color) {
+                              // 检查是否已存在相同的尺码+颜色组合
+                              const variantExists = item.variants.some((v) => v.size === size && v.color === color);
+                              if (variantExists) {
+                                setStatus({ type: 'error', message: `${t('variantAlreadyExists')}: ${size} + ${color}` });
+                                return;
+                              }
+                              addVariant(item.id, size, color);
+                              sizeSelect.value = '';
+                              colorSelect.value = '';
+                            } else {
+                              setStatus({ type: 'error', message: t('pleaseSelectSizeAndColor') });
+                            }
+                          }}
+                          className="px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          {t('addVariant')}
+                        </button>
+                      </div>
                     </div>
 
-                    {/* 变体列表 */}
+                    {/* 变体列表 - 使用 Tailwind */}
                     {item.variants.length > 0 && (
-                      <div className="variants-table">
-                        <table>
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse">
                           <thead>
-                            <tr>
-                              <th>变体类型</th>
-                              <th>变体值</th>
-                              <th>数量</th>
-                              <th>单价 (CAD)</th>
-                              <th>小计 (CAD)</th>
-                              <th>操作</th>
+                            <tr className="bg-gray-50">
+                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('size')}</th>
+                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('color')}</th>
+                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('quantity')}</th>
+                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('unitPrice')}</th>
+                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('subtotal')}</th>
+                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('remove')}</th>
                             </tr>
                           </thead>
                           <tbody>
                             {item.variants.map((variant, variantIndex) => {
                               const variantTotal = variant.quantity * variant.unitPrice;
                               return (
-                                <tr key={variantIndex}>
-                                  <td>{variant.variantType === 'size' ? '尺码' : variant.variantType === 'color' ? '颜色' : '其他'}</td>
-                                  <td>{variant.variantValue}</td>
-                                  <td>
+                                <tr key={variantIndex} className="border-b border-gray-200">
+                                  <td className="px-3 py-3 text-sm font-medium">{variant.size}</td>
+                                  <td className="px-3 py-3 text-sm">{variant.color}</td>
+                                  <td className="px-3 py-3">
                                     <input
                                       type="number"
                                       min="0"
@@ -846,45 +941,45 @@ export default function OfflineOrdersIntakePage() {
                                       onChange={(e) =>
                                         updateVariant(item.id, variantIndex, 'quantity', parseInt(e.target.value, 10) || 0)
                                       }
-                                      className="variant-quantity-input"
+                                      className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                                     />
                                   </td>
-                                  <td>
+                                  <td className="px-3 py-3">
                                     <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      value={variant.unitPrice}
-                                      onChange={(e) =>
-                                        updateVariant(item.id, variantIndex, 'unitPrice', parseFloat(e.target.value) || 0)
-                                      }
-                                      className="variant-price-input"
+                                      type="text"
+                                      value={variant.unitPrice || ''}
+                                      onChange={(e) => {
+                                        const value = e.target.value.replace(/[^\d.]/g, '');
+                                        const numValue = parseFloat(value) || 0;
+                                        updateVariant(item.id, variantIndex, 'unitPrice', numValue);
+                                      }}
+                                      className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
                                     />
                                   </td>
-                                  <td className="variant-total">${variantTotal.toFixed(2)}</td>
-                                  <td>
+                                  <td className="px-3 py-3 text-sm font-semibold text-blue-700">${variantTotal.toFixed(2)}</td>
+                                  <td className="px-3 py-3">
                                     <button
                                       type="button"
-                                      className="remove-variant-btn"
+                                      className="bg-red-600 text-white border-none rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:bg-red-700 transition-colors"
                                       onClick={() => removeVariant(item.id, variantIndex)}
                                     >
-                                      删除
+                                      {t('delete')}
                                     </button>
                                   </td>
                                 </tr>
                               );
                             })}
                           </tbody>
-                          <tfoot>
+                          <tfoot className="bg-gray-50">
                             <tr>
-                              <td colSpan={2}>
-                                <strong>产品小计：</strong>
+                              <td colSpan={2} className="px-3 py-3">
+                                <strong className="font-semibold">{t('productSubtotal')}：</strong>
                               </td>
-                              <td>
-                                <strong>{itemQuantity} 件</strong>
+                              <td className="px-3 py-3">
+                                <strong className="font-semibold">{itemQuantity} {t('items')}</strong>
                               </td>
-                              <td colSpan={2}>
-                                <strong>${itemTotal.toFixed(2)} CAD</strong>
+                              <td colSpan={2} className="px-3 py-3">
+                                <strong className="font-semibold text-blue-700">${itemTotal.toFixed(2)} CAD</strong>
                               </td>
                               <td></td>
                             </tr>
@@ -898,21 +993,21 @@ export default function OfflineOrdersIntakePage() {
             })}
           </div>
         ) : (
-          <div className="empty-state">
-            <p>请先添加产品类型，然后为每个产品添加变体（尺码、颜色等）和数量</p>
+          <div className="p-8 text-center text-gray-600 bg-gray-50 rounded-lg">
+            <p>{t('pleaseAddProducts')}</p>
           </div>
         )}
 
-        {/* 总计 */}
+        {/* 总计 - 使用 Tailwind */}
         {calculateTotalQuantity > 0 && (
-          <div className="total-summary">
-            <div className="total-row">
-              <span>总数量：</span>
-              <strong>{calculateTotalQuantity} 件</strong>
+          <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
+            <div className="flex justify-between items-center text-base">
+              <span>{t('totalQuantity')}：</span>
+              <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items')}</strong>
             </div>
-            <div className="total-row">
-              <span>总金额：</span>
-              <strong>${calculateSubtotal.toFixed(2)} CAD</strong>
+            <div className="flex justify-between items-center text-base">
+              <span>{t('totalAmount')}：</span>
+              <strong className="text-xl text-blue-700">${calculateSubtotal.toFixed(2)} CAD</strong>
             </div>
           </div>
         )}
@@ -920,94 +1015,101 @@ export default function OfflineOrdersIntakePage() {
     );
   };
 
-  // [2025-01-27 18:00:00] 渲染第二步：印刷位置
-  const renderStep2 = () => (
-    <div className="step-content">
-      <h2>印刷位置</h2>
-      <p className="step-description">选择印刷位置、尺寸和添加备注</p>
-      
-      <div className="side-count-section">
-        <label>
-          <span>要印几个地方 *</span>
-          <input
-            type="number"
-            min="1"
-            max="10"
-            value={formState.sideCount}
-            onChange={(e) => updateSideCount(parseInt(e.target.value, 10) || 1)}
-            className="side-count-input"
-          />
-          <span className="input-hint">（最多10个位置）</span>
-        </label>
-      </div>
+  // [2025-01-27 18:00:00] 渲染第二步：印刷位置 - 使用 Tailwind
+  const renderStep2 = () => {
+    // [2025-01-27 20:35:00] 确保 printPositions 至少有一个元素
+    const positionsToRender = formState.printPositions && formState.printPositions.length > 0 
+      ? formState.printPositions 
+      : [{ position: '', width: '', height: '', notes: '' }];
+    
+    return (
+      <div className="space-y-6">
+        <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading')}</h2>
+        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro')}</p>
+        
+        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+          <label className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">{t('howManyPositions')} *</span>
+            <input
+              type="number"
+              min="1"
+              max="10"
+              value={formState.sideCount}
+              onChange={(e) => updateSideCount(parseInt(e.target.value, 10) || 1)}
+              className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <span className="text-xs text-gray-600">{t('max10Positions')}</span>
+          </label>
+        </div>
 
-      <div className="print-positions-list">
-        {formState.printPositions.map((position, index) => (
-          <div key={index} className="print-position-card">
-            <div className="position-header">
-              <h3>位置 {index + 1}</h3>
-            </div>
-            
-            <div className="position-fields">
-              <label>
-                <span>印刷位置 *</span>
-                <select
-                  value={position.position}
-                  onChange={(e) => updatePrintPosition(index, 'position', e.target.value)}
-                  className="position-select"
-                >
-                  <option value="">请选择位置</option>
-                  {PRINT_POSITION_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="size-inputs">
-                <label>
-                  <span>宽度 (inch) *</span>
-                  <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    placeholder="0.0"
-                    value={position.width}
-                    onChange={(e) => updatePrintPosition(index, 'width', e.target.value)}
-                    className="size-input"
-                  />
+        <div className="space-y-6 mt-6">
+          {positionsToRender.map((position, index) => (
+            <div key={index} className="border border-gray-200 rounded-xl p-5 bg-white">
+              <div className="mb-4 pb-3 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 m-0">{t('position')} {index + 1}</h3>
+              </div>
+              
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('position')} *</span>
+                  <select
+                    value={position.position}
+                    onChange={(e) => updatePrintPosition(index, 'position', e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  >
+                    <option value="">{t('selectPosition')}</option>
+                    {PRINT_POSITION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
-                <label>
-                  <span>高度 (inch) *</span>
-                  <input
-                    type="number"
-                    min="0.1"
-                    step="0.1"
-                    placeholder="0.0"
-                    value={position.height}
-                    onChange={(e) => updatePrintPosition(index, 'height', e.target.value)}
-                    className="size-input"
+
+                <div className="grid grid-cols-2 gap-4">
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('width')} *</span>
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      placeholder="0.0"
+                      value={position.width}
+                      onChange={(e) => updatePrintPosition(index, 'width', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('height')} *</span>
+                    <input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      placeholder="0.0"
+                      value={position.height}
+                      onChange={(e) => updatePrintPosition(index, 'height', e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </label>
+                </div>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('notes')}</span>
+                  <textarea
+                    rows={2}
+                    placeholder={t('positionNotesPlaceholder')}
+                    value={position.notes}
+                    onChange={(e) => updatePrintPosition(index, 'notes', e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-y min-h-[60px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </label>
               </div>
-
-              <label>
-                <span>备注</span>
-                <textarea
-                  rows={2}
-                  placeholder="添加此位置的额外说明（可选）"
-                  value={position.notes}
-                  onChange={(e) => updatePrintPosition(index, 'notes', e.target.value)}
-                  className="position-notes"
-                />
-              </label>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // [2025-01-27 18:00:00] 更新发票信息字段
   const updateInvoiceInfo = useCallback((field: keyof InvoiceInfo, value: string) => {
@@ -1018,157 +1120,228 @@ export default function OfflineOrdersIntakePage() {
         [field]: value,
       },
     }));
-  }, []);
+    // [2025-01-28 09:35:00] 清除对应字段的错误
+    const errorKey = `invoice_${field}`;
+    if (fieldErrors[errorKey]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[errorKey];
+        return newErrors;
+      });
+    }
+  }, [fieldErrors]);
 
-  // [2025-01-27 18:00:00] 渲染第三步：客人信息和价格管理
+  // [2025-01-27 18:00:00] 渲染第三步：客人信息和价格管理 - 使用 Tailwind
   const renderStep3 = () => (
-    <div className="step-content">
-      <h2>客人信息和价格管理</h2>
-      <p className="step-description">填写客人联系信息、交付日期和价格管理</p>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step3Heading')}</h2>
+      <p className="text-gray-600 mb-6 text-sm">{t('step3Intro')}</p>
 
-      {/* 客人基本信息 */}
-      <section className="info-section">
-        <h3>客人信息</h3>
-        <div className="grid two-col">
-          <label>
-            <span>联系人姓名 *</span>
+      {/* 客人基本信息 - 使用 Tailwind */}
+      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+        <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo')}</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName')} *</span>
             <input
               type="text"
               name="contactName"
               required
               value={formState.contactName}
               onChange={handleInputChange}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+              }`}
             />
+            {fieldErrors.contactName && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.contactName}</p>
+            )}
           </label>
-          <label>
-            <span>邮箱 *</span>
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-2">{t('email')} *</span>
             <input
               type="email"
               name="email"
               required
               value={formState.email}
               onChange={handleInputChange}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+              }`}
             />
+            {fieldErrors.email && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+            )}
           </label>
-          <label>
-            <span>电话 *</span>
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-2">{t('phone')} *</span>
             <input
               type="tel"
               name="phone"
               required
               value={formState.phone}
               onChange={handleInputChange}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                fieldErrors.phone ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+              }`}
             />
+            {fieldErrors.phone && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
+            )}
           </label>
-          <label>
-            <span>交付日期 (Due Date) *</span>
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-2">{t('dueDate')} *</span>
             <input
               type="date"
               name="dueDate"
               required
               value={formState.dueDate}
               onChange={handleInputChange}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                fieldErrors.dueDate ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+              }`}
             />
+            {fieldErrors.dueDate && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.dueDate}</p>
+            )}
           </label>
         </div>
       </section>
 
-      {/* 发票信息 */}
-      <section className="info-section">
-        <label className="checkbox-label">
+      {/* 发票信息 - 使用 Tailwind */}
+      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+        <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
           <input
             type="checkbox"
             name="requiresInvoice"
             checked={formState.requiresInvoice}
             onChange={(e) => setField('requiresInvoice', e.target.checked)}
+            className="w-4.5 h-4.5 cursor-pointer"
           />
-          <span>需要发票 (Require Invoice)</span>
+          <span className="text-sm font-medium text-gray-700">{t('requireInvoice')}</span>
         </label>
 
         {formState.requiresInvoice && (
-          <div className="invoice-info-section">
-            <h4>发票信息（加拿大）</h4>
-            <div className="grid two-col">
-              <label>
-                <span>公司名称 *</span>
+          <div className="mt-4 p-5 bg-gray-50 rounded-lg">
+            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('invoiceInfo')}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyName')} *</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.companyName}
                   onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
                 />
+                {fieldErrors.invoice_companyName && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyName}</p>
+                )}
               </label>
-              <label>
-                <span>公司邮箱 *</span>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail')} *</span>
                 <input
                   type="email"
                   value={formState.invoiceInfo.companyEmail}
                   onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
                 />
+                {fieldErrors.invoice_companyEmail && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyEmail}</p>
+                )}
               </label>
-              <label>
-                <span>税号 (GST/HST Number) *</span>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber')} *</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.taxNumber}
                   onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
-                  placeholder="例如：123456789RT0001"
+                  placeholder={t('taxNumberPlaceholder')}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
               </label>
-              <label>
-                <span>城市 *</span>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('city')} *</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.city}
                   onChange={(e) => updateInvoiceInfo('city', e.target.value)}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
                 />
+                {fieldErrors.invoice_city && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_city}</p>
+                )}
               </label>
-              <label>
-                <span>省份 *</span>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('province')} *</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.province}
                   onChange={(e) => updateInvoiceInfo('province', e.target.value)}
-                  placeholder="例如：ON, BC, QC"
+                  placeholder={t('provincePlaceholder')}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
                 />
+                {fieldErrors.invoice_province && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_province}</p>
+                )}
               </label>
-              <label>
-                <span>邮编 *</span>
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode')} *</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.postalCode}
                   onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
-                  placeholder="例如：K1A 0B1"
+                  placeholder={t('postalCodePlaceholder')}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
                 />
+                {fieldErrors.invoice_postalCode && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_postalCode}</p>
+                )}
               </label>
             </div>
-            <label>
-              <span>地址 *</span>
+            <label className="block mt-4">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('address')} *</span>
               <input
                 type="text"
                 value={formState.invoiceInfo.address}
                 onChange={(e) => updateInvoiceInfo('address', e.target.value)}
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                }`}
               />
+              {fieldErrors.invoice_address && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_address}</p>
+              )}
             </label>
           </div>
         )}
       </section>
 
-      {/* 价格预估和管理 */}
-      <section className="info-section">
-        <h3>价格预估</h3>
+      {/* 价格预估和管理 - 使用 Tailwind */}
+      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+        <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('priceEstimate')}</h3>
         {formState.productItems.length > 0 ? (
-          <div className="price-management">
-            {/* 价格表格 */}
-            <div className="price-table-section">
-              <table className="price-table">
+          <div className="mt-4">
+            {/* 价格表格 - 使用 Tailwind */}
+            <div className="overflow-x-auto mb-6">
+              <table className="w-full border-collapse">
                 <thead>
-                  <tr>
-                    <th>产品</th>
-                    <th>变体类型</th>
-                    <th>变体值</th>
-                    <th>数量</th>
-                    <th>单价 (CAD)</th>
-                    <th>小计 (CAD)</th>
+                  <tr className="bg-gray-50">
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">产品</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('size')}</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('color')}</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('quantity')}</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('unitPrice')}</th>
+                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('subtotal')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1176,17 +1349,11 @@ export default function OfflineOrdersIntakePage() {
                     item.variants.map((variant, variantIndex) => {
                       const variantTotal = variant.quantity * variant.unitPrice;
                       return (
-                        <tr key={`${item.id}-${variantIndex}`}>
-                          <td>{item.categoryName}</td>
-                          <td>
-                            {variant.variantType === 'size'
-                              ? '尺码'
-                              : variant.variantType === 'color'
-                              ? '颜色'
-                              : '其他'}
-                          </td>
-                          <td>{variant.variantValue}</td>
-                          <td>
+                        <tr key={`${item.id}-${variantIndex}`} className="border-b border-gray-200">
+                          <td className="px-3 py-3 text-sm">{item.categoryName}</td>
+                          <td className="px-3 py-3 text-sm font-medium">{variant.size}</td>
+                          <td className="px-3 py-3 text-sm">{variant.color}</td>
+                          <td className="px-3 py-3">
                             <input
                               type="number"
                               min="0"
@@ -1194,22 +1361,22 @@ export default function OfflineOrdersIntakePage() {
                               onChange={(e) =>
                                 updateVariant(item.id, variantIndex, 'quantity', parseInt(e.target.value, 10) || 0)
                               }
-                              className="price-input"
+                              className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                             />
                           </td>
-                          <td>
+                          <td className="px-3 py-3">
                             <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={variant.unitPrice}
-                              onChange={(e) =>
-                                updateVariant(item.id, variantIndex, 'unitPrice', parseFloat(e.target.value) || 0)
-                              }
-                              className="price-input"
+                              type="text"
+                              value={variant.unitPrice ?? ''}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/[^\d.]/g, '');
+                                const numValue = parseFloat(value) || 0;
+                                updateVariant(item.id, variantIndex, 'unitPrice', numValue);
+                              }}
+                              className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
                             />
                           </td>
-                          <td className="price-total">${variantTotal.toFixed(2)}</td>
+                          <td className="px-3 py-3 text-sm font-semibold text-blue-700">${variantTotal.toFixed(2)}</td>
                         </tr>
                       );
                     })
@@ -1218,103 +1385,109 @@ export default function OfflineOrdersIntakePage() {
               </table>
             </div>
 
-            {/* 总计和折扣 */}
-            <div className="price-summary">
-              <div className="summary-row">
-                <span>小计：</span>
+            {/* 总计和折扣 - 使用 Tailwind */}
+            <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
+              <div className="flex justify-between items-center text-sm">
+                <span>{t('subtotal')}：</span>
                 <span>${calculateSubtotal.toFixed(2)} CAD</span>
               </div>
-              <div className="summary-row">
-                <label>
-                  <span>折扣 (%)：</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={formState.discount}
-                    onChange={(e) => setField('discount', parseFloat(e.target.value) || 0)}
-                    className="discount-input"
-                  />
-                </label>
+              <div className="flex justify-between items-center gap-3">
+                <span className="text-sm">{t('discount')}：</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formState.discount ?? 0}
+                  onChange={(e) => setField('discount', parseFloat(e.target.value) || 0)}
+                  className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
               </div>
               {formState.discount > 0 && (
-                <div className="summary-row discount-row">
-                  <span>折扣金额：</span>
+                <div className="flex justify-between items-center text-sm text-red-600">
+                  <span>{t('discountAmount')}：</span>
                   <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
                 </div>
               )}
-              <div className="summary-row total-row">
-                <span>总计：</span>
-                <strong>${calculateTotal.toFixed(2)} CAD</strong>
+              <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
+                <span className="font-semibold">{t('total')}：</span>
+                <strong className="text-2xl text-blue-700">${calculateTotal.toFixed(2)} CAD</strong>
               </div>
-              <div className="summary-row quantity-row">
-                <span>总数量：</span>
-                <strong>{calculateTotalQuantity} 件</strong>
+              <div className="flex justify-between items-center text-base text-gray-700">
+                <span>{t('totalQuantity')}：</span>
+                <strong>{calculateTotalQuantity} {t('items')}</strong>
               </div>
             </div>
           </div>
         ) : (
-          <p className="empty-message">请先返回第一步添加产品</p>
+          <p className="p-5 text-center text-gray-600 bg-gray-50 rounded-lg">{t('pleaseAddProductsFirst')}</p>
         )}
       </section>
     </div>
   );
 
-  // [2025-01-27 18:00:00] 渲染第四步：项目详情
+  // [2025-01-27 18:00:00] 渲染第四步：项目详情 - 使用 Tailwind
   const renderStep4 = () => (
-    <div className="step-content">
-      <h2>项目详情</h2>
-      <p className="step-description">填写项目名称、交付日期和其他说明</p>
-      <div className="grid two-col">
-        <label>
-          <span>项目名称 *</span>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step4Heading')}</h2>
+      <p className="text-gray-600 mb-6 text-sm">{t('step4Intro')}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label className="block">
+          <span className="block text-sm font-medium text-gray-700 mb-2">{t('projectName')} *</span>
           <input
             type="text"
             name="projectName"
             required
             value={formState.projectName}
             onChange={handleInputChange}
+            className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+              fieldErrors.projectName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+            }`}
           />
+          {fieldErrors.projectName && (
+            <p className="mt-1 text-sm text-red-600">{fieldErrors.projectName}</p>
+          )}
         </label>
-        <label>
-          <span>交付日期</span>
+        <label className="block">
+          <span className="block text-sm font-medium text-gray-700 mb-2">{t('deliveryDate')}</span>
           <input
             type="date"
             name="deliveryDate"
             value={formState.deliveryDate}
             onChange={handleInputChange}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
           />
         </label>
       </div>
-      <label>
-        <span>设计说明</span>
+      <label className="block">
+        <span className="block text-sm font-medium text-gray-700 mb-2">{t('designNotes')}</span>
         <textarea
           name="artworkNotes"
           rows={4}
           value={formState.artworkNotes}
           onChange={handleInputChange}
-          placeholder="描述颜色目标、位置、包装或其他相关信息。"
+          placeholder={t('designNotesPlaceholder')}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
         />
       </label>
     </div>
   );
 
-  // [2025-01-27 18:00:00] 渲染第五步：文件上传
+  // [2025-01-27 18:00:00] 渲染第五步：文件上传 - 使用 Tailwind
   const renderStep5 = () => (
-    <div className="step-content">
-      <h2>文件上传</h2>
-      <p className="step-description">上传设计文件和附件</p>
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step5Heading')}</h2>
+      <p className="text-gray-600 mb-6 text-sm">{t('step5Intro')}</p>
       <div
-        className="upload-zone"
+        className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50 text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         role="button"
         tabIndex={0}
       >
-        <p>{fileListSummary}</p>
-        <p className="muted">
-          Drag & drop or <span className="link">browse</span> (max {MAX_FILES} files, {MAX_FILE_SIZE_MB}MB each)
+        <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
+        <p className="text-xs text-gray-600">
+          {t('dragDropOrBrowse')} ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB })})
         </p>
         <input
           type="file"
@@ -1322,18 +1495,26 @@ export default function OfflineOrdersIntakePage() {
           multiple
           onChange={handleFileInputChange}
           aria-label="Upload artwork files"
+          className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
         />
       </div>
       {files.length > 0 && (
-        <ul className="file-list">
+        <ul className="list-none m-0 p-0 grid gap-3 mt-4">
           {files.map((file, index) => (
-            <li key={`${file.name}-${index}`}>
-              <div>
-                <strong>{file.name}</strong>
-                <span>{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+            <li
+              key={`${file.name}-${index}`}
+              className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex justify-between items-center"
+            >
+              <div className="flex flex-col gap-1">
+                <strong className="text-sm text-gray-900">{file.name}</strong>
+                <span className="text-xs text-gray-600">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
               </div>
-              <button type="button" onClick={() => removeFile(index)}>
-                Remove
+              <button
+                type="button"
+                onClick={() => removeFile(index)}
+                className="border-none bg-transparent text-red-600 cursor-pointer text-sm font-medium hover:text-red-700 transition-colors"
+              >
+                {t('remove')}
               </button>
             </li>
           ))}
@@ -1343,939 +1524,163 @@ export default function OfflineOrdersIntakePage() {
   );
 
   return (
-    <div className="offline-intake">
-      <header className="offline-intake__hero">
+    <div className="min-h-screen bg-gray-100">
+      <header className="relative py-12 px-6 bg-gradient-to-br from-yellow-200 via-yellow-100 to-yellow-50 z-10">
         <div>
-          <p className="eyebrow">Offline Order Intake</p>
-          <h1>Share your project specs and artwork</h1>
-          <p>Upload brand assets, outline quantities, timeline, and special production notes.</p>
+          {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
+          <div className="absolute top-6 right-6 flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
+            <button
+              type="button"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                locale === 'en'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
+              }`}
+              onClick={() => handleLocaleChange('en')}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                locale === 'zh'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
+              }`}
+              onClick={() => handleLocaleChange('zh')}
+            >
+              中文
+            </button>
+          </div>
+          {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
+          {isClient && (
+            <>
+              <p className="text-xs uppercase tracking-wider text-yellow-900 mb-2">{t('heroTitle')}</p>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('heroSubtitle')}</h1>
+              <p className="text-gray-700">{t('heroDescription')}</p>
+            </>
+          )}
         </div>
       </header>
 
-      <main>
-        <form className="intake-form" onSubmit={handleSubmit}>
+      <main className="max-w-[1400px] mx-auto -mt-8 mb-10 px-6 relative z-20">
+        <form className="bg-white rounded-2xl p-8 shadow-xl grid gap-8" onSubmit={handleSubmit}>
           {status.type !== 'idle' && (
-            <div className={`intake-alert intake-alert--${status.type}`} role="status">
+            <div
+              className={`rounded-lg px-4 py-3 ${
+                status.type === 'success'
+                  ? 'bg-green-50 text-green-800 border border-green-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+              }`}
+              role="status"
+            >
               {status.message}
             </div>
           )}
 
-          {/* [2025-01-27 19:00:00] 订单编号显示（所有步骤可见） */}
-          <div className="order-code-banner">
-            <span className="order-code-label">订单编号：</span>
-            <strong className="order-code-value">{formState.orderCode}</strong>
+          {/* [2025-01-27 19:00:00] 订单编号显示（所有步骤可见）- 使用 Tailwind */}
+          {/* [2025-01-28 09:30:00] 只在客户端显示订单编号，避免 hydration 错误 */}
+          {isClient && formState.orderCode && (
+          <div className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-600 rounded-lg">
+            <span className="text-sm text-gray-700 font-medium">{t('orderCode')}：</span>
+            <strong className="text-lg text-blue-800 font-mono tracking-wide font-bold">
+              {formState.orderCode}
+            </strong>
           </div>
+          )}
 
-          {/* [2025-01-27 18:00:00] 步骤导航栏 */}
-          <div className="step-navigation">
+          {/* [2025-01-27 18:00:00] 步骤导航栏 - 使用 Tailwind */}
+          {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
+          {isClient && (
+          <div className="flex gap-3 pb-6 border-b-2 border-gray-200 overflow-x-visible">
             {STEPS.map((step, index) => (
               <div
                 key={step.id}
-                className={`step-nav-item ${currentStep === step.id ? 'active' : ''} ${
-                  currentStep > step.id ? 'completed' : ''
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all flex-1 min-w-0 ${
+                  currentStep === step.id
+                    ? 'bg-blue-50 border-2 border-blue-600'
+                    : currentStep > step.id
+                    ? 'bg-gray-50 hover:bg-gray-100'
+                    : 'bg-gray-50 hover:bg-gray-100'
                 }`}
                 onClick={() => goToStep(step.id)}
               >
-                <div className="step-nav-number">{step.id}</div>
-                <div className="step-nav-info">
-                  <div className="step-nav-title">{step.title}</div>
-                  <div className="step-nav-description">{step.description}</div>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold flex-shrink-0 ${
+                    currentStep === step.id
+                      ? 'bg-blue-600 text-white'
+                      : currentStep > step.id
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-300 text-gray-600'
+                  }`}
+                >
+                  {step.id}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-gray-900 mb-1 truncate">{step.title}</div>
+                  <div className="text-xs text-gray-600 leading-tight line-clamp-2">{step.description}</div>
                 </div>
               </div>
             ))}
           </div>
+          )}
 
-          {/* [2025-01-27 18:00:00] 步骤内容区域 */}
-          <div className="step-container">
+          {/* [2025-01-27 18:00:00] 步骤内容区域 - 使用 Tailwind */}
+          {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
+          {isClient && (
+          <div className="min-h-[400px]">
             {currentStep === 1 && renderStep1()}
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
             {currentStep === 4 && renderStep4()}
             {currentStep === 5 && renderStep5()}
           </div>
+          )}
 
-          {/* [2025-01-27 18:00:00] 步骤导航按钮 */}
-          <div className="form-actions">
+          {/* [2025-01-27 18:00:00] 步骤导航按钮 - 使用 Tailwind */}
+          {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
+          {isClient && (
+          <div className="flex justify-between items-center gap-3 pt-6 border-t border-gray-200">
             <button
               type="button"
-              className="ghost"
+              className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={saveDraft}
               disabled={isSubmitting || isSavingDraft}
             >
-              {isSavingDraft ? 'Saving…' : 'Save draft'}
+              {isSavingDraft ? t('saving') : t('saveDraft')}
             </button>
-            <div className="step-actions">
+            <div className="flex gap-3">
               {currentStep > 1 && (
-                <button type="button" className="btn-secondary" onClick={goToPreviousStep}>
-                  上一步
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  onClick={goToPreviousStep}
+                >
+                  {t('previousStep')}
                 </button>
               )}
               {currentStep < STEPS.length ? (
-                <button type="button" className="btn-primary" onClick={goToNextStep}>
-                  下一步
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
+                  onClick={goToNextStep}
+                >
+                  {t('nextStep')}
                 </button>
               ) : (
-                <button type="submit" className="btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? 'Submitting…' : 'Submit offline order'}
+                <button
+                  type="submit"
+                  className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? t('submitting') : t('submitOrder')}
                 </button>
               )}
             </div>
           </div>
+          )}
         </form>
       </main>
-
-      <style jsx>{`
-        /* [2025-01-27 18:00:00] 基础样式 */
-        .offline-intake {
-          background: #f5f5f5;
-          min-height: 100vh;
-        }
-        .offline-intake__hero {
-          padding: 64px 24px;
-          background: radial-gradient(circle at top left, #fde68a, #fef3c7);
-        }
-        .eyebrow {
-          letter-spacing: 0.2em;
-          text-transform: uppercase;
-          font-size: 12px;
-          color: #854d0e;
-          margin-bottom: 8px;
-        }
-        main {
-          max-width: 1400px;
-          margin: -48px auto 40px;
-          padding: 0 24px 24px;
-        }
-        .intake-form {
-          background: #fff;
-          border-radius: 16px;
-          padding: 32px;
-          box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
-          display: grid;
-          gap: 32px;
-        }
-        
-        /* [2025-01-27 19:00:00] 订单编号横幅样式 */
-        .order-code-banner {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          padding: 12px 20px;
-          background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-          border: 2px solid #2563eb;
-          border-radius: 8px;
-          margin-bottom: 24px;
-        }
-        .order-code-banner .order-code-label {
-          font-size: 15px;
-          color: #374151;
-          font-weight: 500;
-        }
-        .order-code-banner .order-code-value {
-          font-size: 18px;
-          color: #0369a1;
-          font-family: monospace;
-          letter-spacing: 1px;
-          font-weight: 700;
-        }
-        
-        /* [2025-01-27 18:00:00] 步骤导航栏样式 */
-        .step-navigation {
-          display: flex;
-          gap: 12px;
-          padding-bottom: 24px;
-          border-bottom: 2px solid #e5e7eb;
-          overflow-x: visible;
-        }
-        .step-nav-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 14px;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-          flex: 1;
-          min-width: 0;
-        }
-        .step-nav-item:hover {
-          background: #f9fafb;
-        }
-        .step-nav-item.active {
-          background: #eff6ff;
-          border: 2px solid #2563eb;
-        }
-        .step-nav-item.completed .step-nav-number {
-          background: #10b981;
-          color: #fff;
-        }
-        .step-nav-number {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          background: #e5e7eb;
-          color: #6b7280;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 600;
-          flex-shrink: 0;
-        }
-        .step-nav-item.active .step-nav-number {
-          background: #2563eb;
-          color: #fff;
-        }
-        .step-nav-info {
-          flex: 1;
-        }
-        .step-nav-title {
-          font-weight: 600;
-          color: #111827;
-          margin-bottom: 4px;
-        }
-        .step-nav-description {
-          font-size: 11px;
-          color: #6b7280;
-          line-height: 1.3;
-        }
-        
-        /* [2025-01-27 18:00:00] 步骤内容区域样式 */
-        .step-container {
-          min-height: 400px;
-        }
-        .step-content h2 {
-          margin: 0 0 8px;
-          font-size: 24px;
-          color: #111827;
-        }
-        .step-description {
-          color: #6b7280;
-          margin-bottom: 24px;
-          font-size: 14px;
-        }
-        
-        /* [2025-01-27 19:00:00] 订单编号显示样式 */
-        .order-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-          flex-wrap: wrap;
-          gap: 16px;
-        }
-        .order-code-display {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          background: #eff6ff;
-          border: 1px solid #bae6fd;
-          border-radius: 8px;
-        }
-        .order-code-label {
-          font-size: 14px;
-          color: #374151;
-        }
-        .order-code-value {
-          font-size: 16px;
-          color: #0369a1;
-          font-family: monospace;
-          letter-spacing: 1px;
-        }
-        
-        /* [2025-01-27 18:00:00] 第一步：产品选择样式 */
-        .category-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-          gap: 16px;
-          margin-bottom: 32px;
-        }
-        .category-card {
-          position: relative;
-          border: 2px solid #e5e7eb;
-          border-radius: 12px;
-          padding: 16px;
-          background: #fff;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-align: center;
-        }
-        .category-card:hover {
-          border-color: #2563eb;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
-        }
-        .category-card.selected {
-          border-color: #2563eb;
-          background: #eff6ff;
-        }
-        .category-card-content {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-        }
-        .category-image {
-          width: 60px;
-          height: 60px;
-          object-fit: contain;
-        }
-        .category-name {
-          font-size: 14px;
-          font-weight: 500;
-          color: #111827;
-        }
-        .checkmark {
-          position: absolute;
-          top: 8px;
-          right: 8px;
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: #2563eb;
-          color: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-          font-weight: bold;
-        }
-        
-        /* [2025-01-27 18:00:00] 尺码和数量样式 */
-        .size-quantity-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          gap: 12px;
-          margin-bottom: 24px;
-        }
-        .size-quantity-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          background: #fff;
-        }
-        .size-checkbox {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          flex: 1;
-        }
-        .size-checkbox input[type='checkbox'] {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-        }
-        .quantity-input {
-          width: 80px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 6px 8px;
-          font-size: 14px;
-        }
-        .total-quantity-summary {
-          padding: 16px;
-          background: #f0f9ff;
-          border: 1px solid #bae6fd;
-          border-radius: 8px;
-          text-align: center;
-          color: #0369a1;
-          font-size: 18px;
-        }
-        
-        /* [2025-01-27 18:00:00] 第一步：多产品定制样式 */
-        .add-product-section {
-          margin-bottom: 32px;
-          padding: 16px;
-          background: #f9fafb;
-          border-radius: 8px;
-        }
-        .product-select {
-          width: 100%;
-          max-width: 300px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-size: 15px;
-        }
-        .product-items-list {
-          display: grid;
-          gap: 24px;
-          margin-bottom: 32px;
-        }
-        .product-item-card {
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-          padding: 20px;
-          background: #fff;
-        }
-        .product-item-header {
-          margin-bottom: 20px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .product-item-header h3 {
-          margin: 0;
-          font-size: 20px;
-          color: #111827;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .remove-item-btn {
-          background: #dc2626;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          padding: 6px 12px;
-          font-size: 13px;
-          cursor: pointer;
-        }
-        .remove-item-btn:hover {
-          background: #b91c1c;
-        }
-        .variants-section {
-          margin-top: 16px;
-        }
-        .add-variant-section {
-          margin-bottom: 16px;
-        }
-        .variant-select {
-          width: 100%;
-          max-width: 250px;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 8px 12px;
-          font-size: 14px;
-        }
-        .variants-table {
-          overflow-x: auto;
-        }
-        .variants-table table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .variants-table th,
-        .variants-table td {
-          padding: 12px;
-          text-align: left;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .variants-table th {
-          background: #f9fafb;
-          font-weight: 600;
-          color: #374151;
-        }
-        .variants-table tfoot {
-          background: #f9fafb;
-          font-weight: 600;
-        }
-        .variant-quantity-input,
-        .variant-price-input {
-          width: 100px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 6px 8px;
-          font-size: 14px;
-        }
-        .variant-total {
-          font-weight: 600;
-          color: #0369a1;
-        }
-        .remove-variant-btn {
-          background: #dc2626;
-          color: #fff;
-          border: none;
-          border-radius: 6px;
-          padding: 4px 8px;
-          font-size: 12px;
-          cursor: pointer;
-        }
-        .remove-variant-btn:hover {
-          background: #b91c1c;
-        }
-        .empty-state {
-          padding: 32px;
-          text-align: center;
-          color: #6b7280;
-          background: #f9fafb;
-          border-radius: 8px;
-        }
-        .total-summary {
-          padding: 20px;
-          background: #f0f9ff;
-          border: 1px solid #bae6fd;
-          border-radius: 8px;
-          display: grid;
-          gap: 12px;
-        }
-        .total-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 16px;
-        }
-        .total-row strong {
-          font-size: 20px;
-          color: #0369a1;
-        }
-        
-        /* [2025-01-27 18:00:00] 第三步：客人信息和价格管理样式 */
-        .info-section {
-          margin-bottom: 32px;
-          padding: 20px;
-          background: #fff;
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-        }
-        .info-section h3 {
-          margin: 0 0 16px;
-          font-size: 20px;
-          color: #111827;
-        }
-        .info-section h4 {
-          margin: 16px 0 12px;
-          font-size: 16px;
-          color: #374151;
-        }
-        .checkbox-label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          margin-bottom: 16px;
-        }
-        .checkbox-label input[type='checkbox'] {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-        }
-        .invoice-info-section {
-          margin-top: 16px;
-          padding: 20px;
-          background: #f9fafb;
-          border-radius: 8px;
-        }
-        .price-management {
-          margin-top: 16px;
-        }
-        .price-table-section {
-          overflow-x: auto;
-          margin-bottom: 24px;
-        }
-        .price-table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-        .price-table th,
-        .price-table td {
-          padding: 12px;
-          text-align: left;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .price-table th {
-          background: #f9fafb;
-          font-weight: 600;
-          color: #374151;
-        }
-        .price-input {
-          width: 100px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 6px 8px;
-          font-size: 14px;
-        }
-        .price-total {
-          font-weight: 600;
-          color: #0369a1;
-        }
-        .price-summary {
-          padding: 20px;
-          background: #f0f9ff;
-          border: 1px solid #bae6fd;
-          border-radius: 8px;
-          display: grid;
-          gap: 12px;
-        }
-        .summary-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 15px;
-        }
-        .summary-row label {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .discount-input {
-          width: 100px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 6px 8px;
-          font-size: 14px;
-        }
-        .discount-row {
-          color: #dc2626;
-        }
-        .total-row {
-          font-size: 18px;
-          padding-top: 12px;
-          border-top: 1px solid #bae6fd;
-        }
-        .total-row strong {
-          font-size: 24px;
-          color: #0369a1;
-        }
-        .quantity-row {
-          font-size: 16px;
-          color: #374151;
-        }
-        .empty-message {
-          padding: 20px;
-          text-align: center;
-          color: #6b7280;
-          background: #f9fafb;
-          border-radius: 8px;
-        }
-        
-        /* [2025-01-27 18:00:00] 第二步：印刷位置样式 */
-        .side-count-section {
-          margin-bottom: 32px;
-          padding: 16px;
-          background: #f9fafb;
-          border-radius: 8px;
-        }
-        .side-count-section label {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        .side-count-input {
-          width: 100px;
-          border: 1px solid #d1d5db;
-          border-radius: 6px;
-          padding: 8px 12px;
-          font-size: 15px;
-        }
-        .input-hint {
-          color: #6b7280;
-          font-size: 13px;
-          font-weight: normal;
-        }
-        .print-positions-list {
-          display: grid;
-          gap: 24px;
-          margin-top: 24px;
-        }
-        .print-position-card {
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
-          padding: 20px;
-          background: #fff;
-        }
-        .position-header {
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-        .position-header h3 {
-          margin: 0;
-          font-size: 18px;
-          color: #111827;
-        }
-        .position-fields {
-          display: grid;
-          gap: 16px;
-        }
-        .position-select {
-          width: 100%;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-size: 15px;
-          background: #fff;
-          cursor: pointer;
-        }
-        .position-select:focus {
-          outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        .size-inputs {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-        }
-        .size-input {
-          width: 100%;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-size: 15px;
-        }
-        .size-input:focus {
-          outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        .position-notes {
-          width: 100%;
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-size: 15px;
-          resize: vertical;
-          min-height: 60px;
-        }
-        .position-notes:focus {
-          outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-        
-        /* [2025-01-27 18:00:00] 通用表单样式 */
-        .grid {
-          display: grid;
-          gap: 16px;
-        }
-        .two-col {
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        }
-        label {
-          display: grid;
-          gap: 6px;
-        }
-        label span {
-          font-size: 14px;
-          color: #374151;
-          font-weight: 500;
-        }
-        input,
-        textarea {
-          border: 1px solid #d1d5db;
-          border-radius: 8px;
-          padding: 10px 12px;
-          font-size: 15px;
-        }
-        textarea {
-          resize: vertical;
-        }
-        .checkbox-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 16px;
-          margin-top: 16px;
-        }
-        .checkbox-grid label {
-          align-items: center;
-          grid-template-columns: auto 1fr;
-          gap: 8px;
-        }
-        
-        /* [2025-01-27 18:00:00] 文件上传样式 */
-        .upload-zone {
-          border: 2px dashed #d1d5db;
-          border-radius: 12px;
-          padding: 24px;
-          background: #fafafa;
-          text-align: center;
-          cursor: pointer;
-          position: relative;
-        }
-        .upload-zone input[type='file'] {
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          opacity: 0;
-          cursor: pointer;
-        }
-        .file-list {
-          list-style: none;
-          margin: 16px 0 0;
-          padding: 0;
-          display: grid;
-          gap: 12px;
-        }
-        .file-list li {
-          background: #f9fafb;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          padding: 12px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .file-list button {
-          border: none;
-          background: transparent;
-          color: #dc2626;
-          cursor: pointer;
-        }
-        .muted {
-          color: #6b7280;
-          font-size: 13px;
-        }
-        .link {
-          color: #2563eb;
-        }
-        
-        /* [2025-01-27 18:00:00] 表单操作按钮样式 */
-        .form-actions {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-          padding-top: 24px;
-          border-top: 1px solid #e5e7eb;
-        }
-        .form-actions .ghost {
-          border: none;
-          border-radius: 8px;
-          padding: 10px 16px;
-          font-weight: 600;
-          cursor: pointer;
-          background: rgba(37, 99, 235, 0.08);
-          color: #2563eb;
-        }
-        .step-actions {
-          display: flex;
-          gap: 12px;
-        }
-        .btn-secondary,
-        .btn-primary {
-          border: none;
-          border-radius: 8px;
-          padding: 10px 24px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-secondary {
-          background: #f3f4f6;
-          color: #374151;
-        }
-        .btn-secondary:hover {
-          background: #e5e7eb;
-        }
-        .btn-primary {
-          background: #111827;
-          color: #fff;
-        }
-        .btn-primary:hover {
-          background: #374151;
-        }
-        .btn-primary:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        
-        .intake-alert {
-          border-radius: 10px;
-          padding: 12px 16px;
-        }
-        .intake-alert--success {
-          background: #ecfdf5;
-          color: #047857;
-        }
-        .intake-alert--error {
-          background: #fef2f2;
-          color: #b91c1c;
-        }
-        
-        @media (max-width: 640px) {
-          .intake-form {
-            padding: 24px;
-          }
-          .step-navigation {
-            flex-direction: column;
-          }
-          .step-nav-item {
-            min-width: auto;
-          }
-          .category-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          .size-quantity-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          /* [2025-01-27 19:00:00] 订单编号响应式样式 */
-          .order-code-banner {
-            padding: 10px 16px;
-            flex-direction: column;
-            align-items: flex-start;
-          }
-          .order-code-banner .order-code-value {
-            font-size: 16px;
-          }
-          .order-header {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-          /* [2025-01-27 18:00:00] 第一步：多产品定制响应式样式 */
-          .product-item-card {
-            padding: 16px;
-          }
-          .variants-table {
-            font-size: 13px;
-          }
-          .variants-table th,
-          .variants-table td {
-            padding: 8px 4px;
-          }
-          .variant-quantity-input,
-          .variant-price-input {
-            width: 70px;
-            font-size: 13px;
-          }
-          /* [2025-01-27 18:00:00] 第二步：印刷位置响应式样式 */
-          .print-position-card {
-            padding: 16px;
-          }
-          .size-inputs {
-            grid-template-columns: 1fr;
-          }
-          .side-count-section label {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-          }
-          .input-hint {
-            margin-left: 0;
-          }
-          /* [2025-01-27 18:00:00] 第三步：价格管理响应式样式 */
-          .price-table {
-            font-size: 13px;
-          }
-          .price-table th,
-          .price-table td {
-            padding: 8px 4px;
-          }
-          .price-input {
-            width: 70px;
-            font-size: 13px;
-          }
-          .info-section {
-            padding: 16px;
-          }
-          .form-actions {
-            flex-direction: column;
-            align-items: stretch;
-          }
-          .step-actions {
-            width: 100%;
-          }
-          .btn-secondary,
-          .btn-primary {
-            flex: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }

@@ -233,11 +233,11 @@ exports.generateAssetUploadUrl = async (req, res) => {
   }
 };
 
-// [2025-11-11 15:26:30] 计算报价（初版基于产品底价 + 变体调整）
+// [2025-11-11 15:26:30] 计算报价（扩展版：考虑使用的面、图层数、数量折扣）
 exports.requestQuote = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity = 1 } = req.body || {};
+    const { quantity = 1, sidesUsed = [], layerCount = 0 } = req.body || {};
 
     if (!quantity || quantity <= 0) {
       return res.status(400).json({ error: 'quantity must be greater than zero' });
@@ -252,15 +252,61 @@ exports.requestQuote = async (req, res) => {
     const variant = result.design.variant;
     const basePrice = Number(variant.product.basePrice || 0);
     const adjustment = Number(variant.priceAdjustment || 0);
-    const unitPrice = Math.max(basePrice + adjustment, 0);
-    const total = unitPrice * quantity;
-
+    
+    // [2025-01-28 07:00:00] 基础单价 = 产品底价 + 变体调整
+    let unitPrice = Math.max(basePrice + adjustment, 0);
+    
+    // [2025-01-28 07:00:00] 计算使用的面数（front, back, sleeve）
+    const sidesCount = Array.isArray(sidesUsed) ? sidesUsed.length : 0;
+    
+    // [2025-01-28 07:00:00] 多面印刷费用：每增加一个面，增加 $2 CAD（示例定价）
+    // 第一个面（front）包含在基础价格中，back 和 sleeve 需要额外收费
+    const additionalSides = Math.max(0, sidesCount - 1);
+    const sidesFee = additionalSides * 2 * 100; // 转换为分，每个额外面 $2
+    
+    // [2025-01-28 07:00:00] 图层复杂度费用：超过 5 个图层后，每增加一个图层增加 $0.50 CAD
+    const baseLayers = 5;
+    const additionalLayers = Math.max(0, layerCount - baseLayers);
+    const layersFee = additionalLayers * 0.5 * 100; // 转换为分，每个额外图层 $0.50
+    
+    // [2025-01-28 07:00:00] 数量折扣（示例定价规则）
+    let quantityDiscount = 0;
+    if (quantity >= 50) {
+      quantityDiscount = 0.15; // 50+ 件：15% 折扣
+    } else if (quantity >= 25) {
+      quantityDiscount = 0.10; // 25-49 件：10% 折扣
+    } else if (quantity >= 10) {
+      quantityDiscount = 0.05; // 10-24 件：5% 折扣
+    }
+    
+    // [2025-01-28 07:00:00] 计算单价（包含面和图层费用）
+    unitPrice = unitPrice + sidesFee + layersFee;
+    
+    // [2025-01-28 07:00:00] 应用数量折扣
+    const discountedUnitPrice = unitPrice * (1 - quantityDiscount);
+    
+    // [2025-01-28 07:00:00] 计算总价
+    const subtotal = discountedUnitPrice * quantity;
+    const discountAmount = (unitPrice - discountedUnitPrice) * quantity;
+    
     return res.json({
       data: {
-        unitPrice,
+        unitPrice: Math.round(unitPrice) / 100, // 转换为元
+        discountedUnitPrice: Math.round(discountedUnitPrice) / 100, // 转换为元
         quantity,
-        total,
-        currency: 'CAD'
+        subtotal: Math.round(subtotal) / 100, // 转换为元
+        discount: Math.round(discountAmount) / 100, // 转换为元
+        total: Math.round(subtotal) / 100, // 转换为元
+        currency: 'CAD',
+        breakdown: {
+          basePrice: basePrice / 100,
+          variantAdjustment: adjustment / 100,
+          sidesCount,
+          sidesFee: sidesFee / 100,
+          layerCount,
+          layersFee: layersFee / 100,
+          quantityDiscount: quantityDiscount * 100, // 百分比
+        }
       }
     });
   } catch (error) {

@@ -108,19 +108,45 @@ exports.login = async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
+    console.log('[Auth] Login attempt:', { email: email.toLowerCase() });
+
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
-    });
+    let user;
+    try {
+      user = await prisma.user.findUnique({
+        where: { email: email.toLowerCase() },
+      });
+    } catch (dbError) {
+      console.error('[Auth] Database error finding user:', dbError);
+      console.error('[Auth] Database error stack:', dbError.stack);
+      return res.status(500).json({ 
+        error: 'Database error', 
+        details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
+      });
+    }
 
     if (!user) {
+      console.log('[Auth] User not found:', email.toLowerCase());
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
+    console.log('[Auth] User found:', { id: user.id, email: user.email, role: user.role });
+
     // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    let isValidPassword = false;
+    try {
+      if (!user.passwordHash) {
+        console.error('[Auth] User has no password hash:', user.id);
+        return res.status(500).json({ error: 'User account error' });
+      }
+      isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    } catch (bcryptError) {
+      console.error('[Auth] Bcrypt error:', bcryptError);
+      return res.status(500).json({ error: 'Password verification error' });
+    }
 
     if (!isValidPassword) {
+      console.log('[Auth] Invalid password for user:', email.toLowerCase());
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -129,6 +155,8 @@ exports.login = async (req, res) => {
 
     // Set cookie
     res.cookie('token', token, getCookieOptions());
+
+    console.log('[Auth] Login successful:', { userId: user.id, email: user.email });
 
     res.json({
       token,
@@ -142,9 +170,12 @@ exports.login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error logging in:', error);
-    console.error('Error stack:', error.stack);
-    res.status(500).json({ error: 'Failed to login', details: error.message });
+    console.error('[Auth] Unexpected error logging in:', error);
+    console.error('[Auth] Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to login', 
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
+    });
   }
 };
 

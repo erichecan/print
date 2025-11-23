@@ -125,16 +125,42 @@
       artRotateBtn.addEventListener('click', () => rotateArt());
     }
 
-    // [2025-11-19 12:00:00] 颜色选择（product-colors 面板）
-    initColorPanel();
+    // [2025-01-27] 隐藏颜色功能，2期开发
+    // initColorPanel();
 
-    // [2025-11-19 12:00:00] Names 按钮
-    const addNamesBtn = document.getElementById('btn-add-names-numbers');
-    if (addNamesBtn) {
-      addNamesBtn.addEventListener('click', () => {
-        console.log('[Toolbar] Add Names and Numbers clicked');
+    // [2025-01-27] Names and Numbers 功能实现
+    // 绑定复选框，控制选项显示/隐藏
+    const namesEnabled = document.getElementById('names-enabled');
+    const numbersEnabled = document.getElementById('numbers-enabled');
+    const namesOptions = document.getElementById('names-options');
+    const numbersOptions = document.getElementById('numbers-options');
+    
+    if (namesEnabled && namesOptions) {
+      namesEnabled.addEventListener('change', (e) => {
+        namesOptions.style.display = e.target.checked ? 'block' : 'none';
+      });
+      // 初始化显示状态
+      namesOptions.style.display = namesEnabled.checked ? 'block' : 'none';
+    }
+    
+    if (numbersEnabled && numbersOptions) {
+      numbersEnabled.addEventListener('change', (e) => {
+        numbersOptions.style.display = e.target.checked ? 'block' : 'none';
+      });
+      // 初始化显示状态
+      numbersOptions.style.display = numbersEnabled.checked ? 'block' : 'none';
+    }
+    
+    // [2025-01-27] Step 2: Enter Names/Numbers 按钮 - 打开模态框
+    const enterNamesNumbersBtn = document.getElementById('btn-enter-names-numbers');
+    if (enterNamesNumbersBtn) {
+      enterNamesNumbersBtn.addEventListener('click', () => {
+        showNamesNumbersModal();
       });
     }
+    
+    // [2025-01-27] 初始化 Names and Numbers 模态框
+    initNamesNumbersModal();
 
     // [2025-11-19 10:40:00] 颜色模态框关闭
     const colorModal = document.getElementById('color-modal');
@@ -410,7 +436,9 @@
     if (canvas) {
       canvas.requestRenderAll();
       if (window.DesignLabLayers) window.DesignLabLayers.updateLayers();
-      if (window.DesignLabHistory) window.DesignLabHistory.saveState();
+      if (window.DesignLabHistory) {
+        window.DesignLabHistory.saveState();
+      }
     }
   }
 
@@ -461,22 +489,42 @@
   }
 
   // [2025-11-19 12:00:00] 初始化颜色面板（所有工具面板共用）
+  // [2025-01-28 04:40:00] 修复为 8x8 网格，64 种颜色，匹配截图设计
+  // [2025-01-27] 隐藏颜色功能，2期开发
   function initColorPanel() {
-    const colorsGrid = document.getElementById('product-colors-grid');
-    if (!colorsGrid || !window.DesignLabStore) return;
+    // 颜色面板已隐藏，直接返回
+    return;
+    // const colorsGrid = document.getElementById('product-colors-grid');
+    // if (!colorsGrid || !window.DesignLabStore) return;
 
     const store = window.DesignLabStore.getStore();
-    const colors = store?.product?.colors || ['Red', 'Heather Dark Grey', 'Navy', 'Black', 'White'];
+    
+    // [2025-01-28 04:40:00] 64 种颜色（8x8 网格），包含各种常用颜色
+    const colorPalette = [
+      '#ffffff', '#f5f5f5', '#e5e5e5', '#d4d4d4', '#a3a3a3', '#737373', '#525252', '#404040',
+      '#000000', '#1c1c1e', '#2c2c2e', '#3a3a3c', '#48484a', '#636366', '#8e8e93', '#aeaeb2',
+      '#ff1f3d', '#ff3b30', '#ff453a', '#ff6961', '#ff9500', '#ffa500', '#ffb340', '#ffcc00',
+      '#34c759', '#30d158', '#32d74b', '#64de64', '#00c896', '#00d4aa', '#5ac8fa', '#0a84ff',
+      '#007aff', '#0051d5', '#0040dd', '#5856d6', '#af52de', '#bf5af2', '#ff2d55', '#ff375f',
+      '#ff6b9d', '#ff8fab', '#ffb3ba', '#ffc0cb', '#ff69b4', '#ff1493', '#c71585', '#db7093',
+      '#8b4513', '#a0522d', '#cd853f', '#deb887', '#f4a460', '#daa520', '#b8860b', '#d4af37',
+      '#808080', '#708090', '#778899', '#b0c4de', '#d3d3d3', '#dcdcdc', '#f0f0f0', '#fafafa'
+    ];
 
     colorsGrid.innerHTML = '';
-    colors.forEach((color) => {
+    colorPalette.forEach((colorValue, index) => {
       const colorBtn = document.createElement('button');
       colorBtn.className = 'panel__color-item';
       colorBtn.type = 'button';
-      colorBtn.dataset.color = color;
-      colorBtn.setAttribute('aria-label', `Select color ${color}`);
+      colorBtn.dataset.color = colorValue;
+      colorBtn.setAttribute('aria-label', `Select color ${colorValue}`);
       colorBtn.setAttribute('tabindex', '0');
 
+      // [2025-01-28 04:40:00] 只显示颜色方块，不显示文字
+      colorBtn.innerHTML = `<div class="panel__color-swatch" style="background-color: ${colorValue};"></div>`;
+
+      // [2025-01-28 04:40:00] 检查是否是当前选中的颜色（从 store 获取）
+      const currentColor = store?.product?.color || 'Red';
       const colorMap = {
         Red: '#ff1f3d',
         'Heather Dark Grey': '#4a5568',
@@ -484,18 +532,18 @@
         Black: '#000000',
         White: '#ffffff'
       };
-      const colorValue = colorMap[color] || '#cccccc';
-
-      colorBtn.innerHTML = `
-        <div class="panel__color-swatch" style="background-color: ${colorValue};"></div>
-        <span class="panel__color-name">${color}</span>
-      `;
-
-      const isActive = color === store.product.color;
+      const currentColorValue = colorMap[currentColor] || '#ff1f3d';
+      const isActive = colorValue.toLowerCase() === currentColorValue.toLowerCase();
+      
       colorBtn.classList.toggle('is-active', isActive);
       colorBtn.setAttribute('aria-pressed', String(isActive));
 
-      colorBtn.addEventListener('click', () => changeProductColor(color));
+      colorBtn.addEventListener('click', () => {
+        // [2025-01-28 04:40:00] 根据颜色值找到对应的颜色名称，或使用十六进制值
+        const colorName = Object.keys(colorMap).find(key => colorMap[key].toLowerCase() === colorValue.toLowerCase()) || colorValue;
+        changeProductColor(colorName);
+      });
+      
       colorsGrid.appendChild(colorBtn);
     });
   }
@@ -526,15 +574,44 @@
       updateProductInfo();
     }
 
-    const currentColorDisplay = document.getElementById('current-color-display');
-    if (currentColorDisplay) currentColorDisplay.textContent = color;
+    // [2025-01-27] 颜色显示元素已隐藏，2期开发
+    // const currentColorDisplay = document.getElementById('current-color-display');
+    // if (currentColorDisplay) currentColorDisplay.textContent = color;
 
-    document.querySelectorAll('.panel__color-item').forEach((btn) => {
-      const btnColor = btn.getAttribute('data-color');
-      const isActive = btnColor === color;
-      btn.classList.toggle('is-active', isActive);
-      btn.setAttribute('aria-pressed', String(isActive));
-    });
+    // [2025-01-28 04:40:00] 更新颜色指示点
+    // const currentColorDot = document.getElementById('current-color-dot');
+    // if (currentColorDot) {
+    //   const colorMap = {
+    //     Red: '#ff1f3d',
+    //     'Heather Dark Grey': '#4a5568',
+    //     Navy: '#1e3a8a',
+    //     Black: '#000000',
+    //     White: '#ffffff'
+    //   };
+    //   const colorValue = colorMap[color] || '#ff1f3d';
+    //   currentColorDot.style.backgroundColor = colorValue;
+    // }
+
+    // [2025-01-28 04:50:00] 更新尺码显示（颜色面板已隐藏，此功能也暂时禁用）
+    // updateSizesDisplay();
+
+    // [2025-01-27] 颜色面板已隐藏，2期开发
+    // [2025-01-28 04:40:00] 更新颜色网格中的选中状态
+    // const colorMap = {
+    //   Red: '#ff1f3d',
+    //   'Heather Dark Grey': '#4a5568',
+    //   Navy: '#1e3a8a',
+    //   Black: '#000000',
+    //   White: '#ffffff'
+    // };
+    // const currentColorValue = colorMap[color] || '#ff1f3d';
+    
+    // document.querySelectorAll('.panel__color-item').forEach((btn) => {
+    //   const btnColor = btn.getAttribute('data-color');
+    //   const isActive = btnColor && btnColor.toLowerCase() === currentColorValue.toLowerCase();
+    //   btn.classList.toggle('is-active', isActive);
+    //   btn.setAttribute('aria-pressed', String(isActive));
+    // });
 
     console.log('productColor:', { color, side: 'all' });
   }
@@ -589,7 +666,10 @@
   }
   
   // [2025-11-19 11:15:00] 导出 showColorModal 供外部调用
-  window.DesignLabToolbar = window.DesignLabToolbar || {};
+  // [2025-01-27] 不要覆盖已有的 DesignLabToolbar 对象，只添加方法
+  if (!window.DesignLabToolbar) {
+    window.DesignLabToolbar = {};
+  }
   window.DesignLabToolbar.showColorModal = showColorModal;
 
   // [2025-11-19 10:40:00] 隐藏颜色模态框
@@ -605,14 +685,380 @@
   function updateProductInfo() {
     const store = window.DesignLabStore.getStore();
     const productName = document.getElementById('product-name');
-    const productColor = document.getElementById('product-color');
+    // [2025-01-27] 颜色元素已隐藏，2期开发
+    // const productColor = document.getElementById('product-color');
     
     if (productName) productName.textContent = store.product.name;
-    if (productColor) productColor.textContent = store.product.color;
+    // [2025-01-27] 颜色显示已隐藏，2期开发
+    // if (productColor) productColor.textContent = store.product.color;
+  }
+
+  // [2025-01-28 04:50:00] 更新尺码显示（方形按钮，蓝色边框）
+  function updateSizesDisplay() {
+    const sizesGrid = document.getElementById('product-sizes-grid');
+    if (!sizesGrid) return;
+
+    // [2025-01-28 04:50:00] 所有可用尺码
+    const allSizes = ['YS', 'YM', 'YL', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+    
+    sizesGrid.innerHTML = '';
+    allSizes.forEach((size) => {
+      const sizeBtn = document.createElement('button');
+      sizeBtn.className = 'panel__size-btn';
+      sizeBtn.type = 'button';
+      sizeBtn.textContent = size;
+      sizeBtn.setAttribute('aria-label', `Size ${size}`);
+      sizeBtn.setAttribute('tabindex', '0');
+      
+      // [2025-01-28 04:50:00] 点击尺码按钮（可以扩展为实际功能）
+      sizeBtn.addEventListener('click', () => {
+        // 移除其他按钮的选中状态
+        document.querySelectorAll('.panel__size-btn').forEach(btn => {
+          btn.classList.remove('is-selected');
+        });
+        // 添加选中状态
+        sizeBtn.classList.add('is-selected');
+        console.log('[Toolbar] Size selected:', size);
+      });
+      
+      sizesGrid.appendChild(sizeBtn);
+    });
   }
 
   // [2025-11-19 10:40:00] 初始化时更新产品信息
   updateProductInfo();
+  
+  // [2025-01-28 04:50:00] 初始化时更新尺码显示（颜色面板已隐藏，此功能也暂时禁用）
+  // updateSizesDisplay();
+
+  // [2025-01-27] 显示 Names and Numbers 输入模态框
+  function showNamesNumbersModal() {
+    console.log('[Toolbar] showNamesNumbersModal called');
+    const modal = document.getElementById('names-numbers-modal');
+    if (!modal) {
+      console.error('[Toolbar] Names/Numbers modal not found');
+      return;
+    }
+    
+    console.log('[Toolbar] Modal found, initializing...');
+    
+    // [2025-01-27] 初始化表单（如果还没有初始化）
+    if (!modal.dataset.initialized) {
+      console.log('[Toolbar] Initializing form for first time...');
+      initNamesNumbersForm();
+      modal.dataset.initialized = 'true';
+    }
+    
+    // [2025-01-27] 显示模态框
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    console.log('[Toolbar] Modal opened');
+    
+    // [2025-01-27] 更新总计（确保显示最新数据）
+    updateNamesNumbersTotals();
+    
+    // [2025-01-27] 聚焦到第一个输入框
+    const firstInput = modal.querySelector('.names-numbers-input--name');
+    if (firstInput) {
+      setTimeout(() => {
+        firstInput.focus();
+        console.log('[Toolbar] Focused on first input');
+      }, 100);
+    }
+  }
+  
+  // [2025-01-27] 隐藏 Names and Numbers 模态框
+  function hideNamesNumbersModal() {
+    const modal = document.getElementById('names-numbers-modal');
+    if (modal) {
+      modal.classList.remove('is-open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+  
+  // [2025-01-27] 初始化 Names and Numbers 模态框
+  function initNamesNumbersModal() {
+    const modal = document.getElementById('names-numbers-modal');
+    if (!modal) return;
+    
+    // [2025-01-27] 关闭按钮
+    const closeBtn = modal.querySelector('#names-numbers-modal-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        hideNamesNumbersModal();
+      });
+    }
+    
+    // [2025-01-27] 点击背景关闭
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        hideNamesNumbersModal();
+      }
+    });
+    
+    // [2025-01-27] Done 按钮
+    const doneBtn = document.getElementById('btn-names-numbers-done');
+    if (doneBtn) {
+      doneBtn.addEventListener('click', () => {
+        handleNamesNumbersDone();
+      });
+    }
+    
+    // [2025-01-27] 返回设置链接
+    const backToSettingsLink = document.getElementById('link-back-to-settings');
+    if (backToSettingsLink) {
+      backToSettingsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        hideNamesNumbersModal();
+        // [2025-01-27] 打开 names 面板
+        if (window.DesignLabPanel) {
+          window.DesignLabPanel.openPanel('names');
+        }
+      });
+    }
+  }
+  
+  // [2025-01-27] 初始化表单（创建初始5行）
+  function initNamesNumbersForm() {
+    const rowsContainer = document.getElementById('names-numbers-rows');
+    if (!rowsContainer) return;
+    
+    // [2025-01-27] 清空容器
+    rowsContainer.innerHTML = '';
+    
+    // [2025-01-27] 创建初始5行
+    for (let i = 0; i < 5; i++) {
+      addNamesNumbersRow();
+    }
+    
+    // [2025-01-27] 绑定 Add More 按钮
+    const addMoreBtn = document.getElementById('btn-add-more-rows');
+    if (addMoreBtn) {
+      addMoreBtn.addEventListener('click', () => {
+        addNamesNumbersRow();
+      });
+    }
+    
+    // [2025-01-27] 更新总计
+    updateNamesNumbersTotals();
+  }
+  
+  // [2025-01-27] 添加一行输入
+  function addNamesNumbersRow() {
+    const rowsContainer = document.getElementById('names-numbers-rows');
+    if (!rowsContainer) return;
+    
+    const row = document.createElement('div');
+    row.className = 'names-numbers-table__row';
+    row.innerHTML = `
+      <div class="names-numbers-table__col names-numbers-table__col--name">
+        <input type="text" class="names-numbers-input names-numbers-input--name" placeholder="ENTER NAME" data-row-index="${rowsContainer.children.length}">
+      </div>
+      <div class="names-numbers-table__col names-numbers-table__col--number">
+        <input type="text" class="names-numbers-input names-numbers-input--number" value="00" data-row-index="${rowsContainer.children.length}">
+      </div>
+      <div class="names-numbers-table__col names-numbers-table__col--size">
+        <select class="names-numbers-input names-numbers-input--size" data-row-index="${rowsContainer.children.length}">
+          <option value="">Size</option>
+          <option value="YS">YS</option>
+          <option value="YM">YM</option>
+          <option value="YL">YL</option>
+          <option value="XS">XS</option>
+          <option value="S">S</option>
+          <option value="M">M</option>
+          <option value="L">L</option>
+          <option value="XL">XL</option>
+          <option value="2XL">2XL</option>
+          <option value="3XL">3XL</option>
+          <option value="4XL">4XL</option>
+          <option value="5XL">5XL</option>
+        </select>
+      </div>
+    `;
+    
+    rowsContainer.appendChild(row);
+    
+    // [2025-01-27] 绑定输入事件，更新总计
+    const inputs = row.querySelectorAll('input, select');
+    inputs.forEach(input => {
+      input.addEventListener('input', () => {
+        updateNamesNumbersTotals();
+      });
+      input.addEventListener('change', () => {
+        updateNamesNumbersTotals();
+      });
+    });
+  }
+  
+  // [2025-01-27] 更新总计和尺寸摘要
+  function updateNamesNumbersTotals() {
+    const rows = document.querySelectorAll('.names-numbers-table__row');
+    let totalNames = 0;
+    let totalNumbers = 0;
+    let totalItems = 0;
+    const sizesMap = new Map(); // 使用 Map 来统计每个尺寸的数量
+    
+    rows.forEach(row => {
+      const nameInput = row.querySelector('.names-numbers-input--name');
+      const numberInput = row.querySelector('.names-numbers-input--number');
+      const sizeSelect = row.querySelector('.names-numbers-input--size');
+      
+      const name = nameInput?.value.trim() || '';
+      const number = numberInput?.value.trim() || '';
+      const size = sizeSelect?.value || '';
+      
+      if (name || (number && number !== '00') || size) {
+        totalItems++;
+        if (name) totalNames++;
+        if (number && number !== '00') totalNumbers++;
+        if (size) {
+          // [2025-01-27] 统计每个尺寸的数量
+          sizesMap.set(size, (sizesMap.get(size) || 0) + 1);
+        }
+      }
+    });
+    
+    // [2025-01-27] 更新总计显示
+    const totalNamesEl = document.getElementById('total-names');
+    const totalNumbersEl = document.getElementById('total-numbers');
+    const totalItemsEl = document.getElementById('total-items');
+    
+    if (totalNamesEl) totalNamesEl.textContent = totalNames;
+    if (totalNumbersEl) totalNumbersEl.textContent = totalNumbers;
+    if (totalItemsEl) totalItemsEl.textContent = totalItems;
+    
+    // [2025-01-27] 更新尺寸列表 - 格式: (数量/数量) 尺寸
+    const sizesListEl = document.getElementById('names-numbers-sizes-list');
+    if (sizesListEl) {
+      if (sizesMap.size > 0) {
+        const sizesArray = Array.from(sizesMap.entries())
+          .sort((a, b) => a[0].localeCompare(b[0])) // 按尺寸名称排序
+          .map(([size, count]) => `(${count}/${count}) ${size}`);
+        sizesListEl.innerHTML = sizesArray.join(', ');
+      } else {
+        sizesListEl.innerHTML = '<span style="color: #9ca3af;">No sizes selected</span>';
+      }
+    }
+  }
+  
+  // [2025-01-27] 处理 Done 按钮点击
+  function handleNamesNumbersDone() {
+    if (!window.DesignLabCanvas) {
+      console.error('[Toolbar] Canvas not available');
+      return;
+    }
+    
+    // [2025-01-27] 获取 Names 设置
+    const namesEnabled = document.getElementById('names-enabled')?.checked;
+    const namesSide = document.getElementById('names-side')?.value || 'back';
+    const namesHeight = parseFloat(document.getElementById('names-height')?.value || '2');
+    const namesColor = document.getElementById('names-color')?.value || '#ffff00';
+    
+    // [2025-01-27] 获取 Numbers 设置
+    const numbersEnabled = document.getElementById('numbers-enabled')?.checked;
+    const numbersSide = document.getElementById('numbers-side')?.value || 'back';
+    const numbersHeight = parseFloat(document.getElementById('numbers-height')?.value || '8');
+    const numbersColor = document.getElementById('numbers-color')?.value || '#00ffff';
+    
+    // [2025-01-27] 收集所有行的数据
+    const rows = document.querySelectorAll('.names-numbers-table__row');
+    const items = [];
+    
+    rows.forEach(row => {
+      const nameInput = row.querySelector('.names-numbers-input--name');
+      const numberInput = row.querySelector('.names-numbers-input--number');
+      const sizeSelect = row.querySelector('.names-numbers-input--size');
+      
+      const name = nameInput?.value.trim() || '';
+      const number = numberInput?.value.trim() || '';
+      const size = sizeSelect?.value || '';
+      
+      if (name || (number && number !== '00') || size) {
+        items.push({ name, number, size });
+      }
+    });
+    
+    if (items.length === 0) {
+      alert('Please enter at least one item with name, number, or size.');
+      return;
+    }
+    
+    // [2025-01-27] 保存当前面
+    const store = window.DesignLabStore.getStore();
+    const currentSide = store.currentSide;
+    
+    // [2025-01-27] 为每个项目添加名字和数字
+    items.forEach(item => {
+      if (item.name && namesEnabled) {
+        addNamesNumbersToSide(item.name, namesSide, namesHeight, namesColor, 'name');
+      }
+      if (item.number && item.number !== '00' && numbersEnabled) {
+        addNamesNumbersToSide(item.number, numbersSide, numbersHeight, numbersColor, 'number');
+      }
+    });
+    
+    // [2025-01-27] 切换回原来的面
+    if (currentSide !== store.currentSide) {
+      if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
+        window.DesignLabStore.setActiveSide(currentSide);
+      }
+      if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
+        window.DesignLabCanvas.switchSide(currentSide);
+      }
+    }
+    
+    // [2025-01-27] 关闭模态框
+    hideNamesNumbersModal();
+    
+    console.log('[Toolbar] Names and Numbers added:', items.length, 'items');
+  }
+  
+  // [2025-01-27] 添加名字或数字到指定面
+  function addNamesNumbersToSide(text, side, heightInches, color, type) {
+    const store = window.DesignLabStore.getStore();
+    const currentSide = store.currentSide;
+    
+    // [2025-01-27] 如果目标面不是当前面，需要切换
+    if (side !== currentSide) {
+      // 保存当前面
+      if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
+        window.DesignLabCanvas.saveCurrentSide();
+      }
+      
+      // 切换到目标面
+      if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
+        window.DesignLabStore.setActiveSide(side);
+      }
+      if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
+        window.DesignLabCanvas.switchSide(side);
+      }
+    }
+    
+    // [2025-01-27] 计算字体大小（英寸转像素，假设 100 DPI）
+    const fontSize = heightInches * 100;
+    
+    // [2025-01-27] 使用 DesignLabCanvas 的 addText 方法添加文本
+    const textObj = window.DesignLabCanvas.addText(text, {
+      fontSize: fontSize,
+      fontFamily: 'Arial',
+      fill: color,
+      fontWeight: 'bold',
+      name: type === 'name' ? 'name' : 'number'
+    });
+    
+    if (textObj) {
+      // [2025-01-27] 保存状态到历史
+      if (window.DesignLabHistory && window.DesignLabHistory.saveState) {
+        setTimeout(() => {
+          window.DesignLabHistory.saveState();
+        }, 100);
+      }
+      
+      console.log('[Toolbar] Added', type, 'to', side, ':', text);
+    } else {
+      console.error('[Toolbar] Failed to add', type, 'to', side);
+    }
+  }
 
   // [2025-11-19 12:00:00] 导出全局 API
   window.DesignLabToolbar = {
@@ -625,7 +1071,9 @@
     rotateArt,
     initColorPanel,
     updateProductInfo,
-    addShape
+    updateSizesDisplay,
+    addShape,
+    handleEnterNamesNumbers,
   };
 })();
 

@@ -1,0 +1,172 @@
+/**
+ * Home Client Component
+ * [2025-01-28 06:35:00] Client component for homepage that fetches CMS content
+ */
+'use client';
+
+import Image from 'next/image';
+import Link from 'next/link';
+import useSWR from 'swr';
+import { contentApi } from '@/lib/api';
+
+export function HomeClient() {
+  // [2025-01-28 06:35:00] 从 CMS 获取首页内容
+  const { data: contentData } = useSWR('public-content-config', contentApi.get);
+  const homePage = contentData?.data?.homePage;
+
+  // [2025-01-28 06:35:00] 使用 CMS 数据或默认值（向后兼容）
+  const heroTitle = homePage?.heroTitle || 'Custom T-shirts & Promo Gear for Your Group';
+  const heroSubtitle = homePage?.heroSubtitle || 'From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.';
+  const heroCards = homePage?.heroCards || [
+    { id: 'default-1', src: '/assets/hero/hero-card-tee.jpg', alt: 'Featured Tee' },
+    { id: 'default-2', src: '/assets/hero/hero-card-bottle.jpg', alt: 'Featured Bottle' },
+    { id: 'default-3', src: '/assets/hero/hero-card-hat.jpg', alt: 'Featured Hat' },
+    { id: 'default-4', src: '/assets/hero/hero-card-bag.jpg', alt: 'Featured Bag' },
+  ];
+  const servicePromises = homePage?.servicePromises || [
+    { id: 'default-1', title: 'Free Shipping', detail: '2-week delivery' },
+    { id: 'default-2', title: '100% Satisfaction', detail: "We'll make it right" },
+    { id: 'default-3', title: 'Design Help', detail: '7 days a week' },
+    { id: 'default-4', title: 'Rush Options', detail: 'As fast as 3 days' },
+  ];
+  const brandLogos = homePage?.brandLogos || [
+    { id: 'default-1', name: 'Nike', src: '/assets/brands/nike.svg' },
+    { id: 'default-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
+    { id: 'default-3', name: 'New Era', src: '/assets/brands/new-era.png' },
+    { id: 'default-4', name: 'The North Face', src: '/assets/brands/northface.svg' },
+    { id: 'default-5', name: 'Stanley', src: '/assets/brands/stanley.svg' },
+    { id: 'default-6', name: 'Patagonia', src: '/assets/brands/patagonia.svg' },
+    { id: 'default-7', name: 'Champion', src: '/assets/brands/champion.png' },
+    { id: 'default-8', name: 'Adidas', src: '/assets/brands/adidas.png' },
+    { id: 'default-9', name: 'Columbia', src: '/assets/brands/columbia.png' },
+    { id: 'default-10', name: 'Hydro Flask', src: '/assets/brands/hydro-flask.png' },
+  ];
+  const testimonials = homePage?.testimonials || [
+    { id: 'default-1', quote: 'Ordered with ease and delivered on time.', author: 'Mary B., NY', stars: 5 },
+    { id: 'default-2', quote: 'Top quality, fast delivery, stellar support. Highly recommend!', author: 'Ingrid D., MD', stars: 5 },
+    { id: 'default-3', quote: 'Great experience and responsive service. The site is easy to use.', author: 'Jenna F., WI', stars: 4 },
+  ];
+  const enterprisePanels = homePage?.enterprisePanels || [
+    {
+      id: 'default-1',
+      title: 'Enterprise-Level Swag Management',
+      description: 'Get custom kits, white-glove service, address collection, and global shipping with our enterprise solution.',
+      ctaLabel: 'Get a Demo',
+      ctaHref: '/contact',
+    },
+    {
+      id: 'default-2',
+      title: "We'll Do the Work",
+      description: 'Ship to one place or every place. Choose your design and we handle the rest—from packing to delivery tracking.',
+      ctaLabel: 'Start Designing',
+      ctaHref: '/design-lab',
+      ctaVariant: 'outline',
+    },
+  ];
+
+  return (
+    <>
+      <section className="hero" aria-labelledby="hero-heading">
+        <div className="container hero__grid">
+          <div>
+            <h1 className="hero__title" id="hero-heading">
+              {heroTitle}
+            </h1>
+            <p className="hero__subtitle">
+              {heroSubtitle}
+            </p>
+            <div className="hero__actions">
+              <Link className="btn" href="/design-lab">
+                Start Designing
+              </Link>
+              <Link className="btn btn--outline" href="/products">
+                Browse Products
+              </Link>
+              {/* [2025-11-15 15:21:40] Provide entry point to offline order intake */}
+              <Link className="btn btn--outline" href="/offline-orders">
+                Submit Offline Order
+              </Link>
+            </div>
+          </div>
+          <div className="hero__media" aria-label="Featured product categories">
+            {heroCards.map((card) => (
+              <div className="hero-card" key={card.id}>
+                <Image src={card.src} alt={card.alt} width={420} height={300} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="promises" aria-label="Service promises">
+        <div className="container promises__grid">
+          {servicePromises.map((promise) => (
+            <div className="promise-card" key={promise.id}>
+              <div className="promise-card__icon" aria-hidden="true" />
+              <div>
+                <div className="promise-card__label">{promise.title}</div>
+                <div className="promise-card__detail">{promise.detail}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="brands" aria-labelledby="brands-heading">
+        <div className="container">
+          <h2 className="visually-hidden" id="brands-heading">
+            Featured brands
+          </h2>
+          <div className="brands__grid">
+            {brandLogos.map((brand) => (
+              <div key={brand.id} className="brand-logo" role="listitem" aria-label={brand.name}>
+                <Image src={brand.src} alt={brand.name} width={120} height={40} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="testimonials" aria-labelledby="testimonials-heading">
+        <div className="container">
+          <h2 id="testimonials-heading" style={{ textAlign: 'center', marginBottom: '32px' }}>
+            Loved by teams big and small
+          </h2>
+          <div className="testimonials__grid">
+            {testimonials.map((testimonial) => (
+              <article className="testimonial-card" key={testimonial.id} aria-label="Customer testimonial">
+                <div className="testimonial-card__stars" aria-hidden="true">
+                  {Array.from({ length: testimonial.stars }).map((_, index) => (
+                    <span key={index}>★</span>
+                  ))}
+                </div>
+                <p>{testimonial.quote}</p>
+                <footer>— {testimonial.author}</footer>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="enterprise" aria-labelledby="enterprise-heading">
+        <div className="container">
+          <h2 id="enterprise-heading" style={{ textAlign: 'center', marginBottom: '32px' }}>
+            Enterprise services to scale your swag
+          </h2>
+          <div className="enterprise__grid">
+            {enterprisePanels.map((panel) => (
+              <div className="enterprise-card" key={panel.id}>
+                <h3>{panel.title}</h3>
+                <p>{panel.description}</p>
+                <Link className={`btn${panel.ctaVariant === 'outline' ? ' btn--outline' : ''}`} href={panel.ctaHref}>
+                  {panel.ctaLabel}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+

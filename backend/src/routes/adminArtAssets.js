@@ -29,12 +29,25 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (_req, file, cb) => {
-  const allowedMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+const fileFilter = (req, file, cb) => {
+  // [2025-01-27] 支持现代图片格式，包括 AVIF
+  const allowedMimes = [
+    'image/jpeg', 
+    'image/jpg', 
+    'image/png', 
+    'image/gif', 
+    'image/webp', 
+    'image/svg+xml',
+    'image/avif' // [2025-01-27] 添加 AVIF 支持
+  ];
+  // [2025-01-27] 改进错误处理，提供更详细的错误信息
+  if (!file.mimetype) {
+    return cb(new Error('File type could not be determined. Please ensure you are uploading an image file.'), false);
+  }
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error(`Invalid file type. Allowed types: ${allowedMimes.join(', ')}`), false);
+    cb(new Error(`Invalid file type: ${file.mimetype}. Allowed types: ${allowedMimes.join(', ')}`), false);
   }
 };
 

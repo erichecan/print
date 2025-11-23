@@ -13,7 +13,6 @@ import {
   AdminOrderSummary,
   AdminOrderUpdatePayload,
   AdminOrderRefundPayload,
-  AdminAuditLogEntry,
 } from '@/lib/api';
 
 const STATUS_OPTIONS = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
@@ -36,37 +35,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [refundNote, setRefundNote] = useState('');
   const [message, setMessage] = useState<string | null>(null);
 
-  const { data: auditLogResponse } = useSWR(
-    data?.id ? ['admin-order-audit', data.id] : null,
-    ([, orderId]) => adminOrdersApi.auditTrail(orderId, { limit: 20 })
-  );
-
-  const auditLogs = (auditLogResponse as any)?.data ?? [];
-
-  const describeAuditEntry = (log: AdminAuditLogEntry) => {
-    const meta = (log.meta || {}) as Record<string, any>;
-    if (log.action === 'order.update_status') {
-      const changes = (meta.changes || {}) as Record<string, any>;
-      const parts: string[] = [];
-      if (changes.status) parts.push(`状态调整为 ${String(changes.status).toUpperCase()}`);
-      if (changes.paymentStatus) parts.push(`支付状态 ${String(changes.paymentStatus).toUpperCase()}`);
-      if (Object.prototype.hasOwnProperty.call(changes, 'trackingNumber')) {
-        parts.push(`跟踪号 ${changes.trackingNumber || '已清空'}`);
-      }
-      if (Object.prototype.hasOwnProperty.call(changes, 'carrier')) {
-        parts.push(`承运方 ${changes.carrier || '未指定'}`);
-      }
-      if (Object.prototype.hasOwnProperty.call(changes, 'estimatedDelivery')) {
-        parts.push(`预计送达 ${changes.estimatedDelivery || '未设置'}`);
-      }
-      return parts.join('，') || '更新了订单状态';
-    }
-    if (log.action === 'order.refund') {
-      const reason = meta.reason ? `（原因：${meta.reason}）` : '';
-      return `标记订单为退款${reason}`;
-    }
-    return log.action;
-  };
+  // [2025-01-28 08:30:00] Audit Logs 功能已移除
 
   useEffect(() => {
     if (data) {
@@ -328,24 +297,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
           )}
 
-          <div className="admin-form">
-            <h3>Activity Log</h3>
-            {auditLogs.length === 0 ? (
-              <p className="text-muted">暂无审计记录。</p>
-            ) : (
-              <ul className="audit-list">
-                {auditLogs.map((log: AdminAuditLogEntry) => (
-                  <li key={log.id}>
-                    <div className="audit-meta">
-                      <span>{new Date(log.createdAt).toLocaleString()}</span>
-                      <span>{log.actorEmail || '系统'}</span>
-                    </div>
-                    <p>{describeAuditEntry(log)}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {/* [2025-01-28 08:30:00] Activity Log 功能已移除 */}
         </aside>
       </div>
     </div>

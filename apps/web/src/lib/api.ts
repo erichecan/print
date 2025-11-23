@@ -260,14 +260,34 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   // [2025-01-27 16:10:00] 处理空响应
   if (!response || !response.ok) {
     let errorMessage = `API Error: ${response?.status || 'Unknown'}`;
+    let errorDetails: any = null;
     try {
-      const error = await response.json().catch(() => ({ error: response?.statusText || 'Unknown error' }));
-      errorMessage = error.error || errorMessage;
+      const errorText = await response.text();
+      if (errorText) {
+        try {
+          errorDetails = JSON.parse(errorText);
+          errorMessage = errorDetails.error || errorDetails.message || errorMessage;
+          // [2025-01-27] 如果有详细信息，添加到错误消息中
+          if (errorDetails.details && process.env.NODE_ENV === 'development') {
+            errorMessage += `: ${errorDetails.details}`;
+          }
+        } catch {
+          // 如果不是 JSON，使用原始文本
+          errorMessage = errorText || response?.statusText || 'Unknown error';
+        }
+      } else {
+        errorMessage = response?.statusText || 'Network error: Empty response from server';
+      }
     } catch {
-      // 如果无法解析JSON，使用状态文本
+      // 如果无法读取响应，使用状态文本
       errorMessage = response?.statusText || 'Network error: Empty response from server';
     }
-    throw new Error(errorMessage);
+    
+    // [2025-01-27] 添加更详细的错误信息用于调试
+    const fullError = new Error(errorMessage);
+    (fullError as any).status = response?.status;
+    (fullError as any).details = errorDetails;
+    throw fullError;
   }
 
   // [2025-01-27 16:10:00] 处理空响应体
@@ -454,6 +474,21 @@ export const checkoutApi = {
     }),
 };
 
+// Designs API (User)
+export interface UserDesign {
+  id: string;
+  name: string;
+  thumbnailUrl?: string | null;
+  createdAt: string;
+  productName?: string | null;
+}
+
+export const designsApi = {
+  list: () => api<{ designs: UserDesign[]; total: number }>('/user/designs'),
+  get: (id: string) => api<{ data: any }>(`/designs/${id}`),
+  delete: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),
+};
+
 // Orders API
 export const ordersApi = {
   list: (page: number = 1, limit: number = 20, status?: string, sort?: string) => {
@@ -520,7 +555,7 @@ export const authApi = {
   updateProfile: (data: { firstName?: string; lastName?: string; phone?: string }) =>
     api('/auth/me', { method: 'PATCH', body: data }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    api('/auth/change-password', { method: 'POST', body: data }), // [2025-01-27 12:50:00] 密码修改API（需要后端实现）
+    api('/auth/me/password', { method: 'PUT', body: data }), // [2025-01-27 修复] 密码修改API路径修复为PUT /auth/me/password
   forgotPassword: (email: string) =>
     api('/auth/forgot-password', { method: 'POST', body: { email } }),
   resetPassword: (token: string, password: string) =>
@@ -535,7 +570,38 @@ export const addressesApi = {
   update: (id: string, data: Partial<AddressPayload>) =>
     api<Address>(`/addresses/${id}`, { method: 'PATCH', body: data }),
   delete: (id: string) => api(`/addresses/${id}`, { method: 'DELETE' }),
-  setDefault: (id: string) => api<Address>(`/addresses/${id}/set-default`, { method: 'POST' }),
+  setDefault: (id: string) => api<Address>(`/addresses/${id}/set-default`, { method: 'PATCH' }), // [2025-01-27 修复] 修复API方法为PATCH
+};
+
+// [2025-01-27] User Preferences API Types
+export interface UserPreferences {
+  emailNotifications: {
+    orderUpdates: boolean;
+    promotions: boolean;
+    newsletters: boolean;
+    productUpdates: boolean;
+  };
+  smsNotifications: {
+    orderUpdates: boolean;
+    promotions: boolean;
+  };
+  privacy: {
+    profileVisible: boolean;
+    showEmail: boolean;
+    showPhone: boolean;
+  };
+}
+
+export interface UserPreferencesResponse {
+  preferences: UserPreferences;
+  updatedAt: string | null;
+}
+
+// [2025-01-27] User Preferences API
+export const userPreferencesApi = {
+  get: () => api<UserPreferencesResponse>('/user/preferences'),
+  update: (data: Partial<UserPreferences>) =>
+    api<UserPreferencesResponse>('/user/preferences', { method: 'PUT', body: data }),
 };
 
 // [2025-01-27 15:00:00] Admin API Types
@@ -959,7 +1025,126 @@ export interface SiteSettingsPayload {
   reviewEmail: string;
 }
 
+// [2025-01-28 05:50:00] 导航菜单项类型
+export interface NavigationMenuItem {
+  id: string;
+  label: string;
+  href: string;
+  order: number;
+  type: 'link' | 'mega' | 'simple';
+  // mega menu 配置
+  megaPanel?: {
+    columns: Array<{
+      id: string;
+      links: Array<{
+        id: string;
+        label: string;
+        href: string;
+      }>;
+    }>;
+  };
+  // simple panel 配置（如 Design Lab）
+  simplePanel?: {
+    title: string;
+    description: string;
+    actions: Array<{
+      label: string;
+      href: string;
+      variant?: 'primary' | 'outline';
+    }>;
+  };
+}
+
+// [2025-01-28 05:50:00] 首页内容类型
+export interface HomePageContent {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroCards: Array<{
+    id: string;
+    src: string;
+    alt: string;
+  }>;
+  servicePromises: Array<{
+    id: string;
+    title: string;
+    detail: string;
+  }>;
+  testimonials: Array<{
+    id: string;
+    quote: string;
+    author: string;
+    stars: number;
+  }>;
+  enterprisePanels: Array<{
+    id: string;
+    title: string;
+    description: string;
+    ctaLabel: string;
+    ctaHref: string;
+    ctaVariant?: 'primary' | 'outline';
+  }>;
+  brandLogos: Array<{
+    id: string;
+    name: string;
+    src: string;
+  }>;
+}
+
+// [2025-01-28 05:50:00] 关于页内容类型
+export interface AboutPageContent {
+  headerTitle: string;
+  headerDescription: string;
+  milestones: Array<{
+    id: string;
+    year: string;
+    detail: string;
+  }>;
+  values: Array<{
+    id: string;
+    title: string;
+    description: string;
+  }>;
+  teamTitle: string;
+  teamDescription: string;
+}
+
+// [2025-01-28 05:50:00] 帮助页内容类型
+export interface HelpPageContent {
+  quickLinks: Array<{
+    id: string;
+    label: string;
+    href: string;
+    icon: string;
+  }>;
+  faqCategories: Array<{
+    id: string;
+    category: string;
+    icon: string;
+    items: Array<{
+      id: string;
+      question: string;
+      answer: string;
+    }>;
+  }>;
+}
+
+// [2025-01-28 05:50:00] 通用静态文字类型
+export interface StaticTexts {
+  topMessageBar: string;
+  footerColumns: Array<{
+    id: string;
+    title: string;
+    links: Array<{
+      id: string;
+      label: string;
+      href: string;
+    }>;
+  }>;
+  footerCopyright: string;
+}
+
 export interface ContentConfig {
+  // [2025-01-28 05:50:00] 保留原有字段以向后兼容
   heroCards: Array<{
     id: string;
     title: string;
@@ -977,6 +1162,12 @@ export interface ContentConfig {
     title: string;
     linkUrl: string;
   }>;
+  // [2025-01-28 05:50:00] 新增 CMS 字段
+  navigation?: NavigationMenuItem[];
+  homePage?: HomePageContent;
+  aboutPage?: AboutPageContent;
+  helpPage?: HelpPageContent;
+  staticTexts?: StaticTexts;
 }
 
 export const adminSettingsApi = {
@@ -989,6 +1180,21 @@ export const adminContentApi = {
   get: () => api<{ data: ContentConfig }>('/admin/settings/content'),
   update: (data: ContentConfig) =>
     api<{ data: ContentConfig }>('/admin/settings/content', { method: 'PUT', body: data }),
+  // [2025-01-28 05:50:00] 图片上传 API
+  uploadImage: (file: File) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api<{ data: { url: string } }>('/admin/content/upload', {
+      method: 'POST',
+      body: formData,
+      headers: {}, // 让浏览器自动设置 Content-Type 和 boundary
+    });
+  },
+};
+
+// [2025-01-28 06:20:00] 公共内容 API（不需要认证，供前端展示使用）
+export const contentApi = {
+  get: () => api<{ data: ContentConfig }>('/content'),
 };
 
 // [2025-11-16 16:05:00] Production templates types & APIs
@@ -1161,15 +1367,7 @@ export interface AdminOrderUpdatePayload {
   estimatedDelivery?: string | null;
 }
 
-export interface AdminAuditLogEntry {
-  id: string;
-  action: string;
-  actorName?: string;
-  actorEmail?: string; // [2025-11-14 01:05:00] 添加 actorEmail 字段
-  createdAt: string;
-  metadata?: any;
-  meta?: any; // [2025-11-14 00:58:00] 添加 meta 字段（metadata 的别名）
-}
+// [2025-01-28 08:30:00] Audit Logs 功能已移除
 
 // [2025-01-27 16:15:00] Admin Orders API
 export const adminOrdersApi = {
@@ -1191,12 +1389,7 @@ export const adminOrdersApi = {
     api(`/admin/orders/${id}/status`, { method: 'PATCH', body: payload }),
   recordRefund: (id: string, payload: AdminOrderRefundPayload) =>
     api(`/admin/orders/${id}/refund`, { method: 'POST', body: payload }),
-  auditTrail: (id: string, params?: { limit?: number }) => {
-    const query = new URLSearchParams();
-    if (params?.limit) query.append('limit', params.limit.toString());
-    const queryString = query.toString();
-    return api(`/admin/orders/${id}/audit-trail${queryString ? `?${queryString}` : ''}`);
-  },
+  // [2025-01-28 08:30:00] auditTrail 功能已移除
 };
 
 // [2025-01-27 16:15:00] Admin Offline Orders API Types

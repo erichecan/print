@@ -25,10 +25,21 @@
     console.log('[ArtAssetsLoader] ===== Fetching art assets from API =====');
 
     try {
-      const response = await fetch(`${API_BASE_URL}/art-assets`);
+      const response = await fetch(`${API_BASE_URL}/art-assets`).catch(error => {
+        // [2025-01-27] 处理网络错误（后端服务可能未运行）
+        console.warn('[ArtAssetsLoader] Network error (backend may not be running):', error);
+        return null;
+      });
+      
+      if (!response) {
+        console.warn('[ArtAssetsLoader] Failed to fetch art assets - backend may not be running');
+        return {};
+      }
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // [2025-01-27] 静默处理错误，不阻止应用继续运行
+        console.warn('[ArtAssetsLoader] HTTP error:', response.status, '- Continuing without art assets');
+        return {};
       }
 
       const data = await response.json();

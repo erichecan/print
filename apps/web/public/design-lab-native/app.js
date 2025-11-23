@@ -24,8 +24,16 @@
         const variantIdInit = urlParamsInit.get('variantId');
         if (variantIdInit) {
           console.log('[App] variantId from URL:', variantIdInit);
-          // [2025-11-19 11:00:00] 可以在这里加载对应的产品信息
-          // TODO: 根据 variantId 加载产品数据并设置到 store
+          // [2025-01-27] 根据 variantId 加载产品数据并设置到 store
+          // store.js 中的 hydrateProductFromVariantId() 会在初始化后自动调用
+          // 这里只需要确保 variantId 已设置到 store
+          if (window.DesignLabStore) {
+            const store = window.DesignLabStore.getStore();
+            if (store.product.variantId !== variantIdInit) {
+              // variantId 会在 store.js 的 initFromURL() 中设置
+              console.log('[App] VariantId will be loaded by store initialization');
+            }
+          }
         }
       
       // [2025-11-19 10:45:00] 初始化画布
@@ -36,15 +44,55 @@
       }
 
       // [2025-11-19 12:00:00] 初始化各个模块（面板管理器优先，确保面板切换可用）
-      if (window.DesignLabPanel) window.DesignLabPanel.init();
+      // [2025-01-27] 延迟初始化面板管理器，确保脚本已加载
+      console.log('[App] Checking for DesignLabPanel...', { 
+        exists: !!window.DesignLabPanel,
+        type: typeof window.DesignLabPanel 
+      });
+      
+      if (window.DesignLabPanel) {
+        console.log('[App] Initializing DesignLabPanel...');
+        try {
+          window.DesignLabPanel.init();
+          console.log('[App] DesignLabPanel initialized successfully');
+        } catch (error) {
+          console.error('[App] Error initializing DesignLabPanel:', error);
+        }
+      } else {
+        console.warn('[App] DesignLabPanel not found, will retry...');
+        // [2025-01-27] 如果面板管理器还没加载，延迟重试（增加重试次数和延迟时间）
+        let retryCount = 0;
+        const maxRetries = 5;
+        const retryInterval = 200;
+        
+        const retryInit = setInterval(() => {
+          retryCount++;
+          console.log(`[App] Retry ${retryCount}/${maxRetries} for DesignLabPanel...`);
+          
+          if (window.DesignLabPanel) {
+            console.log('[App] DesignLabPanel found, initializing...');
+            try {
+              window.DesignLabPanel.init();
+              console.log('[App] DesignLabPanel initialized successfully (retry)');
+            } catch (error) {
+              console.error('[App] Error initializing DesignLabPanel (retry):', error);
+            }
+            clearInterval(retryInit);
+          } else if (retryCount >= maxRetries) {
+            console.error('[App] DesignLabPanel still not found after', maxRetries, 'retries!');
+            console.error('[App] Available window objects:', Object.keys(window).filter(k => k.includes('Design')));
+            clearInterval(retryInit);
+          }
+        }, retryInterval);
+      }
       if (window.DesignLabZoom) window.DesignLabZoom.init();
       if (window.DesignLabLayers) window.DesignLabLayers.init();
       if (window.DesignLabToolbar) window.DesignLabToolbar.init();
       
-      // [2025-11-19 12:00:00] 初始化颜色面板
-      if (window.DesignLabToolbar && window.DesignLabToolbar.initColorPanel) {
-        window.DesignLabToolbar.initColorPanel();
-      }
+      // [2025-01-27] 隐藏颜色功能，2期开发
+      // if (window.DesignLabToolbar && window.DesignLabToolbar.initColorPanel) {
+      //   window.DesignLabToolbar.initColorPanel();
+      // }
 
       // [2025-01-28 04:15:00] 初始化 CMS 素材库加载器
       if (window.DesignLabArtAssetsLoader) {
@@ -84,20 +132,70 @@
       });
 
       // [2025-11-19 10:45:00] 绑定撤销/重做按钮（在 Rail 中）
+      // [2025-01-28 04:55:00] 添加详细日志用于调试
       const undoBtn = document.getElementById('btn-undo');
       const redoBtn = document.getElementById('btn-redo');
+      
+      console.log('[App] ===== Binding Undo/Redo Buttons =====', {
+        timestamp: new Date().toISOString(),
+        undoBtnExists: !!undoBtn,
+        redoBtnExists: !!redoBtn,
+        hasDesignLabHistory: !!window.DesignLabHistory
+      });
+
       if (undoBtn) {
-        undoBtn.addEventListener('click', () => {
-          if (window.DesignLabHistory) {
-            window.DesignLabHistory.undo();
+        undoBtn.addEventListener('click', (e) => {
+          const timestamp = new Date().toISOString();
+          console.log('[App] ===== UNDO BUTTON CLICKED =====', {
+            timestamp,
+            hasDesignLabHistory: !!window.DesignLabHistory,
+            hasUndoMethod: !!(window.DesignLabHistory && window.DesignLabHistory.undo)
+          });
+
+          if (window.DesignLabHistory && window.DesignLabHistory.undo) {
+            const result = window.DesignLabHistory.undo();
+            console.log('[App] ✅ undo() called, result:', {
+              result,
+              timestamp: new Date().toISOString()
+            });
+          } else {
+            console.error('[App] ❌ DesignLabHistory.undo not available', {
+              hasDesignLabHistory: !!window.DesignLabHistory,
+              timestamp
+            });
           }
         });
+      } else {
+        console.error('[App] ❌ Undo button not found in DOM', {
+          timestamp: new Date().toISOString()
+        });
       }
+
       if (redoBtn) {
-        redoBtn.addEventListener('click', () => {
-          if (window.DesignLabHistory) {
-            window.DesignLabHistory.redo();
+        redoBtn.addEventListener('click', (e) => {
+          const timestamp = new Date().toISOString();
+          console.log('[App] ===== REDO BUTTON CLICKED =====', {
+            timestamp,
+            hasDesignLabHistory: !!window.DesignLabHistory,
+            hasRedoMethod: !!(window.DesignLabHistory && window.DesignLabHistory.redo)
+          });
+
+          if (window.DesignLabHistory && window.DesignLabHistory.redo) {
+            const result = window.DesignLabHistory.redo();
+            console.log('[App] ✅ redo() called, result:', {
+              result,
+              timestamp: new Date().toISOString()
+            });
+          } else {
+            console.error('[App] ❌ DesignLabHistory.redo not available', {
+              hasDesignLabHistory: !!window.DesignLabHistory,
+              timestamp
+            });
           }
+        });
+      } else {
+        console.error('[App] ❌ Redo button not found in DOM', {
+          timestamp: new Date().toISOString()
         });
       }
 
@@ -174,36 +272,48 @@
           getPrice();
         });
       }
-      
-      // [2025-11-19 11:30:00] 绑定 Add Products 按钮
-      const addProductsBtn = document.getElementById('btn-add-products');
-      if (addProductsBtn) {
-        addProductsBtn.addEventListener('click', () => {
-          console.log('[App] open-add-products');
-          showProductModal();
+
+      // [2025-01-28 07:00:00] 绑定价格模态框关闭按钮
+      const priceModal = document.getElementById('price-modal');
+      if (priceModal) {
+        const closeButtons = priceModal.querySelectorAll('.dl-modal__close');
+        closeButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            priceModal.classList.remove('is-open');
+            priceModal.setAttribute('aria-hidden', 'true');
+          });
         });
       }
       
-      // [2025-11-19 11:30:00] 绑定 Change Product 链接
-      const changeProductLink = document.getElementById('link-change-product');
-      if (changeProductLink) {
-        changeProductLink.addEventListener('click', (e) => {
-          e.preventDefault();
-          console.log('[App] open-add-products');
-          showProductModal();
-        });
-      }
+      // [2025-01-27] 隐藏 Add Products 功能，2期开发
+      // const addProductsBtn = document.getElementById('btn-add-products');
+      // if (addProductsBtn) {
+      //   addProductsBtn.addEventListener('click', () => {
+      //     console.log('[App] open-add-products');
+      //     showProductModal();
+      //   });
+      // }
       
-      // [2025-11-19 12:00:00] 绑定 Change Color 链接（打开 product-colors 面板）
-      const changeColorLink = document.getElementById('link-change-color');
-      if (changeColorLink) {
-        changeColorLink.addEventListener('click', (e) => {
-          e.preventDefault();
-          if (window.DesignLabPanel) {
-            window.DesignLabPanel.openPanel('product-colors');
-          }
-        });
-      }
+      // [2025-01-27] 隐藏 Change Product 功能，2期开发
+      // const changeProductLink = document.getElementById('link-change-product');
+      // if (changeProductLink) {
+      //   changeProductLink.addEventListener('click', (e) => {
+      //     e.preventDefault();
+      //     console.log('[App] open-add-products');
+      //     showProductModal();
+      //   });
+      // }
+      
+      // [2025-01-27] 隐藏 Change Color 功能，2期开发
+      // const changeColorLink = document.getElementById('link-change-color');
+      // if (changeColorLink) {
+      //   changeColorLink.addEventListener('click', (e) => {
+      //     e.preventDefault();
+      //     if (window.DesignLabPanel) {
+      //       window.DesignLabPanel.openPanel('product-colors');
+      //     }
+      //   });
+      // }
       
       // [2025-11-19 11:30:00] 绑定 Text 控制条
       initTextControls();
@@ -218,12 +328,40 @@
       const store = window.DesignLabStore.getStore();
       switchSide(store.currentSide);
       
-        // [2025-11-19 11:00:00] 如果 URL 中有 variantId，更新产品信息显示
+        // [2025-01-27] 如果 URL 中有 variantId，调用 API 获取产品信息并更新显示
         const urlParamsFinal = new URLSearchParams(window.location.search);
         const variantIdFinal = urlParamsFinal.get('variantId');
-        if (variantIdFinal && window.DesignLabToolbar) {
-          // TODO: 可以在这里调用 API 获取产品信息并更新显示
-          console.log('[App] Loaded with variantId:', variantIdFinal);
+        if (variantIdFinal && window.DesignLabStore) {
+          const store = window.DesignLabStore.getStore();
+          // [2025-01-27] 如果 store 中已有产品数据，直接更新显示
+          if (store.product.variantId === variantIdFinal && store.product.name && !store.product.name.includes('Gildan Softstyle')) {
+            // 产品数据已加载，更新显示
+            if (typeof window.updateProductInfo === 'function') {
+              window.updateProductInfo();
+            }
+          } else {
+            // [2025-01-27] 产品数据可能还在加载中，等待 store.js 的 hydrateProductFromVariantId 完成
+            console.log('[App] Product data loading for variantId:', variantIdFinal);
+            // 监听 store 更新（通过轮询检查）
+            let checkCount = 0;
+            const checkInterval = setInterval(() => {
+              checkCount++;
+              const currentStore = window.DesignLabStore.getStore();
+              if (currentStore.product.variantId === variantIdFinal && 
+                  currentStore.product.name && 
+                  !currentStore.product.name.includes('Gildan Softstyle')) {
+                // 产品数据已加载
+                if (typeof window.updateProductInfo === 'function') {
+                  window.updateProductInfo();
+                }
+                clearInterval(checkInterval);
+              } else if (checkCount > 50) {
+                // 10秒后超时
+                clearInterval(checkInterval);
+                console.warn('[App] Timeout waiting for product data');
+              }
+            }, 200);
+          }
         }
       
       // [2025-11-19 11:30:00] 初始化右侧竖向按钮状态
@@ -233,14 +371,27 @@
         activeSideBtn.classList.add('is-active');
       }
       
-      // [2025-11-19 11:30:00] 初始化设计名称
+      // [2025-01-27] 初始化设计名称并保存到 store
       const designNameEl = document.getElementById('design-name');
-      if (designNameEl) {
-        designNameEl.textContent = 'Untitled Design';
+      if (designNameEl && window.DesignLabStore) {
+        // [2025-01-27] 从 store 加载已保存的设计名称
+        const savedName = window.DesignLabStore.getDesignName();
+        designNameEl.textContent = savedName;
         designNameEl.setAttribute('contenteditable', 'true');
         designNameEl.addEventListener('blur', () => {
-          // [2025-11-19 11:30:00] 保存设计名称（TODO: 保存到 store）
-          console.log('[App] Design name changed:', designNameEl.textContent);
+          // [2025-01-27] 保存设计名称到 store
+          const newName = designNameEl.textContent.trim() || 'Untitled Design';
+          if (window.DesignLabStore && window.DesignLabStore.setDesignName) {
+            window.DesignLabStore.setDesignName(newName);
+            console.log('[App] Design name saved to store:', newName);
+          }
+        });
+        // [2025-01-27] 监听输入变化，实时更新 store（可选）
+        designNameEl.addEventListener('input', () => {
+          const newName = designNameEl.textContent.trim() || 'Untitled Design';
+          if (window.DesignLabStore && window.DesignLabStore.setDesignName) {
+            window.DesignLabStore.setDesignName(newName);
+          }
         });
       }
       
@@ -509,43 +660,407 @@
     }
   }
 
-  // [2025-11-19 11:30:00] 获取价格（输出日志）
-  function getPrice() {
+  // [2025-01-28 07:00:00] 保存设计到后端（如果未保存）
+  let currentDesignId = null; // 存储当前设计 ID
+
+  async function saveDesignToBackend() {
+    const store = window.DesignLabStore.getStore();
     const canvas = window.DesignLabCanvas.getCanvas();
-    if (!canvas) return;
+    
+    if (!canvas || !store.product.variantId) {
+      console.warn('[App] Cannot save design: missing canvas or variantId');
+      return null;
+    }
+
+    // [2025-01-28 07:00:00] 如果已有设计 ID，更新现有设计
+    if (currentDesignId) {
+      try {
+        // 保存当前面的数据
+        if (window.DesignLabCanvas) {
+          window.DesignLabCanvas.saveCurrentSide();
+        }
+
+        const allSidesData = {
+          front: store.sides.front.canvasJSON,
+          back: store.sides.back.canvasJSON,
+          sleeve: store.sides.sleeve.canvasJSON
+        };
+
+        const canvasSnapshot = {
+          size: { width: canvas.width, height: canvas.height },
+          sides: allSidesData,
+          currentSide: store.currentSide
+        };
+
+        const response = await fetch(`/api/designs/${currentDesignId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            canvas: canvasSnapshot,
+            name: (window.DesignLabStore && window.DesignLabStore.getDesignName ? window.DesignLabStore.getDesignName() : null) || document.getElementById('design-name')?.textContent || 'Untitled Design'
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('[App] Design updated:', result.data.id);
+          return result.data.id;
+        } else {
+          console.warn('[App] Failed to update design, creating new one');
+          currentDesignId = null; // 重置，创建新设计
+        }
+      } catch (error) {
+        console.error('[App] Error updating design:', error);
+        currentDesignId = null; // 重置，创建新设计
+      }
+    }
+
+    // [2025-01-28 07:00:00] 创建新设计
+    if (!currentDesignId) {
+      try {
+        // 保存当前面的数据
+        if (window.DesignLabCanvas) {
+          window.DesignLabCanvas.saveCurrentSide();
+        }
+
+        const allSidesData = {
+          front: store.sides.front.canvasJSON,
+          back: store.sides.back.canvasJSON,
+          sleeve: store.sides.sleeve.canvasJSON
+        };
+
+        const canvasSnapshot = {
+          size: { width: canvas.width, height: canvas.height },
+          sides: allSidesData,
+          currentSide: store.currentSide
+        };
+
+        const response = await fetch('/api/designs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            productVariantId: store.product.variantId,
+            name: (window.DesignLabStore && window.DesignLabStore.getDesignName ? window.DesignLabStore.getDesignName() : null) || document.getElementById('design-name')?.textContent || 'Untitled Design',
+            canvas: canvasSnapshot
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          currentDesignId = result.data.id;
+          console.log('[App] Design created:', currentDesignId);
+          return currentDesignId;
+        } else {
+          const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+          throw new Error(error.error || 'Failed to create design');
+        }
+      } catch (error) {
+        console.error('[App] Error creating design:', error);
+        alert('Failed to save design. Please try again.');
+        return null;
+      }
+    }
+
+    return currentDesignId;
+  }
+
+  // [2025-01-28 07:00:00] 获取价格（完整实现）
+  async function getPrice() {
+    const canvas = window.DesignLabCanvas.getCanvas();
+    if (!canvas) {
+      alert('Canvas not available');
+      return;
+    }
 
     const store = window.DesignLabStore.getStore();
+    const quantityInput = document.getElementById('quantity-input');
+    const quantity = quantityInput ? parseInt(quantityInput.value, 10) || 1 : 1;
+
+    if (quantity < 1) {
+      alert('Quantity must be at least 1');
+      return;
+    }
+
+    // [2025-01-28 07:00:00] 收集设计数据
     const objects = canvas.getObjects().filter(obj => obj.name !== 'background');
     const sidesUsed = ['front', 'back', 'sleeve'].filter(side => {
       const sideData = store.sides[side];
       return sideData && sideData.canvasJSON;
     });
 
-    const priceData = {
-      productId: store.product.id,
-      productName: store.product.name,
-      color: store.product.color,
-      sidesUsed: sidesUsed,
-      layerCount: objects.length
-    };
+    // [2025-01-28 07:00:00] 计算总图层数（所有面的图层）
+    let totalLayerCount = 0;
+    ['front', 'back', 'sleeve'].forEach(side => {
+      const sideData = store.sides[side];
+      if (sideData && sideData.canvasJSON) {
+        try {
+          const sideObjects = JSON.parse(sideData.canvasJSON);
+          if (sideObjects.objects && Array.isArray(sideObjects.objects)) {
+            totalLayerCount += sideObjects.objects.length;
+          }
+        } catch (e) {
+          // 如果解析失败，使用当前面的图层数
+          if (side === store.currentSide) {
+            totalLayerCount += objects.length;
+          }
+        }
+      }
+    });
 
-    console.log('[App]', priceData);
-    // [2025-11-19 11:30:00] 后续对接接口时复用此数据结构
+    // [2025-01-28 07:00:00] 显示加载状态
+    const priceModal = document.getElementById('price-modal');
+    const priceContent = document.getElementById('price-content');
+    if (priceModal && priceContent) {
+      priceContent.innerHTML = '<div class="dl-price-loading">Calculating price...</div>';
+      priceModal.classList.add('is-open');
+      priceModal.setAttribute('aria-hidden', 'false');
+    }
+
+    try {
+      // [2025-01-28 07:00:00] 保存设计到后端（如果未保存）
+      const designId = await saveDesignToBackend();
+      if (!designId) {
+        throw new Error('Failed to save design');
+      }
+
+      // [2025-01-28 07:00:00] 调用报价 API
+      const response = await fetch(`/api/designs/${designId}/quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          quantity,
+          sidesUsed,
+          layerCount: totalLayerCount
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(error.error || 'Failed to get price');
+      }
+
+      const result = await response.json();
+      const quote = result.data;
+
+      // [2025-01-28 07:00:00] 显示价格信息
+      if (priceContent) {
+        const formatPrice = (amount) => {
+          return new Intl.NumberFormat('en-CA', {
+            style: 'currency',
+            currency: quote.currency || 'CAD',
+            minimumFractionDigits: 2
+          }).format(amount);
+        };
+
+        let html = `
+          <div class="dl-price-summary">
+            <div class="dl-price-row">
+              <span>Unit Price:</span>
+              <strong>${formatPrice(quote.unitPrice)}</strong>
+            </div>
+        `;
+
+        if (quote.discountedUnitPrice < quote.unitPrice) {
+          html += `
+            <div class="dl-price-row dl-price-row--discount">
+              <span>Discounted Unit Price:</span>
+              <strong>${formatPrice(quote.discountedUnitPrice)}</strong>
+            </div>
+            <div class="dl-price-row">
+              <span>Quantity Discount:</span>
+              <span>${(quote.breakdown.quantityDiscount || 0).toFixed(0)}%</span>
+            </div>
+          `;
+        }
+
+        html += `
+            <div class="dl-price-row">
+              <span>Quantity:</span>
+              <span>${quote.quantity}</span>
+            </div>
+            <div class="dl-price-row dl-price-row--total">
+              <span>Total:</span>
+              <strong>${formatPrice(quote.total)}</strong>
+            </div>
+          </div>
+          <div class="dl-price-breakdown">
+            <h4>Price Breakdown</h4>
+            <ul>
+              <li>Base Price: ${formatPrice(quote.breakdown.basePrice)}</li>
+              <li>Variant Adjustment: ${formatPrice(quote.breakdown.variantAdjustment)}</li>
+              <li>Sides Used: ${quote.breakdown.sidesCount} (${formatPrice(quote.breakdown.sidesFee)} additional)</li>
+              <li>Layers: ${quote.breakdown.layerCount} (${formatPrice(quote.breakdown.layersFee)} additional)</li>
+            </ul>
+          </div>
+        `;
+
+        priceContent.innerHTML = html;
+
+        // [2025-01-27] 显示 Add to Cart 按钮并实现添加到购物车功能
+        const addToCartBtn = document.getElementById('btn-add-to-cart');
+        if (addToCartBtn) {
+          addToCartBtn.style.display = 'inline-block';
+          addToCartBtn.onclick = async () => {
+            // [2025-01-27] 实现添加到购物车功能
+            try {
+              const store = window.DesignLabStore.getStore();
+              const variantId = store.product.variantId;
+              
+              if (!variantId) {
+                alert('Please select a product variant first.');
+                return;
+              }
+
+              // [2025-01-27] 获取数量（从数量输入框）
+              const quantityInput = document.getElementById('quantity-input');
+              const quantity = quantityInput ? parseInt(quantityInput.value, 10) || 1 : 1;
+
+              // [2025-01-27] 保存设计到后端（如果未保存）
+              const designId = await saveDesignToBackend();
+              
+              // [2025-01-27] 调用购物车 API
+              addToCartBtn.disabled = true;
+              addToCartBtn.textContent = 'Adding...';
+              
+              const response = await fetch('/api/cart/items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                  variantId: variantId,
+                  quantity: quantity,
+                  ...(designId ? { designId: designId } : {})
+                })
+              });
+
+              if (!response.ok) {
+                const error = await response.json().catch(() => ({ error: 'Failed to add to cart' }));
+                throw new Error(error.error || 'Failed to add to cart');
+              }
+
+              // [2025-01-27] 成功添加到购物车
+              alert('Item added to cart successfully!');
+              
+              // [2025-01-27] 可选：跳转到购物车页面
+              // window.location.href = '/cart';
+              
+            } catch (error) {
+              console.error('[App] Error adding to cart:', error);
+              alert('Failed to add to cart: ' + (error.message || 'Unknown error'));
+            } finally {
+              if (addToCartBtn) {
+                addToCartBtn.disabled = false;
+                addToCartBtn.textContent = 'Add to Cart';
+              }
+            }
+          };
+        }
+      }
+
+      console.log('[App] Price quote received:', quote);
+    } catch (error) {
+      console.error('[App] Error getting price:', error);
+      if (priceContent) {
+        priceContent.innerHTML = `<div class="dl-price-error">Error: ${error.message}</div>`;
+      } else {
+        alert(`Failed to get price: ${error.message}`);
+      }
+    }
   }
   
-  // [2025-11-19 11:30:00] 显示产品选择模态框
-  function showProductModal() {
+  // [2025-01-27] 显示产品选择模态框并加载产品列表
+  async function showProductModal() {
     const modal = document.getElementById('product-modal');
     if (!modal) return;
     
-    // [2025-11-19 11:30:00] TODO: 加载产品列表（占位）
     const productsGrid = document.getElementById('products-grid');
     if (productsGrid) {
-      productsGrid.innerHTML = '<p>Product selection (placeholder)</p>';
+      // [2025-01-27] 显示加载状态
+      productsGrid.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">Loading products...</div>';
     }
     
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
+    
+    // [2025-01-27] 加载产品列表
+    try {
+      const response = await fetch('/api/products?limit=24&page=1', {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load products');
+      }
+
+      const result = await response.json();
+      const products = result.data || [];
+
+      if (productsGrid) {
+        if (products.length === 0) {
+          productsGrid.innerHTML = '<div style="padding: 2rem; text-align: center; color: #666;">No products available</div>';
+        } else {
+          // [2025-01-27] 渲染产品网格
+          productsGrid.innerHTML = products.map(product => {
+            const primaryImage = product.images?.[0]?.url || product.primaryImage?.url || '/assets/hero/hero-card-tee.jpg';
+            const productName = product.name || 'Unnamed Product';
+            const productSlug = product.slug || '';
+            
+            return `
+              <div class="dl-product-card" data-product-id="${product.id}" data-product-slug="${productSlug}" style="
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                overflow: hidden;
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+              " onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" 
+                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                <img src="${primaryImage}" alt="${productName}" style="width: 100%; height: 200px; object-fit: cover;" 
+                     onerror="this.src='/assets/hero/hero-card-tee.jpg'">
+                <div style="padding: 12px;">
+                  <h4 style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600;">${productName}</h4>
+                  <p style="margin: 0; font-size: 12px; color: #666;">${product.category?.name || 'Product'}</p>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          // [2025-01-27] 绑定产品卡片点击事件
+          productsGrid.querySelectorAll('.dl-product-card').forEach(card => {
+            card.addEventListener('click', () => {
+              const productId = card.getAttribute('data-product-id');
+              const productSlug = card.getAttribute('data-product-slug');
+              
+              // [2025-01-27] 跳转到产品详情页，用户可以选择 variant 后进入 Design Lab
+              if (productSlug) {
+                window.location.href = `/products/${productSlug}`;
+              } else {
+                console.warn('[App] Product slug not available for product:', productId);
+              }
+            });
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[App] Error loading products:', error);
+      if (productsGrid) {
+        productsGrid.innerHTML = `<div style="padding: 2rem; text-align: center; color: #ff1f3d;">
+          <p>Failed to load products</p>
+          <button onclick="window.showProductModal()" style="
+            margin-top: 8px;
+            padding: 8px 16px;
+            background: #ff1f3d;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          ">Retry</button>
+        </div>`;
+      }
+    }
     
     // [2025-11-19 11:30:00] 绑定关闭按钮
     const closeBtn = modal.querySelector('.dl-modal__close');
@@ -583,17 +1098,61 @@
     const store = window.DesignLabStore.getStore();
     store.product.color = color;
     
-    // [2025-11-19 11:30:00] 更新当前面和其他面的底图
+    // [2025-01-27] 更新当前面和其他面的底图
     if (window.DesignLabCanvas) {
-      // [2025-11-19 11:30:00] 更新所有面的底图
-      ['front', 'back', 'sleeve'].forEach(side => {
-        const currentSide = store.currentSide;
-        if (side === currentSide) {
-          window.DesignLabCanvas.loadBackgroundForCurrentSide();
-        } else {
-          // [2025-11-19 11:30:00] TODO: 更新其他面的底图（需要保存当前面，切换面，更新，再切回）
+      const currentSide = store.currentSide;
+      const allSides = ['front', 'back', 'sleeve'];
+      
+      // [2025-01-27] 先保存当前面的画布数据
+      if (window.DesignLabCanvas.saveCurrentSide) {
+        window.DesignLabCanvas.saveCurrentSide();
+      }
+      
+      // [2025-01-27] 更新当前面的底图
+      window.DesignLabCanvas.loadBackgroundForCurrentSide();
+      
+      // [2025-01-27] 更新其他面的底图（保存当前面，切换面，更新，再切回）
+      // 注意：这里使用同步方式逐个更新，避免异步导致的竞态条件
+      allSides.forEach(side => {
+        if (side !== currentSide) {
+          // [2025-01-27] 保存当前面数据（如果还在当前面）
+          const storeCheck = window.DesignLabStore.getStore();
+          if (storeCheck.currentSide === currentSide && window.DesignLabCanvas.saveCurrentSide) {
+            window.DesignLabCanvas.saveCurrentSide();
+          }
+          
+          // [2025-01-27] 切换到目标面
+          if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
+            window.DesignLabStore.setActiveSide(side);
+          }
+          if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
+            window.DesignLabCanvas.switchSide(side);
+          }
+          
+          // [2025-01-27] 加载目标面的底图
+          if (window.DesignLabCanvas.loadBackgroundForCurrentSide) {
+            window.DesignLabCanvas.loadBackgroundForCurrentSide();
+          }
+          
+          // [2025-01-27] 保存目标面的数据
+          if (window.DesignLabCanvas.saveCurrentSide) {
+            window.DesignLabCanvas.saveCurrentSide();
+          }
         }
       });
+      
+      // [2025-01-27] 切换回原来的面
+      if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
+        window.DesignLabStore.setActiveSide(currentSide);
+      }
+      if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
+        window.DesignLabCanvas.switchSide(currentSide);
+      }
+      
+      // [2025-01-27] 重新加载当前面的底图和数据
+      if (window.DesignLabCanvas.loadBackgroundForCurrentSide) {
+        window.DesignLabCanvas.loadBackgroundForCurrentSide();
+      }
     }
     
     // [2025-11-19 11:30:00] 更新产品信息显示
@@ -609,15 +1168,17 @@
   function updateProductInfo() {
     const store = window.DesignLabStore.getStore();
     const productNameEl = document.getElementById('product-name');
-    const productColorEl = document.getElementById('product-color');
+    // [2025-01-27] 颜色元素已隐藏，2期开发
+    // const productColorEl = document.getElementById('product-color');
     const productThumbImg = document.getElementById('product-thumb-img');
     
     if (productNameEl) {
       productNameEl.textContent = store.product.name || 'Gildan Softstyle T-shirt';
     }
-    if (productColorEl) {
-      productColorEl.textContent = store.product.color || 'Heather Dark Grey';
-    }
+    // [2025-01-27] 颜色显示已隐藏，2期开发
+    // if (productColorEl) {
+    //   productColorEl.textContent = store.product.color || 'Heather Dark Grey';
+    // }
     if (productThumbImg && store.product.baseImages) {
       const currentSide = store.currentSide;
       productThumbImg.src = store.product.baseImages[currentSide] || store.product.baseImages.front || 'https://picsum.photos/seed/product/60/60';

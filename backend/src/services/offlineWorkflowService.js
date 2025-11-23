@@ -1,19 +1,8 @@
 // [2025-11-08 06:55:45] Offline workflow configuration utilities
 const { Setting } = require('../models');
 
-const DEFAULT_STAGE_CONFIG = [
-  { key: 'intake', label: 'Intake', description: 'New offline POD requests', position: 0 },
-  {
-    key: 'collect-materials',
-    label: 'Collect Materials',
-    description: 'Awaiting brand assets and specs',
-    position: 1
-  },
-  { key: 'design', label: 'Design', description: 'Design team working on mockups', position: 2 },
-  { key: 'production', label: 'Production', description: 'Manufacturing and finishing', position: 3 },
-  { key: 'logistics', label: 'Logistics', description: 'Preparing shipment and delivery', position: 4 },
-  { key: 'completed', label: 'Completed', description: 'Order fulfilled and delivered', position: 5 }
-];
+// [2025-01-28 05:40:00] 清空默认阶段配置，由管理员通过设置页面配置
+const DEFAULT_STAGE_CONFIG = [];
 
 const STAGE_SETTING_KEY = 'offline_workflow_stages';
 

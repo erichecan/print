@@ -145,6 +145,7 @@ app.get('/health', async (req, res) => {
 // API routes
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
+app.use('/api/content', require('./routes/content')); // [2025-01-28 06:20:00] Public CMS content API
 app.use('/api/art-assets', require('./routes/artAssets')); // [2025-01-28 00:55:00] Art assets public API // [2025-01-27 18:50:00] Public category routes
 app.use('/api/collections', require('./routes/collections'));
 app.use('/api/cart', require('./routes/cart'));
@@ -164,6 +165,7 @@ app.use('/api/admin/users', require('./routes/adminUsers')); // [2025-11-15 14:0
 app.use('/api/admin/coupons', require('./routes/adminCoupons')); // [2025-11-15 15:15:00] Admin coupon management routes
 app.use('/api/admin/promotions', require('./routes/adminPromotions')); // [2025-11-15 15:20:00] Admin promotion management routes
 app.use('/api/admin/settings', require('./routes/adminSettings')); // [2025-11-15 15:30:00] Admin site/content settings routes
+app.use('/api/admin/content', require('./routes/adminContent')); // [2025-01-28 06:00:00] Admin CMS content management routes
 app.use('/api/admin/designs', require('./routes/adminDesigns')); // [2025-11-15 15:05:00] Admin design review routes
 app.use('/api/admin/art-assets', require('./routes/adminArtAssets')); // [2025-01-28 00:55:00] Admin art assets management routes
 app.use('/api/designs', require('./routes/designs')); // [2025-11-11 15:33:45] Design Lab public routes

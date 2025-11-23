@@ -11,6 +11,7 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { CartProvider } from '@/contexts/CartContext'; // [2025-01-27 15:10:00] Next.js 15: 直接导入客户端组件，无需 dynamic
 import { ToastProvider } from '@/hooks/useToast'; // [2025-01-27 16:35:00] 全局 Toast 提供者
+import { AuthProvider } from '@/contexts/AuthContext'; // [2025-01-28 07:30:00] 全局认证状态管理
 import LayoutWrapper from './LayoutWrapper';
 import './globals.css';
 
@@ -69,11 +70,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <CartProvider>
-          <ToastProvider>
-            <LayoutWrapper>{children}</LayoutWrapper>
-          </ToastProvider>
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            <ToastProvider>
+              <LayoutWrapper>{children}</LayoutWrapper>
+            </ToastProvider>
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

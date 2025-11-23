@@ -23,24 +23,7 @@ const getClientIp = (req) => {
   return req.ip || null;
 };
 
-const recordAuditLog = async (req, action, targetId, meta = {}) => {
-  try {
-    await prisma.adminAuditLog.create({
-      data: {
-        action,
-        targetType: 'order',
-        targetId,
-        actorId: req.user?.id || null,
-        actorEmail: req.user?.email || null,
-        ipAddress: getClientIp(req),
-        userAgent: req.headers['user-agent'] || null,
-        meta,
-      },
-    });
-  } catch (error) {
-    console.warn('[Admin] Failed to record audit log:', error);
-  }
-};
+// [2025-01-28 08:30:00] Audit Logs 功能已移除
 
 exports.listOrders = async (req, res) => {
   try {
@@ -342,12 +325,7 @@ exports.updateOrderStatus = async (req, res) => {
       return updatedOrder;
     });
 
-    // Record audit log
-    await recordAuditLog(req, 'order.update_status', order.id, {
-      orderNumber: order.orderNumber,
-      changes,
-      note: note || null,
-    });
+    // [2025-01-28 08:30:00] Audit Logs 功能已移除
 
     logger.info('Order status updated by admin', {
       orderId: order.id,
@@ -513,15 +491,7 @@ exports.recordRefund = async (req, res) => {
       },
     });
 
-    // Record audit log
-    await recordAuditLog(req, 'order.refund', order.id, {
-      orderNumber: order.orderNumber,
-      reason: reason || null,
-      refundAmount,
-      total: Number(order.total),
-      stripeRefundId: stripeRefund?.id || null,
-      refundError: refundError || null,
-    });
+    // [2025-01-28 08:30:00] Audit Logs 功能已移除
 
     // Send refund confirmation email (don't fail if email fails)
     try {

@@ -122,17 +122,29 @@ exports.getArtAssetsByCategory = async (req, res) => {
  */
 exports.getAllArtAssets = async (req, res) => {
   try {
+    logger.info('[getAllArtAssets] Request received', {
+      query: req.query,
+      user: req.user ? { id: req.user.id, email: req.user.email } : 'No user'
+    });
+    
     const { category, isActive, page = 1, limit = 50 } = req.query;
     
     const where = {};
     if (category) {
       where.category = category;
     }
-    if (isActive !== undefined) {
-      where.is_active = isActive === 'true';
+    // [2025-01-27] 正确处理 isActive 参数（支持字符串和布尔值）
+    if (isActive !== undefined && isActive !== null && isActive !== '') {
+      if (typeof isActive === 'string') {
+        where.is_active = isActive === 'true' || isActive === '1';
+      } else {
+        where.is_active = Boolean(isActive);
+      }
     }
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
+    
+    logger.info('[getAllArtAssets] Query params', { where, offset, limit: parseInt(limit) });
     
     // [2025-01-28 02:00:00] 暂时移除 include，避免关联查询错误
     const { count, rows: assets } = await ArtAsset.findAndCountAll({
@@ -147,6 +159,8 @@ exports.getAllArtAssets = async (req, res) => {
       //   required: false
       // }]
     });
+    
+    logger.info('[getAllArtAssets] Query result', { count, assetsCount: assets.length });
 
     // [2025-01-28 02:30:00] 转换数据格式，将下划线命名转换为驼峰命名
     const formattedAssets = assets.map(asset => {
@@ -249,19 +263,36 @@ exports.createArtAsset = async (req, res) => {
       size: req.file.size,
       path: req.file.path
     } : 'No file');
+    logger.info('Request files:', req.files);
     logger.info('User:', req.user ? { id: req.user.id, email: req.user.email } : 'No user');
 
     const { category, name, sortOrder } = req.body;
     const file = req.file;
 
+    // [2025-01-27] 改进错误处理，提供更详细的错误信息
     if (!file) {
       logger.warn('No file uploaded');
-      return res.status(400).json({ error: 'Image file is required' });
+      logger.warn('Request body keys:', Object.keys(req.body));
+      logger.warn('Request files:', req.files);
+      return res.status(400).json({ 
+        error: 'Image file is required',
+        details: 'Please select an image file to upload'
+      });
     }
 
     if (!category || !name) {
-      logger.warn('Missing required fields:', { category: !!category, name: !!name });
-      return res.status(400).json({ error: 'Category and name are required' });
+      logger.warn('Missing required fields:', { 
+        category: category || 'missing', 
+        name: name || 'missing',
+        bodyKeys: Object.keys(req.body)
+      });
+      const missingFields = [];
+      if (!category) missingFields.push('category');
+      if (!name) missingFields.push('name');
+      return res.status(400).json({ 
+        error: 'Category and name are required',
+        details: `Missing fields: ${missingFields.join(', ')}`
+      });
     }
 
     const uploadRoot = ensureArtAssetUploadRoot();

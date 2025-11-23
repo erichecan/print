@@ -74,6 +74,13 @@ body {
   font-size: 18px;
   font-weight: 700;
   color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.dl-header__logo:hover {
+  color: var(--primary);
 }
 
 .dl-header__breadcrumb {
@@ -490,6 +497,82 @@ body {
   border-color: var(--primary);
 }
 
+/* [2025-01-27] Names and Numbers 面板样式 */
+.panel__checkbox-group {
+  margin-bottom: 12px;
+}
+
+.panel__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.panel__checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary);
+}
+
+.panel__checkbox-text {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.panel__options-group {
+  margin-left: 26px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.panel__option-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.panel__option-row .panel__label {
+  min-width: 60px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.panel__option-row .panel__select {
+  flex: 1;
+  margin: 0;
+}
+
+.panel__pricing {
+  background: var(--surface-muted);
+  padding: 12px;
+  border-radius: var(--radius-6);
+  margin-bottom: 12px;
+}
+
+.panel__pricing-item {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 4px 0;
+}
+
+.panel__note {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.panel__note small {
+  display: block;
+  margin: 4px 0;
+}
+
 .panel__color {
   width: 100%;
   height: 40px;
@@ -556,29 +639,39 @@ body {
 }
 
 /* [2025-11-19 12:00:00] product-colors 面板 */
+/* [2025-01-28 04:40:00] 修复为 8x8 网格，匹配截图设计 */
+/* [2025-01-28 04:45:00] 缩小颜色块并改为圆形 */
 .panel__colors-grid {
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
   margin-bottom: 16px;
 }
 
 .panel__color-item {
   aspect-ratio: 1;
-  border: 2px solid transparent;
-  border-radius: var(--radius-6);
+  width: 100%;
+  max-width: 32px;
+  height: 32px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
   cursor: pointer;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+  padding: 0;
+  background: none;
+  overflow: hidden;
+  margin: 0 auto;
 }
 
 .panel__color-item:hover {
-  border-color: var(--border-dark);
+  border-color: rgba(0, 0, 0, 0.3);
   transform: scale(1.1);
 }
 
 .panel__color-item.is-active {
-  border-color: var(--primary);
+  border-color: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
 .panel__color-item.is-active::after {
@@ -590,7 +683,182 @@ body {
   color: #fff;
   font-size: 12px;
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+.panel__color-swatch {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+}
+
+/* [2025-01-28 04:40:00] 切换开关样式 */
+.panel__ordering-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.panel__ordering-text {
+  flex: 1;
+}
+
+.panel__toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.panel__toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.panel__toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.panel__toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.panel__toggle-switch input:checked + .panel__toggle-slider {
+  background-color: var(--primary);
+}
+
+.panel__toggle-switch input:checked + .panel__toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.panel__info-icon {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel__info-icon:hover {
+  color: var(--text-secondary);
+}
+
+.panel__info-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* [2025-01-28 04:40:00] 当前颜色指示器 */
+.panel__current-color-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.panel__color-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* [2025-01-28 04:40:00] 链接样式 */
+.panel__link {
+  display: block;
+  margin-top: 8px;
+  color: var(--primary);
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.panel__link:hover {
+  text-decoration: underline;
+}
+
+.btn--link {
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  text-align: left;
+  width: 100%;
+}
+
+.btn--link:hover {
+  background: none;
+  color: var(--primary);
+}
+
+.btn--link svg {
+  flex-shrink: 0;
+}
+
+/* [2025-01-28 04:50:00] 尺码按钮样式（方形，蓝色边框，与商品详情页一致） */
+.panel__sizes-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.panel__size-btn {
+  min-width: 50px;
+  padding: 10px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  text-align: center;
+}
+
+.panel__size-btn:hover:not(.is-selected) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.panel__size-btn.is-selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+  font-weight: 600;
 }
 
 /* [2025-11-19 12:00:00] Layers 图层面板（始终显示在底部） */
@@ -1455,6 +1723,46 @@ body {
 
 .dl-bottom-bar__left {
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* [2025-01-28 07:00:00] 数量输入框样式 */
+.dl-quantity-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dl-quantity-input__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.dl-quantity-input__field {
+  width: 80px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-6);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s;
+}
+
+.dl-quantity-input__field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(52, 84, 245, 0.1);
+}
+
+.dl-quantity-input__field:hover {
+  border-color: var(--border-dark);
 }
 
 .dl-bottom-bar__right {
@@ -1569,6 +1877,299 @@ body {
 
 .dl-modal__body {
   padding: 20px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.dl-modal__footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: var(--surface-muted);
+}
+
+.dl-modal__content--large {
+  max-width: 900px;
+  width: 90vw;
+  max-height: 90vh;
+}
+
+/* [2025-01-27] Names and Numbers 表单样式 */
+.names-numbers-form {
+  display: flex;
+  gap: 24px;
+  min-height: 400px;
+}
+
+.names-numbers-form__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.names-numbers-form__sidebar {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+/* [2025-01-27] 表格样式 */
+.names-numbers-table {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-8);
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.names-numbers-table__header {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.names-numbers-table__col {
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+
+.names-numbers-table__col:last-child {
+  border-right: none;
+}
+
+.names-numbers-table__body {
+  background: var(--surface);
+}
+
+.names-numbers-table__row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr;
+  border-bottom: 1px solid var(--border);
+}
+
+.names-numbers-table__row:last-child {
+  border-bottom: none;
+}
+
+.names-numbers-table__row .names-numbers-table__col {
+  padding: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+}
+
+.names-numbers-table__row .names-numbers-table__col:last-child {
+  border-right: none;
+}
+
+/* [2025-01-27] 输入框样式 */
+.names-numbers-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+}
+
+.names-numbers-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.names-numbers-input:focus {
+  background: var(--surface-muted);
+}
+
+.names-numbers-input--size {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='12' viewBox='0 0 12 12' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 4L6 8L10 4' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* [2025-01-27] 操作链接 */
+.names-numbers-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.names-numbers-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  text-decoration: none;
+}
+
+.names-numbers-link:hover {
+  text-decoration: underline;
+}
+
+/* [2025-01-27] 摘要区域 */
+.names-numbers-summary {
+  background: var(--surface-muted);
+  padding: 16px;
+  border-radius: var(--radius-8);
+  margin-bottom: 16px;
+}
+
+.names-numbers-summary__totals {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.names-numbers-summary__sizes {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.names-numbers-sizes-list {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* [2025-01-27] 提示信息 */
+.names-numbers-hints {
+  background: var(--surface-muted);
+  padding: 16px;
+  border-radius: var(--radius-8);
+}
+
+.names-numbers-hints__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.names-numbers-hints__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.names-numbers-hints__list li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.names-numbers-hints__list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--text-tertiary);
+}
+
+.names-numbers-hints__link {
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.names-numbers-hints__link:hover {
+  text-decoration: underline;
+}
+
+/* [2025-01-28 07:00:00] 价格内容样式 */
+.dl-price-content {
+  min-height: 200px;
+}
+
+.dl-price-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.dl-price-error {
+  text-align: center;
+  padding: 40px 20px;
+  color: #dc2626;
+  font-size: 16px;
+}
+
+.dl-price-summary {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--surface-muted);
+  border-radius: var(--radius-8);
+}
+
+.dl-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.dl-price-row--discount {
+  color: #059669;
+}
+
+.dl-price-row--total {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px solid var(--border);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.dl-price-row strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.dl-price-breakdown {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-8);
+}
+
+.dl-price-breakdown h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 12px 0;
+}
+
+.dl-price-breakdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dl-price-breakdown li {
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.dl-price-breakdown li:last-child {
+  border-bottom: none;
 }
 
 .dl-colors-grid {

@@ -84,6 +84,11 @@ const ICONS: Record<string, JSX.Element> = {
       <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
     </svg>
   ),
+  cms: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+    </svg>
+  ),
 };
 
 const NAV_LINKS = [
@@ -94,10 +99,11 @@ const NAV_LINKS = [
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
   { href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // [2025-11-16 13:35:00] 生产管理
-  { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costs' }, // [2025-11-16 13:35:00] 成本管理
+  { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // [2025-01-28 08:50:00] 成本管理 - 使用 costManagement 翻译键
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
   { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // [2025-01-28 01:10:00] Design Lab art assets CMS
+  { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // [2025-01-28 08:00:00] Content Management System
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];
 
@@ -119,9 +125,10 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         if (!mounted) {
           return;
         }
-        if (data.role !== 'ADMIN') {
+        // [2025-01-28 07:30:00] 检查用户角色，必须是 ADMIN（支持大小写）
+        if (data.role !== 'ADMIN' && data.role !== 'admin') {
           setAuthState('forbidden');
-          setAuthMessage('当前账号无管理员权限，无法访问后台。');
+          setAuthMessage('Access denied. Admin privileges required. Please use customer login at /login for account access.');
           return;
         }
         setUser(data);
@@ -161,13 +168,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     };
   }, [router, pathname, t]);
 
-  // [2025-11-16 14:05:00] 未登录时直接跳转到登录页，避免出现中间提示页
+  // [2025-01-28 07:30:00] 未登录时直接跳转到管理员专用登录页
   useEffect(() => {
     if (authState !== 'unauthenticated') {
       return;
     }
     const redirectTarget = pathname && pathname.startsWith('/admin') ? pathname : '/admin';
-    router.replace(`/login?redirect=${encodeURIComponent(redirectTarget)}`);
+    router.replace(`/admin/login?redirect=${encodeURIComponent(redirectTarget)}`);
   }, [authState, pathname, router]);
 
   const handleLogout = async () => {
@@ -176,7 +183,8 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     setAuthState('unauthenticated');
     // [2025-11-16 14:30:00] 使用 i18n 消息提示退出状态
     setAuthMessage(t('logoutMessage'));
-    router.push('/login');
+    // [2025-01-28 07:30:00] 退出后跳转到管理员登录页面
+    router.push('/admin/login');
   };
 
   const isActive = useCallback(

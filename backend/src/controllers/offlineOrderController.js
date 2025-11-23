@@ -266,7 +266,29 @@ exports.createOfflineOrder = async (req, res) => {
       order: mapOrder(order)
     });
   } catch (error) {
-    logger.error('Failed to create offline order', error);
+    // [2025-01-28 09:00:00] 增强错误日志，输出详细错误信息
+    logger.error('[offlineOrderController] Failed to create offline order:', error);
+    logger.error('[offlineOrderController] Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+      name: error.name,
+      stack: error.stack?.split('\n').slice(0, 10).join('\n'),
+    });
+    logger.error('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
+    logger.error('[offlineOrderController] Request files:', req.files ? `Files count: ${req.files.length}` : 'No files');
+    
+    // [2025-01-28 09:00:00] 返回更详细的错误信息（开发环境）
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+      return res.status(500).json({
+        error: 'Server Error',
+        message: 'Failed to create offline order',
+        details: error.message,
+        code: error.code,
+        meta: error.meta,
+      });
+    }
+    
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to create offline order'

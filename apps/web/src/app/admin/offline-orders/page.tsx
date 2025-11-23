@@ -12,6 +12,7 @@ import {
   OfflineOrderHistoryEntry,
   ProductionWorkOrderPayload,
 } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-01-28 08:45:00] 国际化支持
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   month: 'short',
@@ -36,6 +37,7 @@ function toInputDate(value?: string | null) {
 const BOARD_KEY = 'admin-offline-orders-board';
 
 export default function AdminOfflineOrdersPage() {
+  const { t } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
   const [search, setSearch] = useState('');
   const [rushFilter, setRushFilter] = useState<'all' | 'rush' | 'standard'>('all');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -302,21 +304,6 @@ export default function AdminOfflineOrdersPage() {
     setDetailRevision(revision);
   }, [selectedDetail, selectedOrderId, detailRevision]);
 
-  const domOutline = useMemo(() => {
-    const lines: string[] = [];
-    stages.forEach((stage) => {
-      const cards = groupedOrders.get(stage.key) || [];
-      lines.push(`• ${stage.label} (${cards.length})`);
-      if (!cards.length) {
-        lines.push('    ∘ (empty)');
-      } else {
-        cards.forEach((order) => {
-          lines.push(`    ∘ ${order.projectName} · ${order.orderCode}`);
-        });
-      }
-    });
-    return lines.join('\n');
-  }, [stages, groupedOrders]);
 
   const handleSaveView = useCallback(() => {
     alert('Saved view preset (demo)');
@@ -342,8 +329,8 @@ export default function AdminOfflineOrdersPage() {
             <div className="admin-search kanban-search">
               <input
                 type="search"
-                placeholder="Search orders or companies..."
-                aria-label="Search offline orders"
+                placeholder={t('searchOrdersOrCompanies')}
+                aria-label={t('searchOrdersOrCompanies')}
                 value={search}
                 onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
               />
@@ -354,29 +341,29 @@ export default function AdminOfflineOrdersPage() {
               value={rushFilter}
               onChange={(event) => setRushFilter(event.target.value as typeof rushFilter)}
             >
-              <option value="all">All priorities</option>
-              <option value="rush">Rush ({rushCounts.rush})</option>
-              <option value="standard">Standard ({rushCounts.standard})</option>
+              <option value="all">{t('allPriorities')}</option>
+              <option value="rush">{t('rush')} ({rushCounts.rush})</option>
+              <option value="standard">{t('standard')} ({rushCounts.standard})</option>
             </select>
-            <select className="kanban-select" aria-label="Filter by account owner" disabled>
-              <option>All owners (coming soon)</option>
+            <select className="kanban-select" aria-label={t('allOwners')} disabled>
+              <option>{t('allOwners')}</option>
             </select>
             <button type="button" className="btn btn--outline" onClick={handleDateRange}>
-              Date Range
+              {t('dateRange')}
             </button>
           </div>
           <div className="kanban-toolbar-actions">
             <button type="button" className="btn" onClick={handleSaveView}>
-              Save View
+              {t('saveView')}
             </button>
             <button type="button" className="btn btn--outline" onClick={handleExportCsv}>
-              Export CSV
+              {t('exportCsv')}
             </button>
-            <button type="button" className="btn btn--primary" onClick={() => alert('New offline order flow coming soon')}>
-              New Offline Order
-            </button>
+            <Link href="/offline-orders" className="btn btn--primary" target="_blank" rel="noopener noreferrer">
+              {t('newOfflineOrder')}
+            </Link>
             <button type="button" className="btn btn--outline" onClick={handleRefresh}>
-              Refresh
+              {t('refresh')}
             </button>
           </div>
         </section>
@@ -385,7 +372,7 @@ export default function AdminOfflineOrdersPage() {
           <div className="kanban-metrics" aria-live="polite">
             {[0, 1, 2, 3].map((index) => (
               <div key={index} className="kanban-metric-card">
-                <span className="kanban-metric-label">Loading…</span>
+                <span className="kanban-metric-label">{t('loading')}</span>
                 <strong className="kanban-metric-value">--</strong>
               </div>
             ))}
@@ -393,26 +380,26 @@ export default function AdminOfflineOrdersPage() {
         ) : metricsError ? (
           <div className="kanban-metrics" aria-live="polite">
             <div className="kanban-metric-card">
-              <span className="kanban-metric-label">Failed to load metrics</span>
+              <span className="kanban-metric-label">{t('failedToLoadMetrics')}</span>
               <strong className="kanban-metric-value">!</strong>
             </div>
           </div>
         ) : metricsData ? (
           <section className="kanban-metrics" aria-label="Offline workflow metrics">
             <div className="kanban-metric-card">
-              <span className="kanban-metric-label">Orders in Progress</span>
+              <span className="kanban-metric-label">{t('ordersInProgress')}</span>
               <strong className="kanban-metric-value">{metricsData.summary.active}</strong>
             </div>
             <div className="kanban-metric-card">
-              <span className="kanban-metric-label">Average Cycle Time</span>
+              <span className="kanban-metric-label">{t('averageCycleTime')}</span>
               <strong className="kanban-metric-value">{metricsData.summary.completed ? '6.4 days' : '--'}</strong>
             </div>
             <div className="kanban-metric-card">
-              <span className="kanban-metric-label">Rush Orders</span>
+              <span className="kanban-metric-label">{t('rushOrders')}</span>
               <strong className="kanban-metric-value">{metricsData.summary.rushActive}</strong>
             </div>
             <div className="kanban-metric-card">
-              <span className="kanban-metric-label">Delayed</span>
+              <span className="kanban-metric-label">{t('delayed')}</span>
               <strong className="kanban-metric-value">{metricsData.summary.cancelled}</strong>
             </div>
           </section>
@@ -420,33 +407,33 @@ export default function AdminOfflineOrdersPage() {
 
         <section className="kanban-config-entry">
           <p>
-            Workflow stages can be customized in{' '}
+            {t('workflowStagesCustomizable')}{' '}
             <Link href="/admin/settings" target="_blank">
-              System Settings
+              {t('systemSettings')}
             </Link>
-            . Use the button to adjust column names for the board.
+            {t('useButtonToAdjust')}
           </p>
           <button type="button" className="btn btn--outline" onClick={handleCustomizeWorkflow}>
-            Customize Workflow
+            {t('customizeWorkflow')}
           </button>
         </section>
 
         {isLoading ? (
           <div className="kanban-board" aria-live="polite">
             <div className="kanban-column">
-              <div className="kanban-column-body">Loading board…</div>
+              <div className="kanban-column-body">{t('loadingBoard')}</div>
             </div>
           </div>
         ) : boardError ? (
           <div className="kanban-board">
             <div className="kanban-column">
-              <div className="kanban-column-body">Failed to load offline orders.</div>
+              <div className="kanban-column-body">{t('failedToLoadOrders')}</div>
             </div>
           </div>
         ) : (boardData?.orders || []).length === 0 ? (
           <div className="kanban-board">
             <div className="kanban-column">
-              <div className="kanban-column-body">No offline orders match current filters.</div>
+              <div className="kanban-column-body">{t('noOrdersMatchFilters')}</div>
             </div>
           </div>
         ) : (
@@ -470,7 +457,7 @@ export default function AdminOfflineOrdersPage() {
                   </header>
                   <div className="kanban-column-body">
                     {cards.length === 0 ? (
-                      <div className="kanban-card-placeholder">Drop orders here</div>
+                      <div className="kanban-card-placeholder">{t('dropOrdersHere')}</div>
                     ) : (
                       cards.map((order) => (
                         <div
@@ -504,7 +491,7 @@ export default function AdminOfflineOrdersPage() {
                   </div>
                   <footer className="kanban-column-footer">
                     <button type="button" className="btn btn--ghost" onClick={() => selectedOrderId && setNoteDraft('')}>
-                      + Add note
+                      + {t('addNote')}
                     </button>
                   </footer>
                 </article>
@@ -513,36 +500,30 @@ export default function AdminOfflineOrdersPage() {
           </section>
         )}
 
-        <section className="kanban-dom-preview">
-          <details open>
-            <summary>Workflow DOM Outline</summary>
-            <pre>{domOutline || 'No columns loaded.'}</pre>
-          </details>
-        </section>
 
         {selectedOrderId && (
           <section className="kanban-detail-panel" aria-live="polite">
             <div className="kanban-detail-header">
               <div>
-                <h2>{selectedDetail?.projectName || 'Order Detail'}</h2>
+                <h2>{selectedDetail?.projectName || t('orderDetail')}</h2>
                 {selectedDetail && <p>#{selectedDetail.orderCode}</p>}
               </div>
               <button type="button" className="btn btn--outline" onClick={() => setSelectedOrderId(null)}>
-                Close
+                {t('close')}
               </button>
             </div>
 
             {detailLoading ? (
-              <p>Loading order…</p>
+              <p>{t('loadingOrder')}</p>
             ) : detailError ? (
-              <p className="detail-error">Failed to load order detail.</p>
+              <p className="detail-error">{t('failedToLoadOrderDetail')}</p>
             ) : !selectedDetail ? (
-              <p className="detail-error">Order not found.</p>
+              <p className="detail-error">{t('orderNotFound')}</p>
             ) : (
               <div className="kanban-detail-body">
                 {/* [2025-11-15 17:05:00] Stage + note controls mirror prototype detail workflow */}
                 <div className="admin-form">
-                  <h3>Stage</h3>
+                  <h3>{t('stage')}</h3>
                   <div className="admin-grid-two">
                     <select
                       value={stageDraft || selectedDetail.stage?.key || ''}
@@ -560,23 +541,23 @@ export default function AdminOfflineOrdersPage() {
                       disabled={!stageDraft}
                       onClick={() => stageDraft && handleStageChange(selectedDetail.id, stageDraft)}
                     >
-                      Update Stage
+                      {t('updateStage')}
                     </button>
                   </div>
                 </div>
 
                 <div className="admin-grid-two">
                   <div className="admin-form">
-                    <h3>Notes</h3>
+                    <h3>{t('notes')}</h3>
                     <form className="detail-form" onSubmit={handleAddNote}>
                       <textarea
                         value={noteDraft}
                         onChange={(event) => setNoteDraft(event.target.value)}
-                        placeholder="Add internal note"
+                        placeholder={t('addInternalNote')}
                         rows={3}
                       />
                       <button type="submit" className="btn btn--primary" disabled={!noteDraft.trim()}>
-                        Add Note
+                        {t('addNote')}
                       </button>
                     </form>
                     <ul className="detail-notes">
@@ -586,14 +567,14 @@ export default function AdminOfflineOrdersPage() {
                             <span>{history.actorName || 'System'}</span>
                             <span>{formatDate(history.createdAt)}</span>
                           </div>
-                          <p>{history.note || `Moved to ${history.toStageKey}`}</p>
+                          <p>{history.note || `${t('movedTo')} ${history.toStageKey}`}</p>
                         </li>
                       ))}
                     </ul>
                   </div>
 
                   <div className="admin-form">
-                    <h3>Assets</h3>
+                    <h3>{t('assets')}</h3>
                     <input
                       type="file"
                       multiple
@@ -614,70 +595,70 @@ export default function AdminOfflineOrdersPage() {
                 </div>
 
                 <div className="admin-form">
-                  <h3>Production</h3>
+                  <h3>{t('production')}</h3>
                   <form className="detail-form" onSubmit={handleProductionUpdate}>
                     <select value={productionStatusDraft} onChange={(event) => setProductionStatusDraft(event.target.value)}>
-                      <option value="">Status</option>
-                      <option value="awaiting-assets">Awaiting Assets</option>
-                      <option value="in-production">In Production</option>
-                      <option value="qc">Quality Control</option>
-                      <option value="completed">Completed</option>
+                      <option value="">{t('status')}</option>
+                      <option value="awaiting-assets">{t('awaitingAssets')}</option>
+                      <option value="in-production">{t('inProduction')}</option>
+                      <option value="qc">{t('qualityControl')}</option>
+                      <option value="completed">{t('completed')}</option>
                     </select>
                     <input
                       type="number"
                       min={0}
-                      placeholder="Priority"
+                      placeholder={t('priority')}
                       value={priorityDraft}
                       onChange={(event) => setPriorityDraft(event.target.value === '' ? '' : Number(event.target.value))}
                     />
                     <label>
-                      Start
+                      {t('start')}
                       <input type="date" value={startDateDraft} onChange={(event) => setStartDateDraft(event.target.value)} />
                     </label>
                     <label>
-                      Due
+                      {t('due')}
                       <input type="date" value={dueDateDraft} onChange={(event) => setDueDateDraft(event.target.value)} />
                     </label>
                     <input
                       type="text"
-                      placeholder="Assignee ID"
+                      placeholder={t('assigneeId')}
                       value={assigneeIdDraft}
                       onChange={(event) => setAssigneeIdDraft(event.target.value)}
                     />
                     <input
                       type="text"
-                      placeholder="Assignee Name"
+                      placeholder={t('assigneeName')}
                       value={assigneeNameDraft}
                       onChange={(event) => setAssigneeNameDraft(event.target.value)}
                     />
                     <textarea
                       rows={3}
-                      placeholder="Production note"
+                      placeholder={t('productionNote')}
                       value={productionNoteDraft}
                       onChange={(event) => setProductionNoteDraft(event.target.value)}
                     />
                     <button type="submit" className="btn btn--primary">
-                      Save Production Update
+                      {t('saveProductionUpdate')}
                     </button>
                   </form>
                 </div>
 
                 <div className="admin-grid-two">
                   <div className="admin-form">
-                    <h3>Customer</h3>
+                    <h3>{t('customer')}</h3>
                     <p className="text-muted">{selectedDetail.contact?.email || '—'}</p>
                     <div className="address-block">
-                      <h4>Company</h4>
+                      <h4>{t('company')}</h4>
                       <p>{selectedDetail.contact?.company || '—'}</p>
                     </div>
                   </div>
                   <div className="admin-form">
-                    <h3>Timeline</h3>
+                    <h3>{t('timeline')}</h3>
                     <ul className="detail-notes">
                       {(selectedDetail.productionWorkOrder?.events || []).map((event) => (
                         <li key={event.id}>
                           <div className="audit-meta">
-                            <span>{event.status || 'Update'}</span>
+                            <span>{event.status || t('update')}</span>
                             <span>{formatDate(event.createdAt)}</span>
                           </div>
                           {event.note && <p>{event.note}</p>}

@@ -142,6 +142,13 @@
     // [2025-11-19 10:55:00] 加载当前面的数据
     loadSide(window.DesignLabStore.getCurrentSide());
 
+    // [2025-01-28 05:05:00] 保存初始状态到历史栈（空画布状态）
+    setTimeout(() => {
+      if (window.DesignLabHistory) {
+        window.DesignLabHistory.saveState();
+      }
+    }, 500);
+
     console.log('[CanvasManager] Canvas initialized');
     return true;
   }
@@ -156,13 +163,6 @@
     const side = store.currentSide;
     const imageUrl = store.product.baseImages[side];
 
-    console.log('[CanvasManager] loadBackgroundForCurrentSide called:', {
-      side: side,
-      imageUrl: imageUrl,
-      hasBaseImages: !!store.product.baseImages,
-      allBaseImages: store.product.baseImages
-    });
-
     if (!imageUrl) {
       console.warn('[CanvasManager] No image URL for side:', side);
       return;
@@ -172,16 +172,7 @@
     if (backgroundImage) {
       canvas.remove(backgroundImage);
       backgroundImage = null;
-      console.log('[CanvasManager] Removed old background image');
     }
-
-    // [2025-11-21 11:40:00] 使用原生 Image 对象加载，更可靠
-    console.log('[CanvasManager] Loading image from URL:', imageUrl);
-    console.log('[CanvasManager] Canvas state before loading:', {
-      width: canvas.width,
-      height: canvas.height,
-      backgroundColor: canvas.backgroundColor
-    });
     
     // [2025-11-21 11:40:00] 先使用原生 Image 对象加载图片
     const img = new Image();
@@ -196,14 +187,8 @@
     
     img.onload = () => {
       clearTimeout(timeoutId);
-      console.log('[CanvasManager] Native image loaded:', {
-        width: img.width,
-        height: img.height,
-        url: imageUrl
-      });
       
       // [2025-11-21 12:00:00] 将原生 Image 转换为 Fabric Image
-      // 使用 left/top origin 更可靠，避免坐标计算问题
       const fabricImg = new window.fabric.Image(img, {
         selectable: false,
         evented: false,
@@ -213,57 +198,24 @@
         originY: 'top'
       });
       
-      // [2025-11-21 12:00:00] 参考目标网站，产品图片应该占据画布中间约 60-70% 的区域
-      // 而不是填满整个画布，这样更符合实际产品展示效果
-      const targetWidth = CANVAS_WIDTH * 0.65; // 画布宽度的 65%
-      const targetHeight = CANVAS_HEIGHT * 0.75; // 画布高度的 75%
+      // [2025-11-21 12:00:00] 产品图片占据画布中间约 65% 宽、75% 高的区域
+      const targetWidth = CANVAS_WIDTH * 0.65;
+      const targetHeight = CANVAS_HEIGHT * 0.75;
       
-      // [2025-11-21 12:00:00] 计算缩放比例，保持宽高比，适应目标区域
+      // [2025-11-21 12:00:00] 计算缩放比例，保持宽高比
       const scaleX = targetWidth / fabricImg.width;
       const scaleY = targetHeight / fabricImg.height;
       const scale = Math.min(scaleX, scaleY);
       fabricImg.scale(scale);
       
-      // [2025-11-21 12:30:00] 居中图片（使用 left/top origin，计算左上角位置）
-      // 注意：Fabric.js 的坐标系统是基于逻辑尺寸的，不需要考虑 devicePixelRatio
+      // [2025-11-21 12:30:00] 居中图片
       const scaledWidth = fabricImg.width * scale;
       const scaledHeight = fabricImg.height * scale;
       const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
       const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
       
-      console.log('[CanvasManager] ===== IMAGE POSITIONING CALCULATION =====');
-      console.log('[CanvasManager] Original image size:', 'width=' + img.width + ', height=' + img.height);
-      console.log('[CanvasManager] Fabric image size:', 'width=' + fabricImg.width + ', height=' + fabricImg.height);
-      console.log('[CanvasManager] Scale factor:', scale);
-      console.log('[CanvasManager] Scaled size:', 'width=' + scaledWidth.toFixed(2) + ', height=' + scaledHeight.toFixed(2));
-      console.log('[CanvasManager] Canvas size (logical):', 'width=' + CANVAS_WIDTH + ', height=' + CANVAS_HEIGHT);
-      console.log('[CanvasManager] Canvas center:', 'x=' + (CANVAS_WIDTH / 2) + ', y=' + (CANVAS_HEIGHT / 2));
-      console.log('[CanvasManager] Calculated position:', 'left=' + left.toFixed(2) + ', top=' + top.toFixed(2));
-      console.log('[CanvasManager] Expected center check:', 'left + width/2 = ' + (left + scaledWidth / 2).toFixed(2) + ' (should be ' + (CANVAS_WIDTH / 2) + ')');
-      console.log('[CanvasManager] Expected center check:', 'top + height/2 = ' + (top + scaledHeight / 2).toFixed(2) + ' (should be ' + (CANVAS_HEIGHT / 2) + ')');
-      
-      fabricImg.set({
-        left: left,
-        top: top
-      });
-      
-      // [2025-11-21 12:20:00] 确保图片坐标已更新
+      fabricImg.set({ left, top });
       fabricImg.setCoords();
-      
-      // [2025-11-21 12:30:00] 验证实际设置的位置
-      console.log('[CanvasManager] Actual image position after set:', 'left=' + fabricImg.left + ', top=' + fabricImg.top);
-      console.log('[CanvasManager] Image bounds:', {
-        left: fabricImg.left,
-        top: fabricImg.top,
-        right: fabricImg.left + scaledWidth,
-        bottom: fabricImg.top + scaledHeight,
-        centerX: fabricImg.left + scaledWidth / 2,
-        centerY: fabricImg.top + scaledHeight / 2
-      });
-      console.log('[CanvasManager] Canvas actual size:', 'width=' + canvas.width + ', height=' + canvas.height);
-      console.log('[CanvasManager] Canvas zoom:', canvas.getZoom());
-      console.log('[CanvasManager] Device pixel ratio:', devicePixelRatio);
-      console.log('[CanvasManager] ===========================================');
       
       // [2025-11-19 10:20:00] 移除旧背景
       if (backgroundImage) {
@@ -298,74 +250,6 @@
       }
       
       backgroundImage = fabricImg;
-      
-      // [2025-11-21 12:30:00] 再次验证位置（在添加到画布后）
-      fabricImg.setCoords();
-      const bounds = fabricImg.getBoundingRect();
-      
-      // [2025-11-21 12:45:00] 获取画布在屏幕上的实际位置和 viewportTransform
-      const canvasElement = canvas.getElement();
-      const canvasRect = canvasElement ? canvasElement.getBoundingClientRect() : null;
-      const vpt = canvas.viewportTransform;
-      
-      // [2025-11-21 12:45:00] 计算图片在屏幕上的实际位置（考虑 viewportTransform）
-      // viewportTransform = [scaleX, skewY, skewX, scaleY, translateX, translateY]
-      // 屏幕坐标 = (逻辑坐标 * scale) + translate
-      const imageScreenCenterX = (bounds.left + bounds.width / 2) * vpt[0] + vpt[4];
-      const imageScreenCenterY = (bounds.top + bounds.height / 2) * vpt[3] + vpt[5];
-      const canvasScreenCenterX = (CANVAS_WIDTH / 2) * vpt[0] + vpt[4];
-      const canvasScreenCenterY = (CANVAS_HEIGHT / 2) * vpt[3] + vpt[5];
-      
-      console.log('[CanvasManager] ===== AFTER ADDING TO CANVAS =====');
-      console.log('[CanvasManager] Image bounding rect (logical coords):', {
-        left: bounds.left.toFixed(2),
-        top: bounds.top.toFixed(2),
-        width: bounds.width.toFixed(2),
-        height: bounds.height.toFixed(2),
-        centerX: (bounds.left + bounds.width / 2).toFixed(2),
-        centerY: (bounds.top + bounds.height / 2).toFixed(2)
-      });
-      console.log('[CanvasManager] Canvas center (logical):', 'x=' + (CANVAS_WIDTH / 2) + ', y=' + (CANVAS_HEIGHT / 2));
-      console.log('[CanvasManager] Center offset (logical):', {
-        x: ((bounds.left + bounds.width / 2) - CANVAS_WIDTH / 2).toFixed(2),
-        y: ((bounds.top + bounds.height / 2) - CANVAS_HEIGHT / 2).toFixed(2)
-      });
-      console.log('[CanvasManager] ViewportTransform:', '[' + vpt.map(v => v.toFixed(2)).join(', ') + ']');
-      console.log('[CanvasManager] Image screen center:', 'x=' + imageScreenCenterX.toFixed(2) + ', y=' + imageScreenCenterY.toFixed(2));
-      console.log('[CanvasManager] Canvas screen center:', 'x=' + canvasScreenCenterX.toFixed(2) + ', y=' + canvasScreenCenterY.toFixed(2));
-      console.log('[CanvasManager] Screen center offset:', {
-        x: (imageScreenCenterX - canvasScreenCenterX).toFixed(2),
-        y: (imageScreenCenterY - canvasScreenCenterY).toFixed(2)
-      });
-      console.log('[CanvasManager] Canvas actual pixel size:', 'width=' + canvas.width + ', height=' + canvas.height);
-      console.log('[CanvasManager] Canvas CSS size:', 'width=' + (canvasElement?.style.width || 'N/A') + ', height=' + (canvasElement?.style.height || 'N/A'));
-      console.log('[CanvasManager] Canvas element rect:', canvasRect ? {
-        width: canvasRect.width.toFixed(2),
-        height: canvasRect.height.toFixed(2),
-        left: canvasRect.left.toFixed(2),
-        top: canvasRect.top.toFixed(2),
-        centerX: (canvasRect.left + canvasRect.width / 2).toFixed(2),
-        centerY: (canvasRect.top + canvasRect.height / 2).toFixed(2)
-      } : 'N/A');
-      console.log('[CanvasManager] Canvas zoom:', canvas.getZoom());
-      console.log('[CanvasManager] Device pixel ratio:', devicePixelRatio);
-      
-      // [2025-11-21 12:45:00] 验证：逻辑坐标和屏幕坐标
-      const logicalCenterX = CANVAS_WIDTH / 2;
-      const logicalCenterY = CANVAS_HEIGHT / 2;
-      const imageLogicalCenterX = bounds.left + bounds.width / 2;
-      const imageLogicalCenterY = bounds.top + bounds.height / 2;
-      const logicalMatch = (Math.abs(imageLogicalCenterX - logicalCenterX) < 0.01 && Math.abs(imageLogicalCenterY - logicalCenterY) < 0.01);
-      const screenMatch = (Math.abs(imageScreenCenterX - canvasScreenCenterX) < 1 && Math.abs(imageScreenCenterY - canvasScreenCenterY) < 1);
-      
-      console.log('[CanvasManager] Position verification:', {
-        logicalMatch: logicalMatch ? 'YES ✓' : 'NO ✗',
-        screenMatch: screenMatch ? 'YES ✓' : 'NO ✗',
-        logicalCenter: { x: logicalCenterX, y: logicalCenterY },
-        imageLogicalCenter: { x: imageLogicalCenterX.toFixed(2), y: imageLogicalCenterY.toFixed(2) }
-      });
-      console.log('[CanvasManager] ===================================');
-      
       canvas.renderAll();
     };
     
@@ -469,6 +353,13 @@
         // [2025-11-19 11:30:00] 通知历史管理器切换面
         if (window.DesignLabHistory) {
           window.DesignLabHistory.switchSide(side);
+          
+          // [2025-01-28 05:05:00] 切换面后保存新面的初始状态
+          setTimeout(() => {
+            if (window.DesignLabHistory) {
+              window.DesignLabHistory.saveState();
+            }
+          }, 300);
         }
         
         // [2025-11-19 11:30:00] 通知图层面板更新
@@ -516,6 +407,7 @@
   }
 
   // [2025-11-19 10:20:00] 加载指定面的数据
+  // [2025-01-28 05:30:00] 如果 sideData.canvasJSON 为 null，确保画布是空的
   function loadSide(side) {
     if (!canvas) return;
     
@@ -553,8 +445,15 @@
         }
       });
     } else {
-      // [2025-11-19 10:55:00] 如果没有数据，只显示背景
+      // [2025-01-28 05:30:00] 如果没有数据，清空画布（排除背景）
+      const objects = canvas.getObjects().filter(obj => obj.name !== 'background');
+      objects.forEach(obj => canvas.remove(obj));
       canvas.renderAll();
+      
+      // [2025-11-19 10:55:00] 更新图层面板
+      if (window.DesignLabLayers) {
+        window.DesignLabLayers.updateLayers();
+      }
     }
   }
 
@@ -670,57 +569,17 @@
         const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;  // 300px
         const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO; // 360px
         
-        console.log('[CanvasManager] 📐 Target size calculation:', {
-          scaleRatio: SCALE_RATIO,
-          targetMaxWidth,
-          targetMaxHeight,
-          timestamp: new Date().toISOString()
-        });
-        
         // [2025-01-28 04:30:00] 计算缩放比例，确保图片既能完整显示，又不会超出目标区域
         const scaleX = targetMaxWidth / originalWidth;
         const scaleY = targetMaxHeight / originalHeight;
         const scale = Math.min(scaleX, scaleY, 1); // 不超过原始大小，只缩小不放大
-        
-        console.log('[CanvasManager] 📐 Scale calculation:', {
-          scaleX: scaleX.toFixed(4),
-          scaleY: scaleY.toFixed(4),
-          finalScale: scale.toFixed(4),
-          willScale: scale < 1 ? 'YES (downscale)' : 'NO (keep original)',
-          timestamp: new Date().toISOString()
-        });
-        
+
         // [2025-01-28 04:30:00] 应用缩放
         fabricImage.scale(scale);
-        
-        const scaledWidth = originalWidth * scale;
-        const scaledHeight = originalHeight * scale;
-        
-        console.log('[CanvasManager] ✅ Image scaled to fit canvas:', {
-          originalSize: `${originalWidth}x${originalHeight}`,
-          scaledSize: `${scaledWidth.toFixed(2)}x${scaledHeight.toFixed(2)}`,
-          scale: scale.toFixed(4),
-          scalePercentage: `${(scale * 100).toFixed(2)}%`,
-          targetMaxSize: `${targetMaxWidth}x${targetMaxHeight}`,
-          canvasSize: `${CANVAS_WIDTH}x${CANVAS_HEIGHT}`,
-          sizeReduction: scale < 1 ? `${((1 - scale) * 100).toFixed(2)}% smaller` : 'no change',
-          timestamp: new Date().toISOString()
-        });
-        
-        console.log('[CanvasManager] ===== IMAGE SCALING CALCULATION END =====');
 
         // [2025-11-19 12:00:00] 位置居中
         const left = options.left !== undefined ? options.left : CANVAS_WIDTH / 2;
         const top = options.top !== undefined ? options.top : CANVAS_HEIGHT / 2;
-
-        console.log('[CanvasManager] 📍 Setting image position:', {
-          left,
-          top,
-          canvasWidth: CANVAS_WIDTH,
-          canvasHeight: CANVAS_HEIGHT,
-          canvasCenter: `${CANVAS_WIDTH / 2}, ${CANVAS_HEIGHT / 2}`,
-          timestamp: new Date().toISOString()
-        });
 
         fabricImage.set({
           left: left,
@@ -787,13 +646,6 @@
         // [2025-11-19 12:00:00] 记录历史
         if (window.DesignLabHistory) {
           window.DesignLabHistory.saveState();
-          console.log('[CanvasManager] ✅ History state saved', {
-            timestamp: new Date().toISOString()
-          });
-        } else {
-          console.warn('[CanvasManager] ⚠️ DesignLabHistory not available', {
-            timestamp: new Date().toISOString()
-          });
         }
         
         const currentSide = window.DesignLabStore ? window.DesignLabStore.getCurrentSide() : 'front';
@@ -1193,6 +1045,7 @@
   }
 
   // [2025-11-19 10:20:00] 导出全局 API
+  // [2025-01-28 05:35:00] 添加获取和设置背景图的方法，供 history.js 使用
   window.DesignLabCanvas = {
     init: initCanvas,
     getCanvas,
@@ -1206,7 +1059,9 @@
     selectObject,
     exportCanvas,
     loadBackgroundForCurrentSide,
-    autoSave
+    autoSave,
+    getBackgroundImage: () => backgroundImage,
+    setBackgroundImage: (bg) => { backgroundImage = bg; }
   };
 })();
 

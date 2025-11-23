@@ -1,24 +1,23 @@
 /**
- * Login Client Component
- * [2025-11-15 12:05:00] 客户端组件，处理登录逻辑和 redirect 参数
+ * Admin Login Client Component
+ * [2025-01-28 07:30:00] Admin-only login, validates ADMIN role and redirects to /admin
+ * [2025-01-28 08:15:00] Added internationalization support
  */
 'use client';
 
 import { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import Link from 'next/link';
+import { useAdminI18n } from '@/contexts/adminI18nContext';
 
-export default function LoginClient() {
+export default function AdminLoginClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const { t, locale, setLocale } = useAdminI18n(); // [2025-01-28 08:15:00] 使用国际化
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // [2025-11-15 12:05:00] 获取 redirect 参数
-  const redirect = searchParams?.get('redirect') || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,35 +27,18 @@ export default function LoginClient() {
     try {
       const response = await authApi.login(email, password);
       
-      // [2025-01-28 07:30:00] 根据用户角色和 redirect 参数决定跳转位置
-      let targetPath = redirect;
-      
-      // [2025-01-28 07:30:00] 如果是管理员，且 redirect 是 /admin，则跳转到 /admin
-      // 否则提示管理员应该使用 /admin/login
-      if (response.user?.role === 'ADMIN' || response.user?.role === 'admin') {
-        if (redirect === '/admin' || redirect.startsWith('/admin/')) {
-          targetPath = '/admin';
-        } else {
-          // [2025-01-28 07:30:00] 管理员从普通登录页面登录，提示使用专用登录页面
-          // 但仍然允许登录，跳转到账户页面（不暴露后台入口）
-          targetPath = '/account';
-        }
-      } else {
-        // [2025-01-28 07:30:00] 普通用户登录，跳转到账户页面
-        // 如果 redirect 是 /admin，则跳转到账户页面（不允许普通用户访问后台）
-        if (redirect === '/admin' || redirect.startsWith('/admin/')) {
-          targetPath = '/account';
-        } else if (redirect === '/' || !redirect) {
-          targetPath = '/account';
-        } else {
-          targetPath = redirect;
-        }
+      // [2025-01-28 07:30:00] 验证用户角色必须是 ADMIN
+      if (response.user?.role !== 'ADMIN' && response.user?.role !== 'admin') {
+        setError(t('accessDenied'));
+        setLoading(false);
+        return;
       }
       
-      router.push(targetPath);
+      // [2025-01-28 07:30:00] 管理员登录成功，跳转到后台
+      router.push('/admin');
       router.refresh();
     } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+      setError(err.message || t('loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -65,11 +47,50 @@ export default function LoginClient() {
   return (
     <div className="container">
       <div className="auth-card">
-        <h1>Sign In</h1>
+        {/* [2025-01-28 08:15:00] 语言切换按钮 */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', gap: '8px', border: '1px solid #ddd', borderRadius: '4px', padding: '4px' }}>
+            <button
+              type="button"
+              onClick={() => setLocale('en')}
+              style={{
+                padding: '4px 12px',
+                border: 'none',
+                background: locale === 'en' ? '#ff1f3d' : 'transparent',
+                color: locale === 'en' ? 'white' : '#666',
+                cursor: 'pointer',
+                borderRadius: '4px',
+                fontSize: '14px',
+              }}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setLocale('zh')}
+              style={{
+                padding: '4px 12px',
+                border: 'none',
+                background: locale === 'zh' ? '#ff1f3d' : 'transparent',
+                color: locale === 'zh' ? 'white' : '#666',
+                cursor: 'pointer',
+                borderRadius: '4px',
+                fontSize: '14px',
+              }}
+            >
+              中文
+            </button>
+          </div>
+        </div>
+        <h1>{t('adminSignIn')}</h1>
+        <p style={{ color: '#666', fontSize: '14px', marginBottom: '1.5rem' }}>
+          {t('adminSignInDescription')}{' '}
+          <Link href="/login" style={{ color: '#ff1f3d' }}>{t('signIn')}</Link>.
+        </p>
         <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
           <div className="form-group">
-            <label htmlFor="email">Email *</label>
+            <label htmlFor="email">{t('emailLabel')} *</label>
             <input
               id="email"
               type="email"
@@ -79,7 +100,7 @@ export default function LoginClient() {
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password *</label>
+            <label htmlFor="password">{t('passwordLabel')} *</label>
             <input
               id="password"
               type="password"
@@ -89,12 +110,12 @@ export default function LoginClient() {
             />
           </div>
           <button type="submit" disabled={loading} className="btn-primary">
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('signingIn') : t('signIn')}
           </button>
         </form>
         <div className="auth-links">
-          <Link href="/register">Create an account</Link>
-          <Link href="/forgot-password">Forgot password?</Link>
+          <Link href="/login">{t('customerLogin')}</Link>
+          <Link href="/forgot-password">{t('forgotPassword')}</Link>
         </div>
       </div>
 

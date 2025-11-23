@@ -6,6 +6,7 @@
  */
 import { useState, useMemo } from 'react';
 import { adminArtAssetsApi, ArtAsset } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-01-28 08:45:00] 国际化支持
 // [2025-01-28 02:35:00] 暂时移除 Next.js Image 组件，使用普通 img 标签以避免图片加载问题
 // import Image from 'next/image';
 
@@ -50,6 +51,7 @@ export default function AdminArtAssetsClient({
   setIsActiveFilter,
   mutate,
 }: AdminArtAssetsClientProps) {
+  const { t } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingAsset, setEditingAsset] = useState<ArtAsset | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -99,6 +101,32 @@ export default function AdminArtAssetsClient({
       const image = formData.get('image') as File;
       const sortOrder = formData.get('sortOrder') ? parseInt(formData.get('sortOrder') as string) : undefined;
 
+      // [2025-01-27] 验证必填字段
+      if (!category || !name) {
+        alert('Category and name are required');
+        return;
+      }
+
+      if (!image || image.size === 0) {
+        alert('Please select an image file');
+        return;
+      }
+
+      // [2025-01-27] 验证文件类型
+      if (!image.type.startsWith('image/')) {
+        alert('Please select a valid image file');
+        return;
+      }
+
+      console.log('[AdminArtAssets] Uploading asset:', {
+        category,
+        name,
+        imageName: image.name,
+        imageSize: image.size,
+        imageType: image.type,
+        sortOrder
+      });
+
       await adminArtAssetsApi.create({
         category,
         name,
@@ -109,7 +137,9 @@ export default function AdminArtAssetsClient({
       setShowUploadModal(false);
       mutate();
     } catch (err: any) {
-      alert(err.message || 'Failed to upload art asset');
+      console.error('[AdminArtAssets] Upload error:', err);
+      const errorMessage = err?.details || err?.message || 'Failed to upload art asset';
+      alert(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -177,7 +207,7 @@ export default function AdminArtAssetsClient({
     console.log('[AdminArtAssets] ⏳ Showing loading state');
     return (
       <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        Loading art assets...
+        {t('loadingArtAssets')}
       </div>
     );
   }
@@ -186,7 +216,7 @@ export default function AdminArtAssetsClient({
     console.error('[AdminArtAssets] ❌ Error state:', error);
     return (
       <div style={{ minHeight: '40vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ef4444', gap: '12px', padding: '20px' }}>
-        <div style={{ fontWeight: 600 }}>Failed to load art assets</div>
+        <div style={{ fontWeight: 600 }}>{t('failedToLoadArtAssets')}</div>
         <div style={{ fontSize: '14px', color: '#666', textAlign: 'center', maxWidth: '500px' }}>
           {error?.message || 'Unknown error occurred'}
         </div>
@@ -198,7 +228,7 @@ export default function AdminArtAssetsClient({
           }}
           style={{ marginTop: '8px' }}
         >
-          Retry
+          {t('retry')}
         </button>
       </div>
     );
@@ -208,8 +238,8 @@ export default function AdminArtAssetsClient({
     <div style={{ marginTop: 24 }}>
       <div className="admin-page-header">
         <div>
-          <h1>Art Assets</h1>
-          <p className="text-muted">Manage Design Lab art assets and categories</p>
+          <h1>{t('artAssets')}</h1>
+          <p className="text-muted">{t('artAssetsSubtitle')}</p>
         </div>
         <div className="admin-btn-group">
           <button
@@ -219,7 +249,7 @@ export default function AdminArtAssetsClient({
               setShowUploadModal(true);
             }}
           >
-            + Upload Art Asset
+            {t('uploadArtAsset')}
           </button>
         </div>
       </div>
@@ -233,7 +263,7 @@ export default function AdminArtAssetsClient({
           }}
           style={{ minWidth: 200 }}
         >
-          <option value="">All Categories</option>
+          <option value="">{t('allCategories')}</option>
           {CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>
               {cat}
@@ -248,9 +278,9 @@ export default function AdminArtAssetsClient({
             setPage(1);
           }}
         >
-          <option value="all">All Status</option>
-          <option value="active">Active Only</option>
-          <option value="inactive">Inactive Only</option>
+          <option value="all">{t('allStatus')}</option>
+          <option value="active">{t('activeOnly')}</option>
+          <option value="inactive">{t('inactiveOnly')}</option>
         </select>
       </div>
 
@@ -258,20 +288,20 @@ export default function AdminArtAssetsClient({
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Image</th>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Size</th>
-              <th>Status</th>
-              <th>Sort Order</th>
-              <th>Actions</th>
+              <th>{t('image')}</th>
+              <th>{t('name')}</th>
+              <th>{t('category')}</th>
+              <th>{t('size')}</th>
+              <th>{t('status')}</th>
+              <th>{t('sortOrder')}</th>
+              <th>{t('actions')}</th>
             </tr>
           </thead>
           <tbody>
             {assets.length === 0 ? (
               <tr>
                 <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-                  No art assets found
+                  {t('noArtAssetsFound')}
                 </td>
               </tr>
             ) : (
@@ -308,7 +338,7 @@ export default function AdminArtAssetsClient({
                         })()
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#999' }}>
-                          No Image
+                          {t('noImage')}
                         </div>
                       )}
                     </div>
@@ -320,7 +350,7 @@ export default function AdminArtAssetsClient({
                   </td>
                   <td>
                     <span className={(asset.isActive !== undefined ? asset.isActive : asset.is_active) ? 'badge badge-success' : 'badge badge-pending'}>
-                      {(asset.isActive !== undefined ? asset.isActive : asset.is_active) ? 'Active' : 'Inactive'}
+                      {(asset.isActive !== undefined ? asset.isActive : asset.is_active) ? t('active') : t('inactive')}
                     </span>
                   </td>
                   <td>{asset.sortOrder !== undefined ? asset.sortOrder : asset.sort_order}</td>
@@ -330,19 +360,19 @@ export default function AdminArtAssetsClient({
                         className="btn btn--xs btn--outline"
                         onClick={() => setEditingAsset(asset)}
                       >
-                        Edit
+                        {t('edit')}
                       </button>
                       <button
                         className="btn btn--xs btn--outline"
                         onClick={() => handleToggleActive(asset)}
                       >
-                        {asset.isActive ? 'Deactivate' : 'Activate'}
+                        {asset.isActive ? t('deactivate') : t('activate')}
                       </button>
                       <button
                         className="btn btn--xs btn--danger"
                         onClick={() => handleDelete(asset.id)}
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </td>
@@ -360,17 +390,17 @@ export default function AdminArtAssetsClient({
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
           >
-            Previous
+            {t('previous')}
           </button>
           <span>
-            Page {pagination.page} of {pagination.totalPages}
+            {t('page')} {pagination.page} {t('of')} {pagination.totalPages}
           </span>
           <button
             className="btn btn--outline btn--xs"
             disabled={page >= pagination.totalPages}
             onClick={() => setPage(page + 1)}
           >
-            Next
+            {t('next')}
           </button>
         </div>
       )}
@@ -407,7 +437,7 @@ export default function AdminArtAssetsClient({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 style={{ marginTop: 0 }}>{editingAsset ? 'Edit Art Asset' : 'Upload Art Asset'}</h2>
+            <h2 style={{ marginTop: 0 }}>{editingAsset ? t('editArtAsset') : t('uploadArtAssetTitle')}</h2>
             <form
               onSubmit={async (e) => {
                 e.preventDefault();
@@ -421,7 +451,7 @@ export default function AdminArtAssetsClient({
             >
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                  Category *
+                  {t('categoryRequired')}
                 </label>
                 <select
                   name="category"
@@ -429,7 +459,7 @@ export default function AdminArtAssetsClient({
                   defaultValue={editingAsset?.category || ''}
                   style={{ width: '100%', padding: 8, borderRadius: 4, border: '1px solid #ddd' }}
                 >
-                  <option value="">Select category</option>
+                  <option value="">{t('selectCategory')}</option>
                   {CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -440,7 +470,7 @@ export default function AdminArtAssetsClient({
 
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                  Name *
+                  {t('nameRequired')}
                 </label>
                 <input
                   type="text"
@@ -453,7 +483,7 @@ export default function AdminArtAssetsClient({
 
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                  Image {editingAsset ? '(leave empty to keep current)' : '*'}
+                  {editingAsset ? t('imageLeaveEmpty') : t('imageRequired')}
                 </label>
                 <input
                   type="file"
@@ -473,14 +503,14 @@ export default function AdminArtAssetsClient({
                       value="true"
                       defaultChecked={editingAsset.isActive}
                     />
-                    Active
+                    {t('isActive')}
                   </label>
                 </div>
               )}
 
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-                  Sort Order
+                  {t('sortOrderLabel')}
                 </label>
                 <input
                   type="number"
@@ -500,10 +530,10 @@ export default function AdminArtAssetsClient({
                   }}
                   disabled={uploading}
                 >
-                  Cancel
+                  {t('cancel')}
                 </button>
                 <button type="submit" className="btn btn--primary" disabled={uploading}>
-                  {uploading ? 'Saving...' : editingAsset ? 'Update' : 'Upload'}
+                  {uploading ? t('saving') : t('save')}
                 </button>
               </div>
             </form>

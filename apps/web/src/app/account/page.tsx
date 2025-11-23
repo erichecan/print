@@ -1,19 +1,22 @@
 /**
  * Account Overview Page
- * [2025-11-12 00:04:40] Added account hub prompting users to log in
- * [2025-01-27 13:15:00] Enhanced with user profile display and navigation links
+ * [2025-01-27] 账户概览页面，显示欢迎信息和空状态卡片
  */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authApi, type UserProfile } from '@/lib/api';
+import { authApi, ordersApi, designsApi, type UserProfile } from '@/lib/api';
 
 export default function AccountPage() {
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [designsCount, setDesignsCount] = useState(0);
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [editingName, setEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -23,9 +26,35 @@ export default function AccountPage() {
         const data = await authApi.me();
         if (cancelled) return;
         setUser(data);
+        const name = [data.firstName, data.lastName].filter(Boolean).join(' ') || data.email?.split('@')[0] || 'User';
+        setDisplayName(name);
+        
+        // 加载设计数量
+        try {
+          const designsData = await designsApi.list();
+          if (!cancelled) {
+            setDesignsCount(designsData.designs?.length || 0);
+          }
+        } catch {
+          // 忽略错误
+        }
+        
+        // 加载订单数量
+        try {
+          const ordersData = await ordersApi.list(1, 1);
+          if (!cancelled) {
+            if ('orders' in ordersData) {
+              setOrdersCount(ordersData.total || 0);
+            } else if ('pagination' in ordersData) {
+              setOrdersCount(ordersData.pagination?.total || 0);
+            }
+          }
+        } catch {
+          // 忽略错误
+        }
       } catch {
         if (cancelled) return;
-        // User not logged in, keep showing login prompt
+        // User not logged in
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -39,186 +68,390 @@ export default function AccountPage() {
     };
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await authApi.logout();
-      router.push('/');
-      router.refresh();
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
+  const handleNameSave = async () => {
+    if (!user) return;
+    // TODO: 实现名称编辑功能
+    setEditingName(false);
   };
 
   if (loading) {
     return (
-      <section className="container" style={{ padding: '72px 0', maxWidth: '960px' }}>
-        <p>Loading...</p>
-      </section>
+      <div style={{ padding: '48px', textAlign: 'center', color: '#666' }}>
+        Loading...
+      </div>
     );
   }
 
   // Not logged in - show login prompt
   if (!user) {
     return (
-      <section className="container" style={{ padding: '72px 0', display: 'grid', gap: '24px', maxWidth: '640px' }}>
+      <div style={{ padding: '48px', maxWidth: '640px', margin: '0 auto' }}>
         <h1>Your Account</h1>
         <p>
           Sign in to review orders, manage saved designs, and update your profile information. New here? Create
           an account to unlock faster checkout and collaboration tools.
         </p>
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '24px' }}>
           <Link className="btn" href="/login">
             Sign in
           </Link>
           <Link className="btn btn--outline" href="/register">
             Create account
           </Link>
-          <Link className="btn btn--outline" href="/account/orders">
-            View order history
-          </Link>
         </div>
-      </section>
+      </div>
     );
   }
 
-  // Logged in - show account dashboard
   return (
-    <section className="container" style={{ padding: '72px 0', maxWidth: '960px' }}>
-      <div style={{ marginBottom: '32px' }}>
-        <h1>Welcome back{user.firstName ? `, ${user.firstName}` : ''}!</h1>
-        <p>Manage your account, orders, and preferences.</p>
+    <div style={{ padding: '48px 0' }}>
+      {/* 欢迎信息 */}
+      <div style={{ marginBottom: '48px' }}>
+        <h1 style={{ 
+          fontSize: '32px', 
+          fontWeight: 700, 
+          margin: '0 0 8px 0',
+          color: '#1f2937',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          Welcome back,{' '}
+          {editingName ? (
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              onBlur={handleNameSave}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleNameSave();
+                } else if (e.key === 'Escape') {
+                  setEditingName(false);
+                  setDisplayName([user.firstName, user.lastName].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'User');
+                }
+              }}
+              autoFocus
+              style={{
+                fontSize: '32px',
+                fontWeight: 700,
+                border: '1px solid #2563eb',
+                borderRadius: '4px',
+                padding: '4px 8px',
+                outline: 'none',
+                width: '200px'
+              }}
+            />
+          ) : (
+            <>
+              <span>{displayName}</span>
+              <button
+                type="button"
+                onClick={() => setEditingName(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  opacity: 0.6,
+                }}
+                aria-label="Edit name"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+            </>
+          )}
+          !
+        </h1>
+        <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
+          Here&apos;s an overview of your account.
+        </p>
       </div>
 
-      {/* User Info Card */}
-      <div style={{ background: '#f9f9f9', padding: '24px', borderRadius: '8px', marginBottom: '32px' }}>
-        <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Account Information</h2>
-        <div style={{ display: 'grid', gap: '12px' }}>
-          <div>
-            <strong>Email:</strong> {user.email}
+      {/* My Designs 部分 */}
+      <div style={{ marginBottom: '48px' }}>
+        <h2 style={{ 
+          fontSize: '24px', 
+          fontWeight: 700, 
+          margin: '0 0 24px 0',
+          color: '#1f2937'
+        }}>
+          My Designs
+        </h2>
+        {designsCount === 0 ? (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            padding: '64px 32px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: '120px',
+              height: '120px',
+              margin: '0 auto 24px',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {/* 文件夹图标 */}
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style={{ color: '#9ca3af' }}>
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" fill="currentColor" />
+              </svg>
+              {/* 鼠标光标图标 */}
+              <svg 
+                width="32" 
+                height="32" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                style={{ 
+                  position: 'absolute',
+                  top: '20px',
+                  right: '20px',
+                  color: '#3b82f6',
+                  transform: 'rotate(-15deg)'
+                }}
+              >
+                <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" fill="currentColor" />
+              </svg>
+              {/* 闪光效果 */}
+              <div style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#60a5fa',
+                boxShadow: '0 0 12px rgba(96, 165, 250, 0.6)',
+                animation: 'pulse 2s infinite',
+              }} />
+            </div>
+            <h3 style={{ 
+              fontSize: '20px', 
+              fontWeight: 600, 
+              margin: '0 0 8px 0',
+              color: '#1f2937'
+            }}>
+              No designs yet
+            </h3>
+            <p style={{ 
+              fontSize: '16px', 
+              color: '#6b7280', 
+              margin: '0 0 24px 0'
+            }}>
+              Bring your first idea to life.
+            </p>
+            <Link
+              href="/products"
+              style={{
+                display: 'inline-block',
+                padding: '12px 24px',
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '16px',
+                transition: 'background-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#1d4ed8';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#2563eb';
+              }}
+            >
+              Start Designing
+            </Link>
           </div>
-          {user.firstName || user.lastName ? (
-            <div>
-              <strong>Name:</strong> {[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Not set'}
-            </div>
-          ) : null}
-          {user.phone && (
-            <div>
-              <strong>Phone:</strong> {user.phone}
-            </div>
-          )}
-          {user.createdAt && (
-            <div style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>
-              Member since {new Date(user.createdAt).toLocaleDateString()}
-            </div>
-          )}
-        </div>
+        ) : (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            padding: '24px',
+          }}>
+            <p style={{ margin: 0, color: '#6b7280' }}>
+              You have {designsCount} saved design{designsCount !== 1 ? 's' : ''}.
+            </p>
+            <Link
+              href="/account/designs"
+              style={{
+                display: 'inline-block',
+                marginTop: '16px',
+                padding: '12px 24px',
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '16px',
+              }}
+            >
+              View All Designs
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* Quick Actions */}
-      <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ marginBottom: '16px' }}>Quick Actions</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
-          <Link
-            href="/account/orders"
-            style={{
-              padding: '20px',
-              background: 'white',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-            }}
-          >
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Orders</h3>
-            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>View order history and track shipments</p>
-          </Link>
-
-          <Link
-            href="/account/addresses"
-            style={{
-              padding: '20px',
-              background: 'white',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-            }}
-          >
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Addresses</h3>
-            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>Manage shipping addresses</p>
-          </Link>
-
-          <Link
-            href="/account/profile"
-            style={{
-              padding: '20px',
-              background: 'white',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-            }}
-          >
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Profile</h3>
-            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>Update your personal information</p>
-          </Link>
-
-          <Link
-            href="/account/settings"
-            style={{
-              padding: '20px',
-              background: 'white',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-            }}
-          >
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Settings</h3>
-            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>Change password and preferences</p>
-          </Link>
-
-          <Link
-            href="/account/designs"
-            style={{
-              padding: '20px',
-              background: 'white',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-            }}
-          >
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px' }}>Saved Designs</h3>
-            <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>Manage your Design Lab projects</p>
-          </Link>
-        </div>
+      {/* Order History 部分 */}
+      <div>
+        <h2 style={{ 
+          fontSize: '24px', 
+          fontWeight: 700, 
+          margin: '0 0 24px 0',
+          color: '#1f2937'
+        }}>
+          Order History
+        </h2>
+        {ordersCount === 0 ? (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            padding: '64px 32px',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: '120px',
+              height: '120px',
+              margin: '0 auto 24px',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {/* 盒子图标 */}
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style={{ color: '#9ca3af' }}>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" fill="currentColor" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" stroke="#ffffff" strokeWidth="2" />
+                <line x1="12" y1="22.08" x2="12" y2="12" stroke="#ffffff" strokeWidth="2" />
+              </svg>
+              {/* 闪光效果 */}
+              <div style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#60a5fa',
+                boxShadow: '0 0 12px rgba(96, 165, 250, 0.6)',
+                animation: 'pulse 2s infinite',
+              }} />
+            </div>
+            <h3 style={{ 
+              fontSize: '20px', 
+              fontWeight: 600, 
+              margin: '0 0 8px 0',
+              color: '#1f2937'
+            }}>
+              No orders yet
+            </h3>
+            <p style={{ 
+              fontSize: '16px', 
+              color: '#6b7280', 
+              margin: '0 0 24px 0'
+            }}>
+              Browse our catalog to get started.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Link
+                href="/products"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 24px',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }}
+              >
+                Shop Products
+              </Link>
+              <Link
+                href="/products?new=true"
+                style={{
+                  display: 'inline-block',
+                  padding: '12px 24px',
+                  backgroundColor: '#ffffff',
+                  color: '#2563eb',
+                  border: '2px solid #2563eb',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  fontSize: '16px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#eff6ff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#ffffff';
+                }}
+              >
+                View New Arrivals
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            padding: '24px',
+          }}>
+            <p style={{ margin: 0, color: '#6b7280' }}>
+              You have {ordersCount} order{ordersCount !== 1 ? 's' : ''}.
+            </p>
+            <Link
+              href="/account/orders"
+              style={{
+                display: 'inline-block',
+                marginTop: '16px',
+                padding: '12px 24px',
+                backgroundColor: '#2563eb',
+                color: '#ffffff',
+                borderRadius: '8px',
+                textDecoration: 'none',
+                fontWeight: 600,
+                fontSize: '16px',
+              }}
+            >
+              View All Orders
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* Account Management */}
-      <div style={{ borderTop: '1px solid #ddd', paddingTop: '24px' }}>
-        <button
-          type="button"
-          onClick={handleLogout}
-          style={{
-            padding: '12px 24px',
-            background: 'transparent',
-            border: '1px solid #ff1f3d',
-            color: '#ff1f3d',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            fontSize: '14px',
-          }}
-        >
-          Sign Out
-        </button>
-      </div>
-    </section>
+      <style jsx>{`
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.7;
+            transform: scale(1.1);
+          }
+        }
+      `}</style>
+    </div>
   );
 }
-

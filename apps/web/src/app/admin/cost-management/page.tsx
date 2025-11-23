@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { adminCostManagementApi, AdminCostRow, AdminCostSummary } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-01-28 08:45:00] 国际化支持
 
 export default function CostManagementPage() {
+  const { t } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
   const [search, setSearch] = useState('');
   const summaryQuery = useSWR('admin-cost-summary', adminCostManagementApi.getSummary);
   const productsQuery = useSWR(['admin-cost-products', search], ([, searchQuery]) =>
@@ -15,15 +17,15 @@ export default function CostManagementPage() {
   const products: AdminCostRow[] = productsQuery.data?.data ?? [];
 
   const handleEdit = async (row: AdminCostRow) => {
-    const unitCostInput = window.prompt('Unit cost', row.unitCost.toString());
-    const salePriceInput = window.prompt('Sale price', row.salePrice.toString());
+    const unitCostInput = window.prompt(t('unitCostPrompt'), row.unitCost.toString());
+    const salePriceInput = window.prompt(t('salePricePrompt'), row.salePrice.toString());
     if (!unitCostInput || !salePriceInput) {
       return;
     }
     const unitCost = Number(unitCostInput);
     const salePrice = Number(salePriceInput);
     if (Number.isNaN(unitCost) || Number.isNaN(salePrice)) {
-      alert('Invalid numeric values');
+      alert(t('invalidNumericValues'));
       return;
     }
     await adminCostManagementApi.updateProduct(row.id, { unitCost, salePrice });
@@ -35,35 +37,35 @@ export default function CostManagementPage() {
     <div style={{ marginTop: 24 }}>
       <div className="admin-page-header">
         <div>
-          <h1 data-i18n="costManagement">Cost Management</h1>
-          <p className="text-muted">Track production cost, revenue, and gross margins</p>
+          <h1>{t('costManagement')}</h1>
+          <p className="text-muted">{t('costManagementSubtitle')}</p>
         </div>
       </div>
 
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Cost Overview</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t('costOverview')}</h2>
         </div>
         {summary ? (
           <div className="stats-grid" style={{ marginBottom: 24 }}>
-            <StatCard value={`$${summary.totalCost.toLocaleString()}`} label="Total Cost" change="" />
-            <StatCard value={`$${summary.totalRevenue.toLocaleString()}`} label="Total Revenue" change="" positive />
-            <StatCard value={`$${summary.averageGrossProfit.toFixed(2)}`} label="Average Gross Profit" change="24h rolling" />
-            <StatCard value={`${summary.averageMargin.toFixed(1)}%`} label="Average Margin" change="" positive />
+            <StatCard value={`$${summary.totalCost.toLocaleString()}`} label={t('totalCost')} change="" />
+            <StatCard value={`$${summary.totalRevenue.toLocaleString()}`} label={t('totalRevenue')} change="" positive />
+            <StatCard value={`$${summary.averageGrossProfit.toFixed(2)}`} label={t('averageGrossProfit')} change="24h rolling" />
+            <StatCard value={`${summary.averageMargin.toFixed(1)}%`} label={t('averageMargin')} change="" positive />
           </div>
         ) : (
-          <div className="admin-table-placeholder">Loading summary…</div>
+          <div className="admin-table-placeholder">{t('loadingSummary')}</div>
         )}
       </section>
 
       <section>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Product Cost Breakdown</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>{t('productCostBreakdown')}</h2>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <div className="admin-search">
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder={t('searchProducts')}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
               />
@@ -72,23 +74,23 @@ export default function CostManagementPage() {
         </div>
         <div className="admin-table-wrapper">
           {productsQuery.isLoading ? (
-            <div className="admin-table-placeholder">Loading product costs…</div>
+            <div className="admin-table-placeholder">{t('loadingProductCosts')}</div>
           ) : productsQuery.error ? (
-            <div className="admin-table-placeholder error">Failed to load product cost data.</div>
+            <div className="admin-table-placeholder error">{t('failedToLoadProductCostData')}</div>
           ) : products.length === 0 ? (
-            <div className="admin-table-placeholder">No rows found.</div>
+            <div className="admin-table-placeholder">{t('noRowsFound')}</div>
           ) : (
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>SKU</th>
-                  <th>Unit Cost</th>
-                  <th>Unit Sale Price</th>
-                  <th>Unit Gross Profit</th>
-                  <th>Margin</th>
-                  <th>Last Updated</th>
-                  <th>Actions</th>
+                  <th>{t('product')}</th>
+                  <th>{t('skuColumn')}</th>
+                  <th>{t('unitCost')}</th>
+                  <th>{t('unitSalePrice')}</th>
+                  <th>{t('unitGrossProfit')}</th>
+                  <th>{t('margin')}</th>
+                  <th>{t('lastUpdated')}</th>
+                  <th>{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,7 +105,7 @@ export default function CostManagementPage() {
                     <td>{new Date(row.updatedAt).toLocaleDateString()}</td>
                     <td>
                       <button type="button" className="btn btn--outline" style={{ fontSize: 12 }} onClick={() => handleEdit(row)}>
-                        Edit
+                        {t('edit')}
                       </button>
                     </td>
                   </tr>

@@ -1,12 +1,16 @@
 /**
  * Site Footer component
  * [2025-11-11 23:56:40] Ported marketing footer structure from prototype into Next.js
+ * [2025-01-28 06:30:00] Updated to read footer content from CMS
  */
 'use client';
 
 import Link from 'next/link';
+import useSWR from 'swr';
+import { contentApi } from '@/lib/api';
 
-const footerColumns = [
+// [2025-01-28 06:30:00] 默认页脚列（向后兼容）
+const defaultFooterColumns = [
   {
     title: 'About Us',
     links: [
@@ -55,16 +59,30 @@ const footerColumns = [
 ];
 
 export function SiteFooter() {
+  // [2025-01-28 06:30:00] 从 CMS 获取页脚内容
+  const { data: contentData } = useSWR('public-content-config', contentApi.get);
+  const footerColumns = contentData?.data?.staticTexts?.footerColumns || defaultFooterColumns;
+  const footerCopyright = contentData?.data?.staticTexts?.footerCopyright || '© 2025 Inkify LLC. All rights reserved.';
+
+  // [2025-01-28 06:30:00] 从页脚列中提取法律链接（用于底部 meta 区域）
+  const legalColumn = footerColumns.find((col) => col.title === 'Legal');
+  const legalLinks = legalColumn?.links || [
+    { href: '/privacy-policy', label: 'Privacy Policy' },
+    { href: '/terms-of-service', label: 'Terms of Service' },
+    { href: '/returns', label: 'Returns' },
+    { href: '/contact', label: 'Contact' },
+  ];
+
   return (
     <footer className="site-footer" role="contentinfo">
       <section className="footer-info">
         <div className="container footer-info__grid">
           {footerColumns.map((column) => (
-            <div key={column.title}>
+            <div key={column.id || column.title}>
               <h4>{column.title}</h4>
               <ul>
                 {column.links.map((link) => (
-                  <li key={link.href}>
+                  <li key={link.id || link.href}>
                     <Link href={link.href}>{link.label}</Link>
                   </li>
                 ))}
@@ -74,15 +92,14 @@ export function SiteFooter() {
         </div>
       </section>
       <div className="container footer-meta">
-        <small>© 2025 Inkify LLC. All rights reserved.</small>
+        <small>{footerCopyright}</small>
         <nav aria-label="Legal links" className="footer-meta__links">
-          <Link href="/privacy-policy">Privacy Policy</Link>
-          <span aria-hidden="true">|</span>
-          <Link href="/terms-of-service">Terms of Service</Link>
-          <span aria-hidden="true">|</span>
-          <Link href="/returns">Returns</Link>
-          <span aria-hidden="true">|</span>
-          <Link href="/contact">Contact</Link>
+          {legalLinks.map((link, index) => (
+            <span key={link.id || link.href}>
+              <Link href={link.href}>{link.label}</Link>
+              {index < legalLinks.length - 1 && <span aria-hidden="true">|</span>}
+            </span>
+          ))}
         </nav>
       </div>
     </footer>

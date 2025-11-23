@@ -28,8 +28,14 @@ export default function AdminArtAssetsPage() {
       });
       console.log('[AdminArtAssetsPage] ✅ API response:', result);
       return result;
-    } catch (err) {
+    } catch (err: any) {
       console.error('[AdminArtAssetsPage] ❌ API error:', err);
+      console.error('[AdminArtAssetsPage] ❌ Error details:', {
+        message: err?.message,
+        status: err?.status,
+        details: err?.details,
+        stack: err?.stack
+      });
       throw err;
     }
   };

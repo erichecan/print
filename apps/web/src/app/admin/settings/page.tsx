@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { adminSettingsApi, SiteSettingsPayload, adminProductionTemplatesApi, ProductionTemplate, adminContentApi, ContentConfig } from '@/lib/api';
+import { adminSettingsApi, SiteSettingsPayload, adminProductionTemplatesApi, ProductionTemplate } from '@/lib/api';
 
 const DEFAULT_SETTINGS: SiteSettingsPayload = {
   siteName: 'suvernire plus',
@@ -27,17 +27,6 @@ export default function AdminSettingsPage() {
   );
   const [templates, setTemplates] = useState<ProductionTemplate[]>([]);
   const [tplSaving, setTplSaving] = useState(false);
-  // [2025-11-16 18:18:30] Simple CMS content section
-  const { data: contentData, isLoading: contentLoading, error: contentError, mutate: mutateContent } = useSWR(
-    'admin-content-config',
-    adminContentApi.get
-  );
-  const [content, setContent] = useState<ContentConfig>({
-    heroCards: [],
-    brandLogos: [],
-    featuredCollections: [],
-  });
-  const [contentSaving, setContentSaving] = useState(false);
 
   useEffect(() => {
     if (data?.data) {
@@ -50,12 +39,6 @@ export default function AdminSettingsPage() {
       setTemplates(tplData.data);
     }
   }, [tplData]);
-
-  useEffect(() => {
-    if (contentData?.data) {
-      setContent(contentData.data);
-    }
-  }, [contentData]);
 
   const handleChange = <K extends keyof SiteSettingsPayload>(key: K, value: SiteSettingsPayload[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -131,96 +114,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  // [2025-11-16 18:18:30] Content config handlers
-  const handleHeroChange = (index: number, field: 'title' | 'subtitle' | 'imageUrl' | 'linkUrl', value: string) => {
-    setContent((prev) => {
-      const next = { ...prev, heroCards: [...prev.heroCards] };
-      const card = { ...next.heroCards[index] };
-      (card as any)[field] = value;
-      next.heroCards[index] = card;
-      return next;
-    });
-  };
-
-  const addHeroCard = () => {
-    setContent((prev) => ({
-      ...prev,
-      heroCards: [
-        ...prev.heroCards,
-        { id: `hero-${Date.now()}`, title: '', subtitle: '', imageUrl: '', linkUrl: '' },
-      ],
-    }));
-  };
-
-  const removeHeroCard = (index: number) => {
-    setContent((prev) => {
-      const next = { ...prev, heroCards: [...prev.heroCards] };
-      next.heroCards.splice(index, 1);
-      return next;
-    });
-  };
-
-  const handleLogoChange = (index: number, field: 'name' | 'imageUrl', value: string) => {
-    setContent((prev) => {
-      const next = { ...prev, brandLogos: [...prev.brandLogos] };
-      const item = { ...next.brandLogos[index] };
-      (item as any)[field] = value;
-      next.brandLogos[index] = item;
-      return next;
-    });
-  };
-
-  const addLogo = () => {
-    setContent((prev) => ({
-      ...prev,
-      brandLogos: [...prev.brandLogos, { id: `logo-${Date.now()}`, name: '', imageUrl: '' }],
-    }));
-  };
-
-  const removeLogo = (index: number) => {
-    setContent((prev) => {
-      const next = { ...prev, brandLogos: [...prev.brandLogos] };
-      next.brandLogos.splice(index, 1);
-      return next;
-    });
-  };
-
-  const handleCollectionChange = (index: number, field: 'title' | 'linkUrl', value: string) => {
-    setContent((prev) => {
-      const next = { ...prev, featuredCollections: [...prev.featuredCollections] };
-      const item = { ...next.featuredCollections[index] };
-      (item as any)[field] = value;
-      next.featuredCollections[index] = item;
-      return next;
-    });
-  };
-
-  const addCollection = () => {
-    setContent((prev) => ({
-      ...prev,
-      featuredCollections: [...prev.featuredCollections, { id: `collection-${Date.now()}`, title: '', linkUrl: '' }],
-    }));
-  };
-
-  const removeCollection = (index: number) => {
-    setContent((prev) => {
-      const next = { ...prev, featuredCollections: [...prev.featuredCollections] };
-      next.featuredCollections.splice(index, 1);
-      return next;
-    });
-  };
-
-  const saveContent = async () => {
-    try {
-      setContentSaving(true);
-      await adminContentApi.update(content);
-      await mutateContent();
-    } catch (apiError) {
-      alert((apiError as Error).message || 'Failed to save content');
-    } finally {
-      setContentSaving(false);
-    }
-  };
+  // [2025-01-28 08:00:00] CMS 内容管理已移至独立的 /admin/content-manager 页面
 
   if (isLoading && !data) {
     return <div className="admin-table-placeholder">Loading settings…</div>;
@@ -239,83 +133,15 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
-      <div className="admin-form" style={{ marginBottom: 24 }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 18 }}>Content Management (CMS)</h3>
-        {contentLoading && !content.heroCards.length && <div className="admin-table-placeholder">Loading content…</div>}
-        {contentError && <div className="admin-table-placeholder error">Failed to load content configuration.</div>}
-        {/* Hero cards */}
-        <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-          <h4 style={{ margin: '4px 0' }}>Homepage Hero Cards</h4>
-          {content.heroCards.map((card, idx) => (
-            <div key={card.id} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 12 }}>
-              <div className="admin-form-group">
-                <label>Title</label>
-                <input type="text" value={card.title} onChange={(e) => handleHeroChange(idx, 'title', e.target.value)} />
-              </div>
-              <div className="admin-form-group">
-                <label>Subtitle</label>
-                <input type="text" value={card.subtitle} onChange={(e) => handleHeroChange(idx, 'subtitle', e.target.value)} />
-              </div>
-              <div className="admin-form-group">
-                <label>Image URL</label>
-                <input type="url" value={card.imageUrl} onChange={(e) => handleHeroChange(idx, 'imageUrl', e.target.value)} />
-              </div>
-              <div className="admin-form-group">
-                <label>Link URL</label>
-                <input type="url" value={card.linkUrl} onChange={(e) => handleHeroChange(idx, 'linkUrl', e.target.value)} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn--outline btn--xs" onClick={() => removeHeroCard(idx)}>Remove</button>
-              </div>
-            </div>
-          ))}
-          <button type="button" className="btn btn--outline btn--xs" onClick={addHeroCard}>+ Add Hero Card</button>
-        </div>
-        {/* Brand logos */}
-        <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-          <h4 style={{ margin: '4px 0' }}>Brand Logos</h4>
-          {content.brandLogos.map((logo, idx) => (
-            <div key={logo.id} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 12 }}>
-              <div className="admin-form-group">
-                <label>Name</label>
-                <input type="text" value={logo.name} onChange={(e) => handleLogoChange(idx, 'name', e.target.value)} />
-              </div>
-              <div className="admin-form-group">
-                <label>Image URL</label>
-                <input type="url" value={logo.imageUrl} onChange={(e) => handleLogoChange(idx, 'imageUrl', e.target.value)} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn--outline btn--xs" onClick={() => removeLogo(idx)}>Remove</button>
-              </div>
-            </div>
-          ))}
-          <button type="button" className="btn btn--outline btn--xs" onClick={addLogo}>+ Add Brand Logo</button>
-        </div>
-        {/* Featured collections */}
-        <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
-          <h4 style={{ margin: '4px 0' }}>Featured Collections</h4>
-          {content.featuredCollections.map((col, idx) => (
-            <div key={col.id} style={{ border: '1px solid var(--color-border)', borderRadius: 12, padding: 12 }}>
-              <div className="admin-form-group">
-                <label>Title</label>
-                <input type="text" value={col.title} onChange={(e) => handleCollectionChange(idx, 'title', e.target.value)} />
-              </div>
-              <div className="admin-form-group">
-                <label>Link URL</label>
-                <input type="url" value={col.linkUrl} onChange={(e) => handleCollectionChange(idx, 'linkUrl', e.target.value)} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button type="button" className="btn btn--outline btn--xs" onClick={() => removeCollection(idx)}>Remove</button>
-              </div>
-            </div>
-          ))}
-          <button type="button" className="btn btn--outline btn--xs" onClick={addCollection}>+ Add Collection</button>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button type="button" className="btn" onClick={saveContent} disabled={contentSaving}>
-            {contentSaving ? 'Saving…' : 'Save Content'}
-          </button>
-        </div>
+      {/* [2025-01-28 08:00:00] CMS 内容管理已移至独立的 /admin/content-manager 页面 */}
+      <div className="admin-form" style={{ marginBottom: 24, padding: 16, background: '#f9fafb', borderRadius: 8 }}>
+        <h3 style={{ margin: '0 0 12px', fontSize: 18 }}>Content Management</h3>
+        <p style={{ margin: '0 0 16px', color: '#6b7280' }}>
+          Content management has been moved to a dedicated page. 
+        </p>
+        <a href="/admin/content-manager" className="btn btn--primary">
+          Go to CMS Manager
+        </a>
       </div>
 
       <div className="admin-form" style={{ marginBottom: 24 }}>
