@@ -170,16 +170,29 @@
       numbersOptions.style.display = numbersEnabled.checked ? 'block' : 'none';
     }
     
-    // [2025-01-27] Step 2: Enter Names/Numbers 按钮 - 打开模态框
-    const enterNamesNumbersBtn = document.getElementById('btn-enter-names-numbers');
-    if (enterNamesNumbersBtn) {
-      enterNamesNumbersBtn.addEventListener('click', () => {
-        showNamesNumbersModal();
+    // [2025-11-24 10:45:00] Names and Numbers 表单直接在面板中显示，无需模态框
+    // 在面板打开时自动初始化表单（在 panelManager 中处理）
+    const namesPanel = document.querySelector('.panel[data-panel="names"]');
+    if (namesPanel) {
+      // 初始化表单，默认显示 5 行
+      initNamesNumbersForm();
+    }
+    
+    // [2025-11-24 11:15:00] 绑定 Step 1 "Add To Design" 按钮
+    const addExampleBtn = document.getElementById('btn-add-example-to-design');
+    if (addExampleBtn) {
+      addExampleBtn.addEventListener('click', () => {
+        addExampleToCanvas();
       });
     }
     
-    // [2025-01-27] 初始化 Names and Numbers 模态框
-    initNamesNumbersModal();
+    // [2025-11-24 11:25:00] 绑定 Step 2 "Done" 按钮（Save 和 Get Price 使用底部按钮）
+    const doneBtn = document.getElementById('btn-names-numbers-done');
+    if (doneBtn) {
+      doneBtn.addEventListener('click', () => {
+        handleNamesNumbersDone();
+      });
+    }
 
     // [2025-11-19 10:40:00] 颜色模态框关闭
     const colorModal = document.getElementById('color-modal');
@@ -747,167 +760,7 @@
   // [2025-01-28 04:50:00] 初始化时更新尺码显示（颜色面板已隐藏，此功能也暂时禁用）
   // updateSizesDisplay();
 
-  // [2025-01-27] 显示 Names and Numbers 输入模态框
-  function showNamesNumbersModal() {
-    // [2025-01-27] 立即导出到 window，确保在其他脚本初始化时可用
-    if (!window.DesignLabToolbar) {
-      window.DesignLabToolbar = {};
-    }
-    window.DesignLabToolbar.showNamesNumbersModal = showNamesNumbersModal;
-    console.log('[Toolbar] ===== showNamesNumbersModal CALLED =====', {
-      timestamp: new Date().toISOString(),
-      hasModal: !!document.getElementById('names-numbers-modal')
-    });
-    
-    const modal = document.getElementById('names-numbers-modal');
-    if (!modal) {
-      console.error('[Toolbar] ❌ Names/Numbers modal not found in DOM');
-      console.error('[Toolbar] Available modals:', {
-        priceModal: !!document.getElementById('price-modal'),
-        colorModal: !!document.getElementById('color-modal'),
-        namesModal: !!document.getElementById('names-numbers-modal')
-      });
-      return;
-    }
-    
-    console.log('[Toolbar] ✅ Modal found in DOM', {
-      id: modal.id,
-      className: modal.className,
-      isOpen: modal.classList.contains('is-open'),
-      ariaHidden: modal.getAttribute('aria-hidden')
-    });
-    
-    // [2025-01-27] 初始化表单（如果还没有初始化）
-    if (!modal.dataset.initialized) {
-      console.log('[Toolbar] 📝 Initializing form for first time...');
-      try {
-        initNamesNumbersForm();
-        modal.dataset.initialized = 'true';
-        console.log('[Toolbar] ✅ Form initialized');
-      } catch (error) {
-        console.error('[Toolbar] ❌ Error initializing form:', error);
-        return;
-      }
-    } else {
-      console.log('[Toolbar] 📝 Form already initialized');
-    }
-    
-    // [2025-01-27] 显示模态框
-    console.log('[Toolbar] 🎬 Opening modal...');
-    modal.classList.add('is-open');
-    modal.setAttribute('aria-hidden', 'false');
-    
-    // [2025-01-27] 检查模态框是否真的显示了
-    setTimeout(() => {
-      const isActuallyOpen = modal.classList.contains('is-open');
-      const computedStyle = window.getComputedStyle(modal);
-      const display = computedStyle.display;
-      console.log('[Toolbar] Modal state after opening:', {
-        hasIsOpenClass: isActuallyOpen,
-        display: display,
-        ariaHidden: modal.getAttribute('aria-hidden'),
-        zIndex: computedStyle.zIndex,
-        visibility: computedStyle.visibility
-      });
-      
-      if (!isActuallyOpen || display === 'none') {
-        console.error('[Toolbar] ❌ Modal did not open properly!');
-        console.error('[Toolbar] Checking CSS...', {
-          hasIsOpenClass: modal.classList.contains('is-open'),
-          computedDisplay: display,
-          modalHTML: modal.outerHTML.substring(0, 200)
-        });
-      } else {
-        console.log('[Toolbar] ✅ Modal opened successfully');
-      }
-    }, 50);
-    
-    // [2025-01-27] 更新总计（确保显示最新数据）
-    updateNamesNumbersTotals();
-    
-    // [2025-01-27] 聚焦到第一个输入框
-    const firstInput = modal.querySelector('.names-numbers-input--name');
-    if (firstInput) {
-      setTimeout(() => {
-        firstInput.focus();
-        console.log('[Toolbar] ✅ Focused on first input');
-      }, 100);
-    } else {
-      console.warn('[Toolbar] ⚠️ First input not found');
-    }
-  }
-  
-  // [2025-01-27] 立即导出 showNamesNumbersModal，确保在其他脚本初始化时可用
-  if (!window.DesignLabToolbar) {
-    window.DesignLabToolbar = {};
-  }
-  window.DesignLabToolbar.showNamesNumbersModal = showNamesNumbersModal;
-  console.log('[Toolbar] showNamesNumbersModal exported immediately after definition');
-  
-  // [2025-01-27] 隐藏 Names and Numbers 模态框
-  function hideNamesNumbersModal() {
-    const modal = document.getElementById('names-numbers-modal');
-    if (modal) {
-      modal.classList.remove('is-open');
-      modal.setAttribute('aria-hidden', 'true');
-    }
-  }
-  
-  // [2025-01-27] 初始化 Names and Numbers 模态框
-  function initNamesNumbersModal() {
-    console.log('[Toolbar] ===== initNamesNumbersModal CALLED =====', {
-      timestamp: new Date().toISOString()
-    });
-    
-    const modal = document.getElementById('names-numbers-modal');
-    if (!modal) {
-      console.error('[Toolbar] ❌ Modal not found during initialization');
-      return;
-    }
-    
-    console.log('[Toolbar] ✅ Modal found during initialization', {
-      id: modal.id,
-      className: modal.className
-    });
-    
-    // [2025-01-27] 关闭按钮
-    const closeBtn = modal.querySelector('#names-numbers-modal-close');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        hideNamesNumbersModal();
-      });
-    }
-    
-    // [2025-01-27] 点击背景关闭
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        hideNamesNumbersModal();
-      }
-    });
-    
-    // [2025-01-27] Done 按钮
-    const doneBtn = document.getElementById('btn-names-numbers-done');
-    if (doneBtn) {
-      doneBtn.addEventListener('click', () => {
-        handleNamesNumbersDone();
-      });
-    }
-    
-    // [2025-01-27] 返回设置链接
-    const backToSettingsLink = document.getElementById('link-back-to-settings');
-    if (backToSettingsLink) {
-      backToSettingsLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        hideNamesNumbersModal();
-        // [2025-01-27] 打开 names 面板
-        if (window.DesignLabPanel) {
-          window.DesignLabPanel.openPanel('names');
-        }
-      });
-    }
-  }
-  
-  // [2025-01-27] 初始化表单（创建初始5行）
+  // [2025-11-24 10:45:00] 初始化表单（创建初始8行，直接在面板中显示）
   function initNamesNumbersForm() {
     console.log('[Toolbar] ===== initNamesNumbersForm CALLED =====', {
       timestamp: new Date().toISOString()
@@ -915,80 +768,88 @@
     
     const rowsContainer = document.getElementById('names-numbers-rows');
     if (!rowsContainer) {
-      console.error('[Toolbar] ❌ Rows container not found:', 'names-numbers-rows');
-      console.error('[Toolbar] Available elements in modal:', {
-        modal: document.getElementById('names-numbers-modal') ? 'found' : 'not found',
-        header: document.getElementById('names-numbers-modal-title') ? 'found' : 'not found',
-        body: document.querySelector('#names-numbers-modal .dl-modal__body') ? 'found' : 'not found'
-      });
+      console.warn('[Toolbar] ⚠️ Rows container not found, will retry when panel opens');
+      return;
+    }
+    
+    // [2025-11-24 10:45:00] 如果已经初始化过，不重复初始化
+    if (rowsContainer.dataset.initialized === 'true') {
+      console.log('[Toolbar] Form already initialized');
       return;
     }
     
     console.log('[Toolbar] ✅ Rows container found');
     
-    // [2025-01-27] 清空容器
+    // [2025-11-24 10:45:00] 清空容器
     rowsContainer.innerHTML = '';
     
-    // [2025-01-27] 创建初始5行
+    // [2025-11-24 11:15:00] 创建初始5行（默认显示5行）
     console.log('[Toolbar] Creating 5 initial rows...');
     for (let i = 0; i < 5; i++) {
       addNamesNumbersRow();
     }
     console.log('[Toolbar] ✅ Created 5 rows, total rows:', rowsContainer.children.length);
     
-    // [2025-01-27] 绑定 Add More 按钮
+    // [2025-11-24 10:45:00] 标记已初始化
+    rowsContainer.dataset.initialized = 'true';
+    
+    // [2025-11-24 10:45:00] 绑定 Add More 按钮
     const addMoreBtn = document.getElementById('btn-add-more-rows');
     if (addMoreBtn) {
-      console.log('[Toolbar] ✅ Add More button found');
-      addMoreBtn.addEventListener('click', () => {
+      // [2025-11-24 10:45:00] 移除旧的监听器，避免重复绑定
+      const newAddMoreBtn = addMoreBtn.cloneNode(true);
+      addMoreBtn.parentNode.replaceChild(newAddMoreBtn, addMoreBtn);
+      
+      newAddMoreBtn.addEventListener('click', () => {
         console.log('[Toolbar] Add More button clicked');
         addNamesNumbersRow();
       });
+      console.log('[Toolbar] ✅ Add More button bound');
     } else {
       console.warn('[Toolbar] ⚠️ Add More button not found');
     }
     
-    // [2025-01-27] 更新总计
+    // [2025-11-24 10:45:00] 更新总计
     updateNamesNumbersTotals();
     console.log('[Toolbar] ✅ Form initialization completed');
   }
   
-  // [2025-01-27] 添加一行输入
+  // [2025-11-24 10:45:00] 添加一行输入（适合面板显示）
   function addNamesNumbersRow() {
     const rowsContainer = document.getElementById('names-numbers-rows');
     if (!rowsContainer) return;
     
     const row = document.createElement('div');
     row.className = 'names-numbers-table__row';
+    // [2025-11-24 10:45:00] 使用 grid 布局，适合面板显示
+    row.style.display = 'grid';
+    row.style.gridTemplateColumns = '2fr 1fr 1fr';
+    row.style.gap = '8px';
+    row.style.marginBottom = '4px';
+    
     row.innerHTML = `
-      <div class="names-numbers-table__col names-numbers-table__col--name">
-        <input type="text" class="names-numbers-input names-numbers-input--name" placeholder="ENTER NAME" data-row-index="${rowsContainer.children.length}">
-      </div>
-      <div class="names-numbers-table__col names-numbers-table__col--number">
-        <input type="text" class="names-numbers-input names-numbers-input--number" value="00" data-row-index="${rowsContainer.children.length}">
-      </div>
-      <div class="names-numbers-table__col names-numbers-table__col--size">
-        <select class="names-numbers-input names-numbers-input--size" data-row-index="${rowsContainer.children.length}">
-          <option value="">Size</option>
-          <option value="YS">YS</option>
-          <option value="YM">YM</option>
-          <option value="YL">YL</option>
-          <option value="XS">XS</option>
-          <option value="S">S</option>
-          <option value="M">M</option>
-          <option value="L">L</option>
-          <option value="XL">XL</option>
-          <option value="2XL">2XL</option>
-          <option value="3XL">3XL</option>
-          <option value="4XL">4XL</option>
-          <option value="5XL">5XL</option>
-        </select>
-      </div>
+      <input type="text" class="names-numbers-input names-numbers-input--name panel__input" placeholder="Name" data-row-index="${rowsContainer.children.length}" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+      <input type="text" class="names-numbers-input names-numbers-input--number panel__input" placeholder="00" value="00" data-row-index="${rowsContainer.children.length}" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+      <select class="names-numbers-input names-numbers-input--size panel__select" data-row-index="${rowsContainer.children.length}" style="width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px;">
+        <option value="">Size</option>
+        <option value="YS">YS</option>
+        <option value="YM">YM</option>
+        <option value="YL">YL</option>
+        <option value="XS">XS</option>
+        <option value="S">S</option>
+        <option value="M">M</option>
+        <option value="L">L</option>
+        <option value="XL">XL</option>
+        <option value="2XL">2XL</option>
+        <option value="3XL">3XL</option>
+        <option value="4XL">4XL</option>
+        <option value="5XL">5XL</option>
+      </select>
     `;
     
     rowsContainer.appendChild(row);
     
-    // [2025-01-27] 绑定输入事件，更新总计
+    // [2025-11-24 10:45:00] 绑定输入事件，更新总计
     const inputs = row.querySelectorAll('input, select');
     inputs.forEach(input => {
       input.addEventListener('input', () => {
@@ -1028,7 +889,7 @@
       }
     });
     
-    // [2025-01-27] 更新总计显示
+    // [2025-11-24 10:45:00] 更新总计显示
     const totalNamesEl = document.getElementById('total-names');
     const totalNumbersEl = document.getElementById('total-numbers');
     const totalItemsEl = document.getElementById('total-items');
@@ -1036,40 +897,193 @@
     if (totalNamesEl) totalNamesEl.textContent = totalNames;
     if (totalNumbersEl) totalNumbersEl.textContent = totalNumbers;
     if (totalItemsEl) totalItemsEl.textContent = totalItems;
-    
-    // [2025-01-27] 更新尺寸列表 - 格式: (数量/数量) 尺寸
-    const sizesListEl = document.getElementById('names-numbers-sizes-list');
-    if (sizesListEl) {
-      if (sizesMap.size > 0) {
-        const sizesArray = Array.from(sizesMap.entries())
-          .sort((a, b) => a[0].localeCompare(b[0])) // 按尺寸名称排序
-          .map(([size, count]) => `(${count}/${count}) ${size}`);
-        sizesListEl.innerHTML = sizesArray.join(', ');
-      } else {
-        sizesListEl.innerHTML = '<span style="color: #9ca3af;">No sizes selected</span>';
-      }
-    }
   }
   
-  // [2025-01-27] 处理 Done 按钮点击
-  function handleNamesNumbersDone() {
-    if (!window.DesignLabCanvas) {
+  // [2025-11-24 11:15:00] Step 1: 添加示例文字到画布（EXAMPLE 和 00）
+  function addExampleToCanvas() {
+    if (!window.DesignLabCanvas || !window.DesignLabCanvas.getCanvas) {
       console.error('[Toolbar] Canvas not available');
+      alert('画布未初始化，请刷新页面重试');
       return;
     }
     
-    // [2025-01-27] 使用默认设置（不再从 Step 1 获取，直接使用默认值）
-    const namesEnabled = true; // 默认启用
-    const namesSide = 'back'; // 默认背面
-    const namesHeight = 2; // 默认 2 英寸
-    const namesColor = '#ffff00'; // 默认黄色
+    const canvas = window.DesignLabCanvas.getCanvas();
+    if (!canvas) {
+      console.error('[Toolbar] Canvas object not available');
+      return;
+    }
     
-    const numbersEnabled = true; // 默认启用
-    const numbersSide = 'back'; // 默认背面
-    const numbersHeight = 8; // 默认 8 英寸
-    const numbersColor = '#00ffff'; // 默认青色
+    // [2025-11-24 11:15:00] 获取 Step 1 的设置
+    const namesEnabled = getCheckboxValue('names-enabled');
+    const namesSide = getInputValue('names-side', 'back');
+    const namesHeight = parseFloat(getInputValue('names-height', '2'));
+    const namesColor = getInputValue('names-color', '#ffff00');
     
-    // [2025-01-27] 收集所有行的数据
+    const numbersEnabled = getCheckboxValue('numbers-enabled');
+    const numbersSide = getInputValue('numbers-side', 'back');
+    const numbersHeight = parseFloat(getInputValue('numbers-height', '8'));
+    const numbersColor = getInputValue('numbers-color', '#00ffff');
+    
+    // [2025-11-24 11:15:00] 保存当前面
+    const store = window.DesignLabStore.getStore();
+    const originalSide = store.currentSide;
+    const canvasHeight = canvas.height || 1200;
+    const canvasWidth = canvas.width || 1000;
+    
+    // [2025-11-24 11:15:00] 添加示例名字（如果启用）
+    let nameTextObj = null;
+    if (namesEnabled) {
+      // [2025-11-24 11:15:00] 切换到目标面
+      if (namesSide !== originalSide) {
+        if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
+          window.DesignLabCanvas.saveCurrentSide();
+        }
+        if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
+          window.DesignLabStore.setActiveSide(namesSide);
+        }
+        if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
+          window.DesignLabCanvas.switchSide(namesSide);
+        }
+      }
+      
+      // [2025-11-24 11:15:00] 重新获取 canvas 对象（可能在切换面后改变）
+      const currentCanvasForName = window.DesignLabCanvas.getCanvas();
+      if (!currentCanvasForName) return;
+      
+      // [2025-11-24 11:15:00] 直接添加文本并调整位置
+      const fontSize = namesHeight * 30;
+      const nameText = window.DesignLabCanvas.addText('EXAMPLE', {
+        fontSize: fontSize,
+        fontFamily: 'Arial',
+        fill: namesColor,
+        fontWeight: 'bold',
+        name: 'name'
+      });
+      
+      if (nameText && currentCanvasForName) {
+        // [2025-11-24 11:15:00] 向上偏移，为数字留出空间
+        const canvasH = currentCanvasForName.height || 1200;
+        nameText.set('top', (canvasH / 2) - (fontSize / 2 + 30));
+        currentCanvasForName.setActiveObject(nameText);
+        currentCanvasForName.renderAll();
+        nameTextObj = nameText;
+      }
+    }
+    
+    // [2025-11-24 11:15:00] 添加示例数字（如果启用）
+    if (numbersEnabled) {
+      // [2025-11-24 11:15:00] 获取当前面（可能已被名字切换改变）
+      const currentSideAfterName = window.DesignLabStore.getStore().currentSide;
+      
+      // [2025-11-24 11:15:00] 切换到目标面
+      if (numbersSide !== currentSideAfterName) {
+        if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
+          window.DesignLabCanvas.saveCurrentSide();
+        }
+        if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
+          window.DesignLabStore.setActiveSide(numbersSide);
+        }
+        if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
+          window.DesignLabCanvas.switchSide(numbersSide);
+        }
+      }
+      
+      // [2025-11-24 11:15:00] 重新获取 canvas 对象（可能在切换面后改变）
+      const currentCanvas = window.DesignLabCanvas.getCanvas();
+      if (!currentCanvas) return;
+      
+      // [2025-11-24 11:15:00] 直接添加文本并调整位置
+      const fontSize = numbersHeight * 30;
+      const numberText = window.DesignLabCanvas.addText('00', {
+        fontSize: fontSize,
+        fontFamily: 'Arial',
+        fill: numbersColor,
+        fontWeight: 'bold',
+        name: 'number'
+      });
+      
+      if (numberText && currentCanvas) {
+        // [2025-11-24 11:15:00] 向下偏移，避免与名字重叠
+        const canvasH = currentCanvas.height || 1200;
+        const offset = nameTextObj && namesSide === numbersSide ? (namesHeight * 30 / 2 + numbersHeight * 30 / 2 + 30) : 0;
+        numberText.set('top', (canvasH / 2) + offset);
+        currentCanvas.setActiveObject(numberText);
+        currentCanvas.renderAll();
+      }
+    }
+    
+    // [2025-11-24 11:15:00] 切换回原来的面
+    const finalSide = window.DesignLabStore.getStore().currentSide;
+    if (originalSide !== finalSide) {
+      if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
+        window.DesignLabCanvas.saveCurrentSide();
+      }
+      if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
+        window.DesignLabStore.setActiveSide(originalSide);
+      }
+      if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
+        window.DesignLabCanvas.switchSide(originalSide);
+      }
+    }
+    
+    console.log('[Toolbar] Example text added to canvas');
+  }
+  
+  // [2025-11-24 11:15:00] Step 2: 保存整个设计（包括 Names and Numbers 订单数据）
+  // [2025-11-24 11:25:00] 已移除 - 不再使用，Save 和 Get Price 使用底部按钮
+  function _handleNamesNumbersSave_removed() {
+    // [2025-11-24 11:15:00] 收集所有行的数据
+    const rows = document.querySelectorAll('.names-numbers-table__row');
+    const items = [];
+    
+    rows.forEach(row => {
+      const nameInput = row.querySelector('.names-numbers-input--name');
+      const numberInput = row.querySelector('.names-numbers-input--number');
+      const sizeSelect = row.querySelector('.names-numbers-input--size');
+      
+      const name = nameInput?.value.trim() || '';
+      const number = numberInput?.value.trim() || '';
+      const size = sizeSelect?.value || '';
+      
+      if (name || (number && number !== '00') || size) {
+        items.push({ name, number, size });
+      }
+    });
+    
+    // [2025-11-24 11:15:00] 保存订单数据到 store
+    const store = window.DesignLabStore.getStore();
+    if (!store.namesNumbersOrder) {
+      store.namesNumbersOrder = {};
+    }
+    store.namesNumbersOrder.items = items;
+    store.namesNumbersOrder.totals = {
+      names: document.getElementById('total-names')?.textContent || '0',
+      numbers: document.getElementById('total-numbers')?.textContent || '0',
+      items: document.getElementById('total-items')?.textContent || '0'
+    };
+    
+    // [2025-11-24 11:15:00] 保存当前面的设计
+    if (window.DesignLabCanvas) {
+      window.DesignLabCanvas.saveCurrentSide();
+    }
+    
+    // [2025-11-24 11:15:00] 调用全局保存函数（保存整个设计）
+    if (typeof window.saveDesign === 'function') {
+      window.saveDesign();
+    } else {
+      // [2025-11-24 11:15:00] 如果没有全局函数，只保存到 localStorage
+      if (window.DesignLabStore && window.DesignLabStore.save) {
+        window.DesignLabStore.save();
+      }
+      alert(`Saved ${items.length} item(s) successfully!`);
+    }
+    
+    console.log('[Toolbar] Design and Names/Numbers order saved:', items);
+  }
+  
+  // [2025-11-24 11:25:00] 已移除 - 不再使用，Save 和 Get Price 使用底部按钮
+  function _handleNamesNumbersGetPrice_removed() {
+    // [2025-11-24 11:15:00] 收集所有行的数据
     const rows = document.querySelectorAll('.names-numbers-table__row');
     const items = [];
     
@@ -1092,34 +1106,84 @@
       return;
     }
     
-    // [2025-01-27] 保存当前面
+    // [2025-11-24 11:15:00] 保存订单数据到 store（价格计算可能需要这些信息）
     const store = window.DesignLabStore.getStore();
-    const currentSide = store.currentSide;
+    if (!store.namesNumbersOrder) {
+      store.namesNumbersOrder = {};
+    }
+    store.namesNumbersOrder.items = items;
+    store.namesNumbersOrder.totals = {
+      names: document.getElementById('total-names')?.textContent || '0',
+      numbers: document.getElementById('total-numbers')?.textContent || '0',
+      items: document.getElementById('total-items')?.textContent || '0'
+    };
     
-    // [2025-01-27] 为每个项目添加名字和数字
-    items.forEach(item => {
-      if (item.name && namesEnabled) {
-        addNamesNumbersToSide(item.name, namesSide, namesHeight, namesColor, 'name');
-      }
-      if (item.number && item.number !== '00' && numbersEnabled) {
-        addNamesNumbersToSide(item.number, numbersSide, numbersHeight, numbersColor, 'number');
+    // [2025-11-24 11:15:00] 保存当前面的设计
+    if (window.DesignLabCanvas) {
+      window.DesignLabCanvas.saveCurrentSide();
+    }
+    
+    // [2025-11-24 11:15:00] 调用全局 getPrice 函数（会保存设计并计算价格）
+    if (typeof window.getPrice === 'function') {
+      window.getPrice();
+    } else {
+      // [2025-11-24 11:15:00] 如果全局函数不存在，显示简单估算
+      const totalNames = parseInt(document.getElementById('total-names')?.textContent || '0');
+      const totalNumbers = parseInt(document.getElementById('total-numbers')?.textContent || '0');
+      const quantity = parseInt(document.getElementById('quantity-input')?.value || '1');
+      const namesPrice = totalNames * 5.50 * quantity;
+      const numbersPrice = totalNumbers * 3.50 * quantity;
+      const totalPrice = namesPrice + numbersPrice;
+      
+      alert(`Estimated Price (${quantity} items):\nNames: $${namesPrice.toFixed(2)} (${totalNames} × $5.50 × ${quantity})\nNumbers: $${numbersPrice.toFixed(2)} (${totalNumbers} × $3.50 × ${quantity})\nTotal: $${totalPrice.toFixed(2)} CAD`);
+    }
+    
+    console.log('[Toolbar] Getting price for', items.length, 'items');
+  }
+  
+  // [2025-11-24 11:25:00] Step 2 Done 按钮：只保存订单数据，不添加文字到画布
+  function handleNamesNumbersDone() {
+    // [2025-11-24 11:25:00] 收集所有行的数据
+    const rows = document.querySelectorAll('.names-numbers-table__row');
+    const items = [];
+    
+    rows.forEach(row => {
+      const nameInput = row.querySelector('.names-numbers-input--name');
+      const numberInput = row.querySelector('.names-numbers-input--number');
+      const sizeSelect = row.querySelector('.names-numbers-input--size');
+      
+      const name = nameInput?.value.trim() || '';
+      const number = numberInput?.value.trim() || '';
+      const size = sizeSelect?.value || '';
+      
+      if (name || (number && number !== '00') || size) {
+        items.push({ name, number, size });
       }
     });
     
-    // [2025-01-27] 切换回原来的面
-    if (currentSide !== store.currentSide) {
-      if (window.DesignLabStore && window.DesignLabStore.setActiveSide) {
-        window.DesignLabStore.setActiveSide(currentSide);
-      }
-      if (window.DesignLabCanvas && window.DesignLabCanvas.switchSide) {
-        window.DesignLabCanvas.switchSide(currentSide);
-      }
+    // [2025-11-24 11:25:00] 保存订单数据到 store（Save 和 Get Price 按钮会使用这些数据）
+    const store = window.DesignLabStore.getStore();
+    if (!store.namesNumbersOrder) {
+      store.namesNumbersOrder = {};
+    }
+    store.namesNumbersOrder.items = items;
+    store.namesNumbersOrder.totals = {
+      names: document.getElementById('total-names')?.textContent || '0',
+      numbers: document.getElementById('total-numbers')?.textContent || '0',
+      items: document.getElementById('total-items')?.textContent || '0'
+    };
+    
+    // [2025-11-24 11:25:00] 保存到 localStorage
+    if (window.DesignLabStore && window.DesignLabStore.save) {
+      window.DesignLabStore.save();
     }
     
-    // [2025-01-27] 关闭模态框
-    hideNamesNumbersModal();
+    // [2025-11-24 11:25:00] 返回 home 面板
+    if (window.DesignLabPanel) {
+      window.DesignLabPanel.openPanel('home');
+    }
     
-    console.log('[Toolbar] Names and Numbers added:', items.length, 'items');
+    console.log('[Toolbar] Names/Numbers order data saved:', items.length, 'items');
   }
   
   // [2025-01-27] 添加名字或数字到指定面
@@ -1143,8 +1207,9 @@
       }
     }
     
-    // [2025-01-27] 计算字体大小（英寸转像素，假设 100 DPI）
-    const fontSize = heightInches * 100;
+    // [2025-11-24 11:15:00] 计算字体大小（英寸转像素，使用更合理的缩放比例）
+    // 原来使用 100 DPI 太大，改为 30 DPI，这样 2 英寸 = 60px，8 英寸 = 240px
+    const fontSize = heightInches * 30;
     
     // [2025-01-27] 使用 DesignLabCanvas 的 addText 方法添加文本
     const textObj = window.DesignLabCanvas.addText(text, {
@@ -1183,8 +1248,8 @@
     updateProductInfo,
     updateSizesDisplay,
     addShape,
-    handleEnterNamesNumbers,
-    showNamesNumbersModal, // [2025-01-27] 导出供外部调用
+    // [2025-11-24 10:45:00] Names and Numbers 表单初始化（供 panelManager 调用）
+    initNamesNumbersForm,
     showColorModal, // [2025-01-27] 导出 showColorModal
     hideColorModal, // [2025-01-27] 导出 hideColorModal
   };
@@ -1198,7 +1263,7 @@
   
   console.log('[Toolbar] ===== DesignLabToolbar EXPORTED =====', {
     methods: Object.keys(window.DesignLabToolbar),
-    hasShowNamesNumbersModal: typeof window.DesignLabToolbar.showNamesNumbersModal === 'function',
+    hasInitNamesNumbersForm: typeof window.DesignLabToolbar.initNamesNumbersForm === 'function',
     hasInit: typeof window.DesignLabToolbar.init === 'function',
     hasAddTextFromPanel: typeof window.DesignLabToolbar.addTextFromPanel === 'function',
     hasAddArt: typeof window.DesignLabToolbar.addArt === 'function',

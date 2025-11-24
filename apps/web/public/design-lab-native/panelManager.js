@@ -229,6 +229,13 @@
       activatePanel(panelName, targetPanel);
       // [2025-11-19 12:00:00] 更新工具栏按钮状态
       updateRailButtonStates(panelName);
+      
+      // [2025-11-24 10:45:00] 如果打开 names 面板，初始化表单
+      if (panelName === 'names' && window.DesignLabToolbar && typeof window.DesignLabToolbar.initNamesNumbersForm === 'function') {
+        setTimeout(() => {
+          window.DesignLabToolbar.initNamesNumbersForm();
+        }, 100);
+      }
     } else {
       console.error('[PanelManager] Target panel not found:', panelName);
     }

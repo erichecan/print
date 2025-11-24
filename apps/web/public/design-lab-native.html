@@ -470,9 +470,52 @@
               </div>
             </div>
 
-            <!-- Step 2: Enter Names/Numbers -->
+            <!-- Step 1: Add To Design 按钮 -->
             <div class="panel__section">
-              <button id="btn-enter-names-numbers" class="btn btn--primary btn--block">Step 2: Enter Names/Numbers</button>
+              <button class="btn btn--primary btn--block" id="btn-add-example-to-design">Add To Design</button>
+              <p class="panel__note" style="margin-top: 8px; font-size: 12px;">
+                <small>This will add example text "EXAMPLE" and "00" to the canvas</small>
+              </p>
+            </div>
+
+            <!-- Step 2: Enter Names/Numbers - 直接在面板中显示表单 -->
+            <div class="panel__section">
+              <h4 class="panel__subtitle">Step 2: Enter Names/Numbers</h4>
+              
+              <!-- 表头 -->
+              <div class="panel__names-table-header" style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; margin-bottom: 8px; font-weight: bold; font-size: 14px;">
+                <div>Name</div>
+                <div>#</div>
+                <div>Size</div>
+              </div>
+              
+              <!-- 输入行容器 -->
+              <div id="names-numbers-rows" class="panel__names-rows" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto;">
+                <!-- 行将通过 JS 动态生成，默认5行 -->
+              </div>
+              
+              <!-- 操作按钮 -->
+              <div class="panel__section" style="margin-top: 12px;">
+                <button type="button" id="btn-add-more-rows" class="btn btn--link" style="padding: 8px 0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add More
+                </button>
+              </div>
+              
+              <!-- 总计显示 -->
+              <div class="panel__section" style="margin-top: 12px;">
+                <p class="panel__note" style="font-size: 12px; margin: 0;">
+                  <strong>Totals:</strong> <span id="total-names">0</span> names and <span id="total-numbers">0</span> numbers on <span id="total-items">0</span> items
+                </p>
+              </div>
+              
+              <!-- Step 2 Done 按钮 -->
+              <div class="panel__section" style="margin-top: 12px;">
+                <button class="btn btn--primary btn--block" id="btn-names-numbers-done">Done</button>
+              </div>
             </div>
 
             <!-- Pricing Information -->
@@ -612,74 +655,6 @@
       <div class="dl-modal__footer">
         <button id="btn-add-to-cart" class="dl-btn dl-btn--primary" style="display: none;">Add to Cart</button>
         <button class="dl-btn dl-btn--secondary dl-modal__close">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- [2025-01-27] Names and Numbers 输入模态框 -->
-  <div id="names-numbers-modal" class="dl-modal" role="dialog" aria-hidden="true" aria-labelledby="names-numbers-modal-title">
-    <div class="dl-modal__content dl-modal__content--large">
-      <div class="dl-modal__header">
-        <h3 id="names-numbers-modal-title">Enter your full list and sizes for accurate pricing</h3>
-        <button class="dl-modal__close" aria-label="Close" id="names-numbers-modal-close">×</button>
-      </div>
-      <div class="dl-modal__body">
-        <div class="names-numbers-form">
-          <!-- 左侧：输入表单 -->
-          <div class="names-numbers-form__main">
-            <!-- 表头 -->
-            <div class="names-numbers-table">
-              <div class="names-numbers-table__header">
-                <div class="names-numbers-table__col names-numbers-table__col--name">Name</div>
-                <div class="names-numbers-table__col names-numbers-table__col--number">#</div>
-                <div class="names-numbers-table__col names-numbers-table__col--size">Size</div>
-              </div>
-              <!-- 输入行容器 -->
-              <div id="names-numbers-rows" class="names-numbers-table__body">
-                <!-- 行将通过 JS 动态生成 -->
-              </div>
-            </div>
-            
-            <!-- 操作链接 -->
-            <div class="names-numbers-actions">
-              <button type="button" id="btn-add-more-rows" class="names-numbers-link">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add More
-              </button>
-              <button type="button" id="btn-manage-list" class="names-numbers-link">Manage List</button>
-            </div>
-            
-            <!-- 总计和尺寸摘要 -->
-            <div class="names-numbers-summary">
-              <div class="names-numbers-summary__totals">
-                <p id="names-numbers-totals">Totals: <span id="total-names">0</span> names and <span id="total-numbers">0</span> numbers on <span id="total-items">0</span> items</p>
-              </div>
-              <div class="names-numbers-summary__sizes">
-                <p><strong>Sizes:</strong></p>
-                <div id="names-numbers-sizes-list" class="names-numbers-sizes-list">
-                  <!-- 尺寸列表将通过 JS 动态生成 -->
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- 右侧：提示信息 -->
-          <div class="names-numbers-form__sidebar">
-            <div class="names-numbers-hints">
-              <h4 class="names-numbers-hints__title">Helpful Hints</h4>
-              <ul class="names-numbers-hints__list">
-                <li>Don't see the size you want? Switch to a <a href="#" class="names-numbers-hints__link">color</a> or <a href="#" class="names-numbers-hints__link">product</a> that has your size available.</li>
-                <li>Not able to enter names or numbers? Return to the <a href="#" class="names-numbers-hints__link" id="link-back-to-settings">settings</a> to select these options.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="dl-modal__footer">
-        <button class="dl-btn dl-btn--primary" id="btn-names-numbers-done">Done</button>
       </div>
     </div>
   </div>
