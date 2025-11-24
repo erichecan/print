@@ -1,8 +1,8 @@
 # Product Requirements Document (PRD)
 # Print E-commerce Platform - Dynamic Features
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-01-27 00:00:00  
+**Document Version**: 1.1  
+**Last Updated**: 2025-01-27  
 **Status**: Active Development
 
 ## 1. Executive Summary
@@ -83,63 +83,72 @@
 - **US-037**: 作为访客，我可以访问隐私政策页面
 - **US-038**: 作为访客，我可以访问退货政策页面
 
+#### 2.1.9 Design Lab
+- **US-039**: 作为用户，我可以在产品详情页启动 Design Lab 自定义设计
+- **US-040**: 作为用户，我可以在画布上添加文字、图片、素材
+- **US-041**: 作为用户，我可以切换产品颜色并在画布上预览
+- **US-042**: 作为用户，我可以切换设计面（正面/背面/袖子）
+- **US-043**: 作为用户，我可以添加 Names and Numbers（名字和号码）定制
+- **US-044**: 作为用户，我可以获取设计报价
+- **US-045**: 作为用户，我可以保存设计草稿（Phase 1: localStorage，Phase 2: 云端保存）
+
 ---
 
 ### 2.2 Admin Features
 
 #### 2.2.1 Authentication
-- **US-039**: 作为管理员，我可以使用管理员账户登录
-- **US-040**: 作为管理员，我可以安全地访问管理后台
+- **US-046**: 作为管理员，我可以使用管理员账户登录
+- **US-047**: 作为管理员，我可以安全地访问管理后台
 
 #### 2.2.2 Dashboard
-- **US-041**: 作为管理员，我可以查看关键指标仪表板
+- **US-048**: 作为管理员，我可以查看关键指标仪表板
   - 今日/本周/本月订单数
   - 今日/本周/本月收入
   - 待处理订单数
   - 低库存产品数
 
 #### 2.2.3 Product Management
-- **US-042**: 作为管理员，我可以创建新产品
-- **US-043**: 作为管理员，我可以编辑现有产品
-- **US-044**: 作为管理员，我可以删除产品（软删除）
-- **US-045**: 作为管理员，我可以管理产品变体（尺寸、颜色、价格、库存）
-- **US-046**: 作为管理员，我可以上传产品图片
-- **US-047**: 作为管理员，我可以设置产品为激活/停用状态
-- **US-048**: 作为管理员，我可以将产品分配到分类
+- **US-049**: 作为管理员，我可以创建新产品
+- **US-050**: 作为管理员，我可以编辑现有产品
+- **US-051**: 作为管理员，我可以删除产品（软删除）
+- **US-052**: 作为管理员，我可以管理产品变体（尺寸、颜色、价格、库存）
+- **US-053**: 作为管理员，我可以上传产品图片
+- **US-054**: 作为管理员，我可以设置产品为激活/停用状态
+- **US-055**: 作为管理员，我可以将产品分配到分类
 
 #### 2.2.4 Collection Management
-- **US-049**: 作为管理员，我可以创建产品分类/集合
-- **US-050**: 作为管理员，我可以编辑分类
-- **US-051**: 作为管理员，我可以删除分类
-- **US-052**: 作为管理员，我可以将产品添加到分类
+- **US-056**: 作为管理员，我可以创建产品分类/集合
+- **US-057**: 作为管理员，我可以编辑分类
+- **US-058**: 作为管理员，我可以删除分类
+- **US-059**: 作为管理员，我可以将产品添加到分类
 
 #### 2.2.5 Order Management
-- **US-053**: 作为管理员，我可以查看所有订单列表
-- **US-054**: 作为管理员，我可以按状态筛选订单
-- **US-055**: 作为管理员，我可以查看订单详情
-- **US-056**: 作为管理员，我可以更新订单状态（处理中 → 已发货 → 已送达）
-- **US-057**: 作为管理员，我可以取消订单
-- **US-058**: 作为管理员，我可以处理退款（通过 Stripe）
+- **US-060**: 作为管理员，我可以查看所有订单列表
+- **US-061**: 作为管理员，我可以按状态筛选订单
+- **US-062**: 作为管理员，我可以查看订单详情
+- **US-063**: 作为管理员，我可以更新订单状态（处理中 → 已发货 → 已送达）
+- **US-064**: 作为管理员，我可以取消订单
+- **US-065**: 作为管理员，我可以处理退款（通过 Stripe）
 
 #### 2.2.6 Shipping Management (Phase 2)
-- **US-059**: 作为管理员，我可以查看发货标签请求
-- **US-060**: 作为管理员，我可以通过 EasyShip API 生成发货标签
-- **US-061**: 作为管理员，我可以查看订单的跟踪信息
-- **US-062**: 作为管理员，我可以接收发货状态更新的 Webhook
+- **US-066**: 作为管理员，我可以查看发货标签请求
+- **US-067**: 作为管理员，我可以通过 EasyShip API 生成发货标签
+- **US-068**: 作为管理员，我可以查看订单的跟踪信息
+- **US-069**: 作为管理员，我可以接收发货状态更新的 Webhook
 
 ---
 
 ### 2.3 Payment Features
 
 #### 2.3.1 Stripe Integration
-- **US-063**: 作为用户，我可以使用 Stripe Payment Element 输入支付信息
-- **US-064**: 作为用户，我的支付信息不会存储在服务器上（PCI 合规）
-- **US-065**: 作为系统，支付金额以 CAD 处理
-- **US-066**: 作为系统，支付成功后自动创建订单
-- **US-067**: 作为系统，支付失败时显示错误信息
+- **US-070**: 作为用户，我可以使用 Stripe Payment Element 输入支付信息
+- **US-071**: 作为用户，我的支付信息不会存储在服务器上（PCI 合规）
+- **US-072**: 作为系统，支付金额以 CAD 处理
+- **US-073**: 作为系统，支付成功后自动创建订单
+- **US-074**: 作为系统，支付失败时显示错误信息
 
 #### 2.3.2 Webhook Handling
-- **US-068**: 作为系统，我可以处理 Stripe webhook 事件
+- **US-075**: 作为系统，我可以处理 Stripe webhook 事件
   - `payment_intent.succeeded`: 标记订单为已支付
   - `payment_intent.payment_failed`: 标记订单为支付失败
   - `charge.refunded`: 更新订单退款状态
@@ -149,15 +158,15 @@
 ### 2.4 Shipping Features
 
 #### 2.4.1 Phase 1: Static Shipping Rates
-- **US-069**: 作为用户，我可以看到基于收货地址的固定运费
+- **US-076**: 作为用户，我可以看到基于收货地址的固定运费
   - 加拿大: 标准 $9.99 CAD, 快速 $19.99 CAD
   - 美国: 标准 $12.99 CAD
-- **US-070**: 作为用户，我可以看到预计送达时间
+- **US-077**: 作为用户，我可以看到预计送达时间
 
 #### 2.4.2 Phase 2: EasyShip Integration
-- **US-071**: 作为用户，我可以看到基于 EasyShip 的实时运费
-- **US-072**: 作为管理员，我可以通过 EasyShip API 获取发货标签
-- **US-073**: 作为系统，我可以接收 EasyShip 的跟踪更新 webhook
+- **US-078**: 作为用户，我可以看到基于 EasyShip 的实时运费
+- **US-079**: 作为管理员，我可以通过 EasyShip API 获取发货标签
+- **US-080**: 作为系统，我可以接收 EasyShip 的跟踪更新 webhook
 
 ---
 
@@ -211,7 +220,166 @@
 
 ---
 
-## 5. Out of Scope (Phase 1)
+## 5. Design Lab Data Persistence Strategy
+
+### 5.1 Decision Overview
+
+**Date**: 2025-01-27  
+**Decision**: Implement **Phase 1 - Enhanced localStorage Mechanism**  
+**Future Plan**: **Phase 2 - Full User Account Cloud Persistence** (planned for Phase 2)
+
+### 5.2 Phase 1: Enhanced localStorage Mechanism (Current Implementation)
+
+#### 5.2.1 Technical Implementation
+- **Storage Location**: Browser localStorage (`designLabStore` key)
+- **Auto-Recovery**: Automatic restoration on page load from localStorage
+- **Scope**: Same browser + same device only
+- **Data Persisted**:
+  - Current side (front/back/sleeve)
+  - Canvas JSON for all three sides
+  - Product variant ID
+  - Names and Numbers order data
+  - Design name
+  - Timestamp
+
+#### 5.2.2 User Experience
+- ✅ **Supported Scenarios**:
+  - User refreshes page → Design automatically restored
+  - User closes and reopens browser (same session) → Design automatically restored
+  - User navigates away and returns → Design automatically restored
+
+- ❌ **Limitations**:
+  - Different browser → Design not available
+  - Clear browser data → Design lost permanently
+  - Different device → Design not available
+  - Private/Incognito mode → Design lost when tab closed
+
+#### 5.2.3 Save Button Behavior
+- **Current Implementation** (`saveDesign()` function):
+  - Downloads JSON file to local machine (`design-{timestamp}.json`)
+  - Downloads PNG preview to local machine (`design-{side}-{timestamp}.png`)
+  - Does NOT save to server
+  - Does NOT save to localStorage (already saved automatically)
+
+#### 5.2.4 Backend Integration (Partial)
+- **Get Price Flow**:
+  - When user clicks "Get Price", design is automatically saved to backend via `/api/designs` API
+  - Uses `authenticateOptional` middleware (works without login via sessionId)
+  - Design can be saved with `userId` (if logged in) or `sessionId` (if guest)
+  - **Note**: Currently there is NO mechanism to load saved designs from backend into Design Lab
+
+### 5.3 Phase 2: Full User Account Cloud Persistence (Planned)
+
+#### 5.3.1 Planned Features
+- **User Authentication Required**: Users must be logged in to save designs
+- **Cloud Storage**: All designs saved to database via backend API
+- **Cross-Device Access**: Access designs from any browser/device
+- **Design List UI**: "My Designs" panel in Design Lab to list and load saved designs
+- **Auto-Load on Page Load**: If URL contains `?designId=xxx`, automatically load that design
+- **Sync Mechanism**: Merge localStorage designs with cloud designs on login
+
+#### 5.3.2 Technical Requirements
+- Enhance `saveDesign()` to also save to backend
+- Implement auto-save to backend (periodic or on design changes)
+- Create "Load Design" functionality that fetches from `/api/designs/:id`
+- Add "My Designs" panel UI component
+- Integrate with `/api/user/designs` API to list user's designs
+- Handle design versioning and updates
+
+#### 5.3.3 User Stories (Phase 2)
+- **US-081**: 作为登录用户，我可以在任何浏览器/设备上访问我之前保存的设计
+- **US-082**: 作为登录用户，我可以查看我所有保存的设计列表
+- **US-083**: 作为登录用户，我可以点击已保存的设计来加载并继续编辑
+- **US-084**: 作为登录用户，我的设计会自动保存到云端
+- **US-085**: 作为登录用户，我可以给我的设计命名和重命名
+
+### 5.4 Current Implementation Details
+
+#### 5.4.1 Storage Structure
+```javascript
+localStorage.getItem('designLabStore') = {
+  currentSide: 'front' | 'back' | 'sleeve',
+  designName: 'Untitled Design',
+  sides: {
+    front: { canvasJSON: {...}, thumbDataURL: 'data:image/png...' },
+    back: { canvasJSON: {...}, thumbDataURL: 'data:image/png...' },
+    sleeve: { canvasJSON: {...}, thumbDataURL: 'data:image/png...' }
+  },
+  product: {
+    variantId: 'uuid',
+    // ... other product data
+  },
+  namesNumbersOrder: {
+    items: [...],
+    totals: {...}
+  },
+  version: '1.0.0',
+  timestamp: '2025-01-27T...'
+}
+```
+
+#### 5.4.2 Auto-Recovery Logic
+1. On page load, `store.js` calls `loadFromStorage()`
+2. Checks if `variantId` in URL matches saved `variantId`
+3. If different, clears canvas data (new product variant)
+4. If same, restores all saved data including canvas JSON for all sides
+5. Canvas manager loads the restored data into Fabric.js canvas
+
+#### 5.4.3 Save Button Flow
+1. User clicks "Save" button
+2. `saveDesign()` function executed:
+   - Saves current side to store
+   - Creates JSON export with all design data
+   - Downloads JSON file to user's computer
+   - Exports current side as PNG (2x resolution)
+   - Downloads PNG file to user's computer
+   - **Does NOT call backend API**
+
+#### 5.4.4 Get Price Flow (Saves to Backend)
+1. User clicks "Get Price" button
+2. `getPrice()` function executed:
+   - Calls `saveDesignToBackend()` (if not already saved)
+   - Creates/updates design via `POST /api/designs` or `PATCH /api/designs/:id`
+   - Stores design ID in `currentDesignId` variable
+   - Fetches quote via `POST /api/designs/:id/quote`
+   - Displays pricing information
+
+### 5.5 Backend API Status
+
+#### 5.5.1 Available APIs
+- ✅ `POST /api/designs` - Create design draft (supports guest via sessionId)
+- ✅ `GET /api/designs/:id` - Get design draft (requires ownership)
+- ✅ `PATCH /api/designs/:id` - Update design draft (requires ownership)
+- ✅ `GET /api/user/designs` - List user's designs (requires authentication)
+- ✅ `POST /api/designs/:id/quote` - Get pricing quote
+
+#### 5.5.2 Missing Frontend Integration
+- ❌ Design Lab does NOT load designs from backend on page load
+- ❌ Design Lab does NOT have UI to list user's saved designs
+- ❌ Design Lab does NOT have UI to load a specific design by ID
+- ❌ Save button does NOT save to backend (only downloads files)
+
+### 5.6 Migration Path from Phase 1 to Phase 2
+
+When implementing Phase 2, consider:
+
+1. **Backward Compatibility**: 
+   - Continue supporting localStorage for guest users
+   - On login, offer to migrate localStorage designs to cloud
+
+2. **Design Loading Priority**:
+   - Check URL for `?designId=xxx` → Load from backend
+   - If logged in and no designId → Show "My Designs" panel
+   - Otherwise → Fall back to localStorage
+
+3. **Data Sync**:
+   - When user logs in, check if localStorage has unsaved designs
+   - Prompt user to save localStorage designs to cloud
+   - Merge localStorage and cloud designs intelligently
+
+---
+
+## 6. Out of Scope (Phase 1)
 
 - PayPal 支付（仅使用 Stripe）
 - 用户评价/评论系统（可后续添加）
@@ -219,10 +387,11 @@
 - 推荐产品算法
 - 多语言支持（i18n）
 - 实时聊天支持
+- **Design Lab 云端保存（Phase 2）** - See Section 5.3
 
 ---
 
-## 6. Success Metrics
+## 7. Success Metrics
 
 ### 6.1 Business Metrics
 - 订单转化率
@@ -237,7 +406,7 @@
 
 ---
 
-## 7. Timeline & Milestones
+## 8. Timeline & Milestones
 
 - **M1 (Week 1)**: 项目设置、数据库 schema、产品目录 API 和 SSR 页面
 - **M2 (Week 2)**: 购物车服务和 API，持久化购物车

@@ -88,6 +88,11 @@ docker compose up --build -d
 ```bash
 # 运行 E2E 冒烟测试
 ./scripts/e2e-smoke.sh http://localhost:3000 http://localhost:3001/api
+
+# 运行完整 Playwright 回归（需先复制 configs/e2e.test.envvars 至 .env.test）
+RUN_PLAYWRIGHT=1 ./scripts/e2e-smoke.sh
+# 或者进入前端目录执行
+cd apps/web && npx playwright test
 ```
 
 ## Monitoring & Alerts

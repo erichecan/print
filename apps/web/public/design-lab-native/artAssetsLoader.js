@@ -175,10 +175,7 @@
             // [2025-01-28 04:15:00] 降级方案：直接调用 canvasManager
             window.DesignLabCanvas.addImage(imageUrl);
             
-            // [2025-01-28 04:15:00] 记录到历史栈
-            if (window.DesignLabHistory) {
-              window.DesignLabHistory.saveState();
-            }
+            // [2025-01-27] 历史已在 addImage 中添加前保存，这里不需要重复保存
             
             // [2025-01-28 04:15:00] 返回 home 面板
             if (window.DesignLabPanel) {

@@ -18,8 +18,10 @@ COPY backend/server.js ./server.js
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
 ## Expose server port [2025-11-10 13:45:00]
+## [2025-01-27] Cloud Run uses PORT environment variable, default to 8080
 ENV NODE_ENV=production
-EXPOSE 3001
+ENV PORT=8080
+EXPOSE 8080
 
 ## Launch application [2025-11-10 13:45:00]
 # [2025-11-15 23:07:58] Use server bootstrap to bind HTTP listener

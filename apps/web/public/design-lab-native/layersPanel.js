@@ -268,10 +268,10 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-11-19 11:30:00] 记录历史
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 图层显示/隐藏不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     }
   }
 
@@ -293,10 +293,10 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-11-19 11:30:00] 记录历史
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 图层锁定不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     }
   }
 
@@ -327,10 +327,10 @@
     canvas.renderAll();
     updateLayers();
     
-    // [2025-11-19 10:35:00] 记录历史
-    if (window.DesignLabHistory) {
-      window.DesignLabHistory.saveState();
-    }
+    // [2025-01-27] 图层移动不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+    // if (window.DesignLabHistory) {
+    //   window.DesignLabHistory.saveState();
+    // }
   }
 
   // [2025-11-19 11:30:00] 删除图层（带日志）
@@ -347,10 +347,11 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-11-19 11:30:00] 记录历史
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 删除图层不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // 删除操作虽然影响图层，但不是用户期望 undo 的"添加"操作
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     }
   }
 
@@ -381,10 +382,10 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-11-19 10:35:00] 记录历史
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 图层重新排序不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     }
   }
 

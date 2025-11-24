@@ -8,6 +8,16 @@ This project supports E2E testing using Playwright (recommended) or Cypress. The
 
 ## Quick Start
 
+> [2025-11-24 10:21:44] 新增：`configs/e2e.test.envvars` 模板，可复制为 `.env.test`
+
+```bash
+cp configs/e2e.test.envvars .env.test
+```
+
+确保 PostgreSQL 中存在 `suvernireplus_test` 数据库，并在运行 Playwright 前执行 `npx prisma migrate reset --force`.
+
+> [2025-11-24 10:45:10] `RUN_PLAYWRIGHT=1 ./scripts/e2e-smoke.sh` 可联动 API smoke + UI 回归
+
 ### Option 1: Playwright (Recommended)
 
 ```bash

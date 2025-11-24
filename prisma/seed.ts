@@ -1,7 +1,17 @@
 // [2025-11-18 10:45:12] Seed script bootstraps catalog/products/variants/projects
-import { Prisma, PrismaClient, ProjectStatus } from '@prisma/client';
+// [2025-11-24 10:42:10] Extend seeding with coupons/promotions/orders for E2E coverage
+import { Prisma, PrismaClient, ProjectStatus, UserRole, CouponType, PromotionDiscountType } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+const TEST_PASSWORDS = {
+  // [2025-11-24 10:42:10] Precomputed bcrypt hashes for deterministic seed accounts
+  customer: '$2a$10$JYz3K0OkELuvlNXdVJO7l.77vfMyT2Rwg9LzHJxgW7ZNpQL5ma0he',
+  admin: '$2a$10$V4bv7NqQWXa5JDHXFPF2WOIeRuHyp6Q4LEDR1Gz/QPyO8eCWaekJ6',
+};
+const now = new Date();
+const nextYear = new Date(now);
+nextYear.setFullYear(now.getFullYear() + 1);
 
 type ColorSeed = {
   name: string;
@@ -160,6 +170,8 @@ const catalogSeed: CategorySeed[] = [
   }
 ];
 
+const categorySlugToId = new Map<string, string>();
+
 const moneyFromCents = (cents: number) =>
   new Prisma.Decimal(cents).dividedBy(new Prisma.Decimal(100));
 
@@ -191,6 +203,39 @@ async function main() {
     }
   });
 
+  // [2025-11-24 10:42:10] Additional seed accounts for automated E2E flows
+  await prisma.user.upsert({
+    where: { email: 'admin@test.com' },
+    update: {
+      firstName: 'Admin',
+      lastName: 'Tester',
+      role: UserRole.ADMIN,
+    },
+    create: {
+      email: 'admin@test.com',
+      passwordHash: TEST_PASSWORDS.admin,
+      firstName: 'Admin',
+      lastName: 'Tester',
+      role: UserRole.ADMIN,
+    },
+  });
+
+  const customerUser = await prisma.user.upsert({
+    where: { email: 'customer@test.com' },
+    update: {
+      firstName: 'Customer',
+      lastName: 'E2E',
+      role: UserRole.CUSTOMER,
+    },
+    create: {
+      email: 'customer@test.com',
+      passwordHash: TEST_PASSWORDS.customer,
+      firstName: 'Customer',
+      lastName: 'E2E',
+      role: UserRole.CUSTOMER,
+    },
+  });
+
   const seededProducts: {
     productId: string;
     variantIds: string[];
@@ -209,6 +254,7 @@ async function main() {
         description: categorySeed.description
       }
     });
+    categorySlugToId.set(categorySeed.slug, category.id);
 
     for (const productSeed of categorySeed.products) {
       const product = await prisma.product.upsert({
@@ -269,6 +315,139 @@ async function main() {
       });
 
       seededProducts.push({ productId: product.id, variantIds });
+    }
+  }
+
+  const couponSeeds = [
+    {
+      code: 'SAVE10CAD',
+      type: CouponType.FIXED,
+      value: new Prisma.Decimal(10),
+      minOrderValue: new Prisma.Decimal(50),
+      maxDiscount: null,
+      usageLimit: 500,
+    },
+    {
+      code: 'FREESHIP15',
+      type: CouponType.PERCENTAGE,
+      value: new Prisma.Decimal(15),
+      minOrderValue: new Prisma.Decimal(75),
+      maxDiscount: new Prisma.Decimal(40),
+      usageLimit: 300,
+    },
+    {
+      code: 'FIRSTBUY',
+      type: CouponType.FIXED,
+      value: new Prisma.Decimal(20),
+      minOrderValue: new Prisma.Decimal(60),
+      maxDiscount: null,
+      usageLimit: 1,
+      userUsageLimit: 1,
+    },
+  ];
+
+  const couponRecords = await Promise.all(
+    couponSeeds.map((coupon) =>
+      prisma.coupon.upsert({
+        where: { code: coupon.code },
+        update: {
+          type: coupon.type,
+          value: coupon.value,
+          minOrderValue: coupon.minOrderValue,
+          maxDiscount: coupon.maxDiscount,
+          usageLimit: coupon.usageLimit,
+          userUsageLimit: coupon.userUsageLimit,
+          startDate: now,
+          endDate: nextYear,
+          isActive: true,
+        },
+        create: {
+          code: coupon.code,
+          type: coupon.type,
+          value: coupon.value,
+          minOrderValue: coupon.minOrderValue,
+          maxDiscount: coupon.maxDiscount,
+          usageLimit: coupon.usageLimit,
+          userUsageLimit: coupon.userUsageLimit,
+          startDate: now,
+          endDate: nextYear,
+          isActive: true,
+        },
+      })
+    )
+  );
+  const couponMap = new Map(couponRecords.map((coupon) => [coupon.code, coupon]));
+
+  const promotionSeeds = [
+    {
+      id: 'promo-holiday-drop',
+      title: 'Holiday Drop',
+      description: 'Seasonal tees + hoodies with guaranteed delivery.',
+      bannerImageUrl: '/assets/hero/hero-card-tee.jpg',
+      linkUrl: '/products?collection=t-shirts',
+      discountType: PromotionDiscountType.PERCENTAGE,
+      discountValue: new Prisma.Decimal(15),
+      minOrderValue: new Prisma.Decimal(100),
+      sortOrder: 10,
+      categorySlug: 't-shirts',
+    },
+    {
+      id: 'promo-bogo-mugs',
+      title: 'Buy More Drinkware',
+      description: 'Add a second mug for 50% off.',
+      bannerImageUrl: '/assets/hero/hero-card-bottle.jpg',
+      linkUrl: '/products?collection=mugs',
+      discountType: PromotionDiscountType.FIXED,
+      discountValue: new Prisma.Decimal(5),
+      minOrderValue: new Prisma.Decimal(40),
+      sortOrder: 20,
+      categorySlug: 'mugs',
+    },
+  ];
+
+  for (const promotionSeed of promotionSeeds) {
+    const promotion = await prisma.promotion.upsert({
+      where: { id: promotionSeed.id },
+      update: {
+        title: promotionSeed.title,
+        description: promotionSeed.description,
+        bannerImageUrl: promotionSeed.bannerImageUrl,
+        linkUrl: promotionSeed.linkUrl,
+        discountType: promotionSeed.discountType,
+        discountValue: promotionSeed.discountValue,
+        minOrderValue: promotionSeed.minOrderValue,
+        maxDiscount: promotionSeed.maxDiscount ?? null,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+        sortOrder: promotionSeed.sortOrder,
+      },
+      create: {
+        id: promotionSeed.id,
+        title: promotionSeed.title,
+        description: promotionSeed.description,
+        bannerImageUrl: promotionSeed.bannerImageUrl,
+        linkUrl: promotionSeed.linkUrl,
+        discountType: promotionSeed.discountType,
+        discountValue: promotionSeed.discountValue,
+        minOrderValue: promotionSeed.minOrderValue,
+        maxDiscount: promotionSeed.maxDiscount ?? null,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+        sortOrder: promotionSeed.sortOrder,
+      },
+    });
+
+    const categoryId = promotionSeed.categorySlug ? categorySlugToId.get(promotionSeed.categorySlug) : null;
+    if (categoryId) {
+      await prisma.promotionCategory.deleteMany({ where: { promotionId: promotion.id } });
+      await prisma.promotionCategory.create({
+        data: {
+          promotionId: promotion.id,
+          categoryId,
+        },
+      });
     }
   }
 
@@ -377,6 +556,121 @@ async function main() {
   await prisma.project.update({
     where: { id: readyProject.id },
     data: { status: ProjectStatus.ORDERED, orderId: order.id }
+  });
+
+  // [2025-11-24 10:42:10] Helper to create repeatable sample orders
+  async function ensureOrderSeed({
+    orderNumber,
+    user: seedUser,
+    email,
+    couponCode,
+    status = 'PENDING',
+    paymentStatus = 'COMPLETED',
+  }: {
+    orderNumber: string;
+    user?: { id: string; email: string };
+    email?: string;
+    couponCode?: string;
+    status?: string;
+    paymentStatus?: string;
+  }) {
+    const existing = await prisma.order.findUnique({ where: { orderNumber } });
+    if (existing) {
+      return existing;
+    }
+
+    const variantSource = seededProducts[1] || seededProducts[0];
+    const variantId = variantSource?.variantIds[0];
+    if (!variantId) {
+      throw new Error('No variants available for seeded orders');
+    }
+    const variant = await prisma.variant.findUnique({
+      where: { id: variantId },
+      include: { product: true },
+    });
+    if (!variant || !variant.product) {
+      throw new Error('Variant lookup failed for seeded order');
+    }
+
+    const quantity = 2;
+    const basePriceCents = variant.product.basePrice;
+    const subtotalCents = basePriceCents * quantity;
+    const shippingCents = 1500;
+    const taxCents = 700;
+    const coupon = couponCode ? couponMap.get(couponCode) : undefined;
+    const discountCents = coupon ? Math.min(subtotalCents, Number(coupon.value) * 100) : 0;
+    const totalCents = subtotalCents - discountCents + shippingCents + taxCents;
+    const orderEmail = email || seedUser?.email || 'guest@print.local';
+
+    return prisma.order.create({
+      data: {
+        orderNumber,
+        userId: seedUser?.id ?? null,
+        email: orderEmail,
+        status,
+        currency: 'CAD',
+        subtotal: moneyFromCents(subtotalCents),
+        shippingCost: moneyFromCents(shippingCents),
+        tax: moneyFromCents(taxCents),
+        discount: moneyFromCents(discountCents),
+        total: moneyFromCents(totalCents),
+        paymentStatus,
+        shippingAddress: {
+          firstName: seedUser?.firstName || 'Seed',
+          lastName: seedUser?.lastName || 'Customer',
+          address1: '500 King St W',
+          city: 'Toronto',
+          province: 'ON',
+          postalCode: 'M5V1L9',
+          country: 'CA',
+        },
+        billingAddress: {
+          firstName: seedUser?.firstName || 'Seed',
+          lastName: seedUser?.lastName || 'Customer',
+          address1: '500 King St W',
+          city: 'Toronto',
+          province: 'ON',
+          postalCode: 'M5V1L9',
+          country: 'CA',
+        },
+        items: {
+          create: [
+            {
+              variantId: variant.id,
+              quantity,
+              priceSnapshot: moneyFromCents(basePriceCents),
+            },
+          ],
+        },
+        ...(coupon
+          ? {
+              orderCoupons: {
+                create: {
+                  couponId: coupon.id,
+                  userId: seedUser?.id ?? null,
+                  discountAmount: moneyFromCents(discountCents),
+                },
+              },
+            }
+          : {}),
+      },
+    });
+  }
+
+  await ensureOrderSeed({
+    orderNumber: 'ORD-2001',
+    user: customerUser,
+    email: 'customer@test.com',
+    couponCode: 'SAVE10CAD',
+    status: 'PENDING',
+    paymentStatus: 'COMPLETED',
+  });
+
+  await ensureOrderSeed({
+    orderNumber: 'ORD-2002',
+    email: 'guest+seed@print.local',
+    status: 'PROCESSING',
+    paymentStatus: 'COMPLETED',
   });
 
   console.info('✅ Seed completed successfully');

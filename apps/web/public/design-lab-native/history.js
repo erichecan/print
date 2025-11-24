@@ -55,15 +55,19 @@
       totalObjects: allObjects.length,
       objectsExcludingBackground: objects.length,
       backgroundObjects: allObjects.length - objects.length,
+      objectNames: objects.map(obj => ({ name: obj.name, type: obj.type })),
       timestamp
     });
 
     const state = canvas.toDatalessJSON(objects);
     const stateSize = JSON.stringify(state).length;
+    const stateObjectCount = state.objects ? state.objects.length : 0;
     
     console.log('[History] 📋 State serialized:', {
       stateSize: `${(stateSize / 1024).toFixed(2)}KB`,
-      statePreview: JSON.stringify(state).substring(0, 100) + '...',
+      stateObjectCount: stateObjectCount,
+      stateObjects: state.objects ? state.objects.map(obj => ({ type: obj.type, name: obj.name || 'unnamed' })) : [],
+      statePreview: JSON.stringify(state).substring(0, 200) + '...',
       timestamp
     });
     
@@ -111,6 +115,7 @@
   }
 
   // [2025-11-19 10:25:00] 撤销
+  // [2025-01-27] 只撤销图层操作（上传图片、add text、add art），不影响主图（背景）
   // [2025-01-28 04:55:00] 添加详细日志用于调试
   function undo() {
     const timestamp = new Date().toISOString();
@@ -119,7 +124,8 @@
       currentSide,
       historyStackLength: historyStacks[currentSide]?.length || 0,
       futureStackLength: futureStacks[currentSide]?.length || 0,
-      isSaving
+      isSaving,
+      note: 'Undo only affects layer operations (upload image, add text, add art), background will be preserved'
     });
 
     const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
@@ -143,7 +149,8 @@
     if (historyLength === 0) {
       console.warn('[History] ⚠️ Cannot undo: history stack is empty', {
         side: currentSide,
-        timestamp
+        timestamp,
+        note: 'No layer operations to undo'
       });
       return false;
     }
@@ -152,10 +159,13 @@
     const allObjects = canvas.getObjects();
     const objects = allObjects.filter(obj => obj.name !== 'background');
     const currentState = canvas.toDatalessJSON(objects);
+    const currentStateObjectCount = currentState.objects ? currentState.objects.length : 0;
     
     console.log('[History] 📋 Saving current state to future stack:', {
       totalObjects: allObjects.length,
       objectsExcludingBackground: objects.length,
+      currentStateObjectCount: currentStateObjectCount,
+      currentObjectNames: objects.map(obj => ({ name: obj.name, type: obj.type })),
       timestamp
     });
 
@@ -170,9 +180,14 @@
     const previousState = historyStacks[currentSide].pop();
     const newHistoryLength = historyStacks[currentSide].length;
     
+    const previousStateObjectCount = previousState && previousState.objects ? previousState.objects.length : 0;
+    const previousStateObjects = previousState && previousState.objects ? previousState.objects.map(obj => ({ type: obj.type, name: obj.name || 'unnamed' })) : [];
+    
     console.log('[History] 📋 Popped previous state from history stack:', {
       hasPreviousState: !!previousState,
       previousStateSize: previousState ? JSON.stringify(previousState).length : 0,
+      previousStateObjectCount: previousStateObjectCount,
+      previousStateObjects: previousStateObjects,
       newHistoryLength,
       timestamp
     });
@@ -180,152 +195,81 @@
     if (previousState) {
       isSaving = true;
       console.log('[History] 📋 Loading previous state to canvas...', {
-        statePreview: JSON.stringify(previousState).substring(0, 100) + '...',
+        previousStateObjectCount: previousStateObjectCount,
+        previousStateObjects: previousStateObjects,
+        statePreview: JSON.stringify(previousState).substring(0, 200) + '...',
         timestamp
       });
 
-      // [2025-01-28 05:10:00] 在加载新状态之前，先保存背景对象
-      // 方法1：从 canvasManager 的全局变量获取（最可靠）
-      const backgroundFromManager = window.DesignLabCanvas && typeof window.DesignLabCanvas.getBackgroundImage === 'function' 
-        ? window.DesignLabCanvas.getBackgroundImage() 
-        : null;
-      // 方法2：从画布中获取背景对象（备用）
-      const backgroundFromCanvas = canvas.getObjects().find(obj => obj.name === 'background');
-      
-      // [2025-01-28 05:35:00] 优先使用 canvasManager 的全局变量，如果都没有则从画布获取
-      const backgroundObject = backgroundFromManager || backgroundFromCanvas;
-      
-      console.log('[History] 📋 Saving background before loading state:', {
-        hasBackgroundFromCanvas: !!backgroundFromCanvas,
-        hasBackgroundFromManager: !!backgroundFromManager,
-        hasBackgroundObject: !!backgroundObject,
-        backgroundType: backgroundObject?.type,
-        backgroundName: backgroundObject?.name,
+      // [2025-01-27] 不保存背景对象 - 如果 loadFromJSON 后背景缺失，直接重新加载
+      // 这样可以确保主图（背景）永远不会被 undo 影响
+      console.log('[History] 📋 Loading previous state (background will be preserved/restored if missing)', {
         timestamp
       });
       
-      // [2025-01-28 05:35:00] 如果从 manager 获取失败，但画布中有背景，尝试更新 manager
-      if (!backgroundFromManager && backgroundFromCanvas && window.DesignLabCanvas && typeof window.DesignLabCanvas.setBackgroundImage === 'function') {
-        window.DesignLabCanvas.setBackgroundImage(backgroundFromCanvas);
-        console.log('[History] 📋 Updated manager background reference from canvas', { timestamp });
-      }
-
-      // [2025-01-28 05:10:00] 如果找到了背景对象，克隆它以便恢复（避免引用问题）
-      let backgroundClone = null;
-      if (backgroundObject) {
-        try {
-          // [2025-01-28 05:10:00] 使用 toObject() 和 fromObject() 来克隆背景对象
-          const bgData = backgroundObject.toObject();
-          backgroundClone = window.fabric.util.enlivenObjects([bgData], (objects) => {
-            return objects[0];
-          });
-          // [2025-01-28 05:10:00] 如果 enlivenObjects 是异步的，我们需要在回调中处理
-          // 但为了简化，我们直接使用 toObject() 保存数据，然后在 loadFromJSON 回调中恢复
-        } catch (e) {
-          console.warn('[History] ⚠️ Failed to clone background object:', e, { timestamp });
-        }
-      }
-
       canvas.loadFromJSON(previousState, () => {
         const loadTimestamp = new Date().toISOString();
+        const allObjectsAfterLoad = canvas.getObjects();
+        const objectsCount = allObjectsAfterLoad.length;
+        const backgroundAfterLoad = allObjectsAfterLoad.find(obj => obj.name === 'background');
+        
+        const objectsAfterLoad = allObjectsAfterLoad.filter(obj => obj.name !== 'background');
         console.log('[History] ✅ Previous state loaded to canvas:', {
           timestamp: loadTimestamp,
-          objectsCount: canvas.getObjects().length
+          totalObjectsCount: objectsCount,
+          objectsExcludingBackground: objectsAfterLoad.length,
+          hasBackground: !!backgroundAfterLoad,
+          backgroundType: backgroundAfterLoad?.type,
+          allObjectNames: allObjectsAfterLoad.map(obj => ({ name: obj.name, type: obj.type })),
+          loadedObjectNames: objectsAfterLoad.map(obj => ({ name: obj.name, type: obj.type })),
+          note: '⚠️ loadFromJSON may have cleared background - will restore if missing',
+          expectedObjects: previousStateObjectCount,
+          actualObjects: objectsAfterLoad.length
         });
 
         // [2025-01-28 05:35:00] 检查画布中是否已经有背景（loadFromJSON 后）
-        const existingBg = canvas.getObjects().find(obj => obj.name === 'background');
+        const existingBg = backgroundAfterLoad;
         
+        // [2025-01-27] 获取 canvasManager 中的背景引用（用于日志）
+        const bgFromManager = window.DesignLabCanvas && typeof window.DesignLabCanvas.getBackgroundImage === 'function' 
+          ? window.DesignLabCanvas.getBackgroundImage() 
+          : null;
+        
+        console.log('[History] 📋 Background check after loadFromJSON:', {
+          timestamp: loadTimestamp,
+          existingBgFound: !!existingBg,
+          canvasManagerBg: !!bgFromManager,
+          canvasManagerBgType: bgFromManager?.type,
+          note: 'If background missing, will reload immediately'
+        });
+        
+        // [2025-01-27] 背景不存在，立即重新加载（最可靠的方法）
+        // 主图（背景）必须永远存在，即使恢复到空状态也要保留
         if (!existingBg) {
-          // [2025-01-28 05:35:00] 背景不存在，需要恢复
-          console.log('[History] 📋 Background missing after loadFromJSON, restoring...', {
+          console.log('[History] 📋 Background missing after loadFromJSON, immediately reloading...', {
             timestamp: loadTimestamp,
-            hasSavedBackground: !!backgroundObject
+            totalObjects: objectsCount,
+            previousStateObjectsCount: previousState?.objects?.length || 0,
+            willReload: !!(window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function'),
+            note: '⚠️ Background must always be preserved - reloading now'
           });
           
-          if (backgroundObject) {
-            // [2025-01-28 05:35:00] 尝试直接添加背景对象（如果对象仍然有效）
-            try {
-              // [2025-01-28 05:35:00] 检查对象是否仍然有效（没有被垃圾回收）
-              if (backgroundObject.canvas === null || backgroundObject.canvas === undefined) {
-                // [2025-01-28 05:35:00] 对象已从画布移除，可以重新添加
-                canvas.add(backgroundObject);
-                
-                // [2025-01-28 05:35:00] 确保背景在最底层
-                try {
-                  if (typeof canvas.sendToBack === 'function') {
-                    canvas.sendToBack(backgroundObject);
-                  } else if (typeof canvas.sendObjectToBack === 'function') {
-                    canvas.sendObjectToBack(backgroundObject);
-                  }
-                } catch (e) {
-                  console.warn('[History] ⚠️ Failed to send background to back:', e);
-                }
-                
-                // [2025-01-28 05:35:00] 更新 canvasManager 的全局变量
-                if (window.DesignLabCanvas && typeof window.DesignLabCanvas.setBackgroundImage === 'function') {
-                  window.DesignLabCanvas.setBackgroundImage(backgroundObject);
-                }
-                
-                canvas.renderAll();
-                console.log('[History] ✅ Background restored directly', {
-                  timestamp: loadTimestamp
-                });
-              } else {
-                // [2025-01-28 05:35:00] 对象仍在画布上，使用 toObject() 克隆
-                const bgData = backgroundObject.toObject();
-                window.fabric.util.enlivenObjects([bgData], (objects) => {
-                  if (objects && objects.length > 0) {
-                    const restoredBg = objects[0];
-                    canvas.add(restoredBg);
-                    
-                    try {
-                      if (typeof canvas.sendToBack === 'function') {
-                        canvas.sendToBack(restoredBg);
-                      } else if (typeof canvas.sendObjectToBack === 'function') {
-                        canvas.sendObjectToBack(restoredBg);
-                      }
-                    } catch (e) {
-                      console.warn('[History] ⚠️ Failed to send restored background to back:', e);
-                    }
-                    
-                    if (window.DesignLabCanvas && typeof window.DesignLabCanvas.setBackgroundImage === 'function') {
-                      window.DesignLabCanvas.setBackgroundImage(restoredBg);
-                    }
-                    
-                    canvas.renderAll();
-                    console.log('[History] ✅ Background restored from cloned object', {
-                      timestamp: loadTimestamp
-                    });
-                  }
-                });
-              }
-            } catch (e) {
-              console.error('[History] ❌ Failed to restore background:', e, {
-                timestamp: loadTimestamp
-              });
-              
-              // [2025-01-28 05:35:00] 如果恢复失败，重新加载背景
-              if (window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function') {
-                window.DesignLabCanvas.loadBackgroundForCurrentSide();
-                console.log('[History] ✅ Background reloaded from canvasManager', {
-                  timestamp: loadTimestamp
-                });
-              }
-            }
-          } else {
-            // [2025-01-28 05:35:00] 没有保存的背景对象，重新加载
-            console.warn('[History] ⚠️ No saved background, reloading from canvasManager...', {
+          // [2025-01-27] 直接重新加载背景（loadFromJSON 会清空画布，包括背景，所以需要重新加载）
+          if (window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function') {
+            // [2025-01-27] 立即调用，不等待
+            window.DesignLabCanvas.loadBackgroundForCurrentSide();
+            console.log('[History] ✅ Background reload requested from canvasManager (immediate)', {
               timestamp: loadTimestamp
             });
-            
-            if (window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function') {
-              window.DesignLabCanvas.loadBackgroundForCurrentSide();
-              console.log('[History] ✅ Background reloaded from canvasManager', {
-                timestamp: loadTimestamp
-              });
-            }
+          } else {
+            console.error('[History] ❌ Cannot reload background - loadBackgroundForCurrentSide not available', {
+              timestamp: loadTimestamp,
+              hasDesignLabCanvas: !!window.DesignLabCanvas,
+              hasLoadMethod: !!(window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function')
+            });
           }
+          
+          // [2025-01-27] 继续执行最终检查（背景正在异步加载，最终检查会验证）
         } else {
           // [2025-01-28 05:35:00] 背景已存在，确保它在最底层
           console.log('[History] ✅ Background exists, ensuring it is at back', {
@@ -340,32 +284,109 @@
 
         canvas.renderAll();
         
-        // [2025-11-22 12:55:00] 确保背景在最底层（兼容不同版本的 Fabric.js）
-        const bg = canvas.getObjects().find(obj => obj.name === 'background');
-        if (bg) {
+        // [2025-01-27] 最终检查：确保背景存在且在最底层（兼容不同版本的 Fabric.js）
+        const finalBg = canvas.getObjects().find(obj => obj.name === 'background');
+        const finalCheckTimestamp = new Date().toISOString();
+        const allObjectsFinal = canvas.getObjects();
+        
+        const previousStateWasEmpty = !previousState.objects || previousState.objects.length === 0;
+        
+        console.log('[History] 📋 Final check before completing undo:', {
+          timestamp: finalCheckTimestamp,
+          totalObjects: allObjectsFinal.length,
+          hasBackground: !!finalBg,
+          allObjectNames: allObjectsFinal.map(obj => ({ name: obj.name, type: obj.type })),
+          previousStateWasEmpty: previousStateWasEmpty,
+          previousStateSize: previousState ? JSON.stringify(previousState).length : 0,
+          note: previousStateWasEmpty ? '⚠️ Restoring to empty state - background must be preserved!' : 'Restoring to state with objects'
+        });
+        
+        if (finalBg) {
+          console.log('[History] ✅ Final background check: Background exists in canvas', {
+            timestamp: finalCheckTimestamp,
+            backgroundType: finalBg.type,
+            backgroundLeft: finalBg.left,
+            backgroundTop: finalBg.top,
+            backgroundWidth: finalBg.width,
+            backgroundHeight: finalBg.height,
+            totalObjects: allObjectsFinal.length
+          });
+          
           try {
             if (typeof canvas.sendToBack === 'function') {
-              canvas.sendToBack(bg);
+              canvas.sendToBack(finalBg);
             } else if (typeof canvas.sendObjectToBack === 'function') {
-              canvas.sendObjectToBack(bg);
+              canvas.sendObjectToBack(finalBg);
             } else if (typeof canvas.moveTo === 'function') {
-              canvas.moveTo(bg, 0);
+              canvas.moveTo(finalBg, 0);
             } else {
               // [2025-11-22 12:55:00] 如果都没有，手动移动到最底层
               const objects = canvas.getObjects();
-              const index = objects.indexOf(bg);
+              const index = objects.indexOf(finalBg);
               if (index > 0) {
                 objects.splice(index, 1);
-                objects.unshift(bg);
+                objects.unshift(finalBg);
                 canvas.renderAll();
               }
             }
-            console.log('[History] ✅ Background sent to back', { timestamp: loadTimestamp });
+            console.log('[History] ✅ Background sent to back successfully', { timestamp: finalCheckTimestamp });
           } catch (e) {
-            console.warn('[History] ⚠️ Failed to send background to back:', e, { timestamp: loadTimestamp });
+            console.warn('[History] ⚠️ Failed to send background to back:', e, { timestamp: finalCheckTimestamp });
+          }
+          
+          // [2025-01-27] 确保 canvasManager 的 backgroundImage 变量同步
+          if (window.DesignLabCanvas && typeof window.DesignLabCanvas.setBackgroundImage === 'function') {
+            window.DesignLabCanvas.setBackgroundImage(finalBg);
+            console.log('[History] ✅ CanvasManager backgroundImage variable synchronized', { timestamp: finalCheckTimestamp });
           }
         } else {
-          console.warn('[History] ⚠️ Background not found after restore', { timestamp: loadTimestamp });
+          console.error('[History] ❌ CRITICAL: Background not found after all restore attempts!', {
+            timestamp: finalCheckTimestamp,
+            totalObjects: canvas.getObjects().length,
+            objectNames: canvas.getObjects().map(obj => ({ name: obj.name, type: obj.type })),
+            willAttemptReload: !!(window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function')
+          });
+          
+          // [2025-01-27] 最后尝试：重新加载背景（使用更长的延迟确保图片加载完成）
+          if (window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function') {
+            console.log('[History] 🔄 Attempting to reload background from canvasManager as last resort...', {
+              timestamp: finalCheckTimestamp
+            });
+            
+            // [2025-01-27] 立即调用一次
+            window.DesignLabCanvas.loadBackgroundForCurrentSide();
+            
+            // [2025-01-27] 延迟检查是否成功加载
+            setTimeout(() => {
+              const reloadCheck = canvas.getObjects().find(obj => obj.name === 'background');
+              if (reloadCheck) {
+                console.log('[History] ✅ Background successfully reloaded from canvasManager', {
+                  timestamp: new Date().toISOString(),
+                  backgroundType: reloadCheck.type
+                });
+              } else {
+                console.error('[History] ❌ Background reload from canvasManager failed! Retrying...', {
+                  timestamp: new Date().toISOString()
+                });
+                // [2025-01-27] 如果第一次失败，再试一次
+                setTimeout(() => {
+                  window.DesignLabCanvas.loadBackgroundForCurrentSide();
+                  setTimeout(() => {
+                    const finalCheck = canvas.getObjects().find(obj => obj.name === 'background');
+                    if (finalCheck) {
+                      console.log('[History] ✅ Background reloaded on retry', {
+                        timestamp: new Date().toISOString()
+                      });
+                    } else {
+                      console.error('[History] ❌ Background reload failed after retry!', {
+                        timestamp: new Date().toISOString()
+                      });
+                    }
+                  }, 300);
+                }, 200);
+              }
+            }, 300);
+          }
         }
         
         isSaving = false;

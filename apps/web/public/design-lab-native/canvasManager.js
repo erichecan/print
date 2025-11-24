@@ -142,12 +142,8 @@
     // [2025-11-19 10:55:00] 加载当前面的数据
     loadSide(window.DesignLabStore.getCurrentSide());
 
-    // [2025-01-28 05:05:00] 保存初始状态到历史栈（空画布状态）
-    setTimeout(() => {
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
-    }, 500);
+    // [2025-01-27] 不保存初始空状态 - undo 只记录图层操作（上传图片、add text、add art）
+    // 初始状态不应该被记录，这样用户 undo 时不会回到空画布
 
     console.log('[CanvasManager] Canvas initialized');
     return true;
@@ -354,12 +350,8 @@
         if (window.DesignLabHistory) {
           window.DesignLabHistory.switchSide(side);
           
-          // [2025-01-28 05:05:00] 切换面后保存新面的初始状态
-          setTimeout(() => {
-            if (window.DesignLabHistory) {
-              window.DesignLabHistory.saveState();
-            }
-          }, 300);
+          // [2025-01-27] 切换面不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+          // 切换面时不应该创建历史记录，因为这只是查看不同面的设计
         }
         
         // [2025-11-19 11:30:00] 通知图层面板更新
@@ -461,6 +453,14 @@
   function addText(text = 'Your Text', options = {}) {
     if (!canvas) return null;
 
+    // [2025-01-27] 在添加文字前先保存当前状态，这样 undo 时可以删除这个文字
+    console.log('[CanvasManager] 📋 Saving state BEFORE adding text...', {
+      timestamp: new Date().toISOString()
+    });
+    if (window.DesignLabHistory) {
+      window.DesignLabHistory.saveState();
+    }
+
     const textObj = new window.fabric.IText(text, {
       left: CANVAS_WIDTH / 2,
       top: CANVAS_HEIGHT / 2,
@@ -484,11 +484,6 @@
         window.DesignLabLayers.updateLayers();
       }
       
-      // [2025-11-19 12:00:00] 记录历史
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
-      
       const currentSide = window.DesignLabStore.getCurrentSide();
       console.log('[CanvasManager] add:', { id: textObj.name, type: 'text', side: currentSide });
       return textObj;
@@ -508,6 +503,14 @@
     if (!canvas) {
       console.error('[CanvasManager] ❌ Canvas is not initialized', { timestamp });
       return null;
+    }
+
+    // [2025-01-27] 在添加图片前先保存当前状态，这样 undo 时可以删除这个图片
+    console.log('[CanvasManager] 📋 Saving state BEFORE adding image...', {
+      timestamp: new Date().toISOString()
+    });
+    if (window.DesignLabHistory) {
+      window.DesignLabHistory.saveState();
     }
 
     const fromUrlOptions = {};
@@ -643,10 +646,7 @@
           });
         }
         
-        // [2025-11-19 12:00:00] 记录历史
-        if (window.DesignLabHistory) {
-          window.DesignLabHistory.saveState();
-        }
+        // [2025-01-27] 历史已在添加前保存，这里不需要再保存
         
         const currentSide = window.DesignLabStore ? window.DesignLabStore.getCurrentSide() : 'front';
         console.log('[CanvasManager] ===== addImage SUCCESS =====', {
@@ -683,6 +683,14 @@
   // [2025-11-19 10:20:00] 添加形状对象
   function addShape(type, options = {}) {
     if (!canvas) return null;
+
+    // [2025-01-27] 在添加形状前先保存当前状态，这样 undo 时可以删除这个形状
+    console.log('[CanvasManager] 📋 Saving state BEFORE adding shape...', {
+      timestamp: new Date().toISOString()
+    });
+    if (window.DesignLabHistory) {
+      window.DesignLabHistory.saveState();
+    }
 
     let shape = null;
     const left = options.left || CANVAS_WIDTH / 2;
@@ -737,10 +745,7 @@
         window.DesignLabLayers.updateLayers();
       }
       
-      // [2025-11-19 10:20:00] 记录历史
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 历史已在添加前保存，这里不需要再保存
       
       const currentSide = window.DesignLabStore.getCurrentSide();
       console.log('[CanvasManager] add:', { id: shape.name, type: 'shape', side: currentSide });
@@ -827,9 +832,11 @@
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 对象修改（移动、缩放等）不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // 用户拖动、调整大小等操作不应该被 undo 记录
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
       // [2025-11-19 10:55:00] 自动保存
       autoSave();
     }, 300);

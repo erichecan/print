@@ -30,14 +30,16 @@ const allowedOrigins = [
   'https://printm.netlify.app', // [2025-01-27 16:50:00] 添加生产环境前端域名
   process.env.FRONTEND_URL,
 ].filter(Boolean); // 移除 undefined 值
+// [2025-11-24 11:45:00] 允许任意 localhost / 127.0.0.1 端口，避免 Next.js dev server 改用 3001/3002 导致 CORS
+const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
 const corsOptions = {
   origin: (origin, callback) => {
     // 允许没有 origin 的请求（如移动应用或 Postman）
     if (!origin) return callback(null, true);
     
-    // 检查 origin 是否在允许列表中
-    if (allowedOrigins.includes(origin)) {
+    // 检查 origin 是否在允许列表或本地域名列表中
+    if (allowedOrigins.includes(origin) || localhostOriginPattern.test(origin)) {
       callback(null, true);
     } else {
       // 也允许所有 netlify.app 子域名（用于预览部署）

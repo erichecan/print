@@ -91,7 +91,8 @@
         
         <div class="dl-rail__divider"></div>
         
-        <button id="btn-undo" class="dl-rail__btn" aria-label="Undo" title="Undo (Ctrl+Z)" tabindex="0">
+        <!-- [2025-01-27] Undo/Redo 功能暂时隐藏，二期开发 -->
+        <button id="btn-undo" class="dl-rail__btn" aria-label="Undo" title="Undo (Ctrl+Z)" tabindex="0" style="display: none;">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 7v6h6" />
@@ -101,7 +102,7 @@
           <span class="dl-rail__label">Undo</span>
         </button>
         
-        <button id="btn-redo" class="dl-rail__btn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" tabindex="0">
+        <button id="btn-redo" class="dl-rail__btn" aria-label="Redo" title="Redo (Ctrl+Shift+Z)" tabindex="0" style="display: none;">
           <span class="dl-rail__icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 7v6h-6" />
@@ -708,5 +709,94 @@
   <!-- [2025-01-28 04:15:00] CMS 素材库加载器 - 必须在 app.js 之前加载 -->
   <script src="/design-lab-native/artAssetsLoader.js" defer></script>
   <script src="/design-lab-native/app.js" defer></script>
+  
+  <!-- [2025-01-27] Undo 功能测试脚本 - 开发调试用 -->
+  <script>
+    // [2025-01-27] Undo 测试函数 - 在控制台运行 window.testUndo() 来测试
+    window.testUndo = function(iterations = 3, delay = 1000) {
+      console.log('[Test] ===== Starting Undo Test =====', {
+        iterations,
+        delay,
+        timestamp: new Date().toISOString()
+      });
+      
+      const undoBtn = document.getElementById('btn-undo');
+      if (!undoBtn) {
+        console.error('[Test] ❌ Undo button not found');
+        return;
+      }
+      
+      const canvas = window.DesignLabCanvas ? window.DesignLabCanvas.getCanvas() : null;
+      if (!canvas) {
+        console.error('[Test] ❌ Canvas not available');
+        return;
+      }
+      
+      let iteration = 0;
+      
+      function checkBackground() {
+        const bg = canvas.getObjects().find(obj => obj.name === 'background');
+        const bgFromManager = window.DesignLabCanvas && typeof window.DesignLabCanvas.getBackgroundImage === 'function' 
+          ? window.DesignLabCanvas.getBackgroundImage() 
+          : null;
+        
+        return {
+          exists: !!bg,
+          type: bg?.type,
+          fromManager: !!bgFromManager,
+          totalObjects: canvas.getObjects().length,
+          allObjectNames: canvas.getObjects().map(obj => ({ name: obj.name, type: obj.type }))
+        };
+      }
+      
+      function performUndo() {
+        iteration++;
+        console.log(`[Test] ===== Undo Test Iteration ${iteration}/${iterations} =====`, {
+          timestamp: new Date().toISOString(),
+          beforeUndo: checkBackground()
+        });
+        
+        // 模拟点击 undo 按钮
+        undoBtn.click();
+        
+        // 等待 undo 完成（异步操作）
+        setTimeout(() => {
+          const afterUndo = checkBackground();
+          console.log(`[Test] ✅ After Undo ${iteration}:`, {
+            timestamp: new Date().toISOString(),
+            backgroundStatus: afterUndo,
+            success: afterUndo.exists
+          });
+          
+          if (!afterUndo.exists) {
+            console.error(`[Test] ❌ FAILED: Background missing after undo ${iteration}!`, {
+              timestamp: new Date().toISOString(),
+              details: afterUndo
+            });
+          }
+          
+          if (iteration < iterations) {
+            setTimeout(performUndo, delay);
+          } else {
+            console.log('[Test] ===== Undo Test Completed =====', {
+              timestamp: new Date().toISOString(),
+              finalStatus: checkBackground()
+            });
+          }
+        }, delay);
+      }
+      
+      // 开始测试
+      performUndo();
+    };
+    
+    // [2025-01-27] 监听控制台命令，方便测试
+    console.log('[Test] Undo test function loaded. Run window.testUndo() in console to test undo functionality.');
+    console.log('[Test] Usage: window.testUndo(iterations, delay)', {
+      defaultIterations: 3,
+      defaultDelay: 1000,
+      example: 'window.testUndo(5, 500) // Test 5 times with 500ms delay'
+    });
+  </script>
 </body>
 </html>

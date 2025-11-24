@@ -403,10 +403,7 @@
         console.log('[Toolbar] Adding art from URL:', type);
         window.DesignLabCanvas.addImage(type);
         
-        // [2025-11-19 12:00:00] 记录到历史栈
-        if (window.DesignLabHistory) {
-          window.DesignLabHistory.saveState();
-        }
+        // [2025-01-27] 历史已在 addImage 中添加前保存，这里不需要重复保存
         
         // [2025-11-19 12:00:00] 返回 home 面板
         if (window.DesignLabPanel) {
@@ -437,10 +434,7 @@
         }
       }
       
-      // [2025-11-19 12:00:00] 记录到历史栈
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 历史已在 addShape/addImage 中添加前保存，这里不需要重复保存
       
       // [2025-11-19 12:00:00] 返回 home 面板
       if (window.DesignLabPanel) {
@@ -468,9 +462,10 @@
     if (canvas) {
       canvas.requestRenderAll();
       if (window.DesignLabLayers) window.DesignLabLayers.updateLayers();
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 不在 notifyCanvasChanges 中保存状态 - 具体操作（addText/addImage/addShape）已在添加前保存
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     }
   }
 
@@ -1221,12 +1216,7 @@
     });
     
     if (textObj) {
-      // [2025-01-27] 保存状态到历史
-      if (window.DesignLabHistory && window.DesignLabHistory.saveState) {
-        setTimeout(() => {
-          window.DesignLabHistory.saveState();
-        }, 100);
-      }
+      // [2025-01-27] 历史已在 addText 中添加前保存，这里不需要重复保存
       
       console.log('[Toolbar] Added', type, 'to', side, ':', text);
     } else {

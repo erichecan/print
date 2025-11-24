@@ -152,6 +152,9 @@
         });
       });
 
+      // [2025-01-27] Undo/Redo 功能暂时隐藏，二期开发
+      // 按钮已在 HTML 中隐藏（display: none），这里保留代码以便二期启用
+      /*
       // [2025-11-19 10:45:00] 绑定撤销/重做按钮（在 Rail 中）
       // [2025-01-28 04:55:00] 添加详细日志用于调试
       const undoBtn = document.getElementById('btn-undo');
@@ -219,6 +222,7 @@
           timestamp: new Date().toISOString()
         });
       }
+      */
 
       // [2025-11-19 11:30:00] 绑定缩放控制（Fit to screen / 100% 快捷）
       const fitBtn = document.getElementById('btn-fit-screen');
@@ -627,9 +631,10 @@
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 组合操作不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     });
   }
 
@@ -651,9 +656,10 @@
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 组合操作不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     }
   }
 
@@ -675,9 +681,10 @@
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 解组操作不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     }
   }
 
@@ -1323,9 +1330,10 @@
     canvas.renderAll();
     updateTextControls();
     
-    if (window.DesignLabHistory) {
-      window.DesignLabHistory.saveState();
-    }
+    // [2025-01-27] 文本属性修改不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+    // if (window.DesignLabHistory) {
+    //   window.DesignLabHistory.saveState();
+    // }
   }
   
   // [2025-11-19 11:30:00] 设置文本对齐
@@ -1340,9 +1348,10 @@
     canvas.renderAll();
     updateTextControls();
     
-    if (window.DesignLabHistory) {
-      window.DesignLabHistory.saveState();
-    }
+    // [2025-01-27] 文本属性修改不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+    // if (window.DesignLabHistory) {
+    //   window.DesignLabHistory.saveState();
+    // }
   }
   
   // [2025-11-19 11:30:00] 设置文本大小
@@ -1383,9 +1392,11 @@
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
-      if (window.DesignLabHistory) {
-        window.DesignLabHistory.saveState();
-      }
+      // [2025-01-27] 复制操作不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+      // 复制本质上是添加新对象，但应该由 addText/addImage 来记录
+      // if (window.DesignLabHistory) {
+      //   window.DesignLabHistory.saveState();
+      // }
     });
   }
 
@@ -1401,6 +1412,8 @@
         window.DesignLabCanvas.removeSelected();
       }
 
+      // [2025-01-27] Undo/Redo 功能暂时隐藏，二期开发
+      /*
       // [2025-11-19 10:45:00] 撤销/重做：Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -1415,6 +1428,7 @@
           window.DesignLabHistory.redo();
         }
       }
+      */
 
       // [2025-11-19 10:45:00] 复制/粘贴：Ctrl/Cmd+C, Ctrl/Cmd+V
       if ((e.ctrlKey || e.metaKey) && e.key === 'c' && canvas.getActiveObject()) {

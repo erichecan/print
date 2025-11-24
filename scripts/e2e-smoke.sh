@@ -1,8 +1,11 @@
 #!/bin/bash
 # E2E smoke test script [2025-11-12 03:25:00]
-# Usage: ./scripts/e2e-smoke.sh [base-url]
+# [2025-11-24 10:44:55] 支持 RUN_PLAYWRIGHT=1 触发完整 UI 回归
+# Usage: RUN_PLAYWRIGHT=1 ./scripts/e2e-smoke.sh [base-url]
 
 set -e
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 BASE_URL="${1:-http://localhost:3000}"
 API_URL="${2:-http://localhost:3001/api}"
@@ -49,6 +52,12 @@ if [ "$ADMIN_STATUS" = "401" ] || [ "$ADMIN_STATUS" = "403" ] || [ "$ADMIN_STATU
   echo "✅ Admin routes protected"
 else
   echo "⚠️  Admin routes may not be protected (status: $ADMIN_STATUS)"
+fi
+
+if [ "${RUN_PLAYWRIGHT:-0}" = "1" ]; then
+  echo "Running Playwright regression suite..."
+  export E2E_ENV_FILE="${E2E_ENV_FILE:-$REPO_ROOT/configs/e2e.test.envvars}"
+  (cd "$REPO_ROOT/apps/web" && npx playwright test)
 fi
 
 echo "[$(date +'%Y-%m-%d %H:%M:%S')] All smoke tests passed! ✅"

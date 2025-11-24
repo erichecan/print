@@ -78,9 +78,27 @@
           }
         }
         
-        // [2025-01-28 05:15:00] 清空历史栈（如果可用）
-        if (window.DesignLabHistory && typeof window.DesignLabHistory.clearHistory === 'function') {
-          window.DesignLabHistory.clearHistory();
+        // [2025-01-27] 清空所有面的历史栈（切换商品时需要清除所有面的历史）
+        if (window.DesignLabHistory) {
+          const store = window.DesignLabStore.getStore();
+          const currentSideBefore = store.currentSide;
+          
+          // [2025-01-27] 清除所有三个面的历史栈
+          ['front', 'back', 'sleeve'].forEach(side => {
+            if (typeof window.DesignLabHistory.switchSide === 'function') {
+              window.DesignLabHistory.switchSide(side);
+            }
+            if (typeof window.DesignLabHistory.clearHistory === 'function') {
+              window.DesignLabHistory.clearHistory();
+            }
+          });
+          
+          // [2025-01-27] 切换回原来的面
+          if (typeof window.DesignLabHistory.switchSide === 'function') {
+            window.DesignLabHistory.switchSide(currentSideBefore || 'front');
+          }
+          
+          console.log('[Store] ✅ All sides history stacks cleared for new variant');
         }
         
         // [2025-01-28 05:15:00] 立即保存清空后的状态，覆盖 localStorage 中的旧数据

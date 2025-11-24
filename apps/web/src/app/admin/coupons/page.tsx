@@ -3,13 +3,15 @@
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { adminCouponsApi, AdminCoupon } from '@/lib/api';
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-11-24 11:07:42] 引入 i18n 以实现右侧内容双语
 
 const couponTypes = [
-  { value: 'percentage', label: 'Percentage' },
-  { value: 'fixed', label: 'Fixed Amount' },
+  { value: 'percentage', labelKey: 'discountTypePercentage' },
+  { value: 'fixed', labelKey: 'discountTypeFixed' },
 ];
 
 export default function AdminCouponsPage() {
+  const { t } = useAdminI18n(); // [2025-11-24 11:07:42] 使用 t 输出中英文
   const [searchDraft, setSearchDraft] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [form, setForm] = useState({
@@ -52,7 +54,7 @@ export default function AdminCouponsPage() {
       setForm((prev) => ({ ...prev, code: '', value: 10 }));
       mutate();
     } catch (apiError) {
-      alert((apiError as Error).message || 'Failed to create coupon');
+      alert((apiError as Error).message || t('couponsCreateFailed'));
     } finally {
       setSaving(false);
     }
@@ -64,34 +66,36 @@ export default function AdminCouponsPage() {
   };
 
   const deleteCoupon = async (coupon: AdminCoupon) => {
-    const confirmed = window.confirm(`Delete coupon ${coupon.code}?`);
+    const confirmed = window.confirm(t('couponsConfirmDelete', { code: coupon.code }));
     if (!confirmed) return;
     await adminCouponsApi.remove(coupon.id);
     mutate();
   };
 
   const formatDiscount = (coupon: AdminCoupon) =>
-    coupon.type === 'percentage' ? `${coupon.value}%` : `$${coupon.value.toFixed(2)}`;
+    coupon.type === 'percentage'
+      ? t('percentageValue', { value: coupon.value })
+      : t('currencyValue', { value: coupon.value.toFixed(2) });
 
   const usageText = (coupon: AdminCoupon) => {
-    const limit = coupon.usageLimit ? `${coupon.usageLimit}` : 'Unlimited';
-    return `${coupon.usedCount} / ${limit}`;
+    const limit = coupon.usageLimit ? `${coupon.usageLimit}` : t('couponsUnlimited');
+    return t('couponsUsageText', { used: coupon.usedCount, limit });
   };
 
   return (
     <div style={{ marginTop: 24 }}>
       <div className="admin-page-header">
         <div>
-          <h1 data-i18n="coupons">Coupons</h1>
-          <p className="text-muted">Create and track promotional coupon codes</p>
+          <h1>{t('coupons')}</h1>
+          <p className="text-muted">{t('couponsSubtitle')}</p>
         </div>
       </div>
 
       <section className="admin-form" style={{ marginBottom: 24 }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Create Coupon</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>{t('couponsCreateHeading')}</h3>
         <form className="admin-grid-two" onSubmit={handleCreate}>
           <div className="admin-form-group">
-            <label>Code</label>
+            <label>{t('couponsCodeLabel')}</label>
             <input
               type="text"
               value={form.code}
@@ -100,17 +104,17 @@ export default function AdminCouponsPage() {
             />
           </div>
           <div className="admin-form-group">
-            <label>Type</label>
+            <label>{t('couponsTypeLabel')}</label>
             <select value={form.type} onChange={(event) => setForm((prev) => ({ ...prev, type: event.target.value }))}>
               {couponTypes.map((type) => (
                 <option key={type.value} value={type.value}>
-                  {type.label}
+                  {t(type.labelKey)}
                 </option>
               ))}
             </select>
           </div>
           <div className="admin-form-group">
-            <label>Value</label>
+            <label>{t('couponsValueLabel')}</label>
             <input
               type="number"
               min={0}
@@ -120,7 +124,7 @@ export default function AdminCouponsPage() {
             />
           </div>
           <div className="admin-form-group">
-            <label>Min Order Value</label>
+            <label>{t('couponsMinOrderLabel')}</label>
             <input
               type="number"
               min={0}
@@ -129,7 +133,7 @@ export default function AdminCouponsPage() {
             />
           </div>
           <div className="admin-form-group">
-            <label>Max Discount</label>
+            <label>{t('couponsMaxDiscountLabel')}</label>
             <input
               type="number"
               min={0}
@@ -138,7 +142,7 @@ export default function AdminCouponsPage() {
             />
           </div>
           <div className="admin-form-group">
-            <label>Usage Limit</label>
+            <label>{t('couponsUsageLimitLabel')}</label>
             <input
               type="number"
               min={0}
@@ -147,7 +151,7 @@ export default function AdminCouponsPage() {
             />
           </div>
           <div className="admin-form-group">
-            <label>User Usage Limit</label>
+            <label>{t('couponsUserUsageLimitLabel')}</label>
             <input
               type="number"
               min={0}
@@ -156,7 +160,7 @@ export default function AdminCouponsPage() {
             />
           </div>
           <div className="admin-form-group">
-            <label>Start Date</label>
+            <label>{t('couponsStartDateLabel')}</label>
             <input
               type="date"
               value={form.startDate}
@@ -164,7 +168,7 @@ export default function AdminCouponsPage() {
             />
           </div>
           <div className="admin-form-group">
-            <label>End Date</label>
+            <label>{t('couponsEndDateLabel')}</label>
             <input
               type="date"
               value={form.endDate}
@@ -173,7 +177,7 @@ export default function AdminCouponsPage() {
           </div>
           <div>
             <button className="btn btn--primary" type="submit" disabled={saving}>
-              {saving ? 'Saving…' : '+ Create Coupon'}
+              {saving ? t('saving') : t('couponsCreateButton')}
             </button>
           </div>
         </form>
@@ -183,36 +187,36 @@ export default function AdminCouponsPage() {
         <div className="admin-search admin-search-form">
           <input
             type="text"
-            placeholder="Search coupons..."
+            placeholder={t('couponsSearchPlaceholder')}
             value={searchDraft}
             onChange={(event) => setSearchDraft(event.target.value)}
           />
         </div>
         <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'all' | 'active' | 'inactive')}>
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
+          <option value="all">{t('statusFilterAll')}</option>
+          <option value="active">{t('statusFilterActive')}</option>
+          <option value="inactive">{t('statusFilterInactive')}</option>
         </select>
       </div>
 
       <div className="admin-table-wrapper">
         {isLoading ? (
-          <div className="admin-table-placeholder">Loading coupons…</div>
+          <div className="admin-table-placeholder">{t('couponsLoading')}</div>
         ) : error ? (
-          <div className="admin-table-placeholder error">Failed to load coupons.</div>
+          <div className="admin-table-placeholder error">{t('couponsLoadFailed')}</div>
         ) : coupons.length === 0 ? (
-          <div className="admin-table-placeholder">No coupons found.</div>
+          <div className="admin-table-placeholder">{t('couponsEmpty')}</div>
         ) : (
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Usage</th>
-                <th>Validity</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{t('couponsCodeColumn')}</th>
+                <th>{t('couponsTypeColumn')}</th>
+                <th>{t('couponsValueColumn')}</th>
+                <th>{t('couponsUsageColumn')}</th>
+                <th>{t('couponsValidityColumn')}</th>
+                <th>{t('status')}</th>
+                <th>{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -223,7 +227,7 @@ export default function AdminCouponsPage() {
                   </td>
                   <td>
                     <span className={coupon.type === 'fixed' ? 'badge badge-info' : 'badge badge-warning'}>
-                      {coupon.type === 'fixed' ? 'Fixed Amount' : 'Percentage'}
+                      {coupon.type === 'fixed' ? t('discountTypeFixed') : t('discountTypePercentage')}
                     </span>
                   </td>
                   <td>{formatDiscount(coupon)}</td>
@@ -233,7 +237,7 @@ export default function AdminCouponsPage() {
                   </td>
                   <td>
                     <span className={coupon.isActive ? 'badge badge-success' : 'badge badge-pending'}>
-                      {coupon.isActive ? 'Active' : 'Inactive'}
+                      {coupon.isActive ? t('statusFilterActive') : t('statusFilterInactive')}
                     </span>
                   </td>
                   <td>
@@ -243,10 +247,10 @@ export default function AdminCouponsPage() {
                       </button>
                       <div className="actions-dropdown-menu">
                         <button type="button" onClick={() => toggleCoupon(coupon)}>
-                          {coupon.isActive ? 'Deactivate' : 'Activate'}
+                          {coupon.isActive ? t('deactivate') : t('activate')}
                         </button>
                         <button type="button" onClick={() => deleteCoupon(coupon)}>
-                          Delete
+                          {t('delete')}
                         </button>
                       </div>
                     </div>

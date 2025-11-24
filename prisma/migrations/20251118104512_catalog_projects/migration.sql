@@ -23,8 +23,8 @@ END $$;
 ALTER TABLE "products" ALTER COLUMN "base_price_cents" DROP DEFAULT;
 ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "printable_areas" JSONB;
 
--- Rename product_variants table to variants and tighten schema
-ALTER TABLE "product_variants" RENAME TO "variants";
+-- [2025-11-24 09:55:30] 兼容已存在 variants 表的数据库，避免重复 rename 失败
+ALTER TABLE IF EXISTS "product_variants" RENAME TO "variants";
 UPDATE "variants" SET "color" = COALESCE("color", 'UNSET');
 ALTER TABLE "variants" ALTER COLUMN "color" SET NOT NULL;
 UPDATE "variants" SET "size" = COALESCE("size", 'ONE');
@@ -38,8 +38,19 @@ ALTER INDEX IF EXISTS "product_variants_product_id_idx" RENAME TO "variants_prod
 ALTER TABLE "cart_items" DROP CONSTRAINT IF EXISTS "cart_items_variant_id_fkey";
 ALTER TABLE "order_items" DROP CONSTRAINT IF EXISTS "order_items_variant_id_fkey";
 ALTER TABLE "designs" DROP CONSTRAINT IF EXISTS "designs_product_variant_id_fkey";
+-- [2025-11-24 10:02:15] 兼容已存在的新外键命名，确保可重复执行迁移
+ALTER TABLE "designs" DROP CONSTRAINT IF EXISTS "designs_variant_id_fkey";
 
-ALTER TABLE "designs" RENAME COLUMN "product_variant_id" TO "variant_id";
+-- [2025-11-24 09:59:45] 仅在旧列存在时才重命名，避免重复执行时报错
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'designs' AND column_name = 'product_variant_id'
+  ) THEN
+    ALTER TABLE "designs" RENAME COLUMN "product_variant_id" TO "variant_id";
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS "designs_variant_id_idx" ON "designs" ("variant_id");
 
@@ -85,6 +96,12 @@ CREATE INDEX IF NOT EXISTS "projects_user_id_idx" ON "projects" ("user_id");
 CREATE INDEX IF NOT EXISTS "projects_product_id_idx" ON "projects" ("product_id");
 CREATE INDEX IF NOT EXISTS "projects_variant_id_idx" ON "projects" ("variant_id");
 CREATE INDEX IF NOT EXISTS "projects_order_id_idx" ON "projects" ("order_id");
+
+-- [2025-11-24 10:05:20] 防止重复执行时外键已存在导致失败
+ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "projects_user_id_fkey";
+ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "projects_product_id_fkey";
+ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "projects_variant_id_fkey";
+ALTER TABLE "projects" DROP CONSTRAINT IF EXISTS "projects_order_id_fkey";
 
 ALTER TABLE "projects"
   ADD CONSTRAINT "projects_user_id_fkey"

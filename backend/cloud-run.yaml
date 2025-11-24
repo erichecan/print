@@ -1,0 +1,75 @@
+# Cloud Run service configuration for backend
+# [2025-01-27] Backend service definition for GCP Cloud Run
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: print-main-backend
+  annotations:
+    run.googleapis.com/ingress: all
+    run.googleapis.com/execution-environment: gen2
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "10"
+        run.googleapis.com/cpu-throttling: "false"
+        run.googleapis.com/memory: "1Gi"
+        run.googleapis.com/cpu: "1"
+        run.googleapis.com/cloudsql-instances: "PROJECT_ID:REGION:DB_INSTANCE_NAME"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      containers:
+      - image: REGION-docker.pkg.dev/PROJECT_ID/ARTIFACT_REGISTRY/backend:latest
+        ports:
+        - name: http1
+          containerPort: 8080
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "8080"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-url
+              key: latest
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: latest
+        - name: STRIPE_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: stripe-secret-key
+              key: latest
+        - name: FRONTEND_URL
+          value: "https://FRONTEND_SERVICE_URL"
+        - name: CORS_ORIGINS
+          value: "https://FRONTEND_SERVICE_URL"
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 10
+          failureThreshold: 3
+  traffic:
+  - percent: 100
+    latestRevision: true
+
