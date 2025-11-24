@@ -1,5 +1,5 @@
-# Cloud Run service configuration for backend
-# [2025-01-27] Backend service definition for GCP Cloud Run
+# Cloud Run service configuration for backend - FREE TIER OPTIMIZED
+# [2025-01-27] Optimized for zero cost when idle
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
@@ -11,12 +11,13 @@ spec:
   template:
     metadata:
       annotations:
-        autoscaling.knative.dev/minScale: "0"  # ✅ FREE TIER: Scale to zero when idle
-        autoscaling.knative.dev/maxScale: "10"
+        # ⚠️ CRITICAL: minScale: 0 = FREE when idle, minScale: 1 = always running = $$$$
+        autoscaling.knative.dev/minScale: "0"  # ✅ FREE: Scale to zero when idle
+        autoscaling.knative.dev/maxScale: "5"   # ✅ Limit max instances to control cost
         run.googleapis.com/cpu-throttling: "false"
-        run.googleapis.com/memory: "512Mi"  # ✅ FREE TIER: Minimum memory
+        run.googleapis.com/memory: "512Mi"      # ✅ Minimum memory (free tier optimized)
         run.googleapis.com/cpu: "1"
-        # ⚠️ REMOVED Cloud SQL - use external free database (Supabase/Neon) instead
+        # ⚠️ REMOVED Cloud SQL connection - use external free database (Supabase/Neon)
         # run.googleapis.com/cloudsql-instances: "PROJECT_ID:REGION:DB_INSTANCE_NAME"
     spec:
       containerConcurrency: 80
@@ -31,6 +32,7 @@ spec:
           value: "production"
         - name: PORT
           value: "8080"
+        # ⚠️ Use external database URL (Supabase/Neon) instead of Cloud SQL
         - name: DATABASE_URL
           valueFrom:
             secretKeyRef:
@@ -52,8 +54,8 @@ spec:
           value: "https://FRONTEND_SERVICE_URL"
         resources:
           limits:
-            cpu: "1000m"
-            memory: "512Mi"  # ✅ FREE TIER: Minimum memory
+            cpu: "1000m"    # ✅ 1 CPU (minimum)
+            memory: "512Mi" # ✅ Minimum memory (free tier)
         startupProbe:
           httpGet:
             path: /api/health

@@ -212,10 +212,10 @@ gcloud run deploy print-main-backend \
   --add-cloudsql-instances ${PROJECT_ID}:${REGION}:${DB_INSTANCE_NAME} \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
   --set-env-vars NODE_ENV=production,PORT=8080 \
-  --memory 1Gi \
+  --memory 512Mi \
   --cpu 1 \
-  --min-instances 1 \
-  --max-instances 10
+  --min-instances 0 \
+  --max-instances 5
 
 # 获取后端 URL
 export BACKEND_URL=$(gcloud run services describe print-main-backend --region ${REGION} --format 'value(status.url)')
@@ -231,10 +231,10 @@ gcloud run deploy print-main-frontend \
   --allow-unauthenticated \
   --set-secrets NEXT_PUBLIC_API_URL=api-url:latest,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest \
   --set-env-vars NODE_ENV=production \
-  --memory 2Gi \
+  --memory 1Gi \
   --cpu 1 \
-  --min-instances 1 \
-  --max-instances 10
+  --min-instances 0 \
+  --max-instances 5
 ```
 
 ---
