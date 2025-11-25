@@ -34,6 +34,36 @@ npm run dev --workspace backend
 # API 提供 http://localhost:3001/api （示例端口）
 ```
 
+## 🚀 GCP Deployment (Free Tier Optimized)
+
+本项目已配置为 GCP 免费部署，支持 Windows、Mac 和 Linux：
+
+### Windows 11 部署
+
+```powershell
+# 在 PowerShell 中执行
+.\scripts\setup-billing-alerts.ps1    # 设置费用预算告警
+.\scripts\deploy-gcp-free.ps1         # 部署应用
+```
+
+详细步骤：查看 [docs/GCP-WINDOWS-DEPLOYMENT.md](./docs/GCP-WINDOWS-DEPLOYMENT.md)
+
+### Mac/Linux 部署
+
+```bash
+./scripts/setup-billing-alerts.sh     # 设置费用预算告警
+./scripts/deploy-gcp-free.sh          # 部署应用
+```
+
+**重要：部署前必须设置费用预算告警！**
+
+**快速参考：**
+- [免费部署快速指南](./README-GCP-FREE.md)
+- [Windows 部署指南](./docs/GCP-WINDOWS-DEPLOYMENT.md)
+- [成本优化指南](./docs/GCP-COST-OPTIMIZATION.md)
+
+---
+
 ## Deployment
 
 <!-- 更新 Deployment 2025-11-12 03:30:00 -->
