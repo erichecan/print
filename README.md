@@ -34,33 +34,29 @@ npm run dev --workspace backend
 # API 提供 http://localhost:3001/api （示例端口）
 ```
 
-## 🚀 GCP Deployment (Free Tier Optimized)
+## 🚀 GCP Deployment (Free Tier)
 
-本项目已配置为 GCP 免费部署，支持 Windows、Mac 和 Linux：
-
-### Windows 11 部署
-
-```powershell
-# 在 PowerShell 中执行
-.\scripts\setup-billing-alerts.ps1    # 设置费用预算告警
-.\scripts\deploy-gcp-free.ps1         # 部署应用
-```
-
-详细步骤：查看 [docs/GCP-WINDOWS-DEPLOYMENT.md](./docs/GCP-WINDOWS-DEPLOYMENT.md)
-
-### Mac/Linux 部署
+### 快速部署（3 步）
 
 ```bash
-./scripts/setup-billing-alerts.sh     # 设置费用预算告警
-./scripts/deploy-gcp-free.sh          # 部署应用
+# 1. 设置费用预算告警（必须！）
+./scripts/setup-billing-alerts.sh
+
+# 2. 配置数据库密钥
+echo -n "your-database-url" | gcloud secrets create database-url --data-file=-
+echo -n "your-jwt-secret" | gcloud secrets create jwt-secret --data-file=-
+echo -n "your-stripe-secret" | gcloud secrets create stripe-secret-key --data-file=-
+echo -n "your-stripe-publishable" | gcloud secrets create stripe-publishable-key --data-file=-
+
+# 3. 部署应用（已配置 minScale: 0，免费层）
+./scripts/deploy-gcp-free.sh
 ```
 
-**重要：部署前必须设置费用预算告警！**
+### 详细说明
 
-**快速参考：**
-- [免费部署快速指南](./README-GCP-FREE.md)
-- [Windows 部署指南](./docs/GCP-WINDOWS-DEPLOYMENT.md)
-- [成本优化指南](./docs/GCP-COST-OPTIMIZATION.md)
+- 📖 [免费部署快速指南](./README-GCP-FREE.md) - 快速参考
+- 💰 [成本优化指南](./docs/GCP-COST-OPTIMIZATION.md) - 费用说明
+- 📋 [完整部署指南](./docs/GCP-DEPLOYMENT.md) - 详细步骤
 
 ---
 
