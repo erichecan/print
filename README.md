@@ -34,29 +34,36 @@ npm run dev --workspace backend
 # API 提供 http://localhost:3001/api （示例端口）
 ```
 
-## 🚀 GCP Deployment (Free Tier)
+## 🚀 GCP 部署（免费层优化）
 
-### 快速部署（3 步）
+### 超简单一键部署
 
 ```bash
-# 1. 设置费用预算告警（必须！）
-./scripts/setup-billing-alerts.sh
+# 1. 克隆代码
+git clone https://github.com/erichecan/print.git
+cd print
 
-# 2. 配置数据库密钥
-echo -n "your-database-url" | gcloud secrets create database-url --data-file=-
-echo -n "your-jwt-secret" | gcloud secrets create jwt-secret --data-file=-
-echo -n "your-stripe-secret" | gcloud secrets create stripe-secret-key --data-file=-
-echo -n "your-stripe-publishable" | gcloud secrets create stripe-publishable-key --data-file=-
-
-# 3. 部署应用（已配置 minScale: 0，免费层）
-./scripts/deploy-gcp-free.sh
+# 2. 运行全自动部署脚本（一键完成所有步骤）
+chmod +x scripts/deploy-auto.sh
+./scripts/deploy-auto.sh
 ```
 
-### 详细说明
+**脚本会自动：**
+- ✅ 检查依赖（gcloud, docker）
+- ✅ 启用所有必要的 GCP API
+- ✅ 创建所有必要的资源
+- ✅ 构建和部署前后端
 
+**你需要准备：**
+- GCP 项目 ID
+- 数据库 URL（Supabase/Neon 免费数据库）
+- Stripe 密钥
+
+### 详细文档
+
+- 📖 [超简单部署指南](./DEPLOY-SIMPLE.md) - **推荐阅读**（回答所有常见问题）
 - 📖 [免费部署快速指南](./README-GCP-FREE.md) - 快速参考
 - 💰 [成本优化指南](./docs/GCP-COST-OPTIMIZATION.md) - 费用说明
-- 📋 [完整部署指南](./docs/GCP-DEPLOYMENT.md) - 详细步骤
 
 ---
 
