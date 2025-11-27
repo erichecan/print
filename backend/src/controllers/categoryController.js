@@ -30,10 +30,18 @@ exports.listCategories = async (req, res) => {
       data: categories,
     });
   } catch (error) {
-    logger.error('[2025-01-27 18:50:00] listCategories error:', error);
+    logger.error('[2025-01-27 18:50:00] listCategories error:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      meta: error.meta,
+    });
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch categories',
+      ...(process.env.NODE_ENV === 'development' && {
+        details: error.message,
+      }),
     });
   }
 };

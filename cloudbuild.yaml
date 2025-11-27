@@ -7,7 +7,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:${SHORT_SHA}'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:latest'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:latest'
       - '-f'
@@ -20,8 +20,10 @@ steps:
     id: 'build-frontend'
     args:
       - 'build'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_API_URL=https://print-main-backend-234065158862.us-central1.run.app/api'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:${SHORT_SHA}'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest'
       - '-f'
@@ -56,14 +58,14 @@ steps:
       - 'deploy'
       - '${_BACKEND_SERVICE_NAME}'
       - '--image'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:${SHORT_SHA}'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:latest'
       - '--region'
       - '${_REGION}'
       - '--platform'
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NODE_ENV=production,PORT=8080'
+      - 'NODE_ENV=production'
       - '--memory'
       - '512Mi'
       - '--cpu'
@@ -88,7 +90,7 @@ steps:
       - 'deploy'
       - '${_FRONTEND_SERVICE_NAME}'
       - '--image'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:${SHORT_SHA}'
+      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest'
       - '--region'
       - '${_REGION}'
       - '--platform'
@@ -114,7 +116,6 @@ substitutions:
   _ARTIFACT_REGISTRY: 'print-main'           # Artifact Registry repository name
   _BACKEND_SERVICE_NAME: 'print-main-backend'
   _FRONTEND_SERVICE_NAME: 'print-main-frontend'
-  _DB_INSTANCE_NAME: 'print-main-db'         # Cloud SQL instance name
 
 # Build timeout (optional, in seconds)
 timeout: '1200s'  # 20 minutes
@@ -126,8 +127,6 @@ options:
 
 # Images to store in Artifact Registry
 images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:${SHORT_SHA}'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:latest'
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:${SHORT_SHA}'
   - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest'
 

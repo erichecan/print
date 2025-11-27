@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3001; // [2025-01-27 17:05:00] 默认端口改�
 const ensurePrismaClient = () => {
   try {
     logger.info('🔧 Ensuring Prisma Client is generated...');
-    execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
+    execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
       stdio: 'inherit',
       cwd: __dirname,
     });
@@ -48,7 +48,7 @@ const runMigrationsIfEnabled = () => {
           
           // [2025-01-11 14:55:00] 修复后重新生成 Prisma Client 以确保使用正确的 schema
           logger.info('🔧 Regenerating Prisma Client after column fix...');
-          execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
+          execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
             stdio: 'inherit',
             timeout: 30000,
             cwd: __dirname,

@@ -35,16 +35,16 @@ const EMPTY_CART: CartResponse = {
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  // [2025-01-28 03:35:00] 添加详细的错误日志和错误边界
-  try {
-    console.log('[CartProvider] ===== INITIALIZING =====', {
-      timestamp: new Date().toISOString(),
-      hasCartApi: typeof cartApi !== 'undefined',
-      hasGetMethod: typeof cartApi?.get === 'function',
-    });
+  // [2025-01-27 22:45:00] 修复 React Hooks 规则：将 useSWR 移到组件顶层
+  console.log('[CartProvider] ===== INITIALIZING =====', {
+    timestamp: new Date().toISOString(),
+    hasCartApi: typeof cartApi !== 'undefined',
+    hasGetMethod: typeof cartApi?.get === 'function',
+  });
 
-    // [2025-01-28 03:35:00] 使用更安全的错误处理方式
-    const { data, error, mutate, isLoading } = useSWR<CartResponse>(
+  // [2025-01-28 03:35:00] 使用更安全的错误处理方式
+  // [2025-01-27 22:45:00] Hooks 必须在组件顶层调用，不能在 try-catch 内
+  const { data, error, mutate, isLoading } = useSWR<CartResponse>(
       '/cart',
       async () => {
         console.log('[CartProvider] ===== FETCHING CART =====', {
@@ -97,14 +97,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return;
         },
       }
-    );
+  );
 
-    console.log('[CartProvider] ===== SWR HOOK COMPLETED =====', {
-      timestamp: new Date().toISOString(),
-      hasData: !!data,
-      hasError: !!error,
-      isLoading,
-    });
+  console.log('[CartProvider] ===== SWR HOOK COMPLETED =====', {
+    timestamp: new Date().toISOString(),
+    hasData: !!data,
+    hasError: !!error,
+    isLoading,
+  });
 
   const addItem = async (variantId: string, quantity: number = 1, designId?: string) => {
     try {
@@ -146,73 +146,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-    // [2025-01-28 03:35:00] 确保 cart 始终有值，避免 null 导致的问题
-    const cart = data || EMPTY_CART;
+  // [2025-01-28 03:35:00] 确保 cart 始终有值，避免 null 导致的问题
+  const cart = data || EMPTY_CART;
 
-    console.log('[CartProvider] ===== RENDERING PROVIDER =====', {
-      timestamp: new Date().toISOString(),
-      cartItemCount: cart?.itemCount || 0,
-      hasError: !!error,
-      isLoading,
-    });
+  console.log('[CartProvider] ===== RENDERING PROVIDER =====', {
+    timestamp: new Date().toISOString(),
+    cartItemCount: cart?.itemCount || 0,
+    hasError: !!error,
+    isLoading,
+  });
 
-    return (
-      <CartContext.Provider
-        value={{
-          cart,
-          isLoading,
-          error: error || null,
-          addItem,
-          updateItem,
-          removeItem,
-          clearCart,
-          refreshCart: () => mutate(),
-        }}
-      >
-        {children}
-      </CartContext.Provider>
-    );
-  } catch (providerError: any) {
-    // [2025-01-28 03:35:00] 捕获整个组件渲染过程中的错误
-    console.error('[CartProvider] ❌❌❌ FATAL ERROR IN PROVIDER ❌❌❌', {
-      timestamp: new Date().toISOString(),
-      error: providerError,
-      errorMessage: providerError?.message,
-      errorStack: providerError?.stack,
-      errorName: providerError?.name,
-      errorType: typeof providerError,
-      errorString: String(providerError),
-      errorKeys: providerError ? Object.keys(providerError) : [],
-    });
-
-    // [2025-01-28 03:35:00] 即使出错也返回一个基本的 Provider，避免完全崩溃
-    return (
-      <CartContext.Provider
-        value={{
-          cart: EMPTY_CART,
-          isLoading: false,
-          error: providerError,
-          addItem: async () => {
-            console.error('[CartProvider] addItem called but provider is in error state');
-          },
-          updateItem: async () => {
-            console.error('[CartProvider] updateItem called but provider is in error state');
-          },
-          removeItem: async () => {
-            console.error('[CartProvider] removeItem called but provider is in error state');
-          },
-          clearCart: async () => {
-            console.error('[CartProvider] clearCart called but provider is in error state');
-          },
-          refreshCart: () => {
-            console.error('[CartProvider] refreshCart called but provider is in error state');
-          },
-        }}
-      >
-        {children}
-      </CartContext.Provider>
-    );
-  }
+  return (
+    <CartContext.Provider
+      value={{
+        cart,
+        isLoading,
+        error: error || null,
+        addItem,
+        updateItem,
+        removeItem,
+        clearCart,
+        refreshCart: () => mutate(),
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
 }
 
 export function useCart() {

@@ -49,7 +49,7 @@ try {
   // [2025-11-16 11:21:45] 在 Render 上工作目录为 backend/，需要显式传入 schema 路径
   // [2025-01-27 17:15:00] 允许 Prisma 迁移失败（可能数据库已经是最新的）
   const prismaSuccess = run(
-    'npx prisma migrate deploy --schema=../prisma/schema.prisma', 
+    'npx prisma migrate deploy --schema=./prisma/schema.prisma', 
     'Prisma migrate deploy',
     { timeout: 30000, allowFailure: true }
   );

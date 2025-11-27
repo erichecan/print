@@ -1,15 +1,16 @@
 /**
  * Reset Password Page
  * [2025-01-27] 创建重置密码页面，用户通过邮件链接访问此页面
+ * [2025-01-27 22:50:00] 使用 Suspense 包装 useSearchParams 以避免预渲染错误
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import Link from 'next/link';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get('token') || '';
@@ -264,6 +265,34 @@ export default function ResetPasswordPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="container">
+        <div className="auth-card">
+          <h1>Reset Password</h1>
+          <p>Loading...</p>
+        </div>
+        <style jsx>{`
+          .container {
+            max-width: 400px;
+            margin: 4rem auto;
+            padding: 0 1rem;
+          }
+          .auth-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+        `}</style>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
 

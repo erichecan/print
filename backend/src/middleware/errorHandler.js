@@ -4,7 +4,15 @@
  */
 const logger = require('../utils/logger');
 const { AppError } = require('../utils/errors');
-const { ValidationError: ExpressValidationError } = require('express-validator');
+// [2025-01-27 23:10:00] 安全地导入 ValidationError，避免 undefined 导致 instanceof 错误
+let ExpressValidationError;
+try {
+  const expressValidator = require('express-validator');
+  ExpressValidationError = expressValidator.ValidationError || expressValidator.Result?.ValidationError;
+} catch (error) {
+  // express-validator 可能未安装或版本不同
+  ExpressValidationError = null;
+}
 
 /**
  * Handle validation errors from express-validator
@@ -127,7 +135,8 @@ function formatErrorResponse(err, req) {
   }
   
   // Also check for ValidationError instance
-  if (err instanceof ExpressValidationError || err.name === 'ValidationError') {
+  // [2025-01-27 23:10:00] 安全地检查 instanceof，避免 ExpressValidationError 未定义
+  if ((ExpressValidationError && err instanceof ExpressValidationError) || err.name === 'ValidationError') {
     return handleValidationError(err);
   }
 

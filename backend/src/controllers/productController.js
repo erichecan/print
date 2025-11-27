@@ -290,10 +290,18 @@ exports.getFilterOptions = async (req, res) => {
 
     res.json(filterData);
   } catch (error) {
-    logger.error('[2025-01-27 17:00:00] Failed to get filter options:', error);
+    logger.error('[2025-01-27 17:00:00] Failed to get filter options:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      meta: error.meta,
+    });
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch filter options',
+      ...(process.env.NODE_ENV === 'development' && {
+        details: error.message,
+      }),
     });
   }
 };
@@ -518,7 +526,12 @@ exports.getProducts = async (req, res) => {
 
     res.json(response);
   } catch (error) {
-    logger.error('[2025-01-27 13:55:00] Failed to get products:', error);
+    logger.error('[2025-01-27 13:55:00] Failed to get products:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      meta: error.meta,
+    });
     const errorResponse = {
       error: 'Server Error',
       message: 'Failed to fetch products',

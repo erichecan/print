@@ -45,6 +45,9 @@ const corsOptions = {
       // 也允许所有 netlify.app 子域名（用于预览部署）
       if (origin.endsWith('.netlify.app')) {
         callback(null, true);
+      } else if (origin.endsWith('.run.app')) {
+        // [2025-01-27 23:00:00] 允许所有 Cloud Run 域名（用于 GCP 部署）
+        callback(null, true);
       } else {
         // [2025-11-15 12:05:00] 记录被拒绝的 origin 以便调试
         console.warn(`[CORS] Blocked origin: ${origin}`);

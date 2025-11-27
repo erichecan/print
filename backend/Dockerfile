@@ -11,6 +11,7 @@ RUN npm install
 
 ## Copy source and build assets [2025-11-10 23:55:03]
 COPY backend/src ./src
+COPY backend/scripts ./scripts
 COPY prisma ./prisma
 # [2025-11-15 23:07:58] Include server entrypoint for production container
 COPY backend/server.js ./server.js
