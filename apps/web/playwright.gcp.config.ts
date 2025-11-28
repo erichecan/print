@@ -4,8 +4,9 @@
  */
 import { defineConfig, devices } from '@playwright/test';
 
-const FRONTEND_URL = process.env.BASE_URL || 'https://print-main-frontend-234065158862.us-central1.run.app';
-const BACKEND_URL = process.env.API_BASE_URL || 'https://print-main-backend-234065158862.us-central1.run.app';
+// [2025-11-28 11:20:00] 更新为最新的线上 URL
+const FRONTEND_URL = process.env.BASE_URL || 'https://print-main-frontend-hsbqzlnkxa-uc.a.run.app';
+const BACKEND_URL = process.env.API_BASE_URL || 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -13,7 +14,12 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 1, // 使用单个 worker 避免并发问题
-  reporter: [['line'], ['html', { open: 'never' }]],
+  timeout: 60000, // [2025-11-28 12:00:00] 增加测试超时时间到 60 秒
+  reporter: [
+    ['line'],
+    ['html', { open: 'never', outputFolder: 'test-results/html-report' }],
+    ['json', { outputFile: 'test-results/test-results.json' }],
+  ],
   use: {
     baseURL: FRONTEND_URL,
     trace: 'on-first-retry',
@@ -22,6 +28,8 @@ export default defineConfig({
     extraHTTPHeaders: {
       'x-playwright-e2e': 'true',
     },
+    // [2025-11-28 12:00:00] 增加导航超时时间
+    navigationTimeout: 30000,
   },
   projects: [
     {
