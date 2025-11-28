@@ -5,6 +5,16 @@ const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // [2025-11-28 12:25:00] 检查用户是否已存在，避免重复插入
+    const [existingUsers] = await queryInterface.sequelize.query(
+      `SELECT id FROM users WHERE email = 'admin@suvernireplus.com' LIMIT 1;`
+    );
+    
+    if (existingUsers && existingUsers.length > 0) {
+      console.log('ℹ️  Admin 用户已存在，跳过 seed');
+      return;
+    }
+    
     const hashedPassword = await bcrypt.hash('admin123', 10);
     
     await queryInterface.bulkInsert('users', [
@@ -20,6 +30,7 @@ module.exports = {
         updated_at: new Date()
       }
     ], {});
+    console.log('✅ Admin 用户 seed 完成');
   },
 
   down: async (queryInterface, Sequelize) => {
