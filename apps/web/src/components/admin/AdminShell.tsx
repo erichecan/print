@@ -169,8 +169,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   }, [router, pathname, t]);
 
   // [2025-01-28 07:30:00] 未登录时直接跳转到管理员专用登录页
+  // [2025-11-28 10:35:00] 如果当前路径是登录页面，则不执行重定向，避免循环
   useEffect(() => {
     if (authState !== 'unauthenticated') {
+      return;
+    }
+    // [2025-11-28 10:35:00] 如果已经在登录页面，不执行重定向
+    if (pathname === '/admin/login' || pathname?.startsWith('/admin/login?')) {
       return;
     }
     const redirectTarget = pathname && pathname.startsWith('/admin') ? pathname : '/admin';

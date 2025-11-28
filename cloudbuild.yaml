@@ -65,7 +65,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NODE_ENV=production'
+      - 'NODE_ENV=production,AUTO_MIGRATE=true'
       - '--memory'
       - '512Mi'
       - '--cpu'

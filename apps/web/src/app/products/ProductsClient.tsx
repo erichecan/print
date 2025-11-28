@@ -55,6 +55,13 @@ export default function ProductsClient() {
 
   const { sort: sortField, order: sortOrder } = parseSort(sort);
 
+  // [2025-11-28 11:00:00] 读取所有筛选参数并传递给 API
+  const filterParams = [
+    'fit', 'decoration', 'color', 'size', 'material', 'type', 'style', 
+    'neckline', 'feature', 'price', 'brand', 'rushDelivery', 
+    'multiAddress', 'noMinimum'
+  ];
+
   const apiUrl = new URL(`${API_BASE_URL}/products`);
   apiUrl.searchParams.set('page', page);
   apiUrl.searchParams.set('limit', limit);
@@ -62,6 +69,15 @@ export default function ProductsClient() {
   if (collection) apiUrl.searchParams.set('collection', collection);
   if (sortField) apiUrl.searchParams.set('sort', sortField);
   if (sortOrder) apiUrl.searchParams.set('order', sortOrder);
+  
+  // [2025-11-28 11:00:00] 添加所有筛选参数到 API 请求
+  filterParams.forEach(filterName => {
+    const filterValue = params.get(filterName);
+    if (filterValue) {
+      apiUrl.searchParams.set(filterName, filterValue);
+    }
+  });
+  
   // [2025-01-27 16:55:00] 开发阶段允许无库存商品也显示
   apiUrl.searchParams.set('includeOutOfStock', 'true');
 

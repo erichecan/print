@@ -2211,12 +2211,16 @@ select {
 }
 
 /* 左侧筛选器 */
+/* [2025-11-28 10:45:00] 修复横向和纵向滚动条问题 */
 .plp-new__sidebar {
   position: sticky;
   top: 96px;
   align-self: start;
+  width: 280px; /* [2025-11-28 10:45:00] 固定宽度，防止横向溢出 */
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  overflow-x: hidden; /* [2025-11-28 10:45:00] 隐藏横向滚动条 */
+  box-sizing: border-box; /* [2025-11-28 10:45:00] 确保宽度计算包含 padding */
 }
 
 .filters-new {
@@ -2224,13 +2228,20 @@ select {
   gap: 0;
 }
 
+/* [2025-11-28 11:10:00] 对比 Custom Ink 优化筛选区域样式 */
 .filter-section {
   border-bottom: 1px solid var(--color-border);
   padding: 16px 0;
+  width: 100%; /* [2025-11-28 10:45:00] 确保不超出父容器 */
+  box-sizing: border-box; /* [2025-11-28 10:45:00] 包含 padding 在宽度计算内 */
 }
 
 .filter-section:first-child {
   padding-top: 0;
+}
+
+.filter-section:last-child {
+  border-bottom: none; /* [2025-11-28 11:10:00] 最后一个筛选项不显示底部边框 */
 }
 
 .filter-section__title {
@@ -2238,11 +2249,13 @@ select {
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
+  padding: 0; /* [2025-11-28 11:10:00] 移除默认 padding */
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
   user-select: none;
+  line-height: 1.4; /* [2025-11-28 11:10:00] 优化行高 */
 }
 
 .filter-section__header {
@@ -2251,16 +2264,32 @@ select {
   justify-content: space-between;
 }
 
+/* [2025-11-28 10:50:00] 动态切换加号/减号图标 */
 .filter-toggle-icon {
   font-size: 18px;
   color: var(--color-text-muted);
   font-weight: 400;
+  transition: transform 0.2s ease;
+}
+
+/* [2025-11-28 10:50:00] 展开状态显示减号 */
+details[open] .filter-toggle-icon::before {
+  content: '−';
+}
+
+/* [2025-11-28 10:50:00] 收起状态显示加号 */
+details:not([open]) .filter-toggle-icon::before {
+  content: '+';
 }
 
 .filter-section__body {
   margin-top: 12px;
   display: grid;
   gap: 8px;
+  width: 100%; /* [2025-11-28 10:45:00] 确保不超出父容器 */
+  box-sizing: border-box;
+  overflow-wrap: break-word; /* [2025-11-28 10:45:00] 防止长文本溢出 */
+  padding: 0; /* [2025-11-28 11:10:00] 移除默认 padding */
 }
 
 .filter-category-list {
@@ -2306,6 +2335,8 @@ select {
   gap: 8px;
   cursor: pointer;
   font-size: 14px;
+  padding: 2px 0; /* [2025-11-28 11:10:00] 添加轻微垂直间距 */
+  line-height: 1.4; /* [2025-11-28 11:10:00] 优化行高 */
 }
 
 .filter-checkbox input[type="checkbox"] {
@@ -2400,15 +2431,23 @@ select {
 }
 
 /* 颜色网格 */
+/* [2025-11-28 11:10:00] 对比 Custom Ink 优化颜色网格布局 */
 .color-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
+  justify-items: center; /* [2025-11-28 11:10:00] 居中对齐颜色圆圈 */
+  align-items: center;
 }
 
 .color-swatch {
   position: relative;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
 }
 
 .color-swatch input[type="checkbox"] {
@@ -2418,6 +2457,7 @@ select {
   height: 0;
 }
 
+/* [2025-11-28 11:05:00] 修复颜色圆形对齐问题 - 确保颜色在边框中心 */
 .color-swatch__circle {
   display: block;
   width: 28px;
@@ -2425,6 +2465,8 @@ select {
   border-radius: 50%;
   border: 2px solid #e5e7eb;
   transition: border-color 0.2s, transform 0.2s;
+  box-sizing: border-box; /* [2025-11-28 11:05:00] 确保边框包含在尺寸内 */
+  background-clip: padding-box; /* [2025-11-28 11:05:00] 确保背景色在边框内正确显示 */
 }
 
 .color-swatch input:checked + .color-swatch__circle {

@@ -201,7 +201,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Fit
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.fit.map((option) => {
@@ -230,7 +230,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Decoration
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.decoration.map((option) => {
@@ -319,7 +319,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Color Family
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             <div className="color-grid">
@@ -383,7 +383,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Brands
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.brands.slice(0, 7).map((brand) => (
@@ -412,7 +412,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Material
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.material.map((option) => {
@@ -442,7 +442,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Type
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.type.map((option) => {
@@ -471,7 +471,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Sizes
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.sizes.map((option) => (
@@ -497,7 +497,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Style
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.style.map((option) => {
@@ -526,7 +526,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Neckline
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.neckline.map((option) => {
@@ -555,7 +555,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Product Features
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.features.map((option) => {
@@ -585,7 +585,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Price
-            <span className="filter-toggle-icon">−</span>
+            <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
             {filterOptions.priceRanges.map((option) => (
