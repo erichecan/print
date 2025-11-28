@@ -32,6 +32,15 @@ type PrintPosition = {
   notes: string; // 备注
 };
 
+// [2025-11-28 14:20:05] 每个产品的印刷配置（按产品类型分组的印刷位置）
+type ProductPrintConfig = {
+  sideCount: number; // 为该产品印几个位置
+  positions: PrintPosition[]; // 该产品的印刷位置数组
+};
+
+// [2025-11-28 14:20:10] 所有产品印刷配置映射表，key 为 ProductItem.id
+type ProductPrintConfigMap = Record<string, ProductPrintConfig>;
+
 // [2025-01-27 18:00:00] 产品变体类型（尺码和颜色组合）
 type ProductVariant = {
   size: string; // 尺码，如 'XS', 'S', 'M', 'L', 'XL'
@@ -70,6 +79,7 @@ type FormState = {
   // 第二步：印刷位置
   sideCount: number; // [2025-01-27 18:00:00] 要印几个地方
   printPositions: PrintPosition[]; // [2025-01-27 18:00:00] 印刷位置数组
+  productPrintConfigs: ProductPrintConfigMap; // [2025-11-28 14:20:20] 按产品分组的印刷位置配置映射表
   
   // 第三步：客人信息和价格
   contactName: string;
@@ -101,6 +111,7 @@ const initialFormState: FormState = {
   productItems: [], // [2025-01-27 18:00:00] 初始为空，用户添加产品
   sideCount: 1, // [2025-01-27 18:00:00] 默认1个印刷位置
   printPositions: [{ position: '', width: '', height: '', notes: '' }], // [2025-01-27 18:00:00] 默认1个位置
+  productPrintConfigs: {}, // [2025-11-28 14:20:30] 初始无任何产品印刷配置
   contactName: '',
   email: '',
   phone: '',
@@ -271,66 +282,79 @@ export default function OfflineOrdersIntakePage() {
     setFormState((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  // [2025-01-27 18:00:00] 第一步：多产品定制管理方法
+  // [2025-11-28 14:20:45] 第一步：多产品定制管理方法（新增按产品印刷配置）
   const addProductItem = useCallback((categoryId: string, categoryName: string) => {
+    const newItemId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newItem: ProductItem = {
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: newItemId,
       categoryId,
       categoryName,
-      variants: [],
+      variants: [
+        {
+          size: '',
+          color: '',
+          quantity: 0,
+          unitPrice: 0,
+        },
+      ],
+    };
+    const defaultPrintConfig: ProductPrintConfig = {
+      sideCount: 1,
+      positions: [{ position: '', width: '', height: '', notes: '' }],
     };
     setFormState((prev) => ({
       ...prev,
       productItems: [...prev.productItems, newItem],
+      productPrintConfigs: {
+        ...prev.productPrintConfigs,
+        [newItemId]: prev.productPrintConfigs?.[newItemId] || defaultPrintConfig,
+      },
     }));
   }, []);
 
   const removeProductItem = useCallback((itemId: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      productItems: prev.productItems.filter((item) => item.id !== itemId),
-    }));
+    // [2025-11-28 14:20:55] 删除产品时同步清理对应的印刷配置，避免脏数据
+    setFormState((prev) => {
+      const nextItems = prev.productItems.filter((item) => item.id !== itemId);
+      const { [itemId]: _removed, ...restConfigs } = prev.productPrintConfigs || {};
+      return {
+        ...prev,
+        productItems: nextItems,
+        productPrintConfigs: restConfigs,
+      };
+    });
   }, []);
 
-  const addVariant = useCallback(
-    (itemId: string, size: string, color: string) => {
-      setFormState((prev) => {
-        const newItems = prev.productItems.map((item) => {
-          if (item.id === itemId) {
-            // 检查是否已存在相同的尺码+颜色组合
-            const variantExists = item.variants.some(
-              (v) => v.size === size && v.color === color
-            );
-            if (!variantExists) {
-              return {
-                ...item,
-                variants: [
-                  ...item.variants,
-                  {
-                    size,
-                    color,
-                    quantity: 0,
-                    unitPrice: 0,
-                  },
-                ],
-              };
-            }
-          }
-          return item;
-        });
-        return { ...prev, productItems: newItems };
-      });
-    },
-    []
-  );
-
-  const removeVariant = useCallback((itemId: string, variantIndex: number) => {
+  // [2025-11-28 14:21:10] 变体管理：表格内直接编辑尺码/颜色/数量/单价
+  const addVariant = useCallback((itemId: string) => {
     setFormState((prev) => {
       const newItems = prev.productItems.map((item) => {
         if (item.id === itemId) {
           return {
             ...item,
-            variants: item.variants.filter((_, idx) => idx !== variantIndex),
+            variants: [
+              ...item.variants,
+              { size: '', color: '', quantity: 0, unitPrice: 0 },
+            ],
+          };
+        }
+        return item;
+      });
+      return { ...prev, productItems: newItems };
+    });
+  }, []);
+
+  const removeVariant = useCallback((itemId: string, variantIndex: number) => {
+    setFormState((prev) => {
+      const newItems = prev.productItems.map((item) => {
+        if (item.id === itemId) {
+          const nextVariants = item.variants.filter((_, idx) => idx !== variantIndex);
+          // 确保至少保留一行可编辑行，避免用户无处重新添加
+          const safeVariants =
+            nextVariants.length > 0 ? nextVariants : [{ size: '', color: '', quantity: 0, unitPrice: 0 }];
+          return {
+            ...item,
+            variants: safeVariants,
           };
         }
         return item;
@@ -343,18 +367,23 @@ export default function OfflineOrdersIntakePage() {
     (
       itemId: string,
       variantIndex: number,
-      field: 'quantity' | 'unitPrice',
-      value: number
+      field: 'size' | 'color' | 'quantity' | 'unitPrice',
+      value: string | number
     ) => {
-      if (value < 0) return;
+      if ((field === 'quantity' || field === 'unitPrice') && typeof value === 'number' && value < 0) {
+        return;
+      }
       setFormState((prev) => {
         const newItems = prev.productItems.map((item) => {
           if (item.id === itemId) {
             const newVariants = [...item.variants];
-            newVariants[variantIndex] = {
-              ...newVariants[variantIndex],
-              [field]: value,
-            };
+            const nextVariant = { ...newVariants[variantIndex] };
+            if (field === 'quantity' || field === 'unitPrice') {
+              (nextVariant as any)[field] = typeof value === 'number' ? value : Number(value) || 0;
+            } else {
+              (nextVariant as any)[field] = String(value);
+            }
+            newVariants[variantIndex] = nextVariant;
             return { ...item, variants: newVariants };
           }
           return item;
@@ -450,26 +479,51 @@ export default function OfflineOrdersIntakePage() {
       return true;
     }
     if (step === 2) {
-      // 第二步验证：每个位置必须选择位置类型，并且填写尺寸
-      if (formState.printPositions.length === 0) {
-        setStatus({ type: 'error', message: '请至少添加一个印刷位置' });
+      // [2025-11-28 14:22:10] 第二步验证：按产品校验印刷位置
+      if (!formState.productItems.length) {
+        setStatus({ type: 'error', message: '请先在第一步添加产品' });
         return false;
       }
-      for (let i = 0; i < formState.printPositions.length; i++) {
-        const pos = formState.printPositions[i];
-        if (!pos.position || pos.position.trim() === '') {
-          setStatus({ type: 'error', message: `位置 ${i + 1}：请选择印刷位置` });
+      for (let i = 0; i < formState.productItems.length; i++) {
+        const item = formState.productItems[i];
+        const itemQuantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
+        if (itemQuantity <= 0) {
+          continue; // 没有数量的产品不强制要求印刷位置
+        }
+        const config = formState.productPrintConfigs[item.id];
+        const positions = config?.positions || [];
+        if (!positions.length) {
+          setStatus({
+            type: 'error',
+            message: `产品 ${i + 1} (${item.categoryName})：请至少添加一个印刷位置`,
+          });
           return false;
         }
-        const width = parseFloat(pos.width);
-        const height = parseFloat(pos.height);
-        if (isNaN(width) || width <= 0) {
-          setStatus({ type: 'error', message: `位置 ${i + 1}：请填写有效的宽度（大于0）` });
-          return false;
-        }
-        if (isNaN(height) || height <= 0) {
-          setStatus({ type: 'error', message: `位置 ${i + 1}：请填写有效的高度（大于0）` });
-          return false;
+        for (let j = 0; j < positions.length; j++) {
+          const pos = positions[j];
+          if (!pos.position || pos.position.trim() === '') {
+            setStatus({
+              type: 'error',
+              message: `产品 ${i + 1} (${item.categoryName}) 位置 ${j + 1}：请选择印刷位置`,
+            });
+            return false;
+          }
+          const width = parseFloat(pos.width);
+          const height = parseFloat(pos.height);
+          if (Number.isNaN(width) || width <= 0) {
+            setStatus({
+              type: 'error',
+              message: `产品 ${i + 1} (${item.categoryName}) 位置 ${j + 1}：请填写有效的宽度（大于0）`,
+            });
+            return false;
+          }
+          if (Number.isNaN(height) || height <= 0) {
+            setStatus({
+              type: 'error',
+              message: `产品 ${i + 1} (${item.categoryName}) 位置 ${j + 1}：请填写有效的高度（大于0）`,
+            });
+            return false;
+          }
         }
       }
       return true;
@@ -705,6 +759,29 @@ export default function OfflineOrdersIntakePage() {
         payload.append('requiresMockups', String(formState.requiresMockups));
         payload.append('requiresProof', String(formState.requiresProof));
         payload.append('rushOrder', String(formState.rushOrder));
+        // [2025-11-28 14:22:30] 聚合按产品的印刷位置，兼容后端 printPositions 结构
+        const aggregatedPrintPositions =
+          Object.entries(formState.productPrintConfigs || {}).flatMap(
+            ([itemId, config]) => {
+              const productItem = formState.productItems.find(
+                (item) => item.id === itemId,
+              );
+              if (!productItem) return [];
+              const positions = config.positions || [];
+              return positions
+                .filter((pos) => pos.position && pos.width && pos.height)
+                .map((pos, index) => ({
+                  ...pos,
+                  productItemId: itemId,
+                  categoryId: productItem.categoryId,
+                  categoryName: productItem.categoryName,
+                  index,
+                }));
+            },
+          );
+        const totalSideCount =
+          aggregatedPrintPositions.length || formState.sideCount || 0;
+
         payload.append(
           'configuration',
           JSON.stringify({
@@ -712,8 +789,11 @@ export default function OfflineOrdersIntakePage() {
             orderCode: formState.orderCode, // [2025-01-27 19:00:00] 订单编号
             artworkNotes: formState.artworkNotes,
             productItems: formState.productItems, // [2025-01-27 18:00:00] 多产品定制数据
-            sideCount: formState.sideCount,
-            printPositions: formState.printPositions, // [2025-01-27 18:00:00] 印刷位置数据
+            sideCount: totalSideCount, // [2025-11-28 14:22:35] 汇总后的印刷位置总数，兼容旧字段
+            printPositions:
+              aggregatedPrintPositions.length > 0
+                ? aggregatedPrintPositions
+                : formState.printPositions, // [2025-11-28 14:22:40] 优先使用按产品聚合后的印刷位置
             requiresInvoice: formState.requiresInvoice, // [2025-01-27 18:00:00] 发票需求
             invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null, // [2025-01-27 18:00:00] 发票信息
             pricing: {
@@ -851,142 +931,144 @@ export default function OfflineOrdersIntakePage() {
                     </h3>
                   </div>
 
-                  {/* 变体输入区域 - 使用 Tailwind */}
+                  {/* 变体输入区域 - 使用 Tailwind（表格内直接编辑） */}
                   <div className="mt-4">
-                    {/* 添加变体 - 尺码和颜色组合 */}
-                    <div className="mb-4 grid grid-cols-2 gap-3 max-w-md">
-                      <label className="block">
-                        <span className="block text-sm font-medium text-gray-700 mb-2">{t('size')} *</span>
-                        <select
-                          id={`size-select-${item.id}`}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                        >
-                          <option value="">{t('selectSize')}</option>
-                          {SIZE_OPTIONS.map((size) => (
-                            <option key={size} value={size}>
-                              {size}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="block">
-                        <span className="block text-sm font-medium text-gray-700 mb-2">{t('color')} *</span>
-                        <select
-                          id={`color-select-${item.id}`}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                        >
-                          <option value="">{t('selectColor')}</option>
-                          {['White', 'Black', 'Red', 'Blue', 'Green', 'Yellow', 'Gray'].map((color) => (
-                            <option key={color} value={color}>
-                              {color}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <div className="col-span-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const sizeSelect = document.getElementById(`size-select-${item.id}`) as HTMLSelectElement;
-                            const colorSelect = document.getElementById(`color-select-${item.id}`) as HTMLSelectElement;
-                            const size = sizeSelect.value;
-                            const color = colorSelect.value;
-                            if (size && color) {
-                              // 检查是否已存在相同的尺码+颜色组合
-                              const variantExists = item.variants.some((v) => v.size === size && v.color === color);
-                              if (variantExists) {
-                                setStatus({ type: 'error', message: `${t('variantAlreadyExists')}: ${size} + ${color}` });
-                                return;
-                              }
-                              addVariant(item.id, size, color);
-                              sizeSelect.value = '';
-                              colorSelect.value = '';
-                            } else {
-                              setStatus({ type: 'error', message: t('pleaseSelectSizeAndColor') });
-                            }
-                          }}
-                          className="px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
-                        >
-                          {t('addVariant')}
-                        </button>
-                      </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                              {t('size')}
+                            </th>
+                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                              {t('color')}
+                            </th>
+                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                              {t('quantity')}
+                            </th>
+                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                              {t('unitPrice')}
+                            </th>
+                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                              {t('subtotal')}
+                            </th>
+                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
+                              {t('remove')}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {item.variants.map((variant, variantIndex) => {
+                            const variantTotal = variant.quantity * variant.unitPrice;
+                            return (
+                              <tr key={variantIndex} className="border-b border-gray-200">
+                                <td className="px-3 py-3 text-sm">
+                                  <select
+                                    value={variant.size}
+                                    onChange={(e) =>
+                                      updateVariant(item.id, variantIndex, 'size', e.target.value)
+                                    }
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                  >
+                                    <option value="">{t('selectSize')}</option>
+                                    {SIZE_OPTIONS.map((size) => (
+                                      <option key={size} value={size}>
+                                        {size}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </td>
+                                <td className="px-3 py-3 text-sm">
+                                  <select
+                                    value={variant.color}
+                                    onChange={(e) =>
+                                      updateVariant(item.id, variantIndex, 'color', e.target.value)
+                                    }
+                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                  >
+                                    <option value="">{t('selectColor')}</option>
+                                    {['White', 'Black', 'Red', 'Blue', 'Green', 'Yellow', 'Gray'].map(
+                                      (color) => (
+                                        <option key={color} value={color}>
+                                          {color}
+                                        </option>
+                                      )
+                                    )}
+                                  </select>
+                                </td>
+                                <td className="px-3 py-3">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    value={variant.quantity}
+                                    onChange={(e) =>
+                                      updateVariant(
+                                        item.id,
+                                        variantIndex,
+                                        'quantity',
+                                        parseInt(e.target.value, 10) || 0,
+                                      )
+                                    }
+                                    className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                  />
+                                </td>
+                                <td className="px-3 py-3">
+                                  <input
+                                    type="text"
+                                    value={variant.unitPrice || ''}
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/[^\d.]/g, '');
+                                      const numValue = parseFloat(value) || 0;
+                                      updateVariant(item.id, variantIndex, 'unitPrice', numValue);
+                                    }}
+                                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                                  />
+                                </td>
+                                <td className="px-3 py-3 text-sm font-semibold text-blue-700">
+                                  ${variantTotal.toFixed(2)}
+                                </td>
+                                <td className="px-3 py-3">
+                                  <button
+                                    type="button"
+                                    className="bg-red-600 text-white border-none rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:bg-red-700 transition-colors"
+                                    onClick={() => removeVariant(item.id, variantIndex)}
+                                  >
+                                    {t('delete')}
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot className="bg-gray-50">
+                          <tr>
+                            <td colSpan={2} className="px-3 py-3">
+                              <strong className="font-semibold">{t('productSubtotal')}：</strong>
+                            </td>
+                            <td className="px-3 py-3">
+                              <strong className="font-semibold">
+                                {itemQuantity} {t('items')}
+                              </strong>
+                            </td>
+                            <td colSpan={2} className="px-3 py-3">
+                              <strong className="font-semibold text-blue-700">
+                                ${itemTotal.toFixed(2)} CAD
+                              </strong>
+                            </td>
+                            <td></td>
+                          </tr>
+                        </tfoot>
+                      </table>
                     </div>
-
-                    {/* 变体列表 - 使用 Tailwind */}
-                    {item.variants.length > 0 && (
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr className="bg-gray-50">
-                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('size')}</th>
-                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('color')}</th>
-                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('quantity')}</th>
-                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('unitPrice')}</th>
-                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('subtotal')}</th>
-                              <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('remove')}</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {item.variants.map((variant, variantIndex) => {
-                              const variantTotal = variant.quantity * variant.unitPrice;
-                              return (
-                                <tr key={variantIndex} className="border-b border-gray-200">
-                                  <td className="px-3 py-3 text-sm font-medium">{variant.size}</td>
-                                  <td className="px-3 py-3 text-sm">{variant.color}</td>
-                                  <td className="px-3 py-3">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={variant.quantity}
-                                      onChange={(e) =>
-                                        updateVariant(item.id, variantIndex, 'quantity', parseInt(e.target.value, 10) || 0)
-                                      }
-                                      className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                    />
-                                  </td>
-                                  <td className="px-3 py-3">
-                                    <input
-                                      type="text"
-                                      value={variant.unitPrice || ''}
-                                      onChange={(e) => {
-                                        const value = e.target.value.replace(/[^\d.]/g, '');
-                                        const numValue = parseFloat(value) || 0;
-                                        updateVariant(item.id, variantIndex, 'unitPrice', numValue);
-                                      }}
-                                      className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
-                                    />
-                                  </td>
-                                  <td className="px-3 py-3 text-sm font-semibold text-blue-700">${variantTotal.toFixed(2)}</td>
-                                  <td className="px-3 py-3">
-                                    <button
-                                      type="button"
-                                      className="bg-red-600 text-white border-none rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:bg-red-700 transition-colors"
-                                      onClick={() => removeVariant(item.id, variantIndex)}
-                                    >
-                                      {t('delete')}
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                          <tfoot className="bg-gray-50">
-                            <tr>
-                              <td colSpan={2} className="px-3 py-3">
-                                <strong className="font-semibold">{t('productSubtotal')}：</strong>
-                              </td>
-                              <td className="px-3 py-3">
-                                <strong className="font-semibold">{itemQuantity} {t('items')}</strong>
-                              </td>
-                              <td colSpan={2} className="px-3 py-3">
-                                <strong className="font-semibold text-blue-700">${itemTotal.toFixed(2)} CAD</strong>
-                              </td>
-                              <td></td>
-                            </tr>
-                          </tfoot>
-                        </table>
-                      </div>
-                    )}
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        className="px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
+                        onClick={() => addVariant(item.id)}
+                      >
+                        {t('addVariant')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1015,98 +1097,283 @@ export default function OfflineOrdersIntakePage() {
     );
   };
 
-  // [2025-01-27 18:00:00] 渲染第二步：印刷位置 - 使用 Tailwind
+  // [2025-11-28 14:21:40] 渲染第二步：按产品类型分组的印刷位置 - 使用 Tailwind
   const renderStep2 = () => {
-    // [2025-01-27 20:35:00] 确保 printPositions 至少有一个元素
-    const positionsToRender = formState.printPositions && formState.printPositions.length > 0 
-      ? formState.printPositions 
-      : [{ position: '', width: '', height: '', notes: '' }];
-    
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading')}</h2>
         <p className="text-gray-600 mb-6 text-sm">{t('step2Intro')}</p>
-        
-        <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-          <label className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">{t('howManyPositions')} *</span>
-            <input
-              type="number"
-              min="1"
-              max="10"
-              value={formState.sideCount}
-              onChange={(e) => updateSideCount(parseInt(e.target.value, 10) || 1)}
-              className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <span className="text-xs text-gray-600">{t('max10Positions')}</span>
-          </label>
-        </div>
+        {formState.productItems.length === 0 ? (
+          <div className="p-8 text-center text-gray-600 bg-gray-50 rounded-lg">
+            <p>{t('pleaseAddProductsFirst')}</p>
+          </div>
+        ) : (
+          <div className="space-y-6 mt-6">
+            {formState.productItems.map((item) => {
+              const config =
+                formState.productPrintConfigs[item.id] || {
+                  sideCount: 1,
+                  positions: [{ position: '', width: '', height: '', notes: '' }],
+                };
+              const positionsToRender =
+                config.positions && config.positions.length > 0
+                  ? config.positions
+                  : [{ position: '', width: '', height: '', notes: '' }];
+              const itemQuantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
 
-        <div className="space-y-6 mt-6">
-          {positionsToRender.map((position, index) => (
-            <div key={index} className="border border-gray-200 rounded-xl p-5 bg-white">
-              <div className="mb-4 pb-3 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 m-0">{t('position')} {index + 1}</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('position')} *</span>
-                  <select
-                    value={position.position}
-                    onChange={(e) => updatePrintPosition(index, 'position', e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  >
-                    <option value="">{t('selectPosition')}</option>
-                    {PRINT_POSITION_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+              return (
+                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white">
+                  <div className="mb-4 pb-3 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 m-0">
+                        {item.categoryName}
+                      </h3>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {t('totalQuantity')}：{itemQuantity} {t('items')}
+                      </p>
+                    </div>
+                    <label className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-700">
+                        {t('howManyPositions')} *
+                      </span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        value={config.sideCount}
+                        onChange={(e) => {
+                          const count = Math.min(
+                            10,
+                            Math.max(1, parseInt(e.target.value, 10) || 1),
+                          );
+                          setFormState((prev) => {
+                            const prevConfig =
+                              prev.productPrintConfigs[item.id] ||
+                              ({
+                                sideCount: 1,
+                                positions: [
+                                  { position: '', width: '', height: '', notes: '' },
+                                ],
+                              } as ProductPrintConfig);
+                            const currentPositions = prevConfig.positions || [];
+                            const newPositions: PrintPosition[] = [];
+                            for (let i = 0; i < count; i += 1) {
+                              if (currentPositions[i]) {
+                                newPositions.push(currentPositions[i]);
+                              } else {
+                                newPositions.push({
+                                  position: '',
+                                  width: '',
+                                  height: '',
+                                  notes: '',
+                                });
+                              }
+                            }
+                            return {
+                              ...prev,
+                              productPrintConfigs: {
+                                ...(prev.productPrintConfigs || {}),
+                                [item.id]: {
+                                  sideCount: count,
+                                  positions: newPositions,
+                                },
+                              },
+                            };
+                          });
+                        }}
+                        className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      <span className="text-xs text-gray-600">{t('max10Positions')}</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-6 mt-4">
+                    {positionsToRender.map((position, index) => (
+                      <div key={index} className="border border-gray-100 rounded-lg p-4 bg-gray-50">
+                        <div className="mb-3">
+                          <h4 className="text-sm font-semibold text-gray-900 m-0">
+                            {t('position')} {index + 1}
+                          </h4>
+                        </div>
+                        <div className="space-y-4">
+                          <label className="block">
+                            <span className="block text-sm font-medium text-gray-700 mb-2">
+                              {t('position')} *
+                            </span>
+                            <select
+                              value={position.position}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setFormState((prev) => {
+                                  const prevConfig =
+                                    prev.productPrintConfigs[item.id] ||
+                                    ({
+                                      sideCount: positionsToRender.length || 1,
+                                      positions: positionsToRender,
+                                    } as ProductPrintConfig);
+                                  const nextPositions = [...(prevConfig.positions || [])];
+                                  if (nextPositions[index]) {
+                                    nextPositions[index] = {
+                                      ...nextPositions[index],
+                                      position: value,
+                                    };
+                                  }
+                                  return {
+                                    ...prev,
+                                    productPrintConfigs: {
+                                      ...(prev.productPrintConfigs || {}),
+                                      [item.id]: {
+                                        ...prevConfig,
+                                        positions: nextPositions,
+                                      },
+                                    },
+                                  };
+                                });
+                              }}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            >
+                              <option value="">{t('selectPosition')}</option>
+                              {PRINT_POSITION_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <label className="block">
+                              <span className="block text-sm font-medium text-gray-700 mb-2">
+                                {t('width')} *
+                              </span>
+                              <input
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                placeholder="0.0"
+                                value={position.width}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setFormState((prev) => {
+                                    const prevConfig =
+                                      prev.productPrintConfigs[item.id] ||
+                                      ({
+                                        sideCount: positionsToRender.length || 1,
+                                        positions: positionsToRender,
+                                      } as ProductPrintConfig);
+                                    const nextPositions = [...(prevConfig.positions || [])];
+                                    if (nextPositions[index]) {
+                                      nextPositions[index] = {
+                                        ...nextPositions[index],
+                                        width: value,
+                                      };
+                                    }
+                                    return {
+                                      ...prev,
+                                      productPrintConfigs: {
+                                        ...(prev.productPrintConfigs || {}),
+                                        [item.id]: {
+                                          ...prevConfig,
+                                          positions: nextPositions,
+                                        },
+                                      },
+                                    };
+                                  });
+                                }}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                              />
+                            </label>
+                            <label className="block">
+                              <span className="block text-sm font-medium text-gray-700 mb-2">
+                                {t('height')} *
+                              </span>
+                              <input
+                                type="number"
+                                min="0.1"
+                                step="0.1"
+                                placeholder="0.0"
+                                value={position.height}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  setFormState((prev) => {
+                                    const prevConfig =
+                                      prev.productPrintConfigs[item.id] ||
+                                      ({
+                                        sideCount: positionsToRender.length || 1,
+                                        positions: positionsToRender,
+                                      } as ProductPrintConfig);
+                                    const nextPositions = [...(prevConfig.positions || [])];
+                                    if (nextPositions[index]) {
+                                      nextPositions[index] = {
+                                        ...nextPositions[index],
+                                        height: value,
+                                      };
+                                    }
+                                    return {
+                                      ...prev,
+                                      productPrintConfigs: {
+                                        ...(prev.productPrintConfigs || {}),
+                                        [item.id]: {
+                                          ...prevConfig,
+                                          positions: nextPositions,
+                                        },
+                                      },
+                                    };
+                                  });
+                                }}
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                              />
+                            </label>
+                          </div>
+
+                          <label className="block">
+                            <span className="block text-sm font-medium text-gray-700 mb-2">
+                              {t('notes')}
+                            </span>
+                            <textarea
+                              rows={2}
+                              placeholder={t('positionNotesPlaceholder')}
+                              value={position.notes}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setFormState((prev) => {
+                                  const prevConfig =
+                                    prev.productPrintConfigs[item.id] ||
+                                    ({
+                                      sideCount: positionsToRender.length || 1,
+                                      positions: positionsToRender,
+                                    } as ProductPrintConfig);
+                                  const nextPositions = [...(prevConfig.positions || [])];
+                                  if (nextPositions[index]) {
+                                    nextPositions[index] = {
+                                      ...nextPositions[index],
+                                      notes: value,
+                                    };
+                                  }
+                                  return {
+                                    ...prev,
+                                    productPrintConfigs: {
+                                      ...(prev.productPrintConfigs || {}),
+                                      [item.id]: {
+                                        ...prevConfig,
+                                        positions: nextPositions,
+                                      },
+                                    },
+                                  };
+                                });
+                              }}
+                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-y min-h-[60px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                            />
+                          </label>
+                        </div>
+                      </div>
                     ))}
-                  </select>
-                </label>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('width')} *</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      placeholder="0.0"
-                      value={position.width}
-                      onChange={(e) => updatePrintPosition(index, 'width', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('height')} *</span>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.1"
-                      placeholder="0.0"
-                      value={position.height}
-                      onChange={(e) => updatePrintPosition(index, 'height', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    />
-                  </label>
+                  </div>
                 </div>
-
-                <label className="block">
-                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('notes')}</span>
-                  <textarea
-                    rows={2}
-                    placeholder={t('positionNotesPlaceholder')}
-                    value={position.notes}
-                    onChange={(e) => updatePrintPosition(index, 'notes', e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-y min-h-[60px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  />
-                </label>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };

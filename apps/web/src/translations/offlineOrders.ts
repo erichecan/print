@@ -37,6 +37,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     // Step 1
     step1Heading: 'Multi-product Customization',
     step1Intro: 'Supports customizing multiple products simultaneously, each product can choose different variations (size, color, etc.) and quantity',
+    // [2025-11-28 14:22:50] Step1/2 文案微调：添加商品 / 按产品配置印刷位置
     addProduct: 'Add product',
     selectProductType: 'Select product type...',
     pleaseAddProducts: 'Please add product types first, then add variations (size, color, etc.) and quantity for each product',
@@ -48,7 +49,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     subtotal: 'Subtotal (CAD)',
     remove: 'Remove',
     delete: 'Delete',
-    addVariant: 'Add variant',
+    addVariant: 'Add item',
     selectVariant: 'Select variant...',
     selectSize: 'Select size...',
     selectColor: 'Select color...',
@@ -193,7 +194,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     subtotal: '小计 (CAD)',
     remove: '删除',
     delete: '删除',
-    addVariant: '添加变体',
+    addVariant: '添加商品',
     selectVariant: '选择变体...',
     selectSize: '选择尺码...',
     selectColor: '选择颜色...',
