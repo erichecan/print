@@ -18,7 +18,6 @@ import SortSelect from './SortSelect';
 
 // [2025-01-27 16:45:00] 客户端筛选组件
 const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
-const ClearFiltersButton = dynamic(() => import('@/components/products/ClearFiltersButton').then(mod => ({ default: mod.ClearFiltersButton })), { ssr: false });
 // [2025-01-27 17:00:00] 动态筛选器组件（从API获取筛选选项和数量）
 const DynamicFilters = dynamic(() => import('@/components/products/DynamicFilters').then(mod => mod.DynamicFilters), { ssr: false });
 
@@ -374,18 +373,9 @@ export default async function ProductsPage({
           <aside className="plp-new__sidebar">
             {/* [2025-01-27 16:45:00] 使用客户端筛选组件处理筛选逻辑 */}
             <ProductFiltersClient currentCollection={currentCollection} currentBrand={currentBrand} brands={brands} />
-            <form id="filters-form" className="filters-new" method="get" action="/products">
-              {/* [2025-01-27 17:00:00] 使用动态筛选器组件（从API获取筛选选项和数量） */}
-              <DynamicFilters currentCollection={currentCollection} />
-
-              {/* [2025-01-27 16:45:00] 筛选应用按钮 */}
-              <div className="filter-actions">
-                <button type="submit" className="filter-apply-btn">
-                  Apply Filters
-                </button>
-                <ClearFiltersButton />
-              </div>
-            </form>
+            {/* [2025-01-27 17:00:00] 使用动态筛选器组件（从API获取筛选选项和数量） */}
+            {/* [2025-01-28] 移除表单和按钮，改为实时筛选（参考 Custom Ink） */}
+            <DynamicFilters currentCollection={currentCollection} />
           </aside>
 
           {/* 主内容区 */}

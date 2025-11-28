@@ -176,6 +176,11 @@ const DesignLabClient = () => {
   // [2025-01-27 21:00:00] 模态框状态
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAddTextModal, setShowAddTextModal] = useState(false);
+  const [textInput, setTextInput] = useState('Your Text');
+  const [textFont, setTextFont] = useState('Arial');
+  const [textColor, setTextColor] = useState('#FFFFFF'); // [2025-01-28] 默认白色文字
+  const [textSize, setTextSize] = useState(48);
+  const [textRotation, setTextRotation] = useState(0);
   const [showAddArtModal, setShowAddArtModal] = useState(false);
   const [selectedArtCategory, setSelectedArtCategory] = useState<string | null>(null); // [2025-11-20 22:30:00] Art category state
   const [artAssetsFromApi, setArtAssetsFromApi] = useState<Record<string, any[]>>({}); // [2025-01-28 01:20:00] Art assets from API
@@ -184,8 +189,7 @@ const DesignLabClient = () => {
   const [showAddNamesModal, setShowAddNamesModal] = useState(false);
   const [showNamesToolsModal, setShowNamesToolsModal] = useState(false);
 
-  // [2025-01-27 21:00:00] 添加文本状态
-  const [textInput, setTextInput] = useState('');
+  // [2025-01-27 21:00:00] 添加文本状态（已在上面定义，移除重复）
 
   // [2025-01-27 21:00:00] 产品颜色选择状态
   const [selectedColor, setSelectedColor] = useState('Heather Dark Grey');
@@ -1768,27 +1772,55 @@ const DesignLabClient = () => {
     }
   }, [draft, designName, patchDraft]);
 
-  const handleAddText = useCallback(async (text: string = 'Double click to edit') => {
+  // [2025-01-28] 改进的文本添加功能，支持字体、颜色、大小、旋转等选项（参考 native 版本）
+  const handleAddText = useCallback(async (
+    text: string = 'Your Text',
+    options?: {
+      fontFamily?: string;
+      fill?: string;
+      fontSize?: number;
+      rotation?: number;
+    }
+  ) => {
     const fabric = await ensureFabric();
     if (!fabricCanvasRef.current) {
       return;
     }
-    const textbox = new fabric.Textbox(text, {
-      left: 120,
-      top: 160,
-      fill: '#ffffff',
-      fontSize: 28,
-      fontFamily: 'Arial',
-    }) as unknown as { id?: string; text?: string };
+    
+    const canvasWidth = fabricCanvasRef.current.width || 400;
+    const canvasHeight = fabricCanvasRef.current.height || 400;
+    
+    const textbox = new fabric.IText(text || 'Your Text', {
+      left: canvasWidth / 2,
+      top: canvasHeight / 2,
+      fill: options?.fill || textColor || '#FFFFFF', // [2025-01-28] 默认白色
+      fontSize: options?.fontSize || textSize || 48,
+      fontFamily: options?.fontFamily || textFont || 'Arial',
+      originX: 'center',
+      originY: 'center',
+    }) as unknown as { id?: string; text?: string; rotate?: (angle: number) => void };
+    
     textbox.id = uuidv4();
+    
+    // 应用旋转
+    if (options?.rotation !== undefined) {
+      textbox.rotate(options.rotation);
+    } else if (textRotation !== 0) {
+      textbox.rotate(textRotation);
+    }
+    
     fabricCanvasRef.current.add(textbox);
     fabricCanvasRef.current.setActiveObject(textbox);
     fabricCanvasRef.current.renderAll();
+    
     // [2025-01-27 23:00:00] 自动显示编辑面板
     setSelectedTextObject(textbox);
     setShowEditPanel(true);
     handleCanvasChange();
-  }, [ensureFabric, handleCanvasChange]);
+    
+    // [2025-01-28] 添加后返回 home 面板（类似 native 版本）
+    setSelectedTool('upload');
+  }, [ensureFabric, handleCanvasChange, textColor, textSize, textFont, textRotation]);
 
   const handleDeleteSelection = useCallback(() => {
     const active = fabricCanvasRef.current?.getActiveObject();
@@ -2180,21 +2212,101 @@ const DesignLabClient = () => {
           if (img) {
             const imageObject = img as any & { id?: string };
             imageObject.id = uuidv4();
+            const canvasWidth = fabricCanvasRef.current?.width || 400;
+            const canvasHeight = fabricCanvasRef.current?.height || 400;
             imageObject.set({
-              left: 100,
-              top: 120,
+              left: canvasWidth / 2,
+              top: canvasHeight / 2,
+              originX: 'center',
+              originY: 'center',
               scaleX: Math.min(1, 360 / (img.width || 360)),
               scaleY: Math.min(1, 360 / (img.height || 360)),
             });
             fabricCanvasRef.current?.add(imageObject);
             fabricCanvasRef.current?.setActiveObject(imageObject);
             fabricCanvasRef.current?.renderAll();
+            handleCanvasChange();
           }
         },
         { crossOrigin: 'anonymous' }
       );
     },
-    [ensureFabric]
+    [ensureFabric, handleCanvasChange]
+  );
+
+  // [2025-01-28] 添加基本形状功能（参考 native 版本）
+  const handleAddArt = useCallback(
+    async (artType: 'star' | 'heart' | 'circle' | 'triangle' | 'square') => {
+      const fabric = await ensureFabric();
+      if (!fabricCanvasRef.current) {
+        return;
+      }
+
+      const canvasWidth = fabricCanvasRef.current.width || 400;
+      const canvasHeight = fabricCanvasRef.current.height || 400;
+
+      let newObject: any = null;
+
+      // [2025-01-28] 对于 circle, square, triangle 使用 Fabric 形状
+      if (artType === 'circle') {
+        newObject = new fabric.Circle({
+          radius: 50,
+          fill: '#3b82f6',
+          left: canvasWidth / 2,
+          top: canvasHeight / 2,
+          originX: 'center',
+          originY: 'center',
+        });
+      } else if (artType === 'square') {
+        newObject = new fabric.Rect({
+          width: 100,
+          height: 100,
+          fill: '#3b82f6',
+          left: canvasWidth / 2,
+          top: canvasHeight / 2,
+          originX: 'center',
+          originY: 'center',
+        });
+      } else if (artType === 'triangle') {
+        newObject = new fabric.Triangle({
+          width: 100,
+          height: 100,
+          fill: '#3b82f6',
+          left: canvasWidth / 2,
+          top: canvasHeight / 2,
+          originX: 'center',
+          originY: 'center',
+        });
+      } else if (artType === 'star' || artType === 'heart') {
+        // [2025-01-28] 对于 star 和 heart，使用 SVG（参考 native 版本）
+        let svgContent = '';
+        if (artType === 'star') {
+          svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="50,5 61,35 95,35 68,57 79,91 50,70 21,91 32,57 5,35 39,35" fill="#3b82f6"/></svg>';
+        } else if (artType === 'heart') {
+          svgContent = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50,85 C50,85 10,50 10,30 C10,15 20,10 30,10 C40,10 50,20 50,20 C50,20 60,10 70,10 C80,10 90,15 90,30 C90,50 50,85 50,85 Z" fill="#ff1f3d"/></svg>';
+        }
+        
+        if (svgContent) {
+          const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+          const url = URL.createObjectURL(blob);
+          await addImageFromUrl(url);
+          setShowAddArtModal(false);
+          setSelectedTool('upload');
+          return;
+        }
+      }
+
+      if (newObject) {
+        newObject.id = uuidv4();
+        fabricCanvasRef.current.add(newObject);
+        fabricCanvasRef.current.setActiveObject(newObject);
+        fabricCanvasRef.current.renderAll();
+        handleCanvasChange();
+        setShowAddArtModal(false);
+        setSelectedTool('upload');
+      }
+    },
+    [ensureFabric, handleCanvasChange, addImageFromUrl]
   );
 
   const handleInsertPresetArt = useCallback(
@@ -4468,7 +4580,7 @@ const DesignLabClient = () => {
           </div>
         )}
 
-        {/* [2025-01-27 21:00:00] 添加文本模态框 */}
+        {/* [2025-01-28] 改进的文本模态框，添加字体、颜色、大小、旋转选项（参考 native 版本） */}
         {showAddTextModal && (
           <div className="dl-modal-overlay" onClick={() => setShowAddTextModal(false)}>
             <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
@@ -4477,29 +4589,90 @@ const DesignLabClient = () => {
                 <button type="button" className="dl-modal__close" onClick={() => setShowAddTextModal(false)}>×</button>
               </div>
               <div className="dl-modal__body">
-                <input
-                  type="text"
-                  className="dl-text-input"
-                  placeholder="Enter text here"
-                  value={textInput}
-                  onChange={(e) => setTextInput(e.target.value)}
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  className="dl-add-btn"
-                  onClick={() => {
-                    if (textInput.trim()) {
-                      handleAddText(textInput);
+                <div style={{ marginBottom: '16px' }}>
+                  <input
+                    type="text"
+                    className="dl-text-input"
+                    placeholder="Enter text here"
+                    value={textInput}
+                    onChange={(e) => setTextInput(e.target.value)}
+                    autoFocus
+                    style={{ width: '100%', padding: '8px', marginBottom: '12px' }}
+                  />
+                  <button
+                    type="button"
+                    className="dl-add-btn"
+                    style={{ width: '100%', padding: '10px', backgroundColor: '#0066cc', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                    onClick={() => {
+                      handleAddText(textInput.trim() || 'Your Text', {
+                        fontFamily: textFont,
+                        fill: textColor,
+                        fontSize: textSize,
+                        rotation: textRotation,
+                      });
                       setShowAddTextModal(false);
-                      setTextInput('');
-                    }
-                  }}
-                >
-                  Add To Design
-                </button>
-                <div className="dl-modal-feedback">
-                  <p>How would you <Link href="#" className="dl-modal-feedback__link">rate our editing tools?</Link></p>
+                      setTextInput('Your Text');
+                    }}
+                  >
+                    Add To Design
+                  </button>
+                </div>
+                
+                {/* [2025-01-28] 字体选择 */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Change Font</label>
+                  <select
+                    value={textFont}
+                    onChange={(e) => setTextFont(e.target.value)}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+                  >
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Georgia">Georgia</option>
+                  </select>
+                </div>
+                
+                {/* [2025-01-28] 颜色选择器（默认白色） */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Edit Color</label>
+                  <input
+                    type="color"
+                    value={textColor}
+                    onChange={(e) => setTextColor(e.target.value)}
+                    style={{ width: '100%', height: '40px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
+                  />
+                </div>
+                
+                {/* [2025-01-28] 字体大小滑块 */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+                    Text Size: <span style={{ fontWeight: 'bold' }}>{textSize}</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="12"
+                    max="200"
+                    value={textSize}
+                    onChange={(e) => setTextSize(Number(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
+                </div>
+                
+                {/* [2025-01-28] 旋转滑块 */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
+                    Rotation: <span style={{ fontWeight: 'bold' }}>{textRotation}°</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="-180"
+                    max="180"
+                    value={textRotation}
+                    onChange={(e) => setTextRotation(Number(e.target.value))}
+                    style={{ width: '100%' }}
+                  />
                 </div>
               </div>
             </div>
@@ -4581,6 +4754,113 @@ const DesignLabClient = () => {
                   </div>
                 ) : (
                   <>
+                    {/* [2025-01-28] 基本形状网格（参考 native 版本） */}
+                    <div style={{ marginBottom: '24px' }}>
+                      <h3 style={{ marginBottom: '12px', fontSize: '16px', fontWeight: '600' }}>Basic Shapes</h3>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleAddArt('star')}
+                          style={{
+                            padding: '12px',
+                            border: '1px solid #eee',
+                            borderRadius: '8px',
+                            background: 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '60px',
+                          }}
+                          aria-label="Star"
+                        >
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#3b82f6' }}>
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddArt('heart')}
+                          style={{
+                            padding: '12px',
+                            border: '1px solid #eee',
+                            borderRadius: '8px',
+                            background: 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '60px',
+                          }}
+                          aria-label="Heart"
+                        >
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#ff1f3d' }}>
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddArt('circle')}
+                          style={{
+                            padding: '12px',
+                            border: '1px solid #eee',
+                            borderRadius: '8px',
+                            background: 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '60px',
+                          }}
+                          aria-label="Circle"
+                        >
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#3b82f6' }}>
+                            <circle cx="12" cy="12" r="10" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddArt('triangle')}
+                          style={{
+                            padding: '12px',
+                            border: '1px solid #eee',
+                            borderRadius: '8px',
+                            background: 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '60px',
+                          }}
+                          aria-label="Triangle"
+                        >
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#3b82f6' }}>
+                            <path d="M12 2L2 22h20L12 2z" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAddArt('square')}
+                          style={{
+                            padding: '12px',
+                            border: '1px solid #eee',
+                            borderRadius: '8px',
+                            background: 'white',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minHeight: '60px',
+                          }}
+                          aria-label="Square"
+                        >
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#3b82f6' }}>
+                            <rect x="3" y="3" width="18" height="18" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="dl-search-box">
                       <span className="dl-search-box__icon">🔍</span>
                       <input type="text" className="dl-search-box__input" placeholder="Search For Artwork" />

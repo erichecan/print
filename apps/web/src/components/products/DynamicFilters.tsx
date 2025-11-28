@@ -4,9 +4,9 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { productsApi, type FilterOptions } from '@/lib/api';
 import { API_BASE_URL } from '@/lib/api-config';
 import useSWR from 'swr';
@@ -46,8 +46,50 @@ const RUSH_DELIVERY_OPTIONS = [
 ];
 
 export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const search = searchParams.get('search') || '';
+
+  // [2025-01-28] 实时筛选：当用户点击复选框时立即更新 URL
+  const handleFilterChange = useCallback((filterName: string, value: string, checked: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    // 获取当前筛选值数组
+    const currentValues = params.get(filterName)?.split(',') || [];
+    
+    if (checked) {
+      // 添加筛选值
+      if (!currentValues.includes(value)) {
+        currentValues.push(value);
+      }
+    } else {
+      // 移除筛选值
+      const index = currentValues.indexOf(value);
+      if (index > -1) {
+        currentValues.splice(index, 1);
+      }
+    }
+    
+    // 更新 URL 参数
+    if (currentValues.length > 0) {
+      params.set(filterName, currentValues.join(','));
+    } else {
+      params.delete(filterName);
+    }
+    
+    // 重置到第一页
+    params.delete('page');
+    
+    // 更新 URL（实时筛选）
+    router.push(`${pathname}?${params.toString()}`);
+  }, [router, pathname, searchParams]);
+
+  // [2025-01-28] 检查筛选值是否已选中
+  const isFilterChecked = useCallback((filterName: string, value: string) => {
+    const currentValues = searchParams.get(filterName)?.split(',') || [];
+    return currentValues.includes(value);
+  }, [searchParams]);
 
   // [2025-01-27 17:00:00] 从API获取筛选选项
   const filterUrl = `${API_BASE_URL}/products/filters/options?collection=${currentCollection || ''}&search=${search}`;
@@ -162,14 +204,23 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             <span className="filter-toggle-icon">−</span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.fit.map((option) => (
-              <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="fit" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                <span className="filter-checkbox__label">
-                  {option.name} <span className="filter-count">({option.count})</span>
-                </span>
-              </label>
-            ))}
+            {filterOptions.fit.map((option) => {
+              const value = option.name.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <label key={option.name} className="filter-checkbox">
+                  <input 
+                    type="checkbox" 
+                    name="fit" 
+                    value={value}
+                    checked={isFilterChecked('fit', value)}
+                    onChange={(e) => handleFilterChange('fit', value, e.target.checked)}
+                  />
+                  <span className="filter-checkbox__label">
+                    {option.name} <span className="filter-count">({option.count})</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </details>
       )}
@@ -182,14 +233,23 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             <span className="filter-toggle-icon">−</span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.decoration.map((option) => (
-              <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="decoration" value={option.name.toLowerCase()} />
-                <span className="filter-checkbox__label">
-                  {option.name} <span className="filter-count">({option.count})</span>
-                </span>
-              </label>
-            ))}
+            {filterOptions.decoration.map((option) => {
+              const value = option.name.toLowerCase();
+              return (
+                <label key={option.name} className="filter-checkbox">
+                  <input 
+                    type="checkbox" 
+                    name="decoration" 
+                    value={value}
+                    checked={isFilterChecked('decoration', value)}
+                    onChange={(e) => handleFilterChange('decoration', value, e.target.checked)}
+                  />
+                  <span className="filter-checkbox__label">
+                    {option.name} <span className="filter-count">({option.count})</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </details>
       )}
@@ -203,7 +263,21 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <div className="filter-section__body">
           <p className="filter-question">Available to ship to multiple addresses?</p>
           <label className="filter-toggle">
-            <input type="checkbox" name="multiAddress" />
+            <input 
+              type="checkbox" 
+              name="multiAddress"
+              checked={searchParams.get('multiAddress') === 'true'}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (e.target.checked) {
+                  params.set('multiAddress', 'true');
+                } else {
+                  params.delete('multiAddress');
+                }
+                params.delete('page');
+                router.push(`${pathname}?${params.toString()}`);
+              }}
+            />
             <span className="filter-toggle__slider">
               <span className="filter-toggle__label filter-toggle__label--no">No</span>
               <span className="filter-toggle__label filter-toggle__label--yes">Yes</span>
@@ -217,7 +291,21 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <div className="filter-section__header">
           <span className="filter-section__title">No Minimum</span>
           <label className="filter-toggle">
-            <input type="checkbox" name="noMinimum" />
+            <input 
+              type="checkbox" 
+              name="noMinimum"
+              checked={searchParams.get('noMinimum') === 'true'}
+              onChange={(e) => {
+                const params = new URLSearchParams(searchParams.toString());
+                if (e.target.checked) {
+                  params.set('noMinimum', 'true');
+                } else {
+                  params.delete('noMinimum');
+                }
+                params.delete('page');
+                router.push(`${pathname}?${params.toString()}`);
+              }}
+            />
             <span className="filter-toggle__slider">
               <span className="filter-toggle__label filter-toggle__label--no">No</span>
               <span className="filter-toggle__label filter-toggle__label--yes">Yes</span>
@@ -235,19 +323,28 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           </summary>
           <div className="filter-section__body">
             <div className="color-grid">
-              {colorOptions.map((color) => (
-                <label key={color.name} className="color-swatch">
-                  <input type="checkbox" name="color" value={color.name.toLowerCase()} />
-                  <span 
-                    className="color-swatch__circle"
-                    style={{ 
-                      backgroundColor: color.hex,
-                      backgroundImage: color.pattern ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zM10 10h10v10H10z\' fill=\'%23fff\' opacity=\'.1\'/%3E%3C/svg%3E")' : undefined
-                    }}
-                    title={color.name}
-                  />
-                </label>
-              ))}
+              {colorOptions.map((color) => {
+                const value = color.name.toLowerCase();
+                return (
+                  <label key={color.name} className="color-swatch">
+                    <input 
+                      type="checkbox" 
+                      name="color" 
+                      value={value}
+                      checked={isFilterChecked('color', value)}
+                      onChange={(e) => handleFilterChange('color', value, e.target.checked)}
+                    />
+                    <span 
+                      className="color-swatch__circle"
+                      style={{ 
+                        backgroundColor: color.hex,
+                        backgroundImage: color.pattern ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zM10 10h10v10H10z\' fill=\'%23fff\' opacity=\'.1\'/%3E%3C/svg%3E")' : undefined
+                      }}
+                      title={color.name}
+                    />
+                  </label>
+                );
+              })}
             </div>
           </div>
         </details>
@@ -262,7 +359,13 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <div className="filter-section__body">
           {RUSH_DELIVERY_OPTIONS.map((option) => (
             <label key={option.days} className="filter-checkbox">
-              <input type="checkbox" name="rushDelivery" value={option.days} />
+              <input 
+                type="checkbox" 
+                name="rushDelivery" 
+                value={option.days}
+                checked={isFilterChecked('rushDelivery', option.days)}
+                onChange={(e) => handleFilterChange('rushDelivery', option.days, e.target.checked)}
+              />
               <span className="filter-checkbox__label">
                 {option.days}
                 <span className="rush-badge">
@@ -285,7 +388,13 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           <div className="filter-section__body">
             {filterOptions.brands.slice(0, 7).map((brand) => (
               <label key={brand.slug || brand.name} className="filter-checkbox">
-                <input type="checkbox" name="brand" value={brand.name} />
+                <input 
+                  type="checkbox" 
+                  name="brand" 
+                  value={brand.name}
+                  checked={isFilterChecked('brand', brand.name)}
+                  onChange={(e) => handleFilterChange('brand', brand.name, e.target.checked)}
+                />
                 <span className="filter-checkbox__label">
                   {brand.name} <span className="filter-count">({brand.count})</span>
                 </span>
@@ -306,14 +415,23 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             <span className="filter-toggle-icon">−</span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.material.map((option) => (
-              <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="material" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                <span className="filter-checkbox__label">
-                  {option.name} <span className="filter-count">({option.count})</span>
-                </span>
-              </label>
-            ))}
+            {filterOptions.material.map((option) => {
+              const value = option.name.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <label key={option.name} className="filter-checkbox">
+                  <input 
+                    type="checkbox" 
+                    name="material" 
+                    value={value}
+                    checked={isFilterChecked('material', value)}
+                    onChange={(e) => handleFilterChange('material', value, e.target.checked)}
+                  />
+                  <span className="filter-checkbox__label">
+                    {option.name} <span className="filter-count">({option.count})</span>
+                  </span>
+                </label>
+              );
+            })}
             <button type="button" className="filter-show-more">Show more</button>
           </div>
         </details>
@@ -327,14 +445,23 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             <span className="filter-toggle-icon">−</span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.type.map((option) => (
-              <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="type" value={option.name.toLowerCase()} />
-                <span className="filter-checkbox__label">
-                  {option.name} <span className="filter-count">({option.count})</span>
-                </span>
-              </label>
-            ))}
+            {filterOptions.type.map((option) => {
+              const value = option.name.toLowerCase();
+              return (
+                <label key={option.name} className="filter-checkbox">
+                  <input 
+                    type="checkbox" 
+                    name="type" 
+                    value={value}
+                    checked={isFilterChecked('type', value)}
+                    onChange={(e) => handleFilterChange('type', value, e.target.checked)}
+                  />
+                  <span className="filter-checkbox__label">
+                    {option.name} <span className="filter-count">({option.count})</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </details>
       )}
@@ -349,7 +476,13 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           <div className="filter-section__body">
             {filterOptions.sizes.map((option) => (
               <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="size" value={option.name} />
+                <input 
+                  type="checkbox" 
+                  name="size" 
+                  value={option.name}
+                  checked={isFilterChecked('size', option.name)}
+                  onChange={(e) => handleFilterChange('size', option.name, e.target.checked)}
+                />
                 <span className="filter-checkbox__label">
                   {option.name} <span className="filter-count">({option.count})</span>
                 </span>
@@ -367,14 +500,23 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             <span className="filter-toggle-icon">−</span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.style.map((option) => (
-              <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="style" value={option.name.toLowerCase()} />
-                <span className="filter-checkbox__label">
-                  {option.name} <span className="filter-count">({option.count})</span>
-                </span>
-              </label>
-            ))}
+            {filterOptions.style.map((option) => {
+              const value = option.name.toLowerCase();
+              return (
+                <label key={option.name} className="filter-checkbox">
+                  <input 
+                    type="checkbox" 
+                    name="style" 
+                    value={value}
+                    checked={isFilterChecked('style', value)}
+                    onChange={(e) => handleFilterChange('style', value, e.target.checked)}
+                  />
+                  <span className="filter-checkbox__label">
+                    {option.name} <span className="filter-count">({option.count})</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </details>
       )}
@@ -387,14 +529,23 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             <span className="filter-toggle-icon">−</span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.neckline.map((option) => (
-              <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="neckline" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                <span className="filter-checkbox__label">
-                  {option.name} <span className="filter-count">({option.count})</span>
-                </span>
-              </label>
-            ))}
+            {filterOptions.neckline.map((option) => {
+              const value = option.name.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <label key={option.name} className="filter-checkbox">
+                  <input 
+                    type="checkbox" 
+                    name="neckline" 
+                    value={value}
+                    checked={isFilterChecked('neckline', value)}
+                    onChange={(e) => handleFilterChange('neckline', value, e.target.checked)}
+                  />
+                  <span className="filter-checkbox__label">
+                    {option.name} <span className="filter-count">({option.count})</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </details>
       )}
@@ -407,14 +558,23 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             <span className="filter-toggle-icon">−</span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.features.map((option) => (
-              <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="feature" value={option.name.toLowerCase().replace(/\s+/g, '-')} />
-                <span className="filter-checkbox__label">
-                  {option.name} <span className="filter-count">({option.count})</span>
-                </span>
-              </label>
-            ))}
+            {filterOptions.features.map((option) => {
+              const value = option.name.toLowerCase().replace(/\s+/g, '-');
+              return (
+                <label key={option.name} className="filter-checkbox">
+                  <input 
+                    type="checkbox" 
+                    name="feature" 
+                    value={value}
+                    checked={isFilterChecked('feature', value)}
+                    onChange={(e) => handleFilterChange('feature', value, e.target.checked)}
+                  />
+                  <span className="filter-checkbox__label">
+                    {option.name} <span className="filter-count">({option.count})</span>
+                  </span>
+                </label>
+              );
+            })}
             <button type="button" className="filter-show-more">Show more</button>
           </div>
         </details>
@@ -430,7 +590,13 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           <div className="filter-section__body">
             {filterOptions.priceRanges.map((option) => (
               <label key={option.name} className="filter-checkbox">
-                <input type="checkbox" name="price" value={option.name} />
+                <input 
+                  type="checkbox" 
+                  name="price" 
+                  value={option.name}
+                  checked={isFilterChecked('price', option.name)}
+                  onChange={(e) => handleFilterChange('price', option.name, e.target.checked)}
+                />
                 <span className="filter-checkbox__label">
                   {option.name} <span className="filter-count">({option.count})</span>
                 </span>
