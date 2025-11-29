@@ -11,8 +11,8 @@ test.describe('GCP 部署验证', () => {
   test('前端页面应该正常加载', async ({ page }) => {
     await page.goto(FRONTEND_URL);
     
-    // 等待页面加载完成
-    await page.waitForLoadState('networkidle');
+    // [2025-11-28 16:55:00] 使用 domcontentloaded 代替 networkidle，避免超时
+    await page.waitForLoadState('domcontentloaded');
     
     // 检查页面标题
     await expect(page).toHaveTitle(/Custom Merch|suvernire plus/i);

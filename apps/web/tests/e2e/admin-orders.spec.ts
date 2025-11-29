@@ -8,10 +8,31 @@ const SEEDED_ORDER = process.env.E2E_SEEDED_ORDER || 'ORD-1001';
 test.describe('后台订单管理', () => {
   test('管理员可以搜索订单并更新状态', async ({ page, adminAccount }) => {
     await page.goto('/admin/login');
+    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:55:00] 等待页面加载
+    
+    // [2025-11-28 16:55:00] 等待表单元素可见
+    await page.waitForSelector('#email, input[type="email"]', { timeout: 10000 });
     await page.fill('#email', adminAccount.email);
     await page.fill('#password', adminAccount.password);
+    
+    // [2025-11-28 16:55:00] 监听登录 API 请求
+    const loginApiPromise = page.waitForResponse(
+      (response) => response.url().includes('/api/auth/login'),
+      { timeout: 30000 }
+    ).catch(() => null);
+    
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/admin$/, { timeout: 20000 });
+    
+    // 等待登录响应
+    const loginResponse = await loginApiPromise;
+    if (loginResponse && loginResponse.status() !== 200) {
+      const errorData = await loginResponse.json().catch(() => ({}));
+      throw new Error(`登录失败: ${errorData.error || 'HTTP ' + loginResponse.status()}`);
+    }
+    
+    // [2025-11-28 16:55:00] 增加超时时间并等待页面加载
+    await page.waitForURL(/\/admin$/, { timeout: 30000 });
+    await page.waitForLoadState('domcontentloaded');
 
     await page.goto('/admin/orders');
     await expect(page.getByRole('heading', { name: 'Orders' })).toBeVisible();

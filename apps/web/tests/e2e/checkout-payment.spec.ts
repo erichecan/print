@@ -15,6 +15,11 @@ test.describe('结账与支付', () => {
     adminAccount,
     guestEmail,
   }) => {
+    // [2025-11-28 16:55:00] 检查 Stripe 密钥是否配置，如果没有则跳过测试
+    if (!process.env.STRIPE_SECRET_KEY) {
+      test.skip(true, 'Stripe 密钥未配置，跳过支付测试');
+      return;
+    }
     await addProductToCart(page);
     await page.goto('/checkout');
 

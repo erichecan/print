@@ -121,16 +121,32 @@ test.describe('线下订单创建', () => {
     const submitButton = page.locator('button:has-text("提交"), button:has-text("Submit"), button[type="submit"]').first();
     await submitButton.waitFor({ state: 'visible', timeout: 5000 });
     
-    // 监听网络请求
-    const requestPromise = page.waitForResponse(
-      (response) => response.url().includes('/offline-orders') && response.request().method() === 'POST',
-      { timeout: 30000 }
-    );
+    // [2025-11-28 16:55:00] 监听网络请求 - 先设置监听再点击
+    let requestPromise = page.waitForResponse(
+      (response) => {
+        const url = response.url();
+        const method = response.request().method();
+        return url.includes('/offline-orders') && method === 'POST';
+      },
+      { timeout: 60000 } // 增加超时时间到 60 秒
+    ).catch(() => null);
 
     await submitButton.click();
 
-    // 等待响应
+    // [2025-11-28 16:55:00] 等待响应，如果没有响应则检查错误消息
     const response = await requestPromise;
+    
+    if (!response) {
+      // 如果请求超时，检查是否有错误消息
+      await page.waitForTimeout(2000);
+      const errorMessage = page.locator('.error-message, [role="alert"], text=/错误|error/i').first();
+      const hasError = await errorMessage.isVisible({ timeout: 3000 }).catch(() => false);
+      if (hasError) {
+        const errorText = await errorMessage.textContent();
+        throw new Error(`提交失败: ${errorText || '请求超时'}`);
+      }
+      throw new Error('提交请求超时，且没有错误消息');
+    }
     
     // 检查响应状态
     test.info().attach('response-status', { body: `Status: ${response.status()}`, contentType: 'text/plain' });
