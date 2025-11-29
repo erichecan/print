@@ -155,6 +155,19 @@ exports.getCart = async (req, res) => {
       sessionId: sessionId || null,
     });
 
+    // [2025-01-29 00:30:00] 确保 sessionId cookie 被设置（即使已经有 cookie，也要确保响应中包含）
+    // 这样可以确保浏览器在跨域情况下正确保存 cookie
+    if (!userId && sessionId) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('sessionId', sessionId, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: '/',
+      });
+    }
+
     // Calculate totals
     const subtotal = cart.items.reduce((sum, item) => {
       return sum + Number(item.priceSnapshot) * item.quantity;
@@ -362,6 +375,19 @@ exports.addItem = async (req, res) => {
       userId: userId || null,
       sessionId: sessionId || null,
     });
+
+    // [2025-01-29 00:30:00] 确保 sessionId cookie 被设置（即使已经有 cookie，也要确保响应中包含）
+    // 这样可以确保浏览器在跨域情况下正确保存 cookie
+    if (!userId && sessionId) {
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('sessionId', sessionId, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: '/',
+      });
+    }
 
     res.status(201).json({
       id: cartItem.id,
