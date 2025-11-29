@@ -1149,7 +1149,7 @@ export default function OfflineOrdersIntakePage() {
                         {t('totalQuantity')}：{itemQuantity} {t('items')}
                       </p>
                     </div>
-                    <label className="flex items-center gap-3">
+                    <label className="flex items-center gap-3" data-error-key={`product-${item.id}-positions`}>
                       <span className="text-sm font-medium text-gray-700">
                         {t('howManyPositions')} *
                       </span>
@@ -1163,6 +1163,13 @@ export default function OfflineOrdersIntakePage() {
                             10,
                             Math.max(1, parseInt(e.target.value, 10) || 1),
                           );
+                          // [2025-11-28 15:05:00] 清除该字段的错误
+                          const errorKey = `product-${item.id}-positions`;
+                          setFieldErrors((prev) => {
+                            const next = { ...prev };
+                            delete next[errorKey];
+                            return next;
+                          });
                           setFormState((prev) => {
                             const prevConfig =
                               prev.productPrintConfigs[item.id] ||
@@ -1198,9 +1205,19 @@ export default function OfflineOrdersIntakePage() {
                             };
                           });
                         }}
-                        className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className={`w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-all ${
+                          fieldErrors[`product-${item.id}-positions`]
+                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                            : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                        }`}
                       />
                       <span className="text-xs text-gray-600">{t('max10Positions')}</span>
+                      {/* [2025-11-28 15:05:00] 在字段附近显示错误信息 */}
+                      {fieldErrors[`product-${item.id}-positions`] && (
+                        <span className="text-sm text-red-600 whitespace-nowrap">
+                          {fieldErrors[`product-${item.id}-positions`]}
+                        </span>
+                      )}
                     </label>
                   </div>
 
