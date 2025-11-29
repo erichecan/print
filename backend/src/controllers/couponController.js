@@ -94,12 +94,13 @@ exports.validateCoupon = async (req, res) => {
       }
     }
 
-    logger.info('Coupon validated', {
+    logger.info('[couponController] Coupon validated successfully', {
       code: coupon.code,
       type: coupon.type,
       value: coupon.value,
       discountAmount,
       subtotal,
+      userId: userId || null,
     });
 
     res.status(200).json({
@@ -115,9 +116,11 @@ exports.validateCoupon = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error validating coupon', {
+    logger.error('[couponController] Error validating coupon', {
       error: error.message,
       stack: error.stack,
+      code: req.body?.code,
+      subtotal: req.body?.subtotal,
     });
 
     res.status(500).json({

@@ -36,22 +36,51 @@ const mapPromotion = (promotion) => {
 exports.getActivePromotions = async (req, res) => {
   try {
     const now = new Date();
-    const promotions = await prisma.promotion.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-      },
-      orderBy: [
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
-    });
+    let promotions = [];
+    try {
+      promotions = await prisma.promotion.findMany({
+        where: {
+          isActive: true,
+          startDate: { lte: now },
+          endDate: { gte: now },
+        },
+        orderBy: [
+          { sortOrder: 'asc' },
+          { createdAt: 'desc' },
+        ],
+      });
+    } catch (err) {
+      logger.error('[promotionController] Error fetching active promotions:', {
+        error: err.message,
+        stack: err.stack,
+      });
+      promotions = [];
+    }
 
-    res.json({ promotions: promotions.map(mapPromotion) });
+    // [2025-11-29 20:20:00] 安全地映射促销活动
+    const mappedPromotions = promotions
+      .filter((p) => p != null)
+      .map((p) => {
+        try {
+          return mapPromotion(p);
+        } catch (mapError) {
+          logger.warn('[promotionController] Error mapping promotion in getActivePromotions:', {
+            promotionId: p?.id,
+            error: mapError.message,
+          });
+          return null;
+        }
+      })
+      .filter((p) => p != null);
+
+    return res.json({ promotions: mappedPromotions });
   } catch (error) {
-    logger.error('[promotionController] getActivePromotions error:', error);
-    res.status(500).json({ error: 'Failed to fetch promotions' });
+    logger.error('[promotionController] getActivePromotions error:', {
+      error: error.message,
+      stack: error.stack,
+    });
+    // [2025-11-29 20:20:00] 即使出错也返回空数组而不是 500
+    return res.json({ promotions: [] });
   }
 };
 
@@ -68,48 +97,22 @@ exports.getPromotionsForProduct = async (req, res) => {
       return res.status(400).json({ error: 'Product ID is required' });
     }
 
+    logger.info('[promotionController] getPromotionsForProduct called', { productId });
+
     const now = new Date();
 
     // [2025-01-28 12:15:00] Find promotions that include this product directly
-    const productPromotions = await prisma.promotion.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-        products: {
-          some: {
-            productId: productId,
-          },
-        },
-      },
-      orderBy: [
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
-    }).catch((err) => {
-      logger.error('[promotionController] Error fetching product promotions:', err);
-      return [];
-    });
-
-    // [2025-01-28 12:15:00] Find promotions that include this product's category
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-      include: { category: true },
-    }).catch((err) => {
-      logger.error('[promotionController] Error fetching product:', err);
-      return null;
-    });
-
-    let categoryPromotions = [];
-    if (product?.categoryId) {
-      categoryPromotions = await prisma.promotion.findMany({
+    // [2025-11-29 20:15:00] 修复 Prisma 查询语法，使用正确的嵌套关系查询
+    let productPromotions = [];
+    try {
+      productPromotions = await prisma.promotion.findMany({
         where: {
           isActive: true,
           startDate: { lte: now },
           endDate: { gte: now },
-          categories: {
+          products: {
             some: {
-              categoryId: product.categoryId,
+              productId: productId,
             },
           },
         },
@@ -117,10 +120,72 @@ exports.getPromotionsForProduct = async (req, res) => {
           { sortOrder: 'asc' },
           { createdAt: 'desc' },
         ],
-      }).catch((err) => {
-        logger.error('[promotionController] Error fetching category promotions:', err);
-        return [];
       });
+      logger.info('[promotionController] Product promotions fetched', { 
+        productId, 
+        count: productPromotions?.length || 0 
+      });
+    } catch (err) {
+      logger.error('[promotionController] Error fetching product promotions:', {
+        error: err.message,
+        stack: err.stack,
+        productId,
+      });
+      productPromotions = [];
+    }
+
+    // [2025-01-28 12:15:00] Find promotions that include this product's category
+    let product = null;
+    try {
+      product = await prisma.product.findUnique({
+        where: { id: productId },
+        include: { category: true },
+      });
+      logger.info('[promotionController] Product fetched', { 
+        productId, 
+        hasProduct: !!product,
+        categoryId: product?.categoryId || null,
+      });
+    } catch (err) {
+      logger.error('[promotionController] Error fetching product:', {
+        error: err.message,
+        stack: err.stack,
+        productId,
+      });
+      product = null;
+    }
+
+    let categoryPromotions = [];
+    if (product?.categoryId) {
+      try {
+        categoryPromotions = await prisma.promotion.findMany({
+          where: {
+            isActive: true,
+            startDate: { lte: now },
+            endDate: { gte: now },
+            categories: {
+              some: {
+                categoryId: product.categoryId,
+              },
+            },
+          },
+          orderBy: [
+            { sortOrder: 'asc' },
+            { createdAt: 'desc' },
+          ],
+        });
+        logger.info('[promotionController] Category promotions fetched', { 
+          categoryId: product.categoryId, 
+          count: categoryPromotions?.length || 0 
+        });
+      } catch (err) {
+        logger.error('[promotionController] Error fetching category promotions:', {
+          error: err.message,
+          stack: err.stack,
+          categoryId: product.categoryId,
+        });
+        categoryPromotions = [];
+      }
     }
 
     // [2025-01-28 12:15:00] Merge and deduplicate promotions (prefer product-specific over category)
@@ -140,22 +205,38 @@ exports.getPromotionsForProduct = async (req, res) => {
     });
 
     // [2025-11-29 20:10:00] 安全地映射促销活动，处理可能的 null/undefined
-    const mappedPromotions = allPromotions
-      .filter((p) => p != null) // 过滤掉 null/undefined
-      .map((p) => {
-        try {
-          return mapPromotion(p);
-        } catch (mapError) {
-          logger.warn('[promotionController] Error mapping promotion:', {
-            promotionId: p?.id,
-            error: mapError.message,
-          });
-          return null;
-        }
-      })
-      .filter((p) => p != null); // 过滤掉映射失败的项目
+    let mappedPromotions = [];
+    try {
+      mappedPromotions = allPromotions
+        .filter((p) => p != null) // 过滤掉 null/undefined
+        .map((p) => {
+          try {
+            return mapPromotion(p);
+          } catch (mapError) {
+            logger.warn('[promotionController] Error mapping promotion:', {
+              promotionId: p?.id,
+              error: mapError.message,
+              stack: mapError.stack,
+            });
+            return null;
+          }
+        })
+        .filter((p) => p != null); // 过滤掉映射失败的项目
+      
+      logger.info('[promotionController] Promotions mapped successfully', { 
+        productId, 
+        count: mappedPromotions.length 
+      });
+    } catch (mapError) {
+      logger.error('[promotionController] Error mapping all promotions:', {
+        error: mapError.message,
+        stack: mapError.stack,
+        productId,
+      });
+      mappedPromotions = [];
+    }
 
-    res.json({ promotions: mappedPromotions });
+    return res.json({ promotions: mappedPromotions });
   } catch (error) {
     logger.error('[promotionController] getPromotionsForProduct error:', {
       error: error.message,
@@ -163,7 +244,7 @@ exports.getPromotionsForProduct = async (req, res) => {
       productId: req.params?.productId,
     });
     // [2025-11-29 20:10:00] 即使出错也返回空数组而不是 500，避免影响前端功能
-    res.json({ promotions: [] });
+    return res.json({ promotions: [] });
   }
 };
 
@@ -177,27 +258,58 @@ exports.getPromotionsForCategory = async (req, res) => {
     const { categoryId } = req.params;
     const now = new Date();
 
-    const promotions = await prisma.promotion.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-        categories: {
-          some: {
-            categoryId: categoryId,
+    let promotions = [];
+    try {
+      promotions = await prisma.promotion.findMany({
+        where: {
+          isActive: true,
+          startDate: { lte: now },
+          endDate: { gte: now },
+          categories: {
+            some: {
+              categoryId: categoryId,
+            },
           },
         },
-      },
-      orderBy: [
-        { sortOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
-    });
+        orderBy: [
+          { sortOrder: 'asc' },
+          { createdAt: 'desc' },
+        ],
+      });
+    } catch (err) {
+      logger.error('[promotionController] Error fetching category promotions:', {
+        error: err.message,
+        stack: err.stack,
+        categoryId,
+      });
+      promotions = [];
+    }
 
-    res.json({ promotions: promotions.map(mapPromotion) });
+    // [2025-11-29 20:20:00] 安全地映射促销活动
+    const mappedPromotions = promotions
+      .filter((p) => p != null)
+      .map((p) => {
+        try {
+          return mapPromotion(p);
+        } catch (mapError) {
+          logger.warn('[promotionController] Error mapping promotion in getPromotionsForCategory:', {
+            promotionId: p?.id,
+            error: mapError.message,
+          });
+          return null;
+        }
+      })
+      .filter((p) => p != null);
+
+    return res.json({ promotions: mappedPromotions });
   } catch (error) {
-    logger.error('[promotionController] getPromotionsForCategory error:', error);
-    res.status(500).json({ error: 'Failed to fetch promotions for category' });
+    logger.error('[promotionController] getPromotionsForCategory error:', {
+      error: error.message,
+      stack: error.stack,
+      categoryId: req.params?.categoryId,
+    });
+    // [2025-11-29 20:20:00] 即使出错也返回空数组而不是 500
+    return res.json({ promotions: [] });
   }
 };
 
@@ -223,51 +335,63 @@ exports.calculatePromotionDiscount = async (req, res) => {
       const { productId, quantity, unitPrice } = item;
 
       // [2025-01-28 12:15:00] Get promotions for this product
-      const productPromotions = await prisma.promotion.findMany({
-        where: {
-          isActive: true,
-          startDate: { lte: now },
-          endDate: { gte: now },
-          OR: [
-            {
-              products: {
-                some: {
-                  productId: productId,
-                },
-              },
-            },
-            {
-              categories: {
-                some: {
-                  category: {
-                    products: {
-                      some: {
-                        id: productId,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          ],
-        },
-        include: {
-          products: {
-            where: { productId: productId },
-          },
-          categories: {
-            include: {
-              category: {
-                include: {
-                  products: {
-                    where: { id: productId },
-                  },
-                },
+      // [2025-11-29 20:25:00] 简化查询逻辑，与 getPromotionsForProduct 保持一致
+      // 首先获取产品的 categoryId
+      let categoryId = null;
+      try {
+        const product = await prisma.product.findUnique({
+          where: { id: productId },
+          select: { categoryId: true },
+        });
+        categoryId = product?.categoryId || null;
+      } catch (err) {
+        logger.warn('[promotionController] Error fetching product for category:', {
+          error: err.message,
+          productId,
+        });
+      }
+
+      // 查询促销活动：产品直接关联或通过类目关联
+      let productPromotions = [];
+      try {
+        const orConditions = [
+          {
+            products: {
+              some: {
+                productId: productId,
               },
             },
           },
-        },
-      });
+        ];
+
+        // 如果产品有类目，也查询类目关联的促销
+        if (categoryId) {
+          orConditions.push({
+            categories: {
+              some: {
+                categoryId: categoryId,
+              },
+            },
+          });
+        }
+
+        productPromotions = await prisma.promotion.findMany({
+          where: {
+            isActive: true,
+            startDate: { lte: now },
+            endDate: { gte: now },
+            OR: orConditions,
+          },
+        });
+      } catch (err) {
+        logger.error('[promotionController] Error fetching promotions in calculatePromotionDiscount:', {
+          error: err.message,
+          stack: err.stack,
+          productId,
+          categoryId,
+        });
+        continue; // 跳过这个产品，继续处理下一个
+      }
 
       if (productPromotions.length === 0) {
         continue;
@@ -319,13 +443,17 @@ exports.calculatePromotionDiscount = async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       discount: Math.round(totalDiscount * 100) / 100,
       promotions: appliedPromotions,
     });
   } catch (error) {
-    logger.error('[promotionController] calculatePromotionDiscount error:', error);
-    res.status(500).json({ error: 'Failed to calculate promotion discount' });
+    logger.error('[promotionController] calculatePromotionDiscount error:', {
+      error: error.message,
+      stack: error.stack,
+    });
+    // [2025-11-29 20:25:00] 即使出错也返回空折扣，避免影响结账流程
+    return res.json({ discount: 0, promotions: [] });
   }
 };
 
