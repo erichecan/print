@@ -162,7 +162,7 @@ export function ProductDetailContent() {
     setAddingToCart(true);
     try {
       await addItem(selectedVariant.id, quantity);
-      success(`${quantity} item${quantity > 1 ? 's' : ''} added to cart!`);
+      success('添加购物车成功');
     } catch (err: any) {
       showError(err.message || 'Failed to add to cart. Please try again.');
     } finally {
@@ -183,7 +183,7 @@ export function ProductDetailContent() {
     setAddingToCart(true);
     try {
       await addItem(selectedVariant.id, quantity);
-      success(`${quantity} item${quantity > 1 ? 's' : ''} added to cart!`);
+      success('添加购物车成功');
       // 延迟跳转，让用户看到成功提示
       setTimeout(() => {
         router.push('/checkout');

@@ -119,12 +119,22 @@ async function getOrCreateCart(userId, sessionId) {
  * GET /api/cart - Get current cart
  * [2025-11-04 23:50:00]
  */
+// [2025-01-29 00:20:00] GET /api/cart - Get current cart
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
+    // [2025-01-29 00:20:00] 添加日志用于调试购物车为空的问题
+    logger.info('Getting cart', {
+      userId: userId || null,
+      sessionId: sessionId || null,
+      hasUser: !!req.user,
+      hasSessionCookie: !!req.cookies?.sessionId,
+    });
+
     if (!userId && !sessionId) {
+      logger.warn('No userId or sessionId, returning empty cart');
       return res.json({
         items: [],
         subtotal: 0,
@@ -136,6 +146,14 @@ exports.getCart = async (req, res) => {
     }
 
     const cart = await getOrCreateCart(userId, sessionId);
+    
+    // [2025-01-29 00:20:00] 添加日志记录购物车状态
+    logger.info('Cart retrieved', {
+      cartId: cart.id,
+      itemCount: cart.items?.length || 0,
+      userId: userId || null,
+      sessionId: sessionId || null,
+    });
 
     // Calculate totals
     const subtotal = cart.items.reduce((sum, item) => {
@@ -177,11 +195,22 @@ exports.getCart = async (req, res) => {
  * [2025-11-04 23:50:00]
  * [2025-01-27 17:30:00] Support adding design to cart (designId + variantId)
  */
+// [2025-01-29 00:25:00] POST /api/cart/items - Add item to cart
 exports.addItem = async (req, res) => {
   try {
     const { variantId, designId, quantity = 1 } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
+
+    // [2025-01-29 00:25:00] 添加日志用于调试购物车为空的问题
+    logger.info('Adding item to cart - request received', {
+      variantId,
+      quantity,
+      userId: userId || null,
+      sessionId: sessionId || null,
+      hasUser: !!req.user,
+      hasSessionCookie: !!req.cookies?.sessionId,
+    });
 
     if (!variantId) {
       return res.status(400).json({ error: 'variantId is required' });
@@ -257,8 +286,16 @@ exports.addItem = async (req, res) => {
     const priceInCents = basePriceInCents + priceAdjustmentInCents;
     const price = priceInCents / 100; // Convert to dollars for priceSnapshot (Decimal)
 
-    // Get or create cart
+    // [2025-01-29 00:20:00] Get or create cart
     const cart = await getOrCreateCart(userId, sessionId);
+    
+    // [2025-01-29 00:20:00] 记录购物车ID用于调试
+    logger.info('Cart retrieved for adding item', {
+      cartId: cart.id,
+      userId: userId || null,
+      sessionId: sessionId || null,
+      existingItemCount: cart.items?.length || 0,
+    });
 
     // [2025-01-27 17:30:00] Check if item already exists in cart (considering designId)
     const existingItem = await prisma.cartItem.findFirst({
@@ -316,6 +353,16 @@ exports.addItem = async (req, res) => {
       // For now, we'll return the designId in the response for frontend to handle
     }
 
+    // [2025-01-29 00:15:00] 记录添加成功的日志
+    logger.info('Item added to cart successfully', {
+      cartItemId: cartItem.id,
+      variantId: cartItem.variantId,
+      quantity: cartItem.quantity,
+      cartId: cart.id,
+      userId: userId || null,
+      sessionId: sessionId || null,
+    });
+
     res.status(201).json({
       id: cartItem.id,
       variantId: cartItem.variantId,
@@ -323,6 +370,14 @@ exports.addItem = async (req, res) => {
       quantity: cartItem.quantity,
     });
   } catch (error) {
+    // [2025-01-29 00:15:00] 增强错误日志记录
+    logger.error('Error adding item to cart:', {
+      error: error.message,
+      stack: error.stack,
+      variantId,
+      userId: userId || null,
+      sessionId: sessionId || null,
+    });
     console.error('Error adding item to cart:', error);
     res.status(500).json({ error: 'Failed to add item to cart' });
   }

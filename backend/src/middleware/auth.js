@@ -56,12 +56,15 @@ exports.authenticateOptional = async (req, res, next) => {
       if (!sessionId) {
         // Generate new session ID
         sessionId = uuidv4();
-        // Set cookie (expires in 30 days)
+        // [2025-01-29 00:25:00] Set cookie with cross-domain support
+        // 在生产环境中，前端和后端可能在不同域名，需要 sameSite: 'none' 和 secure: true
+        const isProduction = process.env.NODE_ENV === 'production';
         res.cookie('sessionId', sessionId, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
+          secure: isProduction, // 生产环境必须使用 HTTPS
+          sameSite: isProduction ? 'none' : 'lax', // 跨域请求需要 'none'
           maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          path: '/', // 确保 cookie 在所有路径下可用
         });
       }
       
