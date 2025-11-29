@@ -1,8 +1,17 @@
 // [2025-11-08 06:55:45] Offline workflow configuration utilities
 const { Setting } = require('../models');
+const logger = require('../utils/logger');
 
-// [2025-01-28 05:40:00] 清空默认阶段配置，由管理员通过设置页面配置
-const DEFAULT_STAGE_CONFIG = [];
+// [2025-01-28 05:40:00] 默认阶段配置，当数据库中没有配置时使用
+// [2025-01-28 19:15:00] 修复：提供默认阶段，避免 getInitialStage 返回 undefined
+const DEFAULT_STAGE_CONFIG = [
+  {
+    key: 'new',
+    label: 'New',
+    description: 'New order received',
+    position: 0
+  }
+];
 
 const STAGE_SETTING_KEY = 'offline_workflow_stages';
 
@@ -66,12 +75,18 @@ const normalizeStages = (stages = []) => {
 };
 
 const getStageConfig = async () => {
-  const record = await Setting.findOne({ where: { key: STAGE_SETTING_KEY } });
+  try {
+    const record = await Setting.findOne({ where: { key: STAGE_SETTING_KEY } });
 
-  const parsed = parseSettingValue(record?.value);
-  const stages = normalizeStages(parsed?.stages || parsed);
+    const parsed = parseSettingValue(record?.value);
+    const stages = normalizeStages(parsed?.stages || parsed);
 
-  return stages;
+    return stages;
+  } catch (error) {
+    // [2025-01-28 19:20:00] 如果查询失败，记录错误并返回空数组（将使用默认阶段）
+    logger.warn('[offlineWorkflowService] Failed to get stage config from database:', error?.message);
+    return [];
+  }
 };
 
 const updateStageConfig = async (stages = [], actorId = null) => {
@@ -106,8 +121,18 @@ const findStageByKey = async (stageKey) => {
 };
 
 const getInitialStage = async () => {
-  const stages = await getStageConfig();
-  return stages[0] || DEFAULT_STAGE_CONFIG[0];
+  try {
+    const stages = await getStageConfig();
+    // [2025-01-28 19:15:00] 确保始终返回有效的阶段对象
+    if (stages && stages.length > 0) {
+      return stages[0];
+    }
+  } catch (error) {
+    // [2025-01-28 19:15:00] 如果获取阶段配置失败，返回默认阶段
+    logger.warn('[offlineWorkflowService] Failed to get stage config, using default:', error?.message);
+  }
+  // [2025-01-28 19:15:00] 返回默认阶段，确保永远不会返回 undefined
+  return DEFAULT_STAGE_CONFIG[0];
 };
 
 module.exports = {

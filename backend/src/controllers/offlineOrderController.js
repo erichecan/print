@@ -192,7 +192,17 @@ exports.createOfflineOrder = async (req, res) => {
       });
     }
 
+    // [2025-01-28 19:20:00] 获取初始阶段，确保不为 undefined
     const initialStage = await getInitialStage();
+    
+    // [2025-01-28 19:20:00] 验证 initialStage 是否有效
+    if (!initialStage || !initialStage.key || !initialStage.label) {
+      logger.error('[offlineOrderController] Invalid initial stage:', initialStage);
+      return res.status(500).json({
+        error: 'Server Error',
+        message: 'Failed to get initial stage configuration. Please contact administrator.',
+      });
+    }
 
     const orderPayload = {
       orderCode: generateOrderCode(),
