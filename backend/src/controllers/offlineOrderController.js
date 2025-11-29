@@ -149,6 +149,13 @@ const mapOrder = (order) => ({
  */
 exports.createOfflineOrder = async (req, res) => {
   try {
+    // [2025-11-28 16:00:00] 添加详细日志用于调试
+    logger.info('[offlineOrderController] Creating offline order...');
+    logger.info('[offlineOrderController] Request body keys:', Object.keys(req.body || {}));
+    logger.info('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
+    logger.info('[offlineOrderController] Request files:', req.files ? `Files count: ${req.files.length}` : 'No files');
+    logger.info('[offlineOrderController] Content-Type:', req.headers['content-type']);
+    
     const {
       projectName,
       primaryProduct,
@@ -165,10 +172,23 @@ exports.createOfflineOrder = async (req, res) => {
       configuration
     } = req.body;
 
-    if (!projectName || !contactName || !email) {
+    // [2025-11-28 16:00:00] 改进验证错误信息
+    const missingFields = [];
+    if (!projectName) missingFields.push('projectName');
+    if (!contactName) missingFields.push('contactName');
+    if (!email) missingFields.push('email');
+    
+    if (missingFields.length > 0) {
+      logger.warn('[offlineOrderController] Validation failed. Missing fields:', missingFields);
+      logger.warn('[offlineOrderController] Request body received:', {
+        projectName: projectName || 'MISSING',
+        contactName: contactName || 'MISSING',
+        email: email || 'MISSING',
+      });
       return res.status(400).json({
         error: 'Validation Error',
-        message: 'projectName, contactName, and email are required'
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        missingFields,
       });
     }
 
@@ -278,21 +298,32 @@ exports.createOfflineOrder = async (req, res) => {
     logger.error('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
     logger.error('[offlineOrderController] Request files:', req.files ? `Files count: ${req.files.length}` : 'No files');
     
-    // [2025-01-28 09:00:00] 返回更详细的错误信息（开发环境）
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
-      return res.status(500).json({
-        error: 'Server Error',
-        message: 'Failed to create offline order',
-        details: error.message,
-        code: error.code,
-        meta: error.meta,
-      });
+    // [2025-11-28 16:00:00] 返回更详细的错误信息，帮助前端调试
+    const errorResponse = {
+      error: 'Server Error',
+      message: 'Failed to create offline order',
+    };
+    
+    // 在非生产环境或开发环境返回详细信息
+    if (process.env.NODE_ENV !== 'production') {
+      errorResponse.details = error.message;
+      errorResponse.code = error.code;
+      errorResponse.meta = error.meta;
+      if (error.stack) {
+        errorResponse.stack = error.stack.split('\n').slice(0, 5).join('\n');
+      }
     }
     
-    res.status(500).json({
-      error: 'Server Error',
-      message: 'Failed to create offline order'
-    });
+    // 对于已知的错误类型，始终返回详细信息
+    if (error.code === 'P2002') {
+      errorResponse.message = 'Duplicate order code. Please try again.';
+      errorResponse.details = error.meta?.target || error.message;
+    } else if (error.code === 'P2003') {
+      errorResponse.message = 'Invalid reference. Please check your data.';
+      errorResponse.details = error.meta?.field_name || error.message;
+    }
+    
+    res.status(500).json(errorResponse);
   }
 };
 

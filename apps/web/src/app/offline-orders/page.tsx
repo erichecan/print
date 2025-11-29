@@ -831,9 +831,22 @@ export default function OfflineOrdersIntakePage() {
           body: payload,
           credentials: 'include',
         });
-        const data = await response.json();
+        // [2025-11-28 16:00:00] 改进错误处理，显示更详细的错误信息
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          throw new Error(`服务器响应格式错误 (${response.status}): ${response.statusText}`);
+        }
+        
         if (!response.ok) {
-          throw new Error(data?.message || data?.error || 'Failed to submit offline order');
+          // 尝试从错误响应中提取详细信息
+          const errorMessage = data?.message || data?.error || 'Failed to submit offline order';
+          const errorDetails = data?.details || data?.missingFields?.join(', ') || '';
+          const fullErrorMessage = errorDetails 
+            ? `${errorMessage}${errorDetails ? ` (${errorDetails})` : ''}`
+            : errorMessage;
+          throw new Error(fullErrorMessage);
         }
         const finalOrderCode = data?.order?.orderCode || formState.orderCode;
         setStatus({
@@ -843,7 +856,21 @@ export default function OfflineOrdersIntakePage() {
         resetForm();
         setCurrentStep(1); // [2025-01-27 18:00:00] 重置到第一步
       } catch (error: any) {
-        setStatus({ type: 'error', message: error.message || 'Submission failed.' });
+        // [2025-11-28 16:00:00] 显示更详细的错误信息
+        console.error('[OfflineOrder] Submission error:', error);
+        const errorMessage = error.message || 'Submission failed.';
+        setStatus({ 
+          type: 'error', 
+          message: errorMessage,
+        });
+        
+        // 如果有网络错误，提供更友好的提示
+        if (error.message?.includes('fetch') || error.message?.includes('network')) {
+          setStatus({ 
+            type: 'error', 
+            message: '网络连接失败，请检查网络连接后重试。',
+          });
+        }
       } finally {
         setIsSubmitting(false);
       }
