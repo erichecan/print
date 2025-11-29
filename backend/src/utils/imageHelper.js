@@ -9,6 +9,7 @@ const DEFAULT_QUALITY = 85;
 /**
  * [2025-01-27 16:15:00] 将相对路径转换为完整的后端服务器URL
  * [2025-01-27 17:10:00] 智能处理：自动检测环境，本地开发使用 localhost:3001，生产环境使用配置的 URL
+ * [2025-01-28 23:05:00] 修复：对于 /assets/ 路径（前端静态资源），保持相对路径或使用前端服务 URL
  * @param {string} url - 图片URL（可能是相对路径或完整URL）
  * @param {Object} req - Express请求对象（可选）
  * @returns {string} 完整的图片URL
@@ -38,6 +39,26 @@ function normalizeImageUrl(url, req = null) {
 
   // [2025-01-27 16:15:00] 如果已经是完整URL（http:// 或 https://），直接返回
   if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+
+  // [2025-01-28 23:05:00] 对于前端静态资源路径（/assets/），保持相对路径或使用前端服务 URL
+  // 这些文件存储在前端服务的 public 目录，应该从前端服务访问
+  if (url.startsWith('/assets/')) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    // 生产环境：使用前端服务 URL
+    if (isProduction) {
+      const frontendUrl = process.env.FRONTEND_URL;
+      if (frontendUrl) {
+        // 确保 URL 格式正确（去除末尾的斜杠）
+        const baseUrl = frontendUrl.replace(/\/$/, '');
+        return `${baseUrl}${url}`;
+      }
+    }
+    
+    // 本地开发或没有配置 FRONTEND_URL：保持相对路径，让前端自己处理
+    // Next.js 会自动处理 public 目录下的文件
     return url;
   }
 
