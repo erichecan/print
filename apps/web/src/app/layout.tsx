@@ -12,6 +12,7 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { CartProvider } from '@/contexts/CartContext'; // [2025-01-27 15:10:00] Next.js 15: 直接导入客户端组件，无需 dynamic
 import { ToastProvider } from '@/hooks/useToast'; // [2025-01-27 16:35:00] 全局 Toast 提供者
 import { AuthProvider } from '@/contexts/AuthContext'; // [2025-01-28 07:30:00] 全局认证状态管理
+import { GlobalErrorFilter } from '@/components/GlobalErrorFilter'; // [2025-01-29 01:00:00] 全局错误过滤器
 import LayoutWrapper from './LayoutWrapper';
 import './globals.css';
 
@@ -70,6 +71,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
+        <GlobalErrorFilter /> {/* [2025-01-29 01:00:00] 过滤不相关的浏览器错误 */}
         <AuthProvider>
           <CartProvider>
             <ToastProvider>

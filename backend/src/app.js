@@ -23,12 +23,13 @@ app.set('trust proxy', 1);
 // [2025-11-15 12:05:00] 修复 CORS 配置，确保正确处理所有请求
 // [2025-11-15 12:15:00] CORS 必须在 Helmet 之前，确保 CORS 头不被覆盖
 // [2025-01-27 16:50:00] 添加 printm.netlify.app 到允许列表
+// [2025-01-29 01:00:00] 增强 CORS 配置，确保包含所有必要的前端域名
 const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:3000',
   'https://souvenirplus.netlify.app',
   'https://printm.netlify.app', // [2025-01-27 16:50:00] 添加生产环境前端域名
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL, // [2025-01-29 01:00:00] GCP Cloud Run 前端 URL
 ].filter(Boolean); // 移除 undefined 值
 // [2025-11-24 11:45:00] 允许任意 localhost / 127.0.0.1 端口，避免 Next.js dev server 改用 3001/3002 导致 CORS
 const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;

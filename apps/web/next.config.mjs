@@ -71,6 +71,13 @@ const nextConfig = {
   // [2025-01-27 14:20:00] 性能优化配置
   compress: true, // 启用 gzip 压缩
   poweredByHeader: false, // 移除 X-Powered-By 头
+  // [2025-01-29 01:00:00] 优化资源预加载，减少不必要的预加载警告
+  onDemandEntries: {
+    // 页面在内存中保留的时间（毫秒）
+    maxInactiveAge: 25 * 1000,
+    // 同时保留在内存中的页面数
+    pagesBufferLength: 2,
+  },
   // [2025-01-27 14:20:00] 代码分割优化
   experimental: {
     optimizePackageImports: ['@stripe/stripe-js', '@stripe/react-stripe-js', 'fabric'], // 优化大型库的导入
