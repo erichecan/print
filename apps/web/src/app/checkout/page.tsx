@@ -306,6 +306,11 @@ function CheckoutForm({
     return () => clearTimeout(timer);
   }, [address, sameBilling]);
 
+  // [2025-11-29 21:50:00] 调试日志：监听地址状态变化
+  useEffect(() => {
+    console.log('[Checkout Debug] Address state changed:', JSON.stringify(address, null, 2));
+  }, [address]);
+
   const addressReady = useMemo(() => {
     const ready = (
       address.fullName.trim().length > 0 &&
