@@ -297,7 +297,7 @@ function CheckoutForm({
   }, [address, sameBilling]);
 
   const addressReady = useMemo(() => {
-    return (
+    const ready = (
       address.fullName.trim().length > 0 &&
       address.email.trim().length > 0 &&
       address.phone.trim().length > 0 &&
@@ -307,6 +307,18 @@ function CheckoutForm({
       address.postalCode.trim().length > 0 &&
       address.country.trim().length > 0
     );
+    // [2025-11-29 21:05:00] 调试日志：记录 addressReady 状态
+    console.log('[Checkout Debug] addressReady:', ready, {
+      fullName: address.fullName.trim().length > 0,
+      email: address.email.trim().length > 0,
+      phone: address.phone.trim().length > 0,
+      addressLine1: address.addressLine1.trim().length > 0,
+      city: address.city.trim().length > 0,
+      province: address.province.trim().length > 0,
+      postalCode: address.postalCode.trim().length > 0,
+      country: address.country.trim().length > 0,
+    });
+    return ready;
   }, [address]);
 
   const notifyTotals = useCallback(
@@ -489,6 +501,37 @@ function CheckoutForm({
       loadShippingRates();
     }
   }, [addressReady, loadShippingRates]);
+
+  // [2025-11-29 21:05:00] 调试日志：输出按钮状态（状态变化时）
+  useEffect(() => {
+    const placeOrderDisabled = !stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete;
+    const applyCouponDisabled = applyingCoupon || !couponCode.trim() || !addressReady;
+    
+    console.log('[Checkout Debug] Button states:', {
+      placeOrder: {
+        disabled: placeOrderDisabled,
+        stripe: !!stripe,
+        isSubmitting,
+        isFetchingRates,
+        isCalculatingTotals,
+        cardComplete,
+        disabledReason: !stripe ? 'no-stripe' :
+          isSubmitting ? 'submitting' :
+          isFetchingRates ? 'fetching-rates' :
+          isCalculatingTotals ? 'calculating-totals' :
+          !cardComplete ? 'card-incomplete' : 'enabled'
+      },
+      applyCoupon: {
+        disabled: applyCouponDisabled,
+        applyingCoupon,
+        hasCouponCode: !!couponCode.trim(),
+        addressReady,
+        disabledReason: applyingCoupon ? 'applying' :
+          !couponCode.trim() ? 'no-code' :
+          !addressReady ? 'address-not-ready' : 'enabled'
+      },
+    });
+  }, [stripe, isSubmitting, isFetchingRates, isCalculatingTotals, cardComplete, applyingCoupon, couponCode, addressReady]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -918,6 +961,13 @@ function CheckoutForm({
               } else {
                 setCardError(null);
               }
+              // [2025-11-29 21:05:00] 调试日志：记录卡片状态变化
+              console.log('[Checkout Debug] Card state changed:', {
+                complete: event.complete,
+                error: event.error?.message || null,
+                empty: event.empty,
+                brand: event.brand || 'unknown'
+              });
               setCardComplete(event.complete);
             }}
           />
