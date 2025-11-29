@@ -8,7 +8,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { FormEvent } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { contentApi, NavigationMenuItem } from '@/lib/api';
 import { CartIcon } from '@/components/CartIcon';
@@ -17,10 +17,29 @@ import { useAuth } from '@/contexts/AuthContext'; // [2025-01-28 07:30:00] 使�
 export function SiteHeader() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth(); // [2025-01-28 07:30:00] 获取用户认证状态
+  // [2025-01-28 15:00:00] 移动端菜单状态管理
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // [2025-01-28 06:25:00] 从 CMS 获取内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const navigation = contentData?.data?.navigation || [];
   const topMessageBar = contentData?.data?.staticTexts?.topMessageBar || 'Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing';
+  
+  // [2025-01-28 15:00:00] 关闭移动端菜单当路由改变时（通过监听路径变化）
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [router]); // 当 router 变化时关闭菜单
+  
+  // [2025-01-28 15:00:00] 防止滚动当移动端菜单打开时
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -98,6 +117,36 @@ export function SiteHeader() {
     return null;
   };
 
+  // [2025-01-28 15:00:00] 渲染移动端导航菜单项（简化版，无mega menu）
+  const renderMobileNavigationItem = (item: NavigationMenuItem) => {
+    if (item.type === 'link') {
+      return (
+        <li key={item.id}>
+          <Link 
+            href={item.href} 
+            className="mobile-nav__link"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            {item.label}
+          </Link>
+        </li>
+      );
+    }
+    
+    // 对于 mega 和 simple 类型的菜单，移动端只显示主链接
+    return (
+      <li key={item.id}>
+        <Link 
+          href={item.href} 
+          className="mobile-nav__link"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          {item.label}
+        </Link>
+      </li>
+    );
+  };
+
   return (
     <>
       <a href="#main" className="skip-link">
@@ -108,6 +157,21 @@ export function SiteHeader() {
       </div>
       <header className="site-header" role="banner">
         <div className="container site-header__row">
+          {/* [2025-01-28 15:00:00] 移动端汉堡菜单按钮 */}
+          <button
+            type="button"
+            className="mobile-menu-toggle"
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileMenuOpen}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            <span className="mobile-menu-toggle__icon">
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+              <span className="hamburger-line"></span>
+            </span>
+          </button>
+          
           <div className="site-header__brand">
             <Link href="/" aria-label="Suvernire Plus home">
               <Image src="/assets/logo.svg" alt="Suvernire Plus" width={160} height={44} priority />
@@ -156,8 +220,24 @@ export function SiteHeader() {
               </div>
             </div>
           </div>
+          {/* [2025-01-28 15:00:00] 移动端操作按钮（账户、购物车） */}
+          <div className="site-header__mobile-actions">
+            {authLoading ? (
+              <span style={{ opacity: 0.6 }}>Loading...</span>
+            ) : user ? (
+              <Link href="/account" className="mobile-account-link" aria-label="My Account">
+                <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
+              </Link>
+            ) : (
+              <Link href="/login" aria-label="Sign in">
+                <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
+              </Link>
+            )}
+            <CartIcon />
+          </div>
         </div>
-        <nav className="primary-nav" aria-label="Primary">
+        {/* [2025-01-28 15:00:00] 桌面端导航 */}
+        <nav className="primary-nav primary-nav--desktop" aria-label="Primary">
           <div className="container primary-nav__inner">
             <ul className="mega">
               {/* [2025-01-28 06:25:00] 从 CMS 渲染导航菜单 */}
@@ -206,6 +286,96 @@ export function SiteHeader() {
           </div>
         </nav>
       </header>
+      
+      {/* [2025-01-28 15:00:00] 移动端侧边抽屉菜单 */}
+      <div 
+        className={`mobile-menu-overlay ${isMobileMenuOpen ? 'mobile-menu-overlay--open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+        aria-hidden={!isMobileMenuOpen}
+      ></div>
+      <nav 
+        className={`mobile-nav ${isMobileMenuOpen ? 'mobile-nav--open' : ''}`}
+        aria-label="Mobile navigation"
+        aria-hidden={!isMobileMenuOpen}
+      >
+        <div className="mobile-nav__header">
+          <Link 
+            href="/" 
+            className="mobile-nav__logo"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <Image src="/assets/logo.svg" alt="Suvernire Plus" width={120} height={33} />
+          </Link>
+          <button
+            type="button"
+            className="mobile-nav__close"
+            aria-label="Close navigation menu"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <span>×</span>
+          </button>
+        </div>
+        <ul className="mobile-nav__list">
+          {/* [2025-01-28 15:00:00] 从 CMS 渲染移动端导航菜单 */}
+          {navigation.length > 0 ? (
+            navigation
+              .sort((a, b) => (a.order || 0) - (b.order || 0))
+              .map((item) => renderMobileNavigationItem(item))
+          ) : (
+            // [2025-01-28 15:00:00] 默认导航（向后兼容）
+            <>
+              <li>
+                <Link href="/products" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
+                  Custom T-shirts
+                </Link>
+              </li>
+              <li>
+                <Link href="/collections/apparel" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
+                  Custom Apparel
+                </Link>
+              </li>
+              <li>
+                <Link href="/collections/promotional-products" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
+                  Promotional Products
+                </Link>
+              </li>
+              <li>
+                <Link href="/design-lab" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
+                  Design Lab
+                </Link>
+              </li>
+              <li>
+                <Link href="/help" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
+                  Groups & Events
+                </Link>
+              </li>
+            </>
+          )}
+        </ul>
+        <div className="mobile-nav__footer">
+          {authLoading ? (
+            <span style={{ opacity: 0.6 }}>Loading...</span>
+          ) : user ? (
+            <Link 
+              href="/account" 
+              className="mobile-nav__account-link"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
+              <span>My Account</span>
+            </Link>
+          ) : (
+            <Link 
+              href="/login" 
+              className="mobile-nav__login-link"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
+              <span>Sign in</span>
+            </Link>
+          )}
+        </div>
+      </nav>
     </>
   );
 }

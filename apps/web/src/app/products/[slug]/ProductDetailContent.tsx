@@ -236,8 +236,9 @@ export function ProductDetailContent() {
       {/* Main Product Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-12 items-start">
         {/* Left: Image Gallery */}
-        <div className="flex gap-4 items-start">
-          {/* Thumbnails - Vertical on left - 始终显示，移动端隐藏 */}
+        <div className="flex flex-col md:flex-row gap-4 items-start">
+          {/* Thumbnails - Vertical on desktop, horizontal on mobile */}
+          {/* Desktop: Vertical on left */}
           <div className="hidden md:flex flex-col gap-3 max-h-[600px] overflow-y-auto flex-shrink-0">
             {product.images.length > 0 ? (
               product.images.map((img, index) => (
@@ -295,10 +296,30 @@ export function ProductDetailContent() {
               </div>
             )}
           </div>
+          
+          {/* [2025-01-28 16:30:00] 移动端缩略图：底部横向滑动 */}
+          {product.images.length > 1 && (
+            <div className="md:hidden w-full overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'thin' }}>
+              <div className="flex gap-3" style={{ width: 'max-content' }}>
+                {product.images.map((img, index) => (
+                  <button
+                    key={img.id}
+                    className={`w-20 h-20 rounded border-2 overflow-hidden bg-white p-0 transition-colors flex-shrink-0 ${
+                      index === selectedImageIndex ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedImageIndex(index)}
+                    aria-label={`View image ${index + 1}`}
+                  >
+                    <Image src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right: Product Details */}
-        <div className="max-w-[500px] flex flex-col gap-5">
+        <div className="max-w-[500px] flex flex-col gap-5 product-details-mobile">
           {/* Title */}
           <h1 className="text-3xl font-bold leading-tight text-gray-900">{product.name}</h1>
 
@@ -478,11 +499,11 @@ export function ProductDetailContent() {
           </div>
 
           {/* Action Buttons - 3 buttons in a row */}
-          <div className="flex gap-3 flex-col sm:flex-row">
+          <div className="flex gap-3 flex-col sm:flex-row product-actions-mobile">
             {/* Start Design Button */}
             <button
               type="button"
-              className="flex-1 px-4 py-4 rounded border-2 border-blue-600 bg-white text-blue-600 text-base font-semibold text-center cursor-pointer transition-all hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-4 rounded border-2 border-blue-600 bg-white text-blue-600 text-base font-semibold text-center cursor-pointer transition-all hover:bg-blue-50 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
               onClick={handleStartDesign}
               disabled={!selectedVariant}
             >
@@ -492,7 +513,7 @@ export function ProductDetailContent() {
             {/* Add to Cart Button */}
             <button
               type="button"
-              className="flex-1 px-4 py-4 rounded border-2 border-gray-300 bg-white text-gray-900 text-base font-semibold text-center cursor-pointer transition-all hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-4 rounded border-2 border-gray-300 bg-white text-gray-900 text-base font-semibold text-center cursor-pointer transition-all hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
               onClick={handleAddToCart}
               disabled={addingToCart || !selectedVariant}
             >
@@ -502,7 +523,7 @@ export function ProductDetailContent() {
             {/* Buy Now Button */}
             <button
               type="button"
-              className="flex-1 px-4 py-4 rounded bg-red-600 text-white text-base font-semibold text-center cursor-pointer transition-all border-none hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-4 rounded bg-red-600 text-white text-base font-semibold text-center cursor-pointer transition-all border-none hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
               onClick={handleBuyNow}
               disabled={addingToCart || !selectedVariant}
             >

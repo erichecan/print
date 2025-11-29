@@ -20,6 +20,8 @@ import SortSelect from './SortSelect';
 const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
 // [2025-01-27 17:00:00] 动态筛选器组件（从API获取筛选选项和数量）
 const DynamicFilters = dynamic(() => import('@/components/products/DynamicFilters').then(mod => mod.DynamicFilters), { ssr: false });
+// [2025-01-28 15:30:00] 移动端筛选抽屉组件
+const MobileFilterDrawer = dynamic(() => import('@/components/products/MobileFilterDrawer').then(mod => mod.MobileFilterDrawer), { ssr: false });
 
 // [2025-01-27 17:00:00] 生成产品列表页 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
@@ -380,6 +382,13 @@ export default async function ProductsPage({
 
           {/* 主内容区 */}
           <div className="plp-new__main">
+            {/* [2025-01-28 15:30:00] 移动端筛选按钮 */}
+            <MobileFilterDrawer 
+              currentCollection={currentCollection} 
+              currentBrand={currentBrand} 
+              brands={brands} 
+            />
+            
             {/* 面包屑和标题 */}
             <nav className="breadcrumb-nav">
               <ol>
