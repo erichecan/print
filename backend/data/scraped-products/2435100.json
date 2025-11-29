@@ -275,22 +275,22 @@
   ],
   "images": [
     {
-      "url": "https://mms-images.out.customink.com/mms/images/catalog/88f684b2dc9beb02fe27b13776ba3399/colors/2435100/views/alt/front_large.png?autoNegate=1&design=nmp0-00cg-4gv0&digest=000000028&ixbg=%23f5f5f5&ixfm=jpeg&ixq=60&ixw=412&placeMax=1&placeMaxPct=0.8&placeUseProduct=1&placeUseView=front",
+      "url": "/assets/products/2435100/main.png",
       "alt": "Medium Cotton Canvas Tote Bag-default-preview",
       "sortOrder": 0
     },
     {
-      "url": "https://mms-images.out.customink.com/mms/images/catalog/6911b3aeb81c648545238b547a203f80/styles/2435100/catalog_detail_image_large.jpg?ixq=60&ixw=700",
+      "url": "/assets/products/2435100/image-1.jpg",
       "alt": "Medium Cotton Canvas Tote Bag",
       "sortOrder": 1
     },
     {
-      "url": "https://mms-images.out.customink.com/mms/images/catalog/89d76778fc2cf68373a38796d600426e/styles/2435100/supporting/1.jpg?ixq=60&ixw=700",
+      "url": "/assets/products/2435100/image-2.jpg",
       "alt": "Medium Cotton Canvas Tote Bag",
       "sortOrder": 2
     },
     {
-      "url": "https://mms-images.out.customink.com/mms/images/catalog/bf31475496be32a13d1a1a9161349e01/styles/2435100/supporting/2.jpg?ixq=60&ixw=700",
+      "url": "/assets/products/2435100/image-3.jpg",
       "alt": "Medium Cotton Canvas Tote Bag",
       "sortOrder": 3
     }
