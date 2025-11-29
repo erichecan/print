@@ -64,13 +64,26 @@ try {
   if (prismaSuccess && sequelizeSuccess) {
     console.log('✅ 所有迁移已成功执行 [2025-01-11 14:05:00]');
     
-    // [2025-11-28 12:30:00] 迁移成功后自动运行 seed 数据（包括 admin 用户）
-    console.log('🌱 迁移完成，开始运行 seed 数据...');
-    run(
-      'npx sequelize-cli db:seed:all',
-      'Sequelize seed（创建 admin 用户）',
-      { timeout: 60000, allowFailure: true }
-    );
+    // [2025-11-28 12:40:00] 迁移成功后自动创建 admin 用户（使用 Prisma 直接创建，更可靠）
+    console.log('🌱 迁移完成，开始创建 admin 用户...');
+    try {
+      // 先尝试运行 Sequelize seed
+      run(
+        'npx sequelize-cli db:seed:all',
+        'Sequelize seed',
+        { timeout: 60000, allowFailure: true }
+      );
+      
+      // 然后使用 Prisma 直接创建 admin 用户（确保用户存在）
+      console.log('🔧 使用 Prisma 直接创建/更新 admin 用户...');
+      run(
+        'node scripts/create-admin-user.js',
+        '创建 admin 用户（Prisma）',
+        { timeout: 30000, allowFailure: false }
+      );
+    } catch (seedError) {
+      console.warn('⚠️  Seed 或创建用户失败，但继续执行:', seedError.message);
+    }
   } else {
     console.warn('⚠️  部分迁移失败，但服务器将继续启动 [2025-01-27 17:15:00]');
     console.warn('   如果数据库已经是最新状态，可以忽略这些错误');
