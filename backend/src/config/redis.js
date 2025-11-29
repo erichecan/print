@@ -62,32 +62,47 @@ if (hasRedisConfig) {
   console.log('ℹ️  Redis not configured, caching disabled.');
 }
 
+// [2025-01-29 00:05:00] Import memory cache as fallback
+const memoryCache = require('./memoryCache');
+
 // Helper functions
 // [2025-11-15 10:50:00] 修改为检查 Redis 是否可用，不可用时优雅降级
+// [2025-01-29 00:05:00] 添加内存缓存作为后备方案
 const getCache = async (key) => {
-  if (!redis || !redisEnabled) {
-    return null;
+  // Try Redis first
+  if (redis && redisEnabled) {
+    try {
+      const data = await redis.get(key);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch (error) {
+      // Redis failed, fall back to memory cache
+    }
   }
-  try {
-    const data = await redis.get(key);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    // 静默处理错误，返回 null 表示缓存未命中
-    return null;
-  }
+  
+  // Fallback to memory cache
+  return memoryCache.get(key);
 };
 
 const setCache = async (key, value, ttl = 3600) => {
-  if (!redis || !redisEnabled) {
-    return false;
+  let redisSuccess = false;
+  
+  // Try Redis first
+  if (redis && redisEnabled) {
+    try {
+      await redis.setex(key, ttl, JSON.stringify(value));
+      redisSuccess = true;
+    } catch (error) {
+      // Redis failed, will fall back to memory cache
+    }
   }
-  try {
-    await redis.setex(key, ttl, JSON.stringify(value));
-    return true;
-  } catch (error) {
-    // 静默处理错误，返回 false 表示缓存设置失败
-    return false;
-  }
+  
+  // Always use memory cache as backup (with shorter TTL to avoid stale data)
+  const memoryTtl = Math.min(ttl, 600); // Max 10 minutes for memory cache
+  memoryCache.set(key, value, memoryTtl);
+  
+  return redisSuccess || true; // Return true if at least one cache worked
 };
 
 const deleteCache = async (key) => {
