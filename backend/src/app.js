@@ -151,7 +151,9 @@ app.get('/health', async (req, res) => {
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/content', require('./routes/content')); // [2025-01-28 06:20:00] Public CMS content API
-app.use('/api/promotions', require('./routes/promotions')); // [2025-01-28 12:20:00] Public promotion API
+app.use('/api/promotions', require('./routes/promotions'));
+// [2025-11-28 12:50:00] 临时路由：快速创建 admin 用户（生产环境应该禁用）
+app.use('/api/admin-setup', require('./routes/admin-setup')); // [2025-01-28 12:20:00] Public promotion API
 app.use('/api/art-assets', require('./routes/artAssets')); // [2025-01-28 00:55:00] Art assets public API // [2025-01-27 18:50:00] Public category routes
 app.use('/api/collections', require('./routes/collections'));
 app.use('/api/cart', require('./routes/cart'));
