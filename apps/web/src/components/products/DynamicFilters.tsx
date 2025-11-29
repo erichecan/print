@@ -171,8 +171,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             {categoryTree.map((category) => (
               <li key={category.id}>
                 <Link 
-                  href={`/products?collection=${category.slug}`}
-                  className={`filter-category-link ${currentCollection === category.slug ? 'is-active' : ''}`}
+                  href={`/products?category=${category.slug}`}
+                  className={`filter-category-link ${searchParams.get('category') === category.slug ? 'is-active' : ''}`}
                 >
                   {category.name} ({category.count})
                 </Link>
@@ -182,8 +182,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
                     {category.children.slice(0, 5).map((child) => (
                       <li key={child.id}>
                         <Link 
-                          href={`/products?collection=${child.slug}`}
-                          className={`filter-category-link filter-subcategory-link ${currentCollection === child.slug ? 'is-active' : ''}`}
+                          href={`/products?category=${child.slug}`}
+                          className={`filter-category-link filter-subcategory-link ${searchParams.get('category') === child.slug ? 'is-active' : ''}`}
                         >
                           {child.name} ({child.count})
                         </Link>

@@ -16,11 +16,12 @@ const LOW_STOCK_THRESHOLD = parseInt(process.env.LOW_STOCK_THRESHOLD) || 10;
  * Decrease inventory for order items
  * [2025-01-27 13:30:00]
  */
+// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function decreaseInventory(orderItems) {
   try {
     const results = await prisma.$transaction(
       orderItems.map((item) =>
-        prisma.productVariant.update({
+        prisma.variant.update({
           where: { id: item.variantId },
           data: {
             stockQuantity: {
@@ -74,11 +75,12 @@ async function decreaseInventory(orderItems) {
  * Increase inventory (restore stock)
  * [2025-01-27 13:30:00]
  */
+// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function increaseInventory(orderItems) {
   try {
     const results = await prisma.$transaction(
       orderItems.map((item) =>
-        prisma.productVariant.update({
+        prisma.variant.update({
           where: { id: item.variantId },
           data: {
             stockQuantity: {
@@ -121,8 +123,9 @@ async function increaseInventory(orderItems) {
  * Check if variant has sufficient stock
  * [2025-01-27 13:30:00]
  */
+// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function checkStockAvailability(variantId, requestedQuantity) {
-  const variant = await prisma.productVariant.findUnique({
+  const variant = await prisma.variant.findUnique({
     where: { id: variantId },
     select: {
       id: true,
@@ -183,9 +186,10 @@ async function checkMultipleStockAvailability(items) {
  * Get low stock products
  * [2025-01-27 13:30:00]
  */
+// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD) {
   try {
-    const lowStockVariants = await prisma.productVariant.findMany({
+    const lowStockVariants = await prisma.variant.findMany({
       where: {
         stockQuantity: {
           lte: threshold,
@@ -237,9 +241,10 @@ async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD) {
  * Get out of stock products
  * [2025-01-27 13:30:00]
  */
+// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function getOutOfStockProducts() {
   try {
-    const outOfStockVariants = await prisma.productVariant.findMany({
+    const outOfStockVariants = await prisma.variant.findMany({
       where: {
         stockQuantity: {
           lte: 0,
@@ -286,9 +291,10 @@ async function getOutOfStockProducts() {
  * Update variant stock quantity
  * [2025-01-27 13:30:00]
  */
+// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function updateStockQuantity(variantId, newQuantity) {
   try {
-    const variant = await prisma.productVariant.update({
+    const variant = await prisma.variant.update({
       where: { id: variantId },
       data: {
         stockQuantity: Math.max(0, newQuantity), // Ensure non-negative

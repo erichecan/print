@@ -154,7 +154,8 @@ exports.getCart = async (req, res) => {
       quantity: item.quantity,
       unitPrice: Number(item.priceSnapshot),
       subtotal: Number(item.priceSnapshot) * item.quantity,
-      thumbnail: item.variant.imageUrl || item.variant.product.images[0]?.imageUrl || null,
+      // [2025-01-28 23:50:00] 修复：ProductImage 模型使用 url 字段，不是 imageUrl
+      thumbnail: item.variant.imageUrl || item.variant.product.images[0]?.url || null,
     }));
 
     res.json({
@@ -190,8 +191,9 @@ exports.addItem = async (req, res) => {
       return res.status(400).json({ error: 'Quantity must be at least 1' });
     }
 
-    // Verify variant exists and get price
-    const variant = await prisma.productVariant.findUnique({
+    // [2025-01-28 23:35:00] Verify variant exists and get price
+    // 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+    const variant = await prisma.variant.findUnique({
       where: { id: variantId },
       include: {
         product: true,
@@ -245,8 +247,15 @@ exports.addItem = async (req, res) => {
       });
     }
 
-    // Calculate price (basePrice + priceAdjustment)
-    const price = Number(variant.product.basePrice) + Number(variant.priceAdjustment || 0);
+    // [2025-01-28 23:55:00] Calculate price in dollars for priceSnapshot
+    // 参考 productController.js: price = (basePrice + priceAdjustment) / 100
+    // basePrice 是 cents (Int), priceAdjustment 是 Decimal(10,2) 但实际存储的值是 cents 的数值
+    // priceSnapshot should be stored in dollars (Decimal) for cart items
+    // 与 productController.js 保持一致的计算方式
+    const basePriceInCents = Number(variant.product.basePrice) || 0;
+    const priceAdjustmentInCents = Number(variant.priceAdjustment || 0); // priceAdjustment 存储的是 cents 的数值
+    const priceInCents = basePriceInCents + priceAdjustmentInCents;
+    const price = priceInCents / 100; // Convert to dollars for priceSnapshot (Decimal)
 
     // Get or create cart
     const cart = await getOrCreateCart(userId, sessionId);

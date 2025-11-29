@@ -364,12 +364,18 @@ exports.getProducts = async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
     const skip = (page - 1) * limit;
     const collectionSlug = req.query.collection;
+    const categorySlug = req.query.category; // [2025-01-28 23:15:00] 支持 category 筛选
     const search = req.query.search;
     // [2025-01-27 16:45:00] 只使用数据库中实际存在的列名，避免 Prisma 映射问题
     const allowedSortFields = ['createdAt', 'name', 'updatedAt'];
     const requestedSort = req.query.sort || 'createdAt';
     const sortBy = allowedSortFields.includes(requestedSort) ? requestedSort : 'createdAt';
     const sortOrder = req.query.order === 'asc' ? 'asc' : 'desc';
+
+    // [2025-01-28 23:15:00] 读取筛选参数
+    const colorFilter = req.query.color ? req.query.color.split(',') : [];
+    const brandFilter = req.query.brand ? req.query.brand.split(',') : [];
+    const sizeFilter = req.query.size ? req.query.size.split(',') : [];
 
     // Build where clause
     const where = {
@@ -425,6 +431,54 @@ exports.getProducts = async (req, res) => {
       });
     }
 
+    // [2025-01-28 23:15:00] Filter by category (slug)
+    if (categorySlug) {
+      andConditions.push({
+        category: {
+          slug: categorySlug,
+          isActive: true,
+        },
+      });
+    }
+
+    // [2025-01-28 23:15:00] Filter by brand
+    if (brandFilter.length > 0) {
+      andConditions.push({
+        brand: {
+          name: {
+            in: brandFilter,
+            mode: 'insensitive',
+          },
+        },
+      });
+    }
+
+    // [2025-01-28 23:15:00] Filter by color (通过 variants)
+    if (colorFilter.length > 0) {
+      andConditions.push({
+        variants: {
+          some: {
+            color: {
+              in: colorFilter.map(c => c.charAt(0).toUpperCase() + c.slice(1).toLowerCase()), // 首字母大写
+            },
+          },
+        },
+      });
+    }
+
+    // [2025-01-28 23:15:00] Filter by size (通过 variants)
+    if (sizeFilter.length > 0) {
+      andConditions.push({
+        variants: {
+          some: {
+            size: {
+              in: sizeFilter,
+            },
+          },
+        },
+      });
+    }
+
     // Search by name, description, or SKU
     if (search) {
       andConditions.push({
@@ -441,11 +495,16 @@ exports.getProducts = async (req, res) => {
     }
 
     // [2025-01-27 16:30:00] 构建缓存key，包含所有筛选条件
+    // [2025-01-28 23:15:00] 添加新的筛选参数到缓存key
     const cacheKey = `products:list:${JSON.stringify({
       page,
       limit,
       collection: collectionSlug || '',
+      category: categorySlug || '',
       search: search || '',
+      color: colorFilter.join(',') || '',
+      brand: brandFilter.join(',') || '',
+      size: sizeFilter.join(',') || '',
       sort: sortBy,
       order: sortOrder,
       includeOutOfStock,

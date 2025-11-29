@@ -56,10 +56,11 @@ export default function ProductsClient() {
   const { sort: sortField, order: sortOrder } = parseSort(sort);
 
   // [2025-11-28 11:00:00] 读取所有筛选参数并传递给 API
+  // [2025-01-28 23:20:00] 添加 category 参数支持
   const filterParams = [
     'fit', 'decoration', 'color', 'size', 'material', 'type', 'style', 
     'neckline', 'feature', 'price', 'brand', 'rushDelivery', 
-    'multiAddress', 'noMinimum'
+    'multiAddress', 'noMinimum', 'category'
   ];
 
   const apiUrl = new URL(`${API_BASE_URL}/products`);
