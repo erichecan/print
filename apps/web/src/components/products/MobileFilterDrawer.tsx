@@ -7,7 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { DynamicFilters } from './DynamicFilters';
-import ProductFilters from './ProductFilters';
+// [2025-01-28 18:20:00] ProductFilters 不需要在这里导入，它只返回 null
 import type { Brand } from '@/app/products/page';
 
 interface MobileFilterDrawerProps {
@@ -128,7 +128,7 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
         
         {/* [2025-01-28 15:30:00] 筛选内容 */}
         <div className="mobile-filter-drawer__content">
-          <ProductFilters currentCollection={currentCollection} currentBrand={currentBrand} brands={brands} />
+          {/* [2025-01-28 18:20:00] ProductFilters 返回 null，只用于注入逻辑，不需要渲染 */}
           <DynamicFilters currentCollection={currentCollection} />
         </div>
         

@@ -7,7 +7,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // [2025-01-28 18:15:00] 添加 usePathname 用于路由监听
 import { FormEvent, useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { contentApi, NavigationMenuItem } from '@/lib/api';
@@ -24,10 +24,12 @@ export function SiteHeader() {
   const navigation = contentData?.data?.navigation || [];
   const topMessageBar = contentData?.data?.staticTexts?.topMessageBar || 'Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing';
   
+  const pathname = usePathname(); // [2025-01-28 18:15:00] 获取当前路径
+  
   // [2025-01-28 15:00:00] 关闭移动端菜单当路由改变时（通过监听路径变化）
   useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [router]); // 当 router 变化时关闭菜单
+    setIsMobileMenuOpen(false); // [2025-01-28 18:15:00] 当 pathname 变化时关闭菜单
+  }, [pathname]); // 使用 pathname 而不是 router 对象
   
   // [2025-01-28 15:00:00] 防止滚动当移动端菜单打开时
   useEffect(() => {

@@ -1,0 +1,179 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - region "Promotional message" [ref=e3]: Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "Suvernire Plus home" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - img "Suvernire Plus" [ref=e8]
+      - search [ref=e9]:
+        - form "Site search form" [ref=e10]:
+          - button "Search products" [active] [ref=e11] [cursor=pointer]: 🔍
+          - searchbox "Search query" [ref=e12]: Classic Crew Tee
+      - generic "Contact options" [ref=e13]:
+        - generic [ref=e14]:
+          - img [ref=e15]
+          - generic [ref=e17]:
+            - generic [ref=e18]: Talk to a Real Person
+            - link "855-271-2660" [ref=e19] [cursor=pointer]:
+              - /url: tel:8552712660
+        - generic [ref=e20]:
+          - img [ref=e21]
+          - generic [ref=e23]:
+            - generic [ref=e24]: Chat with a Real Person
+            - link "Chat now" [ref=e25] [cursor=pointer]:
+              - /url: /help
+    - navigation "Primary" [ref=e26]:
+      - generic [ref=e27]:
+        - list [ref=e28]:
+          - listitem [ref=e29]:
+            - link "Custom T-shirts" [ref=e30] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e31]:
+            - link "Custom Apparel" [ref=e32] [cursor=pointer]:
+              - /url: /collections/apparel
+          - listitem [ref=e33]:
+            - link "Promotional Products" [ref=e34] [cursor=pointer]:
+              - /url: /collections/promotional-products
+          - listitem [ref=e35]:
+            - link "Design Lab" [ref=e36] [cursor=pointer]:
+              - /url: /design-lab
+          - listitem [ref=e37]:
+            - link "Groups & Events" [ref=e38] [cursor=pointer]:
+              - /url: /help
+        - generic [ref=e39]:
+          - link "Sign in" [ref=e40] [cursor=pointer]:
+            - /url: /login
+            - img [ref=e41]
+            - generic [ref=e42]: Sign in
+          - link "Shopping cart with 0 items" [ref=e43] [cursor=pointer]:
+            - /url: /cart
+            - img [ref=e44]
+            - generic [ref=e48]: Cart
+  - main [ref=e49]:
+    - generic [ref=e52]:
+      - complementary
+      - generic [ref=e53]:
+        - navigation [ref=e54]:
+          - list [ref=e55]:
+            - listitem [ref=e56]:
+              - link "All Products" [ref=e57] [cursor=pointer]:
+                - /url: /products
+            - listitem [ref=e58]: ›
+            - listitem [ref=e59]:
+              - link "T-shirts" [ref=e60] [cursor=pointer]:
+                - /url: /products?collection=t-shirts
+            - listitem [ref=e61]: ›
+            - listitem [ref=e62]: T-shirts
+        - heading "T-shirts" [level=1] [ref=e63]
+        - generic [ref=e65]:
+          - text: "Sort By:"
+          - combobox "Sort By:" [ref=e66] [cursor=pointer]:
+            - option "Recommended" [selected]
+            - 'option "Price: Low to High"'
+            - 'option "Price: High to Low"'
+            - 'option "Name: A to Z"'
+            - 'option "Name: Z to A"'
+        - generic [ref=e67]:
+          - heading "We hit a snag loading products" [level=2] [ref=e68]
+          - paragraph [ref=e69]: Failed to fetch products (Failed to fetch)
+  - contentinfo [ref=e70]:
+    - generic [ref=e72]:
+      - generic [ref=e73]:
+        - heading "About Us" [level=4] [ref=e74]
+        - list [ref=e75]:
+          - listitem [ref=e76]:
+            - link "About Us" [ref=e77] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e78]:
+            - link "Contact Us" [ref=e79] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e80]:
+            - link "Promotions" [ref=e81] [cursor=pointer]:
+              - /url: /promotions
+          - listitem [ref=e82]:
+            - link "Design Gallery" [ref=e83] [cursor=pointer]:
+              - /url: /design-gallery
+      - generic [ref=e84]:
+        - heading "Your Account" [level=4] [ref=e85]
+        - list [ref=e86]:
+          - listitem [ref=e87]:
+            - link "My Account" [ref=e88] [cursor=pointer]:
+              - /url: /account
+          - listitem [ref=e89]:
+            - link "My Designs" [ref=e90] [cursor=pointer]:
+              - /url: /account/designs
+          - listitem [ref=e91]:
+            - link "Track Your Order" [ref=e92] [cursor=pointer]:
+              - /url: /order-tracking
+          - listitem [ref=e93]:
+            - link "View Cart" [ref=e94] [cursor=pointer]:
+              - /url: /cart
+      - generic [ref=e95]:
+        - heading "Shop" [level=4] [ref=e96]
+        - list [ref=e97]:
+          - listitem [ref=e98]:
+            - link "All Products" [ref=e99] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e100]:
+            - link "Design Lab" [ref=e101] [cursor=pointer]:
+              - /url: /design-lab
+          - listitem [ref=e102]:
+            - link "Promotions" [ref=e103] [cursor=pointer]:
+              - /url: /promotions
+          - listitem [ref=e104]:
+            - link "Help Center" [ref=e105] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e106]:
+        - heading "Support" [level=4] [ref=e107]
+        - list [ref=e108]:
+          - listitem [ref=e109]:
+            - link "Help Center" [ref=e110] [cursor=pointer]:
+              - /url: /help
+          - listitem [ref=e111]:
+            - link "Contact Us" [ref=e112] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e113]:
+            - link "Shipping Info" [ref=e114] [cursor=pointer]:
+              - /url: /shipping-info
+          - listitem [ref=e115]:
+            - link "Returns" [ref=e116] [cursor=pointer]:
+              - /url: /returns
+      - generic [ref=e117]:
+        - heading "Legal" [level=4] [ref=e118]
+        - list [ref=e119]:
+          - listitem [ref=e120]:
+            - link "Privacy Policy" [ref=e121] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=e122]:
+            - link "Terms of Service" [ref=e123] [cursor=pointer]:
+              - /url: /terms-of-service
+          - listitem [ref=e124]:
+            - link "Size Guide" [ref=e125] [cursor=pointer]:
+              - /url: /size-guide
+          - listitem [ref=e126]:
+            - link "Sitemap" [ref=e127] [cursor=pointer]:
+              - /url: /sitemap.xml
+    - generic [ref=e128]:
+      - generic [ref=e129]: © 2025 Inkify LLC. All rights reserved.
+      - navigation "Legal links" [ref=e130]:
+        - generic [ref=e131]:
+          - link "Privacy Policy" [ref=e132] [cursor=pointer]:
+            - /url: /privacy-policy
+          - text: "|"
+        - generic [ref=e133]:
+          - link "Terms of Service" [ref=e134] [cursor=pointer]:
+            - /url: /terms-of-service
+          - text: "|"
+        - generic [ref=e135]:
+          - link "Size Guide" [ref=e136] [cursor=pointer]:
+            - /url: /size-guide
+          - text: "|"
+        - link "Sitemap" [ref=e138] [cursor=pointer]:
+          - /url: /sitemap.xml
+  - alert [ref=e139]: Browse All Products - Custom T-Shirts, Hoodies & More | suvernire plus | suvernire plus
+```

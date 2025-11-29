@@ -1,7 +1,7 @@
 # Page snapshot
 
 ```yaml
-- generic [active] [ref=e1]:
+- generic [ref=e1]:
   - link "Skip to content" [ref=e2] [cursor=pointer]:
     - /url: "#main"
   - region "Promotional message" [ref=e3]: Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing
@@ -12,7 +12,7 @@
         - img "Suvernire Plus" [ref=e8]
       - search [ref=e9]:
         - form "Site search form" [ref=e10]:
-          - button "Search products" [ref=e11] [cursor=pointer]: 🔍
+          - button "Search products" [active] [ref=e11] [cursor=pointer]: 🔍
           - searchbox "Search query" [ref=e12]
       - generic "Contact options" [ref=e13]:
         - generic [ref=e14]:
@@ -73,11 +73,11 @@
         - generic [ref=e65]:
           - text: "Sort By:"
           - combobox "Sort By:" [ref=e66] [cursor=pointer]:
-            - option "Recommended"
+            - option "Recommended" [selected]
             - 'option "Price: Low to High"'
             - 'option "Price: High to Low"'
             - 'option "Name: A to Z"'
-            - 'option "Name: Z to A" [selected]'
+            - 'option "Name: Z to A"'
         - generic [ref=e67]:
           - heading "We hit a snag loading products" [level=2] [ref=e68]
           - paragraph [ref=e69]: Failed to fetch products (Failed to fetch)
@@ -175,5 +175,5 @@
           - text: "|"
         - link "Sitemap" [ref=e138] [cursor=pointer]:
           - /url: /sitemap.xml
-  - alert [ref=e139]
+  - alert [ref=e139]: Browse All Products - Custom T-Shirts, Hoodies & More | suvernire plus | suvernire plus
 ```

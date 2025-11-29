@@ -1,7 +1,7 @@
 # Page snapshot
 
 ```yaml
-- generic [ref=e1]:
+- generic [active] [ref=e1]:
   - link "Skip to content" [ref=e2] [cursor=pointer]:
     - /url: "#main"
   - region "Promotional message" [ref=e3]: Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing
@@ -13,7 +13,7 @@
       - search [ref=e9]:
         - form "Site search form" [ref=e10]:
           - button "Search products" [ref=e11] [cursor=pointer]: 🔍
-          - searchbox "Search query" [active] [ref=e12]: tee
+          - searchbox "Search query" [ref=e12]
       - generic "Contact options" [ref=e13]:
         - generic [ref=e14]:
           - img [ref=e15]
@@ -175,5 +175,5 @@
           - text: "|"
         - link "Sitemap" [ref=e138] [cursor=pointer]:
           - /url: /sitemap.xml
-  - alert [ref=e139]: Browse All Products - Custom T-Shirts, Hoodies & More | suvernire plus | suvernire plus
+  - alert [ref=e139]
 ```
