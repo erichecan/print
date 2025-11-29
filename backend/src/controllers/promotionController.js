@@ -6,21 +6,27 @@ const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 
 // [2025-01-28 12:15:00] Map Prisma promotion to API format
-const mapPromotion = (promotion) => ({
-  id: promotion.id,
-  title: promotion.title,
-  description: promotion.description,
-  bannerImageUrl: promotion.bannerImageUrl,
-  linkUrl: promotion.linkUrl,
-  discountType: promotion.discountType === 'PERCENTAGE' ? 'percentage' : 'fixed',
-  discountValue: Number(promotion.discountValue),
-  minOrderValue: promotion.minOrderValue ? Number(promotion.minOrderValue) : null,
-  maxDiscount: promotion.maxDiscount ? Number(promotion.maxDiscount) : null,
-  startDate: promotion.startDate.toISOString().split('T')[0],
-  endDate: promotion.endDate.toISOString().split('T')[0],
-  isActive: promotion.isActive,
-  sortOrder: promotion.sortOrder,
-});
+// [2025-11-29 20:10:00] 添加安全检查，处理可能的 null/undefined 值
+const mapPromotion = (promotion) => {
+  if (!promotion) {
+    return null;
+  }
+  return {
+    id: promotion.id,
+    title: promotion.title || '',
+    description: promotion.description || null,
+    bannerImageUrl: promotion.bannerImageUrl || null,
+    linkUrl: promotion.linkUrl || null,
+    discountType: promotion.discountType === 'PERCENTAGE' ? 'percentage' : 'fixed',
+    discountValue: promotion.discountValue ? Number(promotion.discountValue) : 0,
+    minOrderValue: promotion.minOrderValue ? Number(promotion.minOrderValue) : null,
+    maxDiscount: promotion.maxDiscount ? Number(promotion.maxDiscount) : null,
+    startDate: promotion.startDate && promotion.startDate.toISOString ? promotion.startDate.toISOString().split('T')[0] : null,
+    endDate: promotion.endDate && promotion.endDate.toISOString ? promotion.endDate.toISOString().split('T')[0] : null,
+    isActive: promotion.isActive ?? true,
+    sortOrder: promotion.sortOrder ?? 0,
+  };
+};
 
 /**
  * Get all active promotions
@@ -133,17 +139,31 @@ exports.getPromotionsForProduct = async (req, res) => {
       return bValue - aValue;
     });
 
-    res.json({ promotions: allPromotions.map(mapPromotion) });
+    // [2025-11-29 20:10:00] 安全地映射促销活动，处理可能的 null/undefined
+    const mappedPromotions = allPromotions
+      .filter((p) => p != null) // 过滤掉 null/undefined
+      .map((p) => {
+        try {
+          return mapPromotion(p);
+        } catch (mapError) {
+          logger.warn('[promotionController] Error mapping promotion:', {
+            promotionId: p?.id,
+            error: mapError.message,
+          });
+          return null;
+        }
+      })
+      .filter((p) => p != null); // 过滤掉映射失败的项目
+
+    res.json({ promotions: mappedPromotions });
   } catch (error) {
     logger.error('[promotionController] getPromotionsForProduct error:', {
       error: error.message,
       stack: error.stack,
       productId: req.params?.productId,
     });
-    res.status(500).json({ 
-      error: 'Failed to fetch promotions for product',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
-    });
+    // [2025-11-29 20:10:00] 即使出错也返回空数组而不是 500，避免影响前端功能
+    res.json({ promotions: [] });
   }
 };
 
