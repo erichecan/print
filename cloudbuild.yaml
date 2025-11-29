@@ -15,21 +15,33 @@ steps:
       - '.'
     waitFor: ['-']
 
+  # Read Stripe publishable key from Secret Manager for build
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'read-stripe-key'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        STRIPE_KEY=$(gcloud secrets versions access latest --secret=stripe-publishable-key --project=${PROJECT_ID})
+        echo "$$STRIPE_KEY" > /workspace/stripe-key.txt
+        echo "Stripe key retrieved (length: $$(cat /workspace/stripe-key.txt | wc -c) chars)"
+    waitFor: ['-']
+
   # Build frontend Docker image
   - name: 'gcr.io/cloud-builders/docker'
     id: 'build-frontend'
+    entrypoint: 'bash'
     args:
-      - 'build'
-      - '--build-arg'
-      - 'NEXT_PUBLIC_API_URL=https://print-main-backend-234065158862.us-central1.run.app/api'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest'
-      - '-f'
-      - 'apps/web/Dockerfile'
-      - 'apps/web'
-    waitFor: ['-']
+      - '-c'
+      - |
+        STRIPE_KEY=$$(cat /workspace/stripe-key.txt)
+        docker build \
+          --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-234065158862.us-central1.run.app/api \
+          --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$$STRIPE_KEY" \
+          -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest \
+          -f apps/web/Dockerfile \
+          apps/web
+    waitFor: ['read-stripe-key']
 
   # Push backend image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
