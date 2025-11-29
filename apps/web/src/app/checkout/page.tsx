@@ -515,7 +515,8 @@ function CheckoutForm({
 
   // [2025-11-29 21:05:00] 调试日志：输出按钮状态（状态变化时）
   useEffect(() => {
-    const placeOrderDisabled = !stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete;
+    // [2025-11-29 21:30:00] 改进 Place Order 按钮禁用条件，包括地址和运费验证
+    const placeOrderDisabled = !stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete || !addressReady || !selectedShipping || shippingRates.length === 0;
     const applyCouponDisabled = applyingCoupon || !couponCode.trim() || !addressReady;
     
     const debugInfo = {
@@ -527,10 +528,16 @@ function CheckoutForm({
         isFetchingRates,
         isCalculatingTotals,
         cardComplete,
+        addressReady,
+        selectedShipping: selectedShipping || 'none',
+        shippingRatesCount: shippingRates.length,
         disabledReason: !stripe ? 'no-stripe' :
           isSubmitting ? 'submitting' :
           isFetchingRates ? 'fetching-rates' :
           isCalculatingTotals ? 'calculating-totals' :
+          !addressReady ? 'address-not-ready' :
+          shippingRates.length === 0 ? 'no-shipping-rates' :
+          !selectedShipping ? 'no-shipping-selected' :
           !cardComplete ? 'card-incomplete' : 'enabled'
       },
       applyCoupon: {
@@ -547,7 +554,7 @@ function CheckoutForm({
     
     // [2025-11-29 21:20:00] 使用 JSON.stringify 确保对象内容可见
     console.log('[Checkout Debug] Button states:', JSON.stringify(debugInfo, null, 2));
-  }, [stripe, isSubmitting, isFetchingRates, isCalculatingTotals, cardComplete, applyingCoupon, couponCode, addressReady]);
+  }, [stripe, isSubmitting, isFetchingRates, isCalculatingTotals, cardComplete, addressReady, selectedShipping, shippingRates.length, applyingCoupon, couponCode]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -985,7 +992,9 @@ function CheckoutForm({
                 brand: event.brand || 'unknown'
               };
               console.log('[Checkout Debug] Card state changed:', JSON.stringify(cardState, null, 2));
-              setCardComplete(event.complete);
+              
+              // [2025-11-29 21:35:00] 确保 cardComplete 状态正确更新
+              setCardComplete(event.complete === true);
             }}
           />
         </div>
@@ -1183,13 +1192,15 @@ function CheckoutForm({
 
       <button
         type="submit"
-        disabled={!stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete}
+        disabled={!stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete || !addressReady || !selectedShipping || shippingRates.length === 0}
         className="btn-primary"
         title={
           !stripe ? 'Stripe is loading...' :
           isSubmitting ? 'Submitting order...' :
           isFetchingRates ? 'Loading shipping rates...' :
           isCalculatingTotals ? 'Calculating totals...' :
+          !addressReady ? 'Please complete shipping address' :
+          !selectedShipping || shippingRates.length === 0 ? 'Please select a shipping method' :
           !cardComplete ? 'Please complete card details' :
           undefined
         }
