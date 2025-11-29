@@ -62,14 +62,14 @@ test.describe('Admin 登录功能', () => {
     await emailInput.fill(ADMIN_EMAIL);
     await passwordInput.fill(ADMIN_PASSWORD);
     
-    // [2025-11-28 16:55:00] 监听登录 API 请求以检查是否成功
+    // [2025-11-28 17:50:00] 监听任何登录相关的 API 请求（包括错误响应）
     const loginApiPromise = page.waitForResponse(
-      (response) => response.url().includes('/api/auth/login') && response.status() === 200,
+      (response) => {
+        const url = response.url();
+        return url.includes('/api/auth/login') || url.includes('/auth/login');
+      },
       { timeout: 30000 }
     ).catch(() => null);
-    
-    // 监听导航事件
-    const navigationPromise = page.waitForURL(/\/admin$/, { timeout: 30000 });
     
     // 提交登录表单
     await submitButton.click();
@@ -77,31 +77,57 @@ test.describe('Admin 登录功能', () => {
     // 等待登录 API 响应
     const loginResponse = await loginApiPromise;
     if (loginResponse) {
+      const status = loginResponse.status();
       const loginData = await loginResponse.json().catch(() => ({}));
-      console.log('Login response:', loginData);
       
-      // 如果有错误消息，显示出来
+      if (status !== 200) {
+        console.log(`登录 API 返回状态: ${status}`);
+        console.log('响应数据:', loginData);
+        throw new Error(`登录失败: HTTP ${status} - ${loginData.error || loginData.message || '未知错误'}`);
+      }
+      
       if (loginData.error) {
         throw new Error(`登录失败: ${loginData.error}`);
       }
+    } else {
+      // [2025-11-28 17:50:00] 如果没有 API 响应，等待页面导航或错误消息
+      await page.waitForTimeout(2000);
     }
     
     // 等待跳转到 /admin 或检查错误消息
     try {
-      await navigationPromise;
-      // 验证成功登录并跳转到后台
-      await expect(page).toHaveURL(/\/admin$/, { timeout: 10000 });
+      // [2025-11-28 17:50:00] 使用更宽松的等待策略，先等待页面变化
+      await Promise.race([
+        page.waitForURL(/\/admin$/, { timeout: 15000 }).catch(() => null),
+        page.waitForTimeout(3000),
+      ]);
       
-      // 验证后台页面加载（不应该显示登录表单）
-      await page.waitForLoadState('domcontentloaded');
-      const loginForm = page.locator('input[type="email"]');
-      await expect(loginForm).not.toBeVisible({ timeout: 5000 });
-    } catch (error) {
-      // [2025-11-28 16:55:00] 如果跳转失败，检查是否有错误消息
-      const errorMessage = page.locator('.error-message, [role="alert"]');
-      const hasError = await errorMessage.count() > 0;
+      // 检查当前 URL
+      const currentUrl = page.url();
+      if (currentUrl.includes('/admin') && !currentUrl.includes('/login')) {
+        // 成功登录
+        await page.waitForLoadState('domcontentloaded');
+        const loginForm = page.locator('input[type="email"]');
+        await expect(loginForm).not.toBeVisible({ timeout: 5000 });
+        return;
+      }
+      
+      // 如果还在登录页面，检查错误消息
+      const errorMessage = page.locator('.error-message, [role="alert"], .text-error, [class*="error"]').first();
+      const hasError = await errorMessage.isVisible({ timeout: 3000 }).catch(() => false);
       if (hasError) {
-        const errorText = await errorMessage.first().textContent();
+        const errorText = await errorMessage.textContent();
+        throw new Error(`登录失败: ${errorText || '未知错误'}`);
+      }
+      
+      // 如果既没有跳转也没有错误，可能是网络问题
+      throw new Error('登录超时：未能跳转到后台，可能是网络问题或后端服务不可用');
+    } catch (error) {
+      // 检查是否有错误消息显示
+      const errorMessage = page.locator('.error-message, [role="alert"], .text-error, [class*="error"]').first();
+      const hasError = await errorMessage.isVisible({ timeout: 2000 }).catch(() => false);
+      if (hasError) {
+        const errorText = await errorMessage.textContent();
         throw new Error(`登录失败: ${errorText || '未知错误'}`);
       }
       throw error;

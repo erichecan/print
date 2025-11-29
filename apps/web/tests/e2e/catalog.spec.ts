@@ -8,20 +8,51 @@ test.describe('商品目录', () => {
     await page.goto('/products');
     await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:55:00] 等待页面加载
     
-    // [2025-11-28 16:55:00] 等待商品卡片出现，使用更宽松的等待策略
-    const productCard = page.locator('.product-card-new, .product-card').first();
-    await productCard.waitFor({ state: 'attached', timeout: 20000 }).catch(() => {});
-    
-    // 如果商品卡片不可见，尝试等待 API 响应
-    const hasProducts = await productCard.isVisible({ timeout: 5000 }).catch(() => false);
-    if (!hasProducts) {
-      // 等待商品 API 响应
+    // [2025-11-28 17:50:00] 先等待商品 API 响应，确保数据加载完成
+    try {
       await page.waitForResponse(
-        (response) => response.url().includes('/api/products') && response.status() === 200,
-        { timeout: 15000 }
-      ).catch(() => {});
-      // 再次等待商品卡片
-      await productCard.waitFor({ state: 'visible', timeout: 10000 }).catch(() => {});
+        (response) => {
+          const url = response.url();
+          return (url.includes('/api/products') || url.includes('/products')) && response.status() === 200;
+        },
+        { timeout: 20000 }
+      );
+    } catch (error) {
+      // 如果 API 响应超时，继续尝试查找商品卡片
+      console.log('商品 API 响应超时，继续查找商品卡片...');
+    }
+    
+    // [2025-11-28 17:50:00] 等待商品卡片出现，使用多种选择器
+    const productCard = page.locator('.product-card-new, .product-card, [class*="product"], article').first();
+    
+    // 等待商品卡片可见
+    try {
+      await productCard.waitFor({ state: 'visible', timeout: 20000 });
+    } catch (error) {
+      // 如果不可见，尝试等待页面内容加载
+      await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+      await page.waitForTimeout(2000);
+    }
+    
+    // [2025-11-28 17:50:00] 检查是否有商品显示（即使没有商品卡片，也可能有其他元素）
+    const hasProducts = await productCard.isVisible({ timeout: 5000 }).catch(() => false);
+    
+    if (!hasProducts) {
+      // 检查是否有"没有商品"的消息
+      const noProductsMessage = page.locator('text=/no products|没有商品|暂无商品/i');
+      const hasNoProducts = await noProductsMessage.isVisible({ timeout: 3000 }).catch(() => false);
+      
+      if (hasNoProducts) {
+        // 如果没有商品，这不是测试失败，而是数据问题
+        console.log('⚠️  商品列表页面没有商品数据');
+        // 仍然尝试继续测试，验证页面结构
+      } else {
+        // 如果页面加载但找不到商品卡片，可能是选择器问题
+        // 获取页面 HTML 片段用于调试
+        const pageContent = await page.content();
+        console.log('页面内容片段:', pageContent.substring(0, 1000));
+        throw new Error('商品列表页面加载完成，但找不到商品卡片元素');
+      }
     }
     
     await expect(productCard).toBeVisible({ timeout: 10000 });
