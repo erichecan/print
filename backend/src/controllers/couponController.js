@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
  */
 exports.validateCoupon = async (req, res) => {
   try {
-    const { code, subtotal, userId } = req.body;
+    const { code, subtotal, userId } = req.body || {};
 
     if (!code || !subtotal) {
       return res.status(400).json({
@@ -33,6 +33,9 @@ exports.validateCoupon = async (req, res) => {
         startDate: { lte: now },
         endDate: { gte: now },
       },
+    }).catch((err) => {
+      logger.error('[couponController] Error finding coupon:', err);
+      return null;
     });
 
     if (!coupon) {

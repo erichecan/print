@@ -57,6 +57,11 @@ exports.getActivePromotions = async (req, res) => {
 exports.getPromotionsForProduct = async (req, res) => {
   try {
     const { productId } = req.params;
+    
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
+    }
+
     const now = new Date();
 
     // [2025-01-28 12:15:00] Find promotions that include this product directly
@@ -75,12 +80,18 @@ exports.getPromotionsForProduct = async (req, res) => {
         { sortOrder: 'asc' },
         { createdAt: 'desc' },
       ],
+    }).catch((err) => {
+      logger.error('[promotionController] Error fetching product promotions:', err);
+      return [];
     });
 
     // [2025-01-28 12:15:00] Find promotions that include this product's category
     const product = await prisma.product.findUnique({
       where: { id: productId },
       include: { category: true },
+    }).catch((err) => {
+      logger.error('[promotionController] Error fetching product:', err);
+      return null;
     });
 
     let categoryPromotions = [];
@@ -100,13 +111,16 @@ exports.getPromotionsForProduct = async (req, res) => {
           { sortOrder: 'asc' },
           { createdAt: 'desc' },
         ],
+      }).catch((err) => {
+        logger.error('[promotionController] Error fetching category promotions:', err);
+        return [];
       });
     }
 
     // [2025-01-28 12:15:00] Merge and deduplicate promotions (prefer product-specific over category)
-    const allPromotions = [...productPromotions];
-    const productPromotionIds = new Set(productPromotions.map((p) => p.id));
-    categoryPromotions.forEach((promo) => {
+    const allPromotions = [...(productPromotions || [])];
+    const productPromotionIds = new Set((productPromotions || []).map((p) => p.id));
+    (categoryPromotions || []).forEach((promo) => {
       if (!productPromotionIds.has(promo.id)) {
         allPromotions.push(promo);
       }
@@ -121,8 +135,15 @@ exports.getPromotionsForProduct = async (req, res) => {
 
     res.json({ promotions: allPromotions.map(mapPromotion) });
   } catch (error) {
-    logger.error('[promotionController] getPromotionsForProduct error:', error);
-    res.status(500).json({ error: 'Failed to fetch promotions for product' });
+    logger.error('[promotionController] getPromotionsForProduct error:', {
+      error: error.message,
+      stack: error.stack,
+      productId: req.params?.productId,
+    });
+    res.status(500).json({ 
+      error: 'Failed to fetch promotions for product',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 

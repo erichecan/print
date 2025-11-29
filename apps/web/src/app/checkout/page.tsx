@@ -1118,6 +1118,14 @@ function CheckoutForm({
         type="submit"
         disabled={!stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete}
         className="btn-primary"
+        title={
+          !stripe ? 'Stripe is loading...' :
+          isSubmitting ? 'Submitting order...' :
+          isFetchingRates ? 'Loading shipping rates...' :
+          isCalculatingTotals ? 'Calculating totals...' :
+          !cardComplete ? 'Please complete card details' :
+          undefined
+        }
       >
         {isSubmitting ? (
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

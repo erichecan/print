@@ -577,13 +577,52 @@ export const ordersApi = {
 };
 
 // Auth API
+// [2025-01-29 02:20:00] 创建同域 API 调用函数（用于登录相关请求，避免跨域 Cookie 问题）
+async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+  const { method = 'GET', body, headers = {} } = options;
+  
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  
+  const config: RequestInit = {
+    method,
+    headers: {
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
+      ...headers,
+    },
+    credentials: 'include',
+  };
+  
+  if (body && method !== 'GET') {
+    config.body = isFormData ? body : JSON.stringify(body);
+  }
+  
+  // 使用同源 API 路由（Next.js API Routes）
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const response = await fetch(`${baseUrl}${endpoint}`, config);
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(error.error || `API Error: ${response.status}`);
+  }
+  
+  const contentType = response.headers.get('content-type');
+  if (contentType?.includes('application/json')) {
+    return response.json();
+  }
+  
+  const text = await response.text();
+  return text as unknown as T;
+}
+
 export const authApi = {
   register: (data: { email: string; password: string; firstName?: string; lastName?: string }) =>
     api('/auth/register', { method: 'POST', body: data }),
+  // [2025-01-29 02:20:00] 使用同域 API 路由，避免跨域 Cookie 问题
   login: (email: string, password: string) =>
-    api('/auth/login', { method: 'POST', body: { email, password } }),
+    sameOriginApi('/api/auth/login', { method: 'POST', body: { email, password } }),
   logout: () => api('/auth/logout', { method: 'POST' }),
-  me: () => api<UserProfile>('/auth/me'),
+  // [2025-01-29 02:20:00] 使用同域 API 路由，避免跨域 Cookie 问题
+  me: () => sameOriginApi<UserProfile>('/api/auth/me'),
   updateProfile: (data: { firstName?: string; lastName?: string; phone?: string }) =>
     api('/auth/me', { method: 'PATCH', body: data }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
