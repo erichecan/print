@@ -215,6 +215,16 @@ function CheckoutForm({
   const router = useRouter();
   const { error: showError, warning: showWarning } = useToast(); // [2025-01-27 16:55:00] Toast 通知
 
+  // [2025-11-29 21:25:00] 调试日志：监控 Stripe 加载状态
+  useEffect(() => {
+    console.log('[Checkout Debug] Stripe state:', JSON.stringify({
+      stripe: stripe ? 'loaded' : 'not-loaded',
+      hasStripeKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+      stripeKeyLength: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.length || 0,
+      elements: elements ? 'loaded' : 'not-loaded',
+    }, null, 2));
+  }, [stripe, elements]);
+
   const [address, setAddress] = useState<ShippingAddressForm>({
     fullName: '',
     email: '',
@@ -308,7 +318,7 @@ function CheckoutForm({
       address.country.trim().length > 0
     );
     // [2025-11-29 21:05:00] 调试日志：记录 addressReady 状态
-    console.log('[Checkout Debug] addressReady:', ready, {
+    const addressFields = {
       fullName: address.fullName.trim().length > 0,
       email: address.email.trim().length > 0,
       phone: address.phone.trim().length > 0,
@@ -317,7 +327,8 @@ function CheckoutForm({
       province: address.province.trim().length > 0,
       postalCode: address.postalCode.trim().length > 0,
       country: address.country.trim().length > 0,
-    });
+    };
+    console.log('[Checkout Debug] addressReady:', ready, JSON.stringify(addressFields, null, 2));
     return ready;
   }, [address]);
 
@@ -507,10 +518,11 @@ function CheckoutForm({
     const placeOrderDisabled = !stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete;
     const applyCouponDisabled = applyingCoupon || !couponCode.trim() || !addressReady;
     
-    console.log('[Checkout Debug] Button states:', {
+    const debugInfo = {
       placeOrder: {
         disabled: placeOrderDisabled,
         stripe: !!stripe,
+        stripeObject: stripe ? 'loaded' : 'not-loaded',
         isSubmitting,
         isFetchingRates,
         isCalculatingTotals,
@@ -525,12 +537,16 @@ function CheckoutForm({
         disabled: applyCouponDisabled,
         applyingCoupon,
         hasCouponCode: !!couponCode.trim(),
+        couponCodeLength: couponCode.trim().length,
         addressReady,
         disabledReason: applyingCoupon ? 'applying' :
           !couponCode.trim() ? 'no-code' :
           !addressReady ? 'address-not-ready' : 'enabled'
       },
-    });
+    };
+    
+    // [2025-11-29 21:20:00] 使用 JSON.stringify 确保对象内容可见
+    console.log('[Checkout Debug] Button states:', JSON.stringify(debugInfo, null, 2));
   }, [stripe, isSubmitting, isFetchingRates, isCalculatingTotals, cardComplete, applyingCoupon, couponCode, addressReady]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -962,12 +978,13 @@ function CheckoutForm({
                 setCardError(null);
               }
               // [2025-11-29 21:05:00] 调试日志：记录卡片状态变化
-              console.log('[Checkout Debug] Card state changed:', {
+              const cardState = {
                 complete: event.complete,
                 error: event.error?.message || null,
                 empty: event.empty,
                 brand: event.brand || 'unknown'
-              });
+              };
+              console.log('[Checkout Debug] Card state changed:', JSON.stringify(cardState, null, 2));
               setCardComplete(event.complete);
             }}
           />
