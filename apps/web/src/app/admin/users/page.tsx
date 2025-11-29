@@ -3,11 +3,13 @@
 /**
  * Admin Users Page
  * [2025-11-15 14:35:10] 接入后端 /api/admin/users，支持筛选与分页
+ * [2025-01-28 18:45:00] 添加创建用户功能
  */
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { adminUsersApi, AdminUserSummary } from '@/lib/api';
+import { CreateUserModal } from '@/components/admin/CreateUserModal';
 
 type RemoteFilters = {
   page: number;
@@ -27,6 +29,7 @@ export default function AdminUsersPage() {
   const [filters, setFilters] = useState<RemoteFilters>(remoteDefaults);
   const [searchDraft, setSearchDraft] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // [2025-01-28 18:45:00] 模态框状态
 
   const swrKey = useMemo(() => ['admin-users', filters], [filters]);
 
@@ -87,6 +90,16 @@ export default function AdminUsersPage() {
   const canPrev = filters.page > 1;
   const canNext = filters.page < totalPages;
 
+  // [2025-01-28 18:45:00] 用户创建成功后的回调
+  const handleUserCreated = () => {
+    // 刷新用户列表
+    mutate(swrKey);
+    // 如果当前页有筛选，可能需要回到第一页
+    if (filters.search || filters.role !== 'all' || filters.status !== 'all') {
+      setFilters((prev) => ({ ...prev, page: 1 }));
+    }
+  };
+
   return (
     <div style={{ marginTop: 24 }}>
       <div className="admin-page-header">
@@ -95,11 +108,22 @@ export default function AdminUsersPage() {
           <p className="text-muted">Manage customer and admin accounts</p>
         </div>
         <div className="admin-btn-group">
-          <button type="button" className="btn" disabled>
+          <button 
+            type="button" 
+            className="btn btn--primary" 
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             + Invite User
           </button>
         </div>
       </div>
+
+      {/* [2025-01-28 18:45:00] 创建用户模态框 */}
+      <CreateUserModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleUserCreated}
+      />
 
       <div className="admin-filters admin-filters--wrap">
         <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>

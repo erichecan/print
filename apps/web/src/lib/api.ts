@@ -888,6 +888,31 @@ export interface AdminUserDetailResponse {
   }>;
 }
 
+export interface AdminCreateUserPayload {
+  email: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  role?: 'CUSTOMER' | 'ADMIN' | 'customer' | 'admin';
+  emailVerified?: boolean;
+}
+
+export interface AdminCreateUserResponse {
+  user: {
+    id: string;
+    email: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    fullName: string;
+    phone?: string | null;
+    role: string;
+    emailVerified: boolean;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
 export const adminUsersApi = {
   list: (params?: {
     page?: number;
@@ -908,6 +933,8 @@ export const adminUsersApi = {
     );
   },
   get: (id: string) => api<AdminUserDetailResponse>(`/admin/users/${id}`),
+  create: (data: AdminCreateUserPayload) => // [2025-01-28 18:35:00] 创建新用户
+    api<AdminCreateUserResponse>('/admin/users', { method: 'POST', body: data }),
 };
 
 export interface AdminDesignSummary {
