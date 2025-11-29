@@ -454,8 +454,11 @@ export default function OfflineOrdersIntakePage() {
     });
   }, []);
 
-  // [2025-01-27 18:00:00] 步骤验证
+  // [2025-11-28 15:00:00] 步骤验证 - 将错误保存到 fieldErrors 中，在字段附近显示
   const validateStep = useCallback((step: number): boolean => {
+    // [2025-11-28 15:00:00] 清除之前的字段错误
+    setFieldErrors({});
+    
     if (step === 1) {
       // 第一步验证：至少添加一个产品，每个产品至少有一个变体，且数量和单价都大于0
       if (formState.productItems.length === 0) {
@@ -484,6 +487,9 @@ export default function OfflineOrdersIntakePage() {
         setStatus({ type: 'error', message: '请先在第一步添加产品' });
         return false;
       }
+      const newFieldErrors: Record<string, string> = {};
+      let firstErrorKey: string | null = null;
+      
       for (let i = 0; i < formState.productItems.length; i++) {
         const item = formState.productItems[i];
         const itemQuantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
@@ -493,38 +499,49 @@ export default function OfflineOrdersIntakePage() {
         const config = formState.productPrintConfigs[item.id];
         const positions = config?.positions || [];
         if (!positions.length) {
-          setStatus({
-            type: 'error',
-            message: `产品 ${i + 1} (${item.categoryName})：请至少添加一个印刷位置`,
-          });
-          return false;
+          const errorKey = `product-${item.id}-positions`;
+          newFieldErrors[errorKey] = `请至少添加一个印刷位置`;
+          if (!firstErrorKey) firstErrorKey = errorKey;
         }
         for (let j = 0; j < positions.length; j++) {
           const pos = positions[j];
           if (!pos.position || pos.position.trim() === '') {
-            setStatus({
-              type: 'error',
-              message: `产品 ${i + 1} (${item.categoryName}) 位置 ${j + 1}：请选择印刷位置`,
-            });
-            return false;
+            const errorKey = `product-${item.id}-position-${j}`;
+            newFieldErrors[errorKey] = '请选择印刷位置';
+            if (!firstErrorKey) firstErrorKey = errorKey;
           }
           const width = parseFloat(pos.width);
           const height = parseFloat(pos.height);
           if (Number.isNaN(width) || width <= 0) {
-            setStatus({
-              type: 'error',
-              message: `产品 ${i + 1} (${item.categoryName}) 位置 ${j + 1}：请填写有效的宽度（大于0）`,
-            });
-            return false;
+            const errorKey = `product-${item.id}-width-${j}`;
+            newFieldErrors[errorKey] = '请填写有效的宽度（大于0）';
+            if (!firstErrorKey) firstErrorKey = errorKey;
           }
           if (Number.isNaN(height) || height <= 0) {
-            setStatus({
-              type: 'error',
-              message: `产品 ${i + 1} (${item.categoryName}) 位置 ${j + 1}：请填写有效的高度（大于0）`,
-            });
-            return false;
+            const errorKey = `product-${item.id}-height-${j}`;
+            newFieldErrors[errorKey] = '请填写有效的高度（大于0）';
+            if (!firstErrorKey) firstErrorKey = errorKey;
           }
         }
+      }
+      
+      if (Object.keys(newFieldErrors).length > 0) {
+        setFieldErrors(newFieldErrors);
+        // [2025-11-28 15:00:00] 滚动到第一个错误位置
+        setTimeout(() => {
+          if (firstErrorKey) {
+            const errorElement = document.querySelector(`[data-error-key="${firstErrorKey}"]`);
+            if (errorElement) {
+              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // 聚焦到第一个错误字段
+              const inputElement = errorElement.querySelector('select, input');
+              if (inputElement && inputElement instanceof HTMLElement) {
+                inputElement.focus();
+              }
+            }
+          }
+        }, 100);
+        return false;
       }
       return true;
     }
@@ -1196,7 +1213,7 @@ export default function OfflineOrdersIntakePage() {
                           </h4>
                         </div>
                         <div className="space-y-4">
-                          <label className="block">
+                          <label className="block" data-error-key={`product-${item.id}-position-${index}`}>
                             <span className="block text-sm font-medium text-gray-700 mb-2">
                               {t('position')} *
                             </span>
@@ -1204,6 +1221,13 @@ export default function OfflineOrdersIntakePage() {
                               value={position.position}
                               onChange={(e) => {
                                 const value = e.target.value;
+                                // [2025-11-28 15:00:00] 清除该字段的错误
+                                const errorKey = `product-${item.id}-position-${index}`;
+                                setFieldErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next[errorKey];
+                                  return next;
+                                });
                                 setFormState((prev) => {
                                   const prevConfig =
                                     prev.productPrintConfigs[item.id] ||
@@ -1230,7 +1254,11 @@ export default function OfflineOrdersIntakePage() {
                                   };
                                 });
                               }}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                              className={`w-full border rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-all ${
+                                fieldErrors[`product-${item.id}-position-${index}`]
+                                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                              }`}
                             >
                               <option value="">{t('selectPosition')}</option>
                               {PRINT_POSITION_OPTIONS.map((option) => (
@@ -1239,10 +1267,16 @@ export default function OfflineOrdersIntakePage() {
                                 </option>
                               ))}
                             </select>
+                            {/* [2025-11-28 15:00:00] 在字段下方显示错误信息 */}
+                            {fieldErrors[`product-${item.id}-position-${index}`] && (
+                              <span className="block mt-1 text-sm text-red-600">
+                                {fieldErrors[`product-${item.id}-position-${index}`]}
+                              </span>
+                            )}
                           </label>
 
                           <div className="grid grid-cols-2 gap-4">
-                            <label className="block">
+                            <label className="block" data-error-key={`product-${item.id}-width-${index}`}>
                               <span className="block text-sm font-medium text-gray-700 mb-2">
                                 {t('width')} *
                               </span>
@@ -1254,6 +1288,13 @@ export default function OfflineOrdersIntakePage() {
                                 value={position.width}
                                 onChange={(e) => {
                                   const value = e.target.value;
+                                  // [2025-11-28 15:00:00] 清除该字段的错误
+                                  const errorKey = `product-${item.id}-width-${index}`;
+                                  setFieldErrors((prev) => {
+                                    const next = { ...prev };
+                                    delete next[errorKey];
+                                    return next;
+                                  });
                                   setFormState((prev) => {
                                     const prevConfig =
                                       prev.productPrintConfigs[item.id] ||
@@ -1280,10 +1321,20 @@ export default function OfflineOrdersIntakePage() {
                                     };
                                   });
                                 }}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all ${
+                                  fieldErrors[`product-${item.id}-width-${index}`]
+                                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                }`}
                               />
+                              {/* [2025-11-28 15:00:00] 在字段下方显示错误信息 */}
+                              {fieldErrors[`product-${item.id}-width-${index}`] && (
+                                <span className="block mt-1 text-sm text-red-600">
+                                  {fieldErrors[`product-${item.id}-width-${index}`]}
+                                </span>
+                              )}
                             </label>
-                            <label className="block">
+                            <label className="block" data-error-key={`product-${item.id}-height-${index}`}>
                               <span className="block text-sm font-medium text-gray-700 mb-2">
                                 {t('height')} *
                               </span>
@@ -1295,6 +1346,13 @@ export default function OfflineOrdersIntakePage() {
                                 value={position.height}
                                 onChange={(e) => {
                                   const value = e.target.value;
+                                  // [2025-11-28 15:00:00] 清除该字段的错误
+                                  const errorKey = `product-${item.id}-height-${index}`;
+                                  setFieldErrors((prev) => {
+                                    const next = { ...prev };
+                                    delete next[errorKey];
+                                    return next;
+                                  });
                                   setFormState((prev) => {
                                     const prevConfig =
                                       prev.productPrintConfigs[item.id] ||
@@ -1321,8 +1379,18 @@ export default function OfflineOrdersIntakePage() {
                                     };
                                   });
                                 }}
-                                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all ${
+                                  fieldErrors[`product-${item.id}-height-${index}`]
+                                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
+                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                                }`}
                               />
+                              {/* [2025-11-28 15:00:00] 在字段下方显示错误信息 */}
+                              {fieldErrors[`product-${item.id}-height-${index}`] && (
+                                <span className="block mt-1 text-sm text-red-600">
+                                  {fieldErrors[`product-${item.id}-height-${index}`]}
+                                </span>
+                              )}
                             </label>
                           </div>
 
