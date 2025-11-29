@@ -361,7 +361,7 @@ export interface FilterOptions {
   style: Array<{ name: string; count: number }>;
   neckline: Array<{ name: string; count: number }>;
   features: Array<{ name: string; count: number }>;
-  rushDelivery: Array<{ name: string; count: number }>;
+  rushDelivery: Array<{ name: string; label?: string; count: number }>;
 }
 
 // Products API

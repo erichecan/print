@@ -1,0 +1,431 @@
+{
+  "sourceUrl": "https://www.customink.com/products/womens/womens-short-sleeve-t-shirts/gildan-womens-softstyle-jersey-blend-t-shirt/1021100?PK=1021101",
+  "scrapedAt": "2025-11-29T12:39:25.387Z",
+  "product": {
+    "name": "Gildan Women's Softstyle Jersey Blend T-shirt",
+    "slug": "1021100",
+    "description": "Description and Features",
+    "longDescription": "Description and Features",
+    "basePriceCents": 1061,
+    "skuPrefix": "GIL-WOM-SOF",
+    "categoryParentSlug": "t-shirts",
+    "categoryChildSlug": "short-sleeve-t-shirts",
+    "brandSlug": "gildan",
+    "weight": null,
+    "dimensions": null,
+    "isCustomizable": true
+  },
+  "variants": [
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#797979",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#797979",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#797979",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#797979",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pitch Black",
+      "colorHex": "#212121",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pitch Black",
+      "colorHex": "#212121",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pitch Black",
+      "colorHex": "#212121",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pitch Black",
+      "colorHex": "#212121",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy Mist",
+      "colorHex": "#3a435c",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy Mist",
+      "colorHex": "#3a435c",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy Mist",
+      "colorHex": "#3a435c",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy Mist",
+      "colorHex": "#3a435c",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Steel Blue",
+      "colorHex": "#44555d",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Steel Blue",
+      "colorHex": "#44555d",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Steel Blue",
+      "colorHex": "#44555d",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Steel Blue",
+      "colorHex": "#44555d",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dusty Rose",
+      "colorHex": "#dcb4a7",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dusty Rose",
+      "colorHex": "#dcb4a7",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dusty Rose",
+      "colorHex": "#dcb4a7",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dusty Rose",
+      "colorHex": "#dcb4a7",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Plumrose",
+      "colorHex": "#cf8794",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Plumrose",
+      "colorHex": "#cf8794",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Plumrose",
+      "colorHex": "#cf8794",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Plumrose",
+      "colorHex": "#cf8794",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red Mist",
+      "colorHex": "#c52f42",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red Mist",
+      "colorHex": "#c52f42",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red Mist",
+      "colorHex": "#c52f42",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red Mist",
+      "colorHex": "#c52f42",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon Mist",
+      "colorHex": "#6e283e",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon Mist",
+      "colorHex": "#6e283e",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon Mist",
+      "colorHex": "#6e283e",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon Mist",
+      "colorHex": "#6e283e",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Slate",
+      "colorHex": "#c2b9b0",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Slate",
+      "colorHex": "#c2b9b0",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Slate",
+      "colorHex": "#c2b9b0",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Slate",
+      "colorHex": "#c2b9b0",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#00000000",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#00000000",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#00000000",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gunmetal",
+      "colorHex": "#00000000",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/1021100/main.png",
+      "stockQuantity": 50
+    }
+  ],
+  "images": [
+    {
+      "url": "/assets/products/1021100/main.png",
+      "alt": "Gildan Women's Softstyle Jersey Blend T-shirt-default-preview",
+      "sortOrder": 0
+    },
+    {
+      "url": "/assets/products/1021100/image-1.jpg",
+      "alt": "Gildan Women's Softstyle Jersey Blend T-shirt",
+      "sortOrder": 1
+    },
+    {
+      "url": "/assets/products/1021100/image-2.jpg",
+      "alt": "Gildan Women's Softstyle Jersey Blend T-shirt",
+      "sortOrder": 2
+    },
+    {
+      "url": "/assets/products/1021100/image-3.jpg",
+      "alt": "Gildan Women's Softstyle Jersey Blend T-shirt",
+      "sortOrder": 3
+    },
+    {
+      "url": "/assets/products/1021100/image-4.jpg",
+      "alt": "Gildan Women's Softstyle Jersey Blend T-shirt",
+      "sortOrder": 4
+    }
+  ]
+}

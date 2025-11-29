@@ -104,17 +104,28 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
   );
 
   // [2025-01-27 17:00:00] 合并API返回的颜色和预设颜色，显示数量
+  // [2025-01-28 19:55:00] 始终返回所有颜色，即使数量为0
   const getColorOptions = () => {
     if (!filterOptions) return COLOR_FAMILIES.map(c => ({ ...c, count: 0 }));
     
     const colorMap = new Map(
-      filterOptions.colors.map(c => [c.name.toLowerCase(), c.count])
+      (filterOptions.colors || []).map(c => [c.name.toLowerCase(), c.count || 0])
     );
     
-    return COLOR_FAMILIES.map(color => ({
-      ...color,
-      count: colorMap.get(color.name.toLowerCase()) || 0,
-    }));
+    // [2025-01-28 19:55:00] 使用后端返回的颜色列表（如果存在），否则使用预设颜色列表
+    const colorList = filterOptions.colors && filterOptions.colors.length > 0 
+      ? filterOptions.colors.map(c => ({
+          name: c.name,
+          hex: c.hex || COLOR_FAMILIES.find(cf => cf.name.toLowerCase() === c.name.toLowerCase())?.hex || '#CCCCCC',
+          pattern: COLOR_FAMILIES.find(cf => cf.name.toLowerCase() === c.name.toLowerCase())?.pattern || false,
+          count: c.count || 0,
+        }))
+      : COLOR_FAMILIES.map(color => ({
+          ...color,
+          count: colorMap.get(color.name.toLowerCase()) || 0,
+        }));
+    
+    return colorList;
   };
 
   // [2025-01-27 17:00:00] 获取分类树（一级和二级）
@@ -139,14 +150,14 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
     );
   }
 
-  if (error || !filterOptions) {
+  // [2025-01-28 19:55:00] 即使加载失败，也显示固定的筛选选项（颜色等）
+  // 如果出错，记录错误但不阻止渲染
+  if (error) {
     console.error('[DynamicFilters] Error loading filters:', error);
-    // [2025-01-27 17:00:00] 如果加载失败，返回空内容而不是错误，避免破坏布局
-    return null;
   }
 
-  const categoryTree = getCategoryTree();
-  const colorOptions = getColorOptions();
+  const categoryTree = filterOptions ? getCategoryTree() : [];
+  const colorOptions = getColorOptions(); // [2025-01-28 19:55:00] 始终返回颜色列表，即使 filterOptions 为空
 
   return (
     <>
@@ -315,63 +326,67 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       </div>
 
       {/* [2025-01-27 17:00:00] 动态颜色选择 */}
-      {filterOptions.colors.length > 0 && (
-        <details className="filter-section" open>
-          <summary className="filter-section__title">
-            Color Family
-            <span className="filter-toggle-icon"></span>
-          </summary>
-          <div className="filter-section__body">
-            <div className="color-grid">
-              {colorOptions.map((color) => {
-                const value = color.name.toLowerCase();
-                return (
-                  <label key={color.name} className="color-swatch">
-                    <input 
-                      type="checkbox" 
-                      name="color" 
-                      value={value}
-                      checked={isFilterChecked('color', value)}
-                      onChange={(e) => handleFilterChange('color', value, e.target.checked)}
-                    />
-                    <span 
-                      className="color-swatch__circle"
-                      style={{ 
-                        backgroundColor: color.hex,
-                        backgroundImage: color.pattern ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zM10 10h10v10H10z\' fill=\'%23fff\' opacity=\'.1\'/%3E%3C/svg%3E")' : undefined
-                      }}
-                      title={color.name}
-                    />
-                  </label>
-                );
-              })}
-            </div>
+      {/* [2025-01-28 19:55:00] 始终显示颜色筛选，即使数量为0也显示 */}
+      <details className="filter-section" open>
+        <summary className="filter-section__title">
+          Color Family
+          <span className="filter-toggle-icon"></span>
+        </summary>
+        <div className="filter-section__body">
+          <div className="color-grid">
+            {colorOptions.map((color) => {
+              const value = color.name.toLowerCase();
+              return (
+                <label key={color.name} className="color-swatch">
+                  <input 
+                    type="checkbox" 
+                    name="color" 
+                    value={value}
+                    checked={isFilterChecked('color', value)}
+                    onChange={(e) => handleFilterChange('color', value, e.target.checked)}
+                  />
+                  <span 
+                    className="color-swatch__circle"
+                    style={{ 
+                      backgroundColor: color.hex,
+                      backgroundImage: color.pattern ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zM10 10h10v10H10z\' fill=\'%23fff\' opacity=\'.1\'/%3E%3C/svg%3E")' : undefined
+                    }}
+                    title={color.name}
+                  />
+                </label>
+              );
+            })}
           </div>
-        </details>
-      )}
+        </div>
+      </details>
 
-      {/* Rush Delivery Available - 保持不变（非商品属性） */}
+      {/* Rush Delivery Available - 使用后端返回的数据 */}
+      {/* [2025-01-28 19:55:00] 始终显示 Rush Delivery 筛选，即使数量为0 */}
       <details className="filter-section" open>
         <summary className="filter-section__title">
           Rush Delivery Available
           <span className="filter-toggle-icon">−</span>
         </summary>
         <div className="filter-section__body">
-          {RUSH_DELIVERY_OPTIONS.map((option) => (
-            <label key={option.days} className="filter-checkbox">
+          {(filterOptions?.rushDelivery && filterOptions.rushDelivery.length > 0
+            ? filterOptions.rushDelivery
+            : RUSH_DELIVERY_OPTIONS.map(opt => ({ name: opt.days, label: opt.label, count: 0 }))
+          ).map((option) => (
+            <label key={option.name} className="filter-checkbox">
               <input 
                 type="checkbox" 
                 name="rushDelivery" 
-                value={option.days}
-                checked={isFilterChecked('rushDelivery', option.days)}
-                onChange={(e) => handleFilterChange('rushDelivery', option.days, e.target.checked)}
+                value={option.name}
+                checked={isFilterChecked('rushDelivery', option.name)}
+                onChange={(e) => handleFilterChange('rushDelivery', option.name, e.target.checked)}
               />
               <span className="filter-checkbox__label">
-                {option.days}
+                {option.name}
                 <span className="rush-badge">
-                  {option.icon && <span>{option.icon}</span>}
-                  {option.label}
+                  {option.name === '3 days' && <span>⚡</span>}
+                  {option.label || 'Rush'}
                 </span>
+                <span className="filter-count"> ({option.count || 0})</span>
               </span>
             </label>
           ))}
@@ -379,7 +394,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       </details>
 
       {/* [2025-01-27 17:00:00] 动态品牌筛选 */}
-      {filterOptions.brands.length > 0 && (
+      {/* [2025-01-28 19:55:00] 始终显示品牌筛选，即使数量为0也显示 */}
+      {filterOptions && filterOptions.brands && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Brands
@@ -396,7 +412,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
                   onChange={(e) => handleFilterChange('brand', brand.name, e.target.checked)}
                 />
                 <span className="filter-checkbox__label">
-                  {brand.name} <span className="filter-count">({brand.count})</span>
+                  {brand.name} <span className="filter-count">({brand.count || 0})</span>
                 </span>
               </label>
             ))}

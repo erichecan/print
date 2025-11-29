@@ -1,0 +1,495 @@
+{
+  "sourceUrl": "https://www.customink.com/products/t-shirts/short-sleeve-t-shirts/gildan-hammer-t-shirt/364900?PK=364902",
+  "scrapedAt": "2025-11-29T12:39:06.512Z",
+  "product": {
+    "name": "Gildan Hammer T-shirt",
+    "slug": "364900",
+    "description": "Description and Features",
+    "longDescription": "Description and Features",
+    "basePriceCents": 990,
+    "skuPrefix": "GIL-HAM-T-S",
+    "categoryParentSlug": "t-shirts",
+    "categoryChildSlug": "short-sleeve-t-shirts",
+    "brandSlug": "gildan",
+    "weight": null,
+    "dimensions": null,
+    "isCustomizable": true
+  },
+  "variants": [
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sport Grey",
+      "colorHex": "#c8c8c8",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sport Grey",
+      "colorHex": "#c8c8c8",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sport Grey",
+      "colorHex": "#c8c8c8",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sport Grey",
+      "colorHex": "#c8c8c8",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#969696",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#969696",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#969696",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#969696",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Scarlet Red",
+      "colorHex": "#a62f2f",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Scarlet Red",
+      "colorHex": "#a62f2f",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Scarlet Red",
+      "colorHex": "#a62f2f",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Scarlet Red",
+      "colorHex": "#a62f2f",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Navy",
+      "colorHex": "#312f37",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Navy",
+      "colorHex": "#312f37",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Navy",
+      "colorHex": "#312f37",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Navy",
+      "colorHex": "#312f37",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Deep Royal",
+      "colorHex": "#454891",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Deep Royal",
+      "colorHex": "#454891",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Deep Royal",
+      "colorHex": "#454891",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Deep Royal",
+      "colorHex": "#454891",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chambray",
+      "colorHex": "#dbe6e9",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chambray",
+      "colorHex": "#dbe6e9",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chambray",
+      "colorHex": "#dbe6e9",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chambray",
+      "colorHex": "#dbe6e9",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chalky Mint",
+      "colorHex": "#b7d9d0",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chalky Mint",
+      "colorHex": "#b7d9d0",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chalky Mint",
+      "colorHex": "#b7d9d0",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Chalky Mint",
+      "colorHex": "#b7d9d0",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Seafoam",
+      "colorHex": "#91afa2",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Seafoam",
+      "colorHex": "#91afa2",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Seafoam",
+      "colorHex": "#91afa2",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Seafoam",
+      "colorHex": "#91afa2",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Off White",
+      "colorHex": "#eee3cd",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Off White",
+      "colorHex": "#eee3cd",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Off White",
+      "colorHex": "#eee3cd",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Off White",
+      "colorHex": "#eee3cd",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Olive",
+      "colorHex": "#74674b",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Olive",
+      "colorHex": "#74674b",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Olive",
+      "colorHex": "#74674b",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Olive",
+      "colorHex": "#74674b",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#00000000",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#00000000",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#00000000",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#00000000",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Start Designing",
+      "colorHex": "#1e39d2",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/364900/main.png",
+      "stockQuantity": 50
+    }
+  ],
+  "images": [
+    {
+      "url": "/assets/products/364900/main.png",
+      "alt": "Gildan Hammer T-shirt-default-preview",
+      "sortOrder": 0
+    },
+    {
+      "url": "/assets/products/364900/image-1.jpg",
+      "alt": "Gildan Hammer T-shirt",
+      "sortOrder": 1
+    },
+    {
+      "url": "/assets/products/364900/image-2.jpg",
+      "alt": "Gildan Hammer T-shirt",
+      "sortOrder": 2
+    },
+    {
+      "url": "/assets/products/364900/image-3.jpg",
+      "alt": "Gildan Hammer T-shirt",
+      "sortOrder": 3
+    },
+    {
+      "url": "/assets/products/364900/image-4.jpg",
+      "alt": "Gildan Hammer T-shirt",
+      "sortOrder": 4
+    }
+  ]
+}

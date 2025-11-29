@@ -2366,8 +2366,9 @@ select {
   width: 280px; /* [2025-11-28 10:45:00] 固定宽度，防止横向溢出 */
   max-height: calc(100vh - 120px);
   overflow-y: auto;
-  overflow-x: hidden; /* [2025-11-28 10:45:00] 隐藏横向滚动条 */
+  overflow-x: hidden; /* [2025-01-28 19:45:00] 隐藏横向滚动条，只允许纵向滚动 */
   box-sizing: border-box; /* [2025-11-28 10:45:00] 确保宽度计算包含 padding */
+  max-width: 100%; /* [2025-01-28 19:45:00] 确保不超过父容器 */
 }
 
 .filters-new {
@@ -2434,9 +2435,11 @@ details:not([open]) .filter-toggle-icon::before {
   display: grid;
   gap: 8px;
   width: 100%; /* [2025-11-28 10:45:00] 确保不超出父容器 */
+  max-width: 100%; /* [2025-01-28 19:45:00] 确保不超出父容器，防止横向滚动 */
   box-sizing: border-box;
   overflow-wrap: break-word; /* [2025-11-28 10:45:00] 防止长文本溢出 */
   padding: 0; /* [2025-11-28 11:10:00] 移除默认 padding */
+  overflow-x: hidden; /* [2025-01-28 19:45:00] 防止横向溢出 */
 }
 
 .filter-category-list {
@@ -2605,15 +2608,18 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* [2025-11-28 11:05:00] 修复颜色圆形对齐问题 - 确保颜色在边框中心 */
+/* [2025-01-28 19:45:00] 修复颜色块为圆形：确保 width 和 height 完全相等，border-radius 50% */
 .color-swatch__circle {
   display: block;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+  width: 28px; /* [2025-01-28 19:45:00] 固定宽度 */
+  height: 28px; /* [2025-01-28 19:45:00] 必须与 width 相同，确保是圆形 */
+  border-radius: 50%; /* [2025-01-28 19:45:00] 设置为圆形 */
   border: 2px solid #e5e7eb;
   transition: border-color 0.2s, transform 0.2s;
   box-sizing: border-box; /* [2025-11-28 11:05:00] 确保边框包含在尺寸内 */
   background-clip: padding-box; /* [2025-11-28 11:05:00] 确保背景色在边框内正确显示 */
+  flex-shrink: 0; /* [2025-01-28 19:45:00] 防止被压缩变形 */
+  flex-grow: 0; /* [2025-01-28 19:45:00] 防止被拉伸变形 */
 }
 
 .color-swatch input:checked + .color-swatch__circle {

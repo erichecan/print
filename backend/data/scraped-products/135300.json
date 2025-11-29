@@ -1,0 +1,591 @@
+{
+  "sourceUrl": "https://www.customink.com/products/kids/kids-sweats/gildan-youth-midweight-50-50-pullover-hoodie/135300?PK=135301",
+  "scrapedAt": "2025-11-29T12:40:03.108Z",
+  "product": {
+    "name": "Gildan Youth Lightweight Hooded Sweatshirt - Custom Kids Hoodies",
+    "slug": "135300",
+    "description": "Description and Features",
+    "longDescription": "Description and Features",
+    "basePriceCents": 2551,
+    "skuPrefix": "GIL-YOU-LIG",
+    "categoryParentSlug": "sweatshirts",
+    "categoryChildSlug": "kids-sweats",
+    "brandSlug": "gildan",
+    "weight": null,
+    "dimensions": null,
+    "isCustomizable": true
+  },
+  "variants": [
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sports Grey",
+      "colorHex": "#afafaf",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sports Grey",
+      "colorHex": "#afafaf",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sports Grey",
+      "colorHex": "#afafaf",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Sports Grey",
+      "colorHex": "#afafaf",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#7f7f7f",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#7f7f7f",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#7f7f7f",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite Heather",
+      "colorHex": "#7f7f7f",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Charcoal",
+      "colorHex": "#494949",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Charcoal",
+      "colorHex": "#494949",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Charcoal",
+      "colorHex": "#494949",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Charcoal",
+      "colorHex": "#494949",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Heather",
+      "colorHex": "#4d4d4d",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Heather",
+      "colorHex": "#4d4d4d",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Heather",
+      "colorHex": "#4d4d4d",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Dark Heather",
+      "colorHex": "#4d4d4d",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#1c203b",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#1c203b",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#1c203b",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#1c203b",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Royal",
+      "colorHex": "#395389",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Royal",
+      "colorHex": "#395389",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Royal",
+      "colorHex": "#395389",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Royal",
+      "colorHex": "#395389",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Carolina Blue",
+      "colorHex": "#91b0e6",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Carolina Blue",
+      "colorHex": "#91b0e6",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Carolina Blue",
+      "colorHex": "#91b0e6",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Carolina Blue",
+      "colorHex": "#91b0e6",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Purple",
+      "colorHex": "#4f237a",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Purple",
+      "colorHex": "#4f237a",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Purple",
+      "colorHex": "#4f237a",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Purple",
+      "colorHex": "#4f237a",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Light Pink",
+      "colorHex": "#e9c6d4",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Light Pink",
+      "colorHex": "#e9c6d4",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Light Pink",
+      "colorHex": "#e9c6d4",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Light Pink",
+      "colorHex": "#e9c6d4",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Heliconia",
+      "colorHex": "#c5397d",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Heliconia",
+      "colorHex": "#c5397d",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Heliconia",
+      "colorHex": "#c5397d",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Heliconia",
+      "colorHex": "#c5397d",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red",
+      "colorHex": "#e00928",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red",
+      "colorHex": "#e00928",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red",
+      "colorHex": "#e00928",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Red",
+      "colorHex": "#e00928",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Cardinal Red",
+      "colorHex": "#922238",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Cardinal Red",
+      "colorHex": "#922238",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Cardinal Red",
+      "colorHex": "#922238",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Cardinal Red",
+      "colorHex": "#922238",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon",
+      "colorHex": "#721e38",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon",
+      "colorHex": "#721e38",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon",
+      "colorHex": "#721e38",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Maroon",
+      "colorHex": "#721e38",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Orange",
+      "colorHex": "#dc582a",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Orange",
+      "colorHex": "#dc582a",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Orange",
+      "colorHex": "#dc582a",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Orange",
+      "colorHex": "#dc582a",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gold",
+      "colorHex": "#f0a93d",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gold",
+      "colorHex": "#f0a93d",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gold",
+      "colorHex": "#f0a93d",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gold",
+      "colorHex": "#f0a93d",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    }
+  ],
+  "images": [
+    {
+      "url": "https://mms-images.out.customink.com/mms/images/catalog/c7d57e5e22a1d40e0f90793d4b0d85fc/colors/135301/views/alt/front_large.png?autoNegate=1&design=djn0-00by-wu36&digest=000000028&ixbg=%23f5f5f5&ixfm=jpeg&ixq=60&ixw=412&placeMax=1&placeMaxPct=0.8&placeUseProduct=1&placeUseView=front",
+      "alt": "Gildan Youth Midweight 50/50 Pullover Hoodie-default-preview",
+      "sortOrder": 0
+    },
+    {
+      "url": "https://mms-images.out.customink.com/mms/images/catalog/6f52d641fc7a598fc2fc9dd19152e850/styles/135300/catalog_detail_image_large.jpg?ixq=60&ixw=700",
+      "alt": "Gildan Youth Midweight 50/50 Pullover Hoodie",
+      "sortOrder": 1
+    },
+    {
+      "url": "https://mms-images.out.customink.com/mms/images/catalog/f365d22fd8cc8202a8eb65563e5523ca/styles/135300/supporting/1.jpg?ixq=60&ixw=700",
+      "alt": "Gildan Youth Midweight 50/50 Pullover Hoodie",
+      "sortOrder": 2
+    },
+    {
+      "url": "https://mms-images.out.customink.com/mms/images/catalog/cbea60f0203abf916d321b899b264678/styles/135300/supporting/2.jpg?ixq=60&ixw=700",
+      "alt": "Gildan Youth Midweight 50/50 Pullover Hoodie",
+      "sortOrder": 3
+    },
+    {
+      "url": "https://mms-images.out.customink.com/mms/images/catalog/c8d6978e95cde6232fd931335cfa5e6b/styles/135300/supporting/3.jpg?ixq=60&ixw=700",
+      "alt": "Gildan Youth Midweight 50/50 Pullover Hoodie",
+      "sortOrder": 4
+    }
+  ]
+}

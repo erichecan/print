@@ -28,10 +28,37 @@ const toNumber = (value, defaultValue = 0) => {
   return isNaN(parsed) ? defaultValue : parsed;
 };
 
+// [2025-01-28 19:50:00] 固定的颜色列表（参考 Custom Ink 网站）
+const FIXED_COLOR_LIST = [
+  { name: 'Black', hex: '#000000' },
+  { name: 'Blue', hex: '#0066CC' },
+  { name: 'White', hex: '#FFFFFF' },
+  { name: 'Grey', hex: '#808080' },
+  { name: 'Green', hex: '#00CC00' },
+  { name: 'Red', hex: '#CC0000' },
+  { name: 'Pink', hex: '#FF99CC' },
+  { name: 'Purple', hex: '#9933CC' },
+  { name: 'Yellow', hex: '#FFCC00' },
+  { name: 'Orange', hex: '#FF9900' },
+  { name: 'Brown', hex: '#996633' },
+  { name: 'Heather', hex: '#CCCCCC', pattern: true },
+  { name: 'Camo', hex: '#4A5D23', pattern: true },
+  { name: 'Tie-Dye', hex: '#FF00FF', pattern: true },
+];
+
+// [2025-01-28 19:50:00] 固定的 Rush Delivery 选项列表（参考 Custom Ink 网站）
+const FIXED_RUSH_DELIVERY_OPTIONS = [
+  { name: '3 days', label: 'Super Rush' },
+  { name: '1 week', label: 'Rush' },
+  { name: '10 days', label: 'Rush' },
+  { name: '12 days', label: 'Rush' },
+];
+
 /**
  * Get filter options with counts
  * GET /api/products/filters/options?collection=
  * [2025-01-27 17:00:00] 获取筛选选项统计数据，用于动态渲染筛选器
+ * [2025-01-28 19:50:00] 修改：返回固定筛选选项列表，即使数量为0也返回
  */
 exports.getFilterOptions = async (req, res) => {
   try {
@@ -140,6 +167,7 @@ exports.getFilterOptions = async (req, res) => {
       orderBy: { name: 'asc' },
     });
 
+    // [2025-01-28 19:50:00] 获取所有品牌的商品数量（用于后续返回所有品牌）
     const brands = await Promise.all(
       allBrands.map(async (brand) => {
         const productCount = await prisma.product.count({
@@ -154,8 +182,6 @@ exports.getFilterOptions = async (req, res) => {
         };
       })
     );
-
-    const brandsWithProducts = brands.filter(b => b._count.products > 0);
 
     // [2025-01-27 17:00:00] 获取颜色统计（从variants）
     // color是String（必填），colorHex是String?（可选），只需过滤空字符串
@@ -231,19 +257,32 @@ exports.getFilterOptions = async (req, res) => {
       })),
     }));
 
-    // [2025-01-27 17:00:00] 格式化品牌数据
-    const brandOptions = brandsWithProducts.map((brand) => ({
-      name: brand.name,
-      slug: brand.slug,
-      count: brand._count.products,
-    }));
+    // [2025-01-28 19:50:00] 格式化品牌数据：返回所有品牌，即使数量为0
+    const brandOptions = allBrands.map((brand) => {
+      const brandWithCount = brands.find(b => b.id === brand.id);
+      return {
+        name: brand.name,
+        slug: brand.slug,
+        count: brandWithCount?._count?.products || 0,
+      };
+    });
 
-    // [2025-01-27 17:00:00] 格式化颜色数据
-    const colorOptions = colorStats.map((stat) => ({
-      name: stat.color,
-      hex: stat.colorHex || '#CCCCCC',
-      count: stat._count._all,
-    }));
+    // [2025-01-28 19:50:00] 格式化颜色数据：返回固定颜色列表，即使数量为0
+    // 创建颜色统计映射
+    const colorStatsMap = new Map(
+      colorStats.map((stat) => [stat.color.toLowerCase(), stat._count._all])
+    );
+    
+    // 返回固定颜色列表，填充数量
+    const colorOptions = FIXED_COLOR_LIST.map((fixedColor) => {
+      const count = colorStatsMap.get(fixedColor.name.toLowerCase()) || 0;
+      return {
+        name: fixedColor.name,
+        hex: fixedColor.hex,
+        pattern: fixedColor.pattern || false,
+        count: count,
+      };
+    });
 
     // [2025-01-27 17:00:00] 格式化尺寸数据
     const sizeOptions = sizeStats
@@ -261,6 +300,14 @@ exports.getFilterOptions = async (req, res) => {
         if (indexB !== -1) return 1;
         return a.name.localeCompare(b.name);
       });
+
+    // [2025-01-28 19:50:00] 格式化 Rush Delivery 选项：返回固定列表，即使数量为0
+    // 注意：Rush Delivery 目前不在数据库中存储，所以所有选项数量都为0
+    const rushDeliveryOptions = FIXED_RUSH_DELIVERY_OPTIONS.map((option) => ({
+      name: option.name,
+      label: option.label,
+      count: 0, // [2025-01-28 19:50:00] 目前没有存储 Rush Delivery 数据，数量为0
+    }));
 
     const filterData = {
       categories: categoryTree,
@@ -283,7 +330,8 @@ exports.getFilterOptions = async (req, res) => {
       style: [],
       neckline: [],
       features: [],
-      rushDelivery: [],
+      // [2025-01-28 19:50:00] 返回固定的 Rush Delivery 选项列表
+      rushDelivery: rushDeliveryOptions,
     };
 
     await setCache(cacheKey, filterData, FILTER_OPTIONS_CACHE_TTL);

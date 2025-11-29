@@ -1,0 +1,591 @@
+{
+  "sourceUrl": "https://www.customink.com/products/t-shirts/short-sleeve-t-shirts/comfort-colors-100-cotton-t-shirt/175800?PK=175801",
+  "scrapedAt": "2025-11-29T12:39:15.883Z",
+  "product": {
+    "name": "Comfort Colors 100% Cotton T-shirt",
+    "slug": "175800",
+    "description": "Description and Features",
+    "longDescription": "Description and Features",
+    "basePriceCents": 815,
+    "skuPrefix": "COM-COL-100",
+    "categoryParentSlug": "t-shirts",
+    "categoryChildSlug": "short-sleeve-t-shirts",
+    "brandSlug": "gildan",
+    "weight": null,
+    "dimensions": null,
+    "isCustomizable": true
+  },
+  "variants": [
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#ffffff",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Ivory",
+      "colorHex": "#e8e3da",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Ivory",
+      "colorHex": "#e8e3da",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Ivory",
+      "colorHex": "#e8e3da",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Ivory",
+      "colorHex": "#e8e3da",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Granite",
+      "colorHex": "#acaaae",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Granite",
+      "colorHex": "#acaaae",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Granite",
+      "colorHex": "#acaaae",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Granite",
+      "colorHex": "#acaaae",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grey",
+      "colorHex": "#a49e96",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grey",
+      "colorHex": "#a49e96",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grey",
+      "colorHex": "#a49e96",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grey",
+      "colorHex": "#a49e96",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pepper",
+      "colorHex": "#6d6863",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pepper",
+      "colorHex": "#6d6863",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pepper",
+      "colorHex": "#6d6863",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Pepper",
+      "colorHex": "#6d6863",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite",
+      "colorHex": "#3b3d42",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite",
+      "colorHex": "#3b3d42",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite",
+      "colorHex": "#3b3d42",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Graphite",
+      "colorHex": "#3b3d42",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "True Navy",
+      "colorHex": "#222c3f",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "True Navy",
+      "colorHex": "#222c3f",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "True Navy",
+      "colorHex": "#222c3f",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "True Navy",
+      "colorHex": "#222c3f",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Midnight",
+      "colorHex": "#323d56",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Midnight",
+      "colorHex": "#323d56",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Midnight",
+      "colorHex": "#323d56",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Midnight",
+      "colorHex": "#323d56",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#474f6a",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#474f6a",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#474f6a",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#474f6a",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Denim",
+      "colorHex": "#6e6e72",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Denim",
+      "colorHex": "#6e6e72",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Denim",
+      "colorHex": "#6e6e72",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Denim",
+      "colorHex": "#6e6e72",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Blue Jean",
+      "colorHex": "#8c8f9d",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Blue Jean",
+      "colorHex": "#8c8f9d",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Blue Jean",
+      "colorHex": "#8c8f9d",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Blue Jean",
+      "colorHex": "#8c8f9d",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Periwinkle",
+      "colorHex": "#8996c0",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Periwinkle",
+      "colorHex": "#8996c0",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Periwinkle",
+      "colorHex": "#8996c0",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Periwinkle",
+      "colorHex": "#8996c0",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Mystic Blue",
+      "colorHex": "#808eb9",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Mystic Blue",
+      "colorHex": "#808eb9",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Mystic Blue",
+      "colorHex": "#808eb9",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Mystic Blue",
+      "colorHex": "#808eb9",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Flo Blue",
+      "colorHex": "#9091b7",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Flo Blue",
+      "colorHex": "#9091b7",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Flo Blue",
+      "colorHex": "#9091b7",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Flo Blue",
+      "colorHex": "#9091b7",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "China Blue",
+      "colorHex": "#727999",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "China Blue",
+      "colorHex": "#727999",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "China Blue",
+      "colorHex": "#727999",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "China Blue",
+      "colorHex": "#727999",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grape",
+      "colorHex": "#8483a6",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grape",
+      "colorHex": "#8483a6",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grape",
+      "colorHex": "#8483a6",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    },
+    {
+      "color": "Grape",
+      "colorHex": "#8483a6",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": "/assets/products/175800/main.png",
+      "stockQuantity": 50
+    }
+  ],
+  "images": [
+    {
+      "url": "/assets/products/175800/main.png",
+      "alt": "Comfort Colors 100% Cotton T-shirt-default-preview",
+      "sortOrder": 0
+    },
+    {
+      "url": "/assets/products/175800/image-1.jpg",
+      "alt": "Comfort Colors 100% Cotton T-shirt",
+      "sortOrder": 1
+    },
+    {
+      "url": "/assets/products/175800/image-2.jpg",
+      "alt": "Comfort Colors 100% Cotton T-shirt",
+      "sortOrder": 2
+    },
+    {
+      "url": "/assets/products/175800/image-3.jpg",
+      "alt": "Comfort Colors 100% Cotton T-shirt",
+      "sortOrder": 3
+    },
+    {
+      "url": "/assets/products/175800/image-4.jpg",
+      "alt": "Comfort Colors 100% Cotton T-shirt",
+      "sortOrder": 4
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "sourceUrl": "https://www.customink.com/products/t-shirts/short-sleeve-t-shirts/gildan-softstyle-jersey-t-shirt/176100?PK=176113&bg=1",
+  "scrapedAt": "2025-01-28T21:15:00Z",
+  "product": {
+    "name": "Gildan Softstyle Jersey T-shirt",
+    "slug": "gildan-softstyle-jersey-t-shirt",
+    "description": "Soft, comfortable jersey blend t-shirt perfect for custom printing",
+    "longDescription": "The Gildan Softstyle Jersey T-shirt is a versatile, comfortable shirt made from a premium jersey blend. Features include a tagless label, seamless collar, and durable construction perfect for custom printing and everyday wear.",
+    "basePriceCents": 1500,
+    "skuPrefix": "GIL-SSJ",
+    "categoryParentSlug": "t-shirts",
+    "categoryChildSlug": "short-sleeve-t-shirts",
+    "brandSlug": "gildan",
+    "weight": null,
+    "dimensions": null,
+    "isCustomizable": true
+  },
+  "variants": [
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Black",
+      "colorHex": "#000000",
+      "size": "2X",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#FFFFFF",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#FFFFFF",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#FFFFFF",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#FFFFFF",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "White",
+      "colorHex": "#FFFFFF",
+      "size": "2X",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#001f3f",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#001f3f",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#001f3f",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#001f3f",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Navy",
+      "colorHex": "#001f3f",
+      "size": "2X",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gray",
+      "colorHex": "#808080",
+      "size": "S",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gray",
+      "colorHex": "#808080",
+      "size": "M",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gray",
+      "colorHex": "#808080",
+      "size": "L",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gray",
+      "colorHex": "#808080",
+      "size": "XL",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    },
+    {
+      "color": "Gray",
+      "colorHex": "#808080",
+      "size": "2X",
+      "priceAdjustment": 0,
+      "imageUrl": null,
+      "stockQuantity": 50
+    }
+  ],
+  "images": [
+    {
+      "url": null,
+      "alt": "Gildan Softstyle Jersey T-shirt",
+      "sortOrder": 0
+    }
+  ]
+}
+
