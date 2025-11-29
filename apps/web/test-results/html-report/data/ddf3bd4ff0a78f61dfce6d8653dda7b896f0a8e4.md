@@ -73,11 +73,11 @@
         - generic [ref=e65]:
           - text: "Sort By:"
           - combobox "Sort By:" [ref=e66] [cursor=pointer]:
-            - option "Recommended" [selected]
+            - option "Recommended"
             - 'option "Price: Low to High"'
             - 'option "Price: High to Low"'
             - 'option "Name: A to Z"'
-            - 'option "Name: Z to A"'
+            - 'option "Name: Z to A" [selected]'
         - generic [ref=e67]:
           - heading "We hit a snag loading products" [level=2] [ref=e68]
           - paragraph [ref=e69]: Failed to fetch products (Failed to fetch)

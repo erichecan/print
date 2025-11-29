@@ -1,0 +1,258 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - region "Promotional message" [ref=e3]: Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "Suvernire Plus home" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - img "Suvernire Plus" [ref=e8]
+      - search [ref=e9]:
+        - form "Site search form" [ref=e10]:
+          - button "Search products" [ref=e11] [cursor=pointer]: 🔍
+          - searchbox "Search query" [ref=e12]
+      - generic "Contact options" [ref=e13]:
+        - generic [ref=e14]:
+          - img [ref=e15]
+          - generic [ref=e17]:
+            - generic [ref=e18]: Talk to a Real Person
+            - link "855-271-2660" [ref=e19] [cursor=pointer]:
+              - /url: tel:8552712660
+        - generic [ref=e20]:
+          - img [ref=e21]
+          - generic [ref=e23]:
+            - generic [ref=e24]: Chat with a Real Person
+            - link "Chat now" [ref=e25] [cursor=pointer]:
+              - /url: /help
+    - navigation "Primary" [ref=e26]:
+      - generic [ref=e27]:
+        - list [ref=e28]:
+          - listitem [ref=e29]:
+            - link "Custom T-shirts" [ref=e30] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e31]:
+            - link "Custom Apparel" [ref=e32] [cursor=pointer]:
+              - /url: /collections/apparel
+          - listitem [ref=e33]:
+            - link "Promotional Products" [ref=e34] [cursor=pointer]:
+              - /url: /collections/promotional-products
+          - listitem [ref=e35]:
+            - link "Design Lab" [ref=e36] [cursor=pointer]:
+              - /url: /design-lab
+          - listitem [ref=e37]:
+            - link "Groups & Events" [ref=e38] [cursor=pointer]:
+              - /url: /help
+        - generic [ref=e39]:
+          - link "Sign in" [ref=e40] [cursor=pointer]:
+            - /url: /login
+            - img [ref=e41]
+            - generic [ref=e42]: Sign in
+          - link "Shopping cart with 0 items" [ref=e43] [cursor=pointer]:
+            - /url: /cart
+            - img [ref=e44]
+            - generic [ref=e48]: Cart
+  - main [ref=e49]:
+    - generic [ref=e50]:
+      - region "Custom T-shirts & Promo Gear for Your Group" [ref=e51]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - heading "Custom T-shirts & Promo Gear for Your Group" [level=1] [ref=e54]
+            - paragraph [ref=e55]: From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.
+            - generic [ref=e56]:
+              - link "Start Designing" [ref=e57] [cursor=pointer]:
+                - /url: /design-lab
+              - link "Browse Products" [ref=e58] [cursor=pointer]:
+                - /url: /products
+              - link "Submit Offline Order" [ref=e59] [cursor=pointer]:
+                - /url: /offline-orders
+          - generic "Featured product categories" [ref=e60]:
+            - img "Featured Tee" [ref=e62]
+            - img "Featured Bottle" [ref=e64]
+            - img "Featured Hat" [ref=e66]
+            - img "Featured Bag" [ref=e68]
+      - region "Service promises" [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e73]:
+            - generic [ref=e74]: Free Shipping
+            - generic [ref=e75]: 2-week delivery
+          - generic [ref=e78]:
+            - generic [ref=e79]: 100% Satisfaction
+            - generic [ref=e80]: We'll make it right
+          - generic [ref=e83]:
+            - generic [ref=e84]: Design Help
+            - generic [ref=e85]: 7 days a week
+          - generic [ref=e88]:
+            - generic [ref=e89]: Rush Options
+            - generic [ref=e90]: As fast as 3 days
+      - region "Featured brands" [ref=e91]:
+        - generic [ref=e92]:
+          - heading "Featured brands" [level=2] [ref=e93]
+          - generic [ref=e94]:
+            - listitem "Nike" [ref=e95]:
+              - img "Nike" [ref=e96]
+            - listitem "Carhartt" [ref=e97]:
+              - img "Carhartt" [ref=e98]
+            - listitem "New Era" [ref=e99]:
+              - img "New Era" [ref=e100]
+            - listitem "The North Face" [ref=e101]:
+              - img "The North Face" [ref=e102]
+            - listitem "Stanley" [ref=e103]:
+              - img "Stanley" [ref=e104]
+            - listitem "Patagonia" [ref=e105]:
+              - img "Patagonia" [ref=e106]
+            - listitem "Champion" [ref=e107]:
+              - img "Champion" [ref=e108]
+            - listitem "Adidas" [ref=e109]:
+              - img "Adidas" [ref=e110]
+            - listitem "Columbia" [ref=e111]:
+              - img "Columbia" [ref=e112]
+            - listitem "Hydro Flask" [ref=e113]:
+              - img "Hydro Flask" [ref=e114]
+      - region "Loved by teams big and small" [ref=e115]:
+        - generic [ref=e116]:
+          - heading "Loved by teams big and small" [level=2] [ref=e117]
+          - generic [ref=e118]:
+            - article "Customer testimonial" [ref=e119]:
+              - generic [ref=e120]:
+                - generic [ref=e121]: ★
+                - generic [ref=e122]: ★
+                - generic [ref=e123]: ★
+                - generic [ref=e124]: ★
+                - generic [ref=e125]: ★
+              - paragraph [ref=e126]: Ordered with ease and delivered on time.
+              - generic [ref=e127]: — Mary B., NY
+            - article "Customer testimonial" [ref=e128]:
+              - generic [ref=e129]:
+                - generic [ref=e130]: ★
+                - generic [ref=e131]: ★
+                - generic [ref=e132]: ★
+                - generic [ref=e133]: ★
+                - generic [ref=e134]: ★
+              - paragraph [ref=e135]: Top quality, fast delivery, stellar support. Highly recommend!
+              - generic [ref=e136]: — Ingrid D., MD
+            - article "Customer testimonial" [ref=e137]:
+              - generic [ref=e138]:
+                - generic [ref=e139]: ★
+                - generic [ref=e140]: ★
+                - generic [ref=e141]: ★
+                - generic [ref=e142]: ★
+              - paragraph [ref=e143]: Great experience and responsive service. The site is easy to use.
+              - generic [ref=e144]: — Jenna F., WI
+      - region "Enterprise services to scale your swag" [ref=e145]:
+        - generic [ref=e146]:
+          - heading "Enterprise services to scale your swag" [level=2] [ref=e147]
+          - generic [ref=e148]:
+            - generic [ref=e149]:
+              - heading "Enterprise-Level Swag Management" [level=3] [ref=e150]
+              - paragraph [ref=e151]: Get custom kits, white-glove service, address collection, and global shipping with our enterprise solution.
+              - link "Get a Demo" [ref=e152] [cursor=pointer]:
+                - /url: /contact
+            - generic [ref=e153]:
+              - heading "We'll Do the Work" [level=3] [ref=e154]
+              - paragraph [ref=e155]: Ship to one place or every place. Choose your design and we handle the rest—from packing to delivery tracking.
+              - link "Start Designing" [ref=e156] [cursor=pointer]:
+                - /url: /design-lab
+      - region "Shop by Category" [ref=e157]:
+        - generic [ref=e158]:
+          - heading "Shop by Category" [level=2] [ref=e159]
+          - paragraph [ref=e160]: Find the perfect custom products for your team, event, or business
+          - generic [ref=e161]: Failed to load categories. Please try again later.
+  - contentinfo [ref=e162]:
+    - generic [ref=e164]:
+      - generic [ref=e165]:
+        - heading "About Us" [level=4] [ref=e166]
+        - list [ref=e167]:
+          - listitem [ref=e168]:
+            - link "About Us" [ref=e169] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e170]:
+            - link "Contact Us" [ref=e171] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e172]:
+            - link "Promotions" [ref=e173] [cursor=pointer]:
+              - /url: /promotions
+          - listitem [ref=e174]:
+            - link "Design Gallery" [ref=e175] [cursor=pointer]:
+              - /url: /design-gallery
+      - generic [ref=e176]:
+        - heading "Your Account" [level=4] [ref=e177]
+        - list [ref=e178]:
+          - listitem [ref=e179]:
+            - link "My Account" [ref=e180] [cursor=pointer]:
+              - /url: /account
+          - listitem [ref=e181]:
+            - link "My Designs" [ref=e182] [cursor=pointer]:
+              - /url: /account/designs
+          - listitem [ref=e183]:
+            - link "Track Your Order" [ref=e184] [cursor=pointer]:
+              - /url: /order-tracking
+          - listitem [ref=e185]:
+            - link "View Cart" [ref=e186] [cursor=pointer]:
+              - /url: /cart
+      - generic [ref=e187]:
+        - heading "Shop" [level=4] [ref=e188]
+        - list [ref=e189]:
+          - listitem [ref=e190]:
+            - link "All Products" [ref=e191] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e192]:
+            - link "Design Lab" [ref=e193] [cursor=pointer]:
+              - /url: /design-lab
+          - listitem [ref=e194]:
+            - link "Promotions" [ref=e195] [cursor=pointer]:
+              - /url: /promotions
+          - listitem [ref=e196]:
+            - link "Help Center" [ref=e197] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e198]:
+        - heading "Support" [level=4] [ref=e199]
+        - list [ref=e200]:
+          - listitem [ref=e201]:
+            - link "Help Center" [ref=e202] [cursor=pointer]:
+              - /url: /help
+          - listitem [ref=e203]:
+            - link "Contact Us" [ref=e204] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e205]:
+            - link "Shipping Info" [ref=e206] [cursor=pointer]:
+              - /url: /shipping-info
+          - listitem [ref=e207]:
+            - link "Returns" [ref=e208] [cursor=pointer]:
+              - /url: /returns
+      - generic [ref=e209]:
+        - heading "Legal" [level=4] [ref=e210]
+        - list [ref=e211]:
+          - listitem [ref=e212]:
+            - link "Privacy Policy" [ref=e213] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=e214]:
+            - link "Terms of Service" [ref=e215] [cursor=pointer]:
+              - /url: /terms-of-service
+          - listitem [ref=e216]:
+            - link "Size Guide" [ref=e217] [cursor=pointer]:
+              - /url: /size-guide
+          - listitem [ref=e218]:
+            - link "Sitemap" [ref=e219] [cursor=pointer]:
+              - /url: /sitemap.xml
+    - generic [ref=e220]:
+      - generic [ref=e221]: © 2025 Inkify LLC. All rights reserved.
+      - navigation "Legal links" [ref=e222]:
+        - generic [ref=e223]:
+          - link "Privacy Policy" [ref=e224] [cursor=pointer]:
+            - /url: /privacy-policy
+          - text: "|"
+        - generic [ref=e225]:
+          - link "Terms of Service" [ref=e226] [cursor=pointer]:
+            - /url: /terms-of-service
+          - text: "|"
+        - generic [ref=e227]:
+          - link "Size Guide" [ref=e228] [cursor=pointer]:
+            - /url: /size-guide
+          - text: "|"
+        - link "Sitemap" [ref=e230] [cursor=pointer]:
+          - /url: /sitemap.xml
+  - alert [ref=e231]
+```

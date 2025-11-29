@@ -20,6 +20,7 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: 'test-results/html-report' }],
     ['json', { outputFile: 'test-results/test-results.json' }],
   ],
+  outputDir: 'test-results/artifacts', // [2025-11-28 16:35:00] 将测试输出目录与 HTML 报告目录分开
   use: {
     baseURL: FRONTEND_URL,
     trace: 'on-first-retry',

@@ -1,0 +1,2224 @@
+{
+  "config": {
+    "configFile": "/Users/eric/Desktop/print-main/apps/web/playwright.gcp.config.ts",
+    "rootDir": "/Users/eric/Desktop/print-main/apps/web/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "test-results/html-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/eric/Desktop/print-main/apps/web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/eric/Desktop/print-main/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "admin-login.spec.ts",
+      "file": "admin-login.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Admin 登录功能",
+          "file": "admin-login.spec.ts",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "Admin 登录页面应该可以正常访问",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 774,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:35:28.342Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "481c7578028bb96ee688-0cfc7b7149022beadf33",
+              "file": "admin-login.spec.ts",
+              "line": 12,
+              "column": 7
+            },
+            {
+              "title": "访问 /admin 未登录时应重定向到登录页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3725,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:35:29.354Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "481c7578028bb96ee688-36ddfe7c80de96c15ffb",
+              "file": "admin-login.spec.ts",
+              "line": 36,
+              "column": 7
+            },
+            {
+              "title": "Admin 登录流程应该正常工作",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 16013,
+                      "error": {
+                        "message": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+                        "stack": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts:65:36",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts",
+                          "column": 36,
+                          "line": 65
+                        },
+                        "snippet": "  63 |     \n  64 |     // 监听导航事件\n> 65 |     const navigationPromise = page.waitForURL(/\\/admin$/, { timeout: 15000 });\n     |                                    ^\n  66 |     \n  67 |     // 提交登录表单\n  68 |     await submitButton.click();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts",
+                            "column": 36,
+                            "line": 65
+                          },
+                          "message": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n  63 |     \n  64 |     // 监听导航事件\n> 65 |     const navigationPromise = page.waitForURL(/\\/admin$/, { timeout: 15000 });\n     |                                    ^\n  66 |     \n  67 |     // 提交登录表单\n  68 |     await submitButton.click();\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts:65:36"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:35:33.083Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-login-Admin-登录功能-Admin-登录流程应该正常工作-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-login-Admin-登录功能-Admin-登录流程应该正常工作-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-login-Admin-登录功能-Admin-登录流程应该正常工作-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts",
+                        "column": 36,
+                        "line": 65
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "481c7578028bb96ee688-15682fe86b437470e749",
+              "file": "admin-login.spec.ts",
+              "line": 52,
+              "column": 7
+            },
+            {
+              "title": "登录后应该可以访问后台功能",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 15847,
+                      "error": {
+                        "message": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+                        "stack": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts:95:16",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts",
+                          "column": 16,
+                          "line": 95
+                        },
+                        "snippet": "  93 |     \n  94 |     // 等待跳转到后台\n> 95 |     await page.waitForURL(/\\/admin$/, { timeout: 15000 });\n     |                ^\n  96 |     \n  97 |     // [2025-11-28 12:00:00] 使用 domcontentloaded 避免超时\n  98 |     await page.waitForLoadState('domcontentloaded');"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts",
+                            "column": 16,
+                            "line": 95
+                          },
+                          "message": "TimeoutError: page.waitForURL: Timeout 15000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n  93 |     \n  94 |     // 等待跳转到后台\n> 95 |     await page.waitForURL(/\\/admin$/, { timeout: 15000 });\n     |                ^\n  96 |     \n  97 |     // [2025-11-28 12:00:00] 使用 domcontentloaded 避免超时\n  98 |     await page.waitForLoadState('domcontentloaded');\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts:95:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:35:49.345Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-login-Admin-登录功能-登录后应该可以访问后台功能-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-login-Admin-登录功能-登录后应该可以访问后台功能-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-login-Admin-登录功能-登录后应该可以访问后台功能-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-login.spec.ts",
+                        "column": 16,
+                        "line": 95
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "481c7578028bb96ee688-8fb20fa41568be70cc88",
+              "file": "admin-login.spec.ts",
+              "line": 81,
+              "column": 7
+            },
+            {
+              "title": "登录页面不应出现重定向循环",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2425,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:36:05.519Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "481c7578028bb96ee688-cbf7e5cdd8088d8a67c2",
+              "file": "admin-login.spec.ts",
+              "line": 105,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "admin-orders.spec.ts",
+      "file": "admin-orders.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "后台订单管理",
+          "file": "admin-orders.spec.ts",
+          "line": 8,
+          "column": 6,
+          "specs": [
+            {
+              "title": "管理员可以搜索订单并更新状态",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 20914,
+                      "error": {
+                        "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================",
+                        "stack": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-orders.spec.ts:14:16",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-orders.spec.ts",
+                          "column": 16,
+                          "line": 14
+                        },
+                        "snippet": "  12 |     await page.fill('#password', adminAccount.password);\n  13 |     await page.click('button[type=\"submit\"]');\n> 14 |     await page.waitForURL(/\\/admin$/, { timeout: 20000 });\n     |                ^\n  15 |\n  16 |     await page.goto('/admin/orders');\n  17 |     await expect(page.getByRole('heading', { name: 'Orders' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-orders.spec.ts",
+                            "column": 16,
+                            "line": 14
+                          },
+                          "message": "TimeoutError: page.waitForURL: Timeout 20000ms exceeded.\n=========================== logs ===========================\nwaiting for navigation until \"load\"\n============================================================\n\n  12 |     await page.fill('#password', adminAccount.password);\n  13 |     await page.click('button[type=\"submit\"]');\n> 14 |     await page.waitForURL(/\\/admin$/, { timeout: 20000 });\n     |                ^\n  15 |\n  16 |     await page.goto('/admin/orders');\n  17 |     await expect(page.getByRole('heading', { name: 'Orders' })).toBeVisible();\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-orders.spec.ts:14:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:36:08.059Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-orders-后台订单管理-管理员可以搜索订单并更新状态-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-orders-后台订单管理-管理员可以搜索订单并更新状态-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/admin-orders-后台订单管理-管理员可以搜索订单并更新状态-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/admin-orders.spec.ts",
+                        "column": 16,
+                        "line": 14
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "f6cd05cd61d9178e868b-8d618d1e7dfebd1240cf",
+              "file": "admin-orders.spec.ts",
+              "line": 9,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "cart-coupon.spec.ts",
+      "file": "cart-coupon.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "购物车与优惠券",
+          "file": "cart-coupon.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "更新数量并应用优惠券",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 15674,
+                      "error": {
+                        "message": "TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Add to cart\")') to be visible\u001b[22m\n",
+                        "stack": "TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Add to cart\")') to be visible\u001b[22m\n\n    at addProductToCart (/Users/eric/Desktop/print-main/apps/web/tests/e2e/utils/storefront.ts:8:14)\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/cart-coupon.spec.ts:9:5",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/utils/storefront.ts",
+                          "column": 14,
+                          "line": 8
+                        },
+                        "snippet": "   at utils/storefront.ts:8\n\n   6 | export async function addProductToCart(page: Page, slug: string = 'classic-crew-tee') {\n   7 |   await page.goto(`/products/${slug}`);\n>  8 |   await page.waitForSelector('button:has-text(\"Add to cart\")', { timeout: 15000 });\n     |              ^\n   9 |   await page.click('button:has-text(\"Add to cart\")');\n  10 |   // 轻微等待以便 CartContext 重新拉取\n  11 |   await page.waitForTimeout(1000);"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/utils/storefront.ts",
+                            "column": 14,
+                            "line": 8
+                          },
+                          "message": "TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('button:has-text(\"Add to cart\")') to be visible\u001b[22m\n\n\n   at utils/storefront.ts:8\n\n   6 | export async function addProductToCart(page: Page, slug: string = 'classic-crew-tee') {\n   7 |   await page.goto(`/products/${slug}`);\n>  8 |   await page.waitForSelector('button:has-text(\"Add to cart\")', { timeout: 15000 });\n     |              ^\n   9 |   await page.click('button:has-text(\"Add to cart\")');\n  10 |   // 轻微等待以便 CartContext 重新拉取\n  11 |   await page.waitForTimeout(1000);\n    at addProductToCart (/Users/eric/Desktop/print-main/apps/web/tests/e2e/utils/storefront.ts:8:14)\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/cart-coupon.spec.ts:9:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:36:29.240Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/cart-coupon-购物车与优惠券-更新数量并应用优惠券-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/cart-coupon-购物车与优惠券-更新数量并应用优惠券-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/cart-coupon-购物车与优惠券-更新数量并应用优惠券-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/utils/storefront.ts",
+                        "column": 14,
+                        "line": 8
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e05024afb682f0b49a31-1fa5dd22a1b7ac72aa22",
+              "file": "cart-coupon.spec.ts",
+              "line": 8,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "catalog.spec.ts",
+      "file": "catalog.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "商品目录",
+          "file": "catalog.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "支持排序与分页",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5810,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.product-card-new').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.product-card-new').first()\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.product-card-new').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.product-card-new').first()\u001b[22m\n\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/catalog.spec.ts:9:61",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/catalog.spec.ts",
+                          "column": 61,
+                          "line": 9
+                        },
+                        "snippet": "   7 |   test('支持排序与分页', async ({ page }) => {\n   8 |     await page.goto('/products');\n>  9 |     await expect(page.locator('.product-card-new').first()).toBeVisible();\n     |                                                             ^\n  10 |\n  11 |     await page.selectOption('select[name=\"sort\"]', 'price_desc');\n  12 |     await expect(page).toHaveURL(/sort=price_desc/);"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/catalog.spec.ts",
+                            "column": 61,
+                            "line": 9
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.product-card-new').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.product-card-new').first()\u001b[22m\n\n\n   7 |   test('支持排序与分页', async ({ page }) => {\n   8 |     await page.goto('/products');\n>  9 |     await expect(page.locator('.product-card-new').first()).toBeVisible();\n     |                                                             ^\n  10 |\n  11 |     await page.selectOption('select[name=\"sort\"]', 'price_desc');\n  12 |     await expect(page).toHaveURL(/sort=price_desc/);\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/catalog.spec.ts:9:61"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:36:45.240Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/catalog-商品目录-支持排序与分页-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/catalog-商品目录-支持排序与分页-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/catalog-商品目录-支持排序与分页-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/catalog.spec.ts",
+                        "column": 61,
+                        "line": 9
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "30aa42b97d8966d0c2dc-ace94282c28a67be267f",
+              "file": "catalog.spec.ts",
+              "line": 7,
+              "column": 7
+            },
+            {
+              "title": "Clear All 按钮可重置筛选",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 60164,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/catalog.spec.ts",
+                            "column": 59,
+                            "line": 26
+                          },
+                          "message": "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Clear All' })\u001b[22m\n\n\n  24 |     await page.goto('/products?collection=t-shirts&sort=name_desc&page=2');\n  25 |     await expect(page.locator('.plp-new__title')).toContainText('T-shirts');\n> 26 |     await page.getByRole('button', { name: 'Clear All' }).click();\n     |                                                           ^\n  27 |     await expect(page).not.toHaveURL(/sort=/);\n  28 |     await expect(page).not.toHaveURL(/page=/);\n  29 |     await expect(page.locator('.plp-new__title')).toContainText('T-shirts');\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/catalog.spec.ts:26:59"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:36:51.370Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/catalog-商品目录-Clear-All-按钮可重置筛选-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/catalog-商品目录-Clear-All-按钮可重置筛选-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/catalog-商品目录-Clear-All-按钮可重置筛选-chromium/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "30aa42b97d8966d0c2dc-fe698f6c67d0b1c8c20d",
+              "file": "catalog.spec.ts",
+              "line": 23,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "checkout-payment.spec.ts",
+      "file": "checkout-payment.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "结账与支付",
+          "file": "checkout-payment.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "访客下单并完成 Stripe 支付，后台可见订单",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 109,
+                      "error": {
+                        "message": "Error: STRIPE_SECRET_KEY 未配置，无法在测试中确认支付。",
+                        "stack": "Error: STRIPE_SECRET_KEY 未配置，无法在测试中确认支付。\n    at Object.stripe (/Users/eric/Desktop/print-main/apps/web/tests/e2e/fixtures/test-base.ts:51:13)",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/fixtures/test-base.ts",
+                          "column": 13,
+                          "line": 51
+                        },
+                        "snippet": "   at fixtures/test-base.ts:51\n\n  49 |     const secret = process.env.STRIPE_SECRET_KEY;\n  50 |     if (!secret) {\n> 51 |       throw new Error('STRIPE_SECRET_KEY 未配置，无法在测试中确认支付。');\n     |             ^\n  52 |     }\n  53 |     const stripeClient = new Stripe(secret, { apiVersion: '2024-06-20' });\n  54 |     await use(stripeClient);"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/fixtures/test-base.ts",
+                            "column": 13,
+                            "line": 51
+                          },
+                          "message": "Error: STRIPE_SECRET_KEY 未配置，无法在测试中确认支付。\n\n   at fixtures/test-base.ts:51\n\n  49 |     const secret = process.env.STRIPE_SECRET_KEY;\n  50 |     if (!secret) {\n> 51 |       throw new Error('STRIPE_SECRET_KEY 未配置，无法在测试中确认支付。');\n     |             ^\n  52 |     }\n  53 |     const stripeClient = new Stripe(secret, { apiVersion: '2024-06-20' });\n  54 |     await use(stripeClient);\n    at Object.stripe (/Users/eric/Desktop/print-main/apps/web/tests/e2e/fixtures/test-base.ts:51:13)"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:37:52.041Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/checkout-payment-结账与支付-访客下单并完成-Stripe-支付，后台可见订单-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/checkout-payment-结账与支付-访客下单并完成-Stripe-支付，后台可见订单-chromium/video.webm"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/fixtures/test-base.ts",
+                        "column": 13,
+                        "line": 51
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "e26ac85add3d4467daa5-136731bdfe0589bde94a",
+              "file": "checkout-payment.spec.ts",
+              "line": 11,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "comprehensive-e2e-test.spec.ts",
+      "file": "comprehensive-e2e-test.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "综合 E2E 测试套件",
+          "file": "comprehensive-e2e-test.spec.ts",
+          "line": 9,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "1. 商品筛选功能",
+              "file": "comprehensive-e2e-test.spec.ts",
+              "line": 11,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "应该能够使用筛选条件过滤商品",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 7,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 466,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-11-29T03:37:52.548Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "5e9a5b0ecae8bc5067dc-78529bd2063d2fc76ca7",
+                  "file": "comprehensive-e2e-test.spec.ts",
+                  "line": 12,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "2. 商品搜索功能",
+              "file": "comprehensive-e2e-test.spec.ts",
+              "line": 47,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "应该能够搜索商品并显示结果",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 7,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 989,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/comprehensive-e2e-test.spec.ts:72:23",
+                            "location": {
+                              "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/comprehensive-e2e-test.spec.ts",
+                              "column": 23,
+                              "line": 72
+                            },
+                            "snippet": "  70 |         const productCards = page.locator('.product-card, .product-card-new');\n  71 |         const count = await productCards.count();\n> 72 |         expect(count).toBeGreaterThan(0);\n     |                       ^\n  73 |       }\n  74 |     });\n  75 |   });"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/comprehensive-e2e-test.spec.ts",
+                                "column": 23,
+                                "line": 72
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\n  70 |         const productCards = page.locator('.product-card, .product-card-new');\n  71 |         const count = await productCards.count();\n> 72 |         expect(count).toBeGreaterThan(0);\n     |                       ^\n  73 |       }\n  74 |     });\n  75 |   });\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/comprehensive-e2e-test.spec.ts:72:23"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-11-29T03:37:53.102Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/eric/Desktop/print-main/apps/web/test-results/comprehensive-e2e-test-综合-E2E-测试套件-2-商品搜索功能-应该能够搜索商品并显示结果-chromium/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/eric/Desktop/print-main/apps/web/test-results/comprehensive-e2e-test-综合-E2E-测试套件-2-商品搜索功能-应该能够搜索商品并显示结果-chromium/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/eric/Desktop/print-main/apps/web/test-results/comprehensive-e2e-test-综合-E2E-测试套件-2-商品搜索功能-应该能够搜索商品并显示结果-chromium/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/comprehensive-e2e-test.spec.ts",
+                            "column": 23,
+                            "line": 72
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "5e9a5b0ecae8bc5067dc-1f7a564449db17ece710",
+                  "file": "comprehensive-e2e-test.spec.ts",
+                  "line": 48,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "3. 购物车功能",
+              "file": "comprehensive-e2e-test.spec.ts",
+              "line": 77,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "应该能够添加商品到购物车",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 8,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 10760,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-11-29T03:37:54.408Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "5e9a5b0ecae8bc5067dc-105cca58c8b7c4f3a661",
+                  "file": "comprehensive-e2e-test.spec.ts",
+                  "line": 78,
+                  "column": 9
+                },
+                {
+                  "title": "应该能够查看购物车",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 8,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 10819,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-11-29T03:38:05.401Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "5e9a5b0ecae8bc5067dc-9d3fcca0ea6bcd057bb8",
+                  "file": "comprehensive-e2e-test.spec.ts",
+                  "line": 116,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "4. 结算功能",
+              "file": "comprehensive-e2e-test.spec.ts",
+              "line": 139,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "应该能够访问结算页面",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 8,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 591,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-11-29T03:38:16.225Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "5e9a5b0ecae8bc5067dc-7b04be151c63bc6ba84c",
+                  "file": "comprehensive-e2e-test.spec.ts",
+                  "line": 140,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "5. 线下订单创建",
+              "file": "comprehensive-e2e-test.spec.ts",
+              "line": 157,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "应该能够访问线下订单页面",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [
+                        {
+                          "workerIndex": 8,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 364,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-11-29T03:38:16.820Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "expected"
+                    }
+                  ],
+                  "id": "5e9a5b0ecae8bc5067dc-cbd17e0f930f7fb733b5",
+                  "file": "comprehensive-e2e-test.spec.ts",
+                  "line": 158,
+                  "column": 9
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "gcp-deployment.spec.ts",
+      "file": "gcp-deployment.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "GCP 部署验证",
+          "file": "gcp-deployment.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "前端页面应该正常加载",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1135,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:38:17.190Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-9e9d8c105adbc0a936e9",
+              "file": "gcp-deployment.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "分类 API 应该返回数据",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 271,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:38:18.329Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-2615b3d8f1002e6b5793",
+              "file": "gcp-deployment.spec.ts",
+              "line": 28,
+              "column": 7
+            },
+            {
+              "title": "产品 API 应该返回数据",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 414,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:38:18.604Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-0cc865daf0d9ee0f056f",
+              "file": "gcp-deployment.spec.ts",
+              "line": 46,
+              "column": 7
+            },
+            {
+              "title": "前端应该能成功加载分类数据",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 60220,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts",
+                            "column": 37,
+                            "line": 62
+                          },
+                          "message": "Error: page.waitForResponse: Test timeout of 60000ms exceeded.\n\n  60 |     \n  61 |     // 监听网络请求，检查分类 API 是否成功\n> 62 |     const categoriesResponse = page.waitForResponse(\n     |                                     ^\n  63 |       (response) => response.url().includes('/api/categories') && response.status() === 200\n  64 |     );\n  65 |     \n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts:62:37"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:38:19.032Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-前端应该能成功加载分类数据-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-前端应该能成功加载分类数据-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-前端应该能成功加载分类数据-chromium/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-8d5aa554fbf7bf0d2ffb",
+              "file": "gcp-deployment.spec.ts",
+              "line": 57,
+              "column": 7
+            },
+            {
+              "title": "购物车 API 应该正常工作",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 456,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:39:19.734Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-18ac14d841b823cb1b92",
+              "file": "gcp-deployment.spec.ts",
+              "line": 74,
+              "column": 7
+            },
+            {
+              "title": "设计实验室页面应该可访问",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 31405,
+                      "error": {
+                        "message": "TimeoutError: page.waitForLoadState: Timeout 30000ms exceeded.",
+                        "stack": "TimeoutError: page.waitForLoadState: Timeout 30000ms exceeded.\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts:87:16",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts",
+                          "column": 16,
+                          "line": 87
+                        },
+                        "snippet": "  85 |   test('设计实验室页面应该可访问', async ({ page }) => {\n  86 |     await page.goto(`${FRONTEND_URL}/design-lab`);\n> 87 |     await page.waitForLoadState('networkidle');\n     |                ^\n  88 |     \n  89 |     // 页面应该正常加载，不应该显示 404\n  90 |     const is404 = await page.locator('text=404').or(page.locator('text=Not Found')).count() > 0;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts",
+                            "column": 16,
+                            "line": 87
+                          },
+                          "message": "TimeoutError: page.waitForLoadState: Timeout 30000ms exceeded.\n\n  85 |   test('设计实验室页面应该可访问', async ({ page }) => {\n  86 |     await page.goto(`${FRONTEND_URL}/design-lab`);\n> 87 |     await page.waitForLoadState('networkidle');\n     |                ^\n  88 |     \n  89 |     // 页面应该正常加载，不应该显示 404\n  90 |     const is404 = await page.locator('text=404').or(page.locator('text=Not Found')).count() > 0;\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts:87:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:39:20.204Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-设计实验室页面应该可访问-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-设计实验室页面应该可访问-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-设计实验室页面应该可访问-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts",
+                        "column": 16,
+                        "line": 87
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-07c3be4472bcb1a7b4df",
+              "file": "gcp-deployment.spec.ts",
+              "line": 85,
+              "column": 7
+            },
+            {
+              "title": "产品列表页面应该可访问",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 30801,
+                      "error": {
+                        "message": "TimeoutError: page.waitForLoadState: Timeout 30000ms exceeded.",
+                        "stack": "TimeoutError: page.waitForLoadState: Timeout 30000ms exceeded.\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts:100:16",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts",
+                          "column": 16,
+                          "line": 100
+                        },
+                        "snippet": "   98 |   test('产品列表页面应该可访问', async ({ page }) => {\n   99 |     await page.goto(`${FRONTEND_URL}/products`);\n> 100 |     await page.waitForLoadState('networkidle');\n      |                ^\n  101 |     \n  102 |     // 页面应该正常加载\n  103 |     const is404 = await page.locator('text=404').or(page.locator('text=Not Found')).count() > 0;"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts",
+                            "column": 16,
+                            "line": 100
+                          },
+                          "message": "TimeoutError: page.waitForLoadState: Timeout 30000ms exceeded.\n\n   98 |   test('产品列表页面应该可访问', async ({ page }) => {\n   99 |     await page.goto(`${FRONTEND_URL}/products`);\n> 100 |     await page.waitForLoadState('networkidle');\n      |                ^\n  101 |     \n  102 |     // 页面应该正常加载\n  103 |     const is404 = await page.locator('text=404').or(page.locator('text=Not Found')).count() > 0;\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts:100:16"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:39:52.270Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-产品列表页面应该可访问-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-产品列表页面应该可访问-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/gcp-deployment-GCP-部署验证-产品列表页面应该可访问-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/gcp-deployment.spec.ts",
+                        "column": 16,
+                        "line": 100
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-668577a980a4d8c2a303",
+              "file": "gcp-deployment.spec.ts",
+              "line": 98,
+              "column": 7
+            },
+            {
+              "title": "CORS 应该正确配置",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 176,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:40:23.767Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "39ff06316e5c236691eb-e39ad46d1ada8e0d7082",
+              "file": "gcp-deployment.spec.ts",
+              "line": 107,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "offline-order-creation.spec.ts",
+      "file": "offline-order-creation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "线下订单创建",
+          "file": "offline-order-creation.spec.ts",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "应该能够填写完整表单并创建订单",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 33780,
+                      "error": {
+                        "message": "TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event \"response\"",
+                        "stack": "TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event \"response\"\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-order-creation.spec.ts:125:33",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-order-creation.spec.ts",
+                          "column": 33,
+                          "line": 125
+                        },
+                        "snippet": "  123 |     \n  124 |     // 监听网络请求\n> 125 |     const requestPromise = page.waitForResponse(\n      |                                 ^\n  126 |       (response) => response.url().includes('/offline-orders') && response.request().method() === 'POST',\n  127 |       { timeout: 30000 }\n  128 |     );"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-order-creation.spec.ts",
+                            "column": 33,
+                            "line": 125
+                          },
+                          "message": "TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event \"response\"\n\n  123 |     \n  124 |     // 监听网络请求\n> 125 |     const requestPromise = page.waitForResponse(\n      |                                 ^\n  126 |       (response) => response.url().includes('/offline-orders') && response.request().method() === 'POST',\n  127 |       { timeout: 30000 }\n  128 |     );\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-order-creation.spec.ts:125:33"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:40:24.000Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/offline-order-creation-线下订单创建-应该能够填写完整表单并创建订单-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/offline-order-creation-线下订单创建-应该能够填写完整表单并创建订单-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/offline-order-creation-线下订单创建-应该能够填写完整表单并创建订单-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-order-creation.spec.ts",
+                        "column": 33,
+                        "line": 125
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "fc6c32eefefbe13ffc98-98ddc37032d5a7183d6e",
+              "file": "offline-order-creation.spec.ts",
+              "line": 15,
+              "column": 7
+            },
+            {
+              "title": "应该显示详细的错误信息当验证失败",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 1528,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:40:58.306Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "fc6c32eefefbe13ffc98-1e5eaa97c2225f73d168",
+              "file": "offline-order-creation.spec.ts",
+              "line": 154,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "product-filters.spec.ts",
+      "file": "product-filters.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "商品列表筛选功能",
+          "file": "product-filters.spec.ts",
+          "line": 9,
+          "column": 6,
+          "specs": [
+            {
+              "title": "筛选区域不应出现横向滚动条",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 573,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:40:59.967Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-0b35038776bbea313089",
+              "file": "product-filters.spec.ts",
+              "line": 18,
+              "column": 7
+            },
+            {
+              "title": "筛选区域宽度应固定为 280px",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 412,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:41:00.546Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-97e57698c6c1db903296",
+              "file": "product-filters.spec.ts",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "展开状态应显示减号图标",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "No open filter section found"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25632,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:41:00.962Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "No open filter section found"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-ff92bebec6c495e5b2f8",
+              "file": "product-filters.spec.ts",
+              "line": 54,
+              "column": 7
+            },
+            {
+              "title": "点击折叠后应显示加号图标",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "No open filter section found to test collapse"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25678,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:41:26.600Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "No open filter section found to test collapse"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-3401562243a30c4488d3",
+              "file": "product-filters.spec.ts",
+              "line": 83,
+              "column": 7
+            },
+            {
+              "title": "筛选后 URL 参数应立即更新",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "No filter checkbox found"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25575,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:41:52.285Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "No filter checkbox found"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-908858f1282076417047",
+              "file": "product-filters.spec.ts",
+              "line": 106,
+              "column": 7
+            },
+            {
+              "title": "筛选后商品列表应自动更新",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "No checkbox or products found"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 40700,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:42:17.867Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "No checkbox or products found"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-d9bffc6318887494c180",
+              "file": "product-filters.spec.ts",
+              "line": 143,
+              "column": 7
+            },
+            {
+              "title": "颜色圆圈应在边框中心对齐",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25537,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:42:58.577Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-b4ce4ce899b2b58f872f",
+              "file": "product-filters.spec.ts",
+              "line": 179,
+              "column": 7
+            },
+            {
+              "title": "筛选选项应来自商品属性",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "No filter options found"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 26115,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:43:24.121Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "No filter options found"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-e992c2fc70d38060da4f",
+              "file": "product-filters.spec.ts",
+              "line": 210,
+              "column": 7
+            },
+            {
+              "title": "筛选参数应正确传递给 API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [
+                    {
+                      "type": "skip",
+                      "description": "No filter checkbox found"
+                    }
+                  ],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25646,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:43:50.243Z",
+                      "annotations": [
+                        {
+                          "type": "skip",
+                          "description": "No filter checkbox found"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "775b4825aaecf6b4b974-a0463f4d7feea7d92f1f",
+              "file": "product-filters.spec.ts",
+              "line": 236,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "production-verification.spec.ts",
+      "file": "production-verification.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "线上环境综合验证",
+          "file": "production-verification.spec.ts",
+          "line": 10,
+          "column": 6,
+          "specs": [
+            {
+              "title": "验证筛选功能修复是否生效",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 10701,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:44:15.898Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a6fb233cbe174ccae771-6f9d4485f7b2b8731aa6",
+              "file": "production-verification.spec.ts",
+              "line": 11,
+              "column": 7
+            },
+            {
+              "title": "验证 Admin 登录修复是否生效",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 949,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:44:26.605Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a6fb233cbe174ccae771-536452d18da139356aae",
+              "file": "production-verification.spec.ts",
+              "line": 49,
+              "column": 7
+            },
+            {
+              "title": "验证筛选参数是否正确传递给 API",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25566,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:44:27.560Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a6fb233cbe174ccae771-793c049a0f060a0f6617",
+              "file": "production-verification.spec.ts",
+              "line": 69,
+              "column": 7
+            },
+            {
+              "title": "验证颜色对齐修复是否生效",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 25485,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:44:53.132Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a6fb233cbe174ccae771-0fad1c30e408e70a5f71",
+              "file": "production-verification.spec.ts",
+              "line": 103,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "search-pdp.spec.ts",
+      "file": "search-pdp.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "搜索与详情页",
+          "file": "search-pdp.spec.ts",
+          "line": 6,
+          "column": 6,
+          "specs": [
+            {
+              "title": "站点搜索可定位商品并成功添加到购物车",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5962,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' })\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' })\u001b[22m\n\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/search-pdp.spec.ts:14:30",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/search-pdp.spec.ts",
+                          "column": 30,
+                          "line": 14
+                        },
+                        "snippet": "  12 |     await expect(page).toHaveURL(/products\\?search=/);\n  13 |     const targetCard = page.locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' });\n> 14 |     await expect(targetCard).toBeVisible();\n     |                              ^\n  15 |     await targetCard.locator('a').first().click();\n  16 |\n  17 |     await expect(page.getByRole('heading', { name: 'Classic Crew Tee' })).toBeVisible();"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/search-pdp.spec.ts",
+                            "column": 30,
+                            "line": 14
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' })\u001b[22m\n\n\n  12 |     await expect(page).toHaveURL(/products\\?search=/);\n  13 |     const targetCard = page.locator('.product-card-new').filter({ hasText: 'Classic Crew Tee' });\n> 14 |     await expect(targetCard).toBeVisible();\n     |                              ^\n  15 |     await targetCard.locator('a').first().click();\n  16 |\n  17 |     await expect(page.getByRole('heading', { name: 'Classic Crew Tee' })).toBeVisible();\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/search-pdp.spec.ts:14:30"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-29T03:45:18.624Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/search-pdp-搜索与详情页-站点搜索可定位商品并成功添加到购物车-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/search-pdp-搜索与详情页-站点搜索可定位商品并成功添加到购物车-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/search-pdp-搜索与详情页-站点搜索可定位商品并成功添加到购物车-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/search-pdp.spec.ts",
+                        "column": 30,
+                        "line": 14
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "18fefbd8a5d276348b03-8b5439002d6c49f83ed8",
+              "file": "search-pdp.spec.ts",
+              "line": 7,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-11-29T03:35:27.969Z",
+    "duration": 596651.15,
+    "expected": 27,
+    "skipped": 0,
+    "unexpected": 13,
+    "flaky": 0
+  }
+}

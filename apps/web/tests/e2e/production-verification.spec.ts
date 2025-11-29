@@ -52,7 +52,7 @@ test.describe('线上环境综合验证', () => {
     
     // 访问登录页面
     await page.goto(`${FRONTEND_URL}/admin/login`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
     
     // 验证可以访问登录页面
     await expect(page).toHaveURL(/\/admin\/login/);

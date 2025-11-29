@@ -56,11 +56,12 @@ test.describe('GCP 部署验证', () => {
 
   test('前端应该能成功加载分类数据', async ({ page }) => {
     await page.goto(FRONTEND_URL);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
     
     // 监听网络请求，检查分类 API 是否成功
     const categoriesResponse = page.waitForResponse(
-      (response) => response.url().includes('/api/categories') && response.status() === 200
+      (response) => response.url().includes('/api/categories') && response.status() === 200,
+      { timeout: 30000 }
     );
     
     // 等待 API 响应
@@ -84,7 +85,10 @@ test.describe('GCP 部署验证', () => {
 
   test('设计实验室页面应该可访问', async ({ page }) => {
     await page.goto(`${FRONTEND_URL}/design-lab`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
+    
+    // 等待页面内容加载
+    await page.waitForTimeout(2000);
     
     // 页面应该正常加载，不应该显示 404
     const is404 = await page.locator('text=404').or(page.locator('text=Not Found')).count() > 0;
@@ -97,7 +101,10 @@ test.describe('GCP 部署验证', () => {
 
   test('产品列表页面应该可访问', async ({ page }) => {
     await page.goto(`${FRONTEND_URL}/products`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
+    
+    // 等待页面内容加载
+    await page.waitForTimeout(2000);
     
     // 页面应该正常加载
     const is404 = await page.locator('text=404').or(page.locator('text=Not Found')).count() > 0;
