@@ -29,9 +29,11 @@ export function HomeClient() {
     { id: 'default-3', title: 'Design Help', detail: '7 days a week' },
     { id: 'default-4', title: 'Rush Options', detail: 'As fast as 3 days' },
   ];
-  // [2025-01-29 03:35:00] 所有27个品牌 logo（根据 Custom Ink 品牌合作区域）
+  // [2025-01-29 13:50:00] 品牌logo列表 - 从Custom Ink爬取，存储在GCP前端服务的public目录
+  // Logo路径使用相对路径，在生产环境会自动解析为前端服务URL
+  // 例如：/assets/brands/nike.svg -> https://print-main-frontend-234065158862.us-central1.run.app/assets/brands/nike.svg
   const brandLogos = homePage?.brandLogos || [
-    // Row 1
+    // Row 1 - 与Custom Ink品牌展示区域一致
     { id: 'brand-1', name: 'Nike', src: '/assets/brands/nike.svg' },
     { id: 'brand-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
     { id: 'brand-3', name: 'New Era', src: '/assets/brands/new-era.png' },
@@ -130,13 +132,14 @@ export function HomeClient() {
 
       <section className="brands" aria-labelledby="brands-heading">
         <div className="container">
-          <h2 className="visually-hidden" id="brands-heading">
-            Featured brands
+          <h2 id="brands-heading">
+            Shop Featured Brands
           </h2>
           <div className="brands__grid">
             {brandLogos.map((brand) => (
               <div key={brand.id} className="brand-logo" role="listitem" aria-label={brand.name}>
-                {/* [2025-01-29 23:20:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+                {/* [2025-01-29 13:50:00] 品牌logo从Custom Ink爬取，存储在GCP前端服务
+                    路径使用相对路径，生产环境会自动解析为：https://print-main-frontend-234065158862.us-central1.run.app/assets/brands/xxx */}
                 <img
                   src={brand.src}
                   alt={brand.name}

@@ -1,11 +1,33 @@
 /**
  * Art Assets Loader - CMS 素材库加载器
  * [2025-01-28 04:15:00] 从后端 API 获取 CMS 素材库并显示在 art 面板中
+ * [2025-01-29 12:30:00] 修复：使用动态 API 地址，避免硬编码 localhost
  */
 (function() {
   'use strict';
 
-  const API_BASE_URL = 'http://localhost:3001/api';
+  // [2025-01-29 12:30:00] 动态获取 API 地址：优先使用全局配置，否则使用当前域名
+  function getApiBaseUrl() {
+    // 优先使用 window 全局配置（如果页面设置了）
+    if (typeof window !== 'undefined' && window.API_BASE_URL) {
+      return window.API_BASE_URL;
+    }
+    
+    // 开发环境且在 localhost，使用后端服务器
+    if (typeof window !== 'undefined' && window.location) {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const isDevelopment = window.location.port === '3000' || window.location.hostname.includes('localhost');
+      
+      if (isLocalhost && isDevelopment) {
+        return 'http://localhost:3001/api';
+      }
+    }
+    
+    // 生产环境或其他情况，使用相对路径（同源）
+    return '/api';
+  }
+
+  const API_BASE_URL = getApiBaseUrl();
   let artAssetsCache = null;
   let loadingArtAssets = false;
 
