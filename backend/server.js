@@ -6,23 +6,70 @@ const path = require('path'); // [2025-01-29 22:55:00] 用于路径操作
 
 const PORT = process.env.PORT || 3001; // [2025-01-27 17:05:00] 默认端口改为3001，避免与前端冲突
 
+// [2025-01-29 14:50:00] 验证 DATABASE_URL 环境变量
+const validateDatabaseUrl = () => {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (!databaseUrl) {
+    console.error('[2025-01-29 14:50:00] ❌ DATABASE_URL environment variable is not set');
+    console.error('[2025-01-29 14:50:00]    请检查 Secret Manager 中的 database-url secret 是否正确配置');
+    throw new Error('DATABASE_URL environment variable is required');
+  }
+  
+  // [2025-01-29 14:50:00] 验证 URL 格式
+  if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
+    console.error('[2025-01-29 14:50:00] ❌ Invalid DATABASE_URL format');
+    console.error('[2025-01-29 14:50:00]    期望格式: postgresql://user:password@host:port/database');
+    console.error('[2025-01-29 14:50:00]    当前格式:', databaseUrl.substring(0, 30) + '...');
+    throw new Error(`Invalid DATABASE_URL format. Expected postgresql:// or postgres://, got: ${databaseUrl.substring(0, 30)}...`);
+  }
+  
+  // [2025-01-29 14:50:00] 记录 URL 前缀（不暴露密码）
+  try {
+    const urlParts = databaseUrl.split('@');
+    if (urlParts.length > 1) {
+      const hostPart = urlParts[1].split('/')[0];
+      console.log('[2025-01-29 14:50:00] ✅ DATABASE_URL validated');
+      console.log('[2025-01-29 14:50:00]    数据库主机:', hostPart);
+    }
+  } catch (e) {
+    // 忽略解析错误，继续执行
+  }
+};
+
 // [2025-01-29 23:05:00] 必须在导入应用之前生成 Prisma Client
+// [2025-01-29 14:50:00] 添加 DATABASE_URL 验证和诊断日志
 // 因为应用的路由会在导入时尝试使用 Prisma Client
 const ensurePrismaClient = () => {
   try {
-    console.log('🔧 Ensuring Prisma Client is generated...');
+    console.log('[2025-01-29 14:50:00] 🔧 Ensuring Prisma Client is generated...');
+    
+    // [2025-01-29 14:50:00] 在生成 Prisma Client 前验证 DATABASE_URL
+    validateDatabaseUrl();
+    
     // [2025-01-29 23:00:00] 在 Cloud Run 上，每次都重新生成以确保正确
-    console.log('📦 Generating Prisma Client...');
+    console.log('[2025-01-29 14:50:00] 📦 Generating Prisma Client...');
+    
+    // [2025-01-29 14:50:00] 确保环境变量正确传递，明确禁用 DataProxy
+    const generateEnv = {
+      ...process.env,
+      PRISMA_GENERATE_DATAPROXY: 'false',
+      // [2025-01-29 14:50:00] 确保 DATABASE_URL 被传递到生成过程中
+      DATABASE_URL: process.env.DATABASE_URL,
+    };
+    
     execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
       stdio: 'inherit',
       cwd: __dirname,
       timeout: 120000, // 120秒超时，给 Prisma 更多时间
-      env: { ...process.env, PRISMA_GENERATE_DATAPROXY: 'false' },
+      env: generateEnv,
     });
-    console.log('✅ Prisma Client generated successfully.');
+    
+    console.log('[2025-01-29 14:50:00] ✅ Prisma Client generated successfully.');
   } catch (error) {
-    console.error('❌ Failed to generate Prisma Client:', error.message);
-    console.error('   这会导致数据库操作失败，请检查日志');
+    console.error('[2025-01-29 14:50:00] ❌ Failed to generate Prisma Client:', error.message);
+    console.error('[2025-01-29 14:50:00]    这会导致数据库操作失败，请检查日志');
+    console.error('[2025-01-29 14:50:00]    错误详情:', error);
     // [2025-01-29 23:00:00] 在 Cloud Run 上，如果 Prisma Client 生成失败，退出进程
     process.exit(1);
   }
