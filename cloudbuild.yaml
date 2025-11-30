@@ -77,7 +77,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NODE_ENV=production,AUTO_MIGRATE=true'
+      - 'NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://print-main-frontend-234065158862.us-central1.run.app'
       - '--memory'
       - '512Mi'
       - '--cpu'

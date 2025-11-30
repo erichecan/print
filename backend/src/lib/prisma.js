@@ -5,16 +5,13 @@ const logger = require('../utils/logger');
 
 let prisma;
 
-// [2025-01-27 23:30:00] Prisma Client configuration with connection pool
+// [2025-01-29 14:20:00] Prisma Client configuration - 不要在运行时设置 datasources
+// [2025-01-29 14:20:00] datasources 应该在 schema.prisma 中配置，Prisma Client 会自动读取 DATABASE_URL 环境变量
 const prismaConfig = {
   log: process.env.NODE_ENV === 'development' 
     ? ['query', 'error', 'warn', 'info']
     : ['error', 'warn'],
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
+  // [2025-01-29 14:20:00] 移除 datasources 配置，让 Prisma 从 schema.prisma 和环境变量自动读取
   // [2025-01-27 23:30:00] Connection pool configuration for production
   ...(process.env.NODE_ENV === 'production' && {
     // Optimize connection pool for Cloud Run
