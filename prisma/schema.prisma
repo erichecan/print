@@ -4,10 +4,9 @@
 
 generator client {
   provider = "prisma-client-js"
-  // [2025-01-29 16:40:00] 使用无 Rust 引擎模式（Prisma 6.x）
-  // 需要启用 queryCompiler 和 driverAdapters preview features
-  previewFeatures = ["queryCompiler", "driverAdapters"]
-  // [2025-01-29 16:40:00] engineType = "client" 在 6.x 中需要配合 previewFeatures
+  // [2025-01-29 16:45:00] 使用无 Rust 引擎模式（Prisma 6.x）
+  // driverAdapters 在 Prisma 6.x 中是标准功能，无需 preview features
+  // engineType = "client" 表示使用客户端引擎（无 Rust）
   engineType = "client"
 }
 
