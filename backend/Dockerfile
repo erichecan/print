@@ -1,6 +1,7 @@
 ## Backend production Dockerfile [2025-11-10 13:45:00]
 ## [2025-01-29 15:20:00] 修复：在构建时预生成 Prisma Client（包含引擎），避免运行时生成失败
-FROM node:18-bullseye-slim AS base
+## [2025-01-29 16:55:00] 升级到 Node.js 20（Prisma 7.x 要求）
+FROM node:20-bullseye-slim AS base
 WORKDIR /app
 # [2025-11-14 06:22:30] 使用 Debian 基础镜像并安装 openssl 以满足 Prisma 依赖
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
