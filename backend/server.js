@@ -38,65 +38,43 @@ const validateDatabaseUrl = () => {
 };
 
 // [2025-01-29 23:05:00] 必须在导入应用之前生成 Prisma Client
-// [2025-01-29 14:50:00] 添加 DATABASE_URL 验证和诊断日志
-// [2025-01-29 15:20:00] 优先检查 Prisma Client 是否已在构建时生成（Dockerfile）
+// [2025-01-29 17:30:00] 方案 1：回到运行时生成（使用真实的 DATABASE_URL）
 // 因为应用的路由会在导入时尝试使用 Prisma Client
 const ensurePrismaClient = () => {
   try {
-    console.log('[2025-01-29 15:20:00] 🔧 Checking if Prisma Client is already generated...');
+    console.log('[2025-01-29 17:30:00] 🔧 Ensuring Prisma Client is generated at runtime...');
     
-    // [2025-01-29 17:10:00] 检查 Prisma Client 是否已在构建时生成（二进制引擎模式）
-    const prismaClientPath = path.join(__dirname, 'node_modules/@prisma/client');
-    const generatedClientPath = path.join(__dirname, 'node_modules/.prisma/client');
-    
-    if (fs.existsSync(prismaClientPath) && fs.existsSync(generatedClientPath)) {
-      // 检查是否有引擎文件
-      const engineFiles = fs.readdirSync(generatedClientPath).filter(f => f.endsWith('.node') || f.includes('query-engine'));
-      if (engineFiles.length > 0) {
-        console.log('[2025-01-29 17:10:00] ✅ Prisma Client already generated at build time (binary engine)');
-        console.log('[2025-01-29 17:10:00]    引擎文件:', engineFiles.join(', '));
-        return; // Prisma Client 已生成，跳过
-      } else {
-        console.log('[2025-01-29 17:10:00] ⚠️  Prisma Client exists but no engine files found, regenerating...');
-      }
-    } else {
-      console.log('[2025-01-29 17:10:00] ⚠️  Prisma Client not found, generating at runtime...');
-    }
-    
-    // [2025-01-29 14:50:00] 在生成 Prisma Client 前验证 DATABASE_URL
+    // [2025-01-29 17:30:00] 在生成 Prisma Client 前验证 DATABASE_URL（确保是真实的数据库 URL）
     validateDatabaseUrl();
     
-    // [2025-01-29 17:10:00] 运行时生成 Prisma Client（后备方案，二进制引擎模式）
-    console.log('[2025-01-29 17:10:00] 📦 Generating Prisma Client at runtime (binary engine mode)...');
+    // [2025-01-29 17:30:00] 运行时生成 Prisma Client（使用真实的 DATABASE_URL，不会被误判为 DataProxy）
+    console.log('[2025-01-29 17:30:00] 📦 Generating Prisma Client at runtime (using real DATABASE_URL)...');
     
-    // [2025-01-29 17:10:00] 确保环境变量正确传递，明确禁用 DataProxy 并强制生成二进制引擎
+    // [2025-01-29 17:30:00] 使用真实的环境变量（包括真实的 DATABASE_URL）
+    // 不需要设置额外的 PRISMA_* 环境变量，让 Prisma 自动检测和使用标准引擎
     const generateEnv = {
       ...process.env,
-      PRISMA_GENERATE_DATAPROXY: 'false',
-      PRISMA_CLI_GENERATE_DATAPROXY: 'false',
-      DATABASE_URL: process.env.DATABASE_URL,
-      PRISMA_GENERATE_SKIP_AUTOINSTALL: 'false',
+      DATABASE_URL: process.env.DATABASE_URL, // 确保传递真实的 DATABASE_URL
     };
     
-    // [2025-01-29 17:10:00] 打印环境变量信息（不暴露密码）
+    // [2025-01-29 17:30:00] 打印环境变量信息（不暴露密码）
     const dbUrlPreview = process.env.DATABASE_URL 
       ? process.env.DATABASE_URL.substring(0, 20) + '...' 
       : 'NOT SET';
-    console.log('[2025-01-29 17:10:00] 📋 DATABASE_URL preview:', dbUrlPreview);
-    console.log('[2025-01-29 17:10:00] 📋 PRISMA_GENERATE_DATAPROXY:', generateEnv.PRISMA_GENERATE_DATAPROXY);
+    console.log('[2025-01-29 17:30:00] 📋 DATABASE_URL preview:', dbUrlPreview);
     
     execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
       stdio: 'inherit',
       cwd: __dirname,
-      timeout: 120000, // 120秒超时，二进制引擎生成需要更多时间
+      timeout: 120000, // 120秒超时
       env: generateEnv,
     });
     
-    console.log('[2025-01-29 17:10:00] ✅ Prisma Client generated successfully at runtime (binary engine mode).');
+    console.log('[2025-01-29 17:30:00] ✅ Prisma Client generated successfully at runtime.');
   } catch (error) {
-    console.error('[2025-01-29 15:20:00] ❌ Failed to generate Prisma Client:', error.message);
-    console.error('[2025-01-29 15:20:00]    这会导致数据库操作失败，请检查日志');
-    console.error('[2025-01-29 15:20:00]    错误详情:', error);
+    console.error('[2025-01-29 17:30:00] ❌ Failed to generate Prisma Client:', error.message);
+    console.error('[2025-01-29 17:30:00]    这会导致数据库操作失败，请检查日志');
+    console.error('[2025-01-29 17:30:00]    错误详情:', error);
     // [2025-01-29 23:00:00] 在 Cloud Run 上，如果 Prisma Client 生成失败，退出进程
     process.exit(1);
   }

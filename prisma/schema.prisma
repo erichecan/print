@@ -4,12 +4,9 @@
 
 generator client {
   provider = "prisma-client-js"
-  // [2025-01-29 17:10:00] 回退到二进制引擎模式（Prisma 5.22.0）
-  // 明确指定二进制目标平台，确保生成引擎文件
-  // native 表示当前构建平台，debian-openssl-3.0.x 是 Cloud Run 的运行环境
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
-  // 明确禁用 DataProxy，确保使用标准数据库连接（二进制引擎）
-  previewFeatures = []
+  // [2025-01-29 17:30:00] 回到最简单的配置（方案 1：回到昨天之前的工作配置）
+  // 移除 binaryTargets，让 Prisma 自动检测平台
+  // 运行时生成时使用真实的 DATABASE_URL，不会触发 DataProxy 检测
 }
 
 datasource db {
