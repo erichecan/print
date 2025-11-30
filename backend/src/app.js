@@ -36,18 +36,20 @@ const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // 允许没有 origin 的请求（如移动应用或 Postman）
+    // [2025-01-29 02:00:00] 允许没有 origin 的请求（如移动应用或 Postman）
     if (!origin) return callback(null, true);
     
-    // 检查 origin 是否在允许列表或本地域名列表中
+    // [2025-01-29 02:00:00] 检查 origin 是否在允许列表或本地域名列表中
     if (allowedOrigins.includes(origin) || localhostOriginPattern.test(origin)) {
       callback(null, true);
     } else {
-      // 也允许所有 netlify.app 子域名（用于预览部署）
+      // [2025-01-29 02:00:00] 也允许所有 netlify.app 子域名（用于预览部署）
       if (origin.endsWith('.netlify.app')) {
         callback(null, true);
       } else if (origin.endsWith('.run.app')) {
         // [2025-01-27 23:00:00] 允许所有 Cloud Run 域名（用于 GCP 部署）
+        // [2025-01-29 02:00:00] 记录允许的 Cloud Run 域名以便调试
+        console.log(`[CORS] Allowing Cloud Run origin: ${origin}`);
         callback(null, true);
       } else {
         // [2025-11-15 12:05:00] 记录被拒绝的 origin 以便调试
@@ -155,6 +157,7 @@ app.use('/api/content', require('./routes/content')); // [2025-01-28 06:20:00] P
 app.use('/api/promotions', require('./routes/promotions'));
 // [2025-11-28 12:50:00] 临时路由：快速创建 admin 用户（生产环境应该禁用）
 app.use('/api/admin-setup', require('./routes/admin-setup')); // [2025-01-28 12:20:00] Public promotion API
+app.use('/api/admin-seed', require('./routes/admin-seed')); // [2025-01-29 22:30:00] Admin seed route
 app.use('/api/art-assets', require('./routes/artAssets')); // [2025-01-28 00:55:00] Art assets public API // [2025-01-27 18:50:00] Public category routes
 app.use('/api/collections', require('./routes/collections'));
 app.use('/api/cart', require('./routes/cart'));

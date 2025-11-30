@@ -1,27 +1,40 @@
 // [2025-11-02 20:52:00] Server entry point
 require('dotenv').config();
-const app = require('./src/app');
-const { testConnection } = require('./src/config/database');
-const logger = require('./src/utils/logger');
 const { execSync } = require('child_process');
+const fs = require('fs'); // [2025-01-29 22:55:00] 用于检查 Prisma Client 是否存在
+const path = require('path'); // [2025-01-29 22:55:00] 用于路径操作
 
 const PORT = process.env.PORT || 3001; // [2025-01-27 17:05:00] 默认端口改为3001，避免与前端冲突
 
-// [2025-11-16 16:18:00] Optionally run DB migrations before starting the server in production
-// [2025-01-27 16:50:00] 确保 Prisma Client 已生成
+// [2025-01-29 23:05:00] 必须在导入应用之前生成 Prisma Client
+// 因为应用的路由会在导入时尝试使用 Prisma Client
 const ensurePrismaClient = () => {
   try {
-    logger.info('🔧 Ensuring Prisma Client is generated...');
+    console.log('🔧 Ensuring Prisma Client is generated...');
+    // [2025-01-29 23:00:00] 在 Cloud Run 上，每次都重新生成以确保正确
+    console.log('📦 Generating Prisma Client...');
     execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
       stdio: 'inherit',
       cwd: __dirname,
+      timeout: 120000, // 120秒超时，给 Prisma 更多时间
+      env: { ...process.env, PRISMA_GENERATE_DATAPROXY: 'false' },
     });
-    logger.info('✅ Prisma Client generated.');
+    console.log('✅ Prisma Client generated successfully.');
   } catch (error) {
-    logger.warn('⚠️  Failed to generate Prisma Client (may already be generated):', error.message);
-    // 不退出，因为可能已经生成了
+    console.error('❌ Failed to generate Prisma Client:', error.message);
+    console.error('   这会导致数据库操作失败，请检查日志');
+    // [2025-01-29 23:00:00] 在 Cloud Run 上，如果 Prisma Client 生成失败，退出进程
+    process.exit(1);
   }
 };
+
+// [2025-01-29 23:05:00] 在导入应用之前生成 Prisma Client
+ensurePrismaClient();
+
+// [2025-01-29 23:05:00] 现在可以安全地导入应用
+const app = require('./src/app');
+const { testConnection } = require('./src/config/database');
+const logger = require('./src/utils/logger');
 
 // [2025-01-27 17:15:00] 改进迁移执行，失败时不阻止服务器启动
 const runMigrationsIfEnabled = () => {
@@ -79,7 +92,7 @@ const runMigrationsIfEnabled = () => {
 
 // Test database connection before starting server
 testConnection().then(() => {
-  ensurePrismaClient(); // [2025-01-27 16:50:00] 确保 Prisma Client 已生成
+  // [2025-01-29 23:05:00] Prisma Client 已在导入应用前生成
   runMigrationsIfEnabled();
   app.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT}`);

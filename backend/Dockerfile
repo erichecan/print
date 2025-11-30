@@ -15,8 +15,9 @@ COPY backend/scripts ./scripts
 COPY prisma ./prisma
 # [2025-11-15 23:07:58] Include server entrypoint for production container
 COPY backend/server.js ./server.js
-# [2025-11-14 06:12:00] 生成 Prisma 客户端以供运行阶段使用
-RUN npx prisma generate --schema=./prisma/schema.prisma
+# [2025-01-29 22:50:00] 跳过构建时的 Prisma generate（在 ARM64 Mac 上构建 amd64 镜像时可能失败）
+# Prisma Client 将在运行时由 server.js 生成（如果不存在）
+# RUN npx prisma generate --schema=./prisma/schema.prisma
 
 ## Expose server port [2025-11-10 13:45:00]
 ## [2025-01-27] Cloud Run uses PORT environment variable, default to 8080

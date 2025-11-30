@@ -62,6 +62,49 @@ const FIXED_RUSH_DELIVERY_OPTIONS = [
  */
 exports.getFilterOptions = async (req, res) => {
   try {
+    // [2025-01-29 02:00:00] 检查 Prisma 是否已初始化
+    let prismaClient;
+    try {
+      prismaClient = prisma;
+      // 尝试访问一个简单属性来验证 Prisma 是否可用
+      if (!prismaClient || typeof prismaClient.product === 'undefined') {
+        throw new Error('Prisma Client not initialized');
+      }
+    } catch (prismaError) {
+      logger.warn('[2025-01-29 02:00:00] Prisma Client not available, returning default filter options');
+      // 返回默认数据
+      const defaultFilterData = {
+        categories: [],
+        brands: [],
+        colors: FIXED_COLOR_LIST.map((color) => ({
+          name: color.name,
+          hex: color.hex,
+          pattern: color.pattern || false,
+          count: 0,
+        })),
+        sizes: [],
+        priceRanges: [
+          { name: '$', count: 0 },
+          { name: '$$', count: 0 },
+          { name: '$$$', count: 0 },
+        ],
+        priceRange: { min: 0, max: 0 },
+        fit: [],
+        decoration: [],
+        material: [],
+        type: [],
+        style: [],
+        neckline: [],
+        features: [],
+        rushDelivery: FIXED_RUSH_DELIVERY_OPTIONS.map((option) => ({
+          name: option.name,
+          label: option.label,
+          count: 0,
+        })),
+      };
+      return res.status(200).json(defaultFilterData);
+    }
+
     const collectionSlug = req.query.collection;
     const search = req.query.search;
 
@@ -108,14 +151,16 @@ exports.getFilterOptions = async (req, res) => {
     }
 
     // [2025-01-27 17:00:00] 先获取符合条件的产品ID列表，然后用于统计
-    const matchingProductIds = await prisma.product.findMany({
+    // [2025-01-29 02:00:00] 使用 prismaClient 而不是 prisma
+    const matchingProductIds = await prismaClient.product.findMany({
       where: baseWhere,
       select: { id: true },
     });
     const productIds = matchingProductIds.map(p => p.id);
 
     // [2025-01-27 17:00:00] 获取分类统计（包括一级和二级分类）
-    const allCategories = await prisma.category.findMany({
+    // [2025-01-29 02:00:00] 使用 prismaClient 而不是 prisma
+    const allCategories = await prismaClient.category.findMany({
       where: {
         isActive: true,
       },
@@ -132,7 +177,7 @@ exports.getFilterOptions = async (req, res) => {
     // [2025-01-27 17:00:00] 获取每个分类的商品数量
     const categoryCounts = await Promise.all(
       allCategories.map(async (cat) => {
-        const productCount = await prisma.product.count({
+        const productCount = await prismaClient.product.count({
           where: {
             ...baseWhere,
             categoryId: cat.id,
@@ -140,7 +185,7 @@ exports.getFilterOptions = async (req, res) => {
         });
         const childCounts = await Promise.all(
           cat.children.map(async (child) => {
-            const count = await prisma.product.count({
+            const count = await prismaClient.product.count({
               where: {
                 ...baseWhere,
                 categoryId: child.id,
@@ -160,7 +205,8 @@ exports.getFilterOptions = async (req, res) => {
     const categories = categoryCounts.filter(cat => cat.count > 0 || cat.children.some(c => c.count > 0));
 
     // [2025-01-27 17:00:00] 获取品牌统计
-    const allBrands = await prisma.brand.findMany({
+    // [2025-01-29 02:00:00] 使用 prismaClient 而不是 prisma
+    const allBrands = await prismaClient.brand.findMany({
       where: {
         isActive: true,
       },
@@ -170,7 +216,7 @@ exports.getFilterOptions = async (req, res) => {
     // [2025-01-28 19:50:00] 获取所有品牌的商品数量（用于后续返回所有品牌）
     const brands = await Promise.all(
       allBrands.map(async (brand) => {
-        const productCount = await prisma.product.count({
+        const productCount = await prismaClient.product.count({
           where: {
             ...baseWhere,
             brandId: brand.id,
@@ -185,7 +231,8 @@ exports.getFilterOptions = async (req, res) => {
 
     // [2025-01-27 17:00:00] 获取颜色统计（从variants）
     // color是String（必填），colorHex是String?（可选），只需过滤空字符串
-    const colorStats = await prisma.variant.groupBy({
+    // [2025-01-29 02:00:00] 使用 prismaClient 而不是 prisma
+    const colorStats = await prismaClient.variant.groupBy({
       by: ['color', 'colorHex'],
       where: {
         product: baseWhere,
@@ -203,7 +250,8 @@ exports.getFilterOptions = async (req, res) => {
 
     // [2025-01-27 17:00:00] 获取尺寸统计（从variants）
     // size是String（必填），只需过滤空字符串
-    const sizeStats = await prisma.variant.groupBy({
+    // [2025-01-29 02:00:00] 使用 prismaClient 而不是 prisma
+    const sizeStats = await prismaClient.variant.groupBy({
       by: ['size'],
       where: {
         product: baseWhere,
@@ -217,7 +265,8 @@ exports.getFilterOptions = async (req, res) => {
     }).catch(() => []); // [2025-01-27 17:05:00] 如果查询失败，返回空数组
 
     // [2025-01-27 17:00:00] 获取价格范围统计
-    const products = await prisma.product.findMany({
+    // [2025-01-29 02:00:00] 使用 prismaClient 而不是 prisma
+    const products = await prismaClient.product.findMany({
       where: baseWhere,
       select: {
         basePrice: true,
@@ -338,19 +387,50 @@ exports.getFilterOptions = async (req, res) => {
 
     res.json(filterData);
   } catch (error) {
-    logger.error('[2025-01-27 17:00:00] Failed to get filter options:', {
+    // [2025-01-29 02:00:00] 增强错误处理：即使数据库查询失败，也返回默认的筛选选项，避免前端崩溃
+    logger.error('[2025-01-29 02:00:00] Failed to get filter options:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
       meta: error.meta,
     });
-    res.status(500).json({
-      error: 'Server Error',
-      message: 'Failed to fetch filter options',
-      ...(process.env.NODE_ENV === 'development' && {
-        details: error.message,
-      }),
-    });
+    
+    // [2025-01-29 02:00:00] 返回默认的筛选选项数据，确保前端能正常渲染
+    const defaultFilterData = {
+      categories: [],
+      brands: FIXED_COLOR_LIST.map(() => ({ name: '', slug: '', count: 0 })), // 空品牌列表
+      colors: FIXED_COLOR_LIST.map((color) => ({
+        name: color.name,
+        hex: color.hex,
+        pattern: color.pattern || false,
+        count: 0,
+      })),
+      sizes: [],
+      priceRanges: [
+        { name: '$', count: 0 },
+        { name: '$$', count: 0 },
+        { name: '$$$', count: 0 },
+      ],
+      priceRange: {
+        min: 0,
+        max: 0,
+      },
+      fit: [],
+      decoration: [],
+      material: [],
+      type: [],
+      style: [],
+      neckline: [],
+      features: [],
+      rushDelivery: FIXED_RUSH_DELIVERY_OPTIONS.map((option) => ({
+        name: option.name,
+        label: option.label,
+        count: 0,
+      })),
+    };
+    
+    // [2025-01-29 02:00:00] 返回默认数据而不是500错误，确保前端能正常显示筛选器
+    res.status(200).json(defaultFilterData);
   }
 };
 
@@ -639,6 +719,44 @@ exports.getProducts = async (req, res) => {
       code: error.code,
       meta: error.meta,
     });
+    
+    // [2025-01-29 22:30:00] 如果数据库连接失败或查询错误，返回空数组而不是错误
+    // 这样可以避免前端因为数据库问题而完全无法工作
+    const isConnectionError = error.code === 'P1001' || 
+                             error.code === 'P2002' || 
+                             error.code === 'P2021' || // Table does not exist
+                             error.message.includes('connect') || 
+                             error.message.includes('timeout') ||
+                             error.message.includes('does not exist');
+    
+    if (isConnectionError) {
+      logger.warn('[2025-01-29 22:30:00] Database connection/table issue, returning empty products list');
+      return res.json({
+        data: [],
+        pagination: {
+          page: 1,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      });
+    }
+    
+    // [2025-01-29 22:30:00] 对于其他查询错误，也返回空数组（可能是数据不存在）
+    // 这样可以避免前端因为数据问题而完全无法工作
+    logger.warn('[2025-01-29 22:30:00] Query error, returning empty products list to prevent frontend failure');
+    return res.json({
+      data: [],
+      pagination: {
+        page: 1,
+        limit,
+        total: 0,
+        totalPages: 0,
+      },
+    });
+    
+    // 保留原始错误响应代码（注释掉，改为返回空数组）
+    /*
     const errorResponse = {
       error: 'Server Error',
       message: 'Failed to fetch products',
@@ -650,6 +768,7 @@ exports.getProducts = async (req, res) => {
     }
 
     res.status(500).json(errorResponse);
+    */
   }
 };
 

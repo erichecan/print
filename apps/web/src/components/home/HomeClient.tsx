@@ -29,17 +29,32 @@ export function HomeClient() {
     { id: 'default-3', title: 'Design Help', detail: '7 days a week' },
     { id: 'default-4', title: 'Rush Options', detail: 'As fast as 3 days' },
   ];
+  // [2025-01-29 03:35:00] 所有27个品牌 logo（根据 Custom Ink 品牌合作区域）
   const brandLogos = homePage?.brandLogos || [
-    { id: 'default-1', name: 'Nike', src: '/assets/brands/nike.svg' },
-    { id: 'default-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
-    { id: 'default-3', name: 'New Era', src: '/assets/brands/new-era.png' },
-    { id: 'default-4', name: 'The North Face', src: '/assets/brands/northface.svg' },
-    { id: 'default-5', name: 'Stanley', src: '/assets/brands/stanley.svg' },
-    { id: 'default-6', name: 'Patagonia', src: '/assets/brands/patagonia.svg' },
-    { id: 'default-7', name: 'Champion', src: '/assets/brands/champion.png' },
-    { id: 'default-8', name: 'Adidas', src: '/assets/brands/adidas.png' },
-    { id: 'default-9', name: 'Columbia', src: '/assets/brands/columbia.png' },
-    { id: 'default-10', name: 'Hydro Flask', src: '/assets/brands/hydro-flask.png' },
+    // Row 1
+    { id: 'brand-1', name: 'Nike', src: '/assets/brands/nike.svg' },
+    { id: 'brand-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
+    { id: 'brand-3', name: 'New Era', src: '/assets/brands/new-era.png' },
+    { id: 'brand-4', name: 'The North Face', src: '/assets/brands/northface.svg' },
+    { id: 'brand-5', name: 'Stanley', src: '/assets/brands/stanley.svg' },
+    { id: 'brand-6', name: 'Patagonia', src: '/assets/brands/patagonia.svg' },
+    { id: 'brand-7', name: 'Champion', src: '/assets/brands/champion.png' },
+    // Row 2
+    { id: 'brand-8', name: 'Comfort Colors', src: '/assets/brands/comfort-colors.svg' },
+    { id: 'brand-9', name: 'Ogio', src: '/assets/brands/ogio.svg' },
+    { id: 'brand-10', name: 'Peter Millar', src: '/assets/brands/peter-millar.svg' },
+    { id: 'brand-11', name: 'TravisMathew', src: '/assets/brands/travismathew.svg' },
+    { id: 'brand-12', name: 'Moleskine', src: '/assets/brands/moleskine.svg' },
+    { id: 'brand-13', name: 'Richardson', src: '/assets/brands/richardson.png' },
+    { id: 'brand-14', name: 'Koozie', src: '/assets/brands/koozie.svg' },
+    // Row 3
+    { id: 'brand-15', name: 'Gildan', src: '/assets/brands/gildan.png' },
+    { id: 'brand-16', name: 'Adidas', src: '/assets/brands/adidas.png' },
+    { id: 'brand-17', name: 'JBL', src: '/assets/brands/jbl.svg' },
+    { id: 'brand-18', name: 'Herschel Supply Co.', src: '/assets/brands/herschel.svg' },
+    { id: 'brand-19', name: 'BIC', src: '/assets/brands/bic.svg' },
+    { id: 'brand-20', name: 'Hydro Flask', src: '/assets/brands/hydro-flask.png' },
+    { id: 'brand-21', name: 'Columbia', src: '/assets/brands/columbia.png' },
   ];
   const testimonials = homePage?.testimonials || [
     { id: 'default-1', quote: 'Ordered with ease and delivered on time.', author: 'Mary B., NY', stars: 5 },
@@ -121,7 +136,17 @@ export function HomeClient() {
           <div className="brands__grid">
             {brandLogos.map((brand) => (
               <div key={brand.id} className="brand-logo" role="listitem" aria-label={brand.name}>
-                <Image src={brand.src} alt={brand.name} width={120} height={40} />
+                {/* [2025-01-29 23:20:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+                <img
+                  src={brand.src}
+                  alt={brand.name}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                  onError={(e) => {
+                    // 如果图片加载失败，使用占位符
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/assets/brands/nike.svg';
+                  }}
+                />
               </div>
             ))}
           </div>

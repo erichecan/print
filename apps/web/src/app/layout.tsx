@@ -15,6 +15,7 @@ import { AuthProvider } from '@/contexts/AuthContext'; // [2025-01-28 07:30:00] 
 import { GlobalErrorFilter } from '@/components/GlobalErrorFilter'; // [2025-01-29 01:00:00] 全局错误过滤器
 import LayoutWrapper from './LayoutWrapper';
 import './globals.css';
+import './globals-mobile.css';
 
 const inter = Inter({
   subsets: ['latin'],

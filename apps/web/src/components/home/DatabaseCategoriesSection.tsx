@@ -4,7 +4,6 @@
  */
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { categoriesApi, Category } from '@/lib/api';
@@ -163,11 +162,10 @@ export function DatabaseCategoriesSection() {
                 aria-label={`Browse ${category.name}`}
               >
                 <div className={styles.categoryCardImage}>
-                  <Image
+                  {/* [2025-01-29 23:50:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+                  <img
                     src={imagePath}
                     alt={category.name}
-                    width={300}
-                    height={300}
                     className={styles.categoryImage}
                     style={{ 
                       width: '100%', 

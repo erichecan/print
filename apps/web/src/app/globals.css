@@ -9101,6 +9101,28 @@ select {
   min-width: var(--touch-target-min);
 }
 
+/* [2025-01-29 04:00:00] 桌面端专用样式 - 隐藏移动端组件 */
+@media (min-width: 769px) {
+  .desktop-only {
+    display: block;
+  }
+  
+  .home-mobile {
+    display: none;
+  }
+}
+
+/* [2025-01-29 04:00:00] 移动端专用样式 - 隐藏桌面端组件 */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+  
+  .home-mobile {
+    display: block;
+  }
+}
+
 /* 移动端字体大小优化 */
 @media (max-width: 767px) {
   body {

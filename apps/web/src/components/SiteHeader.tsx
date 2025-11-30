@@ -176,7 +176,8 @@ export function SiteHeader() {
           
           <div className="site-header__brand">
             <Link href="/" aria-label="Suvernire Plus home">
-              <Image src="/assets/logo.svg" alt="Suvernire Plus" width={160} height={44} priority />
+              {/* [2025-01-29 03:00:00] 使用 Souvenir Plus Inc 官方 logo */}
+              <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority />
             </Link>
           </div>
           <div className="site-header__search" role="search">
@@ -306,7 +307,8 @@ export function SiteHeader() {
             className="mobile-nav__logo"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <Image src="/assets/logo.svg" alt="Suvernire Plus" width={120} height={33} />
+            {/* [2025-01-29 03:00:00] 使用 Souvenir Plus Inc 官方 logo */}
+            <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} />
           </Link>
           <button
             type="button"

@@ -159,6 +159,21 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
   const categoryTree = filterOptions ? getCategoryTree() : [];
   const colorOptions = getColorOptions(); // [2025-01-28 19:55:00] 始终返回颜色列表，即使 filterOptions 为空
 
+  // [2025-01-29 02:00:00] 安全访问 filterOptions 的辅助函数，避免 undefined 错误
+  const safeFilterOptions = filterOptions || {
+    fit: [],
+    decoration: [],
+    material: [],
+    type: [],
+    style: [],
+    neckline: [],
+    features: [],
+    sizes: [],
+    priceRanges: [],
+    rushDelivery: [],
+    brands: [],
+  };
+
   return (
     <>
       {/* [2025-01-27 17:00:00] 动态分类列表 */}
@@ -208,14 +223,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态Fit筛选（目前返回空数组，暂不显示） */}
-      {filterOptions.fit.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.fit.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Fit
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.fit.map((option) => {
+            {safeFilterOptions.fit.map((option) => {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
@@ -237,14 +253,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态Decoration筛选（目前返回空数组，暂不显示） */}
-      {filterOptions.decoration.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.decoration.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Decoration
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.decoration.map((option) => {
+            {safeFilterOptions.decoration.map((option) => {
               const value = option.name.toLowerCase();
               return (
                 <label key={option.name} className="filter-checkbox">
@@ -368,8 +385,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           <span className="filter-toggle-icon">−</span>
         </summary>
         <div className="filter-section__body">
-          {(filterOptions?.rushDelivery && filterOptions.rushDelivery.length > 0
-            ? filterOptions.rushDelivery
+          {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+          {(safeFilterOptions.rushDelivery && safeFilterOptions.rushDelivery.length > 0
+            ? safeFilterOptions.rushDelivery
             : RUSH_DELIVERY_OPTIONS.map(opt => ({ name: opt.days, label: opt.label, count: 0 }))
           ).map((option) => (
             <label key={option.name} className="filter-checkbox">
@@ -395,14 +413,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
 
       {/* [2025-01-27 17:00:00] 动态品牌筛选 */}
       {/* [2025-01-28 19:55:00] 始终显示品牌筛选，即使数量为0也显示 */}
-      {filterOptions && filterOptions.brands && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.brands && safeFilterOptions.brands.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Brands
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.brands.slice(0, 7).map((brand) => (
+            {safeFilterOptions.brands.slice(0, 7).map((brand) => (
               <label key={brand.slug || brand.name} className="filter-checkbox">
                 <input 
                   type="checkbox" 
@@ -416,7 +435,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
                 </span>
               </label>
             ))}
-            {filterOptions.brands.length > 7 && (
+            {safeFilterOptions.brands.length > 7 && (
               <button type="button" className="filter-show-more">Show more</button>
             )}
           </div>
@@ -424,14 +443,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态Material筛选（目前返回空数组，暂不显示） */}
-      {filterOptions.material.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.material.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Material
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.material.map((option) => {
+            {safeFilterOptions.material.map((option) => {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
@@ -454,14 +474,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态Type筛选（目前返回空数组，暂不显示） */}
-      {filterOptions.type.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.type.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Type
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.type.map((option) => {
+            {safeFilterOptions.type.map((option) => {
               const value = option.name.toLowerCase();
               return (
                 <label key={option.name} className="filter-checkbox">
@@ -483,14 +504,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态尺寸筛选 */}
-      {filterOptions.sizes.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.sizes.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Sizes
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.sizes.map((option) => (
+            {safeFilterOptions.sizes.map((option) => (
               <label key={option.name} className="filter-checkbox">
                 <input 
                   type="checkbox" 
@@ -509,14 +531,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态Style筛选（目前返回空数组，暂不显示） */}
-      {filterOptions.style.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.style.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Style
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.style.map((option) => {
+            {safeFilterOptions.style.map((option) => {
               const value = option.name.toLowerCase();
               return (
                 <label key={option.name} className="filter-checkbox">
@@ -538,14 +561,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态Neckline筛选（目前返回空数组，暂不显示） */}
-      {filterOptions.neckline.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.neckline.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Neckline
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.neckline.map((option) => {
+            {safeFilterOptions.neckline.map((option) => {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
@@ -567,14 +591,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态Product Features筛选（目前返回空数组，暂不显示） */}
-      {filterOptions.features.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.features.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Product Features
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.features.map((option) => {
+            {safeFilterOptions.features.map((option) => {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
@@ -597,14 +622,15 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       )}
 
       {/* [2025-01-27 17:00:00] 动态价格筛选 */}
-      {filterOptions.priceRanges.length > 0 && (
+      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+      {safeFilterOptions.priceRanges.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
             Price
             <span className="filter-toggle-icon"></span>
           </summary>
           <div className="filter-section__body">
-            {filterOptions.priceRanges.map((option) => (
+            {safeFilterOptions.priceRanges.map((option) => (
               <label key={option.name} className="filter-checkbox">
                 <input 
                   type="checkbox" 

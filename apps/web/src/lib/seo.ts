@@ -98,7 +98,7 @@ export function generateOrganizationSchema() {
     '@type': 'Organization',
     name: 'suvernire plus',
     url: 'https://suvernireplus.com',
-    logo: 'https://suvernireplus.com/assets/logo.svg',
+    logo: 'https://suvernireplus.com/logo.png', // [2025-01-29 03:00:00] 使用 Souvenir Plus Inc 官方 logo
     contactPoint: {
       '@type': 'ContactPoint',
       telephone: '+1-855-271-2660',

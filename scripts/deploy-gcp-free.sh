@@ -43,16 +43,18 @@ echo -e "${GREEN}🔐 Configuring Docker authentication...${NC}"
 gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
 # Build and push backend
-echo -e "${GREEN}🏗️  Building backend Docker image...${NC}"
-docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
+# [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
+echo -e "${GREEN}🏗️  Building backend Docker image (linux/amd64)...${NC}"
+docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
   -f backend/Dockerfile .
 
 echo -e "${GREEN}📤 Pushing backend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest
 
 # Build and push frontend
-echo -e "${GREEN}🏗️  Building frontend Docker image...${NC}"
-docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
+# [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
+echo -e "${GREEN}🏗️  Building frontend Docker image (linux/amd64)...${NC}"
+docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
   -f apps/web/Dockerfile apps/web
 
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"
@@ -83,9 +85,10 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --max-instances 5 \
   --memory 512Mi \
   --cpu 1 \
-  --timeout 300 \
+  --timeout 600 \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production,PORT=8080
+  --set-env-vars NODE_ENV=production,AUTO_MIGRATE=false \
+  --cpu-boost
 
 # Get backend URL
 BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
@@ -110,13 +113,22 @@ gcloud run deploy ${FRONTEND_SERVICE} \
   --max-instances 5 \
   --memory 1Gi \
   --cpu 1 \
-  --timeout 300 \
+  --timeout 600 \
   --set-secrets NEXT_PUBLIC_API_URL=api-url:latest,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest \
   --set-env-vars NODE_ENV=production
 
 # Get frontend URL
 FRONTEND_URL=$(gcloud run services describe ${FRONTEND_SERVICE} --region ${REGION} --format 'value(status.url)')
 echo -e "${GREEN}✅ Frontend deployed: ${FRONTEND_URL}${NC}"
+
+# [2025-01-29 02:45:00] 更新后端服务，添加 FRONTEND_URL 环境变量，用于图片 URL 生成
+echo -e "${GREEN}🔧 更新后端服务，添加 FRONTEND_URL 环境变量...${NC}"
+gcloud run services update ${BACKEND_SERVICE} \
+  --region ${REGION} \
+  --update-env-vars FRONTEND_URL=${FRONTEND_URL} \
+  --quiet
+
+echo -e "${GREEN}✅ 后端服务已更新，FRONTEND_URL=${FRONTEND_URL}${NC}"
 
 echo ""
 echo -e "${GREEN}🎉 FREE TIER deployment completed!${NC}"

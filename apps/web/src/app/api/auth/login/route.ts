@@ -4,16 +4,7 @@
  */
 import { NextResponse } from 'next/server';
 
-const DEFAULT_API_BASE = 'http://localhost:3001/api';
-
-function getBackendApiBase(): string {
-  // 在生产环境中，使用环境变量中的后端 URL
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '');
-  }
-  // 开发环境默认
-  return DEFAULT_API_BASE;
-}
+import { getBackendApiBase } from '@/lib/api-route-config';
 
 const API_BASE = getBackendApiBase();
 

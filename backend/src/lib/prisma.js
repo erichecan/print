@@ -23,22 +23,56 @@ const prismaConfig = {
   }),
 };
 
+// [2025-01-29 23:05:00] 延迟初始化 PrismaClient，避免在 Prisma Client 生成之前就创建实例
+// 在 Cloud Run 环境中，Prisma Client 需要在运行时生成，所以不能立即创建
+function getPrisma() {
+  if (!prisma) {
+    try {
+      // [2025-01-29 23:05:00] 检查 Prisma Client 是否已生成
+      const fs = require('fs');
+      const path = require('path');
+      const prismaClientPath = path.join(__dirname, '../../node_modules/@prisma/client');
+      
+      // 如果 Prisma Client 不存在，返回 null 或抛出错误
+      if (!fs.existsSync(prismaClientPath)) {
+        logger.warn('[2025-01-29 23:05:00] ⚠️  Prisma Client not generated yet, will be generated on server startup');
+        // 不立即创建，等待 server.js 的 ensurePrismaClient 运行
+        return null;
+      }
+      
+      // Prisma Client 已存在，可以安全创建
+      if (process.env.NODE_ENV === 'production') {
+        prisma = new PrismaClient(prismaConfig);
+        
+        // [2025-01-27 23:30:00] Handle connection errors gracefully
+        prisma.$connect()
+          .then(() => {
+            logger.info('[2025-01-27 23:30:00] ✅ Prisma Client connected to database');
+          })
+          .catch((error) => {
+            logger.error('[2025-01-27 23:30:00] ❌ Failed to connect Prisma Client to database:', error);
+          });
+      } else {
+        if (!global.prisma) {
+          global.prisma = new PrismaClient(prismaConfig);
+        }
+        prisma = global.prisma;
+      }
+    } catch (error) {
+      // [2025-01-29 23:05:00] 如果创建失败（可能 Prisma Client 还没生成），记录警告但不抛出错误
+      logger.warn('[2025-01-29 23:05:00] ⚠️  Failed to create Prisma Client (may not be generated yet):', error.message);
+      return null;
+    }
+  }
+  return prisma;
+}
+
+// [2025-01-29 23:05:00] 延迟初始化：只在第一次使用时创建
 if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient(prismaConfig);
-  
-  // [2025-01-27 23:30:00] Handle connection errors gracefully
-  // Note: Prisma Client error events are handled internally
-  
-  // [2025-01-27 23:30:00] Test database connection on startup
-  prisma.$connect()
-    .then(() => {
-      logger.info('[2025-01-27 23:30:00] ✅ Prisma Client connected to database');
-    })
-    .catch((error) => {
-      logger.error('[2025-01-27 23:30:00] ❌ Failed to connect Prisma Client to database:', error);
-      // Don't exit - let the app try to handle it gracefully
-    });
+  // 在生产环境中，延迟初始化
+  // prisma 将在第一次调用 getPrisma() 时创建
 } else {
+  // 开发环境中，立即创建（假设 Prisma Client 已生成）
   if (!global.prisma) {
     global.prisma = new PrismaClient(prismaConfig);
   }
@@ -46,15 +80,22 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // [2025-11-18 14:45:00] Backward compatibility for renamed Variant model
-if (prisma && prisma.variant && !prisma.productVariant) {
-  prisma.productVariant = prisma.variant;
+// [2025-01-29 23:05:00] 延迟设置，等待 Prisma Client 创建
+function setupBackwardCompatibility() {
+  const client = getPrisma();
+  if (client && client.variant && !client.productVariant) {
+    client.productVariant = client.variant;
+  }
 }
 
 // [2025-01-27 23:30:00] Graceful shutdown
 const gracefulShutdown = async () => {
   try {
-    await prisma.$disconnect();
-    logger.info('[2025-01-27 23:30:00] Prisma Client disconnected gracefully');
+    const client = getPrisma();
+    if (client) {
+      await client.$disconnect();
+      logger.info('[2025-01-27 23:30:00] Prisma Client disconnected gracefully');
+    }
   } catch (error) {
     logger.error('[2025-01-27 23:30:00] Error disconnecting Prisma Client:', error);
   }
@@ -63,4 +104,23 @@ const gracefulShutdown = async () => {
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
 
-module.exports = prisma;
+// [2025-01-29 23:05:00] 导出 getter 函数，延迟初始化
+// 为了向后兼容，也导出 prisma 对象（如果已创建）
+module.exports = new Proxy({}, {
+  get(target, prop) {
+    const client = getPrisma();
+    if (!client) {
+      // 如果 Prisma Client 还没创建，抛出有意义的错误
+      throw new Error('Prisma Client not initialized yet. Please wait for server startup to complete.');
+    }
+    setupBackwardCompatibility();
+    return client[prop];
+  },
+  set(target, prop, value) {
+    const client = getPrisma();
+    if (client) {
+      client[prop] = value;
+    }
+    return true;
+  }
+});

@@ -58,15 +58,19 @@ const nextConfig = {
   // [2025-11-14 06:18:00] 切换 Netlify SSR 插件，移除静态导出 output 配置
   // [2025-01-27 12:00:00] 配置图片优化（静态导出模式下需要）
   images: {
-    // [2025-11-18 14:55:00] Disable optimizer locally to avoid 400 responses for static assets
+    // [2025-01-29 23:30:00] 在 Cloud Run 上禁用图片优化器，避免静态资源 400 错误
     unoptimized:
       process.env.NETLIFY === 'true' ||
       process.env.NEXT_IMAGE_UNOPTIMIZED === 'true' ||
-      process.env.NODE_ENV !== 'production',
+      process.env.NODE_ENV !== 'production' ||
+      process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
     formats: ['image/avif', 'image/webp'], // [2025-01-27 14:20:00] 支持现代图片格式
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // [2025-01-27 14:20:00] 响应式图片尺寸
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // [2025-01-27 14:20:00] 图片尺寸配置
     remotePatterns,
+    // [2025-01-29 23:30:00] 允许本地静态资源路径
+    domains: [],
+    path: '/_next/image',
   },
   // [2025-01-27 14:20:00] 性能优化配置
   compress: true, // 启用 gzip 压缩
