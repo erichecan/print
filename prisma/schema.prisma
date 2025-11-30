@@ -4,10 +4,12 @@
 
 generator client {
   provider = "prisma-client-js"
-  // [2025-01-29 16:45:00] 使用无 Rust 引擎模式（Prisma 6.x）
-  // driverAdapters 在 Prisma 6.x 中是标准功能，无需 preview features
-  // engineType = "client" 表示使用客户端引擎（无 Rust）
-  engineType = "client"
+  // [2025-01-29 17:10:00] 回退到二进制引擎模式（Prisma 5.22.0）
+  // 明确指定二进制目标平台，确保生成引擎文件
+  // native 表示当前构建平台，debian-openssl-3.0.x 是 Cloud Run 的运行环境
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  // 明确禁用 DataProxy，确保使用标准数据库连接（二进制引擎）
+  previewFeatures = []
 }
 
 datasource db {

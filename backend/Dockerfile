@@ -18,15 +18,26 @@ COPY prisma ./prisma
 # [2025-11-15 23:07:58] Include server entrypoint for production container
 COPY backend/server.js ./server.js
 
-## [2025-01-29 16:30:00] 在构建时生成 Prisma Client（无 Rust 引擎模式）
-## Prisma 6.x 使用 engineType = "client"，不需要 Rust 引擎二进制文件
+## [2025-01-29 17:10:00] 在构建时生成 Prisma Client（二进制引擎模式）
 ## Prisma Client 生成时只需要 schema 文件，不需要真实的数据库连接
+## 使用占位符 DATABASE_URL（格式正确即可），运行时将使用真实的 DATABASE_URL（从 Secret Manager）
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
-# [2025-01-29 16:30:00] 无 Rust 引擎模式不需要下载引擎文件，生成更快
-RUN npx prisma generate --schema=./prisma/schema.prisma && \
-    echo "[2025-01-29 16:30:00] ✅ Prisma Client generated at build time (no Rust engine, using adapter)" && \
-    echo "[2025-01-29 16:30:00] 📋 Generated files in .prisma/client:" && \
-    ls -lh node_modules/.prisma/client/ | head -10
+# [2025-01-29 17:10:00] 明确禁用 DataProxy，确保生成二进制引擎
+ENV PRISMA_GENERATE_DATAPROXY="false"
+ENV PRISMA_CLI_GENERATE_DATAPROXY="false"
+ENV PRISMA_GENERATE_SKIP_AUTOINSTALL="false"
+RUN PRISMA_GENERATE_DATAPROXY="false" \
+    PRISMA_CLI_GENERATE_DATAPROXY="false" \
+    npx prisma generate --schema=./prisma/schema.prisma && \
+    echo "[2025-01-29 17:10:00] ✅ Prisma Client generated at build time (binary engine)" && \
+    echo "[2025-01-29 17:10:00] 📋 Checking for engine files..." && \
+    (ls -lh node_modules/.prisma/client/libquery_engine* 2>/dev/null || \
+     ls -lh node_modules/.prisma/client/query-engine* 2>/dev/null || \
+     ls -lh node_modules/.prisma/client/*.node 2>/dev/null || \
+     find node_modules/.prisma/client -name "*engine*" -type f 2>/dev/null || \
+     echo "[2025-01-29 17:10:00] ⚠️  Warning: Engine file not found") && \
+    echo "[2025-01-29 17:10:00] 📋 Generated files in .prisma/client:" && \
+    ls -lh node_modules/.prisma/client/ | head -15
 
 ## Expose server port [2025-11-10 13:45:00]
 ## [2025-01-27] Cloud Run uses PORT environment variable, default to 8080
