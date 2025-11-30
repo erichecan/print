@@ -14,8 +14,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // [2025-01-29 17:00:00] Prisma 7.x: url 已移除，连接 URL 通过适配器传递
-  // 连接 URL 现在在 PrismaClient 初始化时通过适配器传递
+  url      = env("DATABASE_URL")
 }
 
 // User model
