@@ -45,61 +45,44 @@ const ensurePrismaClient = () => {
   try {
     console.log('[2025-01-29 15:20:00] 🔧 Checking if Prisma Client is already generated...');
     
-    // [2025-01-29 15:20:00] 检查 Prisma Client 是否已在构建时生成
+    // [2025-01-29 16:30:00] 检查 Prisma Client 是否已在构建时生成（无 Rust 引擎模式）
     const prismaClientPath = path.join(__dirname, 'node_modules/@prisma/client');
     const generatedClientPath = path.join(__dirname, 'node_modules/.prisma/client');
     
     if (fs.existsSync(prismaClientPath) && fs.existsSync(generatedClientPath)) {
-      // 检查是否有引擎文件
-      const engineFiles = fs.readdirSync(generatedClientPath).filter(f => f.endsWith('.node'));
-      if (engineFiles.length > 0) {
-        console.log('[2025-01-29 15:20:00] ✅ Prisma Client already generated at build time');
-        console.log('[2025-01-29 15:20:00]    引擎文件:', engineFiles.join(', '));
-        return; // Prisma Client 已生成，跳过
-      } else {
-        console.log('[2025-01-29 15:20:00] ⚠️  Prisma Client exists but no engine files found, regenerating...');
-      }
+      console.log('[2025-01-29 16:30:00] ✅ Prisma Client already generated at build time (no Rust engine mode)');
+      return; // Prisma Client 已生成，跳过
     } else {
-      console.log('[2025-01-29 15:20:00] ⚠️  Prisma Client not found, generating at runtime...');
+      console.log('[2025-01-29 16:30:00] ⚠️  Prisma Client not found, generating at runtime...');
     }
     
     // [2025-01-29 14:50:00] 在生成 Prisma Client 前验证 DATABASE_URL
     validateDatabaseUrl();
     
-    // [2025-01-29 23:00:00] 运行时生成 Prisma Client（后备方案）
-    console.log('[2025-01-29 15:20:00] 📦 Generating Prisma Client at runtime...');
+    // [2025-01-29 16:30:00] 运行时生成 Prisma Client（后备方案，无 Rust 引擎模式）
+    console.log('[2025-01-29 16:30:00] 📦 Generating Prisma Client at runtime (no Rust engine mode)...');
     
-    // [2025-01-29 16:10:00] 确保环境变量正确传递，明确禁用 DataProxy 并强制生成二进制引擎
-    // [2025-01-29 16:10:00] 关键：需要明确设置环境变量，确保 Prisma Client 生成时包含数据库引擎
+    // [2025-01-29 16:30:00] 无 Rust 引擎模式不需要复杂的环境变量配置
+    // 只需要 DATABASE_URL（用于验证格式）
     const generateEnv = {
       ...process.env,
-      // [2025-01-29 16:10:00] 明确禁用 DataProxy 和 Accelerate（避免使用 prisma:// 协议）
-      PRISMA_GENERATE_DATAPROXY: 'false',
-      PRISMA_CLI_GENERATE_DATAPROXY: 'false',
-      // [2025-01-29 16:10:00] 确保 DATABASE_URL 被传递到生成过程中（使用真实的 PostgreSQL URL）
-      DATABASE_URL: process.env.DATABASE_URL,
-      // [2025-01-29 16:10:00] 强制生成引擎（不是 engine=none）
-      PRISMA_GENERATE_SKIP_AUTOINSTALL: 'false',
-      PRISMA_SKIP_POSTINSTALL_GENERATE: 'false',
-      // [2025-01-29 16:10:00] 确保不跳过引擎下载
-      PRISMA_ENGINES_MIRROR: '',
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://placeholder:placeholder@localhost:5432/placeholder',
     };
     
-    // [2025-01-29 15:00:00] 打印环境变量信息（不暴露密码）
+    // [2025-01-29 16:30:00] 打印环境变量信息（不暴露密码）
     const dbUrlPreview = process.env.DATABASE_URL 
       ? process.env.DATABASE_URL.substring(0, 20) + '...' 
       : 'NOT SET';
-    console.log('[2025-01-29 15:20:00] 📋 DATABASE_URL preview:', dbUrlPreview);
-    console.log('[2025-01-29 15:20:00] 📋 PRISMA_GENERATE_DATAPROXY:', generateEnv.PRISMA_GENERATE_DATAPROXY);
+    console.log('[2025-01-29 16:30:00] 📋 DATABASE_URL preview:', dbUrlPreview);
     
     execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
       stdio: 'inherit',
       cwd: __dirname,
-      timeout: 120000, // 120秒超时，给 Prisma 更多时间
+      timeout: 60000, // 60秒超时，无 Rust 引擎模式生成更快
       env: generateEnv,
     });
     
-    console.log('[2025-01-29 15:20:00] ✅ Prisma Client generated successfully at runtime.');
+    console.log('[2025-01-29 16:30:00] ✅ Prisma Client generated successfully at runtime (no Rust engine mode).');
   } catch (error) {
     console.error('[2025-01-29 15:20:00] ❌ Failed to generate Prisma Client:', error.message);
     console.error('[2025-01-29 15:20:00]    这会导致数据库操作失败，请检查日志');
