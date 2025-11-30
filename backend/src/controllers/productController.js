@@ -628,12 +628,13 @@ exports.getProducts = async (req, res) => {
           },
           images: {
             select: {
+              id: true,
               url: true,
               alt: true,
               sortOrder: true,
             },
             orderBy: { sortOrder: 'asc' },
-            take: 1,
+            // [2025-01-29 20:00:00] 移除 take: 1 限制，返回所有图片
           },
           variants: {
             select: {
