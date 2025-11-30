@@ -674,6 +674,13 @@ exports.getProducts = async (req, res) => {
               alt: primaryImage.alt || product.name,
             }
           : null,
+        // [2025-01-29 20:05:00] 返回完整的图片数组
+        images: (product.images || []).map((image) => ({
+          id: image.id || null,
+          url: image.url ? (optimizeImageUrl(image.url, req) || image.url) : null,
+          alt: image.alt || product.name,
+          sortOrder: image.sortOrder || 0,
+        })),
         category: product.category
           ? {
               name: product.category.name,
