@@ -4,6 +4,11 @@
 
 generator client {
   provider = "prisma-client-js"
+  // [2025-01-29 15:40:00] 明确指定二进制目标平台，确保生成引擎文件
+  // 为 Cloud Run (Linux amd64) 生成引擎
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  // [2025-01-29 15:00:00] 明确禁用 DataProxy，确保使用标准数据库连接
+  previewFeatures = []
 }
 
 datasource db {
