@@ -17,20 +17,30 @@ COPY prisma ./prisma
 # [2025-11-15 23:07:58] Include server entrypoint for production container
 COPY backend/server.js ./server.js
 
-## [2025-01-29 15:20:00] 在构建时生成 Prisma Client（包含引擎）
+## [2025-01-29 16:10:00] 在构建时生成 Prisma Client（包含引擎）
 ## Prisma Client 生成时只需要 schema 文件，不需要真实的数据库连接
 ## 使用占位符 DATABASE_URL（格式正确即可），运行时将使用真实的 DATABASE_URL（从 Secret Manager）
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
-# [2025-01-29 15:25:00] 明确禁用 DataProxy，确保生成标准引擎
+# [2025-01-29 16:10:00] 明确禁用 DataProxy 和 Accelerate，强制生成二进制引擎
 ENV PRISMA_GENERATE_DATAPROXY="false"
-RUN npx prisma generate --schema=./prisma/schema.prisma && \
-    echo "[2025-01-29 15:20:00] ✅ Prisma Client generated at build time" && \
-    # 验证引擎文件是否存在（可能有多个平台的文件）
-    (ls -lh node_modules/.prisma/client/*.node 2>/dev/null || \
+ENV PRISMA_CLI_GENERATE_DATAPROXY="false"
+ENV PRISMA_ENGINES_MIRROR=""
+ENV PRISMA_SKIP_POSTINSTALL_GENERATE="false"
+ENV PRISMA_GENERATE_SKIP_AUTOINSTALL="false"
+# [2025-01-29 16:10:00] 强制使用二进制引擎（不是 DataProxy）
+RUN PRISMA_GENERATE_DATAPROXY="false" \
+    PRISMA_CLI_GENERATE_DATAPROXY="false" \
+    npx prisma generate --schema=./prisma/schema.prisma && \
+    echo "[2025-01-29 16:10:00] ✅ Prisma Client generated at build time" && \
+    echo "[2025-01-29 16:10:00] 📋 Checking for engine files..." && \
+    # 检查所有可能的引擎文件位置
+    (ls -lh node_modules/.prisma/client/libquery_engine* 2>/dev/null || \
      ls -lh node_modules/.prisma/client/query-engine* 2>/dev/null || \
-     echo "[2025-01-29 15:20:00] ⚠️  Warning: Engine file not found in expected location") && \
-    echo "[2025-01-29 15:20:00] 📋 Generated files:" && \
-    ls -lh node_modules/.prisma/client/ | head -10
+     ls -lh node_modules/.prisma/client/*.node 2>/dev/null || \
+     find node_modules/.prisma/client -name "*engine*" -type f 2>/dev/null || \
+     echo "[2025-01-29 16:10:00] ⚠️  Warning: Engine file not found") && \
+    echo "[2025-01-29 16:10:00] 📋 Generated files in .prisma/client:" && \
+    ls -lh node_modules/.prisma/client/ | head -15
 
 ## Expose server port [2025-11-10 13:45:00]
 ## [2025-01-27] Cloud Run uses PORT environment variable, default to 8080

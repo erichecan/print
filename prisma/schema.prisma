@@ -4,10 +4,12 @@
 
 generator client {
   provider = "prisma-client-js"
-  // [2025-01-29 15:40:00] 明确指定二进制目标平台，确保生成引擎文件
-  // 为 Cloud Run (Linux amd64) 生成引擎
+  // [2025-01-29 16:10:00] 明确指定二进制目标平台，确保生成引擎文件
+  // 为 Cloud Run (Linux amd64 Debian) 生成引擎
+  // native 表示当前构建平台，debian-openssl-3.0.x 是 Cloud Run 的运行环境
   binaryTargets = ["native", "debian-openssl-3.0.x"]
-  // [2025-01-29 15:00:00] 明确禁用 DataProxy，确保使用标准数据库连接
+  // [2025-01-29 16:10:00] 明确禁用 DataProxy，确保使用标准数据库连接（二进制引擎）
+  // 不设置 previewFeatures，使用默认的二进制引擎
   previewFeatures = []
 }
 

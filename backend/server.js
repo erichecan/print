@@ -69,17 +69,20 @@ const ensurePrismaClient = () => {
     // [2025-01-29 23:00:00] 运行时生成 Prisma Client（后备方案）
     console.log('[2025-01-29 15:20:00] 📦 Generating Prisma Client at runtime...');
     
-    // [2025-01-29 15:00:00] 确保环境变量正确传递，明确禁用 DataProxy 并确保生成引擎
-    // [2025-01-29 15:00:00] 关键：需要明确设置环境变量，确保 Prisma Client 生成时包含数据库引擎
+    // [2025-01-29 16:10:00] 确保环境变量正确传递，明确禁用 DataProxy 并强制生成二进制引擎
+    // [2025-01-29 16:10:00] 关键：需要明确设置环境变量，确保 Prisma Client 生成时包含数据库引擎
     const generateEnv = {
       ...process.env,
-      // [2025-01-29 15:00:00] 明确禁用 DataProxy（避免使用 prisma:// 协议）
+      // [2025-01-29 16:10:00] 明确禁用 DataProxy 和 Accelerate（避免使用 prisma:// 协议）
       PRISMA_GENERATE_DATAPROXY: 'false',
       PRISMA_CLI_GENERATE_DATAPROXY: 'false',
-      // [2025-01-29 15:00:00] 确保 DATABASE_URL 被传递到生成过程中
+      // [2025-01-29 16:10:00] 确保 DATABASE_URL 被传递到生成过程中（使用真实的 PostgreSQL URL）
       DATABASE_URL: process.env.DATABASE_URL,
-      // [2025-01-29 15:00:00] 确保生成时包含引擎（不是 engine=none）
+      // [2025-01-29 16:10:00] 强制生成引擎（不是 engine=none）
       PRISMA_GENERATE_SKIP_AUTOINSTALL: 'false',
+      PRISMA_SKIP_POSTINSTALL_GENERATE: 'false',
+      // [2025-01-29 16:10:00] 确保不跳过引擎下载
+      PRISMA_ENGINES_MIRROR: '',
     };
     
     // [2025-01-29 15:00:00] 打印环境变量信息（不暴露密码）
