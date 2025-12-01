@@ -46,6 +46,46 @@ const FIXED_COLOR_LIST = [
   { name: 'Tie-Dye', hex: '#FF00FF', pattern: true },
 ];
 
+// [2025-01-29 23:55:00] 递归获取分类及其所有子分类的 ID
+async function getCategoryIdsIncludingChildren(categorySlug) {
+  const category = await prisma.category.findUnique({
+    where: { slug: categorySlug },
+    include: {
+      children: {
+        where: { isActive: true },
+        include: {
+          children: {
+            where: { isActive: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!category) {
+    return [];
+  }
+
+  // 收集所有分类 ID（包括自身和所有子分类）
+  const categoryIds = [category.id];
+
+  // 递归收集子分类 ID
+  function collectChildIds(categories) {
+    for (const child of categories) {
+      categoryIds.push(child.id);
+      if (child.children && child.children.length > 0) {
+        collectChildIds(child.children);
+      }
+    }
+  }
+
+  if (category.children && category.children.length > 0) {
+    collectChildIds(category.children);
+  }
+
+  return categoryIds;
+}
+
 // [2025-01-28 19:50:00] 固定的 Rush Delivery 选项列表（参考 Custom Ink 网站）
 const FIXED_RUSH_DELIVERY_OPTIONS = [
   { name: '3 days', label: 'Super Rush' },
@@ -512,13 +552,23 @@ exports.getProducts = async (req, res) => {
     }
 
     // [2025-01-28 23:15:00] Filter by category (slug)
+    // [2025-01-29 23:55:00] 修改为包含所有子分类的商品
     if (categorySlug) {
-      andConditions.push({
-        category: {
-          slug: categorySlug,
-          isActive: true,
-        },
-      });
+      const categoryIds = await getCategoryIdsIncludingChildren(categorySlug);
+      if (categoryIds.length > 0) {
+        andConditions.push({
+          categoryId: {
+            in: categoryIds,
+          },
+        });
+      } else {
+        // 如果分类不存在，返回空结果
+        andConditions.push({
+          categoryId: {
+            in: [],
+          },
+        });
+      }
     }
 
     // [2025-01-28 23:15:00] Filter by brand

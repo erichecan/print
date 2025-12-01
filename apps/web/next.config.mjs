@@ -25,7 +25,11 @@ const remotePatterns = [
     port: '',
     pathname: '/**',
   },
+<<<<<<< HEAD
   // [2025-12-01 22:20:00] 允许 GCP Cloud Storage 图片域名
+=======
+  // [2025-01-29 23:55:00] 允许 GCP Cloud Storage 图片域名
+>>>>>>> 617e7fa5fc063b61000d760e4fd6a823f74a0bc2
   {
     protocol: 'https',
     hostname: 'storage.googleapis.com',
@@ -67,10 +71,11 @@ const nextConfig = {
   // [2025-01-27 12:00:00] 配置图片优化（静态导出模式下需要）
   images: {
     // [2025-01-29 23:30:00] 在 Cloud Run 上禁用图片优化器，避免静态资源 400 错误
+    // [2025-01-29 23:55:00] 对于 GCS 图片，由于已经配置了 remotePatterns，可以启用优化
+    // 但在 Cloud Run 上，由于静态资源路径问题，仍然禁用优化
     unoptimized:
       process.env.NETLIFY === 'true' ||
       process.env.NEXT_IMAGE_UNOPTIMIZED === 'true' ||
-      process.env.NODE_ENV !== 'production' ||
       process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
     formats: ['image/avif', 'image/webp'], // [2025-01-27 14:20:00] 支持现代图片格式
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // [2025-01-27 14:20:00] 响应式图片尺寸
