@@ -7,6 +7,7 @@
  * 如果不提供路径，将从 all-products.json 导入所有商品
  */
 
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { PrismaClient } = require('@prisma/client');
 const fs = require('fs');
 const path = require('path');
