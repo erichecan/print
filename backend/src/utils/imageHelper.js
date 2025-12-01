@@ -37,17 +37,24 @@ function normalizeImageUrl(url, req = null) {
     }
   }
 
-  // [2025-01-27 16:15:00] 如果已经是完整URL（http:// 或 https://），直接返回
+  // [2025-12-01 22:15:00] 如果已经是完整的 URL（http:// 或 https://），检查是否是 GCS URL
+  // 如果是 GCS URL，直接返回（无需转换）
   if (url.startsWith('http://') || url.startsWith('https://')) {
+    // [2025-12-01 22:15:00] GCS URL 直接返回，无需处理
+    if (url.includes('storage.googleapis.com') || url.includes('.storage.googleapis.com')) {
+      return url;
+    }
     return url;
   }
 
-  // [2025-01-28 23:05:00] 对于前端静态资源路径（/assets/），保持相对路径或使用前端服务 URL
-  // 这些文件存储在前端服务的 public 目录，应该从前端服务访问
+  // [2025-12-01 22:15:00] 对于前端静态资源路径（/assets/），优先检查是否已迁移到 GCS
+  // 如果已迁移，数据库中的 URL 应该已经是完整的 GCS URL，这里保持原样
   if (url.startsWith('/assets/')) {
+    // [2025-12-01 22:15:00] 如果配置了 GCS，且 URL 可能是旧的静态资源路径，可以考虑映射
+    // 但迁移后数据库中应该已经是 GCS URL，所以这里保持向后兼容
     const isProduction = process.env.NODE_ENV === 'production';
     
-    // 生产环境：使用前端服务 URL
+    // 生产环境：使用前端服务 URL（向后兼容，迁移后应该不需要）
     if (isProduction) {
       const frontendUrl = process.env.FRONTEND_URL;
       if (frontendUrl) {
@@ -124,7 +131,8 @@ function optimizeImageUrl(url, options = {}) {
       lowerUrl.includes('cloudflare') ||
       lowerUrl.includes('imgix') ||
       lowerUrl.includes('akamai') ||
-      lowerUrl.includes('fastly');
+      lowerUrl.includes('fastly') ||
+      lowerUrl.includes('storage.googleapis.com'); // [2025-12-01 22:15:00] 支持 GCS
 
     // [2025-01-27 16:15:00] 如果不是CDN URL，直接返回规范化后的URL（不进行优化）
     if (!isCdnUrl) {

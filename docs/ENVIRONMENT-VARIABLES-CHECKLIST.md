@@ -43,6 +43,13 @@ FRONTEND_URL=https://print-main-frontend-234065158862.us-central1.run.app
 
 # CORS 允许的源（多个用逗号分隔）
 CORS_ORIGINS=https://print-main-frontend-234065158862.us-central1.run.app
+
+# [2025-12-01 22:00:00] GCP Cloud Storage 图片 Bucket（统一存放所有站点图片）
+GCP_IMAGE_BUCKET=print-main-product-images
+
+# [2025-12-01 22:00:00] GCP Cloud Storage 图片基础 URL（可使用 storage.googleapis.com 或自定义域）
+# 默认值等价于：https://storage.googleapis.com/print-main-product-images
+GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-main-product-images
 ```
 
 #### 4. Stripe 支付配置（Payment）
@@ -308,5 +315,5 @@ npm run db:migrate
 
 ---
 
-**最后更新：** 2025-01-29 12:30:00
+**最后更新：** 2025-12-01 22:00:00
 

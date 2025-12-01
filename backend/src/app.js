@@ -61,7 +61,20 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Cookie'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With', 
+    'Cookie',
+    'x-playwright-e2e', // [2025-12-01] 允许 Playwright 测试头
+    'Accept',
+    'Origin',
+    'Referer',
+    'User-Agent',
+    'X-Requested-With',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
+  ],
   exposedHeaders: ['Content-Range', 'X-Content-Range', 'Set-Cookie'],
   preflightContinue: false,
 };

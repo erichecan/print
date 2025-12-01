@@ -4,9 +4,9 @@
  */
 import { defineConfig, devices } from '@playwright/test';
 
-// [2025-11-28 11:20:00] 更新为最新的线上 URL
-const FRONTEND_URL = process.env.BASE_URL || 'https://print-main-frontend-hsbqzlnkxa-uc.a.run.app';
-const BACKEND_URL = process.env.API_BASE_URL || 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app';
+// [2025-12-01] 更新为最新的线上 URL
+const FRONTEND_URL = process.env.BASE_URL || 'https://print-main-frontend-234065158862.us-central1.run.app';
+const BACKEND_URL = process.env.API_BASE_URL || 'https://print-main-backend-234065158862.us-central1.run.app';
 
 export default defineConfig({
   testDir: './tests/e2e',

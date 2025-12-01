@@ -25,6 +25,13 @@ const remotePatterns = [
     port: '',
     pathname: '/**',
   },
+  // [2025-12-01 22:20:00] 允许 GCP Cloud Storage 图片域名
+  {
+    protocol: 'https',
+    hostname: 'storage.googleapis.com',
+    port: '',
+    pathname: '/**',
+  },
 ];
 
 // [2025-11-15 23:09:50] Allow image optimizer to proxy the configured API host

@@ -1,0 +1,554 @@
+{
+  "config": {
+    "configFile": "/Users/apony-it/Downloads/print-main/apps/web/playwright.gcp.config.ts",
+    "rootDir": "/Users/apony-it/Downloads/print-main/apps/web/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "test-results/html-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/apony-it/Downloads/print-main/apps/web/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/apony-it/Downloads/print-main/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "gcp-production-deep-analysis.spec.ts",
+      "file": "gcp-production-deep-analysis.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "GCP 生产环境深度功能分析",
+          "file": "gcp-production-deep-analysis.spec.ts",
+          "line": 48,
+          "column": 6,
+          "specs": [
+            {
+              "title": "分析：访问首页并加载产品列表",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5486,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n[首页加载和产品列表] 开始测试...\n"
+                        },
+                        {
+                          "text": "访问 https://print-main-frontend-234065158862.us-central1.run.app\n"
+                        },
+                        {
+                          "text": "找到 3 个产品卡片\n"
+                        },
+                        {
+                          "text": "API 请求数量: 2\n"
+                        },
+                        {
+                          "text": "  GET https://print-main-backend-234065158862.us-central1.run.app/api/content - Status: N/A\n"
+                        },
+                        {
+                          "text": "  GET https://print-main-backend-234065158862.us-central1.run.app/api/content - Status: N/A\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-01T18:52:09.147Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b6ce9f9809d4daf54910-d74250580b46b23e304a",
+              "file": "gcp-production-deep-analysis.spec.ts",
+              "line": 158,
+              "column": 7
+            },
+            {
+              "title": "分析：购物车功能 - 添加商品到购物车",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4388,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n[购物车 - 添加商品] 开始测试...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-01T18:52:15.357Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b6ce9f9809d4daf54910-206c7b9e30851d210fbb",
+              "file": "gcp-production-deep-analysis.spec.ts",
+              "line": 240,
+              "column": 7
+            },
+            {
+              "title": "分析：Buy Now 功能",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4145,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n[Buy Now - 立即购买] 开始测试...\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-01T18:52:19.755Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b6ce9f9809d4daf54910-d5c17e8d0b1cfcfb5855",
+              "file": "gcp-production-deep-analysis.spec.ts",
+              "line": 430,
+              "column": 7
+            },
+            {
+              "title": "分析：支付流程 - 结账页和支付表单",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 11550,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n[支付流程 - 结账页] 开始测试...\n"
+                        },
+                        {
+                          "text": "访问结账页: https://print-main-frontend-234065158862.us-central1.run.app/checkout\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-01T18:52:23.910Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b6ce9f9809d4daf54910-d81d5cf6434a1159b9bb",
+              "file": "gcp-production-deep-analysis.spec.ts",
+              "line": 595,
+              "column": 7
+            },
+            {
+              "title": "生成分析报告",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n================================================================================\n"
+                        },
+                        {
+                          "text": "GCP 生产环境功能分析报告\n"
+                        },
+                        {
+                          "text": "================================================================================\n"
+                        },
+                        {
+                          "text": "\n1. 首页加载和产品列表\n"
+                        },
+                        {
+                          "text": "   状态: ❌ 失败\n"
+                        },
+                        {
+                          "text": "   错误 (2):\n"
+                        },
+                        {
+                          "text": "     - 页面发现 1 个错误元素\n"
+                        },
+                        {
+                          "text": "     - 请求错误: https://print-main-backend-234065158862.us-central1.run.app/api/content - net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "   API 请求: 2\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/content - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/content - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "   控制台错误 (9):\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/content' from or\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/categories' from\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: the server responded with a status of 401 ()\n"
+                        },
+                        {
+                          "text": "\n2. 购物车 - 添加商品\n"
+                        },
+                        {
+                          "text": "   状态: ❌ 失败\n"
+                        },
+                        {
+                          "text": "   错误 (2):\n"
+                        },
+                        {
+                          "text": "     - 未找到产品链接\n"
+                        },
+                        {
+                          "text": "     - 测试异常: 无法找到产品链接\n"
+                        },
+                        {
+                          "text": "   API 请求: 4\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "   控制台错误 (21):\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/content' from or\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/categories' from\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: the server responded with a status of 401 ()\n"
+                        },
+                        {
+                          "text": "\n3. Buy Now - 立即购买\n"
+                        },
+                        {
+                          "text": "   状态: ❌ 失败\n"
+                        },
+                        {
+                          "text": "   错误 (2):\n"
+                        },
+                        {
+                          "text": "     - 未找到产品链接\n"
+                        },
+                        {
+                          "text": "     - 测试异常: 无法找到产品链接\n"
+                        },
+                        {
+                          "text": "   API 请求: 6\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "   控制台错误 (29):\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/content' from or\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/categories' from\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: the server responded with a status of 401 ()\n"
+                        },
+                        {
+                          "text": "\n4. 支付流程 - 结账页\n"
+                        },
+                        {
+                          "text": "   状态: ❌ 失败\n"
+                        },
+                        {
+                          "text": "   错误 (1):\n"
+                        },
+                        {
+                          "text": "     - 购物车为空: Cart is empty\n"
+                        },
+                        {
+                          "text": "   API 请求: 10\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "     GET https://print-main-backend-234065158862.us-central1.run.app/api/cart - Pending/Failed\n"
+                        },
+                        {
+                          "text": "       错误: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "   控制台错误 (53):\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/content' from or\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Access to fetch at 'https://print-main-backend-234065158862.us-central1.run.app/api/categories' from\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: net::ERR_FAILED\n"
+                        },
+                        {
+                          "text": "     - Failed to load resource: the server responded with a status of 401 ()\n"
+                        },
+                        {
+                          "text": "\n================================================================================\n"
+                        },
+                        {
+                          "text": "\n详细报告已保存到: test-results/gcp-production-analysis-report.json\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-01T18:52:35.472Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b6ce9f9809d4daf54910-f401def3e9badee4f136",
+              "file": "gcp-production-deep-analysis.spec.ts",
+              "line": 811,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-01T18:52:08.721Z",
+    "duration": 47340.973,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
