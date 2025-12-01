@@ -77,7 +77,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://print-main-frontend-234065158862.us-central1.run.app'
+      - 'NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://print-main-frontend-234065158862.us-central1.run.app,GCP_IMAGE_BUCKET=print-main-product-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-main-product-images'
       - '--memory'
       - '512Mi'
       - '--cpu'
