@@ -25,11 +25,7 @@ const remotePatterns = [
     port: '',
     pathname: '/**',
   },
-<<<<<<< HEAD
   // [2025-12-01 22:20:00] 允许 GCP Cloud Storage 图片域名
-=======
-  // [2025-01-29 23:55:00] 允许 GCP Cloud Storage 图片域名
->>>>>>> 617e7fa5fc063b61000d760e4fd6a823f74a0bc2
   {
     protocol: 'https',
     hostname: 'storage.googleapis.com',
@@ -140,5 +136,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-
-
