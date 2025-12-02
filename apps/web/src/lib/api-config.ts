@@ -18,13 +18,23 @@ function getApiBaseUrl(): string {
 
   const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // [2025-01-29 12:30:00] 浏览器环境：根据当前域名决定 API 地址
+  // [2025-12-01 12:45:00] 浏览器环境：根据当前域名决定 API 地址
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
     // 开发环境且是 localhost，直接指向后端服务器
     if (isLocalhost && isDevelopment) {
       return 'http://localhost:3001/api';
+    }
+    
+    // [2025-12-01 12:45:00] Cloud Run 生产环境兜底：如果检测到是 print-main-frontend 域名，强制使用后端 API
+    // 这是为了解决 Cloud Run 上 NEXT_PUBLIC_API_URL 可能未正确配置的问题
+    const hostname = window.location.hostname;
+    if (hostname.includes('print-main-frontend-234065158862') && hostname.endsWith('.us-central1.run.app')) {
+      // 强制使用后端 API 地址，避免前端请求自己的 /api 导致 404
+      const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
+      console.warn('[API Config] ⚠️ 检测到 Cloud Run 前端环境，但 NEXT_PUBLIC_API_URL 未配置，使用硬编码后端地址:', backendApiUrl);
+      return backendApiUrl;
     }
     
     // 生产环境或其他情况，使用同源 URL（避免硬编码 localhost）
