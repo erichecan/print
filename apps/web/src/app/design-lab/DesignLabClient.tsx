@@ -784,6 +784,65 @@ const DesignLabClient = () => {
     [sendToBack, updateLayersFromCanvas, handleCanvasChange]
   );
 
+  // [2025-12-02 执行 Custom Ink Plan] Center object to canvas
+  const handleCenterObject = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    const activeObj = fabricCanvasRef.current.getActiveObject();
+    if (!activeObj) return;
+
+    const canvas = fabricCanvasRef.current;
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+
+    // Center the object
+    activeObj.set({
+      left: canvasWidth / 2,
+      top: canvasHeight / 2,
+      originX: 'center',
+      originY: 'center',
+    });
+
+    canvas.renderAll();
+    handleCanvasChange();
+    updateLayersFromCanvas();
+  }, [handleCanvasChange, updateLayersFromCanvas]);
+
+  // [2025-12-02 执行 Custom Ink Plan] Bring active object to front
+  const handleBringActiveToFront = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    const activeObj = fabricCanvasRef.current.getActiveObject();
+    if (!activeObj || !activeObj.id) return;
+
+    fabricCanvasRef.current.bringToFront(activeObj);
+    fabricCanvasRef.current.renderAll();
+    bringToFront(activeObj.id);
+    updateLayersFromCanvas();
+    handleCanvasChange();
+  }, [bringToFront, updateLayersFromCanvas, handleCanvasChange]);
+
+  // [2025-12-02 执行 Custom Ink Plan] Send active object to back
+  const handleSendActiveToBack = useCallback(() => {
+    if (!fabricCanvasRef.current) return;
+    const activeObj = fabricCanvasRef.current.getActiveObject();
+    if (!activeObj || !activeObj.id) return;
+
+    fabricCanvasRef.current.sendToBack(activeObj);
+    fabricCanvasRef.current.renderAll();
+    sendToBack(activeObj.id);
+    updateLayersFromCanvas();
+    handleCanvasChange();
+  }, [sendToBack, updateLayersFromCanvas, handleCanvasChange]);
+
+  // [2025-12-02 执行 Custom Ink Plan] Convert pixels to inches (assuming 150 DPI)
+  const pixelsToInches = useCallback((pixels: number, dpi: number = 150): number => {
+    return pixels / dpi;
+  }, []);
+
+  // [2025-12-02 执行 Custom Ink Plan] Convert inches to pixels
+  const inchesToPixels = useCallback((inches: number, dpi: number = 150): number => {
+    return inches * dpi;
+  }, []);
+
   // [2025-01-27 15:50:00] Advanced text tools handlers
   const handleTextFontSizeChange = useCallback(
     (fontSize: number) => {
@@ -3676,6 +3735,127 @@ const DesignLabClient = () => {
                       </div>
                     </div>
 
+                    {/* 文字形状 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Text Shape</label>
+                      <button
+                        type="button"
+                        className="dl-edit-field__button"
+                        onClick={async () => {
+                          if (!selectedTextObject || !fabricCanvasRef.current) return;
+                          const fabric = await ensureFabric();
+                          // 创建弧形路径
+                          const width = selectedTextObject.width || 200;
+                          const height = 50;
+                          const path = `M 0 ${height} Q ${width / 2} 0 ${width} ${height}`;
+                          const pathObject = new fabric.Path(path, {
+                            fill: '',
+                            stroke: '',
+                            strokeWidth: 0,
+                            visible: false,
+                          });
+                          // 将文字转换为路径文字（简化实现）
+                          // 实际实现需要更复杂的逻辑
+                          alert('Text shape feature: This will convert text to follow a path. Advanced implementation required.');
+                        }}
+                      >
+                        select shape ›
+                      </button>
+                    </div>
+
+                    {/* 文字大小 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Text Size</label>
+                      <input
+                        type="number"
+                        className="dl-edit-field__input"
+                        value={selectedTextObject?.fontSize || 28}
+                        onChange={(e) => handleTextSizeChange(Number(e.target.value))}
+                      />
+                    </div>
+
+                    {/* [2025-12-02 执行 Custom Ink Plan] 底部操作区域 */}
+                    {/* Center */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Center</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={handleCenterObject}
+                        title="Center object to canvas"
+                      >
+                        Center
+                      </button>
+                    </div>
+
+                    {/* Layering */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Layering</label>
+                      <div className="dl-edit-actions">
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={handleBringActiveToFront}
+                          title="Bring to Front"
+                        >
+                          ↑ Front
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={handleSendActiveToBack}
+                          title="Send to Back"
+                        >
+                          ↓ Back
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Text Alignment */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Text Alignment</label>
+                      <div className="dl-edit-actions">
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={() => handleTextAlign('left')}
+                          title="Left Align"
+                        >
+                          ⬅
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={() => handleTextAlign('center')}
+                          title="Center Align"
+                        >
+                          ⚬
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={() => handleTextAlign('right')}
+                          title="Right Align"
+                        >
+                          ➡
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Duplicate */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Duplicate</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={handleDuplicateObject}
+                        title="Duplicate (Ctrl+D)"
+                      >
+                        Duplicate
+                      </button>
+                    </div>
+
+                    {/* 其他高级功能（可选） */}
                     {/* 字间距 */}
                     <div className="dl-edit-field">
                       <label className="dl-edit-field__label">Character Spacing</label>
@@ -3746,45 +3926,6 @@ const DesignLabClient = () => {
                       </div>
                     </div>
 
-                    {/* 文字形状 */}
-                    <div className="dl-edit-field">
-                      <label className="dl-edit-field__label">Text Shape</label>
-                      <button
-                        type="button"
-                        className="dl-edit-field__button"
-                        onClick={async () => {
-                          if (!selectedTextObject || !fabricCanvasRef.current) return;
-                          const fabric = await ensureFabric();
-                          // 创建弧形路径
-                          const width = selectedTextObject.width || 200;
-                          const height = 50;
-                          const path = `M 0 ${height} Q ${width / 2} 0 ${width} ${height}`;
-                          const pathObject = new fabric.Path(path, {
-                            fill: '',
-                            stroke: '',
-                            strokeWidth: 0,
-                            visible: false,
-                          });
-                          // 将文字转换为路径文字（简化实现）
-                          // 实际实现需要更复杂的逻辑
-                          alert('Text shape feature: This will convert text to follow a path. Advanced implementation required.');
-                        }}
-                      >
-                        select shape ›
-                      </button>
-                    </div>
-
-                    {/* 文字大小 */}
-                    <div className="dl-edit-field">
-                      <label className="dl-edit-field__label">Text Size</label>
-                      <input
-                        type="number"
-                        className="dl-edit-field__input"
-                        value={selectedTextObject?.fontSize || 28}
-                        onChange={(e) => handleTextSizeChange(Number(e.target.value))}
-                      />
-                    </div>
-
                     {/* 精确位置控制 */}
                     <div className="dl-edit-field">
                       <label className="dl-edit-field__label">Position</label>
@@ -3817,73 +3958,11 @@ const DesignLabClient = () => {
                             }}
                           />
                         </div>
-                        <div className="dl-edit-position__row">
-                          <label className="dl-edit-position__label">W:</label>
-                          <input
-                            type="number"
-                            className="dl-edit-position__input"
-                            value={Math.round((selectedTextObject?.width || 0) * (selectedTextObject?.scaleX || 1))}
-                            onChange={(e) => {
-                              if (selectedTextObject) {
-                                const newScale = Number(e.target.value) / (selectedTextObject.width || 1);
-                                selectedTextObject.set('scaleX', newScale);
-                                fabricCanvasRef.current?.renderAll();
-                                handleCanvasChange();
-                              }
-                            }}
-                          />
-                          <label className="dl-edit-position__label">H:</label>
-                          <input
-                            type="number"
-                            className="dl-edit-position__input"
-                            value={Math.round((selectedTextObject?.height || 0) * (selectedTextObject?.scaleY || 1))}
-                            onChange={(e) => {
-                              if (selectedTextObject) {
-                                const newScale = Number(e.target.value) / (selectedTextObject.height || 1);
-                                selectedTextObject.set('scaleY', newScale);
-                                fabricCanvasRef.current?.renderAll();
-                                handleCanvasChange();
-                              }
-                            }}
-                          />
-                        </div>
                       </div>
                     </div>
 
-                    {/* 格式化按钮 */}
+                    {/* 操作按钮 */}
                     <div className="dl-edit-actions">
-                      <button
-                        type="button"
-                        className="dl-edit-action-btn"
-                        onClick={() => handleTextAlign('left')}
-                        title="Left Align"
-                      >
-                        ⬅
-                      </button>
-                      <button
-                        type="button"
-                        className="dl-edit-action-btn"
-                        onClick={() => handleTextAlign('center')}
-                        title="Center Align"
-                      >
-                        ⚬
-                      </button>
-                      <button
-                        type="button"
-                        className="dl-edit-action-btn"
-                        onClick={() => handleTextAlign('right')}
-                        title="Right Align"
-                      >
-                        ➡
-                      </button>
-                      <button
-                        type="button"
-                        className="dl-edit-action-btn"
-                        onClick={handleDuplicateObject}
-                        title="Duplicate (Ctrl+D)"
-                      >
-                        📋
-                      </button>
                       <button
                         type="button"
                         className="dl-edit-action-btn dl-edit-action-btn--danger"
@@ -3899,7 +3978,7 @@ const DesignLabClient = () => {
                 {selectedImageObject && (
                   <div className="dl-edit-panel__content">
                     <div className="dl-edit-panel__header">
-                      <h3 className="dl-edit-panel__title">Edit Image</h3>
+                      <h3 className="dl-edit-panel__title">Edit Upload</h3>
                       <button
                         type="button"
                         className="dl-edit-panel__close"
@@ -3915,114 +3994,89 @@ const DesignLabClient = () => {
                       </button>
                     </div>
 
-                    {/* 透明度 */}
+                    {/* [2025-12-02 执行 Custom Ink Plan] Edit Upload 面板 - 按 Custom Ink 顺序排列 */}
+                    {/* 1. Size (宽×高，单位 in) */}
                     <div className="dl-edit-field">
-                      <label className="dl-edit-field__label">Opacity</label>
-                      <div className="dl-edit-slider">
-                        <input
-                          type="range"
-                          className="dl-edit-slider__input"
-                          min="0"
-                          max="100"
-                          value={(selectedImageObject?.opacity || 1) * 100}
-                          onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
-                        />
-                        <input
-                          type="number"
-                          className="dl-edit-slider__value"
-                          value={Math.round((selectedImageObject?.opacity || 1) * 100)}
-                          onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
-                        />
-                      </div>
-                    </div>
-
-                    {/* 旋转 */}
-                    <div className="dl-edit-field">
-                      <label className="dl-edit-field__label">Rotation</label>
-                      <div className="dl-edit-slider">
-                        <input
-                          type="range"
-                          className="dl-edit-slider__input"
-                          min="0"
-                          max="360"
-                          value={selectedImageObject?.angle || 0}
-                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
-                        />
-                        <input
-                          type="number"
-                          className="dl-edit-slider__value"
-                          value={selectedImageObject?.angle || 0}
-                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
-                        />
-                      </div>
-                    </div>
-
-                    {/* 精确位置控制 */}
-                    <div className="dl-edit-field">
-                      <label className="dl-edit-field__label">Position</label>
+                      <label className="dl-edit-field__label">Size</label>
                       <div className="dl-edit-position">
-                        <div className="dl-edit-position__row">
-                          <label className="dl-edit-position__label">X:</label>
-                          <input
-                            type="number"
-                            className="dl-edit-position__input"
-                            value={Math.round(selectedImageObject?.left || 0)}
-                            onChange={(e) => {
-                              if (selectedImageObject) {
-                                selectedImageObject.set('left', Number(e.target.value));
-                                fabricCanvasRef.current?.renderAll();
-                                handleCanvasChange();
-                              }
-                            }}
-                          />
-                          <label className="dl-edit-position__label">Y:</label>
-                          <input
-                            type="number"
-                            className="dl-edit-position__input"
-                            value={Math.round(selectedImageObject?.top || 0)}
-                            onChange={(e) => {
-                              if (selectedImageObject) {
-                                selectedImageObject.set('top', Number(e.target.value));
-                                fabricCanvasRef.current?.renderAll();
-                                handleCanvasChange();
-                              }
-                            }}
-                          />
-                        </div>
                         <div className="dl-edit-position__row">
                           <label className="dl-edit-position__label">W:</label>
                           <input
                             type="number"
+                            step="0.01"
                             className="dl-edit-position__input"
-                            value={Math.round((selectedImageObject?.width || 0) * (selectedImageObject?.scaleX || 1))}
+                            value={pixelsToInches((selectedImageObject?.width || 0) * (selectedImageObject?.scaleX || 1)).toFixed(2)}
                             onChange={(e) => {
                               if (selectedImageObject) {
-                                const newScale = Number(e.target.value) / (selectedImageObject.width || 1);
+                                const inches = Number(e.target.value);
+                                const pixels = inchesToPixels(inches);
+                                const newScale = pixels / (selectedImageObject.width || 1);
                                 selectedImageObject.set('scaleX', newScale);
                                 fabricCanvasRef.current?.renderAll();
                                 handleCanvasChange();
                               }
                             }}
                           />
+                          <span className="dl-edit-position__unit">in</span>
                           <label className="dl-edit-position__label">H:</label>
                           <input
                             type="number"
+                            step="0.01"
                             className="dl-edit-position__input"
-                            value={Math.round((selectedImageObject?.height || 0) * (selectedImageObject?.scaleY || 1))}
+                            value={pixelsToInches((selectedImageObject?.height || 0) * (selectedImageObject?.scaleY || 1)).toFixed(2)}
                             onChange={(e) => {
                               if (selectedImageObject) {
-                                const newScale = Number(e.target.value) / (selectedImageObject.height || 1);
+                                const inches = Number(e.target.value);
+                                const pixels = inchesToPixels(inches);
+                                const newScale = pixels / (selectedImageObject.height || 1);
                                 selectedImageObject.set('scaleY', newScale);
                                 fabricCanvasRef.current?.renderAll();
                                 handleCanvasChange();
                               }
                             }}
                           />
+                          <span className="dl-edit-position__unit">in</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* 翻转 */}
+                    {/* 2. Center */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Center</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={handleCenterObject}
+                        title="Center object to canvas"
+                      >
+                        Center
+                      </button>
+                    </div>
+
+                    {/* 3. Layering */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Layering</label>
+                      <div className="dl-edit-actions">
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={handleBringActiveToFront}
+                          title="Bring to Front"
+                        >
+                          ↑ Front
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={handleSendActiveToBack}
+                          title="Send to Back"
+                        >
+                          ↓ Back
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 4. Flip */}
                     <div className="dl-edit-field">
                       <label className="dl-edit-field__label">Flip</label>
                       <div className="dl-edit-actions">
@@ -4057,85 +4111,25 @@ const DesignLabClient = () => {
                       </div>
                     </div>
 
-                    {/* 滤镜 */}
+                    {/* 5. Duplicate */}
                     <div className="dl-edit-field">
-                      <label className="dl-edit-field__label">Filters</label>
-                      <div className="dl-edit-filters">
-                        <button
-                          type="button"
-                          className="dl-edit-filter-btn"
-                          onClick={async () => {
-                            if (!selectedImageObject) return;
-                            const fabric = await ensureFabric();
-                            selectedImageObject.filters = selectedImageObject.filters || [];
-                            const brightness = new fabric.filters.Brightness({ brightness: 0.1 });
-                            selectedImageObject.filters.push(brightness);
-                            selectedImageObject.applyFilters();
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }}
-                          title="Brightness"
-                        >
-                          ☀️ Brightness
-                        </button>
-                        <button
-                          type="button"
-                          className="dl-edit-filter-btn"
-                          onClick={async () => {
-                            if (!selectedImageObject) return;
-                            const fabric = await ensureFabric();
-                            selectedImageObject.filters = selectedImageObject.filters || [];
-                            const contrast = new fabric.filters.Contrast({ contrast: 0.1 });
-                            selectedImageObject.filters.push(contrast);
-                            selectedImageObject.applyFilters();
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }}
-                          title="Contrast"
-                        >
-                          🎨 Contrast
-                        </button>
-                        <button
-                          type="button"
-                          className="dl-edit-filter-btn"
-                          onClick={async () => {
-                            if (!selectedImageObject) return;
-                            const fabric = await ensureFabric();
-                            selectedImageObject.filters = selectedImageObject.filters || [];
-                            const saturation = new fabric.filters.Saturation({ saturation: 0.1 });
-                            selectedImageObject.filters.push(saturation);
-                            selectedImageObject.applyFilters();
-                            fabricCanvasRef.current?.renderAll();
-                            handleCanvasChange();
-                          }}
-                          title="Saturation"
-                        >
-                          🌈 Saturation
-                        </button>
-                        <button
-                          type="button"
-                          className="dl-edit-filter-btn"
-                          onClick={() => {
-                            if (selectedImageObject) {
-                              selectedImageObject.filters = [];
-                              selectedImageObject.applyFilters();
-                              fabricCanvasRef.current?.renderAll();
-                              handleCanvasChange();
-                            }
-                          }}
-                          title="Remove Filters"
-                        >
-                          ✕ Remove Filters
-                        </button>
-                      </div>
+                      <label className="dl-edit-field__label">Duplicate</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={handleDuplicateObject}
+                        title="Duplicate (Ctrl+D)"
+                      >
+                        Duplicate
+                      </button>
                     </div>
 
-                    {/* 裁剪 */}
+                    {/* 6. Crop */}
                     <div className="dl-edit-field">
                       <label className="dl-edit-field__label">Crop</label>
                       <button
                         type="button"
-                        className="dl-edit-field__button"
+                        className="dl-edit-action-btn"
                         onClick={() => {
                           if (selectedImageObject && fabricCanvasRef.current) {
                             // 启用裁剪模式
@@ -4148,21 +4142,92 @@ const DesignLabClient = () => {
                             alert('Use the corner handles to crop the image. The image will be cropped when you finish adjusting.');
                           }
                         }}
+                        title="Enable Crop Mode"
                       >
                         Enable Crop Mode
                       </button>
                     </div>
 
+                    {/* 7. Rotation slider */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Rotation</label>
+                      <div className="dl-edit-slider">
+                        <input
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="0"
+                          max="360"
+                          value={selectedImageObject?.angle || 0}
+                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
+                        />
+                        <input
+                          type="number"
+                          className="dl-edit-slider__value"
+                          value={selectedImageObject?.angle || 0}
+                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* [2025-12-02 执行 Custom Ink Plan] 其他高级功能（可选） */}
+                    {/* 精确位置控制 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Position</label>
+                      <div className="dl-edit-position">
+                        <div className="dl-edit-position__row">
+                          <label className="dl-edit-position__label">X:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round(selectedImageObject?.left || 0)}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                selectedImageObject.set('left', Number(e.target.value));
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                          <label className="dl-edit-position__label">Y:</label>
+                          <input
+                            type="number"
+                            className="dl-edit-position__input"
+                            value={Math.round(selectedImageObject?.top || 0)}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                selectedImageObject.set('top', Number(e.target.value));
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 透明度 */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Opacity</label>
+                      <div className="dl-edit-slider">
+                        <input
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="0"
+                          max="100"
+                          value={(selectedImageObject?.opacity || 1) * 100}
+                          onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
+                        />
+                        <input
+                          type="number"
+                          className="dl-edit-slider__value"
+                          value={Math.round((selectedImageObject?.opacity || 1) * 100)}
+                          onChange={(e) => handleImageOpacityChange(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+
                     {/* 操作按钮 */}
                     <div className="dl-edit-actions">
-                      <button
-                        type="button"
-                        className="dl-edit-action-btn"
-                        onClick={handleDuplicateObject}
-                        title="Duplicate (Ctrl+D)"
-                      >
-                        📋
-                      </button>
                       {fabricCanvasRef.current?.getActiveObject()?.type === 'group' && (
                         <button
                           type="button"
