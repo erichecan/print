@@ -4984,24 +4984,45 @@ const DesignLabClient = () => {
                         Loading art assets...
                       </div>
                     )}
-                    <div className="dl-art-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+                    {/* [2025-12-02 执行 Custom Ink Plan] 优化子分类网格布局 */}
+                    <div
+                      className="dl-art-grid"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))',
+                        gap: '16px',
+                        padding: '8px 0'
+                      }}
+                    >
                       {mergedArtAssets[selectedArtCategory]?.map((art, index) => (
                         <button
                           key={art.id || index}
                           type="button"
                           className="dl-art-item"
                           style={{
-                            fontSize: art.type === 'emoji' ? '32px' : '14px',
-                            padding: '12px',
-                            border: '1px solid #eee',
-                            borderRadius: '8px',
+                            fontSize: art.type === 'emoji' ? '40px' : '14px',
+                            padding: '16px',
+                            border: '2px solid #e5e7eb',
+                            borderRadius: '10px',
                             background: 'white',
                             cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            minHeight: art.type === 'image' ? '80px' : 'auto',
-                            position: 'relative'
+                            minHeight: art.type === 'image' ? '120px' : '100px',
+                            position: 'relative',
+                            transition: 'all 0.2s',
+                            aspectRatio: '1'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#3b82f6';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.2)';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#e5e7eb';
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.transform = 'translateY(0)';
                           }}
                           onClick={async () => {
                             if (art.type === 'emoji') {
@@ -5015,20 +5036,28 @@ const DesignLabClient = () => {
                           }}
                         >
                           {art.type === 'emoji' ? (
-                            art.content
+                            <span style={{ fontSize: '48px', lineHeight: '1' }}>{art.content}</span>
                           ) : (
                             <Image
                               src={art.imageUrl || ''}
                               alt={art.content}
-                              width={60}
-                              height={60}
-                              style={{ objectFit: 'contain' }}
+                              width={80}
+                              height={80}
+                              style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100%' }}
                             />
                           )}
                         </button>
                       ))}
                       {(!mergedArtAssets[selectedArtCategory] || mergedArtAssets[selectedArtCategory].length === 0) && !loadingArtAssets && (
-                        <div style={{ gridColumn: '1 / -1', padding: '20px', textAlign: 'center', color: '#666' }}>
+                        <div
+                          style={{
+                            gridColumn: '1 / -1',
+                            padding: '40px 20px',
+                            textAlign: 'center',
+                            color: '#6b7280',
+                            fontSize: '16px'
+                          }}
+                        >
                           No art assets in this category
                         </div>
                       )}
@@ -5143,33 +5172,111 @@ const DesignLabClient = () => {
                       </div>
                     </div>
 
-                    <div className="dl-search-box">
+                    {/* [2025-12-02 执行 Custom Ink Plan] 优化搜索框 */}
+                    <div className="dl-search-box" style={{ marginBottom: '20px' }}>
                       <span className="dl-search-box__icon">🔍</span>
-                      <input type="text" className="dl-search-box__input" placeholder="Search For Artwork" />
+                      <input
+                        type="text"
+                        className="dl-search-box__input"
+                        placeholder="Search For Artwork"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px 12px 40px',
+                          border: '1px solid #ddd',
+                          borderRadius: '8px',
+                          fontSize: '14px'
+                        }}
+                      />
                     </div>
-                    <div className="dl-artwork-categories">
+                    {/* [2025-12-02 执行 Custom Ink Plan] 优化大类网格布局 */}
+                    <div
+                      className="dl-artwork-categories"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                        gap: '16px',
+                        marginTop: '16px'
+                      }}
+                    >
                       {Object.keys(mergedArtAssets).map((category) => {
                         const categoryAssets = mergedArtAssets[category] || [];
                         const emojiCount = categoryAssets.filter(a => a.type === 'emoji').length;
                         const imageCount = categoryAssets.filter(a => a.type === 'image').length;
+                        const totalCount = emojiCount + imageCount;
+                        const categoryIcons: Record<string, string> = {
+                          'Emojis': '😊',
+                          'Shapes & Symbols': '⭐',
+                          'Sports & Games': '⚽',
+                          'Letters & Numbers': '🔤',
+                          'Animals': '🐱',
+                          'Mascots': '🐾',
+                          'Nature': '🌲',
+                          'Flags': '🇺🇸',
+                          'Holidays': '🎄',
+                          'Business': '💼'
+                        };
                         return (
                           <button
                             key={category}
                             type="button"
                             className="dl-artwork-category"
                             onClick={() => setSelectedArtCategory(category)}
+                            style={{
+                              padding: '20px',
+                              border: '2px solid #e5e7eb',
+                              borderRadius: '12px',
+                              background: 'white',
+                              cursor: 'pointer',
+                              textAlign: 'center',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: '12px',
+                              minHeight: '140px',
+                              justifyContent: 'center'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = '#3b82f6';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = '#e5e7eb';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}
                           >
-                            <span className="dl-artwork-category__icon">
-                              {category === 'Emojis' ? '😊' : category === 'Shapes & Symbols' ? '⭐' : category === 'Sports & Games' ? '⚽' : category === 'Letters & Numbers' ? 'ABC' : category === 'Animals' ? '🐱' : category === 'Mascots' ? '🐾' : category === 'Nature' ? '🌲' : '🇺🇸'}
+                            <span
+                              className="dl-artwork-category__icon"
+                              style={{
+                                fontSize: '48px',
+                                lineHeight: '1',
+                                marginBottom: '8px'
+                              }}
+                            >
+                              {categoryIcons[category] || '🎨'}
                             </span>
-                            <span className="dl-artwork-category__name">
+                            <span
+                              className="dl-artwork-category__name"
+                              style={{
+                                fontSize: '16px',
+                                fontWeight: '600',
+                                color: '#111827',
+                                display: 'block'
+                              }}
+                            >
                               {category}
-                              {imageCount > 0 && (
-                                <span style={{ fontSize: '12px', color: '#666', marginLeft: '4px' }}>
-                                  ({emojiCount} emojis, {imageCount} images)
-                                </span>
-                              )}
                             </span>
+                            {totalCount > 0 && (
+                              <span
+                                style={{
+                                  fontSize: '13px',
+                                  color: '#6b7280',
+                                  marginTop: '4px'
+                                }}
+                              >
+                                {totalCount} {totalCount === 1 ? 'item' : 'items'}
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -5202,16 +5309,80 @@ const DesignLabClient = () => {
                       <span className="dl-info-icon">ℹ</span>
                     </div>
                   </div>
-                  <div className="dl-colors-grid">
-                    {['#FFFFFF', '#F5F5DC', '#C0C0C0', '#808080', '#000000', '#000080', '#4169E1', '#00CED1', '#800080', '#800020', '#FFC0CB', '#FF0000', '#FFA500', '#FFFF00', '#808000', '#008000', '#8B4513'].map((color, index) => (
+                  {/* [2025-12-02 执行 Custom Ink Plan] 优化色板网格布局 */}
+                  <div
+                    className="dl-colors-grid"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))',
+                      gap: '12px',
+                      marginTop: '16px'
+                    }}
+                  >
+                    {[
+                      { hex: '#FFFFFF', name: 'White' },
+                      { hex: '#F5F5DC', name: 'Beige' },
+                      { hex: '#C0C0C0', name: 'Silver' },
+                      { hex: '#808080', name: 'Grey' },
+                      { hex: '#000000', name: 'Black' },
+                      { hex: '#000080', name: 'Navy' },
+                      { hex: '#4169E1', name: 'Royal Blue' },
+                      { hex: '#00CED1', name: 'Turquoise' },
+                      { hex: '#800080', name: 'Purple' },
+                      { hex: '#800020', name: 'Burgundy' },
+                      { hex: '#FFC0CB', name: 'Pink' },
+                      { hex: '#FF0000', name: 'Red' },
+                      { hex: '#FFA500', name: 'Orange' },
+                      { hex: '#FFFF00', name: 'Yellow' },
+                      { hex: '#808000', name: 'Olive' },
+                      { hex: '#008000', name: 'Green' },
+                      { hex: '#8B4513', name: 'Brown' }
+                    ].map((color, index) => (
                       <button
                         key={index}
                         type="button"
-                        className={`dl-color-swatch ${selectedColor === color ? 'is-selected' : ''}`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => setSelectedColor(color)}
+                        className={`dl-color-swatch ${selectedColor === color.hex ? 'is-selected' : ''}`}
+                        style={{
+                          backgroundColor: color.hex,
+                          width: '60px',
+                          height: '60px',
+                          borderRadius: '8px',
+                          border: selectedColor === color.hex ? '3px solid #3b82f6' : '2px solid #e5e7eb',
+                          cursor: 'pointer',
+                          position: 'relative',
+                          transition: 'all 0.2s',
+                          boxShadow: selectedColor === color.hex ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+                        }}
+                        onClick={() => setSelectedColor(color.hex)}
+                        title={color.name}
+                        onMouseEnter={(e) => {
+                          if (selectedColor !== color.hex) {
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedColor !== color.hex) {
+                            e.currentTarget.style.boxShadow = 'none';
+                            e.currentTarget.style.transform = 'scale(1)';
+                          }
+                        }}
                       >
-                        {selectedColor === color && <span className="dl-color-swatch__check">✓</span>}
+                        {selectedColor === color.hex && (
+                          <span
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              color: color.hex === '#FFFFFF' || color.hex === '#FFFF00' || color.hex === '#FFC0CB' ? '#000' : '#fff',
+                              fontSize: '20px',
+                              fontWeight: 'bold'
+                            }}
+                          >
+                            ✓
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -5349,6 +5520,175 @@ const DesignLabClient = () => {
                   <p>• &apos;EXAMPLE&apos; and &apos;00&apos; are sample placeholders</p>
                   <p>• Our artists will expertly place each name/number from your list</p>
                   <p>• Names/numbers may be printed or vinyl</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* [2025-12-02 执行 Custom Ink Plan] Names & Numbers 列表页 */}
+        {showNamesListModal && (
+          <div className="dl-modal-overlay" onClick={() => setShowNamesListModal(false)}>
+            <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
+              <div className="dl-modal__header">
+                <button
+                  type="button"
+                  className="dl-modal__back"
+                  onClick={() => {
+                    setShowNamesListModal(false);
+                    setShowNamesToolsModal(true);
+                  }}
+                >
+                  ←
+                </button>
+                <h2 className="dl-modal__title">Step 2: Enter Names/Numbers</h2>
+                <button type="button" className="dl-modal__close" onClick={() => setShowNamesListModal(false)}>
+                  ×
+                </button>
+              </div>
+              <div className="dl-modal__body">
+                <p style={{ marginBottom: '20px', color: '#6b7280' }}>
+                  Enter the names and/or numbers for each size you&apos;re ordering.
+                </p>
+                <div style={{ overflowX: 'auto' }}>
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      marginBottom: '20px'
+                    }}
+                  >
+                    <thead>
+                      <tr style={{ borderBottom: '2px solid #e5e7eb' }}>
+                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Size</th>
+                        {addNames && (
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Name</th>
+                        )}
+                        {addNumbers && (
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Number</th>
+                        )}
+                        <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600' }}>Quantity</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.keys(sizeQuantities)
+                        .filter((size) => sizeQuantities[size] > 0)
+                        .map((size) => {
+                          const listItem = namesNumbersList.find((item) => item.size === size) || { size };
+                          return (
+                            <tr key={size} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                              <td style={{ padding: '12px', fontWeight: '500' }}>{size}</td>
+                              {addNames && (
+                                <td style={{ padding: '12px' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="Enter name"
+                                    value={listItem.name || ''}
+                                    onChange={(e) => {
+                                      const updated = [...namesNumbersList];
+                                      const existing = updated.findIndex((item) => item.size === size);
+                                      if (existing >= 0) {
+                                        updated[existing] = { ...updated[existing], name: e.target.value };
+                                      } else {
+                                        updated.push({ size, name: e.target.value });
+                                      }
+                                      setNamesNumbersList(updated);
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      padding: '8px 12px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      fontSize: '14px'
+                                    }}
+                                  />
+                                </td>
+                              )}
+                              {addNumbers && (
+                                <td style={{ padding: '12px' }}>
+                                  <input
+                                    type="text"
+                                    placeholder="Enter number"
+                                    value={listItem.number || ''}
+                                    onChange={(e) => {
+                                      const updated = [...namesNumbersList];
+                                      const existing = updated.findIndex((item) => item.size === size);
+                                      if (existing >= 0) {
+                                        updated[existing] = { ...updated[existing], number: e.target.value };
+                                      } else {
+                                        updated.push({ size, number: e.target.value });
+                                      }
+                                      setNamesNumbersList(updated);
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      padding: '8px 12px',
+                                      border: '1px solid #d1d5db',
+                                      borderRadius: '6px',
+                                      fontSize: '14px'
+                                    }}
+                                  />
+                                </td>
+                              )}
+                              <td style={{ padding: '12px', color: '#6b7280' }}>{sizeQuantities[size]}</td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+                {Object.keys(sizeQuantities).filter((size) => sizeQuantities[size] > 0).length === 0 && (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+                    Please select quantities in the quantity modal first.
+                  </div>
+                )}
+                <div className="dl-modal__footer" style={{ marginTop: '24px' }}>
+                  <button
+                    type="button"
+                    className="dl-add-btn"
+                    style={{ width: '100%' }}
+                    onClick={async () => {
+                      // [2025-12-02 执行 Custom Ink Plan] 将 Names & Numbers 映射到 Canvas
+                      if (!fabricCanvasRef.current) return;
+                      const fabric = await ensureFabric();
+                      let yOffset = 100;
+                      namesNumbersList.forEach((item, index) => {
+                        if (item.name && addNames) {
+                          const fontSize = parseInt(nameHeight.replace(' In', '')) * 28 || 28;
+                          const text = new fabric.IText(item.name, {
+                            left: 200,
+                            top: yOffset + index * 60,
+                            fontSize: fontSize,
+                            fill: nameColor === 'Black' ? '#000000' : nameColor,
+                            fontFamily: 'Arial',
+                            id: uuidv4()
+                          });
+                          (text as any).id = uuidv4();
+                          (text as any).isNameNumber = true;
+                          fabricCanvasRef.current?.add(text);
+                        }
+                        if (item.number && addNumbers) {
+                          const fontSize = parseInt(numberHeight.replace(' In', '')) * 28 || 56;
+                          const text = new fabric.IText(item.number, {
+                            left: 250,
+                            top: yOffset + index * 60 + (item.name ? 30 : 0),
+                            fontSize: fontSize,
+                            fill: numberColor === 'Black' ? '#000000' : numberColor,
+                            fontFamily: 'Arial',
+                            id: uuidv4()
+                          });
+                          (text as any).id = uuidv4();
+                          (text as any).isNameNumber = true;
+                          fabricCanvasRef.current?.add(text);
+                        }
+                      });
+                      fabricCanvasRef.current?.renderAll();
+                      handleCanvasChange();
+                      setShowNamesListModal(false);
+                    }}
+                  >
+                    Add To Design
+                  </button>
                 </div>
               </div>
             </div>
