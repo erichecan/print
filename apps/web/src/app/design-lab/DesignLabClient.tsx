@@ -188,6 +188,9 @@ const DesignLabClient = () => {
   const [showProductColorsModal, setShowProductColorsModal] = useState(false);
   const [showAddNamesModal, setShowAddNamesModal] = useState(false);
   const [showNamesToolsModal, setShowNamesToolsModal] = useState(false);
+  // [2025-12-02 执行 Custom Ink Plan] Names & Numbers 列表页状态
+  const [showNamesListModal, setShowNamesListModal] = useState(false);
+  const [namesNumbersList, setNamesNumbersList] = useState<Array<{ size: string; name?: string; number?: string }>>([]);
 
   // [2025-01-27 21:00:00] 添加文本状态（已在上面定义，移除重复）
 
@@ -2259,8 +2262,9 @@ const DesignLabClient = () => {
   );
 
   const addImageFromUrl = useCallback(
-    async (imageUrl: string) => {
+    async (imageUrl: string, isArt: boolean = false) => {
       // [2025-11-15 16:07:22] 预设图形插入：支持内置缩略图
+      // [2025-12-02 执行 Custom Ink Plan] 支持标记 Art 来源
       const fabric = await ensureFabric();
       if (!fabricCanvasRef.current) {
         return;
@@ -2269,8 +2273,12 @@ const DesignLabClient = () => {
         imageUrl,
         (img: any) => {
           if (img) {
-            const imageObject = img as any & { id?: string };
+            const imageObject = img as any & { id?: string; isArt?: boolean; source?: string };
             imageObject.id = uuidv4();
+            if (isArt) {
+              imageObject.isArt = true;
+              imageObject.source = 'art';
+            }
             const canvasWidth = fabricCanvasRef.current?.width || 400;
             const canvasHeight = fabricCanvasRef.current?.height || 400;
             imageObject.set({
@@ -2357,6 +2365,9 @@ const DesignLabClient = () => {
 
       if (newObject) {
         newObject.id = uuidv4();
+        // [2025-12-02 执行 Custom Ink Plan] 标记 Basic Shapes 为 Art
+        newObject.isArt = true;
+        newObject.source = 'art';
         fabricCanvasRef.current.add(newObject);
         fabricCanvasRef.current.setActiveObject(newObject);
         fabricCanvasRef.current.renderAll();
@@ -3975,7 +3986,7 @@ const DesignLabClient = () => {
                   </div>
                 )}
 
-                {selectedImageObject && (
+                {selectedImageObject && !selectedImageObject.isArt && (
                   <div className="dl-edit-panel__content">
                     <div className="dl-edit-panel__header">
                       <h3 className="dl-edit-panel__title">Edit Upload</h3>
@@ -4238,6 +4249,241 @@ const DesignLabClient = () => {
                           📦
                         </button>
                       )}
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn dl-edit-action-btn--danger"
+                        onClick={handleDeleteObject}
+                        title="Delete (Del)"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* [2025-12-02 执行 Custom Ink Plan] Edit Art 面板 */}
+                {selectedImageObject && selectedImageObject.isArt && (
+                  <div className="dl-edit-panel__content">
+                    <div className="dl-edit-panel__header">
+                      <h3 className="dl-edit-panel__title">Edit Art</h3>
+                      <button
+                        type="button"
+                        className="dl-edit-panel__close"
+                        onClick={() => {
+                          if (fabricCanvasRef.current) {
+                            fabricCanvasRef.current.discardActiveObject();
+                            fabricCanvasRef.current.renderAll();
+                          }
+                          setShowEditPanel(false);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    {/* [2025-12-02 执行 Custom Ink Plan] Edit Art 面板 - 按 Custom Ink 顺序排列 */}
+                    {/* 1. Art Size */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Art Size</label>
+                      <div className="dl-edit-position">
+                        <div className="dl-edit-position__row">
+                          <label className="dl-edit-position__label">W:</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="dl-edit-position__input"
+                            value={pixelsToInches((selectedImageObject?.width || 0) * (selectedImageObject?.scaleX || 1)).toFixed(2)}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                const inches = Number(e.target.value);
+                                const pixels = inchesToPixels(inches);
+                                const newScale = pixels / (selectedImageObject.width || 1);
+                                selectedImageObject.set('scaleX', newScale);
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                          <span className="dl-edit-position__unit">in</span>
+                          <label className="dl-edit-position__label">H:</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            className="dl-edit-position__input"
+                            value={pixelsToInches((selectedImageObject?.height || 0) * (selectedImageObject?.scaleY || 1)).toFixed(2)}
+                            onChange={(e) => {
+                              if (selectedImageObject) {
+                                const inches = Number(e.target.value);
+                                const pixels = inchesToPixels(inches);
+                                const newScale = pixels / (selectedImageObject.height || 1);
+                                selectedImageObject.set('scaleY', newScale);
+                                fabricCanvasRef.current?.renderAll();
+                                handleCanvasChange();
+                              }
+                            }}
+                          />
+                          <span className="dl-edit-position__unit">in</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Center */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Center</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={handleCenterObject}
+                        title="Center object to canvas"
+                      >
+                        Center
+                      </button>
+                    </div>
+
+                    {/* 3. Layering */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Layering</label>
+                      <div className="dl-edit-actions">
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={handleBringActiveToFront}
+                          title="Bring to Front"
+                        >
+                          ↑ Front
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={handleSendActiveToBack}
+                          title="Send to Back"
+                        >
+                          ↓ Back
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 4. Flip */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Flip</label>
+                      <div className="dl-edit-actions">
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={() => {
+                            if (selectedImageObject) {
+                              selectedImageObject.set('flipX', !selectedImageObject.flipX);
+                              fabricCanvasRef.current?.renderAll();
+                              handleCanvasChange();
+                            }
+                          }}
+                          title="Flip Horizontal"
+                        >
+                          ↔
+                        </button>
+                        <button
+                          type="button"
+                          className="dl-edit-action-btn"
+                          onClick={() => {
+                            if (selectedImageObject) {
+                              selectedImageObject.set('flipY', !selectedImageObject.flipY);
+                              fabricCanvasRef.current?.renderAll();
+                              handleCanvasChange();
+                            }
+                          }}
+                          title="Flip Vertical"
+                        >
+                          ↕
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 5. Duplicate */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Duplicate</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={handleDuplicateObject}
+                        title="Duplicate (Ctrl+D)"
+                      >
+                        Duplicate
+                      </button>
+                    </div>
+
+                    {/* 6. Rotation slider */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Rotation</label>
+                      <div className="dl-edit-slider">
+                        <input
+                          type="range"
+                          className="dl-edit-slider__input"
+                          min="0"
+                          max="360"
+                          value={selectedImageObject?.angle || 0}
+                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
+                        />
+                        <input
+                          type="number"
+                          className="dl-edit-slider__value"
+                          value={selectedImageObject?.angle || 0}
+                          onChange={(e) => handleImageRotationChange(Number(e.target.value))}
+                        />
+                      </div>
+                    </div>
+
+                    {/* 7. Make One Color */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Make One Color</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={async () => {
+                          if (!selectedImageObject) return;
+                          // [2025-12-02 执行 Custom Ink Plan] Make One Color 功能占位
+                          alert('Make One Color feature: This will convert the art to a single color. Advanced implementation required.');
+                        }}
+                        title="Make One Color"
+                      >
+                        Make One Color
+                      </button>
+                    </div>
+
+                    {/* 8. Edit Colors */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Edit Colors</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={async () => {
+                          if (!selectedImageObject) return;
+                          // [2025-12-02 执行 Custom Ink Plan] Edit Colors 功能占位
+                          alert('Edit Colors feature: This will allow editing individual colors in the art. Advanced implementation required.');
+                        }}
+                        title="Edit Colors"
+                      >
+                        Edit Colors
+                      </button>
+                    </div>
+
+                    {/* 9. Change Art */}
+                    <div className="dl-edit-field">
+                      <label className="dl-edit-field__label">Change Art</label>
+                      <button
+                        type="button"
+                        className="dl-edit-action-btn"
+                        onClick={() => {
+                          setShowAddArtModal(true);
+                          setShowEditPanel(false);
+                        }}
+                        title="Change Art"
+                      >
+                        Change Art
+                      </button>
+                    </div>
+
+                    {/* 操作按钮 */}
+                    <div className="dl-edit-actions">
                       <button
                         type="button"
                         className="dl-edit-action-btn dl-edit-action-btn--danger"
@@ -4761,7 +5007,8 @@ const DesignLabClient = () => {
                             if (art.type === 'emoji') {
                               handleAddText(art.content);
                             } else if (art.type === 'image' && art.imageUrl) {
-                              await addImageFromUrl(art.imageUrl);
+                              // [2025-12-02 执行 Custom Ink Plan] 标记为 Art 来源
+                              await addImageFromUrl(art.imageUrl, true);
                             }
                             setShowAddArtModal(false);
                             setSelectedArtCategory(null);
@@ -5086,7 +5333,9 @@ const DesignLabClient = () => {
                   type="button"
                   className="dl-add-btn dl-add-btn--full"
                   onClick={() => {
-                    // Handle step 2
+                    // [2025-12-02 执行 Custom Ink Plan] 进入 Step 2: Enter Names/Numbers 列表页
+                    setShowNamesToolsModal(false);
+                    setShowNamesListModal(true);
                   }}
                 >
                   Step 2: Enter Names/Numbers

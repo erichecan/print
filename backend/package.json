@@ -20,7 +20,9 @@
     "prisma:studio": "prisma studio --schema=../prisma/schema.prisma",
     "migrate:deploy": "node scripts/run-migrations.js",
     "fix:base-price": "node scripts/fix-base-price-column.js",
-    "fix:base-price-sql": "node scripts/fix-base-price-direct-sql.js"
+    "fix:base-price-sql": "node scripts/fix-base-price-direct-sql.js",
+    "// [2025-12-02 05:30:45] 线下订单 E2E 专用种子脚本": "",
+    "seed:offline-e2e": "node scripts/seed-offline-e2e.js"
   },
   "keywords": [
     "ecommerce",
