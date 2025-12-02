@@ -40,9 +40,12 @@ model User {
   @@map("users")
 }
 
+// [2025-12-02 04:45:00] 扩展用户角色，支持销售和销售主管
 enum UserRole {
   CUSTOMER
   ADMIN
+  SALES
+  SALES_MANAGER
 }
 
 // Address model (for user shipping addresses)

@@ -1,4 +1,5 @@
 // [2025-11-02 20:55:00] User model
+// [2025-12-02 04:45:00] 扩展角色枚举，增加 sales 与 sales_manager
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
@@ -33,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true
     },
     role: {
-      type: DataTypes.ENUM('customer', 'admin'),
+      type: DataTypes.ENUM('customer', 'admin', 'sales', 'sales_manager'),
       allowNull: false,
       defaultValue: 'customer'
     },

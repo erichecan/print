@@ -1,6 +1,7 @@
 /**
  * Category Controller (Public)
  * [2025-01-27 18:50:00] 提供公共分类列表接口，用于首页展示
+ * [2025-12-02 14:13:10] 分类公共接口说明：所有前台分类展示统一从 category 表读取，不再直接依赖静态类目配置
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');

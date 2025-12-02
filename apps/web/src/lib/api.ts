@@ -244,6 +244,7 @@ export interface AddressPayload {
 }
 
 // [2025-12-02 04:20:00] 需要认证的 API 路径前缀
+// [2025-12-02 04:49:00] 增加 /sales 以支持 Sales 订单管理
 const AUTH_REQUIRED_PATHS = [
   '/orders',
   '/admin',
@@ -251,6 +252,7 @@ const AUTH_REQUIRED_PATHS = [
   '/addresses',
   '/designs',
   '/cart',
+  '/sales',
 ];
 
 /**
@@ -659,6 +661,59 @@ export const authApi = {
     api('/auth/forgot-password', { method: 'POST', body: { email } }),
   resetPassword: (token: string, password: string) =>
     api('/auth/reset-password', { method: 'POST', body: { token, password } }),
+};
+
+// [2025-12-02 04:49:00] Sales Offline Orders API
+export interface SalesOfflineOrderSummary {
+  id: string;
+  orderCode: string;
+  projectName: string;
+  primaryProduct: string | null;
+  quantity: number | null;
+  deliveryDate: string | null;
+  status: string;
+  rushOrder: boolean;
+  stage: {
+    key: string | null;
+    label: string | null;
+    position: number | null;
+  } | null;
+  contact: {
+    name: string;
+    company: string | null;
+    email: string;
+    phone: string | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SalesOfflineOrderListResponse {
+  data: SalesOfflineOrderSummary[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
+  assets: any[];
+  histories: any[];
+  productionWorkOrder: any | null;
+}
+
+export const salesOrdersApi = {
+  list: (params?: { page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', String(params.page));
+    if (params?.limit) query.append('limit', String(params.limit));
+    const qs = query.toString();
+    return api<SalesOfflineOrderListResponse>(`/sales/orders${qs ? `?${qs}` : ''}`);
+  },
+  get: (id: string) =>
+    api<{ order: SalesOfflineOrderDetail }>(`/sales/orders/${id}`).then((res) => res.order),
 };
 
 // Address API

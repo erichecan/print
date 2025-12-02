@@ -55,68 +55,16 @@ export function SiteHeader() {
   };
 
   // [2025-01-28 06:25:00] 渲染导航菜单项
+  // [2025-01-28 12:00:00] 修改：隐藏下拉菜单，只保留一级导航
   const renderNavigationItem = (item: NavigationMenuItem) => {
-    if (item.type === 'link') {
-      return (
-        <li key={item.id} className="mega__item">
-          <Link href={item.href} className="mega__trigger">
-            {item.label}
-          </Link>
-        </li>
-      );
-    }
-
-    if (item.type === 'mega' && item.megaPanel) {
-      return (
-        <li key={item.id} className="mega__item">
-          <Link href={item.href} className="mega__trigger">
-            {item.label}
-          </Link>
-          <div className="mega__panel" role="region" aria-label={item.label}>
-            <div className="mega__cols">
-              {item.megaPanel.columns.map((col) => (
-                <div key={col.id} className="mega__col">
-                  {col.links.map((link) => (
-                    <Link key={link.id} href={link.href}>
-                      {link.label}
-                    </Link>
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-        </li>
-      );
-    }
-
-    if (item.type === 'simple' && item.simplePanel) {
-      return (
-        <li key={item.id} className="mega__item">
-          <Link href={item.href} className="mega__trigger">
-            {item.label}
-          </Link>
-          <div className="mega__panel mega__panel--simple">
-            <div className="mega__cta">
-              <h3>{item.simplePanel.title}</h3>
-              <p>{item.simplePanel.description}</p>
-              <div className="mega__cta-actions">
-                {item.simplePanel.actions.map((action, index) => (
-                  <Link
-                    key={index}
-                    className={`btn${action.variant === 'outline' ? ' btn--outline' : ' btn--primary'}`}
-                    href={action.href}
-                  >
-                    {action.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </li>
-      );
-    }
-
-    return null;
+    // 所有类型的菜单项都只渲染为简单链接，不显示下拉面板
+    return (
+      <li key={item.id} className="mega__item">
+        <Link href={item.href} className="mega__trigger">
+          {item.label}
+        </Link>
+      </li>
+    );
   };
 
   // [2025-01-28 15:00:00] 渲染移动端导航菜单项（简化版，无mega menu）

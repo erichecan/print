@@ -9,6 +9,11 @@ const logger = require('../utils/logger');
 const { getCache, setCache } = require('../config/redis');
 const { optimizeImageUrl } = require('../utils/imageHelper');
 
+// [2025-12-02 14:12:45] 商品公共接口说明：
+// - 所有商品、价格、图片、类目等数据统一来自数据库（包括导入脚本和后台管理创建的记录）
+// - 前端页面（列表 / 详情 / 关联商品）一律通过本控制器提供的接口读取数据，不再直接依赖任何静态 JSON 或硬编码商品
+// - 图片 URL 必须来自后台上传或导入后写入的数据库字段，经过 optimizeImageUrl 统一处理
+
 const PRODUCT_LIST_CACHE_TTL = 300; // 5 minutes
 const PRODUCT_DETAIL_CACHE_TTL = 600; // 10 minutes
 const FILTER_OPTIONS_CACHE_TTL = 600; // 10 minutes

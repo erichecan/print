@@ -224,18 +224,33 @@ exports.authenticate = async (req, res, next) => {
 };
 
 /**
+ * [2025-12-02 04:46:00] 基于角色的授权中间件
+ * 支持多角色（如 ADMIN / SALES / SALES_MANAGER）
+ */
+exports.authorizeRoles = (...allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new UnauthorizedError('Please login to access this resource'));
+    }
+    const userRoleRaw = req.user.role || '';
+    const userRole = String(userRoleRaw).toUpperCase();
+    const allowed = allowedRoles.map((r) => String(r).toUpperCase());
+
+    if (!allowed.includes(userRole)) {
+      return next(new ForbiddenError('You do not have permission to access this resource'));
+    }
+
+    next();
+  };
+};
+
+/**
  * Admin only middleware
  * Requires authentication AND admin role
  * [2025-11-04 23:51:00]
+ * [2025-12-02 04:46:00] 使用 authorizeRoles 统一角色判断
  */
 exports.requireAdmin = [
   exports.authenticate,
-  (req, res, next) => {
-    // [2025-01-28 02:15:00] 支持大小写角色检查（ADMIN 或 admin）
-    const userRole = req.user?.role;
-    if (userRole !== 'ADMIN' && userRole !== 'admin') {
-      return next(new ForbiddenError('Admin access required'));
-    }
-    next();
-  },
+  exports.authorizeRoles('ADMIN'),
 ];

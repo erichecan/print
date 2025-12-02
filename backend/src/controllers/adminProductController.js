@@ -1,6 +1,7 @@
 /**
  * Admin Product Controller
  * [2025-11-11 23:18:42] 提供后台商品管理 CRUD 能力
+ * [2025-12-02 14:05:30] 统一后台价格字段的单位转换（数据库存分，接口返回元/美元）
  */
 const path = require('path');
 const fs = require('fs');
@@ -13,6 +14,31 @@ const {
   buildPublicUrl,
   extractStorageKeyFromUrl,
 } = require('../utils/productUpload');
+
+// [2025-12-02 14:05:30] 将 Prisma Decimal / string / number 安全转换为原始 number，便于做单位换算
+const toNumber = (value, fallback = 0) => {
+  if (value === null || value === undefined) return fallback;
+  if (typeof value === 'number') return Number.isNaN(value) ? fallback : value;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    return Number.isNaN(parsed) ? fallback : parsed;
+  }
+  if (typeof value === 'object') {
+    if (typeof value.toNumber === 'function') {
+      try {
+        const num = value.toNumber();
+        return Number.isNaN(num) ? fallback : num;
+      } catch {
+        return fallback;
+      }
+    }
+    if (value instanceof Number) {
+      const num = Number(value);
+      return Number.isNaN(num) ? fallback : num;
+    }
+  }
+  return fallback;
+};
 
 // [2025-11-11 23:18:42] 简易 slug 生成工具，确保与 Prisma 事务兼容
 const slugify = (value = '') =>
@@ -151,18 +177,28 @@ exports.listProducts = async (req, res) => {
 
     // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
     // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
+    // [2025-12-02 14:05:30] 这里同时将数据库中的价格（分 / Decimal）转换为接口返回的金额（元/美元）
     const { optimizeImageUrl } = require('../utils/imageHelper');
-    const normalizedProducts = products.map((product) => ({
-      ...product,
-      images: (product.images || []).map((image) => ({
-        ...image,
-        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
-      })),
-      variants: (product.variants || []).map((variant) => ({
-        ...variant,
-        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
-      })),
-    }));
+    const normalizedProducts = products.map((product) => {
+      const basePriceCents = toNumber(product.basePrice, 0);
+      const salePriceValue = toNumber(product.salePrice, 0);
+
+      return {
+        ...product,
+        // 数据库存的是“分”，返回给前端统一用“金额”（元/美元，两位小数）
+        basePrice: basePriceCents / 100,
+        // salePrice 在 schema 中是 Decimal，这里直接转为 number（金额）
+        salePrice: salePriceValue,
+        images: (product.images || []).map((image) => ({
+          ...image,
+          url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
+        })),
+        variants: (product.variants || []).map((variant) => ({
+          ...variant,
+          imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
+        })),
+      };
+    });
 
     res.json({
       data: normalizedProducts,
@@ -217,9 +253,14 @@ exports.getProductById = async (req, res) => {
 
     // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
     // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
+    // [2025-12-02 14:05:30] 同时将数据库中的 basePrice（分）与 salePrice（Decimal）转换为金额
     const { optimizeImageUrl } = require('../utils/imageHelper');
+    const basePriceCents = toNumber(product.basePrice, 0);
+    const salePriceValue = toNumber(product.salePrice, 0);
     const normalizedProduct = {
       ...product,
+      basePrice: basePriceCents / 100,
+      salePrice: salePriceValue,
       images: (product.images || []).map((image) => ({
         ...image,
         url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
@@ -504,22 +545,44 @@ exports.updateProduct = async (req, res) => {
         finalSlug = await ensureUniqueSlug(tx, slugify(name), id);
       }
 
+      // [2025-12-02 14:05:30] 更新逻辑中补齐价格字段的单位转换，保持与 createProduct 一致：
+      // - basePrice：前端提交金额（元/美元），这里统一转换为“分”存数据库
+      // - 其他价格字段：统一转换为 Prisma.Decimal，避免类型不一致
+      let basePriceCents;
+      if (basePrice !== undefined) {
+        if (typeof basePrice === 'number') {
+          basePriceCents = basePrice < 1000 ? Math.round(basePrice * 100) : Math.round(basePrice);
+        } else if (typeof basePrice === 'string') {
+          const parsed = parseFloat(basePrice);
+          if (!Number.isNaN(parsed)) {
+            basePriceCents = parsed < 1000 ? Math.round(parsed * 100) : Math.round(parsed);
+          }
+        }
+      }
+
+      const convertToDecimal = (value) => {
+        if (value === undefined || value === null) return undefined;
+        if (typeof value === 'string') return new Prisma.Decimal(value);
+        if (typeof value === 'number') return new Prisma.Decimal(value);
+        return value;
+      };
+
       const updateData = {
         ...(name !== undefined ? { name } : {}),
         slug: finalSlug,
         ...(categoryId !== undefined ? { categoryId } : {}),
         ...(brandId !== undefined ? { brandId } : {}),
-        ...(basePrice !== undefined ? { basePrice } : {}),
-        ...(unitCost !== undefined ? { unitCost } : {}),
-        ...(salePrice !== undefined ? { salePrice } : {}),
-        ...(grossProfit !== undefined ? { grossProfit } : {}),
+        ...(basePriceCents !== undefined ? { basePrice: basePriceCents } : {}),
+        ...(unitCost !== undefined ? { unitCost: convertToDecimal(unitCost) } : {}),
+        ...(salePrice !== undefined ? { salePrice: convertToDecimal(salePrice) } : {}),
+        ...(grossProfit !== undefined ? { grossProfit: convertToDecimal(grossProfit) } : {}),
         ...(sku !== undefined ? { sku } : {}),
         ...(stockQuantity !== undefined ? { stockQuantity } : {}),
         ...(description !== undefined ? { description } : {}),
         ...(longDescription !== undefined ? { longDescription } : {}),
         ...(isActive !== undefined ? { isActive } : {}),
         ...(isCustomizable !== undefined ? { isCustomizable } : {}),
-        ...(weight !== undefined ? { weight } : {}),
+        ...(weight !== undefined ? { weight: convertToDecimal(weight) } : {}),
         ...(dimensions !== undefined ? { dimensions } : {}),
       };
 
