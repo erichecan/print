@@ -43,6 +43,10 @@ export function getBackendApiBase(): string {
     return backendApiUrl;
   }
   
+  // [2025-12-02 04:10:00] 开发环境也不应该返回相对路径，应该返回完整 URL
+  // 如果开发环境也没有配置，返回 localhost
+  return DEFAULT_API_BASE_DEV;
+  
   // 仅开发环境使用 localhost 默认值
   return DEFAULT_API_BASE_DEV;
 }
