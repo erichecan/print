@@ -1,0 +1,81 @@
+{
+  "timestamp": "2025-12-02T21:53:40.467Z",
+  "totalProducts": 2,
+  "totalDownloaded": 8,
+  "totalFailed": 8,
+  "totalSkipped": 0,
+  "images": [
+    {
+      "productId": "6a62c76ef0978853a20391b6c32da4fe",
+      "productName": "Product 6a62c76e",
+      "colorId": 176100,
+      "view": "front",
+      "size": "large_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176100/views/alt/front_large_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/6a62c76ef0978853a20391b6c32da4fe/color-176100/front_large_extended.png"
+    },
+    {
+      "productId": "6a62c76ef0978853a20391b6c32da4fe",
+      "productName": "Product 6a62c76e",
+      "colorId": 176100,
+      "view": "front",
+      "size": "medium_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176100/views/alt/front_medium_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/6a62c76ef0978853a20391b6c32da4fe/color-176100/front_medium_extended.png"
+    },
+    {
+      "productId": "6a62c76ef0978853a20391b6c32da4fe",
+      "productName": "Product 6a62c76e",
+      "colorId": 176100,
+      "view": "back",
+      "size": "large_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176100/views/alt/back_large_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/6a62c76ef0978853a20391b6c32da4fe/color-176100/back_large_extended.png"
+    },
+    {
+      "productId": "6a62c76ef0978853a20391b6c32da4fe",
+      "productName": "Product 6a62c76e",
+      "colorId": 176100,
+      "view": "back",
+      "size": "medium_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176100/views/alt/back_medium_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/6a62c76ef0978853a20391b6c32da4fe/color-176100/back_medium_extended.png"
+    },
+    {
+      "productId": "7be22be6c27a7c98161714a10147ad88",
+      "productName": "Product 7be22be6",
+      "colorId": 176100,
+      "view": "front",
+      "size": "large_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/7be22be6c27a7c98161714a10147ad88/colors/176100/views/alt/front_large_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/7be22be6c27a7c98161714a10147ad88/color-176100/front_large_extended.png"
+    },
+    {
+      "productId": "7be22be6c27a7c98161714a10147ad88",
+      "productName": "Product 7be22be6",
+      "colorId": 176100,
+      "view": "front",
+      "size": "medium_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/7be22be6c27a7c98161714a10147ad88/colors/176100/views/alt/front_medium_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/7be22be6c27a7c98161714a10147ad88/color-176100/front_medium_extended.png"
+    },
+    {
+      "productId": "7be22be6c27a7c98161714a10147ad88",
+      "productName": "Product 7be22be6",
+      "colorId": 176100,
+      "view": "back",
+      "size": "large_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/7be22be6c27a7c98161714a10147ad88/colors/176100/views/alt/back_large_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/7be22be6c27a7c98161714a10147ad88/color-176100/back_large_extended.png"
+    },
+    {
+      "productId": "7be22be6c27a7c98161714a10147ad88",
+      "productName": "Product 7be22be6",
+      "colorId": 176100,
+      "view": "back",
+      "size": "medium_extended",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/7be22be6c27a7c98161714a10147ad88/colors/176100/views/alt/back_medium_extended.png",
+      "path": "/Users/apony-it/Downloads/print-main/customink-images/products/7be22be6c27a7c98161714a10147ad88/color-176100/back_medium_extended.png"
+    }
+  ]
+}

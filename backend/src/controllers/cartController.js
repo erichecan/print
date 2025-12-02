@@ -2,12 +2,14 @@
  * Cart Controller
  * [2025-11-04 23:50:00]
  * [2025-01-27 13:40:00] Enhanced with inventory validation
+ * [2025-01-29 12:00:00] 添加图片 URL 优化处理
  */
 const prisma = require('../lib/prisma');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../utils/logger');
 const { checkStockAvailability } = require('../services/inventoryService');
 const { BadRequestError } = require('../utils/errors');
+const { optimizeImageUrl } = require('../utils/imageHelper');
 
 /**
  * Get or create cart for user/session
@@ -176,18 +178,38 @@ exports.getCart = async (req, res) => {
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
     // Format items for response
-    const items = cart.items.map((item) => ({
-      id: item.id,
-      variantId: item.variantId,
-      productId: item.variant.productId,
-      productName: item.variant.product.name,
-      variantDescription: `${item.variant.color || ''}${item.variant.color && item.variant.size ? ' • ' : ''}${item.variant.size || ''}`.trim(),
-      quantity: item.quantity,
-      unitPrice: Number(item.priceSnapshot),
-      subtotal: Number(item.priceSnapshot) * item.quantity,
-      // [2025-01-28 23:50:00] 修复：ProductImage 模型使用 url 字段，不是 imageUrl
-      thumbnail: item.variant.imageUrl || item.variant.product.images[0]?.url || null,
-    }));
+    // [2025-01-29 12:00:00] 优化图片 URL，确保返回完整的绝对路径
+    const items = cart.items.map((item) => {
+      // 获取图片 URL（优先使用 variant 的 imageUrl，否则使用 product 的第一张图片）
+      let thumbnailUrl = item.variant.imageUrl || item.variant.product.images[0]?.url || null;
+      
+      // [2025-01-29 12:00:00] 使用 optimizeImageUrl 优化图片 URL，确保是完整的绝对路径
+      if (thumbnailUrl) {
+        try {
+          thumbnailUrl = optimizeImageUrl(thumbnailUrl, { req }) || thumbnailUrl;
+        } catch (error) {
+          logger.warn('Failed to optimize image URL for cart item', {
+            itemId: item.id,
+            originalUrl: thumbnailUrl,
+            error: error.message,
+          });
+        }
+      }
+      
+      return {
+        id: item.id,
+        variantId: item.variantId,
+        productId: item.variant.productId,
+        productName: item.variant.product.name,
+        variantDescription: `${item.variant.color || ''}${item.variant.color && item.variant.size ? ' • ' : ''}${item.variant.size || ''}`.trim(),
+        quantity: item.quantity,
+        unitPrice: Number(item.priceSnapshot),
+        subtotal: Number(item.priceSnapshot) * item.quantity,
+        // [2025-01-28 23:50:00] 修复：ProductImage 模型使用 url 字段，不是 imageUrl
+        // [2025-01-29 12:00:00] 优化后的图片 URL
+        thumbnail: thumbnailUrl,
+      };
+    });
 
     res.json({
       items,

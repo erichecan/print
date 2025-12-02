@@ -283,10 +283,26 @@ export default function CartPage() {
             <article key={item.id} className="cart-card">
               <div className="cart-card__media">
                 {item.thumbnail ? (
-                  <Image src={item.thumbnail} alt={item.productName} width={144} height={144} />
-                ) : (
-                  <div className="cart-card__placeholder">Design Preview</div>
-                )}
+                  <Image 
+                    src={item.thumbnail} 
+                    alt={item.productName} 
+                    width={144} 
+                    height={144}
+                    onError={(e) => {
+                      // [2025-01-29 12:00:00] 图片加载失败时显示占位符
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const placeholder = target.nextElementSibling as HTMLElement;
+                      if (placeholder && placeholder.classList.contains('cart-card__placeholder')) {
+                        placeholder.style.display = 'flex';
+                      }
+                    }}
+                    unoptimized={item.thumbnail.startsWith('http') && !item.thumbnail.includes('storage.googleapis.com')}
+                  />
+                ) : null}
+                <div className="cart-card__placeholder" style={{ display: item.thumbnail ? 'none' : 'flex' }}>
+                  {item.thumbnail ? 'Image' : 'Design Preview'}
+                </div>
               </div>
               <div className="cart-card__body">
                 <div className="cart-card__top">

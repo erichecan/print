@@ -216,14 +216,17 @@ function CheckoutForm({
   const { error: showError, warning: showWarning } = useToast(); // [2025-01-27 16:55:00] Toast 通知
 
   // [2025-11-29 21:25:00] 调试日志：监控 Stripe 加载状态
+  // [2025-01-29 12:00:00] 增强 Stripe 加载状态监控
   useEffect(() => {
     console.log('[Checkout Debug] Stripe state:', JSON.stringify({
       stripe: stripe ? 'loaded' : 'not-loaded',
       hasStripeKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
       stripeKeyLength: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.length || 0,
+      stripeKeyPrefix: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 7) || 'none',
       elements: elements ? 'loaded' : 'not-loaded',
+      cardComplete,
     }, null, 2));
-  }, [stripe, elements]);
+  }, [stripe, elements, cardComplete]);
 
   const [address, setAddress] = useState<ShippingAddressForm>({
     fullName: '',
@@ -984,22 +987,26 @@ function CheckoutForm({
             }}
             onChange={(event) => {
               // [2025-01-27 11:10:00] 实时监听卡片输入状态
+              // [2025-01-29 12:00:00] 改进卡片状态检测，确保 cardComplete 正确更新
               if (event.error) {
                 setCardError(event.error.message);
+                setCardComplete(false);
               } else {
                 setCardError(null);
+                // [2025-01-29 12:00:00] 确保 cardComplete 状态正确更新
+                // event.complete 为 true 表示所有必填字段都已填写且有效
+                const isComplete = event.complete === true && !event.empty;
+                setCardComplete(isComplete);
               }
               // [2025-11-29 21:05:00] 调试日志：记录卡片状态变化
               const cardState = {
                 complete: event.complete,
                 error: event.error?.message || null,
                 empty: event.empty,
-                brand: event.brand || 'unknown'
+                brand: event.brand || 'unknown',
+                cardComplete: event.complete === true && !event.empty
               };
               console.log('[Checkout Debug] Card state changed:', JSON.stringify(cardState, null, 2));
-              
-              // [2025-11-29 21:35:00] 确保 cardComplete 状态正确更新
-              setCardComplete(event.complete === true);
             }}
           />
         </div>

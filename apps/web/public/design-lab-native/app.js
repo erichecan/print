@@ -970,7 +970,8 @@
               }
 
               // [2025-01-27] 成功添加到购物车
-              alert('Item added to cart successfully!');
+              // [2025-01-29 12:00:00] 移除 alert 弹窗，触发购物车更新事件
+              window.dispatchEvent(new CustomEvent('cart:updated'));
               
               // [2025-01-27] 可选：跳转到购物车页面
               // window.location.href = '/cart';

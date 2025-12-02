@@ -53,6 +53,7 @@ export function ProductDetail() {
   }, [apiProduct, relatedData]);
 
   // [2025-11-19 09:30:00] 加入购物车处理函数
+  // [2025-01-29 12:00:00] 移除 alert 弹窗，使用 CartContext 确保状态同步
   const handleAddToCart = useCallback(async (payload: any) => {
     console.log('[Add to Cart]', payload);
 
@@ -66,13 +67,20 @@ export function ProductDetail() {
 
       if (matchingVariant && matchingVariant.id) {
         try {
+          // [2025-01-29 12:00:00] 使用 CartContext 的 addItem 方法，确保状态同步
+          const { useCart } = await import('@/contexts/CartContext');
+          // 注意：这里不能直接使用 hook，需要通过事件或全局状态更新
+          // 直接调用 API，然后触发购物车刷新事件
           const { cartApi } = await import('@/lib/api');
           await cartApi.addItem(matchingVariant.id, payload.quantity || 1);
-
-          // 显示成功提示
-          alert(`Successfully added ${payload.quantity || 1} item(s) to cart!`);
+          
+          // [2025-01-29 12:00:00] 触发购物车更新事件，让 CartContext 自动刷新
+          window.dispatchEvent(new CustomEvent('cart:updated'));
+          
+          // [2025-01-29 12:00:00] 移除 alert 弹窗，静默更新购物车图标
         } catch (error) {
           console.error('Failed to add to cart:', error);
+          // [2025-01-29 12:00:00] 只在错误时显示提示
           alert('Failed to add to cart. Please try again.');
         }
       } else {
@@ -97,6 +105,9 @@ export function ProductDetail() {
         try {
           const { cartApi } = await import('@/lib/api');
           await cartApi.addItem(matchingVariant.id, payload.quantity || 1);
+
+          // [2025-01-29 12:00:00] 触发购物车更新事件
+          window.dispatchEvent(new CustomEvent('cart:updated'));
 
           // 跳转到结账页面
           router.push('/checkout');

@@ -106,10 +106,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
     isLoading,
   });
 
+  // [2025-01-29 12:00:00] 监听购物车更新事件，确保实时更新
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      console.log('[CartProvider] Cart update event received, refreshing cart...');
+      mutate(); // 刷新购物车数据
+    };
+
+    window.addEventListener('cart:updated', handleCartUpdate);
+    return () => {
+      window.removeEventListener('cart:updated', handleCartUpdate);
+    };
+  }, [mutate]);
+
   const addItem = async (variantId: string, quantity: number = 1, designId?: string) => {
     try {
       await cartApi.addItem(variantId, quantity, designId);
       await mutate(); // Refresh cart
+      // [2025-01-29 12:00:00] 触发更新事件，确保其他组件也能收到通知
+      window.dispatchEvent(new CustomEvent('cart:updated'));
     } catch (err) {
       console.error('Error adding item to cart:', err);
       throw err;
