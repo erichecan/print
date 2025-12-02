@@ -34,16 +34,33 @@ export async function POST(request: Request) {
       hasCookies
     });
 
-    const upstream = await fetch(upstreamUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(cookies ? { 'Cookie': cookies } : {}), // [2025-12-02 03:35:00] 只在有 cookies 时设置
-      },
-      credentials: 'include',
-      body: JSON.stringify(body),
-      cache: 'no-store',
-    });
+    let upstream;
+    try {
+      upstream = await fetch(upstreamUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(cookies ? { 'Cookie': cookies } : {}), // [2025-12-02 03:35:00] 只在有 cookies 时设置
+        },
+        credentials: 'include',
+        body: JSON.stringify(body),
+        cache: 'no-store',
+      });
+    } catch (fetchError: any) {
+      console.error('[Next.js API Route] Fetch error:', {
+        timestamp,
+        error: fetchError?.message,
+        url: upstreamUrl,
+        name: fetchError?.name
+      });
+      return NextResponse.json(
+        {
+          error: 'Failed to connect to backend server',
+          details: process.env.NODE_ENV === 'development' ? fetchError?.message : undefined,
+        },
+        { status: 503 }
+      );
+    }
 
     const responseBody = await upstream.text();
     const contentType = upstream.headers.get('content-type') || 'application/json';
@@ -53,7 +70,8 @@ export async function POST(request: Request) {
       status: upstream.status,
       statusText: upstream.statusText,
       hasSetCookie: !!upstream.headers.get('set-cookie'),
-      contentType
+      contentType,
+      bodyPreview: responseBody.substring(0, 200)
     });
 
     // [2025-12-02 03:35:00] 创建响应头
