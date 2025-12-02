@@ -243,10 +243,38 @@ export interface AddressPayload {
   isDefault?: boolean;
 }
 
+// [2025-12-02 04:20:00] 需要认证的 API 路径前缀
+const AUTH_REQUIRED_PATHS = [
+  '/orders',
+  '/admin',
+  '/auth/me',
+  '/addresses',
+  '/designs',
+  '/cart',
+];
+
+/**
+ * 检查路径是否需要认证（使用代理路由）
+ */
+function requiresAuthProxy(path: string): boolean {
+  return AUTH_REQUIRED_PATHS.some(prefix => path.startsWith(prefix));
+}
+
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   const { method = 'GET', body, headers = {} } = options;
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+
+  // [2025-12-02 04:20:00] 检查是否需要使用代理路由
+  const useProxy = requiresAuthProxy(endpoint);
+  
+  // [2025-12-02 04:20:00] 确定请求 URL
+  const baseUrl = useProxy 
+    ? (typeof window !== 'undefined' ? window.location.origin : '')
+    : API_BASE_URL;
+  const requestUrl = useProxy 
+    ? `${baseUrl}/api/proxy${endpoint}`
+    : `${baseUrl}${endpoint}`;
 
   const config: RequestInit = {
     method,
@@ -263,7 +291,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    response = await fetch(requestUrl, config);
   } catch (error: unknown) {
     // [2025-01-27 16:10:00] 处理网络错误（连接被拒绝、空响应等）
     if (error instanceof TypeError && error.message.includes('fetch')) {
