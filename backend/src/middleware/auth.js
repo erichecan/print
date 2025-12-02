@@ -2,12 +2,27 @@
  * Authentication Middleware
  * [2025-11-04 23:51:00]
  * [2025-01-27 11:20:00] Enhanced with unified error handling
+ * [2025-12-02 03:30:00] Enhanced JWT_SECRET validation and error handling
  */
 const jwt = require('jsonwebtoken');
 const prisma = require('../lib/prisma');
 const { v4: uuidv4 } = require('uuid');
 const { UnauthorizedError, ForbiddenError } = require('../utils/errors');
 const logger = require('../utils/logger');
+
+// [2025-12-02 03:30:00] JWT_SECRET 验证和获取函数
+const DEFAULT_JWT_SECRET = 'your_jwt_secret_key_change_in_production';
+function getJwtSecret() {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret === DEFAULT_JWT_SECRET) {
+    logger.warn('[Auth] ⚠️  WARNING: JWT_SECRET is not set or using default value. This is a security risk!');
+    logger.warn('[Auth] Please set JWT_SECRET environment variable to a strong random string.');
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('[Auth] ❌ CRITICAL: Using default JWT_SECRET in production is extremely dangerous!');
+    }
+  }
+  return secret || DEFAULT_JWT_SECRET;
+}
 
 /**
  * Optional authentication middleware
@@ -25,7 +40,19 @@ exports.authenticateOptional = async (req, res, next) => {
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production');
+        const jwtSecret = getJwtSecret();
+        logger.debug('[Auth] Verifying token in optional auth', { 
+          hasToken: !!token, 
+          tokenLength: token.length,
+          usingDefaultSecret: !process.env.JWT_SECRET || process.env.JWT_SECRET === DEFAULT_JWT_SECRET
+        });
+        
+        const decoded = jwt.verify(token, jwtSecret);
+        
+        logger.debug('[Auth] Token decoded successfully', { 
+          userId: decoded.userId || decoded.id,
+          hasUserId: !!(decoded.userId || decoded.id)
+        });
         
         // Get user from database
         const user = await prisma.user.findUnique({
@@ -41,10 +68,17 @@ exports.authenticateOptional = async (req, res, next) => {
 
         if (user) {
           req.user = user;
+          logger.debug('[Auth] User authenticated in optional auth', { userId: user.id, email: user.email });
+        } else {
+          logger.debug('[Auth] User not found in database', { userId: decoded.userId || decoded.id });
         }
       } catch (jwtError) {
         // Invalid token, continue as guest
-        logger.debug('Invalid JWT token in optional auth:', jwtError.message);
+        logger.debug('[Auth] Invalid JWT token in optional auth:', {
+          error: jwtError.message,
+          errorName: jwtError.name,
+          tokenPresent: !!token
+        });
       }
     }
 
@@ -91,15 +125,60 @@ exports.authenticate = async (req, res, next) => {
       req.headers.authorization?.replace('Bearer ', '') ||
       null;
 
+    // [2025-12-02 03:30:00] 详细记录认证尝试
+    logger.debug('[Auth] Authentication attempt', {
+      hasCookieToken: !!req.cookies?.token,
+      hasAuthHeader: !!req.headers.authorization,
+      hasToken: !!token,
+      path: req.path,
+      method: req.method
+    });
+
     if (!token) {
+      logger.debug('[Auth] No token provided', { path: req.path });
       // [2025-11-18 11:58:00] Avoid crashing server when auth is missing
       return next(new UnauthorizedError('Please login to access this resource'));
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production');
+    const jwtSecret = getJwtSecret();
+    logger.debug('[Auth] Verifying token', {
+      tokenLength: token.length,
+      usingDefaultSecret: !process.env.JWT_SECRET || process.env.JWT_SECRET === DEFAULT_JWT_SECRET
+    });
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, jwtSecret);
+      logger.debug('[Auth] Token verified successfully', {
+        userId: decoded.userId || decoded.id,
+        hasUserId: !!(decoded.userId || decoded.id)
+      });
+    } catch (jwtError) {
+      logger.warn('[Auth] Token verification failed', {
+        error: jwtError.message,
+        errorName: jwtError.name,
+        tokenLength: token.length
+      });
+      
+      // Handle specific JWT errors
+      if (jwtError.name === 'JsonWebTokenError') {
+        return next(new UnauthorizedError('Invalid token'));
+      }
+      if (jwtError.name === 'TokenExpiredError') {
+        return next(new UnauthorizedError('Token expired'));
+      }
+      throw jwtError; // Re-throw to be handled by outer catch
+    }
     
+    const userId = decoded.userId || decoded.id;
+    if (!userId) {
+      logger.warn('[Auth] Token decoded but no userId found', { decoded });
+      return next(new UnauthorizedError('Invalid token: missing user ID'));
+    }
+
+    logger.debug('[Auth] Fetching user from database', { userId });
     const user = await prisma.user.findUnique({
-      where: { id: decoded.userId || decoded.id },
+      where: { id: userId },
       select: {
         id: true,
         email: true,
@@ -110,10 +189,12 @@ exports.authenticate = async (req, res, next) => {
     });
 
     if (!user) {
+      logger.warn('[Auth] User not found in database', { userId });
       // [2025-11-18 11:58:00] Surface invalid token as handled error
-      return next(new UnauthorizedError('Invalid token'));
+      return next(new UnauthorizedError('Invalid token: user not found'));
     }
 
+    logger.debug('[Auth] User authenticated successfully', { userId: user.id, email: user.email, role: user.role });
     req.user = user;
     next();
   } catch (error) {
@@ -123,12 +204,21 @@ exports.authenticate = async (req, res, next) => {
       return next(error);
     }
     
-    // Handle JWT errors
+    // Handle JWT errors (should already be handled above, but catch any edge cases)
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+      logger.warn('[Auth] JWT error in catch block', {
+        error: error.message,
+        errorName: error.name
+      });
       return next(new UnauthorizedError('Invalid or expired token'));
     }
     
-    logger.error('Authentication error:', error);
+    logger.error('[Auth] Unexpected authentication error:', {
+      error: error.message,
+      errorName: error.name,
+      stack: error.stack,
+      path: req.path
+    });
     return next(new UnauthorizedError('Authentication failed'));
   }
 };

@@ -18,9 +18,10 @@ function generateToken(userId) {
 }
 
 // [2025-11-15 12:25:00] Cookie 配置辅助函数，统一跨域 cookie 设置
+// [2025-12-02 03:50:00] Enhanced with validation and logging
 function getCookieOptions() {
   const isProduction = process.env.NODE_ENV === 'production';
-  return {
+  const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // 生产环境必须使用 HTTPS
     sameSite: isProduction ? 'none' : 'lax', // 跨域请求需要 'none'
@@ -28,6 +29,18 @@ function getCookieOptions() {
     domain: undefined, // 不设置 domain，让浏览器自动处理
     path: '/', // 确保 cookie 在所有路径下可用
   };
+  
+  // [2025-12-02 03:50:00] 验证 Cookie 配置
+  if (isProduction) {
+    if (!cookieOptions.secure) {
+      console.warn('[Auth] ⚠️  WARNING: Cookie secure flag is false in production!');
+    }
+    if (cookieOptions.sameSite !== 'none') {
+      console.warn('[Auth] ⚠️  WARNING: Cookie sameSite is not "none" in production! This may cause cross-domain issues.');
+    }
+  }
+  
+  return cookieOptions;
 }
 
 /**
@@ -98,27 +111,45 @@ exports.register = async (req, res) => {
 /**
  * POST /api/auth/login - Login user
  * [2025-11-05 01:00:00]
+ * [2025-12-02 03:40:00] Enhanced error handling and logging
  */
 exports.login = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  
   try {
     const { email, password } = req.body;
 
-    // Validation
+    // [2025-12-02 03:40:00] Validation with detailed logging
     if (!email || !password) {
+      console.log('[Auth] Login validation failed', {
+        timestamp,
+        hasEmail: !!email,
+        hasPassword: !!password
+      });
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    console.log('[Auth] Login attempt:', { email: email.toLowerCase() });
+    const normalizedEmail = email.toLowerCase();
+    console.log('[Auth] Login attempt', {
+      timestamp,
+      email: normalizedEmail.substring(0, 3) + '***',
+      hasPassword: !!password
+    });
 
-    // Find user
+    // [2025-12-02 03:40:00] Find user with detailed error handling
     let user;
     try {
       user = await prisma.user.findUnique({
-        where: { email: email.toLowerCase() },
+        where: { email: normalizedEmail },
       });
     } catch (dbError) {
-      console.error('[Auth] Database error finding user:', dbError);
-      console.error('[Auth] Database error stack:', dbError.stack);
+      console.error('[Auth] Database error finding user', {
+        timestamp,
+        error: dbError.message,
+        errorCode: dbError.code,
+        email: normalizedEmail.substring(0, 3) + '***',
+        stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
+      });
       return res.status(500).json({ 
         error: 'Database error', 
         details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
@@ -126,37 +157,108 @@ exports.login = async (req, res) => {
     }
 
     if (!user) {
-      console.log('[Auth] User not found:', email.toLowerCase());
+      console.log('[Auth] User not found', {
+        timestamp,
+        email: normalizedEmail.substring(0, 3) + '***'
+      });
+      // [2025-12-02 03:40:00] 使用通用错误消息，避免泄露用户是否存在
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    console.log('[Auth] User found:', { id: user.id, email: user.email, role: user.role });
+    console.log('[Auth] User found', {
+      timestamp,
+      userId: user.id,
+      email: user.email.substring(0, 3) + '***',
+      role: user.role,
+      hasPasswordHash: !!user.passwordHash
+    });
 
-    // Verify password
+    // [2025-12-02 03:40:00] Verify password with detailed error handling
     let isValidPassword = false;
     try {
       if (!user.passwordHash) {
-        console.error('[Auth] User has no password hash:', user.id);
+        console.error('[Auth] User has no password hash', {
+          timestamp,
+          userId: user.id,
+          email: user.email.substring(0, 3) + '***'
+        });
         return res.status(500).json({ error: 'User account error' });
       }
+      
       isValidPassword = await bcrypt.compare(password, user.passwordHash);
+      
+      console.log('[Auth] Password verification result', {
+        timestamp,
+        userId: user.id,
+        isValid: isValidPassword
+      });
     } catch (bcryptError) {
-      console.error('[Auth] Bcrypt error:', bcryptError);
+      console.error('[Auth] Bcrypt error', {
+        timestamp,
+        error: bcryptError.message,
+        userId: user.id,
+        stack: process.env.NODE_ENV === 'development' ? bcryptError.stack : undefined
+      });
       return res.status(500).json({ error: 'Password verification error' });
     }
 
     if (!isValidPassword) {
-      console.log('[Auth] Invalid password for user:', email.toLowerCase());
+      console.log('[Auth] Invalid password', {
+        timestamp,
+        userId: user.id,
+        email: normalizedEmail.substring(0, 3) + '***'
+      });
+      // [2025-12-02 03:40:00] 使用通用错误消息，避免泄露密码是否正确
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Generate token
-    const token = generateToken(user.id);
+    // [2025-12-02 03:40:00] Generate token
+    let token;
+    try {
+      token = generateToken(user.id);
+      console.log('[Auth] Token generated', {
+        timestamp,
+        userId: user.id,
+        tokenLength: token.length
+      });
+    } catch (tokenError) {
+      console.error('[Auth] Token generation error', {
+        timestamp,
+        error: tokenError.message,
+        userId: user.id
+      });
+      return res.status(500).json({ error: 'Failed to generate authentication token' });
+    }
 
-    // Set cookie
-    res.cookie('token', token, getCookieOptions());
+    // [2025-12-02 03:40:00] Set cookie with validation
+    try {
+      const cookieOptions = getCookieOptions();
+      res.cookie('token', token, cookieOptions);
+      console.log('[Auth] Cookie set', {
+        timestamp,
+        userId: user.id,
+        cookieOptions: {
+          httpOnly: cookieOptions.httpOnly,
+          secure: cookieOptions.secure,
+          sameSite: cookieOptions.sameSite,
+          path: cookieOptions.path
+        }
+      });
+    } catch (cookieError) {
+      console.error('[Auth] Cookie setting error', {
+        timestamp,
+        error: cookieError.message,
+        userId: user.id
+      });
+      // 即使设置 cookie 失败，也返回 token，让前端可以手动处理
+    }
 
-    console.log('[Auth] Login successful:', { userId: user.id, email: user.email });
+    console.log('[Auth] Login successful', {
+      timestamp,
+      userId: user.id,
+      email: user.email.substring(0, 3) + '***',
+      role: user.role
+    });
 
     res.json({
       token,
@@ -170,8 +272,12 @@ exports.login = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[Auth] Unexpected error logging in:', error);
-    console.error('[Auth] Error stack:', error.stack);
+    console.error('[Auth] Unexpected error logging in', {
+      timestamp,
+      error: error.message,
+      errorName: error.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     res.status(500).json({ 
       error: 'Failed to login', 
       details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error' 
@@ -200,12 +306,25 @@ exports.logout = async (req, res) => {
 /**
  * GET /api/auth/me - Get current user
  * [2025-11-05 01:00:00]
+ * [2025-12-02 03:40:00] Enhanced error handling and logging
  */
 exports.me = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  
   try {
     const userId = req.user?.id;
 
+    console.log('[Auth] Get current user request', {
+      timestamp,
+      hasUser: !!req.user,
+      userId: userId || 'missing'
+    });
+
     if (!userId) {
+      console.log('[Auth] No user ID in request', {
+        timestamp,
+        hasUser: !!req.user
+      });
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
@@ -225,12 +344,29 @@ exports.me = async (req, res) => {
     });
 
     if (!user) {
+      console.error('[Auth] User not found in database', {
+        timestamp,
+        userId
+      });
       return res.status(404).json({ error: 'User not found' });
     }
 
+    console.log('[Auth] User retrieved successfully', {
+      timestamp,
+      userId: user.id,
+      email: user.email.substring(0, 3) + '***',
+      role: user.role
+    });
+
     res.json(user);
   } catch (error) {
-    console.error('Error getting current user:', error);
+    console.error('[Auth] Error getting current user', {
+      timestamp,
+      error: error.message,
+      errorName: error.name,
+      userId: req.user?.id,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     res.status(500).json({ error: 'Failed to get current user' });
   }
 };
@@ -405,5 +541,104 @@ exports.updatePassword = async (req, res) => {
   } catch (error) {
     console.error('Error updating password:', error);
     res.status(500).json({ error: 'Failed to update password' });
+  }
+};
+
+/**
+ * GET /api/auth/check - Diagnostic endpoint for authentication status
+ * [2025-12-02 03:45:00] Returns authentication status and configuration info
+ */
+exports.check = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  
+  try {
+    const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '') || null;
+    const hasToken = !!token;
+    
+    // Check JWT_SECRET configuration
+    const DEFAULT_JWT_SECRET = 'your_jwt_secret_key_change_in_production';
+    const jwtSecret = process.env.JWT_SECRET;
+    const usingDefaultSecret = !jwtSecret || jwtSecret === DEFAULT_JWT_SECRET;
+    
+    // Check cookie configuration
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = getCookieOptions();
+    
+    // Try to decode token if present
+    let tokenInfo = null;
+    if (token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.decode(token);
+        tokenInfo = {
+          hasUserId: !!(decoded?.userId || decoded?.id),
+          userId: decoded?.userId || decoded?.id,
+          expiresAt: decoded?.exp ? new Date(decoded.exp * 1000).toISOString() : null,
+          isExpired: decoded?.exp ? decoded.exp < Date.now() / 1000 : null,
+        };
+      } catch (decodeError) {
+        tokenInfo = {
+          error: 'Failed to decode token',
+          message: decodeError.message
+        };
+      }
+    }
+    
+    // Check user if authenticated
+    let userInfo = null;
+    if (req.user) {
+      userInfo = {
+        id: req.user.id,
+        email: req.user.email?.substring(0, 3) + '***',
+        role: req.user.role,
+      };
+    }
+    
+    const diagnosticInfo = {
+      timestamp,
+      authenticated: !!req.user,
+      hasToken,
+      tokenInfo,
+      userInfo,
+      configuration: {
+        jwtSecret: {
+          isSet: !!jwtSecret,
+          usingDefault: usingDefaultSecret,
+          length: jwtSecret ? jwtSecret.length : 0,
+          warning: usingDefaultSecret ? 'Using default JWT_SECRET is insecure!' : null,
+        },
+        cookie: {
+          httpOnly: cookieOptions.httpOnly,
+          secure: cookieOptions.secure,
+          sameSite: cookieOptions.sameSite,
+          path: cookieOptions.path,
+          maxAge: cookieOptions.maxAge,
+          isProduction,
+        },
+        environment: {
+          nodeEnv: process.env.NODE_ENV,
+          isProduction,
+        },
+      },
+    };
+    
+    console.log('[Auth] Diagnostic check', {
+      timestamp,
+      authenticated: !!req.user,
+      hasToken,
+      usingDefaultSecret
+    });
+    
+    res.json(diagnosticInfo);
+  } catch (error) {
+    console.error('[Auth] Error in diagnostic check', {
+      timestamp,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    res.status(500).json({
+      error: 'Failed to perform diagnostic check',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };

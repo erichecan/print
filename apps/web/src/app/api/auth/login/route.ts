@@ -1,6 +1,7 @@
 /**
  * Next.js API Route: POST /api/auth/login
  * [2025-01-29 02:15:00] 代理登录请求到后端，确保 Cookie 正确传递
+ * [2025-12-02 03:35:00] Enhanced Cookie handling and error logging
  */
 import { NextResponse } from 'next/server';
 
@@ -9,19 +10,35 @@ import { getBackendApiBase } from '@/lib/api-route-config';
 const API_BASE = getBackendApiBase();
 
 export async function POST(request: Request) {
+  const timestamp = new Date().toISOString();
+  
   try {
     const body = await request.json();
 
-    // 获取前端请求的 cookies（如果有）
+    // [2025-12-02 03:35:00] 获取前端请求的 cookies（如果有）
     const cookies = request.headers.get('cookie') || '';
+    const hasCookies = !!cookies;
+    
+    console.log('[Next.js API Route] Login request', {
+      timestamp,
+      hasCookies,
+      cookieCount: cookies ? cookies.split(';').length : 0,
+      email: body.email ? body.email.substring(0, 3) + '***' : 'missing'
+    });
 
-    // 转发请求到后端
+    // [2025-12-02 03:35:00] 转发请求到后端
     const upstreamUrl = `${API_BASE}/auth/login`;
+    console.log('[Next.js API Route] Forwarding to upstream', {
+      timestamp,
+      url: upstreamUrl,
+      hasCookies
+    });
+
     const upstream = await fetch(upstreamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Cookie': cookies, // 传递前端已有的 cookies
+        ...(cookies ? { 'Cookie': cookies } : {}), // [2025-12-02 03:35:00] 只在有 cookies 时设置
       },
       credentials: 'include',
       body: JSON.stringify(body),
@@ -31,15 +48,27 @@ export async function POST(request: Request) {
     const responseBody = await upstream.text();
     const contentType = upstream.headers.get('content-type') || 'application/json';
 
-    // 创建响应头
+    console.log('[Next.js API Route] Upstream response', {
+      timestamp,
+      status: upstream.status,
+      statusText: upstream.statusText,
+      hasSetCookie: !!upstream.headers.get('set-cookie'),
+      contentType
+    });
+
+    // [2025-12-02 03:35:00] 创建响应头
     const responseHeaders = new Headers({
       'content-type': contentType,
     });
 
-    // 复制 Set-Cookie 头（这样浏览器可以保存认证 Cookie）
+    // [2025-12-02 03:35:00] 复制 Set-Cookie 头（这样浏览器可以保存认证 Cookie）
     // Next.js 需要逐个设置 Set-Cookie 头
     const setCookieHeaders = upstream.headers.getSetCookie?.() || [];
     if (setCookieHeaders.length > 0) {
+      console.log('[Next.js API Route] Setting cookies', {
+        timestamp,
+        cookieCount: setCookieHeaders.length
+      });
       // 如果支持 getSetCookie()，使用它
       setCookieHeaders.forEach(cookie => {
         responseHeaders.append('set-cookie', cookie);
@@ -48,11 +77,17 @@ export async function POST(request: Request) {
       // 降级：使用 get('set-cookie')
       const setCookieHeader = upstream.headers.get('set-cookie');
       if (setCookieHeader) {
+        console.log('[Next.js API Route] Setting cookie (fallback)', {
+          timestamp,
+          cookieLength: setCookieHeader.length
+        });
         responseHeaders.set('set-cookie', setCookieHeader);
+      } else {
+        console.log('[Next.js API Route] No Set-Cookie header from upstream', { timestamp });
       }
     }
 
-    // 复制其他相关头
+    // [2025-12-02 03:35:00] 复制其他相关头
     const accessControlHeaders = [
       'access-control-expose-headers',
       'access-control-allow-credentials',
@@ -65,12 +100,26 @@ export async function POST(request: Request) {
       }
     });
 
+    // [2025-12-02 03:35:00] 记录响应状态
+    if (!upstream.ok) {
+      console.error('[Next.js API Route] Upstream error', {
+        timestamp,
+        status: upstream.status,
+        body: responseBody.substring(0, 200)
+      });
+    }
+
     return new NextResponse(responseBody, {
       status: upstream.status,
       headers: responseHeaders,
     });
   } catch (error: any) {
-    console.error('[Next.js API Route] Login proxy error:', error);
+    console.error('[Next.js API Route] Login proxy error:', {
+      timestamp,
+      error: error?.message,
+      stack: error?.stack,
+      name: error?.name
+    });
     return NextResponse.json(
       {
         error: 'Failed to login',

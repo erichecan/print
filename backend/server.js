@@ -37,6 +37,35 @@ const validateDatabaseUrl = () => {
   }
 };
 
+// [2025-12-02 03:55:00] 验证 JWT_SECRET 环境变量
+const validateJwtSecret = () => {
+  const DEFAULT_JWT_SECRET = 'your_jwt_secret_key_change_in_production';
+  const jwtSecret = process.env.JWT_SECRET;
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (!jwtSecret || jwtSecret === DEFAULT_JWT_SECRET) {
+    if (isProduction) {
+      console.error('[2025-12-02 03:55:00] ❌ CRITICAL: JWT_SECRET is not set or using default value in PRODUCTION!');
+      console.error('[2025-12-02 03:55:00]    这是一个严重的安全风险！');
+      console.error('[2025-12-02 03:55:00]    请立即设置 JWT_SECRET 环境变量为强随机字符串');
+      console.error('[2025-12-02 03:55:00]    生成方法: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+      throw new Error('JWT_SECRET must be set in production environment');
+    } else {
+      console.warn('[2025-12-02 03:55:00] ⚠️  WARNING: JWT_SECRET is not set or using default value');
+      console.warn('[2025-12-02 03:55:00]    开发环境可以使用默认值，但生产环境必须设置强随机字符串');
+      console.warn('[2025-12-02 03:55:00]    生成方法: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    }
+  } else {
+    if (jwtSecret.length < 32) {
+      console.warn('[2025-12-02 03:55:00] ⚠️  WARNING: JWT_SECRET is shorter than recommended (32 characters)');
+      console.warn('[2025-12-02 03:55:00]    建议使用至少 32 字符的强随机字符串');
+    } else {
+      console.log('[2025-12-02 03:55:00] ✅ JWT_SECRET validated');
+      console.log('[2025-12-02 03:55:00]    长度:', jwtSecret.length, '字符');
+    }
+  }
+};
+
 // [2025-01-29 23:05:00] 必须在导入应用之前生成 Prisma Client
 // [2025-01-29 17:30:00] 方案 1：回到运行时生成（使用真实的 DATABASE_URL）
 // 因为应用的路由会在导入时尝试使用 Prisma Client
@@ -79,6 +108,9 @@ const ensurePrismaClient = () => {
     process.exit(1);
   }
 };
+
+// [2025-12-02 03:55:00] 验证环境变量
+validateJwtSecret();
 
 // [2025-01-29 23:05:00] 在导入应用之前生成 Prisma Client
 ensurePrismaClient();

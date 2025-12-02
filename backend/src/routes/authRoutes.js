@@ -13,6 +13,7 @@ const {
   resetPassword,
   updateProfile,
   updatePassword,
+  check,
 } = require('../controllers/authController');
 const { authenticate } = require('../middleware/auth');
 
@@ -27,6 +28,10 @@ router.post('/logout', logout);
 
 // GET /api/auth/me - Get current user (auth required)
 router.get('/me', authenticate, me);
+
+// GET /api/auth/check - Diagnostic endpoint for authentication status (public)
+// [2025-12-02 03:45:00] Returns authentication status and configuration info
+router.get('/check', check);
 
 // POST /api/auth/forgot-password - Request password reset (public)
 router.post('/forgot-password', forgotPassword);
