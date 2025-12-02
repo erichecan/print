@@ -2376,6 +2376,7 @@ const DesignLabClient = () => {
   );
 
   // [2025-01-27 23:30:00] 添加详细日志，包括上传按钮点击追踪
+  // [2025-12-02 06:05:00] 更新：Upload 工具改为先打开「Choose File To Upload」模态，而不是直接触发文件选择器
   const triggerToolAction = useCallback(
     (tool: ToolKey) => {
       const timestamp = new Date().toISOString();
@@ -2387,40 +2388,11 @@ const DesignLabClient = () => {
           console.log('[Upload] ========================================');
           console.log('[Upload] ===== UPLOAD BUTTON CLICKED =====');
           console.log('[Upload] Timestamp:', timestamp);
-          console.log('[Upload] fileInputRef exists:', !!fileInputRef.current);
           console.log('[Upload] draft exists:', !!draft);
           console.log('[Upload] user exists:', !!user);
           console.log('[Upload] ========================================');
-          
-          // [2025-01-28 00:10:00] 直接触发文件选择器，而不是打开模态框
-          if (!draft) {
-            console.warn('[Upload] ❌ No draft found', { timestamp });
-            setError('请先创建设计草稿');
-            return;
-          }
-          if (!user) {
-            console.warn('[Upload] ❌ No user found', { timestamp });
-            setError('请先登录后再上传素材');
-            return;
-          }
-
-          if (fileInputRef.current) {
-            console.log('[Upload] 📋 Triggering file input click directly...', { timestamp });
-            try {
-              fileInputRef.current.click();
-              console.log('[Upload] ✅ File input click triggered successfully', { timestamp });
-            } catch (err: any) {
-              console.error('[Upload] ❌ Error triggering file input click:', {
-                error: err.message,
-                stack: err.stack,
-                timestamp
-              });
-              setError('无法打开文件选择器，请刷新页面重试');
-            }
-          } else {
-            console.error('[Upload] ❌ File input ref is null!', { timestamp });
-            setError('文件输入框未初始化，请刷新页面重试');
-          }
+          // [2025-12-02 06:05:00] 行为对齐 Custom Ink：先进入「Choose File To Upload」界面，由其中的 Browse/Drag&Drop 真正触发上传
+          setShowUploadModal(true);
           break;
         case 'text':
           console.log('[Design Lab] Opening add text modal', { timestamp });
@@ -2468,9 +2440,7 @@ const DesignLabClient = () => {
   const handleGuideActionTrigger = useCallback(
     (tool: ToolKey) => {
       triggerToolAction(tool);
-      if (tool === 'upload' || tool === 'text' || tool === 'art') {
-        setGuideCollapsed(true);
-      }
+      // [2025-12-02 06:05:00] 保持与 hasArtwork 规则一致：不在点击瞬间强制折叠，引导面板由画布是否已有内容决定
     },
     [triggerToolAction]
   );
