@@ -126,13 +126,21 @@ function optimizeImageUrl(url, options = {}) {
 
   try {
     const lowerUrl = normalizedUrl.toLowerCase();
+    const isGcsUrl = lowerUrl.includes('storage.googleapis.com');
+    
+    // [2025-12-03 04:00:00] 对于 GCS URL，不添加查询参数
+    // GCS 不支持 width/quality 查询参数进行图片优化
+    // Next.js Image 优化器会处理这些参数，所以直接返回规范化后的 URL
+    if (isGcsUrl) {
+      return normalizedUrl;
+    }
+    
     const isCdnUrl =
       lowerUrl.includes('cloudfront') ||
       lowerUrl.includes('cloudflare') ||
       lowerUrl.includes('imgix') ||
       lowerUrl.includes('akamai') ||
-      lowerUrl.includes('fastly') ||
-      lowerUrl.includes('storage.googleapis.com'); // [2025-12-01 22:15:00] 支持 GCS
+      lowerUrl.includes('fastly');
 
     // [2025-01-27 16:15:00] 如果不是CDN URL，直接返回规范化后的URL（不进行优化）
     if (!isCdnUrl) {

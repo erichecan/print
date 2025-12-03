@@ -719,8 +719,16 @@ exports.getProducts = async (req, res) => {
         name: product.name,
         slug: product.slug,
         price: {
-          base: toNumber(product.basePrice) / 100, // 转换为美元
-          sale: toNumber(product.salePrice),
+          base: toNumber(product.basePrice) / 100, // [2025-12-03 04:30:00] basePrice 从分转换为元
+          // [2025-12-03 04:35:00] salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
+          // 但如果历史数据中 salePrice 可能是以"分"存储的，需要兼容处理
+          // 检查：如果 salePrice 值很大（> 1000），可能是"分"，需要除以 100；否则是"元"
+          sale: (() => {
+            const saleValue = toNumber(product.salePrice, 0);
+            // 如果 salePrice 值很大，可能是历史数据（以"分"存储），需要除以 100
+            // 否则是正常数据（以"元"存储）
+            return saleValue > 1000 ? saleValue / 100 : saleValue;
+          })(),
           currency: 'CAD',
         },
         primaryImage: imageUrl
@@ -929,47 +937,77 @@ exports.getProductBySlug = async (req, res) => {
     });
 
     if (!product) {
+      logger.info('Product not found', { slug: req.params.slug, isNumericId: /^\d+$/.test(req.params.slug) });
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const avgRating = await prisma.productReview.aggregate({
-      where: { productId: product.id },
-      _avg: { rating: true },
-      _count: { rating: true },
-    });
+    // [2025-12-03 04:05:00] 防御性检查：确保产品数据完整
+    if (!product.id) {
+      logger.error('Product data incomplete: missing id', { slug: req.params.slug, product });
+      return res.status(500).json({ error: 'Product data is incomplete' });
+    }
 
+    // [2025-12-03 04:05:00] 安全地获取评分数据，避免查询失败导致整个请求失败
+    let avgRating = { _avg: { rating: null }, _count: { rating: 0 } };
+    try {
+      avgRating = await prisma.productReview.aggregate({
+        where: { productId: product.id },
+        _avg: { rating: true },
+        _count: { rating: true },
+      });
+    } catch (ratingError) {
+      logger.warn('Failed to fetch product rating', {
+        productId: product.id,
+        error: ratingError.message,
+        code: ratingError.code,
+      });
+      // 继续执行，使用默认值
+    }
+
+    // [2025-12-03 04:05:00] 防御性处理关联数据，避免 null/undefined 导致错误
     const formattedProduct = {
       id: product.id,
-      name: product.name,
-      slug: product.slug,
-      description: product.description,
-      longDescription: product.longDescription,
+      name: product.name || '',
+      slug: product.slug || '',
+      description: product.description || null,
+      longDescription: product.longDescription || null,
       basePrice: toNumber(product.basePrice, 0),
       price: {
-        base: toNumber(product.basePrice, 0) / 100, // 转换为美元
-        sale: toNumber(product.salePrice, toNumber(product.basePrice, 0)) / 100,
+        base: toNumber(product.basePrice, 0) / 100, // [2025-12-03 04:35:00] basePrice 从分转换为元
+        // [2025-12-03 04:35:00] salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
+        // 但如果历史数据中 salePrice 可能是以"分"存储的，需要兼容处理
+        sale: (() => {
+          const saleValue = toNumber(product.salePrice, 0);
+          const baseValue = toNumber(product.basePrice, 0) / 100;
+          // 如果 salePrice 值很大（> 1000），可能是历史数据（以"分"存储），需要除以 100
+          // 否则是正常数据（以"元"存储）
+          return saleValue > 1000 ? saleValue / 100 : saleValue;
+        })(),
         currency: 'CAD',
         onSale: (() => {
           const sale = toNumber(product.salePrice, 0);
           const base = toNumber(product.basePrice, 0);
-          return sale > 0 && sale !== base;
+          // [2025-12-03 04:35:00] 比较时需要统一单位（都转换为元）
+          const saleInYuan = sale > 1000 ? sale / 100 : sale;
+          const baseInYuan = base / 100;
+          return saleInYuan > 0 && saleInYuan !== baseInYuan;
         })(),
       },
-      category: product.category,
-      brand: product.brand,
+      category: product.category || null,
+      brand: product.brand || null,
       images: (product.images || []).map((image) => ({
         id: image.id,
         url: image.url ? (optimizeImageUrl(image.url, { width: 1280, quality: 85, req }) || image.url) : null,
         alt: image.alt || product.name,
-        sortOrder: image.sortOrder,
+        sortOrder: image.sortOrder || 0,
       })),
       variants: (product.variants || []).map((variant) => ({
         id: variant.id,
-        sku: variant.sku,
-        color: variant.color,
-        colorHex: variant.colorHex,
-        size: variant.size,
-        stockQuantity: variant.stockQuantity,
+        sku: variant.sku || null,
+        color: variant.color || null,
+        colorHex: variant.colorHex || null,
+        size: variant.size || null,
+        stockQuantity: variant.stockQuantity || 0,
         priceAdjustment: toNumber(variant.priceAdjustment, 0),
         price: (toNumber(product.basePrice, 0) + toNumber(variant.priceAdjustment, 0)) / 100,
         imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl) : null,
@@ -978,8 +1016,8 @@ exports.getProductBySlug = async (req, res) => {
         average: Number(avgRating._avg.rating || 0),
         count: Number(avgRating._count.rating || 0),
       },
-      reviews: product.reviews,
-      collections: (product.collectionProducts || []).map((item) => item.collection),
+      reviews: product.reviews || [],
+      collections: (product.collectionProducts || []).map((item) => item.collection).filter(Boolean),
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     };
@@ -992,14 +1030,41 @@ exports.getProductBySlug = async (req, res) => {
 
     res.json(formattedProduct);
   } catch (error) {
-    logger.error('Failed to fetch product by slug', { 
-      error: error.message, 
+    // [2025-12-03 04:05:00] 增强错误日志，记录 Prisma 错误代码和元数据
+    const errorDetails = {
+      error: error.message,
       stack: error.stack,
       slug: req.params.slug,
-    });
+      code: error.code,
+      meta: error.meta,
+      name: error.name,
+    };
+    
+    logger.error('Failed to fetch product by slug', errorDetails);
+    
+    // [2025-12-03 04:05:00] 区分不同类型的错误
+    // Prisma P2025: Record not found (应该返回 404)
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Prisma P1001: Connection error
+    if (error.code === 'P1001') {
+      logger.error('Database connection error', errorDetails);
+      return res.status(503).json({ 
+        error: 'Database connection failed',
+        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+      });
+    }
+    
+    // 其他错误返回 500
     res.status(500).json({ 
       error: 'Failed to fetch product',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error.message,
+        code: error.code,
+        meta: error.meta,
+      }),
     });
   }
 };
@@ -1024,7 +1089,17 @@ exports.getRelatedProducts = async (req, res) => {
     });
 
     if (!currentProduct) {
+      logger.info('Product not found for related products', { slug, isNumericId });
       return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // [2025-12-03 04:10:00] 检查 categoryId 是否为 null，如果为 null 则返回空数组
+    if (!currentProduct.categoryId) {
+      logger.warn('Product has no categoryId, returning empty related products', {
+        productId: currentProduct.id,
+        slug,
+      });
+      return res.json({ data: [] });
     }
 
     const cacheKey = `products:related:${slug}:${limit}`;
@@ -1046,14 +1121,27 @@ exports.getRelatedProducts = async (req, res) => {
     
     const productIds = candidateProducts.map((p) => p.id);
     
-    const ratingStats = await prisma.productReview.groupBy({
-      by: ['productId'],
-      where: {
-        productId: { in: productIds },
-      },
-      _avg: { rating: true },
-      _count: true,
-    });
+    // [2025-12-03 04:10:00] 安全地获取评分统计，避免查询失败
+    let ratingStats = [];
+    if (productIds.length > 0) {
+      try {
+        ratingStats = await prisma.productReview.groupBy({
+          by: ['productId'],
+          where: {
+            productId: { in: productIds },
+          },
+          _avg: { rating: true },
+          _count: true,
+        });
+      } catch (ratingError) {
+        logger.warn('Failed to fetch rating stats for related products', {
+          productIds,
+          error: ratingError.message,
+          code: ratingError.code,
+        });
+        // 继续执行，使用空数组
+      }
+    }
     
     const ratingMap = new Map();
     ratingStats.forEach((stat) => {
@@ -1143,8 +1231,15 @@ exports.getRelatedProducts = async (req, res) => {
         slug: product.slug,
         basePrice: toNumber(product.basePrice, 0),
         price: {
-          base: toNumber(product.basePrice, 0) / 100,
-          sale: toNumber(product.salePrice, product.basePrice) / 100,
+          base: toNumber(product.basePrice, 0) / 100, // [2025-12-03 04:35:00] basePrice 从分转换为元
+          // [2025-12-03 04:35:00] salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
+          // 但如果历史数据中 salePrice 可能是以"分"存储的，需要兼容处理
+          sale: (() => {
+            const saleValue = toNumber(product.salePrice, 0);
+            // 如果 salePrice 值很大（> 1000），可能是历史数据（以"分"存储），需要除以 100
+            // 否则是正常数据（以"元"存储）
+            return saleValue > 1000 ? saleValue / 100 : saleValue;
+          })(),
           currency: 'CAD',
         },
         category: product.category,
@@ -1160,8 +1255,45 @@ exports.getRelatedProducts = async (req, res) => {
 
     res.json({ data: formattedRelated });
   } catch (error) {
-    logger.error('Failed to fetch related products', { error: error.message });
-    res.status(500).json({ error: 'Failed to fetch related products' });
+    // [2025-12-03 04:10:00] 增强错误日志，记录 Prisma 错误代码和元数据
+    const errorDetails = {
+      error: error.message,
+      stack: error.stack,
+      slug: req.params.slug,
+      limit: req.query.limit,
+      code: error.code,
+      meta: error.meta,
+      name: error.name,
+    };
+    
+    logger.error('Failed to fetch related products', errorDetails);
+    
+    // [2025-12-03 04:10:00] 区分不同类型的错误
+    // Prisma P2025: Record not found (应该返回 404)
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Prisma P1001: Connection error
+    if (error.code === 'P1001') {
+      logger.error('Database connection error in getRelatedProducts', errorDetails);
+      return res.status(503).json({ 
+        error: 'Database connection failed',
+        ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+      });
+    }
+    
+    // 其他错误返回 500，但返回空数组以避免前端完全失败
+    logger.error('Returning empty array due to error in getRelatedProducts', errorDetails);
+    res.status(500).json({ 
+      error: 'Failed to fetch related products',
+      data: [], // [2025-12-03 04:10:00] 返回空数组，避免前端完全失败
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error.message,
+        code: error.code,
+        meta: error.meta,
+      }),
+    });
   }
 };
 

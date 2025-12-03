@@ -82,6 +82,8 @@ export function ProductDetailContent() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
+  // [2025-12-03 04:35:00] 悬停预览颜色状态
+  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
 
   // Get unique colors and sizes from variants
   const colors = Array.from(new Set(product?.variants.map(v => v.color).filter(Boolean))) as string[];
@@ -212,7 +214,21 @@ export function ProductDetailContent() {
   }
 
   const fallbackImage = '/assets/hero/hero-card-tee.jpg';
-  const currentImage = product.images[selectedImageIndex]?.url || product.images[0]?.url || fallbackImage;
+  // [2025-12-03 04:35:00] 颜色切换图片逻辑：
+  // 1. 如果悬停在某个颜色上，显示该颜色的 variant 图片（预览）
+  // 2. 如果选中了颜色，显示选中 variant 的图片
+  // 3. 否则显示产品主图片
+  const getImageForColor = (colorName: string | null) => {
+    if (!colorName) return null;
+    const variant = product.variants.find(v => v.color === colorName);
+    return variant?.imageUrl || null;
+  };
+  
+  const previewImage = hoveredColor ? getImageForColor(hoveredColor) : null;
+  const selectedImage = selectedVariant?.imageUrl || null;
+  const currentImage = previewImage 
+    ? previewImage 
+    : (selectedImage || product.images[selectedImageIndex]?.url || product.images[0]?.url || fallbackImage);
   const price = selectedVariant
     ? Number(product.basePrice) + Number(selectedVariant.priceAdjustment || 0)
     : Number(product.basePrice);
@@ -411,6 +427,16 @@ export function ProductDetailContent() {
                             setSelectedSize(availableSizes[0] as string);
                           }
                         }
+                      }}
+                      onMouseEnter={() => {
+                        // [2025-12-03 04:35:00] 鼠标悬停时预览该颜色的图片
+                        if (isAvailable) {
+                          setHoveredColor(color.name);
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        // [2025-12-03 04:35:00] 鼠标离开时恢复显示选中颜色的图片
+                        setHoveredColor(null);
                       }}
                       disabled={!isAvailable}
                       title={color.name}
