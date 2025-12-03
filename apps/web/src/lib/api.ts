@@ -715,7 +715,68 @@ export interface SalesOfflineOrderListResponse {
   };
 }
 
+// [2025-01-28 21:30:00] 订单配置数据结构类型定义
+export interface OfflineOrderProductItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  variants: Array<{
+    size: string;
+    color: string;
+    quantity: number;
+    unitPrice: number;
+  }>;
+}
+
+export interface OfflineOrderPrintPosition {
+  productItemId?: string;
+  categoryId?: string;
+  categoryName?: string;
+  position: string;
+  width: string;
+  height: string;
+  notes: string;
+  index?: number;
+}
+
+export interface OfflineOrderPricing {
+  subtotal: number;
+  discount: number;
+  discountAmount: number;
+  total: number;
+  currency: string;
+}
+
+export interface OfflineOrderInvoiceInfo {
+  companyName: string;
+  companyEmail: string;
+  taxNumber: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface OfflineOrderConfiguration {
+  source?: string;
+  orderCode?: string;
+  artworkNotes?: string;
+  productItems?: OfflineOrderProductItem[];
+  sideCount?: number;
+  printPositions?: OfflineOrderPrintPosition[];
+  requiresInvoice?: boolean;
+  invoiceInfo?: OfflineOrderInvoiceInfo | null;
+  pricing?: OfflineOrderPricing;
+}
+
 export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
+  // [2025-01-28 21:30:00] 详情接口包含的额外字段
+  description?: string | null; // 设计说明
+  requiresMockups?: boolean;
+  requiresProof?: boolean;
+  configuration?: OfflineOrderConfiguration | null; // 完整配置信息
+  metadata?: any;
   assets: any[];
   histories: any[];
   productionWorkOrder: any | null;

@@ -5,29 +5,47 @@
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 
-const mapSalesOfflineOrder = (order) => ({
-  id: order.id,
-  orderCode: order.orderCode,
-  projectName: order.projectName,
-  primaryProduct: order.primaryProduct,
-  quantity: order.quantity,
-  deliveryDate: order.deliveryDate,
-  status: order.status,
-  rushOrder: order.rushOrder,
-  stage: {
-    key: order.stageKey,
-    label: order.stageLabel,
-    position: order.stagePosition,
-  },
-  contact: {
-    name: order.contactName,
-    company: order.company,
-    email: order.email,
-    phone: order.phone,
-  },
-  createdAt: order.createdAt,
-  updatedAt: order.updatedAt,
-});
+// [2025-12-02 04:47:00] Sales 订单映射函数
+// [2025-01-28 21:30:00] 添加 configuration 和其他字段支持详情页面显示
+const mapSalesOfflineOrder = (order, includeDetails = false) => {
+  const base = {
+    id: order.id,
+    orderCode: order.orderCode,
+    projectName: order.projectName,
+    primaryProduct: order.primaryProduct,
+    quantity: order.quantity,
+    deliveryDate: order.deliveryDate,
+    status: order.status,
+    rushOrder: order.rushOrder,
+    stage: {
+      key: order.stageKey,
+      label: order.stageLabel,
+      position: order.stagePosition,
+    },
+    contact: {
+      name: order.contactName,
+      company: order.company,
+      email: order.email,
+      phone: order.phone,
+    },
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  };
+
+  // [2025-01-28 21:30:00] 详情接口包含完整配置信息
+  if (includeDetails) {
+    return {
+      ...base,
+      description: order.description, // 设计说明
+      requiresMockups: order.requiresMockups,
+      requiresProof: order.requiresProof,
+      configuration: order.configuration, // 包含 productItems, printPositions, pricing, invoiceInfo 等
+      metadata: order.metadata,
+    };
+  }
+
+  return base;
+};
 
 /**
  * GET /api/sales/orders
@@ -140,9 +158,10 @@ exports.getSalesOrderById = async (req, res) => {
       return res.status(403).json({ error: 'You do not have permission to view this order' });
     }
 
+    // [2025-01-28 21:30:00] 详情接口包含完整配置信息
     res.json({
       order: {
-        ...mapSalesOfflineOrder(order),
+        ...mapSalesOfflineOrder(order, true), // 传入 true 包含详情字段
         assets: order.assets || [],
         histories: order.histories || [],
         productionWorkOrder: order.productionWorkOrder || null,
