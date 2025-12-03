@@ -64,26 +64,12 @@ export default function SalesOrderDetailPage() {
     };
   }, [orderId, router]);
 
-  if (authChecking) {
-    return (
-      <div className="sales-order-shell">
-        <div className="sales-order-card">
-          <p>正在检查登录状态...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleBack = () => {
-    router.push('/offline-orders/sales/orders');
-  };
-
   const meta = order;
   
   // [2025-01-28 21:30:00] 解析配置信息
   const config: OfflineOrderConfiguration | null = meta?.configuration || null;
   
-  // [2025-01-28 21:30:00] 按产品分组印刷位置
+  // [2025-01-28 21:30:00] 按产品分组印刷位置（必须在 early return 之前调用）
   const printPositionsByProduct = useMemo(() => {
     if (!config?.printPositions) return {};
     const grouped: Record<string, typeof config.printPositions> = {};
@@ -98,7 +84,7 @@ export default function SalesOrderDetailPage() {
     return grouped;
   }, [config?.printPositions]);
   
-  // [2025-01-28 21:30:00] 计算每个产品的总数量和总金额
+  // [2025-01-28 21:30:00] 计算每个产品的总数量和总金额（必须在 early return 之前调用）
   const productTotals = useMemo(() => {
     if (!config?.productItems) return {};
     const totals: Record<string, { quantity: number; total: number }> = {};
@@ -109,6 +95,20 @@ export default function SalesOrderDetailPage() {
     });
     return totals;
   }, [config?.productItems]);
+
+  if (authChecking) {
+    return (
+      <div className="sales-order-shell">
+        <div className="sales-order-card">
+          <p>正在检查登录状态...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleBack = () => {
+    router.push('/offline-orders/sales/orders');
+  };
 
   return (
     <div className="sales-order-shell">
@@ -255,7 +255,7 @@ export default function SalesOrderDetailPage() {
                               <div className="sales-order-print-header">
                                 <strong>位置 {idx + 1}: {pos.position}</strong>
                                 <span className="sales-order-print-size">
-                                  {pos.width}" × {pos.height}"
+                                  {pos.width}&quot; × {pos.height}&quot;
                                 </span>
                               </div>
                               {pos.notes && (
@@ -286,7 +286,7 @@ export default function SalesOrderDetailPage() {
                               <div className="sales-order-print-header">
                                 <strong>位置 {idx + 1}: {pos.position}</strong>
                                 <span className="sales-order-print-size">
-                                  {pos.width}" × {pos.height}"
+                                  {pos.width}&quot; × {pos.height}&quot;
                                 </span>
                               </div>
                               {pos.notes && (
