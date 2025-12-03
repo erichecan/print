@@ -308,7 +308,7 @@ export default function SalesOrderDetailPage() {
                             <div className="sales-order-print-header">
                               <strong>位置 {idx + 1}: {pos.position}</strong>
                               <span className="sales-order-print-size">
-                                {pos.width}" × {pos.height}"
+                                {pos.width}&quot; × {pos.height}&quot;
                               </span>
                             </div>
                             {pos.notes && (
