@@ -696,6 +696,7 @@ exports.getProducts = async (req, res) => {
               id: true,
               color: true,
               colorHex: true,
+              imageUrl: true, // [2025-01-29 23:00:00] 包含 imageUrl 用于颜色悬停切换
               stockQuantity: true,
             },
             orderBy: { stockQuantity: 'desc' },
@@ -757,11 +758,13 @@ exports.getProducts = async (req, res) => {
             }
           : null,
         // [2025-01-27 18:30:00] 添加variants信息用于颜色显示
+        // [2025-01-29 23:00:00] 包含 imageUrl 字段用于颜色悬停切换图片
         variants: product.variants
           .filter((v) => v.color && v.color.trim() !== '') // [2025-01-27 17:05:00] 只返回有颜色信息的variant
           .map((v) => ({
             color: v.color || null,
             colorHex: v.colorHex || null,
+            imageUrl: v.imageUrl ? (optimizeImageUrl(v.imageUrl, req) || v.imageUrl) : null, // [2025-01-29 23:00:00] 包含变体图片URL
           })),
         rating: {
           average: 4.5, // 默认值，可以从reviews计算

@@ -4,7 +4,9 @@
  * ProductsClient
  * [2025-11-16 16:35:00] 客户端渲染版 PLP，直接走浏览器发起的 API 请求，绕开 SSR 环节的环境差异
  * [2025-01-27 18:30:00] 重新设计产品卡片以匹配参考设计，包含标签、颜色选择器、评分等
+ * [2025-01-29 23:00:00] 添加颜色悬停切换图片功能
  */
+import { useState } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -22,7 +24,7 @@ type Product = {
   images?: Array<{ url: string; alt?: string | null }>;
   category?: { name: string } | null;
   brand?: { name: string } | null;
-  variants?: Array<{ color?: string; colorHex?: string }>;
+  variants?: Array<{ color?: string; colorHex?: string; imageUrl?: string | null }>; // [2025-01-29 23:00:00] 添加 imageUrl 字段
   rating?: { average: number; count: number };
   promotions?: Promotion[]; // [2025-01-28 12:35:00] 促销活动信息
 };
@@ -44,6 +46,9 @@ export default function ProductsClient() {
   const search = params.get('search') || '';
   const collection = params.get('collection') || '';
   const sort = params.get('sort') || '';
+  
+  // [2025-01-29 23:00:00] 状态管理：跟踪每个商品悬停的颜色
+  const [hoveredColors, setHoveredColors] = useState<Record<string, string | null>>({});
 
   // [2025-01-27 16:55:00] 解析排序参数（sort=price_asc -> sort=price&order=asc）
   const parseSort = (sortValue: string) => {
@@ -159,7 +164,15 @@ export default function ProductsClient() {
       <div className="product-grid-new">
         {products.map((product, index) => {
         const fallbackImage = '/assets/hero/hero-card-tee.jpg';
-        const img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
+        // [2025-01-29 23:00:00] 根据悬停的颜色切换图片
+        const hoveredColor = hoveredColors[product.id];
+        let img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
+        if (hoveredColor) {
+          const colorVariant = product.variants?.find(v => v.color === hoveredColor);
+          if (colorVariant?.imageUrl) {
+            img = colorVariant.imageUrl;
+          }
+        }
         const alt = product.primaryImage?.alt || product.name;
         const basePrice = Number(product.price?.sale || product.price?.base || 0);
         // [2025-01-28 12:35:00] 获取该产品的促销活动
@@ -184,27 +197,52 @@ export default function ProductsClient() {
         const badge = index < 3 ? getProductBadge(index) : null;
         const rating = product.rating?.average || 4.5;
         const reviewCount = product.rating?.count || 10000;
-        // [2025-01-27 17:05:00] 从产品variants中获取颜色信息，如果没有则显示白色圆圈
+        // [2025-01-29 23:30:00] 从产品variants中获取所有颜色信息（不限制为黑白，支持后续添加其他颜色）
         const productColors = product.variants?.filter(v => v.color && v.color.trim() !== '') || [];
-        const colors = productColors.length > 0 
-          ? productColors.slice(0, 10).map(v => {
-              const colorName = (v.color || '').toLowerCase().trim();
-              // [2025-01-27 17:05:00] 如果colorHex存在则使用，否则从COLOR_MAP查找，最后默认白色
-              const hex = v.colorHex || COLOR_MAP[colorName] || '#FFFFFF';
-              return { 
-                name: v.color || 'Color', 
-                hex
-              };
+        // [2025-01-29 23:30:00] 去重并保留所有颜色，每个颜色包含名称、hex值和图片URL
+        const uniqueColors = Array.from(
+          new Map(
+            productColors.map(v => {
+              const colorName = (v.color || '').trim();
+              // [2025-01-29 23:30:00] 如果colorHex存在则使用，否则从COLOR_MAP查找，最后根据颜色名称推断
+              const hex = v.colorHex || COLOR_MAP[colorName.toLowerCase()] || 
+                (colorName === '黑' ? '#000000' : 
+                 colorName === '白' ? '#FFFFFF' : 
+                 '#CCCCCC'); // 默认灰色
+              return [colorName, { 
+                name: colorName, 
+                hex,
+                imageUrl: v.imageUrl || null
+              }];
             })
-          : [{ name: 'Default', hex: '#FFFFFF' }]; // [2025-01-27 17:05:00] 如果没有颜色，显示白色圆圈
-        const totalColorCount = productColors.length;
+          ).values()
+        );
+        // [2025-01-29 23:30:00] 按颜色名称排序，确保显示顺序一致
+        const colors = uniqueColors.sort((a, b) => {
+          // 优先显示黑白，然后按字母顺序
+          if (a.name === '黑') return -1;
+          if (b.name === '黑') return 1;
+          if (a.name === '白') return -1;
+          if (b.name === '白') return 1;
+          return a.name.localeCompare(b.name);
+        });
+        const totalColorCount = colors.length;
+        // [2025-01-29 23:30:00] 最多显示10个颜色点，超过的显示"+N"
+        const displayedColors = colors.slice(0, 10);
         const moreColors = totalColorCount > 10 ? totalColorCount - 10 : 0;
 
         return (
           <article key={product.id} className="product-card-new">
             <Link href={`/products/${product.slug}`} className="product-card-new__image-link">
               <div className="product-card-new__image">
-                <Image src={img} alt={alt || product.name} width={480} height={600} sizes="(max-width: 768px) 100vw, 320px" />
+                <Image 
+                  src={img} 
+                  alt={alt || product.name} 
+                  width={480} 
+                  height={600} 
+                  sizes="(max-width: 768px) 100vw, 320px"
+                  style={{ transition: 'opacity 0.3s ease-in-out' }} // [2025-01-29 23:00:00] 添加过渡效果
+                />
                 {/* [2025-01-28 12:35:00] 显示促销活动标签 */}
                 {bestPromotion && (
                   <span className="product-badge product-badge--promotion" style={{ backgroundColor: '#e74c3c', color: 'white' }}>
@@ -227,12 +265,27 @@ export default function ProductsClient() {
             </Link>
             
             <div className="product-card-new__colors">
-              {colors.map((color, colorIndex) => (
+              {displayedColors.map((color, colorIndex) => (
                 <span
                   key={colorIndex}
                   className="color-dot"
                   style={{ backgroundColor: color.hex }}
                   title={color.name}
+                  onMouseEnter={() => {
+                    // [2025-01-29 23:30:00] 鼠标悬停时切换图片
+                    setHoveredColors(prev => ({
+                      ...prev,
+                      [product.id]: color.name
+                    }));
+                  }}
+                  onMouseLeave={() => {
+                    // [2025-01-29 23:30:00] 鼠标离开时恢复默认图片
+                    setHoveredColors(prev => {
+                      const newState = { ...prev };
+                      delete newState[product.id];
+                      return newState;
+                    });
+                  }}
                 />
               ))}
               {moreColors > 0 && (
