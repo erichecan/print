@@ -13,64 +13,116 @@
   padding: 16px;
 }
 
-/* [2025-01-29 04:00:00] Hero 区域 - 大横幅促销 */
+/* [2025-01-29 12:00:00] Hero 区域 - 使用 canvas-design 创建的渐变背景 */
 .home-mobile__hero {
-  background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+  position: relative;
   color: #fff;
-  padding: 40px 16px;
+  padding: 50px 16px;
   text-align: center;
+  overflow: hidden;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-mobile__hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.home-mobile__hero-bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .home-mobile__hero-content {
+  position: relative;
+  z-index: 1;
   max-width: 100%;
   margin: 0 auto;
+  width: 100%;
 }
 
 .home-mobile__hero-title {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 0 0 12px;
+  font-size: 36px;
+  font-weight: 800;
+  margin: 0 0 16px;
   line-height: 1.2;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .home-mobile__hero-subtitle {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
   color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  animation: fadeInUp 0.6s ease-out 0.1s both;
 }
 
 .home-mobile__hero-detail {
-  font-size: 14px;
-  margin: 0 0 24px;
+  font-size: 15px;
+  margin: 0 0 28px;
   opacity: 0.95;
-  line-height: 1.5;
+  line-height: 1.6;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 
-/* [2025-01-29 04:00:00] 按钮样式 */
+/* [2025-01-29 12:00:00] 动画关键帧 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* [2025-01-29 12:00:00] 按钮样式 - 优化视觉效果 */
 .home-mobile__btn {
   display: inline-block;
-  padding: 14px 28px;
-  border-radius: 6px;
+  padding: 16px 32px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
-  min-height: 44px;
-  transition: all 0.2s ease;
+  min-height: 48px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: fadeInUp 0.6s ease-out 0.3s both;
 }
 
 .home-mobile__btn--primary {
-  background: #0066cc;
-  color: #fff;
-  border-color: #0066cc;
+  background: #fff;
+  color: #0066cc;
+  border-color: #fff;
 }
 
 .home-mobile__btn--primary:hover {
-  background: #0052a3;
-  border-color: #0052a3;
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-mobile__btn--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .home-mobile__btn--outline {
@@ -82,6 +134,13 @@
 .home-mobile__btn--outline:hover {
   background: #0066cc;
   color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.3);
+}
+
+.home-mobile__btn--outline:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.2);
 }
 
 /* [2025-01-29 04:00:00] 通用标题样式 */
@@ -111,23 +170,30 @@
   flex-direction: column;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .home-mobile__category-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #0066cc;
 }
 
 .home-mobile__category-image {
   width: 100%;
   aspect-ratio: 1;
   overflow: hidden;
-  background: #f5f5f5;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e5e7eb 100%);
+  transition: transform 0.3s ease;
+}
+
+.home-mobile__category-card:hover .home-mobile__category-image {
+  transform: scale(1.05);
 }
 
 .home-mobile__category-image img {
@@ -366,22 +432,39 @@
   font-weight: 600;
 }
 
-/* [2025-01-29 04:00:00] 响应式调整 */
+/* [2025-01-29 12:00:00] 响应式调整 - 优化移动端体验 */
 @media (max-width: 480px) {
+  .home-mobile__hero {
+    padding: 40px 16px;
+    min-height: 280px;
+  }
+
   .home-mobile__hero-title {
-    font-size: 28px;
+    font-size: 30px;
+    letter-spacing: 0.5px;
   }
 
   .home-mobile__hero-subtitle {
-    font-size: 18px;
+    font-size: 19px;
+  }
+
+  .home-mobile__hero-detail {
+    font-size: 14px;
+  }
+
+  .home-mobile__btn {
+    padding: 14px 28px;
+    font-size: 15px;
   }
 
   .home-mobile__categories-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .home-mobile__brands-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .home-mobile__new-arrivals-grid {

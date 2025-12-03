@@ -118,8 +118,15 @@ export function HomeMobileClient() {
 
   return (
     <div className="home-mobile">
-      {/* [2025-01-29 04:00:00] Hero 区域 - 大横幅促销 */}
+      {/* [2025-01-29 12:00:00] Hero 区域 - 使用 canvas-design 创建的渐变背景 */}
       <section className="home-mobile__hero">
+        <div className="home-mobile__hero-background">
+          <img 
+            src="/assets/hero/hero-mobile-gradient.png" 
+            alt="Hero background"
+            className="home-mobile__hero-bg-image"
+          />
+        </div>
         <div className="home-mobile__hero-content">
           <h1 className="home-mobile__hero-title">10% OFF EVERYTHING</h1>
           <p className="home-mobile__hero-subtitle">Gear up for gifting season</p>
