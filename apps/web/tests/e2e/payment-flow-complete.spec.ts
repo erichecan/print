@@ -33,8 +33,16 @@ test.describe('支付功能完整测试', () => {
         }
       }
     } catch (error) {
-      console.warn('[Test] Error finding product:', error);
+      console.warn('[Test] Error finding product via API:', error);
+      // [2025-01-29 13:00:00] 使用 fallback，允许测试继续
       availableProductSlug = 'classic-crew-tee'; // Fallback
+      console.log('[Test] Using fallback product slug:', availableProductSlug);
+    }
+    
+    // [2025-01-29 13:00:00] 如果没有找到商品，使用默认值
+    if (!availableProductSlug) {
+      availableProductSlug = 'classic-crew-tee';
+      console.log('[Test] No product found, using default:', availableProductSlug);
     }
   });
 
