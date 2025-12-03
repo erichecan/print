@@ -861,12 +861,10 @@ exports.getProductBySlug = async (req, res) => {
       return res.json(cachedProduct);
     }
 
-    // [2025-12-03 03:50:00] 支持同时使用 slug 或数字 ID 查找产品
-    const isNumericId = /^\d+$/.test(slug);
-    const whereClause = isNumericId ? { id: parseInt(slug) } : { slug };
-
+    // [2025-01-30 13:30:00] 修复：Product id 是 UUID，不是数字，应该始终使用 slug 查找
+    // 之前的代码错误地尝试将数字 slug 当作 id 查找，导致 Prisma 查询失败
     const product = await prisma.product.findUnique({
-      where: whereClause,
+      where: { slug },
       select: {
         id: true,
         name: true,
@@ -940,7 +938,7 @@ exports.getProductBySlug = async (req, res) => {
     });
 
     if (!product) {
-      logger.info('Product not found', { slug: req.params.slug, isNumericId: /^\d+$/.test(req.params.slug) });
+      logger.info('Product not found', { slug: req.params.slug });
       return res.status(404).json({ error: 'Product not found' });
     }
 
@@ -1082,17 +1080,14 @@ exports.getRelatedProducts = async (req, res) => {
     const { slug } = req.params;
     const limit = parseInt(req.query.limit) || 4;
 
-    // [2025-12-03 03:50:00] 支持同时使用 slug 或数字 ID 查找产品
-    const isNumericId = /^\d+$/.test(slug);
-    const whereClause = isNumericId ? { id: parseInt(slug) } : { slug };
-
+    // [2025-01-30 13:30:00] 修复：Product id 是 UUID，不是数字，应该始终使用 slug 查找
     const currentProduct = await prisma.product.findUnique({
-      where: whereClause,
+      where: { slug },
       select: { id: true, categoryId: true, brandId: true },
     });
 
     if (!currentProduct) {
-      logger.info('Product not found for related products', { slug, isNumericId });
+      logger.info('Product not found for related products', { slug });
       return res.status(404).json({ error: 'Product not found' });
     }
 
