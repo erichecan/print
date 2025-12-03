@@ -1,0 +1,28 @@
+{
+  "search": {
+    "search_form_found": true,
+    "search_submitted": true,
+    "url_redirected": true,
+    "api_request_success": true,
+    "products_displayed": true
+  },
+  "categories": {
+    "api_request_success": true,
+    "categories_loaded": true,
+    "categories_displayed": true,
+    "category_links_work": true,
+    "data_from_api": true
+  },
+  "admin": {
+    "admin_page_accessible": false,
+    "login_required": true,
+    "api_request_success": false,
+    "categories_data_consistent": false
+  },
+  "data_source": {
+    "api_endpoint_accessible": true,
+    "data_structure_valid": true,
+    "database_fields_present": true,
+    "not_hardcoded": true
+  }
+}
