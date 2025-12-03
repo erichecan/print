@@ -631,6 +631,12 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
   const response = await fetch(`${baseUrl}${endpoint}`, config);
   
   if (!response.ok) {
+    // [2025-12-03 03:55:00] 对于 401 错误，抛出特殊错误以便调用方识别
+    if (response.status === 401) {
+      const error = new Error('UNAUTHORIZED');
+      (error as any).status = 401;
+      throw error;
+    }
     const error = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(error.error || `API Error: ${response.status}`);
   }
@@ -652,7 +658,18 @@ export const authApi = {
     sameOriginApi('/api/auth/login', { method: 'POST', body: { email, password } }),
   logout: () => api('/auth/logout', { method: 'POST' }),
   // [2025-01-29 02:20:00] 使用同域 API 路由，避免跨域 Cookie 问题
-  me: () => sameOriginApi<UserProfile>('/api/auth/me'),
+  // [2025-12-03 03:55:00] 静默处理 401 错误（未登录是正常状态）
+  me: async () => {
+    try {
+      return await sameOriginApi<UserProfile>('/api/auth/me');
+    } catch (err: any) {
+      // 401 错误表示用户未登录，这是正常状态，不抛出错误
+      if (err?.message?.includes('401') || err?.message?.includes('Unauthorized')) {
+        throw new Error('UNAUTHORIZED'); // 使用特殊错误标识，让调用方可以区分
+      }
+      throw err;
+    }
+  },
   updateProfile: (data: { firstName?: string; lastName?: string; phone?: string }) =>
     api('/auth/me', { method: 'PATCH', body: data }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>

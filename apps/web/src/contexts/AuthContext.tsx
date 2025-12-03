@@ -28,10 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
       const data = await authApi.me();
       setUser(data);
-    } catch (err) {
+    } catch (err: any) {
+      // [2025-12-03 03:55:00] 静默处理 401 错误（未登录是正常状态）
       setUser(null);
-      if (err instanceof Error) {
+      // UNAUTHORIZED 是预期的错误（用户未登录），不设置 error
+      if (err instanceof Error && err.message === 'UNAUTHORIZED') {
+        setError(null);
+      } else if (err instanceof Error) {
+        // 其他错误才设置 error
         setError(err);
+      } else {
+        setError(null);
       }
     } finally {
       setLoading(false);

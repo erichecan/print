@@ -850,8 +850,12 @@ exports.getProductBySlug = async (req, res) => {
       return res.json(cachedProduct);
     }
 
+    // [2025-12-03 03:50:00] 支持同时使用 slug 或数字 ID 查找产品
+    const isNumericId = /^\d+$/.test(slug);
+    const whereClause = isNumericId ? { id: parseInt(slug) } : { slug };
+
     const product = await prisma.product.findUnique({
-      where: { slug },
+      where: whereClause,
       select: {
         id: true,
         name: true,
@@ -1010,8 +1014,12 @@ exports.getRelatedProducts = async (req, res) => {
     const { slug } = req.params;
     const limit = parseInt(req.query.limit) || 4;
 
+    // [2025-12-03 03:50:00] 支持同时使用 slug 或数字 ID 查找产品
+    const isNumericId = /^\d+$/.test(slug);
+    const whereClause = isNumericId ? { id: parseInt(slug) } : { slug };
+
     const currentProduct = await prisma.product.findUnique({
-      where: { slug },
+      where: whereClause,
       select: { id: true, categoryId: true, brandId: true },
     });
 
