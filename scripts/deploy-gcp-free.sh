@@ -44,8 +44,16 @@ gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
 # Build and push backend
 # [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
+# [2025-12-04 21:50:00] 注入构建版本信息（Git SHA 和构建时间）
 echo -e "${GREEN}🏗️  Building backend Docker image (linux/amd64)...${NC}"
-docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
+GIT_SHA=$(git rev-parse --short HEAD)
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo -e "${YELLOW}📌 Build version: ${GIT_SHA} at ${BUILD_TIME}${NC}"
+
+docker build --platform linux/amd64 \
+  --build-arg APP_BUILD_SHA="${GIT_SHA}" \
+  --build-arg APP_BUILD_TIME="${BUILD_TIME}" \
+  -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
   -f backend/Dockerfile .
 
 echo -e "${GREEN}📤 Pushing backend image...${NC}"
@@ -53,8 +61,16 @@ docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest
 
 # Build and push frontend
 # [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
+# [2025-12-04 21:50:00] 注入构建版本信息（Git SHA 和构建时间）
 echo -e "${GREEN}🏗️  Building frontend Docker image (linux/amd64)...${NC}"
-docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
+GIT_SHA=$(git rev-parse --short HEAD)
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo -e "${YELLOW}📌 Build version: ${GIT_SHA} at ${BUILD_TIME}${NC}"
+
+docker build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_BUILD_SHA="${GIT_SHA}" \
+  --build-arg NEXT_PUBLIC_BUILD_TIME="${BUILD_TIME}" \
+  -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
   -f apps/web/Dockerfile apps/web
 
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"

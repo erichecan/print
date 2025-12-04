@@ -217,7 +217,11 @@ export default function ProductsClient() {
           'white': '白',
         };
         
-        const productColors = product.variants?.filter(v => v.color && v.color.trim() !== '') || [];
+        // [2025-12-04 21:55:00] 只显示黑白两种颜色，避免显示过多颜色造成视觉混乱
+        const productColors = product.variants?.filter(v => {
+          const color = (v.color || '').trim().toLowerCase();
+          return color === '黑' || color === '白' || color === 'black' || color === 'white';
+        }) || [];
         // [2025-01-29 23:30:00] 去重并保留所有颜色，每个颜色包含名称、hex值和图片URL
         const uniqueColors = Array.from(
           new Map(

@@ -24,8 +24,13 @@ COPY backend/server.js ./server.js
 
 ## Expose server port [2025-11-10 13:45:00]
 ## [2025-01-27] Cloud Run uses PORT environment variable, default to 8080
+## [2025-12-04 21:50:00] 支持构建时传入版本信息（短 SHA + UTC 构建时间）
+ARG APP_BUILD_SHA
+ARG APP_BUILD_TIME
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV APP_BUILD_SHA=${APP_BUILD_SHA}
+ENV APP_BUILD_TIME=${APP_BUILD_TIME}
 EXPOSE 8080
 
 ## Launch application [2025-11-10 13:45:00]
