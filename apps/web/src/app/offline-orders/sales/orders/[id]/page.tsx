@@ -284,7 +284,7 @@ export default function SalesOrderDetailPage() {
                               <div className="print-position-header">
                                 <span className="print-position-name">{pos.position}</span>
                                 <span className="print-position-size">
-                                  {pos.width}" × {pos.height}"
+                                  {pos.width}&quot; × {pos.height}&quot;
                                 </span>
                               </div>
                               {pos.notes && (
@@ -312,7 +312,7 @@ export default function SalesOrderDetailPage() {
                               <div className="print-position-header">
                                 <span className="print-position-name">{pos.position}</span>
                                 <span className="print-position-size">
-                                  {pos.width}" × {pos.height}"
+                                  {pos.width}&quot; × {pos.height}&quot;
                                 </span>
                               </div>
                               {pos.notes && (
