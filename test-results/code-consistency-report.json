@@ -1,5 +1,5 @@
 {
-  "test_time": "2025-12-03T21:53:29.625742",
+  "test_time": "2025-12-03T22:06:29.977916",
   "base_url": "https://print-main-frontend-hsbqzlnkxa-uc.a.run.app",
   "results": {
     "products_page": {
@@ -14,17 +14,14 @@
       ]
     },
     "design_lab": {
-      "page_accessible": true,
+      "page_accessible": false,
       "design_lab_loaded": false,
-      "art_tool_found": true,
+      "art_tool_found": false,
       "edit_art_panel_found": false,
       "art_size_control": false,
       "names_numbers_found": false,
       "details": [
-        "Design Lab Canvas 未找到",
-        "找到 4 个 Art 相关按钮",
-        "测试 Art 功能失败: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"button:has-text(\\\"Art\\\"), [class*=\\\"art\\\"], button[aria-label*=\\\"art\\\" i]\").first\n    - locator resolved to <a href=\"/cart\" class=\"cart-icon\" aria-label=\"Shopping cart with 0 items\">…</a>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n",
-        "未找到 Names & Numbers 按钮"
+        "测试异常: Page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://print-main-frontend-hsbqzlnkxa-uc.a.run.app/design-lab\", waiting until \"networkidle\"\n"
       ]
     }
   }
