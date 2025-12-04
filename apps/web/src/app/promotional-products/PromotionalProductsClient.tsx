@@ -152,7 +152,7 @@ export default function PromotionalProductsClient() {
             Product Experts Available 7 Days a Week
           </h2>
           <p className={styles.helpDescription}>
-            Not sure what to buy? We'll point you to the right product!
+            Not sure what to buy? We&apos;ll point you to the right product!
           </p>
           <div className={styles.helpContact}>
             <div className={styles.helpContactItem}>
