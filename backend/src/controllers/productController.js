@@ -759,13 +759,22 @@ exports.getProducts = async (req, res) => {
           : null,
         // [2025-01-27 18:30:00] 添加variants信息用于颜色显示
         // [2025-01-29 23:00:00] 包含 imageUrl 字段用于颜色悬停切换图片
+        // [2025-12-03 23:40:00] 修复：确保 imageUrl 正确返回，即使 optimizeImageUrl 返回 null 也使用原始值
         variants: product.variants
           .filter((v) => v.color && v.color.trim() !== '') // [2025-01-27 17:05:00] 只返回有颜色信息的variant
-          .map((v) => ({
-            color: v.color || null,
-            colorHex: v.colorHex || null,
-            imageUrl: v.imageUrl ? (optimizeImageUrl(v.imageUrl, req) || v.imageUrl) : null, // [2025-01-29 23:00:00] 包含变体图片URL
-          })),
+          .map((v) => {
+            let finalImageUrl = null;
+            if (v.imageUrl && v.imageUrl.trim() !== '') {
+              // [2025-12-03 23:40:00] 尝试优化 URL，如果失败则使用原始值
+              const optimized = optimizeImageUrl(v.imageUrl, req);
+              finalImageUrl = optimized || v.imageUrl;
+            }
+            return {
+              color: v.color || null,
+              colorHex: v.colorHex || null,
+              imageUrl: finalImageUrl, // [2025-01-29 23:00:00] 包含变体图片URL
+            };
+          }),
         rating: {
           average: 4.5, // 默认值，可以从reviews计算
           count: 10000, // 默认值
