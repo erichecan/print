@@ -3565,8 +3565,6 @@ const DesignLabClient = () => {
                 </button>
               </div>
 
-              {/* 视图切换按钮 */}
-              <div className="dl-view-buttons">
               {/* 警告提示 */}
               {showOrderOptionsPanel && (
                 <div className="dl-tools-alert">
@@ -3809,8 +3807,6 @@ const DesignLabClient = () => {
                     Get Price
                   </button>
                 </div>
-              </div>
-            </section>
 
             {/* [2025-01-27 23:00:00] 右侧编辑面板 */}
             {showEditPanel && (
