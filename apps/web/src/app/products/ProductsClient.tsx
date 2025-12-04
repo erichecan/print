@@ -165,13 +165,19 @@ export default function ProductsClient() {
         {products.map((product, index) => {
         const fallbackImage = '/assets/hero/hero-card-tee.jpg';
         // [2025-01-29 23:00:00] 根据悬停的颜色切换图片
-        // [2025-12-03 23:20:00] 支持中文显示名称和英文原始名称的匹配
+        // [2025-12-03 23:20:00] 颜色名称映射：将英文颜色名称映射到中文显示名称
+        const COLOR_NAME_MAP_FOR_MATCH: Record<string, string> = {
+          'Black': '黑',
+          'White': '白',
+          'black': '黑',
+          'white': '白',
+        };
         const hoveredColor = hoveredColors[product.id];
         let img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
         if (hoveredColor) {
-          // [2025-12-03 23:20:00] 先尝试用显示名称匹配，如果找不到则尝试用原始名称匹配
+          // [2025-12-03 23:20:00] 先尝试用显示名称（中文）匹配，如果找不到则尝试用原始名称（英文）匹配
           const colorVariant = product.variants?.find(v => {
-            const displayName = COLOR_NAME_MAP[v.color] || v.color;
+            const displayName = COLOR_NAME_MAP_FOR_MATCH[v.color || ''] || v.color;
             return displayName === hoveredColor || v.color === hoveredColor;
           });
           if (colorVariant?.imageUrl) {
