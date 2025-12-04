@@ -176,6 +176,49 @@ const defaultFaqCategories = [
       },
     ],
   },
+  {
+    id: 'default-promotional',
+    category: 'Promotional Products',
+    icon: '🎁',
+    items: [
+      {
+        id: 'default-promotional-1',
+        question: 'What are promotional products?',
+        answer:
+          'Promotional products are custom marketing merchandise featuring your company\'s logo or design. They include popular corporate swag items like pens, custom t-shirts, tote bags, and water bottles. Businesses use them for trade shows, client gifts, and employee appreciation to help gain brand impressions over time.',
+      },
+      {
+        id: 'default-promotional-2',
+        question: 'Why are promotional products important?',
+        answer:
+          'Custom promotional items help your company effectively gain a large quantity of brand impressions at a relatively reasonable cost. By adding your company\'s logo to popular custom promo products you can easily make connections with prospective customers, clients, and brand champions.',
+      },
+      {
+        id: 'default-promotional-3',
+        question: 'Who buys promo products?',
+        answer:
+          'Businesses of all sizes, including corporations, small companies, and non-profits use branded promotional products to raise visibility and connect with audiences. Companies in all industries use custom products for conferences and trade show booths, branded client gifts, sales material, and employee recognition and team building.',
+      },
+      {
+        id: 'default-promotional-4',
+        question: 'What are the most popular promotional products?',
+        answer:
+          'The most popular custom promotional items are custom t-shirts, drinkware, bags, pens, hats, and tech products. These items are budget-friendly, easy to order in bulk, and always useful, which is why they remain customer favorites.',
+      },
+      {
+        id: 'default-promotional-5',
+        question: 'How do I get started creating custom promotional products?',
+        answer:
+          'We offer a wide selection of popular promotional items. Upload your logo or design, start with a template, or create from scratch in our Design Lab. Choose from thousands of promo products, and our team of experts can help you find the right product for your organization and can guide you through the process from start to finish.',
+      },
+      {
+        id: 'default-promotional-6',
+        question: 'Can I put my logo on promotional products?',
+        answer:
+          'Yes! We make it easy to add your company\'s logo to thousands of custom promotional items, from custom water bottles and tech accessories to custom t-shirts and office supplies. Upload your logo to our Design Lab, create a new design from scratch, or work with our team of experts to create a promo product bundle that best serves your team\'s needs.',
+      },
+    ],
+  },
 ];
 
 export default function HelpClient() {
