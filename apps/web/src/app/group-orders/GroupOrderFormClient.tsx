@@ -16,7 +16,7 @@ export function GroupOrderFormClient() {
     {
       id: 1,
       title: 'Designed with groups in mind',
-      description: 'Getting your group together in custom gear has never been easier. We've simplified the process so that you can focus on your group's experience. Now everyone can place their own orders, find and enter their sizes, pay for their items, and even have them shipped directly to their homes.',
+      description: 'Getting your group together in custom gear has never been easier. We\'ve simplified the process so that you can focus on your group\'s experience. Now everyone can place their own orders, find and enter their sizes, pay for their items, and even have them shipped directly to their homes.',
       icon: '👥',
     },
     {
