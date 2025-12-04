@@ -1,6 +1,7 @@
 /**
  * 促销产品类别数据
  * [2025-01-29 12:00:00] 定义促销产品页面的类别数据结构
+ * [2025-01-30 12:30:00] 更新图片路径，使用 GCS 中爬取的 Custom Ink 图片，避免重复显示
  * 参考 Custom Ink 促销产品页面的类别列表
  */
 
@@ -55,7 +56,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Blankets',
     slug: 'blankets',
     description: 'Custom blankets and throws',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/208.jpg',
     order: 5
   },
   {
@@ -63,7 +64,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Gifts',
     slug: 'gifts',
     description: 'Promotional gift items',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/220.jpg',
     order: 6
   },
   {
@@ -71,7 +72,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Keychains',
     slug: 'keychains',
     description: 'Custom keychains and accessories',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/387.jpg',
     order: 7
   },
   {
@@ -79,7 +80,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Stickers & Magnets',
     slug: 'stickers-magnets',
     description: 'Custom stickers and magnets',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/388.jpg',
     order: 8
   },
   {
@@ -87,7 +88,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Ornaments',
     slug: 'ornaments',
     description: 'Holiday ornaments and decorations',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/404.jpg',
     order: 9
   },
   {
@@ -95,7 +96,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Can Coolers',
     slug: 'can-coolers',
     description: 'Custom can coolers and koozies',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/441.jpg',
     order: 10
   },
   {
@@ -103,7 +104,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Towels',
     slug: 'towels',
     description: 'Custom towels and beach accessories',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/442.jpg',
     order: 11
   },
   {
@@ -111,7 +112,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Signs, Banners, & Flags',
     slug: 'signs-banners',
     description: 'Custom signage and banners',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/443.jpg',
     order: 12
   },
   {
@@ -119,7 +120,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Tablecloths',
     slug: 'tablecloths',
     description: 'Custom tablecloths and linens',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/444.jpg',
     order: 13
   },
   {
@@ -127,7 +128,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Games & Novelties',
     slug: 'games-novelties',
     description: 'Custom games and novelty items',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/445.jpg',
     order: 14
   },
   {
@@ -135,7 +136,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Socks',
     slug: 'socks',
     description: 'Custom socks and hosiery',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/512.jpg',
     order: 15
   },
   {
@@ -143,7 +144,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Lanyards & Badge Holders',
     slug: 'lanyards',
     description: 'Custom lanyards and ID badge holders',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/567.jpg',
     order: 16
   },
   {
@@ -151,7 +152,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Buttons & Pins',
     slug: 'buttons-pins',
     description: 'Custom buttons and pins',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/699.jpg',
     order: 17
   },
   {
@@ -159,7 +160,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Awards & Recognition',
     slug: 'awards',
     description: 'Custom awards and recognition items',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/896.jpg',
     order: 18
   },
   {
@@ -167,7 +168,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Calendars & Planners',
     slug: 'calendars',
     description: 'Custom calendars and planners',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/932.jpg',
     order: 19
   },
   {
@@ -175,7 +176,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Sunglasses',
     slug: 'sunglasses',
     description: 'Custom sunglasses and eyewear',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/998.jpg',
     order: 20
   },
   {
@@ -183,7 +184,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Umbrellas',
     slug: 'umbrellas',
     description: 'Custom umbrellas and rain gear',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/catalog_detail_image.jpg',
     order: 21
   },
   {
@@ -191,7 +192,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Tools',
     slug: 'tools',
     description: 'Custom tools and hardware',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/misc-1.png',
     order: 22
   },
   {
@@ -199,7 +200,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Pet Supplies',
     slug: 'pet-supplies',
     description: 'Custom pet products and accessories',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/208.jpg',
     order: 23
   },
   {
@@ -207,7 +208,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Golf Balls & Accessories',
     slug: 'golf',
     description: 'Custom golf products',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/220.jpg',
     order: 24
   },
   {
@@ -215,7 +216,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Travel',
     slug: 'travel',
     description: 'Custom travel accessories',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/387.jpg',
     order: 25
   },
   {
@@ -223,7 +224,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Chairs & Stadium Seats',
     slug: 'chairs',
     description: 'Custom chairs and seating',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/388.jpg',
     order: 26
   },
   {
@@ -231,7 +232,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Coasters',
     slug: 'coasters',
     description: 'Custom coasters and drink accessories',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/404.jpg',
     order: 27
   },
   {
@@ -239,7 +240,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Bottle Openers',
     slug: 'bottle-openers',
     description: 'Custom bottle openers',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/441.jpg',
     order: 28
   },
   {
@@ -247,7 +248,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Health & Personal Care',
     slug: 'health-care',
     description: 'Custom health and personal care items',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/442.jpg',
     order: 29
   },
   {
@@ -255,7 +256,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Frisbees',
     slug: 'frisbees',
     description: 'Custom frisbees and flying discs',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/443.jpg',
     order: 30
   },
   {
@@ -263,7 +264,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Memo Clips',
     slug: 'memo-clips',
     description: 'Custom memo clips and holders',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/444.jpg',
     order: 31
   },
   {
@@ -271,7 +272,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Bandanas',
     slug: 'bandanas',
     description: 'Custom bandanas and headwear',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/445.jpg',
     order: 32
   },
   {
@@ -279,7 +280,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Flip Flops',
     slug: 'flip-flops',
     description: 'Custom flip flops and sandals',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/512.jpg',
     order: 33
   },
   {
@@ -287,7 +288,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Scarves',
     slug: 'scarves',
     description: 'Custom scarves and wraps',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/567.jpg',
     order: 34
   },
   {
@@ -295,7 +296,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Sustainable',
     slug: 'sustainable',
     description: 'Eco-friendly promotional products',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/699.jpg',
     order: 35
   },
   {
@@ -303,7 +304,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Made in USA',
     slug: 'made-in-usa',
     description: 'USA-made promotional products',
-    imagePath: '/assets/categories/cat-tshirt.png',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/896.jpg',
     order: 36
   }
 ];
