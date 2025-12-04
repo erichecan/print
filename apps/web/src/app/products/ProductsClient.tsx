@@ -165,10 +165,15 @@ export default function ProductsClient() {
         {products.map((product, index) => {
         const fallbackImage = '/assets/hero/hero-card-tee.jpg';
         // [2025-01-29 23:00:00] 根据悬停的颜色切换图片
+        // [2025-12-03 23:20:00] 支持中文显示名称和英文原始名称的匹配
         const hoveredColor = hoveredColors[product.id];
         let img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
         if (hoveredColor) {
-          const colorVariant = product.variants?.find(v => v.color === hoveredColor);
+          // [2025-12-03 23:20:00] 先尝试用显示名称匹配，如果找不到则尝试用原始名称匹配
+          const colorVariant = product.variants?.find(v => {
+            const displayName = COLOR_NAME_MAP[v.color] || v.color;
+            return displayName === hoveredColor || v.color === hoveredColor;
+          });
           if (colorVariant?.imageUrl) {
             img = colorVariant.imageUrl;
           }
@@ -198,19 +203,30 @@ export default function ProductsClient() {
         const rating = product.rating?.average || 4.5;
         const reviewCount = product.rating?.count || 10000;
         // [2025-01-29 23:30:00] 从产品variants中获取所有颜色信息（不限制为黑白，支持后续添加其他颜色）
+        // [2025-12-03 23:20:00] 颜色名称映射：将英文颜色名称映射到中文显示名称
+        const COLOR_NAME_MAP: Record<string, string> = {
+          'Black': '黑',
+          'White': '白',
+          'black': '黑',
+          'white': '白',
+        };
+        
         const productColors = product.variants?.filter(v => v.color && v.color.trim() !== '') || [];
         // [2025-01-29 23:30:00] 去重并保留所有颜色，每个颜色包含名称、hex值和图片URL
         const uniqueColors = Array.from(
           new Map(
             productColors.map(v => {
-              const colorName = (v.color || '').trim();
+              const originalColorName = (v.color || '').trim();
+              // [2025-12-03 23:20:00] 将英文颜色名称映射到中文显示名称
+              const displayColorName = COLOR_NAME_MAP[originalColorName] || originalColorName;
               // [2025-01-29 23:30:00] 如果colorHex存在则使用，否则从COLOR_MAP查找，最后根据颜色名称推断
-              const hex = v.colorHex || COLOR_MAP[colorName.toLowerCase()] || 
-                (colorName === '黑' ? '#000000' : 
-                 colorName === '白' ? '#FFFFFF' : 
+              const hex = v.colorHex || COLOR_MAP[originalColorName.toLowerCase()] || 
+                (displayColorName === '黑' || originalColorName.toLowerCase() === 'black' ? '#000000' : 
+                 displayColorName === '白' || originalColorName.toLowerCase() === 'white' ? '#FFFFFF' : 
                  '#CCCCCC'); // 默认灰色
-              return [colorName, { 
-                name: colorName, 
+              return [displayColorName, { 
+                name: displayColorName, // [2025-12-03 23:20:00] 使用中文显示名称
+                originalName: originalColorName, // [2025-12-03 23:20:00] 保留原始名称用于匹配
                 hex,
                 imageUrl: v.imageUrl || null
               }];
