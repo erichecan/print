@@ -3146,7 +3146,6 @@ const DesignLabClient = () => {
     <>
       {/* [2025-01-28 00:00:00] 文件输入框 - 放在最外层，确保始终在 DOM 中 */}
       {fileInputElement}
-      
       <div className="design-lab-new">
         {/* [2025-01-27 20:00:00] 顶部深蓝色导航栏 - 完全匹配参考设计 */}
         <header className="dl-header">
