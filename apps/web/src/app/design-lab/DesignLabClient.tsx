@@ -4948,7 +4948,6 @@ const DesignLabClient = () => {
               </div>
             </section>
           </div>
-        </div>
 
         {/* [2025-01-27 20:00:00] Buy more, save more 部分 */}
         <section className="dl-buy-more">
@@ -7017,9 +7016,10 @@ const DesignLabClient = () => {
             </div>
           </details>
         </aside>
-      </div>
+      </div> */}
 
-      <div className="lab__bottom-bar">
+      {/* [2025-12-04] 旧代码 - 已替换为新的 dl-bottom-bar，保留用于兼容 */}
+      {/* <div className="lab__bottom-bar">
         <div className="lab__bottom-left">
           <button type="button" className="lab__ghost-btn" onClick={handleAddProductsClick}>
             添加产品
@@ -7234,7 +7234,8 @@ const DesignLabClient = () => {
         </div>
       )}
 
-      <section className="lab__recos" aria-label="推荐产品">
+      {/* [2025-12-04] 旧代码 - 已替换为新的 dl-buy-more，保留用于兼容 */}
+      {/* <section className="lab__recos" aria-label="推荐产品">
         <div className="lab__recos-grid">
           {recommendations.map((item) => (
             <article key={item.id} className="lab__reco-card">
