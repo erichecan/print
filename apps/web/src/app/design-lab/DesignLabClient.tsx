@@ -4947,7 +4947,7 @@ const DesignLabClient = () => {
                 </div>
               </div>
             </section>
-          </div>
+        </div>
 
         {/* [2025-01-27 20:00:00] Buy more, save more 部分 */}
         <section className="dl-buy-more">
