@@ -4,8 +4,9 @@
  * Design Lab Client
  * [2025-11-11 15:54:12] Fabric.js + Zustand 前端编辑器骨架，实现桌面编辑与移动端快速编辑
  * [2025-01-27 20:00:00] 完全重新设计以100%匹配参考设计，包含所有模块、布局、颜色和功能
+ * [2025-12-04 09:45:30] 显式引入 React 以便在复杂 JSX 结构中使用 React.Fragment，避免 TS/JSX 解析兼容性问题
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-16 13:10:00] 使用 Next Image 优化缩略图
@@ -3112,13 +3113,14 @@ const DesignLabClient = () => {
       timestamp: new Date().toISOString(),
       fileInputRefExists: !!fileInputRef.current
     });
+    // [2025-12-04 09:47:10] 使用额外 div 包裹多根节点，避免对 JSX 片段语法支持差异导致的解析错误
     return (
-      <>
+      <div className="design-lab-root">
         {fileInputElement}
         <section className="lab__loading">
           <p>正在加载 Design Lab...</p>
         </section>
-      </>
+      </div>
     );
   }
 
@@ -3131,22 +3133,25 @@ const DesignLabClient = () => {
       error,
       fileInputRefExists: !!fileInputRef.current
     });
+    // [2025-12-04 09:47:15] 错误态同样使用 div 包裹，保证返回结构合法且与加载态保持一致
     return (
-      <>
+      <div className="design-lab-root">
         {fileInputElement}
         <section className="lab__error">
           <h1>Design Lab</h1>
           <p>{error}</p>
         </section>
-      </>
+      </div>
     );
   }
 
+  // [2025-12-04 09:47:22] 主渲染分支使用 Fragment 包裹根节点，使布局 div 与样式 <style jsx> 并列存在，同时保持 JSX 结构合法
   return (
     <>
-      {/* [2025-01-28 00:00:00] 文件输入框 - 放在最外层，确保始终在 DOM 中 */}
-      {fileInputElement}
-      <div className="design-lab-new">
+      <div className="design-lab-root">
+        {/* [2025-01-28 00:00:00] 文件输入框 - 放在最外层，确保始终在 DOM 中 */}
+        {fileInputElement}
+        <div className="design-lab-new">
         {/* [2025-01-27 20:00:00] 顶部深蓝色导航栏 - 完全匹配参考设计 */}
         <header className="dl-header">
           <div className="dl-header__content">
