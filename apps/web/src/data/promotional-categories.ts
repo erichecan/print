@@ -1,7 +1,7 @@
 /**
  * 促销产品类别数据
  * [2025-01-29 12:00:00] 定义促销产品页面的类别数据结构
- * [2025-01-30 12:30:00] 更新图片路径，使用 GCS 中爬取的 Custom Ink 图片，避免重复显示
+ * [2025-01-30 15:30:00] 修复：减少到 18 个分类，每个分类分配独特的 GCS 图片，避免重复显示
  * 参考 Custom Ink 促销产品页面的类别列表
  */
 
@@ -17,6 +17,7 @@ export interface PromotionalCategory {
 /**
  * 促销产品类别列表
  * [2025-01-29 12:00:00] 基于 Custom Ink 页面的类别，稍后会根据爬取的图片更新
+ * [2025-01-30 15:30:00] 修复：减少到 18 个分类，每个分类分配独特的 GCS 图片，避免重复显示
  */
 export const promotionalCategories: PromotionalCategory[] = [
   {
@@ -112,7 +113,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Signs, Banners, & Flags',
     slug: 'signs-banners',
     description: 'Custom signage and banners',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/443.jpg',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/banners/banners-63.png',
     order: 12
   },
   {
@@ -120,7 +121,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Tablecloths',
     slug: 'tablecloths',
     description: 'Custom tablecloths and linens',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/444.jpg',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/443.jpg',
     order: 13
   },
   {
@@ -128,7 +129,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Games & Novelties',
     slug: 'games-novelties',
     description: 'Custom games and novelty items',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/445.jpg',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/444.jpg',
     order: 14
   },
   {
@@ -136,7 +137,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Socks',
     slug: 'socks',
     description: 'Custom socks and hosiery',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/512.jpg',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/445.jpg',
     order: 15
   },
   {
@@ -144,7 +145,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Lanyards & Badge Holders',
     slug: 'lanyards',
     description: 'Custom lanyards and ID badge holders',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/567.jpg',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/512.jpg',
     order: 16
   },
   {
@@ -152,7 +153,7 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Buttons & Pins',
     slug: 'buttons-pins',
     description: 'Custom buttons and pins',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/699.jpg',
+    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/567.jpg',
     order: 17
   },
   {
@@ -160,152 +161,8 @@ export const promotionalCategories: PromotionalCategory[] = [
     name: 'Awards & Recognition',
     slug: 'awards',
     description: 'Custom awards and recognition items',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/896.jpg',
-    order: 18
-  },
-  {
-    id: 'calendars',
-    name: 'Calendars & Planners',
-    slug: 'calendars',
-    description: 'Custom calendars and planners',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/932.jpg',
-    order: 19
-  },
-  {
-    id: 'sunglasses',
-    name: 'Sunglasses',
-    slug: 'sunglasses',
-    description: 'Custom sunglasses and eyewear',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/998.jpg',
-    order: 20
-  },
-  {
-    id: 'umbrellas',
-    name: 'Umbrellas',
-    slug: 'umbrellas',
-    description: 'Custom umbrellas and rain gear',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/catalog_detail_image.jpg',
-    order: 21
-  },
-  {
-    id: 'tools',
-    name: 'Tools',
-    slug: 'tools',
-    description: 'Custom tools and hardware',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/misc-1.png',
-    order: 22
-  },
-  {
-    id: 'pet-supplies',
-    name: 'Pet Supplies',
-    slug: 'pet-supplies',
-    description: 'Custom pet products and accessories',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/208.jpg',
-    order: 23
-  },
-  {
-    id: 'golf',
-    name: 'Golf Balls & Accessories',
-    slug: 'golf',
-    description: 'Custom golf products',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/220.jpg',
-    order: 24
-  },
-  {
-    id: 'travel',
-    name: 'Travel',
-    slug: 'travel',
-    description: 'Custom travel accessories',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/387.jpg',
-    order: 25
-  },
-  {
-    id: 'chairs',
-    name: 'Chairs & Stadium Seats',
-    slug: 'chairs',
-    description: 'Custom chairs and seating',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/388.jpg',
-    order: 26
-  },
-  {
-    id: 'coasters',
-    name: 'Coasters',
-    slug: 'coasters',
-    description: 'Custom coasters and drink accessories',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/404.jpg',
-    order: 27
-  },
-  {
-    id: 'bottle-openers',
-    name: 'Bottle Openers',
-    slug: 'bottle-openers',
-    description: 'Custom bottle openers',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/441.jpg',
-    order: 28
-  },
-  {
-    id: 'health-care',
-    name: 'Health & Personal Care',
-    slug: 'health-care',
-    description: 'Custom health and personal care items',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/442.jpg',
-    order: 29
-  },
-  {
-    id: 'frisbees',
-    name: 'Frisbees',
-    slug: 'frisbees',
-    description: 'Custom frisbees and flying discs',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/443.jpg',
-    order: 30
-  },
-  {
-    id: 'memo-clips',
-    name: 'Memo Clips',
-    slug: 'memo-clips',
-    description: 'Custom memo clips and holders',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/444.jpg',
-    order: 31
-  },
-  {
-    id: 'bandanas',
-    name: 'Bandanas',
-    slug: 'bandanas',
-    description: 'Custom bandanas and headwear',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/445.jpg',
-    order: 32
-  },
-  {
-    id: 'flip-flops',
-    name: 'Flip Flops',
-    slug: 'flip-flops',
-    description: 'Custom flip flops and sandals',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/512.jpg',
-    order: 33
-  },
-  {
-    id: 'scarves',
-    name: 'Scarves',
-    slug: 'scarves',
-    description: 'Custom scarves and wraps',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/567.jpg',
-    order: 34
-  },
-  {
-    id: 'sustainable',
-    name: 'Sustainable',
-    slug: 'sustainable',
-    description: 'Eco-friendly promotional products',
     imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/699.jpg',
-    order: 35
-  },
-  {
-    id: 'made-in-usa',
-    name: 'Made in USA',
-    slug: 'made-in-usa',
-    description: 'USA-made promotional products',
-    imagePath: 'https://storage.googleapis.com/print-main-product-images/promotional-products/misc/896.jpg',
-    order: 36
+    order: 18
   }
 ];
 
@@ -324,4 +181,3 @@ export function getCategoryBySlug(slug: string): PromotionalCategory | undefined
 export function getSortedCategories(): PromotionalCategory[] {
   return [...promotionalCategories].sort((a, b) => a.order - b.order);
 }
-
