@@ -1,244 +1,143 @@
 {
-  "timestamp": "2025-12-04T00:06:17.444Z",
+  "timestamp": "2025-12-04T02:35:11.563Z",
   "bucket": "print-main-product-images",
-  "totalFiles": 39,
-  "uploadedCount": 0,
+  "totalFiles": 19,
+  "uploadedCount": 19,
   "skippedCount": 0,
-  "errorCount": 39,
+  "errorCount": 0,
   "results": [
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/banners/banners-63.png",
-      "relativePath": "banners/banners-63.png",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/logos/svg-xml-base64-phn2zyb3awr0ad0indkwiibozwlnahq9ije4miigdmlld0jved0imcawidq5mcaxodiiigzpbgw9im5vbmuii.png",
-      "relativePath": "logos/svg-xml-base64-phn2zyb3awr0ad0indkwiibozwlnahq9ije4miigdmlld0jved0imcawidq5mcaxodiiigzpbgw9im5vbmuii.png",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/1048.jpg",
-      "relativePath": "misc/1048.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/1049.jpg",
-      "relativePath": "misc/1049.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/208.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/208.jpg",
       "relativePath": "misc/208.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/208.jpg",
+      "fileSize": 13968,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/219.jpg",
-      "relativePath": "misc/219.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/220.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/220.jpg",
       "relativePath": "misc/220.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/220.jpg",
+      "fileSize": 9043,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/236.jpg",
-      "relativePath": "misc/236.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/245.jpg",
-      "relativePath": "misc/245.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/254.jpg",
-      "relativePath": "misc/254.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/387.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/387.jpg",
       "relativePath": "misc/387.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/387.jpg",
+      "fileSize": 14099,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/388.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/388.jpg",
       "relativePath": "misc/388.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/388.jpg",
+      "fileSize": 14136,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/395.jpg",
-      "relativePath": "misc/395.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/404.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/404.jpg",
       "relativePath": "misc/404.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/404.jpg",
+      "fileSize": 15084,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/422.jpg",
-      "relativePath": "misc/422.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/441.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/441.jpg",
       "relativePath": "misc/441.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/441.jpg",
+      "fileSize": 20442,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/442.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/442.jpg",
       "relativePath": "misc/442.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/442.jpg",
+      "fileSize": 13452,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/443.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/443.jpg",
       "relativePath": "misc/443.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/443.jpg",
+      "fileSize": 12679,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/444.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/444.jpg",
       "relativePath": "misc/444.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/444.jpg",
+      "fileSize": 16123,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/445.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/445.jpg",
       "relativePath": "misc/445.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/445.jpg",
+      "fileSize": 13883,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/512.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/512.jpg",
       "relativePath": "misc/512.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/512.jpg",
+      "fileSize": 14075,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/543.jpg",
-      "relativePath": "misc/543.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/547.jpg",
-      "relativePath": "misc/547.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/567.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/567.jpg",
       "relativePath": "misc/567.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/567.jpg",
+      "fileSize": 10488,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/590.jpg",
-      "relativePath": "misc/590.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/602.jpg",
-      "relativePath": "misc/602.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/610.jpg",
-      "relativePath": "misc/610.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/697.jpg",
-      "relativePath": "misc/697.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/699.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/699.jpg",
       "relativePath": "misc/699.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/699.jpg",
+      "fileSize": 16876,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/896.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/896.jpg",
       "relativePath": "misc/896.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/896.jpg",
+      "fileSize": 12976,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/932.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/932.jpg",
       "relativePath": "misc/932.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/932.jpg",
+      "fileSize": 14792,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/934.jpg",
-      "relativePath": "misc/934.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/998.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/998.jpg",
       "relativePath": "misc/998.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/998.jpg",
+      "fileSize": 8995,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/catalog_detail_image.jpg",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/catalog_detail_image.jpg",
       "relativePath": "misc/catalog_detail_image.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/catalog_detail_image.jpg",
+      "fileSize": 12465,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/misc-1.png",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/misc-1.png",
       "relativePath": "misc/misc-1.png",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/misc-1.png",
+      "fileSize": 68,
+      "status": "success"
     },
     {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/misc-26.jpg",
-      "relativePath": "misc/misc-26.jpg",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/pixel.gif",
+      "localPath": "/Users/eric/Desktop/print-main/customink-images/promotional-products/misc/pixel.gif",
       "relativePath": "misc/pixel.gif",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/misc/setuid.png",
-      "relativePath": "misc/setuid.png",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
-    },
-    {
-      "localPath": "/Users/apony-it/Downloads/print-main/customink-images/promotional-products/products/front_medium_extended.png",
-      "relativePath": "products/front_medium_extended.png",
-      "status": "failed",
-      "error": "Could not load the default credentials. Browse to https://cloud.google.com/docs/authentication/getting-started for more information."
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/promotional-products/misc/pixel.gif",
+      "fileSize": 42,
+      "status": "success"
     }
   ]
 }

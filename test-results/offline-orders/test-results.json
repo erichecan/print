@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-12-03T23:05:27.840179",
+  "frontend_url": "https://print-main-frontend-hsbqzlnkxa-uc.a.run.app",
+  "backend_url": "https://print-main-backend-hsbqzlnkxa-uc.a.run.app",
+  "test_user": "offline-tester@example.com",
+  "tests": {
+    "offline_order_creation": true,
+    "sales_login": true,
+    "sales_orders_list": true,
+    "sales_order_detail": false,
+    "admin_offline_orders": true
+  }
+}

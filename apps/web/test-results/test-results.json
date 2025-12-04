@@ -1,0 +1,304 @@
+{
+  "config": {
+    "configFile": "/Users/eric/Desktop/print-main/apps/web/playwright.gcp.config.ts",
+    "rootDir": "/Users/eric/Desktop/print-main/apps/web/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "test-results/html-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/eric/Desktop/print-main/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "offline-orders-sales-flow.spec.ts",
+      "file": "offline-orders-sales-flow.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "线下订单 Sales 流程",
+          "file": "offline-orders-sales-flow.spec.ts",
+          "line": 26,
+          "column": 6,
+          "specs": [
+            {
+              "title": "未登录访问线下订单入口应引导到登录页或保持在入口页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 9635,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-03T05:11:04.048Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-dc2582726a6cc0e7c9ad",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "Sales 用户可以登录并看到线下订单列表",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7231,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/OFF-E2E-CASE-/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/OFF-E2E-CASE-/)\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/OFF-E2E-CASE-/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/OFF-E2E-CASE-/)\u001b[22m\n\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts:57:69",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts",
+                          "column": 69,
+                          "line": 57
+                        },
+                        "snippet": "  55 |\n  56 |     // [2025-12-02 05:31:30] 种子订单（OFF-E2E-CASE-*）应出现在表格中\n> 57 |     await expect(page.getByText(/OFF-E2E-CASE-/, { exact: false })).toBeVisible();\n     |                                                                     ^\n  58 |\n  59 |     // [2025-12-02 05:31:30] 确保没有 React 压缩错误或 History SecurityError\n  60 |     expect("
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts",
+                            "column": 69,
+                            "line": 57
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/OFF-E2E-CASE-/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/OFF-E2E-CASE-/)\u001b[22m\n\n\n  55 |\n  56 |     // [2025-12-02 05:31:30] 种子订单（OFF-E2E-CASE-*）应出现在表格中\n> 57 |     await expect(page.getByText(/OFF-E2E-CASE-/, { exact: false })).toBeVisible();\n     |                                                                     ^\n  58 |\n  59 |     // [2025-12-02 05:31:30] 确保没有 React 压缩错误或 History SecurityError\n  60 |     expect(\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts:57:69"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-03T05:11:13.863Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--73df2-es-流程-Sales-用户可以登录并看到线下订单列表-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--73df2-es-流程-Sales-用户可以登录并看到线下订单列表-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--73df2-es-流程-Sales-用户可以登录并看到线下订单列表-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts",
+                        "column": 69,
+                        "line": 57
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-24b0b1e6f3520975a89d",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "Sales 用户可以从列表进入订单详情并返回",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2230,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-03T05:11:21.457Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-95fa6dbad1e1fa641123",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 68,
+              "column": 7
+            },
+            {
+              "title": "未登录直接访问 Sales 订单列表会被重定向到登录页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2179,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-03T05:11:23.759Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-f2db56be9b19ff444c37",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 106,
+              "column": 7
+            },
+            {
+              "title": "未登录直接访问订单详情会被重定向到登录页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2173,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-03T05:11:25.943Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-f6212f6fd74a9f9dca49",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 116,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-03T05:11:03.740Z",
+    "duration": 24396.689,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

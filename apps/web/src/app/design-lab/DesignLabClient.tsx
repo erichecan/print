@@ -288,13 +288,20 @@ const DesignLabClient = () => {
           name: 'Gildan Softstyle Jersey T-shirt',
           image: '/assets/categories/cat-tshirt.png'
         });
+        // [2025-12-04] 使用爬取的图片作为默认图片
+        const defaultColor = 'heather-dark-grey';
         setCurrentVariant({
           id: 'default-variant',
           color: 'Heather Dark Grey',
-          image: '/assets/categories/cat-tshirt.png',
-          baseImages: { front: '/assets/categories/cat-tshirt.png' },
-          gallery: ['/assets/categories/cat-tshirt.png']
+          image: `/customink-images/products/gildan-softstyle-tshirt/${defaultColor}/front_large_extended.png`,
+          baseImages: {
+            front: `/customink-images/products/gildan-softstyle-tshirt/${defaultColor}/front_large_extended.png`,
+            back: `/customink-images/products/gildan-softstyle-tshirt/${defaultColor}/back_large_extended.png`,
+            sleeve: `/customink-images/products/gildan-softstyle-tshirt/${defaultColor}/front_large_extended.png`,
+          },
+          gallery: [`/customink-images/products/gildan-softstyle-tshirt/${defaultColor}/front_large_extended.png`]
         });
+        setSelectedProductColor('heather-dark-grey');
         setLoading(false);
         return;
       }
@@ -337,11 +344,19 @@ const DesignLabClient = () => {
         console.error('Failed to fetch product details:', err);
         // setError(err.message || 'Failed to load product details'); // Don't block UI
         // [2025-11-21 11:00:00] 失败时使用默认图片
+        // [2025-12-04] 失败时使用爬取的默认图片
+        const fallbackColor = 'white';
         setCurrentVariant({
           id: targetVariantId,
           color: 'White',
-          image: '/assets/categories/cat-tshirt.png'
+          image: `/customink-images/products/gildan-softstyle-tshirt/${fallbackColor}/front_large_extended.png`,
+          baseImages: {
+            front: `/customink-images/products/gildan-softstyle-tshirt/${fallbackColor}/front_large_extended.png`,
+            back: `/customink-images/products/gildan-softstyle-tshirt/${fallbackColor}/back_large_extended.png`,
+            sleeve: `/customink-images/products/gildan-softstyle-tshirt/${fallbackColor}/front_large_extended.png`,
+          }
         });
+        setSelectedProductColor('white');
         setLoading(false);
       }
     };
@@ -1473,8 +1488,7 @@ const DesignLabClient = () => {
     handleZoomChange(100);
   }, [handleZoomChange]);
 
-  // [2025-01-27 16:10:00] View switching (front/back/sleeve)
-  // [2025-01-27 21:00:00] 实现多视图切换功能
+  // [2025-12-04] View switching (front/back/sleeve) - 完善视图切换和产品图片更新
   const handleViewSwitch = useCallback(
     async (view: 'front' | 'back' | 'sleeve' | 'zoom') => {
       if (view === 'zoom') {
@@ -1491,6 +1505,38 @@ const DesignLabClient = () => {
 
       // 切换视图
       setView(view as 'front' | 'back' | 'sleeve');
+      setSelectedView(view);
+
+      // [2025-12-04] 根据视图和当前颜色更新产品图片
+      if (currentVariant) {
+        const colorKey = selectedProductColor || 'white';
+        const viewMap: Record<string, string> = {
+          'front': 'front',
+          'back': 'back',
+          'sleeve': 'front', // 袖子视图暂时使用front
+        };
+        const viewName = viewMap[view] || 'front';
+        
+        // 构建图片URL（使用爬取的图片）
+        const imageUrl = `/customink-images/products/gildan-softstyle-tshirt/${colorKey}/${viewName}_large_extended.png`;
+        
+        // 更新当前变体的图片
+        setCurrentVariant((prev: any) => ({
+          ...prev,
+          image: imageUrl,
+          baseImages: {
+            ...prev?.baseImages,
+            [view]: imageUrl,
+          },
+        }));
+        
+        console.log('[Design Lab] View switched:', {
+          view,
+          colorKey,
+          imageUrl,
+          timestamp: new Date().toISOString()
+        });
+      }
 
       // 加载新视图的画布
       const viewCanvas = viewCanvases[view as 'front' | 'back' | 'sleeve'];
@@ -1519,7 +1565,7 @@ const DesignLabClient = () => {
         }
       }
     },
-    [currentView, viewCanvases, setView, setCanvas, applySnapshotToCanvas, ensureFabric, initializePrintArea, handleZoomChange]
+    [currentView, viewCanvases, setView, setCanvas, applySnapshotToCanvas, ensureFabric, initializePrintArea, handleZoomChange, currentVariant, selectedProductColor]
   );
 
   useEffect(() => {
@@ -2588,10 +2634,55 @@ const DesignLabClient = () => {
     }
   }, [handleCanvasChange]);
 
-  const handleProductColorSelect = useCallback((colorKey: string) => {
-    // [2025-11-15 16:07:58] Inspector 色板切换
+  // [2025-12-04] 产品颜色切换处理（使用爬取的图片）
+  const handleProductColorSelect = useCallback((colorKey: string, colorName: string) => {
     setSelectedProductColor(colorKey);
-  }, []);
+    
+    // 颜色名称到颜色ID的映射（根据爬虫脚本中的映射）
+    const colorIdMap: Record<string, string> = {
+      'white': '176100',
+      'navy': '176101',
+      'maroon': '176102',
+      'black': '176103',
+      'heather-grey': '176104',
+      'heather-dark-grey': '176105',
+    };
+    
+    // 产品ID（根据爬虫脚本）
+    const productId = '6a62c76ef0978853a20391b6c32da4fe';
+    const colorId = colorIdMap[colorKey.toLowerCase()] || colorIdMap['white'];
+    
+    // 根据当前视图选择对应的图片
+    const viewMap: Record<string, string> = {
+      'front': 'front',
+      'back': 'back',
+      'sleeve': 'front', // 袖子视图暂时使用front
+    };
+    const view = viewMap[currentView] || 'front';
+    
+    // 构建图片URL（使用爬取的图片）
+    const imageUrl = `/customink-images/products/gildan-softstyle-tshirt/${colorKey}/${view}_large_extended.png`;
+    
+    // 更新当前变体
+    setCurrentVariant((prev: any) => ({
+      ...prev,
+      color: colorName,
+      image: imageUrl,
+      baseImages: {
+        front: `/customink-images/products/gildan-softstyle-tshirt/${colorKey}/front_large_extended.png`,
+        back: `/customink-images/products/gildan-softstyle-tshirt/${colorKey}/back_large_extended.png`,
+        sleeve: `/customink-images/products/gildan-softstyle-tshirt/${colorKey}/front_large_extended.png`,
+      },
+    }));
+    
+    console.log('[Design Lab] Product color changed:', {
+      colorKey,
+      colorName,
+      imageUrl,
+      view: currentView,
+      timestamp: new Date().toISOString()
+    });
+  }, [currentView]);
 
   const handleAddProductsClick = useCallback(() => {
     router.push('/products');
@@ -3084,19 +3175,18 @@ const DesignLabClient = () => {
           </div>
         </header>
 
-        {/* [2025-01-27 20:00:00] 主内容区域 */}
+        {/* [2025-12-04] 主内容区域 - 5 区域 Grid 布局 */}
         <div className="dl-main">
-          <div className={`dl-main__grid ${showOrderOptionsPanel ? 'has-order-panel' : ''} ${showEditPanel ? 'has-edit-panel' : ''} ${showEditPanel && layers.length > 0 ? 'has-layers-panel' : ''}`}>
-            {/* 左侧深灰色垂直导航栏 */}
-            <nav className="dl-sidebar" aria-label="编辑工具">
+          {/* Rail - 左侧深灰色垂直工具栏（完全按照截图） */}
+          <nav className="dl-rail" aria-label="编辑工具">
               <button
                 type="button"
-                className={`dl-sidebar__btn ${selectedTool === 'upload' ? 'is-active' : ''}`}
+                className={`dl-rail__btn ${selectedTool === 'upload' ? 'is-active' : ''}`}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   const timestamp = new Date().toISOString();
-                  console.log('[Upload] ===== SIDEBAR UPLOAD BUTTON CLICKED =====', {
+                  console.log('[Upload] ===== RAIL UPLOAD BUTTON CLICKED =====', {
                     timestamp,
                     triggerToolActionExists: typeof triggerToolAction === 'function',
                     selectedTool
@@ -3113,59 +3203,59 @@ const DesignLabClient = () => {
                   }
                 }}
               >
-                <span className="dl-sidebar__icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <span className="dl-rail__btn-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
                 </span>
-                <span className="dl-sidebar__label">Upload</span>
+                <span className="dl-rail__btn-label">Upload</span>
               </button>
               <button
                 type="button"
-                className={`dl-sidebar__btn ${selectedTool === 'text' ? 'is-active' : ''}`}
+                className={`dl-rail__btn ${selectedTool === 'text' ? 'is-active' : ''}`}
                 onClick={() => triggerToolAction('text')}
               >
-                <span className="dl-sidebar__icon dl-sidebar__icon--text">T</span>
-                <span className="dl-sidebar__label">Add Text</span>
+                <span className="dl-rail__btn-icon" style={{ fontSize: '24px', fontWeight: 'bold' }}>T</span>
+                <span className="dl-rail__btn-label">Add Text</span>
               </button>
               <button
                 type="button"
-                className={`dl-sidebar__btn ${selectedTool === 'art' ? 'is-active' : ''}`}
+                className={`dl-rail__btn ${selectedTool === 'art' ? 'is-active' : ''}`}
                 onClick={() => triggerToolAction('art')}
               >
-                <span className="dl-sidebar__icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <span className="dl-rail__btn-icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <rect x="3" y="3" width="18" height="18" rx="2" />
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
                   </svg>
                 </span>
-                <span className="dl-sidebar__label">Add Art</span>
+                <span className="dl-rail__btn-label">Add Art</span>
               </button>
               <button
                 type="button"
-                className={`dl-sidebar__btn ${selectedTool === 'colors' ? 'is-active' : ''}`}
+                className={`dl-rail__btn ${selectedTool === 'colors' ? 'is-active' : ''}`}
                 onClick={() => triggerToolAction('colors')}
               >
-                <span className="dl-sidebar__icon">
+                <span className="dl-rail__btn-icon">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                   </svg>
                 </span>
-                <span className="dl-sidebar__label">Product Colors</span>
+                <span className="dl-rail__btn-label">Product Colors</span>
               </button>
               <button
                 type="button"
-                className={`dl-sidebar__btn ${selectedTool === 'names' ? 'is-active' : ''}`}
+                className={`dl-rail__btn ${selectedTool === 'names' ? 'is-active' : ''}`}
                 onClick={() => triggerToolAction('names')}
               >
-                <span className="dl-sidebar__icon dl-sidebar__icon--names">
-                  <span className="dl-sidebar__names-top">SMITH</span>
-                  <span className="dl-sidebar__names-bottom">00</span>
+                <span className="dl-rail__btn-icon" style={{ display: 'flex', flexDirection: 'column', fontSize: '10px', lineHeight: '1.2' }}>
+                  <span>SMITH</span>
+                  <span>00</span>
                 </span>
-                <span className="dl-sidebar__label">Add Names</span>
+                <span className="dl-rail__btn-label">Add Names</span>
               </button>
               {/* [2025-01-28 00:05:00] 文件输入框已移到组件最外层（fileInputElement），这里不再需要 */}
               {/* [2025-01-27 23:20:00] 拖拽上传支持 - 全页面拖拽区域 */}
@@ -3273,8 +3363,210 @@ const DesignLabClient = () => {
               />
             </nav>
 
-            {/* 左侧设计工具区域 */}
-            <aside className="dl-tools">
+            {/* Canvas - 中央画布区域 */}
+            <section className="dl-canvas">
+              {/* "What's next for you?" 引导面板 */}
+              {!guideCollapsed && (
+                <div className="dl-whats-next">
+                  <h2 className="dl-whats-next__title">What&apos;s next for you?</h2>
+                  <div className="dl-whats-next__grid">
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const timestamp = new Date().toISOString();
+                        console.log('[Upload] ===== WHATS-NEXT UPLOAD BUTTON CLICKED =====', {
+                          timestamp,
+                          triggerToolActionExists: typeof triggerToolAction === 'function'
+                        });
+                        try {
+                          triggerToolAction('upload');
+                          console.log('[Upload] ✅ triggerToolAction("upload") called successfully', { timestamp });
+                        } catch (err: any) {
+                          console.error('[Upload] ❌ Error calling triggerToolAction:', {
+                            error: err.message,
+                            stack: err.stack,
+                            timestamp
+                          });
+                        }
+                      }}
+                    >
+                      <span className="dl-whats-next__icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <path d="M24 8v32M8 24h32" />
+                          <path d="M24 8l-8 8h16l-8-8z" />
+                          <path d="M24 8l8 8h-16l8-8z" />
+                          <ellipse cx="24" cy="20" rx="12" ry="8" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Upload</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={() => triggerToolAction('text')}
+                    >
+                      <span className="dl-whats-next__icon dl-whats-next__icon--text">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <rect x="12" y="12" width="24" height="24" rx="2" />
+                          <line x1="18" y1="24" x2="30" y2="24" />
+                          <line x1="18" y1="28" x2="26" y2="28" />
+                          <line x1="24" y1="20" x2="24" y2="32" strokeWidth="1.5" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Add Text</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={() => triggerToolAction('art')}
+                    >
+                      <span className="dl-whats-next__icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <rect x="8" y="8" width="32" height="32" rx="2" />
+                          <path d="M8 24 L16 16 L24 20 L32 12 L40 20" />
+                          <circle cx="12" cy="28" r="2" />
+                          <circle cx="36" cy="28" r="2" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Add Art</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="dl-whats-next__card"
+                      onClick={() => triggerToolAction('products')}
+                    >
+                      <span className="dl-whats-next__icon">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#0066cc" strokeWidth="2">
+                          <path d="M16 12 L12 16 L12 36 L36 36 L36 16 L32 12 Z" />
+                          <path d="M16 12 L24 8 L32 12" />
+                          <circle cx="18" cy="24" r="1.5" />
+                          <circle cx="24" cy="24" r="1.5" />
+                          <circle cx="30" cy="24" r="1.5" />
+                          <path d="M20 32 L20 28 L28 28 L28 32" />
+                          <circle cx="24" cy="36" r="2" />
+                          <circle cx="32" cy="36" r="2" />
+                          <circle cx="36" cy="36" r="2" />
+                          <circle cx="40" cy="36" r="2" />
+                          <circle cx="44" cy="36" r="2" />
+                        </svg>
+                      </span>
+                      <span className="dl-whats-next__label">Change Products</span>
+                    </button>
+                  </div>
+                  <p className="dl-whats-next__hint">
+                    <span className="dl-whats-next__hint-icon">💡</span>
+                    Drag & drop a file anywhere to upload.
+                  </p>
+                </div>
+              )}
+
+              {/* 产品可视化区域 */}
+              <div className="dl-visualization">
+                <div className="dl-visualization__main">
+                  {/* 产品大图 */}
+                  <div className="dl-visualization__image" style={{ position: 'relative' }}>
+                    <Image
+                      src={
+                        currentVariant?.baseImages?.[currentView] || 
+                        currentVariant?.image || 
+                        currentVariant?.baseImages?.front || 
+                        currentVariant?.gallery?.[0] || 
+                        "/assets/categories/cat-tshirt.png"
+                      }
+                      alt={currentProduct?.name || "Product visualization"}
+                      width={1000}
+                      height={1200}
+                      className="dl-visualization__img"
+                      priority
+                      style={{
+                        zIndex: 1,
+                        position: 'relative',
+                        display: 'block',
+                        width: '1000px',
+                        height: '1200px',
+                        minWidth: '1000px',
+                        minHeight: '1200px',
+                        maxWidth: '1000px',
+                        maxHeight: '1200px',
+                        objectFit: 'contain',
+                        flexShrink: 0,
+                        boxSizing: 'border-box'
+                      } as React.CSSProperties}
+                    />
+                    {/* 画布覆盖层 */}
+                    <div className="dl-visualization__canvas-wrapper" style={{
+                      position: 'absolute',
+                      top: '20%',
+                      left: '25%',
+                      width: '50%',
+                      height: '60%',
+                      border: showPrintArea ? '1px dashed rgba(0,0,0,0.2)' : 'none',
+                      pointerEvents: 'auto',
+                      backgroundColor: 'transparent',
+                      zIndex: 2
+                    }}>
+                      <canvas
+                        ref={canvasElementRef}
+                        className="dl-visualization__canvas"
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          backgroundColor: 'transparent'
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Sidebar - 右侧视图切换面板 */}
+            <aside className="dl-sidebar">
+              {/* 撤销/重做按钮 */}
+              <div className="dl-undo-redo">
+                <button
+                  type="button"
+                  className="dl-undo-redo__btn"
+                  onClick={() => {
+                    const currentHistory = useDesignLabStore.getState().history;
+                    if (currentHistory.length > 0) {
+                      undo();
+                      setTimeout(() => {
+                        const newCanvas = useDesignLabStore.getState().canvas;
+                        applySnapshotToCanvas(newCanvas);
+                      }, 0);
+                    }
+                  }}
+                  disabled={history.length === 0}
+                  title="Undo (Ctrl+Z)"
+                >
+                  ↶ Undo
+                </button>
+                <button
+                  type="button"
+                  className="dl-undo-redo__btn"
+                  onClick={() => {
+                    const currentFuture = useDesignLabStore.getState().future;
+                    if (currentFuture.length > 0) {
+                      redo();
+                      setTimeout(() => {
+                        const newCanvas = useDesignLabStore.getState().canvas;
+                        applySnapshotToCanvas(newCanvas);
+                      }, 0);
+                    }
+                  }}
+                  disabled={future.length === 0}
+                  title="Redo (Ctrl+Shift+Z)"
+                >
+                  ↷ Redo
+                </button>
+              </div>
+
+              {/* 视图切换按钮 */}
+              <div className="dl-view-buttons">
               {/* 警告提示 */}
               {showOrderOptionsPanel && (
                 <div className="dl-tools-alert">
@@ -3384,204 +3676,103 @@ const DesignLabClient = () => {
                 </div>
               )}
 
-              {/* 产品选择栏 */}
-              <div className="dl-product-selector">
-                <button type="button" className="dl-product-selector__add-btn">+ Add Products</button>
-                <div className="dl-product-selector__current">
-                  <Image
-                    src={currentVariant?.image || currentVariant?.baseImages?.front || currentVariant?.gallery?.[0] || "/assets/categories/cat-tshirt.png"}
-                    alt={currentProduct?.name || "Current product"}
-                    width={48}
-                    height={48}
-                    className="dl-product-selector__thumb"
-                  />
-                  <div className="dl-product-selector__info">
-                    <div className="dl-product-selector__name">
-                      {currentProduct?.name || 'Gildan Softstyle Jersey T-shirt'}
-                      <Link href="#change-product" className="dl-product-selector__change">Change Product</Link>
-                    </div>
-                    <div className="dl-product-selector__color">
-                      {currentVariant?.color || 'Heather Dark Grey'}
-                      <Link href="#change-color" className="dl-product-selector__change">Change Color</Link>
-                    </div>
+              {/* 视图切换按钮 */}
+              <div className="dl-view-buttons">
+                <button
+                  type="button"
+                  className={`dl-view-btn ${selectedView === 'front' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setSelectedView('front');
+                    handleViewSwitch('front');
+                  }}
+                >
+                  <div className="dl-view-btn__thumb">
+                    <Image src="/assets/categories/cat-tshirt.png" alt="Front" width={60} height={60} />
+                  </div>
+                  <span className="dl-view-btn__label">front</span>
+                </button>
+                <button
+                  type="button"
+                  className={`dl-view-btn ${selectedView === 'back' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setSelectedView('back');
+                    handleViewSwitch('back');
+                  }}
+                >
+                  <div className="dl-view-btn__thumb">
+                    <Image src="/assets/categories/cat-tshirt.png" alt="Back" width={60} height={60} />
+                  </div>
+                  <span className="dl-view-btn__label">back</span>
+                </button>
+                <button
+                  type="button"
+                  className={`dl-view-btn ${selectedView === 'sleeve' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setSelectedView('sleeve');
+                    handleViewSwitch('sleeve');
+                  }}
+                >
+                  <div className="dl-view-btn__thumb">
+                    <span className="dl-view-btn__icon">👕</span>
+                  </div>
+                  <span className="dl-view-btn__label">Sleeve Design</span>
+                </button>
+                <button
+                  type="button"
+                  className={`dl-view-btn ${selectedView === 'zoom' ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setSelectedView('zoom');
+                    handleViewSwitch('zoom');
+                  }}
+                >
+                  <div className="dl-view-btn__thumb">
+                    <span className="dl-view-btn__icon">🔍</span>
+                  </div>
+                  <span className="dl-view-btn__label">Zoom</span>
+                </button>
+              </div>
+            </aside>
+          </div>
+
+          {/* Bottom Bar - 底部操作栏（完全按照截图） */}
+          <footer className="dl-bottom-bar">
+            <div className="dl-bottom-bar__left">
+              <button type="button" className="dl-bottom-bar__add-products">
+                + Add Products
+              </button>
+              <div className="dl-bottom-bar__product-info">
+                <Image
+                  src={currentVariant?.image || currentVariant?.baseImages?.front || "/assets/categories/cat-tshirt.png"}
+                  alt={currentProduct?.name || "Product"}
+                  width={40}
+                  height={40}
+                  className="dl-bottom-bar__product-thumb"
+                />
+                <div className="dl-bottom-bar__product-details">
+                  <div className="dl-bottom-bar__product-name">
+                    {currentProduct?.name || 'Gildan Softstyle Jersey T-shirt'}
+                    <Link href="#change-product" className="dl-bottom-bar__change-link">Change Product</Link>
+                  </div>
+                  <div className="dl-bottom-bar__product-color">
+                    {currentVariant?.color || 'Heather Dark Grey'}
+                    <Link href="#change-color" className="dl-bottom-bar__change-link">Change Color</Link>
                   </div>
                 </div>
               </div>
-            </aside>
+            </div>
+            <div className="dl-bottom-bar__right">
+              <button type="button" className="dl-bottom-bar__save-share" onClick={handleShareDesign}>
+                Save | Share
+              </button>
+              <button type="button" className="dl-bottom-bar__get-price" onClick={handleRequestQuote}>
+                Get Price
+              </button>
+            </div>
+          </footer>
+        </div>
 
-            {/* 中间产品可视化区域 */}
-            <section className="dl-visualization">
-              <div className="dl-visualization__main">
-                {/* 撤销/重做按钮 */}
-                <div className="dl-undo-redo">
-                  <button
-                    type="button"
-                    className="dl-undo-redo__btn"
-                    onClick={() => {
-                      const currentHistory = useDesignLabStore.getState().history;
-                      if (currentHistory.length > 0) {
-                        undo();
-                        setTimeout(() => {
-                          const newCanvas = useDesignLabStore.getState().canvas;
-                          applySnapshotToCanvas(newCanvas);
-                        }, 0);
-                      }
-                    }}
-                    disabled={history.length === 0}
-                    title="Undo (Ctrl+Z)"
-                  >
-                    ↶ Undo
-                  </button>
-                  <button
-                    type="button"
-                    className="dl-undo-redo__btn"
-                    onClick={() => {
-                      const currentFuture = useDesignLabStore.getState().future;
-                      if (currentFuture.length > 0) {
-                        redo();
-                        setTimeout(() => {
-                          const newCanvas = useDesignLabStore.getState().canvas;
-                          applySnapshotToCanvas(newCanvas);
-                        }, 0);
-                      }
-                    }}
-                    disabled={future.length === 0}
-                    title="Redo (Ctrl+Shift+Z)"
-                  >
-                    ↷ Redo
-                  </button>
-                </div>
-
-                {/* 产品大图 */}
-                {/* [2025-01-27 21:55:00] 调整图片尺寸为 1000x1200px，响应式布局 */}
-                <div className="dl-visualization__image" style={{ position: 'relative' }}>
-                  {/* [2025-11-21 11:15:00] 产品图片 - 确保显示在最底层 */}
-                  <Image
-                    src={currentVariant?.image || currentVariant?.baseImages?.front || currentVariant?.gallery?.[0] || "/assets/categories/cat-tshirt.png"}
-                    alt={currentProduct?.name || "Product visualization"}
-                    width={1000}
-                    height={1200}
-                    className="dl-visualization__img"
-                    priority
-                    onLoad={(e) => {
-                      const img = e.target as HTMLImageElement;
-                      const actualWidth = img.naturalWidth;
-                      const actualHeight = img.naturalHeight;
-                      const displayWidth = img.offsetWidth;
-                      const displayHeight = img.offsetHeight;
-                      console.log('[Design Lab] Product image loaded:', {
-                        src: currentVariant?.image || currentVariant?.baseImages?.front,
-                        naturalSize: `${actualWidth}x${actualHeight}`,
-                        displaySize: `${displayWidth}x${displayHeight}`,
-                        aspectRatio: (actualWidth / actualHeight).toFixed(2),
-                        timestamp: new Date().toISOString()
-                      });
-                    }}
-                    onError={(e) => {
-                      console.error('[Design Lab] Failed to load product image:', {
-                        error: e,
-                        src: currentVariant?.image || currentVariant?.baseImages?.front,
-                        fallback: "/assets/categories/cat-tshirt.png",
-                        timestamp: new Date().toISOString()
-                      });
-                    }}
-                    style={{
-                      zIndex: 1,
-                      position: 'relative',
-                      display: 'block',
-                      width: '1000px', /* [2025-01-27 22:17:00] 强制设置宽度为 1000px */
-                      height: '1200px', /* [2025-01-27 22:17:00] 强制设置高度为 1200px */
-                      minWidth: '1000px', /* 防止缩小 */
-                      minHeight: '1200px', /* 防止缩小 */
-                      maxWidth: '1000px',
-                      maxHeight: '1200px',
-                      objectFit: 'contain', /* 保持宽高比 */
-                      flexShrink: 0, /* 防止 flex 容器缩小 */
-                      boxSizing: 'border-box' /* 确保尺寸计算正确 */
-                    } as React.CSSProperties}
-                  />
-                  {/* [2025-11-21 11:15:00] 画布覆盖层 - 透明背景，不遮挡产品图片 */}
-                  <div className="dl-visualization__canvas-wrapper" style={{
-                    position: 'absolute',
-                    top: '20%', // Adjust based on product print area
-                    left: '25%', // Adjust based on product print area
-                    width: '50%', // Adjust based on product print area
-                    height: '60%', // Adjust based on product print area
-                    border: showPrintArea ? '1px dashed rgba(0,0,0,0.2)' : 'none',
-                    pointerEvents: 'auto', // Ensure canvas receives events
-                    backgroundColor: 'transparent', // [2025-11-21 11:15:00] 确保背景透明，不遮挡产品图片
-                    zIndex: 2 // [2025-11-21 11:15:00] 画布在图片上方，但背景透明
-                  }}>
-                    <canvas
-                      ref={canvasElementRef}
-                      className="dl-visualization__canvas"
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: 'transparent' // [2025-11-21 11:15:00] 确保画布背景透明
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* 右侧垂直按钮栏 */}
-                <div className="dl-view-buttons">
-                  <button
-                    type="button"
-                    className={`dl-view-btn ${selectedView === 'front' ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setSelectedView('front');
-                      handleViewSwitch('front');
-                    }}
-                  >
-                    <div className="dl-view-btn__thumb">
-                      <Image src="/assets/categories/cat-tshirt.png" alt="Front" width={40} height={40} />
-                    </div>
-                    <span className="dl-view-btn__label">Front</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`dl-view-btn ${selectedView === 'back' ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setSelectedView('back');
-                      handleViewSwitch('back');
-                    }}
-                  >
-                    <div className="dl-view-btn__thumb">
-                      <Image src="/assets/categories/cat-tshirt.png" alt="Back" width={40} height={40} />
-                    </div>
-                    <span className="dl-view-btn__label">Back</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`dl-view-btn ${selectedView === 'sleeve' ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setSelectedView('sleeve');
-                      handleViewSwitch('sleeve');
-                    }}
-                  >
-                    <div className="dl-view-btn__thumb">
-                      <Image src="/assets/categories/cat-tshirt.png" alt="Sleeve" width={40} height={40} />
-                    </div>
-                    <span className="dl-view-btn__label">Sleeve Design</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`dl-view-btn ${selectedView === 'zoom' ? 'is-active' : ''}`}
-                    onClick={() => {
-                      setSelectedView('zoom');
-                      handleViewSwitch('zoom');
-                    }}
-                  >
-                    <div className="dl-view-btn__thumb">
-                      <span className="dl-view-btn__icon">🔍</span>
-                    </div>
-                    <span className="dl-view-btn__label">Zoom</span>
-                  </button>
-                </div>
-
-                {/* 底部操作栏 */}
-                <div className="dl-actions-bar">
+        {/* 保留原有的操作栏（临时，后续移除） */}
+        <div className="dl-actions-bar" style={{ display: 'none' }}>
                   <button type="button" className="dl-actions-bar__save-share" onClick={handleShareDesign}>
                     <span>💾</span> Save | Share
                   </button>
@@ -4799,7 +4990,7 @@ const DesignLabClient = () => {
           </div>
         </section>
 
-        {/* [2025-01-27 21:00:00] 上传文件模态框 */}
+        {/* [2025-12-04] "Choose File To Upload" 模态（完全按照截图） */}
         {showUploadModal && (
           <div className="dl-modal-overlay" onClick={() => setShowUploadModal(false)}>
             <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
@@ -4817,20 +5008,12 @@ const DesignLabClient = () => {
                       const timestamp = new Date().toISOString();
                       console.log('[Upload] ===== BROWSE BUTTON CLICKED =====', {
                         timestamp,
-                        fileInputRefExists: !!fileInputRef.current,
-                        fileInputElement: fileInputRef.current ? {
-                          type: fileInputRef.current.type,
-                          accept: fileInputRef.current.accept,
-                          style: fileInputRef.current.style.display
-                        } : 'null'
+                        fileInputRefExists: !!fileInputRef.current
                       });
                       
                       if (fileInputRef.current) {
-                        console.log('[Upload] 📋 Calling fileInputRef.current.click()...', { timestamp });
                         fileInputRef.current.click();
-                        console.log('[Upload] ✅ fileInputRef.current.click() called', { timestamp });
                       } else {
-                        console.error('[Upload] ❌ fileInputRef.current is null!', { timestamp });
                         setError('文件输入框未初始化，请刷新页面重试');
                       }
                     }}
@@ -4845,16 +5028,13 @@ const DesignLabClient = () => {
                 <div className="dl-upload-info">
                   <span className="dl-upload-info__icon">💡</span>
                   <p className="dl-upload-info__text">Vector or high resolution artwork of 300 DPI or more will look the best. Max size of 20 MB.</p>
-                  <span className="dl-upload-info__info">ℹ</span>
+                  <span className="dl-upload-info__info">ⓘ</span>
                 </div>
                 <div className="dl-upload-help">
-                  <p>Need help with your upload?</p>
+                  <p><strong>Need help with your upload?</strong></p>
                   <p>
                     <Link href="/chat" className="dl-upload-help__link">Chat now</Link> or email <Link href="mailto:service@customink.com" className="dl-upload-help__link">service@customink.com</Link>
                   </p>
-                </div>
-                <div className="dl-upload-feedback">
-                  <p>How would you <Link href="#" className="dl-upload-feedback__link">rate our upload experience?</Link></p>
                 </div>
               </div>
             </div>
@@ -4870,7 +5050,8 @@ const DesignLabClient = () => {
                 <button type="button" className="dl-modal__close" onClick={() => setShowAddTextModal(false)}>×</button>
               </div>
               <div className="dl-modal__body">
-                <div style={{ marginBottom: '16px' }}>
+                {/* [2025-12-04] Add Text 模态（完全按照截图） */}
+                <div className="dl-edit-field">
                   <input
                     type="text"
                     className="dl-text-input"
@@ -4878,12 +5059,10 @@ const DesignLabClient = () => {
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
                     autoFocus
-                    style={{ width: '100%', padding: '8px', marginBottom: '12px' }}
                   />
                   <button
                     type="button"
                     className="dl-add-btn"
-                    style={{ width: '100%', padding: '10px', backgroundColor: '#0066cc', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
                     onClick={() => {
                       handleAddText(textInput.trim() || 'Your Text', {
                         fontFamily: textFont,
@@ -4899,13 +5078,13 @@ const DesignLabClient = () => {
                   </button>
                 </div>
                 
-                {/* [2025-01-28] 字体选择 */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Change Font</label>
+                {/* 字体选择 */}
+                <div className="dl-edit-field">
+                  <label className="dl-edit-field__label">Change Font</label>
                   <select
+                    className="dl-edit-field__select"
                     value={textFont}
                     onChange={(e) => setTextFont(e.target.value)}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                   >
                     <option value="Arial">Arial</option>
                     <option value="Helvetica">Helvetica</option>
@@ -4915,45 +5094,65 @@ const DesignLabClient = () => {
                   </select>
                 </div>
                 
-                {/* [2025-01-28] 颜色选择器（默认白色） */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Edit Color</label>
-                  <input
-                    type="color"
-                    value={textColor}
-                    onChange={(e) => setTextColor(e.target.value)}
-                    style={{ width: '100%', height: '40px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
-                  />
+                {/* 颜色选择器 */}
+                <div className="dl-edit-field">
+                  <label className="dl-edit-field__label">Edit Color</label>
+                  <div className="dl-edit-color">
+                    <input
+                      type="color"
+                      className="dl-edit-color__input"
+                      value={textColor}
+                      onChange={(e) => setTextColor(e.target.value)}
+                    />
+                    <span className="dl-edit-color__text">{textColor}</span>
+                    <span className="dl-edit-color__arrow">›</span>
+                  </div>
                 </div>
                 
-                {/* [2025-01-28] 字体大小滑块 */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
-                    Text Size: <span style={{ fontWeight: 'bold' }}>{textSize}</span>
+                {/* 字体大小滑块 */}
+                <div className="dl-edit-field">
+                  <label className="dl-edit-field__label">
+                    Text Size: <strong>{textSize}</strong>
                   </label>
-                  <input
-                    type="range"
-                    min="12"
-                    max="200"
-                    value={textSize}
-                    onChange={(e) => setTextSize(Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
+                  <div className="dl-edit-slider">
+                    <input
+                      type="range"
+                      className="dl-edit-slider__input"
+                      min="12"
+                      max="200"
+                      value={textSize}
+                      onChange={(e) => setTextSize(Number(e.target.value))}
+                    />
+                    <input
+                      type="number"
+                      className="dl-edit-slider__value"
+                      value={textSize}
+                      onChange={(e) => setTextSize(Number(e.target.value))}
+                    />
+                  </div>
                 </div>
                 
-                {/* [2025-01-28] 旋转滑块 */}
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>
-                    Rotation: <span style={{ fontWeight: 'bold' }}>{textRotation}°</span>
+                {/* 旋转滑块 */}
+                <div className="dl-edit-field">
+                  <label className="dl-edit-field__label">
+                    Rotation: <strong>{textRotation}°</strong>
                   </label>
-                  <input
-                    type="range"
-                    min="-180"
-                    max="180"
-                    value={textRotation}
-                    onChange={(e) => setTextRotation(Number(e.target.value))}
-                    style={{ width: '100%' }}
-                  />
+                  <div className="dl-edit-slider">
+                    <input
+                      type="range"
+                      className="dl-edit-slider__input"
+                      min="-180"
+                      max="180"
+                      value={textRotation}
+                      onChange={(e) => setTextRotation(Number(e.target.value))}
+                    />
+                    <input
+                      type="number"
+                      className="dl-edit-slider__value"
+                      value={textRotation}
+                      onChange={(e) => setTextRotation(Number(e.target.value))}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -5337,23 +5536,53 @@ const DesignLabClient = () => {
                       { hex: '#808000', name: 'Olive' },
                       { hex: '#008000', name: 'Green' },
                       { hex: '#8B4513', name: 'Brown' }
-                    ].map((color, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        className={`dl-color-swatch ${selectedColor === color.hex ? 'is-selected' : ''}`}
-                        style={{
-                          backgroundColor: color.hex,
-                          width: '60px',
-                          height: '60px',
-                          borderRadius: '8px',
-                          border: selectedColor === color.hex ? '3px solid #3b82f6' : '2px solid #e5e7eb',
-                          cursor: 'pointer',
-                          position: 'relative',
-                          transition: 'all 0.2s',
-                          boxShadow: selectedColor === color.hex ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
-                        }}
-                        onClick={() => setSelectedColor(color.hex)}
+                    ].map((color, index) => {
+                      // [2025-12-04] 颜色名称到颜色key的映射
+                      const colorKeyMap: Record<string, string> = {
+                        'White': 'white',
+                        'Navy': 'navy',
+                        'Maroon': 'maroon',
+                        'Black': 'black',
+                        'Grey': 'heather-grey',
+                        'Silver': 'heather-grey',
+                        'Beige': 'white',
+                        'Royal Blue': 'navy',
+                        'Turquoise': 'white',
+                        'Purple': 'white',
+                        'Burgundy': 'maroon',
+                        'Pink': 'white',
+                        'Red': 'white',
+                        'Orange': 'white',
+                        'Yellow': 'white',
+                        'Olive': 'white',
+                        'Green': 'white',
+                        'Brown': 'white',
+                      };
+                      const colorKey = colorKeyMap[color.name] || 'white';
+                      
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          className={`dl-color-swatch ${selectedColor === color.hex ? 'is-selected' : ''}`}
+                          style={{
+                            backgroundColor: color.hex,
+                            width: '60px',
+                            height: '60px',
+                            borderRadius: '8px',
+                            border: selectedColor === color.hex ? '3px solid #3b82f6' : '2px solid #e5e7eb',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            transition: 'all 0.2s',
+                            boxShadow: selectedColor === color.hex ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+                          }}
+                          onClick={() => {
+                            setSelectedColor(color.hex);
+                            // [2025-12-04] 颜色选择后更新产品图片
+                            handleProductColorSelect(colorKey, color.name);
+                            // 关闭模态
+                            setShowProductColorsModal(false);
+                          }}
                         title={color.name}
                         onMouseEnter={(e) => {
                           if (selectedColor !== color.hex) {
@@ -5384,7 +5613,8 @@ const DesignLabClient = () => {
                           </span>
                         )}
                       </button>
-                    ))}
+                    );
+                    })}
                   </div>
                 </div>
                 <div className="dl-sizes-section">
