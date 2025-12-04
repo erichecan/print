@@ -140,7 +140,7 @@ const DEFAULT_CONTENT_CONFIG = {
     {
       id: 'nav-3',
       label: 'Promotional Products',
-      href: '/collections/promotional-products',
+      href: '/promotional-products',
       order: 3,
       type: 'mega',
       megaPanel: {
@@ -206,7 +206,7 @@ const DEFAULT_CONTENT_CONFIG = {
     {
       id: 'nav-5',
       label: 'Groups & Events',
-      href: '/help',
+      href: '/group-orders',
       order: 5,
       type: 'mega',
       megaPanel: {

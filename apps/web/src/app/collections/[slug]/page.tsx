@@ -7,7 +7,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-11 06:06:54] 使用 Next Image 提升性能
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 // [2025-11-15 11:20:00] 使用集中管理的 API 配置
 import { API_BASE_URL } from '@/lib/api-config';
 import { generateSEOMetadata } from '@/lib/seo';
@@ -81,6 +81,11 @@ export async function generateStaticParams() {
 export default function CollectionPage({ params }: { params: { slug: string } }) {
   // [2025-01-27 15:55:00] Next.js 14: params 是同步的
   const { slug } = params;
+  
+  // [2025-01-30 12:00:00] 特殊处理：promotional-products 重定向到新的页面路由
+  if (slug === 'promotional-products') {
+    redirect('/promotional-products');
+  }
   
   // 注意：由于这是静态导出，我们需要在客户端获取数据
   // 这里暂时返回空，实际数据获取在客户端组件中处理

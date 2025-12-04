@@ -206,13 +206,13 @@ export function SiteHeader() {
                     <Link href="/collections/apparel" className="mega__trigger">Custom Apparel</Link>
                   </li>
                   <li className="mega__item">
-                    <Link href="/collections/promotional-products" className="mega__trigger">Promotional Products</Link>
+                    <Link href="/promotional-products" className="mega__trigger">Promotional Products</Link>
                   </li>
                   <li className="mega__item">
                     <Link href="/design-lab" className="mega__trigger">Design Lab</Link>
                   </li>
                   <li className="mega__item">
-                    <Link href="/help" className="mega__trigger">Groups & Events</Link>
+                    <Link href="/group-orders" className="mega__trigger">Groups & Events</Link>
                   </li>
                 </>
               )}
@@ -287,7 +287,7 @@ export function SiteHeader() {
                 </Link>
               </li>
               <li>
-                <Link href="/collections/promotional-products" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href="/promotional-products" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
                   Promotional Products
                 </Link>
               </li>
@@ -297,7 +297,7 @@ export function SiteHeader() {
                 </Link>
               </li>
               <li>
-                <Link href="/help" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href="/group-orders" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
                   Groups & Events
                 </Link>
               </li>
