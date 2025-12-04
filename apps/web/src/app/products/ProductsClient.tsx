@@ -173,15 +173,54 @@ export default function ProductsClient() {
           'white': '白',
         };
         const hoveredColor = hoveredColors[product.id];
-        let img = product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
-        if (hoveredColor) {
-          // [2025-12-03 23:20:00] 先尝试用显示名称（中文）匹配，如果找不到则尝试用原始名称（英文）匹配
-          const colorVariant = product.variants?.find(v => {
-            const displayName = COLOR_NAME_MAP_FOR_MATCH[v.color || ''] || v.color;
-            return displayName === hoveredColor || v.color === hoveredColor;
+        
+        // [2025-12-04 22:30:00] 主图选择逻辑：优先显示白色变体图片，无白色则用黑色，最后回退到 primaryImage
+        const getDefaultImage = () => {
+          // 1. 优先查找白色变体的 imageUrl
+          const whiteVariant = product.variants?.find(v => {
+            const color = (v.color || '').trim();
+            return color === 'White' || color === 'white' || color === '白';
           });
+          if (whiteVariant?.imageUrl) {
+            return whiteVariant.imageUrl;
+          }
+          
+          // 2. 如果没有白色，查找黑色变体的 imageUrl
+          const blackVariant = product.variants?.find(v => {
+            const color = (v.color || '').trim();
+            return color === 'Black' || color === 'black' || color === '黑';
+          });
+          if (blackVariant?.imageUrl) {
+            return blackVariant.imageUrl;
+          }
+          
+          // 3. 如果都没有，使用产品主图或第一张图片
+          return product.primaryImage?.url || product.images?.[0]?.url || fallbackImage;
+        };
+        
+        let img = getDefaultImage();
+        
+        // [2025-12-04 22:30:00] 颜色悬停切换逻辑：当悬停时优先使用变体图片，如果没有则回退到产品图片
+        if (hoveredColor) {
+          // [2025-12-04 22:40:00] 修复颜色匹配逻辑：支持中文显示名称和英文原始名称的双向匹配
+          const colorVariant = product.variants?.find(v => {
+            const originalColor = (v.color || '').trim();
+            const displayName = COLOR_NAME_MAP_FOR_MATCH[originalColor] || originalColor;
+            // 匹配逻辑：hoveredColor 可能是中文"黑"/"白"，也可能是英文"Black"/"White"
+            // 需要同时匹配显示名称和原始名称
+            return displayName === hoveredColor || 
+                   originalColor === hoveredColor ||
+                   originalColor.toLowerCase() === hoveredColor.toLowerCase() ||
+                   (hoveredColor === '黑' && (originalColor === 'Black' || originalColor === 'black')) ||
+                   (hoveredColor === '白' && (originalColor === 'White' || originalColor === 'white'));
+          });
+          
           if (colorVariant?.imageUrl) {
+            // 如果变体有 imageUrl，使用变体的图片
             img = colorVariant.imageUrl;
+          } else {
+            // 如果变体没有 imageUrl，回退到默认主图
+            img = getDefaultImage();
           }
         }
         const alt = product.primaryImage?.alt || product.name;
