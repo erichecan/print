@@ -35,9 +35,14 @@ steps:
       - '-c'
       - |
         STRIPE_KEY=$$(cat /workspace/stripe-key.txt)
+        # [2025-12-04 16:30:15] 构建时记录当前 Git 提交短 SHA 和构建时间，注入到前端环境变量中
+        GIT_SHA=$$(git rev-parse --short HEAD)
+        BUILD_TIME=$$(date -u +"%Y-%m-%dT%H:%M:%SZ")
         docker build \
           --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-234065158862.us-central1.run.app/api \
           --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$$STRIPE_KEY" \
+          --build-arg NEXT_PUBLIC_BUILD_SHA="$$GIT_SHA" \
+          --build-arg NEXT_PUBLIC_BUILD_TIME="$$BUILD_TIME" \
           -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest \
           -f apps/web/Dockerfile \
           apps/web
@@ -64,33 +69,24 @@ steps:
   # Deploy backend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'deploy-backend'
-    entrypoint: 'gcloud'
+    entrypoint: 'bash'
     args:
-      - 'run'
-      - 'deploy'
-      - '${_BACKEND_SERVICE_NAME}'
-      - '--image'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:latest'
-      - '--region'
-      - '${_REGION}'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-      - '--set-env-vars'
-      - 'NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://print-main-frontend-234065158862.us-central1.run.app,GCP_IMAGE_BUCKET=print-main-product-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-main-product-images'
-      - '--memory'
-      - '512Mi'
-      - '--cpu'
-      - '1'
-      - '--min-instances'
-      - '0'
-      - '--max-instances'
-      - '5'
-      # ⚠️ REMOVED Cloud SQL - use external free database (Supabase/Neon) instead
-      # - '--add-cloudsql-instances'
-      # - '${PROJECT_ID}:${_REGION}:${_DB_INSTANCE_NAME}'
-      - '--set-secrets'
-      - 'DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest'
+      - '-c'
+      - |
+        # [2025-12-04 16:30:15] 部署后端时设置构建版本信息环境变量，供 /api/version 使用
+        GIT_SHA=$$(git rev-parse --short HEAD)
+        BUILD_TIME=$$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        gcloud run deploy ${_BACKEND_SERVICE_NAME} \
+          --image ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:latest \
+          --region ${_REGION} \
+          --platform managed \
+          --allow-unauthenticated \
+          --set-env-vars NODE_ENV=production,AUTO_MIGRATE=true,FRONTEND_URL=https://print-main-frontend-234065158862.us-central1.run.app,GCP_IMAGE_BUCKET=print-main-product-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-main-product-images,APP_BUILD_SHA=$$GIT_SHA,APP_BUILD_TIME=$$BUILD_TIME \
+          --memory 512Mi \
+          --cpu 1 \
+          --min-instances 0 \
+          --max-instances 5 \
+          --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest
     waitFor: ['push-backend']
 
   # Deploy frontend to Cloud Run

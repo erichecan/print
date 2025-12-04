@@ -163,6 +163,19 @@ app.get('/health', async (req, res) => {
   res.status(statusCode).json(health);
 });
 
+// Version endpoint
+// [2025-12-04 16:30:15] 返回后端当前部署的构建版本（短 SHA）和构建时间，便于线上与本地版本对比
+app.get('/api/version', (req, res) => {
+  const version = process.env.APP_BUILD_SHA || 'unknown';
+  const buildTime = process.env.APP_BUILD_TIME || null;
+
+  res.json({
+    version,
+    buildTime,
+    env: process.env.NODE_ENV || 'development',
+  });
+});
+
 // API routes
 app.use('/api/products', require('./routes/products'));
 app.use('/api/categories', require('./routes/categories'));
