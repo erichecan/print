@@ -144,6 +144,8 @@ export default function OfflineOrdersIntakePage() {
   // [2025-01-27 20:00:00] 语言切换状态 - 默认值，避免hydration错误
   const [locale, setLocale] = useState<OfflineOrdersLocale>('zh');
   const [isClient, setIsClient] = useState(false); // [2025-01-27 20:35:00] 标记是否在客户端
+  // [2025-12-04 00:15:00] 移动设备检测 - 用于支持拍照功能
+  const [isMobile, setIsMobile] = useState(false);
   
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [files, setFiles] = useState<File[]>([]);
@@ -158,6 +160,7 @@ export default function OfflineOrdersIntakePage() {
 
   // [2025-01-27 20:35:00] 确保客户端渲染后再读取localStorage，避免hydration错误
   // [2025-01-28 09:30:00] 在客户端生成订单编号，避免 hydration 错误
+  // [2025-12-04 00:15:00] 检测移动设备，用于支持拍照功能
   useEffect(() => {
     setIsClient(true);
     if (typeof window !== 'undefined') {
@@ -172,6 +175,11 @@ export default function OfflineOrdersIntakePage() {
         }
         return prev;
       });
+      // [2025-12-04 00:15:00] 检测移动设备
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) ||
+        (window.innerWidth <= 768);
+      setIsMobile(isMobileDevice);
     }
   }, []);
 
@@ -1853,10 +1861,18 @@ export default function OfflineOrdersIntakePage() {
   );
 
   // [2025-01-27 18:00:00] 渲染第五步：文件上传 - 使用 Tailwind
+  // [2025-12-04 00:15:00] 添加移动端拍照支持
   const renderStep5 = () => (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step5Heading')}</h2>
       <p className="text-gray-600 mb-6 text-sm">{t('step5Intro')}</p>
+      {/* [2025-12-04 00:15:00] 移动设备提示 */}
+      {isMobile && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p className="text-sm font-semibold text-blue-900 mb-1">{t('mobileUploadTip')}</p>
+          <p className="text-xs text-blue-700">{t('mobileUploadDescription')}</p>
+        </div>
+      )}
       <div
         className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50 text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
         onDrop={handleDrop}
@@ -1866,11 +1882,12 @@ export default function OfflineOrdersIntakePage() {
       >
         <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
         <p className="text-xs text-gray-600">
-          {t('dragDropOrBrowse')} ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB })})
+          {isMobile ? t('mobileUploadOrBrowse') : t('dragDropOrBrowse')} ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB })})
         </p>
         <input
           type="file"
-          accept={ACCEPTED_EXTENSIONS.join(',')}
+          accept={isMobile ? `${ACCEPTED_EXTENSIONS.join(',')},image/*` : ACCEPTED_EXTENSIONS.join(',')}
+          capture={isMobile ? 'environment' : undefined}
           multiple
           onChange={handleFileInputChange}
           aria-label="Upload artwork files"
