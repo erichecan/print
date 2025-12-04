@@ -1,0 +1,31 @@
+{
+  "test_time": "2025-12-03T21:53:29.625742",
+  "base_url": "https://print-main-frontend-hsbqzlnkxa-uc.a.run.app",
+  "results": {
+    "products_page": {
+      "page_accessible": true,
+      "products_found": true,
+      "color_swatches_found": true,
+      "hover_functionality": false,
+      "image_switching": false,
+      "details": [
+        "找到 198 个颜色元素",
+        "颜色悬停后图片未切换"
+      ]
+    },
+    "design_lab": {
+      "page_accessible": true,
+      "design_lab_loaded": false,
+      "art_tool_found": true,
+      "edit_art_panel_found": false,
+      "art_size_control": false,
+      "names_numbers_found": false,
+      "details": [
+        "Design Lab Canvas 未找到",
+        "找到 4 个 Art 相关按钮",
+        "测试 Art 功能失败: Locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\"button:has-text(\\\"Art\\\"), [class*=\\\"art\\\"], button[aria-label*=\\\"art\\\" i]\").first\n    - locator resolved to <a href=\"/cart\" class=\"cart-icon\" aria-label=\"Shopping cart with 0 items\">…</a>\n  - attempting click action\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n    - waiting 20ms\n    2 × waiting for element to be visible, enabled and stable\n      - element is not visible\n    - retrying click action\n      - waiting 100ms\n    58 × waiting for element to be visible, enabled and stable\n       - element is not visible\n     - retrying click action\n       - waiting 500ms\n",
+        "未找到 Names & Numbers 按钮"
+      ]
+    }
+  }
+}
