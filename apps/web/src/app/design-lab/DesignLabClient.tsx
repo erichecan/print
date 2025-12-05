@@ -1175,6 +1175,9 @@ const DesignLabClient: React.FC = () => {
     const handleSelection = () => {
       const activeObject = fabricCanvas.getActiveObject();
       if (activeObject) {
+        // [2025-01-31 01:00:00] 重置添加对象标志，因为选择事件已触发
+        isAddingObjectRef.current = false;
+        
         // [2025-01-30 17:00:00] 根据对象类型自动切换工具面板
         const objType = activeObject.type;
         const objName = (activeObject as any).name || '';
