@@ -2101,8 +2101,9 @@
 .dl-canvas__fabric {
   /* [2025-01-30 22:35:00] 确保画布可见且可交互 */
   /* [2025-01-30 23:55:00] 修复：使画布填满可用空间，类似 Custom Ink */
-  width: 100%;
-  height: 100%;
+  /* [2025-01-31 16:15:00] 修复：确保画布正确显示，使用固定尺寸而不是百分比 */
+  width: 1000px;
+  height: 1200px;
   max-width: 100%;
   max-height: 100%;
   display: block;
@@ -2114,6 +2115,7 @@
 
 .dl-canvas__placeholder {
   /* [2025-01-30 22:35:00] Placeholder 应该绝对定位，不遮挡画布 */
+  /* [2025-01-31 16:15:00] 修复：确保 placeholder 正确显示，只在画布未初始化时显示 */
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2128,6 +2130,9 @@
   padding: var(--dl-space-4);
   z-index: 0;
   pointer-events: none; /* [2025-01-30 22:35:00] 不阻止画布交互 */
+  /* [2025-01-31 16:15:00] 确保 placeholder 在画布初始化后隐藏 */
+  opacity: 1;
+  transition: opacity 0.3s ease;
 }
 
 /* 引导面板 - "What's next for you?" */

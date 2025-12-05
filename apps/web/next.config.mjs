@@ -103,6 +103,7 @@ const nextConfig = {
     optimizePackageImports: ['@stripe/stripe-js', '@stripe/react-stripe-js', 'fabric'], // 优化大型库的导入
   },
   // [2025-01-27 14:20:00] Webpack 优化配置
+  // [2025-01-31 16:25:00] 修复：移除 vendor.css 和 layout.css 的生成，避免 404 错误
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // 客户端代码分割优化
@@ -113,13 +114,14 @@ const nextConfig = {
           cacheGroups: {
             default: false,
             vendors: false,
-            // 将大型库单独打包
-            vendor: {
-              name: 'vendor',
-              chunks: 'all',
-              test: /node_modules/,
-              priority: 20,
-            },
+            // [2025-01-31 16:25:00] 移除 vendor 单独打包，避免生成 vendor.css 导致 404
+            // 将大型库合并到主 bundle 中
+            // vendor: {
+            //   name: 'vendor',
+            //   chunks: 'all',
+            //   test: /node_modules/,
+            //   priority: 20,
+            // },
             // Stripe 相关库单独打包
             stripe: {
               name: 'stripe',
