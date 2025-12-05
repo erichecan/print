@@ -1,0 +1,290 @@
+{
+  "timestamp": "2025-12-05T13:11:22.771Z",
+  "bucket": "print-main-product-images",
+  "baseUrl": "https://storage.googleapis.com/print-main-product-images",
+  "totalProducts": 1,
+  "totalImages": 18,
+  "successCount": 18,
+  "failedCount": 0,
+  "products": [
+    {
+      "productKey": "gildan-softstyle-tshirt",
+      "productId": "6a62c76ef0978853a20391b6c32da4fe",
+      "productName": "Gildan Softstyle Jersey T-shirt",
+      "images": [
+        {
+          "colorName": "White",
+          "view": "front",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176100/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/front-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/white/front-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-white-front-large_extended.png",
+          "fileSize": 1463929,
+          "status": "success"
+        },
+        {
+          "colorName": "White",
+          "view": "back",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176100/views/alt/back_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/back-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/white/back-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-white-back-large_extended.png",
+          "fileSize": 1574645,
+          "status": "success"
+        },
+        {
+          "colorName": "White",
+          "view": "sleeve",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176100/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/sleeve-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/white/sleeve-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-white-sleeve-large_extended.png",
+          "fileSize": 1463929,
+          "status": "success"
+        },
+        {
+          "colorName": "Navy",
+          "view": "front",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176101/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/navy/front-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/navy/front-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-navy-front-large_extended.png",
+          "fileSize": 1115207,
+          "status": "success"
+        },
+        {
+          "colorName": "Navy",
+          "view": "back",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176101/views/alt/back_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/navy/back-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/navy/back-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-navy-back-large_extended.png",
+          "fileSize": 1326506,
+          "status": "success"
+        },
+        {
+          "colorName": "Navy",
+          "view": "sleeve",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176101/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/navy/sleeve-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/navy/sleeve-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-navy-sleeve-large_extended.png",
+          "fileSize": 1115207,
+          "status": "success"
+        },
+        {
+          "colorName": "Maroon",
+          "view": "front",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176102/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/maroon/front-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/maroon/front-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-maroon-front-large_extended.png",
+          "fileSize": 2305578,
+          "status": "success"
+        },
+        {
+          "colorName": "Maroon",
+          "view": "back",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176102/views/alt/back_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/maroon/back-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/maroon/back-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-maroon-back-large_extended.png",
+          "fileSize": 2268485,
+          "status": "success"
+        },
+        {
+          "colorName": "Maroon",
+          "view": "sleeve",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176102/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/maroon/sleeve-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/maroon/sleeve-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-maroon-sleeve-large_extended.png",
+          "fileSize": 2305578,
+          "status": "success"
+        },
+        {
+          "colorName": "Black",
+          "view": "front",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176103/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/black/front-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/black/front-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-black-front-large_extended.png",
+          "fileSize": 1330653,
+          "status": "success"
+        },
+        {
+          "colorName": "Black",
+          "view": "back",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176103/views/alt/back_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/black/back-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/black/back-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-black-back-large_extended.png",
+          "fileSize": 1388922,
+          "status": "success"
+        },
+        {
+          "colorName": "Black",
+          "view": "sleeve",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176103/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/black/sleeve-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/black/sleeve-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-black-sleeve-large_extended.png",
+          "fileSize": 1330653,
+          "status": "success"
+        },
+        {
+          "colorName": "Heather Grey",
+          "view": "front",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176104/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-grey/front-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/heather-grey/front-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-heather-grey-front-large_extended.png",
+          "fileSize": 1265269,
+          "status": "success"
+        },
+        {
+          "colorName": "Heather Grey",
+          "view": "back",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176104/views/alt/back_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-grey/back-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/heather-grey/back-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-heather-grey-back-large_extended.png",
+          "fileSize": 1424549,
+          "status": "success"
+        },
+        {
+          "colorName": "Heather Grey",
+          "view": "sleeve",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176104/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-grey/sleeve-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/heather-grey/sleeve-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-heather-grey-sleeve-large_extended.png",
+          "fileSize": 1265269,
+          "status": "success"
+        },
+        {
+          "colorName": "Heather Dark Grey",
+          "view": "front",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176105/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/front-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/front-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-heather-dark-grey-front-large_extended.png",
+          "fileSize": 1530254,
+          "status": "success"
+        },
+        {
+          "colorName": "Heather Dark Grey",
+          "view": "back",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176105/views/alt/back_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/back-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/back-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-heather-dark-grey-back-large_extended.png",
+          "fileSize": 1684966,
+          "status": "success"
+        },
+        {
+          "colorName": "Heather Dark Grey",
+          "view": "sleeve",
+          "originalUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/6a62c76ef0978853a20391b6c32da4fe/colors/176105/views/alt/front_large_extended.png?w=2000&q=100",
+          "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/sleeve-large_extended.png",
+          "gcsObjectPath": "design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/sleeve-large_extended.png",
+          "localPath": "/Users/eric/Desktop/print-main/temp-customink-images/gildan-softstyle-tshirt-heather-dark-grey-sleeve-large_extended.png",
+          "fileSize": 1530254,
+          "status": "success"
+        }
+      ]
+    }
+  ],
+  "imageUrlMapping": {
+    "gildan-softstyle-tshirt:White:front": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/front-large_extended.png",
+      "colorName": "White",
+      "view": "front"
+    },
+    "gildan-softstyle-tshirt:White:back": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/back-large_extended.png",
+      "colorName": "White",
+      "view": "back"
+    },
+    "gildan-softstyle-tshirt:White:sleeve": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/sleeve-large_extended.png",
+      "colorName": "White",
+      "view": "sleeve"
+    },
+    "gildan-softstyle-tshirt:Navy:front": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/navy/front-large_extended.png",
+      "colorName": "Navy",
+      "view": "front"
+    },
+    "gildan-softstyle-tshirt:Navy:back": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/navy/back-large_extended.png",
+      "colorName": "Navy",
+      "view": "back"
+    },
+    "gildan-softstyle-tshirt:Navy:sleeve": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/navy/sleeve-large_extended.png",
+      "colorName": "Navy",
+      "view": "sleeve"
+    },
+    "gildan-softstyle-tshirt:Maroon:front": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/maroon/front-large_extended.png",
+      "colorName": "Maroon",
+      "view": "front"
+    },
+    "gildan-softstyle-tshirt:Maroon:back": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/maroon/back-large_extended.png",
+      "colorName": "Maroon",
+      "view": "back"
+    },
+    "gildan-softstyle-tshirt:Maroon:sleeve": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/maroon/sleeve-large_extended.png",
+      "colorName": "Maroon",
+      "view": "sleeve"
+    },
+    "gildan-softstyle-tshirt:Black:front": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/black/front-large_extended.png",
+      "colorName": "Black",
+      "view": "front"
+    },
+    "gildan-softstyle-tshirt:Black:back": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/black/back-large_extended.png",
+      "colorName": "Black",
+      "view": "back"
+    },
+    "gildan-softstyle-tshirt:Black:sleeve": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/black/sleeve-large_extended.png",
+      "colorName": "Black",
+      "view": "sleeve"
+    },
+    "gildan-softstyle-tshirt:Heather Grey:front": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-grey/front-large_extended.png",
+      "colorName": "Heather Grey",
+      "view": "front"
+    },
+    "gildan-softstyle-tshirt:Heather Grey:back": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-grey/back-large_extended.png",
+      "colorName": "Heather Grey",
+      "view": "back"
+    },
+    "gildan-softstyle-tshirt:Heather Grey:sleeve": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-grey/sleeve-large_extended.png",
+      "colorName": "Heather Grey",
+      "view": "sleeve"
+    },
+    "gildan-softstyle-tshirt:Heather Dark Grey:front": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/front-large_extended.png",
+      "colorName": "Heather Dark Grey",
+      "view": "front"
+    },
+    "gildan-softstyle-tshirt:Heather Dark Grey:back": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/back-large_extended.png",
+      "colorName": "Heather Dark Grey",
+      "view": "back"
+    },
+    "gildan-softstyle-tshirt:Heather Dark Grey:sleeve": {
+      "gcsUrl": "https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/heather-dark-grey/sleeve-large_extended.png",
+      "colorName": "Heather Dark Grey",
+      "view": "sleeve"
+    }
+  }
+}

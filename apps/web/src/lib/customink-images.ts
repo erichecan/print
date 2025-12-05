@@ -210,7 +210,45 @@ export async function getProductImageUrlFromAPI(
 }
 
 /**
+ * [2025-01-31 14:00:00] 生成 GCS 图片 URL
+ * 使用统一的路径模式：design-lab-products/{productKey}/{colorName}/{view}-large_extended.png
+ */
+function generateGcsImageUrl(productKey: string, colorName: string, view: ViewType): string {
+  // 获取 GCS base URL（从环境变量或默认值）
+  const gcsBaseUrl = process.env.NEXT_PUBLIC_GCS_IMAGE_BASE_URL || 
+                     process.env.GCP_IMAGE_BASE_URL || 
+                     'https://storage.googleapis.com/print-main-product-images';
+  
+  // 标准化颜色名称（小写，空格替换为连字符）
+  const colorNameSafe = (colorName || 'White').toLowerCase().replace(/\s+/g, '-');
+  
+  // 构建路径
+  const path = `design-lab-products/${productKey}/${colorNameSafe}/${view}-large_extended.png`;
+  
+  return `${gcsBaseUrl.replace(/\/$/, '')}/${path}`;
+}
+
+/**
+ * [2025-01-31 14:00:00] 检查图片是否存在于 GCS（通过尝试加载）
+ * 这是一个异步检查，用于验证图片是否真的存在
+ */
+async function checkGcsImageExists(gcsUrl: string): Promise<boolean> {
+  if (typeof window === 'undefined') {
+    // 服务端环境，默认返回 true（假设已上传）
+    return true;
+  }
+  
+  try {
+    const response = await fetch(gcsUrl, { method: 'HEAD' });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * 生成默认产品的所有视图图片 URL
+ * [2025-01-31 14:00:00] 优先使用 GCS URL，如果不存在则使用 Custom Ink 原始 URL
  * @param colorName 颜色名称
  */
 export function getDefaultProductBaseImages(colorName: string | null = 'White'): {
@@ -219,11 +257,26 @@ export function getDefaultProductBaseImages(colorName: string | null = 'White'):
   sleeve: string;
 } {
   const colorId = getColorIdSync(colorName);
+  const productKey = 'gildan-softstyle-tshirt';
   
+  // [2025-01-31 14:00:00] 优先使用 GCS URL（根据路径模式生成）
+  // 如果图片已上传到 GCS，这些 URL 会生效
+  // 如果未上传，将回退到 Custom Ink 原始 URL
+  const frontGcs = generateGcsImageUrl(productKey, colorName || 'White', 'front');
+  const backGcs = generateGcsImageUrl(productKey, colorName || 'White', 'back');
+  const sleeveGcs = generateGcsImageUrl(productKey, colorName || 'White', 'sleeve');
+  
+  // 生成 Custom Ink 原始 URL 作为备用
+  const frontOriginal = generateCustomInkImageUrl(GILDAN_SOFTSTYLE_PRODUCT_ID, colorId, 'front', 'large_extended', true);
+  const backOriginal = generateCustomInkImageUrl(GILDAN_SOFTSTYLE_PRODUCT_ID, colorId, 'back', 'large_extended', true);
+  const sleeveOriginal = generateCustomInkImageUrl(GILDAN_SOFTSTYLE_PRODUCT_ID, colorId, 'sleeve', 'large_extended', true);
+  
+  // [2025-01-31 14:00:00] 优先返回 GCS URL
+  // 前端加载失败时会自动回退到原始 URL（通过错误处理）
   return {
-    front: generateCustomInkImageUrl(GILDAN_SOFTSTYLE_PRODUCT_ID, colorId, 'front', 'large_extended', true),
-    back: generateCustomInkImageUrl(GILDAN_SOFTSTYLE_PRODUCT_ID, colorId, 'back', 'large_extended', true),
-    sleeve: generateCustomInkImageUrl(GILDAN_SOFTSTYLE_PRODUCT_ID, colorId, 'sleeve', 'large_extended', true),
+    front: frontGcs,
+    back: backGcs,
+    sleeve: sleeveGcs,
   };
 }
 

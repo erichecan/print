@@ -179,7 +179,69 @@ const DesignLabClient: React.FC = () => {
   // [2025-01-30 19:30:00] 更新为使用实际产品图片
   // [2025-01-30 21:25:00] 移到 loadProductInfo 之前，避免初始化顺序问题
   // [2025-01-30 21:35:00] 支持 zoom 视图（虽然不会加载背景）
+  // [2025-01-31 14:00:00] 加载占位图片的辅助函数，确保至少显示一个图片
+  const loadFallbackImage = useCallback((viewKey: 'front' | 'back' | 'sleeve', canvas: fabric.Canvas) => {
+    if (!canvas) return;
+    
+    // 使用可靠的占位图片服务
+    const fallbackUrl = `https://picsum.photos/seed/tshirt-${viewKey}-${Date.now()}/900/700`;
+    console.log('[DesignLab] Loading fallback placeholder image:', fallbackUrl);
+    
+    fabric.Image.fromURL(
+      fallbackUrl,
+      (fabricImg) => {
+        if (!fabricImg) {
+          console.error('[DesignLab] Failed to load fallback image, canvas will remain empty');
+          return;
+        }
+        
+        // 移除旧背景
+        if (backgroundImageRef.current) {
+          canvas.remove(backgroundImageRef.current);
+          backgroundImageRef.current = null;
+        }
+        
+        // 设置图片属性
+        fabricImg.set({
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          name: 'background',
+          originX: 'left',
+          originY: 'top'
+        });
+        
+        // 缩放以适应画布
+        const targetWidth = CANVAS_WIDTH * 0.65;
+        const targetHeight = CANVAS_HEIGHT * 0.75;
+        const scaleX = targetWidth / (fabricImg.width || 1);
+        const scaleY = targetHeight / (fabricImg.height || 1);
+        const scale = Math.min(scaleX, scaleY);
+        fabricImg.scale(scale);
+        
+        // 居中
+        const scaledWidth = (fabricImg.width || 0) * scale;
+        const scaledHeight = (fabricImg.height || 0) * scale;
+        const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
+        const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
+        
+        fabricImg.set({ left, top });
+        fabricImg.setCoords();
+        
+        canvas.add(fabricImg);
+        canvas.sendToBack(fabricImg);
+        backgroundImageRef.current = fabricImg;
+        canvas.renderAll();
+        console.log('[DesignLab] Fallback placeholder image loaded successfully');
+      },
+      {
+        crossOrigin: 'anonymous'
+      }
+    );
+  }, [CANVAS_WIDTH, CANVAS_HEIGHT]);
+
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，优化背景图片加载逻辑：添加详细日志、错误处理、超时处理
+  // [2025-01-31 14:00:00] 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
   const loadBackgroundImage = useCallback((view: 'front' | 'back' | 'sleeve' | 'zoom') => {
     if (view === 'zoom') {
       console.log('[DesignLab] Zoom view, skipping background image load');
@@ -237,94 +299,97 @@ const DesignLabClient: React.FC = () => {
       console.warn('[DesignLab] No productInfo or color, using placeholder image:', imageUrl);
     }
     
+    // [2025-01-31 14:00:00] 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
     console.log('[DesignLab] Loading background image:', imageUrl);
     
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // [2025-01-31 14:00:00] 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
+    // 使用 Fabric.js 的 fromURL 方法，它内置了更好的错误处理
+    let imageLoaded = false;
     
-    // [2025-01-31 13:00:00] 优化超时处理，添加错误提示和回退机制
-    const timeoutId = setTimeout(() => {
-      console.error('[DesignLab] Image load timeout after 15 seconds for URL:', imageUrl);
-      img.onload = null;
-      img.onerror = null;
-      // 超时时使用占位图片作为回退
-      const fallbackUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
-      console.warn('[DesignLab] Using fallback placeholder image:', fallbackUrl);
-      img.src = fallbackUrl;
-    }, 15000);
-    
-    img.onload = () => {
-      clearTimeout(timeoutId);
-      console.log('[DesignLab] Background image loaded successfully:', imageUrl, 'Dimensions:', img.width, 'x', img.height);
-      
-      try {
-        const fabricImg = new fabric.Image(img, {
-          selectable: false,
-          evented: false,
-          excludeFromExport: true,
-          name: 'background',
-          originX: 'left',
-          originY: 'top'
-        });
+    fabric.Image.fromURL(
+      imageUrl,
+      (fabricImg) => {
+        imageLoaded = true;
         
-        // [2025-01-30 16:30:00] 产品图片占据画布中间约 65% 宽、75% 高的区域
-        const targetWidth = CANVAS_WIDTH * 0.65;
-        const targetHeight = CANVAS_HEIGHT * 0.75;
-        
-        // [2025-01-30 16:30:00] 计算缩放比例，保持宽高比
-        const scaleX = targetWidth / fabricImg.width!;
-        const scaleY = targetHeight / fabricImg.height!;
-        const scale = Math.min(scaleX, scaleY);
-        fabricImg.scale(scale);
-        
-        // [2025-01-30 16:30:00] 居中图片
-        const scaledWidth = fabricImg.width! * scale;
-        const scaledHeight = fabricImg.height! * scale;
-        const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
-        const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
-        
-        fabricImg.set({ left, top });
-        fabricImg.setCoords();
-        
-        canvas.add(fabricImg);
-        
-        // [2025-01-30 16:30:00] 移动到最底层
-        try {
-          canvas.sendToBack(fabricImg);
-        } catch (e) {
-          const objects = canvas.getObjects();
-          const index = objects.indexOf(fabricImg);
-          if (index > 0) {
-            objects.splice(index, 1);
-            objects.unshift(fabricImg);
-            canvas.renderAll();
-          }
+        if (!fabricImg || !canvas) {
+          console.error('[DesignLab] Failed to create fabric image or canvas not available');
+          loadFallbackImage(viewKey, canvas);
+          return;
         }
         
-        backgroundImageRef.current = fabricImg;
-        canvas.renderAll();
-        console.log('[DesignLab] Background image added to canvas successfully');
-      } catch (error) {
-        console.error('[DesignLab] Error creating fabric image:', error);
-        // [2025-01-31 13:00:00] 错误时尝试使用占位图片
-        const fallbackUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
-        console.warn('[DesignLab] Using fallback placeholder image after error:', fallbackUrl);
-        img.src = fallbackUrl;
+        console.log('[DesignLab] Background image loaded successfully:', imageUrl, 'Dimensions:', fabricImg.width, 'x', fabricImg.height);
+        
+        try {
+          // 设置图片属性
+          fabricImg.set({
+            selectable: false,
+            evented: false,
+            excludeFromExport: true,
+            name: 'background',
+            originX: 'left',
+            originY: 'top'
+          });
+          
+          // [2025-01-30 16:30:00] 产品图片占据画布中间约 65% 宽、75% 高的区域
+          const targetWidth = CANVAS_WIDTH * 0.65;
+          const targetHeight = CANVAS_HEIGHT * 0.75;
+          
+          // [2025-01-30 16:30:00] 计算缩放比例，保持宽高比
+          const scaleX = targetWidth / (fabricImg.width || 1);
+          const scaleY = targetHeight / (fabricImg.height || 1);
+          const scale = Math.min(scaleX, scaleY);
+          fabricImg.scale(scale);
+          
+          // [2025-01-30 16:30:00] 居中图片
+          const scaledWidth = (fabricImg.width || 0) * scale;
+          const scaledHeight = (fabricImg.height || 0) * scale;
+          const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
+          const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
+          
+          fabricImg.set({ left, top });
+          fabricImg.setCoords();
+          
+          // [2025-01-30 16:30:00] 移除旧背景
+          if (backgroundImageRef.current) {
+            canvas.remove(backgroundImageRef.current);
+            backgroundImageRef.current = null;
+          }
+          
+          canvas.add(fabricImg);
+          
+          // [2025-01-30 16:30:00] 移动到最底层
+          try {
+            canvas.sendToBack(fabricImg);
+          } catch (e) {
+            const objects = canvas.getObjects();
+            const index = objects.indexOf(fabricImg);
+            if (index > 0) {
+              objects.splice(index, 1);
+              objects.unshift(fabricImg);
+              canvas.renderAll();
+            }
+          }
+          
+          backgroundImageRef.current = fabricImg;
+          canvas.renderAll();
+          console.log('[DesignLab] Background image added to canvas successfully');
+        } catch (error) {
+          console.error('[DesignLab] Error adding fabric image to canvas:', error);
+          loadFallbackImage(viewKey, canvas);
+        }
+      },
+      {
+        crossOrigin: 'anonymous'
       }
-    };
+    );
     
-    img.onerror = (error) => {
-      clearTimeout(timeoutId);
-      console.error('[DesignLab] Failed to load background image:', imageUrl, error);
-      // [2025-01-31 13:00:00] 图片加载失败时，尝试使用占位图片作为回退
-      if (imageUrl.includes('mms-images-prod.imgix.net')) {
-        const fallbackUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
-        console.warn('[DesignLab] Using fallback placeholder image:', fallbackUrl);
-        img.src = fallbackUrl;
+    // [2025-01-31 14:00:00] 设置超时，如果 10 秒内没加载成功，使用占位图
+    setTimeout(() => {
+      if (!imageLoaded && !backgroundImageRef.current) {
+        console.warn('[DesignLab] Image load timeout after 10 seconds, using fallback placeholder');
+        loadFallbackImage(viewKey, canvas);
       }
-    };
-    
-    img.src = imageUrl;
+    }, 10000);
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, productInfo]);
 
   // [2025-01-30 19:30:00] 加载产品信息

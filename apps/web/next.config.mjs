@@ -58,6 +58,8 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
     API_BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api' : ''),
+    // [2025-01-31 14:00:00] GCS 图片基础 URL（用于 Design Lab 产品图片）
+    NEXT_PUBLIC_GCS_IMAGE_BASE_URL: process.env.NEXT_PUBLIC_GCS_IMAGE_BASE_URL || process.env.GCP_IMAGE_BASE_URL || 'https://storage.googleapis.com/print-main-product-images',
     // [2025-01-31 00:45:00] 添加 Git SHA 环境变量（在构建时设置）
     NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'dev',
   },
