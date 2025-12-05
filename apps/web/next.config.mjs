@@ -58,6 +58,8 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
     API_BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api' : ''),
+    // [2025-01-31 00:45:00] 添加 Git SHA 环境变量（在构建时设置）
+    NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'dev',
   },
   // [2025-01-27 15:30:00] 临时禁用类型检查以避免 Next.js 15 类型生成问题
   typescript: {

@@ -61,31 +61,44 @@ const DesignLabClient: React.FC = () => {
   useEffect(() => {
     const getVersion = async () => {
       try {
-        // 获取当前 Git SHA（从 API）
-        let gitSha = 'dev';
+        // 获取当前 Git SHA（从 API 或环境变量）
+        let gitSha = process.env.NEXT_PUBLIC_GIT_SHA || 'dev';
         let utcTime = new Date().toISOString();
         
         try {
-          // 从 API 获取版本信息
-          const response = await fetch('/api/version', { cache: 'no-store' });
+          // 从 API 获取版本信息（使用相对路径，避免 CORS 问题）
+          const response = await fetch('/api/version', { 
+            cache: 'no-store',
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
           if (response.ok) {
             const data = await response.json();
-            gitSha = data.sha || 'dev';
+            gitSha = data.sha || gitSha;
             utcTime = data.utcTime || utcTime;
+          } else {
+            console.warn('Version API returned non-OK status:', response.status);
           }
         } catch (error) {
-          console.warn('Failed to fetch version from API:', error);
+          // API 调用失败时使用默认值，不阻止页面加载
+          console.warn('Failed to fetch version from API, using defaults:', error);
         }
         
         const version = `${gitSha}+${utcTime}`;
         
-        console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
-        console.log('%cDesign Lab Version', 'color: #0066CC; font-size: 16px; font-weight: bold;');
-        console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
-        console.log(`%cVersion: ${version}`, 'color: #333; font-size: 12px;');
-        console.log(`%cSHA: ${gitSha}`, 'color: #666; font-size: 11px;');
-        console.log(`%cUTC Time: ${utcTime}`, 'color: #666; font-size: 11px;');
-        console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
+        // 延迟打印，确保 console 已准备好
+        setTimeout(() => {
+          console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
+          console.log('%cDesign Lab Version', 'color: #0066CC; font-size: 16px; font-weight: bold;');
+          console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
+          console.log(`%cVersion: ${version}`, 'color: #333; font-size: 12px;');
+          console.log(`%cSHA: ${gitSha}`, 'color: #666; font-size: 11px;');
+          console.log(`%cUTC Time: ${utcTime}`, 'color: #666; font-size: 11px;');
+          console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
+        }, 100);
       } catch (error) {
         console.warn('Failed to get version info:', error);
       }
