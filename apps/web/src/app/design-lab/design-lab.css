@@ -1559,8 +1559,8 @@
 .dl-canvas__product {
   position: relative;
   width: 100%;
-  max-width: 800px;
   height: 100%;
+  /* [2025-01-30 23:55:00] 修复：移除 max-width 限制，使画布填满可用空间 */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1568,14 +1568,16 @@
 
 .dl-canvas__fabric {
   /* [2025-01-30 22:35:00] 确保画布可见且可交互 */
+  /* [2025-01-30 23:55:00] 修复：使画布填满可用空间，类似 Custom Ink */
   width: 100%;
   height: 100%;
-  max-width: 1000px;
-  max-height: 1200px;
+  max-width: 100%;
+  max-height: 100%;
   display: block;
   position: relative;
   z-index: 1;
   background: transparent;
+  object-fit: contain; /* 保持比例，填满容器 */
 }
 
 .dl-canvas__placeholder {
@@ -1735,6 +1737,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+/* [2025-01-30 23:55:00] 修复：Sidebar 缩略图图片样式 */
+.dl-sidebar__thumbnail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 }
 
 .dl-sidebar__thumbnail-placeholder {

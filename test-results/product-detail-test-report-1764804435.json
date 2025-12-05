@@ -1,0 +1,312 @@
+{
+  "timestamp": "2025-12-03T18:27:15.948956",
+  "frontend_url": "https://print-main-frontend-234065158862.us-central1.run.app",
+  "backend_url": "https://print-main-backend-234065158862.us-central1.run.app",
+  "total_tested": 3,
+  "results": [
+    {
+      "slug": "t-shirt",
+      "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/t-shirt",
+      "timestamp": "2025-12-03T18:26:57.410972",
+      "network": {},
+      "console_errors": [],
+      "page_errors": [],
+      "elements": {},
+      "api_verification": {},
+      "screenshot_path": "test-results/product-detail-t-shirt-error-1764804420.png",
+      "error": "Page.goto: Navigation to \"https://print-main-frontend-234065158862.us-central1.run.app/products/t-shirt\" is interrupted by another navigation to \"about:blank\"\nCall log:\n  - navigating to \"https://print-main-frontend-234065158862.us-central1.run.app/products/t-shirt\", waiting until \"domcontentloaded\"\n"
+    },
+    {
+      "slug": "hoodie",
+      "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/hoodie",
+      "timestamp": "2025-12-03T18:27:03.185729",
+      "network": {
+        "api_requests": [],
+        "api_responses": [
+          {
+            "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/hoodie",
+            "status": 200,
+            "status_text": "",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "cache-control": "s-maxage=31536000, stale-while-revalidate",
+              "content-encoding": "gzip",
+              "content-type": "text/html; charset=utf-8",
+              "date": "Wed, 03 Dec 2025 23:27:03 GMT",
+              "etag": "\"omtipaleqbd0t\"",
+              "server": "Google Frontend",
+              "vary": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
+              "x-nextjs-cache": "MISS"
+            },
+            "timestamp": "2025-12-03T18:27:03.405512",
+            "response_text": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/e4af272ccee01ff0-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2Flogo.png&amp;w=256&amp;q=75 1x, /_next/image?url=%2Flogo.png&amp;w=640&amp;q=75 2x\" fetchPriority=\"high\"/><link rel=\"stylesheet\" href=\"/_next/static/css/7cca8e2c5137bd71.css\" data-precedenc"
+          }
+        ],
+        "failed_requests": [
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/hoodie/related?limit=8",
+            "status": 404,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"1d-KH4ngqV3S/XmJmUEKpwjFfjZ2wg\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:27:07 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "5c1b8834606da389048f2017bead44fd",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "98",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "29",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:27:07.538719"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/hoodie",
+            "status": 404,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"1d-KH4ngqV3S/XmJmUEKpwjFfjZ2wg\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:27:07 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "f50b7ea65e4db11c048f2017bead4598",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "99",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "29",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:27:07.670079"
+          }
+        ],
+        "cors_errors": []
+      },
+      "console_errors": [
+        {
+          "type": "console_error",
+          "text": "[CartProvider] ❌ Error fetching cart: {timestamp: 2025-12-03T23:27:03.407Z, error: Error: Network error: Unable to connect to server. Please check if the backend server is running.\n …, errorMessage: Network error: Unable to connect to server. Please check if the backend server is running., errorStack: Error: Network error: Unable to connect to server.…static/chunks/vendor-09afdf22f36ae068.js:2:436335, errorName: Error}",
+          "timestamp": "2025-12-03T18:27:03.410601"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:27:07.370210"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 404 ()",
+          "timestamp": "2025-12-03T18:27:07.538855"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 404 ()",
+          "timestamp": "2025-12-03T18:27:07.670222"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:27:13.665617"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 404 ()",
+          "timestamp": "2025-12-03T18:27:13.668593"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 404 ()",
+          "timestamp": "2025-12-03T18:27:13.669062"
+        }
+      ],
+      "page_errors": [],
+      "elements": {
+        "page_loaded": true,
+        "loading_state": false,
+        "error_state": true,
+        "product_title": false,
+        "product_price": false,
+        "product_images": false,
+        "product_variants": false,
+        "add_to_cart_button": false
+      },
+      "api_verification": {
+        "success": false,
+        "status_code": null,
+        "response_data": null,
+        "error": "requests library not available",
+        "data_structure": {}
+      },
+      "screenshot_path": "test-results/product-detail-hoodie-1764804428.png"
+    },
+    {
+      "slug": "hat",
+      "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/hat",
+      "timestamp": "2025-12-03T18:27:10.504182",
+      "network": {
+        "api_requests": [],
+        "api_responses": [
+          {
+            "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/hat",
+            "status": 200,
+            "status_text": "",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "cache-control": "s-maxage=31536000, stale-while-revalidate",
+              "content-encoding": "gzip",
+              "content-type": "text/html; charset=utf-8",
+              "date": "Wed, 03 Dec 2025 23:27:10 GMT",
+              "etag": "\"imbljw4j6oczh\"",
+              "server": "Google Frontend",
+              "vary": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
+              "x-nextjs-cache": "MISS"
+            },
+            "timestamp": "2025-12-03T18:27:10.647744",
+            "response_text": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/e4af272ccee01ff0-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2Flogo.png&amp;w=256&amp;q=75 1x, /_next/image?url=%2Flogo.png&amp;w=640&amp;q=75 2x\" fetchPriority=\"high\"/><link rel=\"stylesheet\" href=\"/_next/static/css/7cca8e2c5137bd71.css\" data-precedenc"
+          }
+        ],
+        "failed_requests": [
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/hat/related?limit=8",
+            "status": 404,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"1d-KH4ngqV3S/XmJmUEKpwjFfjZ2wg\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:27:10 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "de2978c3202f07cd048f2017bead4a4b",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "95",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "29",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:27:13.668506"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/hat",
+            "status": 404,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"1d-KH4ngqV3S/XmJmUEKpwjFfjZ2wg\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:27:10 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "96d95120a8a86d48048f2017bead4ae6",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "94",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "29",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:27:13.668991"
+          }
+        ],
+        "cors_errors": []
+      },
+      "console_errors": [
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:27:13.665630"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 404 ()",
+          "timestamp": "2025-12-03T18:27:13.668618"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 404 ()",
+          "timestamp": "2025-12-03T18:27:13.669073"
+        }
+      ],
+      "page_errors": [],
+      "elements": {
+        "page_loaded": true,
+        "loading_state": false,
+        "error_state": true,
+        "product_title": false,
+        "product_price": false,
+        "product_images": false,
+        "product_variants": false,
+        "add_to_cart_button": false
+      },
+      "api_verification": {
+        "success": false,
+        "status_code": null,
+        "response_data": null,
+        "error": "requests library not available",
+        "data_structure": {}
+      },
+      "screenshot_path": "test-results/product-detail-hat-1764804433.png"
+    }
+  ],
+  "summary": {
+    "successful": 0,
+    "failed": 3,
+    "api_errors": 3,
+    "render_errors": 2
+  }
+}

@@ -6,7 +6,7 @@
  * [2025-11-15 12:35:00] Admin 路径不显示 header/footer
  */
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Noto_Sans_SC, Noto_Sans_TC, Noto_Sans_JP, Noto_Sans_Devanagari } from 'next/font/google';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { CartProvider } from '@/contexts/CartContext'; // [2025-01-27 15:10:00] Next.js 15: 直接导入客户端组件，无需 dynamic
@@ -21,6 +21,35 @@ const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
 }); // [2025-11-11 23:57:05] Ensure Inter font served via next/font for CLS stability
+
+// [2025-01-30 18:40:00] 加载多语言字体支持
+const notoSansSC = Noto_Sans_SC({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-noto-sans-sc',
+}); // 简体中文
+
+const notoSansTC = Noto_Sans_TC({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-noto-sans-tc',
+}); // 繁体中文
+
+const notoSansJP = Noto_Sans_JP({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-noto-sans-jp',
+}); // 日文
+
+const notoSansDevanagari = Noto_Sans_Devanagari({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-noto-sans-devanagari',
+}); // Hindi (Devanagari)
 
 // [2025-01-27 16:30:00] 补充完整的 SEO 元数据，基于原型实现
 export const metadata: Metadata = {
@@ -71,7 +100,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} ${notoSansSC.variable} ${notoSansTC.variable} ${notoSansJP.variable} ${notoSansDevanagari.variable}`}>
         <GlobalErrorFilter /> {/* [2025-01-29 01:00:00] 过滤不相关的浏览器错误 */}
         <AuthProvider>
           <CartProvider>

@@ -1,0 +1,38 @@
+{
+  "timestamp": "20251204180823",
+  "url": "https://print-main-frontend-234065158862.us-central1.run.app/products",
+  "test_result": {
+    "version_info": null,
+    "console_messages": [
+      {
+        "type": "log",
+        "text": "[Frontend Build] 46d2c9f 2025-12-04T23:04:55Z",
+        "timestamp": "2025-12-04T18:08:26.380252"
+      }
+    ],
+    "test_results": [
+      {
+        "index": 1,
+        "name": "Medium Cotton Canvas Tote Bag",
+        "main_image_url": "/_next/image?url=https%3A%2F%2Fstorage.googleapis.com%2Fprint-main-product-image",
+        "color_count": 2,
+        "hover_switched": false
+      },
+      {
+        "index": 2,
+        "name": "Product 2",
+        "main_image_url": "/_next/image?url=https%3A%2F%2Fstorage.googleapis.com%2Fprint-main-product-image",
+        "color_count": 0,
+        "hover_switched": false
+      },
+      {
+        "index": 3,
+        "name": "Product 3",
+        "main_image_url": "/_next/image?url=https%3A%2F%2Fstorage.googleapis.com%2Fprint-main-product-image",
+        "color_count": 0,
+        "hover_switched": false
+      }
+    ]
+  },
+  "issues": []
+}

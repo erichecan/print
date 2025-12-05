@@ -185,6 +185,7 @@ app.use('/api/promotions', require('./routes/promotions'));
 app.use('/api/admin-setup', require('./routes/admin-setup')); // [2025-01-28 12:20:00] Public promotion API
 app.use('/api/admin-seed', require('./routes/admin-seed')); // [2025-01-29 22:30:00] Admin seed route
 app.use('/api/art-assets', require('./routes/artAssets')); // [2025-01-28 00:55:00] Art assets public API // [2025-01-27 18:50:00] Public category routes
+app.use('/api/fonts', require('./routes/fonts')); // [2025-01-30 19:00:00] Fonts public API
 app.use('/api/collections', require('./routes/collections'));
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/checkout', require('./routes/checkout'));
@@ -208,6 +209,7 @@ app.use('/api/admin/settings', require('./routes/adminSettings')); // [2025-11-1
 app.use('/api/admin/content', require('./routes/adminContent')); // [2025-01-28 06:00:00] Admin CMS content management routes
 app.use('/api/admin/designs', require('./routes/adminDesigns')); // [2025-11-15 15:05:00] Admin design review routes
 app.use('/api/admin/art-assets', require('./routes/adminArtAssets')); // [2025-01-28 00:55:00] Admin art assets management routes
+app.use('/api/admin/fonts', require('./routes/adminFonts')); // [2025-01-30 19:00:00] Admin fonts management routes
 app.use('/api/admin/fix-images', require('./routes/adminFixImages')); // [2025-01-29 19:50:00] 临时：修复商品图片记录
 app.use('/api/designs', require('./routes/designs')); // [2025-11-11 15:33:45] Design Lab public routes
 app.use('/api/designs', require('./routes/designComments')); // [2025-01-27 21:40:00] Design comment routes

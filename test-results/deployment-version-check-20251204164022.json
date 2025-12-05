@@ -1,0 +1,18 @@
+{
+  "timestamp": "20251204164022",
+  "local_sha": "0815b5d",
+  "frontend_url": "https://print-main-frontend-234065158862.us-central1.run.app",
+  "backend_url": "https://print-main-backend-234065158862.us-central1.run.app",
+  "frontend_version": null,
+  "backend_version": {
+    "version": "0815b5d",
+    "buildTime": "2025-12-04T21:35:35Z",
+    "env": "production"
+  },
+  "issues": [
+    "未找到前端构建版本信息（可能未部署最新代码）"
+  ],
+  "products_count": 0,
+  "color_swatches_count": 0,
+  "design_lab_simplified": false
+}

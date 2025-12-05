@@ -434,6 +434,19 @@ export const productsApi = {
     variantId: string;
     color: string | null;
     colors: string[];
+    colorDetails?: Array<{
+      name: string;
+      hex: string;
+      availableSizes: string[];
+      isAvailable: boolean;
+    }>;
+    variants?: Array<{
+      id: string;
+      color: string | null;
+      colorHex: string | null;
+      size: string | null;
+      stockQuantity: number;
+    }>;
     baseImages: {
       front: string;
       back: string;
@@ -2164,6 +2177,137 @@ export const adminArtAssetsApi = {
   // [2025-01-28 01:00:00] Delete art asset (admin)
   delete: async (id: string): Promise<{ success: boolean; message: string }> => {
     return api<{ success: boolean; message: string }>(`/admin/art-assets/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// [2025-01-30 19:00:00] Font interfaces
+export interface Font {
+  id: string;
+  name: string;
+  displayName?: string;
+  previewText: string;
+  category: 'latin' | 'chinese' | 'japanese' | 'hindi' | 'arabic' | 'korean' | 'thai';
+  source: 'system' | 'google' | 'custom';
+  googleFontFamily?: string | null;
+  weights?: string[];
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+  createdBy?: string | null;
+}
+
+export interface FontsResponse {
+  success: boolean;
+  data: Record<string, Font[]>;
+  categories: string[];
+}
+
+export interface FontsByCategoryResponse {
+  success: boolean;
+  data: Font[];
+}
+
+export interface FontsListResponse {
+  success: boolean;
+  data: Font[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+// [2025-01-30 19:00:00] Fonts API (Public)
+export const fontsApi = {
+  // Get all fonts grouped by category (public)
+  getAll: async (): Promise<FontsResponse> => {
+    return api<FontsResponse>('/fonts');
+  },
+
+  // Get fonts by category (public)
+  getByCategory: async (category: string): Promise<FontsByCategoryResponse> => {
+    return api<FontsByCategoryResponse>(`/fonts/category/${encodeURIComponent(category)}`);
+  },
+};
+
+// [2025-01-30 19:00:00] Admin Fonts API
+export const adminFontsApi = {
+  // List all fonts (admin)
+  list: async (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    isActive?: boolean;
+    source?: string;
+  }): Promise<FontsListResponse> => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.category) query.append('category', params.category);
+    if (params?.isActive !== undefined) query.append('isActive', params.isActive.toString());
+    if (params?.source) query.append('source', params.source);
+    
+    const queryString = query.toString();
+    return api<FontsListResponse>(`/admin/fonts${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // Get single font (admin)
+  get: async (id: string): Promise<{ success: boolean; data: Font }> => {
+    return api<{ success: boolean; data: Font }>(`/admin/fonts/${id}`);
+  },
+
+  // Create font (admin)
+  create: async (data: {
+    name: string;
+    displayName?: string;
+    previewText?: string;
+    category: 'latin' | 'chinese' | 'japanese' | 'hindi' | 'arabic' | 'korean' | 'thai';
+    source: 'system' | 'google' | 'custom';
+    googleFontFamily?: string;
+    weights?: string[];
+    isActive?: boolean;
+    sortOrder?: number;
+  }): Promise<{ success: boolean; data: Font }> => {
+    return api<{ success: boolean; data: Font }>('/admin/fonts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // Update font (admin)
+  update: async (
+    id: string,
+    data: {
+      name?: string;
+      displayName?: string;
+      previewText?: string;
+      category?: 'latin' | 'chinese' | 'japanese' | 'hindi' | 'arabic' | 'korean' | 'thai';
+      source?: 'system' | 'google' | 'custom';
+      googleFontFamily?: string;
+      weights?: string[];
+      isActive?: boolean;
+      sortOrder?: number;
+    }
+  ): Promise<{ success: boolean; data: Font }> => {
+    return api<{ success: boolean; data: Font }>(`/admin/fonts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  },
+
+  // Delete font (admin)
+  delete: async (id: string): Promise<{ success: boolean; message: string }> => {
+    return api<{ success: boolean; message: string }>(`/admin/fonts/${id}`, {
       method: 'DELETE',
     });
   },

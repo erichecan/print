@@ -24,6 +24,7 @@ const Setting = require('./Setting')(sequelize, DataTypes);
 const Session = require('./Session')(sequelize, DataTypes);
 const OrderAddressSnapshot = require('./OrderAddressSnapshot')(sequelize, DataTypes);
 const ArtAsset = require('./ArtAsset')(sequelize, DataTypes);
+const Font = require('./Font')(sequelize, DataTypes);
 
 // Define associations
 const models = {
@@ -47,7 +48,8 @@ const models = {
   Setting,
   Session,
   OrderAddressSnapshot,
-  ArtAsset
+  ArtAsset,
+  Font
 };
 
 // User associations
@@ -59,6 +61,7 @@ User.hasMany(ProductReview, { foreignKey: 'user_id', as: 'reviews', onDelete: 'S
 User.hasMany(Upload, { foreignKey: 'user_id', as: 'uploads', onDelete: 'SET NULL' });
 User.hasMany(Session, { foreignKey: 'user_id', as: 'sessions', onDelete: 'CASCADE' });
 User.hasMany(ArtAsset, { foreignKey: 'created_by', as: 'artAssets', onDelete: 'SET NULL' });
+User.hasMany(Font, { foreignKey: 'created_by', as: 'fonts', onDelete: 'SET NULL' });
 
 Address.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 CartItem.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -69,6 +72,7 @@ ProductReview.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Upload.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Session.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 ArtAsset.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+Font.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 
 // Category associations
 Category.hasMany(Product, { foreignKey: 'category_id', as: 'products' });

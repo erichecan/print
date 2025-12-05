@@ -1,0 +1,30 @@
+{
+  "timestamp": "20251204162151",
+  "frontend_url": "https://print-main-frontend-234065158862.us-central1.run.app",
+  "backend_url": "https://print-main-backend-234065158862.us-central1.run.app",
+  "tests": {
+    "homepage": true,
+    "products_page": true,
+    "api": {
+      "/products": "success",
+      "/products/filters/options": "success"
+    }
+  },
+  "console_errors": [
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "timestamp": "2025-12-04T16:21:54.249237"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "timestamp": "2025-12-04T16:22:08.294355"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 400 ()",
+      "timestamp": "2025-12-04T16:22:08.755519"
+    }
+  ]
+}

@@ -1382,14 +1382,58 @@ exports.getProductByVariantId = async (req, res) => {
       )
     );
 
+    // [2025-01-30 19:30:00] 构建颜色详细信息（包含 hex、可用尺寸等）
+    const colorDetails = [];
+    const colorMap = new Map();
+    
+    (product.variants || []).forEach((v) => {
+      if (v.color && v.color.trim() !== '') {
+        const colorName = v.color;
+        if (!colorMap.has(colorName)) {
+          colorMap.set(colorName, {
+            name: colorName,
+            hex: v.colorHex || '#cccccc',
+            sizes: new Set(),
+            isAvailable: (v.stockQuantity || 0) > 0,
+          });
+        }
+        const colorInfo = colorMap.get(colorName);
+        if (v.size) {
+          colorInfo.sizes.add(v.size);
+        }
+        // 如果任何一个变体有库存，则认为颜色可用
+        if ((v.stockQuantity || 0) > 0) {
+          colorInfo.isAvailable = true;
+        }
+      }
+    });
+    
+    // 转换为数组格式
+    colorMap.forEach((colorInfo) => {
+      colorDetails.push({
+        name: colorInfo.name,
+        hex: colorInfo.hex,
+        availableSizes: Array.from(colorInfo.sizes).sort(),
+        isAvailable: colorInfo.isAvailable,
+      });
+    });
+
     const response = {
       productId: product.id,
       productName: product.name,
       variantId: variant.id,
       color: variant.color || null,
       colors,
+      colorDetails, // [2025-01-30 19:30:00] 添加颜色详细信息
       baseImages,
       gallery: optimizedImages,
+      variants: product.variants.map((v) => ({
+        id: v.id,
+        color: v.color,
+        colorHex: v.colorHex,
+        size: v.size,
+        stockQuantity: v.stockQuantity,
+      })), // [2025-01-30 19:30:00] 添加变体列表，用于颜色切换
     };
 
     console.log('[Backend] Sending response:', {

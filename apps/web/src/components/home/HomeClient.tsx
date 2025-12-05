@@ -158,15 +158,15 @@ export function HomeClient() {
             };
 
             return (
-              <div className="promise-card" key={promise.id}>
+            <div className="promise-card" key={promise.id}>
                 <div className="promise-card__icon" aria-hidden="true">
                   {getIcon(promise.title)}
                 </div>
-                <div>
-                  <div className="promise-card__label">{promise.title}</div>
-                  <div className="promise-card__detail">{promise.detail}</div>
-                </div>
+              <div>
+                <div className="promise-card__label">{promise.title}</div>
+                <div className="promise-card__detail">{promise.detail}</div>
               </div>
+            </div>
             );
           })}
         </div>

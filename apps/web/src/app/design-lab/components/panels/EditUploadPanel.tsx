@@ -5,7 +5,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { fabric } from 'fabric';
+// [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用命名空间导入
+import * as fabric from 'fabric';
 
 interface EditUploadPanelProps {
   selectedImage: fabric.Image | null;
@@ -35,9 +36,14 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({ selectedImage, canvas
   }, [selectedImage]);
 
   // [2025-01-30 17:20:00] Center 按钮
+  // [2025-01-30 22:05:00] 添加调试日志和错误处理
   const handleCenter = () => {
-    if (!selectedImage || !canvas) return;
+    if (!selectedImage || !canvas) {
+      console.warn('[EditUploadPanel] handleCenter: selectedImage or canvas is null');
+      return;
+    }
     
+    console.log('[EditUploadPanel] Centering image');
     const canvasWidth = canvas.width || 1000;
     const canvasHeight = canvas.height || 1200;
     

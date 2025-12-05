@@ -1,0 +1,805 @@
+{
+  "timestamp": "2025-12-03T18:31:04.467505",
+  "frontend_url": "https://print-main-frontend-234065158862.us-central1.run.app",
+  "backend_url": "https://print-main-backend-234065158862.us-central1.run.app",
+  "results": [
+    {
+      "slug": "2435100",
+      "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/2435100",
+      "timestamp": "2025-12-03T18:27:48.447153",
+      "network": {
+        "api_requests": [],
+        "api_responses": [
+          {
+            "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/2435100",
+            "status": 200,
+            "status_text": "",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "cache-control": "s-maxage=31536000, stale-while-revalidate",
+              "content-encoding": "gzip",
+              "content-type": "text/html; charset=utf-8",
+              "date": "Wed, 03 Dec 2025 23:27:48 GMT",
+              "etag": "\"vcllqq86rod1k\"",
+              "server": "Google Frontend",
+              "vary": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
+              "x-nextjs-cache": "HIT"
+            },
+            "timestamp": "2025-12-03T18:27:48.552313",
+            "response_text": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/e4af272ccee01ff0-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2Flogo.png&amp;w=256&amp;q=75 1x, /_next/image?url=%2Flogo.png&amp;w=640&amp;q=75 2x\" fetchPriority=\"high\"/><link rel=\"stylesheet\" href=\"/_next/static/css/7cca8e2c5137bd71.css\" data-precedenc"
+          }
+        ],
+        "failed_requests": [
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/2435100/related?limit=8",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"36-srYOr6MGtk9cu2NOWuByv64fiEU\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:27:48 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "4c0480fd4c096aaa3da3eea9d04a2718",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "74",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "54",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:27:51.655191"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/2435100",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:27:48 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "233a3f99948ac5823da3eea9d04a2c4c",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "75",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:27:51.655916"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/2435100",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:27:53 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "a13eb6a11928920f3da3eea9d04a25bc",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "73",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:27:53.841915"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/2435100",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:28:03 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "3bd2b587e36e31a565ed87d9334b0a6c",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "72",
+              "x-ratelimit-reset": "1764804488",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:28:03.966636"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/2435100",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:28:49 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "aee2e5ac539d3a72827683a017d4fd93",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "99",
+              "x-ratelimit-reset": "1764804590",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:28:49.166098"
+          }
+        ],
+        "cors_errors": []
+      },
+      "console_errors": [
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:27:51.654624"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:27:51.655330"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:27:51.656044"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:27:53.842279"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:28:03.966950"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:28:49.166433"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:28:56.915764"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:28:56.916786"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:28:56.917992"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:29:04.138719"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:29:19.253572"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:30:02.214365"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:02.215247"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:02.216049"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:04.476138"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:14.600829"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:34.727567"
+        }
+      ],
+      "page_errors": [],
+      "elements": {
+        "page_loaded": true,
+        "loading_state": false,
+        "error_state": true,
+        "product_title": false,
+        "product_price": false,
+        "product_images": false,
+        "product_variants": false,
+        "add_to_cart_button": false
+      },
+      "api_verification": {
+        "success": false,
+        "status_code": null,
+        "response_data": null,
+        "error": "requests library not available",
+        "data_structure": {}
+      },
+      "screenshot_path": null,
+      "error": "Page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n"
+    },
+    {
+      "slug": "135500",
+      "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/135500",
+      "timestamp": "2025-12-03T18:28:53.725871",
+      "network": {
+        "api_requests": [],
+        "api_responses": [
+          {
+            "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/135500",
+            "status": 200,
+            "status_text": "",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "cache-control": "s-maxage=31536000, stale-while-revalidate",
+              "content-encoding": "gzip",
+              "content-type": "text/html; charset=utf-8",
+              "date": "Wed, 03 Dec 2025 23:28:53 GMT",
+              "etag": "\"5bwv1fv81ld14\"",
+              "server": "Google Frontend",
+              "vary": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
+              "x-nextjs-cache": "HIT"
+            },
+            "timestamp": "2025-12-03T18:28:53.888334",
+            "response_text": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/e4af272ccee01ff0-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2Flogo.png&amp;w=256&amp;q=75 1x, /_next/image?url=%2Flogo.png&amp;w=640&amp;q=75 2x\" fetchPriority=\"high\"/><link rel=\"stylesheet\" href=\"/_next/static/css/7cca8e2c5137bd71.css\" data-precedenc"
+          }
+        ],
+        "failed_requests": [
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/135500/related?limit=8",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"36-srYOr6MGtk9cu2NOWuByv64fiEU\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:28:54 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "1c921fa1fc09908e827683a017d4fa68",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "97",
+              "x-ratelimit-reset": "1764804590",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "54",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:28:56.916608"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/135500",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:28:54 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "db8237d2c3729707827683a017d4fe63",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "96",
+              "x-ratelimit-reset": "1764804590",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:28:56.917859"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/135500",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:29:04 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "a5bf65d6c2891b9c6da76e2ba4445d23",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "95",
+              "x-ratelimit-reset": "1764804590",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:29:04.138422"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/135500",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:29:19 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "3a96ed9825ed0ce0cb9e7abfb16050d5",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "94",
+              "x-ratelimit-reset": "1764804590",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:29:19.253308"
+          }
+        ],
+        "cors_errors": []
+      },
+      "console_errors": [
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:28:56.915828"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:28:56.916820"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:28:56.918027"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:29:04.138776"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:29:19.253619"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:30:02.214407"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:02.215279"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:02.216080"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:04.476217"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:14.600887"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:34.727626"
+        }
+      ],
+      "page_errors": [],
+      "elements": {
+        "page_loaded": true,
+        "loading_state": false,
+        "error_state": true,
+        "product_title": false,
+        "product_price": false,
+        "product_images": false,
+        "product_variants": false,
+        "add_to_cart_button": false
+      },
+      "api_verification": {
+        "success": false,
+        "status_code": null,
+        "response_data": null,
+        "error": "requests library not available",
+        "data_structure": {}
+      },
+      "screenshot_path": null,
+      "error": "Page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n"
+    },
+    {
+      "slug": "107200",
+      "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/107200",
+      "timestamp": "2025-12-03T18:29:58.982947",
+      "network": {
+        "api_requests": [],
+        "api_responses": [
+          {
+            "url": "https://print-main-frontend-234065158862.us-central1.run.app/products/107200",
+            "status": 200,
+            "status_text": "",
+            "headers": {
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "cache-control": "s-maxage=31536000, stale-while-revalidate",
+              "content-encoding": "gzip",
+              "content-type": "text/html; charset=utf-8",
+              "date": "Wed, 03 Dec 2025 23:29:59 GMT",
+              "etag": "\"12exjef31fyd14\"",
+              "server": "Google Frontend",
+              "vary": "RSC, Next-Router-State-Tree, Next-Router-Prefetch, Accept-Encoding",
+              "x-nextjs-cache": "HIT"
+            },
+            "timestamp": "2025-12-03T18:29:59.187481",
+            "response_text": "<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/><link rel=\"preload\" href=\"/_next/static/media/e4af272ccee01ff0-s.p.woff2\" as=\"font\" crossorigin=\"\" type=\"font/woff2\"/><link rel=\"preload\" as=\"image\" imageSrcSet=\"/_next/image?url=%2Flogo.png&amp;w=256&amp;q=75 1x, /_next/image?url=%2Flogo.png&amp;w=640&amp;q=75 2x\" fetchPriority=\"high\"/><link rel=\"stylesheet\" href=\"/_next/static/css/7cca8e2c5137bd71.css\" data-precedenc"
+          }
+        ],
+        "failed_requests": [
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/107200",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:29:59 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "78884b8ffb68b3ad12c85394681daa8a",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "98",
+              "x-ratelimit-reset": "1764804660",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:30:02.215115"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/107200/related?limit=8",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"36-srYOr6MGtk9cu2NOWuByv64fiEU\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:29:59 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "9ce98289dd37bf9f12c85394681da819",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "97",
+              "x-ratelimit-reset": "1764804660",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "54",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:30:02.215918"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/107200",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:30:04 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "3963ca882f1ca3c517ca2e2526f39bb1",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "96",
+              "x-ratelimit-reset": "1764804660",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:30:04.475911"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/107200",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:30:14 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "01ab7381459ea86d68ef2e3a529d5998",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "95",
+              "x-ratelimit-reset": "1764804660",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:30:14.600486"
+          },
+          {
+            "url": "https://print-main-backend-234065158862.us-central1.run.app/api/products/107200",
+            "status": 500,
+            "status_text": "",
+            "headers": {
+              "access-control-expose-headers": "Content-Range,X-Content-Range,Set-Cookie",
+              "etag": "W/\"23-2UBnITbfCimWcd7rJcN994vAEgc\"",
+              "x-permitted-cross-domain-policies": "none",
+              "x-content-type-options": "nosniff",
+              "alt-svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+              "date": "Wed, 03 Dec 2025 23:30:34 GMT",
+              "content-type": "application/json; charset=utf-8",
+              "vary": "Origin, Accept-Encoding",
+              "x-cloud-trace-context": "3d166aa2a62a9f52401b6883c2c91f2c",
+              "x-frame-options": "SAMEORIGIN",
+              "strict-transport-security": "max-age=15552000; includeSubDomains",
+              "x-dns-prefetch-control": "off",
+              "cross-origin-opener-policy": "same-origin",
+              "cross-origin-resource-policy": "cross-origin",
+              "access-control-allow-credentials": "true",
+              "referrer-policy": "no-referrer",
+              "x-download-options": "noopen",
+              "x-ratelimit-remaining": "94",
+              "x-ratelimit-reset": "1764804660",
+              "access-control-allow-origin": "https://print-main-frontend-234065158862.us-central1.run.app",
+              "content-length": "35",
+              "x-xss-protection": "0",
+              "x-ratelimit-limit": "100",
+              "origin-agent-cluster": "?1",
+              "server": "Google Frontend"
+            },
+            "timestamp": "2025-12-03T18:30:34.727259"
+          }
+        ],
+        "cors_errors": []
+      },
+      "console_errors": [
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 401 ()",
+          "timestamp": "2025-12-03T18:30:02.214437"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:02.215334"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:02.216127"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:04.476261"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:14.600934"
+        },
+        {
+          "type": "console_error",
+          "text": "Failed to load resource: the server responded with a status of 500 ()",
+          "timestamp": "2025-12-03T18:30:34.727672"
+        }
+      ],
+      "page_errors": [],
+      "elements": {
+        "page_loaded": true,
+        "loading_state": false,
+        "error_state": true,
+        "product_title": false,
+        "product_price": false,
+        "product_images": false,
+        "product_variants": false,
+        "add_to_cart_button": false
+      },
+      "api_verification": {
+        "success": false,
+        "status_code": null,
+        "response_data": null,
+        "error": "requests library not available",
+        "data_structure": {}
+      },
+      "screenshot_path": null,
+      "error": "Page.screenshot: Timeout 30000ms exceeded.\nCall log:\n  - taking page screenshot\n  - waiting for fonts to load...\n  - fonts loaded\n"
+    }
+  ],
+  "summary": {
+    "total_tested": 3,
+    "successful": 0,
+    "failed": 3,
+    "api_errors": 3,
+    "render_errors": 3
+  }
+}

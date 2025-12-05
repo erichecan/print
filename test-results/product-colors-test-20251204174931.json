@@ -1,0 +1,67 @@
+{
+  "timestamp": "20251204174931",
+  "url": "https://print-main-frontend-234065158862.us-central1.run.app/products",
+  "test_result": {
+    "version_info": null,
+    "console_messages": [
+      {
+        "type": "log",
+        "text": "[Frontend Build] 0815b5d 2025-12-04T21:35:40Z",
+        "timestamp": "2025-12-04T17:49:33.387223"
+      }
+    ],
+    "products_checked": 3,
+    "total_color_swatches": 27,
+    "products_with_colors": [
+      {
+        "index": 1,
+        "name": "Medium Cotton Canvas Tote Bag",
+        "color_count": 8,
+        "more_colors": "",
+        "total_displayed": 8
+      },
+      {
+        "index": 4,
+        "name": "Product 4",
+        "color_count": 7,
+        "more_colors": "",
+        "total_displayed": 7
+      },
+      {
+        "index": 10,
+        "name": "Gildan Youth Lightweight Crewneck Sweatshirt - Des",
+        "color_count": 12,
+        "more_colors": "+1",
+        "total_displayed": 13
+      }
+    ],
+    "products_with_many_colors": [
+      {
+        "index": 1,
+        "name": "Medium Cotton Canvas Tote Bag",
+        "color_count": 8,
+        "more_colors": "",
+        "total_displayed": 8
+      },
+      {
+        "index": 4,
+        "name": "Product 4",
+        "color_count": 7,
+        "more_colors": "",
+        "total_displayed": 7
+      },
+      {
+        "index": 10,
+        "name": "Gildan Youth Lightweight Crewneck Sweatshirt - Des",
+        "color_count": 12,
+        "more_colors": "+1",
+        "total_displayed": 13
+      }
+    ],
+    "more_colors_count": 11
+  },
+  "issues": [
+    "未找到前端构建版本信息",
+    "发现 3 个产品显示超过2个颜色（期望只显示黑白）"
+  ]
+}
