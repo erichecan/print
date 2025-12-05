@@ -135,6 +135,8 @@ const DesignLabClient: React.FC = () => {
   const [showNamesNumbersModal, setShowNamesNumbersModal] = useState(false);
   // [2025-01-30 23:30:00] Recent Uploads 状态
   const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
+  // [2025-01-31 01:00:00] 防止选择清除事件在添加对象后立即触发
+  const isAddingObjectRef = useRef(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -710,6 +712,9 @@ const DesignLabClient: React.FC = () => {
     }
 
     try {
+      // [2025-01-31 01:00:00] 设置标志，防止选择清除事件在添加对象后立即触发
+      isAddingObjectRef.current = true;
+      
       // [2025-01-30 17:50:00] 创建 Fabric IText 对象
       const textObj = new fabric.IText(text, {
         left: CANVAS_WIDTH / 2,
@@ -741,9 +746,15 @@ const DesignLabClient: React.FC = () => {
       // [2025-01-30 17:50:00] 同步到 store
       const snapshot = canvasToSnapshot(canvas);
       setCanvas(snapshot, { pushHistory: true });
+      
+      // [2025-01-31 01:00:00] 延迟重置标志，确保 selection:created 事件先触发
+      setTimeout(() => {
+        isAddingObjectRef.current = false;
+      }, 100);
     } catch (error) {
       console.error('[DesignLab] Error creating text:', error);
       alert('Failed to add text: ' + (error as Error).message);
+      isAddingObjectRef.current = false;
     }
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
@@ -1206,6 +1217,12 @@ const DesignLabClient: React.FC = () => {
     };
 
     const handleSelectionCleared = () => {
+      // [2025-01-31 01:00:00] 如果正在添加对象，忽略选择清除事件
+      if (isAddingObjectRef.current) {
+        console.log('[DesignLab] Selection cleared but object is being added, ignoring');
+        return;
+      }
+      
       // [2025-01-30 17:00:00] 清除选择时返回 Home 面板
       // [2025-01-30 22:25:00] 修复：检查是否有活动对象，避免在添加对象时错误清除选择
       const activeObject = fabricCanvas.getActiveObject();
@@ -1217,6 +1234,20 @@ const DesignLabClient: React.FC = () => {
       
       // [2025-01-30 22:20:00] 使用 ref 获取最新的面板状态，避免闭包问题
       const currentPanel = toolPanelTypeRef.current;
+      
+      // [2025-01-31 01:00:00] 如果当前面板是编辑面板，不应该清除（可能是用户点击了画布空白处但对象仍然存在）
+      if (currentPanel === 'edit-text' || currentPanel === 'edit-upload' || currentPanel === 'edit-art') {
+        // 检查是否真的没有选中对象
+        const hasSelectedText = selectedText !== null;
+        const hasSelectedImage = selectedImage !== null;
+        const hasSelectedArt = selectedArt !== null;
+        
+        if (hasSelectedText || hasSelectedImage || hasSelectedArt) {
+          console.log('[DesignLab] Selection cleared but edit panel has selected object, keeping panel');
+          return;
+        }
+      }
+      
       console.log('[DesignLab] Selection cleared, current panel:', currentPanel, '→ Home panel');
       setToolPanelType('home');
       setSelectedImage(null);
