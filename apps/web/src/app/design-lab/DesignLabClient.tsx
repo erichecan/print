@@ -30,7 +30,7 @@ import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
-import { getDefaultProductBaseImages, getThumbnailImageUrl } from '@/lib/customink-images';
+import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl } from '@/lib/customink-images';
 import './design-lab.css';
 
 interface ProductInfo {
@@ -131,7 +131,6 @@ const DesignLabClient: React.FC = () => {
       imageUrl = productInfo.baseImages[viewKey];
     } else if (productInfo?.color) {
       // 如果只有颜色信息，生成 Custom Ink 图片 URL
-      const { getDefaultProductImageUrl } = require('@/lib/customink-images');
       imageUrl = getDefaultProductImageUrl(productInfo.color, viewKey);
     } else {
       // 最后使用占位图片
