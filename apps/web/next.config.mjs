@@ -51,6 +51,24 @@ if (apiBaseUrl) {
 }
 
 const nextConfig = {
+  async rewrites() {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    return [
+      {
+        source: '/api/proxy/:path*',
+        destination: `${apiUrl}/:path*`,
+      },
+      // [2025-01-29 02:20:00] 代理 /api/auth/login 和 /api/auth/me 以处理 Cookie
+      {
+        source: '/api/auth/login',
+        destination: `${apiUrl}/auth/login`,
+      },
+      {
+        source: '/api/auth/me',
+        destination: `${apiUrl}/auth/me`,
+      },
+    ];
+  },
   reactStrictMode: true,
   // [2025-01-29 12:30:00] API URL 配置：开发环境使用 localhost，生产环境必须通过环境变量设置
   env: {
