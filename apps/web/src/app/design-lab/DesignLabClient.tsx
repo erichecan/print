@@ -30,6 +30,7 @@ import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
+import { getDefaultProductBaseImages, getThumbnailImageUrl } from '@/lib/customink-images';
 import './design-lab.css';
 
 interface ProductInfo {
@@ -121,8 +122,21 @@ const DesignLabClient: React.FC = () => {
     }
 
     // [2025-01-30 19:30:00] 使用产品图片或占位图片
+    // [2025-01-30 23:55:00] 优先使用 Custom Ink 的真实图片 URL
     const viewKey = view as 'front' | 'back' | 'sleeve'; // 类型断言，因为已经排除了 zoom
-    const imageUrl = productInfo?.baseImages?.[viewKey] || `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
+    let imageUrl: string;
+    
+    if (productInfo?.baseImages?.[viewKey]) {
+      // 如果产品信息中有图片 URL，直接使用
+      imageUrl = productInfo.baseImages[viewKey];
+    } else if (productInfo?.color) {
+      // 如果只有颜色信息，生成 Custom Ink 图片 URL
+      const { getDefaultProductImageUrl } = require('@/lib/customink-images');
+      imageUrl = getDefaultProductImageUrl(productInfo.color, viewKey);
+    } else {
+      // 最后使用占位图片
+      imageUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
+    }
     
     const img = new Image();
     img.crossOrigin = 'anonymous';
@@ -312,17 +326,15 @@ const DesignLabClient: React.FC = () => {
       loadProductInfo(variantId);
     } else {
       // [2025-01-30 23:55:00] 没有 variantId 时，设置默认产品信息以显示默认图片
+      // [2025-01-30 23:55:00] 使用 Custom Ink 的真实图片 URL
+      const defaultColor = 'White';
       const defaultProductInfo: ProductInfo = {
         productId: 'default',
         productName: 'Gildan Softstyle Jersey T-shirt',
         variantId: 'default',
-        color: 'White',
-        colors: ['White', 'Black', 'Navy', 'Red'],
-        baseImages: {
-          front: 'https://picsum.photos/seed/tshirt-front/900/700',
-          back: 'https://picsum.photos/seed/tshirt-back/900/700',
-          sleeve: 'https://picsum.photos/seed/tshirt-sleeve/900/700',
-        },
+        color: defaultColor,
+        colors: ['White', 'Black', 'Navy', 'Maroon', 'Heather Grey', 'Heather Dark Grey'],
+        baseImages: getDefaultProductBaseImages(defaultColor),
         gallery: [],
       };
       setProductInfo(defaultProductInfo);
@@ -1371,7 +1383,7 @@ const DesignLabClient: React.FC = () => {
             <div className="dl-sidebar__thumbnail">
               {productInfo?.baseImages?.front ? (
                 <img 
-                  src={productInfo.baseImages.front} 
+                  src={getThumbnailImageUrl(productInfo.color || 'White', 'front')} 
                   alt="Front view thumbnail"
                   className="dl-sidebar__thumbnail-image"
                 />
@@ -1391,7 +1403,7 @@ const DesignLabClient: React.FC = () => {
             <div className="dl-sidebar__thumbnail">
               {productInfo?.baseImages?.back ? (
                 <img 
-                  src={productInfo.baseImages.back} 
+                  src={getThumbnailImageUrl(productInfo.color || 'White', 'back')} 
                   alt="Back view thumbnail"
                   className="dl-sidebar__thumbnail-image"
                 />
