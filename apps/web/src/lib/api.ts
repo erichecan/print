@@ -1613,6 +1613,16 @@ export interface UpdateDesignDraftPayload {
   summary?: string;
 }
 
+// [2025-01-30 23:55:00] Product Color Image API
+export const productColorImageApi = {
+  getColorMapping: (productId: string) =>
+    api<{ data: { productId: string; mapping: Record<string, string>; colors: Array<{ colorId: string; colorName: string; colorHex: string | null; imageUrls: { front: string; back: string; sleeve: string } }> } }>(`/product-color-images/mapping/${productId}`),
+  getImageUrlByColor: (productId: string, colorName: string, view: 'front' | 'back' | 'sleeve' = 'front') =>
+    api<{ data: { colorId: string; colorName: string; colorHex: string | null; imageUrl: string; view: string; allViews: { front: string; back: string; sleeve: string } } }>(`/product-color-images/by-color/${productId}/${encodeURIComponent(colorName)}?view=${view}`),
+  getAll: (productId?: string) =>
+    api<{ data: Array<any>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`),
+};
+
 // [2025-01-27 16:15:00] Design Lab API
 export const designLabApi = {
   createDraft: (payload: CreateDesignDraftPayload) =>

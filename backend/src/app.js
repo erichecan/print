@@ -178,6 +178,7 @@ app.get('/api/version', (req, res) => {
 
 // API routes
 app.use('/api/products', require('./routes/products'));
+app.use('/api/product-color-images', require('./routes/productColorImages')); // [2025-01-30 23:55:00] Product color image mapping API
 app.use('/api/categories', require('./routes/categories'));
 app.use('/api/content', require('./routes/content')); // [2025-01-28 06:20:00] Public CMS content API
 app.use('/api/promotions', require('./routes/promotions'));

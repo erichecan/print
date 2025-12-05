@@ -148,6 +148,8 @@ model Product {
   projects           Project[]
   // [2025-01-28 12:00:00] 促销活动关联
   promotionProducts  PromotionProduct[]
+  // [2025-01-30 23:55:00] 产品颜色图片映射
+  colorImages        ProductColorImage[]
 
   @@index([slug])
   @@index([categoryId])
@@ -193,6 +195,35 @@ model ProductImage {
 
   @@index([productId])
   @@map("product_images")
+}
+
+// [2025-01-30 23:55:00] Product Color Image - 存储产品颜色图片映射（用于 Design Lab）
+model ProductColorImage {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // [2025-01-30 23:55:00] Custom Ink 产品 ID（如 6a62c76ef0978853a20391b6c32da4fe）
+  customInkProductId String   @map("customink_product_id")
+  // [2025-01-30 23:55:00] Custom Ink 颜色 ID（如 176100）
+  customInkColorId   String   @map("customink_color_id")
+  // [2025-01-30 23:55:00] 颜色名称（如 White, Black）
+  colorName          String   @map("color_name")
+  // [2025-01-30 23:55:00] 颜色 hex 值（可选）
+  colorHex           String?  @map("color_hex")
+  // [2025-01-30 23:55:00] 图片 URL（front, back, sleeve）
+  imageUrls          Json     @map("image_urls") // { front: string, back: string, sleeve: string }
+  // [2025-01-30 23:55:00] 是否已验证（图片 URL 是否存在）
+  isVerified         Boolean  @default(false) @map("is_verified")
+  // [2025-01-30 23:55:00] 是否启用
+  isActive           Boolean  @default(true) @map("is_active")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([customInkProductId, customInkColorId])
+  @@index([customInkProductId])
+  @@index([customInkColorId])
+  @@index([colorName])
+  @@map("product_color_images")
 }
 
 model ProductReview {

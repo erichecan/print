@@ -25,6 +25,7 @@ const Session = require('./Session')(sequelize, DataTypes);
 const OrderAddressSnapshot = require('./OrderAddressSnapshot')(sequelize, DataTypes);
 const ArtAsset = require('./ArtAsset')(sequelize, DataTypes);
 const Font = require('./Font')(sequelize, DataTypes);
+const ProductColorImage = require('./ProductColorImage')(sequelize, DataTypes);
 
 // Define associations
 const models = {
@@ -49,7 +50,8 @@ const models = {
   Session,
   OrderAddressSnapshot,
   ArtAsset,
-  Font
+  Font,
+  ProductColorImage
 };
 
 // User associations
@@ -73,6 +75,7 @@ Upload.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Session.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 ArtAsset.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
 Font.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+ProductColorImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 
 // Category associations
 Category.hasMany(Product, { foreignKey: 'category_id', as: 'products' });
@@ -91,6 +94,7 @@ Product.hasMany(ProductReview, { foreignKey: 'product_id', as: 'reviews', onDele
 Product.hasMany(CartItem, { foreignKey: 'product_id', as: 'cartItems', onDelete: 'CASCADE' });
 Product.hasMany(OrderItem, { foreignKey: 'product_id', as: 'orderItems' });
 Product.hasMany(Design, { foreignKey: 'product_id', as: 'designs' });
+Product.hasMany(ProductColorImage, { foreignKey: 'product_id', as: 'colorImages' });
 
 ProductVariant.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 ProductImage.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });

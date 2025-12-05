@@ -1,6 +1,7 @@
 /**
  * Product Colors Modal - 产品颜色选择模态
  * [2025-01-30 18:30:00] 实现产品颜色选择模态，对齐 Custom Ink
+ * [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg 更新模态标题和结构，完全匹配 Custom Ink
  */
 'use client';
 
@@ -46,7 +47,8 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
     <div className="dl-modal-overlay" onClick={onClose}>
       <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
-          <h3 className="dl-modal__title">Product Colors</h3>
+          {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg 更新标题为 "Choose Your Product Color" */}
+          <h3 className="dl-modal__title">Choose Your Product Color</h3>
           <button
             className="dl-modal__close"
             onClick={onClose}
@@ -62,27 +64,26 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
             <p className="dl-modal__product-name">{productName}</p>
           )}
 
-          {/* Ordering fewer than 6? 开关 */}
+          {/* Colors 色板矩阵 */}
+          {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，Ordering fewer than 6? 复选框应在 Colors 标题右侧 */}
           <div className="dl-modal__section">
-            <label className="dl-modal__checkbox-label">
-              <input
-                type="checkbox"
-                checked={orderingFewerThan6}
-                onChange={(e) => setOrderingFewerThan6(e.target.checked)}
-                className="dl-modal__checkbox"
-              />
-              <span>Ordering fewer than 6?</span>
-            </label>
+            <div className="dl-modal__section-header">
+              <h4 className="dl-modal__section-title">Colors:</h4>
+              <label className="dl-modal__checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={orderingFewerThan6}
+                  onChange={(e) => setOrderingFewerThan6(e.target.checked)}
+                  className="dl-modal__checkbox"
+                />
+                <span>Ordering fewer than 6?</span>
+              </label>
+            </div>
             {orderingFewerThan6 && (
               <p className="dl-modal__hint">
                 Some colors may have limited availability for orders under 6 items.
               </p>
             )}
-          </div>
-
-          {/* Colors 色板矩阵 */}
-          <div className="dl-modal__section">
-            <h4 className="dl-modal__section-title">Colors</h4>
             <div className="dl-colors-grid">
               {colors.map((color) => {
                 const isSelected = selectedColor === color.name;
@@ -97,14 +98,15 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
                     disabled={!color.isAvailable}
                     title={color.name}
                   >
+                    {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，checkmark 应在右上角 */}
                     <div
                       className="dl-color-item__swatch"
                       style={{ backgroundColor: color.hex || '#cccccc' }}
                     >
                       {isSelected && (
                         <svg
-                          width="20"
-                          height="20"
+                          width="16"
+                          height="16"
                           viewBox="0 0 24 24"
                           fill="none"
                           stroke="white"
@@ -129,6 +131,44 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
                   </button>
                 );
               })}
+            </div>
+            
+            {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 Sizes Available in 显示 */}
+            {selectedColor && (() => {
+              const selectedColorObj = colors.find(c => c.name === selectedColor);
+              if (selectedColorObj && selectedColorObj.availableSizes.length > 0) {
+                return (
+                  <div className="dl-modal__sizes-available">
+                    <p className="dl-modal__sizes-available-title">
+                      Sizes Available in: {selectedColor}
+                    </p>
+                    <div className="dl-modal__sizes-list">
+                      {selectedColorObj.availableSizes.join(' ')}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 "Add this product in another color" 部分 */}
+            <div className="dl-modal__pick-another">
+              <div className="dl-modal__pick-another-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <div className="dl-modal__pick-another-content">
+                <p className="dl-modal__pick-another-text">Add this product in another color</p>
+                <button 
+                  className="dl-modal__pick-another-link"
+                  onClick={() => {
+                    // 保持模态打开，用户可以继续选择颜色
+                  }}
+                >
+                  Pick another color
+                </button>
+              </div>
             </div>
           </div>
 

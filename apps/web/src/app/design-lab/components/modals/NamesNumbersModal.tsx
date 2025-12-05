@@ -29,7 +29,7 @@ interface NamesNumbersConfig {
   numberColor: string;
 }
 
-type Step = 'intro' | 'tools' | 'list';
+type Step = 'intro' | 'tools' | 'list' | 'quantities';
 
 const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
   isOpen,
@@ -37,7 +37,8 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
   onAddToCanvas,
 }) => {
   // [2025-01-30 21:50:00] 修复：跳过 intro，直接显示 tools 配置页面（与 Custom Ink 一致）
-  const [step, setStep] = useState<Step>('tools');
+  // [2025-01-31 00:00:00] 根据截图，应该先显示 intro 介绍页
+  const [step, setStep] = useState<Step>('intro');
   const [config, setConfig] = useState<NamesNumbersConfig>({
     addNames: true,
     addNumbers: true,
@@ -87,8 +88,43 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
     setItems(newItems);
   };
 
+  // [2025-01-31 00:00:00] Additional Items 状态
+  const [showAdditionalItems, setShowAdditionalItems] = useState(false);
+  const [additionalItemsCount, setAdditionalItemsCount] = useState<Record<string, number>>({});
+  const [hasAdditionalItems, setHasAdditionalItems] = useState(false);
+
   const handleDone = () => {
     // [2025-01-30 20:00:00] 过滤空项并添加到画布
+    const validItems = items.filter(
+      (item) => item.name.trim() || item.number.trim()
+    );
+    if (validItems.length > 0) {
+      // [2025-01-31 00:00:00] 根据截图，Done 后应该进入 Additional Items 模态
+      setShowAdditionalItems(true);
+      setStep('quantities');
+      // 初始化数量
+      const sizes = [...new Set(validItems.map(item => item.size).filter(Boolean))];
+      const initialCounts: Record<string, number> = {};
+      sizes.forEach(size => {
+        initialCounts[size] = validItems.filter(item => item.size === size).length;
+      });
+      setAdditionalItemsCount(initialCounts);
+    } else {
+      onClose();
+      setStep('tools');
+      setItems([
+        { name: '', number: '', size: '' },
+        { name: '', number: '', size: '' },
+        { name: '', number: '', size: '' },
+        { name: '', number: '', size: '' },
+        { name: '', number: '', size: '' },
+      ]);
+    }
+  };
+
+  // [2025-01-31 00:00:00] Additional Items Done 处理
+  const handleQuantitiesDone = () => {
+    // 最终添加到画布
     const validItems = items.filter(
       (item) => item.name.trim() || item.number.trim()
     );
@@ -96,8 +132,9 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
       onAddToCanvas(validItems, config);
     }
     onClose();
-    // [2025-01-30 20:00:00] 重置状态（回到 tools 页面，与 Custom Ink 一致）
+    // 重置状态
     setStep('tools');
+    setShowAdditionalItems(false);
     setItems([
       { name: '', number: '', size: '' },
       { name: '', number: '', size: '' },
@@ -115,7 +152,10 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
     <div className="dl-modal-overlay" onClick={onClose}>
       <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
-          <h3 className="dl-modal__title">Names & Numbers</h3>
+          {/* [2025-01-31 00:00:00] 根据截图，Tools 页标题应该是 "Names and Numbers Tools" */}
+          <h3 className="dl-modal__title">
+            {step === 'tools' ? 'Names and Numbers Tools' : step === 'list' ? 'My List' : step === 'quantities' ? 'My Quantities' : 'Names & Numbers'}
+          </h3>
           <button
             className="dl-modal__close"
             onClick={onClose}
@@ -127,36 +167,25 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
         </div>
 
         <div className="dl-modal__body">
-          {/* Step 1: Intro Page */}
+          {/* Step 1: Intro Page - [2025-01-31 00:00:00] 根据 designlab-addnames01.jpeg 修复介绍页 */}
           {step === 'intro' && (
             <div className="dl-names-numbers-intro">
-              <h4 className="dl-names-numbers-intro__title">
-                Add Names and Numbers to Your Design
-              </h4>
-              <p className="dl-names-numbers-intro__description">
-                Personalize your design by adding names and numbers. You can add names
-                and numbers to the front, back, or sleeve of your product.
-              </p>
-              <div className="dl-names-numbers-intro__features">
-                <div className="dl-names-numbers-intro__feature">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                  <span>Customize side, height, and color</span>
-                </div>
-                <div className="dl-names-numbers-intro__feature">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                  <span>Add multiple names and numbers</span>
-                </div>
-                <div className="dl-names-numbers-intro__feature">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 6L9 17l-5-5" />
-                  </svg>
-                  <span>Preview on canvas before ordering</span>
-                </div>
+              {/* [2025-01-31 00:00:00] 添加介绍图片 */}
+              <div className="dl-names-numbers-intro__image">
+                <img 
+                  src="/images/names-numbers-intro.jpg" 
+                  alt="Team jerseys with names and numbers"
+                  onError={(e) => {
+                    // 如果图片不存在，使用占位符
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
               </div>
+              {/* [2025-01-31 00:00:00] 更新介绍文本，匹配 Custom Ink */}
+              <p className="dl-names-numbers-intro__description">
+                Use personalized Names & Numbers for projects like team jerseys where you need a unique name and/or number for each item.
+              </p>
+              {/* [2025-01-31 00:00:00] 更新按钮文本 */}
               <button
                 className="dl-modal__btn dl-modal__btn--primary"
                 onClick={() => setStep('tools')}
@@ -325,28 +354,39 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                 )}
               </div>
 
-              {/* Add To Design Button */}
+              {/* [2025-01-31 00:00:00] Step 2 按钮 - 根据 designlab-addnames02.jpeg 和 designlab-addnames03.jpeg */}
               <div className="dl-names-numbers-tools__section">
                 <button
                   className="dl-modal__btn dl-modal__btn--primary dl-modal__btn--block"
                   onClick={handleAddExample}
                   type="button"
                 >
-                  Add To Design
+                  Step 2: Enter Names/Numbers
                 </button>
-                <p className="dl-names-numbers-tools__hint">
-                  This will add example text &quot;EXAMPLE&quot; and &quot;00&quot; to the canvas
-                </p>
+              </div>
+
+              {/* [2025-01-31 00:00:00] 价格信息 - 根据截图添加 */}
+              <div className="dl-names-numbers-tools__pricing">
+                <p className="dl-names-numbers-tools__pricing-text">Full list required for accurate pricing</p>
+                <p className="dl-names-numbers-tools__pricing-item">Names: $5.50 each item</p>
+                <p className="dl-names-numbers-tools__pricing-item">Numbers: $3.50 each item</p>
+              </div>
+
+              {/* [2025-01-31 00:00:00] 说明文本 - 根据截图添加 */}
+              <div className="dl-names-numbers-tools__notes">
+                <p>&quot;EXAMPLE&quot; and &quot;00&quot; are sample placeholders</p>
+                <p>Our artists will expertly place each name/number from your list</p>
+                <p>Names/numbers may be printed or vinyl</p>
               </div>
             </div>
           )}
 
-          {/* Step 2: List Page */}
+          {/* Step 2: List Page - [2025-01-31 00:00:00] 根据 designlab-addnames04.png 和 designlab-addnames05.png 修复 */}
           {step === 'list' && (
             <div className="dl-names-numbers-list">
-              <h4 className="dl-names-numbers-list__title">
-                Step 2: Enter Names/Numbers
-              </h4>
+              {/* [2025-01-31 00:00:00] 更新标题和副标题 */}
+              <h4 className="dl-names-numbers-list__title">My List</h4>
+              <p className="dl-names-numbers-list__subtitle">Enter your full list and sizes for accurate pricing</p>
 
               {/* Table Header */}
               <div className="dl-names-numbers-list__table-header">
@@ -359,10 +399,11 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
               <div className="dl-names-numbers-list__table-body">
                 {items.map((item, index) => (
                   <div key={index} className="dl-names-numbers-list__table-row">
+                    {/* [2025-01-31 00:00:00] 更新占位符文本，匹配 Custom Ink */}
                     <input
                       type="text"
                       className="dl-names-numbers-list__input"
-                      placeholder="Enter name"
+                      placeholder="ENTER NAME"
                       value={item.name}
                       onChange={(e) =>
                         handleItemChange(index, 'name', e.target.value)
@@ -371,48 +412,133 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                     <input
                       type="text"
                       className="dl-names-numbers-list__input"
-                      placeholder="Enter number"
+                      placeholder="00"
                       value={item.number}
                       onChange={(e) =>
                         handleItemChange(index, 'number', e.target.value)
                       }
                     />
-                    <input
-                      type="text"
-                      className="dl-names-numbers-list__input"
-                      placeholder="Size"
+                    <select
+                      className="dl-names-numbers-list__input dl-names-numbers-list__size-select"
                       value={item.size}
                       onChange={(e) =>
                         handleItemChange(index, 'size', e.target.value)
                       }
+                    >
+                      <option value="">Size▾</option>
+                      <option value="XS">XS</option>
+                      <option value="S">S</option>
+                      <option value="M">M</option>
+                      <option value="L">L</option>
+                      <option value="XL">XL</option>
+                      <option value="2XL">2XL</option>
+                      <option value="3XL">3XL</option>
+                      <option value="YS">YS</option>
+                      <option value="YM">YM</option>
+                      <option value="YL">YL</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              {/* [2025-01-31 00:00:00] Add More 和 Manage List 链接 */}
+              <div className="dl-names-numbers-list__actions">
+                <button
+                  className="dl-names-numbers-list__add-more"
+                  onClick={handleAddMoreRows}
+                  type="button"
+                >
+                  + Add More
+                </button>
+                <button
+                  className="dl-names-numbers-list__manage-list"
+                  onClick={() => {
+                    // TODO: 实现 Manage List 功能
+                    alert('Manage List feature coming soon');
+                  }}
+                  type="button"
+                >
+                  Manage List
+                </button>
+              </div>
+
+              {/* [2025-01-31 00:00:00] Totals 和 Sizes 摘要框 */}
+              <div className="dl-names-numbers-list__summary">
+                <div className="dl-names-numbers-list__totals">
+                  <strong>Totals:</strong> {totalNames} name{totalNames !== 1 ? 's' : ''} and {totalNumbers} number{totalNumbers !== 1 ? 's' : ''} on {totalItems} item{totalItems !== 1 ? 's' : ''}
+                </div>
+                <div className="dl-names-numbers-list__sizes">
+                  <strong>Sizes:</strong> {items.filter(item => item.size.trim()).length > 0 ? `(${items.filter(item => item.size.trim()).length}/${items.length}) ${[...new Set(items.filter(item => item.size.trim()).map(item => item.size))].join(', ')}` : ''}
+                </div>
+              </div>
+
+              {/* [2025-01-31 00:00:00] Helpful Hints 框 - 根据 designlab-addnames04.png */}
+              <div className="dl-names-numbers-list__hints">
+                <h5 className="dl-names-numbers-list__hints-title">Helpful Hints</h5>
+                <ul className="dl-names-numbers-list__hints-list">
+                  <li>
+                    Don&apos;t see the size you want? Switch to a <a href="#" onClick={(e) => { e.preventDefault(); /* TODO: Open color selector */ }}>color</a> or <a href="#" onClick={(e) => { e.preventDefault(); /* TODO: Open product selector */ }}>product</a> that has your size available.
+                  </li>
+                  <li>
+                    Not able to enter names or numbers? Return to the <a href="#" onClick={(e) => { e.preventDefault(); setStep('tools'); }}>settings</a> to select these options.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* [2025-01-31 00:00:00] Step 3: Additional Items 模态 - 根据 designlab-addnames06.png */}
+          {step === 'quantities' && (
+            <div className="dl-names-numbers-quantities">
+              <h4 className="dl-names-numbers-quantities__title">My Quantities</h4>
+              <p className="dl-names-numbers-quantities__subtitle">Additional items without Names and Numbers</p>
+              <p className="dl-names-numbers-quantities__description">
+                We will update the quantities in your design to match the sizes in your names/numbers list. Check the box below if you would like additional sizes that won&apos;t receive names or numbers.
+              </p>
+
+              {/* Items receiving names or numbers */}
+              <div className="dl-names-numbers-quantities__section">
+                <label className="dl-names-numbers-quantities__label">Items receiving names or numbers</label>
+                {Object.entries(additionalItemsCount).map(([size, count]) => (
+                  <div key={size} className="dl-names-numbers-quantities__size-row">
+                    <span className="dl-names-numbers-quantities__size-label">{size}</span>
+                    <input
+                      type="number"
+                      className="dl-names-numbers-quantities__count-input"
+                      value={count}
+                      onChange={(e) => {
+                        setAdditionalItemsCount({
+                          ...additionalItemsCount,
+                          [size]: parseInt(e.target.value) || 0
+                        });
+                      }}
+                      min="0"
                     />
                   </div>
                 ))}
               </div>
 
-              {/* Add More Button */}
-              <button
-                className="dl-names-numbers-list__add-more"
-                onClick={handleAddMoreRows}
-                type="button"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add More
-              </button>
-
-              {/* Totals */}
-              <div className="dl-names-numbers-list__totals">
-                <strong>Totals:</strong> {totalNames} names and {totalNumbers} numbers on{' '}
-                {totalItems} items
+              {/* Checkbox for additional items */}
+              <div className="dl-names-numbers-quantities__section">
+                <label className="dl-names-numbers-quantities__checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={hasAdditionalItems}
+                    onChange={(e) => setHasAdditionalItems(e.target.checked)}
+                    className="dl-names-numbers-quantities__checkbox"
+                  />
+                  <span>I have items that are not receiving names or numbers</span>
+                </label>
               </div>
 
-              {/* Pricing Info */}
-              <div className="dl-names-numbers-list__pricing">
-                <p>Names: $5.50 each item</p>
-                <p>Numbers: $3.50 each item</p>
+              {/* Summary */}
+              <div className="dl-names-numbers-quantities__summary">
+                <div className="dl-names-numbers-quantities__totals">
+                  <strong>Totals:</strong> {totalNames} name{totalNames !== 1 ? 's' : ''} and {totalNumbers} number{totalNumbers !== 1 ? 's' : ''} on {totalItems} item{totalItems !== 1 ? 's' : ''}
+                </div>
+                <div className="dl-names-numbers-quantities__sizes">
+                  <strong>Sizes:</strong> {Object.keys(additionalItemsCount).length > 0 ? `(${Object.values(additionalItemsCount).reduce((a, b) => a + b, 0)}/${Object.values(additionalItemsCount).reduce((a, b) => a + b, 0)}) ${Object.keys(additionalItemsCount).join(', ')}` : ''}
+                </div>
               </div>
             </div>
           )}
@@ -448,16 +574,42 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
           )}
           {step === 'list' && (
             <>
+              {/* [2025-01-31 00:00:00] 返回箭头按钮 - 根据截图 */}
               <button
-                className="dl-modal__btn dl-modal__btn--secondary"
+                className="dl-modal__btn dl-modal__btn--back"
                 onClick={() => setStep('tools')}
                 type="button"
+                aria-label="Back"
               >
-                Back
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
               </button>
               <button
                 className="dl-modal__btn dl-modal__btn--primary"
                 onClick={handleDone}
+                type="button"
+              >
+                Done
+              </button>
+            </>
+          )}
+          {step === 'quantities' && (
+            <>
+              {/* [2025-01-31 00:00:00] 返回箭头按钮 */}
+              <button
+                className="dl-modal__btn dl-modal__btn--back"
+                onClick={() => setStep('list')}
+                type="button"
+                aria-label="Back"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                className="dl-modal__btn dl-modal__btn--primary"
+                onClick={handleQuantitiesDone}
                 type="button"
               >
                 Done

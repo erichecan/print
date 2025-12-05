@@ -1,6 +1,7 @@
 /**
  * Art Panel - 艺术素材面板
  * [2025-01-30 18:00:00] 实现 Artwork Categories 界面
+ * [2025-12-04 21:50:00] 优化大类网格 UI，调整为 3 列布局，对齐 Custom Ink 设计
  */
 'use client';
 
@@ -56,9 +57,13 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   }, []);
 
   // [2025-01-30 18:00:00] 显示分类网格
+  // [2025-12-04 21:50:00] 优化分类网格 UI，添加 header 和更好的布局
   if (!currentCategory) {
     return (
       <div className="dl-art-panel">
+        <div className="dl-art-panel__header">
+          <h2 className="dl-art-panel__title">Artwork Categories</h2>
+        </div>
         <div className="dl-art-panel__categories">
           {loading && <p className="dl-art-panel__loading">Loading categories...</p>}
           {error && <p className="dl-art-panel__error">{error}</p>}
@@ -74,6 +79,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                     className={`dl-art-panel__category-card ${hasAssets ? '' : 'is-empty'}`}
                     onClick={() => setCurrentCategory(category)}
                     disabled={!hasAssets}
+                    type="button"
                   >
                     <div className="dl-art-panel__category-icon">
                       {hasAssets && assets[0]?.thumbnailUrl ? (

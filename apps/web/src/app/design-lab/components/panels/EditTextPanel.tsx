@@ -1,6 +1,8 @@
 /**
  * Edit Text Panel - 编辑文本面板
  * [2025-01-30 17:45:00] 实现 Edit Text 面板，包含所有文本编辑控件
+ * [2025-01-31 00:00:00] 像素级对齐 Custom Ink designlab-addtext03.jpeg
+ * 控件顺序：Text, Change Font, Edit Color, Rotation, Outline, Text Size, Positioning Controls
  */
 'use client';
 
@@ -442,13 +444,8 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         </div>
       </div>
 
-      {/* 6. Text Shape（文本形状 - 简化版） */}
-      <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Text Shape</label>
-        <p className="dl-edit-text-panel__hint">Coming soon</p>
-      </div>
-
-      {/* 7. Text Size（字体大小滑块） */}
+      {/* 6. Text Size（字体大小滑块） */}
+      {/* [2025-01-31 00:00:00] 像素级对齐：根据 Custom Ink designlab-addtext03.jpeg，Text Size 应在 Outline 之后 */}
       <div className="dl-edit-text-panel__section">
         <label className="dl-edit-text-panel__label">
           Text Size: {fontSize}px

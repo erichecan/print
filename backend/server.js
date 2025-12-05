@@ -92,7 +92,7 @@ const ensurePrismaClient = () => {
       : 'NOT SET';
     console.log('[2025-01-29 17:30:00] 📋 DATABASE_URL preview:', dbUrlPreview);
     
-    execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
+    execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
       stdio: 'inherit',
       cwd: __dirname,
       timeout: 120000, // 120秒超时
@@ -145,7 +145,7 @@ const runMigrationsIfEnabled = () => {
           
           // [2025-01-11 14:55:00] 修复后重新生成 Prisma Client 以确保使用正确的 schema
           logger.info('🔧 Regenerating Prisma Client after column fix...');
-          execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
+          execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
             stdio: 'inherit',
             timeout: 30000,
             cwd: __dirname,

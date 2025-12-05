@@ -53,24 +53,29 @@ const ToolPanel: React.FC<ToolPanelProps> = ({ panelType, onBack, children }) =>
   // [2025-01-30 16:50:00] 是否显示返回按钮（Home 面板不显示）
   const showBackButton = panelType !== 'home' && onBack;
 
+  // [2025-01-30 23:30:00] 检查子组件是否有自己的 header（UploadPanel 和 EditUploadPanel 有自己的 header）
+  const hasCustomHeader = panelType === 'upload' || panelType === 'edit-upload' || panelType === 'edit-text' || panelType === 'edit-art';
+
   return (
     <aside className="dl-tool-panel" aria-label="Tool panel">
       <div className="dl-tool-panel__content">
-        <div className="dl-tool-panel__header">
-          <h2 className="dl-tool-panel__title">{getPanelTitle()}</h2>
-          {showBackButton && (
-            <button
-              className="dl-tool-panel__back-btn"
-              onClick={onBack}
-              aria-label="Back to home"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 12H5M12 19l-7-7 7-7" />
-              </svg>
-              Back
-            </button>
-          )}
-        </div>
+        {!hasCustomHeader && (
+          <div className="dl-tool-panel__header">
+            <h2 className="dl-tool-panel__title">{getPanelTitle()}</h2>
+            {showBackButton && (
+              <button
+                className="dl-tool-panel__back-btn"
+                onClick={onBack}
+                aria-label="Back to home"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+            )}
+          </div>
+        )}
         {children}
       </div>
     </aside>

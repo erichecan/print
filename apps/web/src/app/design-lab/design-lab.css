@@ -254,18 +254,19 @@
 }
 
 /* [2025-01-30 23:20:00] 修复：Rail 按钮样式对齐 Custom Ink - element-8 到 element-12 */
+/* [2025-01-31 00:00:00] 像素级对齐：element-9 (Add Text) - x:16, y:239, width:68, height:70, color: rgb(191, 191, 191) */
 .dl-rail__btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--dl-space-1);
-  width: 68px; /* Custom Ink element-8 width */
-  min-height: 70px; /* Custom Ink element-8 height */
+  width: 68px; /* Custom Ink element-9 width */
+  min-height: 70px; /* Custom Ink element-9 height */
   padding: var(--dl-space-2) var(--dl-space-1);
   background: transparent;
   border: none;
-  color: rgb(191, 191, 191); /* Custom Ink Rail 按钮文本颜色 */
+  color: rgb(191, 191, 191); /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 */
   cursor: pointer !important; /* [2025-01-30 21:35:00] 强制启用指针事件 */
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
@@ -307,11 +308,33 @@
   line-height: 1;
 }
 
+/* [2025-01-31 00:00:00] Add Names 图标样式 - 显示 "00" */
+.dl-rail__icon--names {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.dl-rail__icon--names .dl-rail__icon-text {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'Arial', sans-serif;
+  line-height: 1;
+  color: currentColor;
+}
+
+/* [2025-01-31 00:00:00] 像素级对齐：element-24 (Add Text 文本) - x:19, y:285, width:64, height:16 */
 .dl-rail__btn-label {
   font-size: var(--dl-font-sm);
   line-height: 1.2;
   text-align: center;
   margin-top: var(--dl-space-1);
+  width: 64px; /* Custom Ink element-24 width */
+  height: 16px; /* Custom Ink element-24 height */
+  display: block;
+  color: rgb(191, 191, 191); /* Custom Ink element-24 color */
 }
 
 /* ============================================
@@ -445,16 +468,52 @@
 }
 
 /* Upload Panel 样式 */
+/* [2025-01-30 23:30:00] Upload Panel 样式 - 根据 designlab-upload01.jpeg 和 designlab-upload03.jpeg 更新 */
 .dl-upload-panel {
   display: flex;
   flex-direction: column;
-  gap: var(--dl-space-4);
+  background: var(--dl-bg-panel);
+  border-radius: var(--dl-radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.dl-upload-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--dl-space-4) var(--dl-space-6);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-upload-panel__title {
+  font-size: var(--dl-font-lg);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
+
+.dl-upload-panel__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--dl-space-1);
+  color: var(--dl-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--dl-transition-base);
+}
+
+.dl-upload-panel__close:hover {
+  color: var(--dl-text-primary);
 }
 
 .dl-upload-panel__content {
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-4);
+  padding: var(--dl-space-6);
 }
 
 .dl-upload-panel__browse {
@@ -472,6 +531,7 @@
   font-weight: var(--dl-font-weight-medium);
   cursor: pointer;
   transition: all var(--dl-transition-base);
+  min-width: 200px;
 }
 
 .dl-upload-panel__browse-btn:hover {
@@ -484,6 +544,7 @@
   text-align: center;
   color: var(--dl-text-secondary);
   font-size: var(--dl-font-sm);
+  margin: var(--dl-space-2) 0;
 }
 
 .dl-upload-panel__divider::before,
@@ -497,67 +558,194 @@
   padding: 0 var(--dl-space-4);
 }
 
-.dl-upload-panel__hint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--dl-space-2);
+.dl-upload-panel__drag-drop {
   padding: var(--dl-space-6);
   border: 2px dashed var(--dl-border-color);
   border-radius: var(--dl-radius-md);
   text-align: center;
-  color: var(--dl-text-secondary);
+  background: var(--dl-bg-primary);
+  transition: all var(--dl-transition-base);
+  cursor: pointer;
 }
 
-.dl-upload-panel__hint svg {
-  width: 48px;
-  height: 48px;
-  color: var(--dl-color-primary);
+.dl-upload-panel__drag-drop.is-active {
+  border-color: var(--dl-color-primary);
+  background: rgba(0, 102, 204, 0.05);
 }
 
-.dl-upload-panel__hint p {
+.dl-upload-panel__drag-text {
   margin: 0;
   font-size: var(--dl-font-base);
+  color: var(--dl-text-secondary);
+  font-weight: var(--dl-font-weight-medium);
 }
 
 .dl-upload-panel__info {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
   gap: var(--dl-space-2);
-  padding: var(--dl-space-4);
+  padding: var(--dl-space-3);
   background: var(--dl-bg-primary);
   border-radius: var(--dl-radius-sm);
-  font-size: var(--dl-font-sm);
-}
-
-.dl-upload-panel__info-item {
-  display: flex;
-  gap: var(--dl-space-2);
-}
-
-.dl-upload-panel__info-item strong {
-  color: var(--dl-text-primary);
-}
-
-.dl-upload-panel__help {
-  text-align: center;
   font-size: var(--dl-font-sm);
   color: var(--dl-text-secondary);
 }
 
-.dl-upload-panel__help a {
+.dl-upload-panel__info-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
   color: var(--dl-color-primary);
-  text-decoration: none;
+  margin-top: 2px;
 }
 
-.dl-upload-panel__help a:hover {
+.dl-upload-panel__info-text {
+  margin: 0;
+  flex: 1;
+  line-height: 1.5;
+}
+
+.dl-upload-panel__info-text strong {
+  color: var(--dl-text-primary);
+  font-weight: var(--dl-font-weight-medium);
+}
+
+.dl-upload-panel__signin {
+  text-align: center;
+}
+
+.dl-upload-panel__signin-link {
+  color: var(--dl-color-primary);
+  text-decoration: none;
+  font-size: var(--dl-font-sm);
+  transition: text-decoration var(--dl-transition-base);
+}
+
+.dl-upload-panel__signin-link:hover {
   text-decoration: underline;
 }
 
-/* Edit Upload Panel 样式 */
+.dl-upload-panel__recent {
+  margin-top: var(--dl-space-4);
+  padding-top: var(--dl-space-4);
+  border-top: 1px solid var(--dl-border-color);
+}
+
+.dl-upload-panel__recent-title {
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-upload-panel__recent-desc {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: 0 0 var(--dl-space-3) 0;
+  line-height: 1.5;
+}
+
+.dl-upload-panel__recent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: var(--dl-space-2);
+}
+
+.dl-upload-panel__recent-item {
+  background: none;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  padding: var(--dl-space-1);
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+  overflow: hidden;
+}
+
+.dl-upload-panel__recent-item:hover {
+  border-color: var(--dl-color-primary);
+  transform: scale(1.05);
+}
+
+.dl-upload-panel__recent-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: var(--dl-radius-sm);
+}
+
+.dl-upload-panel__help {
+  margin-top: var(--dl-space-4);
+  padding-top: var(--dl-space-4);
+  border-top: 1px solid var(--dl-border-color);
+}
+
+.dl-upload-panel__help-title {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-upload-panel__help-links {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+}
+
+.dl-upload-panel__help-link {
+  color: var(--dl-color-primary);
+  text-decoration: none;
+  transition: text-decoration var(--dl-transition-base);
+}
+
+.dl-upload-panel__help-link:hover {
+  text-decoration: underline;
+}
+
+/* [2025-01-30 23:30:00] Edit Upload Panel 样式 - 根据 designlab-upload02.jpeg 更新 */
 .dl-edit-upload-panel {
   display: flex;
   flex-direction: column;
+  background: var(--dl-bg-panel);
+  border-radius: var(--dl-radius-md);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.dl-edit-upload-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--dl-space-4) var(--dl-space-6);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-upload-panel__title {
+  font-size: var(--dl-font-lg);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
+
+.dl-edit-upload-panel__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--dl-space-1);
+  color: var(--dl-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--dl-transition-base);
+}
+
+.dl-edit-upload-panel__close:hover {
+  color: var(--dl-text-primary);
+}
+
+.dl-edit-upload-panel__content {
+  display: flex;
+  flex-direction: column;
+  padding: var(--dl-space-6);
   gap: var(--dl-space-4);
 }
 
@@ -571,45 +759,136 @@
 
 .dl-edit-upload-panel__section:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .dl-edit-upload-panel__label {
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-medium);
   color: var(--dl-text-primary);
-  margin-bottom: var(--dl-space-1);
+  margin-bottom: var(--dl-space-2);
 }
 
-.dl-edit-upload-panel__size {
-  font-size: var(--dl-font-base);
+.dl-edit-upload-panel__size-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+}
+
+.dl-edit-upload-panel__size-input {
+  flex: 1;
+  padding: var(--dl-space-2) var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
   color: var(--dl-text-primary);
+  background: var(--dl-bg-panel);
 }
 
-.dl-edit-upload-panel__btn {
-  padding: var(--dl-space-2) var(--dl-space-4);
+.dl-edit-upload-panel__size-separator {
+  color: var(--dl-text-secondary);
+  font-size: var(--dl-font-sm);
+}
+
+.dl-edit-upload-panel__colors {
+  display: flex;
+  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+}
+
+.dl-edit-upload-panel__color-swatch {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+  padding: 0;
+}
+
+.dl-edit-upload-panel__color-swatch:hover {
+  border-color: var(--dl-color-primary);
+  transform: scale(1.1);
+}
+
+.dl-edit-upload-panel__toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dl-edit-upload-panel__toggle-label {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
+
+.dl-edit-upload-panel__toggle-btn {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #ccc;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--dl-transition-base);
+  padding: 0;
+}
+
+.dl-edit-upload-panel__toggle-btn.is-active {
+  background: var(--dl-color-primary);
+}
+
+.dl-edit-upload-panel__toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform var(--dl-transition-base);
+}
+
+.dl-edit-upload-panel__toggle-btn.is-active .dl-edit-upload-panel__toggle-slider {
+  transform: translateX(20px);
+}
+
+.dl-edit-upload-panel__controls {
+  display: flex;
+  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+}
+
+.dl-edit-upload-panel__control-btn {
+  width: 40px;
+  height: 40px;
+  padding: var(--dl-space-2);
   background: var(--dl-bg-panel);
   border: 1px solid var(--dl-border-color);
   border-radius: var(--dl-radius-sm);
   color: var(--dl-text-primary);
-  font-size: var(--dl-font-sm);
-  font-weight: var(--dl-font-weight-medium);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all var(--dl-transition-base);
 }
 
-.dl-edit-upload-panel__btn:hover {
+.dl-edit-upload-panel__control-btn:hover {
   background: var(--dl-bg-primary);
   border-color: var(--dl-color-primary);
+  color: var(--dl-color-primary);
 }
 
-.dl-edit-upload-panel__btn-group {
+.dl-edit-upload-panel__rotation {
   display: flex;
-  flex-direction: column;
-  gap: var(--dl-space-2);
+  align-items: center;
+  gap: var(--dl-space-3);
 }
 
 .dl-edit-upload-panel__slider {
-  width: 100%;
+  flex: 1;
   height: 6px;
   border-radius: 3px;
   background: var(--dl-bg-primary);
@@ -636,31 +915,132 @@
   border: none;
 }
 
+.dl-edit-upload-panel__rotation-input {
+  width: 60px;
+  padding: var(--dl-space-1) var(--dl-space-2);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  background: var(--dl-bg-panel);
+  text-align: center;
+}
+
+.dl-edit-upload-panel__actions {
+  display: flex;
+  gap: var(--dl-space-2);
+}
+
+.dl-edit-upload-panel__action-btn {
+  flex: 1;
+  padding: var(--dl-space-3) var(--dl-space-4);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+  border: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-upload-panel__action-btn--outline {
+  background: var(--dl-bg-panel);
+  color: var(--dl-text-primary);
+}
+
+.dl-edit-upload-panel__action-btn--outline:hover {
+  background: var(--dl-bg-primary);
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-upload-panel__action-btn--primary {
+  background: var(--dl-color-primary);
+  color: var(--dl-text-inverse);
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-upload-panel__action-btn--primary:hover {
+  background: #0052A3;
+}
+
+.dl-edit-upload-panel__info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--dl-space-2);
+  padding: var(--dl-space-3);
+  background: #E3F2FD;
+  border-radius: var(--dl-radius-sm);
+}
+
+.dl-edit-upload-panel__info-icon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--dl-color-primary);
+  margin-top: 2px;
+}
+
+.dl-edit-upload-panel__info-content {
+  flex: 1;
+}
+
+.dl-edit-upload-panel__info-title {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-1) 0;
+}
+
+.dl-edit-upload-panel__info-text {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dl-edit-upload-panel__feedback-link {
+  color: var(--dl-color-primary);
+  text-decoration: none;
+  font-size: var(--dl-font-sm);
+  transition: text-decoration var(--dl-transition-base);
+}
+
+.dl-edit-upload-panel__feedback-link:hover {
+  text-decoration: underline;
+}
+
 /* Text Panel 样式 */
+/* [2025-01-31 00:00:00] 像素级对齐 Custom Ink designlab-addtext01.jpeg - Add Text 面板 */
 .dl-text-panel {
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-4);
+  width: 100%;
 }
 
 .dl-text-panel__content {
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-4);
+  width: 100%;
 }
 
 .dl-text-panel__input-section {
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-2);
+  width: 100%;
 }
 
+/* [2025-01-31 00:00:00] 根据 Custom Ink 截图，label 可能隐藏或使用不同文本 */
 .dl-text-panel__label {
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-medium);
   color: var(--dl-text-primary);
+  /* 如果 Custom Ink 没有显示 label，可以隐藏 */
+  /* display: none; */
 }
 
+/* [2025-01-31 00:00:00] 文本输入框样式对齐 Custom Ink */
 .dl-text-panel__input {
   width: 100%;
   padding: var(--dl-space-3);
@@ -670,6 +1050,8 @@
   font-family: var(--dl-font-family);
   resize: vertical;
   min-height: 100px;
+  background: var(--dl-bg-panel);
+  color: var(--dl-text-primary);
 }
 
 .dl-text-panel__input:focus {
@@ -678,9 +1060,14 @@
   box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
 }
 
+.dl-text-panel__input::placeholder {
+  color: var(--dl-text-secondary);
+}
+
+/* [2025-01-31 00:00:00] Add To Design 按钮样式对齐 Custom Ink - 蓝色按钮 */
 .dl-text-panel__add-btn {
   padding: var(--dl-space-3) var(--dl-space-6);
-  background: var(--dl-color-primary);
+  background: var(--dl-color-primary); /* 蓝色按钮 */
   color: var(--dl-text-inverse);
   border: none;
   border-radius: var(--dl-radius-sm);
@@ -688,17 +1075,24 @@
   font-weight: var(--dl-font-weight-medium);
   cursor: pointer;
   transition: all var(--dl-transition-base);
+  width: 100%;
+  align-self: flex-start;
 }
 
 .dl-text-panel__add-btn:hover {
-  background: #0052A3;
+  background: #0052A3; /* 悬停时更深的蓝色 */
 }
 
-/* Edit Text Panel 样式 */
+.dl-text-panel__add-btn:active {
+  background: #003d7a;
+}
+
+/* [2025-01-31 00:00:00] 像素级对齐 Custom Ink designlab-addtext03.jpeg - Edit Text 面板 */
 .dl-edit-text-panel {
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-4);
+  width: 100%;
 }
 
 .dl-edit-text-panel__section {
@@ -707,10 +1101,12 @@
   gap: var(--dl-space-2);
   padding-bottom: var(--dl-space-4);
   border-bottom: 1px solid var(--dl-border-color);
+  width: 100%;
 }
 
 .dl-edit-text-panel__section:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .dl-edit-text-panel__label {
@@ -1033,7 +1429,7 @@
 
 .dl-art-panel__grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--dl-space-3);
 }
 
@@ -1050,12 +1446,14 @@
   cursor: pointer;
   transition: all var(--dl-transition-base);
   min-height: 120px;
+  position: relative;
 }
 
 .dl-art-panel__category-card:hover:not(:disabled) {
   background: var(--dl-bg-panel);
   border-color: var(--dl-color-primary);
-  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+  transform: translateY(-2px);
 }
 
 .dl-art-panel__category-card:disabled {
@@ -1101,6 +1499,13 @@
   margin-bottom: var(--dl-space-4);
   padding-bottom: var(--dl-space-4);
   border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-art-panel__title {
+  font-size: var(--dl-font-lg);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin: 0;
 }
 
 .dl-art-panel__back-btn {
@@ -1209,6 +1614,9 @@
 .dl-edit-art-panel {
   display: flex;
   flex-direction: column;
+  background: var(--dl-bg-panel);
+  border-radius: var(--dl-radius-md);
+  padding: var(--dl-space-6);
   gap: var(--dl-space-4);
 }
 
@@ -1222,6 +1630,7 @@
 
 .dl-edit-art-panel__section:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .dl-edit-art-panel__label {
@@ -1241,11 +1650,17 @@
   font-weight: var(--dl-font-weight-medium);
   cursor: pointer;
   transition: all var(--dl-transition-base);
+  text-align: left;
 }
 
-.dl-edit-art-panel__btn:hover {
+.dl-edit-art-panel__btn:hover:not(:disabled) {
   background: var(--dl-bg-primary);
   border-color: var(--dl-color-primary);
+}
+
+.dl-edit-art-panel__btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .dl-edit-art-panel__btn--primary {
@@ -1256,6 +1671,7 @@
 
 .dl-edit-art-panel__btn--primary:hover {
   background: #0052A3;
+  border-color: #0052A3;
 }
 
 .dl-edit-art-panel__btn-group {
@@ -1271,6 +1687,7 @@
   background: var(--dl-bg-primary);
   outline: none;
   -webkit-appearance: none;
+  cursor: pointer;
 }
 
 .dl-edit-art-panel__slider::-webkit-slider-thumb {
@@ -1281,6 +1698,12 @@
   border-radius: 50%;
   background: var(--dl-color-primary);
   cursor: pointer;
+  transition: all var(--dl-transition-base);
+}
+
+.dl-edit-art-panel__slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
 }
 
 .dl-edit-art-panel__slider::-moz-range-thumb {
@@ -1290,6 +1713,12 @@
   background: var(--dl-color-primary);
   cursor: pointer;
   border: none;
+  transition: all var(--dl-transition-base);
+}
+
+.dl-edit-art-panel__slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
 }
 
 /* Modal 样式 */
@@ -1307,12 +1736,14 @@
   padding: var(--dl-space-4);
 }
 
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化模态尺寸 */
 .dl-modal {
   background: var(--dl-bg-panel);
   border-radius: var(--dl-radius-md);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  max-width: 600px;
-  width: 100%;
+  max-width: 800px; /* 根据截图，模态较宽以容纳 8 列颜色 */
+  width: 90vw;
+  max-width: 900px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -1413,6 +1844,18 @@
   margin: 0 0 var(--dl-space-2) 0;
 }
 
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，Colors 标题和复选框应在同一行 */
+.dl-modal__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--dl-space-3);
+}
+
+.dl-modal__section-header .dl-modal__section-title {
+  margin: 0;
+}
+
 .dl-modal__product-name {
   font-size: var(--dl-font-base);
   color: var(--dl-text-secondary);
@@ -1449,20 +1892,42 @@
 }
 
 /* Colors Grid 样式 */
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg 更新颜色网格为 8 列布局 */
 .dl-colors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: var(--dl-space-3);
+  grid-template-columns: repeat(8, 1fr);
+  gap: var(--dl-space-2);
+  margin-top: var(--dl-space-3);
 }
 
+/* 响应式布局：在较小屏幕上减少列数 */
+@media (max-width: 1200px) {
+  .dl-colors-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dl-colors-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .dl-colors-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化颜色卡片样式 */
 .dl-color-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--dl-space-2);
-  padding: var(--dl-space-3);
+  gap: var(--dl-space-1);
+  padding: var(--dl-space-2);
   border: 2px solid var(--dl-border-color);
-  border-radius: var(--dl-radius-md);
+  border-radius: var(--dl-radius-sm);
   background: var(--dl-bg-panel);
   cursor: pointer;
   transition: all var(--dl-transition-base);
@@ -1490,11 +1955,12 @@
   cursor: not-allowed;
 }
 
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化色块尺寸 */
 .dl-color-item__swatch {
-  width: 60px;
-  height: 60px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--dl-radius-sm);
-  border: 2px solid var(--dl-border-color);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1502,16 +1968,17 @@
   overflow: hidden;
 }
 
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，checkmark 应在右上角 */
 .dl-color-item__check {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  top: 4px;
+  right: 4px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
+/* [2025-01-31 XX:XX:XX] 根据 designlab-colors01.jpeg，颜色名称可能不显示在每个卡片中 */
 .dl-color-item__info {
-  display: flex;
+  display: none; /* 根据截图，颜色名称不在卡片中显示，而是在下方显示 */
   flex-direction: column;
   gap: var(--dl-space-1);
   width: 100%;
@@ -1532,6 +1999,71 @@
   font-size: var(--dl-font-sm);
   color: #dc2626;
   font-weight: var(--dl-font-weight-medium);
+}
+
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 Sizes Available 样式 */
+.dl-modal__sizes-available {
+  margin-top: var(--dl-space-4);
+  padding-top: var(--dl-space-4);
+  border-top: 1px solid var(--dl-border-color);
+}
+
+.dl-modal__sizes-available-title {
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-modal__sizes-list {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  line-height: 1.6;
+}
+
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 Pick Another Color 样式 */
+.dl-modal__pick-another {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--dl-space-3);
+  margin-top: var(--dl-space-4);
+  padding-top: var(--dl-space-4);
+  border-top: 1px solid var(--dl-border-color);
+}
+
+.dl-modal__pick-another-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--dl-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-modal__pick-another-content {
+  flex: 1;
+}
+
+.dl-modal__pick-another-text {
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-1) 0;
+}
+
+.dl-modal__pick-another-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--dl-color-primary);
+  font-size: var(--dl-font-sm);
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color var(--dl-transition-base);
+}
+
+.dl-modal__pick-another-link:hover {
+  color: var(--dl-color-primary-hover);
 }
 
 /* ============================================
@@ -1747,7 +2279,6 @@
   object-fit: cover;
   display: block;
 }
-}
 
 .dl-sidebar__thumbnail-placeholder {
   font-size: var(--dl-font-sm);
@@ -1855,10 +2386,11 @@
   color: var(--dl-text-primary);
 }
 
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化底部 Product pill 的链接样式 */
 .dl-bottom-bar__product-links {
   display: flex;
   align-items: center;
-  gap: var(--dl-space-3);
+  gap: var(--dl-space-2);
   font-size: var(--dl-font-sm);
 }
 
@@ -1879,21 +2411,24 @@
   color: rgb(24, 46, 168); /* 悬停时深蓝色 */
 }
 
+/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化颜色显示样式 */
 .dl-bottom-bar__color {
   display: flex;
   align-items: center;
   gap: var(--dl-space-1);
+  margin-right: var(--dl-space-2);
 }
 
 .dl-bottom-bar__color input[type="checkbox"] {
   margin: 0;
+  cursor: default;
 }
 
 .dl-bottom-bar__color label {
   margin: 0;
   font-size: var(--dl-font-sm);
   color: var(--dl-text-primary);
-  cursor: pointer;
+  cursor: default;
 }
 
 .dl-bottom-bar__right {
@@ -1994,9 +2529,27 @@
   max-height: 90vh;
 }
 
+/* [2025-01-31 00:00:00] 根据 designlab-addnames01.jpeg 修复介绍页样式 */
 .dl-names-numbers-intro {
   text-align: center;
   padding: var(--dl-space-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--dl-space-4);
+}
+
+.dl-names-numbers-intro__image {
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: var(--dl-space-4);
+}
+
+.dl-names-numbers-intro__image img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--dl-radius-sm);
+  object-fit: cover;
 }
 
 .dl-names-numbers-intro__title {
@@ -2011,30 +2564,7 @@
   color: var(--dl-text-secondary);
   margin: 0 0 var(--dl-space-6) 0;
   line-height: 1.6;
-}
-
-.dl-names-numbers-intro__features {
-  display: flex;
-  flex-direction: column;
-  gap: var(--dl-space-3);
-  margin: 0 0 var(--dl-space-6) 0;
-  text-align: left;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.dl-names-numbers-intro__feature {
-  display: flex;
-  align-items: center;
-  gap: var(--dl-space-3);
-  font-size: var(--dl-font-base);
-  color: var(--dl-text-primary);
-}
-
-.dl-names-numbers-intro__feature svg {
-  color: var(--dl-color-primary);
-  flex-shrink: 0;
+  max-width: 500px;
 }
 
 .dl-names-numbers-tools {
@@ -2109,8 +2639,64 @@
   text-align: center;
 }
 
+/* [2025-01-31 00:00:00] 价格信息样式 - 根据 designlab-addnames02.jpeg 和 designlab-addnames03.jpeg */
+.dl-names-numbers-tools__pricing {
+  padding: var(--dl-space-3) 0;
+  border-top: 1px solid var(--dl-border-color);
+  margin-top: var(--dl-space-4);
+}
+
+.dl-names-numbers-tools__pricing-text {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+  font-weight: var(--dl-font-weight-bold);
+}
+
+.dl-names-numbers-tools__pricing-item {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: var(--dl-space-1) 0;
+}
+
+/* [2025-01-31 00:00:00] 说明文本样式 */
+.dl-names-numbers-tools__notes {
+  padding: var(--dl-space-3) 0;
+  border-top: 1px solid var(--dl-border-color);
+  margin-top: var(--dl-space-4);
+}
+
+.dl-names-numbers-tools__notes p {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: var(--dl-space-1) 0;
+  line-height: 1.5;
+}
+
 .dl-modal__btn--block {
   width: 100%;
+}
+
+/* [2025-01-31 00:00:00] 返回箭头按钮样式 */
+.dl-modal__btn--back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dl-space-2);
+  background: none;
+  border: none;
+  color: var(--dl-text-secondary);
+  cursor: pointer;
+  transition: color var(--dl-transition-base);
+}
+
+.dl-modal__btn--back:hover {
+  color: var(--dl-text-primary);
+}
+
+.dl-modal__btn--back svg {
+  width: 16px;
+  height: 16px;
 }
 
 .dl-names-numbers-list {
@@ -2119,11 +2705,18 @@
   gap: var(--dl-space-4);
 }
 
+/* [2025-01-31 00:00:00] 根据 designlab-addnames04.png 和 designlab-addnames05.png 修复 List 页样式 */
 .dl-names-numbers-list__title {
-  font-size: var(--dl-font-md);
+  font-size: var(--dl-font-lg);
   font-weight: var(--dl-font-weight-bold);
   color: var(--dl-text-primary);
-  margin: 0 0 var(--dl-space-3) 0;
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-names-numbers-list__subtitle {
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-secondary);
+  margin: 0 0 var(--dl-space-4) 0;
 }
 
 .dl-names-numbers-list__table-header {
@@ -2180,12 +2773,30 @@
 
 .dl-names-numbers-list__input::placeholder {
   color: var(--dl-text-secondary);
+  text-transform: uppercase;
+  font-size: var(--dl-font-sm);
+}
+
+.dl-names-numbers-list__size-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--dl-space-2) center;
+  padding-right: var(--dl-space-6);
+  cursor: pointer;
+}
+
+/* [2025-01-31 00:00:00] Add More 和 Manage List 链接样式 */
+.dl-names-numbers-list__actions {
+  display: flex;
+  gap: var(--dl-space-4);
+  margin: var(--dl-space-3) 0;
 }
 
 .dl-names-numbers-list__add-more {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--dl-space-2);
+  gap: var(--dl-space-1);
   padding: var(--dl-space-2) 0;
   background: none;
   border: none;
@@ -2193,32 +2804,192 @@
   font-size: var(--dl-font-base);
   cursor: pointer;
   transition: color var(--dl-transition-base);
+  text-decoration: none;
 }
 
 .dl-names-numbers-list__add-more:hover {
   color: #0052A3;
+  text-decoration: underline;
 }
 
-.dl-names-numbers-list__add-more svg {
-  width: 16px;
-  height: 16px;
+.dl-names-numbers-list__manage-list {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--dl-space-2) 0;
+  background: none;
+  border: none;
+  color: var(--dl-color-primary);
+  font-size: var(--dl-font-base);
+  cursor: pointer;
+  transition: color var(--dl-transition-base);
+  text-decoration: none;
+}
+
+.dl-names-numbers-list__manage-list:hover {
+  color: #0052A3;
+  text-decoration: underline;
+}
+
+/* [2025-01-31 00:00:00] 摘要框样式 */
+.dl-names-numbers-list__summary {
+  background: var(--dl-bg-panel);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  padding: var(--dl-space-3) var(--dl-space-4);
+  margin: var(--dl-space-4) 0;
 }
 
 .dl-names-numbers-list__totals {
   font-size: var(--dl-font-sm);
   color: var(--dl-text-primary);
-  padding: var(--dl-space-3) 0;
+  margin: 0 0 var(--dl-space-2) 0;
 }
 
-.dl-names-numbers-list__pricing {
-  padding: var(--dl-space-3) 0;
-  border-top: 1px solid var(--dl-border-color);
+.dl-names-numbers-list__sizes {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
+
+/* [2025-01-31 00:00:00] Helpful Hints 框样式 */
+.dl-names-numbers-list__hints {
+  background: #f5f5f5;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  padding: var(--dl-space-4);
+  margin: var(--dl-space-4) 0;
+}
+
+.dl-names-numbers-list__hints-title {
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-names-numbers-list__hints-list {
+  margin: 0;
+  padding-left: var(--dl-space-5);
+  list-style: disc;
+}
+
+.dl-names-numbers-list__hints-list li {
   font-size: var(--dl-font-sm);
   color: var(--dl-text-secondary);
+  margin: var(--dl-space-2) 0;
+  line-height: 1.5;
 }
 
-.dl-names-numbers-list__pricing p {
-  margin: var(--dl-space-1) 0;
+.dl-names-numbers-list__hints-list a {
+  color: var(--dl-color-primary);
+  text-decoration: none;
+}
+
+.dl-names-numbers-list__hints-list a:hover {
+  text-decoration: underline;
+}
+
+/* [2025-01-31 00:00:00] Additional Items 模态样式 - 根据 designlab-addnames06.png */
+.dl-names-numbers-quantities {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-4);
+}
+
+.dl-names-numbers-quantities__title {
+  font-size: var(--dl-font-lg);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-names-numbers-quantities__subtitle {
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-names-numbers-quantities__description {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: 0 0 var(--dl-space-4) 0;
+  line-height: 1.5;
+}
+
+.dl-names-numbers-quantities__section {
+  padding: var(--dl-space-3) 0;
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-names-numbers-quantities__section:last-of-type {
+  border-bottom: none;
+}
+
+.dl-names-numbers-quantities__label {
+  display: block;
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin-bottom: var(--dl-space-3);
+}
+
+.dl-names-numbers-quantities__size-row {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-3);
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-names-numbers-quantities__size-label {
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+  min-width: 60px;
+}
+
+.dl-names-numbers-quantities__count-input {
+  width: 80px;
+  padding: var(--dl-space-2) var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+  background: var(--dl-bg-panel);
+}
+
+.dl-names-numbers-quantities__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+  cursor: pointer;
+}
+
+.dl-names-numbers-quantities__checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.dl-names-numbers-quantities__summary {
+  background: var(--dl-bg-panel);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  padding: var(--dl-space-3) var(--dl-space-4);
+  margin-top: var(--dl-space-4);
+}
+
+.dl-names-numbers-quantities__totals {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-2) 0;
+}
+
+.dl-names-numbers-quantities__sizes {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  margin: 0;
 }
 
 /* 7.3 移动端 (320px - 767px) - 阶段 7 实现 */

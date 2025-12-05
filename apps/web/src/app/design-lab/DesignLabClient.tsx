@@ -30,7 +30,7 @@ import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
-import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl } from '@/lib/customink-images';
+import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import './design-lab.css';
 
 interface ProductInfo {
@@ -56,6 +56,27 @@ interface ProductColor {
 
 const DesignLabClient: React.FC = () => {
   const searchParams = useSearchParams();
+  
+  // [2025-01-31 00:30:00] 版本号显示 - 在 console 打印 SHA + UTC
+  useEffect(() => {
+    const getVersion = async () => {
+      try {
+        // 尝试从环境变量获取版本号
+        const gitSha = process.env.NEXT_PUBLIC_GIT_SHA || 'dev';
+        const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString();
+        const version = `${gitSha}+${buildTime}`;
+        
+        console.log('%cDesign Lab Version', 'color: #0066CC; font-size: 16px; font-weight: bold;');
+        console.log(`%cVersion: ${version}`, 'color: #333; font-size: 12px;');
+        console.log(`%cSHA: ${gitSha}`, 'color: #666; font-size: 11px;');
+        console.log(`%cBuild Time: ${buildTime}`, 'color: #666; font-size: 11px;');
+      } catch (error) {
+        console.warn('Failed to get version info:', error);
+      }
+    };
+    
+    getVersion();
+  }, []);
   
   // [2025-01-30 14:00:00] 状态管理
   const [activeTool, setActiveTool] = useState<string | null>(null);
@@ -83,6 +104,8 @@ const DesignLabClient: React.FC = () => {
   const [loadingProduct, setLoadingProduct] = useState(false);
   // [2025-01-30 20:00:00] Names & Numbers 状态
   const [showNamesNumbersModal, setShowNamesNumbersModal] = useState(false);
+  // [2025-01-30 23:30:00] Recent Uploads 状态
+  const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -123,6 +146,7 @@ const DesignLabClient: React.FC = () => {
 
     // [2025-01-30 19:30:00] 使用产品图片或占位图片
     // [2025-01-30 23:55:00] 优先使用 Custom Ink 的真实图片 URL
+    // [2025-01-30 23:55:00] 支持从 API 动态获取图片 URL
     const viewKey = view as 'front' | 'back' | 'sleeve'; // 类型断言，因为已经排除了 zoom
     let imageUrl: string;
     
@@ -130,8 +154,24 @@ const DesignLabClient: React.FC = () => {
       // 如果产品信息中有图片 URL，直接使用
       imageUrl = productInfo.baseImages[viewKey];
     } else if (productInfo?.color) {
-      // 如果只有颜色信息，生成 Custom Ink 图片 URL
+      // [2025-01-30 23:55:00] 尝试从 API 获取图片 URL（如果可用）
+      // 注意：这里是同步调用，所以先使用静态生成，后续可以优化为异步
       imageUrl = getDefaultProductImageUrl(productInfo.color, viewKey);
+      
+      // [2025-01-30 23:55:00] 异步尝试从 API 获取并更新（不阻塞当前加载）
+      if (typeof window !== 'undefined' && productInfo.color) {
+        getProductBaseImagesFromAPI(productInfo.color).then((apiImages) => {
+          if (apiImages && apiImages[viewKey] && apiImages[viewKey] !== imageUrl) {
+            // 如果 API 返回了不同的 URL，更新 productInfo 并重新加载
+            setProductInfo({
+              ...productInfo,
+              baseImages: apiImages
+            });
+          }
+        }).catch(() => {
+          // 忽略错误，继续使用静态生成的 URL
+        });
+      }
     } else {
       // 最后使用占位图片
       imageUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
@@ -337,12 +377,44 @@ const DesignLabClient: React.FC = () => {
         gallery: [],
       };
       setProductInfo(defaultProductInfo);
-      // [2025-01-30 23:55:00] 加载默认背景图片
-      if (fabricCanvasRef.current) {
+    }
+  }, [searchParams, loadProductInfo]);
+
+  // [2025-01-30 23:55:00] 当 productInfo 或画布初始化后，自动加载背景图片
+  // [2025-01-30 23:55:00] 修复：确保即使没有 productInfo，也显示默认图片
+  useEffect(() => {
+    if (fabricCanvasRef.current && currentView !== 'zoom') {
+      // 如果有 productInfo，使用它；否则使用默认白色图片
+      if (productInfo) {
+        console.log('[DesignLab] Loading background image for view:', currentView, 'productInfo:', productInfo);
         loadBackgroundImage(currentView);
+      } else {
+        // [2025-01-30 23:55:00] 没有产品信息时，使用默认白色图片
+        console.log('[DesignLab] No productInfo, loading default white product image');
+        const defaultColor = 'White';
+        const defaultBaseImages = getDefaultProductBaseImages(defaultColor);
+        const tempProductInfo: ProductInfo = {
+          productId: 'default',
+          productName: 'Gildan Softstyle Jersey T-shirt',
+          variantId: 'default',
+          color: defaultColor,
+          colors: ['White', 'Black', 'Navy', 'Maroon', 'Heather Grey', 'Heather Dark Grey'],
+          baseImages: defaultBaseImages,
+          gallery: [],
+        };
+        // 临时设置 productInfo 以加载图片
+        setProductInfo(tempProductInfo);
       }
     }
-  }, [searchParams, loadProductInfo, currentView]);
+  }, [fabricCanvasRef.current, currentView, loadBackgroundImage]);
+  
+  // [2025-01-30 23:55:00] 当 productInfo 更新后，重新加载背景图片
+  useEffect(() => {
+    if (fabricCanvasRef.current && productInfo && currentView !== 'zoom') {
+      console.log('[DesignLab] ProductInfo updated, reloading background image');
+      loadBackgroundImage(currentView);
+    }
+  }, [productInfo, currentView, loadBackgroundImage]);
 
   // [2025-01-30 14:00:00] 工具点击处理
   const handleToolClick = (tool: string) => {
@@ -504,6 +576,7 @@ const DesignLabClient: React.FC = () => {
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, currentView, viewCanvases, canvasToSnapshot, snapshotToCanvas, setCanvas, setView, loadBackgroundImage]);
 
   // [2025-01-30 19:30:00] 处理颜色选择
+  // [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化颜色选择后立即更新所有视图的图片
   const handleColorSelect = useCallback(async (colorName: string) => {
     if (!productInfo) return;
 
@@ -560,14 +633,17 @@ const DesignLabClient: React.FC = () => {
         // [2025-01-30 19:30:00] 重新加载产品信息（使用新颜色的变体）
         await loadProductInfo(targetVariantId);
       } else {
-        // [2025-01-30 19:30:00] 如果找不到变体，只更新颜色名称
+        // [2025-01-30 23:55:00] 修复：如果找不到变体，立即更新颜色和 baseImages
+        // [2025-01-31 12:00:00] 确保立即更新所有视图的图片
+        const newBaseImages = getDefaultProductBaseImages(colorName);
         setProductInfo({
           ...productInfo,
           color: colorName,
+          baseImages: newBaseImages, // [2025-01-30 23:55:00] 立即更新图片 URL，确保颜色切换时图片立即更新
         });
         
-        // [2025-01-30 19:30:00] 重新加载背景图片
-        if (fabricCanvasRef.current) {
+        // [2025-01-31 12:00:00] 立即更新当前视图的背景图片，useEffect 也会监听 productInfo 变化自动加载
+        if (fabricCanvasRef.current && currentView !== 'zoom') {
           loadBackgroundImage(currentView);
         }
       }
@@ -834,6 +910,15 @@ const DesignLabClient: React.FC = () => {
             setSelectedImage(fabricImage);
             setToolPanelType('edit-upload');
             
+            // [2025-01-30 23:30:00] 保存到 Recent Uploads
+            const uploadId = `upload_${Date.now()}`;
+            const thumbnail = imageUrl; // 使用原始图片 URL 作为缩略图
+            setRecentUploads(prev => {
+              // 限制最多保存 10 个最近上传
+              const newUploads = [{ id: uploadId, url: imageUrl, thumbnail }, ...prev];
+              return newUploads.slice(0, 10);
+            });
+            
             // [2025-01-30 17:30:00] 同步到 store
             const snapshot = canvasToSnapshot(canvas);
             setCanvas(snapshot, { pushHistory: true });
@@ -910,6 +995,74 @@ const DesignLabClient: React.FC = () => {
       setCanvas(snapshot, { pushHistory: true });
     } else {
       console.warn('[DesignLab] handleCanvasUpdate called but canvas is not initialized');
+    }
+  }, [canvasToSnapshot, setCanvas]);
+
+  // [2025-01-30 23:30:00] Recent Upload Click 处理
+  const handleRecentUploadClick = useCallback((upload: { id: string; url: string; thumbnail: string }) => {
+    if (!fabricCanvasRef.current) return;
+    
+    const imgElement = new Image();
+    imgElement.crossOrigin = 'anonymous';
+    
+    imgElement.onload = () => {
+      try {
+        const fabricImage = new fabric.Image(imgElement, {
+          selectable: true,
+          evented: true,
+          hasControls: true,
+          hasBorders: true,
+          lockRotation: false,
+          lockScalingX: false,
+          lockScalingY: false,
+          lockUniScaling: false,
+          centeredScaling: true,
+          centeredRotation: true,
+          originX: 'center',
+          originY: 'center',
+          left: CANVAS_WIDTH / 2,
+          top: CANVAS_HEIGHT / 2,
+          name: `image_${Date.now()}`
+        });
+        
+        const canvas = fabricCanvasRef.current;
+        if (canvas) {
+          canvas.add(fabricImage);
+          canvas.setActiveObject(fabricImage);
+          canvas.renderAll();
+          
+          setSelectedImage(fabricImage);
+          setToolPanelType('edit-upload');
+          
+          const snapshot = canvasToSnapshot(canvas);
+          setCanvas(snapshot, { pushHistory: true });
+        }
+      } catch (error) {
+        console.error('[DesignLab] Error creating image from recent upload:', error);
+        alert('Failed to load recent upload');
+      }
+    };
+    
+    imgElement.onerror = () => {
+      alert('Failed to load recent upload image');
+    };
+    
+    imgElement.src = upload.url;
+  }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
+
+  // [2025-01-30 23:30:00] Reset To Original 处理
+  const handleResetUpload = useCallback(() => {
+    // Reset 逻辑在 EditUploadPanel 中处理
+    console.log('[DesignLab] Reset upload requested');
+  }, []);
+
+  // [2025-01-30 23:30:00] Save Design 处理
+  const handleSaveDesign = useCallback(() => {
+    if (fabricCanvasRef.current) {
+      const snapshot = canvasToSnapshot(fabricCanvasRef.current);
+      setCanvas(snapshot, { pushHistory: true });
+      // TODO: 调用保存 API
+      console.log('[DesignLab] Design saved');
     }
   }, [canvasToSnapshot, setCanvas]);
 
@@ -1240,13 +1393,9 @@ const DesignLabClient: React.FC = () => {
             aria-label="Add names"
             aria-pressed={activeTool === 'names'}
           >
-            <span className="dl-rail__btn-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
+            {/* [2025-01-31 00:00:00] 根据截图，Add Names 按钮应该显示 "00" 图标 */}
+            <span className="dl-rail__btn-icon dl-rail__icon--names">
+              <span className="dl-rail__icon-text">00</span>
             </span>
             <span className="dl-rail__btn-label">Add Names</span>
           </button>
@@ -1261,6 +1410,9 @@ const DesignLabClient: React.FC = () => {
             <UploadPanel
               onFileSelect={handleFileUpload}
               onBrowseClick={() => {}}
+              recentUploads={recentUploads}
+              onRecentUploadClick={handleRecentUploadClick}
+              onClose={handleBackToHome}
             />
           )}
           {toolPanelType === 'text' && (
@@ -1274,6 +1426,9 @@ const DesignLabClient: React.FC = () => {
               selectedImage={selectedImage}
               canvas={fabricCanvasRef.current}
               onUpdate={handleCanvasUpdate}
+              onReset={handleResetUpload}
+              onSave={handleSaveDesign}
+              onClose={handleBackToHome}
             />
           )}
           {toolPanelType === 'edit-text' && (
@@ -1447,6 +1602,7 @@ const DesignLabClient: React.FC = () => {
             <div className="dl-bottom-bar__product-thumb">
               <div className="dl-bottom-bar__product-thumb-placeholder">T</div>
             </div>
+            {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化底部 Product pill 的颜色显示 */}
             <div className="dl-bottom-bar__product-details">
               <div className="dl-bottom-bar__product-name">
                 {productInfo?.productName || 'Gildan Softstyle Jersey T-shirt'}
@@ -1462,7 +1618,7 @@ const DesignLabClient: React.FC = () => {
                 <button
                   className="dl-bottom-bar__link"
                   onClick={() => setShowColorModal(true)}
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline', color: 'inherit' }}
+                  type="button"
                 >
                   Change Color
                 </button>
