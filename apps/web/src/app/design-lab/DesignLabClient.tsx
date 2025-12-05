@@ -127,7 +127,21 @@ const DesignLabClient: React.FC = () => {
   // [2025-01-30 18:10:00] 选中的艺术素材对象
   const [selectedArt, setSelectedArt] = useState<fabric.Image | null>(null);
   // [2025-01-30 19:30:00] 产品信息状态
-  const [productInfo, setProductInfo] = useState<ProductInfo | null>(null);
+  // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，在初始化时设置默认产品信息，确保画布始终有产品图片
+  // [2025-01-31 13:45:00] 修复：将类型从 ProductInfo | null 改为 ProductInfo，因为初始化时总是返回非 null 对象
+  const [productInfo, setProductInfo] = useState<ProductInfo>(() => {
+    // 在初始化时设置默认产品信息，确保画布始终有产品图片
+    const defaultColor = 'White';
+    return {
+      productId: 'default',
+      productName: 'Gildan Softstyle Jersey T-shirt',
+      variantId: 'default',
+      color: defaultColor,
+      colors: ['White', 'Black', 'Navy', 'Maroon', 'Heather Grey', 'Heather Dark Grey'],
+      baseImages: getDefaultProductBaseImages(defaultColor),
+      gallery: [],
+    };
+  });
   const [productColors, setProductColors] = useState<ProductColor[]>([]);
   const [showColorModal, setShowColorModal] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
@@ -137,6 +151,8 @@ const DesignLabClient: React.FC = () => {
   const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
   // [2025-01-31 01:00:00] 防止选择清除事件在添加对象后立即触发
   const isAddingObjectRef = useRef(false);
+  // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，添加画布初始化状态跟踪
+  const [canvasInitialized, setCanvasInitialized] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -163,14 +179,22 @@ const DesignLabClient: React.FC = () => {
   // [2025-01-30 19:30:00] 更新为使用实际产品图片
   // [2025-01-30 21:25:00] 移到 loadProductInfo 之前，避免初始化顺序问题
   // [2025-01-30 21:35:00] 支持 zoom 视图（虽然不会加载背景）
+  // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，优化背景图片加载逻辑：添加详细日志、错误处理、超时处理
   const loadBackgroundImage = useCallback((view: 'front' | 'back' | 'sleeve' | 'zoom') => {
-    if (view === 'zoom') return; // Zoom 视图不加载背景
-    if (!fabricCanvasRef.current) return;
+    if (view === 'zoom') {
+      console.log('[DesignLab] Zoom view, skipping background image load');
+      return; // Zoom 视图不加载背景
+    }
+    if (!fabricCanvasRef.current) {
+      console.warn('[DesignLab] Cannot load background image: canvas not initialized');
+      return;
+    }
 
     const canvas = fabricCanvasRef.current;
     
     // [2025-01-30 16:30:00] 移除旧背景
     if (backgroundImageRef.current) {
+      console.log('[DesignLab] Removing old background image');
       canvas.remove(backgroundImageRef.current);
       backgroundImageRef.current = null;
     }
@@ -184,92 +208,120 @@ const DesignLabClient: React.FC = () => {
     if (productInfo?.baseImages?.[viewKey]) {
       // 如果产品信息中有图片 URL，直接使用
       imageUrl = productInfo.baseImages[viewKey];
+      console.log('[DesignLab] Using baseImages URL for view:', viewKey, imageUrl);
     } else if (productInfo?.color) {
       // [2025-01-30 23:55:00] 尝试从 API 获取图片 URL（如果可用）
       // 注意：这里是同步调用，所以先使用静态生成，后续可以优化为异步
       imageUrl = getDefaultProductImageUrl(productInfo.color, viewKey);
+      console.log('[DesignLab] Using default product image URL for color:', productInfo.color, 'view:', viewKey, imageUrl);
       
       // [2025-01-30 23:55:00] 异步尝试从 API 获取并更新（不阻塞当前加载）
       if (typeof window !== 'undefined' && productInfo.color) {
         getProductBaseImagesFromAPI(productInfo.color).then((apiImages) => {
           if (apiImages && apiImages[viewKey] && apiImages[viewKey] !== imageUrl) {
             // 如果 API 返回了不同的 URL，更新 productInfo 并重新加载
+            console.log('[DesignLab] API returned different image URL, updating productInfo');
             setProductInfo({
               ...productInfo,
               baseImages: apiImages
             });
           }
-        }).catch(() => {
+        }).catch((error) => {
           // 忽略错误，继续使用静态生成的 URL
+          console.warn('[DesignLab] Failed to get image URL from API, using static URL:', error);
         });
       }
     } else {
       // 最后使用占位图片
       imageUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
+      console.warn('[DesignLab] No productInfo or color, using placeholder image:', imageUrl);
     }
+    
+    console.log('[DesignLab] Loading background image:', imageUrl);
     
     const img = new Image();
     img.crossOrigin = 'anonymous';
     
+    // [2025-01-31 13:00:00] 优化超时处理，添加错误提示和回退机制
     const timeoutId = setTimeout(() => {
-      console.error('[DesignLab] Image load timeout after 15 seconds');
+      console.error('[DesignLab] Image load timeout after 15 seconds for URL:', imageUrl);
       img.onload = null;
       img.onerror = null;
+      // 超时时使用占位图片作为回退
+      const fallbackUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
+      console.warn('[DesignLab] Using fallback placeholder image:', fallbackUrl);
+      img.src = fallbackUrl;
     }, 15000);
     
     img.onload = () => {
       clearTimeout(timeoutId);
+      console.log('[DesignLab] Background image loaded successfully:', imageUrl, 'Dimensions:', img.width, 'x', img.height);
       
-      const fabricImg = new fabric.Image(img, {
-        selectable: false,
-        evented: false,
-        excludeFromExport: true,
-        name: 'background',
-        originX: 'left',
-        originY: 'top'
-      });
-      
-      // [2025-01-30 16:30:00] 产品图片占据画布中间约 65% 宽、75% 高的区域
-      const targetWidth = CANVAS_WIDTH * 0.65;
-      const targetHeight = CANVAS_HEIGHT * 0.75;
-      
-      // [2025-01-30 16:30:00] 计算缩放比例，保持宽高比
-      const scaleX = targetWidth / fabricImg.width!;
-      const scaleY = targetHeight / fabricImg.height!;
-      const scale = Math.min(scaleX, scaleY);
-      fabricImg.scale(scale);
-      
-      // [2025-01-30 16:30:00] 居中图片
-      const scaledWidth = fabricImg.width! * scale;
-      const scaledHeight = fabricImg.height! * scale;
-      const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
-      const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
-      
-      fabricImg.set({ left, top });
-      fabricImg.setCoords();
-      
-      canvas.add(fabricImg);
-      
-      // [2025-01-30 16:30:00] 移动到最底层
       try {
-        canvas.sendToBack(fabricImg);
-      } catch (e) {
-        const objects = canvas.getObjects();
-        const index = objects.indexOf(fabricImg);
-        if (index > 0) {
-          objects.splice(index, 1);
-          objects.unshift(fabricImg);
-          canvas.renderAll();
+        const fabricImg = new fabric.Image(img, {
+          selectable: false,
+          evented: false,
+          excludeFromExport: true,
+          name: 'background',
+          originX: 'left',
+          originY: 'top'
+        });
+        
+        // [2025-01-30 16:30:00] 产品图片占据画布中间约 65% 宽、75% 高的区域
+        const targetWidth = CANVAS_WIDTH * 0.65;
+        const targetHeight = CANVAS_HEIGHT * 0.75;
+        
+        // [2025-01-30 16:30:00] 计算缩放比例，保持宽高比
+        const scaleX = targetWidth / fabricImg.width!;
+        const scaleY = targetHeight / fabricImg.height!;
+        const scale = Math.min(scaleX, scaleY);
+        fabricImg.scale(scale);
+        
+        // [2025-01-30 16:30:00] 居中图片
+        const scaledWidth = fabricImg.width! * scale;
+        const scaledHeight = fabricImg.height! * scale;
+        const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
+        const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
+        
+        fabricImg.set({ left, top });
+        fabricImg.setCoords();
+        
+        canvas.add(fabricImg);
+        
+        // [2025-01-30 16:30:00] 移动到最底层
+        try {
+          canvas.sendToBack(fabricImg);
+        } catch (e) {
+          const objects = canvas.getObjects();
+          const index = objects.indexOf(fabricImg);
+          if (index > 0) {
+            objects.splice(index, 1);
+            objects.unshift(fabricImg);
+            canvas.renderAll();
+          }
         }
+        
+        backgroundImageRef.current = fabricImg;
+        canvas.renderAll();
+        console.log('[DesignLab] Background image added to canvas successfully');
+      } catch (error) {
+        console.error('[DesignLab] Error creating fabric image:', error);
+        // [2025-01-31 13:00:00] 错误时尝试使用占位图片
+        const fallbackUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
+        console.warn('[DesignLab] Using fallback placeholder image after error:', fallbackUrl);
+        img.src = fallbackUrl;
       }
-      
-      backgroundImageRef.current = fabricImg;
-      canvas.renderAll();
     };
     
-    img.onerror = () => {
+    img.onerror = (error) => {
       clearTimeout(timeoutId);
-      console.error('[DesignLab] Failed to load background image:', imageUrl);
+      console.error('[DesignLab] Failed to load background image:', imageUrl, error);
+      // [2025-01-31 13:00:00] 图片加载失败时，尝试使用占位图片作为回退
+      if (imageUrl.includes('mms-images-prod.imgix.net')) {
+        const fallbackUrl = `https://picsum.photos/seed/tshirt-${viewKey}/900/700`;
+        console.warn('[DesignLab] Using fallback placeholder image:', fallbackUrl);
+        img.src = fallbackUrl;
+      }
     };
     
     img.src = imageUrl;
@@ -411,33 +463,8 @@ const DesignLabClient: React.FC = () => {
     }
   }, [searchParams, loadProductInfo]);
 
-  // [2025-01-30 23:55:00] 当 productInfo 或画布初始化后，自动加载背景图片
-  // [2025-01-30 23:55:00] 修复：确保即使没有 productInfo，也显示默认图片
-  useEffect(() => {
-    if (fabricCanvasRef.current && currentView !== 'zoom') {
-      // 如果有 productInfo，使用它；否则使用默认白色图片
-      if (productInfo) {
-        console.log('[DesignLab] Loading background image for view:', currentView, 'productInfo:', productInfo);
-        loadBackgroundImage(currentView);
-      } else {
-        // [2025-01-30 23:55:00] 没有产品信息时，使用默认白色图片
-        console.log('[DesignLab] No productInfo, loading default white product image');
-        const defaultColor = 'White';
-        const defaultBaseImages = getDefaultProductBaseImages(defaultColor);
-        const tempProductInfo: ProductInfo = {
-          productId: 'default',
-          productName: 'Gildan Softstyle Jersey T-shirt',
-          variantId: 'default',
-          color: defaultColor,
-          colors: ['White', 'Black', 'Navy', 'Maroon', 'Heather Grey', 'Heather Dark Grey'],
-          baseImages: defaultBaseImages,
-          gallery: [],
-        };
-        // 临时设置 productInfo 以加载图片
-        setProductInfo(tempProductInfo);
-      }
-    }
-  }, [fabricCanvasRef.current, currentView, loadBackgroundImage]);
+  // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，移除依赖 fabricCanvasRef.current 的 useEffect
+  // 因为 ref 不能作为依赖项，会导致问题。改为使用 canvasInitialized 状态标志
   
   // [2025-01-30 23:55:00] 当 productInfo 更新后，重新加载背景图片
   useEffect(() => {
@@ -1292,7 +1319,25 @@ const DesignLabClient: React.FC = () => {
       snapshotToCanvas(currentViewCanvas, fabricCanvas);
     }
 
-      console.log('[DesignLab] Fabric.js canvas initialized');
+    // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，确保画布初始化后立即设置默认产品信息（如果没有）
+    if (!productInfo) {
+      console.log('[DesignLab] Canvas initialized but no productInfo, setting default');
+      const defaultColor = 'White';
+      const defaultProductInfo: ProductInfo = {
+        productId: 'default',
+        productName: 'Gildan Softstyle Jersey T-shirt',
+        variantId: 'default',
+        color: defaultColor,
+        colors: ['White', 'Black', 'Navy', 'Maroon', 'Heather Grey', 'Heather Dark Grey'],
+        baseImages: getDefaultProductBaseImages(defaultColor),
+        gallery: [],
+      };
+      setProductInfo(defaultProductInfo);
+    }
+
+    // [2025-01-31 13:00:00] 标记画布已初始化
+    setCanvasInitialized(true);
+    console.log('[DesignLab] Fabric.js canvas initialized');
       
       // [2025-01-30 16:30:00] 清理函数
       return () => {
@@ -1310,6 +1355,8 @@ const DesignLabClient: React.FC = () => {
             console.error('[DesignLab] Error cleaning up canvas:', error);
           }
           fabricCanvasRef.current = null;
+          // [2025-01-31 13:00:00] 重置画布初始化状态
+          setCanvasInitialized(false);
         }
       };
     } catch (error) {
@@ -1319,13 +1366,14 @@ const DesignLabClient: React.FC = () => {
     }
   }, [canvasToSnapshot, snapshotToCanvas, setCanvas, getCurrentViewCanvas]);
 
-  // [2025-01-30 16:30:00] 初始化时加载背景图片
-  // [2025-01-30 23:55:00] 修复：当 productInfo 或 fabricCanvasRef 变化时也加载背景图片
+  // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，使用 canvasInitialized 状态标志确保在画布和产品信息都准备好后加载背景图片
+  // [2025-01-31 13:45:00] 修复：productInfo 现在总是非 null，移除多余的 null 检查
   useEffect(() => {
-    if (fabricCanvasRef.current && currentView !== 'zoom' && productInfo) {
+    if (canvasInitialized && currentView !== 'zoom') {
+      console.log('[DesignLab] Canvas and productInfo ready, loading background image for view:', currentView);
       loadBackgroundImage(currentView);
     }
-  }, [currentView, productInfo, loadBackgroundImage]);
+  }, [canvasInitialized, productInfo, currentView, loadBackgroundImage]);
 
   // [2025-01-30 16:30:00] 视图切换时更新画布
   useEffect(() => {
@@ -1736,11 +1784,14 @@ const DesignLabClient: React.FC = () => {
       />
 
       {/* [2025-01-30 20:00:00] Names & Numbers Modal */}
-      <NamesNumbersModal
-        isOpen={showNamesNumbersModal}
-        onClose={() => setShowNamesNumbersModal(false)}
-        onAddToCanvas={handleAddNamesNumbers}
-      />
+      {/* [2025-01-31 13:50:00] 修复 React Hooks 错误：在父组件中使用条件渲染，确保组件始终挂载且 hooks 数量一致 */}
+      {showNamesNumbersModal && (
+        <NamesNumbersModal
+          isOpen={showNamesNumbersModal}
+          onClose={() => setShowNamesNumbersModal(false)}
+          onAddToCanvas={handleAddNamesNumbers}
+        />
+      )}
     </div>
   );
 };

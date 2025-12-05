@@ -56,8 +56,11 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
     { name: '', number: '', size: '' },
     { name: '', number: '', size: '' },
   ]);
-
-  if (!isOpen) return null;
+  // [2025-01-31 13:30:00] 修复 React Hooks 错误：将所有 hooks 移到早期返回之前
+  // [2025-01-31 00:00:00] Additional Items 状态
+  const [showAdditionalItems, setShowAdditionalItems] = useState(false);
+  const [additionalItemsCount, setAdditionalItemsCount] = useState<Record<string, number>>({});
+  const [hasAdditionalItems, setHasAdditionalItems] = useState(false);
 
   // [2025-01-30 21:50:00] 修复：Add To Design 按钮应该添加示例文本到画布，然后进入列表页面
   const handleAddExample = () => {
@@ -87,11 +90,6 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
     newItems[index] = { ...newItems[index], [field]: value };
     setItems(newItems);
   };
-
-  // [2025-01-31 00:00:00] Additional Items 状态
-  const [showAdditionalItems, setShowAdditionalItems] = useState(false);
-  const [additionalItemsCount, setAdditionalItemsCount] = useState<Record<string, number>>({});
-  const [hasAdditionalItems, setHasAdditionalItems] = useState(false);
 
   const handleDone = () => {
     // [2025-01-30 20:00:00] 过滤空项并添加到画布
@@ -147,6 +145,12 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
   const totalNames = items.filter((item) => item.name.trim()).length;
   const totalNumbers = items.filter((item) => item.number.trim()).length;
   const totalItems = items.filter((item) => item.name.trim() || item.number.trim()).length;
+
+  // [2025-01-31 13:50:00] 修复 React Hooks 错误：移除早期返回，因为父组件已经使用条件渲染
+  // 这样可以确保 hooks 在每次渲染时都以相同的顺序和数量被调用
+  if (!isOpen) {
+    return null;
+  }
 
   return (
     <div className="dl-modal-overlay" onClick={onClose}>
