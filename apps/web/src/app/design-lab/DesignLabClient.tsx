@@ -61,15 +61,31 @@ const DesignLabClient: React.FC = () => {
   useEffect(() => {
     const getVersion = async () => {
       try {
-        // 尝试从环境变量获取版本号
-        const gitSha = process.env.NEXT_PUBLIC_GIT_SHA || 'dev';
-        const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || new Date().toISOString();
-        const version = `${gitSha}+${buildTime}`;
+        // 获取当前 Git SHA（从 API）
+        let gitSha = 'dev';
+        let utcTime = new Date().toISOString();
         
+        try {
+          // 从 API 获取版本信息
+          const response = await fetch('/api/version', { cache: 'no-store' });
+          if (response.ok) {
+            const data = await response.json();
+            gitSha = data.sha || 'dev';
+            utcTime = data.utcTime || utcTime;
+          }
+        } catch (error) {
+          console.warn('Failed to fetch version from API:', error);
+        }
+        
+        const version = `${gitSha}+${utcTime}`;
+        
+        console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
         console.log('%cDesign Lab Version', 'color: #0066CC; font-size: 16px; font-weight: bold;');
+        console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
         console.log(`%cVersion: ${version}`, 'color: #333; font-size: 12px;');
         console.log(`%cSHA: ${gitSha}`, 'color: #666; font-size: 11px;');
-        console.log(`%cBuild Time: ${buildTime}`, 'color: #666; font-size: 11px;');
+        console.log(`%cUTC Time: ${utcTime}`, 'color: #666; font-size: 11px;');
+        console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
       } catch (error) {
         console.warn('Failed to get version info:', error);
       }
