@@ -607,15 +607,27 @@ export const ordersApi = {
     }),
   getTracking: (id: string) =>
     api<{
+      orderNumber: string;
+      status: string;
       trackingNumber?: string | null;
       carrier?: string | null;
-      status: string;
+      estimatedDelivery?: string | null;
+      shipments: Array<{
+        id: string;
+        trackingNumber?: string | null;
+        carrier?: string | null;
+        status: string;
+        labelUrl?: string | null;
+        createdAt: string;
+        updatedAt: string;
+      }>;
       events: Array<{
         date: string;
-        location?: string;
+        location?: string | null;
         status: string;
-        description?: string;
+        description: string;
       }>;
+      lastUpdated: string;
     }>(`/orders/${id}/tracking`),
 };
 
