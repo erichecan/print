@@ -21,6 +21,9 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  // [2025-12-06 15:00:00] Real-time tracking information
+  const [trackingInfo, setTrackingInfo] = useState<any>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -41,6 +44,34 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
   useEffect(() => {
     loadOrder();
   }, [loadOrder]);
+
+  // [2025-12-06 15:00:00] Load and poll tracking information
+  const loadTrackingInfo = useCallback(async () => {
+    if (!order) return;
+    setTrackingLoading(true);
+    try {
+      const data = await ordersApi.getTracking(order.id);
+      setTrackingInfo(data);
+    } catch (err) {
+      console.error('[2025-12-06 15:00:00] 加载跟踪信息失败', err);
+    } finally {
+      setTrackingLoading(false);
+    }
+  }, [order]);
+
+  useEffect(() => {
+    if (order) {
+      loadTrackingInfo();
+      // [2025-12-06 15:00:00] Poll tracking info every 30 seconds if order is shipped
+      if (order.status === 'SHIPPED' || order.status === 'PROCESSING') {
+        const interval = setInterval(() => {
+          loadTrackingInfo();
+        }, 30000); // Poll every 30 seconds
+
+        return () => clearInterval(interval);
+      }
+    }
+  }, [order, loadTrackingInfo]);
 
   const handleInvoiceDownload = async () => {
     if (!order) return;
@@ -314,39 +345,90 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
             currentStatus={order.status}
           />
 
-          {primaryShipment && (
+          {/* [2025-12-06 15:00:00] Enhanced tracking information with real-time updates */}
+          {(trackingInfo || primaryShipment) && (
             <div className="tracking-card">
-              <h3>Tracking</h3>
-              <p>
-                <strong>Status:</strong> {primaryShipment.status}
-              </p>
-              {primaryShipment.carrier && (
-                <p>
-                  <strong>Carrier:</strong> {primaryShipment.carrier}
-                </p>
-              )}
-              {primaryShipment.trackingNumber && (
-                <div className="tracking-number-section">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3>订单跟踪</h3>
+                {trackingLoading && (
+                  <span style={{ fontSize: '0.85em', color: '#64748b' }}>更新中...</span>
+                )}
+                {trackingInfo?.lastUpdated && (
+                  <span style={{ fontSize: '0.85em', color: '#64748b' }}>
+                    最后更新: {new Date(trackingInfo.lastUpdated).toLocaleString('zh-CN')}
+                  </span>
+                )}
+              </div>
+
+              {trackingInfo?.trackingNumber && (
+                <div className="tracking-number-section" style={{ marginBottom: '16px' }}>
                   <p>
-                    <strong>Tracking #:</strong> {primaryShipment.trackingNumber}
+                    <strong>跟踪号:</strong> {trackingInfo.trackingNumber}
                   </p>
                   <button
                     type="button"
                     className="btn-copy-tracking"
                     onClick={async () => {
                       try {
-                        await navigator.clipboard.writeText(primaryShipment.trackingNumber || '');
-                        alert('Tracking number copied to clipboard');
+                        await navigator.clipboard.writeText(trackingInfo.trackingNumber || '');
+                        alert('跟踪号已复制到剪贴板');
                       } catch (err) {
-                        console.error('[2025-01-27 12:15:00] Failed to copy tracking number:', err);
+                        console.error('[2025-12-06 15:00:00] 复制跟踪号失败', err);
                       }
                     }}
                   >
-                    Copy
+                    复制
                   </button>
                 </div>
               )}
-              {primaryShipment.labelUrl && (
+
+              {trackingInfo?.carrier && (
+                <p style={{ marginBottom: '8px' }}>
+                  <strong>承运商:</strong> {trackingInfo.carrier}
+                </p>
+              )}
+
+              {trackingInfo?.estimatedDelivery && (
+                <p style={{ marginBottom: '16px' }}>
+                  <strong>预计送达:</strong> {new Date(trackingInfo.estimatedDelivery).toLocaleDateString('zh-CN')}
+                </p>
+              )}
+
+              {/* [2025-12-06 15:00:00] Tracking events timeline */}
+              {trackingInfo?.events && trackingInfo.events.length > 0 && (
+                <div style={{ marginTop: '16px' }}>
+                  <h4 style={{ marginBottom: '12px', fontSize: '0.95em', fontWeight: 600 }}>跟踪事件</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {trackingInfo.events.map((event: any, index: number) => (
+                      <div
+                        key={index}
+                        style={{
+                          padding: '12px',
+                          backgroundColor: index === 0 ? '#f0f9ff' : '#f8fafc',
+                          borderRadius: '6px',
+                          borderLeft: index === 0 ? '3px solid #2563eb' : '3px solid #e2e8f0',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <p style={{ margin: '0 0 4px 0', fontWeight: index === 0 ? 600 : 400 }}>
+                              {event.description}
+                            </p>
+                            {event.location && (
+                              <p style={{ margin: 0, fontSize: '0.85em', color: '#64748b' }}>{event.location}</p>
+                            )}
+                          </div>
+                          <span style={{ fontSize: '0.85em', color: '#64748b', whiteSpace: 'nowrap', marginLeft: '12px' }}>
+                            {new Date(event.date).toLocaleString('zh-CN')}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {primaryShipment?.labelUrl && (
                 <Link className="btn btn--outline" href={primaryShipment.labelUrl} target="_blank">
                   Download label
                 </Link>

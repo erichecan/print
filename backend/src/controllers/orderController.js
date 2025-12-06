@@ -757,8 +757,10 @@ exports.canCancelOrder = async (req, res) => {
 /**
  * GET /api/orders/:id/tracking - Get order tracking information
  * [2025-01-27 14:35:00] Get order tracking details
+ * [2025-12-06 15:00:00] Enhanced with unified error handling and tracking events
  */
-exports.getOrderTracking = async (req, res) => {
+exports.getOrderTracking = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
     const { id } = req.params;
     const userId = req.user?.id;
@@ -778,6 +780,7 @@ exports.getOrderTracking = async (req, res) => {
         carrier: true,
         estimatedDelivery: true,
         userId: true,
+        email: true,
         shipments: {
           select: {
             id: true,
@@ -793,25 +796,95 @@ exports.getOrderTracking = async (req, res) => {
     });
 
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return next(new NotFoundError('订单不存在'));
     }
 
     // Verify ownership if order has userId
     if (order.userId && userId && order.userId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
+      return next(new ForbiddenError('无权访问此订单的跟踪信息'));
     }
 
     // If order has userId but no authenticated user, require authentication
     if (order.userId && !userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return next(new UnauthorizedError('需要身份验证'));
     }
 
-    // Build tracking response
+    // [2025-12-06 15:00:00] Build tracking response with events
+    const primaryShipment = order.shipments[0];
+    const trackingEvents = [];
+
+    // Add order status events
+    trackingEvents.push({
+      date: order.createdAt,
+      status: 'ORDER_PLACED',
+      description: '订单已创建',
+      location: null,
+    });
+
+    if (order.status === 'PROCESSING') {
+      trackingEvents.push({
+        date: order.updatedAt || order.createdAt,
+        status: 'PROCESSING',
+        description: '订单处理中',
+        location: null,
+      });
+    }
+
+    if (primaryShipment) {
+      if (primaryShipment.status === 'LABEL_CREATED') {
+        trackingEvents.push({
+          date: primaryShipment.createdAt,
+          status: 'LABEL_CREATED',
+          description: '发货标签已创建',
+          location: null,
+        });
+      }
+
+      if (primaryShipment.status === 'IN_TRANSIT') {
+        trackingEvents.push({
+          date: primaryShipment.updatedAt || primaryShipment.createdAt,
+          status: 'IN_TRANSIT',
+          description: '包裹运输中',
+          location: null,
+        });
+      }
+
+      if (primaryShipment.status === 'DELIVERED') {
+        trackingEvents.push({
+          date: primaryShipment.updatedAt || primaryShipment.createdAt,
+          status: 'DELIVERED',
+          description: '包裹已送达',
+          location: null,
+        });
+      }
+
+      if (primaryShipment.status === 'EXCEPTION') {
+        trackingEvents.push({
+          date: primaryShipment.updatedAt || primaryShipment.createdAt,
+          status: 'EXCEPTION',
+          description: '运输异常',
+          location: null,
+        });
+      }
+    }
+
+    if (order.status === 'DELIVERED') {
+      trackingEvents.push({
+        date: order.updatedAt || order.createdAt,
+        status: 'DELIVERED',
+        description: '订单已完成',
+        location: null,
+      });
+    }
+
+    // Sort events by date (newest first)
+    trackingEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
     const trackingInfo = {
       orderNumber: order.orderNumber,
       status: order.status.toLowerCase(),
-      trackingNumber: order.trackingNumber || order.shipments[0]?.trackingNumber || null,
-      carrier: order.carrier || order.shipments[0]?.carrier || null,
+      trackingNumber: order.trackingNumber || primaryShipment?.trackingNumber || null,
+      carrier: order.carrier || primaryShipment?.carrier || null,
       estimatedDelivery: order.estimatedDelivery || null,
       shipments: order.shipments.map((shipment) => ({
         id: shipment.id,
@@ -822,16 +895,28 @@ exports.getOrderTracking = async (req, res) => {
         createdAt: shipment.createdAt,
         updatedAt: shipment.updatedAt,
       })),
+      events: trackingEvents,
+      lastUpdated: primaryShipment?.updatedAt || order.updatedAt,
     };
+
+    logger.debug('Order tracking information retrieved', {
+      timestamp,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      userId: userId || null,
+      hasTracking: !!trackingInfo.trackingNumber,
+      eventsCount: trackingEvents.length,
+    });
 
     res.json(trackingInfo);
   } catch (error) {
-    logger.error('Error fetching order tracking:', {
-      error: error.message,
-      stack: error.stack,
+    logger.error('Error fetching order tracking', {
+      timestamp,
       orderId: req.params.id,
       userId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
     });
-    res.status(500).json({ error: 'Failed to fetch order tracking information' });
+    next(new InternalServerError('获取订单跟踪信息失败，请稍后重试'));
   }
 };

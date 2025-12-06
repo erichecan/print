@@ -279,6 +279,7 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     // Update order and create/update shipment if tracking info provided
+    let shipmentUpdated = false;
     const order = await prisma.$transaction(async (tx) => {
       const updatedOrder = await tx.order.update({
       where: { id },
@@ -302,6 +303,11 @@ exports.updateOrderStatus = async (req, res) => {
         });
 
         if (existingShipment) {
+          // [2025-12-06 15:00:00] Check if tracking info changed
+          const trackingChanged =
+            existingShipment.trackingNumber !== trackingNumber || existingShipment.carrier !== carrier;
+          shipmentUpdated = trackingChanged;
+
           await tx.shipment.update({
             where: { id: existingShipment.id },
             data: {
@@ -311,6 +317,7 @@ exports.updateOrderStatus = async (req, res) => {
             },
           });
         } else {
+          shipmentUpdated = true;
           await tx.shipment.create({
             data: {
               orderId: id,
@@ -324,6 +331,47 @@ exports.updateOrderStatus = async (req, res) => {
 
       return updatedOrder;
     });
+
+    // [2025-12-06 15:00:00] Send tracking update notification if tracking info was added or updated
+    if (shipmentUpdated && trackingNumber && carrier) {
+      try {
+        // Fetch full order details for email
+        const orderWithDetails = await prisma.order.findUnique({
+          where: { id },
+          include: {
+            items: {
+              include: {
+                variant: {
+                  include: {
+                    product: true,
+                  },
+                },
+              },
+            },
+            shippingAddress: true,
+          },
+        });
+
+        if (orderWithDetails) {
+          const { sendShippingNotification } = require('../services/emailService');
+          await sendShippingNotification(orderWithDetails, trackingNumber, carrier);
+          logger.info('Tracking update notification email sent', {
+            orderNumber: order.orderNumber,
+            orderId: order.id,
+            email: orderWithDetails.email,
+            trackingNumber,
+            carrier,
+          });
+        }
+      } catch (emailError) {
+        logger.warn('Failed to send tracking update notification email', {
+          orderNumber: order.orderNumber,
+          orderId: order.id,
+          error: emailError.message,
+        });
+        // Don't throw - email failure shouldn't fail status update
+      }
+    }
 
     // [2025-01-28 08:30:00] Audit Logs 功能已移除
 
