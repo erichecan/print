@@ -1143,351 +1143,294 @@ export default function OfflineOrdersIntakePage() {
     );
   };
 
-  // [2025-11-28 14:21:40] 渲染第二步：按产品类型分组的印刷位置 - 使用 Tailwind
+  // [2025-12-06] PRD v2.0: 渲染第二步 - 客户信息和Invoice
   const renderStep2 = () => {
+    // 计算税（13%安省税率，仅当选择Invoice时）
+    const taxRate = 0.13;
+    const taxBase = calculateSubtotal - calculateDiscountAmount;
+    const taxAmount = formState.requiresInvoice ? taxBase * taxRate : 0;
+    const totalWithTax = calculateSubtotal - calculateDiscountAmount + taxAmount;
+
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading')}</h2>
-        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro')}</p>
-        {formState.productItems.length === 0 ? (
-          <div className="p-8 text-center text-gray-600 bg-gray-50 rounded-lg">
-            <p>{t('pleaseAddProductsFirst')}</p>
+        <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading') || '客户信息'}</h2>
+        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息'}</p>
+
+        {/* 客户基本信息 */}
+        <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+          <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo') || '客户基本信息'}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'} *</span>
+              <input
+                type="text"
+                name="contactName"
+                required
+                value={formState.contactName}
+                onChange={handleInputChange}
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                }`}
+              />
+              {fieldErrors.contactName && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.contactName}</p>
+              )}
+            </label>
+            
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('email') || '邮箱'} *</span>
+              <input
+                type="email"
+                name="email"
+                required
+                value={formState.email}
+                onChange={handleInputChange}
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                }`}
+              />
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
+            </label>
+            
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('phone') || '电话'}</span>
+              <input
+                type="tel"
+                name="phone"
+                value={formState.phone}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </label>
+            
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('company') || '公司'}</span>
+              <input
+                type="text"
+                name="company"
+                value={formState.company || ''}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </label>
+            
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('dueDate') || '交付日期'}</span>
+              <input
+                type="date"
+                name="dueDate"
+                value={formState.dueDate}
+                onChange={handleInputChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              />
+            </label>
           </div>
-        ) : (
-          <div className="space-y-6 mt-6">
-            {formState.productItems.map((item) => {
-              const config =
-                formState.productPrintConfigs[item.id] || {
-                  sideCount: 1,
-                  positions: [{ position: '', width: '', height: '', notes: '' }],
-                };
-              const positionsToRender =
-                config.positions && config.positions.length > 0
-                  ? config.positions
-                  : [{ position: '', width: '', height: '', notes: '' }];
-              const itemQuantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
+        </section>
 
-              return (
-                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white">
-                  <div className="mb-4 pb-3 border-b border-gray-200 flex justify-between items-center">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 m-0">
-                        {item.categoryName}
-                      </h3>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {t('totalQuantity')}：{itemQuantity} {t('items')}
-                      </p>
-                    </div>
-                    <label className="flex items-center gap-3" data-error-key={`product-${item.id}-positions`}>
-                      <span className="text-sm font-medium text-gray-700">
-                        {t('howManyPositions')} *
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={10}
-                        value={config.sideCount}
-                        onChange={(e) => {
-                          const count = Math.min(
-                            10,
-                            Math.max(1, parseInt(e.target.value, 10) || 1),
-                          );
-                          // [2025-11-28 15:05:00] 清除该字段的错误
-                          const errorKey = `product-${item.id}-positions`;
-                          setFieldErrors((prev) => {
-                            const next = { ...prev };
-                            delete next[errorKey];
-                            return next;
-                          });
-                          setFormState((prev) => {
-                            const prevConfig =
-                              prev.productPrintConfigs[item.id] ||
-                              ({
-                                sideCount: 1,
-                                positions: [
-                                  { position: '', width: '', height: '', notes: '' },
-                                ],
-                              } as ProductPrintConfig);
-                            const currentPositions = prevConfig.positions || [];
-                            const newPositions: PrintPosition[] = [];
-                            for (let i = 0; i < count; i += 1) {
-                              if (currentPositions[i]) {
-                                newPositions.push(currentPositions[i]);
-                              } else {
-                                newPositions.push({
-                                  position: '',
-                                  width: '',
-                                  height: '',
-                                  notes: '',
-                                });
-                              }
-                            }
-                            return {
-                              ...prev,
-                              productPrintConfigs: {
-                                ...(prev.productPrintConfigs || {}),
-                                [item.id]: {
-                                  sideCount: count,
-                                  positions: newPositions,
-                                },
-                              },
-                            };
-                          });
-                        }}
-                        className={`w-24 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 transition-all ${
-                          fieldErrors[`product-${item.id}-positions`]
-                            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                            : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                        }`}
-                      />
-                      <span className="text-xs text-gray-600">{t('max10Positions')}</span>
-                      {/* [2025-11-28 15:05:00] 在字段附近显示错误信息 */}
-                      {fieldErrors[`product-${item.id}-positions`] && (
-                        <span className="text-sm text-red-600 whitespace-nowrap">
-                          {fieldErrors[`product-${item.id}-positions`]}
-                        </span>
-                      )}
-                    </label>
+        {/* Invoice功能 */}
+        <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+          <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
+            <input
+              type="checkbox"
+              name="requiresInvoice"
+              checked={formState.requiresInvoice}
+              onChange={(e) => setField('requiresInvoice', e.target.checked)}
+              className="w-4.5 h-4.5 cursor-pointer"
+            />
+            <span className="text-sm font-medium text-gray-700">{t('requireInvoice') || '需要Invoice'}</span>
+          </label>
+
+          {formState.requiresInvoice && (
+            <div className="mt-4 space-y-4">
+              {/* Invoice信息表单 */}
+              <div className="p-5 bg-gray-50 rounded-lg">
+                <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('invoiceInfo') || 'Invoice信息'}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyName') || '公司名称'} *</span>
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.companyName}
+                      onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                        fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                    />
+                    {fieldErrors.invoice_companyName && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyName}</p>
+                    )}
+                  </label>
+                  
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail') || '公司邮箱'} *</span>
+                    <input
+                      type="email"
+                      value={formState.invoiceInfo.companyEmail}
+                      onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                        fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                    />
+                    {fieldErrors.invoice_companyEmail && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyEmail}</p>
+                    )}
+                  </label>
+                  
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber') || 'GST/HST Number'} *</span>
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.taxNumber}
+                      onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
+                      placeholder={t('taxNumberPlaceholder') || 'GST/HST Number'}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </label>
+                  
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('city') || '城市'} *</span>
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.city}
+                      onChange={(e) => updateInvoiceInfo('city', e.target.value)}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                        fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                    />
+                    {fieldErrors.invoice_city && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_city}</p>
+                    )}
+                  </label>
+                  
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('province') || '省份'} *</span>
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.province}
+                      onChange={(e) => updateInvoiceInfo('province', e.target.value)}
+                      placeholder={t('provincePlaceholder') || 'Ontario'}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                        fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                    />
+                    {fieldErrors.invoice_province && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_province}</p>
+                    )}
+                  </label>
+                  
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode') || '邮编'} *</span>
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.postalCode}
+                      onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
+                      placeholder={t('postalCodePlaceholder') || 'A1B 2C3'}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                        fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                    />
+                    {fieldErrors.invoice_postalCode && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_postalCode}</p>
+                    )}
+                  </label>
+                </div>
+                
+                <label className="block mt-4">
+                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('address') || '地址'} *</span>
+                  <input
+                    type="text"
+                    value={formState.invoiceInfo.address}
+                    onChange={(e) => updateInvoiceInfo('address', e.target.value)}
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                      fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                    }`}
+                  />
+                  {fieldErrors.invoice_address && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_address}</p>
+                  )}
+                </label>
+              </div>
+
+              {/* 支付信息（Invoice时必填） */}
+              <div className="p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">支付信息 *</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">支付方式 *</span>
+                    <select
+                      value={formState.invoiceInfo.paymentMethod || ''}
+                      onChange={(e) => {
+                        const paymentMethod = e.target.value as 'card' | 'etrans' | '';
+                        setFormState((prev) => ({
+                          ...prev,
+                          invoiceInfo: {
+                            ...prev.invoiceInfo,
+                            paymentMethod: paymentMethod || undefined,
+                          },
+                        }));
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">选择支付方式...</option>
+                      <option value="card">刷卡</option>
+                      <option value="etrans">e-trans</option>
+                    </select>
+                  </label>
+                  
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">Reference Number *</span>
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.referenceNumber || ''}
+                      onChange={(e) => {
+                        setFormState((prev) => ({
+                          ...prev,
+                          invoiceInfo: {
+                            ...prev.invoiceInfo,
+                            referenceNumber: e.target.value,
+                          },
+                        }));
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Reference Number"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* 税计算显示 */}
+              <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg">
+                <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">价格明细（含税）</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span>小计：</span>
+                    <span>${calculateSubtotal.toFixed(2)} CAD</span>
                   </div>
-
-                  <div className="space-y-6 mt-4">
-                    {positionsToRender.map((position, index) => (
-                      <div key={index} className="border border-gray-100 rounded-lg p-4 bg-gray-50">
-                        <div className="mb-3">
-                          <h4 className="text-sm font-semibold text-gray-900 m-0">
-                            {t('position')} {index + 1}
-                          </h4>
-                        </div>
-                        <div className="space-y-4">
-                          <label className="block" data-error-key={`product-${item.id}-position-${index}`}>
-                            <span className="block text-sm font-medium text-gray-700 mb-2">
-                              {t('position')} *
-                            </span>
-                            <select
-                              value={position.position}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                // [2025-11-28 15:00:00] 清除该字段的错误
-                                const errorKey = `product-${item.id}-position-${index}`;
-                                setFieldErrors((prev) => {
-                                  const next = { ...prev };
-                                  delete next[errorKey];
-                                  return next;
-                                });
-                                setFormState((prev) => {
-                                  const prevConfig =
-                                    prev.productPrintConfigs[item.id] ||
-                                    ({
-                                      sideCount: positionsToRender.length || 1,
-                                      positions: positionsToRender,
-                                    } as ProductPrintConfig);
-                                  const nextPositions = [...(prevConfig.positions || [])];
-                                  if (nextPositions[index]) {
-                                    nextPositions[index] = {
-                                      ...nextPositions[index],
-                                      position: value,
-                                    };
-                                  }
-                                  return {
-                                    ...prev,
-                                    productPrintConfigs: {
-                                      ...(prev.productPrintConfigs || {}),
-                                      [item.id]: {
-                                        ...prevConfig,
-                                        positions: nextPositions,
-                                      },
-                                    },
-                                  };
-                                });
-                              }}
-                              className={`w-full border rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 transition-all ${
-                                fieldErrors[`product-${item.id}-position-${index}`]
-                                  ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                              }`}
-                            >
-                              <option value="">{t('selectPosition')}</option>
-                              {PRINT_POSITION_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                            {/* [2025-11-28 15:00:00] 在字段下方显示错误信息 */}
-                            {fieldErrors[`product-${item.id}-position-${index}`] && (
-                              <span className="block mt-1 text-sm text-red-600">
-                                {fieldErrors[`product-${item.id}-position-${index}`]}
-                              </span>
-                            )}
-                          </label>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <label className="block" data-error-key={`product-${item.id}-width-${index}`}>
-                              <span className="block text-sm font-medium text-gray-700 mb-2">
-                                {t('width')} *
-                              </span>
-                              <input
-                                type="number"
-                                min="0.1"
-                                step="0.1"
-                                placeholder="0.0"
-                                value={position.width}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  // [2025-11-28 15:00:00] 清除该字段的错误
-                                  const errorKey = `product-${item.id}-width-${index}`;
-                                  setFieldErrors((prev) => {
-                                    const next = { ...prev };
-                                    delete next[errorKey];
-                                    return next;
-                                  });
-                                  setFormState((prev) => {
-                                    const prevConfig =
-                                      prev.productPrintConfigs[item.id] ||
-                                      ({
-                                        sideCount: positionsToRender.length || 1,
-                                        positions: positionsToRender,
-                                      } as ProductPrintConfig);
-                                    const nextPositions = [...(prevConfig.positions || [])];
-                                    if (nextPositions[index]) {
-                                      nextPositions[index] = {
-                                        ...nextPositions[index],
-                                        width: value,
-                                      };
-                                    }
-                                    return {
-                                      ...prev,
-                                      productPrintConfigs: {
-                                        ...(prev.productPrintConfigs || {}),
-                                        [item.id]: {
-                                          ...prevConfig,
-                                          positions: nextPositions,
-                                        },
-                                      },
-                                    };
-                                  });
-                                }}
-                                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all ${
-                                  fieldErrors[`product-${item.id}-width-${index}`]
-                                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                                }`}
-                              />
-                              {/* [2025-11-28 15:00:00] 在字段下方显示错误信息 */}
-                              {fieldErrors[`product-${item.id}-width-${index}`] && (
-                                <span className="block mt-1 text-sm text-red-600">
-                                  {fieldErrors[`product-${item.id}-width-${index}`]}
-                                </span>
-                              )}
-                            </label>
-                            <label className="block" data-error-key={`product-${item.id}-height-${index}`}>
-                              <span className="block text-sm font-medium text-gray-700 mb-2">
-                                {t('height')} *
-                              </span>
-                              <input
-                                type="number"
-                                min="0.1"
-                                step="0.1"
-                                placeholder="0.0"
-                                value={position.height}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  // [2025-11-28 15:00:00] 清除该字段的错误
-                                  const errorKey = `product-${item.id}-height-${index}`;
-                                  setFieldErrors((prev) => {
-                                    const next = { ...prev };
-                                    delete next[errorKey];
-                                    return next;
-                                  });
-                                  setFormState((prev) => {
-                                    const prevConfig =
-                                      prev.productPrintConfigs[item.id] ||
-                                      ({
-                                        sideCount: positionsToRender.length || 1,
-                                        positions: positionsToRender,
-                                      } as ProductPrintConfig);
-                                    const nextPositions = [...(prevConfig.positions || [])];
-                                    if (nextPositions[index]) {
-                                      nextPositions[index] = {
-                                        ...nextPositions[index],
-                                        height: value,
-                                      };
-                                    }
-                                    return {
-                                      ...prev,
-                                      productPrintConfigs: {
-                                        ...(prev.productPrintConfigs || {}),
-                                        [item.id]: {
-                                          ...prevConfig,
-                                          positions: nextPositions,
-                                        },
-                                      },
-                                    };
-                                  });
-                                }}
-                                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 transition-all ${
-                                  fieldErrors[`product-${item.id}-height-${index}`]
-                                    ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-                                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-                                }`}
-                              />
-                              {/* [2025-11-28 15:00:00] 在字段下方显示错误信息 */}
-                              {fieldErrors[`product-${item.id}-height-${index}`] && (
-                                <span className="block mt-1 text-sm text-red-600">
-                                  {fieldErrors[`product-${item.id}-height-${index}`]}
-                                </span>
-                              )}
-                            </label>
-                          </div>
-
-                          <label className="block">
-                            <span className="block text-sm font-medium text-gray-700 mb-2">
-                              {t('notes')}
-                            </span>
-                            <textarea
-                              rows={2}
-                              placeholder={t('positionNotesPlaceholder')}
-                              value={position.notes}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                setFormState((prev) => {
-                                  const prevConfig =
-                                    prev.productPrintConfigs[item.id] ||
-                                    ({
-                                      sideCount: positionsToRender.length || 1,
-                                      positions: positionsToRender,
-                                    } as ProductPrintConfig);
-                                  const nextPositions = [...(prevConfig.positions || [])];
-                                  if (nextPositions[index]) {
-                                    nextPositions[index] = {
-                                      ...nextPositions[index],
-                                      notes: value,
-                                    };
-                                  }
-                                  return {
-                                    ...prev,
-                                    productPrintConfigs: {
-                                      ...(prev.productPrintConfigs || {}),
-                                      [item.id]: {
-                                        ...prevConfig,
-                                        positions: nextPositions,
-                                      },
-                                    },
-                                  };
-                                });
-                              }}
-                              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm resize-y min-h-[60px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                            />
-                          </label>
-                        </div>
-                      </div>
-                    ))}
+                  {formState.discount > 0 && (
+                    <div className="flex justify-between items-center text-sm text-red-600">
+                      <span>折扣 ({formState.discount}%)：</span>
+                      <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-sm">
+                    <span>税前金额：</span>
+                    <span>${taxBase.toFixed(2)} CAD</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>税 (13% HST)：</span>
+                    <span>${taxAmount.toFixed(2)} CAD</span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
+                    <span className="font-semibold">总计（含税）：</span>
+                    <strong className="text-xl text-blue-700">${totalWithTax.toFixed(2)} CAD</strong>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
     );
   };

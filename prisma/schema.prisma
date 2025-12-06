@@ -27,13 +27,15 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  addresses Address[]
-  cart      Cart?
-  orders    Order[]
-  sessions  Session[]
-  designs   Design[]
+  addresses      Address[]
+  cart           Cart?
+  orders         Order[]
+  sessions       Session[]
+  designs        Design[]
   // [2025-11-18 10:45:12] Users can own design projects synced to storefront
-  projects  Project[]
+  projects       Project[]
+  // [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112)
+  paymentMethods PaymentMethod[]
 
   @@index([email])
   @@index([role])
@@ -868,4 +870,26 @@ model OrderPromotion {
   @@index([orderId])
   @@index([promotionId])
   @@map("order_promotions")
+}
+
+// [2025-12-06 17:20:00] PaymentMethod model for Issue #112 - Quick checkout with saved payment methods
+model PaymentMethod {
+  id                  String   @id @default(uuid())
+  userId              String   @map("user_id")
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentMethodId String @unique @map("stripe_payment_method_id")
+  type                String   @default("card") // card, bank_account, etc.
+  cardBrand           String?  @map("card_brand") // visa, mastercard, amex, etc.
+  cardLast4           String?  @map("card_last4")
+  cardExpMonth        Int?     @map("card_exp_month")
+  cardExpYear         Int?     @map("card_exp_year")
+  isDefault           Boolean  @default(false) @map("is_default")
+  billingDetails      Json?    @map("billing_details") // Store billing address details
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([isDefault])
+  @@index([stripePaymentMethodId])
+  @@map("payment_methods")
 }
