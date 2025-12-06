@@ -52,6 +52,110 @@ const generateWorkOrderCode = () => {
   return `WO-${datePart}-${randomPart}`;
 };
 
+/**
+ * GET /api/offline-orders/config
+ * [2025-12-06 17:55:00] PRD v2.0: 获取创建订单所需的所有配置数据
+ */
+exports.getOrderConfig = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  try {
+    // [2025-12-06 17:55:00] 获取所有配置数据
+    const [products, colors, sizeFees, availabilityConfigs] = await Promise.all([
+      prisma.offlineOrderProduct.findMany({
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.offlineOrderColor.findMany({
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.offlineOrderSizeFee.findMany({
+        orderBy: { size: 'asc' },
+      }),
+      prisma.offlineOrderProductColorSize.findMany({
+        where: { isAvailable: true },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          color: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    // [2025-12-06 17:55:00] 处理尺码费用（如果配置为空，返回默认值）
+    const defaultSizes = ['2XL', '3XL', '4XL', '5XL'];
+    const defaultFees = {
+      '2XL': 2.5,
+      '3XL': 3.5,
+      '4XL': 4.5,
+      '5XL': 5.5,
+    };
+
+    const sizeFeeMap = {};
+    sizeFees.forEach((sf) => {
+      sizeFeeMap[sf.size] = parseFloat(sf.additionalFee);
+    });
+
+    const sizeFeesResult = defaultSizes.map((size) => ({
+      size,
+      additionalFee: sizeFeeMap[size] || defaultFees[size],
+    }));
+
+    // [2025-12-06 17:55:00] 处理可用性配置（转换为前端需要的格式）
+    const availabilityMap = {};
+    availabilityConfigs.forEach((config) => {
+      const key = `${config.productId}_${config.colorId}`;
+      if (!availabilityMap[key]) {
+        availabilityMap[key] = [];
+      }
+      availabilityMap[key].push(config.size);
+    });
+
+    // [2025-12-06 17:55:00] 构建响应数据
+    const response = {
+      products: products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        imageUrl: p.imageUrl,
+        isCustomerOwned: p.isCustomerOwned,
+      })),
+      colors: colors.map((c) => ({
+        id: c.id,
+        name: c.name,
+        hexCode: c.hexCode,
+      })),
+      sizeFees: sizeFeesResult,
+      availability: availabilityConfigs.map((a) => ({
+        productId: a.productId,
+        colorId: a.colorId,
+        size: a.size,
+        available: a.isAvailable,
+      })),
+    };
+
+    logger.info('[OfflineOrder] Get order config', {
+      timestamp,
+      productCount: products.length,
+      colorCount: colors.length,
+    });
+    res.json(response);
+  } catch (error) {
+    logger.error('[OfflineOrder] Get order config error', {
+      timestamp,
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ error: 'Failed to get order config' });
+  }
+};
+
 const buildAssetPayload = (file) => {
   const storageKey = path.join('offline-orders', file.filename).replace(/\\/g, '/');
   return {
@@ -102,6 +206,11 @@ const mapOrder = (order) => ({
   quantity: order.quantity,
   deliveryDate: order.deliveryDate,
   description: order.description,
+  // [2025-12-06 18:00:00] PRD v2.0: 新增字段
+  orderNotes: order.orderNotes || null,
+  dstFileFee: order.dstFileFee ? parseFloat(order.dstFileFee) : null,
+  paymentMethod: order.paymentMethod || null,
+  referenceNumber: order.referenceNumber || null,
   requiresMockups: order.requiresMockups,
   requiresProof: order.requiresProof,
   rushOrder: order.rushOrder,
@@ -162,6 +271,11 @@ exports.createOfflineOrder = async (req, res) => {
       quantity,
       deliveryDate,
       artworkNotes,
+      // [2025-12-06 18:00:00] PRD v2.0: 新增字段
+      orderNotes,
+      dstFileFee,
+      paymentMethod,
+      referenceNumber,
       company,
       contactName,
       email,
@@ -204,6 +318,10 @@ exports.createOfflineOrder = async (req, res) => {
       });
     }
 
+    // [2025-12-06 18:00:00] PRD v2.0: 解析 DST File Fee（订单级别）
+    const parsedDstFileFee = dstFileFee ? parseFloat(dstFileFee) : null;
+    const validDstFileFee = parsedDstFileFee && !isNaN(parsedDstFileFee) && parsedDstFileFee >= 0 ? parsedDstFileFee : null;
+
     const orderPayload = {
       orderCode: generateOrderCode(),
       projectName: projectName.trim(),
@@ -211,6 +329,11 @@ exports.createOfflineOrder = async (req, res) => {
       quantity: quantity ? parseInt(quantity, 10) || null : null,
       deliveryDate: parseDate(deliveryDate),
       description: artworkNotes?.trim() || null,
+      // [2025-12-06 18:00:00] PRD v2.0: 新增字段
+      orderNotes: orderNotes?.trim() || null,
+      dstFileFee: validDstFileFee,
+      paymentMethod: paymentMethod?.trim() || null, // card, etrans
+      referenceNumber: referenceNumber?.trim() || null,
       requiresMockups: parseBoolean(requiresMockups),
       requiresProof: parseBoolean(requiresProof),
       rushOrder: parseBoolean(rushOrder),

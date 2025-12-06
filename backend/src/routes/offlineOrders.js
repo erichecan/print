@@ -40,6 +40,9 @@ const upload = multer({
   fileFilter
 });
 
+// [2025-12-06 17:55:00] PRD v2.0: 获取订单配置数据（无需认证，前端创建订单时使用）
+router.get('/config', offlineOrderController.getOrderConfig);
+
 router.post(
   '/',
   authenticateOptional,
