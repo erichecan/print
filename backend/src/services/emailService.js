@@ -465,6 +465,226 @@ async function sendOrderConfirmation(order) {
 }
 
 /**
+ * Generate order cancellation email HTML
+ * [2025-12-06 11:00:00] 订单取消确认邮件模板
+ */
+function generateOrderCancellationEmail(order, reason, cancelledBy = 'customer') {
+  const orderDate = new Date(order.createdAt).toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const itemsHtml = order.items && order.items.length > 0
+    ? order.items
+        .map(
+          (item) => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #eee;">
+        ${item.variant?.product?.name || 'Product'} 
+        ${item.variant?.color || item.variant?.size ? `(${item.variant.color || ''}${item.variant.color && item.variant.size ? ', ' : ''}${item.variant.size || ''})` : ''}
+      </td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${Number(item.priceSnapshot).toFixed(2)}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${(Number(item.priceSnapshot) * item.quantity).toFixed(2)}</td>
+    </tr>
+  `
+        )
+        .join('')
+    : '<tr><td colspan="4" style="padding: 10px; text-align: center; color: #666;">No items found</td></tr>';
+
+  const refundInfo = order.paymentStatus === 'COMPLETED' 
+    ? `
+    <div style="background-color: #fff7ed; padding: 15px; border-radius: 5px; margin-top: 20px; border-left: 4px solid #ea580c;">
+      <p style="margin: 0; color: #9a3412;">
+        <strong>Refund Information:</strong><br>
+        ${order.paymentStatus === 'REFUNDED' 
+          ? `Your refund of $${Number(order.total).toFixed(2)} has been processed and will appear in your account within 5-10 business days.`
+          : `A refund of $${Number(order.total).toFixed(2)} will be processed to your original payment method. This may take 5-10 business days to appear in your account.`
+        }
+      </p>
+    </div>
+    `
+    : '';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Cancelled - ${order.orderNumber}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #fef2f2; padding: 20px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #dc2626;">
+    <h1 style="color: #991b1b; margin-top: 0;">❌ Order Cancelled</h1>
+    <p style="margin: 0; color: #991b1b; font-size: 1.1em;">Your order has been cancelled${cancelledBy === 'admin' ? ' by our team' : ''}.</p>
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Order Details</h2>
+    <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+    <p><strong>Order Date:</strong> ${orderDate}</p>
+    <p><strong>Status:</strong> <strong style="color: #dc2626;">CANCELLED</strong></p>
+    <p><strong>Payment Status:</strong> ${order.paymentStatus}</p>
+    ${reason ? `<p><strong>Cancellation Reason:</strong> ${reason}</p>` : ''}
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Items Cancelled</h2>
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background-color: #f8f9fa;">
+          <th style="padding: 10px; text-align: left; border-bottom: 2px solid #ddd;">Item</th>
+          <th style="padding: 10px; text-align: center; border-bottom: 2px solid #ddd;">Qty</th>
+          <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Price</th>
+          <th style="padding: 10px; text-align: right; border-bottom: 2px solid #ddd;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Order Summary</h2>
+    <table style="width: 100%;">
+      <tr>
+        <td style="padding: 5px 0;">Subtotal:</td>
+        <td style="text-align: right; padding: 5px 0;">$${Number(order.subtotal).toFixed(2)}</td>
+      </tr>
+      ${Number(order.discount) > 0 ? `
+      <tr>
+        <td style="padding: 5px 0;">Discount:</td>
+        <td style="text-align: right; padding: 5px 0;">-$${Number(order.discount).toFixed(2)}</td>
+      </tr>
+      ` : ''}
+      <tr>
+        <td style="padding: 5px 0;">Shipping:</td>
+        <td style="text-align: right; padding: 5px 0;">$${Number(order.shippingCost).toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0;">Tax:</td>
+        <td style="text-align: right; padding: 5px 0;">$${Number(order.tax).toFixed(2)}</td>
+      </tr>
+      <tr style="font-weight: bold; font-size: 1.1em; border-top: 2px solid #ddd;">
+        <td style="padding: 10px 0;">Total:</td>
+        <td style="text-align: right; padding: 10px 0;">$${Number(order.total).toFixed(2)} ${order.currency || 'CAD'}</td>
+      </tr>
+    </table>
+  </div>
+
+  ${refundInfo}
+
+  <div style="background-color: #f8fafc; padding: 15px; border-radius: 5px; margin-top: 20px;">
+    <p style="margin: 0; font-size: 0.9em; color: #64748b;">
+      <strong>What happens next?</strong><br>
+      ${order.paymentStatus === 'COMPLETED' 
+        ? 'If you paid for this order, a refund will be processed to your original payment method. This typically takes 5-10 business days.'
+        : 'No payment was processed for this order.'
+      }
+      <br><br>
+      <strong>Need help?</strong> If you have any questions about this cancellation, please contact our support team at 
+      <a href="mailto:${process.env.SUPPORT_EMAIL || 'support@print.dev'}" style="color: #2563eb; text-decoration: none;">
+        ${process.env.SUPPORT_EMAIL || 'support@print.dev'}
+      </a>
+      <br>
+      Please include your order number: <strong>${order.orderNumber}</strong>
+    </p>
+  </div>
+
+  <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9em;">
+    <p>© ${new Date().getFullYear()} ${process.env.APP_NAME || 'Suvernire Plus'}. All rights reserved.</p>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Send order cancellation confirmation email
+ * [2025-12-06 11:00:00] 发送订单取消确认邮件
+ */
+async function sendOrderCancellationConfirmation(order, reason, cancelledBy = 'customer') {
+  try {
+    const transporter = getTransporter();
+    const emailFrom = process.env.EMAIL_FROM || 'noreply@suvernireplus.com';
+    const appName = process.env.APP_NAME || 'Suvernire Plus';
+
+    // Fetch order with items if not already included
+    let orderWithItems = order;
+    if (!order.items || order.items.length === 0) {
+      const prisma = require('../lib/prisma');
+      orderWithItems = await prisma.order.findUnique({
+        where: { id: order.id },
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    const html = generateOrderCancellationEmail(orderWithItems, reason, cancelledBy);
+
+    // Generate plain text version
+    const orderDateText = new Date(order.createdAt).toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    
+    const itemsText = orderWithItems.items && orderWithItems.items.length > 0
+      ? orderWithItems.items.map(item => 
+          `- ${item.variant?.product?.name || 'Product'}${item.variant?.color || item.variant?.size ? ` (${item.variant.color || ''}${item.variant.color && item.variant.size ? ', ' : ''}${item.variant.size || ''})` : ''} x${item.quantity} - $${(Number(item.priceSnapshot) * item.quantity).toFixed(2)}`
+        ).join('\n')
+      : 'No items found';
+    
+    const refundText = order.paymentStatus === 'COMPLETED' 
+      ? `\n\nRefund Information:\n${order.paymentStatus === 'REFUNDED' 
+          ? `Your refund of $${Number(order.total).toFixed(2)} has been processed and will appear in your account within 5-10 business days.`
+          : `A refund of $${Number(order.total).toFixed(2)} will be processed to your original payment method. This may take 5-10 business days to appear in your account.`
+        }`
+      : '';
+
+    const textVersion = `Order Cancelled\n\nOrder Number: ${order.orderNumber}\nOrder Date: ${orderDateText}\nStatus: CANCELLED\nPayment Status: ${order.paymentStatus}\n${reason ? `Cancellation Reason: ${reason}\n` : ''}\nItems Cancelled:\n${itemsText}\n\nOrder Summary:\nSubtotal: $${Number(order.subtotal).toFixed(2)}\n${Number(order.discount) > 0 ? `Discount: -$${Number(order.discount).toFixed(2)}\n` : ''}Shipping: $${Number(order.shippingCost).toFixed(2)}\nTax: $${Number(order.tax).toFixed(2)}\nTotal: $${Number(order.total).toFixed(2)} ${order.currency || 'CAD'}${refundText}\n\nIf you have any questions about this cancellation, please contact our support team at ${process.env.SUPPORT_EMAIL || 'support@print.dev'}\nPlease include your order number: ${order.orderNumber}`;
+
+    const mailOptions = {
+      from: `"${appName}" <${emailFrom}>`,
+      to: order.email,
+      subject: `Order Cancelled - ${order.orderNumber}`,
+      html,
+      text: textVersion,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    logger.info('Order cancellation confirmation email sent', {
+      orderNumber: order.orderNumber,
+      email: order.email,
+      cancelledBy,
+      reason: reason || null,
+      messageId: result.messageId,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Failed to send order cancellation confirmation email', {
+      orderNumber: order.orderNumber,
+      email: order.email,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
+/**
  * Send refund confirmation email
  * [2025-01-27 10:00:00]
  */
@@ -583,6 +803,7 @@ async function sendContactFormNotification(formData) {
 
 module.exports = {
   sendOrderConfirmation,
+  sendOrderCancellationConfirmation,
   sendRefundConfirmation,
   sendShippingNotification,
   sendContactFormNotification,
