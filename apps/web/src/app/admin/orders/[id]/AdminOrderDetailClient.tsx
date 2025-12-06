@@ -188,9 +188,9 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                 <label>Payment Status</label>
                 <select
                   value={form.paymentStatus || ''}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, paymentStatus: event.target.value || undefined }))
-                  }
+                  onChange={(event) => {
+                    setForm((prev) => ({ ...prev, paymentStatus: event.target.value || undefined }));
+                  }}
                 >
                   {PAYMENT_OPTIONS.map((option) => (
                     <option key={option} value={option}>
