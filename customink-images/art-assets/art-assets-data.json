@@ -1,17 +1,22 @@
 {
   "categories": [
     {
-      "name": "Category 2",
-      "slug": "category-2"
+      "name": "Desc",
+      "slug": "desc"
     },
     {
-      "name": "Category 4",
-      "slug": "category-4"
+      "name": "Switch Handler",
+      "slug": "switch-handler"
+    },
+    {
+      "name": "Filter Handler",
+      "slug": "filter-handler"
     }
   ],
   "assets": {
-    "category-2": [],
-    "category-4": [],
+    "desc": [],
+    "switch-handler": [],
+    "filter-handler": [],
     "other": [
       {
         "name": "art-1",
@@ -30,13 +35,8 @@
       },
       {
         "name": "art-4",
-<<<<<<< HEAD
-        "url": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=0ed8195b082eb3e9762c85fc9fb091b0aa416278db8a930c65fb1be2dc399412",
-        "thumbnailUrl": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=0ed8195b082eb3e9762c85fc9fb091b0aa416278db8a930c65fb1be2dc399412"
-=======
-        "url": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=f3b92ef7dda55cbcbcb6a79be200319323f73c817eafbb1925f4ecfccdf10390",
-        "thumbnailUrl": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=f3b92ef7dda55cbcbcb6a79be200319323f73c817eafbb1925f4ecfccdf10390"
->>>>>>> origin/develop
+        "url": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=d55e88612bae64d934a6df01f17853b871691cba32c99c2b9279fa9721f2b79e",
+        "thumbnailUrl": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=d55e88612bae64d934a6df01f17853b871691cba32c99c2b9279fa9721f2b79e"
       },
       {
         "name": "view of product 1503502",
@@ -55,28 +55,13 @@
       },
       {
         "name": "art-15",
-<<<<<<< HEAD
-        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=4fcdb6ef-18e1-43ff-878d-9409ff5936f3&bo=1&sid=216e3530d2c211f0bd707742974a720b&vid=216e5260d2c211f0bda09f30a92a8057&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=454&evt=pageLoad&sv=2&cdb=AQAS&rn=403474",
-        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=4fcdb6ef-18e1-43ff-878d-9409ff5936f3&bo=1&sid=216e3530d2c211f0bd707742974a720b&vid=216e5260d2c211f0bda09f30a92a8057&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=454&evt=pageLoad&sv=2&cdb=AQAS&rn=403474"
+        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=1&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=604&evt=pageLoad&sv=2&cdb=AQAS&rn=465229",
+        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=1&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=604&evt=pageLoad&sv=2&cdb=AQAS&rn=465229"
       },
       {
         "name": "art-16",
-        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=4fcdb6ef-18e1-43ff-878d-9409ff5936f3&bo=2&sid=216e3530d2c211f0bd707742974a720b&vid=216e5260d2c211f0bda09f30a92a8057&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=927319",
-        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=4fcdb6ef-18e1-43ff-878d-9409ff5936f3&bo=2&sid=216e3530d2c211f0bd707742974a720b&vid=216e5260d2c211f0bda09f30a92a8057&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=927319"
-=======
-        "url": "https://ib.adnxs.com/setuid?entity=315&code=A3aHqE3uZ2DCgTsgffedQWhJ0jpyM1mrXmiKros7aXE&consent=1",
-        "thumbnailUrl": "https://ib.adnxs.com/setuid?entity=315&code=A3aHqE3uZ2DCgTsgffedQWhJ0jpyM1mrXmiKros7aXE&consent=1"
-      },
-      {
-        "name": "art-16",
-        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=11d3b36a-d8cc-4e1d-b798-f2a9478588c2&bo=1&sid=6cc14700d2c211f0a94a25a94589d7c4&vid=6cc15b60d2c211f09a70a36811d5faa4&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=697&evt=pageLoad&sv=2&cdb=AQAS&rn=149081",
-        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=11d3b36a-d8cc-4e1d-b798-f2a9478588c2&bo=1&sid=6cc14700d2c211f0a94a25a94589d7c4&vid=6cc15b60d2c211f09a70a36811d5faa4&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=697&evt=pageLoad&sv=2&cdb=AQAS&rn=149081"
-      },
-      {
-        "name": "art-17",
-        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=11d3b36a-d8cc-4e1d-b798-f2a9478588c2&bo=2&sid=6cc14700d2c211f0a94a25a94589d7c4&vid=6cc15b60d2c211f09a70a36811d5faa4&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=533231",
-        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=11d3b36a-d8cc-4e1d-b798-f2a9478588c2&bo=2&sid=6cc14700d2c211f0a94a25a94589d7c4&vid=6cc15b60d2c211f09a70a36811d5faa4&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=533231"
->>>>>>> origin/develop
+        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=2&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=970999",
+        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=2&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=970999"
       },
       {
         "name": "Company Logo",
@@ -87,14 +72,11 @@
         "name": "Powered by Onetrust",
         "url": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg",
         "thumbnailUrl": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg"
-<<<<<<< HEAD
       },
       {
         "name": "art-19",
-        "url": "https://ib.adnxs.com/setuid?entity=315&code=h79LuDcVFO9LjflcYzoJxVDcgRAXQmnWwBBl8HAX_XM&consent=1",
-        "thumbnailUrl": "https://ib.adnxs.com/setuid?entity=315&code=h79LuDcVFO9LjflcYzoJxVDcgRAXQmnWwBBl8HAX_XM&consent=1"
-=======
->>>>>>> origin/develop
+        "url": "https://ib.adnxs.com/setuid?entity=315&code=EHiGylmRdVLvjZVWZg_blmJ7dEoHIyAsgqGbPyuh9Ho&consent=1",
+        "thumbnailUrl": "https://ib.adnxs.com/setuid?entity=315&code=EHiGylmRdVLvjZVWZg_blmJ7dEoHIyAsgqGbPyuh9Ho&consent=1"
       }
     ]
   }

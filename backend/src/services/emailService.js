@@ -763,6 +763,229 @@ async function sendShippingNotification(order, trackingNumber, carrier) {
 }
 
 /**
+ * Get order status description
+ * [2025-12-06 10:30:00] 获取订单状态说明
+ */
+function getStatusDescription(status) {
+  const descriptions = {
+    'PENDING': 'Your order is pending and awaiting payment confirmation.',
+    'PROCESSING': 'Your order is being processed and prepared for shipment.',
+    'SHIPPED': 'Your order has been shipped and is on its way to you!',
+    'DELIVERED': 'Your order has been delivered. We hope you enjoy your purchase!',
+    'CANCELLED': 'Your order has been cancelled.',
+    'REFUNDED': 'Your order has been refunded.',
+  };
+  return descriptions[status] || 'Your order status has been updated.';
+}
+
+/**
+ * Generate order status update notification email HTML
+ * [2025-12-06 10:30:00] 生成订单状态更新通知邮件模板
+ */
+function generateOrderStatusUpdateEmail(order, fromStatus, toStatus, actorName = null) {
+  const orderDate = new Date(order.createdAt).toLocaleDateString('en-CA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  // 状态图标和颜色
+  const getStatusStyle = (status) => {
+    const styles = {
+      'PROCESSING': { color: '#0284c7', bg: '#e0f2fe', icon: '⚙️' },
+      'SHIPPED': { color: '#2563eb', bg: '#dbeafe', icon: '📦' },
+      'DELIVERED': { color: '#16a34a', bg: '#dcfce7', icon: '✅' },
+      'CANCELLED': { color: '#dc2626', bg: '#fef2f2', icon: '❌' },
+      'REFUNDED': { color: '#ea580c', bg: '#fff7ed', icon: '↩️' },
+    };
+    return styles[status] || { color: '#475569', bg: '#f1f5f9', icon: '📋' };
+  };
+
+  const statusStyle = getStatusStyle(toStatus);
+  const statusDescription = getStatusDescription(toStatus);
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Status Update - ${order.orderNumber}</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: ${statusStyle.bg}; padding: 20px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid ${statusStyle.color};">
+    <h1 style="color: ${statusStyle.color}; margin-top: 0;">
+      ${statusStyle.icon} Order Status Updated
+    </h1>
+    <p style="margin: 0; color: ${statusStyle.color}; font-size: 1.1em;">
+      <strong>Status: ${toStatus}</strong>
+    </p>
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Order Information</h2>
+    <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+    <p><strong>Order Date:</strong> ${orderDate}</p>
+    <p><strong>Previous Status:</strong> ${fromStatus || 'N/A'}</p>
+    <p><strong>Current Status:</strong> <strong style="color: ${statusStyle.color};">${toStatus}</strong></p>
+    ${order.trackingNumber ? `<p><strong>Tracking Number:</strong> <code style="background: #f5f5f5; padding: 4px 8px; border-radius: 3px; font-family: monospace;">${order.trackingNumber}</code></p>` : ''}
+    ${order.carrier ? `<p><strong>Carrier:</strong> ${order.carrier}</p>` : ''}
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">What This Means</h2>
+    <p style="margin: 0; padding: 15px; background: #f8f9fa; border-radius: 5px; border-left: 3px solid ${statusStyle.color};">
+      ${statusDescription}
+    </p>
+  </div>
+
+  ${toStatus === 'SHIPPED' && order.trackingNumber ? `
+  <div style="background-color: #e0f2fe; padding: 20px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #0284c7;">
+    <h2 style="color: #0c4a6e; margin-top: 0;">Track Your Package</h2>
+    <p style="color: #0c4a6e;">You can track your order using the tracking number above.</p>
+    <p style="text-align: center; margin-top: 20px;">
+      <a href="${process.env.FRONTEND_URL || 'https://printm.netlify.app'}/order-tracking?order=${order.orderNumber}" 
+         style="background-color: #0284c7; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: 600;">
+        Track Your Order
+      </a>
+    </p>
+  </div>
+  ` : ''}
+
+  ${toStatus === 'DELIVERED' ? `
+  <div style="background-color: #dcfce7; padding: 20px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #16a34a;">
+    <h2 style="color: #166534; margin-top: 0;">🎉 Your Order Has Arrived!</h2>
+    <p style="color: #166534;">We hope you're happy with your purchase. If you have any questions or concerns, please don't hesitate to contact us.</p>
+  </div>
+  ` : ''}
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Order Summary</h2>
+    <table style="width: 100%;">
+      <tr>
+        <td style="padding: 5px 0;">Subtotal:</td>
+        <td style="text-align: right; padding: 5px 0;">$${Number(order.subtotal).toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0;">Shipping:</td>
+        <td style="text-align: right; padding: 5px 0;">$${Number(order.shippingCost).toFixed(2)}</td>
+      </tr>
+      <tr>
+        <td style="padding: 5px 0;">Tax:</td>
+        <td style="text-align: right; padding: 5px 0;">$${Number(order.tax).toFixed(2)}</td>
+      </tr>
+      <tr style="font-weight: bold; font-size: 1.1em; border-top: 2px solid #ddd;">
+        <td style="padding: 10px 0;">Total:</td>
+        <td style="text-align: right; padding: 10px 0;">$${Number(order.total).toFixed(2)}</td>
+      </tr>
+    </table>
+  </div>
+
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Shipping Address</h2>
+    <p style="margin: 0;">
+      ${order.shippingAddress?.firstName || ''} ${order.shippingAddress?.lastName || ''}<br>
+      ${order.shippingAddress?.address1 || ''}<br>
+      ${order.shippingAddress?.address2 ? order.shippingAddress.address2 + '<br>' : ''}
+      ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.province || ''} ${order.shippingAddress?.postalCode || ''}<br>
+      ${order.shippingAddress?.country || ''}
+    </p>
+  </div>
+
+  <div style="background-color: #f8fafc; padding: 15px; border-radius: 5px; margin-top: 20px;">
+    <p style="margin: 0; font-size: 0.9em; color: #64748b;">
+      <strong>Need help?</strong> If you have any questions about your order, please contact our support team at 
+      <a href="mailto:${process.env.SUPPORT_EMAIL || 'support@print.dev'}" style="color: #2563eb; text-decoration: none;">
+        ${process.env.SUPPORT_EMAIL || 'support@print.dev'}
+      </a>
+      <br>
+      Please include your order number: <strong>${order.orderNumber}</strong>
+    </p>
+  </div>
+
+  <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9em;">
+    <p>© ${new Date().getFullYear()} ${process.env.APP_NAME || 'Print'}. All rights reserved.</p>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Send order status update notification email
+ * [2025-12-06 10:30:00] 发送订单状态更新通知邮件
+ */
+async function sendOrderStatusUpdateNotification(order, fromStatus, toStatus, actorName = null) {
+  try {
+    const transporter = getTransporter();
+    const emailFrom = process.env.EMAIL_FROM || 'noreply@suvernireplus.com';
+    const appName = process.env.APP_NAME || 'Suvernire Plus';
+
+    // Fetch order with items if not already included
+    let orderWithItems = order;
+    if (!order.items || order.items.length === 0) {
+      const prisma = require('../lib/prisma');
+      orderWithItems = await prisma.order.findUnique({
+        where: { id: order.id },
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    const html = generateOrderStatusUpdateEmail(orderWithItems, fromStatus, toStatus, actorName);
+
+    // 根据状态生成主题
+    const getSubject = (status) => {
+      const subjects = {
+        'PROCESSING': `Your Order is Being Processed - ${order.orderNumber}`,
+        'SHIPPED': `Your Order Has Shipped - ${order.orderNumber}`,
+        'DELIVERED': `Your Order Has Been Delivered - ${order.orderNumber}`,
+        'CANCELLED': `Order Cancelled - ${order.orderNumber}`,
+        'REFUNDED': `Order Refunded - ${order.orderNumber}`,
+      };
+      return subjects[status] || `Order Status Updated - ${order.orderNumber}`;
+    };
+
+    const mailOptions = {
+      from: `"${appName}" <${emailFrom}>`,
+      to: order.email,
+      subject: getSubject(toStatus),
+      html,
+      text: `Order Status Update\n\nOrder Number: ${order.orderNumber}\nStatus: ${toStatus}\n\n${getStatusDescription(toStatus)}\n\nThank you for your order!`,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    logger.info('Order status update notification email sent', {
+      orderNumber: order.orderNumber,
+      email: order.email,
+      fromStatus,
+      toStatus,
+      messageId: result.messageId,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Failed to send order status update notification email', {
+      orderNumber: order.orderNumber,
+      email: order.email,
+      fromStatus,
+      toStatus,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
+/**
  * Send contact form submission notification
  * [2025-01-27 19:05:00] 发送联系表单提交通知
  */
@@ -807,6 +1030,7 @@ module.exports = {
   sendRefundConfirmation,
   sendShippingNotification,
   sendContactFormNotification,
+  sendOrderStatusUpdateNotification,
   getTransporter,
 };
 

@@ -159,27 +159,54 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
     actorName,
   });
 
-  // [2025-12-06 11:00:00] If status changed to CANCELLED, send cancellation email
-  // Otherwise, send status update notification email (handled by Issue #3 implementation)
-  if (normalizedNewStatus === 'CANCELLED' && order.status !== 'CANCELLED') {
-    try {
-      // Fetch full order details for email
-      const orderWithDetails = await prisma.order.findUnique({
-        where: { id: orderId },
-        include: {
-          items: {
-            include: {
-              variant: {
-                include: {
-                  product: true,
-                },
+<<<<<<< HEAD
+  // [2025-12-06 10:30:00] Record status change history
+  try {
+    await prisma.orderStatusHistory.create({
+      data: {
+        orderId: order.id,
+        fromStatus: order.status,
+        toStatus: normalizedNewStatus,
+        actorId: actorId || null,
+        actorName: actorName || null,
+        note: note || null,
+      },
+    });
+    logger.debug('Order status history recorded', {
+      orderId,
+      fromStatus: order.status,
+      toStatus: normalizedNewStatus,
+    });
+  } catch (historyError) {
+    // Don't fail status update if history recording fails
+    logger.warn('Failed to record order status history', {
+      orderId,
+      error: historyError.message,
+    });
+  }
+
+  // [2025-12-06 10:30:00] Send status update notification email (don't fail if email fails)
+  try {
+    // Fetch full order details for email
+    const orderWithDetails = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: true,
               },
             },
           },
         },
-      });
+      },
+    });
 
-      if (orderWithDetails) {
+    if (orderWithDetails) {
+      // [2025-12-06 11:00:00] If status changed to CANCELLED, send cancellation email
+      // Otherwise, send status update notification email
+      if (normalizedNewStatus === 'CANCELLED' && order.status !== 'CANCELLED') {
         const cancelledBy = actorId ? 'admin' : 'system';
         await sendOrderCancellationConfirmation(orderWithDetails, note, cancelledBy);
         logger.info('Order cancellation confirmation email sent via updateOrderStatus', {
@@ -188,14 +215,28 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
           cancelledBy,
           reason: note || null,
         });
+      } else {
+        // Send regular status update notification
+        await sendOrderStatusUpdateNotification(
+          orderWithDetails,
+          order.status,
+          normalizedNewStatus,
+          actorName
+        );
+        logger.info('Order status update notification email sent', {
+          orderNumber: order.orderNumber,
+          email: orderWithDetails.email,
+          fromStatus: order.status,
+          toStatus: normalizedNewStatus,
+        });
       }
-    } catch (emailError) {
-      logger.warn('Failed to send order cancellation confirmation email via updateOrderStatus', {
-        orderNumber: order.orderNumber,
-        error: emailError.message,
-      });
-      // Don't throw - email failure shouldn't fail status update
     }
+  } catch (emailError) {
+    logger.warn('Failed to send order status update notification email', {
+      orderNumber: order.orderNumber,
+      error: emailError.message,
+    });
+    // Don't throw - email failure shouldn't fail status update
   }
 
   return updatedOrder;
