@@ -12,11 +12,13 @@ interface AccountLayoutProps {
   children: ReactNode;
 }
 
+// [2025-01-28 12:00:00] 添加地址管理导航链接
 const navItems = [
   { href: '/account', label: 'Overview', icon: '🏠', exact: true },
   { href: '/account/designs', label: 'My Designs', icon: '📁' },
   { href: '/account/uploads', label: 'My Uploads', icon: '☁️' },
   { href: '/account/orders', label: 'Order History', icon: '📋' },
+  { href: '/account/addresses', label: 'Addresses', icon: '📍' },
   { href: '/account/group-orders', label: 'Group Orders', icon: '👥' },
   { href: '/account/fundraising', label: 'Fundraising', icon: '❤️' },
   { href: '/account/stores', label: 'Online Stores', icon: '🏪' },

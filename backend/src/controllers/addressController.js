@@ -134,11 +134,11 @@ exports.createAddress = async (req, res) => {
       isDefault = false,
     } = req.body;
 
-    // Validation
-    if (!address1 || !city || !province || !postalCode) {
+    // [2025-01-28 12:00:00] 验证必填字段：firstName, lastName, address1, city, province, postalCode
+    if (!firstName || !lastName || !address1 || !city || !province || !postalCode) {
       return res.status(400).json({
         error: 'Missing required fields',
-        required: ['address1', 'city', 'province', 'postalCode'],
+        required: ['firstName', 'lastName', 'address1', 'city', 'province', 'postalCode'],
       });
     }
 
@@ -150,11 +150,12 @@ exports.createAddress = async (req, res) => {
       });
     }
 
+    // [2025-01-28 12:00:00] firstName 和 lastName 已通过验证，不需要 || null
     const address = await prisma.address.create({
       data: {
         userId,
-        firstName: firstName || null,
-        lastName: lastName || null,
+        firstName,
+        lastName,
         company: company || null,
         address1,
         address2: address2 || null,
@@ -239,6 +240,26 @@ exports.updateAddress = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // [2025-01-28 12:00:00] 验证更新数据：如果提供了必填字段，它们不能为空
+    if (firstName !== undefined && !firstName) {
+      return res.status(400).json({ error: 'firstName cannot be empty' });
+    }
+    if (lastName !== undefined && !lastName) {
+      return res.status(400).json({ error: 'lastName cannot be empty' });
+    }
+    if (address1 !== undefined && !address1) {
+      return res.status(400).json({ error: 'address1 cannot be empty' });
+    }
+    if (city !== undefined && !city) {
+      return res.status(400).json({ error: 'city cannot be empty' });
+    }
+    if (province !== undefined && !province) {
+      return res.status(400).json({ error: 'province cannot be empty' });
+    }
+    if (postalCode !== undefined && !postalCode) {
+      return res.status(400).json({ error: 'postalCode cannot be empty' });
+    }
+
     // If setting as default, unset other default addresses
     if (isDefault === true && !existingAddress.isDefault) {
       await prisma.address.updateMany({
@@ -252,8 +273,8 @@ exports.updateAddress = async (req, res) => {
 
     // Build update data
     const updateData = {};
-    if (firstName !== undefined) updateData.firstName = firstName || null;
-    if (lastName !== undefined) updateData.lastName = lastName || null;
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
     if (company !== undefined) updateData.company = company || null;
     if (address1 !== undefined) updateData.address1 = address1;
     if (address2 !== undefined) updateData.address2 = address2 || null;

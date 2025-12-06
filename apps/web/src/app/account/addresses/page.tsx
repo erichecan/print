@@ -153,12 +153,10 @@ export default function AddressesPage() {
     );
   }
 
+  // [2025-01-28 12:00:00] 地址管理页面已在账户布局中，不需要返回按钮
   return (
-    <div className="container" style={{ padding: '72px 0', maxWidth: '960px' }}>
+    <div style={{ maxWidth: '960px' }}>
       <div style={{ marginBottom: '32px' }}>
-        <Link href="/account" style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
-          ← Back to Account
-        </Link>
         <h1>Addresses</h1>
         <p>Manage your shipping addresses for faster checkout.</p>
       </div>

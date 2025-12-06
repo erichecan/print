@@ -848,14 +848,20 @@ export const offlineOrderProductApi = {
 };
 
 // Address API
+// [2025-01-28 12:00:00] 修复地址管理 API：统一 HTTP 方法，修复响应格式
 export const addressesApi = {
-  list: () => api<Address[]>('/addresses'),
+  // [2025-01-28 12:00:00] 后端返回 { addresses, count }，需要提取 addresses 数组
+  list: async () => {
+    const response = await api<{ addresses: Address[]; count: number }>('/addresses');
+    return response.addresses;
+  },
   get: (id: string) => api<Address>(`/addresses/${id}`),
   create: (data: AddressPayload) => api<Address>('/addresses', { method: 'POST', body: data }),
+  // [2025-01-28 12:00:00] 统一使用 PUT 方法（与后端路由一致）
   update: (id: string, data: Partial<AddressPayload>) =>
-    api<Address>(`/addresses/${id}`, { method: 'PATCH', body: data }),
+    api<Address>(`/addresses/${id}`, { method: 'PUT', body: data }),
   delete: (id: string) => api(`/addresses/${id}`, { method: 'DELETE' }),
-  setDefault: (id: string) => api<Address>(`/addresses/${id}/set-default`, { method: 'PATCH' }), // [2025-01-27 修复] 修复API方法为PATCH
+  setDefault: (id: string) => api<Address>(`/addresses/${id}/set-default`, { method: 'PATCH' }),
 };
 
 // [2025-01-27] User Preferences API Types
