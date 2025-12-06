@@ -68,11 +68,25 @@ exports.validateCoupon = async (req, res) => {
     }
 
     // [2025-01-28 11:15:00] Check minimum order value
+    // [2025-12-06 17:30:00] Enhanced validation for Issue #138
     const minOrderValue = coupon.minOrderValue ? Number(coupon.minOrderValue) : null;
     if (minOrderValue && Number(subtotal) < minOrderValue) {
       return res.status(400).json({
         error: `Minimum order value of $${minOrderValue.toFixed(2)} required`,
         minOrderValue: minOrderValue,
+      });
+    }
+
+    // [2025-12-06 17:30:00] Check if coupon is still within valid date range
+    const now = new Date();
+    if (coupon.startDate > now) {
+      return res.status(400).json({
+        error: 'Coupon is not yet active',
+      });
+    }
+    if (coupon.endDate < now) {
+      return res.status(400).json({
+        error: 'Coupon has expired',
       });
     }
 
