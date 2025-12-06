@@ -159,7 +159,6 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
     actorName,
   });
 
-<<<<<<< HEAD
   // [2025-12-06 10:30:00] Record status change history
   try {
     await prisma.orderStatusHistory.create({

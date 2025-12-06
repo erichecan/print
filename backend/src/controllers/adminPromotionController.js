@@ -14,10 +14,15 @@ const mapPromotion = (promotion) => ({
   bannerImageUrl: promotion.bannerImageUrl,
   linkUrl: promotion.linkUrl,
   // [2025-01-28 12:10:00] 新增折扣相关字段
-  discountType: promotion.discountType === 'PERCENTAGE' ? 'percentage' : 'fixed', // Map enum to string
+  discountType: promotion.discountType === 'PERCENTAGE' ? 'percentage' : promotion.discountType === 'FIXED' ? 'fixed' : 'buy_get_free', // [2025-12-06 18:00:00] Support buy-get-free type
   discountValue: Number(promotion.discountValue),
   minOrderValue: promotion.minOrderValue ? Number(promotion.minOrderValue) : null,
   maxDiscount: promotion.maxDiscount ? Number(promotion.maxDiscount) : null,
+  // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+  buyQuantity: promotion.buyQuantity || null,
+  getQuantity: promotion.getQuantity || null,
+  giftProduct: promotion.giftProduct ? { id: promotion.giftProduct.id, name: promotion.giftProduct.name } : null,
+  giftVariant: promotion.giftVariant ? { id: promotion.giftVariant.id, sku: promotion.giftVariant.sku } : null,
   startDate: promotion.startDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
   endDate: promotion.endDate.toISOString().split('T')[0],
   isActive: promotion.isActive,
@@ -77,6 +82,22 @@ exports.listPromotions = async (req, res) => {
             coupon: true,
           },
         },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
+          },
+        },
       },
       orderBy: [
         { isActive: 'desc' },
@@ -113,7 +134,13 @@ exports.createPromotion = async (req, res) => {
     }
 
     // [2025-01-28 12:10:00] Map discount type string to enum
-    const discountType = payload.discountType.toUpperCase() === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED';
+    // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+    let discountType = 'FIXED';
+    if (payload.discountType === 'percentage' || payload.discountType === 'PERCENTAGE') {
+      discountType = 'PERCENTAGE';
+    } else if (payload.discountType === 'buy_get_free' || payload.discountType === 'BUY_GET_FREE') {
+      discountType = 'BUY_GET_FREE';
+    }
 
     // [2025-01-28 12:10:00] Parse dates
     const startDate = new Date(payload.startDate);
@@ -126,9 +153,14 @@ exports.createPromotion = async (req, res) => {
         bannerImageUrl: payload.bannerImageUrl || null,
         linkUrl: payload.linkUrl || null,
         discountType: discountType,
-        discountValue: Number(payload.discountValue),
+        discountValue: Number(payload.discountValue) || 0,
         minOrderValue: payload.minOrderValue ? Number(payload.minOrderValue) : null,
         maxDiscount: payload.maxDiscount ? Number(payload.maxDiscount) : null,
+        // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+        buyQuantity: payload.buyQuantity ? Number(payload.buyQuantity) : null,
+        getQuantity: payload.getQuantity ? Number(payload.getQuantity) : null,
+        giftProductId: payload.giftProductId || null,
+        giftVariantId: payload.giftVariantId || null,
         startDate: startDate,
         endDate: endDate,
         isActive: payload.isActive !== undefined ? Boolean(payload.isActive) : true,
@@ -148,6 +180,22 @@ exports.createPromotion = async (req, res) => {
         coupon: {
           include: {
             coupon: true,
+          },
+        },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
           },
         },
       },
@@ -186,7 +234,14 @@ exports.updatePromotion = async (req, res) => {
       updateData.linkUrl = payload.linkUrl || null;
     }
     if (payload.discountType !== undefined) {
-      updateData.discountType = payload.discountType.toUpperCase() === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED';
+      // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+      if (payload.discountType === 'percentage' || payload.discountType === 'PERCENTAGE') {
+        updateData.discountType = 'PERCENTAGE';
+      } else if (payload.discountType === 'buy_get_free' || payload.discountType === 'BUY_GET_FREE') {
+        updateData.discountType = 'BUY_GET_FREE';
+      } else {
+        updateData.discountType = 'FIXED';
+      }
     }
     if (payload.discountValue !== undefined) {
       updateData.discountValue = Number(payload.discountValue);
@@ -209,6 +264,19 @@ exports.updatePromotion = async (req, res) => {
     if (payload.sortOrder !== undefined) {
       updateData.sortOrder = payload.sortOrder;
     }
+    // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+    if (payload.buyQuantity !== undefined) {
+      updateData.buyQuantity = payload.buyQuantity ? Number(payload.buyQuantity) : null;
+    }
+    if (payload.getQuantity !== undefined) {
+      updateData.getQuantity = payload.getQuantity ? Number(payload.getQuantity) : null;
+    }
+    if (payload.giftProductId !== undefined) {
+      updateData.giftProductId = payload.giftProductId || null;
+    }
+    if (payload.giftVariantId !== undefined) {
+      updateData.giftVariantId = payload.giftVariantId || null;
+    }
 
     const promotion = await prisma.promotion.update({
       where: { id },
@@ -227,6 +295,22 @@ exports.updatePromotion = async (req, res) => {
         coupon: {
           include: {
             coupon: true,
+          },
+        },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
           },
         },
       },
@@ -300,6 +384,22 @@ exports.addProductsToPromotion = async (req, res) => {
             coupon: true,
           },
         },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
+          },
+        },
       },
     });
 
@@ -339,6 +439,22 @@ exports.removeProductFromPromotion = async (req, res) => {
         coupon: {
           include: {
             coupon: true,
+          },
+        },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
           },
         },
       },
@@ -399,6 +515,22 @@ exports.addCategoriesToPromotion = async (req, res) => {
             coupon: true,
           },
         },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
+          },
+        },
       },
     });
 
@@ -438,6 +570,22 @@ exports.removeCategoryFromPromotion = async (req, res) => {
         coupon: {
           include: {
             coupon: true,
+          },
+        },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
           },
         },
       },
@@ -506,6 +654,22 @@ exports.setPromotionCoupon = async (req, res) => {
         coupon: {
           include: {
             coupon: true,
+          },
+        },
+        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+        giftProduct: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        giftVariant: {
+          select: {
+            id: true,
+            sku: true,
+            color: true,
+            size: true,
           },
         },
       },

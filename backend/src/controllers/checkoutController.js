@@ -173,6 +173,7 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
       const categoryId = variant.product.categoryId;
 
       // [2025-01-28 12:25:00] Find active promotions for this product
+      // [2025-12-06 18:00:00] Include buy-get-free promotion fields for Issue #139
       const productPromotions = await prisma.promotion.findMany({
         where: {
           isActive: true,
@@ -195,6 +196,20 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
             },
           ],
         },
+        include: {
+          giftProduct: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          giftVariant: {
+            select: {
+              id: true,
+              sku: true,
+            },
+          },
+        },
       });
 
       if (productPromotions.length === 0) {
@@ -212,6 +227,7 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
         }
 
         // [2025-01-28 12:25:00] Calculate discount for this item
+        // [2025-12-06 18:00:00] Support buy-get-free promotions for Issue #139
         let itemDiscount = 0;
 
         if (promotion.discountType === 'PERCENTAGE') {
@@ -219,6 +235,22 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
           // Apply max discount limit
           if (promotion.maxDiscount && itemDiscount > Number(promotion.maxDiscount)) {
             itemDiscount = Number(promotion.maxDiscount);
+          }
+        } else if (promotion.discountType === 'BUY_GET_FREE') {
+          // [2025-12-06 18:00:00] Buy X Get Y Free: Calculate free items discount
+          const buyQty = promotion.buyQuantity || 1;
+          const getQty = promotion.getQuantity || 1;
+          
+          // Calculate how many "buy-get-free" sets can be applied
+          const sets = Math.floor(quantity / (buyQty + getQty));
+          const freeItems = sets * getQty;
+          
+          // Discount is the value of free items
+          itemDiscount = freeItems * unitPrice;
+          
+          // Don't exceed item subtotal
+          if (itemDiscount > itemSubtotal) {
+            itemDiscount = itemSubtotal;
           }
         } else {
           // Fixed discount per item
@@ -242,6 +274,12 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
           promotionTitle: bestPromotion.title,
           productId: productId,
           discountAmount: Math.round(bestDiscount * 100) / 100,
+          // [2025-12-06 18:00:00] Include buy-get-free promotion details for Issue #139
+          promotionType: bestPromotion.discountType,
+          buyQuantity: bestPromotion.buyQuantity,
+          getQuantity: bestPromotion.getQuantity,
+          giftProductId: bestPromotion.giftProductId,
+          giftVariantId: bestPromotion.giftVariantId,
         });
       }
     }

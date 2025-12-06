@@ -150,6 +150,8 @@ model Product {
   projects           Project[]
   // [2025-01-28 12:00:00] 促销活动关联
   promotionProducts  PromotionProduct[]
+  // [2025-12-06 18:00:00] Gift product promotions for Issue #139
+  giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
   // [2025-01-30 23:55:00] 产品颜色图片映射
   colorImages        ProductColorImage[]
 
@@ -178,10 +180,12 @@ model Variant {
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-  designs    Design[]
-  projects   Project[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  designs        Design[]
+  projects       Project[]
+  // [2025-12-06 18:00:00] Gift variant promotions for Issue #139
+  giftPromotions Promotion[] @relation("PromotionGiftVariant")
 
   @@index([productId])
   @@index([sku])
@@ -341,7 +345,7 @@ model Order {
   // [2025-01-28 12:00:00] Promotions applied to this order
   orderPromotions OrderPromotion[]
   // [2025-12-06 10:30:00] Order status change history
-  statusHistory OrderStatusHistory[]
+  statusHistory   OrderStatusHistory[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -410,15 +414,15 @@ enum ShipmentStatus {
 
 // [2025-12-06 10:30:00] Order Status History - Track order status changes
 model OrderStatusHistory {
-  id            String   @id @default(uuid())
-  orderId       String   @map("order_id")
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  fromStatus    OrderStatus? @map("from_status")
-  toStatus      OrderStatus  @map("to_status")
-  actorId       String?  @map("actor_id")
-  actorName     String?  @map("actor_name")
-  note          String?  @db.Text
-  createdAt     DateTime @default(now()) @map("created_at")
+  id         String       @id @default(uuid())
+  orderId    String       @map("order_id")
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus? @map("from_status")
+  toStatus   OrderStatus  @map("to_status")
+  actorId    String?      @map("actor_id")
+  actorName  String?      @map("actor_name")
+  note       String?      @db.Text
+  createdAt  DateTime     @default(now()) @map("created_at")
 
   @@index([orderId])
   @@index([toStatus])
@@ -786,6 +790,11 @@ model Promotion {
   discountValue  Decimal               @map("discount_value") @db.Decimal(10, 2)
   minOrderValue  Decimal?              @map("min_order_value") @db.Decimal(10, 2)
   maxDiscount    Decimal?              @map("max_discount") @db.Decimal(10, 2)
+  // [2025-12-06 18:00:00] Buy X Get Y Free promotion fields for Issue #139
+  buyQuantity    Int?                  @map("buy_quantity") // Buy X items
+  getQuantity    Int?                  @map("get_quantity") // Get Y items free
+  giftProductId  String?               @map("gift_product_id") // Optional: specific gift product
+  giftVariantId  String?               @map("gift_variant_id") // Optional: specific gift variant
   // [2025-01-28 12:00:00] 促销活动时间
   startDate      DateTime              @map("start_date")
   endDate        DateTime              @map("end_date")
@@ -800,6 +809,9 @@ model Promotion {
   categories      PromotionCategory[]
   coupon          PromotionCoupon? // 可选：关联特定优惠券
   orderPromotions OrderPromotion[] // 跟踪促销活动使用情况
+  // [2025-12-06 18:00:00] Gift product and variant relations for buy-get-free promotions
+  giftProduct     Product?            @relation("PromotionGiftProduct", fields: [giftProductId], references: [id], onDelete: SetNull)
+  giftVariant     Variant?            @relation("PromotionGiftVariant", fields: [giftVariantId], references: [id], onDelete: SetNull)
 
   @@index([isActive])
   @@index([startDate, endDate])
@@ -810,6 +822,7 @@ model Promotion {
 enum PromotionDiscountType {
   PERCENTAGE
   FIXED
+  BUY_GET_FREE // [2025-12-06 18:00:00] Buy X Get Y Free promotion type for Issue #139
 }
 
 // [2025-01-28 12:00:00] 促销活动与商品的关联（多对多）
@@ -874,19 +887,19 @@ model OrderPromotion {
 
 // [2025-12-06 17:20:00] PaymentMethod model for Issue #112 - Quick checkout with saved payment methods
 model PaymentMethod {
-  id                  String   @id @default(uuid())
-  userId              String   @map("user_id")
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stripePaymentMethodId String @unique @map("stripe_payment_method_id")
-  type                String   @default("card") // card, bank_account, etc.
-  cardBrand           String?  @map("card_brand") // visa, mastercard, amex, etc.
-  cardLast4           String?  @map("card_last4")
-  cardExpMonth        Int?     @map("card_exp_month")
-  cardExpYear         Int?     @map("card_exp_year")
-  isDefault           Boolean  @default(false) @map("is_default")
-  billingDetails      Json?    @map("billing_details") // Store billing address details
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentMethodId String   @unique @map("stripe_payment_method_id")
+  type                  String   @default("card") // card, bank_account, etc.
+  cardBrand             String?  @map("card_brand") // visa, mastercard, amex, etc.
+  cardLast4             String?  @map("card_last4")
+  cardExpMonth          Int?     @map("card_exp_month")
+  cardExpYear           Int?     @map("card_exp_year")
+  isDefault             Boolean  @default(false) @map("is_default")
+  billingDetails        Json?    @map("billing_details") // Store billing address details
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
 
   @@index([userId])
   @@index([isDefault])
