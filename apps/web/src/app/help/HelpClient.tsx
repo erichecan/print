@@ -3,6 +3,7 @@
  * [2025-01-27 19:25:00] 帮助中心客户端组件（处理搜索和交互）
  * [2025-11-16 12:05:00] 原型化帮助中心布局与搜索
  * [2025-01-28 06:45:00] Updated to read content from CMS
+ * [2025-12-06 19:00:00] Enhanced search with fuzzy matching and highlighting for Issue #147
  */
 'use client';
 
@@ -10,6 +11,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
+import type React from 'react';
 
 // [2025-01-28 06:45:00] 默认快速链接（向后兼容）
 const defaultQuickLinks = [
@@ -219,6 +221,155 @@ const defaultFaqCategories = [
       },
     ],
   },
+  // [2025-12-06 19:00:00] Additional FAQ categories for Issue #147
+  {
+    id: 'default-account',
+    category: 'Account & Settings',
+    icon: '👤',
+    items: [
+      {
+        id: 'default-account-1',
+        question: 'How do I create an account?',
+        answer:
+          'You can create an account during checkout or by clicking "Sign In" in the top navigation. Creating an account allows you to save designs, track orders, and access order history.',
+      },
+      {
+        id: 'default-account-2',
+        question: 'Can I checkout without creating an account?',
+        answer:
+          'Yes! You can checkout as a guest. However, creating an account makes it easier to track orders and manage your designs.',
+      },
+      {
+        id: 'default-account-3',
+        question: 'How do I reset my password?',
+        answer:
+          'Click "Sign In" and then "Forgot Password". Enter your email address and we\'ll send you a password reset link.',
+      },
+      {
+        id: 'default-account-4',
+        question: 'How do I update my account information?',
+        answer:
+          'Log in to your account and go to "My Account" to update your profile, shipping addresses, and payment methods.',
+      },
+      {
+        id: 'default-account-5',
+        question: 'Can I save multiple shipping addresses?',
+        answer:
+          'Yes! You can save multiple shipping addresses in your account settings. Select the address you want to use during checkout.',
+      },
+    ],
+  },
+  {
+    id: 'default-troubleshooting',
+    category: 'Troubleshooting',
+    icon: '🔧',
+    items: [
+      {
+        id: 'default-troubleshooting-1',
+        question: 'My design looks different than expected. What should I do?',
+        answer:
+          'If your design differs from the approved proof, contact us immediately. We\'ll work with you to resolve the issue, which may include a reprint or refund.',
+      },
+      {
+        id: 'default-troubleshooting-2',
+        question: 'I haven\'t received my order confirmation email. What should I do?',
+        answer:
+          'Check your spam folder first. If you still don\'t see it, contact us with your order number and we\'ll resend the confirmation email.',
+      },
+      {
+        id: 'default-troubleshooting-3',
+        question: 'The tracking number isn\'t working. What should I do?',
+        answer:
+          'Tracking numbers may take 24-48 hours to activate in the carrier\'s system. If it\'s been longer, contact us with your order number and we\'ll investigate.',
+      },
+      {
+        id: 'default-troubleshooting-4',
+        question: 'I entered the wrong shipping address. Can I change it?',
+        answer:
+          'Contact us immediately with your order number. If your order hasn\'t shipped yet, we can update the address. Once shipped, we\'ll work with the carrier to redirect the package.',
+      },
+      {
+        id: 'default-troubleshooting-5',
+        question: 'My payment was declined. What should I do?',
+        answer:
+          'Check that your card information is correct and that you have sufficient funds. If the problem persists, contact your bank or try a different payment method.',
+      },
+      {
+        id: 'default-troubleshooting-6',
+        question: 'The Design Lab isn\'t loading. How can I fix this?',
+        answer:
+          'Try clearing your browser cache and cookies, or use a different browser. Make sure JavaScript is enabled. If the problem persists, contact our support team.',
+      },
+    ],
+  },
+  {
+    id: 'default-quality',
+    category: 'Quality & Care',
+    icon: '⭐',
+    items: [
+      {
+        id: 'default-quality-1',
+        question: 'How do I care for my custom apparel?',
+        answer:
+          'Follow the care instructions on the garment label. Generally, wash in cold water, tumble dry low, and avoid bleach. For best results, turn garments inside out before washing.',
+      },
+      {
+        id: 'default-quality-2',
+        question: 'What is your quality guarantee?',
+        answer:
+          'We guarantee that your order will match the approved proof. If there\'s a quality issue or error on our part, we\'ll replace or refund your order.',
+      },
+      {
+        id: 'default-quality-3',
+        question: 'How long will my custom print last?',
+        answer:
+          'With proper care, our prints are designed to last the lifetime of the garment. Follow the care instructions to maintain print quality.',
+      },
+      {
+        id: 'default-quality-4',
+        question: 'What printing methods do you use?',
+        answer:
+          'We use various printing methods including screen printing, DTG (Direct-to-Garment), and heat transfer, depending on the design and quantity. Our team selects the best method for your order.',
+      },
+    ],
+  },
+  {
+    id: 'default-business',
+    category: 'Business & Wholesale',
+    icon: '🏢',
+    items: [
+      {
+        id: 'default-business-1',
+        question: 'Do you offer wholesale pricing?',
+        answer:
+          'Yes! We offer tiered pricing for bulk orders. Contact us for custom pricing on orders over 500 units or for ongoing business partnerships.',
+      },
+      {
+        id: 'default-business-2',
+        question: 'Can I get a custom quote for a large order?',
+        answer:
+          'Absolutely! Contact our sales team with your order details and we\'ll provide a custom quote with volume discounts.',
+      },
+      {
+        id: 'default-business-3',
+        question: 'Do you work with businesses and organizations?',
+        answer:
+          'Yes! We work with businesses, schools, sports teams, and organizations of all sizes. Contact us to discuss your needs.',
+      },
+      {
+        id: 'default-business-4',
+        question: 'Can I set up a business account?',
+        answer:
+          'Yes! Business accounts offer benefits like net payment terms, dedicated account management, and custom pricing. Contact us to learn more.',
+      },
+      {
+        id: 'default-business-5',
+        question: 'Do you offer rush production for business orders?',
+        answer:
+          'Yes! We offer rush production options for business orders. Contact us to discuss timelines and pricing for urgent orders.',
+      },
+    ],
+  },
 ];
 
 export default function HelpClient() {
@@ -233,23 +384,66 @@ export default function HelpClient() {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
+  // [2025-12-06 19:00:00] Enhanced search with fuzzy matching and highlighting for Issue #147
   const filteredFAQs = useMemo(() => {
     if (!searchQuery.trim()) {
       return faqCategories;
     }
 
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase().trim();
+    const queryWords = query.split(/\s+/).filter(Boolean);
+    
     return faqCategories
-      .map((category) => ({
-        ...category,
-        items: category.items.filter(
-          (item) =>
-            item.question.toLowerCase().includes(query) ||
-            item.answer.toLowerCase().includes(query)
-        ),
-      }))
+      .map((category) => {
+        const filteredItems = category.items.filter((item) => {
+          const questionLower = item.question.toLowerCase();
+          const answerLower = item.answer.toLowerCase();
+          
+          // Exact match (highest priority)
+          if (questionLower.includes(query) || answerLower.includes(query)) {
+            return true;
+          }
+          
+          // Fuzzy match: all query words must appear somewhere
+          return queryWords.every(
+            (word) => questionLower.includes(word) || answerLower.includes(word)
+          );
+        });
+        
+        return {
+          ...category,
+          items: filteredItems,
+        };
+      })
       .filter((category) => category.items.length > 0);
   }, [searchQuery, faqCategories]);
+
+  // [2025-12-06 19:00:00] Highlight search terms in text for Issue #147
+  const highlightText = (text: string, query: string): React.ReactNode => {
+    if (!query.trim()) return text;
+    
+    const queryWords = query.trim().split(/\s+/).filter(Boolean);
+    if (queryWords.length === 0) return text;
+    
+    // Create a regex that matches any of the query words
+    const regex = new RegExp(`(${queryWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+    const parts = text.split(regex);
+    
+    return (
+      <>
+        {parts.map((part, index) => {
+          const isMatch = queryWords.some((word) => part.toLowerCase() === word.toLowerCase());
+          return isMatch ? (
+            <mark key={index} style={{ backgroundColor: '#fef08a', padding: '0 2px', borderRadius: '2px' }}>
+              {part}
+            </mark>
+          ) : (
+            <span key={index}>{part}</span>
+          );
+        })}
+      </>
+    );
+  };
 
   const toggleFaq = (faqId: string) => {
     setExpandedFaq(expandedFaq === faqId ? null : faqId);
@@ -264,12 +458,19 @@ export default function HelpClient() {
           <div className="help-search">
             <input
               type="search"
-              placeholder="Search for help..."
+              placeholder="Search for help... (e.g., shipping, returns, design)"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                }
+              }}
               aria-label="Search help center"
             />
-            <button type="button">Search</button>
+            <button type="button" onClick={() => setSearchQuery('')} style={{ display: searchQuery ? 'block' : 'none' }}>
+              Clear
+            </button>
           </div>
         </div>
       </div>
@@ -288,7 +489,15 @@ export default function HelpClient() {
         </section>
 
         <section className="faq">
-          <h2>FAQs</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <h2>FAQs</h2>
+            {/* [2025-12-06 19:00:00] Search results count for Issue #147 */}
+            {searchQuery && (
+              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
+                Found {filteredFAQs.reduce((sum, cat) => sum + cat.items.length, 0)} result{filteredFAQs.reduce((sum, cat) => sum + cat.items.length, 0) !== 1 ? 's' : ''} for &ldquo;{searchQuery}&rdquo;
+              </p>
+            )}
+          </div>
           <div className="faq__grid">
             {filteredFAQs.map((category) => (
               <article key={category.id || category.category} className="faq-card">
@@ -303,13 +512,17 @@ export default function HelpClient() {
                     return (
                       <div key={faqId} className="faq-item">
                         <button type="button" onClick={() => toggleFaq(faqId)} aria-expanded={isExpanded}>
-                          {item.question}
+                          {searchQuery ? highlightText(item.question, searchQuery) : item.question}
                           <span aria-hidden="true">{isExpanded ? '−' : '+'}</span>
                         </button>
                         {isExpanded ? (
-                          <p>{item.answer}</p>
+                          <p>{searchQuery ? highlightText(item.answer, searchQuery) : item.answer}</p>
                         ) : (
-                          <p>{item.answer.substring(0, 120)}…</p>
+                          <p>
+                            {searchQuery
+                              ? highlightText(item.answer.substring(0, 120) + '…', searchQuery)
+                              : item.answer.substring(0, 120) + '…'}
+                          </p>
                         )}
                       </div>
                     );
