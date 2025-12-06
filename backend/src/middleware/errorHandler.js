@@ -1,6 +1,7 @@
 /**
  * Error Handler Middleware
  * [2025-01-27 11:05:00] Unified error handling middleware
+ * [2025-12-06 12:00:00] Enhanced error logging with more context
  */
 const logger = require('../utils/logger');
 const { AppError } = require('../utils/errors');
@@ -196,25 +197,33 @@ function errorHandler(err, req, res, next) {
   // Log error
   const errorResponse = formatErrorResponse(err, req);
 
-  // Log error details
+  // [2025-12-06 12:00:00] Enhanced error logging with more context
+  const logContext = {
+    error: err.message,
+    statusCode: errorResponse.statusCode,
+    code: errorResponse.code,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    userAgent: req.get('user-agent'),
+    userId: req.user?.id || null,
+    timestamp: new Date().toISOString(),
+    ...(errorResponse.details && { details: errorResponse.details }),
+  };
+
   if (errorResponse.statusCode >= 500) {
+    // Server errors: log full stack trace and additional context
     logger.error('Server error', {
-      error: err.message,
+      ...logContext,
       stack: err.stack,
-      url: req.url,
-      method: req.method,
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
+      originalError: err.name,
     });
+  } else if (errorResponse.statusCode >= 400) {
+    // Client errors: log warning with context
+    logger.warn('Client error', logContext);
   } else {
-    logger.warn('Client error', {
-      error: err.message,
-      statusCode: errorResponse.statusCode,
-      code: errorResponse.code,
-      url: req.url,
-      method: req.method,
-      ip: req.ip,
-    });
+    // Other errors: log info
+    logger.info('Error handled', logContext);
   }
 
   // Send error response
