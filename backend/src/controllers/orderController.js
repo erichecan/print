@@ -8,7 +8,7 @@ const PDFDocument = require('pdfkit'); // [2025-11-12 01:05:02] 用于生成发�
 const { Readable } = require('stream');
 const logger = require('../utils/logger');
 const { cancelOrder, canCancelOrder } = require('../services/orderService');
-const { BadRequestError, ForbiddenError } = require('../utils/errors');
+const { BadRequestError, ForbiddenError, NotFoundError, UnauthorizedError, InternalServerError } = require('../utils/errors');
 const { sendOrderConfirmation } = require('../services/emailService');
 
 /**
@@ -337,53 +337,184 @@ const formatAddress = (address = {}) => {
   return lines.filter(Boolean).join('\n');
 }; // [2025-11-12 01:05:02] 格式化地址文本
 
+/**
+ * Generate invoice PDF with enhanced template design
+ * [2025-11-12 01:05:02] 生成订单发票 PDF
+ * [2025-12-06 14:30:00] Enhanced with professional invoice template design
+ */
 const generateInvoicePdf = (order) => {
-  const doc = new PDFDocument({ margin: 50 });
+  const doc = new PDFDocument({ margin: 50, size: 'A4' });
   const stream = new Readable({ read() {} });
 
   doc.on('data', (chunk) => stream.push(chunk));
   doc.on('end', () => stream.push(null));
 
-  doc.fontSize(20).text('Invoice', { align: 'right' });
-  doc.moveDown();
+  const pageWidth = doc.page.width;
+  const pageHeight = doc.page.height;
+  const margin = 50;
+  const contentWidth = pageWidth - 2 * margin;
 
-  doc.fontSize(12).text(`Order Number: ${order.orderNumber}`);
-  doc.text(`Date: ${order.createdAt.toISOString().slice(0, 10)}`);
-  doc.text(`Payment Status: ${order.paymentStatus.toLowerCase()}`);
-  doc.moveDown();
+  // [2025-12-06 14:30:00] Header with company info and invoice title
+  doc.rect(margin, margin, contentWidth, 80).fill('#1e293b');
+  doc.fillColor('#ffffff')
+    .fontSize(28)
+    .font('Helvetica-Bold')
+    .text('INVOICE', margin + 20, margin + 25, { width: contentWidth - 40, align: 'right' });
 
-  doc.font('Helvetica-Bold').text('Bill To:');
-  doc.font('Helvetica').text(formatAddress(order.billingAddress));
-  doc.moveDown();
+  // Company info (left side of header)
+  doc.fillColor('#ffffff')
+    .fontSize(10)
+    .font('Helvetica')
+    .text(process.env.APP_NAME || 'Suvernire Plus', margin + 20, margin + 15)
+    .fontSize(8)
+    .text(process.env.COMPANY_ADDRESS || '123 Business St, Toronto, ON, Canada', margin + 20, margin + 30, { width: 200 })
+    .text(`Phone: ${process.env.COMPANY_PHONE || '1-800-123-4567'}`, margin + 20, margin + 45)
+    .text(`Email: ${process.env.COMPANY_EMAIL || 'info@suvernireplus.com'}`, margin + 20, margin + 60);
 
-  doc.font('Helvetica-Bold').text('Ship To:');
-  doc.font('Helvetica').text(formatAddress(order.shippingAddress));
-  doc.moveDown();
+  // Invoice details (right side of header)
+  doc.fillColor('#ffffff')
+    .fontSize(10)
+    .font('Helvetica-Bold')
+    .text('Invoice Number:', pageWidth - margin - 200, margin + 15)
+    .font('Helvetica')
+    .text(order.orderNumber, pageWidth - margin - 200, margin + 30)
+    .font('Helvetica-Bold')
+    .text('Invoice Date:', pageWidth - margin - 200, margin + 45)
+    .font('Helvetica')
+    .text(new Date(order.createdAt).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' }), pageWidth - margin - 200, margin + 60);
 
-  doc.font('Helvetica-Bold').text('Items');
-  doc.moveDown(0.5);
-  doc.font('Helvetica');
+  let yPos = margin + 100;
 
+  // [2025-12-06 14:30:00] Bill To and Ship To sections
+  doc.fillColor('#000000');
+  const sectionWidth = (contentWidth - 20) / 2;
+
+  // Bill To section
+  doc.font('Helvetica-Bold')
+    .fontSize(12)
+    .text('Bill To:', margin, yPos);
+  yPos += 20;
+  doc.font('Helvetica')
+    .fontSize(10)
+    .text(formatAddress(order.billingAddress), margin, yPos, { width: sectionWidth });
+
+  // Ship To section
+  yPos = margin + 100;
+  doc.font('Helvetica-Bold')
+    .fontSize(12)
+    .text('Ship To:', margin + sectionWidth + 20, yPos);
+  yPos += 20;
+  doc.font('Helvetica')
+    .fontSize(10)
+    .text(formatAddress(order.shippingAddress), margin + sectionWidth + 20, yPos, { width: sectionWidth });
+
+  yPos = margin + 200;
+
+  // [2025-12-06 14:30:00] Items table header
+  doc.rect(margin, yPos, contentWidth, 30).fill('#f1f5f9');
+  doc.fillColor('#1e293b')
+    .font('Helvetica-Bold')
+    .fontSize(11)
+    .text('Description', margin + 10, yPos + 8)
+    .text('Quantity', margin + contentWidth - 200, yPos + 8, { width: 60, align: 'center' })
+    .text('Unit Price', margin + contentWidth - 130, yPos + 8, { width: 60, align: 'right' })
+    .text('Total', margin + contentWidth - 60, yPos + 8, { width: 50, align: 'right' });
+
+  yPos += 35;
+
+  // [2025-12-06 14:30:00] Items table rows
+  doc.font('Helvetica').fontSize(10);
   order.items.forEach((item) => {
-    doc.text(`${item.variant.product.name}`, { continued: true });
-    doc.text(
-      `  ${item.variant.color || ''}${item.variant.color && item.variant.size ? ' • ' : ''}${item.variant.size || ''}`,
-      { continued: true }
-    );
-    doc.text(`  x${item.quantity}  @ $${Number(item.priceSnapshot).toFixed(2)}`);
+    const itemHeight = 40;
+    const productName = item.variant?.product?.name || 'Product';
+    const variantInfo = [
+      item.variant?.color,
+      item.variant?.size,
+    ].filter(Boolean).join(' • ');
+
+    // Item row background (alternating)
+    if (order.items.indexOf(item) % 2 === 0) {
+      doc.rect(margin, yPos - 5, contentWidth, itemHeight).fill('#f8fafc');
+    }
+
+    doc.fillColor('#1e293b')
+      .text(productName, margin + 10, yPos, { width: contentWidth - 250 })
+      .fontSize(9)
+      .fillColor('#64748b')
+      .text(variantInfo || '', margin + 10, yPos + 15, { width: contentWidth - 250 })
+      .fontSize(10)
+      .fillColor('#1e293b')
+      .text(item.quantity.toString(), margin + contentWidth - 200, yPos, { width: 60, align: 'center' })
+      .text(`$${Number(item.priceSnapshot).toFixed(2)}`, margin + contentWidth - 130, yPos, { width: 60, align: 'right' })
+      .text(`$${(Number(item.priceSnapshot) * item.quantity).toFixed(2)}`, margin + contentWidth - 60, yPos, { width: 50, align: 'right' });
+
+    yPos += itemHeight;
   });
 
-  doc.moveDown();
-  doc.text(`Subtotal: $${Number(order.subtotal).toFixed(2)}`);
-  doc.text(`Shipping: $${Number(order.shippingCost).toFixed(2)}`);
-  doc.text(`Tax: $${Number(order.tax).toFixed(2)}`);
-  doc.text(`Discount: $${Number(order.discount).toFixed(2)}`);
-  doc.moveDown(0.5);
-  doc.font('Helvetica-Bold').text(`Total: $${Number(order.total).toFixed(2)}`);
+  // [2025-12-06 14:30:00] Summary section
+  const summaryY = yPos + 20;
+  const summaryWidth = 200;
+  const summaryX = pageWidth - margin - summaryWidth;
+
+  doc.rect(summaryX, summaryY - 5, summaryWidth, 150).stroke('#e2e8f0');
+
+  let summaryYPos = summaryY + 10;
+
+  doc.font('Helvetica')
+    .fontSize(10)
+    .fillColor('#64748b')
+    .text('Subtotal:', summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' })
+    .fillColor('#1e293b')
+    .text(`$${Number(order.subtotal).toFixed(2)}`, summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' });
+  summaryYPos += 20;
+
+  if (Number(order.discount) > 0) {
+    doc.fillColor('#64748b')
+      .text('Discount:', summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' })
+      .fillColor('#1e293b')
+      .text(`-$${Number(order.discount).toFixed(2)}`, summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' });
+    summaryYPos += 20;
+  }
+
+  doc.fillColor('#64748b')
+    .text('Shipping:', summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' })
+    .fillColor('#1e293b')
+    .text(`$${Number(order.shippingCost).toFixed(2)}`, summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' });
+  summaryYPos += 20;
+
+  doc.fillColor('#64748b')
+    .text('Tax:', summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' })
+    .fillColor('#1e293b')
+    .text(`$${Number(order.tax).toFixed(2)}`, summaryX + 10, summaryYPos, { width: summaryWidth - 20, align: 'right' });
+  summaryYPos += 30;
+
+  // Total line
+  doc.rect(summaryX, summaryYPos - 5, summaryWidth, 30).fill('#1e293b');
+  doc.fillColor('#ffffff')
+    .font('Helvetica-Bold')
+    .fontSize(12)
+    .text('Total:', summaryX + 10, summaryYPos + 5, { width: summaryWidth - 20, align: 'right' })
+    .text(`${order.currency || 'CAD'} $${Number(order.total).toFixed(2)}`, summaryX + 10, summaryYPos + 5, { width: summaryWidth - 20, align: 'right' });
+
+  // [2025-12-06 14:30:00] Payment status and footer
+  const footerY = pageHeight - margin - 60;
+  doc.fillColor('#64748b')
+    .font('Helvetica')
+    .fontSize(9)
+    .text(`Payment Status: ${order.paymentStatus.toUpperCase()}`, margin, footerY)
+    .text(`Order Date: ${new Date(order.createdAt).toLocaleDateString('en-CA')}`, margin, footerY + 15);
+
+  // Footer note
+  doc.text(
+    'Thank you for your business! If you have any questions about this invoice, please contact our support team.',
+    margin,
+    footerY + 35,
+    { width: contentWidth, align: 'center' }
+  );
 
   doc.end();
   return stream;
-}; // [2025-11-12 01:05:02] 生成订单发票 PDF
+};
 
 const fetchOrderWithItems = async (where) =>
   prisma.order.findFirst({
@@ -401,7 +532,13 @@ const fetchOrderWithItems = async (where) =>
     },
   });
 
-exports.downloadInvoice = async (req, res) => {
+/**
+ * GET /api/orders/:id/invoice - Download invoice PDF
+ * [2025-11-12 01:05:02] Download invoice PDF
+ * [2025-12-06 14:30:00] Enhanced with unified error handling
+ */
+exports.downloadInvoice = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
     const { id } = req.params;
     const userId = req.user?.id;
@@ -409,59 +546,95 @@ exports.downloadInvoice = async (req, res) => {
     const order = await fetchOrderWithItems({ id });
 
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return next(new NotFoundError('订单不存在'));
     }
 
     if (order.userId && order.userId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
+      return next(new ForbiddenError('无权访问此订单的发票'));
     }
 
     if (!order.userId && !userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return next(new UnauthorizedError('需要身份验证'));
     }
 
+    // [2025-12-06 14:30:00] Generate invoice PDF
     const pdfStream = generateInvoicePdf(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=invoice-${order.orderNumber}.pdf`
     );
+
+    logger.info('Invoice PDF generated', {
+      timestamp,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      userId: userId || null,
+    });
+
     pdfStream.pipe(res);
   } catch (error) {
-    console.error('Error generating invoice:', error);
-    res.status(500).json({ error: 'Failed to generate invoice' });
+    logger.error('Error generating invoice', {
+      timestamp,
+      orderId: req.params.id,
+      userId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+    });
+    next(new InternalServerError('生成发票失败，请稍后重试'));
   }
 };
 
-exports.downloadInvoiceByOrderNumber = async (req, res) => {
+/**
+ * GET /api/orders/number/:orderNumber/invoice - Download invoice PDF by order number (guest access)
+ * [2025-11-12 01:05:02] Download invoice PDF by order number
+ * [2025-12-06 14:30:00] Enhanced with unified error handling
+ */
+exports.downloadInvoiceByOrderNumber = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
     const { orderNumber } = req.params;
     const { email } = req.query;
 
     if (!email) {
-      return res.status(400).json({ error: 'Email query parameter is required' });
+      return next(new BadRequestError('需要提供邮箱地址', { field: 'email' }));
     }
 
     const order = await fetchOrderWithItems({ orderNumber });
 
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return next(new NotFoundError('订单不存在'));
     }
 
     if (order.email.toLowerCase() !== String(email).toLowerCase()) {
-      return res.status(403).json({ error: 'Access denied' });
+      return next(new ForbiddenError('无权访问此订单的发票'));
     }
 
+    // [2025-12-06 14:30:00] Generate invoice PDF
     const pdfStream = generateInvoicePdf(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
       `attachment; filename=invoice-${order.orderNumber}.pdf`
     );
+
+    logger.info('Invoice PDF generated by order number', {
+      timestamp,
+      orderNumber: order.orderNumber,
+      orderId: order.id,
+      email: email.substring(0, 3) + '***',
+    });
+
     pdfStream.pipe(res);
   } catch (error) {
-    console.error('Error generating invoice by order number:', error);
-    res.status(500).json({ error: 'Failed to generate invoice' });
+    logger.error('Error generating invoice by order number', {
+      timestamp,
+      orderNumber: req.params.orderNumber,
+      email: req.query.email ? req.query.email.substring(0, 3) + '***' : null,
+      error: error.message,
+      stack: error.stack,
+    });
+    next(new InternalServerError('生成发票失败，请稍后重试'));
   }
 };
 
