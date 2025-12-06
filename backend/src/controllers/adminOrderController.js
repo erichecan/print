@@ -10,7 +10,8 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
 const logger = require('../utils/logger');
 const { sendRefundConfirmation } = require('../services/emailService');
 const { updateOrderStatus, validateStatusTransition } = require('../services/orderService');
-const { BadRequestError } = require('../utils/errors');
+const { BadRequestError, NotFoundError, InternalServerError } = require('../utils/errors');
+const easyshipService = require('../services/easyshipService');
 
 const ALLOWED_STATUSES = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
 const ALLOWED_PAYMENT_STATUSES = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED'];
@@ -521,6 +522,508 @@ exports.recordRefund = async (req, res) => {
       error: 'Failed to process refund',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
+  }
+};
+
+/**
+ * PATCH /api/admin/orders/batch/status - Batch update order statuses
+ * [2025-12-06 16:40:00] Batch order status update for Issue #87
+ */
+exports.batchUpdateStatus = async (req, res) => {
+  try {
+    const { orderIds, status, paymentStatus } = req.body || {};
+
+    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
+      return res.status(400).json({ error: 'orderIds array is required and must not be empty' });
+    }
+
+    if (!status && !paymentStatus) {
+      return res.status(400).json({ error: 'At least one of status or paymentStatus must be provided' });
+    }
+
+    const normalizedStatus = status ? String(status).toUpperCase() : null;
+    const normalizedPaymentStatus = paymentStatus ? String(paymentStatus).toUpperCase() : null;
+
+    // Validate status values
+    if (normalizedStatus && !ALLOWED_STATUSES.includes(normalizedStatus)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+
+    if (normalizedPaymentStatus && !ALLOWED_PAYMENT_STATUSES.includes(normalizedPaymentStatus)) {
+      return res.status(400).json({ error: 'Invalid payment status value' });
+    }
+
+    // Fetch all orders for validation
+    const orders = await prisma.order.findMany({
+      where: { id: { in: orderIds } },
+      select: {
+        id: true,
+        orderNumber: true,
+        status: true,
+        paymentStatus: true,
+      },
+    });
+
+    if (orders.length !== orderIds.length) {
+      const foundIds = orders.map((o) => o.id);
+      const missingIds = orderIds.filter((id) => !foundIds.includes(id));
+      return res.status(404).json({
+        error: 'Some orders not found',
+        missingIds,
+      });
+    }
+
+    // Validate status transitions for all orders
+    const validationErrors = [];
+    for (const order of orders) {
+      if (normalizedStatus && order.status !== normalizedStatus) {
+        try {
+          validateStatusTransition(order, normalizedStatus);
+        } catch (validationError) {
+          validationErrors.push({
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            error: validationError.message,
+          });
+        }
+      }
+    }
+
+    if (validationErrors.length > 0) {
+      return res.status(400).json({
+        error: 'Some orders have invalid status transitions',
+        errors: validationErrors,
+      });
+    }
+
+    // Build update data
+    const updateData = {};
+    if (normalizedStatus) {
+      updateData.status = normalizedStatus;
+    }
+    if (normalizedPaymentStatus) {
+      updateData.paymentStatus = normalizedPaymentStatus;
+    }
+
+    // Batch update orders
+    const result = await prisma.order.updateMany({
+      where: { id: { in: orderIds } },
+      data: updateData,
+    });
+
+    logger.info('Batch order status updated by admin', {
+      orderIds,
+      updateData,
+      updatedCount: result.count,
+      actorId: req.user?.id,
+      actorEmail: req.user?.email,
+    });
+
+    res.json({
+      success: true,
+      updatedCount: result.count,
+      orderIds,
+    });
+  } catch (error) {
+    logger.error('[Admin] Error batch updating order status:', {
+      error: error.message,
+      stack: error.stack,
+      orderIds: req.body?.orderIds,
+    });
+
+    res.status(500).json({
+      error: 'Failed to batch update order status',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * GET /api/admin/orders/export - Export orders to CSV
+ * [2025-12-06 16:40:00] Batch export orders for Issue #87
+ */
+exports.exportOrders = async (req, res) => {
+  try {
+    const { orderIds, status, paymentStatus, search, startDate, endDate } = req.query || {};
+
+    // Build where clause
+    const where = {};
+
+    if (orderIds) {
+      const ids = Array.isArray(orderIds) ? orderIds : orderIds.split(',');
+      where.id = { in: ids };
+    }
+
+    if (status) {
+      const normalizedStatus = String(status).toUpperCase();
+      if (ALLOWED_STATUSES.includes(normalizedStatus)) {
+        where.status = normalizedStatus;
+      }
+    }
+
+    if (paymentStatus) {
+      const normalizedPayment = String(paymentStatus).toUpperCase();
+      if (ALLOWED_PAYMENT_STATUSES.includes(normalizedPayment)) {
+        where.paymentStatus = normalizedPayment;
+      }
+    }
+
+    if (search) {
+      where.OR = [
+        { orderNumber: { contains: search, mode: 'insensitive' } },
+        { customerEmail: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+
+    // Fetch orders with related data
+    const orders = await prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        orderNumber: true,
+        customerEmail: true,
+        status: true,
+        paymentStatus: true,
+        total: true,
+        currency: true,
+        createdAt: true,
+        updatedAt: true,
+        trackingNumber: true,
+        carrier: true,
+        items: {
+          select: {
+            quantity: true,
+            unitPrice: true,
+            product: {
+              select: {
+                name: true,
+                sku: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10000, // Limit to 10k orders for performance
+    });
+
+    // Generate CSV
+    const csvHeaders = [
+      'Order Number',
+      'Customer Email',
+      'Status',
+      'Payment Status',
+      'Total',
+      'Currency',
+      'Item Count',
+      'Tracking Number',
+      'Carrier',
+      'Created At',
+      'Updated At',
+    ];
+
+    const csvRows = orders.map((order) => {
+      const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
+      return [
+        order.orderNumber,
+        order.customerEmail || '',
+        order.status,
+        order.paymentStatus,
+        order.total.toString(),
+        order.currency || 'USD',
+        itemCount.toString(),
+        order.trackingNumber || '',
+        order.carrier || '',
+        new Date(order.createdAt).toISOString(),
+        new Date(order.updatedAt).toISOString(),
+      ];
+    });
+
+    // Escape CSV values
+    const escapeCsvValue = (value) => {
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    const csvContent = [
+      csvHeaders.map(escapeCsvValue).join(','),
+      ...csvRows.map((row) => row.map((cell) => escapeCsvValue(String(cell))).join(',')),
+    ].join('\n');
+
+    // Set response headers
+    const filename = `orders-export-${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Add BOM for Excel compatibility
+    res.write('\ufeff');
+    res.end(csvContent);
+
+    logger.info('Orders exported by admin', {
+      orderCount: orders.length,
+      filters: { orderIds, status, paymentStatus, search, startDate, endDate },
+      actorId: req.user?.id,
+      actorEmail: req.user?.email,
+    });
+  } catch (error) {
+    logger.error('[Admin] Error exporting orders:', {
+      error: error.message,
+      stack: error.stack,
+    });
+
+    res.status(500).json({
+      error: 'Failed to export orders',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
+/**
+ * POST /api/admin/orders/:id/shipment/label - Generate shipping label via EasyShip
+ * [2025-12-06 15:30:00] Generate shipping label using EasyShip API
+ */
+exports.generateShippingLabel = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
+  try {
+    const { id } = req.params;
+    const { rateId } = req.body || {}; // Optional: pre-selected rate ID
+
+    // Fetch order with full details
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+        shippingAddress: true,
+        billingAddress: true,
+      },
+    });
+
+    if (!order) {
+      return next(new NotFoundError('订单不存在'));
+    }
+
+    // Check if order can be shipped
+    if (order.status === 'CANCELLED' || order.status === 'REFUNDED') {
+      return next(new BadRequestError('无法为已取消或已退款的订单生成发货标签', { status: order.status }));
+    }
+
+    // Check if shipment already exists
+    const existingShipment = await prisma.shipment.findFirst({
+      where: { orderId: id },
+    });
+
+    if (existingShipment && existingShipment.labelUrl) {
+      return next(
+        new BadRequestError('该订单已存在发货标签', {
+          shipmentId: existingShipment.id,
+          labelUrl: existingShipment.labelUrl,
+        })
+      );
+    }
+
+    // [2025-12-06 15:30:00] Prepare shipment data for EasyShip
+    const shipmentData = {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      email: order.email,
+      currency: order.currency || 'CAD',
+      shippingAddress: order.shippingAddress,
+      items: order.items.map((item) => ({
+        productName: item.variant.product.name,
+        sku: item.variant.sku,
+        quantity: item.quantity,
+        priceSnapshot: Number(item.priceSnapshot),
+        weight: item.variant.weight || 0.5, // Default weight in kg
+      })),
+      rateId: rateId || null,
+    };
+
+    // [2025-12-06 15:30:00] Create shipment via EasyShip API
+    let easyshipResult;
+    try {
+      easyshipResult = await easyshipService.createShipment(shipmentData);
+    } catch (easyshipError) {
+      logger.error('EasyShip API error', {
+        timestamp,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        error: easyshipError.message,
+      });
+      return next(
+        new InternalServerError('生成发货标签失败', {
+          details: easyshipError.message,
+          suggestion: '请检查 EasyShip API 配置或稍后重试',
+        })
+      );
+    }
+
+    // [2025-12-06 15:30:00] Update or create shipment record
+    const shipment = await prisma.$transaction(async (tx) => {
+      if (existingShipment) {
+        return await tx.shipment.update({
+          where: { id: existingShipment.id },
+          data: {
+            trackingNumber: easyshipResult.trackingNumber,
+            carrier: easyshipResult.carrier,
+            labelUrl: easyshipResult.labelUrl || easyshipResult.labelPdfUrl,
+            status: 'LABEL_CREATED',
+          },
+        });
+      } else {
+        return await tx.shipment.create({
+          data: {
+            orderId: order.id,
+            trackingNumber: easyshipResult.trackingNumber,
+            carrier: easyshipResult.carrier,
+            labelUrl: easyshipResult.labelUrl || easyshipResult.labelPdfUrl,
+            status: 'LABEL_CREATED',
+          },
+        });
+      }
+    });
+
+    // [2025-12-06 15:30:00] Update order status to SHIPPED if not already
+    if (order.status !== 'SHIPPED' && order.status !== 'DELIVERED') {
+      try {
+        await updateOrderStatus(order.id, 'SHIPPED', {
+          actorId: req.user?.id,
+          actorName: req.user?.email,
+          note: '发货标签已生成',
+        });
+      } catch (statusError) {
+        logger.warn('Failed to update order status to SHIPPED', {
+          timestamp,
+          orderId: order.id,
+          error: statusError.message,
+        });
+        // Don't fail label generation if status update fails
+      }
+    }
+
+    logger.info('Shipping label generated successfully', {
+      timestamp,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      shipmentId: shipment.id,
+      trackingNumber: easyshipResult.trackingNumber,
+      carrier: easyshipResult.carrier,
+      labelUrl: shipment.labelUrl,
+    });
+
+    res.json({
+      id: shipment.id,
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      trackingNumber: shipment.trackingNumber,
+      carrier: shipment.carrier,
+      labelUrl: shipment.labelUrl,
+      status: shipment.status.toLowerCase(),
+      createdAt: shipment.createdAt,
+      updatedAt: shipment.updatedAt,
+    });
+  } catch (error) {
+    logger.error('Error generating shipping label', {
+      timestamp,
+      orderId: req.params.id,
+      userId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+    });
+    next(new InternalServerError('生成发货标签失败，请稍后重试'));
+  }
+};
+
+/**
+ * GET /api/admin/orders/:id/shipment/rates - Get shipping rates from EasyShip
+ * [2025-12-06 15:30:00] Get available shipping rates for an order
+ */
+exports.getShippingRates = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
+  try {
+    const { id } = req.params;
+
+    // Fetch order with full details
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+        shippingAddress: true,
+      },
+    });
+
+    if (!order) {
+      return next(new NotFoundError('订单不存在'));
+    }
+
+    // [2025-12-06 15:30:00] Get shipping rates from EasyShip
+    const rateData = {
+      currency: order.currency || 'CAD',
+      shippingAddress: order.shippingAddress,
+      items: order.items.map((item) => ({
+        productName: item.variant.product.name,
+        sku: item.variant.sku,
+        quantity: item.quantity,
+        priceSnapshot: Number(item.priceSnapshot),
+        weight: item.variant.weight || 0.5, // Default weight in kg
+      })),
+    };
+
+    let rates = [];
+    try {
+      rates = await easyshipService.getShippingRates(rateData);
+    } catch (rateError) {
+      logger.warn('Failed to get EasyShip rates, returning empty array', {
+        timestamp,
+        orderId: order.id,
+        error: rateError.message,
+      });
+      // Return empty array - frontend can handle fallback
+    }
+
+    res.json({
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      rates: rates,
+      currency: order.currency || 'CAD',
+    });
+  } catch (error) {
+    logger.error('Error getting shipping rates', {
+      timestamp,
+      orderId: req.params.id,
+      userId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+    });
+    next(new InternalServerError('获取运费报价失败，请稍后重试'));
   }
 };
 

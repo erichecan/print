@@ -1720,8 +1720,67 @@ export const adminOrdersApi = {
   get: (id: string) => api<any>(`/admin/orders/${id}`),
   updateStatus: (id: string, payload: any) =>
     api(`/admin/orders/${id}/status`, { method: 'PATCH', body: payload }),
+  // [2025-12-06 16:40:00] Batch operations for Issue #87
+  batchUpdateStatus: (orderIds: string[], payload: { status?: string; paymentStatus?: string }) =>
+    api<{ success: boolean; updatedCount: number; orderIds: string[] }>(`/admin/orders/batch/status`, {
+      method: 'PATCH',
+      body: { orderIds, ...payload },
+    }),
+  exportOrders: async (params?: {
+    orderIds?: string[];
+    status?: string;
+    paymentStatus?: string;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.orderIds) {
+      if (Array.isArray(params.orderIds)) {
+        params.orderIds.forEach((id) => query.append('orderIds', id));
+      } else {
+        query.append('orderIds', params.orderIds);
+      }
+    }
+    if (params?.status) query.append('status', params.status);
+    if (params?.paymentStatus) query.append('paymentStatus', params.paymentStatus);
+    if (params?.search) query.append('search', params.search);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString();
+    const response = await fetch(`${API_BASE_URL}/admin/orders/export${queryString ? `?${queryString}` : ''}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `Export failed: ${response.status}`);
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-export-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
   recordRefund: (id: string, payload: AdminOrderRefundPayload) =>
     api(`/admin/orders/${id}/refund`, { method: 'POST', body: payload }),
+  // [2025-12-06 15:30:00] EasyShip shipping label APIs
+  getShippingRates: (id: string) => api<{ orderId: string; orderNumber: string; rates: Array<{ id: string; courier: string; service: string; price: number; currency: string; estimatedDeliveryDays?: number | null }>; currency: string }>(`/admin/orders/${id}/shipment/rates`),
+  generateShippingLabel: (id: string, rateId?: string) =>
+    api<{
+      id: string;
+      orderId: string;
+      orderNumber: string;
+      trackingNumber: string | null;
+      carrier: string | null;
+      labelUrl: string | null;
+      status: string;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/admin/orders/${id}/shipment/label`, { method: 'POST', body: rateId ? { rateId } : {} }),
   // [2025-01-28 08:30:00] auditTrail 功能已移除
 };
 
