@@ -5,6 +5,7 @@
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { BadRequestError, ForbiddenError } = require('../utils/errors');
+const { sendOrderStatusUpdateNotification, sendOrderCancellationConfirmation } = require('./emailService');
 
 /**
  * Order Status State Machine
@@ -158,8 +159,44 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
     actorName,
   });
 
-  // TODO: Record status change history (if needed)
-  // TODO: Send status update notification email
+  // [2025-12-06 11:00:00] If status changed to CANCELLED, send cancellation email
+  // Otherwise, send status update notification email (handled by Issue #3 implementation)
+  if (normalizedNewStatus === 'CANCELLED' && order.status !== 'CANCELLED') {
+    try {
+      // Fetch full order details for email
+      const orderWithDetails = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+          items: {
+            include: {
+              variant: {
+                include: {
+                  product: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (orderWithDetails) {
+        const cancelledBy = actorId ? 'admin' : 'system';
+        await sendOrderCancellationConfirmation(orderWithDetails, note, cancelledBy);
+        logger.info('Order cancellation confirmation email sent via updateOrderStatus', {
+          orderNumber: order.orderNumber,
+          email: orderWithDetails.email,
+          cancelledBy,
+          reason: note || null,
+        });
+      }
+    } catch (emailError) {
+      logger.warn('Failed to send order cancellation confirmation email via updateOrderStatus', {
+        orderNumber: order.orderNumber,
+        error: emailError.message,
+      });
+      // Don't throw - email failure shouldn't fail status update
+    }
+  }
 
   return updatedOrder;
 }
@@ -219,10 +256,11 @@ async function cancelOrder(orderId, options = {}) {
       },
     });
 
-    // Restore inventory if needed
+    // [2025-12-06 11:30:00] Restore inventory if needed
+    // Use correct Prisma model name: Variant (not productVariant)
     if (restoreInventory) {
       for (const item of order.items) {
-        await tx.productVariant.update({
+        await tx.variant.update({
           where: { id: item.variantId },
           data: {
             stockQuantity: {
@@ -262,7 +300,41 @@ async function cancelOrder(orderId, options = {}) {
     processRefund,
   });
 
-  // TODO: Send cancellation confirmation email
+  // [2025-12-06 11:00:00] Send cancellation confirmation email (don't fail if email fails)
+  try {
+    // Fetch full order details for email
+    const orderWithDetails = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (orderWithDetails) {
+      const cancelledBy = userId ? 'customer' : 'admin';
+      await sendOrderCancellationConfirmation(orderWithDetails, reason, cancelledBy);
+      logger.info('Order cancellation confirmation email sent', {
+        orderNumber: order.orderNumber,
+        email: orderWithDetails.email,
+        cancelledBy,
+        reason: reason || null,
+      });
+    }
+  } catch (emailError) {
+    logger.warn('Failed to send order cancellation confirmation email', {
+      orderNumber: order.orderNumber,
+      error: emailError.message,
+    });
+    // Don't throw - email failure shouldn't fail cancellation
+  }
 
   return updatedOrder;
 }

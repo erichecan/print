@@ -565,13 +565,28 @@ export const designsApi = {
 };
 
 // Orders API
+// [2025-12-06 13:30:00] Enhanced with search, paymentStatus filter, and proper sorting
 export const ordersApi = {
-  list: (page: number = 1, limit: number = 20, status?: string, sort?: string) => {
+  list: (
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+    sort?: string,
+    search?: string,
+    paymentStatus?: string
+  ) => {
     const query = new URLSearchParams();
     query.append('page', page.toString());
     query.append('limit', limit.toString());
     if (status) query.append('status', status);
-    if (sort) query.append('sort', sort);
+    if (paymentStatus) query.append('paymentStatus', paymentStatus);
+    if (search) query.append('search', search);
+    // [2025-12-06 13:30:00] Parse sort parameter (format: "field_order" e.g., "createdAt_desc")
+    if (sort) {
+      const [sortBy, sortOrder] = sort.split('_');
+      if (sortBy) query.append('sortBy', sortBy);
+      if (sortOrder) query.append('sortOrder', sortOrder);
+    }
     return api<{ orders: AccountOrderDetail[]; pagination?: any } | { data: AccountOrderDetail[]; pagination?: any }>(`/orders?${query.toString()}`);
   },
   getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`),
@@ -607,15 +622,27 @@ export const ordersApi = {
     }),
   getTracking: (id: string) =>
     api<{
+      orderNumber: string;
+      status: string;
       trackingNumber?: string | null;
       carrier?: string | null;
-      status: string;
+      estimatedDelivery?: string | null;
+      shipments: Array<{
+        id: string;
+        trackingNumber?: string | null;
+        carrier?: string | null;
+        status: string;
+        labelUrl?: string | null;
+        createdAt: string;
+        updatedAt: string;
+      }>;
       events: Array<{
         date: string;
-        location?: string;
+        location?: string | null;
         status: string;
-        description?: string;
+        description: string;
       }>;
+      lastUpdated: string;
     }>(`/orders/${id}/tracking`),
 };
 
@@ -805,6 +832,46 @@ export const salesOrdersApi = {
   },
   get: (id: string) =>
     api<{ order: SalesOfflineOrderDetail }>(`/sales/orders/${id}`).then((res) => res.order),
+};
+
+// [2025-12-06 17:00:00] Offline Order Product Configuration API
+// 获取线下订单配置数据（产品、颜色、尺寸费用、可用性等）
+export interface OfflineOrderProduct {
+  id: string;
+  name: string;
+  categoryId: string;
+  categoryName: string;
+  basePrice: number;
+}
+
+export interface OfflineOrderColor {
+  id: string;
+  name: string;
+  hex?: string;
+}
+
+export interface OfflineOrderSizeFee {
+  size: string;
+  additionalFee: number;
+}
+
+export interface OfflineOrderAvailability {
+  productId: string;
+  colorId: string;
+  size: string;
+  available: boolean;
+}
+
+export interface OfflineOrderConfig {
+  products: OfflineOrderProduct[];
+  colors: OfflineOrderColor[];
+  sizeFees: OfflineOrderSizeFee[];
+  availability: OfflineOrderAvailability[];
+}
+
+export const offlineOrderProductApi = {
+  // [2025-12-06 17:00:00] 获取订单配置数据
+  getOrderConfig: () => sameOriginApi<OfflineOrderConfig>('/api/offline-order-products/config'),
 };
 
 // Address API
@@ -1690,6 +1757,8 @@ export interface AdminOrderListParams {
 
 export interface AdminOrderRefundPayload {
   reason?: string;
+  amount?: number; // [2025-12-06 14:00:00] Support partial refund
+  refundToStripe?: boolean; // [2025-12-06 14:00:00] Whether to process refund via Stripe
 }
 
 export interface AdminOrderUpdatePayload {

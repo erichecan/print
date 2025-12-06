@@ -1,4 +1,5 @@
 // [2025-11-08 06:56:10] Offline POD order controller
+// [2025-12-06 12:00:00] Enhanced with unified error handling
 const path = require('path');
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -9,6 +10,7 @@ const {
   getInitialStage
 } = require('../services/offlineWorkflowService');
 const { ensureOfflineUploadRoot } = require('../utils/offlineUpload');
+const { InternalServerError } = require('../utils/errors');
 
 const UPLOADS_PUBLIC_PREFIX = '/uploads';
 ensureOfflineUploadRoot();
@@ -341,7 +343,7 @@ exports.createOfflineOrder = async (req, res) => {
  * GET /api/admin/offline-orders
  * [2025-11-08 06:56:10]
  */
-exports.listOfflineOrders = async (req, res) => {
+exports.listOfflineOrders = async (req, res, next) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
@@ -420,10 +422,7 @@ exports.listOfflineOrders = async (req, res) => {
     });
   } catch (error) {
     logger.error('Failed to list offline orders', error);
-    res.status(500).json({
-      error: 'Server Error',
-      message: 'Failed to list offline orders'
-    });
+    next(new InternalServerError('无法获取线下订单列表，请稍后重试'));
   }
 };
 
@@ -431,7 +430,7 @@ exports.listOfflineOrders = async (req, res) => {
  * GET /api/admin/offline-orders/metrics/summary
  * [2025-11-08 06:56:10]
  */
-exports.getOfflineOrderMetrics = async (req, res) => {
+exports.getOfflineOrderMetrics = async (req, res, next) => {
   try {
     const [stageCounts, statusCounts, rushCount, totalCount, stages] = await Promise.all([
       prisma.offlineOrder.groupBy({

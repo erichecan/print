@@ -1,84 +1,115 @@
-// [2025-12-06] PRD v2.0: 线下订单尺码费用管理控制器
+/**
+ * Offline Order Size Fee Controller
+ * [2025-12-06 17:50:00] PRD v2.0: 尺码额外费用配置 API
+ * [2025-12-06 12:00:00] Enhanced with unified error handling
+ */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
-const { BadRequestError, NotFoundError, InternalServerError } = require('../utils/errors');
-
-const ALLOWED_SIZES = ['2XL', '3XL', '4XL', '5XL'];
+const {
+  BadRequestError,
+  InternalServerError,
+} = require('../utils/errors');
 
 /**
- * 获取尺码费用列表
  * GET /api/admin/offline-order-size-fees
+ * 获取所有尺码费用配置
  */
 exports.getSizeFees = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
     const sizeFees = await prisma.offlineOrderSizeFee.findMany({
       orderBy: { size: 'asc' },
     });
 
-    res.json({
-      success: true,
-      data: sizeFees.map((sf) => ({
-        id: sf.id,
-        size: sf.size,
-        additionalFee: Number(sf.additionalFee),
-      })),
-      count: sizeFees.length,
+    // [2025-12-06 17:50:00] 如果配置为空，返回默认值
+    const defaultSizes = ['2XL', '3XL', '4XL', '5XL'];
+    const defaultFees = {
+      '2XL': 2.5,
+      '3XL': 3.5,
+      '4XL': 4.5,
+      '5XL': 5.5,
+    };
+
+    const sizeFeeMap = {};
+    sizeFees.forEach((sf) => {
+      sizeFeeMap[sf.size] = parseFloat(sf.additionalFee);
     });
+
+    // [2025-12-06 17:50:00] 合并默认值（如果配置中没有）
+    const result = defaultSizes.map((size) => ({
+      size,
+      additionalFee: sizeFeeMap[size] || defaultFees[size],
+    }));
+
+    logger.info('[OfflineOrderSizeFee] Get size fees', { timestamp });
+    res.json({ data: result });
   } catch (error) {
-    logger.error('[offlineOrderSizeFeeController] Error getting size fees:', error);
-    next(new InternalServerError('Failed to get size fees'));
+    logger.error('[OfflineOrderSizeFee] Get size fees error', {
+      timestamp,
+      error: error.message,
+      stack: error.stack,
+    });
+    next(new InternalServerError('无法获取尺码费用配置，请稍后重试'));
   }
 };
 
 /**
- * 批量更新尺码费用
  * PATCH /api/admin/offline-order-size-fees
+ * 批量更新尺码费用配置
  */
 exports.updateSizeFees = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
-    const { sizeFees } = req.body;
+    const { sizeFees } = req.body; // [{ size: '2XL', additionalFee: 2.5 }, ...]
 
     if (!Array.isArray(sizeFees)) {
-      return next(new BadRequestError('sizeFees must be an array'));
+      return next(new BadRequestError('尺码费用配置必须是一个数组', {
+        received: typeof sizeFees,
+      }));
     }
 
-    // 验证数据
-    for (const sf of sizeFees) {
-      if (!sf.size || !ALLOWED_SIZES.includes(sf.size)) {
-        return next(new BadRequestError(`Invalid size: ${sf.size}. Allowed sizes: ${ALLOWED_SIZES.join(', ')}`));
-      }
-      if (typeof sf.additionalFee !== 'number' || sf.additionalFee < 0) {
-        return next(new BadRequestError(`Invalid additionalFee for size ${sf.size}: must be a non-negative number`));
-      }
-    }
+    const validSizes = ['2XL', '3XL', '4XL', '5XL'];
+    const updates = [];
 
-    // 使用事务批量更新或创建
-    const results = await prisma.$transaction(
-      sizeFees.map((sf) =>
+    for (const item of sizeFees) {
+      if (!validSizes.includes(item.size)) {
+        return next(new BadRequestError(`无效的尺码: ${item.size}`, {
+          validSizes,
+          received: item.size,
+        }));
+      }
+
+      const fee = parseFloat(item.additionalFee);
+      if (isNaN(fee) || fee < 0) {
+        return next(new BadRequestError(`尺码 ${item.size} 的费用无效，必须为非负数`, {
+          size: item.size,
+          received: item.additionalFee,
+        }));
+      }
+
+      updates.push(
         prisma.offlineOrderSizeFee.upsert({
-          where: { size: sf.size },
-          update: {
-            additionalFee: sf.additionalFee,
-          },
+          where: { size: item.size },
+          update: { additionalFee: fee },
           create: {
-            size: sf.size,
-            additionalFee: sf.additionalFee,
+            size: item.size,
+            additionalFee: fee,
           },
         })
-      )
-    );
+      );
+    }
 
-    res.json({
-      success: true,
-      data: results.map((sf) => ({
-        id: sf.id,
-        size: sf.size,
-        additionalFee: Number(sf.additionalFee),
-      })),
-    });
+    const results = await Promise.all(updates);
+
+    logger.info('[OfflineOrderSizeFee] Update size fees', { timestamp, count: results.length });
+    res.json({ data: results });
   } catch (error) {
-    logger.error('[offlineOrderSizeFeeController] Error updating size fees:', error);
-    next(new InternalServerError('Failed to update size fees'));
+    logger.error('[OfflineOrderSizeFee] Update size fees error', {
+      timestamp,
+      error: error.message,
+      stack: error.stack,
+    });
+    next(new InternalServerError('更新尺码费用配置失败，请稍后重试'));
   }
 };
 

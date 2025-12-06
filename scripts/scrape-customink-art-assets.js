@@ -381,11 +381,52 @@ async function scrapeArtAssets() {
       // 添加从网络请求捕获的 URL
       if (window.artAssetUrls && window.artAssetUrls.size > 0) {
         window.artAssetUrls.forEach((url) => {
+          // 过滤掉非艺术素材的 URL
+          const urlLower = url.toLowerCase();
+          const skipPatterns = [
+            'clickagy.com', 'bing.com', 'adnxs.com', 'cookielaw.org',
+            'pixel.gif', 'tracking', 'analytics', 'beacon',
+            'mms-images-prod.imgix.net', // 产品图片
+            'logo', 'icon', 'button',
+          ];
+          
+          if (skipPatterns.some(pattern => urlLower.includes(pattern))) {
+            return; // 跳过
+          }
+          
+          // 只保留艺术素材 URL
+          const artPatterns = [
+            'art', 'artwork', 'asset', 'design', 'graphic',
+            '/ndx/assets', 'pigment-cdn', '/art/',
+          ];
+          
+          if (!artPatterns.some(pattern => urlLower.includes(pattern))) {
+            return; // 跳过非艺术素材
+          }
+          
           let categorySlug = 'other';
-          for (const cat of categories) {
-            if (url.toLowerCase().includes(cat.slug)) {
-              categorySlug = cat.slug;
-              break;
+          
+          // 尝试从 URL 路径提取分类
+          const urlParts = url.split('/');
+          for (let i = 0; i < urlParts.length; i++) {
+            const part = urlParts[i].toLowerCase();
+            for (const cat of categories) {
+              if (part === cat.slug || part.includes(cat.slug) || cat.slug.includes(part)) {
+                categorySlug = cat.slug;
+                break;
+              }
+            }
+            if (categorySlug !== 'other') break;
+          }
+          
+          // 如果还是 other，尝试从文件名推断
+          if (categorySlug === 'other') {
+            const fileName = url.split('/').pop() || '';
+            for (const cat of categories) {
+              if (fileName.toLowerCase().includes(cat.slug)) {
+                categorySlug = cat.slug;
+                break;
+              }
             }
           }
           
@@ -394,13 +435,17 @@ async function scrapeArtAssets() {
           }
           
           const fileName = url.split('/').pop() || 'art-asset';
-          const name = fileName.replace(/\.(png|jpg|jpeg|svg|webp)$/i, '');
+          const name = fileName.split('?')[0].replace(/\.(png|jpg|jpeg|svg|webp)$/i, '') || 'art-asset';
           
-          assets[categorySlug].push({
-            name: name,
-            url: url,
-            thumbnailUrl: url
-          });
+          // 避免重复
+          const exists = assets[categorySlug].some(a => a.url === url);
+          if (!exists) {
+            assets[categorySlug].push({
+              name: name,
+              url: url,
+              thumbnailUrl: url
+            });
+          }
         });
       }
 

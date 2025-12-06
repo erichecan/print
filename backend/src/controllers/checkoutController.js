@@ -813,10 +813,11 @@ exports.confirmOrder = async (req, res) => {
         },
       });
 
-      // Decrease inventory for all order items
-      // [2025-01-27 13:35:00] Inventory management
+      // [2025-12-06 11:30:00] Decrease inventory for all order items
+      // Use correct Prisma model name: Variant (not productVariant)
+      // This is done within the transaction to ensure atomicity
       for (const item of createdOrder.items) {
-        await tx.productVariant.update({
+        await tx.variant.update({
           where: { id: item.variantId },
           data: {
             stockQuantity: {

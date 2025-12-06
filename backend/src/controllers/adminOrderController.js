@@ -280,6 +280,7 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     // Update order and create/update shipment if tracking info provided
+    let shipmentUpdated = false;
     const order = await prisma.$transaction(async (tx) => {
       const updatedOrder = await tx.order.update({
       where: { id },
@@ -303,6 +304,11 @@ exports.updateOrderStatus = async (req, res) => {
         });
 
         if (existingShipment) {
+          // [2025-12-06 15:00:00] Check if tracking info changed
+          const trackingChanged =
+            existingShipment.trackingNumber !== trackingNumber || existingShipment.carrier !== carrier;
+          shipmentUpdated = trackingChanged;
+
           await tx.shipment.update({
             where: { id: existingShipment.id },
             data: {
@@ -312,6 +318,7 @@ exports.updateOrderStatus = async (req, res) => {
             },
           });
         } else {
+          shipmentUpdated = true;
           await tx.shipment.create({
             data: {
               orderId: id,
@@ -325,6 +332,47 @@ exports.updateOrderStatus = async (req, res) => {
 
       return updatedOrder;
     });
+
+    // [2025-12-06 15:00:00] Send tracking update notification if tracking info was added or updated
+    if (shipmentUpdated && trackingNumber && carrier) {
+      try {
+        // Fetch full order details for email
+        const orderWithDetails = await prisma.order.findUnique({
+          where: { id },
+          include: {
+            items: {
+              include: {
+                variant: {
+                  include: {
+                    product: true,
+                  },
+                },
+              },
+            },
+            shippingAddress: true,
+          },
+        });
+
+        if (orderWithDetails) {
+          const { sendShippingNotification } = require('../services/emailService');
+          await sendShippingNotification(orderWithDetails, trackingNumber, carrier);
+          logger.info('Tracking update notification email sent', {
+            orderNumber: order.orderNumber,
+            orderId: order.id,
+            email: orderWithDetails.email,
+            trackingNumber,
+            carrier,
+          });
+        }
+      } catch (emailError) {
+        logger.warn('Failed to send tracking update notification email', {
+          orderNumber: order.orderNumber,
+          orderId: order.id,
+          error: emailError.message,
+        });
+        // Don't throw - email failure shouldn't fail status update
+      }
+    }
 
     // [2025-01-28 08:30:00] Audit Logs 功能已移除
 
@@ -372,8 +420,10 @@ exports.updateOrderStatus = async (req, res) => {
 /**
  * POST /api/admin/orders/:id/refund - Process refund for an order
  * [2025-01-27 10:15:00] Enhanced with Stripe refund integration
+ * [2025-12-06 14:00:00] Enhanced with unified error handling
  */
-exports.recordRefund = async (req, res) => {
+exports.recordRefund = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
     const { id } = req.params;
     const { reason, amount, refundToStripe = true } = req.body || {};
@@ -394,29 +444,35 @@ exports.recordRefund = async (req, res) => {
     });
 
     if (!order) {
-      return res.status(404).json({ error: 'Order not found' });
+      return next(new NotFoundError('订单不存在'));
     }
 
     // Validate order can be refunded
     if (order.paymentStatus !== 'COMPLETED') {
-      return res.status(400).json({
-        error: 'Order payment status must be COMPLETED to process refund',
-        currentStatus: order.paymentStatus,
-      });
+      return next(
+        new BadRequestError('只有已支付的订单才能退款', {
+          currentStatus: order.paymentStatus,
+          requiredStatus: 'COMPLETED',
+        })
+      );
     }
 
     if (order.status === 'REFUNDED') {
-      return res.status(400).json({
-        error: 'Order has already been refunded',
-      });
+      return next(new BadRequestError('该订单已经退款', { orderNumber: order.orderNumber }));
     }
 
     const refundAmount = amount ? Number(amount) : Number(order.total);
-    if (refundAmount <= 0 || refundAmount > Number(order.total)) {
-      return res.status(400).json({
-        error: 'Invalid refund amount',
-        maxAmount: Number(order.total),
-      });
+    if (isNaN(refundAmount) || refundAmount <= 0) {
+      return next(new BadRequestError('退款金额必须大于 0', { amount, orderTotal: Number(order.total) }));
+    }
+
+    if (refundAmount > Number(order.total)) {
+      return next(
+        new BadRequestError('退款金额不能超过订单总额', {
+          refundAmount,
+          maxAmount: Number(order.total),
+        })
+      );
     }
 
     let stripeRefund = null;
@@ -465,11 +521,18 @@ exports.recordRefund = async (req, res) => {
         // If Stripe refund fails, still allow manual refund record
         // but return error status
         if (refundToStripe) {
-          return res.status(500).json({
-            error: 'Failed to process Stripe refund',
-            details: stripeError.message,
-            suggestion: 'You can record refund manually by setting refundToStripe=false',
+          logger.error('Stripe refund failed, rejecting request', {
+            timestamp,
+            orderNumber: order.orderNumber,
+            orderId: order.id,
+            error: stripeError.message,
           });
+          return next(
+            new InternalServerError('Stripe 退款处理失败', {
+              details: stripeError.message,
+              suggestion: '可以设置 refundToStripe=false 手动记录退款',
+            })
+          );
         }
       }
     }
@@ -504,6 +567,16 @@ exports.recordRefund = async (req, res) => {
       });
     }
 
+    logger.info('Refund processed successfully', {
+      timestamp,
+      orderNumber: updatedOrder.orderNumber,
+      orderId: updatedOrder.id,
+      refundAmount,
+      isFullRefund: refundAmount >= Number(order.total),
+      stripeRefundId: stripeRefund?.id || null,
+      refundToStripe,
+    });
+
     res.json({
       id: updatedOrder.id,
       orderNumber: updatedOrder.orderNumber,
@@ -514,14 +587,16 @@ exports.recordRefund = async (req, res) => {
       updatedAt: updatedOrder.updatedAt,
       refundNote: reason || null,
       stripeRefundId: stripeRefund?.id || null,
-      ...(refundError && { warning: `Stripe refund failed: ${refundError}` }),
+      ...(refundError && { warning: `Stripe 退款失败: ${refundError}` }),
     });
   } catch (error) {
-    logger.error('[Admin] Error processing refund:', error);
-    res.status(500).json({
-      error: 'Failed to process refund',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    logger.error('Error processing refund', {
+      timestamp,
+      orderId: req.params.id,
+      error: error.message,
+      stack: error.stack,
     });
+    next(new InternalServerError('处理退款失败，请稍后重试'));
   }
 };
 

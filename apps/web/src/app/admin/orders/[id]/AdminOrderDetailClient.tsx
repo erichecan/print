@@ -33,6 +33,8 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [updating, setUpdating] = useState(false);
   const [refundLoading, setRefundLoading] = useState(false);
   const [refundNote, setRefundNote] = useState('');
+  const [refundAmount, setRefundAmount] = useState<string>('');
+  const [showRefundModal, setShowRefundModal] = useState(false);
   // [2025-12-06 15:30:00] Shipping label generation
   const [generatingLabel, setGeneratingLabel] = useState(false);
   const [loadingRates, setLoadingRates] = useState(false);
@@ -127,24 +129,66 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
     }
   };
 
+  // [2025-12-06 14:00:00] Enhanced refund handler with partial refund support
   const handleRefund = async () => {
     if (!data) return;
-    const confirmMsg = refundNote
-      ? `Confirm marking order ${data.orderNumber} as refunded? Note: ${refundNote}`
-      : `Confirm marking order ${data.orderNumber} as refunded?`;
+
+    // Validate refund amount
+    const orderTotal = Number(data.total || 0);
+    const amount = refundAmount.trim() ? parseFloat(refundAmount) : orderTotal;
+
+    if (isNaN(amount) || amount <= 0) {
+      setMessage('请输入有效的退款金额');
+      return;
+    }
+
+    if (amount > orderTotal) {
+      setMessage(`退款金额不能超过订单总额 $${orderTotal.toFixed(2)}`);
+      return;
+    }
+
+    // Check if order can be refunded
+    if (data.paymentStatus !== 'COMPLETED') {
+      setMessage('只有已支付的订单才能退款');
+      return;
+    }
+
+    if (data.status === 'REFUNDED') {
+      setMessage('该订单已经退款');
+      return;
+    }
+
+    const isFullRefund = amount >= orderTotal;
+    const confirmMsg = isFullRefund
+      ? `确认退款订单 ${data.orderNumber} 的金额 $${amount.toFixed(2)}？${refundNote ? `\n退款原因：${refundNote}` : ''}`
+      : `确认部分退款订单 ${data.orderNumber} 的金额 $${amount.toFixed(2)}（订单总额：$${orderTotal.toFixed(2)}）？${refundNote ? `\n退款原因：${refundNote}` : ''}`;
+
     if (!confirm(confirmMsg)) return;
 
     setRefundLoading(true);
     setMessage(null);
     try {
-      const payload: AdminOrderRefundPayload = refundNote ? { reason: refundNote } : {};
-      await adminOrdersApi.recordRefund(data.id, payload);
+      const payload: AdminOrderRefundPayload = {
+        reason: refundNote || undefined,
+        amount: amount,
+        refundToStripe: true,
+      };
+      const result = await adminOrdersApi.recordRefund(data.id, payload);
       setRefundNote('');
+      setRefundAmount('');
+      setShowRefundModal(false);
       await mutate();
-      setMessage('Order marked as refunded.');
-    } catch (err) {
-      console.error('[2025-11-12 01:27:20] 退款标记失败', err);
-      setMessage('Failed to mark refund. Please try again.');
+      const successMsg = isFullRefund
+        ? `订单 ${data.orderNumber} 已全额退款 $${amount.toFixed(2)}`
+        : `订单 ${data.orderNumber} 已部分退款 $${amount.toFixed(2)}`;
+      setMessage(successMsg);
+      if (result.warning) {
+        setMessage(`${successMsg}。警告：${result.warning}`);
+      }
+    } catch (err: any) {
+      console.error('[2025-12-06 14:00:00] 退款处理失败', err);
+      const errorMsg = err?.message || err?.error || '退款处理失败，请稍后重试';
+      setMessage(errorMsg);
     } finally {
       setRefundLoading(false);
     }
@@ -197,9 +241,9 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                 <label>Payment Status</label>
                 <select
                   value={form.paymentStatus || ''}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, paymentStatus: event.target.value || undefined }))
-                  }
+                  onChange={(event) => {
+                    setForm((prev) => ({ ...prev, paymentStatus: event.target.value || undefined }));
+                  }}
                 >
                   {PAYMENT_OPTIONS.map((option) => (
                     <option key={option} value={option}>
@@ -239,6 +283,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
               <button type="button" className="btn btn--primary" onClick={handleUpdate} disabled={updating}>
                 {updating ? '保存中…' : '保存更改'}
               </button>
+<<<<<<< HEAD
               {/* [2025-12-06 15:30:00] Generate shipping label button */}
               {order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
                 <button
@@ -250,18 +295,111 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                   {generatingLabel ? '生成中…' : loadingRates ? '加载报价…' : '生成发货标签'}
                 </button>
               )}
-              <button type="button" className="btn btn--outline" onClick={handleRefund} disabled={refundLoading}>
-                {refundLoading ? '处理中…' : '处理退款'}
-              </button>
-              <input
-                type="text"
-                className="admin-note-input"
-                placeholder="退款备注（可选）"
-                value={refundNote}
-                onChange={(event) => setRefundNote(event.target.value)}
-              />
+              {/* [2025-12-06 14:00:00] Enhanced refund button with modal */}
+              {data.paymentStatus === 'COMPLETED' && data.status !== 'REFUNDED' && (
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={() => setShowRefundModal(true)}
+                  disabled={refundLoading}
+                >
+                  处理退款
+                </button>
+              )}
             </div>
-            {message && <div className="admin-alert">{message}</div>}
+            {message && (
+              <div className={`admin-alert ${message.includes('警告') || message.includes('失败') ? 'error' : ''}`}>
+                {message}
+              </div>
+            )}
+          </div>
+
+          {/* [2025-12-06 14:00:00] Refund modal */}
+          {showRefundModal && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+              }}
+              onClick={() => !refundLoading && setShowRefundModal(false)}
+            >
+              <div
+                className="admin-form"
+                style={{
+                  backgroundColor: 'white',
+                  padding: '24px',
+                  borderRadius: '8px',
+                  maxWidth: '500px',
+                  width: '90%',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 style={{ marginTop: 0 }}>处理退款</h3>
+                <div className="admin-form-group">
+                  <label>
+                    退款金额 <span style={{ color: '#666', fontSize: '0.9em' }}>（订单总额：${formatCurrency(data.total)}）</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max={data.total}
+                    value={refundAmount}
+                    onChange={(e) => setRefundAmount(e.target.value)}
+                    placeholder={`默认全额退款：${formatCurrency(data.total)}`}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: '14px' }}
+                  />
+                  <p style={{ margin: '8px 0 0 0', fontSize: '0.85em', color: '#666' }}>
+                    留空或输入 {formatCurrency(data.total)} 表示全额退款
+                  </p>
+                </div>
+                <div className="admin-form-group">
+                  <label>退款原因（可选）</label>
+                  <textarea
+                    value={refundNote}
+                    onChange={(e) => setRefundNote(e.target.value)}
+                    placeholder="请输入退款原因..."
+                    rows={3}
+                    style={{ width: '100%', padding: '10px 12px', fontSize: '14px', resize: 'vertical' }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={handleRefund}
+                    disabled={refundLoading}
+                    style={{ flex: 1 }}
+                  >
+                    {refundLoading ? '处理中…' : '确认退款'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--outline"
+                    onClick={() => {
+                      setShowRefundModal(false);
+                      setRefundAmount('');
+                      setRefundNote('');
+                    }}
+                    disabled={refundLoading}
+                    style={{ flex: 1 }}
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           </div>
 
           <div className="admin-form">
