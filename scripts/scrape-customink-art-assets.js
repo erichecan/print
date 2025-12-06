@@ -381,6 +381,13 @@ async function scrapeArtAssets() {
       // 添加从网络请求捕获的 URL
       if (window.artAssetUrls && window.artAssetUrls.size > 0) {
         window.artAssetUrls.forEach((url) => {
+<<<<<<< HEAD
+          let categorySlug = 'other';
+          for (const cat of categories) {
+            if (url.toLowerCase().includes(cat.slug)) {
+              categorySlug = cat.slug;
+              break;
+=======
           // 过滤掉非艺术素材的 URL
           const urlLower = url.toLowerCase();
           const skipPatterns = [
@@ -427,6 +434,7 @@ async function scrapeArtAssets() {
                 categorySlug = cat.slug;
                 break;
               }
+>>>>>>> origin/develop
             }
           }
           
@@ -435,6 +443,15 @@ async function scrapeArtAssets() {
           }
           
           const fileName = url.split('/').pop() || 'art-asset';
+<<<<<<< HEAD
+          const name = fileName.replace(/\.(png|jpg|jpeg|svg|webp)$/i, '');
+          
+          assets[categorySlug].push({
+            name: name,
+            url: url,
+            thumbnailUrl: url
+          });
+=======
           const name = fileName.split('?')[0].replace(/\.(png|jpg|jpeg|svg|webp)$/i, '') || 'art-asset';
           
           // 避免重复
@@ -446,6 +463,7 @@ async function scrapeArtAssets() {
               thumbnailUrl: url
             });
           }
+>>>>>>> origin/develop
         });
       }
 
