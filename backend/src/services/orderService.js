@@ -5,6 +5,7 @@
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { BadRequestError, ForbiddenError } = require('../utils/errors');
+const { sendOrderStatusUpdateNotification } = require('./emailService');
 
 /**
  * Order Status State Machine
@@ -158,8 +159,70 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
     actorName,
   });
 
-  // TODO: Record status change history (if needed)
-  // TODO: Send status update notification email
+  // [2025-12-06 10:30:00] Record status change history
+  try {
+    await prisma.orderStatusHistory.create({
+      data: {
+        orderId: order.id,
+        fromStatus: order.status,
+        toStatus: normalizedNewStatus,
+        actorId: actorId || null,
+        actorName: actorName || null,
+        note: note || null,
+      },
+    });
+    logger.debug('Order status history recorded', {
+      orderId,
+      fromStatus: order.status,
+      toStatus: normalizedNewStatus,
+    });
+  } catch (historyError) {
+    // Don't fail status update if history recording fails
+    logger.warn('Failed to record order status history', {
+      orderId,
+      error: historyError.message,
+    });
+  }
+
+  // [2025-12-06 10:30:00] Send status update notification email (don't fail if email fails)
+  try {
+    // Fetch full order details for email
+    const orderWithDetails = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            variant: {
+              include: {
+                product: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (orderWithDetails) {
+      await sendOrderStatusUpdateNotification(
+        orderWithDetails,
+        order.status,
+        normalizedNewStatus,
+        actorName
+      );
+      logger.info('Order status update notification email sent', {
+        orderNumber: order.orderNumber,
+        email: orderWithDetails.email,
+        fromStatus: order.status,
+        toStatus: normalizedNewStatus,
+      });
+    }
+  } catch (emailError) {
+    logger.warn('Failed to send order status update notification email', {
+      orderNumber: order.orderNumber,
+      error: emailError.message,
+    });
+    // Don't throw - email failure shouldn't fail status update
+  }
 
   return updatedOrder;
 }

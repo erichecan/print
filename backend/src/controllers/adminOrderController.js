@@ -112,6 +112,41 @@ exports.listOrders = async (req, res) => {
   }
 };
 
+/**
+ * Get order status history
+ * [2025-12-06 10:30:00] 获取订单状态历史记录
+ */
+exports.getOrderStatusHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const history = await prisma.orderStatusHistory.findMany({
+      where: { orderId: id },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        fromStatus: true,
+        toStatus: true,
+        actorId: true,
+        actorName: true,
+        note: true,
+        createdAt: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: history,
+    });
+  } catch (error) {
+    logger.error('Failed to get order status history', {
+      orderId: req.params.id,
+      error: error.message,
+    });
+    res.status(500).json({ error: 'Failed to get order status history' });
+  }
+};
+
 exports.getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -214,17 +249,17 @@ exports.updateOrderStatus = async (req, res) => {
     const updateData = {};
     const changes = {};
 
-    // Validate and update order status with state machine
+    // [2025-12-06 10:30:00] Validate and update order status with state machine
+    // Use orderService.updateOrderStatus to ensure history recording and email notifications
     if (status) {
       const normalizedStatus = String(status).toUpperCase();
       if (!ALLOWED_STATUSES.includes(normalizedStatus)) {
         return res.status(400).json({ error: 'Invalid status value' });
       }
 
-      // Validate state transition
+      // Validate state transition first
       try {
         validateStatusTransition(currentOrder, normalizedStatus);
-        updateData.status = normalizedStatus;
         changes.status = {
           from: currentOrder.status,
           to: normalizedStatus,
@@ -239,6 +274,38 @@ exports.updateOrderStatus = async (req, res) => {
           });
         }
         throw validationError;
+      }
+
+      // [2025-12-06 10:30:00] Use orderService.updateOrderStatus to handle status update
+      // This will automatically record history and send email notifications
+      try {
+        const actorId = req.user?.id || null;
+        const actorName = req.user ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email : 'System';
+        
+        await updateOrderStatus(id, normalizedStatus, {
+          actorId,
+          actorName,
+          note: note || null,
+        });
+        
+        // Status update is handled by orderService, so we don't add it to updateData
+        // But we still need to track it for the response
+        logger.info('Order status updated via admin controller', {
+          orderId: id,
+          orderNumber: currentOrder.orderNumber,
+          fromStatus: currentOrder.status,
+          toStatus: normalizedStatus,
+          actorId,
+          actorName,
+        });
+      } catch (statusUpdateError) {
+        logger.error('Failed to update order status via orderService', {
+          orderId: id,
+          error: statusUpdateError.message,
+        });
+        // If orderService.updateOrderStatus fails, fall back to direct update
+        // (but without history/email)
+        updateData.status = normalizedStatus;
       }
     }
 
@@ -278,22 +345,62 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(400).json({ error: 'No update fields provided' });
     }
 
-    // Update order and create/update shipment if tracking info provided
+    // [2025-12-06 10:30:00] Update order and create/update shipment if tracking info provided
+    // Note: If status was updated, it's already handled by orderService.updateOrderStatus above
+    // So we only update other fields here
     const order = await prisma.$transaction(async (tx) => {
-      const updatedOrder = await tx.order.update({
-      where: { id },
-      data: updateData,
-        select: {
-          id: true,
-          orderNumber: true,
-          status: true,
-          paymentStatus: true,
-          trackingNumber: true,
-          carrier: true,
-          estimatedDelivery: true,
-          updatedAt: true,
-        },
-      });
+      // If status was updated via orderService, fetch the updated order first
+      let updatedOrder;
+      if (status && !updateData.status) {
+        // Status was already updated by orderService, just fetch it
+        updatedOrder = await tx.order.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            paymentStatus: true,
+            trackingNumber: true,
+            carrier: true,
+            estimatedDelivery: true,
+            updatedAt: true,
+          },
+        });
+        
+        // If we have other fields to update, update them
+        if (Object.keys(updateData).length > 0) {
+          updatedOrder = await tx.order.update({
+            where: { id },
+            data: updateData,
+            select: {
+              id: true,
+              orderNumber: true,
+              status: true,
+              paymentStatus: true,
+              trackingNumber: true,
+              carrier: true,
+              estimatedDelivery: true,
+              updatedAt: true,
+            },
+          });
+        }
+      } else {
+        // Status wasn't updated or was added to updateData (fallback case)
+        updatedOrder = await tx.order.update({
+          where: { id },
+          data: updateData,
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            paymentStatus: true,
+            trackingNumber: true,
+            carrier: true,
+            estimatedDelivery: true,
+            updatedAt: true,
+          },
+        });
+      }
 
       // Create or update shipment record if tracking info provided
       if (trackingNumber && carrier) {

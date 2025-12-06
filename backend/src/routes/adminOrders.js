@@ -8,6 +8,7 @@ router.use(requireAdmin);
 
 router.get('/', adminOrderController.listOrders);
 router.get('/:id', adminOrderController.getOrderById);
+router.get('/:id/status-history', adminOrderController.getOrderStatusHistory);
 router.patch('/:id/status', adminOrderController.updateOrderStatus);
 router.post('/:id/refund', adminOrderController.recordRefund);
 

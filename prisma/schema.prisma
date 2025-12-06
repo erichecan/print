@@ -336,6 +336,8 @@ model Order {
   orderCoupons OrderCoupon[]
   // [2025-01-28 12:00:00] Promotions applied to this order
   orderPromotions OrderPromotion[]
+  // [2025-12-06 10:30:00] Order status change history
+  statusHistory OrderStatusHistory[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -400,6 +402,24 @@ enum ShipmentStatus {
   IN_TRANSIT
   DELIVERED
   EXCEPTION
+}
+
+// [2025-12-06 10:30:00] Order Status History - Track order status changes
+model OrderStatusHistory {
+  id            String   @id @default(uuid())
+  orderId       String   @map("order_id")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus    OrderStatus? @map("from_status")
+  toStatus      OrderStatus  @map("to_status")
+  actorId       String?  @map("actor_id")
+  actorName     String?  @map("actor_name")
+  note          String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([toStatus])
+  @@index([createdAt])
+  @@map("order_status_history")
 }
 
 // Session model (for cart persistence)
