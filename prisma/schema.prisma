@@ -339,7 +339,7 @@ model Order {
   // [2025-01-28 12:00:00] Promotions applied to this order
   orderPromotions OrderPromotion[]
   // [2025-12-06 10:30:00] Order status change history
-  statusHistory OrderStatusHistory[]
+  statusHistory   OrderStatusHistory[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -408,15 +408,15 @@ enum ShipmentStatus {
 
 // [2025-12-06 10:30:00] Order Status History - Track order status changes
 model OrderStatusHistory {
-  id            String   @id @default(uuid())
-  orderId       String   @map("order_id")
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  fromStatus    OrderStatus? @map("from_status")
-  toStatus      OrderStatus  @map("to_status")
-  actorId       String?  @map("actor_id")
-  actorName     String?  @map("actor_name")
-  note          String?  @db.Text
-  createdAt     DateTime @default(now()) @map("created_at")
+  id         String       @id @default(uuid())
+  orderId    String       @map("order_id")
+  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  fromStatus OrderStatus? @map("from_status")
+  toStatus   OrderStatus  @map("to_status")
+  actorId    String?      @map("actor_id")
+  actorName  String?      @map("actor_name")
+  note       String?      @db.Text
+  createdAt  DateTime     @default(now()) @map("created_at")
 
   @@index([orderId])
   @@index([toStatus])
@@ -868,4 +868,55 @@ model OrderPromotion {
   @@index([orderId])
   @@index([promotionId])
   @@map("order_promotions")
+}
+
+// [2025-12-06 17:10:00] Supplier model for Issue #89 - Inventory sync with suppliers
+model Supplier {
+  id             String    @id @default(uuid())
+  name           String
+  apiUrl         String    @map("api_url")
+  apiKey         String    @map("api_key")
+  apiSecret      String?   @map("api_secret")
+  syncInterval   Int       @default(3600) @map("sync_interval") // seconds
+  isActive       Boolean   @default(true) @map("is_active")
+  lastSyncAt     DateTime? @map("last_sync_at")
+  lastSyncStatus String?   @map("last_sync_status") // SUCCESS, FAILED, PARTIAL
+  config         Json? // Custom configuration (field mapping, response path, etc.)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  syncs InventorySync[]
+
+  @@index([isActive])
+  @@index([lastSyncAt])
+  @@map("suppliers")
+}
+
+// [2025-12-06 17:10:00] Inventory sync status enum for Issue #89
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  SUCCESS
+  FAILED
+  PARTIAL
+}
+
+// [2025-12-06 17:10:00] InventorySync model for Issue #89 - Track inventory synchronization history
+model InventorySync {
+  id             String     @id @default(uuid())
+  supplierId     String     @map("supplier_id")
+  supplier       Supplier   @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  status         SyncStatus
+  startedAt      DateTime   @map("started_at")
+  completedAt    DateTime?  @map("completed_at")
+  itemsProcessed Int        @default(0) @map("items_processed")
+  itemsUpdated   Int        @default(0) @map("items_updated")
+  itemsFailed    Int        @default(0) @map("items_failed")
+  errorMessage   String?    @map("error_message") @db.Text
+  metadata       Json? // Additional sync metadata
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("inventory_syncs")
 }
