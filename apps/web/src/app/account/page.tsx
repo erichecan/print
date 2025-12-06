@@ -17,6 +17,9 @@ export default function AccountPage() {
   const [ordersCount, setOrdersCount] = useState(0);
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [nameSuccess, setNameSuccess] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,10 +71,80 @@ export default function AccountPage() {
     };
   }, []);
 
+  // [2025-12-06 13:00:00] 实现名称编辑功能
   const handleNameSave = async () => {
     if (!user) return;
-    // TODO: 实现名称编辑功能
-    setEditingName(false);
+    
+    setNameError(null);
+    setNameSuccess(false);
+    
+    // [2025-12-06 13:00:00] 验证名称
+    const trimmedName = displayName.trim();
+    if (!trimmedName) {
+      setNameError('名称不能为空');
+      return;
+    }
+    
+    // [2025-12-06 13:00:00] 名称长度验证（最多 50 个字符）
+    if (trimmedName.length > 50) {
+      setNameError('名称长度不能超过 50 个字符');
+      return;
+    }
+    
+    // [2025-12-06 13:00:00] 名称格式验证（只允许字母、数字、空格、中文字符和常见标点）
+    const nameRegex = /^[\u4e00-\u9fa5a-zA-Z0-9\s\-'.,]+$/;
+    if (!nameRegex.test(trimmedName)) {
+      setNameError('名称只能包含字母、数字、中文字符和常见标点符号');
+      return;
+    }
+    
+    // [2025-12-06 13:00:00] 检查名称是否改变
+    const currentName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'User';
+    if (trimmedName === currentName) {
+      setEditingName(false);
+      return;
+    }
+    
+    setSavingName(true);
+    
+    try {
+      // [2025-12-06 13:00:00] 将显示名称解析为 firstName 和 lastName
+      // 简单策略：如果包含空格，第一个词作为 firstName，其余作为 lastName
+      // 否则，整个名称作为 firstName
+      const nameParts = trimmedName.split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || null;
+      
+      // [2025-12-06 13:00:00] 调用 API 更新用户信息
+      await authApi.updateProfile({
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+      });
+      
+      // [2025-12-06 13:00:00] 重新加载用户信息
+      const updatedUser = await authApi.me();
+      setUser(updatedUser);
+      
+      // [2025-12-06 13:00:00] 更新显示名称
+      const updatedDisplayName = [updatedUser.firstName, updatedUser.lastName].filter(Boolean).join(' ') || updatedUser.email?.split('@')[0] || 'User';
+      setDisplayName(updatedDisplayName);
+      
+      setNameSuccess(true);
+      setEditingName(false);
+      
+      // [2025-12-06 13:00:00] 3 秒后清除成功提示
+      setTimeout(() => {
+        setNameSuccess(false);
+      }, 3000);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : '保存名称失败，请稍后重试';
+      setNameError(errorMessage);
+      // [2025-12-06 13:00:00] 恢复原始名称
+      const originalName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'User';
+      setDisplayName(originalName);
+    } finally {
+      setSavingName(false);
+    }
   };
 
   if (loading) {
@@ -118,30 +191,54 @@ export default function AccountPage() {
         }}>
           Welcome back,{' '}
           {editingName ? (
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              onBlur={handleNameSave}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleNameSave();
-                } else if (e.key === 'Escape') {
-                  setEditingName(false);
-                  setDisplayName([user.firstName, user.lastName].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'User');
-                }
-              }}
-              autoFocus
-              style={{
-                fontSize: '32px',
-                fontWeight: 700,
-                border: '1px solid #2563eb',
-                borderRadius: '4px',
-                padding: '4px 8px',
-                outline: 'none',
-                width: '200px'
-              }}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => {
+                  setDisplayName(e.target.value);
+                  setNameError(null);
+                }}
+                onBlur={handleNameSave}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !savingName) {
+                    handleNameSave();
+                  } else if (e.key === 'Escape') {
+                    setEditingName(false);
+                    setNameError(null);
+                    setDisplayName([user.firstName, user.lastName].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'User');
+                  }
+                }}
+                disabled={savingName}
+                autoFocus
+                maxLength={50}
+                style={{
+                  fontSize: '32px',
+                  fontWeight: 700,
+                  border: nameError ? '1px solid #ff1f3d' : '1px solid #2563eb',
+                  borderRadius: '4px',
+                  padding: '4px 8px',
+                  outline: 'none',
+                  width: '200px',
+                  opacity: savingName ? 0.6 : 1,
+                }}
+              />
+              {nameError && (
+                <div style={{ fontSize: '14px', color: '#ff1f3d', marginTop: '-4px' }}>
+                  {nameError}
+                </div>
+              )}
+              {nameSuccess && (
+                <div style={{ fontSize: '14px', color: '#1f7d3d', marginTop: '-4px' }}>
+                  ✅ 名称已更新
+                </div>
+              )}
+              {savingName && (
+                <div style={{ fontSize: '14px', color: '#666', marginTop: '-4px' }}>
+                  正在保存...
+                </div>
+              )}
+            </div>
           ) : (
             <>
               <span>{displayName}</span>
