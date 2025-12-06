@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { adminCouponsApi, AdminCoupon } from '@/lib/api';
 import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-11-24 11:07:42] 引入 i18n 以实现右侧内容双语
+// [2025-12-06 17:30:00] Coupon statistics for Issue #138
 
 const couponTypes = [
   { value: 'percentage', labelKey: 'discountTypePercentage' },
@@ -34,7 +35,13 @@ export default function AdminCouponsPage() {
     })
   );
 
+  // [2025-12-06 17:30:00] Load coupon statistics for Issue #138
+  const { data: statisticsData, isLoading: statisticsLoading } = useSWR('admin-coupons-statistics', () =>
+    adminCouponsApi.getStatistics()
+  );
+
   const coupons = useMemo(() => data?.data ?? [], [data]);
+  const statistics = useMemo(() => statisticsData?.data, [statisticsData]);
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -90,6 +97,55 @@ export default function AdminCouponsPage() {
           <p className="text-muted">{t('couponsSubtitle')}</p>
         </div>
       </div>
+
+      {/* [2025-12-06 17:30:00] Coupon Statistics Section for Issue #138 */}
+      {statistics && (
+        <section className="admin-stats-grid" style={{ marginBottom: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+          <div className="admin-stat-card" style={{ padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 8 }}>总优惠券数</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color: '#1e293b' }}>{statistics.overview.totalCoupons}</div>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+              活跃: {statistics.overview.activeCoupons} | 未激活: {statistics.overview.inactiveCoupons}
+            </div>
+          </div>
+          <div className="admin-stat-card" style={{ padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 8 }}>总使用次数</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color: '#1e293b' }}>{statistics.overview.totalUsage}</div>
+          </div>
+          <div className="admin-stat-card" style={{ padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+            <div style={{ fontSize: 14, color: '#64748b', marginBottom: 8 }}>总折扣金额</div>
+            <div style={{ fontSize: 24, fontWeight: 600, color: '#10b981' }}>${statistics.overview.totalDiscountAmount.toFixed(2)}</div>
+          </div>
+        </section>
+      )}
+
+      {/* [2025-12-06 17:30:00] Top Coupons Section */}
+      {statistics && statistics.topCoupons.length > 0 && (
+        <section style={{ marginBottom: 24, padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600 }}>最受欢迎的优惠券</h3>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {statistics.topCoupons.slice(0, 5).map((item, index) => (
+              item.coupon && (
+                <div key={item.coupon.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, backgroundColor: '#ffffff', borderRadius: 6 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <span style={{ fontSize: 14, color: '#64748b', minWidth: 24 }}>#{index + 1}</span>
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{item.coupon.code}</div>
+                      <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                        {item.coupon.type === 'percentage' ? `${item.coupon.value}%` : `$${item.coupon.value.toFixed(2)}`}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 600, color: '#1e293b' }}>{item.usageCount} 次</div>
+                    <div style={{ fontSize: 12, color: '#10b981' }}>${item.totalDiscount.toFixed(2)}</div>
+                  </div>
+                </div>
+              )
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="admin-form" style={{ marginBottom: 24 }}>
         <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>{t('couponsCreateHeading')}</h3>
@@ -246,6 +302,26 @@ export default function AdminCouponsPage() {
                         ⋯
                       </button>
                       <div className="actions-dropdown-menu">
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const stats = await adminCouponsApi.getCouponStatistics(coupon.id);
+                              const statsInfo = stats.data;
+                              alert(
+                                `优惠券统计: ${coupon.code}\n\n` +
+                                  `使用次数: ${statsInfo.statistics.usageCount}\n` +
+                                  `总折扣: $${statsInfo.statistics.totalDiscount.toFixed(2)}\n` +
+                                  `平均折扣: $${statsInfo.statistics.averageDiscount.toFixed(2)}\n` +
+                                  `唯一用户: ${statsInfo.statistics.uniqueUsers}`
+                              );
+                            } catch (err) {
+                              alert('无法加载统计信息');
+                            }
+                          }}
+                        >
+                          查看统计
+                        </button>
                         <button type="button" onClick={() => toggleCoupon(coupon)}>
                           {coupon.isActive ? t('deactivate') : t('activate')}
                         </button>

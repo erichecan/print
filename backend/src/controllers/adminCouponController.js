@@ -199,3 +199,237 @@ exports.deleteCoupon = async (req, res) => {
   }
 };
 
+/**
+ * Get coupon statistics
+ * [2025-12-06 17:30:00] Coupon statistics for Issue #138
+ */
+exports.getCouponStatistics = async (req, res) => {
+  try {
+    const { couponId, startDate, endDate } = req.query;
+    const timestamp = new Date().toISOString();
+
+    // [2025-12-06 17:30:00] Build date filter
+    const dateFilter = {};
+    if (startDate) {
+      dateFilter.gte = new Date(startDate);
+    }
+    if (endDate) {
+      dateFilter.lte = new Date(endDate);
+    }
+
+    // [2025-12-06 17:30:00] Build coupon filter
+    const couponFilter = {};
+    if (couponId) {
+      couponFilter.couponId = couponId;
+    }
+
+    // [2025-12-06 17:30:00] Get overall statistics
+    const totalCoupons = await prisma.coupon.count();
+    const activeCoupons = await prisma.coupon.count({ where: { isActive: true } });
+    const totalUsage = await prisma.orderCoupon.count({
+      where: {
+        ...couponFilter,
+        ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+      },
+    });
+
+    // [2025-12-06 17:30:00] Calculate total discount amount
+    const orderCoupons = await prisma.orderCoupon.findMany({
+      where: {
+        ...couponFilter,
+        ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+      },
+      select: {
+        discountAmount: true,
+      },
+    });
+
+    const totalDiscountAmount = orderCoupons.reduce((sum, oc) => sum + Number(oc.discountAmount), 0);
+
+    // [2025-12-06 17:30:00] Get top used coupons
+    const topCoupons = await prisma.orderCoupon.groupBy({
+      by: ['couponId'],
+      where: {
+        ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        discountAmount: true,
+      },
+      orderBy: {
+        _count: {
+          id: 'desc',
+        },
+      },
+      take: 10,
+    });
+
+    // [2025-12-06 17:30:00] Get coupon details for top coupons
+    const topCouponDetails = await Promise.all(
+      topCoupons.map(async (tc) => {
+        const coupon = await prisma.coupon.findUnique({
+          where: { id: tc.couponId },
+          select: {
+            id: true,
+            code: true,
+            type: true,
+            value: true,
+            isActive: true,
+          },
+        });
+        return {
+          coupon: coupon
+            ? {
+                id: coupon.id,
+                code: coupon.code,
+                type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed',
+                value: Number(coupon.value),
+                isActive: coupon.isActive,
+              }
+            : null,
+          usageCount: tc._count.id,
+          totalDiscount: Number(tc._sum.discountAmount || 0),
+        };
+      })
+    );
+
+    // [2025-12-06 17:30:00] Get usage by date (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const usageByDate = await prisma.orderCoupon.groupBy({
+      by: ['createdAt'],
+      where: {
+        ...couponFilter,
+        createdAt: {
+          gte: thirtyDaysAgo,
+        },
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        discountAmount: true,
+      },
+    });
+
+    // [2025-12-06 17:30:00] Format usage by date
+    const formattedUsageByDate = usageByDate.map((ubd) => ({
+      date: ubd.createdAt.toISOString().split('T')[0],
+      usageCount: ubd._count.id,
+      totalDiscount: Number(ubd._sum.discountAmount || 0),
+    }));
+
+    res.json({
+      data: {
+        overview: {
+          totalCoupons,
+          activeCoupons,
+          inactiveCoupons: totalCoupons - activeCoupons,
+          totalUsage,
+          totalDiscountAmount: Number(totalDiscountAmount.toFixed(2)),
+        },
+        topCoupons: topCouponDetails,
+        usageByDate: formattedUsageByDate,
+      },
+    });
+  } catch (error) {
+    console.error('[adminCouponController] getCouponStatistics error:', error);
+    res.status(500).json({ error: 'Failed to load coupon statistics' });
+  }
+};
+
+/**
+ * Get coupon detail statistics
+ * [2025-12-06 17:30:00] Get detailed statistics for a specific coupon
+ */
+exports.getCouponDetailStatistics = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { startDate, endDate } = req.query;
+
+    // [2025-12-06 17:30:00] Check if coupon exists
+    const coupon = await prisma.coupon.findUnique({
+      where: { id },
+      include: {
+        orderCoupons: {
+          where: {
+            ...(startDate && endDate
+              ? {
+                  createdAt: {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate),
+                  },
+                }
+              : {}),
+          },
+          include: {
+            order: {
+              select: {
+                id: true,
+                orderNumber: true,
+                total: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!coupon) {
+      return res.status(404).json({ error: 'Coupon not found' });
+    }
+
+    // [2025-12-06 17:30:00] Calculate statistics
+    const usageCount = coupon.orderCoupons.length;
+    const totalDiscount = coupon.orderCoupons.reduce((sum, oc) => sum + Number(oc.discountAmount), 0);
+    const averageDiscount = usageCount > 0 ? totalDiscount / usageCount : 0;
+
+    // [2025-12-06 17:30:00] Get unique users count
+    const uniqueUsers = new Set(coupon.orderCoupons.map((oc) => oc.userId).filter(Boolean)).size;
+
+    // [2025-12-06 17:30:00] Get usage by date
+    const usageByDate = coupon.orderCoupons.reduce((acc, oc) => {
+      const date = oc.createdAt.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = { usageCount: 0, totalDiscount: 0 };
+      }
+      acc[date].usageCount += 1;
+      acc[date].totalDiscount += Number(oc.discountAmount);
+      return acc;
+    }, {});
+
+    res.json({
+      data: {
+        coupon: mapCoupon(coupon),
+        statistics: {
+          usageCount,
+          totalDiscount: Number(totalDiscount.toFixed(2)),
+          averageDiscount: Number(averageDiscount.toFixed(2)),
+          uniqueUsers,
+          usageByDate: Object.entries(usageByDate).map(([date, stats]) => ({
+            date,
+            usageCount: stats.usageCount,
+            totalDiscount: Number(stats.totalDiscount.toFixed(2)),
+          })),
+        },
+        recentUsage: coupon.orderCoupons
+          .slice(-10)
+          .reverse()
+          .map((oc) => ({
+            orderNumber: oc.order.orderNumber,
+            discountAmount: Number(oc.discountAmount),
+            orderTotal: Number(oc.order.total),
+            usedAt: oc.createdAt.toISOString(),
+          })),
+      },
+    });
+  } catch (error) {
+    console.error('[adminCouponController] getCouponDetailStatistics error:', error);
+    res.status(500).json({ error: 'Failed to load coupon detail statistics' });
+  }
+};
+

@@ -271,6 +271,11 @@ function CheckoutForm({
   const [cardError, setCardError] = useState<string | null>(null);
   const [cardComplete, setCardComplete] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'confirming'>('form');
+  // [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112)
+  const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null); // 'new' or payment method ID
+  const [savePaymentMethod, setSavePaymentMethod] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   // [2025-01-27 20:15:00] 优惠券状态
   const [couponCode, setCouponCode] = useState('');
@@ -293,6 +298,38 @@ function CheckoutForm({
     } catch (err) {
       console.error('[2025-01-27 11:20:00] Failed to load saved address:', err);
     }
+  }, []);
+
+  // [2025-12-06 17:20:00] Load saved payment methods for logged-in users (Issue #112)
+  useEffect(() => {
+    const loadPaymentMethods = async () => {
+      try {
+        const user = await authApi.me();
+        if (user) {
+          setIsLoggedIn(true);
+          const methods = await paymentMethodsApi.list();
+          setSavedPaymentMethods(methods.paymentMethods);
+          // Set default payment method if available
+          const defaultMethod = methods.paymentMethods.find((m) => m.isDefault);
+          if (defaultMethod) {
+            setSelectedPaymentMethod(defaultMethod.id);
+          } else if (methods.paymentMethods.length > 0) {
+            setSelectedPaymentMethod(methods.paymentMethods[0].id);
+          } else {
+            setSelectedPaymentMethod('new');
+          }
+        } else {
+          setIsLoggedIn(false);
+          setSelectedPaymentMethod('new');
+        }
+      } catch (err) {
+        // User not logged in or error loading payment methods
+        setIsLoggedIn(false);
+        setSelectedPaymentMethod('new');
+      }
+    };
+
+    loadPaymentMethods();
   }, []);
 
   // [2025-01-27 11:20:00] 地址持久化：自动保存地址到 localStorage
@@ -624,13 +661,21 @@ function CheckoutForm({
     setIsSubmitting(true);
     setPaymentStep('processing');
 
-    // [2025-01-27 11:10:00] 验证卡片是否完整
-    if (!cardComplete) {
+    // [2025-12-06 17:20:00] Validate payment method selection (Issue #112)
+    if (selectedPaymentMethod === 'new' && !cardComplete) {
       const errorMsg = 'Please complete your card details';
       setCardError(errorMsg);
       setIsSubmitting(false);
       setPaymentStep('form');
       showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
+      return;
+    }
+
+    if (!selectedPaymentMethod) {
+      const errorMsg = 'Please select a payment method';
+      setIsSubmitting(false);
+      setPaymentStep('form');
+      showError(errorMsg);
       return;
     }
 
@@ -658,34 +703,91 @@ function CheckoutForm({
         notifyTotals(paymentIntentResponse.breakdown);
       }
 
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Payment form is not ready. Please reload and try again.');
-      }
-
       setPaymentStep('confirming');
 
-      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-        paymentIntentResponse.clientSecret,
-        {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              name: billingPayload.fullName,
-              email: billingPayload.email,
-              phone: billingPayload.phone,
-              address: {
-                line1: billingPayload.addressLine1,
-                line2: billingPayload.addressLine2,
-                city: billingPayload.city,
-                state: billingPayload.province,
-                postal_code: billingPayload.postalCode,
-                country: billingPayload.country,
+      // [2025-12-06 17:20:00] Use saved payment method or new card (Issue #112)
+      let paymentIntent;
+      let stripeError = null;
+
+      if (selectedPaymentMethod && selectedPaymentMethod !== 'new') {
+        // Use saved payment method
+        const savedMethod = savedPaymentMethods.find((m) => m.id === selectedPaymentMethod);
+        if (!savedMethod) {
+          throw new Error('Selected payment method not found');
+        }
+
+        const { error, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
+          paymentIntentResponse.clientSecret,
+          {
+            payment_method: savedMethod.stripePaymentMethodId,
+          }
+        );
+
+        stripeError = error;
+        paymentIntent = confirmedIntent;
+      } else {
+        // Use new card
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+          throw new Error('Payment form is not ready. Please reload and try again.');
+        }
+
+        const { error, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
+          paymentIntentResponse.clientSecret,
+          {
+            payment_method: {
+              card: cardElement,
+              billing_details: {
+                name: billingPayload.fullName,
+                email: billingPayload.email,
+                phone: billingPayload.phone,
+                address: {
+                  line1: billingPayload.addressLine1,
+                  line2: billingPayload.addressLine2,
+                  city: billingPayload.city,
+                  state: billingPayload.province,
+                  postal_code: billingPayload.postalCode,
+                  country: billingPayload.country,
+                },
               },
             },
-          },
+          }
+        );
+
+        stripeError = error;
+        paymentIntent = confirmedIntent;
+
+        // [2025-12-06 17:20:00] Save payment method if requested
+        if (savePaymentMethod && paymentIntent?.payment_method) {
+          try {
+            const paymentMethodId = typeof paymentIntent.payment_method === 'string'
+              ? paymentIntent.payment_method
+              : (paymentIntent.payment_method as any).id;
+            
+            if (paymentMethodId) {
+              await paymentMethodsApi.save(paymentMethodId, {
+                isDefault: savedPaymentMethods.length === 0, // Set as default if first payment method
+                billingDetails: {
+                  name: billingPayload.fullName,
+                  email: billingPayload.email,
+                  phone: billingPayload.phone,
+                  address: {
+                    line1: billingPayload.addressLine1,
+                    line2: billingPayload.addressLine2,
+                    city: billingPayload.city,
+                    state: billingPayload.province,
+                    postal_code: billingPayload.postalCode,
+                    country: billingPayload.country,
+                  },
+                },
+              });
+            }
+          } catch (err) {
+            // Log error but don't fail the order
+            console.error('Failed to save payment method:', err);
+          }
         }
-      );
+      }
 
       if (stripeError) {
         // [2025-01-27 10:30:00] 支付错误处理：不跳转页面，显示错误让用户重试
@@ -961,13 +1063,66 @@ function CheckoutForm({
       </div>
 
       <h2>Payment Information</h2>
-      <div className="payment-card">
-        <label htmlFor="card-element">Card Details *</label>
-        <div
-          id="card-element"
-          className={`card-element${cardError ? ' is-error' : ''}${cardComplete ? ' is-complete' : ''}`}
-        >
-          <CardElement
+      {/* [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112) */}
+      {isLoggedIn && savedPaymentMethods.length > 0 && (
+        <div className="payment-card">
+          <label>Saved Payment Methods</label>
+          <div className="saved-payment-methods">
+            {savedPaymentMethods.map((method) => (
+              <label
+                key={method.id}
+                className={`saved-payment-method${selectedPaymentMethod === method.id ? ' is-selected' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value={method.id}
+                  checked={selectedPaymentMethod === method.id}
+                  onChange={() => setSelectedPaymentMethod(method.id)}
+                />
+                <div className="saved-payment-method__info">
+                  <span className="saved-payment-method__brand">
+                    {method.cardBrand ? method.cardBrand.toUpperCase() : 'Card'}
+                  </span>
+                  <span className="saved-payment-method__last4">
+                    •••• {method.cardLast4 || '****'}
+                  </span>
+                  {method.cardExpMonth && method.cardExpYear && (
+                    <span className="saved-payment-method__exp">
+                      Exp. {method.cardExpMonth}/{method.cardExpYear}
+                    </span>
+                  )}
+                  {method.isDefault && (
+                    <span className="saved-payment-method__default">Default</span>
+                  )}
+                </div>
+              </label>
+            ))}
+            <label
+              className={`saved-payment-method${selectedPaymentMethod === 'new' ? ' is-selected' : ''}`}
+            >
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="new"
+                checked={selectedPaymentMethod === 'new'}
+                onChange={() => setSelectedPaymentMethod('new')}
+              />
+              <div className="saved-payment-method__info">
+                <span>Use a new card</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      )}
+      {selectedPaymentMethod === 'new' && (
+        <div className="payment-card">
+          <label htmlFor="card-element">Card Details *</label>
+          <div
+            id="card-element"
+            className={`card-element${cardError ? ' is-error' : ''}${cardComplete ? ' is-complete' : ''}`}
+          >
+            <CardElement
             options={{
               hidePostalCode: true,
               style: {
