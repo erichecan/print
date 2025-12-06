@@ -807,6 +807,46 @@ export const salesOrdersApi = {
     api<{ order: SalesOfflineOrderDetail }>(`/sales/orders/${id}`).then((res) => res.order),
 };
 
+// [2025-12-06 17:00:00] Offline Order Product Configuration API
+// 获取线下订单配置数据（产品、颜色、尺寸费用、可用性等）
+export interface OfflineOrderProduct {
+  id: string;
+  name: string;
+  categoryId: string;
+  categoryName: string;
+  basePrice: number;
+}
+
+export interface OfflineOrderColor {
+  id: string;
+  name: string;
+  hex?: string;
+}
+
+export interface OfflineOrderSizeFee {
+  size: string;
+  additionalFee: number;
+}
+
+export interface OfflineOrderAvailability {
+  productId: string;
+  colorId: string;
+  size: string;
+  available: boolean;
+}
+
+export interface OfflineOrderConfig {
+  products: OfflineOrderProduct[];
+  colors: OfflineOrderColor[];
+  sizeFees: OfflineOrderSizeFee[];
+  availability: OfflineOrderAvailability[];
+}
+
+export const offlineOrderProductApi = {
+  // [2025-12-06 17:00:00] 获取订单配置数据
+  getOrderConfig: () => sameOriginApi<OfflineOrderConfig>('/api/offline-order-products/config'),
+};
+
 // Address API
 export const addressesApi = {
   list: () => api<Address[]>('/addresses'),
