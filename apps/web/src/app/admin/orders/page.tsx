@@ -4,6 +4,7 @@
  * Admin Orders Page
  * [2025-11-12 01:25:45] 订单列表与筛选
  * [2025-11-15 16:28:00] 还原 prototype/admin/admin/orders.html 布局
+ * [2025-12-06 16:40:00] 添加批量订单处理功能 (Issue #87)
  */
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -37,12 +38,91 @@ export default function AdminOrdersPage() {
     search: '',
   });
   const [searchInput, setSearchInput] = useState('');
+  // [2025-12-06 16:40:00] Batch selection state for Issue #87
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [isBatchUpdating, setIsBatchUpdating] = useState(false);
+  const [batchUpdateStatus, setBatchUpdateStatus] = useState<string>('');
+  const [batchUpdatePaymentStatus, setBatchUpdatePaymentStatus] = useState<string>('');
 
   const swrKey = useMemo(() => ['admin-orders', filters], [filters]);
-  const { data, isLoading } = useSWR(swrKey, ([, params]: [string, AdminOrderListParams]) => adminOrdersApi.list(params));
+  const { data, isLoading, mutate } = useSWR(swrKey, ([, params]: [string, AdminOrderListParams]) => adminOrdersApi.list(params));
 
   const orders = data?.data ?? [];
   const pagination = data?.pagination;
+
+  // [2025-12-06 16:40:00] Batch selection handlers for Issue #87
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrderIds(new Set(orders.map((order) => order.id)));
+    } else {
+      setSelectedOrderIds(new Set());
+    }
+  };
+
+  const handleSelectOrder = (orderId: string, checked: boolean) => {
+    const newSelected = new Set(selectedOrderIds);
+    if (checked) {
+      newSelected.add(orderId);
+    } else {
+      newSelected.delete(orderId);
+    }
+    setSelectedOrderIds(newSelected);
+  };
+
+  const isAllSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
+  const isIndeterminate = selectedOrderIds.size > 0 && selectedOrderIds.size < orders.length;
+
+  // [2025-12-06 16:40:00] Batch update handler for Issue #87
+  const handleBatchUpdate = async () => {
+    if (selectedOrderIds.size === 0) {
+      alert('Please select at least one order');
+      return;
+    }
+
+    if (!batchUpdateStatus && !batchUpdatePaymentStatus) {
+      alert('Please select at least one status to update');
+      return;
+    }
+
+    const count = selectedOrderIds.size;
+    if (!confirm(`Update ${count} order(s)?`)) {
+      return;
+    }
+
+    setIsBatchUpdating(true);
+    try {
+      await adminOrdersApi.batchUpdateStatus(Array.from(selectedOrderIds), {
+        status: batchUpdateStatus || undefined,
+        paymentStatus: batchUpdatePaymentStatus || undefined,
+      });
+      setSelectedOrderIds(new Set());
+      setBatchUpdateStatus('');
+      setBatchUpdatePaymentStatus('');
+      await mutate();
+      alert(`Successfully updated ${count} order(s)`);
+    } catch (error: any) {
+      console.error('Batch update error:', error);
+      alert(`Failed to update orders: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsBatchUpdating(false);
+    }
+  };
+
+  // [2025-12-06 16:40:00] Batch export handler for Issue #87
+  const handleBatchExport = async () => {
+    try {
+      const orderIds = selectedOrderIds.size > 0 ? Array.from(selectedOrderIds) : undefined;
+      await adminOrdersApi.exportOrders({
+        orderIds,
+        status: filters.status || undefined,
+        paymentStatus: filters.paymentStatus || undefined,
+        search: filters.search || undefined,
+      });
+    } catch (error: any) {
+      console.error('Export error:', error);
+      alert(`Failed to export orders: ${error.message || 'Unknown error'}`);
+    }
+  };
 
   const handleFilterChange = (key: 'status' | 'paymentStatus') => (event: React.ChangeEvent<HTMLSelectElement>) => {
     setFilters((prev) => ({
@@ -108,10 +188,93 @@ export default function AdminOrdersPage() {
             </option>
           ))}
         </select>
-        <button type="button" className="btn" onClick={() => alert('Export coming soon')}>
+        <button type="button" className="btn" onClick={handleBatchExport} disabled={isLoading}>
           Export CSV
         </button>
       </div>
+
+      {/* [2025-12-06 16:40:00] Batch operations toolbar for Issue #87 */}
+      {selectedOrderIds.size > 0 && (
+        <div
+          style={{
+            padding: '12px 16px',
+            backgroundColor: '#f3f4f6',
+            border: '1px solid #e5e7eb',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <strong style={{ color: '#374151' }}>
+            {selectedOrderIds.size} order{selectedOrderIds.size > 1 ? 's' : ''} selected
+          </strong>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              value={batchUpdateStatus}
+              onChange={(e) => setBatchUpdateStatus(e.target.value)}
+              style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
+            >
+              <option value="">Update Status...</option>
+              {STATUS_OPTIONS.filter((opt) => opt.value).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <select
+              value={batchUpdatePaymentStatus}
+              onChange={(e) => setBatchUpdatePaymentStatus(e.target.value)}
+              style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
+            >
+              <option value="">Update Payment Status...</option>
+              {PAYMENT_OPTIONS.filter((opt) => opt.value).map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={handleBatchUpdate}
+              disabled={isBatchUpdating || (!batchUpdateStatus && !batchUpdatePaymentStatus)}
+              style={{
+                padding: '6px 16px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: isBatchUpdating || (!batchUpdateStatus && !batchUpdatePaymentStatus) ? 'not-allowed' : 'pointer',
+                opacity: isBatchUpdating || (!batchUpdateStatus && !batchUpdatePaymentStatus) ? 0.6 : 1,
+                fontSize: '14px',
+              }}
+            >
+              {isBatchUpdating ? 'Updating...' : 'Update Selected'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedOrderIds(new Set());
+                setBatchUpdateStatus('');
+                setBatchUpdatePaymentStatus('');
+              }}
+              style={{
+                padding: '6px 16px',
+                backgroundColor: 'transparent',
+                color: '#6b7280',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+              }}
+            >
+              Clear Selection
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="admin-table-wrapper">
         {isLoading ? (
@@ -122,6 +285,17 @@ export default function AdminOrdersPage() {
           <table className="admin-table">
             <thead>
               <tr>
+                <th style={{ width: '40px' }}>
+                  <input
+                    type="checkbox"
+                    checked={isAllSelected}
+                    ref={(input) => {
+                      if (input) input.indeterminate = isIndeterminate;
+                    }}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </th>
                 <th>Order #</th>
                 <th>Customer</th>
                 <th>Items</th>
@@ -134,6 +308,14 @@ export default function AdminOrdersPage() {
             <tbody>
               {orders.map((order: AdminOrderSummary) => (
                 <tr key={order.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedOrderIds.has(order.id)}
+                      onChange={(e) => handleSelectOrder(order.id, e.target.checked)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </td>
                   <td>
                     <Link href={`/admin/orders/${order.id}`}>#{order.orderNumber}</Link>
                   </td>

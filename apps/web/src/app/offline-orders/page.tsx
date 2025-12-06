@@ -149,8 +149,7 @@ export default function OfflineOrdersIntakePage() {
   const [isMobile, setIsMobile] = useState(false);
   
   const [formState, setFormState] = useState<FormState>(initialFormState);
-  const [files, setFiles] = useState<File[]>([]);
-  const [currentStep, setCurrentStep] = useState<number>(1); // [2025-01-27 18:00:00] 当前步骤
+  // [2025-12-06] PRD v2.0: 文件已移到formState.files，不再需要单独状态
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({
     type: 'idle',
   });
@@ -210,11 +209,11 @@ export default function OfflineOrdersIntakePage() {
     }
   }, []);
 
-  // [2025-12-06 17:15:00] 动态生成步骤定义 - 重构为3步流程
+  // [2025-12-06] PRD v2.0: 3步流程定义
   const STEPS = useMemo(() => [
-    { id: 1, title: t('step1Title'), description: t('step1Description') }, // 产品选择 + 印刷位置
-    { id: 2, title: t('step3Title'), description: t('step3Description') }, // 客户信息 + 项目详情 + 价格
-    { id: 3, title: t('step5Title'), description: t('step5Description') }, // 文件上传
+    { id: 1, title: t('step1Title') || '产品选择', description: t('step1Description') || '选择产品、颜色、尺码、印刷位置' },
+    { id: 2, title: t('step2Title') || '客户信息', description: t('step2Description') || '填写客户信息和Invoice信息' },
+    { id: 3, title: t('step3Title') || '文件上传', description: t('step3Description') || '上传设计文件（非必填）' },
   ], [t, isClient]);
 
   // [2025-01-27 20:00:00] 动态生成印刷位置选项 - 依赖isClient确保hydration一致性
@@ -228,16 +227,45 @@ export default function OfflineOrdersIntakePage() {
     { value: 'other', label: t('positionOther') },
   ], [t, isClient]);
 
-  // [2025-01-27 18:00:00] 获取产品分类列表
-  const { data: categoriesData, isLoading: categoriesLoading } = useSWR<{ data: Category[] }>(
-    'offline-order-categories',
-    () => categoriesApi.list(),
+  // [2025-12-06] PRD v2.0: 获取订单配置数据（产品、颜色、尺码费用、可用性）
+  const { data: orderConfigData, isLoading: orderConfigLoading } = useSWR(
+    'offline-order-config',
+    () => offlineOrderProductApi.getOrderConfig(),
     {
       revalidateOnFocus: false,
     }
   );
 
-  const categories = categoriesData?.data || [];
+  const orderConfig = orderConfigData || {
+    products: [] as OfflineOrderProduct[],
+    colors: [] as OfflineOrderColor[],
+    sizeFees: [] as OfflineOrderSizeFee[],
+    availability: [] as OfflineOrderAvailability[],
+  };
+
+  // [2025-12-06] PRD v2.0: 创建尺码费用映射表
+  const sizeFeeMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    orderConfig.sizeFees.forEach((sf) => {
+      map[sf.size] = sf.additionalFee;
+    });
+    return map;
+  }, [orderConfig.sizeFees]);
+
+  // [2025-12-06] PRD v2.0: 创建可用性映射表（productId-colorId -> available sizes）
+  const availabilityMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    orderConfig.availability.forEach((av) => {
+      const key = `${av.productId}-${av.colorId}`;
+      if (!map[key]) {
+        map[key] = new Set();
+      }
+      if (av.available) {
+        map[key].add(av.size);
+      }
+    });
+    return map;
+  }, [orderConfig.availability]);
 
   // [2025-11-15 15:18:30] Restore last-saved draft data on mount
   useEffect(() => {
