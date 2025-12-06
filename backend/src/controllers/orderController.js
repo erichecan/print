@@ -2,26 +2,29 @@
  * Order Controller
  * [2025-11-04 23:54:00]
  * [2025-01-27 13:20:00] Enhanced with order cancellation and query optimization
+ * [2025-12-06 13:30:00] Enhanced with unified error handling
  */
 const prisma = require('../lib/prisma');
 const PDFDocument = require('pdfkit'); // [2025-11-12 01:05:02] 用于生成发票 PDF
 const { Readable } = require('stream');
 const logger = require('../utils/logger');
 const { cancelOrder, canCancelOrder } = require('../services/orderService');
-const { BadRequestError, ForbiddenError } = require('../utils/errors');
+const { BadRequestError, ForbiddenError, UnauthorizedError, InternalServerError } = require('../utils/errors');
 const { sendOrderConfirmation } = require('../services/emailService');
 
 /**
  * GET /api/orders - List user's orders with filtering, sorting, and search
  * [2025-11-04 23:54:00]
  * [2025-01-27 13:20:00] Enhanced with filtering, sorting, and search
+ * [2025-12-06 13:30:00] Enhanced with unified error handling
  */
-exports.getOrders = async (req, res) => {
+exports.getOrders = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return next(new UnauthorizedError('需要身份验证'));
     }
 
     // Pagination
@@ -138,12 +141,13 @@ exports.getOrders = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error fetching orders:', {
+    logger.error('Error fetching orders', {
+      timestamp,
       error: error.message,
       stack: error.stack,
       userId: req.user?.id,
     });
-    res.status(500).json({ error: 'Failed to fetch orders' });
+    next(new InternalServerError('获取订单列表失败，请稍后重试'));
   }
 };
 

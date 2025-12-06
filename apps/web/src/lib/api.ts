@@ -565,13 +565,28 @@ export const designsApi = {
 };
 
 // Orders API
+// [2025-12-06 13:30:00] Enhanced with search, paymentStatus filter, and proper sorting
 export const ordersApi = {
-  list: (page: number = 1, limit: number = 20, status?: string, sort?: string) => {
+  list: (
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+    sort?: string,
+    search?: string,
+    paymentStatus?: string
+  ) => {
     const query = new URLSearchParams();
     query.append('page', page.toString());
     query.append('limit', limit.toString());
     if (status) query.append('status', status);
-    if (sort) query.append('sort', sort);
+    if (paymentStatus) query.append('paymentStatus', paymentStatus);
+    if (search) query.append('search', search);
+    // [2025-12-06 13:30:00] Parse sort parameter (format: "field_order" e.g., "createdAt_desc")
+    if (sort) {
+      const [sortBy, sortOrder] = sort.split('_');
+      if (sortBy) query.append('sortBy', sortBy);
+      if (sortOrder) query.append('sortOrder', sortOrder);
+    }
     return api<{ orders: AccountOrderDetail[]; pagination?: any } | { data: AccountOrderDetail[]; pagination?: any }>(`/orders?${query.toString()}`);
   },
   getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`),
