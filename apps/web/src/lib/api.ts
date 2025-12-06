@@ -565,13 +565,28 @@ export const designsApi = {
 };
 
 // Orders API
+// [2025-12-06 13:30:00] Enhanced with search, paymentStatus filter, and proper sorting
 export const ordersApi = {
-  list: (page: number = 1, limit: number = 20, status?: string, sort?: string) => {
+  list: (
+    page: number = 1,
+    limit: number = 20,
+    status?: string,
+    sort?: string,
+    search?: string,
+    paymentStatus?: string
+  ) => {
     const query = new URLSearchParams();
     query.append('page', page.toString());
     query.append('limit', limit.toString());
     if (status) query.append('status', status);
-    if (sort) query.append('sort', sort);
+    if (paymentStatus) query.append('paymentStatus', paymentStatus);
+    if (search) query.append('search', search);
+    // [2025-12-06 13:30:00] Parse sort parameter (format: "field_order" e.g., "createdAt_desc")
+    if (sort) {
+      const [sortBy, sortOrder] = sort.split('_');
+      if (sortBy) query.append('sortBy', sortBy);
+      if (sortOrder) query.append('sortOrder', sortOrder);
+    }
     return api<{ orders: AccountOrderDetail[]; pagination?: any } | { data: AccountOrderDetail[]; pagination?: any }>(`/orders?${query.toString()}`);
   },
   getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`),
@@ -607,15 +622,27 @@ export const ordersApi = {
     }),
   getTracking: (id: string) =>
     api<{
+      orderNumber: string;
+      status: string;
       trackingNumber?: string | null;
       carrier?: string | null;
-      status: string;
+      estimatedDelivery?: string | null;
+      shipments: Array<{
+        id: string;
+        trackingNumber?: string | null;
+        carrier?: string | null;
+        status: string;
+        labelUrl?: string | null;
+        createdAt: string;
+        updatedAt: string;
+      }>;
       events: Array<{
         date: string;
-        location?: string;
+        location?: string | null;
         status: string;
-        description?: string;
+        description: string;
       }>;
+      lastUpdated: string;
     }>(`/orders/${id}/tracking`),
 };
 
@@ -805,6 +832,46 @@ export const salesOrdersApi = {
   },
   get: (id: string) =>
     api<{ order: SalesOfflineOrderDetail }>(`/sales/orders/${id}`).then((res) => res.order),
+};
+
+// [2025-12-06 17:00:00] Offline Order Product Configuration API
+// 获取线下订单配置数据（产品、颜色、尺寸费用、可用性等）
+export interface OfflineOrderProduct {
+  id: string;
+  name: string;
+  categoryId: string;
+  categoryName: string;
+  basePrice: number;
+}
+
+export interface OfflineOrderColor {
+  id: string;
+  name: string;
+  hex?: string;
+}
+
+export interface OfflineOrderSizeFee {
+  size: string;
+  additionalFee: number;
+}
+
+export interface OfflineOrderAvailability {
+  productId: string;
+  colorId: string;
+  size: string;
+  available: boolean;
+}
+
+export interface OfflineOrderConfig {
+  products: OfflineOrderProduct[];
+  colors: OfflineOrderColor[];
+  sizeFees: OfflineOrderSizeFee[];
+  availability: OfflineOrderAvailability[];
+}
+
+export const offlineOrderProductApi = {
+  // [2025-12-06 17:00:00] 获取订单配置数据
+  getOrderConfig: () => sameOriginApi<OfflineOrderConfig>('/api/offline-order-products/config'),
 };
 
 // Address API
@@ -1690,6 +1757,8 @@ export interface AdminOrderListParams {
 
 export interface AdminOrderRefundPayload {
   reason?: string;
+  amount?: number; // [2025-12-06 14:00:00] Support partial refund
+  refundToStripe?: boolean; // [2025-12-06 14:00:00] Whether to process refund via Stripe
 }
 
 export interface AdminOrderUpdatePayload {
@@ -1720,8 +1789,67 @@ export const adminOrdersApi = {
   get: (id: string) => api<any>(`/admin/orders/${id}`),
   updateStatus: (id: string, payload: any) =>
     api(`/admin/orders/${id}/status`, { method: 'PATCH', body: payload }),
+  // [2025-12-06 16:40:00] Batch operations for Issue #87
+  batchUpdateStatus: (orderIds: string[], payload: { status?: string; paymentStatus?: string }) =>
+    api<{ success: boolean; updatedCount: number; orderIds: string[] }>(`/admin/orders/batch/status`, {
+      method: 'PATCH',
+      body: { orderIds, ...payload },
+    }),
+  exportOrders: async (params?: {
+    orderIds?: string[];
+    status?: string;
+    paymentStatus?: string;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.orderIds) {
+      if (Array.isArray(params.orderIds)) {
+        params.orderIds.forEach((id) => query.append('orderIds', id));
+      } else {
+        query.append('orderIds', params.orderIds);
+      }
+    }
+    if (params?.status) query.append('status', params.status);
+    if (params?.paymentStatus) query.append('paymentStatus', params.paymentStatus);
+    if (params?.search) query.append('search', params.search);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString();
+    const response = await fetch(`${API_BASE_URL}/admin/orders/export${queryString ? `?${queryString}` : ''}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `Export failed: ${response.status}`);
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-export-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
   recordRefund: (id: string, payload: AdminOrderRefundPayload) =>
     api(`/admin/orders/${id}/refund`, { method: 'POST', body: payload }),
+  // [2025-12-06 15:30:00] EasyShip shipping label APIs
+  getShippingRates: (id: string) => api<{ orderId: string; orderNumber: string; rates: Array<{ id: string; courier: string; service: string; price: number; currency: string; estimatedDeliveryDays?: number | null }>; currency: string }>(`/admin/orders/${id}/shipment/rates`),
+  generateShippingLabel: (id: string, rateId?: string) =>
+    api<{
+      id: string;
+      orderId: string;
+      orderNumber: string;
+      trackingNumber: string | null;
+      carrier: string | null;
+      labelUrl: string | null;
+      status: string;
+      createdAt: string;
+      updatedAt: string;
+    }>(`/admin/orders/${id}/shipment/label`, { method: 'POST', body: rateId ? { rateId } : {} }),
   // [2025-01-28 08:30:00] auditTrail 功能已移除
 };
 

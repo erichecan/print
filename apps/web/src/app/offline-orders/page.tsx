@@ -5,6 +5,7 @@ import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用
 import { categoriesApi, Category } from '@/lib/api'; // [2025-01-27 18:00:00] 引入分类 API 和类型
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // [2025-01-27 20:00:00] 引入翻译
+import { UserMenu } from './components/UserMenu'; // [2025-12-06 17:10:00] 引入用户菜单组件
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -148,8 +149,7 @@ export default function OfflineOrdersIntakePage() {
   const [isMobile, setIsMobile] = useState(false);
   
   const [formState, setFormState] = useState<FormState>(initialFormState);
-  const [files, setFiles] = useState<File[]>([]);
-  const [currentStep, setCurrentStep] = useState<number>(1); // [2025-01-27 18:00:00] 当前步骤
+  // [2025-12-06] PRD v2.0: 文件已移到formState.files，不再需要单独状态
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({
     type: 'idle',
   });
@@ -209,13 +209,11 @@ export default function OfflineOrdersIntakePage() {
     }
   }, []);
 
-  // [2025-01-27 20:00:00] 动态生成步骤定义 - 依赖isClient确保hydration一致性
+  // [2025-12-06] PRD v2.0: 3步流程定义
   const STEPS = useMemo(() => [
-    { id: 1, title: t('step1Title'), description: t('step1Description') },
-    { id: 2, title: t('step2Title'), description: t('step2Description') },
-    { id: 3, title: t('step3Title'), description: t('step3Description') },
-    { id: 4, title: t('step4Title'), description: t('step4Description') },
-    { id: 5, title: t('step5Title'), description: t('step5Description') },
+    { id: 1, title: t('step1Title') || '产品选择', description: t('step1Description') || '选择产品、颜色、尺码、印刷位置' },
+    { id: 2, title: t('step2Title') || '客户信息', description: t('step2Description') || '填写客户信息和Invoice信息' },
+    { id: 3, title: t('step3Title') || '文件上传', description: t('step3Description') || '上传设计文件（非必填）' },
   ], [t, isClient]);
 
   // [2025-01-27 20:00:00] 动态生成印刷位置选项 - 依赖isClient确保hydration一致性
@@ -229,16 +227,45 @@ export default function OfflineOrdersIntakePage() {
     { value: 'other', label: t('positionOther') },
   ], [t, isClient]);
 
-  // [2025-01-27 18:00:00] 获取产品分类列表
-  const { data: categoriesData, isLoading: categoriesLoading } = useSWR<{ data: Category[] }>(
-    'offline-order-categories',
-    () => categoriesApi.list(),
+  // [2025-12-06] PRD v2.0: 获取订单配置数据（产品、颜色、尺码费用、可用性）
+  const { data: orderConfigData, isLoading: orderConfigLoading } = useSWR(
+    'offline-order-config',
+    () => offlineOrderProductApi.getOrderConfig(),
     {
       revalidateOnFocus: false,
     }
   );
 
-  const categories = categoriesData?.data || [];
+  const orderConfig = orderConfigData || {
+    products: [] as OfflineOrderProduct[],
+    colors: [] as OfflineOrderColor[],
+    sizeFees: [] as OfflineOrderSizeFee[],
+    availability: [] as OfflineOrderAvailability[],
+  };
+
+  // [2025-12-06] PRD v2.0: 创建尺码费用映射表
+  const sizeFeeMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    orderConfig.sizeFees.forEach((sf) => {
+      map[sf.size] = sf.additionalFee;
+    });
+    return map;
+  }, [orderConfig.sizeFees]);
+
+  // [2025-12-06] PRD v2.0: 创建可用性映射表（productId-colorId -> available sizes）
+  const availabilityMap = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    orderConfig.availability.forEach((av) => {
+      const key = `${av.productId}-${av.colorId}`;
+      if (!map[key]) {
+        map[key] = new Set();
+      }
+      if (av.available) {
+        map[key].add(av.size);
+      }
+    });
+    return map;
+  }, [orderConfig.availability]);
 
   // [2025-11-15 15:18:30] Restore last-saved draft data on mount
   useEffect(() => {
@@ -602,14 +629,24 @@ export default function OfflineOrdersIntakePage() {
   const resetStatus = useCallback(() => setStatus({ type: 'idle' }), []);
 
   const goToNextStep = useCallback(() => {
-    if (!validateStep(currentStep)) {
-      return;
+    // [2025-12-06 17:20:00] 根据新的3步流程验证步骤
+    // Step 1 需要验证原 Step 1 和 Step 2
+    // Step 2 需要验证原 Step 3 和 Step 4
+    // Step 3 不需要验证（文件上传可选）
+    if (currentStep === 1) {
+      if (!validateStep(1) || !validateStep(2)) {
+        return;
+      }
+    } else if (currentStep === 2) {
+      if (!validateStep(3) || !validateStep(4)) {
+        return;
+      }
     }
     resetStatus();
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
     }
-  }, [currentStep, validateStep, resetStatus]);
+  }, [currentStep, validateStep, resetStatus, STEPS.length]);
 
   const goToPreviousStep = useCallback(() => {
     resetStatus();
@@ -763,7 +800,7 @@ export default function OfflineOrdersIntakePage() {
       event.preventDefault();
       resetStatus();
       
-      // [2025-01-27 18:00:00] 验证所有步骤
+      // [2025-12-06 17:15:00] 验证所有步骤（重构为3步，验证原Step1-4，Step5可选）
       if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
         return;
       }
@@ -1923,30 +1960,35 @@ export default function OfflineOrdersIntakePage() {
     <div className="min-h-screen bg-gray-100">
       <header className="relative py-12 px-6 bg-gradient-to-br from-yellow-200 via-yellow-100 to-yellow-50 z-10">
         <div>
-          {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
-          <div className="absolute top-6 right-6 flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
-            <button
-              type="button"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                locale === 'en'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
-              }`}
-              onClick={() => handleLocaleChange('en')}
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                locale === 'zh'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
-              }`}
-              onClick={() => handleLocaleChange('zh')}
-            >
-              中文
-            </button>
+          {/* [2025-12-06 17:15:00] 右上角操作区域：语言切换 + 用户菜单 */}
+          <div className="absolute top-6 right-6 flex gap-2 items-center">
+            {/* [2025-12-06 17:15:00] 用户菜单 */}
+            <UserMenu />
+            {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
+            <div className="flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
+              <button
+                type="button"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  locale === 'en'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
+                }`}
+                onClick={() => handleLocaleChange('en')}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  locale === 'zh'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
+                }`}
+                onClick={() => handleLocaleChange('zh')}
+              >
+                中文
+              </button>
+            </div>
           </div>
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {isClient && (
@@ -2021,15 +2063,27 @@ export default function OfflineOrdersIntakePage() {
           </div>
           )}
 
-          {/* [2025-01-27 18:00:00] 步骤内容区域 - 使用 Tailwind */}
+          {/* [2025-12-06 17:15:00] 步骤内容区域 - 重构为3步流程 */}
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {isClient && (
           <div className="min-h-[400px]">
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
-            {currentStep === 5 && renderStep5()}
+            {currentStep === 1 && (
+              <>
+                {renderStep1()}
+                <div className="mt-8 border-t pt-8">
+                  {renderStep2()}
+                </div>
+              </>
+            )}
+            {currentStep === 2 && (
+              <>
+                {renderStep3()}
+                <div className="mt-8 border-t pt-8">
+                  {renderStep4()}
+                </div>
+              </>
+            )}
+            {currentStep === 3 && renderStep5()}
           </div>
           )}
 

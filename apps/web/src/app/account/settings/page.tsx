@@ -2,6 +2,7 @@
  * Account Settings Page
  * [2025-01-27 13:00:00] 实现账户设置功能：密码修改、通知偏好
  * [2025-01-27] 修复：密码修改API路径已修复为 PUT /auth/me/password
+ * [2025-12-06 12:30:00] Enhanced with password strength validation
  */
 'use client';
 
@@ -9,6 +10,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, userPreferencesApi, UserPreferences } from '@/lib/api';
+import {
+  validatePasswordStrength,
+  getPasswordStrengthDescription,
+  getPasswordStrengthColor,
+  type PasswordValidationResult,
+} from '@/utils/passwordValidator';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -17,28 +24,53 @@ export default function SettingsPage() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [passwordValidation, setPasswordValidation] = useState<PasswordValidationResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // [2025-12-06 12:30:00] Real-time password validation
+  useEffect(() => {
+    if (passwordForm.newPassword) {
+      const validation = validatePasswordStrength(passwordForm.newPassword);
+      setPasswordValidation(validation);
+    } else {
+      setPasswordValidation(null);
+    }
+  }, [passwordForm.newPassword]);
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(false);
 
-    // 验证新密码
-    if (passwordForm.newPassword.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    // [2025-12-06 12:30:00] Validate current password
+    if (!passwordForm.currentPassword) {
+      setError('请输入当前密码');
       return;
     }
 
+    // [2025-12-06 12:30:00] Validate new password strength
+    if (!passwordForm.newPassword) {
+      setError('请输入新密码');
+      return;
+    }
+
+    const validation = validatePasswordStrength(passwordForm.newPassword);
+    if (!validation.valid) {
+      setError(validation.errors[0] || '新密码不符合强度要求');
+      return;
+    }
+
+    // [2025-12-06 12:30:00] Validate password confirmation
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('New passwords do not match.');
+      setError('新密码和确认密码不匹配');
       return;
     }
 
+    // [2025-12-06 12:30:00] Check if new password is different from current password
     if (passwordForm.currentPassword === passwordForm.newPassword) {
-      setError('New password must be different from current password.');
+      setError('新密码必须与当前密码不同');
       return;
     }
 
@@ -55,10 +87,15 @@ export default function SettingsPage() {
         newPassword: '',
         confirmPassword: '',
       });
-      setTimeout(() => setSuccess(false), 3000);
+      setPasswordValidation(null);
+      setTimeout(() => setSuccess(false), 5000);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to change password.';
-      // [2025-01-27] API路径已修复，现在应该可以正常工作
+      let errorMessage = '修改密码失败，请稍后重试';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null && 'message' in err) {
+        errorMessage = String(err.message);
+      }
       setError(errorMessage);
     } finally {
       setSaving(false);
@@ -87,14 +124,14 @@ export default function SettingsPage() {
 
         {success && (
           <div style={{ padding: '12px', background: '#e5f5e5', color: '#1f7d3d', borderRadius: '4px', marginBottom: '16px' }}>
-            Password changed successfully!
+            ✅ 密码修改成功！
           </div>
         )}
 
         <form onSubmit={handlePasswordChange}>
           <div style={{ marginBottom: '16px' }}>
             <label htmlFor="currentPassword" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>
-              Current Password *
+              当前密码 *
             </label>
             <input
               id="currentPassword"
@@ -108,35 +145,110 @@ export default function SettingsPage() {
 
           <div style={{ marginBottom: '16px' }}>
             <label htmlFor="newPassword" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>
-              New Password *
+              新密码 *
             </label>
             <input
               id="newPassword"
               type="password"
               required
               minLength={8}
+              maxLength={128}
               value={passwordForm.newPassword}
               onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border: passwordValidation && !passwordValidation.valid ? '1px solid #ff1f3d' : '1px solid #ddd',
+                borderRadius: '4px',
+              }}
             />
-            <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#666' }}>
-              Password must be at least 8 characters long.
-            </p>
+            {passwordValidation && (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px', color: '#666' }}>密码强度：</span>
+                  <span
+                    style={{
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      color: getPasswordStrengthColor(passwordValidation.strength),
+                    }}
+                  >
+                    {getPasswordStrengthDescription(passwordValidation.strength)}
+                  </span>
+                  <div
+                    style={{
+                      flex: 1,
+                      height: '4px',
+                      background: '#e0e0e0',
+                      borderRadius: '2px',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: passwordValidation.strength === 'weak' ? '33%' : passwordValidation.strength === 'medium' ? '66%' : '100%',
+                        height: '100%',
+                        background: getPasswordStrengthColor(passwordValidation.strength),
+                        transition: 'all 0.3s ease',
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ fontSize: '13px', color: '#666' }}>
+                  <div style={{ marginBottom: '4px' }}>密码要求：</div>
+                  <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
+                    <li style={{ color: passwordValidation.requirements.length ? '#1f7d3d' : '#666' }}>
+                      {passwordValidation.requirements.length ? '✓' : '○'} 长度至少 8 个字符，最多 128 个字符
+                    </li>
+                    <li style={{ color: passwordValidation.requirements.uppercase ? '#1f7d3d' : '#666' }}>
+                      {passwordValidation.requirements.uppercase ? '✓' : '○'} 包含至少一个大写字母
+                    </li>
+                    <li style={{ color: passwordValidation.requirements.lowercase ? '#1f7d3d' : '#666' }}>
+                      {passwordValidation.requirements.lowercase ? '✓' : '○'} 包含至少一个小写字母
+                    </li>
+                    <li style={{ color: passwordValidation.requirements.number ? '#1f7d3d' : '#666' }}>
+                      {passwordValidation.requirements.number ? '✓' : '○'} 包含至少一个数字
+                    </li>
+                    <li style={{ color: passwordValidation.requirements.special ? '#1f7d3d' : '#666' }}>
+                      {passwordValidation.requirements.special ? '✓' : '○'} 包含至少一个特殊字符
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ marginBottom: '24px' }}>
             <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>
-              Confirm New Password *
+              确认新密码 *
             </label>
             <input
               id="confirmPassword"
               type="password"
               required
               minLength={8}
+              maxLength={128}
               value={passwordForm.confirmPassword}
               onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '4px' }}
+              style={{
+                width: '100%',
+                padding: '8px',
+                border:
+                  passwordForm.confirmPassword &&
+                  passwordForm.newPassword &&
+                  passwordForm.confirmPassword !== passwordForm.newPassword
+                    ? '1px solid #ff1f3d'
+                    : '1px solid #ddd',
+                borderRadius: '4px',
+              }}
             />
+            {passwordForm.confirmPassword &&
+              passwordForm.newPassword &&
+              passwordForm.confirmPassword !== passwordForm.newPassword && (
+                <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#ff1f3d' }}>
+                  新密码和确认密码不匹配
+                </p>
+              )}
           </div>
 
           <button
@@ -153,7 +265,7 @@ export default function SettingsPage() {
               opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? 'Changing Password...' : 'Change Password'}
+            {saving ? '正在修改密码...' : '修改密码'}
           </button>
         </form>
 

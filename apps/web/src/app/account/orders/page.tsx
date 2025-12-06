@@ -42,17 +42,37 @@ export default function AccountOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   // [2025-01-27 12:10:00] 添加筛选和搜索状态
+  // [2025-12-06 13:30:00] Enhanced with payment status filter
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt_desc');
+  // [2025-12-06 13:30:00] Debounce search query
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
+
+  // [2025-12-06 13:30:00] Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchOrders = useCallback(
     async (page: number) => {
       setLoading(true);
       setError(null);
       try {
-        // [2025-01-27 14:10:00] 添加搜索查询支持（如果API支持）
-        const data = await ordersApi.list(page, pagination.limit, statusFilter || undefined, sortBy);
+        // [2025-12-06 13:30:00] Enhanced: Pass search, paymentStatus to API
+        const data = await ordersApi.list(
+          page,
+          pagination.limit,
+          statusFilter || undefined,
+          sortBy,
+          debouncedSearchQuery.trim() || undefined,
+          paymentStatusFilter || undefined
+        );
         let filteredOrders: AccountOrderSummary[] = [];
         if ('orders' in data) {
           filteredOrders = (data.orders || []).map((order: AccountOrderDetail) => ({
@@ -80,13 +100,6 @@ export default function AccountOrdersPage() {
           }));
         }
         
-        // [2025-01-27 14:10:00] 前端搜索过滤（如果后端不支持搜索）
-        if (searchQuery.trim()) {
-          filteredOrders = filteredOrders.filter((order: AccountOrderSummary) =>
-            order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase().trim())
-          );
-        }
-        
         setOrders(filteredOrders);
         const paginationData = 'pagination' in data ? data.pagination : undefined;
         setPagination(paginationData || { page, limit: pagination.limit, total: filteredOrders.length, totalPages: 1 });
@@ -96,7 +109,7 @@ export default function AccountOrdersPage() {
         setLoading(false);
       }
     },
-    [pagination.limit, statusFilter, sortBy, searchQuery] // [2025-01-27 14:10:00] 添加 searchQuery 依赖
+    [pagination.limit, statusFilter, paymentStatusFilter, sortBy, debouncedSearchQuery] // [2025-12-06 13:30:00] Use debouncedSearchQuery
   );
 
   useEffect(() => {
@@ -119,6 +132,11 @@ export default function AccountOrdersPage() {
       cancelled = true;
     };
   }, [fetchOrders, router]);
+
+  // [2025-12-06 13:30:00] Refetch orders when filters change
+  useEffect(() => {
+    fetchOrders(1);
+  }, [debouncedSearchQuery, statusFilter, paymentStatusFilter, sortBy]);
 
   const handleDownload = async (orderId: string, orderNumber: string) => {
     setDownloading(orderId);
@@ -179,69 +197,92 @@ export default function AccountOrdersPage() {
       </header>
 
       {/* [2025-01-27 12:10:00] 添加筛选和搜索功能 */}
+      {/* [2025-12-06 13:30:00] Enhanced with payment status filter and improved UI */}
       <div className="filters-section">
         <div className="filters-row">
           <div className="filter-group">
-            <label htmlFor="search">Search orders</label>
+            <label htmlFor="search">搜索订单</label>
             <input
               id="search"
               type="text"
-              placeholder="Search by order number..."
+              placeholder="按订单号或邮箱搜索..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               className="filter-input"
             />
           </div>
           <div className="filter-group">
-            <label htmlFor="status">Filter by status</label>
+            <label htmlFor="status">订单状态</label>
             <select
               id="status"
               value={statusFilter}
               onChange={(event) => {
                 setStatusFilter(event.target.value);
-                fetchOrders(1);
               }}
               className="filter-select"
             >
-              <option value="">All statuses</option>
-              <option value="PENDING">Pending</option>
-              <option value="PROCESSING">Processing</option>
-              <option value="SHIPPED">Shipped</option>
-              <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
-              <option value="REFUNDED">Refunded</option>
+              <option value="">全部状态</option>
+              <option value="PENDING">待处理</option>
+              <option value="PROCESSING">处理中</option>
+              <option value="SHIPPED">已发货</option>
+              <option value="DELIVERED">已送达</option>
+              <option value="CANCELLED">已取消</option>
+              <option value="REFUNDED">已退款</option>
             </select>
           </div>
           <div className="filter-group">
-            <label htmlFor="sort">Sort by</label>
+            <label htmlFor="paymentStatus">支付状态</label>
+            <select
+              id="paymentStatus"
+              value={paymentStatusFilter}
+              onChange={(event) => {
+                setPaymentStatusFilter(event.target.value);
+              }}
+              className="filter-select"
+            >
+              <option value="">全部支付状态</option>
+              <option value="PENDING">待支付</option>
+              <option value="COMPLETED">已支付</option>
+              <option value="FAILED">支付失败</option>
+              <option value="REFUNDED">已退款</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label htmlFor="sort">排序方式</label>
             <select
               id="sort"
               value={sortBy}
               onChange={(event) => {
                 setSortBy(event.target.value);
-                fetchOrders(1);
               }}
               className="filter-select"
             >
-              <option value="createdAt_desc">Newest first</option>
-              <option value="createdAt_asc">Oldest first</option>
-              <option value="total_desc">Highest amount</option>
-              <option value="total_asc">Lowest amount</option>
+              <option value="createdAt_desc">最新优先</option>
+              <option value="createdAt_asc">最早优先</option>
+              <option value="total_desc">金额从高到低</option>
+              <option value="total_asc">金额从低到高</option>
+              <option value="orderNumber_asc">订单号升序</option>
+              <option value="orderNumber_desc">订单号降序</option>
             </select>
           </div>
         </div>
-        {searchQuery && (
+        {(debouncedSearchQuery || statusFilter || paymentStatusFilter) && (
           <div className="search-results-info">
-            <span>Searching for: &quot;{searchQuery}&quot;</span>
+            <span>
+              {debouncedSearchQuery && `搜索: "${debouncedSearchQuery}"`}
+              {statusFilter && ` | 状态: ${statusFilter}`}
+              {paymentStatusFilter && ` | 支付状态: ${paymentStatusFilter}`}
+            </span>
             <button
               type="button"
               className="btn-clear-search"
               onClick={() => {
                 setSearchQuery('');
-                fetchOrders(1);
+                setStatusFilter('');
+                setPaymentStatusFilter('');
               }}
             >
-              Clear
+              清除筛选
             </button>
           </div>
         )}
@@ -506,7 +547,7 @@ export default function AccountOrdersPage() {
         }
         .filters-row {
           display: grid;
-          grid-template-columns: 2fr 1fr 1fr;
+          grid-template-columns: 2fr 1fr 1fr 1fr;
           gap: 16px;
           align-items: end;
         }
@@ -556,6 +597,11 @@ export default function AccountOrdersPage() {
         }
         .btn-clear-search:hover {
           background: #f1f5f9;
+        }
+        @media (max-width: 1024px) {
+          .filters-row {
+            grid-template-columns: 1fr 1fr;
+          }
         }
         @media (max-width: 768px) {
           .filters-row {

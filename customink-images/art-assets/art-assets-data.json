@@ -1,0 +1,83 @@
+{
+  "categories": [
+    {
+      "name": "Desc",
+      "slug": "desc"
+    },
+    {
+      "name": "Switch Handler",
+      "slug": "switch-handler"
+    },
+    {
+      "name": "Filter Handler",
+      "slug": "filter-handler"
+    }
+  ],
+  "assets": {
+    "desc": [],
+    "switch-handler": [],
+    "filter-handler": [],
+    "other": [
+      {
+        "name": "art-1",
+        "url": "https://aorta.clickagy.com/pixel.gif?clkgypv=jstag&ws=1",
+        "thumbnailUrl": "https://aorta.clickagy.com/pixel.gif?clkgypv=jstag&ws=1"
+      },
+      {
+        "name": "art-2",
+        "url": "https://aorta.clickagy.com/channel-sync/4?clkgypv=jstag&ws=1",
+        "thumbnailUrl": "https://aorta.clickagy.com/channel-sync/4?clkgypv=jstag&ws=1"
+      },
+      {
+        "name": "art-3",
+        "url": "https://aorta.clickagy.com/channel-sync/114?clkgypv=jstag&ws=1",
+        "thumbnailUrl": "https://aorta.clickagy.com/channel-sync/114?clkgypv=jstag&ws=1"
+      },
+      {
+        "name": "art-4",
+        "url": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=d55e88612bae64d934a6df01f17853b871691cba32c99c2b9279fa9721f2b79e",
+        "thumbnailUrl": "https://aorta.clickagy.com/pixel.gif?ch=319&cm=d55e88612bae64d934a6df01f17853b871691cba32c99c2b9279fa9721f2b79e"
+      },
+      {
+        "name": "view of product 1503502",
+        "url": "https://mms-images-prod.imgix.net/mms/images/catalog/e58b3a4ef5efba9d4aa9a86c982ef05a/colors/1503502/views/alt/front_large_extended.png?dpr=1.2&auto=format&nrs=0&w=1000",
+        "thumbnailUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/e58b3a4ef5efba9d4aa9a86c982ef05a/colors/1503502/views/alt/front_large_extended.png?dpr=1.2&auto=format&nrs=0&w=1000"
+      },
+      {
+        "name": "view of product 1503502",
+        "url": "https://mms-images-prod.imgix.net/mms/images/catalog/e58b3a4ef5efba9d4aa9a86c982ef05a/colors/1503502/views/alt/front_medium_extended.png?dpr=1.2&auto=format&nrs=0&w=1000",
+        "thumbnailUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/e58b3a4ef5efba9d4aa9a86c982ef05a/colors/1503502/views/alt/front_medium_extended.png?dpr=1.2&auto=format&nrs=0&w=1000"
+      },
+      {
+        "name": "view of product 1503502",
+        "url": "https://mms-images-prod.imgix.net/mms/images/catalog/056912340fc7164d75d22ce8de14160c/colors/1503502/views/alt/back_medium_extended.png?dpr=1.2&auto=format&nrs=0&w=1000",
+        "thumbnailUrl": "https://mms-images-prod.imgix.net/mms/images/catalog/056912340fc7164d75d22ce8de14160c/colors/1503502/views/alt/back_medium_extended.png?dpr=1.2&auto=format&nrs=0&w=1000"
+      },
+      {
+        "name": "art-15",
+        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=1&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=604&evt=pageLoad&sv=2&cdb=AQAS&rn=465229",
+        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=1&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=1&msclkid=N&pi=918639831&lg=zh-CN&sw=2560&sh=1440&sc=24&nwd=1&tl=T-shirt%20Design%20Lab%20-%20Design%20Your%20Own%20T-shirts%20%26%20More&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%3FSK%3D1503500%26PK%3D1503502%23%2Fwelcome&r=&lt=604&evt=pageLoad&sv=2&cdb=AQAS&rn=465229"
+      },
+      {
+        "name": "art-16",
+        "url": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=2&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=970999",
+        "thumbnailUrl": "https://bat.bing.com/action/0?ti=20042032&Ver=2&mid=891125a3-f211-492b-be75-21698d2a1fea&bo=2&sid=a075fa90d2c211f09a7b931dba400f4d&vid=a07607f0d2c211f083a681d7ba1b3199&vids=0&msclkid=N&gc=USD&en=Y&p=https%3A%2F%2Fwww.customink.com%2Fndx%2F%23%2Fwelcome&sw=2560&sh=1440&sc=24&nwd=1&evt=custom&cdb=AQAS&rn=970999"
+      },
+      {
+        "name": "Company Logo",
+        "url": "https://cdn.cookielaw.org/logos/static/ot_company_logo.png",
+        "thumbnailUrl": "https://cdn.cookielaw.org/logos/static/ot_company_logo.png"
+      },
+      {
+        "name": "Powered by Onetrust",
+        "url": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg",
+        "thumbnailUrl": "https://cdn.cookielaw.org/logos/static/powered_by_logo.svg"
+      },
+      {
+        "name": "art-19",
+        "url": "https://ib.adnxs.com/setuid?entity=315&code=EHiGylmRdVLvjZVWZg_blmJ7dEoHIyAsgqGbPyuh9Ho&consent=1",
+        "thumbnailUrl": "https://ib.adnxs.com/setuid?entity=315&code=EHiGylmRdVLvjZVWZg_blmJ7dEoHIyAsgqGbPyuh9Ho&consent=1"
+      }
+    ]
+  }
+}
