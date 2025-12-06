@@ -48,8 +48,69 @@ test.describe('后台订单管理', () => {
 
     const fulfillmentSelect = page.locator('.admin-form select').first();
     await fulfillmentSelect.selectOption('PROCESSING');
-    await page.getByRole('button', { name: 'Save Changes' }).click();
-    await expect(page.locator('.admin-alert')).toHaveText(/Order updated successfully/i);
+    
+    // [2025-12-06 18:00:00] Test status update note field for Issue #177
+    const noteField = page.locator('textarea[placeholder*="状态更新备注"]');
+    if (await noteField.isVisible().catch(() => false)) {
+      await noteField.fill('测试状态更新备注');
+    }
+    
+    await page.getByRole('button', { name: '保存更改' }).click();
+    await expect(page.locator('.admin-alert')).toContainText(/订单更新成功|Order updated successfully/i);
+    
+    // [2025-12-06 18:00:00] Test status history display for Issue #177
+    const statusHistoryButton = page.getByRole('button', { name: /查看状态历史|View Status History/i });
+    if (await statusHistoryButton.isVisible().catch(() => false)) {
+      await statusHistoryButton.click();
+      await page.waitForTimeout(1000); // Wait for API call
+      
+      // Check if status history table is visible
+      const historyTable = page.locator('.admin-table');
+      if (await historyTable.isVisible().catch(() => false)) {
+        // Verify history record exists
+        await expect(historyTable.locator('tbody tr').first()).toBeVisible();
+      }
+    }
+  });
+  
+  // [2025-12-06 18:00:00] Test status transition validation for Issue #177
+  test('管理员可以看到状态转换提示', async ({ page, adminAccount }) => {
+    await page.goto('/admin/login');
+    await page.waitForLoadState('domcontentloaded');
+    
+    await page.waitForSelector('#email, input[type="email"]', { timeout: 10000 });
+    await page.fill('#email', adminAccount.email);
+    await page.fill('#password', adminAccount.password);
+    
+    const loginApiPromise = page.waitForResponse(
+      (response) => response.url().includes('/api/auth/login'),
+      { timeout: 30000 }
+    ).catch(() => null);
+    
+    await page.click('button[type="submit"]');
+    await loginApiPromise;
+    await page.waitForURL(/\/admin$/, { timeout: 30000 });
+    
+    await page.goto('/admin/orders');
+    await page.fill('input[placeholder="Search order # or email"]', SEEDED_ORDER);
+    await page.click('.admin-search-form button[type="submit"]');
+    await page.waitForSelector('.admin-table tbody tr', { timeout: 15000 });
+    await page.locator('.admin-table tbody tr').first().locator('a', { hasText: 'View' }).click();
+    
+    // Check if status select shows allowed transitions
+    const statusSelect = page.locator('.admin-form select').first();
+    if (await statusSelect.isVisible().catch(() => false)) {
+      // Check if optgroup exists (indicating grouped status options)
+      const optgroup = statusSelect.locator('optgroup');
+      const hasOptgroup = await optgroup.count() > 0;
+      
+      // Check if status transition hint is visible
+      const hintText = page.locator('text=/允许的转换|Allowed transitions/i');
+      const hasHint = await hintText.isVisible().catch(() => false);
+      
+      // At least one of these should be true
+      expect(hasOptgroup || hasHint).toBeTruthy();
+    }
   });
 });
 

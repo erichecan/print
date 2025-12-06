@@ -18,6 +18,23 @@ import {
 const STATUS_OPTIONS = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED'];
 const PAYMENT_OPTIONS = ['PENDING', 'COMPLETED', 'FAILED', 'REFUNDED'];
 
+// [2025-12-06 18:00:00] Order status transitions for Issue #177
+const ORDER_STATUS_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['PROCESSING', 'CANCELLED'],
+  PROCESSING: ['SHIPPED', 'CANCELLED'],
+  SHIPPED: ['DELIVERED'],
+  DELIVERED: [], // Terminal state
+  CANCELLED: [], // Terminal state
+  REFUNDED: [], // Terminal state
+};
+
+// [2025-12-06 18:00:00] Get allowed status transitions for current order status
+function getAllowedTransitions(currentStatus: string): string[] {
+  if (!currentStatus) return [];
+  const normalized = String(currentStatus).toUpperCase();
+  return ORDER_STATUS_TRANSITIONS[normalized] || [];
+}
+
 export default function AdminOrderDetailClient({ id }: { id: string }) {
   const { data, error, mutate, isLoading } = useSWR(['admin-order', id], ([, orderId]) =>
     adminOrdersApi.get(orderId)
@@ -42,6 +59,13 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [showRatesModal, setShowRatesModal] = useState(false);
   const [selectedRateId, setSelectedRateId] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
+  // [2025-12-06 18:00:00] Status history for Issue #177
+  const [statusNote, setStatusNote] = useState<string>('');
+  const [showStatusHistory, setShowStatusHistory] = useState(false);
+  const { data: statusHistoryData, mutate: mutateHistory } = useSWR(
+    showStatusHistory ? ['admin-order-status-history', id] : null,
+    ([, orderId]) => adminOrdersApi.getStatusHistory(orderId)
+  );
 
   // [2025-01-28 08:30:00] Audit Logs 功能已移除
 
@@ -59,24 +83,31 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
     }
   }, [data]);
 
+  // [2025-12-06 18:00:00] Enhanced update handler with note support for Issue #177
   const handleUpdate = async () => {
     if (!data) return;
     setUpdating(true);
     setMessage(null);
     try {
-      const payload: AdminOrderUpdatePayload = {
+      const payload: AdminOrderUpdatePayload & { note?: string } = {
         status: form.status,
         paymentStatus: form.paymentStatus,
         trackingNumber: form.trackingNumber || null,
         carrier: form.carrier || null,
         estimatedDelivery: form.estimatedDelivery || null,
+        note: statusNote.trim() || undefined,
       };
       await adminOrdersApi.updateStatus(data.id, payload);
       await mutate();
-      setMessage('Order updated successfully.');
-    } catch (err) {
-      console.error('[2025-11-12 01:27:20] 更新订单失败', err);
-      setMessage('Failed to update order. Please try again.');
+      if (showStatusHistory) {
+        await mutateHistory();
+      }
+      setStatusNote('');
+      setMessage('订单更新成功。');
+    } catch (err: any) {
+      console.error('[2025-12-06 18:00:00] 更新订单失败', err);
+      const errorMsg = err?.message || err?.error || '更新订单失败，请稍后重试';
+      setMessage(errorMsg);
     } finally {
       setUpdating(false);
     }
@@ -230,12 +261,50 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                   value={form.status || ''}
                   onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value || undefined }))}
                 >
-                  {STATUS_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
+                  {/* [2025-12-06 18:00:00] Show current status and allowed transitions for Issue #177 */}
+                  {(() => {
+                    const currentStatus = order.status;
+                    const allowedTransitions = getAllowedTransitions(currentStatus);
+                    const allOptions = [currentStatus, ...allowedTransitions].filter(Boolean);
+                    const otherOptions = STATUS_OPTIONS.filter(opt => !allOptions.includes(opt));
+                    
+                    return (
+                      <>
+                        {allOptions.length > 0 && (
+                          <optgroup label="当前状态 / 允许的转换">
+                            {allOptions.map((option) => (
+                              <option key={option} value={option} style={{ fontWeight: option === currentStatus ? 'bold' : 'normal' }}>
+                                {option} {option === currentStatus ? '(当前)' : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                        {otherOptions.length > 0 && (
+                          <optgroup label="其他状态（可能不被允许）">
+                            {otherOptions.map((option) => (
+                              <option key={option} value={option} style={{ color: '#999' }}>
+                                {option} (可能无效)
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </>
+                    );
+                  })()}
                 </select>
+                {/* [2025-12-06 18:00:00] Show allowed transitions hint */}
+                {order.status && (
+                  <p style={{ margin: '8px 0 0 0', fontSize: '0.85em', color: '#64748b' }}>
+                    当前状态: <strong>{order.status}</strong>
+                    {(() => {
+                      const allowed = getAllowedTransitions(order.status);
+                      if (allowed.length > 0) {
+                        return ` · 允许的转换: ${allowed.join(', ')}`;
+                      }
+                      return ' · 终端状态（无允许的转换）';
+                    })()}
+                  </p>
+                )}
               </div>
               <div className="admin-form-group">
                 <label>Payment Status</label>
@@ -279,11 +348,53 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                 onChange={(event) => setForm((prev) => ({ ...prev, estimatedDelivery: event.target.value }))}
               />
             </div>
+            {/* [2025-12-06 18:00:00] Status note field for Issue #177 */}
+            <div className="admin-form-group">
+              <label>状态更新备注（可选）</label>
+              <textarea
+                value={statusNote}
+                onChange={(e) => setStatusNote(e.target.value)}
+                placeholder="请输入状态更新备注..."
+                rows={2}
+                style={{ width: '100%', padding: '10px 12px', fontSize: '14px', resize: 'vertical' }}
+              />
+            </div>
+            {/* [2025-12-06 18:00:00] Show allowed transitions hint for Issue #177 */}
+            {form.status && form.status !== order.status && (
+              <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: '#f0f9ff', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+                <p style={{ margin: 0, fontSize: '0.875rem', color: '#0369a1' }}>
+                  <strong>状态转换提示：</strong> 从 <code>{order.status}</code> 转换为 <code>{form.status}</code>
+                  {(() => {
+                    const allowed = getAllowedTransitions(order.status);
+                    if (allowed.length > 0 && !allowed.includes(form.status)) {
+                      return (
+                        <span style={{ display: 'block', marginTop: '4px', color: '#dc2626' }}>
+                          警告：此状态转换可能不被允许。允许的转换：{allowed.join(', ') || '无（终端状态）'}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                </p>
+              </div>
+            )}
             <div className="admin-form-actions">
               <button type="button" className="btn btn--primary" onClick={handleUpdate} disabled={updating}>
                 {updating ? '保存中…' : '保存更改'}
               </button>
-<<<<<<< HEAD
+              {/* [2025-12-06 18:00:00] Status history button for Issue #177 */}
+              <button
+                type="button"
+                className="btn btn--outline"
+                onClick={() => {
+                  setShowStatusHistory(!showStatusHistory);
+                  if (!showStatusHistory) {
+                    mutateHistory();
+                  }
+                }}
+              >
+                {showStatusHistory ? '隐藏状态历史' : '查看状态历史'}
+              </button>
               {/* [2025-12-06 15:30:00] Generate shipping label button */}
               {order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
                 <button
@@ -398,6 +509,49 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* [2025-12-06 18:00:00] Status history display for Issue #177 */}
+          {showStatusHistory && (
+            <div className="admin-form" style={{ marginTop: '24px' }}>
+              <h3>状态历史记录</h3>
+              {statusHistoryData?.data && statusHistoryData.data.length > 0 ? (
+                <div className="admin-table-wrapper">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>时间</th>
+                        <th>从状态</th>
+                        <th>到状态</th>
+                        <th>操作人</th>
+                        <th>备注</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statusHistoryData.data.map((history: any) => (
+                        <tr key={history.id}>
+                          <td>{new Date(history.createdAt).toLocaleString('zh-CN')}</td>
+                          <td>
+                            <span className={`status-badge status-${history.fromStatus?.toLowerCase() || 'unknown'}`}>
+                              {history.fromStatus || '—'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`status-badge status-${history.toStatus?.toLowerCase()}`}>
+                              {history.toStatus}
+                            </span>
+                          </td>
+                          <td>{history.actorName || history.actorId || '系统'}</td>
+                          <td>{history.note || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p style={{ color: '#64748b', padding: '16px' }}>暂无状态历史记录</p>
+              )}
             </div>
           )}
           </div>
