@@ -1745,6 +1745,8 @@ export interface AdminOrderListParams {
 
 export interface AdminOrderRefundPayload {
   reason?: string;
+  amount?: number; // [2025-12-06 14:00:00] Support partial refund
+  refundToStripe?: boolean; // [2025-12-06 14:00:00] Whether to process refund via Stripe
 }
 
 export interface AdminOrderUpdatePayload {
