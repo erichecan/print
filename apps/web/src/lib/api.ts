@@ -1896,6 +1896,7 @@ export interface AdminOrderUpdatePayload {
   trackingNumber?: string | null;
   carrier?: string | null;
   estimatedDelivery?: string | null;
+  note?: string; // [2025-12-06 18:00:00] Status update note for Issue #177
 }
 
 // [2025-01-28 08:30:00] Audit Logs 功能已移除
@@ -1916,6 +1917,9 @@ export const adminOrdersApi = {
     );
   },
   get: (id: string) => api<any>(`/admin/orders/${id}`),
+  // [2025-12-06 18:00:00] Get order status history for Issue #177
+  getStatusHistory: (id: string) =>
+    api<{ success: boolean; data: Array<{ id: string; fromStatus: string | null; toStatus: string; actorId: string | null; actorName: string | null; note: string | null; createdAt: string }> }>(`/admin/orders/${id}/status-history`),
   updateStatus: (id: string, payload: any) =>
     api(`/admin/orders/${id}/status`, { method: 'PATCH', body: payload }),
   // [2025-12-06 16:40:00] Batch operations for Issue #87
