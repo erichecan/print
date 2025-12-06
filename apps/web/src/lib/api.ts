@@ -2323,4 +2323,72 @@ export const adminFontsApi = {
   },
 };
 
+// [2025-12-06 17:20:00] Payment Method API for Issue #112
+export interface PaymentMethod {
+  id: string;
+  userId: string;
+  stripePaymentMethodId: string;
+  type: string;
+  cardBrand?: string | null;
+  cardLast4?: string | null;
+  cardExpMonth?: number | null;
+  cardExpYear?: number | null;
+  isDefault: boolean;
+  billingDetails?: any | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavePaymentMethodPayload {
+  paymentMethodId: string;
+  isDefault?: boolean;
+  billingDetails?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    address?: {
+      line1?: string;
+      line2?: string;
+      city?: string;
+      state?: string;
+      postal_code?: string;
+      country?: string;
+    };
+  };
+}
+
+export const paymentMethodsApi = {
+  // [2025-12-06 17:20:00] Get user's payment methods
+  list: () => api<{ paymentMethods: PaymentMethod[] }>('/payment-methods'),
+
+  // [2025-12-06 17:20:00] Get payment method by ID
+  get: (id: string) => api<{ paymentMethod: PaymentMethod }>(`/payment-methods/${id}`),
+
+  // [2025-12-06 17:20:00] Save payment method
+  save: (paymentMethodId: string, options?: { isDefault?: boolean; billingDetails?: any }) =>
+    api<{ paymentMethod: PaymentMethod }>('/payment-methods', {
+      method: 'POST',
+      body: JSON.stringify({
+        paymentMethodId,
+        isDefault: options?.isDefault || false,
+        billingDetails: options?.billingDetails || null,
+      }),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }),
+
+  // [2025-12-06 17:20:00] Set payment method as default
+  setDefault: (id: string) =>
+    api<{ paymentMethod: PaymentMethod }>(`/payment-methods/${id}/default`, {
+      method: 'PATCH',
+    }),
+
+  // [2025-12-06 17:20:00] Delete payment method
+  delete: (id: string) =>
+    api<{ success: boolean }>(`/payment-methods/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
 export default api;

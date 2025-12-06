@@ -1,0 +1,147 @@
+/* [2025-12-06 12:30:00] My Designs Modal 样式 */
+.dl-my-designs__loading,
+.dl-my-designs__error,
+.dl-my-designs__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dl-space-8);
+  min-height: 300px;
+  text-align: center;
+}
+
+.dl-my-designs__error {
+  color: var(--dl-color-error);
+}
+
+.dl-my-designs__retry-btn {
+  margin-top: var(--dl-space-4);
+  padding: var(--dl-space-2) var(--dl-space-4);
+  background: var(--dl-color-primary);
+  color: var(--dl-text-inverse);
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  cursor: pointer;
+  font-size: var(--dl-font-base);
+}
+
+.dl-my-designs__retry-btn:hover {
+  background: var(--dl-color-primary-dark);
+}
+
+.dl-my-designs__empty svg {
+  color: var(--dl-text-secondary);
+  margin-bottom: var(--dl-space-4);
+}
+
+.dl-my-designs__empty p {
+  margin: var(--dl-space-2) 0;
+  color: var(--dl-text-secondary);
+}
+
+.dl-my-designs__empty-hint {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-tertiary);
+}
+
+.dl-my-designs__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--dl-space-4);
+  padding: var(--dl-space-4);
+}
+
+.dl-my-designs__item {
+  position: relative;
+  background: var(--dl-bg-panel);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+}
+
+.dl-my-designs__item:hover {
+  border-color: var(--dl-color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.dl-my-designs__item-thumb {
+  width: 100%;
+  height: 150px;
+  background: var(--dl-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.dl-my-designs__item-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.dl-my-designs__item-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dl-text-tertiary);
+  background: var(--dl-bg-primary);
+}
+
+.dl-my-designs__item-info {
+  padding: var(--dl-space-3);
+}
+
+.dl-my-designs__item-name {
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-1) 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dl-my-designs__item-product {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dl-my-designs__item-delete {
+  position: absolute;
+  top: var(--dl-space-2);
+  right: var(--dl-space-2);
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--dl-transition-base);
+  color: var(--dl-color-error);
+}
+
+.dl-my-designs__item:hover .dl-my-designs__item-delete {
+  opacity: 1;
+}
+
+.dl-my-designs__item-delete:hover {
+  background: var(--dl-color-error);
+  color: var(--dl-text-inverse);
+  border-color: var(--dl-color-error);
+}
+
