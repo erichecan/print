@@ -1236,6 +1236,70 @@ export const adminCouponsApi = {
     const queryString = query.toString();
     return api<{ data: AdminCoupon[] }>(`/admin/coupons${queryString ? `?${queryString}` : ''}`);
   },
+  // [2025-12-06 17:30:00] Get coupon statistics for Issue #138
+  getStatistics: (params?: { couponId?: string; startDate?: string; endDate?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.couponId) query.append('couponId', params.couponId);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString();
+    return api<{
+      data: {
+        overview: {
+          totalCoupons: number;
+          activeCoupons: number;
+          inactiveCoupons: number;
+          totalUsage: number;
+          totalDiscountAmount: number;
+        };
+        topCoupons: Array<{
+          coupon: {
+            id: string;
+            code: string;
+            type: 'percentage' | 'fixed';
+            value: number;
+            isActive: boolean;
+          } | null;
+          usageCount: number;
+          totalDiscount: number;
+        }>;
+        usageByDate: Array<{
+          date: string;
+          usageCount: number;
+          totalDiscount: number;
+        }>;
+      };
+    }>(`/admin/coupons/statistics${queryString ? `?${queryString}` : ''}`);
+  },
+  // [2025-12-06 17:30:00] Get coupon detail statistics
+  getCouponStatistics: (id: string, params?: { startDate?: string; endDate?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString();
+    return api<{
+      data: {
+        coupon: AdminCoupon;
+        statistics: {
+          usageCount: number;
+          totalDiscount: number;
+          averageDiscount: number;
+          uniqueUsers: number;
+          usageByDate: Array<{
+            date: string;
+            usageCount: number;
+            totalDiscount: number;
+          }>;
+        };
+        recentUsage: Array<{
+          orderNumber: string;
+          discountAmount: number;
+          orderTotal: number;
+          usedAt: string;
+        }>;
+      };
+    }>(`/admin/coupons/${id}/statistics${queryString ? `?${queryString}` : ''}`);
+  },
   create: (data: {
     code: string;
     type: 'percentage' | 'fixed';
