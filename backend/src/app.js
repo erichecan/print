@@ -206,11 +206,17 @@ app.use('/api/admin/offline-order-product-color-sizes', require('./routes/offlin
 app.use('/api/sales/orders', require('./routes/salesOrders'));
 app.use('/api/admin/cost-management', require('./routes/adminCostManagement')); // [2025-11-10 10:30:00] Cost management routes
 app.use('/api/admin/products', require('./routes/adminProducts')); // [2025-11-11 23:20:15] Admin product management routes
+// [2025-12-06 16:00:00] Inventory alerts routes - create a simple router that forwards to adminProducts
+const inventoryAlertsRouter = express.Router();
+inventoryAlertsRouter.use(require('./middleware/auth').requireAdmin);
+inventoryAlertsRouter.get('/alerts', require('./controllers/inventoryController').getInventoryAlerts);
+app.use('/api/admin/inventory', inventoryAlertsRouter);
 app.use('/api/admin/categories', require('./routes/adminCategories')); // [2025-11-11 23:20:15] Admin category management routes
 app.use('/api/admin/orders', require('./routes/adminOrders')); // [2025-11-12 01:05:02] Admin order management routes
 app.use('/api/admin/users', require('./routes/adminUsers')); // [2025-11-15 14:05:00] Admin user management routes
 app.use('/api/admin/coupons', require('./routes/adminCoupons')); // [2025-11-15 15:15:00] Admin coupon management routes
 app.use('/api/admin/promotions', require('./routes/adminPromotions')); // [2025-11-15 15:20:00] Admin promotion management routes
+app.use('/api/admin/suppliers', require('./routes/suppliers')); // [2025-12-06 17:10:00] Supplier management routes for Issue #89
 app.use('/api/admin/settings', require('./routes/adminSettings')); // [2025-11-15 15:30:00] Admin site/content settings routes
 app.use('/api/admin/content', require('./routes/adminContent')); // [2025-01-28 06:00:00] Admin CMS content management routes
 app.use('/api/admin/designs', require('./routes/adminDesigns')); // [2025-11-15 15:05:00] Admin design review routes

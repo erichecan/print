@@ -1077,6 +1077,71 @@ export const adminCategoriesApi = {
 };
 
 // [2025-01-27 15:00:00] Admin Products API
+// [2025-12-06 16:00:00] Inventory Alert API Types
+export interface LowStockProduct {
+  variantId: string;
+  sku: string;
+  productId: string;
+  productName: string;
+  productSku: string;
+  currentStock: number;
+  threshold: number;
+  isOutOfStock: boolean;
+  hasCustomThreshold?: boolean;
+}
+
+export interface InventoryAlerts {
+  summary: {
+    lowStockCount: number;
+    outOfStockCount: number;
+    totalAlerts: number;
+    threshold: number;
+  };
+  lowStock: LowStockProduct[];
+  outOfStock: LowStockProduct[];
+}
+
+export const inventoryApi = {
+  // [2025-12-06 16:00:00] Get low stock products
+  getLowStock: (threshold?: number) => {
+    const query = new URLSearchParams();
+    if (threshold !== undefined) query.append('threshold', threshold.toString());
+    return api<{ products: LowStockProduct[]; count: number; threshold: number }>(
+      `/admin/products/low-stock${query.toString() ? `?${query.toString()}` : ''}`
+    );
+  },
+  // [2025-12-06 16:00:00] Get out of stock products
+  getOutOfStock: () => api<{ products: LowStockProduct[]; count: number }>('/admin/products/out-of-stock'),
+  // [2025-12-06 16:00:00] Get inventory alerts summary
+  getAlerts: (threshold?: number) => {
+    const query = new URLSearchParams();
+    if (threshold !== undefined) query.append('threshold', threshold.toString());
+    return api<InventoryAlerts>(`/admin/inventory/alerts${query.toString() ? `?${query.toString()}` : ''}`);
+  },
+  // [2025-12-06 16:00:00] Get low stock threshold for a variant
+  getThreshold: (variantId: string) =>
+    api<{
+      variantId: string;
+      sku: string;
+      productName: string;
+      lowStockThreshold: number | null;
+      currentStock: number;
+      effectiveThreshold: number;
+    }>(`/admin/products/variants/${variantId}/low-stock-threshold`),
+  // [2025-12-06 16:00:00] Update low stock threshold for a variant
+  updateThreshold: (variantId: string, threshold: number | null) =>
+    api<{
+      id: string;
+      sku: string;
+      productName: string;
+      lowStockThreshold: number | null;
+      currentStock: number;
+    }>(`/admin/products/variants/${variantId}/low-stock-threshold`, {
+      method: 'PATCH',
+      body: { threshold },
+    }),
+};
+
 export const adminProductsApi = {
   list: (params?: {
     page?: number;
@@ -2029,6 +2094,65 @@ export const adminOfflineOrdersApi = {
       method: 'POST',
       body: payload,
     }),
+};
+
+// [2025-12-06 17:10:00] Supplier API for Issue #89
+export interface Supplier {
+  id: string;
+  name: string;
+  apiUrl: string;
+  apiKey: string;
+  apiSecret?: string | null;
+  syncInterval: number;
+  isActive: boolean;
+  lastSyncAt?: string | null;
+  lastSyncStatus?: string | null;
+  config?: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InventorySync {
+  id: string;
+  supplierId: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'SUCCESS' | 'FAILED' | 'PARTIAL';
+  startedAt: string;
+  completedAt?: string | null;
+  itemsProcessed: number;
+  itemsUpdated: number;
+  itemsFailed: number;
+  errorMessage?: string | null;
+  metadata?: any;
+  createdAt: string;
+}
+
+export const suppliersApi = {
+  list: () => api<{ suppliers: Supplier[] }>('/admin/suppliers'),
+  get: (id: string) => api<{ supplier: Supplier }>(`/admin/suppliers/${id}`),
+  create: (data: Partial<Supplier>) => api<{ supplier: Supplier }>('/admin/suppliers', { method: 'POST', body: data }),
+  update: (id: string, data: Partial<Supplier>) => api<{ supplier: Supplier }>(`/admin/suppliers/${id}`, { method: 'PATCH', body: data }),
+  delete: (id: string) => api(`/admin/suppliers/${id}`, { method: 'DELETE' }),
+  sync: (id: string, options?: { force?: boolean; dryRun?: boolean }) =>
+    api<{
+      success: boolean;
+      syncId: string;
+      status: string;
+      itemsProcessed: number;
+      itemsUpdated: number;
+      itemsFailed: number;
+      errors?: any[];
+      dryRun?: boolean;
+    }>(`/admin/suppliers/${id}/sync`, { method: 'POST', body: options || {} }),
+  getSyncHistory: (id: string, params?: { limit?: number; offset?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.offset) query.append('offset', params.offset.toString());
+    const queryString = query.toString();
+    return api<{ syncs: InventorySync[]; total: number; limit: number; offset: number }>(
+      `/admin/suppliers/${id}/sync-history${queryString ? `?${queryString}` : ''}`
+    );
+  },
+  getSyncStatus: () => api<{ suppliers: Array<Supplier & { latestSync?: InventorySync | null }> }>('/admin/suppliers/sync-status'),
 };
 
 // [2025-01-27 19:15:00] Contact form API

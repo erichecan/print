@@ -52,6 +52,9 @@ const productImageUpload = multer({
 // Inventory management routes (must be before /:id routes)
 router.get('/low-stock', inventoryController.getLowStockProducts);
 router.get('/out-of-stock', inventoryController.getOutOfStockProducts);
+// [2025-12-06 16:00:00] Inventory alert routes
+router.get('/variants/:id/low-stock-threshold', inventoryController.getLowStockThreshold);
+router.patch('/variants/:id/low-stock-threshold', inventoryController.updateLowStockThreshold);
 
 router.get('/', controller.listProducts);
 router.get('/:id', controller.getProductById);
