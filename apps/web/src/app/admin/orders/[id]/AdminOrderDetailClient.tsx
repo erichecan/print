@@ -33,6 +33,12 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [updating, setUpdating] = useState(false);
   const [refundLoading, setRefundLoading] = useState(false);
   const [refundNote, setRefundNote] = useState('');
+  // [2025-12-06 15:30:00] Shipping label generation
+  const [generatingLabel, setGeneratingLabel] = useState(false);
+  const [loadingRates, setLoadingRates] = useState(false);
+  const [shippingRates, setShippingRates] = useState<any[]>([]);
+  const [showRatesModal, setShowRatesModal] = useState(false);
+  const [selectedRateId, setSelectedRateId] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
 
   // [2025-01-28 08:30:00] Audit Logs 功能已移除
@@ -71,6 +77,53 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       setMessage('Failed to update order. Please try again.');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // [2025-12-06 15:30:00] Load shipping rates
+  const loadShippingRates = async () => {
+    if (!data) return;
+    setLoadingRates(true);
+    try {
+      const ratesData = await adminOrdersApi.getShippingRates(data.id);
+      setShippingRates(ratesData.rates || []);
+      setShowRatesModal(true);
+    } catch (err: any) {
+      console.error('[2025-12-06 15:30:00] 加载运费报价失败', err);
+      setMessage('获取运费报价失败，将使用默认设置生成标签');
+      // Continue with label generation without rate selection
+      handleGenerateLabel();
+    } finally {
+      setLoadingRates(false);
+    }
+  };
+
+  // [2025-12-06 15:30:00] Generate shipping label
+  const handleGenerateLabel = async (rateId?: string) => {
+    if (!data) return;
+
+    // Check if label already exists
+    const existingShipment = data.shipments?.find((s: any) => s.labelUrl);
+    if (existingShipment) {
+      if (!confirm(`该订单已存在发货标签。是否重新生成？`)) {
+        return;
+      }
+    }
+
+    setGeneratingLabel(true);
+    setMessage(null);
+    try {
+      const result = await adminOrdersApi.generateShippingLabel(data.id, rateId || selectedRateId || undefined);
+      await mutate();
+      setShowRatesModal(false);
+      setSelectedRateId('');
+      setMessage(`发货标签已生成！跟踪号：${result.trackingNumber || 'N/A'}`);
+    } catch (err: any) {
+      console.error('[2025-12-06 15:30:00] 生成发货标签失败', err);
+      const errorMsg = err?.message || err?.error || '生成发货标签失败，请稍后重试';
+      setMessage(errorMsg);
+    } finally {
+      setGeneratingLabel(false);
     }
   };
 
@@ -184,15 +237,26 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
             <div className="admin-form-actions">
               <button type="button" className="btn btn--primary" onClick={handleUpdate} disabled={updating}>
-                {updating ? 'Saving…' : 'Save Changes'}
+                {updating ? '保存中…' : '保存更改'}
               </button>
+              {/* [2025-12-06 15:30:00] Generate shipping label button */}
+              {order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
+                <button
+                  type="button"
+                  className="btn btn--outline"
+                  onClick={loadShippingRates}
+                  disabled={generatingLabel || loadingRates}
+                >
+                  {generatingLabel ? '生成中…' : loadingRates ? '加载报价…' : '生成发货标签'}
+                </button>
+              )}
               <button type="button" className="btn btn--outline" onClick={handleRefund} disabled={refundLoading}>
-                {refundLoading ? 'Marking…' : 'Mark as Refunded'}
+                {refundLoading ? '处理中…' : '处理退款'}
               </button>
               <input
                 type="text"
                 className="admin-note-input"
-                placeholder="Refund note (optional)"
+                placeholder="退款备注（可选）"
                 value={refundNote}
                 onChange={(event) => setRefundNote(event.target.value)}
               />
@@ -274,9 +338,10 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
           </div>
 
+          {/* [2025-12-06 15:30:00] Enhanced shipments section with label printing */}
           {(order.shipments || []).length > 0 && (
             <div className="admin-form">
-              <h3>Shipments</h3>
+              <h3>发货信息</h3>
               <div className="shipments-list">
                 {(order.shipments || []).map((shipment: any) => (
                   <div key={shipment.id} className="shipment-card">
@@ -284,15 +349,120 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                       <strong>{shipment.status}</strong>
                       <span>{new Date(shipment.createdAt).toLocaleString()}</span>
                     </div>
-                    <p>Carrier: {shipment.carrier || '—'}</p>
-                    <p>Tracking: {shipment.trackingNumber || '—'}</p>
+                    <p>承运商: {shipment.carrier || '—'}</p>
+                    <p>跟踪号: {shipment.trackingNumber || '—'}</p>
                     {shipment.labelUrl && (
-                      <Link href={shipment.labelUrl} target="_blank" className="btn btn--outline btn--xs">
-                        Download Label
-                      </Link>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <Link href={shipment.labelUrl} target="_blank" className="btn btn--outline btn--xs">
+                          下载标签
+                        </Link>
+                        <button
+                          type="button"
+                          className="btn btn--outline btn--xs"
+                          onClick={() => {
+                            window.open(shipment.labelUrl, '_blank');
+                            window.print();
+                          }}
+                        >
+                          打印标签
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* [2025-12-06 15:30:00] Shipping rates modal */}
+          {showRatesModal && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+              }}
+              onClick={() => !generatingLabel && setShowRatesModal(false)}
+            >
+              <div
+                className="admin-form"
+                style={{
+                  backgroundColor: 'white',
+                  padding: '24px',
+                  borderRadius: '8px',
+                  maxWidth: '600px',
+                  width: '90%',
+                  maxHeight: '90vh',
+                  overflow: 'auto',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 style={{ marginTop: 0 }}>选择运费方案</h3>
+                {shippingRates.length === 0 ? (
+                  <p style={{ color: '#64748b' }}>暂无可用运费方案，将使用默认设置生成标签</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                    {shippingRates.map((rate: any) => (
+                      <div
+                        key={rate.id}
+                        style={{
+                          padding: '12px',
+                          border: selectedRateId === rate.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          backgroundColor: selectedRateId === rate.id ? '#f0f9ff' : 'white',
+                        }}
+                        onClick={() => setSelectedRateId(rate.id)}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <p style={{ margin: '0 0 4px 0', fontWeight: 600 }}>
+                              {rate.courier} - {rate.service}
+                            </p>
+                            {rate.estimatedDeliveryDays && (
+                              <p style={{ margin: 0, fontSize: '0.85em', color: '#64748b' }}>
+                                预计 {rate.estimatedDeliveryDays} 天送达
+                              </p>
+                            )}
+                          </div>
+                          <strong style={{ fontSize: '1.1em' }}>
+                            {rate.currency} ${rate.price.toFixed(2)}
+                          </strong>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    onClick={() => handleGenerateLabel(selectedRateId || undefined)}
+                    disabled={generatingLabel}
+                    style={{ flex: 1 }}
+                  >
+                    {generatingLabel ? '生成中…' : '生成标签'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn--outline"
+                    onClick={() => {
+                      setShowRatesModal(false);
+                      setSelectedRateId('');
+                    }}
+                    disabled={generatingLabel}
+                    style={{ flex: 1 }}
+                  >
+                    取消
+                  </button>
+                </div>
               </div>
             </div>
           )}
