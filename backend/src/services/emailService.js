@@ -65,6 +65,16 @@ function getTransporter() {
  * Generate order confirmation email HTML
  * [2025-01-27 10:00:00]
  */
+/**
+ * Generate order confirmation email HTML
+ * [2025-01-27 10:00:00] Original implementation
+ * [2025-12-06 10:45:00] Enhanced with better address handling, discount display, and support information
+ */
+/**
+ * Generate order confirmation email HTML
+ * [2025-01-27 10:00:00] Original implementation
+ * [2025-12-06 10:45:00] Enhanced with better address handling, discount display, and support information
+ */
 function generateOrderConfirmationEmail(order) {
   const orderDate = new Date(order.createdAt).toLocaleDateString('en-CA', {
     year: 'numeric',
@@ -72,21 +82,25 @@ function generateOrderConfirmationEmail(order) {
     day: 'numeric',
   });
 
-  const itemsHtml = order.items
-    .map(
-      (item) => `
+  // [2025-12-06 10:45:00] Generate items HTML with better error handling
+  const itemsHtml = order.items && order.items.length > 0
+    ? order.items
+        .map(
+          (item) => `
     <tr>
       <td style="padding: 10px; border-bottom: 1px solid #eee;">
         ${item.variant?.product?.name || 'Product'} 
         ${item.variant?.color || item.variant?.size ? `(${item.variant.color || ''}${item.variant.color && item.variant.size ? ', ' : ''}${item.variant.size || ''})` : ''}
+        ${item.variant?.sku ? `<br><small style="color: #666;">SKU: ${item.variant.sku}</small>` : ''}
       </td>
       <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
       <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${Number(item.priceSnapshot).toFixed(2)}</td>
       <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${(Number(item.priceSnapshot) * item.quantity).toFixed(2)}</td>
     </tr>
   `
-    )
-    .join('');
+        )
+        .join('')
+    : '<tr><td colspan="4" style="padding: 10px; text-align: center; color: #666;">No items found</td></tr>';
 
   return `
 <!DOCTYPE html>
@@ -97,9 +111,9 @@ function generateOrderConfirmationEmail(order) {
   <title>Order Confirmation - ${order.orderNumber}</title>
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px;">
-    <h1 style="color: #2c3e50; margin-top: 0;">Order Confirmation</h1>
-    <p style="margin: 0;">Thank you for your order!</p>
+  <div style="background-color: #e8f5e9; padding: 20px; border-radius: 5px; margin-bottom: 20px; border-left: 4px solid #16a34a;">
+    <h1 style="color: #166534; margin-top: 0;">✅ Order Confirmation</h1>
+    <p style="margin: 0; color: #166534; font-size: 1.1em;">Thank you for your order! We've received your payment and your order is being processed.</p>
   </div>
 
   <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
@@ -134,6 +148,12 @@ function generateOrderConfirmationEmail(order) {
         <td style="padding: 5px 0;">Subtotal:</td>
         <td style="text-align: right; padding: 5px 0;">$${Number(order.subtotal).toFixed(2)}</td>
       </tr>
+      ${Number(order.discount) > 0 ? `
+      <tr>
+        <td style="padding: 5px 0; color: #16a34a;">Discount:</td>
+        <td style="text-align: right; padding: 5px 0; color: #16a34a;">-$${Number(order.discount).toFixed(2)}</td>
+      </tr>
+      ` : ''}
       <tr>
         <td style="padding: 5px 0;">Shipping:</td>
         <td style="text-align: right; padding: 5px 0;">$${Number(order.shippingCost).toFixed(2)}</td>
@@ -144,7 +164,7 @@ function generateOrderConfirmationEmail(order) {
       </tr>
       <tr style="font-weight: bold; font-size: 1.1em; border-top: 2px solid #ddd;">
         <td style="padding: 10px 0;">Total:</td>
-        <td style="text-align: right; padding: 10px 0;">$${Number(order.total).toFixed(2)}</td>
+        <td style="text-align: right; padding: 10px 0;">$${Number(order.total).toFixed(2)} ${order.currency || 'CAD'}</td>
       </tr>
     </table>
   </div>
@@ -152,13 +172,26 @@ function generateOrderConfirmationEmail(order) {
   <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
     <h2 style="color: #2c3e50; margin-top: 0;">Shipping Address</h2>
     <p style="margin: 0;">
-      ${order.shippingAddress?.fullName || ''}<br>
-      ${order.shippingAddress?.addressLine1 || ''}<br>
-      ${order.shippingAddress?.addressLine2 ? order.shippingAddress.addressLine2 + '<br>' : ''}
-      ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.province || ''} ${order.shippingAddress?.postalCode || ''}<br>
-      ${order.shippingAddress?.country || ''}
+      ${order.shippingAddress?.fullName || (order.shippingAddress?.firstName && order.shippingAddress?.lastName ? `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}` : '')}<br>
+      ${order.shippingAddress?.addressLine1 || order.shippingAddress?.address1 || ''}<br>
+      ${order.shippingAddress?.addressLine2 || order.shippingAddress?.address2 ? (order.shippingAddress.addressLine2 || order.shippingAddress.address2) + '<br>' : ''}
+      ${order.shippingAddress?.city || ''}, ${order.shippingAddress?.province || order.shippingAddress?.state || ''} ${order.shippingAddress?.postalCode || order.shippingAddress?.zipCode || ''}<br>
+      ${order.shippingAddress?.country || 'Canada'}
     </p>
   </div>
+
+  ${order.billingAddress && (order.billingAddress.addressLine1 || order.billingAddress.address1) && (order.billingAddress.addressLine1 !== order.shippingAddress?.addressLine1 && order.billingAddress.address1 !== order.shippingAddress?.address1) ? `
+  <div style="background-color: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 20px;">
+    <h2 style="color: #2c3e50; margin-top: 0;">Billing Address</h2>
+    <p style="margin: 0;">
+      ${order.billingAddress?.fullName || (order.billingAddress?.firstName && order.billingAddress?.lastName ? `${order.billingAddress.firstName} ${order.billingAddress.lastName}` : '')}<br>
+      ${order.billingAddress?.addressLine1 || order.billingAddress?.address1 || ''}<br>
+      ${order.billingAddress?.addressLine2 || order.billingAddress?.address2 ? (order.billingAddress.addressLine2 || order.billingAddress.address2) + '<br>' : ''}
+      ${order.billingAddress?.city || ''}, ${order.billingAddress?.province || order.billingAddress?.state || ''} ${order.billingAddress?.postalCode || order.billingAddress?.zipCode || ''}<br>
+      ${order.billingAddress?.country || 'Canada'}
+    </p>
+  </div>
+  ` : ''}
 
   <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin-top: 20px;">
     <p style="margin: 0; color: #2e7d32;">
@@ -167,9 +200,19 @@ function generateOrderConfirmationEmail(order) {
     </p>
   </div>
 
+  <div style="background-color: #f8fafc; padding: 15px; border-radius: 5px; margin-top: 20px;">
+    <p style="margin: 0; font-size: 0.9em; color: #64748b;">
+      <strong>Need help?</strong> If you have any questions about your order, please contact our support team at 
+      <a href="mailto:${process.env.SUPPORT_EMAIL || 'support@print.dev'}" style="color: #2563eb; text-decoration: none;">
+        ${process.env.SUPPORT_EMAIL || 'support@print.dev'}
+      </a>
+      <br>
+      Please include your order number: <strong>${order.orderNumber}</strong>
+    </p>
+  </div>
+
   <div style="text-align: center; margin-top: 30px; color: #666; font-size: 0.9em;">
-    <p>If you have any questions, please contact our support team.</p>
-    <p style="margin: 0;">© ${new Date().getFullYear()} Suvernire Plus. All rights reserved.</p>
+    <p>© ${new Date().getFullYear()} ${process.env.APP_NAME || 'Suvernire Plus'}. All rights reserved.</p>
   </div>
 </body>
 </html>
@@ -376,12 +419,31 @@ async function sendOrderConfirmation(order) {
 
     const html = generateOrderConfirmationEmail(orderWithItems);
 
+    // [2025-12-06 10:45:00] Generate plain text version for better email client compatibility
+    const orderDateText = new Date(order.createdAt).toLocaleDateString('en-CA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+    
+    const itemsText = orderWithItems.items && orderWithItems.items.length > 0
+      ? orderWithItems.items.map(item => 
+          `- ${item.variant?.product?.name || 'Product'}${item.variant?.color || item.variant?.size ? ` (${item.variant.color || ''}${item.variant.color && item.variant.size ? ', ' : ''}${item.variant.size || ''})` : ''} x${item.quantity} - $${(Number(item.priceSnapshot) * item.quantity).toFixed(2)}`
+        ).join('\n')
+      : 'No items found';
+    
+    const shippingAddressText = orderWithItems.shippingAddress
+      ? `${orderWithItems.shippingAddress.fullName || (orderWithItems.shippingAddress.firstName && orderWithItems.shippingAddress.lastName ? `${orderWithItems.shippingAddress.firstName} ${orderWithItems.shippingAddress.lastName}` : '')}\n${orderWithItems.shippingAddress.addressLine1 || orderWithItems.shippingAddress.address1 || ''}\n${orderWithItems.shippingAddress.addressLine2 || orderWithItems.shippingAddress.address2 || ''}\n${orderWithItems.shippingAddress.city || ''}, ${orderWithItems.shippingAddress.province || orderWithItems.shippingAddress.state || ''} ${orderWithItems.shippingAddress.postalCode || orderWithItems.shippingAddress.zipCode || ''}\n${orderWithItems.shippingAddress.country || 'Canada'}`
+      : 'Not provided';
+    
+    const textVersion = `Order Confirmation\n\nOrder Number: ${order.orderNumber}\nOrder Date: ${orderDateText}\nStatus: ${order.status}\nPayment Status: ${order.paymentStatus}\n\nItems Ordered:\n${itemsText}\n\nOrder Summary:\nSubtotal: $${Number(order.subtotal).toFixed(2)}\n${Number(order.discount) > 0 ? `Discount: -$${Number(order.discount).toFixed(2)}\n` : ''}Shipping: $${Number(order.shippingCost).toFixed(2)}\nTax: $${Number(order.tax).toFixed(2)}\nTotal: $${Number(order.total).toFixed(2)} ${order.currency || 'CAD'}\n\nShipping Address:\n${shippingAddressText}\n\nThank you for your order! We'll send you an email when your order ships.\n\nIf you have any questions, please contact our support team at ${process.env.SUPPORT_EMAIL || 'support@print.dev'}\nPlease include your order number: ${order.orderNumber}`;
+
     const mailOptions = {
       from: `"${appName}" <${emailFrom}>`,
       to: order.email,
       subject: `Order Confirmation - ${order.orderNumber}`,
       html,
-      text: `Order Confirmation\n\nOrder Number: ${order.orderNumber}\nTotal: $${Number(order.total).toFixed(2)}\n\nThank you for your order!`,
+      text: textVersion,
     };
 
     const result = await transporter.sendMail(mailOptions);
