@@ -256,10 +256,11 @@ async function cancelOrder(orderId, options = {}) {
       },
     });
 
-    // Restore inventory if needed
+    // [2025-12-06 11:30:00] Restore inventory if needed
+    // Use correct Prisma model name: Variant (not productVariant)
     if (restoreInventory) {
       for (const item of order.items) {
-        await tx.productVariant.update({
+        await tx.variant.update({
           where: { id: item.variantId },
           data: {
             stockQuantity: {

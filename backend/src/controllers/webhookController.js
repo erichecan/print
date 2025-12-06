@@ -8,6 +8,7 @@ const Stripe = require('stripe');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY || '');
 const logger = require('../utils/logger');
 const { sendOrderConfirmation } = require('../services/emailService');
+const { increaseInventory } = require('../services/inventoryService');
 
 /**
  * POST /api/webhooks/stripe - Handle Stripe webhooks
@@ -168,11 +169,24 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
  * [2025-11-04 23:55:00]
  * [2025-01-27 10:30:00] Enhanced with better logging
  */
+/**
+ * Handle payment_intent.payment_failed event
+ * [2025-11-04 23:55:00]
+ * [2025-01-27 10:30:00] Enhanced with better logging
+ * [2025-12-06 11:30:00] Enhanced with inventory restoration
+ */
 async function handlePaymentIntentFailed(paymentIntent) {
   try {
-    // Find order by paymentIntentId
+    // Find order by paymentIntentId with items
     const order = await prisma.order.findUnique({
       where: { paymentIntentId: paymentIntent.id },
+      include: {
+        items: {
+          include: {
+            variant: true,
+          },
+        },
+      },
     });
 
     if (!order) {
@@ -180,6 +194,34 @@ async function handlePaymentIntentFailed(paymentIntent) {
         paymentIntentId: paymentIntent.id,
       });
       return;
+    }
+
+    // [2025-12-06 11:30:00] Restore inventory if order was created and payment failed
+    // Only restore if order status is PENDING (order was created but payment failed)
+    if (order.status === 'PENDING' && order.items && order.items.length > 0) {
+      try {
+        await increaseInventory(
+          order.items.map((item) => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+          }))
+        );
+
+        logger.info('Inventory restored for failed payment', {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          paymentIntentId: paymentIntent.id,
+          itemsRestored: order.items.length,
+        });
+      } catch (inventoryError) {
+        logger.error('Failed to restore inventory for failed payment', {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          paymentIntentId: paymentIntent.id,
+          error: inventoryError.message,
+        });
+        // Don't throw - inventory restoration failure shouldn't fail webhook processing
+      }
     }
 
     // Update order payment status to FAILED
@@ -196,6 +238,7 @@ async function handlePaymentIntentFailed(paymentIntent) {
       paymentIntentId: paymentIntent.id,
       failureCode: paymentIntent.last_payment_error?.code,
       failureMessage: paymentIntent.last_payment_error?.message,
+      inventoryRestored: order.status === 'PENDING' && order.items && order.items.length > 0,
     });
 
     // TODO: Send payment failure notification email (optional)
