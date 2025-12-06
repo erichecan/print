@@ -30,6 +30,8 @@ import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
+import PriceModal from './components/modals/PriceModal';
+import { designLabApi } from '@/lib/api';
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import './design-lab.css';
 
@@ -111,6 +113,13 @@ const DesignLabClient: React.FC = () => {
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'zoom'>('front');
   const [showGuidePanel, setShowGuidePanel] = useState(false); // [2025-01-30 17:00:00] 默认隐藏，因为工具面板会显示
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false); // [2025-12-06 12:30:00] 模板库面板显示状态
+  const [showPriceModal, setShowPriceModal] = useState(false); // [2025-12-06 12:30:00] 价格模态框显示状态
+  const [priceQuote, setPriceQuote] = useState<any>(null); // [2025-12-06 12:30:00] 价格报价数据
+  const [priceLoading, setPriceLoading] = useState(false); // [2025-12-06 12:30:00] 价格加载状态
+  const [priceError, setPriceError] = useState<string | null>(null); // [2025-12-06 12:30:00] 价格错误信息
+  const [quoteQuantity, setQuoteQuantity] = useState(1); // [2025-12-06 12:30:00] 报价数量
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(null); // [2025-12-06 12:30:00] 当前设计 ID
   const [designName, setDesignName] = useState('Untitled Design');
   // [2025-01-30 17:00:00] 工具面板状态管理
   // [2025-01-30 22:20:00] 同时更新 ref，确保事件处理器能访问最新值
@@ -1368,6 +1377,157 @@ const DesignLabClient: React.FC = () => {
     }
   }, [canvasToSnapshot, setCanvas]);
 
+  // [2025-12-06 12:30:00] Get Price 处理
+  const handleGetPrice = useCallback(async () => {
+    if (!fabricCanvasRef.current || !productInfo) {
+      console.warn('[DesignLab] Cannot get price: canvas or productInfo not available');
+      alert('Please ensure the canvas is loaded and a product is selected.');
+      return;
+    }
+
+    // 确保设计已保存
+    let designId = currentDesignId;
+    if (!designId) {
+      // 先保存设计
+      try {
+        const snapshot = canvasToSnapshot(fabricCanvasRef.current);
+        setCanvas(snapshot, { pushHistory: true });
+
+        let productVariantId = productInfo.variantId;
+        if (productVariantId === 'default' && productInfo.productId && productInfo.productId !== 'default') {
+          try {
+            const productSlug = productInfo.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const productData = await productsApi.getBySlug(productSlug);
+            if (productData.variants && productData.variants.length > 0) {
+              productVariantId = productData.variants[0].id;
+            }
+          } catch (error) {
+            console.warn('[DesignLab] Failed to get product variant:', error);
+          }
+        }
+
+        if (!productVariantId || productVariantId === 'default') {
+          alert('Please select a product before getting price. Use "Change Product" to select a product.');
+          return;
+        }
+
+        const payload = {
+          name: designName,
+          canvas: snapshot,
+          productVariantId: productVariantId!
+        };
+
+        const response = await designLabApi.createDraft(payload);
+        if (response.success && response.data) {
+          designId = response.data.id;
+          setCurrentDesignId(designId);
+        } else {
+          throw new Error('Failed to save design');
+        }
+      } catch (error) {
+        console.error('[DesignLab] Error saving design before getting price:', error);
+        alert('Failed to save design. Please try again.');
+        return;
+      }
+    }
+
+    // 打开价格模态框
+    setShowPriceModal(true);
+    setPriceLoading(true);
+    setPriceError(null);
+
+    try {
+      // 计算使用的面和图层数
+      const canvas = fabricCanvasRef.current;
+      const objects = canvas.getObjects().filter(obj => {
+        const fabricObj = obj as fabric.Object;
+        return fabricObj.name && fabricObj.name !== 'background';
+      });
+
+      // 确定使用的面（基于当前视图和画布对象）
+      const sidesUsed: string[] = [];
+      if (currentView === 'front' || objects.some(obj => (obj as any).name?.includes('front'))) {
+        sidesUsed.push('front');
+      }
+      if (currentView === 'back' || objects.some(obj => (obj as any).name?.includes('back'))) {
+        sidesUsed.push('back');
+      }
+      if (currentView === 'sleeve' || objects.some(obj => (obj as any).name?.includes('sleeve'))) {
+        sidesUsed.push('sleeve');
+      }
+      // 如果没有对象，至少包含当前视图
+      if (sidesUsed.length === 0 && currentView !== 'zoom') {
+        sidesUsed.push(currentView);
+      }
+
+      const layerCount = objects.length;
+
+      // 调用报价 API
+      const response = await designLabApi.requestQuote(designId, {
+        quantity: quoteQuantity,
+        sidesUsed: sidesUsed,
+        layerCount: layerCount
+      });
+
+      if (response.success && response.data) {
+        setPriceQuote(response.data);
+        console.log('[DesignLab] Price quote received:', response.data);
+      } else {
+        throw new Error('Failed to get price quote');
+      }
+    } catch (error) {
+      console.error('[DesignLab] Error getting price:', error);
+      setPriceError('Failed to get price. Please try again.');
+    } finally {
+      setPriceLoading(false);
+    }
+  }, [fabricCanvasRef, productInfo, currentDesignId, currentView, quoteQuantity, canvasToSnapshot, setCanvas, designName, setCurrentDesignId]);
+
+  // [2025-12-06 12:30:00] 处理数量变化并重新获取报价
+  const handleQuantityChange = useCallback(async (newQuantity: number) => {
+    setQuoteQuantity(newQuantity);
+    
+    if (currentDesignId && showPriceModal && !priceLoading) {
+      // 重新获取报价
+      setPriceLoading(true);
+      try {
+        const canvas = fabricCanvasRef.current;
+        const objects = canvas?.getObjects().filter(obj => {
+          const fabricObj = obj as fabric.Object;
+          return fabricObj.name && fabricObj.name !== 'background';
+        }) || [];
+
+        const sidesUsed: string[] = [];
+        if (currentView === 'front' || objects.some(obj => (obj as any).name?.includes('front'))) {
+          sidesUsed.push('front');
+        }
+        if (currentView === 'back' || objects.some(obj => (obj as any).name?.includes('back'))) {
+          sidesUsed.push('back');
+        }
+        if (currentView === 'sleeve' || objects.some(obj => (obj as any).name?.includes('sleeve'))) {
+          sidesUsed.push('sleeve');
+        }
+        if (sidesUsed.length === 0 && currentView !== 'zoom') {
+          sidesUsed.push(currentView);
+        }
+
+        const response = await designLabApi.requestQuote(currentDesignId, {
+          quantity: newQuantity,
+          sidesUsed: sidesUsed,
+          layerCount: objects.length
+        });
+
+        if (response.success && response.data) {
+          setPriceQuote(response.data);
+        }
+      } catch (error) {
+        console.error('[DesignLab] Error updating price:', error);
+      } finally {
+        setPriceLoading(false);
+      }
+    }
+  }, [currentDesignId, showPriceModal, priceLoading, currentView]);
+
   // [2025-01-30 14:00:00] 视图切换处理
   const handleViewChange = (view: 'front' | 'back' | 'sleeve' | 'zoom') => {
     setCurrentView(view);
@@ -1951,7 +2111,10 @@ const DesignLabClient: React.FC = () => {
             </svg>
             Save | Share
           </button>
-          <button className="dl-bottom-bar__btn dl-bottom-bar__btn--primary">
+          <button 
+            className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
+            onClick={handleGetPrice}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
               <line x1="1" y1="10" x2="23" y2="10" />
@@ -1997,6 +2160,20 @@ const DesignLabClient: React.FC = () => {
           onAddToCanvas={handleAddNamesNumbers}
         />
       )}
+
+      {/* [2025-12-06 12:30:00] Price Modal */}
+      <PriceModal
+        isOpen={showPriceModal}
+        onClose={() => {
+          setShowPriceModal(false);
+          setPriceError(null);
+        }}
+        quoteData={priceQuote}
+        loading={priceLoading}
+        error={priceError}
+        quantity={quoteQuantity}
+        onQuantityChange={handleQuantityChange}
+      />
     </div>
   );
 };

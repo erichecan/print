@@ -1,0 +1,102 @@
+/* Price Modal 样式 */
+/* [2025-12-06 12:30:00] 价格报价模态框样式 */
+.dl-price-modal {
+  max-width: 500px;
+  width: 90%;
+}
+
+.dl-price-modal__loading,
+.dl-price-modal__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dl-space-8);
+  text-align: center;
+  color: var(--dl-text-secondary);
+}
+
+.dl-price-modal__error button {
+  margin-top: var(--dl-space-3);
+  padding: var(--dl-space-2) var(--dl-space-4);
+  background: var(--dl-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  cursor: pointer;
+  font-size: var(--dl-font-sm);
+}
+
+.dl-price-modal__quantity {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-3);
+  margin-bottom: var(--dl-space-6);
+  padding-bottom: var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-price-modal__label {
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+}
+
+.dl-price-modal__quantity-input {
+  padding: var(--dl-space-2) var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+  background: var(--dl-bg-primary);
+  width: 100px;
+}
+
+.dl-price-modal__quantity-input:focus {
+  outline: none;
+  border-color: var(--dl-color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.dl-price-modal__breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-2);
+  margin-bottom: var(--dl-space-6);
+}
+
+.dl-price-modal__breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--dl-space-2) 0;
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+}
+
+.dl-price-modal__breakdown-item--subtotal {
+  border-top: 1px solid var(--dl-border-color);
+  padding-top: var(--dl-space-3);
+  margin-top: var(--dl-space-2);
+  font-weight: var(--dl-font-weight-medium);
+}
+
+.dl-price-modal__breakdown-item--total {
+  border-top: 2px solid var(--dl-border-color);
+  padding-top: var(--dl-space-4);
+  margin-top: var(--dl-space-3);
+  font-size: var(--dl-font-lg);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-color-primary);
+}
+
+.dl-price-modal__actions {
+  display: flex;
+  gap: var(--dl-space-3);
+  margin-top: var(--dl-space-6);
+}
+
+.dl-price-modal__actions .dl-modal__btn {
+  flex: 1;
+}
+

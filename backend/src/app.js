@@ -211,6 +211,7 @@ app.use('/api/admin/orders', require('./routes/adminOrders')); // [2025-11-12 01
 app.use('/api/admin/users', require('./routes/adminUsers')); // [2025-11-15 14:05:00] Admin user management routes
 app.use('/api/admin/coupons', require('./routes/adminCoupons')); // [2025-11-15 15:15:00] Admin coupon management routes
 app.use('/api/admin/promotions', require('./routes/adminPromotions')); // [2025-11-15 15:20:00] Admin promotion management routes
+app.use('/api/admin/suppliers', require('./routes/suppliers')); // [2025-12-06 17:10:00] Supplier management routes for Issue #89
 app.use('/api/admin/settings', require('./routes/adminSettings')); // [2025-11-15 15:30:00] Admin site/content settings routes
 app.use('/api/admin/content', require('./routes/adminContent')); // [2025-01-28 06:00:00] Admin CMS content management routes
 app.use('/api/admin/designs', require('./routes/adminDesigns')); // [2025-11-15 15:05:00] Admin design review routes

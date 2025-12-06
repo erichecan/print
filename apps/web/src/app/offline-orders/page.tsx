@@ -5,7 +5,6 @@ import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用
 import { categoriesApi, Category } from '@/lib/api'; // [2025-01-27 18:00:00] 引入分类 API 和类型
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // [2025-01-27 20:00:00] 引入翻译
-import { UserMenu } from './components/UserMenu'; // [2025-12-06 17:10:00] 引入用户菜单组件
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -149,7 +148,8 @@ export default function OfflineOrdersIntakePage() {
   const [isMobile, setIsMobile] = useState(false);
   
   const [formState, setFormState] = useState<FormState>(initialFormState);
-  // [2025-12-06] PRD v2.0: 文件已移到formState.files，不再需要单独状态
+  const [files, setFiles] = useState<File[]>([]);
+  const [currentStep, setCurrentStep] = useState<number>(1); // [2025-01-27 18:00:00] 当前步骤
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({
     type: 'idle',
   });
@@ -209,11 +209,13 @@ export default function OfflineOrdersIntakePage() {
     }
   }, []);
 
-  // [2025-12-06] PRD v2.0: 3步流程定义
+  // [2025-01-27 20:00:00] 动态生成步骤定义 - 依赖isClient确保hydration一致性
   const STEPS = useMemo(() => [
-    { id: 1, title: t('step1Title') || '产品选择', description: t('step1Description') || '选择产品、颜色、尺码、印刷位置' },
-    { id: 2, title: t('step2Title') || '客户信息', description: t('step2Description') || '填写客户信息和Invoice信息' },
-    { id: 3, title: t('step3Title') || '文件上传', description: t('step3Description') || '上传设计文件（非必填）' },
+    { id: 1, title: t('step1Title'), description: t('step1Description') },
+    { id: 2, title: t('step2Title'), description: t('step2Description') },
+    { id: 3, title: t('step3Title'), description: t('step3Description') },
+    { id: 4, title: t('step4Title'), description: t('step4Description') },
+    { id: 5, title: t('step5Title'), description: t('step5Description') },
   ], [t, isClient]);
 
   // [2025-01-27 20:00:00] 动态生成印刷位置选项 - 依赖isClient确保hydration一致性
@@ -227,45 +229,16 @@ export default function OfflineOrdersIntakePage() {
     { value: 'other', label: t('positionOther') },
   ], [t, isClient]);
 
-  // [2025-12-06] PRD v2.0: 获取订单配置数据（产品、颜色、尺码费用、可用性）
-  const { data: orderConfigData, isLoading: orderConfigLoading } = useSWR(
-    'offline-order-config',
-    () => offlineOrderProductApi.getOrderConfig(),
+  // [2025-01-27 18:00:00] 获取产品分类列表
+  const { data: categoriesData, isLoading: categoriesLoading } = useSWR<{ data: Category[] }>(
+    'offline-order-categories',
+    () => categoriesApi.list(),
     {
       revalidateOnFocus: false,
     }
   );
 
-  const orderConfig = orderConfigData || {
-    products: [] as OfflineOrderProduct[],
-    colors: [] as OfflineOrderColor[],
-    sizeFees: [] as OfflineOrderSizeFee[],
-    availability: [] as OfflineOrderAvailability[],
-  };
-
-  // [2025-12-06] PRD v2.0: 创建尺码费用映射表
-  const sizeFeeMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    orderConfig.sizeFees.forEach((sf) => {
-      map[sf.size] = sf.additionalFee;
-    });
-    return map;
-  }, [orderConfig.sizeFees]);
-
-  // [2025-12-06] PRD v2.0: 创建可用性映射表（productId-colorId -> available sizes）
-  const availabilityMap = useMemo(() => {
-    const map: Record<string, Set<string>> = {};
-    orderConfig.availability.forEach((av) => {
-      const key = `${av.productId}-${av.colorId}`;
-      if (!map[key]) {
-        map[key] = new Set();
-      }
-      if (av.available) {
-        map[key].add(av.size);
-      }
-    });
-    return map;
-  }, [orderConfig.availability]);
+  const categories = categoriesData?.data || [];
 
   // [2025-11-15 15:18:30] Restore last-saved draft data on mount
   useEffect(() => {
@@ -629,24 +602,14 @@ export default function OfflineOrdersIntakePage() {
   const resetStatus = useCallback(() => setStatus({ type: 'idle' }), []);
 
   const goToNextStep = useCallback(() => {
-    // [2025-12-06 17:20:00] 根据新的3步流程验证步骤
-    // Step 1 需要验证原 Step 1 和 Step 2
-    // Step 2 需要验证原 Step 3 和 Step 4
-    // Step 3 不需要验证（文件上传可选）
-    if (currentStep === 1) {
-      if (!validateStep(1) || !validateStep(2)) {
-        return;
-      }
-    } else if (currentStep === 2) {
-      if (!validateStep(3) || !validateStep(4)) {
-        return;
-      }
+    if (!validateStep(currentStep)) {
+      return;
     }
     resetStatus();
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
     }
-  }, [currentStep, validateStep, resetStatus, STEPS.length]);
+  }, [currentStep, validateStep, resetStatus]);
 
   const goToPreviousStep = useCallback(() => {
     resetStatus();
@@ -768,107 +731,104 @@ export default function OfflineOrdersIntakePage() {
   }, [formState, currentStep]);
 
   const resetForm = useCallback(() => {
-    // [2025-01-27 19:00:00] 重置表单时生成新的订单编号
     setFormState({ ...initialFormState, orderCode: generateOrderCode() });
-    setFiles([]);
+    setCurrentStep(1);
     localStorage.removeItem(DRAFT_STORAGE_KEY);
   }, []);
-
-  const fileListSummary = useMemo(() => {
-    if (!files.length) {
-      return 'No files selected yet.';
-    }
-    return `${files.length} file${files.length > 1 ? 's' : ''} attached`;
-  }, [files]);
-
-  // [2025-01-27 18:00:00] 生成主要产品描述（基于产品项目）
-  const primaryProductDescription = useMemo(() => {
-    if (formState.productItems.length === 0) return '';
-    return formState.productItems
-      .map((item) => {
-        const variantsText = item.variants
-          .filter((v) => v.quantity > 0)
-          .map((v) => `${v.size} ${v.color}: ${v.quantity}`)
-          .join(', ');
-        return `${item.categoryName}${variantsText ? ` (${variantsText})` : ''}`;
-      })
-      .join('; ');
-  }, [formState.productItems]);
 
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       resetStatus();
       
-      // [2025-12-06 17:15:00] 验证所有步骤（重构为3步，验证原Step1-4，Step5可选）
-      if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
+      // [2025-12-06] PRD v2.0: 验证3个步骤
+      if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
         return;
       }
 
       try {
         setIsSubmitting(true);
         const payload = new FormData();
-        payload.append('projectName', formState.projectName.trim());
+        // [2025-12-06] PRD v2.0: 移除旧字段 projectName, artworkNotes, requiresMockups, requiresProof, rushOrder
         payload.append('primaryProduct', primaryProductDescription);
         payload.append('quantity', calculateTotalQuantity.toString());
         payload.append('deliveryDate', formState.dueDate);
         payload.append('contactName', formState.contactName.trim());
         payload.append('email', formState.email.trim());
         payload.append('phone', formState.phone.trim());
-        // [2025-01-28 09:05:00] 添加 company 字段（从发票信息中获取，如果有）
-        payload.append('company', formState.requiresInvoice && formState.invoiceInfo.companyName ? formState.invoiceInfo.companyName.trim() : '');
-        payload.append('artworkNotes', formState.artworkNotes);
-        payload.append('requiresMockups', String(formState.requiresMockups));
-        payload.append('requiresProof', String(formState.requiresProof));
-        payload.append('rushOrder', String(formState.rushOrder));
-        // [2025-11-28 14:22:30] 聚合按产品的印刷位置，兼容后端 printPositions 结构
-        const aggregatedPrintPositions =
-          Object.entries(formState.productPrintConfigs || {}).flatMap(
-            ([itemId, config]) => {
-              const productItem = formState.productItems.find(
-                (item) => item.id === itemId,
-              );
-              if (!productItem) return [];
-              const positions = config.positions || [];
-              return positions
-                .filter((pos) => pos.position && pos.width && pos.height)
-                .map((pos, index) => ({
+        payload.append('company', formState.requiresInvoice && formState.invoiceInfo.companyName ? formState.invoiceInfo.companyName.trim() : formState.company || '');
+        
+        // [2025-12-06] PRD v2.0: 聚合印刷位置（全局 + 产品级别）
+        const allPrintPositions: Array<PrintPosition & { productItemId?: string; index?: number }> = [];
+        
+        // 添加全局印刷位置
+        formState.globalPrintPositions.forEach((pos, index) => {
+          if (pos.position && (pos.width || pos.height)) {
+            allPrintPositions.push({
+              ...pos,
+              index,
+            });
+          }
+        });
+        
+        // 添加产品级别的印刷位置（如果有）
+        formState.productItems.forEach((item) => {
+          if (item.printPositions && item.printPositions.length > 0) {
+            item.printPositions.forEach((pos, index) => {
+              if (pos.position && (pos.width || pos.height)) {
+                allPrintPositions.push({
                   ...pos,
-                  productItemId: itemId,
-                  categoryId: productItem.categoryId,
-                  categoryName: productItem.categoryName,
+                  productItemId: item.id,
+                  productName: item.productName,
                   index,
-                }));
-            },
-          );
-        const totalSideCount =
-          aggregatedPrintPositions.length || formState.sideCount || 0;
+                });
+              }
+            });
+          }
+        });
 
+        // [2025-12-06] PRD v2.0: 构建配置数据（使用新数据结构）
         payload.append(
           'configuration',
           JSON.stringify({
-            source: 'nextjs-offline-intake',
-            orderCode: formState.orderCode, // [2025-01-27 19:00:00] 订单编号
-            artworkNotes: formState.artworkNotes,
-            productItems: formState.productItems, // [2025-01-27 18:00:00] 多产品定制数据
-            sideCount: totalSideCount, // [2025-11-28 14:22:35] 汇总后的印刷位置总数，兼容旧字段
-            printPositions:
-              aggregatedPrintPositions.length > 0
-                ? aggregatedPrintPositions
-                : formState.printPositions, // [2025-11-28 14:22:40] 优先使用按产品聚合后的印刷位置
-            requiresInvoice: formState.requiresInvoice, // [2025-01-27 18:00:00] 发票需求
-            invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null, // [2025-01-27 18:00:00] 发票信息
+            source: 'nextjs-offline-intake-v2',
+            orderCode: formState.orderCode,
+            orderNotes: formState.orderNotes, // [2025-12-06] 订单备注（PRD v2.0）
+            dstFileFee: formState.dstFileFee || null, // [2025-12-06] DST File Fee
+            productItems: formState.productItems, // 新数据结构
+            globalPrintPositions: formState.globalPrintPositions,
+            printPositions: allPrintPositions, // 聚合后的所有印刷位置
+            requiresInvoice: formState.requiresInvoice,
+            invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null,
+            paymentMethod: formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null,
+            referenceNumber: formState.requiresInvoice ? formState.invoiceInfo.referenceNumber : null,
             pricing: {
-              // [2025-01-27 18:00:00] 价格信息
               subtotal: calculateSubtotal,
               discount: formState.discount,
               discountAmount: calculateDiscountAmount,
+              taxRate: formState.taxRate,
+              taxAmount: calculateTaxAmount,
               total: calculateTotal,
               currency: 'CAD',
             },
           }),
         );
-        files.forEach((file) => payload.append('assets', file, file.name));
+        
+        // [2025-12-06] PRD v2.0: 添加新字段
+        payload.append('orderNotes', formState.orderNotes || '');
+        if (formState.dstFileFee > 0) {
+          payload.append('dstFileFee', formState.dstFileFee.toString());
+        }
+        if (formState.requiresInvoice) {
+          if (formState.invoiceInfo.paymentMethod) {
+            payload.append('paymentMethod', formState.invoiceInfo.paymentMethod);
+          }
+          if (formState.invoiceInfo.referenceNumber) {
+            payload.append('referenceNumber', formState.invoiceInfo.referenceNumber);
+          }
+        }
+        // [2025-12-06] PRD v2.0: 添加文件到 payload
+        (formState.files || []).forEach((file) => payload.append('assets', file, file.name));
 
         // [2025-11-16 09:50:00] 指向后端 API_BASE_URL，避免 Netlify 返回 HTML 404
         const response = await fetch(`${API_BASE_URL}/offline-orders`, {
@@ -899,9 +859,7 @@ export default function OfflineOrdersIntakePage() {
           message: `订单提交成功！订单编号：${finalOrderCode}。订单已进入生产管理系统，我们会尽快处理。`,
         });
         resetForm();
-        setCurrentStep(1); // [2025-01-27 18:00:00] 重置到第一步
       } catch (error: any) {
-        // [2025-11-28 16:00:00] 显示更详细的错误信息
         console.error('[OfflineOrder] Submission error:', error);
         const errorMessage = error.message || 'Submission failed.';
         setStatus({ 
@@ -909,7 +867,6 @@ export default function OfflineOrdersIntakePage() {
           message: errorMessage,
         });
         
-        // 如果有网络错误，提供更友好的提示
         if (error.message?.includes('fetch') || error.message?.includes('network')) {
           setStatus({ 
             type: 'error', 
@@ -921,7 +878,6 @@ export default function OfflineOrdersIntakePage() {
       }
     },
     [
-      files,
       formState,
       resetForm,
       resetStatus,
@@ -930,6 +886,7 @@ export default function OfflineOrdersIntakePage() {
       calculateTotalQuantity,
       calculateSubtotal,
       calculateDiscountAmount,
+      calculateTaxAmount,
       calculateTotal,
     ],
   );
@@ -1960,35 +1917,30 @@ export default function OfflineOrdersIntakePage() {
     <div className="min-h-screen bg-gray-100">
       <header className="relative py-12 px-6 bg-gradient-to-br from-yellow-200 via-yellow-100 to-yellow-50 z-10">
         <div>
-          {/* [2025-12-06 17:15:00] 右上角操作区域：语言切换 + 用户菜单 */}
-          <div className="absolute top-6 right-6 flex gap-2 items-center">
-            {/* [2025-12-06 17:15:00] 用户菜单 */}
-            <UserMenu />
-            {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
-            <div className="flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
-              <button
-                type="button"
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  locale === 'en'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
-                }`}
-                onClick={() => handleLocaleChange('en')}
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  locale === 'zh'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
-                }`}
-                onClick={() => handleLocaleChange('zh')}
-              >
-                中文
-              </button>
-            </div>
+          {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
+          <div className="absolute top-6 right-6 flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
+            <button
+              type="button"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                locale === 'en'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
+              }`}
+              onClick={() => handleLocaleChange('en')}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                locale === 'zh'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
+              }`}
+              onClick={() => handleLocaleChange('zh')}
+            >
+              中文
+            </button>
           </div>
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {isClient && (
@@ -2063,27 +2015,15 @@ export default function OfflineOrdersIntakePage() {
           </div>
           )}
 
-          {/* [2025-12-06 17:15:00] 步骤内容区域 - 重构为3步流程 */}
+          {/* [2025-01-27 18:00:00] 步骤内容区域 - 使用 Tailwind */}
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {isClient && (
           <div className="min-h-[400px]">
-            {currentStep === 1 && (
-              <>
-                {renderStep1()}
-                <div className="mt-8 border-t pt-8">
-                  {renderStep2()}
-                </div>
-              </>
-            )}
-            {currentStep === 2 && (
-              <>
-                {renderStep3()}
-                <div className="mt-8 border-t pt-8">
-                  {renderStep4()}
-                </div>
-              </>
-            )}
-            {currentStep === 3 && renderStep5()}
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+            {currentStep === 3 && renderStep3()}
+            {currentStep === 4 && renderStep4()}
+            {currentStep === 5 && renderStep5()}
           </div>
           )}
 

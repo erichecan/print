@@ -61,6 +61,16 @@ async function decreaseInventory(orderItems) {
       })),
     });
 
+    // [2025-12-06 16:00:00] Check for low stock alerts after inventory decrease
+    try {
+      await checkAndSendLowStockAlerts(results);
+    } catch (alertError) {
+      // Don't fail inventory decrease if alert check fails
+      logger.warn('Failed to check low stock alerts', {
+        error: alertError.message,
+      });
+    }
+
     return results;
   } catch (error) {
     logger.error('Error decreasing inventory:', {
@@ -185,15 +195,15 @@ async function checkMultipleStockAvailability(items) {
 /**
  * Get low stock products
  * [2025-01-27 13:30:00]
+ * [2025-12-06 16:00:00] Enhanced with per-variant threshold support
  */
 // [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD) {
   try {
-    const lowStockVariants = await prisma.variant.findMany({
+    // [2025-12-06 16:00:00] Get all active variants and filter by threshold
+    // Variants with custom threshold use that, others use global threshold
+    const allVariants = await prisma.variant.findMany({
       where: {
-        stockQuantity: {
-          lte: threshold,
-        },
         product: {
           isActive: true,
         },
@@ -213,21 +223,31 @@ async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD) {
       },
     });
 
+    // [2025-12-06 16:00:00] Filter variants that are below their threshold
+    const lowStockVariants = allVariants.filter((variant) => {
+      const variantThreshold = variant.lowStockThreshold ?? threshold;
+      return variant.stockQuantity <= variantThreshold;
+    });
+
     logger.info('Low stock products retrieved', {
       threshold,
       count: lowStockVariants.length,
     });
 
-    return lowStockVariants.map((variant) => ({
-      variantId: variant.id,
-      sku: variant.sku,
-      productId: variant.productId,
-      productName: variant.product.name,
-      productSku: variant.product.sku,
-      currentStock: variant.stockQuantity,
-      threshold,
-      isOutOfStock: variant.stockQuantity === 0,
-    }));
+    return lowStockVariants.map((variant) => {
+      const variantThreshold = variant.lowStockThreshold ?? threshold;
+      return {
+        variantId: variant.id,
+        sku: variant.sku,
+        productId: variant.productId,
+        productName: variant.product.name,
+        productSku: variant.product.sku,
+        currentStock: variant.stockQuantity,
+        threshold: variantThreshold,
+        isOutOfStock: variant.stockQuantity === 0,
+        hasCustomThreshold: variant.lowStockThreshold !== null,
+      };
+    });
   } catch (error) {
     logger.error('Error getting low stock products:', {
       error: error.message,
@@ -325,6 +345,112 @@ async function updateStockQuantity(variantId, newQuantity) {
   }
 }
 
+/**
+ * Check and send low stock alerts for variants
+ * [2025-12-06 16:00:00] Check if variants are below threshold and send alerts
+ */
+async function checkAndSendLowStockAlerts(variants) {
+  const timestamp = new Date().toISOString();
+  try {
+    const { sendLowStockAlert } = require('./emailService');
+    const alerts = [];
+
+    for (const variant of variants) {
+      // Get variant with threshold info
+      const fullVariant = await prisma.variant.findUnique({
+        where: { id: variant.id },
+        include: {
+          product: {
+            select: {
+              name: true,
+              sku: true,
+            },
+          },
+        },
+      });
+
+      if (!fullVariant) continue;
+
+      const threshold = fullVariant.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
+      if (fullVariant.stockQuantity <= threshold) {
+        alerts.push({
+          variant: fullVariant,
+          threshold,
+        });
+      }
+    }
+
+    if (alerts.length > 0) {
+      // Send alerts (don't fail if email fails)
+      for (const alert of alerts) {
+        try {
+          await sendLowStockAlert(alert.variant, alert.threshold);
+        } catch (emailError) {
+          logger.warn('Failed to send low stock alert email', {
+            timestamp,
+            variantId: alert.variant.id,
+            sku: alert.variant.sku,
+            error: emailError.message,
+          });
+        }
+      }
+
+      logger.info('Low stock alerts processed', {
+        timestamp,
+        alertsCount: alerts.length,
+      });
+    }
+  } catch (error) {
+    logger.error('Error checking low stock alerts', {
+      timestamp,
+      error: error.message,
+      stack: error.stack,
+    });
+    // Don't throw - alert checking shouldn't fail inventory operations
+  }
+}
+
+/**
+ * Update low stock threshold for a variant
+ * [2025-12-06 16:00:00] Set custom threshold for a variant
+ */
+async function updateLowStockThreshold(variantId, threshold) {
+  const timestamp = new Date().toISOString();
+  try {
+    const variant = await prisma.variant.update({
+      where: { id: variantId },
+      data: {
+        lowStockThreshold: threshold !== null && threshold !== undefined ? threshold : null,
+      },
+      include: {
+        product: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    logger.info('Low stock threshold updated', {
+      timestamp,
+      variantId,
+      sku: variant.sku,
+      threshold: variant.lowStockThreshold,
+      productName: variant.product.name,
+    });
+
+    return variant;
+  } catch (error) {
+    logger.error('Error updating low stock threshold', {
+      timestamp,
+      variantId,
+      error: error.message,
+      stack: error.stack,
+    });
+    throw error;
+  }
+}
+
 module.exports = {
   decreaseInventory,
   increaseInventory,
@@ -333,6 +459,8 @@ module.exports = {
   getLowStockProducts,
   getOutOfStockProducts,
   updateStockQuantity,
+  updateLowStockThreshold,
+  checkAndSendLowStockAlerts,
   LOW_STOCK_THRESHOLD,
 };
 
