@@ -1455,298 +1455,71 @@ export default function OfflineOrdersIntakePage() {
     }
   }, [fieldErrors]);
 
-  // [2025-01-27 18:00:00] 渲染第三步：客人信息和价格管理 - 使用 Tailwind
+  // [2025-12-06] PRD v2.0: 渲染第三步 - 文件上传（非必填）
   const renderStep3 = () => (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step3Heading')}</h2>
-      <p className="text-gray-600 mb-6 text-sm">{t('step3Intro')}</p>
-
-      {/* 客人基本信息 - 使用 Tailwind */}
-      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
-        <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo')}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block">
-            <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName')} *</span>
-            <input
-              type="text"
-              name="contactName"
-              required
-              value={formState.contactName}
-              onChange={handleInputChange}
-              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-              }`}
-            />
-            {fieldErrors.contactName && (
-              <p className="mt-1 text-sm text-red-600">{fieldErrors.contactName}</p>
-            )}
-          </label>
-          <label className="block">
-            <span className="block text-sm font-medium text-gray-700 mb-2">{t('email')} *</span>
-            <input
-              type="email"
-              name="email"
-              required
-              value={formState.email}
-              onChange={handleInputChange}
-              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-              }`}
-            />
-            {fieldErrors.email && (
-              <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
-            )}
-          </label>
-          <label className="block">
-            <span className="block text-sm font-medium text-gray-700 mb-2">{t('phone')} *</span>
-            <input
-              type="tel"
-              name="phone"
-              required
-              value={formState.phone}
-              onChange={handleInputChange}
-              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                fieldErrors.phone ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-              }`}
-            />
-            {fieldErrors.phone && (
-              <p className="mt-1 text-sm text-red-600">{fieldErrors.phone}</p>
-            )}
-          </label>
-          <label className="block">
-            <span className="block text-sm font-medium text-gray-700 mb-2">{t('dueDate')} *</span>
-            <input
-              type="date"
-              name="dueDate"
-              required
-              value={formState.dueDate}
-              onChange={handleInputChange}
-              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                fieldErrors.dueDate ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-              }`}
-            />
-            {fieldErrors.dueDate && (
-              <p className="mt-1 text-sm text-red-600">{fieldErrors.dueDate}</p>
-            )}
-          </label>
+      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step3Heading') || '文件上传'}</h2>
+      <p className="text-gray-600 mb-6 text-sm">{t('step3Intro') || '上传设计文件（非必填，可以不传文件直接提交）'}</p>
+      
+      {/* [2025-12-04 00:15:00] 移动设备提示 */}
+      {isMobile && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <p className="text-sm font-semibold text-blue-900 mb-1">{t('mobileUploadTip') || '移动设备提示'}</p>
+          <p className="text-xs text-blue-700">{t('mobileUploadDescription') || '您可以使用相机拍照上传文件'}</p>
         </div>
-      </section>
-
-      {/* 发票信息 - 使用 Tailwind */}
-      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
-        <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
-          <input
-            type="checkbox"
-            name="requiresInvoice"
-            checked={formState.requiresInvoice}
-            onChange={(e) => setField('requiresInvoice', e.target.checked)}
-            className="w-4.5 h-4.5 cursor-pointer"
-          />
-          <span className="text-sm font-medium text-gray-700">{t('requireInvoice')}</span>
-        </label>
-
-        {formState.requiresInvoice && (
-          <div className="mt-4 p-5 bg-gray-50 rounded-lg">
-            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('invoiceInfo')}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyName')} *</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.companyName}
-                  onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_companyName && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyName}</p>
-                )}
-              </label>
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail')} *</span>
-                <input
-                  type="email"
-                  value={formState.invoiceInfo.companyEmail}
-                  onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_companyEmail && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyEmail}</p>
-                )}
-              </label>
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber')} *</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.taxNumber}
-                  onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
-                  placeholder={t('taxNumberPlaceholder')}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </label>
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('city')} *</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.city}
-                  onChange={(e) => updateInvoiceInfo('city', e.target.value)}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_city && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_city}</p>
-                )}
-              </label>
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('province')} *</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.province}
-                  onChange={(e) => updateInvoiceInfo('province', e.target.value)}
-                  placeholder={t('provincePlaceholder')}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_province && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_province}</p>
-                )}
-              </label>
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode')} *</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.postalCode}
-                  onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
-                  placeholder={t('postalCodePlaceholder')}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_postalCode && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_postalCode}</p>
-                )}
-              </label>
-            </div>
-            <label className="block mt-4">
-              <span className="block text-sm font-medium text-gray-700 mb-2">{t('address')} *</span>
-              <input
-                type="text"
-                value={formState.invoiceInfo.address}
-                onChange={(e) => updateInvoiceInfo('address', e.target.value)}
-                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                  fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                }`}
-              />
-              {fieldErrors.invoice_address && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_address}</p>
-              )}
-            </label>
-          </div>
-        )}
-      </section>
-
-      {/* 价格预估和管理 - 使用 Tailwind */}
-      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
-        <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('priceEstimate')}</h3>
-        {formState.productItems.length > 0 ? (
-          <div className="mt-4">
-            {/* 价格表格 - 使用 Tailwind */}
-            <div className="overflow-x-auto mb-6">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50">
-                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">产品</th>
-                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('size')}</th>
-                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('color')}</th>
-                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('quantity')}</th>
-                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('unitPrice')}</th>
-                    <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">{t('subtotal')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formState.productItems.flatMap((item) =>
-                    item.variants.map((variant, variantIndex) => {
-                      const variantTotal = variant.quantity * variant.unitPrice;
-                      return (
-                        <tr key={`${item.id}-${variantIndex}`} className="border-b border-gray-200">
-                          <td className="px-3 py-3 text-sm">{item.categoryName}</td>
-                          <td className="px-3 py-3 text-sm font-medium">{variant.size}</td>
-                          <td className="px-3 py-3 text-sm">{variant.color}</td>
-                          <td className="px-3 py-3">
-                            <input
-                              type="number"
-                              min="0"
-                              value={variant.quantity}
-                              onChange={(e) =>
-                                updateVariant(item.id, variantIndex, 'quantity', parseInt(e.target.value, 10) || 0)
-                              }
-                              className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                            />
-                          </td>
-                          <td className="px-3 py-3">
-                            <input
-                              type="text"
-                              value={variant.unitPrice ?? ''}
-                              onChange={(e) => {
-                                const value = e.target.value.replace(/[^\d.]/g, '');
-                                const numValue = parseFloat(value) || 0;
-                                updateVariant(item.id, variantIndex, 'unitPrice', numValue);
-                              }}
-                              className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
-                            />
-                          </td>
-                          <td className="px-3 py-3 text-sm font-semibold text-blue-700">${variantTotal.toFixed(2)}</td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* 总计和折扣 - 使用 Tailwind */}
-            <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
-              <div className="flex justify-between items-center text-sm">
-                <span>{t('subtotal')}：</span>
-                <span>${calculateSubtotal.toFixed(2)} CAD</span>
+      )}
+      
+      <div
+        className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50 text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        role="button"
+        tabIndex={0}
+      >
+        <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
+        <p className="text-xs text-gray-600">
+          {isMobile ? (t('mobileUploadOrBrowse') || '点击上传或拍照') : (t('dragDropOrBrowse') || '拖拽文件到此处或点击浏览')} 
+          ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB }) || `最多 ${MAX_FILES} 个文件，每个文件最大 ${MAX_FILE_SIZE_MB}MB`})
+        </p>
+        <input
+          type="file"
+          accept={isMobile ? `${ACCEPTED_EXTENSIONS.join(',')},image/*` : ACCEPTED_EXTENSIONS.join(',')}
+          capture={isMobile ? 'environment' : undefined}
+          multiple
+          onChange={handleFileInputChange}
+          aria-label="Upload artwork files"
+          className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+        />
+      </div>
+      
+      {files.length > 0 && (
+        <ul className="list-none m-0 p-0 grid gap-3 mt-4">
+          {files.map((file, index) => (
+            <li
+              key={`${file.name}-${index}`}
+              className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex justify-between items-center"
+            >
+              <div className="flex flex-col gap-1">
+                <strong className="text-sm text-gray-900">{file.name}</strong>
+                <span className="text-xs text-gray-600">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
               </div>
-              <div className="flex justify-between items-center gap-3">
-                <span className="text-sm">{t('discount')}：</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={formState.discount ?? 0}
-                  onChange={(e) => setField('discount', parseFloat(e.target.value) || 0)}
-                  className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </div>
-              {formState.discount > 0 && (
-                <div className="flex justify-between items-center text-sm text-red-600">
-                  <span>{t('discountAmount')}：</span>
-                  <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
-                <span className="font-semibold">{t('total')}：</span>
-                <strong className="text-2xl text-blue-700">${calculateTotal.toFixed(2)} CAD</strong>
-              </div>
-              <div className="flex justify-between items-center text-base text-gray-700">
-                <span>{t('totalQuantity')}：</span>
-                <strong>{calculateTotalQuantity} {t('items')}</strong>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p className="p-5 text-center text-gray-600 bg-gray-50 rounded-lg">{t('pleaseAddProductsFirst')}</p>
-        )}
-      </section>
+              <button
+                type="button"
+                onClick={() => removeFile(index)}
+                className="border-none bg-transparent text-red-600 cursor-pointer text-sm font-medium hover:text-red-700 transition-colors"
+              >
+                {t('remove') || '删除'}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      
+      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-800">
+          <strong>注意：</strong>文件上传是非必填的，您可以不传文件直接提交订单。
+        </p>
+      </div>
     </div>
   );
 
