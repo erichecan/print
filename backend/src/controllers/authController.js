@@ -1,11 +1,20 @@
 /**
  * Authentication Controller
  * [2025-11-05 01:00:00]
+ * [2025-12-06 12:30:00] Enhanced with unified error handling
  */
 const prisma = require('../lib/prisma');
 // [2025-11-09 20:50:12] Switch to bcryptjs to avoid native build dependency on Windows
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
+const {
+  BadRequestError,
+  UnauthorizedError,
+  NotFoundError,
+  ValidationError,
+  InternalServerError,
+} = require('../utils/errors');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret_key_change_in_production';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
@@ -486,23 +495,43 @@ exports.updateProfile = async (req, res) => {
 /**
  * PUT /api/auth/me/password - Update password
  * [2025-01-27 14:40:00] Update user password
+ * [2025-12-06 12:30:00] Enhanced with password strength validation and unified error handling
  */
-exports.updatePassword = async (req, res) => {
+exports.updatePassword = async (req, res, next) => {
+  const timestamp = new Date().toISOString();
   try {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Authentication required' });
+      return next(new UnauthorizedError('需要身份验证'));
     }
 
     const { currentPassword, newPassword } = req.body;
 
+    // [2025-12-06 12:30:00] Validate required fields
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: 'Current password and new password are required' });
+      return next(new BadRequestError('当前密码和新密码为必填项', {
+        missingFields: {
+          currentPassword: !currentPassword,
+          newPassword: !newPassword,
+        },
+      }));
     }
 
-    if (newPassword.length < 8) {
-      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    // [2025-12-06 12:30:00] Validate password strength
+    const { validatePasswordStrength } = require('../utils/passwordValidator');
+    const passwordValidation = validatePasswordStrength(newPassword);
+
+    if (!passwordValidation.valid) {
+      return next(new ValidationError('新密码不符合强度要求', {
+        errors: passwordValidation.errors,
+        strength: passwordValidation.strength,
+      }));
+    }
+
+    // [2025-12-06 12:30:00] Check if new password is different from current password
+    if (currentPassword === newPassword) {
+      return next(new BadRequestError('新密码必须与当前密码不同'));
     }
 
     // Get user with password hash
@@ -510,12 +539,13 @@ exports.updatePassword = async (req, res) => {
       where: { id: userId },
       select: {
         id: true,
+        email: true,
         passwordHash: true,
       },
     });
 
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return next(new NotFoundError('用户不存在'));
     }
 
     // Verify current password
@@ -523,7 +553,12 @@ exports.updatePassword = async (req, res) => {
     const isValidPassword = await bcrypt.compare(currentPassword, user.passwordHash);
 
     if (!isValidPassword) {
-      return res.status(401).json({ error: 'Current password is incorrect' });
+      logger.warn('Password update failed: incorrect current password', {
+        timestamp,
+        userId,
+        email: user.email.substring(0, 3) + '***',
+      });
+      return next(new UnauthorizedError('当前密码不正确'));
     }
 
     // Hash new password
@@ -537,10 +572,26 @@ exports.updatePassword = async (req, res) => {
       },
     });
 
-    res.json({ message: 'Password updated successfully' });
+    logger.info('Password updated successfully', {
+      timestamp,
+      userId,
+      email: user.email.substring(0, 3) + '***',
+      strength: passwordValidation.strength,
+    });
+
+    res.json({
+      success: true,
+      message: '密码修改成功',
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
-    console.error('Error updating password:', error);
-    res.status(500).json({ error: 'Failed to update password' });
+    logger.error('Error updating password', {
+      timestamp,
+      userId: req.user?.id,
+      error: error.message,
+      stack: error.stack,
+    });
+    next(new InternalServerError('修改密码失败，请稍后重试'));
   }
 };
 
