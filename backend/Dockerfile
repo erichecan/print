@@ -17,10 +17,9 @@ COPY prisma ./prisma
 # [2025-11-15 23:07:58] Include server entrypoint for production container
 COPY backend/server.js ./server.js
 
-## [2025-01-29 17:30:00] 跳过构建时的 Prisma generate（回到运行时生成方式）
-## Prisma Client 将在运行时由 server.js 生成（使用真实的 DATABASE_URL）
-## 这样可以避免占位符 URL 触发 DataProxy 检测，确保生成正确的引擎
-# RUN npx prisma generate --schema=./prisma/schema.prisma
+## [2025-12-07 03:55:00] 在构建时生成 Prisma Client 以加快启动速度
+## 使用占位符 DATABASE_URL 生成，运行时使用真实的 DATABASE_URL
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate --schema=./prisma/schema.prisma
 
 ## Expose server port [2025-11-10 13:45:00]
 ## [2025-01-27] Cloud Run uses PORT environment variable, default to 8080

@@ -66,59 +66,26 @@ const validateJwtSecret = () => {
   }
 };
 
-// [2025-01-29 23:05:00] 必须在导入应用之前生成 Prisma Client
-// [2025-01-29 17:30:00] 方案 1：回到运行时生成（使用真实的 DATABASE_URL）
-// 因为应用的路由会在导入时尝试使用 Prisma Client
-const ensurePrismaClient = () => {
-  try {
-    console.log('[2025-01-29 17:30:00] 🔧 Ensuring Prisma Client is generated at runtime...');
-    
-    // [2025-01-29 17:30:00] 在生成 Prisma Client 前验证 DATABASE_URL（确保是真实的数据库 URL）
-    validateDatabaseUrl();
-    
-    // [2025-01-29 17:30:00] 运行时生成 Prisma Client（使用真实的 DATABASE_URL，不会被误判为 DataProxy）
-    console.log('[2025-01-29 17:30:00] 📦 Generating Prisma Client at runtime (using real DATABASE_URL)...');
-    
-    // [2025-01-29 17:30:00] 使用真实的环境变量（包括真实的 DATABASE_URL）
-    // 不需要设置额外的 PRISMA_* 环境变量，让 Prisma 自动检测和使用标准引擎
-    const generateEnv = {
-      ...process.env,
-      DATABASE_URL: process.env.DATABASE_URL, // 确保传递真实的 DATABASE_URL
-    };
-    
-    // [2025-01-29 17:30:00] 打印环境变量信息（不暴露密码）
-    const dbUrlPreview = process.env.DATABASE_URL 
-      ? process.env.DATABASE_URL.substring(0, 20) + '...' 
-      : 'NOT SET';
-    console.log('[2025-01-29 17:30:00] 📋 DATABASE_URL preview:', dbUrlPreview);
-    
-    execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
-      stdio: 'inherit',
-      cwd: __dirname,
-      timeout: 120000, // 120秒超时
-      env: generateEnv,
-    });
-    
-    console.log('[2025-01-29 17:30:00] ✅ Prisma Client generated successfully at runtime.');
-  } catch (error) {
-    console.error('[2025-01-29 17:30:00] ❌ Failed to generate Prisma Client:', error.message);
-    console.error('[2025-01-29 17:30:00]    这会导致数据库操作失败，请检查日志');
-    console.error('[2025-01-29 17:30:00]    错误详情:', error);
-    // [2025-01-29 23:00:00] 在 Cloud Run 上，如果 Prisma Client 生成失败，退出进程
-    process.exit(1);
-  }
-};
+// [2025-12-07 03:55:00] Prisma Client 已在 Docker 构建时生成，无需运行时生成
+console.log('[2025-12-07 03:55:00] 🚀 Starting backend server...');
+console.log('[2025-12-07 03:55:00] 📋 Environment:', process.env.NODE_ENV || 'development');
+console.log('[2025-12-07 03:55:00] 🔌 PORT:', PORT);
 
-// [2025-12-02 03:55:00] 验证环境变量
-validateJwtSecret();
-
-// [2025-01-29 23:05:00] 在导入应用之前生成 Prisma Client
-ensurePrismaClient();
+// 验证环境变量
+try {
+  validateJwtSecret();
+  console.log('[2025-12-07 03:55:00] ✅ JWT_SECRET validated');
+} catch (error) {
+  console.error('[2025-12-07 03:55:00] ❌ JWT_SECRET validation failed:', error.message);
+  process.exit(1);
+}
 
 // [2025-01-29 23:05:00] 现在可以安全地导入应用
+console.log('[2025-12-07 03:55:00] 📦 Loading application modules...');
 const app = require('./src/app');
 const { testConnection } = require('./src/config/database');
 const logger = require('./src/utils/logger');
+console.log('[2025-12-07 03:55:00] ✅ Application modules loaded');
 
 // [2025-01-27 17:15:00] 改进迁移执行，失败时不阻止服务器启动
 const runMigrationsIfEnabled = () => {
@@ -145,7 +112,7 @@ const runMigrationsIfEnabled = () => {
           
           // [2025-01-11 14:55:00] 修复后重新生成 Prisma Client 以确保使用正确的 schema
           logger.info('🔧 Regenerating Prisma Client after column fix...');
-          execSync('npx prisma generate --schema=../prisma/schema.prisma', { 
+          execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
             stdio: 'inherit',
             timeout: 30000,
             cwd: __dirname,
@@ -174,29 +141,32 @@ const runMigrationsIfEnabled = () => {
   }
 };
 
-// Test database connection before starting server
-testConnection().then(() => {
-  // [2025-01-29 23:05:00] Prisma Client 已在导入应用前生成
-  runMigrationsIfEnabled();
+// [2025-12-07 03:50:00] 优化启动流程：先启动服务器，再测试数据库连接
+// 这样可以更快响应 Cloud Run 的健康检查
+const http = require('http');
+const httpServer = http.createServer(app);
+
+// [2025-12-07 01:30:00] Initialize Socket.IO chat server
+const { initializeChatServer } = require('./src/socket/chatServer');
+const io = initializeChatServer(httpServer);
+logger.info('✅ Socket.IO chat server initialized');
+
+// [2025-12-07 03:50:00] 立即启动服务器监听，不等待数据库连接测试
+httpServer.listen(PORT, () => {
+  logger.info(`🚀 Server running on port ${PORT}`);
+  logger.info(`📡 API available at http://localhost:${PORT}/api`);
+  logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
+  logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   
-  // [2025-12-07 01:30:00] Create HTTP server for Socket.IO integration (Issue #144)
-  const http = require('http');
-  const httpServer = http.createServer(app);
-  
-  // [2025-12-07 01:30:00] Initialize Socket.IO chat server
-  const { initializeChatServer } = require('./src/socket/chatServer');
-  const io = initializeChatServer(httpServer);
-  logger.info('✅ Socket.IO chat server initialized');
-  
-  httpServer.listen(PORT, () => {
-    logger.info(`🚀 Server running on port ${PORT}`);
-    logger.info(`📡 API available at http://localhost:${PORT}/api`);
-    logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
-    logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  // [2025-12-07 03:50:00] 服务器启动后，异步测试数据库连接和运行迁移
+  testConnection().then(() => {
+    logger.info('✅ Database connection verified');
+    runMigrationsIfEnabled();
+  }).catch((error) => {
+    logger.error('⚠️  Database connection test failed, but server is running:', error);
+    logger.warn('   某些需要数据库的功能可能不可用，但服务器会继续运行');
+    // 不退出进程，让服务器继续运行
   });
-}).catch((error) => {
-  logger.error('Failed to start server:', error);
-  process.exit(1);
 });
 
 // Graceful shutdown
