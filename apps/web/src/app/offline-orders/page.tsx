@@ -58,6 +58,7 @@ type ProductItem = {
 };
 
 // [2025-01-27 18:00:00] 发票信息类型（加拿大invoice常规信息）
+// [2025-12-06 18:30:00] 添加支付相关字段
 type InvoiceInfo = {
   companyName: string;
   companyEmail: string;
@@ -67,6 +68,8 @@ type InvoiceInfo = {
   province: string;
   postalCode: string;
   country: string;
+  paymentMethod?: string; // [2025-12-06 18:30:00] 支付方式（card/etrans）
+  referenceNumber?: string; // [2025-12-06 18:30:00] Reference Number
 };
 
 type FormState = {
@@ -80,15 +83,21 @@ type FormState = {
   sideCount: number; // [2025-01-27 18:00:00] 要印几个地方
   printPositions: PrintPosition[]; // [2025-01-27 18:00:00] 印刷位置数组
   productPrintConfigs: ProductPrintConfigMap; // [2025-11-28 14:20:20] 按产品分组的印刷位置配置映射表
+  globalPrintPositions?: PrintPosition[]; // [2025-12-06 18:30:00] 全局印刷位置（PRD v2.0）
   
   // 第三步：客人信息和价格
   contactName: string;
   email: string;
   phone: string;
+  company?: string; // [2025-12-06 18:30:00] 公司名称
   dueDate: string; // 交付日期
   requiresInvoice: boolean; // 是否需要发票
   invoiceInfo: InvoiceInfo; // [2025-01-27 18:00:00] 发票信息
   discount: number; // [2025-01-27 18:00:00] 整体折扣百分比（0-100）
+  taxRate?: number; // [2025-12-06 18:30:00] 税率（默认13%）
+  orderNotes?: string; // [2025-12-06 18:30:00] 订单备注（PRD v2.0）
+  dstFileFee?: number; // [2025-12-06 18:30:00] DST File Fee
+  files?: File[]; // [2025-12-06 18:30:00] 上传的文件列表
   
   // 第四步：项目详情
   projectName: string;
@@ -112,9 +121,11 @@ const initialFormState: FormState = {
   sideCount: 1, // [2025-01-27 18:00:00] 默认1个印刷位置
   printPositions: [{ position: '', width: '', height: '', notes: '' }], // [2025-01-27 18:00:00] 默认1个位置
   productPrintConfigs: {}, // [2025-11-28 14:20:30] 初始无任何产品印刷配置
+  globalPrintPositions: [], // [2025-12-06 18:30:00] 全局印刷位置初始为空
   contactName: '',
   email: '',
   phone: '',
+  company: '', // [2025-12-06 18:30:00] 公司名称初始为空
   dueDate: '',
   requiresInvoice: false,
   invoiceInfo: {
@@ -126,8 +137,14 @@ const initialFormState: FormState = {
     province: '',
     postalCode: '',
     country: 'Canada',
+    paymentMethod: undefined, // [2025-12-06 18:30:00] 支付方式初始为空
+    referenceNumber: undefined, // [2025-12-06 18:30:00] Reference Number初始为空
   },
   discount: 0,
+  taxRate: 0.13, // [2025-12-06 18:30:00] 默认13%税率（安省HST）
+  orderNotes: '', // [2025-12-06 18:30:00] 订单备注初始为空
+  dstFileFee: 0, // [2025-12-06 18:30:00] DST File Fee初始为0
+  files: [], // [2025-12-06 18:30:00] 文件列表初始为空
   projectName: '',
   requiresMockups: false,
   requiresProof: false,
@@ -426,6 +443,35 @@ export default function OfflineOrdersIntakePage() {
       return sum + item.variants.reduce((itemSum, variant) => itemSum + variant.quantity, 0);
     }, 0);
   }, [formState.productItems]);
+
+  // [2025-12-06 18:30:00] 计算税额（仅当需要Invoice时）
+  const calculateTaxAmount = useMemo(() => {
+    if (!formState.requiresInvoice) return 0;
+    const taxBase = calculateSubtotal - calculateDiscountAmount;
+    const taxRate = formState.taxRate || 0.13; // 默认13%安省HST
+    return taxBase * taxRate;
+  }, [calculateSubtotal, calculateDiscountAmount, formState.requiresInvoice, formState.taxRate]);
+
+  // [2025-12-06 18:30:00] 生成主要产品描述（用于提交）
+  const primaryProductDescription = useMemo(() => {
+    if (formState.productItems.length === 0) return '';
+    if (formState.productItems.length === 1) {
+      return formState.productItems[0].categoryName;
+    }
+    // 多个产品时，返回产品列表
+    return formState.productItems.map(item => item.categoryName).join(', ');
+  }, [formState.productItems]);
+
+  // [2025-12-06 18:30:00] 文件列表摘要
+  const fileListSummary = useMemo(() => {
+    if (files.length === 0) {
+      return t('noFilesSelected') || '未选择文件';
+    }
+    if (files.length === 1) {
+      return `${files[0].name} (${(files[0].size / (1024 * 1024)).toFixed(1)} MB)`;
+    }
+    return `${files.length} 个文件已选择`;
+  }, [files, t]);
 
   // [2025-01-27 18:00:00] 第二步：印刷位置管理方法
   const updateSideCount = useCallback((count: number) => {
@@ -761,8 +807,9 @@ export default function OfflineOrdersIntakePage() {
         // [2025-12-06] PRD v2.0: 聚合印刷位置（全局 + 产品级别）
         const allPrintPositions: Array<PrintPosition & { productItemId?: string; index?: number }> = [];
         
-        // 添加全局印刷位置
-        formState.globalPrintPositions.forEach((pos, index) => {
+        // 添加全局印刷位置（如果存在）
+        const globalPositions = formState.globalPrintPositions || [];
+        globalPositions.forEach((pos, index) => {
           if (pos.position && (pos.width || pos.height)) {
             allPrintPositions.push({
                   ...pos,
@@ -771,15 +818,15 @@ export default function OfflineOrdersIntakePage() {
           }
         });
         
-        // 添加产品级别的印刷位置（如果有）
+        // 添加产品级别的印刷位置（从 productPrintConfigs 获取）
         formState.productItems.forEach((item) => {
-          if (item.printPositions && item.printPositions.length > 0) {
-            item.printPositions.forEach((pos, index) => {
+          const config = formState.productPrintConfigs[item.id];
+          if (config && config.positions && config.positions.length > 0) {
+            config.positions.forEach((pos, index) => {
               if (pos.position && (pos.width || pos.height)) {
                 allPrintPositions.push({
                   ...pos,
                   productItemId: item.id,
-                  productName: item.productName,
                   index,
                 });
               }
@@ -827,8 +874,8 @@ export default function OfflineOrdersIntakePage() {
             payload.append('referenceNumber', formState.invoiceInfo.referenceNumber);
           }
         }
-        // [2025-12-06] PRD v2.0: 添加文件到 payload
-        (formState.files || []).forEach((file) => payload.append('assets', file, file.name));
+        // [2025-12-06] PRD v2.0: 添加文件到 payload（使用 files state，不是 formState.files）
+        files.forEach((file) => payload.append('assets', file, file.name));
 
         // [2025-11-16 09:50:00] 指向后端 API_BASE_URL，避免 Netlify 返回 HTML 404
         const response = await fetch(`${API_BASE_URL}/offline-orders`, {

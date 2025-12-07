@@ -23,9 +23,9 @@ def test_rail_button_colors(page, base_url):
     print("测试1: Rail 按钮颜色验证")
     print("="*60)
     
-    page.goto(f'{base_url}/design-lab')
+    page.goto(f'{base_url}/design-lab', wait_until='networkidle')
     page.wait_for_load_state('networkidle')
-    time.sleep(3)  # 等待页面完全加载
+    time.sleep(5)  # 等待页面完全加载，包括 React 渲染
     
     # 查找 Rail 按钮
     rail_buttons = page.locator('.dl-rail__btn')
@@ -70,12 +70,12 @@ def test_rail_button_layout(page, base_url):
     print("测试2: Rail 按钮位置和布局验证")
     print("="*60)
     
-    page.goto(f'{base_url}/design-lab')
+    page.goto(f'{base_url}/design-lab', wait_until='networkidle')
     page.wait_for_load_state('networkidle')
-    time.sleep(3)
+    time.sleep(5)  # 等待页面完全加载
     
     # 查找 Rail 容器
-    rail = page.locator('.dl-rail').first()
+    rail = page.locator('.dl-rail').nth(0)
     if rail.count() == 0:
         print("❌ 未找到 Rail 容器")
         return False
@@ -134,12 +134,12 @@ def test_header_elements(page, base_url):
     print("测试3: Header 元素位置和颜色验证")
     print("="*60)
     
-    page.goto(f'{base_url}/design-lab')
+    page.goto(f'{base_url}/design-lab', wait_until='networkidle')
     page.wait_for_load_state('networkidle')
-    time.sleep(3)
+    time.sleep(5)  # 等待页面完全加载
     
     # 查找 My Designs 按钮
-    my_designs_btn = page.locator('.dl-header__breadcrumb-link--button').first()
+    my_designs_btn = page.locator('.dl-header__breadcrumb-link--button').nth(0)
     if my_designs_btn.count() == 0:
         print("❌ 未找到 My Designs 按钮")
         return False
@@ -165,7 +165,7 @@ def test_header_elements(page, base_url):
             print(f"❌ My Designs 颜色不正确，期望: rgb(74, 74, 74), 实际: {color}")
     
     # 查找 Untitled design 按钮
-    untitled_btn = page.locator('.dl-header__breadcrumb-current--button').first()
+    untitled_btn = page.locator('.dl-header__breadcrumb-current--button').nth(0)
     if untitled_btn.count() == 0:
         print("❌ 未找到 Untitled design 按钮")
         return False
@@ -199,9 +199,9 @@ def test_rail_button_active_state(page, base_url):
     print("测试4: Rail 按钮激活状态验证")
     print("="*60)
     
-    page.goto(f'{base_url}/design-lab')
+    page.goto(f'{base_url}/design-lab', wait_until='networkidle')
     page.wait_for_load_state('networkidle')
-    time.sleep(3)
+    time.sleep(5)  # 等待页面完全加载
     
     # 查找第一个 Rail 按钮（Upload）
     upload_btn = page.locator('.dl-rail__btn').nth(0)
