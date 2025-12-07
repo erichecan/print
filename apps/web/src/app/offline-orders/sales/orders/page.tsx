@@ -259,7 +259,7 @@ export default function SalesOrdersPage() {
               <button
                 type="button"
                 className="sales-orders-config-btn"
-                onClick={() => router.push('/admin/offline-orders/config')}
+                onClick={() => router.push('/admin/offline-orders/products')}
               >
                 配置管理
               </button>

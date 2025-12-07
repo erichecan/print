@@ -1,12 +1,5 @@
-// [2025-01-27 00:00:00] Prisma schema for Print E-commerce Platform
-// Database: PostgreSQL
-// ORM: Prisma 5+
-
 generator client {
   provider = "prisma-client-js"
-  // [2025-01-29 17:30:00] 回到最简单的配置（方案 1：回到昨天之前的工作配置）
-  // 移除 binaryTargets，让 Prisma 自动检测平台
-  // 运行时生成时使用真实的 DATABASE_URL，不会触发 DataProxy 检测
 }
 
 datasource db {
@@ -14,51 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  passwordHash  String   @map("password_hash")
-  firstName     String?  @map("first_name")
-  lastName      String?  @map("last_name")
-  phone         String?
-  role          UserRole @default(CUSTOMER)
-  emailVerified Boolean  @default(false) @map("email_verified")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-
-  addresses           Address[]
-  cart                Cart?
-  orders              Order[]
-  sessions            Session[]
-  designs             Design[]
-  // [2025-11-18 10:45:12] Users can own design projects synced to storefront
-  projects            Project[]
-  // [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112)
-  paymentMethods      PaymentMethod[]
-  // [2025-12-07 01:30:00] Customer service chat rooms for Issue #144
-  chatRoomsAsCustomer ChatRoom[]      @relation("ChatRoomCustomer")
-  chatRoomsAsAgent    ChatRoom[]      @relation("ChatRoomAgent")
-  chatMessages        ChatMessage[]
+  id             String          @id @default(uuid())
+  email          String          @unique
+  passwordHash   String          @map("password_hash")
+  firstName      String?         @map("first_name")
+  lastName       String?         @map("last_name")
+  phone          String?
+  role           UserRole        @default(CUSTOMER)
+  emailVerified  Boolean         @default(false) @map("email_verified")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  addresses      Address[]
+  cart           Cart?
+  designs        Design[]
+  orders         Order[]
+  paymentMethods PaymentMethod[]
+  projects       Project[]
+  sessions       Session[]
 
   @@index([email])
   @@index([role])
   @@map("users")
 }
 
-// [2025-12-02 04:45:00] 扩展用户角色，支持销售和销售主管
-enum UserRole {
-  CUSTOMER
-  ADMIN
-  SALES
-  SALES_MANAGER
-}
-
-// Address model (for user shipping addresses)
 model Address {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   firstName  String   @map("first_name")
   lastName   String   @map("last_name")
   company    String?
@@ -72,29 +47,27 @@ model Address {
   isDefault  Boolean  @default(false) @map("is_default")
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("addresses")
 }
 
-// Category/Brand models
 model Category {
-  id          String     @id @default(uuid())
-  name        String
-  slug        String     @unique
-  description String?    @db.Text
-  imageUrl    String?    @map("image_url")
-  parentId    String?    @map("parent_id")
-  parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
-  children    Category[] @relation("CategoryTree")
-  sortOrder   Int        @default(0) @map("sort_order")
-  isActive    Boolean    @default(true) @map("is_active")
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
-
-  products            Product[]
+  id                  String              @id @default(uuid())
+  name                String
+  slug                String              @unique
+  description         String?
+  imageUrl            String?             @map("image_url")
+  parentId            String?             @map("parent_id")
+  sortOrder           Int                 @default(0) @map("sort_order")
+  isActive            Boolean             @default(true) @map("is_active")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  parent              Category?           @relation("CategoryTree", fields: [parentId], references: [id])
+  children            Category[]          @relation("CategoryTree")
   designTemplates     DesignTemplate[]
-  // [2025-01-28 12:00:00] 促销活动关联
+  products            Product[]
   promotionCategories PromotionCategory[]
 
   @@index([slug])
@@ -103,93 +76,77 @@ model Category {
 }
 
 model Brand {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
-  slug        String   @unique
-  logoUrl     String?  @map("logo_url")
-  description String?  @db.Text
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  products Product[]
+  slug        String    @unique
+  logoUrl     String?   @map("logo_url")
+  description String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  products    Product[]
 
   @@index([slug])
   @@map("brands")
 }
 
-// Product models
 model Product {
-  id              String   @id @default(uuid())
-  name            String
-  slug            String   @unique
-  description     String?  @db.Text
-  longDescription String?  @map("long_description") @db.Text
-  // [2025-11-18 10:45:12] Store base price in cents to align backend/frontend calculations
-  basePrice       Int      @map("base_price_cents")
-  // [2025-11-10 10:30:00] Added cost management fields
-  unitCost        Decimal  @default(0) @map("unit_cost") @db.Decimal(10, 2)
-  salePrice       Decimal  @default(0) @map("sale_price") @db.Decimal(10, 2)
-  grossProfit     Decimal  @default(0) @map("gross_profit") @db.Decimal(10, 2)
-  sku             String   @unique
-  isCustomizable  Boolean  @default(true) @map("is_customizable")
-  stockQuantity   Int      @default(0) @map("stock_quantity")
-  weight          Decimal? @db.Decimal(8, 2)
-  dimensions      String?
-  // [2025-11-18 10:45:12] Printable areas capture front safe-zone metadata for editors
-  printableAreas  Json?    @map("printable_areas")
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  categoryId String   @map("category_id")
-  category   Category @relation(fields: [categoryId], references: [id])
-  brandId    String?  @map("brand_id")
-  brand      Brand?   @relation(fields: [brandId], references: [id], onDelete: SetNull)
-
-  variants           Variant[]
+  id                 String              @id @default(uuid())
+  name               String
+  slug               String              @unique
+  description        String?
+  longDescription    String?             @map("long_description")
+  basePrice          Int                 @map("base_price_cents")
+  unitCost           Decimal             @default(0) @map("unit_cost") @db.Decimal(10, 2)
+  salePrice          Decimal             @default(0) @map("sale_price") @db.Decimal(10, 2)
+  grossProfit        Decimal             @default(0) @map("gross_profit") @db.Decimal(10, 2)
+  sku                String              @unique
+  isCustomizable     Boolean             @default(true) @map("is_customizable")
+  stockQuantity      Int                 @default(0) @map("stock_quantity")
+  weight             Decimal?            @db.Decimal(8, 2)
+  dimensions         String?
+  printableAreas     Json?               @map("printable_areas")
+  isActive           Boolean             @default(true) @map("is_active")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  categoryId         String              @map("category_id")
+  brandId            String?             @map("brand_id")
+  collectionProducts CollectionProduct[]
+  colorImages        ProductColorImage[]
   images             ProductImage[]
   reviews            ProductReview[]
-  collectionProducts CollectionProduct[]
+  brand              Brand?              @relation(fields: [brandId], references: [id])
+  category           Category            @relation(fields: [categoryId], references: [id])
   projects           Project[]
-  // [2025-01-28 12:00:00] 促销活动关联
   promotionProducts  PromotionProduct[]
-  // [2025-12-06 18:00:00] Gift product promotions for Issue #139
-  giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
-  // [2025-01-30 23:55:00] 产品颜色图片映射
-  colorImages        ProductColorImage[]
+  variants           Variant[]
 
   @@index([slug])
   @@index([categoryId])
   @@index([brandId])
   @@index([isActive])
+  @@index([createdAt], map: "idx_products_created_at")
+  @@index([name(ops: raw("gin_trgm_ops"))], map: "idx_products_name_trgm", type: Gin)
   @@map("products")
 }
 
-// [2025-11-18 10:45:12] Variant model powers color/size level inventory
 model Variant {
-  id                String   @id @default(uuid())
-  productId         String   @map("product_id")
-  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  color             String
-  colorHex          String?  @map("color_hex")
-  size              String
-  sku               String   @unique
-  priceAdjustment   Decimal  @default(0) @map("price_adjustment") @db.Decimal(10, 2)
-  // [2025-11-18 10:45:12] Keep stockQuantity naming for legacy controllers
-  stockQuantity     Int      @default(0) @map("stock_quantity")
-  // [2025-12-06 16:00:00] Low stock threshold for this variant (null = use global threshold)
-  lowStockThreshold Int?     @map("low_stock_threshold")
-  imageUrl          String?  @map("image_url")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  cartItems      CartItem[]
-  orderItems     OrderItem[]
-  designs        Design[]
-  projects       Project[]
-  // [2025-12-06 18:00:00] Gift variant promotions for Issue #139
-  giftPromotions Promotion[] @relation("PromotionGiftVariant")
+  id              String      @id @default(uuid())
+  productId       String      @map("product_id")
+  color           String
+  colorHex        String?     @map("color_hex")
+  size            String
+  sku             String      @unique
+  priceAdjustment Decimal     @default(0) @map("price_adjustment") @db.Decimal(10, 2)
+  stockQuantity   Int         @default(0) @map("stock_quantity")
+  imageUrl        String?     @map("image_url")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+  cartItems       CartItem[]
+  designs         Design[]
+  orderItems      OrderItem[]
+  projects        Project[]
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([sku])
@@ -199,37 +156,29 @@ model Variant {
 model ProductImage {
   id        String   @id @default(uuid())
   productId String   @map("product_id")
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   url       String
   alt       String?
   sortOrder Int      @default(0) @map("sort_order")
   createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@map("product_images")
 }
 
-// [2025-01-30 23:55:00] Product Color Image - 存储产品颜色图片映射（用于 Design Lab）
 model ProductColorImage {
   id                 String   @id @default(uuid())
   productId          String   @map("product_id")
-  product            Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  // [2025-01-30 23:55:00] Custom Ink 产品 ID（如 6a62c76ef0978853a20391b6c32da4fe）
   customInkProductId String   @map("customink_product_id")
-  // [2025-01-30 23:55:00] Custom Ink 颜色 ID（如 176100）
   customInkColorId   String   @map("customink_color_id")
-  // [2025-01-30 23:55:00] 颜色名称（如 White, Black）
   colorName          String   @map("color_name")
-  // [2025-01-30 23:55:00] 颜色 hex 值（可选）
   colorHex           String?  @map("color_hex")
-  // [2025-01-30 23:55:00] 图片 URL（front, back, sleeve）
-  imageUrls          Json     @map("image_urls") // { front: string, back: string, sleeve: string }
-  // [2025-01-30 23:55:00] 是否已验证（图片 URL 是否存在）
+  imageUrls          Json     @map("image_urls")
   isVerified         Boolean  @default(false) @map("is_verified")
-  // [2025-01-30 23:55:00] 是否启用
   isActive           Boolean  @default(true) @map("is_active")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([customInkProductId, customInkColorId])
   @@index([customInkProductId])
@@ -241,16 +190,16 @@ model ProductColorImage {
 model ProductReview {
   id                 String   @id @default(uuid())
   productId          String   @map("product_id")
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   userId             String?  @map("user_id")
   orderId            String?  @map("order_id")
   rating             Int
   title              String
-  comment            String   @db.Text
+  comment            String
   isVerifiedPurchase Boolean  @default(false) @map("is_verified_purchase")
   helpfulCount       Int      @default(0) @map("helpful_count")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
+  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([userId])
@@ -258,18 +207,16 @@ model ProductReview {
   @@map("product_reviews")
 }
 
-// Collection models
 model Collection {
-  id          String   @id @default(uuid())
+  id          String              @id @default(uuid())
   name        String
-  slug        String   @unique
-  description String?  @db.Text
-  imageUrl    String?  @map("image_url")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  products CollectionProduct[]
+  slug        String              @unique
+  description String?
+  imageUrl    String?             @map("image_url")
+  isActive    Boolean             @default(true) @map("is_active")
+  createdAt   DateTime            @default(now()) @map("created_at")
+  updatedAt   DateTime            @updatedAt @map("updated_at")
+  products    CollectionProduct[]
 
   @@index([slug])
   @@map("collections")
@@ -277,24 +224,22 @@ model Collection {
 
 model CollectionProduct {
   collectionId String     @map("collection_id")
-  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   productId    String     @map("product_id")
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([collectionId, productId])
   @@map("collection_products")
 }
 
-// Cart models
 model Cart {
-  id        String   @id @default(uuid())
-  userId    String?  @unique @map("user_id")
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessionId String?  @unique @map("session_id")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  items CartItem[]
+  id        String     @id @default(uuid())
+  userId    String?    @unique @map("user_id")
+  sessionId String?    @unique @map("session_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  items     CartItem[]
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("carts")
 }
@@ -302,61 +247,599 @@ model Cart {
 model CartItem {
   id            String   @id @default(uuid())
   cartId        String   @map("cart_id")
-  cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  // [2025-11-18 10:45:12] Cart items now reference Variant model
   variantId     String   @map("variant_id")
-  variant       Variant  @relation(fields: [variantId], references: [id])
   quantity      Int
   priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+  cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant       Variant  @relation(fields: [variantId], references: [id])
 
   @@index([cartId])
   @@index([variantId])
   @@map("cart_items")
 }
 
-// Order models
 model Order {
-  id                String        @id @default(uuid())
-  orderNumber       String        @unique @map("order_number")
-  userId            String?       @map("user_id")
-  user              User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id                String           @id @default(uuid())
+  orderNumber       String           @unique @map("order_number")
+  userId            String?          @map("user_id")
   email             String
-  status            OrderStatus   @default(PENDING)
-  currency          String        @default("CAD")
-  subtotal          Decimal       @db.Decimal(10, 2)
-  shippingCost      Decimal       @default(0) @map("shipping_cost") @db.Decimal(10, 2)
-  tax               Decimal       @default(0) @db.Decimal(10, 2)
-  discount          Decimal       @default(0) @db.Decimal(10, 2)
-  total             Decimal       @db.Decimal(10, 2)
-  paymentStatus     PaymentStatus @default(PENDING) @map("payment_status")
-  paymentIntentId   String?       @unique @map("payment_intent_id")
-  shippingAddress   Json          @map("shipping_address")
-  billingAddress    Json          @map("billing_address")
-  trackingNumber    String?       @map("tracking_number")
+  status            OrderStatus      @default(PENDING)
+  currency          String           @default("CAD")
+  subtotal          Decimal          @db.Decimal(10, 2)
+  shippingCost      Decimal          @default(0) @map("shipping_cost") @db.Decimal(10, 2)
+  tax               Decimal          @default(0) @db.Decimal(10, 2)
+  discount          Decimal          @default(0) @db.Decimal(10, 2)
+  total             Decimal          @db.Decimal(10, 2)
+  paymentStatus     PaymentStatus    @default(PENDING) @map("payment_status")
+  paymentIntentId   String?          @unique @map("payment_intent_id")
+  shippingAddress   Json             @map("shipping_address")
+  billingAddress    Json             @map("billing_address")
+  trackingNumber    String?          @map("tracking_number")
   carrier           String?
-  estimatedDelivery DateTime?     @map("estimated_delivery")
-  createdAt         DateTime      @default(now()) @map("created_at")
-  updatedAt         DateTime      @updatedAt @map("updated_at")
-
-  items           OrderItem[]
-  shipments       Shipment[]
-  // [2025-11-18 10:45:12] Projects submitted through the storefront for this order
-  projects        Project[]
-  // [2025-01-28 11:00:00] Coupons applied to this order
-  orderCoupons    OrderCoupon[]
-  // [2025-01-28 12:00:00] Promotions applied to this order
-  orderPromotions OrderPromotion[]
-  // [2025-12-06 10:30:00] Order status change history
-  statusHistory   OrderStatusHistory[]
+  estimatedDelivery DateTime?        @map("estimated_delivery")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+  orderCoupons      OrderCoupon[]
+  items             OrderItem[]
+  orderPromotions   OrderPromotion[]
+  user              User?            @relation(fields: [userId], references: [id])
+  projects          Project[]
+  shipments         Shipment[]
 
   @@index([userId])
   @@index([orderNumber])
   @@index([status])
   @@index([paymentStatus])
   @@index([email])
+  @@index([createdAt], map: "idx_orders_created_at")
+  @@index([status], map: "idx_orders_status")
   @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(uuid())
+  orderId       String   @map("order_id")
+  variantId     String   @map("variant_id")
+  quantity      Int
+  priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
+  createdAt     DateTime @default(now()) @map("created_at")
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant       Variant  @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+model Shipment {
+  id             String         @id @default(uuid())
+  orderId        String         @map("order_id")
+  carrier        String?
+  trackingNumber String?        @unique @map("tracking_number")
+  labelUrl       String?        @map("label_url")
+  status         ShipmentStatus @default(PENDING)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  order          Order          @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([trackingNumber])
+  @@map("shipments")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model OfflineOrder {
+  id                  String                     @id @default(uuid())
+  orderCode           String                     @unique @map("order_code")
+  projectName         String                     @map("project_name")
+  primaryProduct      String?                    @map("primary_product")
+  quantity            Int?
+  deliveryDate        DateTime?                  @map("delivery_date")
+  description         String?
+  requiresMockups     Boolean                    @default(false) @map("requires_mockups")
+  requiresProof       Boolean                    @default(false) @map("requires_proof")
+  rushOrder           Boolean                    @default(false) @map("rush_order")
+  stageKey            String                     @map("stage_key")
+  stageLabel          String                     @map("stage_label")
+  stagePosition       Int?                       @map("stage_position")
+  status              OfflineOrderStatus         @default(ACTIVE)
+  contactName         String                     @map("contact_name")
+  company             String?
+  email               String
+  phone               String?
+  configuration       Json?                      @map("configuration")
+  metadata            Json?                      @map("metadata")
+  createdAt           DateTime                   @default(now()) @map("created_at")
+  updatedAt           DateTime                   @updatedAt @map("updated_at")
+  dst_file_fee        Decimal?                   @db.Decimal(10, 2)
+  order_notes         String?
+  payment_method      String?
+  reference_number    String?
+  assets              OfflineOrderAsset[]
+  histories           OfflineOrderStageHistory[]
+  productionWorkOrder ProductionWorkOrder?
+
+  @@index([email])
+  @@index([stageKey])
+  @@index([status])
+  @@map("offline_orders")
+}
+
+model OfflineOrderAsset {
+  id          String       @id @default(uuid())
+  orderId     String       @map("order_id")
+  fileName    String       @map("file_name")
+  fileSize    Int          @map("file_size")
+  contentType String?      @map("content_type")
+  storageKey  String       @map("storage_key")
+  url         String
+  uploadedAt  DateTime     @default(now()) @map("uploaded_at")
+  uploadedBy  String?      @map("uploaded_by")
+  order       OfflineOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("offline_order_assets")
+}
+
+model OfflineOrderStageHistory {
+  id           String       @id @default(uuid())
+  orderId      String       @map("order_id")
+  fromStageKey String?      @map("from_stage_key")
+  toStageKey   String       @map("to_stage_key")
+  actorId      String?      @map("actor_id")
+  actorName    String?      @map("actor_name")
+  note         String?
+  createdAt    DateTime     @default(now()) @map("created_at")
+  order        OfflineOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([toStageKey])
+  @@map("offline_order_stage_history")
+}
+
+model ProductionWorkOrder {
+  id             String                     @id @default(uuid())
+  workOrderCode  String                     @unique @map("work_order_code")
+  offlineOrderId String?                    @unique @map("offline_order_id")
+  status         ProductionWorkOrderStatus  @default(PLANNING)
+  priority       Int                        @default(0)
+  startDate      DateTime?                  @map("start_date")
+  dueDate        DateTime?                  @map("due_date")
+  completedDate  DateTime?                  @map("completed_date")
+  assigneeId     String?                    @map("assignee_id")
+  assigneeName   String?                    @map("assignee_name")
+  notes          String?
+  metadata       Json?
+  createdAt      DateTime                   @default(now()) @map("created_at")
+  updatedAt      DateTime                   @updatedAt @map("updated_at")
+  events         ProductionWorkOrderEvent[]
+  offlineOrder   OfflineOrder?              @relation(fields: [offlineOrderId], references: [id])
+
+  @@index([offlineOrderId])
+  @@index([status])
+  @@map("production_work_orders")
+}
+
+model ProductionWorkOrderEvent {
+  id          String                    @id @default(uuid())
+  workOrderId String                    @map("work_order_id")
+  status      ProductionWorkOrderStatus @map("status")
+  actorId     String?                   @map("actor_id")
+  actorName   String?                   @map("actor_name")
+  note        String?
+  createdAt   DateTime                  @default(now()) @map("created_at")
+  workOrder   ProductionWorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+
+  @@index([workOrderId])
+  @@index([status])
+  @@map("production_work_order_events")
+}
+
+model Design {
+  id              String          @id @default(uuid())
+  userId          String?         @map("user_id")
+  sessionId       String?         @map("session_id")
+  variantId       String          @map("variant_id")
+  name            String
+  status          DesignStatus    @default(DRAFT)
+  currentVersion  Int             @default(1) @map("current_version")
+  canvasSnapshot  Json            @map("canvas_snapshot")
+  pricingSnapshot Json?           @map("pricing_snapshot")
+  thumbnailUrl    String?         @map("thumbnail_url")
+  lockedAt        DateTime?       @map("locked_at")
+  lockedBy        String?         @map("locked_by")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  assets          DesignAsset[]
+  comments        DesignComment[]
+  versions        DesignVersion[]
+  user            User?           @relation(fields: [userId], references: [id])
+  variant         Variant         @relation(fields: [variantId], references: [id])
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([variantId])
+  @@index([status])
+  @@map("designs")
+}
+
+model DesignVersion {
+  id              String   @id @default(uuid())
+  designId        String   @map("design_id")
+  version         Int
+  summary         String?
+  canvasSnapshot  Json     @map("canvas_snapshot")
+  pricingSnapshot Json?    @map("pricing_snapshot")
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  design          Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@unique([designId, version])
+  @@index([createdAt])
+  @@map("design_versions")
+}
+
+model DesignAsset {
+  id          String   @id @default(uuid())
+  designId    String   @map("design_id")
+  fileName    String   @map("file_name")
+  fileSize    Int      @map("file_size")
+  contentType String   @map("content_type")
+  storageKey  String   @map("storage_key")
+  url         String
+  uploadedBy  String?  @map("uploaded_by")
+  uploadedAt  DateTime @default(now()) @map("uploaded_at")
+  design      Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@index([designId])
+  @@index([uploadedAt])
+  @@map("design_assets")
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  userId      String?       @map("user_id")
+  productId   String        @map("product_id")
+  variantId   String?       @map("variant_id")
+  orderId     String?       @map("order_id")
+  name        String
+  status      ProjectStatus @default(DRAFT)
+  canvasState Json          @map("canvas_state")
+  previewUrls String[]      @default([]) @map("preview_urls")
+  notes       String?
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  order       Order?        @relation(fields: [orderId], references: [id])
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User?         @relation(fields: [userId], references: [id])
+  variant     Variant?      @relation(fields: [variantId], references: [id])
+
+  @@index([userId])
+  @@index([productId])
+  @@index([variantId])
+  @@index([orderId])
+  @@map("projects")
+}
+
+model DesignTemplate {
+  id                String    @id @default(uuid())
+  name              String
+  description       String?
+  category          String?
+  tags              String[]  @default([])
+  thumbnailUrl      String?   @map("thumbnail_url")
+  previewUrl        String?   @map("preview_url")
+  designData        Json      @map("design_data")
+  productCategoryId String?   @map("product_category_id")
+  usageCount        Int       @default(0) @map("usage_count")
+  likesCount        Int       @default(0) @map("likes_count")
+  isFeatured        Boolean   @default(false) @map("is_featured")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdBy         String?   @map("created_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  productCategory   Category? @relation(fields: [productCategoryId], references: [id])
+
+  @@index([category])
+  @@index([productCategoryId])
+  @@index([isFeatured])
+  @@index([isActive])
+  @@index([createdAt])
+  @@map("design_templates")
+}
+
+model DesignComment {
+  id          String          @id @default(uuid())
+  designId    String          @map("design_id")
+  userId      String?         @map("user_id")
+  parentId    String?         @map("parent_id")
+  content     String
+  authorName  String?         @map("author_name")
+  authorEmail String?         @map("author_email")
+  likesCount  Int             @default(0) @map("likes_count")
+  isApproved  Boolean         @default(true) @map("is_approved")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+  design      Design          @relation(fields: [designId], references: [id], onDelete: Cascade)
+  parent      DesignComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     DesignComment[] @relation("CommentReplies")
+
+  @@index([designId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@index([isApproved])
+  @@map("design_comments")
+}
+
+model Coupon {
+  id              String           @id @default(uuid())
+  code            String           @unique
+  type            CouponType
+  value           Decimal          @db.Decimal(10, 2)
+  minOrderValue   Decimal?         @map("min_order_value") @db.Decimal(10, 2)
+  maxDiscount     Decimal?         @map("max_discount") @db.Decimal(10, 2)
+  usageLimit      Int?             @map("usage_limit")
+  userUsageLimit  Int?             @map("user_usage_limit")
+  usedCount       Int              @default(0) @map("used_count")
+  startDate       DateTime         @map("start_date")
+  endDate         DateTime         @map("end_date")
+  isActive        Boolean          @default(true) @map("is_active")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  orderCoupons    OrderCoupon[]
+  promotionCoupon PromotionCoupon?
+
+  @@index([code])
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@map("coupons")
+}
+
+model OrderCoupon {
+  id             String   @id @default(uuid())
+  orderId        String   @map("order_id")
+  couponId       String   @map("coupon_id")
+  userId         String?  @map("user_id")
+  discountAmount Decimal  @map("discount_amount") @db.Decimal(10, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, couponId])
+  @@index([orderId])
+  @@index([couponId])
+  @@index([userId])
+  @@map("order_coupons")
+}
+
+model Promotion {
+  id              String                @id @default(uuid())
+  title           String
+  description     String?
+  bannerImageUrl  String?               @map("banner_image_url")
+  linkUrl         String?               @map("link_url")
+  discountType    PromotionDiscountType @map("discount_type")
+  discountValue   Decimal               @map("discount_value") @db.Decimal(10, 2)
+  minOrderValue   Decimal?              @map("min_order_value") @db.Decimal(10, 2)
+  maxDiscount     Decimal?              @map("max_discount") @db.Decimal(10, 2)
+  startDate       DateTime              @map("start_date")
+  endDate         DateTime              @map("end_date")
+  isActive        Boolean               @default(true) @map("is_active")
+  sortOrder       Int                   @default(0) @map("sort_order")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+  orderPromotions OrderPromotion[]
+  categories      PromotionCategory[]
+  coupon          PromotionCoupon?
+  products        PromotionProduct[]
+
+  @@index([isActive])
+  @@index([startDate, endDate])
+  @@index([sortOrder])
+  @@map("promotions")
+}
+
+model PromotionProduct {
+  id          String    @id @default(uuid())
+  promotionId String    @map("promotion_id")
+  productId   String    @map("product_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, productId])
+  @@index([promotionId])
+  @@index([productId])
+  @@map("promotion_products")
+}
+
+model PromotionCategory {
+  id          String    @id @default(uuid())
+  promotionId String    @map("promotion_id")
+  categoryId  String    @map("category_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@unique([promotionId, categoryId])
+  @@index([promotionId])
+  @@index([categoryId])
+  @@map("promotion_categories")
+}
+
+model PromotionCoupon {
+  id          String    @id @default(uuid())
+  promotionId String    @unique @map("promotion_id")
+  couponId    String    @unique @map("coupon_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  coupon      Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+
+  @@index([promotionId])
+  @@index([couponId])
+  @@map("promotion_coupons")
+}
+
+model OrderPromotion {
+  id             String    @id @default(uuid())
+  orderId        String    @map("order_id")
+  promotionId    String    @map("promotion_id")
+  discountAmount Decimal   @map("discount_amount") @db.Decimal(10, 2)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  promotion      Promotion @relation(fields: [promotionId], references: [id])
+
+  @@unique([orderId, promotionId])
+  @@index([orderId])
+  @@index([promotionId])
+  @@map("order_promotions")
+}
+
+model PaymentMethod {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  stripePaymentMethodId String   @unique @map("stripe_payment_method_id")
+  type                  String   @default("card")
+  cardBrand             String?  @map("card_brand")
+  cardLast4             String?  @map("card_last4")
+  cardExpMonth          Int?     @map("card_exp_month")
+  cardExpYear           Int?     @map("card_exp_year")
+  isDefault             Boolean  @default(false) @map("is_default")
+  billingDetails        Json?    @map("billing_details")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isDefault])
+  @@index([stripePaymentMethodId])
+  @@map("payment_methods")
+}
+
+model SequelizeMeta {
+  name String @id @db.VarChar(255)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model art_assets {
+  id            String   @id @db.Uuid
+  category      String   @db.VarChar(100)
+  name          String   @db.VarChar(255)
+  image_url     String   @db.VarChar(500)
+  thumbnail_url String?  @db.VarChar(500)
+  file_size     Int?
+  width         Int?
+  height        Int?
+  mime_type     String?  @db.VarChar(100)
+  is_active     Boolean? @default(true)
+  sort_order    Int?     @default(0)
+  created_by    String?  @db.Uuid
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([category], map: "idx_art_assets_category")
+  @@index([created_at], map: "idx_art_assets_created_at")
+  @@index([is_active], map: "idx_art_assets_is_active")
+  @@index([sort_order], map: "idx_art_assets_sort_order")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model fonts {
+  id                 String              @id @db.Uuid
+  name               String              @unique @db.VarChar(255)
+  display_name       String?             @db.VarChar(255)
+  preview_text       String              @default("Aa") @db.VarChar(50)
+  category           enum_fonts_category @default(latin)
+  source             enum_fonts_source   @default(system)
+  google_font_family String?             @db.VarChar(255)
+  weights            Json?               @db.Json
+  is_active          Boolean?            @default(true)
+  sort_order         Int?                @default(0)
+  created_by         String?             @db.Uuid
+  created_at         DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime            @default(now()) @db.Timestamptz(6)
+
+  @@index([category], map: "idx_fonts_category")
+  @@index([created_at], map: "idx_fonts_created_at")
+  @@index([is_active], map: "idx_fonts_is_active")
+  @@index([sort_order], map: "idx_fonts_sort_order")
+  @@index([source], map: "idx_fonts_source")
+}
+
+model offline_order_colors {
+  id                                String                              @id
+  name                              String                              @unique
+  hex_code                          String?
+  created_at                        DateTime                            @default(now())
+  updated_at                        DateTime
+  offline_order_product_color_sizes offline_order_product_color_sizes[]
+}
+
+model offline_order_product_color_sizes {
+  id                     String                 @id
+  product_id             String
+  color_id               String
+  size                   String
+  is_available           Boolean                @default(true)
+  created_at             DateTime               @default(now())
+  updated_at             DateTime
+  offline_order_colors   offline_order_colors   @relation(fields: [color_id], references: [id], onDelete: Cascade)
+  offline_order_products offline_order_products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+  @@unique([product_id, color_id, size])
+  @@index([product_id, color_id])
+}
+
+model offline_order_products {
+  id                                String                              @id
+  name                              String
+  image_url                         String?
+  is_customer_owned                 Boolean                             @default(false)
+  display_order                     Int                                 @default(0)
+  is_active                         Boolean                             @default(true)
+  created_at                        DateTime                            @default(now())
+  updated_at                        DateTime                            @updatedAt
+  offline_order_product_color_sizes offline_order_product_color_sizes[]
+}
+
+model offline_order_size_fees {
+  id             String   @id
+  size           String   @unique
+  additional_fee Decimal  @db.Decimal(10, 2)
+  created_at     DateTime @default(now())
+  updated_at     DateTime
+}
+
+model settings {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String   @unique @db.VarChar(100)
+  value      Json?
+  updated_by String?  @db.Uuid
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([key], map: "idx_settings_key")
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  SALES
+  SALES_MANAGER
 }
 
 enum OrderStatus {
@@ -375,39 +858,6 @@ enum PaymentStatus {
   REFUNDED
 }
 
-model OrderItem {
-  id            String   @id @default(uuid())
-  orderId       String   @map("order_id")
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  // [2025-11-18 10:45:12] Order items reference the Variant model for fulfillment
-  variantId     String   @map("variant_id")
-  variant       Variant  @relation(fields: [variantId], references: [id])
-  quantity      Int
-  priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
-  createdAt     DateTime @default(now()) @map("created_at")
-
-  @@index([orderId])
-  @@index([variantId])
-  @@map("order_items")
-}
-
-// Shipment model (for Phase 2 - EasyShip)
-model Shipment {
-  id             String         @id @default(uuid())
-  orderId        String         @map("order_id")
-  order          Order          @relation(fields: [orderId], references: [id])
-  carrier        String?
-  trackingNumber String?        @unique @map("tracking_number")
-  labelUrl       String?        @map("label_url")
-  status         ShipmentStatus @default(PENDING)
-  createdAt      DateTime       @default(now()) @map("created_at")
-  updatedAt      DateTime       @updatedAt @map("updated_at")
-
-  @@index([orderId])
-  @@index([trackingNumber])
-  @@map("shipments")
-}
-
 enum ShipmentStatus {
   PENDING
   LABEL_CREATED
@@ -416,39 +866,6 @@ enum ShipmentStatus {
   EXCEPTION
 }
 
-// [2025-12-06 10:30:00] Order Status History - Track order status changes
-model OrderStatusHistory {
-  id         String       @id @default(uuid())
-  orderId    String       @map("order_id")
-  order      Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  fromStatus OrderStatus? @map("from_status")
-  toStatus   OrderStatus  @map("to_status")
-  actorId    String?      @map("actor_id")
-  actorName  String?      @map("actor_name")
-  note       String?      @db.Text
-  createdAt  DateTime     @default(now()) @map("created_at")
-
-  @@index([orderId])
-  @@index([toStatus])
-  @@index([createdAt])
-  @@map("order_status_history")
-}
-
-// Session model (for cart persistence)
-model Session {
-  id        String   @id @default(uuid())
-  userId    String?  @map("user_id")
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token     String   @unique
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-
-  @@index([token])
-  @@index([expiresAt])
-  @@map("sessions")
-}
-
-// [2025-11-08 06:55:02] Offline POD orders
 enum OfflineOrderStatus {
   ACTIVE
   COMPLETED
@@ -465,178 +882,6 @@ enum ProductionWorkOrderStatus {
   CANCELLED
 }
 
-model OfflineOrder {
-  id              String             @id @default(uuid())
-  orderCode       String             @unique @map("order_code")
-  projectName     String             @map("project_name")
-  primaryProduct  String?            @map("primary_product")
-  quantity        Int?
-  deliveryDate    DateTime?          @map("delivery_date")
-  description     String?            @db.Text
-  requiresMockups Boolean            @default(false) @map("requires_mockups")
-  requiresProof   Boolean            @default(false) @map("requires_proof")
-  rushOrder       Boolean            @default(false) @map("rush_order")
-  stageKey        String             @map("stage_key")
-  stageLabel      String             @map("stage_label")
-  stagePosition   Int?               @map("stage_position")
-  status          OfflineOrderStatus @default(ACTIVE)
-  contactName     String             @map("contact_name")
-  company         String?
-  email           String
-  phone           String?
-  configuration   Json?              @map("configuration")
-  metadata        Json?              @map("metadata")
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
-
-  assets              OfflineOrderAsset[]
-  histories           OfflineOrderStageHistory[]
-  productionWorkOrder ProductionWorkOrder?
-
-  @@index([email])
-  @@index([stageKey])
-  @@index([status])
-  @@map("offline_orders")
-}
-
-model OfflineOrderAsset {
-  id          String       @id @default(uuid())
-  orderId     String       @map("order_id")
-  order       OfflineOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  fileName    String       @map("file_name")
-  fileSize    Int          @map("file_size")
-  contentType String?      @map("content_type")
-  storageKey  String       @map("storage_key")
-  url         String
-  uploadedAt  DateTime     @default(now()) @map("uploaded_at")
-  uploadedBy  String?      @map("uploaded_by")
-
-  @@index([orderId])
-  @@map("offline_order_assets")
-}
-
-model OfflineOrderStageHistory {
-  id           String       @id @default(uuid())
-  orderId      String       @map("order_id")
-  order        OfflineOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  fromStageKey String?      @map("from_stage_key")
-  toStageKey   String       @map("to_stage_key")
-  actorId      String?      @map("actor_id")
-  actorName    String?      @map("actor_name")
-  note         String?      @db.Text
-  createdAt    DateTime     @default(now()) @map("created_at")
-
-  @@index([orderId])
-  @@index([toStageKey])
-  @@map("offline_order_stage_history")
-}
-
-model ProductionWorkOrder {
-  id             String                    @id @default(uuid())
-  workOrderCode  String                    @unique @map("work_order_code")
-  offlineOrderId String?                   @unique @map("offline_order_id")
-  offlineOrder   OfflineOrder?             @relation(fields: [offlineOrderId], references: [id], onDelete: SetNull)
-  status         ProductionWorkOrderStatus @default(PLANNING)
-  priority       Int                       @default(0)
-  startDate      DateTime?                 @map("start_date")
-  dueDate        DateTime?                 @map("due_date")
-  completedDate  DateTime?                 @map("completed_date")
-  assigneeId     String?                   @map("assignee_id")
-  assigneeName   String?                   @map("assignee_name")
-  notes          String?                   @db.Text
-  metadata       Json?
-  createdAt      DateTime                  @default(now()) @map("created_at")
-  updatedAt      DateTime                  @updatedAt @map("updated_at")
-
-  events ProductionWorkOrderEvent[]
-
-  @@index([offlineOrderId])
-  @@index([status])
-  @@map("production_work_orders")
-}
-
-model ProductionWorkOrderEvent {
-  id          String                    @id @default(uuid())
-  workOrderId String                    @map("work_order_id")
-  workOrder   ProductionWorkOrder       @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
-  status      ProductionWorkOrderStatus @map("status")
-  actorId     String?                   @map("actor_id")
-  actorName   String?                   @map("actor_name")
-  note        String?                   @db.Text
-  createdAt   DateTime                  @default(now()) @map("created_at")
-
-  @@index([workOrderId])
-  @@index([status])
-  @@map("production_work_order_events")
-}
-
-// [2025-11-11 15:10:25] Design entities supporting Fabric.js editor drafts
-model Design {
-  id              String       @id @default(uuid())
-  userId          String?      @map("user_id")
-  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  sessionId       String?      @map("session_id")
-  // [2025-11-18 10:45:12] Design records bind to Variant for synchronized stock
-  variantId       String       @map("variant_id")
-  variant         Variant      @relation(fields: [variantId], references: [id])
-  name            String
-  status          DesignStatus @default(DRAFT)
-  currentVersion  Int          @default(1) @map("current_version")
-  canvasSnapshot  Json         @map("canvas_snapshot")
-  pricingSnapshot Json?        @map("pricing_snapshot")
-  thumbnailUrl    String?      @map("thumbnail_url")
-  lockedAt        DateTime?    @map("locked_at")
-  lockedBy        String?      @map("locked_by")
-  createdAt       DateTime     @default(now()) @map("created_at")
-  updatedAt       DateTime     @updatedAt @map("updated_at")
-
-  versions DesignVersion[]
-  assets   DesignAsset[]
-  comments DesignComment[]
-
-  @@index([userId])
-  @@index([sessionId])
-  @@index([variantId])
-  @@index([status])
-  @@map("designs")
-}
-
-// [2025-11-11 15:10:25] Version history table for design snapshots
-model DesignVersion {
-  id              String   @id @default(uuid())
-  designId        String   @map("design_id")
-  design          Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
-  version         Int
-  summary         String?  @db.Text
-  canvasSnapshot  Json     @map("canvas_snapshot")
-  pricingSnapshot Json?    @map("pricing_snapshot")
-  createdBy       String?  @map("created_by")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  @@unique([designId, version])
-  @@index([createdAt])
-  @@map("design_versions")
-}
-
-// [2025-11-11 15:10:25] Uploaded asset library linked to designs
-model DesignAsset {
-  id          String   @id @default(uuid())
-  designId    String   @map("design_id")
-  design      Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
-  fileName    String   @map("file_name")
-  fileSize    Int      @map("file_size")
-  contentType String   @map("content_type")
-  storageKey  String   @map("storage_key")
-  url         String
-  uploadedBy  String?  @map("uploaded_by")
-  uploadedAt  DateTime @default(now()) @map("uploaded_at")
-
-  @@index([designId])
-  @@index([uploadedAt])
-  @@map("design_assets")
-}
-
-// [2025-11-11 15:10:25] Draft lifecycle states
 enum DesignStatus {
   DRAFT
   LOCKED
@@ -644,7 +889,6 @@ enum DesignStatus {
   ARCHIVED
 }
 
-// [2025-11-18 10:45:12] Project lifecycle for storefront editor
 enum ProjectStatus {
   DRAFT
   READY_FOR_UPLOAD
@@ -653,319 +897,28 @@ enum ProjectStatus {
   ARCHIVED
 }
 
-// [2025-11-18 10:45:12] Project captures customizable canvas/output previews
-model Project {
-  id          String        @id @default(uuid())
-  userId      String?       @map("user_id")
-  user        User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  productId   String        @map("product_id")
-  product     Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantId   String?       @map("variant_id")
-  variant     Variant?      @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  orderId     String?       @map("order_id")
-  order       Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  name        String
-  status      ProjectStatus @default(DRAFT)
-  canvasState Json          @map("canvas_state")
-  previewUrls String[]      @default([]) @map("preview_urls")
-  notes       String?       @db.Text
-  createdAt   DateTime      @default(now()) @map("created_at")
-  updatedAt   DateTime      @updatedAt @map("updated_at")
-
-  @@index([userId])
-  @@index([productId])
-  @@index([variantId])
-  @@index([orderId])
-  @@map("projects")
-}
-
-// [2025-01-27 21:30:00] Design Template model - 设计模板
-model DesignTemplate {
-  id                String    @id @default(uuid())
-  name              String
-  description       String?   @db.Text
-  category          String? // 模板分类：'birthday', 'wedding', 'business', 'sports', etc.
-  tags              String[]  @default([])
-  thumbnailUrl      String?   @map("thumbnail_url")
-  previewUrl        String?   @map("preview_url")
-  designData        Json      @map("design_data")
-  productCategoryId String?   @map("product_category_id")
-  productCategory   Category? @relation(fields: [productCategoryId], references: [id], onDelete: SetNull)
-  usageCount        Int       @default(0) @map("usage_count")
-  likesCount        Int       @default(0) @map("likes_count")
-  isFeatured        Boolean   @default(false) @map("is_featured")
-  isActive          Boolean   @default(true) @map("is_active")
-  createdBy         String?   @map("created_by")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-
-  @@index([category])
-  @@index([productCategoryId])
-  @@index([isFeatured])
-  @@index([isActive])
-  @@index([createdAt])
-  @@map("design_templates")
-}
-
-// [2025-01-27 21:30:00] Design Comment model - 设计评论
-model DesignComment {
-  id          String          @id @default(uuid())
-  designId    String          @map("design_id")
-  design      Design          @relation(fields: [designId], references: [id], onDelete: Cascade)
-  userId      String?         @map("user_id")
-  parentId    String?         @map("parent_id")
-  parent      DesignComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies     DesignComment[] @relation("CommentReplies")
-  content     String          @db.Text
-  authorName  String?         @map("author_name")
-  authorEmail String?         @map("author_email")
-  likesCount  Int             @default(0) @map("likes_count")
-  isApproved  Boolean         @default(true) @map("is_approved")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
-
-  @@index([designId])
-  @@index([userId])
-  @@index([parentId])
-  @@index([createdAt])
-  @@index([isApproved])
-  @@map("design_comments")
-}
-
-// [2025-01-28 11:00:00] Coupon model for promotional discounts
-model Coupon {
-  id             String     @id @default(uuid())
-  code           String     @unique
-  type           CouponType
-  value          Decimal    @db.Decimal(10, 2)
-  minOrderValue  Decimal?   @map("min_order_value") @db.Decimal(10, 2)
-  maxDiscount    Decimal?   @map("max_discount") @db.Decimal(10, 2)
-  usageLimit     Int?       @map("usage_limit")
-  userUsageLimit Int?       @map("user_usage_limit")
-  usedCount      Int        @default(0) @map("used_count")
-  startDate      DateTime   @map("start_date")
-  endDate        DateTime   @map("end_date")
-  isActive       Boolean    @default(true) @map("is_active")
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
-
-  orderCoupons    OrderCoupon[]
-  // [2025-01-28 12:00:00] 促销活动关联
-  promotionCoupon PromotionCoupon?
-
-  @@index([code])
-  @@index([isActive])
-  @@index([startDate, endDate])
-  @@map("coupons")
-}
-
 enum CouponType {
   PERCENTAGE
   FIXED
 }
 
-// [2025-01-28 11:00:00] Track coupon usage in orders
-model OrderCoupon {
-  id             String   @id @default(uuid())
-  orderId        String   @map("order_id")
-  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  couponId       String   @map("coupon_id")
-  coupon         Coupon   @relation(fields: [couponId], references: [id])
-  userId         String?  @map("user_id")
-  discountAmount Decimal  @map("discount_amount") @db.Decimal(10, 2)
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  @@unique([orderId, couponId])
-  @@index([orderId])
-  @@index([couponId])
-  @@index([userId])
-  @@map("order_coupons")
-}
-
-// [2025-01-28 12:00:00] Promotion model for marketing campaigns
-model Promotion {
-  id             String                @id @default(uuid())
-  title          String
-  description    String?               @db.Text
-  bannerImageUrl String?               @map("banner_image_url")
-  linkUrl        String?               @map("link_url")
-  // [2025-01-28 12:00:00] 促销折扣类型和值
-  discountType   PromotionDiscountType @map("discount_type")
-  discountValue  Decimal               @map("discount_value") @db.Decimal(10, 2)
-  minOrderValue  Decimal?              @map("min_order_value") @db.Decimal(10, 2)
-  maxDiscount    Decimal?              @map("max_discount") @db.Decimal(10, 2)
-  // [2025-12-06 18:00:00] Buy X Get Y Free promotion fields for Issue #139
-  buyQuantity    Int?                  @map("buy_quantity") // Buy X items
-  getQuantity    Int?                  @map("get_quantity") // Get Y items free
-  giftProductId  String?               @map("gift_product_id") // Optional: specific gift product
-  giftVariantId  String?               @map("gift_variant_id") // Optional: specific gift variant
-  // [2025-01-28 12:00:00] 促销活动时间
-  startDate      DateTime              @map("start_date")
-  endDate        DateTime              @map("end_date")
-  // [2025-01-28 12:00:00] 促销活动状态和排序
-  isActive       Boolean               @default(true) @map("is_active")
-  sortOrder      Int                   @default(0) @map("sort_order")
-  createdAt      DateTime              @default(now()) @map("created_at")
-  updatedAt      DateTime              @updatedAt @map("updated_at")
-
-  // [2025-01-28 12:00:00] 关联关系
-  products        PromotionProduct[]
-  categories      PromotionCategory[]
-  coupon          PromotionCoupon? // 可选：关联特定优惠券
-  orderPromotions OrderPromotion[] // 跟踪促销活动使用情况
-  // [2025-12-06 18:00:00] Gift product and variant relations for buy-get-free promotions
-  giftProduct     Product?            @relation("PromotionGiftProduct", fields: [giftProductId], references: [id], onDelete: SetNull)
-  giftVariant     Variant?            @relation("PromotionGiftVariant", fields: [giftVariantId], references: [id], onDelete: SetNull)
-
-  @@index([isActive])
-  @@index([startDate, endDate])
-  @@index([sortOrder])
-  @@map("promotions")
-}
-
 enum PromotionDiscountType {
   PERCENTAGE
   FIXED
-  BUY_GET_FREE // [2025-12-06 18:00:00] Buy X Get Y Free promotion type for Issue #139
 }
 
-// [2025-01-28 12:00:00] 促销活动与商品的关联（多对多）
-model PromotionProduct {
-  id          String    @id @default(uuid())
-  promotionId String    @map("promotion_id")
-  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  productId   String    @map("product_id")
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now()) @map("created_at")
-
-  @@unique([promotionId, productId])
-  @@index([promotionId])
-  @@index([productId])
-  @@map("promotion_products")
+enum enum_fonts_category {
+  latin
+  chinese
+  japanese
+  hindi
+  arabic
+  korean
+  thai
 }
 
-// [2025-01-28 12:00:00] 促销活动与类目的关联（多对多）
-model PromotionCategory {
-  id          String    @id @default(uuid())
-  promotionId String    @map("promotion_id")
-  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  categoryId  String    @map("category_id")
-  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now()) @map("created_at")
-
-  @@unique([promotionId, categoryId])
-  @@index([promotionId])
-  @@index([categoryId])
-  @@map("promotion_categories")
-}
-
-// [2025-01-28 12:00:00] 促销活动与优惠券的关联（一对一或可选）
-model PromotionCoupon {
-  id          String    @id @default(uuid())
-  promotionId String    @unique @map("promotion_id")
-  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
-  couponId    String    @unique @map("coupon_id") // [2025-01-28 12:05:00] 一对一关系需要 unique
-  coupon      Coupon    @relation(fields: [couponId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now()) @map("created_at")
-
-  @@index([promotionId])
-  @@index([couponId])
-  @@map("promotion_coupons")
-}
-
-// [2025-01-28 12:00:00] 跟踪订单中使用的促销活动
-model OrderPromotion {
-  id             String    @id @default(uuid())
-  orderId        String    @map("order_id")
-  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  promotionId    String    @map("promotion_id")
-  promotion      Promotion @relation(fields: [promotionId], references: [id])
-  discountAmount Decimal   @map("discount_amount") @db.Decimal(10, 2)
-  createdAt      DateTime  @default(now()) @map("created_at")
-
-  @@unique([orderId, promotionId])
-  @@index([orderId])
-  @@index([promotionId])
-  @@map("order_promotions")
-}
-
-// [2025-12-06 17:20:00] PaymentMethod model for Issue #112 - Quick checkout with saved payment methods
-model PaymentMethod {
-  id                    String   @id @default(uuid())
-  userId                String   @map("user_id")
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stripePaymentMethodId String   @unique @map("stripe_payment_method_id")
-  type                  String   @default("card") // card, bank_account, etc.
-  cardBrand             String?  @map("card_brand") // visa, mastercard, amex, etc.
-  cardLast4             String?  @map("card_last4")
-  cardExpMonth          Int?     @map("card_exp_month")
-  cardExpYear           Int?     @map("card_exp_year")
-  isDefault             Boolean  @default(false) @map("is_default")
-  billingDetails        Json?    @map("billing_details") // Store billing address details
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-
-  @@index([userId])
-  @@index([isDefault])
-  @@index([stripePaymentMethodId])
-  @@map("payment_methods")
-}
-
-// [2025-12-07 01:30:00] Customer Service Chat models for Issue #144
-model ChatRoom {
-  id            String         @id @default(uuid())
-  customerId    String?        @map("customer_id") // Nullable for guest users
-  customer      User?          @relation("ChatRoomCustomer", fields: [customerId], references: [id], onDelete: SetNull)
-  agentId       String?        @map("agent_id") // Assigned customer service agent
-  agent         User?          @relation("ChatRoomAgent", fields: [agentId], references: [id], onDelete: SetNull)
-  status        ChatRoomStatus @default(OPEN)
-  customerName  String?        @map("customer_name") // For guest users
-  customerEmail String?        @map("customer_email") // For guest users
-  sessionId     String?        @map("session_id") // For guest users
-  lastMessageAt DateTime?      @map("last_message_at")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-
-  messages ChatMessage[]
-
-  @@index([customerId])
-  @@index([agentId])
-  @@index([status])
-  @@index([sessionId])
-  @@index([lastMessageAt])
-  @@map("chat_rooms")
-}
-
-enum ChatRoomStatus {
-  OPEN // Waiting for agent
-  ASSIGNED // Assigned to agent, waiting for response
-  ACTIVE // Active conversation
-  RESOLVED // Conversation resolved
-  CLOSED // Conversation closed
-}
-
-model ChatMessage {
-  id         String            @id @default(uuid())
-  roomId     String            @map("room_id")
-  room       ChatRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  senderId   String?           @map("sender_id") // Nullable for system messages
-  sender     User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
-  senderType MessageSenderType @map("sender_type")
-  content    String            @db.Text
-  isRead     Boolean           @default(false) @map("is_read")
-  readAt     DateTime?         @map("read_at")
-  createdAt  DateTime          @default(now()) @map("created_at")
-
-  @@index([roomId])
-  @@index([senderId])
-  @@index([senderType])
-  @@index([createdAt])
-  @@index([isRead])
-  @@map("chat_messages")
-}
-
-enum MessageSenderType {
-  CUSTOMER
-  AGENT
-  SYSTEM
+enum enum_fonts_source {
+  system
+  google
+  custom
 }

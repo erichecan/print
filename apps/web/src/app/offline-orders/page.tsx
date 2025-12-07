@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, ChangeEvent, FormEvent, DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
-import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig } from '@/lib/api'; // [2025-12-07 02:30:00] PRD v2.0: 引入配置API
+import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct } from '@/lib/api'; // [2025-12-07 08:00:00] 简化的产品 API
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // [2025-01-27 20:00:00] 引入翻译
 
@@ -385,20 +385,28 @@ export default function OfflineOrdersIntakePage() {
     { value: 'other', label: t('positionOther') },
   ], [t, isClient]);
 
-  // [2025-12-07 02:30:00] PRD v2.0: 获取订单配置数据（产品、颜色、尺码费用、可用性）
-  const { data: configData, isLoading: configLoading } = useSWR<{ success: boolean; data: OfflineOrderConfig }>(
-    'offline-order-config',
-    () => offlineOrderProductApi.getOrderConfig(),
+  // [2025-12-07 08:00:00] 使用简化的产品 API
+  const { data: productsData, error: productsError, isLoading: productsLoading } = useSWR(
+    'simple-offline-order-products',
+    () => simpleOfflineOrderProductApi.list(),
     {
       revalidateOnFocus: false,
     }
   );
 
-  const orderConfig = configData?.data || {
-    products: [],
-    colors: [],
-    sizeFees: [],
-    availability: [],
+  const products: SimpleOfflineOrderProduct[] = productsData?.data || [];
+
+  // [2025-12-07 08:00:00] 为了兼容现有代码，保留 orderConfig 结构
+  const orderConfig = {
+    products: products.map(p => ({
+      id: p.id,
+      name: p.name,
+      imageUrl: p.imageUrl || undefined,
+      isCustomerOwned: p.isCustomerOwned,
+    })),
+    colors: [], // 暂时保留，后续删除
+    sizeFees: [], // 暂时保留，后续删除
+    availability: [], // 暂时保留，后续删除
   };
 
   // [2025-12-07 02:30:00] PRD v2.0: 构建尺码费用映射表
@@ -1121,7 +1129,7 @@ export default function OfflineOrdersIntakePage() {
         <div className="mb-8 p-4 bg-gray-50 rounded-lg">
           <label className="block">
             <span className="block text-sm font-medium text-gray-700 mb-2">{t('addProduct')}：</span>
-            {configLoading ? (
+            {productsLoading ? (
               <select
                 className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 disabled

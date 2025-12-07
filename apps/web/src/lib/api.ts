@@ -949,6 +949,39 @@ export interface OfflineOrderConfig {
   availability: OfflineOrderAvailability[];
 }
 
+// [2025-12-07 08:00:00] 简化的产品 API
+export interface SimpleOfflineOrderProduct {
+  id: string;
+  name: string;
+  imageUrl?: string | null;
+  isCustomerOwned: boolean;
+  displayOrder?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const simpleOfflineOrderProductApi = {
+  // 获取产品列表（用于下拉菜单）
+  list: () => sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct[] }>('/api/offline-orders/products'),
+  // 管理接口
+  listAll: () => sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct[] }>('/api/proxy/admin/offline-orders/products/admin'),
+  create: (product: { name: string; imageUrl?: string; isCustomerOwned?: boolean; displayOrder?: number }) =>
+    sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>('/api/proxy/admin/offline-orders/products/admin', {
+      method: 'POST',
+      body: product,
+    }),
+  update: (id: string, product: { name?: string; imageUrl?: string; isCustomerOwned?: boolean; displayOrder?: number; isActive?: boolean }) =>
+    sameOriginApi<{ success: boolean; data: SimpleOfflineOrderProduct }>(`/api/proxy/admin/offline-orders/products/admin/${id}`, {
+      method: 'PATCH',
+      body: product,
+    }),
+  delete: (id: string) =>
+    sameOriginApi<{ success: boolean; message: string }>(`/api/proxy/admin/offline-orders/products/admin/${id}`, {
+      method: 'DELETE',
+    }),
+};
+
 export const offlineOrderProductApi = {
   // [2025-12-07 02:30:00] PRD v2.0: 获取订单配置数据
   getOrderConfig: () => sameOriginApi<OfflineOrderConfig>('/api/offline-orders/config'),
