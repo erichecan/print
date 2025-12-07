@@ -1212,6 +1212,7 @@ exports.updateOfflineWorkflowStages = async (req, res) => {
 /**
  * GET /api/offline-orders/config
  * [2025-12-07 02:30:00] PRD v2.0: 获取订单创建所需的所有配置数据
+ * [2025-01-27 12:00:00] 重构：使用snake_case模型和字段名
  * 返回：产品列表、颜色列表、尺码费用配置、可用性配置等
  */
 exports.getOrderConfig = async (req, res, next) => {
@@ -1221,71 +1222,77 @@ exports.getOrderConfig = async (req, res, next) => {
     let sizeFees = [];
     let availability = [];
 
-    // 尝试获取产品列表（如果表存在）
+    // 尝试获取产品列表（仅返回激活的产品）
     try {
-      products = await prisma.offlineOrderProduct.findMany({
+      products = await prisma.offline_order_products.findMany({
+        where: {
+          is_active: true,
+        },
+        orderBy: [
+          { display_order: 'asc' },
+          { name: 'asc' },
+        ],
+      });
+    } catch (error) {
+      logger.warn('[getOrderConfig] offline_order_products table not found, returning empty array');
+    }
+
+    // 尝试获取颜色列表
+    try {
+      colors = await prisma.offline_order_colors.findMany({
         orderBy: { name: 'asc' },
       });
     } catch (error) {
-      logger.warn('[getOrderConfig] OfflineOrderProduct table not found, returning empty array');
+      logger.warn('[getOrderConfig] offline_order_colors table not found, returning empty array');
     }
 
-    // 尝试获取颜色列表（如果表存在）
+    // 尝试获取尺码费用配置
     try {
-      colors = await prisma.offlineOrderColor.findMany({
-        orderBy: { name: 'asc' },
-      });
-    } catch (error) {
-      logger.warn('[getOrderConfig] OfflineOrderColor table not found, returning empty array');
-    }
-
-    // 尝试获取尺码费用配置（如果表存在）
-    try {
-      sizeFees = await prisma.offlineOrderSizeFee.findMany({
+      sizeFees = await prisma.offline_order_size_fees.findMany({
         orderBy: { size: 'asc' },
       });
     } catch (error) {
-      logger.warn('[getOrderConfig] OfflineOrderSizeFee table not found, returning default values');
+      logger.warn('[getOrderConfig] offline_order_size_fees table not found, returning default values');
       // 返回默认值
       sizeFees = [
-        { size: '2XL', additionalFee: 2.50 },
-        { size: '3XL', additionalFee: 3.50 },
-        { size: '4XL', additionalFee: 4.50 },
-        { size: '5XL', additionalFee: 5.50 },
+        { size: '2XL', additional_fee: 2.50 },
+        { size: '3XL', additional_fee: 3.50 },
+        { size: '4XL', additional_fee: 4.50 },
+        { size: '5XL', additional_fee: 5.50 },
       ];
     }
 
-    // 尝试获取可用性配置（如果表存在）
+    // 尝试获取可用性配置
     try {
-      availability = await prisma.offlineOrderProductColorSize.findMany({
-        where: { isAvailable: true },
+      availability = await prisma.offline_order_product_color_sizes.findMany({
+        where: { is_available: true },
       });
     } catch (error) {
-      logger.warn('[getOrderConfig] OfflineOrderProductColorSize table not found, returning empty array');
+      logger.warn('[getOrderConfig] offline_order_product_color_sizes table not found, returning empty array');
     }
 
-    // 构建响应数据
+    // 构建响应数据（转换为camelCase以匹配前端期望）
     const config = {
       products: products.map(p => ({
         id: p.id,
         name: p.name,
-        imageUrl: p.imageUrl,
-        isCustomerOwned: p.isCustomerOwned,
+        imageUrl: p.image_url,
+        isCustomerOwned: p.is_customer_owned,
       })),
       colors: colors.map(c => ({
         id: c.id,
         name: c.name,
-        hexCode: c.hexCode,
+        hexCode: c.hex_code,
       })),
       sizeFees: sizeFees.map(sf => ({
         size: sf.size,
-        additionalFee: typeof sf.additionalFee === 'number' ? sf.additionalFee : Number(sf.additionalFee),
+        additionalFee: typeof sf.additional_fee === 'number' ? sf.additional_fee : Number(sf.additional_fee),
       })),
       availability: availability.map(a => ({
-        productId: a.productId,
-        colorId: a.colorId,
+        productId: a.product_id,
+        colorId: a.color_id,
         size: a.size,
-        available: a.isAvailable,
+        available: a.is_available,
       })),
     };
 

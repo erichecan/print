@@ -1,8 +1,10 @@
 // [2025-12-06] PRD v2.0: 线下订单颜色管理控制器
 // [2025-12-07 04:20:00] 从备份文件恢复
+// [2025-01-27 10:30:00] 重构：使用snake_case模型和字段名
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { BadRequestError, NotFoundError, ConflictError, InternalServerError } = require('../utils/errors');
+const { v4: uuidv4 } = require('uuid');
 
 /**
  * 获取颜色列表
@@ -10,13 +12,19 @@ const { BadRequestError, NotFoundError, ConflictError, InternalServerError } = r
  */
 exports.listColors = async (req, res, next) => {
   try {
-    const colors = await prisma.offlineOrderColor.findMany({
+    const colors = await prisma.offline_order_colors.findMany({
       orderBy: { name: 'asc' },
     });
 
     res.json({
       success: true,
-      data: colors,
+      data: colors.map(c => ({
+        id: c.id,
+        name: c.name,
+        hexCode: c.hex_code,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      })),
       count: colors.length,
     });
   } catch (error) {
@@ -38,7 +46,7 @@ exports.createColor = async (req, res, next) => {
     }
 
     // 检查是否已存在同名颜色
-    const existing = await prisma.offlineOrderColor.findUnique({
+    const existing = await prisma.offline_order_colors.findUnique({
       where: { name: name.trim() },
     });
 
@@ -46,16 +54,25 @@ exports.createColor = async (req, res, next) => {
       return next(new ConflictError('Color with this name already exists'));
     }
 
-    const color = await prisma.offlineOrderColor.create({
+    const color = await prisma.offline_order_colors.create({
       data: {
+        id: uuidv4(),
         name: name.trim(),
-        hexCode: hexCode?.trim() || null,
+        hex_code: hexCode?.trim() || null,
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
 
     res.status(201).json({
       success: true,
-      data: color,
+      data: {
+        id: color.id,
+        name: color.name,
+        hexCode: color.hex_code,
+        createdAt: color.created_at,
+        updatedAt: color.updated_at,
+      },
     });
   } catch (error) {
     if (error.code === 'P2002') {
@@ -75,7 +92,7 @@ exports.updateColor = async (req, res, next) => {
     const { id } = req.params;
     const { name, hexCode } = req.body;
 
-    const existing = await prisma.offlineOrderColor.findUnique({
+    const existing = await prisma.offline_order_colors.findUnique({
       where: { id },
     });
 
@@ -83,14 +100,17 @@ exports.updateColor = async (req, res, next) => {
       return next(new NotFoundError('Color not found'));
     }
 
-    const updateData = {};
+    const updateData = {
+      updated_at: new Date(),
+    };
+
     if (name !== undefined) {
       if (!name || !name.trim()) {
         return next(new BadRequestError('Color name cannot be empty'));
       }
       // 如果名称改变，检查新名称是否已被占用
       if (name.trim() !== existing.name) {
-        const nameExists = await prisma.offlineOrderColor.findUnique({
+        const nameExists = await prisma.offline_order_colors.findUnique({
           where: { name: name.trim() },
         });
         if (nameExists) {
@@ -100,21 +120,34 @@ exports.updateColor = async (req, res, next) => {
       updateData.name = name.trim();
     }
     if (hexCode !== undefined) {
-      updateData.hexCode = hexCode?.trim() || null;
+      updateData.hex_code = hexCode?.trim() || null;
     }
 
-    const color = await prisma.offlineOrderColor.update({
+    const color = await prisma.offline_order_colors.update({
       where: { id },
       data: updateData,
     });
 
     res.json({
       success: true,
-      data: color,
+      data: {
+        id: color.id,
+        name: color.name,
+        hexCode: color.hex_code,
+        createdAt: color.created_at,
+        updatedAt: color.updated_at,
+      },
     });
   } catch (error) {
     if (error.code === 'P2002') {
       return next(new ConflictError('Color with this name already exists'));
+    }
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Color not found',
+      });
     }
     logger.error('[offlineOrderColorController] Error updating color:', error);
     next(new InternalServerError('Failed to update color'));
@@ -129,7 +162,7 @@ exports.deleteColor = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const existing = await prisma.offlineOrderColor.findUnique({
+    const existing = await prisma.offline_order_colors.findUnique({
       where: { id },
     });
 
@@ -137,7 +170,7 @@ exports.deleteColor = async (req, res, next) => {
       return next(new NotFoundError('Color not found'));
     }
 
-    await prisma.offlineOrderColor.delete({
+    await prisma.offline_order_colors.delete({
       where: { id },
     });
 
@@ -146,6 +179,13 @@ exports.deleteColor = async (req, res, next) => {
       message: 'Color deleted successfully',
     });
   } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: 'Color not found',
+      });
+    }
     logger.error('[offlineOrderColorController] Error deleting color:', error);
     next(new InternalServerError('Failed to delete color'));
   }

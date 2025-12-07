@@ -915,19 +915,25 @@ export const salesOrdersApi = {
 };
 
 // [2025-12-06 17:00:00] Offline Order Product Configuration API
+// [2025-01-27 14:00:00] 重构：更新接口定义以匹配后端返回格式
 // 获取线下订单配置数据（产品、颜色、尺寸费用、可用性等）
 export interface OfflineOrderProduct {
   id: string;
   name: string;
-  categoryId: string;
-  categoryName: string;
-  basePrice: number;
+  imageUrl?: string | null;
+  isCustomerOwned: boolean;
+  displayOrder?: number;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OfflineOrderColor {
   id: string;
   name: string;
-  hex?: string;
+  hexCode?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OfflineOrderSizeFee {

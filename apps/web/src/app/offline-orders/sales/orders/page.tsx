@@ -6,7 +6,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
+import { authApi, salesOrdersApi, SalesOfflineOrderSummary, api } from '@/lib/api';
+import useSWR from 'swr';
 
 // [2025-12-07 06:20:00] 状态选择组件 - 圆角标签 + 下拉箭头
 function StatusSelector({
@@ -90,6 +91,20 @@ function StatusSelector({
   );
 }
 
+// [2025-01-27 13:00:00] 配置管理相关接口类型
+interface Color {
+  id: string;
+  name: string;
+  hexCode: string | null;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  isCustomerOwned: boolean;
+}
+
 export default function SalesOrdersPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -100,6 +115,26 @@ export default function SalesOrdersPage() {
   const [stages, setStages] = useState<Array<{ key: string; label: string }>>([]);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  
+  // [2025-01-27 13:00:00] Tab状态管理
+  const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
+  
+  // [2025-01-27 13:00:00] 配置管理状态
+  const [configTab, setConfigTab] = useState<'colors' | 'products'>('colors');
+  const [colors, setColors] = useState<Color[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [newColorName, setNewColorName] = useState('');
+  const [newColorHex, setNewColorHex] = useState('');
+  const [editingColorId, setEditingColorId] = useState<string | null>(null);
+  const [editColorName, setEditColorName] = useState('');
+  const [editColorHex, setEditColorHex] = useState('');
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductImageUrl, setNewProductImageUrl] = useState('');
+  const [newProductIsCustomerOwned, setNewProductIsCustomerOwned] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editProductName, setEditProductName] = useState('');
+  const [editProductImageUrl, setEditProductImageUrl] = useState('');
+  const [editProductIsCustomerOwned, setEditProductIsCustomerOwned] = useState(false);
 
   // [2025-12-07 05:15:00] 订单状态选项
   // [2025-12-07 06:50:00] 添加 ACTIVE_RUSH 状态
@@ -236,6 +271,126 @@ export default function SalesOrdersPage() {
 
   const isManager = currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase());
 
+  // [2025-01-27 13:10:00] 配置管理数据获取
+  const { data: colorsData, mutate: mutateColors } = useSWR(
+    activeTab === 'config' && configTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
+    async (url) => {
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch colors');
+      return response.json();
+    }
+  );
+
+  const { data: productsData, mutate: mutateProducts } = useSWR(
+    activeTab === 'config' && configTab === 'products' ? '/api/proxy/admin/offline-order-products' : null,
+    async (url) => {
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch products');
+      return response.json();
+    }
+  );
+
+  useEffect(() => {
+    if (colorsData?.data) {
+      setColors(colorsData.data);
+    }
+  }, [colorsData]);
+
+  useEffect(() => {
+    if (productsData?.data) {
+      setProducts(productsData.data);
+    }
+  }, [productsData]);
+
+  // [2025-01-27 13:15:00] 颜色管理函数
+  const handleCreateColor = async () => {
+    if (!newColorName.trim()) return;
+    try {
+      await api('/api/proxy/admin/offline-order-colors', {
+        method: 'POST',
+        body: { name: newColorName.trim(), hexCode: newColorHex.trim() || null },
+      });
+      setNewColorName('');
+      setNewColorHex('');
+      mutateColors();
+    } catch (err: any) {
+      alert(err.message || '创建失败');
+    }
+  };
+
+  const handleUpdateColor = async (id: string) => {
+    if (!editColorName.trim()) return;
+    try {
+      await api(`/api/proxy/admin/offline-order-colors/${id}`, {
+        method: 'PATCH',
+        body: { name: editColorName.trim(), hexCode: editColorHex.trim() || null },
+      });
+      setEditingColorId(null);
+      mutateColors();
+    } catch (err: any) {
+      alert(err.message || '更新失败');
+    }
+  };
+
+  const handleDeleteColor = async (id: string) => {
+    if (!confirm('确定要删除这个颜色吗？')) return;
+    try {
+      await api(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
+      mutateColors();
+    } catch (err: any) {
+      alert(err.message || '删除失败');
+    }
+  };
+
+  // [2025-01-27 13:20:00] 产品管理函数
+  const handleCreateProduct = async () => {
+    if (!newProductName.trim()) return;
+    try {
+      await api('/api/proxy/admin/offline-order-products', {
+        method: 'POST',
+        body: {
+          name: newProductName.trim(),
+          imageUrl: newProductImageUrl.trim() || null,
+          isCustomerOwned: newProductIsCustomerOwned,
+        },
+      });
+      setNewProductName('');
+      setNewProductImageUrl('');
+      setNewProductIsCustomerOwned(false);
+      mutateProducts();
+    } catch (err: any) {
+      alert(err.message || '创建失败');
+    }
+  };
+
+  const handleUpdateProduct = async (id: string) => {
+    if (!editProductName.trim()) return;
+    try {
+      await api(`/api/proxy/admin/offline-order-products/${id}`, {
+        method: 'PATCH',
+        body: {
+          name: editProductName.trim(),
+          imageUrl: editProductImageUrl.trim() || null,
+          isCustomerOwned: editProductIsCustomerOwned,
+        },
+      });
+      setEditingProductId(null);
+      mutateProducts();
+    } catch (err: any) {
+      alert(err.message || '更新失败');
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm('确定要删除这个产品吗？')) return;
+    try {
+      await api(`/api/proxy/admin/offline-order-products/${id}`, { method: 'DELETE' });
+      mutateProducts();
+    } catch (err: any) {
+      alert(err.message || '删除失败');
+    }
+  };
+
   if (authChecking) {
     return (
       <div className="sales-orders-shell">
@@ -251,19 +406,10 @@ export default function SalesOrdersPage() {
       <div className="sales-orders-card">
         <header className="sales-orders-header">
           <div>
-            <h1>Sales 线下订单列表</h1>
+            <h1>Sales 线下订单管理</h1>
             <p>在这里查看你创建的线下订单（主管可查看全部订单）。</p>
           </div>
           <div className="sales-orders-header-actions">
-            {isManager && (
-              <button
-                type="button"
-                className="sales-orders-config-btn"
-                onClick={() => router.push('/admin/offline-orders/products')}
-              >
-                配置管理
-              </button>
-            )}
             <button
               type="button"
               className="sales-orders-new"
@@ -274,7 +420,31 @@ export default function SalesOrdersPage() {
           </div>
         </header>
 
+        {/* [2025-01-27 13:30:00] Tab切换 */}
+        <div className="sales-orders-tabs">
+          <button
+            type="button"
+            className={`sales-orders-tab ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            订单列表
+          </button>
+          {isManager && (
+            <button
+              type="button"
+              className={`sales-orders-tab ${activeTab === 'config' ? 'active' : ''}`}
+              onClick={() => setActiveTab('config')}
+            >
+              配置管理
+            </button>
+          )}
+        </div>
+
         {error && <div className="sales-orders-error">{error}</div>}
+
+        {/* [2025-01-27 13:35:00] 订单列表Tab内容 */}
+        {activeTab === 'orders' && (
+          <div className="sales-orders-tab-content">
 
         {loading ? (
           <p>正在加载订单...</p>
@@ -371,6 +541,297 @@ export default function SalesOrdersPage() {
             </tbody>
           </table>
         )}
+          </div>
+        )}
+
+        {/* [2025-01-27 13:40:00] 配置管理Tab内容 */}
+        {activeTab === 'config' && isManager && (
+          <div className="sales-orders-tab-content">
+            <div className="config-sub-tabs">
+              <button
+                type="button"
+                className={`config-sub-tab ${configTab === 'colors' ? 'active' : ''}`}
+                onClick={() => setConfigTab('colors')}
+              >
+                颜色管理
+              </button>
+              <button
+                type="button"
+                className={`config-sub-tab ${configTab === 'products' ? 'active' : ''}`}
+                onClick={() => setConfigTab('products')}
+              >
+                产品管理
+              </button>
+            </div>
+
+            {configTab === 'colors' && (
+              <div className="config-tab-panel">
+                <h2>颜色管理</h2>
+                <p className="config-desc">管理产品可选的颜色列表</p>
+                
+                <div className="config-form">
+                  <h3>添加新颜色</h3>
+                  <div className="config-form-row">
+                    <input
+                      type="text"
+                      placeholder="颜色名称"
+                      value={newColorName}
+                      onChange={(e) => setNewColorName(e.target.value)}
+                      className="config-input"
+                    />
+                    <input
+                      type="text"
+                      placeholder="十六进制颜色码（可选）"
+                      value={newColorHex}
+                      onChange={(e) => setNewColorHex(e.target.value)}
+                      className="config-input"
+                      style={{ width: '200px' }}
+                    />
+                    <button onClick={handleCreateColor} className="config-btn config-btn-primary">
+                      添加
+                    </button>
+                  </div>
+                </div>
+
+                <div className="config-table-wrapper">
+                  <table className="config-table">
+                    <thead>
+                      <tr>
+                        <th>颜色名称</th>
+                        <th>颜色码</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {colors.map((color) => (
+                        <tr key={color.id}>
+                          <td>
+                            {editingColorId === color.id ? (
+                              <input
+                                type="text"
+                                value={editColorName}
+                                onChange={(e) => setEditColorName(e.target.value)}
+                                className="config-input-inline"
+                              />
+                            ) : (
+                              color.name
+                            )}
+                          </td>
+                          <td>
+                            {editingColorId === color.id ? (
+                              <input
+                                type="text"
+                                value={editColorHex}
+                                onChange={(e) => setEditColorHex(e.target.value)}
+                                className="config-input-inline"
+                              />
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {color.hexCode && (
+                                  <div
+                                    style={{
+                                      width: '24px',
+                                      height: '24px',
+                                      borderRadius: '4px',
+                                      background: color.hexCode,
+                                      border: '1px solid #ddd',
+                                    }}
+                                  />
+                                )}
+                                {color.hexCode || '—'}
+                              </div>
+                            )}
+                          </td>
+                          <td>
+                            {editingColorId === color.id ? (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleUpdateColor(color.id)}
+                                  className="config-btn config-btn-success"
+                                >
+                                  保存
+                                </button>
+                                <button
+                                  onClick={() => setEditingColorId(null)}
+                                  className="config-btn config-btn-secondary"
+                                >
+                                  取消
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => {
+                                    setEditingColorId(color.id);
+                                    setEditColorName(color.name);
+                                    setEditColorHex(color.hexCode || '');
+                                  }}
+                                  className="config-btn config-btn-secondary"
+                                >
+                                  编辑
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteColor(color.id)}
+                                  className="config-btn config-btn-danger"
+                                >
+                                  删除
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {colors.length === 0 && (
+                    <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>暂无颜色配置</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {configTab === 'products' && (
+              <div className="config-tab-panel">
+                <h2>产品管理</h2>
+                <p className="config-desc">管理线下订单可用的产品列表（显示哪些产品可以定制）</p>
+                
+                <div className="config-form">
+                  <h3>添加新产品</h3>
+                  <div className="config-form-row">
+                    <input
+                      type="text"
+                      placeholder="产品名称"
+                      value={newProductName}
+                      onChange={(e) => setNewProductName(e.target.value)}
+                      className="config-input"
+                    />
+                    <input
+                      type="text"
+                      placeholder="图片 URL（可选）"
+                      value={newProductImageUrl}
+                      onChange={(e) => setNewProductImageUrl(e.target.value)}
+                      className="config-input"
+                    />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
+                      <input
+                        type="checkbox"
+                        checked={newProductIsCustomerOwned}
+                        onChange={(e) => setNewProductIsCustomerOwned(e.target.checked)}
+                      />
+                      客户自有产品
+                    </label>
+                    <button onClick={handleCreateProduct} className="config-btn config-btn-primary">
+                      添加
+                    </button>
+                  </div>
+                </div>
+
+                <div className="config-table-wrapper">
+                  <table className="config-table">
+                    <thead>
+                      <tr>
+                        <th>产品名称</th>
+                        <th>图片</th>
+                        <th>类型</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.map((product) => (
+                        <tr key={product.id}>
+                          <td>
+                            {editingProductId === product.id ? (
+                              <input
+                                type="text"
+                                value={editProductName}
+                                onChange={(e) => setEditProductName(e.target.value)}
+                                className="config-input-inline"
+                              />
+                            ) : (
+                              product.name
+                            )}
+                          </td>
+                          <td>
+                            {editingProductId === product.id ? (
+                              <input
+                                type="text"
+                                value={editProductImageUrl}
+                                onChange={(e) => setEditProductImageUrl(e.target.value)}
+                                className="config-input-inline"
+                                placeholder="图片 URL"
+                              />
+                            ) : product.imageUrl ? (
+                              <img src={product.imageUrl} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td>
+                            {editingProductId === product.id ? (
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <input
+                                  type="checkbox"
+                                  checked={editProductIsCustomerOwned}
+                                  onChange={(e) => setEditProductIsCustomerOwned(e.target.checked)}
+                                />
+                                客户自有
+                              </label>
+                            ) : (
+                              <span className={`tag ${product.isCustomerOwned ? 'tag-rush' : 'tag-active'}`}>
+                                {product.isCustomerOwned ? '客户自有' : '标准产品'}
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            {editingProductId === product.id ? (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleUpdateProduct(product.id)}
+                                  className="config-btn config-btn-success"
+                                >
+                                  保存
+                                </button>
+                                <button
+                                  onClick={() => setEditingProductId(null)}
+                                  className="config-btn config-btn-secondary"
+                                >
+                                  取消
+                                </button>
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => {
+                                    setEditingProductId(product.id);
+                                    setEditProductName(product.name);
+                                    setEditProductImageUrl(product.imageUrl || '');
+                                    setEditProductIsCustomerOwned(product.isCustomerOwned);
+                                  }}
+                                  className="config-btn config-btn-secondary"
+                                >
+                                  编辑
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteProduct(product.id)}
+                                  className="config-btn config-btn-danger"
+                                >
+                                  删除
+                                </button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {products.length === 0 && (
+                    <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>暂无产品配置</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <style jsx>{`
@@ -401,20 +862,175 @@ export default function SalesOrdersPage() {
           gap: 0.75rem;
           align-items: center;
         }
-        .sales-orders-config-btn {
-          border: none;
-          border-radius: 999px;
-          padding: 0.6rem 1.3rem;
-          font-size: 0.9rem;
-          font-weight: 600;
-          background: linear-gradient(135deg, #7c3aed, #6d28d9);
-          color: #ffffff;
-          cursor: pointer;
-          transition: transform 0.1s ease, box-shadow 0.1s ease;
+        /* [2025-01-27 13:50:00] Tab样式 */
+        .sales-orders-tabs {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 1.5rem;
+          border-bottom: 2px solid #e5e7eb;
         }
-        .sales-orders-config-btn:hover {
-          box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
-          transform: translateY(-1px);
+        .sales-orders-tab {
+          padding: 0.75rem 1.5rem;
+          border: none;
+          background: transparent;
+          color: #6b7280;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
+          margin-bottom: -2px;
+          transition: all 0.2s ease;
+        }
+        .sales-orders-tab:hover {
+          color: #2563eb;
+        }
+        .sales-orders-tab.active {
+          color: #2563eb;
+          border-bottom-color: #2563eb;
+        }
+        .sales-orders-tab-content {
+          min-height: 400px;
+        }
+        /* [2025-01-27 13:55:00] 配置管理样式 */
+        .config-sub-tabs {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 2rem;
+          border-bottom: 2px solid #e5e7eb;
+        }
+        .config-sub-tab {
+          padding: 0.75rem 1.5rem;
+          border: none;
+          background: transparent;
+          color: #6b7280;
+          font-size: 0.95rem;
+          font-weight: 600;
+          cursor: pointer;
+          border-bottom: 2px solid transparent;
+          margin-bottom: -2px;
+          transition: all 0.2s ease;
+        }
+        .config-sub-tab:hover {
+          color: #2563eb;
+        }
+        .config-sub-tab.active {
+          color: #2563eb;
+          border-bottom-color: #2563eb;
+        }
+        .config-tab-panel h2 {
+          margin: 0 0 0.5rem;
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #111827;
+        }
+        .config-desc {
+          margin: 0 0 2rem;
+          font-size: 0.95rem;
+          color: #6b7280;
+        }
+        .config-form {
+          background: #f9fafb;
+          padding: 1.5rem;
+          border-radius: 12px;
+          margin-bottom: 2rem;
+        }
+        .config-form h3 {
+          margin: 0 0 1rem;
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: #111827;
+        }
+        .config-form-row {
+          display: flex;
+          gap: 0.5rem;
+          align-items: flex-end;
+          flex-wrap: wrap;
+        }
+        .config-input {
+          padding: 0.5rem;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 0.95rem;
+          flex: 1;
+          min-width: 200px;
+        }
+        .config-input:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .config-input-inline {
+          padding: 0.25rem 0.5rem;
+          border: 1px solid #d1d5db;
+          border-radius: 4px;
+          font-size: 0.875rem;
+          width: 100%;
+        }
+        .config-input-inline:focus {
+          outline: none;
+          border-color: #2563eb;
+        }
+        .config-btn {
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .config-btn-primary {
+          background: #2563eb;
+          color: #ffffff;
+        }
+        .config-btn-primary:hover {
+          background: #1d4ed8;
+        }
+        .config-btn-success {
+          background: #10b981;
+          color: #ffffff;
+        }
+        .config-btn-success:hover {
+          background: #059669;
+        }
+        .config-btn-danger {
+          background: #ef4444;
+          color: #ffffff;
+        }
+        .config-btn-danger:hover {
+          background: #dc2626;
+        }
+        .config-btn-secondary {
+          background: #ffffff;
+          color: #374151;
+          border: 1px solid #d1d5db;
+        }
+        .config-btn-secondary:hover {
+          background: #f9fafb;
+        }
+        .config-table-wrapper {
+          overflow-x: auto;
+        }
+        .config-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        .config-table thead {
+          background: #f9fafb;
+        }
+        .config-table th {
+          padding: 0.75rem;
+          text-align: left;
+          font-weight: 600;
+          color: #111827;
+          border-bottom: 2px solid #e5e7eb;
+        }
+        .config-table td {
+          padding: 0.75rem;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .config-table tbody tr:hover {
+          background: #f9fafb;
         }
         .sales-orders-header h1 {
           margin: 0 0 0.4rem;
@@ -624,6 +1240,18 @@ export default function SalesOrdersPage() {
           .sales-orders-table {
             display: block;
             overflow-x: auto;
+          }
+          .sales-orders-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+          }
+          .config-sub-tabs {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+          }
+          .config-form-row {
+            flex-direction: column;
+            align-items: stretch;
           }
         }
       `}</style>
