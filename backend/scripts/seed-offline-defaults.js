@@ -98,7 +98,7 @@ async function seedProducts() {
         continue;
       }
       
-      // 创建产品
+      // [2025-12-07 09:10:00] 创建产品 - created_at 和 updated_at 由 Prisma 自动处理
       const created = await prisma.offline_order_products.create({
         data: {
           id: uuidv4(),
@@ -107,8 +107,8 @@ async function seedProducts() {
           is_customer_owned: product.isCustomerOwned || false,
           display_order: product.displayOrder,
           is_active: true,
-          created_at: new Date(),
-          updated_at: new Date(),
+          // created_at 由 @default(now()) 自动处理
+          // updated_at 由 @updatedAt 自动处理
         },
       });
       
@@ -142,13 +142,14 @@ async function seedColors() {
         continue;
       }
       
-      // 创建颜色
+      // [2025-12-07 09:10:00] 创建颜色 - created_at 由 @default(now()) 自动处理
       await prisma.offline_order_colors.create({
         data: {
           id: uuidv4(),
           name: color.name,
           hex_code: color.hexCode || null,
-          created_at: new Date(),
+          // created_at 由 Prisma 自动处理（schema 中有 @default(now())）
+          // updated_at 需要手动设置（schema 中没有 @updatedAt）
           updated_at: new Date(),
         },
       });
