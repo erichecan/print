@@ -3,9 +3,10 @@
 const express = require('express');
 const router = express.Router();
 const offlineOrderSizeFeeController = require('../controllers/offlineOrderSizeFeeController');
-const { authorizeRoles } = require('../middleware/auth');
+const { authenticate, authorizeRoles } = require('../middleware/auth');
 
-// 允许 SALES_MANAGER 和 ADMIN 访问
+// [2025-12-07 06:30:00] 先认证，再检查角色权限
+router.use(authenticate);
 router.use(authorizeRoles('SALES_MANAGER', 'ADMIN'));
 
 router.get('/', offlineOrderSizeFeeController.getSizeFees);
