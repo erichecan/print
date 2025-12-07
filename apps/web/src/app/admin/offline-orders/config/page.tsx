@@ -54,49 +54,50 @@ export default function OfflineOrdersConfigPage() {
   const [editingSizeFeeId, setEditingSizeFeeId] = useState<string | null>(null);
   const [editSizeFee, setEditSizeFee] = useState('');
 
+  // [2025-12-07 08:00:00] 自定义 fetch 函数，从 localStorage 读取 token 并添加到 Authorization header
+  const customFetcher = async (url: string) => {
+    console.log('[Config Page] 🔵 Fetching from:', url);
+    
+    // [2025-12-07 08:00:00] 从 localStorage 读取 token
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    console.log('[Config Page] 🔵 Token in localStorage:', token ? token.substring(0, 30) + '...' : 'none');
+    
+    try {
+      const response = await fetch(url, { 
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          // [2025-12-07 08:00:00] 如果存在 token，添加到 Authorization header
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        cache: 'no-store', // 避免缓存
+      });
+      
+      console.log('[Config Page] 🔵 Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Config Page] ❌ Fetch failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorText,
+        });
+        throw new Error(`Failed to fetch: ${response.status} ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log('[Config Page] ✅ Fetched successfully:', data);
+      return data;
+    } catch (error: any) {
+      console.error('[Config Page] ❌ Fetch error:', error);
+      throw error;
+    }
+  };
+
   const { data: colorsData, mutate: mutateColors } = useSWR(
     activeTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
-    async (url) => {
-      console.log('[Config Page] 🔵 Fetching colors from:', url);
-      console.log('[Config Page] 🔵 Cookies:', document.cookie);
-      
-      try {
-        // [2025-12-07 07:15:00] 确保 Cookie 被正确传递
-        // 在跨域请求中，需要明确设置 credentials: 'include'
-        const response = await fetch(url, { 
-          method: 'GET',
-          credentials: 'include', // 确保 Cookie 被发送
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          cache: 'no-store', // 避免缓存
-        });
-        
-        console.log('[Config Page] 🔵 Response status:', response.status);
-        console.log('[Config Page] 🔵 Response headers:', {
-          'content-type': response.headers.get('content-type'),
-          'set-cookie': response.headers.get('set-cookie'),
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('[Config Page] ❌ Fetch failed:', {
-            status: response.status,
-            statusText: response.statusText,
-            error: errorText,
-          });
-          throw new Error(`Failed to fetch colors: ${response.status} ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('[Config Page] ✅ Colors fetched successfully:', data);
-        return data;
-      } catch (error: any) {
-        console.error('[Config Page] ❌ Fetch error:', error);
-        throw error;
-      }
-    }
+    customFetcher
   );
 
   const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(

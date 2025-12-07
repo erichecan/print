@@ -93,7 +93,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 6765,
+                      "duration": 6821,
                       "error": {
                         "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
                         "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:61:36",
@@ -139,7 +139,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T07:11:36.224Z",
+                      "startTime": "2025-12-07T07:13:49.468Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -180,8 +180,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T07:11:35.986Z",
-    "duration": 7300.195000000001,
+    "startTime": "2025-12-07T07:13:49.028Z",
+    "duration": 7501.79,
     "expected": 0,
     "skipped": 0,
     "unexpected": 1,
