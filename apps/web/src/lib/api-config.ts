@@ -30,9 +30,9 @@ function getApiBaseUrl(): string {
     // [2025-12-01 12:45:00] Cloud Run 生产环境兜底：如果检测到是 print-main-frontend 域名，强制使用后端 API
     // 这是为了解决 Cloud Run 上 NEXT_PUBLIC_API_URL 可能未正确配置的问题
     const hostname = window.location.hostname;
-    if (hostname.includes('print-main-frontend-234065158862') && hostname.endsWith('.us-central1.run.app')) {
+    if (hostname.includes('print-main-frontend') && hostname.endsWith('.us-central1.run.app')) {
       // 强制使用后端 API 地址，避免前端请求自己的 /api 导致 404
-      const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
+      const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
       console.warn('[API Config] ⚠️ 检测到 Cloud Run 前端环境，但 NEXT_PUBLIC_API_URL 未配置，使用硬编码后端地址:', backendApiUrl);
       return backendApiUrl;
     }

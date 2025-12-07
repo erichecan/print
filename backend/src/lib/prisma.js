@@ -63,20 +63,22 @@ function getPrisma() {
       
       logger.info('[2025-01-29 17:10:00] 📦 Creating Prisma Client instance (binary engine mode)...');
       
-      // [2025-01-29 17:10:00] 创建 Prisma Client 实例（使用二进制引擎）
+      // [2025-12-07 04:00:00] 创建 Prisma Client 实例（使用二进制引擎）
+      // 配置连接池，延迟连接以避免阻塞启动
+      const clientConfig = {
+        ...prismaConfig,
+        log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+        // [2025-12-07 04:00:00] 延迟连接，不立即连接数据库
+        // Prisma Client 会在第一次查询时自动连接
+      };
+      
       if (process.env.NODE_ENV === 'production') {
-        // 生产环境：使用模块级单例
-        prisma = new PrismaClient(prismaConfig);
+        // 生产环境：使用模块级单例，不立即连接
+        prisma = new PrismaClient(clientConfig);
         
-        // [2025-01-27 23:30:00] Handle connection errors gracefully
-        prisma.$connect()
-          .then(() => {
-            logger.info('[2025-01-29 17:10:00] ✅ Prisma Client connected to database successfully (binary engine)');
-          })
-          .catch((error) => {
-            logger.error('[2025-01-29 17:10:00] ❌ Failed to connect Prisma Client to database:', error.message);
-            logger.error('[2025-01-29 17:10:00]   错误详情:', error);
-          });
+        // [2025-12-07 04:00:00] 不立即连接，让服务器先启动
+        // Prisma Client 会在第一次查询时自动连接
+        logger.info('[2025-01-29 17:10:00] ✅ Prisma Client instance created (will connect on first query)');
       } else {
         // 开发环境：使用全局单例（支持热重载）
         if (!global.prisma) {
