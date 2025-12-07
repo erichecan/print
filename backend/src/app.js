@@ -176,6 +176,21 @@ app.get('/api/version', (req, res) => {
   });
 });
 
+// [2025-12-07 08:15:00] 添加全局中间件，记录所有 /api/admin 请求（在路由注册之前）
+app.use('/api/admin', (req, res, next) => {
+  logger.info('[App] 🔵 /api/admin request received (before routing)', {
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    url: req.url,
+    hasAuthHeader: !!req.headers.authorization,
+    tokenPreview: req.headers.authorization?.substring(0, 30) || 'none',
+    allHeaders: Object.keys(req.headers),
+  });
+  next();
+});
+
 // API routes
 app.use('/api/products', require('./routes/products'));
 app.use('/api/product-color-images', require('./routes/productColorImages')); // [2025-01-30 23:55:00] Product color image mapping API
