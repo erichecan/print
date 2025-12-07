@@ -74,45 +74,33 @@ export default function OfflineOrdersConfigPage() {
           <div className="config-section">
             <h2 className="config-section-title">产品管理</h2>
             <p className="config-section-desc">管理线下订单可用的产品列表</p>
-            <p className="config-section-info">
-              API 端点: <code>/api/admin/offline-order-products</code>
-            </p>
-            <p className="config-section-note">
-              使用 API 工具（如 Postman）或联系系统管理员进行配置
-            </p>
+            <Link href="/admin/products" target="_blank" className="config-link-btn">
+              前往产品管理 →
+            </Link>
           </div>
 
           <div className="config-section">
             <h2 className="config-section-title">颜色管理</h2>
             <p className="config-section-desc">管理产品可选的颜色列表</p>
-            <p className="config-section-info">
-              API 端点: <code>/api/admin/offline-order-colors</code>
-            </p>
-            <p className="config-section-note">
-              使用 API 工具（如 Postman）或联系系统管理员进行配置
-            </p>
+            <Link href="/admin/offline-order-colors" target="_blank" className="config-link-btn">
+              前往颜色管理 →
+            </Link>
           </div>
 
           <div className="config-section">
             <h2 className="config-section-title">尺码费用配置</h2>
             <p className="config-section-desc">配置大尺码（2XL-5XL）的额外费用</p>
-            <p className="config-section-info">
-              API 端点: <code>/api/admin/offline-order-size-fees</code>
-            </p>
-            <p className="config-section-note">
-              使用 API 工具（如 Postman）或联系系统管理员进行配置
-            </p>
+            <Link href="/admin/offline-order-size-fees" target="_blank" className="config-link-btn">
+              前往尺码费用配置 →
+            </Link>
           </div>
 
           <div className="config-section">
             <h2 className="config-section-title">可用性配置</h2>
             <p className="config-section-desc">配置产品-颜色-尺码组合的可用性</p>
-            <p className="config-section-info">
-              API 端点: <code>/api/admin/offline-order-product-color-sizes</code>
-            </p>
-            <p className="config-section-note">
-              使用 API 工具（如 Postman）或联系系统管理员进行配置
-            </p>
+            <Link href="/admin/offline-order-product-color-sizes" target="_blank" className="config-link-btn">
+              前往可用性配置 →
+            </Link>
           </div>
 
           <div className="config-section">
