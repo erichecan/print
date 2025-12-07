@@ -274,11 +274,11 @@ exports.authorizeRoles = (...allowedRoles) => {
       allowedRolesRaw: allowedRoles,
       allowedRoles: allowed,
       isAllowed: allowed.includes(userRole),
-      comparison: {
-        'SALES_MANAGER' === 'SALES_MANAGER': 'SALES_MANAGER' === 'SALES_MANAGER',
-        'SALES_MANAGER' in allowed: allowed.includes('SALES_MANAGER'),
-        userRoleInAllowed: allowed.includes(userRole),
-      },
+            comparison: {
+              salesManagerEquals: 'SALES_MANAGER' === 'SALES_MANAGER',
+              salesManagerInAllowed: allowed.includes('SALES_MANAGER'),
+              userRoleInAllowed: allowed.includes(userRole),
+            },
     });
 
     if (!allowed.includes(userRole)) {
