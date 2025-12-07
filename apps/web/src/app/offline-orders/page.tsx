@@ -1581,8 +1581,8 @@ export default function OfflineOrdersIntakePage() {
     const taxAmount = formState.requiresInvoice ? taxBase * taxRate : 0;
     const totalWithTax = calculateSubtotal - calculateDiscountAmount + taxAmount;
 
-              return (
-    <div className="space-y-6">
+    return (
+      <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading') || '客户信息'}</h2>
         <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息'}</p>
 
@@ -1905,8 +1905,9 @@ export default function OfflineOrdersIntakePage() {
   }, [fieldErrors]);
 
   // [2025-12-06] PRD v2.0: 渲染第三步 - 文件上传（非必填）
-  const renderStep3 = () => (
-    <div className="space-y-6">
+  const renderStep3 = () => {
+    return (
+      <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step3Heading') || '文件上传'}</h2>
       <p className="text-gray-600 mb-6 text-sm">{t('step3Intro') || '上传设计文件（非必填，可以不传文件直接提交）'}</p>
       
@@ -1970,7 +1971,8 @@ export default function OfflineOrdersIntakePage() {
         </p>
       </div>
     </div>
-  );
+    );
+  };
 
   // [2025-12-06] PRD v2.0: renderStep4和renderStep5已删除（合并到新的3步流程中）
 
@@ -1984,28 +1986,29 @@ export default function OfflineOrdersIntakePage() {
             <UserMenu />
             {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
             <div className="flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
-            <button
-              type="button"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                locale === 'en'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
-              }`}
-              onClick={() => handleLocaleChange('en')}
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                locale === 'zh'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
-              }`}
-              onClick={() => handleLocaleChange('zh')}
-            >
-              中文
-            </button>
+              <button
+                type="button"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  locale === 'en'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
+                }`}
+                onClick={() => handleLocaleChange('en')}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  locale === 'zh'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
+                }`}
+                onClick={() => handleLocaleChange('zh')}
+              >
+                中文
+              </button>
+            </div>
           </div>
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {isClient && (
