@@ -65,13 +65,18 @@ async function handleProxyRequest(
     const allCookies: string[] = [];
     
     // [2025-12-07 07:05:00] 从 cookieStore 获取所有 Cookie
-    cookieStore.getAll().forEach((cookie) => {
-      allCookies.push(`${cookie.name}=${cookie.value}`);
-    });
+    try {
+      cookieStore.getAll().forEach((cookie) => {
+        allCookies.push(`${cookie.name}=${cookie.value}`);
+      });
+    } catch (e) {
+      console.error('[API Proxy] ❌ Error reading cookies from cookieStore:', e);
+    }
     
-    // [2025-12-07 07:05:00] 如果 cookieStore 为空，尝试使用 header（向后兼容）
+    // [2025-12-07 07:10:00] 优先使用 cookieStore，如果为空则使用 header
+    // 但需要确保至少有一个来源有 Cookie
     const cookies = allCookies.length > 0 ? allCookies.join('; ') : cookieHeader;
-    const hasCookies = !!cookies && cookies.length > 0;
+    const hasCookies = !!cookies && cookies.length > 0 && cookies !== 'none';
     const hasToken = cookies.includes('token=');
     
     // [2025-12-07 06:40:00] 增强日志输出
@@ -84,8 +89,10 @@ async function handleProxyRequest(
       hasToken,
       cookieLength: cookies.length,
       cookiePreview: cookies.substring(0, 100), // 只显示前100字符
-      cookieCount: cookieStore.getAll().length,
-      cookieNames: cookieStore.getAll().map(c => c.name),
+      cookieStoreCount: cookieStore.getAll().length,
+      cookieStoreNames: cookieStore.getAll().map(c => c.name),
+      cookieHeaderLength: cookieHeader.length,
+      cookieHeaderPreview: cookieHeader.substring(0, 50),
       queryString: queryString || 'none',
       origin: request.headers.get('origin'),
       referer: request.headers.get('referer'),

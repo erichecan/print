@@ -61,11 +61,16 @@ export default function OfflineOrdersConfigPage() {
       console.log('[Config Page] 🔵 Cookies:', document.cookie);
       
       try {
+        // [2025-12-07 07:15:00] 确保 Cookie 被正确传递
+        // 在跨域请求中，需要明确设置 credentials: 'include'
         const response = await fetch(url, { 
-          credentials: 'include',
+          method: 'GET',
+          credentials: 'include', // 确保 Cookie 被发送
           headers: {
             'Content-Type': 'application/json',
-          }
+            'Accept': 'application/json',
+          },
+          cache: 'no-store', // 避免缓存
         });
         
         console.log('[Config Page] 🔵 Response status:', response.status);
