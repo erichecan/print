@@ -118,6 +118,15 @@ async function handleProxyRequest(
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
     
+    // [2025-12-07 07:40:00] 详细日志：记录最终发送的请求头
+    console.log('[API Proxy] 📤 Final Request Headers', {
+      timestamp,
+      hasCookieHeader: !!headers['Cookie'],
+      hasAuthorizationHeader: !!headers['Authorization'],
+      authorizationPreview: headers['Authorization']?.substring(0, 30) || 'none',
+      cookiePreview: headers['Cookie']?.substring(0, 50) || 'none',
+    });
+    
     // [2025-12-02 04:15:00] 复制其他请求头（排除一些不需要的）
     const excludeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding'];
     request.headers.forEach((value, key) => {

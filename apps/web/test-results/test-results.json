@@ -93,7 +93,7 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6090,
+                      "duration": 4651,
                       "errors": [],
                       "stdout": [
                         {
@@ -106,7 +106,7 @@
                           "text": "[Cookie Test] 浏览器 Cookie 数量: 2\n"
                         },
                         {
-                          "text": "[Cookie Test] Cookie: sessionId = 90ccc370-bfb0-4d14-b... (domain: print-main-frontend-234065158862.us-central1.run.app, path: /, secure: true, sameSite: None)\n"
+                          "text": "[Cookie Test] Cookie: sessionId = 8b70612b-09f6-485b-8... (domain: print-main-frontend-234065158862.us-central1.run.app, path: /, secure: true, sameSite: None)\n"
                         },
                         {
                           "text": "[Cookie Test] Cookie: token = eyJhbGciOiJIUzI1NiIs... (domain: print-main-frontend-234065158862.us-central1.run.app, path: /, secure: true, sameSite: None)\n"
@@ -160,7 +160,7 @@
                           "text": "[Cookie Test] 手动请求状态: 403\n"
                         },
                         {
-                          "text": "[Cookie Test] 错误响应: {\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T06:51:22.987Z\"}\n"
+                          "text": "[Cookie Test] 错误响应: {\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T07:01:27.110Z\"}\n"
                         },
                         {
                           "text": "[Cookie Test] ⚠️ 存在 403 错误，需要进一步调试\n"
@@ -168,7 +168,7 @@
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T06:51:16.810Z",
+                      "startTime": "2025-12-07T07:01:22.488Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -188,8 +188,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T06:51:16.554Z",
-    "duration": 6573.152,
+    "startTime": "2025-12-07T07:01:22.254Z",
+    "duration": 4982.57,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,
