@@ -443,17 +443,9 @@ exports.updateSalesOrderStatus = async (req, res) => {
 
     // [2025-12-07 05:15:00] 更新订单状态
     // [2025-12-07 05:25:00] 如果提供了 rushOrder，同时更新加急状态
+    // [2025-12-07 19:55:00] 修复：状态更新不需要创建 stage history（stage history 用于阶段变更，不是状态变更）
     const updateData = {
       status: normalizedStatus,
-      histories: {
-        create: {
-          fromStageKey: null,
-          toStageKey: null,
-          actorId: req.user?.id || null,
-          actorName,
-          note: `Status changed from ${order.status} to ${normalizedStatus}${rushOrder !== undefined ? (rushOrder ? ' (Rush)' : ' (Normal)') : ''}`,
-        },
-      },
     };
 
     // [2025-12-07 05:25:00] 如果提供了 rushOrder 参数，更新加急状态

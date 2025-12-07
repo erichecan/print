@@ -8,9 +8,9 @@ const { requireAdmin, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
 
-// [2025-12-07 18:55:00] 配置相关接口允许 SALES_MANAGER 访问（必须在 requireAdmin 之前定义）
-// [2025-12-07 06:25:00] GET /config/stages 允许 SALES_MANAGER 和 ADMIN 访问
-router.get('/config/stages', authorizeRoles('SALES_MANAGER', 'ADMIN'), offlineOrderController.getOfflineWorkflowStages);
+// [2025-12-07 19:55:00] 配置相关接口允许 SALES、SALES_MANAGER 和 ADMIN 访问（必须在 requireAdmin 之前定义）
+// [2025-12-07 06:25:00] GET /config/stages 允许 SALES、SALES_MANAGER 和 ADMIN 访问（SALES 需要查看阶段配置）
+router.get('/config/stages', authorizeRoles('SALES', 'SALES_MANAGER', 'ADMIN'), offlineOrderController.getOfflineWorkflowStages);
 // [2025-12-07 06:25:00] PUT /config/stages 仅允许 ADMIN 访问
 router.put('/config/stages', requireAdmin, offlineOrderController.updateOfflineWorkflowStages);
 
