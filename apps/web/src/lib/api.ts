@@ -849,10 +849,10 @@ export const salesOrdersApi = {
       body: data,
     }),
   // [2025-12-07 05:15:00] 更新订单状态
-  updateStatus: (id: string, status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED') =>
+  updateStatus: (id: string, status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED', rushOrder?: boolean) =>
     api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/sales/orders/${id}/status`, {
       method: 'PATCH',
-      body: { status },
+      body: { status, ...(rushOrder !== undefined ? { rushOrder } : {}) },
     }),
 };
 

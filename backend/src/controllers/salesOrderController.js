@@ -355,12 +355,13 @@ exports.updateSalesOrderStage = async (req, res) => {
 /**
  * PATCH /api/sales/orders/:id/status
  * [2025-12-07 05:15:00] Sales 更新订单状态（ACTIVE, COMPLETED, CANCELLED）
+ * [2025-12-07 05:25:00] 支持同时更新加急状态（rushOrder）
  */
 exports.updateSalesOrderStatus = async (req, res) => {
   const timestamp = new Date().toISOString();
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, rushOrder } = req.body;
 
     const roleRaw = req.user?.role || '';
     const role = String(roleRaw).toUpperCase();
@@ -422,21 +423,29 @@ exports.updateSalesOrderStatus = async (req, res) => {
       : 'Sales';
 
     // [2025-12-07 05:15:00] 更新订单状态
+    // [2025-12-07 05:25:00] 如果提供了 rushOrder，同时更新加急状态
+    const updateData = {
+      status: normalizedStatus,
+      histories: {
+        create: {
+          fromStageKey: null,
+          toStageKey: null,
+          actorId: req.user?.id || null,
+          actorName,
+          note: `Status changed from ${order.status} to ${normalizedStatus}${rushOrder !== undefined ? (rushOrder ? ' (Rush)' : ' (Normal)') : ''}`,
+        },
+      },
+    };
+
+    // [2025-12-07 05:25:00] 如果提供了 rushOrder 参数，更新加急状态
+    if (rushOrder !== undefined) {
+      updateData.rushOrder = Boolean(rushOrder);
+    }
+
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const order = await tx.offlineOrder.update({
         where: { id },
-        data: {
-          status: normalizedStatus,
-          histories: {
-            create: {
-              fromStageKey: null,
-              toStageKey: null,
-              actorId: req.user?.id || null,
-              actorName,
-              note: `Status changed from ${order.status} to ${normalizedStatus}`,
-            },
-          },
-        },
+        data: updateData,
         include: {
           assets: true,
           histories: {

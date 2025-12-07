@@ -22,9 +22,18 @@ export default function SalesOrdersPage() {
   // [2025-12-07 05:15:00] 订单状态选项
   const statusOptions = [
     { value: 'ACTIVE', label: '进行中' },
+    { value: 'ACTIVE_RUSH', label: '进行中（加急）' },
     { value: 'COMPLETED', label: '已完成' },
     { value: 'CANCELLED', label: '已取消' },
   ];
+
+  // [2025-12-07 05:25:00] 获取订单的显示状态值（考虑加急）
+  const getOrderStatusValue = (order: any) => {
+    if (order.status === 'ACTIVE' && order.rushOrder) {
+      return 'ACTIVE_RUSH';
+    }
+    return order.status;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -114,7 +123,25 @@ export default function SalesOrdersPage() {
     
     setUpdatingStatus(orderId);
     try {
-      await salesOrdersApi.updateStatus(orderId, newStatus as 'ACTIVE' | 'COMPLETED' | 'CANCELLED');
+      // [2025-12-07 05:25:00] 处理 ACTIVE_RUSH 状态（ACTIVE + rushOrder）
+      let actualStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' = 'ACTIVE';
+      let rushOrder: boolean | undefined = undefined;
+      
+      if (newStatus === 'ACTIVE_RUSH') {
+        actualStatus = 'ACTIVE';
+        rushOrder = true;
+      } else if (newStatus === 'ACTIVE') {
+        actualStatus = 'ACTIVE';
+        rushOrder = false;
+      } else {
+        actualStatus = newStatus as 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+        // COMPLETED 和 CANCELLED 时，清除加急标记
+        rushOrder = false;
+      }
+
+      // [2025-12-07 05:25:00] 更新状态和加急标记
+      await salesOrdersApi.updateStatus(orderId, actualStatus, rushOrder);
+      
       // 刷新订单列表
       const response = await salesOrdersApi.list({ page: 1, limit: 50 });
       setOrders(response.data);
@@ -216,7 +243,7 @@ export default function SalesOrdersPage() {
                   <td>
                     <div className="sales-orders-status">
                       <select
-                        value={order.status}
+                        value={getOrderStatusValue(order)}
                         onChange={(e) => handleQuickUpdateStatus(order.id, e.target.value)}
                         disabled={updatingStatus === order.id}
                         className="sales-orders-status-select"
@@ -227,7 +254,6 @@ export default function SalesOrdersPage() {
                           </option>
                         ))}
                       </select>
-                      {order.rushOrder && <span className="tag tag-rush">加急</span>}
                     </div>
                   </td>
                   <td>
