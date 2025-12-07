@@ -81,7 +81,7 @@ async function handleProxyRequest(
     };
     
     // [2025-12-02 04:15:00] 复制其他请求头（排除一些不需要的）
-    const excludeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding'];
+    const excludeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding', 'authorization'];
     request.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
       if (!excludeHeaders.includes(lowerKey) && lowerKey !== 'cookie') {
@@ -130,7 +130,6 @@ async function handleProxyRequest(
         method: request.method,
         headers,
         body,
-        credentials: 'include',
         cache: 'no-store',
       });
     } catch (fetchError: any) {
