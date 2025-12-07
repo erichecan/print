@@ -13,36 +13,15 @@ export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
   
   try {
-    // [2025-12-07 07:30:00] 从多个来源获取 token
-    const cookieHeader = request.headers.get('cookie') || '';
-    const cookieStore = request.cookies;
-    let tokenFromCookie: string | null = null;
-    
-    // [2025-12-07 07:30:00] 从 cookieStore 获取 token
-    try {
-      const tokenCookie = cookieStore.get('token');
-      if (tokenCookie) {
-        tokenFromCookie = tokenCookie.value;
-      }
-    } catch (e) {
-      console.error('[Next.js API Route] ❌ Error reading token from cookieStore:', e);
-    }
-    
-    // [2025-12-07 07:30:00] 也从 Cookie header 中尝试提取 token（备用）
-    const tokenFromHeader = cookieHeader.match(/token=([^;]+)/)?.[1] || null;
-    
-    // [2025-12-07 07:30:00] 优先使用 cookieStore 中的 token，如果没有则使用 header 中的
-    const token = tokenFromCookie || tokenFromHeader;
+    // [2025-12-07 07:55:00] 简化：直接从 Authorization header 读取 token
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '') || null;
     const hasToken = !!token;
-    const hasCookies = !!cookieHeader;
     
     console.log('[Next.js API Route] Get user request', {
       timestamp,
-      hasCookies,
       hasToken,
-      tokenFromCookie: !!tokenFromCookie,
-      tokenFromHeader: !!tokenFromHeader,
-      cookieCount: cookieHeader ? cookieHeader.split(';').length : 0
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
     });
 
     // [2025-12-02 03:35:00] 转发请求到后端
@@ -50,18 +29,15 @@ export async function GET(request: NextRequest) {
     console.log('[Next.js API Route] Forwarding to upstream', {
       timestamp,
       url: upstreamUrl,
-      hasCookies,
       hasToken
     });
 
     const upstream = await fetch(upstreamUrl, {
       method: 'GET',
       headers: {
-        ...(cookieHeader ? { 'Cookie': cookieHeader } : {}), // [2025-12-02 03:35:00] 只在有 cookies 时设置
-        // [2025-12-07 07:30:00] 如果找到 token，添加到 Authorization header（后端支持这种方式，更可靠）
+        // [2025-12-07 07:55:00] 只使用 Authorization header
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
-      credentials: 'include',
       cache: 'no-store',
     });
 

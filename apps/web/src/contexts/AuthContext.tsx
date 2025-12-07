@@ -48,10 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await authApi.logout();
-      setUser(null);
-      setError(null);
     } catch (err) {
       console.error('Logout failed:', err);
+    } finally {
+      // [2025-12-07 07:55:00] 无论后端请求是否成功，都清除用户状态
+      setUser(null);
+      setError(null);
     }
   };
 

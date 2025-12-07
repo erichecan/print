@@ -281,13 +281,18 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     ? `${baseUrl}/api/proxy${endpoint}`
     : `${baseUrl}${endpoint}`;
 
+  // [2025-12-07 07:55:00] 从 localStorage 读取 token 并添加到 Authorization header
+  const token = getToken();
+
   const config: RequestInit = {
     method,
     headers: {
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
+      // [2025-12-07 07:55:00] 如果存在 token，添加到 Authorization header
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...headers,
     },
-    credentials: 'include',
+    // [2025-12-07 07:55:00] 不再需要 credentials: 'include'（不使用 Cookie）
   };
 
   if (body && method !== 'GET') {
@@ -651,18 +656,54 @@ export const ordersApi = {
 
 // Auth API
 // [2025-01-29 02:20:00] 创建同域 API 调用函数（用于登录相关请求，避免跨域 Cookie 问题）
+// [2025-12-07 07:55:00] 从 localStorage 获取 token
+function getToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem('auth_token');
+  } catch (e) {
+    console.error('[API] Error reading token from localStorage:', e);
+    return null;
+  }
+}
+
+// [2025-12-07 07:55:00] 保存 token 到 localStorage
+export function setAuthToken(token: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem('auth_token', token);
+  } catch (e) {
+    console.error('[API] Error saving token to localStorage:', e);
+  }
+}
+
+// [2025-12-07 07:55:00] 清除 token
+export function clearAuthToken(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem('auth_token');
+  } catch (e) {
+    console.error('[API] Error clearing token from localStorage:', e);
+  }
+}
+
 async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   const { method = 'GET', body, headers = {} } = options;
   
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   
+  // [2025-12-07 07:55:00] 从 localStorage 读取 token 并添加到 Authorization header
+  const token = getToken();
+  
   const config: RequestInit = {
     method,
     headers: {
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
+      // [2025-12-07 07:55:00] 如果存在 token，添加到 Authorization header
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...headers,
     },
-    credentials: 'include',
+    // [2025-12-07 07:55:00] 不再需要 credentials: 'include'（不使用 Cookie）
   };
   
   if (body && method !== 'GET') {
@@ -676,8 +717,10 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
   if (!response.ok) {
     // [2025-12-03 03:55:00] 对于 401 错误，抛出特殊错误以便调用方识别
     if (response.status === 401) {
+      // [2025-12-07 07:55:00] 401 错误时清除 token
+      clearAuthToken();
       const error = new Error('UNAUTHORIZED');
-      (error as Error & { status?: number }).status = 401; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type assertion
+      (error as Error & { status?: number }).status = 401;
       throw error;
     }
     const error = await response.json().catch(() => ({ error: response.statusText }));

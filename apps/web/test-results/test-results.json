@@ -65,20 +65,20 @@
   },
   "suites": [
     {
-      "title": "cookie-403-debug.spec.ts",
-      "file": "cookie-403-debug.spec.ts",
+      "title": "chrome-devtools-403-debug.spec.ts",
+      "file": "chrome-devtools-403-debug.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Cookie 403 错误调试",
-          "file": "cookie-403-debug.spec.ts",
+          "title": "Chrome DevTools 403 错误调试",
+          "file": "chrome-devtools-403-debug.spec.ts",
           "line": 11,
           "column": 6,
           "specs": [
             {
-              "title": "验证登录后 Cookie 是否正确设置和传递",
+              "title": "使用 Chrome DevTools 调试 403 错误",
               "ok": true,
               "tags": [],
               "tests": [
@@ -93,82 +93,55 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 4651,
+                      "duration": 6575,
                       "errors": [],
                       "stdout": [
                         {
-                          "text": "[Cookie Test] 开始登录...\n"
+                          "text": "[DevTools Test] 开始登录...\n"
                         },
                         {
-                          "text": "[Cookie Test] 登录成功\n"
+                          "text": "[DevTools Test] 登录成功\n"
                         },
                         {
-                          "text": "[Cookie Test] 浏览器 Cookie 数量: 2\n"
+                          "text": "[DevTools Test] Token Cookie: { exists: \u001b[33mtrue\u001b[39m, value: \u001b[32m'eyJhbGciOiJIUzI1NiIsInR5cCI6Ik'\u001b[39m }\n"
                         },
                         {
-                          "text": "[Cookie Test] Cookie: sessionId = 8b70612b-09f6-485b-8... (domain: print-main-frontend-234065158862.us-central1.run.app, path: /, secure: true, sameSite: None)\n"
+                          "text": "[DevTools Test] 访问配置页面...\n"
                         },
                         {
-                          "text": "[Cookie Test] Cookie: token = eyJhbGciOiJIUzI1NiIs... (domain: print-main-frontend-234065158862.us-central1.run.app, path: /, secure: true, sameSite: None)\n"
+                          "text": "[DevTools Test] 📤 Request: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  cookie: \u001b[32m'none'\u001b[39m,\n  authorization: \u001b[32m'none'\u001b[39m\n}\n"
                         },
                         {
-                          "text": "[Cookie Test] ✅ Token Cookie 已设置\n"
+                          "text": "[DevTools Test] 📥 Response: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  status: \u001b[33m403\u001b[39m,\n  body: \u001b[32m'{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T07:06:02.445Z\"}'\u001b[39m\n}\n"
                         },
                         {
-                          "text": "[Cookie Test]   - Domain: print-main-frontend-234065158862.us-central1.run.app\n"
+                          "text": "\n[DevTools Test] ========== 测试结果 ==========\n"
                         },
                         {
-                          "text": "[Cookie Test]   - Path: /\n"
+                          "text": "[DevTools Test] 请求数量: 1\n"
                         },
                         {
-                          "text": "[Cookie Test]   - Secure: true\n"
+                          "text": "[DevTools Test] 响应数量: 1\n"
                         },
                         {
-                          "text": "[Cookie Test]   - SameSite: None\n"
+                          "text": "[DevTools Test] 控制台错误数量: 0\n"
                         },
                         {
-                          "text": "[Cookie Test]   - HttpOnly: true\n"
+                          "text": "\n[DevTools Test] ❌ 403 错误详情:\n"
                         },
                         {
-                          "text": "[Cookie Test] 访问配置页面...\n"
+                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"status\": 403,\n  \"headers\": {\n    \"content-type\": \"application/json; charset=utf-8\"\n  },\n  \"body\": \"{\\\"success\\\":false,\\\"statusCode\\\":403,\\\"code\\\":\\\"FORBIDDEN\\\",\\\"message\\\":\\\"You do not have permission to access this resource\\\",\\\"timestamp\\\":\\\"2025-12-07T07:06:02.445Z\\\"}\"\n}\n"
                         },
                         {
-                          "text": "[Cookie Test] ❌ 发现 1 个 403 错误:\n"
+                          "text": "\n[DevTools Test] 📤 请求详情:\n"
                         },
                         {
-                          "text": "[Cookie Test]   - undefined https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors -> 403\n"
-                        },
-                        {
-                          "text": "[Cookie Test] 配置页面 API 请求数量: 1\n"
-                        },
-                        {
-                          "text": "[Cookie Test]   - GET https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\n"
-                        },
-                        {
-                          "text": "[Cookie Test]     Cookie 头: none...\n"
-                        },
-                        {
-                          "text": "[Cookie Test]     Cookie 长度: 4\n"
-                        },
-                        {
-                          "text": "[Cookie Test]     包含 token: false\n"
-                        },
-                        {
-                          "text": "[Cookie Test] 手动测试 API 请求...\n"
-                        },
-                        {
-                          "text": "[Cookie Test] 手动请求状态: 403\n"
-                        },
-                        {
-                          "text": "[Cookie Test] 错误响应: {\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T07:01:27.110Z\"}\n"
-                        },
-                        {
-                          "text": "[Cookie Test] ⚠️ 存在 403 错误，需要进一步调试\n"
+                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"method\": \"GET\",\n  \"headers\": {\n    \"cookie\": \"none\",\n    \"authorization\": \"none\"\n  },\n  \"allHeaders\": [\n    \"sec-ch-ua-platform\",\n    \"referer\",\n    \"accept-language\",\n    \"sec-ch-ua\",\n    \"sec-ch-ua-mobile\",\n    \"user-agent\",\n    \"accept\",\n    \"content-type\",\n    \"x-playwright-e2e\"\n  ]\n}\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T07:01:22.488Z",
+                      "startTime": "2025-12-07T07:05:59.422Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -176,8 +149,8 @@
                   "status": "expected"
                 }
               ],
-              "id": "d235e3a6129b7dadc796-9f619756473516b77794",
-              "file": "cookie-403-debug.spec.ts",
+              "id": "4f77ac1e009de7aeedcb-02133920a70a640414b6",
+              "file": "chrome-devtools-403-debug.spec.ts",
               "line": 12,
               "column": 7
             }
@@ -188,8 +161,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T07:01:22.254Z",
-    "duration": 4982.57,
+    "startTime": "2025-12-07T07:05:59.151Z",
+    "duration": 7064.642000000001,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,

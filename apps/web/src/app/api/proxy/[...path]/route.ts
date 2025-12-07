@@ -58,74 +58,27 @@ async function handleProxyRequest(
     // [2025-12-02 04:15:00] 构建后端 URL
     const upstreamUrl = `${API_BASE}${fullPath}`;
     
-    // [2025-12-07 07:30:00] 从多个来源获取 token 和 cookies
-    const cookieHeader = request.headers.get('cookie') || '';
-    const cookieStore = request.cookies;
-    const allCookies: string[] = [];
-    let tokenFromCookie: string | null = null;
-    
-    // [2025-12-07 07:30:00] 从 cookieStore 获取所有 Cookie 和 token
-    try {
-      cookieStore.getAll().forEach((cookie) => {
-        allCookies.push(`${cookie.name}=${cookie.value}`);
-        // [2025-12-07 07:30:00] 特别提取 token
-        if (cookie.name === 'token') {
-          tokenFromCookie = cookie.value;
-        }
-      });
-    } catch (e) {
-      console.error('[API Proxy] ❌ Error reading cookies from cookieStore:', e);
-    }
-    
-    // [2025-12-07 07:30:00] 也从 Cookie header 中尝试提取 token（备用）
-    const tokenFromHeader = cookieHeader.match(/token=([^;]+)/)?.[1] || null;
-    
-    // [2025-12-07 07:30:00] 优先使用 cookieStore 中的 token，如果没有则使用 header 中的
-    const token = tokenFromCookie || tokenFromHeader;
-    
-    // [2025-12-07 07:10:00] 优先使用 cookieStore，如果为空则使用 header
-    // 但需要确保至少有一个来源有 Cookie
-    const cookies = allCookies.length > 0 ? allCookies.join('; ') : cookieHeader;
-    const hasCookies = !!cookies && cookies.length > 0 && cookies !== 'none';
+    // [2025-12-07 07:55:00] 简化：直接从 Authorization header 读取 token（不再使用 Cookie）
+    const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '') || null;
     const hasToken = !!token;
     
-    // [2025-12-07 06:40:00] 增强日志输出
+    // [2025-12-07 07:55:00] 简化日志输出
     console.log('[API Proxy] 🔍 Request Details', {
       timestamp,
       method: request.method,
       path: backendPath,
       needsAuth,
-      hasCookies,
       hasToken,
-      tokenFromCookie: !!tokenFromCookie,
-      tokenFromHeader: !!tokenFromHeader,
-      cookieLength: cookies.length,
-      cookiePreview: cookies.substring(0, 100), // 只显示前100字符
-      cookieStoreCount: cookieStore.getAll().length,
-      cookieStoreNames: cookieStore.getAll().map(c => c.name),
-      cookieHeaderLength: cookieHeader.length,
-      cookieHeaderPreview: cookieHeader.substring(0, 50),
+      tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
       queryString: queryString || 'none',
-      origin: request.headers.get('origin'),
-      referer: request.headers.get('referer'),
     });
     
-    // [2025-12-07 07:30:00] 准备请求头
-    // 同时传递 Cookie 和 Authorization header（后端支持两种方式）
+    // [2025-12-07 07:55:00] 准备请求头：只使用 Authorization header
     const headers: HeadersInit = {
-      ...(cookies ? { 'Cookie': cookies } : {}),
-      // [2025-12-07 07:30:00] 如果找到 token，添加到 Authorization header（后端支持这种方式，更可靠）
+      // [2025-12-07 07:55:00] 如果存在 token，添加到 Authorization header
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
-    
-    // [2025-12-07 07:40:00] 详细日志：记录最终发送的请求头
-    console.log('[API Proxy] 📤 Final Request Headers', {
-      timestamp,
-      hasCookieHeader: !!headers['Cookie'],
-      hasAuthorizationHeader: !!headers['Authorization'],
-      authorizationPreview: headers['Authorization']?.substring(0, 30) || 'none',
-      cookiePreview: headers['Cookie']?.substring(0, 50) || 'none',
-    });
     
     // [2025-12-02 04:15:00] 复制其他请求头（排除一些不需要的）
     const excludeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding'];
