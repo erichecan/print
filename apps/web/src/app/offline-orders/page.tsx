@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, ChangeEvent, FormEvent, DragEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
-import { categoriesApi, Category } from '@/lib/api'; // [2025-01-27 18:00:00] 引入分类 API 和类型
+import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig } from '@/lib/api'; // [2025-12-07 02:30:00] PRD v2.0: 引入配置API
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // [2025-01-27 20:00:00] 引入翻译
 
@@ -17,18 +18,23 @@ const MAX_FILES =
 const MAX_FILE_SIZE_MB =
   Number(process.env.NEXT_PUBLIC_OFFLINE_ORDER_MAX_FILE_MB || DEFAULT_MAX_FILE_MB) || DEFAULT_MAX_FILE_MB;
 
-// [2025-01-27 18:00:00] 标准尺码选项
-const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+// [2025-12-07 02:30:00] PRD v2.0: 尺码分类
+const YOUTH_SIZES = ['YS', 'YM', 'YL'];
+const ADULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+const ALL_SIZES = [...YOUTH_SIZES, ...ADULT_SIZES];
+const LARGE_SIZES = ['2XL', '3XL', '4XL', '5XL']; // 需要额外费用的大尺码
 
 // [2025-01-27 18:00:00] 步骤定义（将在组件中根据语言动态生成）
 
 // [2025-01-27 18:00:00] 印刷位置选项（将在组件中根据语言动态生成）
 
-// [2025-01-27 18:00:00] 印刷位置数据类型
+// [2025-12-07 02:30:00] PRD v2.0: 印刷位置数据类型（扩展）
 type PrintPosition = {
-  position: string; // 位置选择
-  width: string; // 宽度（inch）
-  height: string; // 高度（inch）
+  position: string; // 位置（包含"其他"）
+  printingStyle: string; // 工艺：DTF, Embroidery, UV, Vinyl, 其他
+  dstFileFee?: number; // DST File Fee（仅Embroidery，订单级别）
+  width?: string; // 宽度（inch），可选
+  height?: string; // 高度（inch），可选（width和height至少一个）
   notes: string; // 备注
 };
 
@@ -41,20 +47,42 @@ type ProductPrintConfig = {
 // [2025-11-28 14:20:10] 所有产品印刷配置映射表，key 为 ProductItem.id
 type ProductPrintConfigMap = Record<string, ProductPrintConfig>;
 
-// [2025-01-27 18:00:00] 产品变体类型（尺码和颜色组合）
-type ProductVariant = {
-  size: string; // 尺码，如 'XS', 'S', 'M', 'L', 'XL'
-  color: string; // 颜色，如 'White', 'Black', 'Red'
-  quantity: number; // 数量
-  unitPrice: number; // 单价（CAD）
+// [2025-12-07 02:30:00] PRD v2.0: 尺码额外费用配置
+type SizeAdditionalFee = {
+  size: string; // 2XL, 3XL, 4XL, 5XL
+  fee: number; // 额外费用（可配置）
 };
 
-// [2025-01-27 18:00:00] 产品项目类型（支持多产品定制）
+// [2025-12-07 02:30:00] PRD v2.0: 尺码数量输入
+type SizeQuantity = {
+  size: string; // 尺码：YS, YM, YL, XS, S, M, L, XL, 2XL, 3XL, 4XL, 5XL
+  quantity: number; // 件数
+  unitPrice: number; // 单价
+  additionalFee: number; // 额外费用（从配置读取）
+  subtotal: number; // 小计：quantity × (unitPrice + additionalFee)
+};
+
+// [2025-12-07 02:30:00] PRD v2.0: 产品颜色配置
+type ProductColor = {
+  colorId: string; // 颜色ID
+  colorName: string; // 颜色名称
+  availableSizes: string[]; // 可用尺码列表（从配置读取）
+  sizes: SizeQuantity[]; // 尺码数量配置
+  totalQuantity: number; // 该颜色总数量
+  totalPrice: number; // 该颜色总价
+};
+
+// [2025-12-07 02:30:00] PRD v2.0: 产品项目类型
 type ProductItem = {
   id: string; // 唯一ID
-  categoryId: string; // 产品分类ID
-  categoryName: string; // 产品分类名称
-  variants: ProductVariant[]; // 变体列表（如不同尺码、颜色）
+  productId: string; // 产品ID（可维护）
+  productName: string; // 产品名称
+  isCustomerOwned: boolean; // 是否客户自带服装
+  colors: ProductColor[]; // 颜色列表
+  printPositions?: PrintPosition[]; // 单独印刷位置配置（可选）
+  useSeparatePrintPositions: boolean; // 是否使用单独印刷位置
+  totalQuantity: number; // 总数量
+  totalPrice: number; // 总价格
 };
 
 // [2025-01-27 18:00:00] 发票信息类型（加拿大invoice常规信息）
@@ -72,39 +100,38 @@ type InvoiceInfo = {
   referenceNumber?: string; // [2025-12-06 18:30:00] Reference Number
 };
 
+// [2025-12-07 02:30:00] PRD v2.0: 表单状态（3步流程）
 type FormState = {
-  // [2025-01-27 19:00:00] 订单编号（从第一步开始生成）
-  orderCode: string; // [2025-01-27 19:00:00] 唯一订单编号
+  orderCode: string; // 订单编号
   
-  // 第一步：多产品定制
-  productItems: ProductItem[]; // [2025-01-27 18:00:00] 产品项目数组，支持多产品定制
+  // 第一步：产品配置
+  productItems: ProductItem[]; // 产品列表
+  globalPrintPositions: PrintPosition[]; // 总体印刷位置
+  orderNotes: string; // 订单备注（必填）
+  dstFileFee: number; // DST File Fee（订单级别，仅当有Embroidery时）
   
-  // 第二步：印刷位置
-  sideCount: number; // [2025-01-27 18:00:00] 要印几个地方
-  printPositions: PrintPosition[]; // [2025-01-27 18:00:00] 印刷位置数组
-  productPrintConfigs: ProductPrintConfigMap; // [2025-11-28 14:20:20] 按产品分组的印刷位置配置映射表
-  globalPrintPositions?: PrintPosition[]; // [2025-12-06 18:30:00] 全局印刷位置（PRD v2.0）
-  
-  // 第三步：客人信息和价格
+  // 第二步：客户信息
   contactName: string;
   email: string;
   phone: string;
-  company?: string; // [2025-12-06 18:30:00] 公司名称
-  dueDate: string; // 交付日期
-  requiresInvoice: boolean; // 是否需要发票
-  invoiceInfo: InvoiceInfo; // [2025-01-27 18:00:00] 发票信息
-  discount: number; // [2025-01-27 18:00:00] 整体折扣百分比（0-100）
-  taxRate?: number; // [2025-12-06 18:30:00] 税率（默认13%）
-  orderNotes?: string; // [2025-12-06 18:30:00] 订单备注（PRD v2.0）
-  dstFileFee?: number; // [2025-12-06 18:30:00] DST File Fee
-  files?: File[]; // [2025-12-06 18:30:00] 上传的文件列表
+  company: string;
+  dueDate: string;
+  requiresInvoice: boolean;
+  invoiceInfo: InvoiceInfo;
   
-  // 第四步：项目详情
-  projectName: string;
-  requiresMockups: boolean;
-  requiresProof: boolean;
-  rushOrder: boolean;
-  artworkNotes: string;
+  // 第三步：文件上传（非必填）
+  files: File[];
+  
+  // 价格汇总
+  subtotal: number; // 小计
+  discount: number; // 折扣百分比
+  discountAmount: number; // 折扣金额
+  taxRate: number; // 税率（0.13 for 13%）
+  taxAmount: number; // 税额
+  total: number; // 总计（含税）
+  
+  // 流程控制
+  currentStep: number; // 当前步骤（1-3）
 };
 
 // [2025-01-27 19:00:00] 生成订单编号（与后端格式一致）
@@ -115,17 +142,17 @@ const generateOrderCode = (): string => {
   return `OFF-${datePart}-${randomPart}`;
 };
 
+// [2025-12-07 02:30:00] PRD v2.0: 初始表单状态
 const initialFormState: FormState = {
-  orderCode: '', // [2025-01-28 09:30:00] 订单编号在客户端生成，避免 hydration 错误
-  productItems: [], // [2025-01-27 18:00:00] 初始为空，用户添加产品
-  sideCount: 1, // [2025-01-27 18:00:00] 默认1个印刷位置
-  printPositions: [{ position: '', width: '', height: '', notes: '' }], // [2025-01-27 18:00:00] 默认1个位置
-  productPrintConfigs: {}, // [2025-11-28 14:20:30] 初始无任何产品印刷配置
-  globalPrintPositions: [], // [2025-12-06 18:30:00] 全局印刷位置初始为空
+  orderCode: '',
+  productItems: [],
+  globalPrintPositions: [],
+  orderNotes: '',
+  dstFileFee: 0,
   contactName: '',
   email: '',
   phone: '',
-  company: '', // [2025-12-06 18:30:00] 公司名称初始为空
+  company: '',
   dueDate: '',
   requiresInvoice: false,
   invoiceInfo: {
@@ -137,25 +164,139 @@ const initialFormState: FormState = {
     province: '',
     postalCode: '',
     country: 'Canada',
-    paymentMethod: undefined, // [2025-12-06 18:30:00] 支付方式初始为空
-    referenceNumber: undefined, // [2025-12-06 18:30:00] Reference Number初始为空
+    paymentMethod: undefined,
+    referenceNumber: undefined,
   },
+  files: [],
+  subtotal: 0,
   discount: 0,
-  taxRate: 0.13, // [2025-12-06 18:30:00] 默认13%税率（安省HST）
-  orderNotes: '', // [2025-12-06 18:30:00] 订单备注初始为空
-  dstFileFee: 0, // [2025-12-06 18:30:00] DST File Fee初始为0
-  files: [], // [2025-12-06 18:30:00] 文件列表初始为空
-  projectName: '',
-  requiresMockups: false,
-  requiresProof: false,
-  rushOrder: false,
-  artworkNotes: '',
+  discountAmount: 0,
+  taxRate: 0.13,
+  taxAmount: 0,
+  total: 0,
+  currentStep: 1,
 };
 
 const extensionIsAllowed = (fileName: string) => {
   const lower = fileName.toLowerCase();
   return ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
 };
+
+// [2025-12-07 03:00:00] 用户菜单组件（登录按钮/用户菜单）
+function UserMenu() {
+  const [isClient, setIsClient] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    setIsClient(true);
+    // 检查登录状态
+    const checkAuth = async () => {
+      try {
+        const { authApi } = await import('@/lib/api');
+        const me = await authApi.me();
+        setUser(me);
+      } catch {
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const { authApi } = await import('@/lib/api');
+      await authApi.logout();
+      setUser(null);
+      setShowMenu(false);
+      window.location.reload();
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
+
+  if (!isClient || loading) {
+    return null;
+  }
+
+  if (!user) {
+    return (
+      <button
+        type="button"
+        onClick={() => router.push('/offline-orders/sales/login')}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm shadow-md"
+      >
+        登录
+      </button>
+    );
+  }
+
+  const userName = user.firstName && user.lastName 
+    ? `${user.firstName} ${user.lastName}`.trim()
+    : user.email?.split('@')[0] || '用户';
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setShowMenu(!showMenu)}
+        className="flex items-center gap-2 px-3 py-2 bg-white/90 rounded-lg shadow-md hover:bg-white transition-colors"
+      >
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
+          <path d="M10 12C5.58172 12 2 14.6863 2 18V20H18V18C18 14.6863 14.4183 12 10 12Z" fill="currentColor"/>
+        </svg>
+        <span className="text-sm font-medium text-gray-700 hidden sm:inline">{userName}</span>
+      </button>
+      
+      {showMenu && (
+        <>
+          <div 
+            className="fixed inset-0 z-40" 
+            onClick={() => setShowMenu(false)}
+          />
+          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+            <div className="px-4 py-2 border-b border-gray-200">
+              <p className="text-sm font-medium text-gray-900">{userName}</p>
+              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowMenu(false);
+                router.push('/offline-orders/sales/orders');
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              订单管理
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowMenu(false);
+                router.push('/account/settings');
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              修改密码
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200"
+            >
+              退出登录
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function OfflineOrdersIntakePage() {
   // [2025-01-27 20:00:00] 语言切换状态 - 默认值，避免hydration错误
@@ -226,13 +367,11 @@ export default function OfflineOrdersIntakePage() {
     }
   }, []);
 
-  // [2025-01-27 20:00:00] 动态生成步骤定义 - 依赖isClient确保hydration一致性
+  // [2025-12-07 02:00:00] PRD v2.0: 3步流程（产品选择、客户信息和Invoice、文件上传）
   const STEPS = useMemo(() => [
-    { id: 1, title: t('step1Title'), description: t('step1Description') },
-    { id: 2, title: t('step2Title'), description: t('step2Description') },
-    { id: 3, title: t('step3Title'), description: t('step3Description') },
-    { id: 4, title: t('step4Title'), description: t('step4Description') },
-    { id: 5, title: t('step5Title'), description: t('step5Description') },
+    { id: 1, title: t('step1Title'), description: t('step1Description') }, // 产品选择
+    { id: 2, title: t('step2TitleV2'), description: t('step2DescriptionV2') }, // 客户信息和Invoice
+    { id: 3, title: t('step3TitleV2'), description: t('step3DescriptionV2') }, // 文件上传
   ], [t, isClient]);
 
   // [2025-01-27 20:00:00] 动态生成印刷位置选项 - 依赖isClient确保hydration一致性
@@ -246,16 +385,55 @@ export default function OfflineOrdersIntakePage() {
     { value: 'other', label: t('positionOther') },
   ], [t, isClient]);
 
-  // [2025-01-27 18:00:00] 获取产品分类列表
-  const { data: categoriesData, isLoading: categoriesLoading } = useSWR<{ data: Category[] }>(
-    'offline-order-categories',
-    () => categoriesApi.list(),
+  // [2025-12-07 02:30:00] PRD v2.0: 获取订单配置数据（产品、颜色、尺码费用、可用性）
+  const { data: configData, isLoading: configLoading } = useSWR<{ success: boolean; data: OfflineOrderConfig }>(
+    'offline-order-config',
+    () => offlineOrderProductApi.getOrderConfig(),
     {
       revalidateOnFocus: false,
     }
   );
 
-  const categories = categoriesData?.data || [];
+  const orderConfig = configData?.data || {
+    products: [],
+    colors: [],
+    sizeFees: [],
+    availability: [],
+  };
+
+  // [2025-12-07 02:30:00] PRD v2.0: 构建尺码费用映射表
+  const sizeFeeMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    orderConfig.sizeFees.forEach((sf) => {
+      map[sf.size] = sf.additionalFee;
+    });
+    // 默认值（如果API没有返回）
+    if (orderConfig.sizeFees.length === 0) {
+      LARGE_SIZES.forEach((size) => {
+        const defaultFees: Record<string, number> = {
+          '2XL': 2.50,
+          '3XL': 3.50,
+          '4XL': 4.50,
+          '5XL': 5.50,
+        };
+        map[size] = defaultFees[size] || 0;
+      });
+    }
+    return map;
+  }, [orderConfig.sizeFees]);
+
+  // [2025-12-07 02:30:00] PRD v2.0: 检查尺码可用性
+  const isSizeAvailable = useCallback(
+    (productId: string, colorId: string, size: string): boolean => {
+      // 如果没有可用性配置，默认所有尺码可用
+      if (orderConfig.availability.length === 0) return true;
+      const config = orderConfig.availability.find(
+        (a) => a.productId === productId && a.colorId === colorId && a.size === size
+      );
+      return config ? config.available : true; // 默认可用
+    },
+    [orderConfig.availability]
+  );
 
   // [2025-11-15 15:18:30] Restore last-saved draft data on mount
   useEffect(() => {
@@ -307,60 +485,53 @@ export default function OfflineOrdersIntakePage() {
     setFormState((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  // [2025-11-28 14:20:45] 第一步：多产品定制管理方法（新增按产品印刷配置）
-  const addProductItem = useCallback((categoryId: string, categoryName: string) => {
+  // [2025-12-07 02:30:00] PRD v2.0: 添加产品（使用可维护的产品列表）
+  const addProductItem = useCallback((productId: string, productName: string, isCustomerOwned: boolean = false) => {
     const newItemId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newItem: ProductItem = {
       id: newItemId,
-      categoryId,
-      categoryName,
-      variants: [
-        {
-          size: '',
-          color: '',
-          quantity: 0,
-          unitPrice: 0,
-        },
-      ],
-    };
-    const defaultPrintConfig: ProductPrintConfig = {
-      sideCount: 1,
-      positions: [{ position: '', width: '', height: '', notes: '' }],
+      productId,
+      productName,
+      isCustomerOwned,
+      colors: [],
+      useSeparatePrintPositions: false,
+      totalQuantity: 0,
+      totalPrice: 0,
     };
     setFormState((prev) => ({
       ...prev,
       productItems: [...prev.productItems, newItem],
-      productPrintConfigs: {
-        ...prev.productPrintConfigs,
-        [newItemId]: prev.productPrintConfigs?.[newItemId] || defaultPrintConfig,
-      },
     }));
   }, []);
 
+  // [2025-12-07 02:30:00] PRD v2.0: 删除产品
   const removeProductItem = useCallback((itemId: string) => {
-    // [2025-11-28 14:20:55] 删除产品时同步清理对应的印刷配置，避免脏数据
-    setFormState((prev) => {
-      const nextItems = prev.productItems.filter((item) => item.id !== itemId);
-      const { [itemId]: _removed, ...restConfigs } = prev.productPrintConfigs || {};
-      return {
-        ...prev,
-        productItems: nextItems,
-        productPrintConfigs: restConfigs,
-      };
-    });
+    setFormState((prev) => ({
+      ...prev,
+      productItems: prev.productItems.filter((item) => item.id !== itemId),
+    }));
   }, []);
 
-  // [2025-11-28 14:21:10] 变体管理：表格内直接编辑尺码/颜色/数量/单价
-  const addVariant = useCallback((itemId: string) => {
+  // [2025-12-07 02:30:00] PRD v2.0: 为产品添加颜色
+  const addColorToProduct = useCallback((itemId: string, colorId: string, colorName: string) => {
     setFormState((prev) => {
       const newItems = prev.productItems.map((item) => {
         if (item.id === itemId) {
+          // 检查颜色是否已存在
+          if (item.colors.some((c) => c.colorId === colorId)) {
+            return item;
+          }
+          const newColor: ProductColor = {
+            colorId,
+            colorName,
+            availableSizes: ALL_SIZES, // 默认所有尺码可用，后续从配置读取
+            sizes: [],
+            totalQuantity: 0,
+            totalPrice: 0,
+          };
           return {
             ...item,
-            variants: [
-              ...item.variants,
-              { size: '', color: '', quantity: 0, unitPrice: 0 },
-            ],
+            colors: [...item.colors, newColor],
           };
         }
         return item;
@@ -369,17 +540,14 @@ export default function OfflineOrdersIntakePage() {
     });
   }, []);
 
-  const removeVariant = useCallback((itemId: string, variantIndex: number) => {
+  // [2025-12-07 02:30:00] PRD v2.0: 删除产品颜色
+  const removeColorFromProduct = useCallback((itemId: string, colorId: string) => {
     setFormState((prev) => {
       const newItems = prev.productItems.map((item) => {
         if (item.id === itemId) {
-          const nextVariants = item.variants.filter((_, idx) => idx !== variantIndex);
-          // 确保至少保留一行可编辑行，避免用户无处重新添加
-          const safeVariants =
-            nextVariants.length > 0 ? nextVariants : [{ size: '', color: '', quantity: 0, unitPrice: 0 }];
           return {
             ...item,
-            variants: safeVariants,
+            colors: item.colors.filter((c) => c.colorId !== colorId),
           };
         }
         return item;
@@ -388,47 +556,69 @@ export default function OfflineOrdersIntakePage() {
     });
   }, []);
 
-  const updateVariant = useCallback(
-    (
-      itemId: string,
-      variantIndex: number,
-      field: 'size' | 'color' | 'quantity' | 'unitPrice',
-      value: string | number
-    ) => {
-      if ((field === 'quantity' || field === 'unitPrice') && typeof value === 'number' && value < 0) {
-        return;
-      }
+  // [2025-12-07 02:30:00] PRD v2.0: 更新尺码数量
+  const updateSizeQuantity = useCallback(
+    (itemId: string, colorId: string, size: string, quantity: number, unitPrice: number) => {
       setFormState((prev) => {
         const newItems = prev.productItems.map((item) => {
           if (item.id === itemId) {
-            const newVariants = [...item.variants];
-            const nextVariant = { ...newVariants[variantIndex] };
-            if (field === 'quantity' || field === 'unitPrice') {
-              (nextVariant as any)[field] = typeof value === 'number' ? value : Number(value) || 0;
-            } else {
-              (nextVariant as any)[field] = String(value);
-            }
-            newVariants[variantIndex] = nextVariant;
-            return { ...item, variants: newVariants };
+            const newColors = item.colors.map((color) => {
+              if (color.colorId === colorId) {
+                const additionalFee = sizeFeeMap[size] || 0;
+                const existingSizeIndex = color.sizes.findIndex((s) => s.size === size);
+                const newSizeQuantity: SizeQuantity = {
+                  size,
+                  quantity,
+                  unitPrice,
+                  additionalFee,
+                  subtotal: quantity * (unitPrice + additionalFee),
+                };
+
+                let newSizes: SizeQuantity[];
+                if (existingSizeIndex >= 0) {
+                  newSizes = [...color.sizes];
+                  newSizes[existingSizeIndex] = newSizeQuantity;
+                } else {
+                  newSizes = [...color.sizes, newSizeQuantity];
+                }
+
+                // 计算该颜色的总数量和总价
+                const totalQuantity = newSizes.reduce((sum, s) => sum + s.quantity, 0);
+                const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
+
+                return {
+                  ...color,
+                  sizes: newSizes,
+                  totalQuantity,
+                  totalPrice,
+                };
+              }
+              return color;
+            });
+
+            // 计算产品的总数量和总价
+            const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
+            const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
+
+            return {
+              ...item,
+              colors: newColors,
+              totalQuantity,
+              totalPrice,
+            };
           }
           return item;
         });
         return { ...prev, productItems: newItems };
       });
     },
-    []
+    [sizeFeeMap]
   );
 
-  // [2025-01-27 18:00:00] 价格计算逻辑
-  const calculateItemTotal = useCallback((item: ProductItem): number => {
-    return item.variants.reduce((sum, variant) => {
-      return sum + variant.quantity * variant.unitPrice;
-    }, 0);
-  }, []);
-
+  // [2025-12-07 02:30:00] PRD v2.0: 价格计算逻辑
   const calculateSubtotal = useMemo(() => {
-    return formState.productItems.reduce((sum, item) => sum + calculateItemTotal(item), 0);
-  }, [formState.productItems, calculateItemTotal]);
+    return formState.productItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  }, [formState.productItems]);
 
   const calculateDiscountAmount = useMemo(() => {
     return (calculateSubtotal * formState.discount) / 100;
@@ -438,10 +628,9 @@ export default function OfflineOrdersIntakePage() {
     return calculateSubtotal - calculateDiscountAmount;
   }, [calculateSubtotal, calculateDiscountAmount]);
 
+  // [2025-12-07 02:30:00] PRD v2.0: 计算总数量
   const calculateTotalQuantity = useMemo(() => {
-    return formState.productItems.reduce((sum, item) => {
-      return sum + item.variants.reduce((itemSum, variant) => itemSum + variant.quantity, 0);
-    }, 0);
+    return formState.productItems.reduce((sum, item) => sum + item.totalQuantity, 0);
   }, [formState.productItems]);
 
   // [2025-12-06 18:30:00] 计算税额（仅当需要Invoice时）
@@ -452,14 +641,14 @@ export default function OfflineOrdersIntakePage() {
     return taxBase * taxRate;
   }, [calculateSubtotal, calculateDiscountAmount, formState.requiresInvoice, formState.taxRate]);
 
-  // [2025-12-06 18:30:00] 生成主要产品描述（用于提交）
+  // [2025-12-07 02:30:00] PRD v2.0: 生成主要产品描述（用于提交）
   const primaryProductDescription = useMemo(() => {
     if (formState.productItems.length === 0) return '';
     if (formState.productItems.length === 1) {
-      return formState.productItems[0].categoryName;
+      return formState.productItems[0].productName;
     }
     // 多个产品时，返回产品列表
-    return formState.productItems.map(item => item.categoryName).join(', ');
+    return formState.productItems.map(item => item.productName).join(', ');
   }, [formState.productItems]);
 
   // [2025-12-06 18:30:00] 文件列表摘要
@@ -508,141 +697,118 @@ export default function OfflineOrdersIntakePage() {
     });
   }, []);
 
-  // [2025-11-28 15:00:00] 步骤验证 - 将错误保存到 fieldErrors 中，在字段附近显示
+  // [2025-12-07 02:30:00] PRD v2.0: 步骤验证
   const validateStep = useCallback((step: number): boolean => {
-    // [2025-11-28 15:00:00] 清除之前的字段错误
     setFieldErrors({});
     
     if (step === 1) {
-      // 第一步验证：至少添加一个产品，每个产品至少有一个变体，且数量和单价都大于0
+      // 第一步验证：至少选择一个产品，每个产品至少选择一个颜色，每个颜色至少填写一个尺码的数量（>0），每个尺码必须填写单价（>0），订单备注
       if (formState.productItems.length === 0) {
-        setStatus({ type: 'error', message: '请至少添加一个产品' });
+        setStatus({ type: 'error', message: t('errorNoProducts') || '请至少添加一个产品' });
         return false;
       }
+      
       for (let i = 0; i < formState.productItems.length; i++) {
         const item = formState.productItems[i];
-        if (item.variants.length === 0) {
-          setStatus({ type: 'error', message: `产品 ${i + 1} (${item.categoryName})：请至少添加一个变体` });
+        if (item.colors.length === 0) {
+          setStatus({ type: 'error', message: `产品 ${i + 1} (${item.productName})：请至少选择一个颜色` });
           return false;
         }
-        const hasValidVariant = item.variants.some(
-          (v) => v.quantity > 0 && v.unitPrice > 0
-        );
-        if (!hasValidVariant) {
-          setStatus({ type: 'error', message: `产品 ${i + 1} (${item.categoryName})：请填写有效的数量和单价（大于0）` });
-          return false;
+        
+        for (let j = 0; j < item.colors.length; j++) {
+          const color = item.colors[j];
+          const hasValidSize = color.sizes.some((s) => s.quantity > 0 && s.unitPrice > 0);
+          if (!hasValidSize) {
+            setStatus({ type: 'error', message: `产品 ${i + 1} (${item.productName}) - 颜色 ${color.colorName}：请至少填写一个尺码的数量和单价（大于0）` });
+            return false;
+          }
         }
       }
+      
+      // 验证订单备注（必填）
+      if (!formState.orderNotes || !formState.orderNotes.trim()) {
+        setFieldErrors({ orderNotes: t('errorOrderNotes') || '订单备注是必填项' });
+        setStatus({ type: 'error', message: t('errorOrderNotes') || '订单备注是必填项' });
+        return false;
+      }
+      
+      // 验证印刷位置：Height或Width至少一个
+      if (formState.globalPrintPositions && formState.globalPrintPositions.length > 0) {
+        for (let i = 0; i < formState.globalPrintPositions.length; i++) {
+          const pos = formState.globalPrintPositions[i];
+          const width = parseFloat(pos.width || '0');
+          const height = parseFloat(pos.height || '0');
+          if ((!pos.width || width <= 0) && (!pos.height || height <= 0)) {
+            setFieldErrors({ [`globalPrintPosition-${i}`]: t('errorPrintPositionSize') || '印刷位置：Height或Width至少填写一个' });
+            setStatus({ type: 'error', message: t('errorPrintPositionSize') || '印刷位置：Height或Width至少填写一个' });
+            return false;
+          }
+        }
+      }
+      
       return true;
     }
+    
+    // [2025-12-07 02:30:00] PRD v2.0: 第二步验证（客户信息和Invoice）
     if (step === 2) {
-      // [2025-11-28 14:22:10] 第二步验证：按产品校验印刷位置
-      if (!formState.productItems.length) {
-        setStatus({ type: 'error', message: '请先在第一步添加产品' });
-        return false;
-      }
-      const newFieldErrors: Record<string, string> = {};
-      let firstErrorKey: string | null = null;
-      
-      for (let i = 0; i < formState.productItems.length; i++) {
-        const item = formState.productItems[i];
-        const itemQuantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
-        if (itemQuantity <= 0) {
-          continue; // 没有数量的产品不强制要求印刷位置
-        }
-        const config = formState.productPrintConfigs[item.id];
-        const positions = config?.positions || [];
-        if (!positions.length) {
-          const errorKey = `product-${item.id}-positions`;
-          newFieldErrors[errorKey] = `请至少添加一个印刷位置`;
-          if (!firstErrorKey) firstErrorKey = errorKey;
-        }
-        for (let j = 0; j < positions.length; j++) {
-          const pos = positions[j];
-          if (!pos.position || pos.position.trim() === '') {
-            const errorKey = `product-${item.id}-position-${j}`;
-            newFieldErrors[errorKey] = '请选择印刷位置';
-            if (!firstErrorKey) firstErrorKey = errorKey;
-          }
-          const width = parseFloat(pos.width);
-          const height = parseFloat(pos.height);
-          if (Number.isNaN(width) || width <= 0) {
-            const errorKey = `product-${item.id}-width-${j}`;
-            newFieldErrors[errorKey] = '请填写有效的宽度（大于0）';
-            if (!firstErrorKey) firstErrorKey = errorKey;
-          }
-          if (Number.isNaN(height) || height <= 0) {
-            const errorKey = `product-${item.id}-height-${j}`;
-            newFieldErrors[errorKey] = '请填写有效的高度（大于0）';
-            if (!firstErrorKey) firstErrorKey = errorKey;
-          }
-        }
-      }
-      
-      if (Object.keys(newFieldErrors).length > 0) {
-        setFieldErrors(newFieldErrors);
-        // [2025-11-28 15:00:00] 滚动到第一个错误位置
-        setTimeout(() => {
-          if (firstErrorKey) {
-            const errorElement = document.querySelector(`[data-error-key="${firstErrorKey}"]`);
-            if (errorElement) {
-              errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              // 聚焦到第一个错误字段
-              const inputElement = errorElement.querySelector('select, input');
-              if (inputElement && inputElement instanceof HTMLElement) {
-                inputElement.focus();
-              }
-            }
-          }
-        }, 100);
-        return false;
-      }
-      return true;
-    }
-    if (step === 3) {
-      // 第三步验证：联系姓名、邮箱、电话、交付日期必填；如果需要发票，发票信息必填
+      // 客户信息必填：联系人姓名、邮箱
       if (!formState.contactName.trim()) {
-        setStatus({ type: 'error', message: '联系人姓名是必填项' });
+        setFieldErrors({ contactName: t('errorContactName') || '联系人姓名是必填项' });
+        setStatus({ type: 'error', message: t('errorContactName') || '联系人姓名是必填项' });
         return false;
       }
       if (!formState.email.trim()) {
-        setStatus({ type: 'error', message: '邮箱是必填项' });
+        setFieldErrors({ email: t('errorEmail') || '邮箱是必填项' });
+        setStatus({ type: 'error', message: t('errorEmail') || '邮箱是必填项' });
         return false;
       }
-      if (!formState.phone.trim()) {
-        setStatus({ type: 'error', message: '电话是必填项' });
+      // 邮箱格式验证
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formState.email)) {
+        setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
+        setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
         return false;
       }
-      if (!formState.dueDate.trim()) {
-        setStatus({ type: 'error', message: '交付日期是必填项' });
-        return false;
-      }
+      
+      // 如果选择Invoice，Invoice信息和支付信息必填
       if (formState.requiresInvoice) {
         if (!formState.invoiceInfo.companyName.trim()) {
-          setStatus({ type: 'error', message: '发票公司名称是必填项' });
+          setFieldErrors({ companyName: t('errorCompanyName') || '发票公司名称是必填项' });
+          setStatus({ type: 'error', message: t('errorCompanyName') || '发票公司名称是必填项' });
           return false;
         }
-        if (!formState.invoiceInfo.companyEmail.trim()) {
-          setStatus({ type: 'error', message: '发票公司邮箱是必填项' });
+        if (!formState.invoiceInfo.taxNumber.trim()) {
+          setFieldErrors({ taxNumber: t('errorTaxNumber') || '税号是必填项' });
+          setStatus({ type: 'error', message: t('errorTaxNumber') || '税号是必填项' });
           return false;
         }
         if (!formState.invoiceInfo.address.trim()) {
-          setStatus({ type: 'error', message: '发票地址是必填项' });
+          setFieldErrors({ address: t('errorAddress') || '发票地址是必填项' });
+          setStatus({ type: 'error', message: t('errorAddress') || '发票地址是必填项' });
+          return false;
+        }
+        // 支付信息必填（Invoice时）
+        if (!formState.invoiceInfo.paymentMethod) {
+          setFieldErrors({ paymentMethod: t('errorPaymentMethod') || '支付方式是必填项' });
+          setStatus({ type: 'error', message: t('errorPaymentMethod') || '支付方式是必填项' });
+          return false;
+        }
+        // 如果选择Etransfer，Reference Number必填
+        if (formState.invoiceInfo.paymentMethod === 'etrans' && !formState.invoiceInfo.referenceNumber?.trim()) {
+          setFieldErrors({ referenceNumber: t('errorReferenceNumber') || 'Reference Number是必填项' });
+          setStatus({ type: 'error', message: t('errorReferenceNumber') || 'Reference Number是必填项' });
           return false;
         }
       }
       return true;
     }
-    if (step === 4) {
-      // 第四步验证：项目名称必填
-      if (!formState.projectName.trim()) {
-        setStatus({ type: 'error', message: '项目名称是必填项' });
-        return false;
-      }
+    // [2025-12-07 02:00:00] PRD v2.0: 第三步验证（文件上传，非必填，无需验证）
+    if (step === 3) {
+      // 文件上传是非必填的，可以直接通过
       return true;
     }
     return true;
-  }, [formState]);
+  }, [formState, t]);
 
   // [2025-01-27 18:00:00] 步骤导航
   const resetStatus = useCallback(() => setStatus({ type: 'idle' }), []);
@@ -664,9 +830,9 @@ export default function OfflineOrdersIntakePage() {
     }
   }, [currentStep, resetStatus]);
 
+  // [2025-12-07 02:30:00] PRD v2.0: 步骤导航（支持点击跳转，可自由前进后退）
   const goToStep = useCallback((step: number) => {
-    // [2025-01-27 18:00:00] 只能跳转到已完成的步骤或当前步骤
-    // 暂时允许跳转到任意步骤（可以后续添加限制）
+    // PRD v2.0: 所有步骤可自由前进后退，无强制顺序限制
     resetStatus();
     if (step >= 1 && step <= STEPS.length) {
       setCurrentStep(step);
@@ -818,11 +984,10 @@ export default function OfflineOrdersIntakePage() {
           }
         });
         
-        // 添加产品级别的印刷位置（从 productPrintConfigs 获取）
+        // [2025-12-07 02:30:00] PRD v2.0: 添加产品级别的印刷位置（从 item.printPositions 获取）
         formState.productItems.forEach((item) => {
-          const config = formState.productPrintConfigs[item.id];
-          if (config && config.positions && config.positions.length > 0) {
-            config.positions.forEach((pos, index) => {
+          if (item.printPositions && item.printPositions.length > 0) {
+            item.printPositions.forEach((pos, index) => {
               if (pos.position && (pos.width || pos.height)) {
                 allPrintPositions.push({
                   ...pos,
@@ -938,12 +1103,12 @@ export default function OfflineOrdersIntakePage() {
     ],
   );
 
-  // [2025-01-27 18:00:00] 渲染第一步：多产品定制
+  // [2025-12-07 02:30:00] PRD v2.0: 渲染第一步：产品选择与配置
   const renderStep1 = () => {
-    // 获取已添加的产品分类ID列表
-    const addedCategoryIds = formState.productItems.map((item) => item.categoryId);
-    // 可添加的产品分类（未添加的）
-    const availableCategories = categories.filter((cat) => !addedCategoryIds.includes(cat.id));
+    // 获取已添加的产品ID列表
+    const addedProductIds = formState.productItems.map((item) => item.productId);
+    // 可添加的产品（未添加的）
+    const availableProducts = orderConfig.products.filter((p) => !addedProductIds.includes(p.id));
 
     return (
       <div className="space-y-6">
@@ -952,16 +1117,16 @@ export default function OfflineOrdersIntakePage() {
         </div>
         <p className="text-gray-600 mb-6 text-sm">{t('step1Intro')}</p>
 
-        {/* 添加产品区域 - 使用 Tailwind */}
+        {/* 添加产品区域 - PRD v2.0: 使用可维护的产品列表 */}
         <div className="mb-8 p-4 bg-gray-50 rounded-lg">
           <label className="block">
             <span className="block text-sm font-medium text-gray-700 mb-2">{t('addProduct')}：</span>
-            {categoriesLoading ? (
+            {configLoading ? (
               <select
                 className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 disabled
               >
-                <option>加载产品分类中...</option>
+                <option>加载产品列表中...</option>
               </select>
             ) : (
               <>
@@ -969,32 +1134,32 @@ export default function OfflineOrdersIntakePage() {
                   value=""
                   onChange={(e) => {
                     if (e.target.value) {
-                      const category = categories.find((c) => c.id === e.target.value);
-                      if (category) {
-                        addProductItem(category.id, category.name);
+                      const product = orderConfig.products.find((p) => p.id === e.target.value);
+                      if (product) {
+                        addProductItem(product.id, product.name, product.isCustomerOwned);
                         e.target.value = '';
                       }
                     }
                   }}
                   className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                  disabled={availableCategories.length === 0}
+                  disabled={availableProducts.length === 0}
                 >
                   <option value="">
-                    {availableCategories.length === 0 
-                      ? (categories.length === 0 
-                          ? '暂无产品分类，请先添加产品分类' 
-                          : '所有产品分类已添加')
-                      : t('selectProductType')}
+                    {availableProducts.length === 0 
+                      ? (orderConfig.products.length === 0 
+                          ? '暂无产品，请先在管理员后台添加产品' 
+                          : '所有产品已添加')
+                      : t('selectProductType') || '选择产品'}
                   </option>
-                  {availableCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
+                  {availableProducts.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name} {product.isCustomerOwned ? '(客户自带服装)' : ''}
                     </option>
                   ))}
                 </select>
-                {availableCategories.length === 0 && categories.length > 0 && (
+                {availableProducts.length === 0 && orderConfig.products.length > 0 && (
                   <p className="mt-2 text-xs text-gray-600">
-                    所有产品分类已添加，如需添加更多，请先删除已添加的产品
+                    所有产品已添加，如需添加更多，请先删除已添加的产品
                   </p>
                 )}
               </>
@@ -1002,167 +1167,230 @@ export default function OfflineOrdersIntakePage() {
           </label>
         </div>
 
-        {/* 产品列表 - 使用 Tailwind */}
+        {/* 产品列表 - PRD v2.0: 产品卡片显示 */}
         {formState.productItems.length > 0 ? (
           <div className="space-y-6 mb-8">
             {formState.productItems.map((item, itemIndex) => {
-              const itemTotal = calculateItemTotal(item);
-              const itemQuantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
+              // 获取该产品的可用颜色（如果是客户自带服装，显示"自带颜色"）
+              const availableColors = item.isCustomerOwned 
+                ? [{ id: 'customer-owned', name: '自带颜色' }]
+                : orderConfig.colors;
 
               return (
-                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white">
-                  <div className="mb-5 pb-3 border-b border-gray-200">
-                    <h3 className="text-xl font-semibold text-gray-900 m-0 flex justify-between items-center">
-                      {item.categoryName}
-                      <button
-                        type="button"
-                        className="bg-red-600 text-white border-none rounded-md px-3 py-1.5 text-xs font-medium cursor-pointer hover:bg-red-700 transition-colors"
-                        onClick={() => removeProductItem(item.id)}
-                      >
-                        {t('delete')}
-                      </button>
-                    </h3>
+                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm">
+                  {/* 产品卡片头部 - PRD v2.0: 产品图片、产品名称、关闭按钮 */}
+                  <div className="mb-5 pb-3 border-b border-gray-200 flex items-center gap-4">
+                    {(() => {
+                      const product = orderConfig.products.find(p => p.id === item.productId);
+                      return product?.imageUrl ? (
+                        <img 
+                          src={product.imageUrl} 
+                          alt={item.productName}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      ) : null;
+                    })()}
+                    <div className="flex-1">
+                      <h3 className="text-xl font-semibold text-gray-900 m-0">
+                        {item.productName}
+                        {item.isCustomerOwned && (
+                          <span className="ml-2 text-sm text-gray-500">(客户自带服装)</span>
+                        )}
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-gray-400 hover:text-red-600 text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"
+                      onClick={() => removeProductItem(item.id)}
+                      title={t('delete') || '删除'}
+                    >
+                      ×
+                    </button>
                   </div>
 
-                  {/* 变体输入区域 - 使用 Tailwind（表格内直接编辑） */}
-                  <div className="mt-4">
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="bg-gray-50">
-                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
-                              {t('size')}
-                            </th>
-                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
-                              {t('color')}
-                            </th>
-                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
-                              {t('quantity')}
-                            </th>
-                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
-                              {t('unitPrice')}
-                            </th>
-                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
-                              {t('subtotal')}
-                            </th>
-                            <th className="px-3 py-3 text-left text-sm font-semibold text-gray-700 border-b border-gray-200">
-                              {t('remove')}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {item.variants.map((variant, variantIndex) => {
-                            const variantTotal = variant.quantity * variant.unitPrice;
-                            return (
-                              <tr key={variantIndex} className="border-b border-gray-200">
-                                <td className="px-3 py-3 text-sm">
-                                  <select
-                                    value={variant.size}
-                                    onChange={(e) =>
-                                      updateVariant(item.id, variantIndex, 'size', e.target.value)
-                                    }
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                  >
-                                    <option value="">{t('selectSize')}</option>
-                                    {SIZE_OPTIONS.map((size) => (
-                                      <option key={size} value={size}>
+                  {/* 颜色选择区域 - PRD v2.0: 支持"Add another color" */}
+                  <div className="mt-4 space-y-4">
+                    {item.colors.map((color, colorIndex) => {
+                      // 获取该颜色的可用尺码（从配置读取）
+                      const availableSizesForColor = color.availableSizes.length > 0 
+                        ? color.availableSizes 
+                        : ALL_SIZES; // 默认所有尺码可用
+
+                      return (
+                        <div key={color.colorId} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          <div className="flex justify-between items-center mb-3">
+                            <h4 className="text-lg font-medium text-gray-800">
+                              {color.colorName}
+                            </h4>
+                            {item.colors.length > 1 && (
+                              <button
+                                type="button"
+                                className="text-red-600 hover:text-red-700 text-sm font-medium"
+                                onClick={() => removeColorFromProduct(item.id, color.colorId)}
+                              >
+                                {t('remove') || '移除颜色'}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* 尺码输入区域 - PRD v2.0: YOUTH/ADULT分类、可用性控制、额外费用显示 */}
+                          <div className="space-y-3">
+                            {/* YOUTH尺码 */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
+                              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                                {YOUTH_SIZES.map((size) => {
+                                  const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
+                                  const sizeData = color.sizes.find(s => s.size === size);
+                                  const additionalFee = sizeFeeMap[size] || 0;
+                                  
+                                  return (
+                                    <div key={size} className={`${!isAvailable ? 'opacity-50' : ''}`}>
+                                      <label className="block text-xs text-gray-600 mb-1">{size}</label>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={sizeData?.quantity || 0}
+                                        onChange={(e) => {
+                                          const quantity = parseInt(e.target.value, 10) || 0;
+                                          const unitPrice = sizeData?.unitPrice || 0;
+                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
+                                        }}
+                                        disabled={!isAvailable}
+                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        placeholder="数量"
+                                      />
+                                      {sizeData && sizeData.quantity > 0 && (
+                                        <div className="mt-1">
+                                          <input
+                                            type="text"
+                                            value={sizeData.unitPrice || ''}
+                                            onChange={(e) => {
+                                              const value = e.target.value.replace(/[^\d.]/g, '');
+                                              const unitPrice = parseFloat(value) || 0;
+                                              updateSizeQuantity(item.id, color.colorId, size, sizeData.quantity, unitPrice);
+                                            }}
+                                            className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                                            placeholder="单价"
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* ADULT尺码 */}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
+                              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                                {ADULT_SIZES.map((size) => {
+                                  const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
+                                  const sizeData = color.sizes.find(s => s.size === size);
+                                  const additionalFee = sizeFeeMap[size] || 0;
+                                  
+                                  return (
+                                    <div key={size} className={`${!isAvailable ? 'opacity-50' : ''}`}>
+                                      <label className="block text-xs text-gray-600 mb-1">
                                         {size}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </td>
-                                <td className="px-3 py-3 text-sm">
-                                  <select
-                                    value={variant.color}
-                                    onChange={(e) =>
-                                      updateVariant(item.id, variantIndex, 'color', e.target.value)
-                                    }
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                  >
-                                    <option value="">{t('selectColor')}</option>
-                                    {['White', 'Black', 'Red', 'Blue', 'Green', 'Yellow', 'Gray'].map(
-                                      (color) => (
-                                        <option key={color} value={color}>
-                                          {color}
-                                        </option>
-                                      )
-                                    )}
-                                  </select>
-                                </td>
-                                <td className="px-3 py-3">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    value={variant.quantity}
-                                    onChange={(e) =>
-                                      updateVariant(
-                                        item.id,
-                                        variantIndex,
-                                        'quantity',
-                                        parseInt(e.target.value, 10) || 0,
-                                      )
-                                    }
-                                    className="w-24 border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                                  />
-                                </td>
-                                <td className="px-3 py-3">
-                                  <input
-                                    type="text"
-                                    value={variant.unitPrice || ''}
-                                    onChange={(e) => {
-                                      const value = e.target.value.replace(/[^\d.]/g, '');
-                                      const numValue = parseFloat(value) || 0;
-                                      updateVariant(item.id, variantIndex, 'unitPrice', numValue);
-                                    }}
-                                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
-                                  />
-                                </td>
-                                <td className="px-3 py-3 text-sm font-semibold text-blue-700">
-                                  ${variantTotal.toFixed(2)}
-                                </td>
-                                <td className="px-3 py-3">
-                                  <button
-                                    type="button"
-                                    className="bg-red-600 text-white border-none rounded-md px-2 py-1 text-xs font-medium cursor-pointer hover:bg-red-700 transition-colors"
-                                    onClick={() => removeVariant(item.id, variantIndex)}
-                                  >
-                                    {t('delete')}
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                        <tfoot className="bg-gray-50">
-                          <tr>
-                            <td colSpan={2} className="px-3 py-3">
-                              <strong className="font-semibold">{t('productSubtotal')}：</strong>
-                            </td>
-                            <td className="px-3 py-3">
-                              <strong className="font-semibold">
-                                {itemQuantity} {t('items')}
-                              </strong>
-                            </td>
-                            <td colSpan={2} className="px-3 py-3">
-                              <strong className="font-semibold text-blue-700">
-                                ${itemTotal.toFixed(2)} CAD
-                              </strong>
-                            </td>
-                            <td></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                                        {LARGE_SIZES.includes(size) && additionalFee > 0 && (
+                                          <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
+                                        )}
+                                      </label>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        value={sizeData?.quantity || 0}
+                                        onChange={(e) => {
+                                          const quantity = parseInt(e.target.value, 10) || 0;
+                                          const unitPrice = sizeData?.unitPrice || 0;
+                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
+                                        }}
+                                        disabled={!isAvailable}
+                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        placeholder="数量"
+                                      />
+                                      {sizeData && sizeData.quantity > 0 && (
+                                        <div className="mt-1">
+                                          <input
+                                            type="text"
+                                            value={sizeData.unitPrice || ''}
+                                            onChange={(e) => {
+                                              const value = e.target.value.replace(/[^\d.]/g, '');
+                                              const unitPrice = parseFloat(value) || 0;
+                                              updateSizeQuantity(item.id, color.colorId, size, sizeData.quantity, unitPrice);
+                                            }}
+                                            className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                                            placeholder="单价"
+                                          />
+                                          {sizeData.subtotal > 0 && (
+                                            <div className="text-xs text-blue-700 mt-1">
+                                              小计: ${sizeData.subtotal.toFixed(2)}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* 颜色小计 */}
+                          {color.totalPrice > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
+                              <span className="text-sm font-medium text-gray-700">
+                                该颜色小计: {color.totalQuantity} 件
+                              </span>
+                              <span className="text-sm font-semibold text-blue-700">
+                                ${color.totalPrice.toFixed(2)} CAD
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {/* Add another color 按钮 */}
                     <div className="mt-4">
-                      <button
-                        type="button"
-                        className="px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
-                        onClick={() => addVariant(item.id)}
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const color = availableColors.find(c => c.id === e.target.value);
+                            if (color && !item.colors.some(c => c.colorId === color.id)) {
+                              addColorToProduct(item.id, color.id, color.name);
+                              e.target.value = '';
+                            }
+                          }
+                        }}
+                        className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
-                        {t('addVariant')}
-                      </button>
+                        <option value="">{t('addAnotherColor') || 'Add another color'}</option>
+                        {availableColors
+                          .filter(c => !item.colors.some(ic => ic.colorId === c.id))
+                          .map((color) => (
+                            <option key={color.id} value={color.id}>
+                              {color.name}
+                            </option>
+                          ))}
+                      </select>
                     </div>
                   </div>
+
+                  {/* 产品小计 */}
+                  {item.totalPrice > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                      <span className="text-base font-medium text-gray-700">
+                        {t('productSubtotal') || '产品小计'}: {item.totalQuantity} {t('items') || '件'}
+                      </span>
+                      <span className="text-lg font-semibold text-blue-700">
+                        ${item.totalPrice.toFixed(2)} CAD
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -1173,17 +1401,172 @@ export default function OfflineOrdersIntakePage() {
           </div>
         )}
 
-        {/* 总计 - 使用 Tailwind */}
+        {/* 印刷位置配置 - PRD v2.0: PrintingStyle、DST File Fee */}
+        <div className="mt-8 p-5 bg-white border border-gray-200 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-900 m-0 mb-4">
+            {t('printPositions') || '印刷位置配置'}
+          </h3>
+          
+          {/* 总体印刷位置 */}
+          <div className="space-y-4">
+            {formState.globalPrintPositions && formState.globalPrintPositions.length > 0 ? (
+              formState.globalPrintPositions.map((pos, index) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className="block">
+                      <span className="block text-sm font-medium text-gray-700 mb-2">位置</span>
+                      <select
+                        value={pos.position}
+                        onChange={(e) => {
+                          const newPositions = [...formState.globalPrintPositions || []];
+                          newPositions[index] = { ...newPositions[index], position: e.target.value };
+                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      >
+                        <option value="">选择位置</option>
+                        {PRINT_POSITION_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="block text-sm font-medium text-gray-700 mb-2">工艺 (PrintingStyle)</span>
+                      <select
+                        value={pos.printingStyle || ''}
+                        onChange={(e) => {
+                          const newPositions = [...formState.globalPrintPositions || []];
+                          newPositions[index] = { ...newPositions[index], printingStyle: e.target.value };
+                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      >
+                        <option value="">选择工艺</option>
+                        <option value="DTF">DTF</option>
+                        <option value="Embroidery">Embroidery</option>
+                        <option value="UV">UV</option>
+                        <option value="Vinyl">Vinyl</option>
+                        <option value="其他">其他</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="block text-sm font-medium text-gray-700 mb-2">宽度 (inch)</span>
+                      <input
+                        type="text"
+                        value={pos.width || ''}
+                        onChange={(e) => {
+                          const newPositions = [...formState.globalPrintPositions || []];
+                          newPositions[index] = { ...newPositions[index], width: e.target.value };
+                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="可选"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="block text-sm font-medium text-gray-700 mb-2">高度 (inch)</span>
+                      <input
+                        type="text"
+                        value={pos.height || ''}
+                        onChange={(e) => {
+                          const newPositions = [...formState.globalPrintPositions || []];
+                          newPositions[index] = { ...newPositions[index], height: e.target.value };
+                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="可选"
+                      />
+                    </label>
+                    <label className="block md:col-span-2">
+                      <span className="block text-sm font-medium text-gray-700 mb-2">备注</span>
+                      <input
+                        type="text"
+                        value={pos.notes || ''}
+                        onChange={(e) => {
+                          const newPositions = [...formState.globalPrintPositions || []];
+                          newPositions[index] = { ...newPositions[index], notes: e.target.value };
+                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
+                        }}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setFormState(prev => ({
+                    ...prev,
+                    globalPrintPositions: [{ position: '', printingStyle: '', width: '', height: '', notes: '' }]
+                  }));
+                }}
+                className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
+              >
+                {t('addPrintPosition') || '添加印刷位置'}
+              </button>
+            )}
+          </div>
+
+          {/* DST File Fee - 仅当选择Embroidery时显示 */}
+          {formState.globalPrintPositions?.some(pos => pos.printingStyle === 'Embroidery') && (
+            <div className="mt-4">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">DST File Fee (订单级别)</span>
+                <input
+                  type="text"
+                  value={formState.dstFileFee || ''}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^\d.]/g, '');
+                    setFormState(prev => ({ ...prev, dstFileFee: parseFloat(value) || 0 }));
+                  }}
+                  className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  placeholder="0.00"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        {/* 订单备注 - PRD v2.0: 必填 */}
+        <div className="mt-6 p-5 bg-white border border-gray-200 rounded-xl">
+          <label className="block">
+            <span className="block text-sm font-medium text-gray-700 mb-2">
+              {t('orderNotes') || '订单备注'} *
+            </span>
+            <textarea
+              value={formState.orderNotes}
+              onChange={(e) => setFormState(prev => ({ ...prev, orderNotes: e.target.value }))}
+              className={`w-full border rounded-lg px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                fieldErrors.orderNotes ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+              }`}
+              placeholder={t('orderNotesPlaceholder') || '请输入订单备注...'}
+              required
+            />
+            {fieldErrors.orderNotes && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.orderNotes}</p>
+            )}
+          </label>
+        </div>
+
+        {/* 总计 - PRD v2.0 */}
         {calculateTotalQuantity > 0 && (
           <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
             <div className="flex justify-between items-center text-base">
-              <span>{t('totalQuantity')}：</span>
-              <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items')}</strong>
+              <span>{t('totalQuantity') || '总数量'}：</span>
+              <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items') || '件'}</strong>
             </div>
             <div className="flex justify-between items-center text-base">
-              <span>{t('totalAmount')}：</span>
+              <span>{t('totalAmount') || '总金额'}：</span>
               <strong className="text-xl text-blue-700">${calculateSubtotal.toFixed(2)} CAD</strong>
             </div>
+            {formState.dstFileFee > 0 && (
+              <div className="flex justify-between items-center text-base">
+                <span>DST File Fee：</span>
+                <strong className="text-lg text-blue-700">${formState.dstFileFee.toFixed(2)} CAD</strong>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1399,84 +1782,103 @@ export default function OfflineOrdersIntakePage() {
               )}
             </label>
           </div>
+          </div>
+        )}
 
-              {/* 支付信息（Invoice时必填） */}
-              <div className="p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">支付信息 *</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">支付方式 *</span>
-                    <select
-                      value={formState.invoiceInfo.paymentMethod || ''}
-                      onChange={(e) => {
-                        const paymentMethod = e.target.value as 'card' | 'etrans' | '';
-                        setFormState((prev) => ({
-                          ...prev,
-                          invoiceInfo: {
-                            ...prev.invoiceInfo,
-                            paymentMethod: paymentMethod || undefined,
-                          },
-                        }));
-                      }}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">选择支付方式...</option>
-                      <option value="card">刷卡</option>
-                      <option value="etrans">e-trans</option>
-                    </select>
-                  </label>
-                  
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">Reference Number *</span>
-                            <input
-                              type="text"
-                      value={formState.invoiceInfo.referenceNumber || ''}
-                              onChange={(e) => {
-                        setFormState((prev) => ({
-                          ...prev,
-                          invoiceInfo: {
-                            ...prev.invoiceInfo,
-                            referenceNumber: e.target.value,
-                          },
-                        }));
-                              }}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Reference Number"
-                    />
-                  </label>
-                </div>
-            </div>
-
-              {/* 税计算显示 */}
-              <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">价格明细（含税）</h4>
-                <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                    <span>小计：</span>
-                <span>${calculateSubtotal.toFixed(2)} CAD</span>
-              </div>
-              {formState.discount > 0 && (
-                <div className="flex justify-between items-center text-sm text-red-600">
-                      <span>折扣 ({formState.discount}%)：</span>
-                  <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
-                </div>
-              )}
-                  <div className="flex justify-between items-center text-sm">
-                    <span>税前金额：</span>
-                    <span>${taxBase.toFixed(2)} CAD</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span>税 (13% HST)：</span>
-                    <span>${taxAmount.toFixed(2)} CAD</span>
-                  </div>
-              <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
-                    <span className="font-semibold">总计（含税）：</span>
-                    <strong className="text-xl text-blue-700">${totalWithTax.toFixed(2)} CAD</strong>
-              </div>
-              </div>
+        {/* [2025-12-07 02:30:00] PRD v2.0: 支付信息（Invoice时必填） */}
+        {formState.requiresInvoice && (
+          <div className="mt-4 p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('paymentInfo') || '支付信息'} *</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'} *</span>
+                <select
+                  value={formState.invoiceInfo.paymentMethod || ''}
+                  onChange={(e) => {
+                    const paymentMethod = e.target.value as 'card' | 'etrans' | '';
+                    setFormState((prev) => ({
+                      ...prev,
+                      invoiceInfo: {
+                        ...prev.invoiceInfo,
+                        paymentMethod: paymentMethod || undefined,
+                      },
+                    }));
+                  }}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    fieldErrors.paymentMethod ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                >
+                  <option value="">{t('selectPaymentMethod') || '选择支付方式...'}</option>
+                  <option value="card">{t('paymentCard') || '刷卡'}</option>
+                  <option value="etrans">{t('paymentEtransfer') || 'e-trans'}</option>
+                </select>
+                {fieldErrors.paymentMethod && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.paymentMethod}</p>
+                )}
+              </label>
+              
+              <label className="block">
+                <span className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('referenceNumber') || 'Reference Number'}
+                  {formState.invoiceInfo.paymentMethod === 'etrans' ? ' *' : ''}
+                </span>
+                <input
+                  type="text"
+                  value={formState.invoiceInfo.referenceNumber || ''}
+                  onChange={(e) => {
+                    setFormState((prev) => ({
+                      ...prev,
+                      invoiceInfo: {
+                        ...prev.invoiceInfo,
+                        referenceNumber: e.target.value,
+                      },
+                    }));
+                  }}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    fieldErrors.referenceNumber ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                  placeholder={t('referenceNumberPlaceholder') || 'Reference Number'}
+                />
+                {fieldErrors.referenceNumber && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.referenceNumber}</p>
+                )}
+              </label>
             </div>
           </div>
         )}
+
+        {/* [2025-12-07 02:00:00] PRD v2.0: 税计算显示（仅当选择Invoice时显示税额） */}
+        <div className="mt-4 p-5 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">{t('priceDetails') || '价格明细'}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}</h4>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span>{t('subtotal') || '小计'}：</span>
+              <span>${calculateSubtotal.toFixed(2)} CAD</span>
+            </div>
+            {formState.discount > 0 && (
+              <div className="flex justify-between items-center text-sm text-red-600">
+                <span>{t('discount')} ({formState.discount}%)：</span>
+                <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
+              </div>
+            )}
+            {formState.requiresInvoice && (
+              <>
+                <div className="flex justify-between items-center text-sm">
+                  <span>{t('beforeTax') || '税前金额'}：</span>
+                  <span>${taxBase.toFixed(2)} CAD</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>{t('tax')} (13% HST)：</span>
+                  <span>${taxAmount.toFixed(2)} CAD</span>
+                </div>
+              </>
+            )}
+            <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
+              <span className="font-semibold">{t('total')}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}：</span>
+              <strong className="text-xl text-blue-700">${totalWithTax.toFixed(2)} CAD</strong>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   );
@@ -1576,8 +1978,12 @@ export default function OfflineOrdersIntakePage() {
     <div className="min-h-screen bg-gray-100">
       <header className="relative py-12 px-6 bg-gradient-to-br from-yellow-200 via-yellow-100 to-yellow-50 z-10">
         <div>
-          {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
-          <div className="absolute top-6 right-6 flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
+          {/* [2025-12-07 03:00:00] 右上角：登录按钮/用户菜单 + 语言切换 */}
+          <div className="absolute top-6 right-6 flex items-center gap-3">
+            {/* 登录按钮/用户菜单 */}
+            <UserMenu />
+            {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
+            <div className="flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
             <button
               type="button"
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
@@ -1638,8 +2044,7 @@ export default function OfflineOrdersIntakePage() {
           </div>
           )}
 
-          {/* [2025-01-27 18:00:00] 步骤导航栏 - 使用 Tailwind */}
-          {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
+          {/* [2025-12-07 02:30:00] PRD v2.0: 步骤导航栏（支持点击跳转） */}
           {isClient && (
           <div className="flex gap-3 pb-6 border-b-2 border-gray-200 overflow-x-visible">
             {STEPS.map((step, index) => (
@@ -1653,6 +2058,7 @@ export default function OfflineOrdersIntakePage() {
                     : 'bg-gray-50 hover:bg-gray-100'
                 }`}
                 onClick={() => goToStep(step.id)}
+                title={t('clickToJump') || '点击跳转到此步骤'}
               >
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold flex-shrink-0 ${

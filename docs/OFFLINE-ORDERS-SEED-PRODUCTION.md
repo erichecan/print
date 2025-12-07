@@ -12,33 +12,24 @@ Next.js 的路由是基于文件系统的，但访问时不需要包含文件路
 
 ## 📋 生成的测试数据
 
-### 3 个销售账号
+### 销售员账号（3个）
 
-| 账号 | 邮箱 | 密码 | 姓名 |
-|------|------|------|------|
-| Sales 1 | `sales1@example.com` | `Sales123!` | Sales One |
-| Sales 2 | `sales2@example.com` | `Sales123!` | Sales Two |
-| Sales 3 | `sales3@example.com` | `Sales123!` | Sales Three |
+| 账号 | 邮箱 | 密码 | 姓名 | 角色 |
+|------|------|------|------|------|
+| Sales 1 | `sales1@suvernireplus.com` | `sales123456` | Sales One | SALES |
+| Sales 2 | `sales2@suvernireplus.com` | `sales123456` | Sales Two | SALES |
+| Sales 3 | `sales3@suvernireplus.com` | `sales123456` | Sales Three | SALES |
 
-### 订单分配
+### 销售主管账号（1个）
 
-每个销售账号都有不同的订单数据：
+| 账号 | 邮箱 | 密码 | 姓名 | 角色 |
+|------|------|------|------|------|
+| Sales Manager | `salesmanager@suvernireplus.com` | `manager123456` | Sales Manager | SALES_MANAGER |
 
-#### Sales 1 (sales1@example.com)
-- `OFF-SALES1-CASE-1` - New 阶段，50件
-- `OFF-SALES1-CASE-2` - Review 阶段，120件，加急
-- `OFF-SALES1-CASE-3` - Production 阶段，200件
-- `OFF-SALES1-CASE-4` - Completed 阶段，150件（有生产工单）
+### 权限说明
 
-#### Sales 2 (sales2@example.com)
-- `OFF-SALES2-CASE-1` - New 阶段，60件
-- `OFF-SALES2-CASE-2` - Review 阶段，140件，非加急
-- `OFF-SALES2-CASE-3` - Production 阶段，230件
-
-#### Sales 3 (sales3@example.com)
-- `OFF-SALES3-CASE-1` - New 阶段，70件
-- `OFF-SALES3-CASE-2` - Review 阶段，160件，加急
-- `OFF-SALES3-CASE-3` - Production 阶段，260件
+- **Sales 账号**：只能查看和管理自己提交的订单（通过 `metadata.submittedByUserId` 过滤）
+- **Sales Manager 账号**：可以查看和管理所有订单（无过滤限制）
 
 ## 🚀 在线上环境运行 Seed
 
@@ -113,19 +104,24 @@ https://print-main-frontend-234065158862.us-central1.run.app/offline-orders/sale
 ### 2. 使用不同账号登录测试
 
 #### 测试 Sales 1
-- 邮箱: `sales1@example.com`
-- 密码: `Sales123!`
-- 应该看到 4 条订单（包括 1 条已完成）
+- 邮箱: `sales1@suvernireplus.com`
+- 密码: `sales123456`
+- 角色: SALES
 
 #### 测试 Sales 2
-- 邮箱: `sales2@example.com`
-- 密码: `Sales123!`
-- 应该看到 3 条订单
+- 邮箱: `sales2@suvernireplus.com`
+- 密码: `sales123456`
+- 角色: SALES
 
 #### 测试 Sales 3
-- 邮箱: `sales3@example.com`
-- 密码: `Sales123!`
-- 应该看到 3 条订单
+- 邮箱: `sales3@suvernireplus.com`
+- 密码: `sales123456`
+- 角色: SALES
+
+#### 测试 Sales Manager
+- 邮箱: `salesmanager@suvernireplus.com`
+- 密码: `manager123456`
+- 角色: SALES_MANAGER（可查看所有订单）
 
 ### 3. 验证功能
 

@@ -14,6 +14,7 @@ export type ToolPanelType =
   | 'edit-upload' 
   | 'edit-text' 
   | 'edit-art' 
+  | 'layers' // [2025-12-06 13:00:00] 图层管理面板
   | null;
 
 interface ToolPanelProps {
@@ -45,6 +46,8 @@ const ToolPanel: React.FC<ToolPanelProps> = ({ panelType, onBack, children }) =>
         return 'Edit Text';
       case 'edit-art':
         return 'Edit Art';
+      case 'layers':
+        return 'Layers';
       default:
         return '';
     }

@@ -14,6 +14,15 @@ interface LayerItem {
   visible: boolean;
   locked: boolean;
   object: fabric.Object;
+  groupId?: string; // [2025-12-06 13:00:00] 图层分组 ID
+}
+
+interface LayerGroup {
+  id: string;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  layerIds: string[];
 }
 
 interface LayerManagementPanelProps {
@@ -28,7 +37,9 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
   onUpdate
 }) => {
   const [layers, setLayers] = useState<LayerItem[]>([]);
+  const [groups, setGroups] = useState<LayerGroup[]>([]);
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set()); // [2025-12-06 13:00:00] 展开的分组
 
   // 获取图层类型图标
   const getLayerIcon = (type: string) => {
@@ -93,7 +104,8 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
         type,
         visible: obj.visible !== false,
         locked: obj.selectable === false,
-        object: obj
+        object: obj,
+        groupId: (obj as any).groupId || undefined // [2025-12-06 13:00:00] 图层分组 ID
       };
     });
 
@@ -247,11 +259,139 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     onUpdate?.();
   };
 
+  // [2025-12-06 13:00:00] 创建图层分组
+  const handleCreateGroup = () => {
+    if (!canvas) return;
+
+    const selectedObjects = canvas.getActiveObjects();
+    if (selectedObjects.length < 2) {
+      alert('Please select at least 2 layers to create a group');
+      return;
+    }
+
+    const groupId = `group-${Date.now()}`;
+    const groupName = prompt('Enter group name:', `Group ${groups.length + 1}`) || `Group ${groups.length + 1}`;
+
+    // 为选中的对象设置 groupId
+    selectedObjects.forEach((obj) => {
+      (obj as any).groupId = groupId;
+    });
+
+    // 创建分组
+    const newGroup: LayerGroup = {
+      id: groupId,
+      name: groupName,
+      visible: true,
+      locked: false,
+      layerIds: selectedObjects.map((obj) => (obj as any).id || `layer-${Date.now()}`)
+    };
+
+    setGroups([...groups, newGroup]);
+    setExpandedGroups(new Set([...expandedGroups, groupId]));
+    updateLayers();
+    onUpdate?.();
+  };
+
+  // [2025-12-06 13:00:00] 取消分组
+  const handleUngroup = (groupId: string) => {
+    if (!canvas) return;
+
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+
+    // 移除所有图层的分组 ID
+    group.layerIds.forEach((layerId) => {
+      const layer = layers.find(l => l.id === layerId);
+      if (layer) {
+        delete (layer.object as any).groupId;
+      }
+    });
+
+    setGroups(groups.filter(g => g.id !== groupId));
+    updateLayers();
+    onUpdate?.();
+  };
+
+  // [2025-12-06 13:00:00] 切换分组展开/折叠
+  const handleToggleGroup = (groupId: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupId)) {
+      newExpanded.delete(groupId);
+    } else {
+      newExpanded.add(groupId);
+    }
+    setExpandedGroups(newExpanded);
+  };
+
+  // [2025-12-06 13:00:00] 切换分组可见性
+  const handleToggleGroupVisibility = (group: LayerGroup, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!canvas) return;
+
+    const newVisible = !group.visible;
+    group.layerIds.forEach((layerId) => {
+      const layer = layers.find(l => l.id === layerId);
+      if (layer) {
+        layer.object.set('visible', newVisible);
+      }
+    });
+
+    setGroups(groups.map(g => g.id === group.id ? { ...g, visible: newVisible } : g));
+    canvas.renderAll();
+    updateLayers();
+    onUpdate?.();
+  };
+
+  // [2025-12-06 13:00:00] 切换分组锁定
+  const handleToggleGroupLock = (group: LayerGroup, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!canvas) return;
+
+    const newLocked = !group.locked;
+    group.layerIds.forEach((layerId) => {
+      const layer = layers.find(l => l.id === layerId);
+      if (layer) {
+        layer.object.set({
+          selectable: !newLocked,
+          evented: !newLocked
+        });
+      }
+    });
+
+    setGroups(groups.map(g => g.id === group.id ? { ...g, locked: newLocked } : g));
+    canvas.renderAll();
+    updateLayers();
+    onUpdate?.();
+  };
+
+  // [2025-12-06 13:00:00] 获取分组中的图层
+  const getGroupLayers = (groupId: string): LayerItem[] => {
+    return layers.filter(layer => layer.groupId === groupId);
+  };
+
+  // [2025-12-06 13:00:00] 获取未分组的图层
+  const getUngroupedLayers = (): LayerItem[] => {
+    return layers.filter(layer => !layer.groupId);
+  };
+
   return (
     <div className="dl-layer-management-panel">
       <div className="dl-layer-management-panel__header">
         <h3 className="dl-layer-management-panel__title">Layers</h3>
         <span className="dl-layer-management-panel__count">{layers.length}</span>
+        <button
+          className="dl-layer-management-panel__group-btn"
+          onClick={handleCreateGroup}
+          title="Create Group (Select 2+ layers first)"
+          type="button"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          Group
+        </button>
       </div>
 
       <div className="dl-layer-management-panel__list">
@@ -263,7 +403,129 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
             </p>
           </div>
         ) : (
-          layers.map((layer) => {
+          <>
+            {/* [2025-12-06 13:00:00] 渲染分组 */}
+            {groups.map((group) => {
+              const groupLayers = getGroupLayers(group.id);
+              const isExpanded = expandedGroups.has(group.id);
+
+              return (
+                <div key={group.id} className="dl-layer-management-panel__group">
+                  <div
+                    className="dl-layer-management-panel__group-header"
+                    onClick={() => handleToggleGroup(group.id)}
+                  >
+                    <button
+                      className="dl-layer-management-panel__group-toggle"
+                      type="button"
+                      aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
+                      >
+                        <polyline points="9 18 15 12 9 6" />
+                      </svg>
+                    </button>
+                    <span className="dl-layer-management-panel__group-name">{group.name}</span>
+                    <span className="dl-layer-management-panel__group-count">({groupLayers.length})</span>
+                    <div className="dl-layer-management-panel__group-controls">
+                      <button
+                        className={`dl-layer-management-panel__control-btn ${group.visible ? 'is-visible' : ''}`}
+                        onClick={(e) => handleToggleGroupVisibility(group, e)}
+                        title={group.visible ? 'Hide Group' : 'Show Group'}
+                        type="button"
+                      >
+                        {group.visible ? '👁' : '👁‍🗨'}
+                      </button>
+                      <button
+                        className={`dl-layer-management-panel__control-btn ${group.locked ? 'is-locked' : ''}`}
+                        onClick={(e) => handleToggleGroupLock(group, e)}
+                        title={group.locked ? 'Unlock Group' : 'Lock Group'}
+                        type="button"
+                      >
+                        {group.locked ? '🔒' : '🔓'}
+                      </button>
+                      <button
+                        className="dl-layer-management-panel__control-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUngroup(group.id);
+                        }}
+                        title="Ungroup"
+                        type="button"
+                      >
+                        ↶
+                      </button>
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="dl-layer-management-panel__group-layers">
+                      {groupLayers.map((layer) => {
+                        const isSelected = canvas?.getActiveObject() === layer.object;
+                        const isDragging = draggedLayerId === layer.id;
+
+                        return (
+                          <div
+                            key={layer.id}
+                            className={`dl-layer-management-panel__item dl-layer-management-panel__item--nested ${isSelected ? 'is-selected' : ''} ${isDragging ? 'is-dragging' : ''}`}
+                            draggable
+                            onDragStart={(e) => handleDragStart(layer.id, e)}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(layer.id, e)}
+                            onClick={() => handleLayerSelect(layer)}
+                          >
+                            <div className="dl-layer-management-panel__item-content">
+                              <span className="dl-layer-management-panel__item-icon">
+                                {getLayerIcon(layer.type)}
+                              </span>
+                              <span className="dl-layer-management-panel__item-name" title={layer.name}>
+                                {layer.name}
+                              </span>
+                            </div>
+                            <div className="dl-layer-management-panel__item-controls">
+                              <button
+                                className={`dl-layer-management-panel__control-btn ${layer.visible ? 'is-visible' : ''}`}
+                                onClick={(e) => handleToggleVisibility(layer, e)}
+                                title={layer.visible ? 'Hide' : 'Show'}
+                                type="button"
+                              >
+                                {layer.visible ? '👁' : '👁‍🗨'}
+                              </button>
+                              <button
+                                className={`dl-layer-management-panel__control-btn ${layer.locked ? 'is-locked' : ''}`}
+                                onClick={(e) => handleToggleLock(layer, e)}
+                                title={layer.locked ? 'Unlock' : 'Lock'}
+                                type="button"
+                              >
+                                {layer.locked ? '🔒' : '🔓'}
+                              </button>
+                              <button
+                                className="dl-layer-management-panel__control-btn"
+                                onClick={(e) => handleDeleteLayer(layer, e)}
+                                title="Delete"
+                                type="button"
+                              >
+                                🗑
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* [2025-12-06 13:00:00] 渲染未分组的图层 */}
+            {getUngroupedLayers().map((layer) => {
             const isSelected = canvas?.getActiveObject() === layer.object;
             const isDragging = draggedLayerId === layer.id;
 
@@ -315,7 +577,8 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
                 </div>
               </div>
             );
-          })
+          })}
+          </>
         )}
       </div>
     </div>

@@ -28,6 +28,7 @@ import TextPanel from './components/panels/TextPanel';
 import EditTextPanel from './components/panels/EditTextPanel';
 import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
+import LayerManagementPanel from './components/panels/LayerManagementPanel';
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
 import PriceModal from './components/modals/PriceModal';
@@ -962,10 +963,16 @@ const DesignLabClient: React.FC = () => {
   }, [productInfo, currentView, loadBackgroundImage, loadProductInfo]);
 
   // [2025-01-30 17:00:00] Home 面板操作处理
-  const handleHomeAction = (action: 'upload' | 'text' | 'art' | 'products') => {
+  const handleHomeAction = (action: 'upload' | 'text' | 'art' | 'products' | 'layers') => {
     if (action === 'products') {
       // TODO: 实现产品切换功能
       console.log('[DesignLab] Change products');
+      return;
+    }
+    if (action === 'layers') {
+      // [2025-12-06 13:00:00] 打开图层管理面板
+      setToolPanelType('layers');
+      setActiveTool('layers');
       return;
     }
     handleToolClick(action);
@@ -1931,6 +1938,18 @@ const DesignLabClient: React.FC = () => {
               canvas={fabricCanvasRef.current}
               onUpdate={handleCanvasUpdate}
               onChangeArt={handleChangeArt}
+            />
+          )}
+          {toolPanelType === 'layers' && (
+            <LayerManagementPanel
+              canvas={fabricCanvasRef.current}
+              onSelectLayer={(object) => {
+                if (fabricCanvasRef.current) {
+                  fabricCanvasRef.current.setActiveObject(object);
+                  fabricCanvasRef.current.renderAll();
+                }
+              }}
+              onUpdate={handleCanvasUpdate}
             />
           )}
         </ToolPanel>

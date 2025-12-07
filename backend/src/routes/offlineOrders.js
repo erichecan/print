@@ -40,6 +40,9 @@ const upload = multer({
   fileFilter
 });
 
+// [2025-12-07 02:30:00] PRD v2.0: 获取订单创建配置数据（产品、颜色、尺码费用、可用性等）
+router.get('/config', offlineOrderController.getOrderConfig);
+
 router.post(
   '/',
   authenticateOptional,

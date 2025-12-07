@@ -85,7 +85,7 @@ export default function SalesOrdersPage() {
           <button
             type="button"
             className="sales-orders-new"
-            onClick={() => router.push('/offline-orders')}
+            onClick={() => window.open('/offline-orders', '_blank')}
           >
             新建线下订单
           </button>

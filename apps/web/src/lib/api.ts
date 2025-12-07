@@ -836,6 +836,12 @@ export const salesOrdersApi = {
   },
   get: (id: string) =>
     api<{ order: SalesOfflineOrderDetail }>(`/sales/orders/${id}`).then((res) => res.order),
+  // [2025-12-07 03:00:00] 更新订单阶段
+  updateStage: (id: string, data: { stageKey: string; note?: string }) =>
+    api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/sales/orders/${id}/stage`, {
+      method: 'PATCH',
+      body: data,
+    }),
 };
 
 // [2025-12-06 17:00:00] Offline Order Product Configuration API
@@ -874,8 +880,8 @@ export interface OfflineOrderConfig {
 }
 
 export const offlineOrderProductApi = {
-  // [2025-12-06 17:00:00] 获取订单配置数据
-  getOrderConfig: () => sameOriginApi<OfflineOrderConfig>('/api/offline-order-products/config'),
+  // [2025-12-07 02:30:00] PRD v2.0: 获取订单配置数据
+  getOrderConfig: () => sameOriginApi<OfflineOrderConfig>('/api/offline-orders/config'),
 };
 
 // Address API

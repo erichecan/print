@@ -7,6 +7,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/api-config';
 
 export default function SalesOrderDetailPage() {
   const router = useRouter();
@@ -17,6 +18,9 @@ export default function SalesOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<SalesOfflineOrderDetail | null>(null);
   const [error, setError] = useState('');
+  const [stages, setStages] = useState<Array<{ key: string; label: string; position: number }>>([]);
+  const [updatingStage, setUpdatingStage] = useState(false);
+  const [stageNote, setStageNote] = useState('');
 
   useEffect(() => {
     if (!orderId) return;
@@ -42,9 +46,14 @@ export default function SalesOrderDetailPage() {
       }
 
       try {
-        const detail = await salesOrdersApi.get(orderId);
+        // 获取订单详情和阶段配置
+        const [detail, stagesRes] = await Promise.all([
+          salesOrdersApi.get(orderId),
+          fetch(`${API_BASE_URL}/admin/offline-orders/config/stages`).then(res => res.json()).catch(() => ({ stages: [] }))
+        ]);
         if (!cancelled) {
           setOrder(detail);
+          setStages(stagesRes.stages || []);
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -109,6 +118,26 @@ export default function SalesOrderDetailPage() {
     router.push('/offline-orders/sales/orders');
   };
 
+  // [2025-12-07 03:00:00] 更新订单阶段
+  const handleUpdateStage = async (newStageKey: string) => {
+    if (!order || updatingStage) return;
+    
+    setUpdatingStage(true);
+    try {
+      const updated = await salesOrdersApi.updateStage(order.id, {
+        stageKey: newStageKey,
+        note: stageNote || undefined,
+      });
+      setOrder(updated.order);
+      setStageNote('');
+      setError('');
+    } catch (err: any) {
+      setError(err.message || '更新订单阶段失败。');
+    } finally {
+      setUpdatingStage(false);
+    }
+  };
+
   return (
     <div className="order-detail-shell">
       <div className="order-detail-card">
@@ -131,6 +160,33 @@ export default function SalesOrderDetailPage() {
                   {meta.rushOrder && <span className="status-badge status-rush">加急</span>}
                   {meta.stage?.label && <span className="status-badge status-stage">{meta.stage.label}</span>}
                 </div>
+                {/* [2025-12-07 03:00:00] 修改订单阶段 */}
+                {stages.length > 0 && (
+                  <div className="order-stage-update">
+                    <label className="stage-update-label">
+                      <span>修改阶段：</span>
+                      <select
+                        value={meta.stage?.key || ''}
+                        onChange={(e) => handleUpdateStage(e.target.value)}
+                        disabled={updatingStage}
+                        className="stage-update-select"
+                      >
+                        {stages.map((stage) => (
+                          <option key={stage.key} value={stage.key}>
+                            {stage.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <textarea
+                      value={stageNote}
+                      onChange={(e) => setStageNote(e.target.value)}
+                      placeholder="备注（可选）"
+                      className="stage-update-note"
+                      rows={2}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -621,6 +677,63 @@ export default function SalesOrderDetailPage() {
         .status-stage {
           background: #f3f4f6;
           color: #6b7280;
+        }
+
+        .order-stage-update {
+          margin-top: 1rem;
+          padding: 1rem;
+          background: #f7fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+        }
+
+        .stage-update-label {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-bottom: 0.75rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #4a5568;
+        }
+
+        .stage-update-select {
+          flex: 1;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #cbd5e0;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          background: #ffffff;
+          cursor: pointer;
+          transition: border-color 0.2s ease;
+        }
+
+        .stage-update-select:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .stage-update-select:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .stage-update-note {
+          width: 100%;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #cbd5e0;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-family: inherit;
+          resize: vertical;
+          min-height: 60px;
+        }
+
+        .stage-update-note:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .order-detail-error {

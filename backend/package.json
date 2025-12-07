@@ -22,7 +22,9 @@
     "fix:base-price": "node scripts/fix-base-price-column.js",
     "fix:base-price-sql": "node scripts/fix-base-price-direct-sql.js",
     "// [2025-12-02 05:30:45] 线下订单 E2E 专用种子脚本": "",
-    "seed:offline-e2e": "node scripts/seed-offline-e2e.js"
+    "seed:offline-e2e": "node scripts/seed-offline-e2e.js",
+    "// [2025-12-07 03:00:00] 生产环境 Sales 账号种子脚本": "",
+    "seed:sales-production": "node scripts/seed-sales-production.js"
   },
   "keywords": [
     "ecommerce",

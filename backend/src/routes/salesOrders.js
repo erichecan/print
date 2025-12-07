@@ -14,6 +14,9 @@ router.get('/', salesOrderController.listSalesOrders);
 // GET /api/sales/orders/:id - 详情
 router.get('/:id', salesOrderController.getSalesOrderById);
 
+// PATCH /api/sales/orders/:id/stage - 更新订单阶段
+router.patch('/:id/stage', salesOrderController.updateSalesOrderStage);
+
 module.exports = router;
 
 

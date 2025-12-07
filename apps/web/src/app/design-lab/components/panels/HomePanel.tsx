@@ -7,7 +7,7 @@
 import React from 'react';
 
 interface HomePanelProps {
-  onAction: (action: 'upload' | 'text' | 'art' | 'products') => void;
+  onAction: (action: 'upload' | 'text' | 'art' | 'products' | 'layers') => void; // [2025-12-06 13:00:00] 添加图层管理
 }
 
 const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
@@ -60,6 +60,20 @@ const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
             <path d="M16 10a4 4 0 0 1-8 0" />
           </svg>
           <span>Change Products</span>
+        </button>
+        
+        {/* [2025-12-06 13:00:00] 图层管理按钮 */}
+        <button
+          className="dl-home-panel__action"
+          onClick={() => onAction('layers')}
+          aria-label="Manage Layers"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="3" y1="15" x2="21" y2="15" />
+          </svg>
+          <span>Layers</span>
         </button>
       </div>
       

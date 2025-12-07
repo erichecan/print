@@ -24,6 +24,11 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     step4Description: 'Fill in project name and notes',
     step5Title: 'File Upload',
     step5Description: 'Upload design files and attachments',
+    // [2025-12-07 02:00:00] PRD v2.0: 3步流程的新标题
+    step2TitleV2: 'Customer Information and Invoice',
+    step2DescriptionV2: 'Fill in customer information and invoice details',
+    step3TitleV2: 'File Upload',
+    step3DescriptionV2: 'Upload design files (optional)',
 
     // Common
     orderCode: 'Order Number',
@@ -129,7 +134,6 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     maxFiles: 'max {maxFiles} files, {maxSize}MB each',
     noFilesSelected: 'No files selected yet.',
     filesAttached: '{count} file(s) attached',
-    remove: 'Remove',
 
     // Validation messages
     errorAtLeastOneProduct: 'Please add at least one product',
@@ -147,6 +151,19 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     errorCompanyEmail: 'Company email is required for invoice',
     errorAddress: 'Address is required for invoice',
     errorProjectName: 'Project name is required',
+    errorPaymentMethod: 'Payment method is required',
+    // [2025-12-07 02:00:00] PRD v2.0: 支付相关翻译
+    paymentInfo: 'Payment Information',
+    paymentMethod: 'Payment Method',
+    selectPaymentMethod: 'Select payment method...',
+    paymentCard: 'Card',
+    paymentEtransfer: 'E-transfer',
+    referenceNumber: 'Reference Number',
+    referenceNumberPlaceholder: 'Reference Number',
+    priceDetails: 'Price Details',
+    withTax: 'with tax',
+    beforeTax: 'Before Tax',
+    tax: 'Tax (HST)',
     successOrderSubmitted: 'Order submitted successfully! Order Number: {orderCode}. The order has entered the production management system, we will process it as soon as possible.',
     errorSubmissionFailed: 'Submission failed.',
     errorUnsupportedFileType: 'Unsupported file type: {fileName}. Allowed: {extensions}',
@@ -173,6 +190,11 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     step4Description: '填写项目名称和备注',
     step5Title: '文件上传',
     step5Description: '上传设计文件和附件',
+    // [2025-12-07 02:00:00] PRD v2.0: 3步流程的新标题
+    step2TitleV2: '客户信息和Invoice',
+    step2DescriptionV2: '填写客户信息和Invoice信息',
+    step3TitleV2: '文件上传',
+    step3DescriptionV2: '上传设计文件（非必填）',
 
     // Common
     orderCode: '订单编号',
@@ -277,7 +299,6 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     maxFiles: '最多 {maxFiles} 个文件，每个 {maxSize}MB',
     noFilesSelected: '尚未选择文件。',
     filesAttached: '已附加 {count} 个文件',
-    remove: '删除',
 
     // Validation messages
     errorAtLeastOneProduct: '请至少添加一个产品',
@@ -295,6 +316,19 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     errorCompanyEmail: '发票公司邮箱是必填项',
     errorAddress: '发票地址是必填项',
     errorProjectName: '项目名称是必填项',
+    errorPaymentMethod: '支付方式是必填项',
+    // [2025-12-07 02:00:00] PRD v2.0: 支付相关翻译
+    paymentInfo: '支付信息',
+    paymentMethod: '支付方式',
+    selectPaymentMethod: '选择支付方式...',
+    paymentCard: '刷卡',
+    paymentEtransfer: 'e-trans',
+    referenceNumber: 'Reference Number',
+    referenceNumberPlaceholder: 'Reference Number',
+    priceDetails: '价格明细',
+    withTax: '含税',
+    beforeTax: '税前金额',
+    tax: '税 (HST)',
     successOrderSubmitted: '订单提交成功！订单编号：{orderCode}。订单已进入生产管理系统，我们会尽快处理。',
     errorSubmissionFailed: '提交失败。',
     errorUnsupportedFileType: '不支持的文件类型：{fileName}。允许：{extensions}',

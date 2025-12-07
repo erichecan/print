@@ -64,14 +64,20 @@
 - **角色**: `SALES`
 - **邮箱已验证**: ✅ true
 
-#### 生产环境测试账号（3个）
-根据 `docs/OFFLINE-ORDERS-SEED-PRODUCTION.md`，生产环境还有 3 个销售账号：
+#### 生产环境测试账号（4个）
+根据 `docs/OFFLINE-ORDERS-SEED-PRODUCTION.md`，生产环境有 4 个销售账号：
 
-| 账号 | 邮箱 | 密码 | 姓名 |
-|------|------|------|------|
-| Sales 1 | `sales1@example.com` | `Sales123!` | Sales One |
-| Sales 2 | `sales2@example.com` | `Sales123!` | Sales Two |
-| Sales 3 | `sales3@example.com` | `Sales123!` | Sales Three |
+**销售员账号（3个）：**
+| 账号 | 邮箱 | 密码 | 姓名 | 角色 |
+|------|------|------|------|------|
+| Sales 1 | `sales1@suvernireplus.com` | `sales123456` | Sales One | SALES |
+| Sales 2 | `sales2@suvernireplus.com` | `sales123456` | Sales Two | SALES |
+| Sales 3 | `sales3@suvernireplus.com` | `sales123456` | Sales Three | SALES |
+
+**销售主管账号（1个）：**
+| 账号 | 邮箱 | 密码 | 姓名 | 角色 |
+|------|------|------|------|------|
+| Sales Manager | `salesmanager@suvernireplus.com` | `manager123456` | Sales Manager | SALES_MANAGER |
 
 ### 测试订单数据
 

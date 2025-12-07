@@ -177,4 +177,145 @@ exports.getSalesOrderById = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/sales/orders/:id/stage
+ * [2025-12-07 03:00:00] Sales 更新订单阶段
+ */
+exports.updateSalesOrderStage = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  try {
+    const { id } = req.params;
+    const { stageKey, note } = req.body;
+
+    if (!stageKey) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'stageKey is required'
+      });
+    }
+
+    const roleRaw = req.user?.role || '';
+    const role = String(roleRaw).toUpperCase();
+    const isManager = role === 'SALES_MANAGER' || role === 'ADMIN';
+    const userId = req.user?.id;
+
+    logger.info('[SalesOrders] updateSalesOrderStage', {
+      timestamp,
+      id,
+      userId,
+      role,
+      isManager,
+      stageKey,
+    });
+
+    // 获取订单并检查权限
+    const order = await prisma.offlineOrder.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        stageKey: true,
+        metadata: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Offline order not found' });
+    }
+
+    // [2025-12-07 03:00:00] 普通 Sales 只能修改自己提交的订单
+    const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
+    if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
+      return res.status(403).json({ error: 'You do not have permission to update this order' });
+    }
+
+    // 获取阶段配置（复用workflow service的逻辑）
+    const { findStageByKey } = require('../services/offlineWorkflowService');
+    const stage = await findStageByKey(stageKey);
+    if (!stage) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: 'Invalid stage key'
+      });
+    }
+
+    const actorName = req.user
+      ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
+      : 'Sales';
+
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const existing = await tx.offlineOrder.findUnique({
+        where: { id },
+        select: { stageKey: true }
+      });
+
+      if (!existing) {
+        return null;
+      }
+
+      const order = await tx.offlineOrder.update({
+        where: { id },
+        data: {
+          stageKey: stage.key,
+          stageLabel: stage.label,
+          stagePosition: stage.position ?? null,
+          histories: {
+            create: {
+              fromStageKey: existing.stageKey,
+              toStageKey: stage.key,
+              actorId: req.user?.id || null,
+              actorName,
+              note: note?.toString().trim() || null
+            }
+          }
+        },
+        include: {
+          assets: true,
+          histories: {
+            orderBy: { createdAt: 'desc' }
+          },
+          productionWorkOrder: {
+            include: {
+              events: {
+                orderBy: { createdAt: 'desc' }
+              }
+            }
+          }
+        }
+      });
+
+      return order;
+    });
+
+    if (!updatedOrder) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: 'Offline order not found'
+      });
+    }
+
+    logger.info('[SalesOrders] updateSalesOrderStage success', {
+      timestamp,
+      id,
+      userId,
+      fromStage: order.stageKey,
+      toStage: stageKey,
+    });
+
+    res.json({
+      success: true,
+      order: mapSalesOfflineOrder(updatedOrder, true),
+    });
+  } catch (error) {
+    logger.error('[SalesOrders] updateSalesOrderStage error', {
+      timestamp,
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to update sales order stage'
+    });
+  }
+};
+
 
