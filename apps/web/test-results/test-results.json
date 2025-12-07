@@ -93,25 +93,25 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 2601,
+                      "duration": 6765,
                       "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:27:19",
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:61:36",
                         "location": {
                           "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
-                          "column": 19,
-                          "line": 27
+                          "column": 36,
+                          "line": 61
                         },
-                        "snippet": "  25 |     const token = await page.evaluate(() => localStorage.getItem('auth_token'));\n  26 |     console.log(`[Auth Test] Token in localStorage: ${token ? token.substring(0, 30) + '...' : 'none'}`);\n> 27 |     expect(token).toBeTruthy();\n     |                   ^\n  28 |\n  29 |     // 3. 监听网络请求，检查 Authorization header\n  30 |     const requests: any[] = [];"
+                        "snippet": "  59 |         authorizationPreview: req.authorization.substring(0, 50),\n  60 |       });\n> 61 |       expect(req.hasAuthorization).toBe(true);\n     |                                    ^\n  62 |     }\n  63 |\n  64 |     // 6. 检查响应"
                       },
                       "errors": [
                         {
                           "location": {
                             "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
-                            "column": 19,
-                            "line": 27
+                            "column": 36,
+                            "line": 61
                           },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n\n  25 |     const token = await page.evaluate(() => localStorage.getItem('auth_token'));\n  26 |     console.log(`[Auth Test] Token in localStorage: ${token ? token.substring(0, 30) + '...' : 'none'}`);\n> 27 |     expect(token).toBeTruthy();\n     |                   ^\n  28 |\n  29 |     // 3. 监听网络请求，检查 Authorization header\n  30 |     const requests: any[] = [];\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:27:19"
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  59 |         authorizationPreview: req.authorization.substring(0, 50),\n  60 |       });\n> 61 |       expect(req.hasAuthorization).toBe(true);\n     |                                    ^\n  62 |     }\n  63 |\n  64 |     // 6. 检查响应\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:61:36"
                         }
                       ],
                       "stdout": [
@@ -122,12 +122,24 @@
                           "text": "[Auth Test] 登录成功\n"
                         },
                         {
-                          "text": "[Auth Test] Token in localStorage: none\n"
+                          "text": "[Auth Test] Token in localStorage: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...\n"
+                        },
+                        {
+                          "text": "[Auth Test] 访问配置页面...\n"
+                        },
+                        {
+                          "text": "[Auth Test] 📤 Request: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  authorization: \u001b[32m'none'\u001b[39m\n}\n"
+                        },
+                        {
+                          "text": "[Auth Test] 找到 1 个相关请求\n"
+                        },
+                        {
+                          "text": "[Auth Test] 请求详情: { hasAuthorization: \u001b[33mfalse\u001b[39m, authorizationPreview: \u001b[32m'none'\u001b[39m }\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T07:09:14.222Z",
+                      "startTime": "2025-12-07T07:11:36.224Z",
                       "annotations": [],
                       "attachments": [
                         {
@@ -148,8 +160,8 @@
                       ],
                       "errorLocation": {
                         "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
-                        "column": 19,
-                        "line": 27
+                        "column": 36,
+                        "line": 61
                       }
                     }
                   ],
@@ -168,8 +180,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T07:09:13.943Z",
-    "duration": 3109.577,
+    "startTime": "2025-12-07T07:11:35.986Z",
+    "duration": 7300.195000000001,
     "expected": 0,
     "skipped": 0,
     "unexpected": 1,
