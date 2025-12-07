@@ -3,26 +3,46 @@
  * [2025-01-29 02:15:00] 代理获取当前用户请求到后端，确保 Cookie 正确传递
  * [2025-12-02 03:35:00] Enhanced Cookie handling and error logging
  */
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { getBackendApiBase } from '@/lib/api-route-config';
 
 const API_BASE = getBackendApiBase();
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
   
   try {
-    // [2025-12-02 03:35:00] 获取前端请求的 cookies（包含认证 token）
-    const cookies = request.headers.get('cookie') || '';
-    const hasCookies = !!cookies;
-    const hasToken = cookies.includes('token=');
+    // [2025-12-07 07:30:00] 从多个来源获取 token
+    const cookieHeader = request.headers.get('cookie') || '';
+    const cookieStore = request.cookies;
+    let tokenFromCookie: string | null = null;
+    
+    // [2025-12-07 07:30:00] 从 cookieStore 获取 token
+    try {
+      const tokenCookie = cookieStore.get('token');
+      if (tokenCookie) {
+        tokenFromCookie = tokenCookie.value;
+      }
+    } catch (e) {
+      console.error('[Next.js API Route] ❌ Error reading token from cookieStore:', e);
+    }
+    
+    // [2025-12-07 07:30:00] 也从 Cookie header 中尝试提取 token（备用）
+    const tokenFromHeader = cookieHeader.match(/token=([^;]+)/)?.[1] || null;
+    
+    // [2025-12-07 07:30:00] 优先使用 cookieStore 中的 token，如果没有则使用 header 中的
+    const token = tokenFromCookie || tokenFromHeader;
+    const hasToken = !!token;
+    const hasCookies = !!cookieHeader;
     
     console.log('[Next.js API Route] Get user request', {
       timestamp,
       hasCookies,
       hasToken,
-      cookieCount: cookies ? cookies.split(';').length : 0
+      tokenFromCookie: !!tokenFromCookie,
+      tokenFromHeader: !!tokenFromHeader,
+      cookieCount: cookieHeader ? cookieHeader.split(';').length : 0
     });
 
     // [2025-12-02 03:35:00] 转发请求到后端
@@ -37,7 +57,9 @@ export async function GET(request: Request) {
     const upstream = await fetch(upstreamUrl, {
       method: 'GET',
       headers: {
-        ...(cookies ? { 'Cookie': cookies } : {}), // [2025-12-02 03:35:00] 只在有 cookies 时设置
+        ...(cookieHeader ? { 'Cookie': cookieHeader } : {}), // [2025-12-02 03:35:00] 只在有 cookies 时设置
+        // [2025-12-07 07:30:00] 如果找到 token，添加到 Authorization header（后端支持这种方式，更可靠）
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
       credentials: 'include',
       cache: 'no-store',

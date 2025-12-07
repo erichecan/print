@@ -3,7 +3,7 @@
  * [2025-01-29 02:15:00] 代理登录请求到后端，确保 Cookie 正确传递
  * [2025-12-02 03:35:00] Enhanced Cookie handling and error logging
  */
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 import { getBackendApiBase } from '@/lib/api-route-config';
 

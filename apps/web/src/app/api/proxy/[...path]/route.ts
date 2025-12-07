@@ -58,26 +58,36 @@ async function handleProxyRequest(
     // [2025-12-02 04:15:00] 构建后端 URL
     const upstreamUrl = `${API_BASE}${fullPath}`;
     
-    // [2025-12-07 07:05:00] 使用 NextRequest.cookies 获取 Cookie（而不是 headers.get('cookie')）
-    // Next.js 的 cookies API 会自动处理 Cookie 的解析
+    // [2025-12-07 07:30:00] 从多个来源获取 token 和 cookies
     const cookieHeader = request.headers.get('cookie') || '';
     const cookieStore = request.cookies;
     const allCookies: string[] = [];
+    let tokenFromCookie: string | null = null;
     
-    // [2025-12-07 07:05:00] 从 cookieStore 获取所有 Cookie
+    // [2025-12-07 07:30:00] 从 cookieStore 获取所有 Cookie 和 token
     try {
       cookieStore.getAll().forEach((cookie) => {
         allCookies.push(`${cookie.name}=${cookie.value}`);
+        // [2025-12-07 07:30:00] 特别提取 token
+        if (cookie.name === 'token') {
+          tokenFromCookie = cookie.value;
+        }
       });
     } catch (e) {
       console.error('[API Proxy] ❌ Error reading cookies from cookieStore:', e);
     }
     
+    // [2025-12-07 07:30:00] 也从 Cookie header 中尝试提取 token（备用）
+    const tokenFromHeader = cookieHeader.match(/token=([^;]+)/)?.[1] || null;
+    
+    // [2025-12-07 07:30:00] 优先使用 cookieStore 中的 token，如果没有则使用 header 中的
+    const token = tokenFromCookie || tokenFromHeader;
+    
     // [2025-12-07 07:10:00] 优先使用 cookieStore，如果为空则使用 header
     // 但需要确保至少有一个来源有 Cookie
     const cookies = allCookies.length > 0 ? allCookies.join('; ') : cookieHeader;
     const hasCookies = !!cookies && cookies.length > 0 && cookies !== 'none';
-    const hasToken = cookies.includes('token=');
+    const hasToken = !!token;
     
     // [2025-12-07 06:40:00] 增强日志输出
     console.log('[API Proxy] 🔍 Request Details', {
@@ -87,6 +97,8 @@ async function handleProxyRequest(
       needsAuth,
       hasCookies,
       hasToken,
+      tokenFromCookie: !!tokenFromCookie,
+      tokenFromHeader: !!tokenFromHeader,
       cookieLength: cookies.length,
       cookiePreview: cookies.substring(0, 100), // 只显示前100字符
       cookieStoreCount: cookieStore.getAll().length,
@@ -98,9 +110,12 @@ async function handleProxyRequest(
       referer: request.headers.get('referer'),
     });
     
-    // [2025-12-02 04:15:00] 准备请求头
+    // [2025-12-07 07:30:00] 准备请求头
+    // 同时传递 Cookie 和 Authorization header（后端支持两种方式）
     const headers: HeadersInit = {
       ...(cookies ? { 'Cookie': cookies } : {}),
+      // [2025-12-07 07:30:00] 如果找到 token，添加到 Authorization header（后端支持这种方式，更可靠）
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     };
     
     // [2025-12-02 04:15:00] 复制其他请求头（排除一些不需要的）
