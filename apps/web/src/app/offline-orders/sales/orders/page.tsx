@@ -8,8 +8,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
 
-// [2025-12-07 05:40:00] 状态下拉菜单组件
-function StatusDropdown({
+// [2025-12-07 06:15:00] 状态图标选择组件 - 使用图标按钮组，更友好的交互
+function StatusSelector({
   orderId,
   currentValue,
   statusOptions,
@@ -22,26 +22,36 @@ function StatusDropdown({
   onUpdate: (orderId: string, value: string) => void;
   disabled: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+  // [2025-12-07 06:15:00] 获取状态图标
+  const getStatusIcon = (status: string) => {
+    const lower = status.toLowerCase();
+    if (lower === 'active') {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" strokeLinecap="round" />
+        </svg>
+      );
     }
-  }, [isOpen]);
+    if (lower === 'completed') {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    }
+    if (lower === 'cancelled') {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
+        </svg>
+      );
+    }
+    return null;
+  };
 
-  const currentLabel = statusOptions.find(opt => opt.value === currentValue)?.label || currentValue;
-  const statusClass = currentValue.toLowerCase();
-  
-  // [2025-12-07 06:05:00] 确保状态类名正确映射
+  // [2025-12-07 06:15:00] 获取状态颜色类名
   const getStatusClass = (status: string) => {
     const lower = status.toLowerCase();
     if (lower === 'active') return 'active';
@@ -51,35 +61,23 @@ function StatusDropdown({
   };
 
   return (
-    <div className="sales-orders-status-dropdown" ref={dropdownRef}>
-      <button
-        type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
-        disabled={disabled}
-        className={`tag tag-${getStatusClass(currentValue)}`}
-      >
-        {currentLabel}
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '0.25rem' }}>
-          <path d="M3 4.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-      {isOpen && (
-        <div className="sales-orders-status-menu">
-          {statusOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                onUpdate(orderId, option.value);
-                setIsOpen(false);
-              }}
-              className={`sales-orders-status-menu-item ${currentValue === option.value ? 'active' : ''}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="sales-orders-status-selector">
+      {statusOptions.map((option) => {
+        const isActive = option.value === currentValue;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => !disabled && onUpdate(orderId, option.value)}
+            disabled={disabled}
+            className={`status-icon-btn status-icon-btn-${getStatusClass(option.value)} ${isActive ? 'active' : ''}`}
+            title={option.label}
+            aria-label={option.label}
+          >
+            {getStatusIcon(option.value)}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -304,7 +302,7 @@ export default function SalesOrdersPage() {
                   <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <StatusDropdown
+                      <StatusSelector
                         orderId={order.id}
                         currentValue={order.status}
                         statusOptions={statusOptions}
