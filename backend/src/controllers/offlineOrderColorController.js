@@ -54,12 +54,14 @@ exports.createColor = async (req, res, next) => {
       return next(new ConflictError('Color with this name already exists'));
     }
 
+    // [2025-12-07 08:55:00] 创建颜色 - created_at 由 @default(now()) 自动处理
     const color = await prisma.offline_order_colors.create({
       data: {
         id: uuidv4(),
         name: name.trim(),
         hex_code: hexCode?.trim() || null,
-        created_at: new Date(),
+        // created_at 由 Prisma 自动处理（schema 中有 @default(now())）
+        // updated_at 需要手动设置（schema 中没有 @updatedAt）
         updated_at: new Date(),
       },
     });

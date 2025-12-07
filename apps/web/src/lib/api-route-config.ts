@@ -13,10 +13,22 @@ const DEFAULT_API_BASE_DEV = 'http://localhost:3001/api';
  * [2025-12-02 04:05:00] 添加 Cloud Run 生产环境兜底逻辑
  */
 export function getBackendApiBase(): string {
-  // [2025-12-07 04:30:00] 优先使用 NEXT_PUBLIC_API_URL（前端环境变量）
+  // [2025-12-07 18:50:00] 优先使用 NEXT_PUBLIC_API_URL（前端环境变量）
   // 注意：NEXT_PUBLIC_* 变量在构建时内联，运行时可能无法读取
   const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (publicApiUrl && !publicApiUrl.includes('localhost') && !publicApiUrl.includes('127.0.0.1')) {
+  if (publicApiUrl) {
+    // [2025-12-07 18:50:00] 如果包含 localhost，在生产环境应该警告但继续使用（开发环境允许）
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (!isDevelopment && (publicApiUrl.includes('localhost') || publicApiUrl.includes('127.0.0.1'))) {
+      console.warn('[API Route Config] ⚠️ 警告：生产环境检测到 localhost API 地址！', publicApiUrl);
+      console.warn('[API Route Config] 请设置 NEXT_PUBLIC_API_URL 环境变量指向生产环境的 API 服务器');
+    }
+    // [2025-12-07 18:50:00] 开发环境允许 localhost，生产环境如果包含 localhost 则使用硬编码后端地址
+    if (!isDevelopment && (publicApiUrl.includes('localhost') || publicApiUrl.includes('127.0.0.1'))) {
+      const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
+      console.warn('[API Route Config] 使用硬编码后端地址替代 localhost:', backendApiUrl);
+      return backendApiUrl;
+    }
     const url = publicApiUrl.replace(/\/$/, '');
     // 确保包含 /api 路径
     return url.endsWith('/api') ? url : `${url}/api`;
@@ -24,14 +36,26 @@ export function getBackendApiBase(): string {
   
   // 回退到 API_BASE_URL（服务器端环境变量）
   const apiBaseUrl = process.env.API_BASE_URL;
-  if (apiBaseUrl && !apiBaseUrl.includes('localhost') && !apiBaseUrl.includes('127.0.0.1')) {
+  if (apiBaseUrl) {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (!isDevelopment && (apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1'))) {
+      const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
+      console.warn('[API Route Config] ⚠️ 警告：生产环境 API_BASE_URL 包含 localhost，使用硬编码后端地址:', backendApiUrl);
+      return backendApiUrl;
+    }
     const url = apiBaseUrl.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
   }
   
   // 回退到 NEXT_PUBLIC_API_BASE_URL
   const publicApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (publicApiBaseUrl && !publicApiBaseUrl.includes('localhost') && !publicApiBaseUrl.includes('127.0.0.1')) {
+  if (publicApiBaseUrl) {
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (!isDevelopment && (publicApiBaseUrl.includes('localhost') || publicApiBaseUrl.includes('127.0.0.1'))) {
+      const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
+      console.warn('[API Route Config] ⚠️ 警告：生产环境 NEXT_PUBLIC_API_BASE_URL 包含 localhost，使用硬编码后端地址:', backendApiUrl);
+      return backendApiUrl;
+    }
     const url = publicApiBaseUrl.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
   }

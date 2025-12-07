@@ -97,6 +97,7 @@ exports.createProduct = async (req, res, next) => {
       select: { display_order: true },
     });
 
+    // [2025-12-07 08:55:00] 创建产品 - updated_at 由 @updatedAt 自动处理
     const product = await prisma.offline_order_products.create({
       data: {
         id: uuidv4(),
@@ -105,8 +106,7 @@ exports.createProduct = async (req, res, next) => {
         is_customer_owned: Boolean(isCustomerOwned) || false,
         display_order: displayOrder !== undefined ? displayOrder : (maxOrder?.display_order || 0) + 1,
         is_active: true,
-        created_at: new Date(),
-        updated_at: new Date(),
+        // created_at 和 updated_at 由 Prisma 自动处理（schema 中有 @default(now()) 和 @updatedAt）
       },
     });
 

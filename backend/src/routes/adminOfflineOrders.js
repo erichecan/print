@@ -8,9 +8,11 @@ const { requireAdmin, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
 
-// [2025-12-07 06:25:00] 配置相关接口允许 SALES_MANAGER 访问
+// [2025-12-07 18:55:00] 配置相关接口允许 SALES_MANAGER 访问（必须在 requireAdmin 之前定义）
+// [2025-12-07 06:25:00] GET /config/stages 允许 SALES_MANAGER 和 ADMIN 访问
 router.get('/config/stages', authorizeRoles('SALES_MANAGER', 'ADMIN'), offlineOrderController.getOfflineWorkflowStages);
-router.put('/config/stages', requireAdmin); // 更新配置仍需要 ADMIN
+// [2025-12-07 06:25:00] PUT /config/stages 仅允许 ADMIN 访问
+router.put('/config/stages', requireAdmin, offlineOrderController.updateOfflineWorkflowStages);
 
 // [2025-12-07 06:25:00] 其他接口需要 ADMIN 权限
 router.use(requireAdmin);
@@ -48,9 +50,7 @@ const adminUpload = multer({
   fileFilter
 });
 
-router.get('/config/stages', offlineOrderController.getOfflineWorkflowStages);
-
-router.put('/config/stages', offlineOrderController.updateOfflineWorkflowStages);
+// [2025-12-07 18:55:00] 注意：以下路由都会应用 requireAdmin 中间件（通过上面的 router.use）
 
 router.get('/metrics/summary', offlineOrderController.getOfflineOrderMetrics);
 

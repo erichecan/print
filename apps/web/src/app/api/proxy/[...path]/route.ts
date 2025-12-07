@@ -219,14 +219,28 @@ async function handleProxyRequest(
       }
     });
     
-    // [2025-12-02 04:15:00] 记录响应状态
+    // [2025-12-07 18:55:00] 记录响应状态，增强错误日志
     if (!upstream.ok) {
+      // [2025-12-07 18:55:00] 尝试解析错误响应体，获取详细错误信息
+      let errorDetails: any = null;
+      try {
+        if (responseContentType.includes('application/json')) {
+          errorDetails = JSON.parse(responseBody);
+        }
+      } catch (e) {
+        // 如果无法解析 JSON，使用原始文本
+        errorDetails = { raw: responseBody.substring(0, 500) };
+      }
+      
       console.error('[API Proxy] ❌ Upstream Error', {
         timestamp,
         status: upstream.status,
         statusText: upstream.statusText,
-        bodyPreview: responseBody.substring(0, 500), // 显示前500字符
         path: backendPath,
+        upstreamUrl,
+        hasToken,
+        errorDetails: errorDetails || responseBody.substring(0, 500),
+        bodyPreview: responseBody.substring(0, 500),
       });
     } else {
       console.log('[API Proxy] ✅ Upstream Success', {

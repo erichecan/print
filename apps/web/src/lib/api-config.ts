@@ -41,17 +41,19 @@ function getApiBaseUrl(): string {
     return normalizeApiUrl(window.location.origin);
   }
 
-  // [2025-01-29 12:30:00] SSR/构建时：优先使用部署 URL
+  // [2025-12-07 18:50:00] SSR/构建时：优先使用部署 URL
   const deployUrl = process.env.DEPLOY_URL || process.env.URL;
   if (deployUrl) {
     return normalizeApiUrl(deployUrl);
   }
 
-  // [2025-01-29 12:30:00] 生产环境不应该回退到 localhost，应该使用相对路径
+  // [2025-12-07 18:50:00] 生产环境不应该回退到 localhost，应该使用硬编码的后端地址或相对路径
   if (!isDevelopment) {
-    // 生产环境下，如果没有配置，使用相对路径（同源）
-    // 这样在浏览器端运行时，会使用当前域名
-    return '/api';
+    // [2025-12-07 18:50:00] 生产环境：如果没有配置环境变量，使用硬编码的后端地址
+    // 避免使用 localhost 导致警告
+    const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
+    console.warn('[API Config] ⚠️ 生产环境未配置 NEXT_PUBLIC_API_URL，使用硬编码后端地址:', backendApiUrl);
+    return backendApiUrl;
   }
 
   // [2025-01-29 12:30:00] 仅开发环境使用 localhost 作为最终回退
