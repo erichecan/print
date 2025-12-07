@@ -78,7 +78,7 @@ exports.validateCoupon = async (req, res) => {
     }
 
     // [2025-12-06 17:30:00] Check if coupon is still within valid date range
-    const now = new Date();
+    // Note: 'now' is already declared at line 28, no need to redeclare
     if (coupon.startDate > now) {
       return res.status(400).json({
         error: 'Coupon is not yet active',
