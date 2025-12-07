@@ -10,11 +10,7 @@ const { authenticate, authorizeRoles } = require('../middleware/auth');
 // 公开接口：获取产品列表（用于下拉菜单）
 router.get('/', simpleOfflineOrderProductController.listProducts);
 
-// 管理接口：需要认证和授权
-router.get('/admin', authenticate, authorizeRoles('SALES_MANAGER', 'ADMIN'), simpleOfflineOrderProductController.listAllProducts);
-router.post('/admin', authenticate, authorizeRoles('SALES_MANAGER', 'ADMIN'), simpleOfflineOrderProductController.createProduct);
-router.patch('/admin/:id', authenticate, authorizeRoles('SALES_MANAGER', 'ADMIN'), simpleOfflineOrderProductController.updateProduct);
-router.delete('/admin/:id', authenticate, authorizeRoles('SALES_MANAGER', 'ADMIN'), simpleOfflineOrderProductController.deleteProduct);
+// 管理接口：需要认证和授权（通过 app.js 中的路由前缀 /api/admin/offline-orders/products 访问）
 
 module.exports = router;
 
