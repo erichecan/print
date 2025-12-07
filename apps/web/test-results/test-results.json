@@ -65,20 +65,20 @@
   },
   "suites": [
     {
-      "title": "token-parsing-debug.spec.ts",
-      "file": "token-parsing-debug.spec.ts",
+      "title": "offline-orders-sales-flow.spec.ts",
+      "file": "offline-orders-sales-flow.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Token 解析调试测试",
-          "file": "token-parsing-debug.spec.ts",
-          "line": 11,
+          "title": "线下订单 Sales 流程",
+          "file": "offline-orders-sales-flow.spec.ts",
+          "line": 26,
           "column": 6,
           "specs": [
             {
-              "title": "使用 Chrome DevTools 验证 token 解析和传递",
+              "title": "未登录访问线下订单入口应引导到登录页或保持在入口页",
               "ok": true,
               "tags": [],
               "tests": [
@@ -93,73 +93,12 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 6140,
+                      "duration": 1665,
                       "errors": [],
-                      "stdout": [
-                        {
-                          "text": "[Token Debug] 开始登录...\n"
-                        },
-                        {
-                          "text": "[Token Debug] 登录成功\n"
-                        },
-                        {
-                          "text": "[Token Debug] Token in localStorage: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...\n"
-                        },
-                        {
-                          "text": "[Token Debug] Token 部分数量: 3\n"
-                        },
-                        {
-                          "text": "[Token Debug] Token Payload: {\n  userId: \u001b[32m'4d844ff5-f0ec-43b1-806d-986def14a0ca'\u001b[39m,\n  iat: \u001b[33m1765092826\u001b[39m,\n  exp: \u001b[33m1765697626\u001b[39m,\n  expiresIn: \u001b[32m'2025-12-14T07:33:46.000Z'\u001b[39m\n}\n"
-                        },
-                        {
-                          "text": "[Token Debug] 访问配置页面...\n"
-                        },
-                        {
-                          "text": "[Token Debug] 📤 Request: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  hasAuthorization: \u001b[33mtrue\u001b[39m,\n  authorizationPreview: \u001b[32m'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2'\u001b[39m\n}\n"
-                        },
-                        {
-                          "text": "[Token Debug] 📥 Response: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  status: \u001b[33m403\u001b[39m,\n  body: \u001b[32m'{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T07:33:46.896Z\"}'\u001b[39m\n}\n"
-                        },
-                        {
-                          "text": "\n[Token Debug] ========== 测试结果 ==========\n"
-                        },
-                        {
-                          "text": "[Token Debug] Token 存在: true\n"
-                        },
-                        {
-                          "text": "[Token Debug] Token 长度: 192\n"
-                        },
-                        {
-                          "text": "[Token Debug] 请求数量: 1\n"
-                        },
-                        {
-                          "text": "[Token Debug] 响应数量: 1\n"
-                        },
-                        {
-                          "text": "[Token Debug] 控制台消息数量: 0\n"
-                        },
-                        {
-                          "text": "\n[Token Debug] 📤 请求详情:\n"
-                        },
-                        {
-                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"method\": \"GET\",\n  \"authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0ZDg0NGZmNS1mMGVjLTQzYjEtODA2ZC05ODZkZWYxNGEwY2EiLCJpYXQiOjE3NjUwOTI4MjYsImV4cCI6MTc2NTY5NzYyNn0.WKYMMsHhP6Wld233lshgpilIYtKlTeWAiuzlnUXiUZ0\",\n  \"hasAuthorization\": true,\n  \"authorizationPreview\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2\",\n  \"allHeaders\": [\n    \"sec-ch-ua-platform\",\n    \"authorization\",\n    \"referer\",\n    \"accept-language\",\n    \"sec-ch-ua\",\n    \"sec-ch-ua-mobile\",\n    \"user-agent\",\n    \"accept\",\n    \"content-type\",\n    \"x-playwright-e2e\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "\n[Token Debug] 📥 响应详情:\n"
-                        },
-                        {
-                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"status\": 403,\n  \"headers\": {\n    \"content-type\": \"application/json; charset=utf-8\"\n  },\n  \"body\": \"{\\\"success\\\":false,\\\"statusCode\\\":403,\\\"code\\\":\\\"FORBIDDEN\\\",\\\"message\\\":\\\"You do not have permission to access this resource\\\",\\\"timestamp\\\":\\\"2025-12-07T07:33:46.896Z\\\"}\"\n}\n"
-                        },
-                        {
-                          "text": "\n[Token Debug] ❌ 403 错误详情:\n"
-                        },
-                        {
-                          "text": "{\n  \"success\": false,\n  \"statusCode\": 403,\n  \"code\": \"FORBIDDEN\",\n  \"message\": \"You do not have permission to access this resource\",\n  \"timestamp\": \"2025-12-07T07:33:46.896Z\"\n}\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T07:33:44.252Z",
+                      "startTime": "2025-12-07T13:31:21.584Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -167,9 +106,217 @@
                   "status": "expected"
                 }
               ],
-              "id": "e34c3bf51f7dcb825b84-f3f591e299146ddc9919",
-              "file": "token-parsing-debug.spec.ts",
-              "line": 12,
+              "id": "cfb7fcf7e8fc802033ff-dc2582726a6cc0e7c9ad",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 27,
+              "column": 7
+            },
+            {
+              "title": "Sales 用户可以登录并看到线下订单列表",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 6828,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/OFF-E2E-CASE-/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/OFF-E2E-CASE-/)\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/OFF-E2E-CASE-/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/OFF-E2E-CASE-/)\u001b[22m\n\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts:58:69",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts",
+                          "column": 69,
+                          "line": 58
+                        },
+                        "snippet": "  56 |\n  57 |     // [2025-12-02 05:31:30] 种子订单（OFF-E2E-CASE-*）应出现在表格中\n> 58 |     await expect(page.getByText(/OFF-E2E-CASE-/, { exact: false })).toBeVisible();\n     |                                                                     ^\n  59 |\n  60 |     // [2025-12-02 05:31:30] 确保没有 React 压缩错误或 History SecurityError\n  61 |     expect("
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts",
+                            "column": 69,
+                            "line": 58
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/OFF-E2E-CASE-/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/OFF-E2E-CASE-/)\u001b[22m\n\n\n  56 |\n  57 |     // [2025-12-02 05:31:30] 种子订单（OFF-E2E-CASE-*）应出现在表格中\n> 58 |     await expect(page.getByText(/OFF-E2E-CASE-/, { exact: false })).toBeVisible();\n     |                                                                     ^\n  59 |\n  60 |     // [2025-12-02 05:31:30] 确保没有 React 压缩错误或 History SecurityError\n  61 |     expect(\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts:58:69"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T13:31:23.432Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--73df2-es-流程-Sales-用户可以登录并看到线下订单列表-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--73df2-es-流程-Sales-用户可以登录并看到线下订单列表-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--73df2-es-流程-Sales-用户可以登录并看到线下订单列表-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts",
+                        "column": 69,
+                        "line": 58
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-24b0b1e6f3520975a89d",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 42,
+              "column": 7
+            },
+            {
+              "title": "Sales 用户可以从列表进入订单详情并返回",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 60897,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts",
+                            "column": 29,
+                            "line": 74
+                          },
+                          "message": "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: /详情/ }).first()\u001b[22m\n\n\n  72 |     // [2025-01-28 21:30:00] 点击第一个详情按钮\n  73 |     const firstDetailButton = page.getByRole('button', { name: /详情/ }).first();\n> 74 |     await firstDetailButton.click();\n     |                             ^\n  75 |\n  76 |     await page.waitForURL(/\\/offline-orders\\/sales\\/orders\\/.+/, { timeout: 20000 });\n  77 |     await page.waitForLoadState('networkidle');\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/offline-orders-sales-flow.spec.ts:74:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T13:31:30.512Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--85ebf-s-流程-Sales-用户可以从列表进入订单详情并返回-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--85ebf-s-流程-Sales-用户可以从列表进入订单详情并返回-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/offline-orders-sales-flow--85ebf-s-流程-Sales-用户可以从列表进入订单详情并返回-chromium/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-95fa6dbad1e1fa641123",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 69,
+              "column": 7
+            },
+            {
+              "title": "未登录直接访问 Sales 订单列表会被重定向到登录页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2313,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T13:32:31.826Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-f2db56be9b19ff444c37",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 107,
+              "column": 7
+            },
+            {
+              "title": "未登录直接访问订单详情会被重定向到登录页",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 2353,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T13:32:34.225Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "cfb7fcf7e8fc802033ff-f6212f6fd74a9f9dca49",
+              "file": "offline-orders-sales-flow.spec.ts",
+              "line": 117,
               "column": 7
             }
           ]
@@ -179,11 +326,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T07:33:44.024Z",
-    "duration": 6580.581999999999,
-    "expected": 1,
+    "startTime": "2025-12-07T13:31:21.295Z",
+    "duration": 75303.661,
+    "expected": 3,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 2,
     "flaky": 0
   }
 }
