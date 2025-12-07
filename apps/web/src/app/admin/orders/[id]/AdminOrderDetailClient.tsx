@@ -554,7 +554,6 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
               )}
             </div>
           )}
-          </div>
 
           <div className="admin-form">
             <h3>Order Items</h3>

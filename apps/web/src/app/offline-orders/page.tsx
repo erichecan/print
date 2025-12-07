@@ -765,8 +765,8 @@ export default function OfflineOrdersIntakePage() {
         formState.globalPrintPositions.forEach((pos, index) => {
           if (pos.position && (pos.width || pos.height)) {
             allPrintPositions.push({
-              ...pos,
-              index,
+                  ...pos,
+                  index,
             });
           }
         });
@@ -1151,61 +1151,61 @@ export default function OfflineOrdersIntakePage() {
     const taxAmount = formState.requiresInvoice ? taxBase * taxRate : 0;
     const totalWithTax = calculateSubtotal - calculateDiscountAmount + taxAmount;
 
-    return (
-      <div className="space-y-6">
+              return (
+    <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading') || '客户信息'}</h2>
         <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息'}</p>
 
         {/* 客户基本信息 */}
-        <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
           <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo') || '客户基本信息'}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'} *</span>
-              <input
-                type="text"
-                name="contactName"
-                required
-                value={formState.contactName}
-                onChange={handleInputChange}
-                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                  fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                }`}
-              />
-              {fieldErrors.contactName && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.contactName}</p>
-              )}
-            </label>
+            <input
+              type="text"
+              name="contactName"
+              required
+              value={formState.contactName}
+              onChange={handleInputChange}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+              }`}
+            />
+            {fieldErrors.contactName && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.contactName}</p>
+            )}
+          </label>
             
-            <label className="block">
+          <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('email') || '邮箱'} *</span>
-              <input
-                type="email"
-                name="email"
-                required
-                value={formState.email}
-                onChange={handleInputChange}
-                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                  fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                }`}
-              />
-              {fieldErrors.email && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
-              )}
-            </label>
+            <input
+              type="email"
+              name="email"
+              required
+              value={formState.email}
+              onChange={handleInputChange}
+              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+              }`}
+            />
+            {fieldErrors.email && (
+              <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+            )}
+          </label>
             
-            <label className="block">
+          <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('phone') || '电话'}</span>
-              <input
-                type="tel"
-                name="phone"
-                value={formState.phone}
-                onChange={handleInputChange}
+            <input
+              type="tel"
+              name="phone"
+              value={formState.phone}
+              onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              />
-            </label>
+            />
+          </label>
             
-            <label className="block">
+          <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('company') || '公司'}</span>
               <input
                 type="text"
@@ -1218,140 +1218,140 @@ export default function OfflineOrdersIntakePage() {
             
             <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('dueDate') || '交付日期'}</span>
-              <input
-                type="date"
-                name="dueDate"
-                value={formState.dueDate}
-                onChange={handleInputChange}
+            <input
+              type="date"
+              name="dueDate"
+              value={formState.dueDate}
+              onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              />
-            </label>
-          </div>
-        </section>
+            />
+          </label>
+        </div>
+      </section>
 
         {/* Invoice功能 */}
-        <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
-          <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
-            <input
-              type="checkbox"
-              name="requiresInvoice"
-              checked={formState.requiresInvoice}
-              onChange={(e) => setField('requiresInvoice', e.target.checked)}
-              className="w-4.5 h-4.5 cursor-pointer"
-            />
+      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+        <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
+          <input
+            type="checkbox"
+            name="requiresInvoice"
+            checked={formState.requiresInvoice}
+            onChange={(e) => setField('requiresInvoice', e.target.checked)}
+            className="w-4.5 h-4.5 cursor-pointer"
+          />
             <span className="text-sm font-medium text-gray-700">{t('requireInvoice') || '需要Invoice'}</span>
-          </label>
+        </label>
 
-          {formState.requiresInvoice && (
+        {formState.requiresInvoice && (
             <div className="mt-4 space-y-4">
               {/* Invoice信息表单 */}
               <div className="p-5 bg-gray-50 rounded-lg">
                 <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('invoiceInfo') || 'Invoice信息'}</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="block">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyName') || '公司名称'} *</span>
-                    <input
-                      type="text"
-                      value={formState.invoiceInfo.companyName}
-                      onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
-                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                        fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                      }`}
-                    />
-                    {fieldErrors.invoice_companyName && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyName}</p>
-                    )}
-                  </label>
+                <input
+                  type="text"
+                  value={formState.invoiceInfo.companyName}
+                  onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                />
+                {fieldErrors.invoice_companyName && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyName}</p>
+                )}
+              </label>
                   
-                  <label className="block">
+              <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail') || '公司邮箱'} *</span>
-                    <input
-                      type="email"
-                      value={formState.invoiceInfo.companyEmail}
-                      onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
-                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                        fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                      }`}
-                    />
-                    {fieldErrors.invoice_companyEmail && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyEmail}</p>
-                    )}
-                  </label>
+                <input
+                  type="email"
+                  value={formState.invoiceInfo.companyEmail}
+                  onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                />
+                {fieldErrors.invoice_companyEmail && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyEmail}</p>
+                )}
+              </label>
                   
-                  <label className="block">
+              <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber') || 'GST/HST Number'} *</span>
-                    <input
-                      type="text"
-                      value={formState.invoiceInfo.taxNumber}
-                      onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
+                <input
+                  type="text"
+                  value={formState.invoiceInfo.taxNumber}
+                  onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
                       placeholder={t('taxNumberPlaceholder') || 'GST/HST Number'}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    />
-                  </label>
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+              </label>
                   
-                  <label className="block">
+              <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('city') || '城市'} *</span>
-                    <input
-                      type="text"
-                      value={formState.invoiceInfo.city}
-                      onChange={(e) => updateInvoiceInfo('city', e.target.value)}
-                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                        fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                      }`}
-                    />
-                    {fieldErrors.invoice_city && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_city}</p>
-                    )}
-                  </label>
+                <input
+                  type="text"
+                  value={formState.invoiceInfo.city}
+                  onChange={(e) => updateInvoiceInfo('city', e.target.value)}
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                />
+                {fieldErrors.invoice_city && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_city}</p>
+                )}
+              </label>
                   
-                  <label className="block">
+              <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('province') || '省份'} *</span>
-                    <input
-                      type="text"
-                      value={formState.invoiceInfo.province}
-                      onChange={(e) => updateInvoiceInfo('province', e.target.value)}
+                <input
+                  type="text"
+                  value={formState.invoiceInfo.province}
+                  onChange={(e) => updateInvoiceInfo('province', e.target.value)}
                       placeholder={t('provincePlaceholder') || 'Ontario'}
-                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                        fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                      }`}
-                    />
-                    {fieldErrors.invoice_province && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_province}</p>
-                    )}
-                  </label>
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                />
+                {fieldErrors.invoice_province && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_province}</p>
+                )}
+              </label>
                   
-                  <label className="block">
+              <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode') || '邮编'} *</span>
-                    <input
-                      type="text"
-                      value={formState.invoiceInfo.postalCode}
-                      onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
+                <input
+                  type="text"
+                  value={formState.invoiceInfo.postalCode}
+                  onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
                       placeholder={t('postalCodePlaceholder') || 'A1B 2C3'}
-                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                        fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                      }`}
-                    />
-                    {fieldErrors.invoice_postalCode && (
-                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_postalCode}</p>
-                    )}
-                  </label>
-                </div>
+                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+                />
+                {fieldErrors.invoice_postalCode && (
+                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_postalCode}</p>
+                )}
+              </label>
+            </div>
                 
-                <label className="block mt-4">
+            <label className="block mt-4">
                   <span className="block text-sm font-medium text-gray-700 mb-2">{t('address') || '地址'} *</span>
-                  <input
-                    type="text"
-                    value={formState.invoiceInfo.address}
-                    onChange={(e) => updateInvoiceInfo('address', e.target.value)}
-                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                      fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                    }`}
-                  />
-                  {fieldErrors.invoice_address && (
-                    <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_address}</p>
-                  )}
-                </label>
-              </div>
+              <input
+                type="text"
+                value={formState.invoiceInfo.address}
+                onChange={(e) => updateInvoiceInfo('address', e.target.value)}
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                }`}
+              />
+              {fieldErrors.invoice_address && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_address}</p>
+              )}
+            </label>
+          </div>
 
               {/* 支付信息（Invoice时必填） */}
               <div className="p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
@@ -1381,10 +1381,10 @@ export default function OfflineOrdersIntakePage() {
                   
                   <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">Reference Number *</span>
-                    <input
-                      type="text"
+                            <input
+                              type="text"
                       value={formState.invoiceInfo.referenceNumber || ''}
-                      onChange={(e) => {
+                              onChange={(e) => {
                         setFormState((prev) => ({
                           ...prev,
                           invoiceInfo: {
@@ -1392,28 +1392,28 @@ export default function OfflineOrdersIntakePage() {
                             referenceNumber: e.target.value,
                           },
                         }));
-                      }}
+                              }}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Reference Number"
                     />
                   </label>
                 </div>
-              </div>
+            </div>
 
               {/* 税计算显示 */}
               <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg">
                 <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">价格明细（含税）</h4>
                 <div className="space-y-2">
-                  <div className="flex justify-between items-center text-sm">
+              <div className="flex justify-between items-center text-sm">
                     <span>小计：</span>
-                    <span>${calculateSubtotal.toFixed(2)} CAD</span>
-                  </div>
-                  {formState.discount > 0 && (
-                    <div className="flex justify-between items-center text-sm text-red-600">
+                <span>${calculateSubtotal.toFixed(2)} CAD</span>
+              </div>
+              {formState.discount > 0 && (
+                <div className="flex justify-between items-center text-sm text-red-600">
                       <span>折扣 ({formState.discount}%)：</span>
-                      <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
-                    </div>
-                  )}
+                  <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
+                </div>
+              )}
                   <div className="flex justify-between items-center text-sm">
                     <span>税前金额：</span>
                     <span>${taxBase.toFixed(2)} CAD</span>
@@ -1422,17 +1422,17 @@ export default function OfflineOrdersIntakePage() {
                     <span>税 (13% HST)：</span>
                     <span>${taxAmount.toFixed(2)} CAD</span>
                   </div>
-                  <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
+              <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
                     <span className="font-semibold">总计（含税）：</span>
                     <strong className="text-xl text-blue-700">${totalWithTax.toFixed(2)} CAD</strong>
-                  </div>
-                </div>
+              </div>
               </div>
             </div>
-          )}
-        </section>
-      </div>
-    );
+          </div>
+        )}
+      </section>
+    </div>
+  );
   };
 
   // [2025-01-27 18:00:00] 更新发票信息字段
