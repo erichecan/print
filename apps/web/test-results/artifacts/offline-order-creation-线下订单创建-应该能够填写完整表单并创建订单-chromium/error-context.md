@@ -1,0 +1,57 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - button "登录" [ref=e6] [cursor=pointer]
+          - generic [ref=e7]:
+            - button "EN" [ref=e8] [cursor=pointer]
+            - button "中文" [ref=e9] [cursor=pointer]
+        - paragraph [ref=e10]: 离线订单录入
+        - heading "分享您的项目规格和设计稿" [level=1] [ref=e11]
+        - paragraph [ref=e12]: 上传品牌资源，概述数量、时间线和特殊生产说明。
+    - main [ref=e13]:
+      - generic [ref=e14]:
+        - status [ref=e15]: errorNoProducts
+        - generic [ref=e16]:
+          - generic [ref=e17]: 订单编号：
+          - strong [ref=e18]: OFF-20251207-901L
+        - generic [ref=e19]:
+          - generic "clickToJump" [ref=e20] [cursor=pointer]:
+            - generic [ref=e21]: "1"
+            - generic [ref=e22]:
+              - generic [ref=e23]: 产品选择
+              - generic [ref=e24]: 多产品定制，选择产品类型、变体和数量
+          - generic "clickToJump" [ref=e25] [cursor=pointer]:
+            - generic [ref=e26]: "2"
+            - generic [ref=e27]:
+              - generic [ref=e28]: 客户信息和Invoice
+              - generic [ref=e29]: 填写客户信息和Invoice信息
+          - generic "clickToJump" [ref=e30] [cursor=pointer]:
+            - generic [ref=e31]: "3"
+            - generic [ref=e32]:
+              - generic [ref=e33]: 文件上传
+              - generic [ref=e34]: 上传设计文件（非必填）
+        - generic [ref=e36]:
+          - heading "多产品定制" [level=2] [ref=e38]
+          - paragraph [ref=e39]: 支持同时定制多种产品，每个产品可以选择不同的变体（尺码、颜色等）和数量
+          - generic [ref=e41]:
+            - generic [ref=e42]: 添加产品：
+            - combobox "添加产品：" [disabled] [ref=e43]:
+              - option "暂无产品，请先在管理员后台添加产品" [selected]
+          - paragraph [ref=e45]: 请先添加产品类型，然后为每个产品添加变体（尺码、颜色等）和数量
+          - generic [ref=e46]:
+            - heading "printPositions" [level=3] [ref=e47]
+            - button "addPrintPosition" [ref=e49] [cursor=pointer]
+          - generic [ref=e51]:
+            - generic [ref=e52]: orderNotes *
+            - textbox "orderNotes *" [ref=e53]:
+              - /placeholder: orderNotesPlaceholder
+        - generic [ref=e54]:
+          - button "保存草稿" [ref=e55] [cursor=pointer]
+          - button "下一步" [active] [ref=e57] [cursor=pointer]
+  - alert [ref=e58]
+```

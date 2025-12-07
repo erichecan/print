@@ -47,7 +47,7 @@ gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
 # Build and push backend
 echo -e "${GREEN}🏗️  Building backend Docker image...${NC}"
-docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
+docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
   -f backend/Dockerfile .
 
 echo -e "${GREEN}📤 Pushing backend image...${NC}"
@@ -55,7 +55,7 @@ docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest
 
 # Build and push frontend
 echo -e "${GREEN}🏗️  Building frontend Docker image...${NC}"
-docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
+docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
   -f apps/web/Dockerfile apps/web
 
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"
@@ -70,7 +70,7 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --allow-unauthenticated \
   --add-cloudsql-instances ${PROJECT_ID}:${REGION}:${DB_INSTANCE} \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production,PORT=8080 \
+  --set-env-vars NODE_ENV=production \
   --memory 512Mi \
   --cpu 1 \
   --min-instances 1 \
