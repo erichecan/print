@@ -51,7 +51,8 @@ test.describe('线下订单 Sales 流程', () => {
     await loginAsSalesTester(page);
 
     // [2025-12-02 05:31:30] 页面标题和基本结构
-    await expect(page.getByRole('heading', { name: /Sales 线下订单列表/ })).toBeVisible();
+    // [2025-01-27 16:00:00] 更新标题匹配：Sales 线下订单管理
+    await expect(page.getByRole('heading', { name: /Sales 线下订单管理/ })).toBeVisible();
 
     // [2025-12-02 05:31:30] 种子订单（OFF-E2E-CASE-*）应出现在表格中
     await expect(page.getByText(/OFF-E2E-CASE-/, { exact: false })).toBeVisible();
