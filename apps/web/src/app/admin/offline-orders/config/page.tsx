@@ -286,20 +286,6 @@ export default function OfflineOrdersConfigPage() {
           >
             产品管理
           </button>
-          <button
-            type="button"
-            className={`config-tab ${activeTab === 'availability' ? 'active' : ''}`}
-            onClick={() => setActiveTab('availability')}
-          >
-            可用性配置
-          </button>
-          <button
-            type="button"
-            className={`config-tab ${activeTab === 'stages' ? 'active' : ''}`}
-            onClick={() => setActiveTab('stages')}
-          >
-            工作流阶段
-          </button>
         </div>
 
         <div className="config-content">
