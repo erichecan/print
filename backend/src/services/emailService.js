@@ -519,6 +519,52 @@ async function sendContactFormNotification(formData) {
   }
 }
 
+/**
+ * Send low stock alert email
+ * [2025-12-07 04:15:00] 发送低库存警报邮件
+ */
+async function sendLowStockAlert(product, variant, currentStock, threshold) {
+  try {
+    const transporter = getTransporter();
+    const emailFrom = process.env.EMAIL_FROM || 'noreply@suvernireplus.com';
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.SUPPORT_EMAIL || 'admin@suvernireplus.com';
+    const appName = process.env.APP_NAME || 'Suvernire Plus';
+
+    const html = `
+      <h2>Low Stock Alert</h2>
+      <p><strong>Product:</strong> ${product.name}</p>
+      <p><strong>Variant:</strong> ${variant?.name || 'N/A'}</p>
+      <p><strong>Current Stock:</strong> ${currentStock}</p>
+      <p><strong>Threshold:</strong> ${threshold}</p>
+      <p>Please restock this item soon.</p>
+    `;
+
+    const mailOptions = {
+      from: `"${appName}" <${emailFrom}>`,
+      to: adminEmail,
+      subject: `Low Stock Alert: ${product.name}`,
+      html,
+      text: `Low Stock Alert\n\nProduct: ${product.name}\nVariant: ${variant?.name || 'N/A'}\nCurrent Stock: ${currentStock}\nThreshold: ${threshold}\n\nPlease restock this item soon.`,
+    };
+
+    const result = await transporter.sendMail(mailOptions);
+    logger.info('Low stock alert email sent', {
+      productId: product.id,
+      variantId: variant?.id,
+      currentStock,
+      messageId: result.messageId,
+    });
+
+    return result;
+  } catch (error) {
+    logger.error('Failed to send low stock alert email', {
+      productId: product.id,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
 module.exports = {
   sendOrderConfirmation,
   sendRefundConfirmation,
