@@ -10,7 +10,7 @@ import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
 import api from '@/lib/api';
 import useSWR from 'swr';
 
-// [2025-12-07 06:20:00] 状态选择组件 - 圆角标签 + 下拉箭头
+// [2025-12-07 08:15:00] 状态选择组件 - 参考 PillSelect 的单选版样式
 function StatusSelector({
   orderId,
   currentValue,
@@ -24,69 +24,159 @@ function StatusSelector({
   onUpdate: (orderId: string, value: string) => void;
   disabled: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const id = `status-selector-${orderId}`;
 
+  const currentLabel = statusOptions.find(o => o.value === currentValue)?.label ?? statusOptions[0]?.label ?? '';
+
+  const handleSelect = (val: string) => {
+    onUpdate(orderId, val);
+    setOpen(false);
+    triggerRef.current?.focus();
+  };
+
+  // 关闭逻辑：点击外部或按下 Escape
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+    if (!open) return;
+
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (triggerRef.current && triggerRef.current.contains(target)) return;
+      if (listRef.current && listRef.current.contains(target)) return;
+      setOpen(false);
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [isOpen]);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
 
-  const currentOption = statusOptions.find(opt => opt.value === currentValue) || statusOptions[0];
-  const getStatusClass = (status: string) => {
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  // 键盘导航：上下选择，回车确认
+  const onListKeyDown = (e: React.KeyboardEvent) => {
+    const items = listRef.current?.querySelectorAll<HTMLLIElement>('[role="option"]');
+    if (!items || items.length === 0) return;
+
+    const active = document.activeElement as HTMLElement | null;
+    const idx = Array.from(items).findIndex(el => el === active);
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = items[idx + 1] ?? items[0];
+      next.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = items[idx - 1] ?? items[items.length - 1];
+      prev.focus();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      const val = (active?.dataset.value) as string | undefined;
+      if (val) handleSelect(val);
+    }
+  };
+
+  // 获取状态对应的颜色类
+  const getStatusColorClass = (status: string) => {
     const lower = status.toLowerCase();
-    if (lower === 'active' || lower === 'active_rush') return 'active';
-    if (lower === 'completed') return 'completed';
-    if (lower === 'cancelled') return 'cancelled';
-    return lower;
+    if (lower === 'active' || lower === 'active_rush') {
+      return 'bg-green-50 text-green-700';
+    }
+    if (lower === 'completed') {
+      return 'bg-blue-50 text-blue-700';
+    }
+    if (lower === 'cancelled') {
+      return 'bg-red-50 text-red-700';
+    }
+    return 'bg-indigo-50 text-indigo-700';
   };
 
   return (
-    <div className="sales-orders-status-selector" ref={dropdownRef}>
+    <div className="relative">
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`status-tag status-tag-${getStatusClass(currentValue)}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={`${id}-listbox`}
+        className={`
+          inline-flex items-center justify-between gap-2
+          rounded-xl border border-slate-300 bg-white px-3 py-2
+          text-slate-900 shadow-sm
+          focus:outline-none focus:ring-4 focus:ring-indigo-200
+          disabled:opacity-60 disabled:cursor-not-allowed
+          transition-all
+        `}
+        onClick={() => !disabled && setOpen(o => !o)}
       >
-        {currentOption.label}
+        <span className={`
+          inline-flex items-center rounded-full
+          text-sm px-3 py-1 font-medium
+          ${getStatusColorClass(currentValue)}
+        `}>
+          {currentLabel}
+        </span>
         <svg 
-          width="12" 
-          height="12" 
-          viewBox="0 0 12 12" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          style={{ marginLeft: '0.375rem', transition: 'transform 0.2s' }}
-          className={isOpen ? 'arrow-open' : ''}
+          width="16" 
+          height="16" 
+          viewBox="0 0 24 24" 
+          aria-hidden="true" 
+          className={`text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
         >
-          <path d="M3 4.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+          <path 
+            d="M6 9l6 6 6-6" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            fill="none" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          />
         </svg>
       </button>
-      {isOpen && (
-        <div className="status-dropdown-menu">
-          {statusOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                onUpdate(orderId, option.value);
-                setIsOpen(false);
-              }}
-              className={`status-menu-item ${currentValue === option.value ? 'active' : ''}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+
+      {open && !disabled && (
+        <ul
+          ref={listRef}
+          id={`${id}-listbox`}
+          role="listbox"
+          tabIndex={-1}
+          className="
+            absolute z-20 mt-2 w-full min-w-[120px]
+            rounded-xl border border-slate-200 bg-white
+            shadow-lg p-1
+          "
+          onKeyDown={onListKeyDown}
+        >
+          {statusOptions.map((opt) => {
+            const selected = opt.value === currentValue;
+            return (
+              <li
+                key={opt.value}
+                role="option"
+                aria-selected={selected}
+                data-value={opt.value}
+                tabIndex={0}
+                className={`
+                  cursor-pointer select-none rounded-lg px-3 py-2
+                  text-sm text-slate-900
+                  hover:bg-slate-100 focus:bg-slate-100 focus:outline-none
+                  ${selected ? 'bg-indigo-50 text-indigo-700' : ''}
+                `}
+                onClick={() => handleSelect(opt.value)}
+              >
+                {opt.label}
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
@@ -168,10 +258,10 @@ export default function SalesOrdersPage() {
 
         // [2025-12-07 04:55:00] 获取阶段配置（用于快速修改状态）
         // [2025-12-07 05:30:00] 使用代理 API 访问，确保认证正确传递
+        // [2025-12-07 08:00:00] 修复：使用 authenticatedFetch 确保 token 正确传递
         try {
-          const stagesRes = await fetch('/api/proxy/admin/offline-orders/config/stages', {
-            credentials: 'include',
-          })
+          const { authenticatedFetch } = await import('@/lib/api');
+          const stagesRes = await authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
             .then(res => {
               if (!res.ok) {
                 console.warn('[SalesOrders] Failed to fetch stages:', res.status);
@@ -273,19 +363,23 @@ export default function SalesOrdersPage() {
   const isManager = currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase());
 
   // [2025-01-27 13:10:00] 配置管理数据获取
+  // [2025-12-07 08:10:00] 修复：使用 authenticatedFetch 确保 token 正确传递
   const { data: colorsData, mutate: mutateColors } = useSWR(
     activeTab === 'config' && configTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
     async (url) => {
-      const response = await fetch(url, { credentials: 'include' });
+      const { authenticatedFetch } = await import('@/lib/api');
+      const response = await authenticatedFetch(url);
       if (!response.ok) throw new Error('Failed to fetch colors');
       return response.json();
     }
   );
 
+  // [2025-12-07 08:10:00] 修复：使用 authenticatedFetch 确保 token 正确传递
   const { data: productsData, mutate: mutateProducts } = useSWR(
     activeTab === 'config' && configTab === 'products' ? '/api/proxy/admin/offline-order-products' : null,
     async (url) => {
-      const response = await fetch(url, { credentials: 'include' });
+      const { authenticatedFetch } = await import('@/lib/api');
+      const response = await authenticatedFetch(url);
       if (!response.ok) throw new Error('Failed to fetch products');
       return response.json();
     }
@@ -1115,82 +1209,7 @@ export default function SalesOrdersPage() {
           border-color: #2563eb;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
-        .sales-orders-status-selector {
-          position: relative;
-          display: inline-block;
-        }
-        .status-tag {
-          display: inline-flex;
-          align-items: center;
-          padding: 0.375rem 0.75rem;
-          border-radius: 9999px;
-          font-size: 0.875rem;
-          font-weight: 500;
-          border: none;
-          cursor: pointer;
-          transition: all 0.2s;
-          user-select: none;
-        }
-        .status-tag:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .status-tag:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .status-tag-active {
-          background: #dcfce7;
-          color: #166534;
-        }
-        .status-tag-active-rush {
-          background: #fef3c7;
-          color: #b45309;
-        }
-        .status-tag-completed {
-          background: #eff6ff;
-          color: #1d4ed8;
-        }
-        .status-tag-cancelled {
-          background: #fef2f2;
-          color: #b91c1c;
-        }
-        .status-tag .arrow-open {
-          transform: rotate(180deg);
-        }
-        .status-dropdown-menu {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          margin-top: 0.25rem;
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          z-index: 100;
-          min-width: 140px;
-          overflow: hidden;
-        }
-        .status-menu-item {
-          display: block;
-          width: 100%;
-          padding: 0.5rem 1rem;
-          text-align: left;
-          background: transparent;
-          border: none;
-          color: #374151;
-          font-size: 0.875rem;
-          cursor: pointer;
-          transition: background 0.15s;
-        }
-        .status-menu-item:hover {
-          background: #f3f4f6;
-        }
-        .status-menu-item.active {
-          background: #eff6ff;
-          color: #1d4ed8;
-          font-weight: 500;
-        }
+        /* [2025-12-07 08:15:00] StatusSelector 样式已迁移到 Tailwind CSS，移除旧样式 */
         .tag-active-rush {
           background: #fef3c7;
           color: #b45309;

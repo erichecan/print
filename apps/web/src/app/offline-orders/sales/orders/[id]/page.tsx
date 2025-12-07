@@ -6,8 +6,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration } from '@/lib/api';
-import { API_BASE_URL } from '@/lib/api-config';
+import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration, authenticatedFetch } from '@/lib/api';
 
 export default function SalesOrderDetailPage() {
   const router = useRouter();
@@ -47,9 +46,12 @@ export default function SalesOrderDetailPage() {
 
       try {
         // 获取订单详情和阶段配置
+        // [2025-12-07 08:00:00] 修复：使用 authenticatedFetch 确保 token 正确传递
         const [detail, stagesRes] = await Promise.all([
           salesOrdersApi.get(orderId),
-          fetch(`${API_BASE_URL}/admin/offline-orders/config/stages`).then(res => res.json()).catch(() => ({ stages: [] }))
+          authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
+            .then(res => res.ok ? res.json() : { stages: [] })
+            .catch(() => ({ stages: [] }))
         ]);
         if (!cancelled) {
           setOrder(detail);

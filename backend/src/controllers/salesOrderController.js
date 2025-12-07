@@ -388,11 +388,13 @@ exports.updateSalesOrderStatus = async (req, res) => {
     }
 
     // [2025-12-07 05:15:00] 查找订单并验证权限
+    // [2025-12-07 08:00:00] 修复：包含 rushOrder 字段用于比较
     const order = await prisma.offlineOrder.findUnique({
       where: { id },
       select: {
         id: true,
         status: true,
+        rushOrder: true,
         metadata: true,
       },
     });

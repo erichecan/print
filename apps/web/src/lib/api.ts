@@ -271,15 +271,24 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
   // [2025-12-02 04:20:00] 检查是否需要使用代理路由
-  const useProxy = requiresAuthProxy(endpoint);
+  // [2025-12-07 08:10:00] 修复：如果 endpoint 已经包含 /api/proxy，直接使用，避免重复拼接
+  const alreadyHasProxy = endpoint.startsWith('/api/proxy');
+  const useProxy = !alreadyHasProxy && requiresAuthProxy(endpoint);
   
   // [2025-12-02 04:20:00] 确定请求 URL
-  const baseUrl = useProxy 
-    ? (typeof window !== 'undefined' ? window.location.origin : '')
-    : API_BASE_URL;
-  const requestUrl = useProxy 
-    ? `${baseUrl}/api/proxy${endpoint}`
-    : `${baseUrl}${endpoint}`;
+  // [2025-12-07 08:10:00] 修复：如果 endpoint 已经包含 /api/proxy，直接使用 window.location.origin（客户端）或相对路径（SSR）
+  let requestUrl: string;
+  if (alreadyHasProxy) {
+    // endpoint 已经包含 /api/proxy，直接使用相对路径（Next.js 会处理）
+    requestUrl = endpoint;
+  } else if (useProxy) {
+    // 需要代理，添加 /api/proxy 前缀
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+    requestUrl = `${baseUrl}/api/proxy${endpoint}`;
+  } else {
+    // 不需要代理，直接使用 API_BASE_URL
+    requestUrl = `${API_BASE_URL}${endpoint}`;
+  }
 
   // [2025-12-07 07:55:00] 从 localStorage 读取 token 并添加到 Authorization header
   const token = getToken();
@@ -685,6 +694,29 @@ export function clearAuthToken(): void {
   } catch (e) {
     console.error('[API] Error clearing token from localStorage:', e);
   }
+}
+
+// [2025-12-07 08:00:00] 导出 getToken 函数供外部使用
+export function getAuthToken(): string | null {
+  return getToken();
+}
+
+// [2025-12-07 08:00:00] 创建带认证的 fetch 辅助函数
+export async function authenticatedFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const token = getToken();
+  const headers = new Headers(options.headers);
+  
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+  
+  return fetch(url, {
+    ...options,
+    headers,
+  });
 }
 
 async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
