@@ -58,9 +58,20 @@ async function handleProxyRequest(
     // [2025-12-02 04:15:00] 构建后端 URL
     const upstreamUrl = `${API_BASE}${fullPath}`;
     
-    // [2025-12-02 04:15:00] 获取前端请求的 cookies（包含认证 token）
-    const cookies = request.headers.get('cookie') || '';
-    const hasCookies = !!cookies;
+    // [2025-12-07 07:05:00] 使用 NextRequest.cookies 获取 Cookie（而不是 headers.get('cookie')）
+    // Next.js 的 cookies API 会自动处理 Cookie 的解析
+    const cookieHeader = request.headers.get('cookie') || '';
+    const cookieStore = request.cookies;
+    const allCookies: string[] = [];
+    
+    // [2025-12-07 07:05:00] 从 cookieStore 获取所有 Cookie
+    cookieStore.getAll().forEach((cookie) => {
+      allCookies.push(`${cookie.name}=${cookie.value}`);
+    });
+    
+    // [2025-12-07 07:05:00] 如果 cookieStore 为空，尝试使用 header（向后兼容）
+    const cookies = allCookies.length > 0 ? allCookies.join('; ') : cookieHeader;
+    const hasCookies = !!cookies && cookies.length > 0;
     const hasToken = cookies.includes('token=');
     
     // [2025-12-07 06:40:00] 增强日志输出
@@ -73,6 +84,8 @@ async function handleProxyRequest(
       hasToken,
       cookieLength: cookies.length,
       cookiePreview: cookies.substring(0, 100), // 只显示前100字符
+      cookieCount: cookieStore.getAll().length,
+      cookieNames: cookieStore.getAll().map(c => c.name),
       queryString: queryString || 'none',
       origin: request.headers.get('origin'),
       referer: request.headers.get('referer'),

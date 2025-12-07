@@ -1,0 +1,198 @@
+{
+  "config": {
+    "configFile": "/Users/eric/Desktop/print-main/apps/web/playwright.gcp.config.ts",
+    "rootDir": "/Users/eric/Desktop/print-main/apps/web/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "line",
+        null
+      ],
+      [
+        "html",
+        {
+          "open": "never",
+          "outputFolder": "test-results/html-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/eric/Desktop/print-main/apps/web/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "cookie-403-debug.spec.ts",
+      "file": "cookie-403-debug.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Cookie 403 错误调试",
+          "file": "cookie-403-debug.spec.ts",
+          "line": 11,
+          "column": 6,
+          "specs": [
+            {
+              "title": "验证登录后 Cookie 是否正确设置和传递",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5138,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "[Cookie Test] 开始登录...\n"
+                        },
+                        {
+                          "text": "[Cookie Test] 登录成功\n"
+                        },
+                        {
+                          "text": "[Cookie Test] 浏览器 Cookie 数量: 2\n"
+                        },
+                        {
+                          "text": "[Cookie Test] Cookie: sessionId = 92a10579-e45a-48fd-9... (domain: print-main-frontend-234065158862.us-central1.run.app, path: /, secure: true, sameSite: None)\n"
+                        },
+                        {
+                          "text": "[Cookie Test] Cookie: token = eyJhbGciOiJIUzI1NiIs... (domain: print-main-frontend-234065158862.us-central1.run.app, path: /, secure: true, sameSite: None)\n"
+                        },
+                        {
+                          "text": "[Cookie Test] ✅ Token Cookie 已设置\n"
+                        },
+                        {
+                          "text": "[Cookie Test]   - Domain: print-main-frontend-234065158862.us-central1.run.app\n"
+                        },
+                        {
+                          "text": "[Cookie Test]   - Path: /\n"
+                        },
+                        {
+                          "text": "[Cookie Test]   - Secure: true\n"
+                        },
+                        {
+                          "text": "[Cookie Test]   - SameSite: None\n"
+                        },
+                        {
+                          "text": "[Cookie Test]   - HttpOnly: true\n"
+                        },
+                        {
+                          "text": "[Cookie Test] 访问配置页面...\n"
+                        },
+                        {
+                          "text": "[Cookie Test] ❌ 发现 1 个 403 错误:\n"
+                        },
+                        {
+                          "text": "[Cookie Test]   - undefined https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors -> 403\n"
+                        },
+                        {
+                          "text": "[Cookie Test] 配置页面 API 请求数量: 1\n"
+                        },
+                        {
+                          "text": "[Cookie Test]   - GET https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\n"
+                        },
+                        {
+                          "text": "[Cookie Test]     Cookie 头: none...\n"
+                        },
+                        {
+                          "text": "[Cookie Test]     Cookie 长度: 4\n"
+                        },
+                        {
+                          "text": "[Cookie Test]     包含 token: false\n"
+                        },
+                        {
+                          "text": "[Cookie Test] 手动测试 API 请求...\n"
+                        },
+                        {
+                          "text": "[Cookie Test] 手动请求状态: 403\n"
+                        },
+                        {
+                          "text": "[Cookie Test] 错误响应: {\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T06:43:29.459Z\"}\n"
+                        },
+                        {
+                          "text": "[Cookie Test] ⚠️ 存在 403 错误，需要进一步调试\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-12-07T06:43:24.226Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "d235e3a6129b7dadc796-9f619756473516b77794",
+              "file": "cookie-403-debug.spec.ts",
+              "line": 12,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-07T06:43:23.953Z",
+    "duration": 5630.129,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
