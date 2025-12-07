@@ -56,6 +56,13 @@ const defaultFooterColumns = [
       { href: '/sitemap.xml', label: 'Sitemap' },
     ],
   },
+  // [2025-12-07 05:10:00] 添加线下订单入口
+  {
+    title: 'Business',
+    links: [
+      { href: '/offline-orders/sales/login', label: 'Offline Orders' },
+    ],
+  },
 ];
 
 export function SiteFooter() {

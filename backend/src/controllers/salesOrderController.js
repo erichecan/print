@@ -352,4 +352,132 @@ exports.updateSalesOrderStage = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/sales/orders/:id/status
+ * [2025-12-07 05:15:00] Sales 更新订单状态（ACTIVE, COMPLETED, CANCELLED）
+ */
+exports.updateSalesOrderStatus = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const roleRaw = req.user?.role || '';
+    const role = String(roleRaw).toUpperCase();
+    const isManager = role === 'SALES_MANAGER' || role === 'ADMIN';
+    const userId = req.user?.id;
+
+    logger.info('[SalesOrders] updateSalesOrderStatus', {
+      timestamp,
+      id,
+      userId,
+      role,
+      isManager,
+      newStatus: status,
+    });
+
+    // [2025-12-07 05:15:00] 验证状态值
+    const validStatuses = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
+    const normalizedStatus = status ? String(status).toUpperCase() : null;
+    if (!normalizedStatus || !validStatuses.includes(normalizedStatus)) {
+      return res.status(400).json({
+        error: 'Validation Error',
+        message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+      });
+    }
+
+    // [2025-12-07 05:15:00] 查找订单并验证权限
+    const order = await prisma.offlineOrder.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        status: true,
+        metadata: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Offline order not found' });
+    }
+
+    // [2025-12-07 05:15:00] 普通 Sales 只能修改自己提交的订单
+    const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
+    if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
+      return res.status(403).json({ error: 'You do not have permission to update this order' });
+    }
+
+    // [2025-12-07 05:15:00] 如果状态没有变化，直接返回
+    if (order.status === normalizedStatus) {
+      const currentOrder = await prisma.offlineOrder.findUnique({
+        where: { id },
+      });
+      return res.json({
+        success: true,
+        order: mapSalesOfflineOrder(currentOrder, true),
+      });
+    }
+
+    const actorName = req.user
+      ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
+      : 'Sales';
+
+    // [2025-12-07 05:15:00] 更新订单状态
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      const order = await tx.offlineOrder.update({
+        where: { id },
+        data: {
+          status: normalizedStatus,
+          histories: {
+            create: {
+              fromStageKey: null,
+              toStageKey: null,
+              actorId: req.user?.id || null,
+              actorName,
+              note: `Status changed from ${order.status} to ${normalizedStatus}`,
+            },
+          },
+        },
+        include: {
+          assets: true,
+          histories: {
+            orderBy: { createdAt: 'desc' },
+          },
+          productionWorkOrder: {
+            include: {
+              events: {
+                orderBy: { createdAt: 'desc' },
+              },
+            },
+          },
+        },
+      });
+
+      return order;
+    });
+
+    logger.info('[SalesOrders] updateSalesOrderStatus success', {
+      timestamp,
+      id,
+      userId,
+      fromStatus: order.status,
+      toStatus: normalizedStatus,
+    });
+
+    res.json({
+      success: true,
+      order: mapSalesOfflineOrder(updatedOrder, true),
+    });
+  } catch (error) {
+    logger.error('[SalesOrders] updateSalesOrderStatus error', {
+      timestamp,
+      error: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to update sales order status',
+    });
+  }
+};
+
 

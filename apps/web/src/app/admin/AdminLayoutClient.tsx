@@ -14,9 +14,11 @@ export default function AdminLayoutClient({ children }: { children: ReactNode })
   
   // [2025-11-28 10:30:00] 登录页面不使用 AdminShell，避免重定向循环
   const isLoginPage = pathname === '/admin/login' || pathname?.startsWith('/admin/login?');
+  // [2025-12-07 05:20:00] 配置页面不使用 AdminShell，使用自己的布局
+  const isConfigPage = pathname === '/admin/offline-orders/config';
   
-  if (isLoginPage) {
-    // 登录页面直接渲染，不使用 AdminShell
+  if (isLoginPage || isConfigPage) {
+    // 登录页面和配置页面直接渲染，不使用 AdminShell
     return <>{children}</>;
   }
   

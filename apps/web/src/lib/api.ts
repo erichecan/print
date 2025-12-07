@@ -848,6 +848,12 @@ export const salesOrdersApi = {
       method: 'PATCH',
       body: data,
     }),
+  // [2025-12-07 05:15:00] 更新订单状态
+  updateStatus: (id: string, status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED') =>
+    api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/sales/orders/${id}/status`, {
+      method: 'PATCH',
+      body: { status },
+    }),
 };
 
 // [2025-12-06 17:00:00] Offline Order Product Configuration API

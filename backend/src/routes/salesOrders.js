@@ -17,6 +17,9 @@ router.get('/:id', salesOrderController.getSalesOrderById);
 // PATCH /api/sales/orders/:id/stage - 更新订单阶段
 router.patch('/:id/stage', salesOrderController.updateSalesOrderStage);
 
+// [2025-12-07 05:15:00] PATCH /api/sales/orders/:id/status - 更新订单状态
+router.patch('/:id/status', salesOrderController.updateSalesOrderStatus);
+
 module.exports = router;
 
 

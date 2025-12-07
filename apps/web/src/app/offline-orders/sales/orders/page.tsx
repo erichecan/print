@@ -17,6 +17,14 @@ export default function SalesOrdersPage() {
   const [currentUser, setCurrentUser] = useState<{ role?: string } | null>(null);
   const [stages, setStages] = useState<Array<{ key: string; label: string }>>([]);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+
+  // [2025-12-07 05:15:00] 订单状态选项
+  const statusOptions = [
+    { value: 'ACTIVE', label: '进行中' },
+    { value: 'COMPLETED', label: '已完成' },
+    { value: 'CANCELLED', label: '已取消' },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -83,7 +91,7 @@ export default function SalesOrdersPage() {
     router.push(`/offline-orders/sales/orders/${orderId}`);
   };
 
-  // [2025-12-07 04:55:00] 快速修改订单状态
+  // [2025-12-07 04:55:00] 快速修改订单阶段
   const handleQuickUpdateStage = async (orderId: string, newStageKey: string) => {
     if (!newStageKey) return;
     
@@ -94,9 +102,26 @@ export default function SalesOrdersPage() {
       const response = await salesOrdersApi.list({ page: 1, limit: 50 });
       setOrders(response.data);
     } catch (err: any) {
-      setError(err.message || '更新订单状态失败。');
+      setError(err.message || '更新订单阶段失败。');
     } finally {
       setUpdatingStage(null);
+    }
+  };
+
+  // [2025-12-07 05:15:00] 快速修改订单状态
+  const handleQuickUpdateStatus = async (orderId: string, newStatus: string) => {
+    if (!newStatus) return;
+    
+    setUpdatingStatus(orderId);
+    try {
+      await salesOrdersApi.updateStatus(orderId, newStatus as 'ACTIVE' | 'COMPLETED' | 'CANCELLED');
+      // 刷新订单列表
+      const response = await salesOrdersApi.list({ page: 1, limit: 50 });
+      setOrders(response.data);
+    } catch (err: any) {
+      setError(err.message || '更新订单状态失败。');
+    } finally {
+      setUpdatingStatus(null);
     }
   };
 
@@ -189,10 +214,21 @@ export default function SalesOrdersPage() {
                   <td>{order.quantity ?? '—'}</td>
                   <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
                   <td>
-                    <span className={`tag tag-${order.status.toLowerCase()}`}>
-                      {order.status}
-                    </span>
-                    {order.rushOrder && <span className="tag tag-rush">加急</span>}
+                    <div className="sales-orders-status">
+                      <select
+                        value={order.status}
+                        onChange={(e) => handleQuickUpdateStatus(order.id, e.target.value)}
+                        disabled={updatingStatus === order.id}
+                        className="sales-orders-status-select"
+                      >
+                        {statusOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      {order.rushOrder && <span className="tag tag-rush">加急</span>}
+                    </div>
                   </td>
                   <td>
                     <div className="sales-orders-stage">
@@ -352,6 +388,29 @@ export default function SalesOrdersPage() {
           cursor: not-allowed;
         }
         .sales-orders-stage-select:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+        .sales-orders-status {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .sales-orders-status-select {
+          padding: 0.25rem 0.5rem;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 0.85rem;
+          background: #ffffff;
+          cursor: pointer;
+          min-width: 100px;
+        }
+        .sales-orders-status-select:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .sales-orders-status-select:focus {
           outline: none;
           border-color: #2563eb;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
