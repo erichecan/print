@@ -476,68 +476,60 @@ export default function SalesOrdersPage() {
           border-color: #2563eb;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
-        .sales-orders-status-dropdown {
-          position: relative;
-          display: inline-block;
-        }
-        .sales-orders-status-dropdown button.tag {
-          cursor: pointer;
-          user-select: none;
+        .sales-orders-status-selector {
           display: inline-flex;
           align-items: center;
+          gap: 0.25rem;
+          background: #f3f4f6;
+          padding: 0.25rem;
+          border-radius: 8px;
         }
-        .sales-orders-status-dropdown button.tag:disabled {
-          opacity: 0.6;
+        .status-icon-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: transparent;
+          color: #6b7280;
+        }
+        .status-icon-btn:hover:not(:disabled) {
+          background: #e5e7eb;
+          transform: scale(1.1);
+        }
+        .status-icon-btn:disabled {
+          opacity: 0.5;
           cursor: not-allowed;
+        }
+        .status-icon-btn.active {
+          background: #ffffff;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .status-icon-btn-active.active {
+          color: #16a34a;
+        }
+        .status-icon-btn-completed.active {
+          color: #2563eb;
+        }
+        .status-icon-btn-cancelled.active {
+          color: #dc2626;
+        }
+        .status-icon-btn-active:not(.active):hover:not(:disabled) {
+          color: #16a34a;
+        }
+        .status-icon-btn-completed:not(.active):hover:not(:disabled) {
+          color: #2563eb;
+        }
+        .status-icon-btn-cancelled:not(.active):hover:not(:disabled) {
+          color: #dc2626;
         }
         .tag-active-rush {
           background: #fef3c7;
           color: #b45309;
-        }
-        .tag-active {
-          background: #ecfdf3;
-          color: #15803d;
-        }
-        .tag-completed {
-          background: #eff6ff;
-          color: #1d4ed8;
-        }
-        .tag-cancelled {
-          background: #fef2f2;
-          color: #b91c1c;
-        }
-        .sales-orders-status-menu {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          margin-top: 0.25rem;
-          background: #ffffff;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          z-index: 100;
-          min-width: 140px;
-          overflow: hidden;
-        }
-        .sales-orders-status-menu-item {
-          display: block;
-          width: 100%;
-          padding: 0.5rem 0.75rem;
-          text-align: left;
-          border: none;
-          background: #ffffff;
-          color: #374151;
-          font-size: 0.875rem;
-          cursor: pointer;
-          transition: background 0.15s ease;
-        }
-        .sales-orders-status-menu-item:hover {
-          background: #f3f4f6;
-        }
-        .sales-orders-status-menu-item.active {
-          background: #eff6ff;
-          color: #2563eb;
-          font-weight: 600;
         }
         .tag {
           display: inline-flex;
