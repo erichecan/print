@@ -15,10 +15,16 @@ export default function AdminPromotionsPage() {
     bannerImageUrl: '',
     linkUrl: '',
     // [2025-01-28 12:50:00] 折扣相关字段
-    discountType: 'percentage' as 'percentage' | 'fixed',
+    // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+    discountType: 'percentage' as 'percentage' | 'fixed' | 'buy_get_free',
     discountValue: 0,
     minOrderValue: '',
     maxDiscount: '',
+    // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+    buyQuantity: '',
+    getQuantity: '',
+    giftProductId: '',
+    giftVariantId: '',
     startDate: '',
     endDate: '',
     sortOrder: 0,
@@ -37,12 +43,28 @@ export default function AdminPromotionsPage() {
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // [2025-12-06 18:00:00] Validate buy-get-free promotion fields for Issue #139
+    if (form.discountType === 'buy_get_free') {
+      if (!form.buyQuantity || Number(form.buyQuantity) < 1) {
+        alert('Buy quantity is required and must be at least 1');
+        return;
+      }
+      if (!form.getQuantity || Number(form.getQuantity) < 1) {
+        alert('Get quantity is required and must be at least 1');
+        return;
+      }
+    }
     try {
       setSaving(true);
       await adminPromotionsApi.create({
         ...form,
         minOrderValue: form.minOrderValue ? Number(form.minOrderValue) : undefined,
         maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : undefined,
+        // [2025-12-06 18:00:00] Include buy-get-free fields for Issue #139
+        buyQuantity: form.buyQuantity ? Number(form.buyQuantity) : undefined,
+        getQuantity: form.getQuantity ? Number(form.getQuantity) : undefined,
+        giftProductId: form.giftProductId || undefined,
+        giftVariantId: form.giftVariantId || undefined,
       } as Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt' | 'products' | 'categories' | 'coupon'>);
       setForm({
         title: '',
@@ -53,6 +75,10 @@ export default function AdminPromotionsPage() {
         discountValue: 0,
         minOrderValue: '',
         maxDiscount: '',
+        buyQuantity: '',
+        getQuantity: '',
+        giftProductId: '',
+        giftVariantId: '',
         startDate: '',
         endDate: '',
         sortOrder: 0,
@@ -96,6 +122,12 @@ export default function AdminPromotionsPage() {
   };
 
   const formatDiscountDisplay = (promotion: AdminPromotion) => {
+    // [2025-12-06 18:00:00] Support buy-get-free promotion display for Issue #139
+    if (promotion.discountType === 'buy_get_free') {
+      const buyQty = promotion.buyQuantity || 1;
+      const getQty = promotion.getQuantity || 1;
+      return `Buy ${buyQty} Get ${getQty} Free`;
+    }
     if (!promotion.discountType || !promotion.discountValue) {
       return '';
     }
@@ -147,27 +179,79 @@ export default function AdminPromotionsPage() {
             />
           </div>
           {/* [2025-01-28 12:50:00] 折扣类型和值 */}
+          {/* [2025-12-06 18:00:00] Support buy-get-free type for Issue #139 */}
           <div className="admin-form-group">
             <label>{t('promotionsDiscountTypeLabel')}</label>
             <select
               value={form.discountType}
-              onChange={(event) => setForm((prev) => ({ ...prev, discountType: event.target.value as 'percentage' | 'fixed' }))}
+              onChange={(event) => setForm((prev) => ({ ...prev, discountType: event.target.value as 'percentage' | 'fixed' | 'buy_get_free' }))}
             >
               <option value="percentage">{t('discountTypePercentage')}</option>
               <option value="fixed">{t('discountTypeFixed')}</option>
+              <option value="buy_get_free">{t('discountTypeBuyGetFree')}</option>
             </select>
           </div>
-          <div className="admin-form-group">
-            <label>{t('promotionsDiscountValueLabel', { unit: form.discountType === 'percentage' ? '%' : '$' })}</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={form.discountValue}
-              onChange={(event) => setForm((prev) => ({ ...prev, discountValue: Number(event.target.value) }))}
-              required
-            />
-          </div>
+          {form.discountType !== 'buy_get_free' ? (
+            <div className="admin-form-group">
+              <label>{t('promotionsDiscountValueLabel', { unit: form.discountType === 'percentage' ? '%' : '$' })}</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={form.discountValue}
+                onChange={(event) => setForm((prev) => ({ ...prev, discountValue: Number(event.target.value) }))}
+                required
+              />
+            </div>
+          ) : (
+            <>
+              {/* [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139 */}
+              <div className="admin-form-group">
+                <label>{t('promotionsBuyQuantityLabel')}</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.buyQuantity}
+                  onChange={(event) => setForm((prev) => ({ ...prev, buyQuantity: event.target.value }))}
+                  placeholder="e.g., 2"
+                  required
+                />
+                <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>{t('promotionsBuyQuantityHint')}</small>
+              </div>
+              <div className="admin-form-group">
+                <label>{t('promotionsGetQuantityLabel')}</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={form.getQuantity}
+                  onChange={(event) => setForm((prev) => ({ ...prev, getQuantity: event.target.value }))}
+                  placeholder="e.g., 1"
+                  required
+                />
+                <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>{t('promotionsGetQuantityHint')}</small>
+              </div>
+              <div className="admin-form-group">
+                <label>{t('promotionsGiftProductLabel')}</label>
+                <input
+                  type="text"
+                  value={form.giftProductId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, giftProductId: event.target.value }))}
+                  placeholder={t('promotionsGiftProductPlaceholder')}
+                />
+                <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>{t('promotionsGiftProductHint')}</small>
+              </div>
+              <div className="admin-form-group">
+                <label>{t('promotionsGiftVariantLabel')}</label>
+                <input
+                  type="text"
+                  value={form.giftVariantId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, giftVariantId: event.target.value }))}
+                  placeholder={t('promotionsGiftVariantPlaceholder')}
+                />
+                <small style={{ display: 'block', marginTop: '4px', color: '#666' }}>{t('promotionsGiftVariantHint')}</small>
+              </div>
+            </>
+          )}
           <div className="admin-form-group">
             <label>{t('promotionsMinOrderLabel')}</label>
             <input
@@ -294,14 +378,18 @@ export default function AdminPromotionsPage() {
                   </td>
                   <td>
                     {/* [2025-01-28 12:50:00] 显示折扣信息 */}
-                    {promotion.discountType && promotion.discountValue ? (
+                    {/* [2025-12-06 18:00:00] Support buy-get-free promotion display for Issue #139 */}
+                    {promotion.discountType ? (
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <strong>{formatDiscountDisplay(promotion)}</strong>
-                        {promotion.minOrderValue && (
+                        {promotion.discountType !== 'buy_get_free' && promotion.minOrderValue && (
                           <small className="text-muted">{formatMinLabel(Number(promotion.minOrderValue))}</small>
                         )}
-                        {promotion.maxDiscount && (
+                        {promotion.discountType !== 'buy_get_free' && promotion.maxDiscount && (
                           <small className="text-muted">{formatMaxLabel(Number(promotion.maxDiscount))}</small>
+                        )}
+                        {promotion.discountType === 'buy_get_free' && promotion.giftProduct && (
+                          <small className="text-muted">Gift: {promotion.giftProduct.name}</small>
                         )}
                       </div>
                     ) : (

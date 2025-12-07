@@ -1458,10 +1458,16 @@ export interface AdminPromotion {
   bannerImageUrl?: string | null;
   linkUrl?: string | null;
   // [2025-01-28 12:30:00] 折扣相关字段
-  discountType: 'percentage' | 'fixed';
+  // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+  discountType: 'percentage' | 'fixed' | 'buy_get_free';
   discountValue: number;
   minOrderValue?: number | null;
   maxDiscount?: number | null;
+  // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+  buyQuantity?: number | null;
+  getQuantity?: number | null;
+  giftProduct?: { id: string; name: string } | null;
+  giftVariant?: { id: string; sku: string } | null;
   startDate: string;
   endDate: string;
   isActive: boolean;
@@ -1481,10 +1487,16 @@ export interface Promotion {
   description?: string;
   bannerImageUrl?: string;
   linkUrl?: string;
-  discountType: 'percentage' | 'fixed';
+  // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+  discountType: 'percentage' | 'fixed' | 'buy_get_free';
   discountValue: number;
   minOrderValue?: number | null;
   maxDiscount?: number | null;
+  // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+  buyQuantity?: number | null;
+  getQuantity?: number | null;
+  giftProduct?: { id: string; name: string } | null;
+  giftVariant?: { id: string; sku: string } | null;
   startDate: string;
   endDate: string;
   isActive: boolean;
