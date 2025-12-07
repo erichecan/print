@@ -210,13 +210,13 @@ app.use('/api/webhooks', require('./routes/webhooks'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/addresses', require('./routes/addresses')); // [2025-01-27 14:00:00] User address management routes
 app.use('/api/user/preferences', require('./routes/userPreferences')); // [2025-01-27 14:45:00] User preferences routes
+// [2025-12-07 08:00:00] 简化的产品管理路由（必须在 /api/offline-orders 之前，避免路由冲突）
+app.use('/api/offline-orders/products', require('./routes/simpleOfflineOrderProducts'));
+app.use('/api/admin/offline-orders/products', require('./routes/adminSimpleOfflineOrderProducts'));
 app.use('/api/offline-orders', require('./routes/offlineOrders'));
 app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
 // [2025-12-06] PRD v2.0: 线下订单配置数据管理路由
 app.use('/api/admin/offline-order-products', require('./routes/offlineOrderProducts'));
-// [2025-12-07 08:00:00] 简化的产品管理路由
-app.use('/api/offline-orders/products', require('./routes/simpleOfflineOrderProducts'));
-app.use('/api/admin/offline-orders/products', require('./routes/adminSimpleOfflineOrderProducts'));
 app.use('/api/admin/offline-order-colors', require('./routes/offlineOrderColors'));
 app.use('/api/admin/offline-order-size-fees', require('./routes/offlineOrderSizeFees'));
 app.use('/api/admin/offline-order-product-color-sizes', require('./routes/offlineOrderProductColorSizes'));
