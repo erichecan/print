@@ -41,7 +41,7 @@ function StatusSelector({
   const currentOption = statusOptions.find(opt => opt.value === currentValue) || statusOptions[0];
   const getStatusClass = (status: string) => {
     const lower = status.toLowerCase();
-    if (lower === 'active') return 'active';
+    if (lower === 'active' || lower === 'active_rush') return 'active';
     if (lower === 'completed') return 'completed';
     if (lower === 'cancelled') return 'cancelled';
     return lower;
@@ -102,8 +102,10 @@ export default function SalesOrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   // [2025-12-07 05:15:00] 订单状态选项
+  // [2025-12-07 06:50:00] 添加 ACTIVE_RUSH 状态
   const statusOptions = [
     { value: 'ACTIVE', label: 'ACTIVE' },
+    { value: 'ACTIVE_RUSH', label: 'ACTIVE (加急)' },
     { value: 'COMPLETED', label: 'COMPLETED' },
     { value: 'CANCELLED', label: 'CANCELLED' },
   ];
@@ -201,14 +203,26 @@ export default function SalesOrdersPage() {
   };
 
   // [2025-12-07 05:15:00] 快速修改订单状态
+  // [2025-12-07 06:50:00] 支持 ACTIVE_RUSH 状态
   const handleQuickUpdateStatus = async (orderId: string, newStatus: string) => {
     if (!newStatus) return;
     
     setUpdatingStatus(orderId);
     try {
-      const actualStatus = newStatus as 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-      // [2025-12-07 06:00:00] 更新状态时，保持原有的加急标记不变
-      await salesOrdersApi.updateStatus(orderId, actualStatus);
+      // [2025-12-07 06:50:00] 处理 ACTIVE_RUSH 状态
+      let actualStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+      let rushOrder: boolean | undefined;
+      
+      if (newStatus === 'ACTIVE_RUSH') {
+        actualStatus = 'ACTIVE';
+        rushOrder = true;
+      } else {
+        actualStatus = newStatus as 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+        // 如果从 ACTIVE_RUSH 切换到其他状态，取消加急标记
+        rushOrder = false;
+      }
+      
+      await salesOrdersApi.updateStatus(orderId, actualStatus, rushOrder);
       
       // 刷新订单列表
       const response = await salesOrdersApi.list({ page: 1, limit: 50 });
@@ -511,6 +525,10 @@ export default function SalesOrdersPage() {
         .status-tag-active {
           background: #dcfce7;
           color: #166534;
+        }
+        .status-tag-active-rush {
+          background: #fef3c7;
+          color: #b45309;
         }
         .status-tag-completed {
           background: #eff6ff;

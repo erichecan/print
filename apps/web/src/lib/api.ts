@@ -849,11 +849,17 @@ export const salesOrdersApi = {
       body: data,
     }),
   // [2025-12-07 05:15:00] 更新订单状态
-  updateStatus: (id: string, status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED', rushOrder?: boolean) =>
-    api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/sales/orders/${id}/status`, {
+  // [2025-12-07 06:50:00] 支持 rushOrder 参数
+  updateStatus: (id: string, status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED', rushOrder?: boolean) => {
+    const body: { status: string; rushOrder?: boolean } = { status };
+    if (rushOrder !== undefined) {
+      body.rushOrder = rushOrder;
+    }
+    return sameOriginApi(`/api/proxy/sales/orders/${id}/status`, {
       method: 'PATCH',
-      body: { status, ...(rushOrder !== undefined ? { rushOrder } : {}) },
-    }),
+      body,
+    });
+  },
 };
 
 // [2025-12-06 17:00:00] Offline Order Product Configuration API
