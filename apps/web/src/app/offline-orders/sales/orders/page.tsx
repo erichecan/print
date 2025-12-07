@@ -505,6 +505,18 @@ export default function SalesOrdersPage() {
           background: #fef3c7;
           color: #b45309;
         }
+        .tag-active {
+          background: #ecfdf3;
+          color: #15803d;
+        }
+        .tag-completed {
+          background: #eff6ff;
+          color: #1d4ed8;
+        }
+        .tag-cancelled {
+          background: #fef2f2;
+          color: #b91c1c;
+        }
         .sales-orders-status-menu {
           position: absolute;
           top: 100%;
