@@ -65,21 +65,21 @@
   },
   "suites": [
     {
-      "title": "chrome-devtools-403-debug.spec.ts",
-      "file": "chrome-devtools-403-debug.spec.ts",
+      "title": "localstorage-auth-test.spec.ts",
+      "file": "localstorage-auth-test.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Chrome DevTools 403 错误调试",
-          "file": "chrome-devtools-403-debug.spec.ts",
+          "title": "localStorage + Authorization Header 认证测试",
+          "file": "localstorage-auth-test.spec.ts",
           "line": 11,
           "column": 6,
           "specs": [
             {
-              "title": "使用 Chrome DevTools 调试 403 错误",
-              "ok": true,
+              "title": "验证登录后 token 存储到 localStorage 并正确传递",
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -92,65 +92,72 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6575,
-                      "errors": [],
+                      "status": "failed",
+                      "duration": 2601,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:27:19",
+                        "location": {
+                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
+                          "column": 19,
+                          "line": 27
+                        },
+                        "snippet": "  25 |     const token = await page.evaluate(() => localStorage.getItem('auth_token'));\n  26 |     console.log(`[Auth Test] Token in localStorage: ${token ? token.substring(0, 30) + '...' : 'none'}`);\n> 27 |     expect(token).toBeTruthy();\n     |                   ^\n  28 |\n  29 |     // 3. 监听网络请求，检查 Authorization header\n  30 |     const requests: any[] = [];"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
+                            "column": 19,
+                            "line": 27
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mnull\u001b[39m\n\n  25 |     const token = await page.evaluate(() => localStorage.getItem('auth_token'));\n  26 |     console.log(`[Auth Test] Token in localStorage: ${token ? token.substring(0, 30) + '...' : 'none'}`);\n> 27 |     expect(token).toBeTruthy();\n     |                   ^\n  28 |\n  29 |     // 3. 监听网络请求，检查 Authorization header\n  30 |     const requests: any[] = [];\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:27:19"
+                        }
+                      ],
                       "stdout": [
                         {
-                          "text": "[DevTools Test] 开始登录...\n"
+                          "text": "[Auth Test] 开始登录...\n"
                         },
                         {
-                          "text": "[DevTools Test] 登录成功\n"
+                          "text": "[Auth Test] 登录成功\n"
                         },
                         {
-                          "text": "[DevTools Test] Token Cookie: { exists: \u001b[33mtrue\u001b[39m, value: \u001b[32m'eyJhbGciOiJIUzI1NiIsInR5cCI6Ik'\u001b[39m }\n"
-                        },
-                        {
-                          "text": "[DevTools Test] 访问配置页面...\n"
-                        },
-                        {
-                          "text": "[DevTools Test] 📤 Request: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  cookie: \u001b[32m'none'\u001b[39m,\n  authorization: \u001b[32m'none'\u001b[39m\n}\n"
-                        },
-                        {
-                          "text": "[DevTools Test] 📥 Response: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  status: \u001b[33m403\u001b[39m,\n  body: \u001b[32m'{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T07:06:02.445Z\"}'\u001b[39m\n}\n"
-                        },
-                        {
-                          "text": "\n[DevTools Test] ========== 测试结果 ==========\n"
-                        },
-                        {
-                          "text": "[DevTools Test] 请求数量: 1\n"
-                        },
-                        {
-                          "text": "[DevTools Test] 响应数量: 1\n"
-                        },
-                        {
-                          "text": "[DevTools Test] 控制台错误数量: 0\n"
-                        },
-                        {
-                          "text": "\n[DevTools Test] ❌ 403 错误详情:\n"
-                        },
-                        {
-                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"status\": 403,\n  \"headers\": {\n    \"content-type\": \"application/json; charset=utf-8\"\n  },\n  \"body\": \"{\\\"success\\\":false,\\\"statusCode\\\":403,\\\"code\\\":\\\"FORBIDDEN\\\",\\\"message\\\":\\\"You do not have permission to access this resource\\\",\\\"timestamp\\\":\\\"2025-12-07T07:06:02.445Z\\\"}\"\n}\n"
-                        },
-                        {
-                          "text": "\n[DevTools Test] 📤 请求详情:\n"
-                        },
-                        {
-                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"method\": \"GET\",\n  \"headers\": {\n    \"cookie\": \"none\",\n    \"authorization\": \"none\"\n  },\n  \"allHeaders\": [\n    \"sec-ch-ua-platform\",\n    \"referer\",\n    \"accept-language\",\n    \"sec-ch-ua\",\n    \"sec-ch-ua-mobile\",\n    \"user-agent\",\n    \"accept\",\n    \"content-type\",\n    \"x-playwright-e2e\"\n  ]\n}\n"
+                          "text": "[Auth Test] Token in localStorage: none\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T07:05:59.422Z",
+                      "startTime": "2025-12-07T07:09:14.222Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/localstorage-auth-test-loc-87a46-oken-存储到-localStorage-并正确传递-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/localstorage-auth-test-loc-87a46-oken-存储到-localStorage-并正确传递-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/localstorage-auth-test-loc-87a46-oken-存储到-localStorage-并正确传递-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
+                        "column": 19,
+                        "line": 27
+                      }
                     }
                   ],
-                  "status": "expected"
+                  "status": "unexpected"
                 }
               ],
-              "id": "4f77ac1e009de7aeedcb-02133920a70a640414b6",
-              "file": "chrome-devtools-403-debug.spec.ts",
+              "id": "0d2a33234edc5fb073a4-c4ae9a6157939a5dcc7c",
+              "file": "localstorage-auth-test.spec.ts",
               "line": 12,
               "column": 7
             }
@@ -161,11 +168,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T07:05:59.151Z",
-    "duration": 7064.642000000001,
-    "expected": 1,
+    "startTime": "2025-12-07T07:09:13.943Z",
+    "duration": 3109.577,
+    "expected": 0,
     "skipped": 0,
-    "unexpected": 0,
+    "unexpected": 1,
     "flaky": 0
   }
 }

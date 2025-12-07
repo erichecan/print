@@ -739,9 +739,18 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
 export const authApi = {
   register: (data: { email: string; password: string; firstName?: string; lastName?: string }) =>
     api('/auth/register', { method: 'POST', body: data }),
-  // [2025-01-29 02:20:00] 使用同域 API 路由，避免跨域 Cookie 问题
-  login: (email: string, password: string) =>
-    sameOriginApi('/api/auth/login', { method: 'POST', body: { email, password } }),
+  // [2025-12-07 07:55:00] 登录后保存 token 到 localStorage
+  login: async (email: string, password: string) => {
+    const response = await sameOriginApi<{ token: string; user: any }>('/api/auth/login', { 
+      method: 'POST', 
+      body: { email, password } 
+    });
+    // [2025-12-07 07:55:00] 保存 token 到 localStorage
+    if (response.token) {
+      setAuthToken(response.token);
+    }
+    return response;
+  },
   logout: () => api('/auth/logout', { method: 'POST' }),
   // [2025-01-29 02:20:00] 使用同域 API 路由，避免跨域 Cookie 问题
   // [2025-12-03 03:55:00] 静默处理 401 错误（未登录是正常状态）
