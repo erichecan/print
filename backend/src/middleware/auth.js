@@ -295,8 +295,12 @@ exports.authorizeRoles = (...allowedRoles) => {
 
     logger.info('[Auth] ✅ Authorization passed', {
       userRole,
+      userRoleRaw,
+      allowedRoles: allowed,
       path: req.path,
       originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
+      url: req.url,
     });
 
     next();
