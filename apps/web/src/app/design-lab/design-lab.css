@@ -77,13 +77,14 @@
 /* ============================================
    1. Header - 顶部导航栏
    ============================================ */
+/* [2025-12-06 12:50:00] 修复：Header 定位 - element-1 x:41 是相对于整个页面的 */
 .dl-header {
   grid-column: 1 / -1;
   grid-row: 1;
   background: var(--dl-bg-panel);
   border-bottom: 1px solid var(--dl-border-color);
   height: var(--dl-header-height);
-  padding: 0 var(--dl-space-6);
+  padding: 0 var(--dl-space-6); /* 保持左右 padding */
   display: flex;
   align-items: center;
   z-index: 100;
@@ -97,27 +98,35 @@
   gap: var(--dl-space-6);
 }
 
+/* [2025-12-06 12:50:00] 修复：Header left 定位 - element-1 x:41 是相对于整个页面的 */
+/* 计算：Header padding-left (24px) + header__left margin-left = 41px */
+/* 所以 header__left margin-left = 41 - 24 = 17px */
 .dl-header__left {
   display: flex;
   align-items: center;
   gap: var(--dl-space-6);
+  margin-left: 17px; /* 41px (element-1 x) - 24px (Header padding-left) = 17px */
 }
 
+/* [2025-12-06 12:50:00] 修复：Logo 定位 - 需要确保 Logo + gap + breadcrumb = element-1 x:41 */
 .dl-header__logo {
   font-size: var(--dl-font-lg);
   font-weight: var(--dl-font-weight-bold);
   color: var(--dl-color-accent);
   text-decoration: none;
   font-family: var(--dl-font-family);
+  margin-left: 0; /* Logo 从页面左边开始 */
+  width: auto; /* 让 Logo 自然宽度 */
 }
 
 /* [2025-12-06 12:35:00] 修复：Header breadcrumb 定位 - element-1 x:41, element-2 x:177 */
+/* [2025-12-06 12:50:00] 修复：element-1 x:41 是相对于整个页面的，需要计算 Logo 宽度和 gap */
 .dl-header__breadcrumb {
   display: flex;
   align-items: center;
   gap: var(--dl-space-2);
   font-size: var(--dl-font-base);
-  margin-left: 41px; /* element-1 x 位置 */
+  margin-left: 0; /* 移除 margin-left，改为在 header__left 中控制 */
 }
 
 .dl-header__breadcrumb-link {
@@ -132,6 +141,7 @@
 
 /* [2025-01-30 23:15:00] 修复：My Designs 按钮样式对齐 Custom Ink - element-1 */
 /* [2025-12-06 12:35:00] 修复：确保位置和颜色正确 - x:41, y:0, width:116, height:32, color: rgb(74, 74, 74) */
+/* [2025-12-06 12:50:00] 修复：element-1 x:41 是相对于整个页面的，需要调整 header__left 的 margin-left */
 .dl-header__breadcrumb-link--button {
   background: transparent;
   border: none;
@@ -145,7 +155,7 @@
   height: 32px !important; /* element-1 height */
   display: flex;
   align-items: center;
-  margin-left: 0; /* breadcrumb 已经有 margin-left: 41px */
+  margin-left: 0; /* 位置由 header__left 控制 */
 }
 
 .dl-header__breadcrumb-link--button:hover {

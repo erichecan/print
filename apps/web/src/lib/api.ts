@@ -2573,6 +2573,105 @@ export const fontsApi = {
 };
 
 // [2025-01-30 19:00:00] Admin Fonts API
+// [2025-12-06 21:30:00] Admin Analytics API for Issue #160
+export const adminAnalyticsApi = {
+  getSales: (params?: { startDate?: string; endDate?: string; period?: 'day' | 'week' | 'month' }) => {
+    const query = new URLSearchParams();
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    if (params?.period) query.append('period', params.period);
+    const queryString = query.toString();
+    return api<{
+      data: {
+        overview: {
+          totalRevenue: number;
+          totalOrders: number;
+          averageOrderValue: number;
+          totalItemsSold: number;
+        };
+        revenueByPeriod: Array<{
+          date: string;
+          revenue: number;
+          orders: number;
+          items: number;
+        }>;
+        topProducts: Array<{
+          productId: string;
+          productName: string;
+          sku: string;
+          quantity: number;
+          revenue: number;
+        }>;
+      };
+    }>(`/admin/analytics/sales${queryString ? `?${queryString}` : ''}`);
+  },
+  getUsers: (params?: { startDate?: string; endDate?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString();
+    return api<{
+      data: {
+        overview: {
+          totalUsers: number;
+          activeCustomers: number;
+          averageLifetimeValue: number;
+        };
+        usersByDate: Array<{ date: string; count: number }>;
+        topCustomers: Array<{
+          userId: string;
+          email: string;
+          name: string;
+          totalSpent: number;
+          orderCount: number;
+          averageOrderValue: number;
+        }>;
+        registrationByDate: Array<{ date: string; count: number }>;
+      };
+    }>(`/admin/analytics/users${queryString ? `?${queryString}` : ''}`);
+  },
+  getProducts: (params?: { startDate?: string; endDate?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const queryString = query.toString();
+    return api<{
+      data: {
+        overview: {
+          totalProducts: number;
+          activeProducts: number;
+          totalItemsSold: number;
+          totalRevenue: number;
+        };
+        topSellingProducts: Array<{
+          productId: string;
+          productName: string;
+          sku: string;
+          category: string;
+          brand: string;
+          quantity: number;
+          revenue: number;
+        }>;
+        topRevenueProducts: Array<{
+          productId: string;
+          productName: string;
+          sku: string;
+          category: string;
+          brand: string;
+          quantity: number;
+          revenue: number;
+        }>;
+        salesByCategory: Array<{
+          category: string;
+          quantity: number;
+          revenue: number;
+          productCount: number;
+        }>;
+      };
+    }>(`/admin/analytics/products${queryString ? `?${queryString}` : ''}`);
+  },
+};
+
 export const adminFontsApi = {
   // List all fonts (admin)
   list: async (params?: {

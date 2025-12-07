@@ -107,6 +107,11 @@ const ICONS: Record<string, JSX.Element> = {
       />
     </svg>
   ),
+  analytics: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M3 3v18h18v-2H5V3H3zm16.59 1.41L18 6.83V13h-5.17l-2.58-2.59-4.24 4.24L3 10.83V8.41l5.66-5.66L11.83 5H19v5.17l2.59 2.58L24 10.83V5.83l-4.41-4.42z" />
+    </svg>
+  ),
 };
 
 const NAV_LINKS = [
@@ -121,6 +126,7 @@ const NAV_LINKS = [
   { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // [2025-01-28 08:50:00] 成本管理 - 使用 costManagement 翻译键
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
+  { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', i18n: 'analytics' }, // [2025-12-06 21:30:00] Analytics and Reports for Issue #160
   { href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // [2025-12-06 17:10:00] Supplier management for Issue #89
   { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // [2025-01-28 01:10:00] Design Lab art assets CMS
   { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // [2025-01-30 19:00:00] Font management

@@ -1175,6 +1175,7 @@ function CheckoutForm({
           <p className="card-success-message">✓ Card details are valid</p>
         )}
       </div>
+      )}
 
       <label className="checkbox-label">
         <input
