@@ -250,19 +250,47 @@ export default function SalesOrdersPage() {
                   <td>{order.quantity ?? '—'}</td>
                   <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
                   <td>
-                    <div className="sales-orders-status">
-                      <select
-                        value={getOrderStatusValue(order)}
-                        onChange={(e) => handleQuickUpdateStatus(order.id, e.target.value)}
-                        disabled={updatingStatus === order.id}
-                        className="sales-orders-status-select"
-                      >
-                        {statusOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="sales-orders-status-icons">
+                      {statusOptions.map((option) => {
+                        const isActive = getOrderStatusValue(order) === option.value;
+                        const isDisabled = updatingStatus === order.id;
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => !isDisabled && handleQuickUpdateStatus(order.id, option.value)}
+                            disabled={isDisabled}
+                            className={`sales-orders-status-icon ${isActive ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
+                            title={option.label}
+                            aria-label={option.label}
+                          >
+                            {option.value === 'ACTIVE' && (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <circle cx="12" cy="12" r="6" />
+                              </svg>
+                            )}
+                            {option.value === 'ACTIVE_RUSH' && (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <circle cx="12" cy="12" r="6" />
+                                <path d="M12 6v6l4 2" strokeLinecap="round" />
+                              </svg>
+                            )}
+                            {option.value === 'COMPLETED' && (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                            {option.value === 'CANCELLED' && (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="18" y1="6" x2="6" y2="18" strokeLinecap="round" />
+                                <line x1="6" y1="6" x2="18" y2="18" strokeLinecap="round" />
+                              </svg>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </td>
                   <td>
@@ -427,28 +455,58 @@ export default function SalesOrdersPage() {
           border-color: #2563eb;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
-        .sales-orders-status {
+        .sales-orders-status-icons {
           display: flex;
           align-items: center;
           gap: 0.5rem;
         }
-        .sales-orders-status-select {
-          padding: 0.25rem 0.5rem;
-          border: 1px solid #d1d5db;
+        .sales-orders-status-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          padding: 0;
+          border: 2px solid #d1d5db;
           border-radius: 6px;
-          font-size: 0.85rem;
           background: #ffffff;
+          color: #6b7280;
           cursor: pointer;
-          min-width: 100px;
+          transition: all 0.2s ease;
         }
-        .sales-orders-status-select:disabled {
-          opacity: 0.6;
+        .sales-orders-status-icon:hover:not(.disabled) {
+          border-color: #2563eb;
+          color: #2563eb;
+          background: #eff6ff;
+          transform: translateY(-1px);
+        }
+        .sales-orders-status-icon.active {
+          border-color: #2563eb;
+          background: #2563eb;
+          color: #ffffff;
+        }
+        .sales-orders-status-icon.active.ACTIVE {
+          border-color: #3b82f6;
+          background: #3b82f6;
+        }
+        .sales-orders-status-icon.active.ACTIVE_RUSH {
+          border-color: #f59e0b;
+          background: #f59e0b;
+        }
+        .sales-orders-status-icon.active.COMPLETED {
+          border-color: #10b981;
+          background: #10b981;
+        }
+        .sales-orders-status-icon.active.CANCELLED {
+          border-color: #ef4444;
+          background: #ef4444;
+        }
+        .sales-orders-status-icon.disabled {
+          opacity: 0.5;
           cursor: not-allowed;
         }
-        .sales-orders-status-select:focus {
-          outline: none;
-          border-color: #2563eb;
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        .sales-orders-status-icon svg {
+          pointer-events: none;
         }
         .tag {
           display: inline-flex;
