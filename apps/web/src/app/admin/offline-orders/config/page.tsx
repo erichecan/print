@@ -29,7 +29,17 @@ export default function OfflineOrdersConfigPage() {
   const router = useRouter();
   const [authChecking, setAuthChecking] = useState(true);
   const [currentUser, setCurrentUser] = useState<{ role?: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'colors' | 'sizeFees' | 'products' | 'availability' | 'stages'>('colors');
+  const [activeTab, setActiveTab] = useState<'colors' | 'sizeFees' | 'products'>('colors');
+  
+  // 产品管理
+  const [products, setProducts] = useState<Array<{ id: string; name: string; imageUrl: string | null; isCustomerOwned: boolean }>>([]);
+  const [newProductName, setNewProductName] = useState('');
+  const [newProductImageUrl, setNewProductImageUrl] = useState('');
+  const [newProductIsCustomerOwned, setNewProductIsCustomerOwned] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editProductName, setEditProductName] = useState('');
+  const [editProductImageUrl, setEditProductImageUrl] = useState('');
+  const [editProductIsCustomerOwned, setEditProductIsCustomerOwned] = useState(false);
   
   // 颜色管理
   const [colors, setColors] = useState<Color[]>([]);
@@ -58,6 +68,15 @@ export default function OfflineOrdersConfigPage() {
     async (url) => {
       const response = await fetch(url, { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to fetch size fees');
+      return response.json();
+    }
+  );
+
+  const { data: productsData, mutate: mutateProducts } = useSWR(
+    activeTab === 'products' ? '/api/proxy/admin/offline-order-products' : null,
+    async (url) => {
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch products');
       return response.json();
     }
   );
@@ -106,6 +125,12 @@ export default function OfflineOrdersConfigPage() {
       setSizeFees(sizeFeesData.data);
     }
   }, [sizeFeesData]);
+
+  useEffect(() => {
+    if (productsData?.data) {
+      setProducts(productsData.data);
+    }
+  }, [productsData]);
 
   // 颜色管理函数
   const handleCreateColor = async () => {
@@ -158,6 +183,55 @@ export default function OfflineOrdersConfigPage() {
       mutateSizeFees();
     } catch (err: any) {
       alert(err.message || '更新失败');
+    }
+  };
+
+  // 产品管理函数
+  const handleCreateProduct = async () => {
+    if (!newProductName.trim()) return;
+    try {
+      await api('/api/proxy/admin/offline-order-products', {
+        method: 'POST',
+        body: {
+          name: newProductName.trim(),
+          imageUrl: newProductImageUrl.trim() || null,
+          isCustomerOwned: newProductIsCustomerOwned,
+        },
+      });
+      setNewProductName('');
+      setNewProductImageUrl('');
+      setNewProductIsCustomerOwned(false);
+      mutateProducts();
+    } catch (err: any) {
+      alert(err.message || '创建失败');
+    }
+  };
+
+  const handleUpdateProduct = async (id: string) => {
+    if (!editProductName.trim()) return;
+    try {
+      await api(`/api/proxy/admin/offline-order-products/${id}`, {
+        method: 'PATCH',
+        body: {
+          name: editProductName.trim(),
+          imageUrl: editProductImageUrl.trim() || null,
+          isCustomerOwned: editProductIsCustomerOwned,
+        },
+      });
+      setEditingProductId(null);
+      mutateProducts();
+    } catch (err: any) {
+      alert(err.message || '更新失败');
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (!confirm('确定要删除这个产品吗？')) return;
+    try {
+      await api(`/api/proxy/admin/offline-order-products/${id}`, { method: 'DELETE' });
+      mutateProducts();
+    } catch (err: any) {
+      alert(err.message || '删除失败');
     }
   };
 
@@ -427,30 +501,141 @@ export default function OfflineOrdersConfigPage() {
           {activeTab === 'products' && (
             <div className="config-tab-content">
               <h2>产品管理</h2>
-              <p className="config-desc">管理线下订单可用的产品列表</p>
-              <Link href="/admin/products" target="_blank" className="config-link-btn">
-                前往产品管理页面 →
-              </Link>
-            </div>
-          )}
+              <p className="config-desc">管理线下订单可用的产品列表（显示哪些产品可以定制）</p>
+              
+              <div className="config-form">
+                <h3>添加新产品</h3>
+                <div className="config-form-row">
+                  <input
+                    type="text"
+                    placeholder="产品名称"
+                    value={newProductName}
+                    onChange={(e) => setNewProductName(e.target.value)}
+                    className="config-input"
+                  />
+                  <input
+                    type="text"
+                    placeholder="图片 URL（可选）"
+                    value={newProductImageUrl}
+                    onChange={(e) => setNewProductImageUrl(e.target.value)}
+                    className="config-input"
+                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
+                    <input
+                      type="checkbox"
+                      checked={newProductIsCustomerOwned}
+                      onChange={(e) => setNewProductIsCustomerOwned(e.target.checked)}
+                    />
+                    客户自有产品
+                  </label>
+                  <button onClick={handleCreateProduct} className="config-btn config-btn-primary">
+                    添加
+                  </button>
+                </div>
+              </div>
 
-          {activeTab === 'availability' && (
-            <div className="config-tab-content">
-              <h2>可用性配置</h2>
-              <p className="config-desc">配置产品-颜色-尺码组合的可用性</p>
-              <Link href="/admin/offline-order-product-color-sizes" target="_blank" className="config-link-btn">
-                前往可用性配置页面 →
-              </Link>
-            </div>
-          )}
-
-          {activeTab === 'stages' && (
-            <div className="config-tab-content">
-              <h2>工作流阶段配置</h2>
-              <p className="config-desc">配置订单工作流的各个阶段</p>
-              <Link href="/admin/settings" target="_blank" className="config-link-btn">
-                前往系统设置 →
-              </Link>
+              <div className="config-table-wrapper">
+                <table className="config-table">
+                  <thead>
+                    <tr>
+                      <th>产品名称</th>
+                      <th>图片</th>
+                      <th>类型</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => (
+                      <tr key={product.id}>
+                        <td>
+                          {editingProductId === product.id ? (
+                            <input
+                              type="text"
+                              value={editProductName}
+                              onChange={(e) => setEditProductName(e.target.value)}
+                              className="config-input-inline"
+                            />
+                          ) : (
+                            product.name
+                          )}
+                        </td>
+                        <td>
+                          {editingProductId === product.id ? (
+                            <input
+                              type="text"
+                              value={editProductImageUrl}
+                              onChange={(e) => setEditProductImageUrl(e.target.value)}
+                              className="config-input-inline"
+                              placeholder="图片 URL"
+                            />
+                          ) : product.imageUrl ? (
+                            <img src={product.imageUrl} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td>
+                          {editingProductId === product.id ? (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <input
+                                type="checkbox"
+                                checked={editProductIsCustomerOwned}
+                                onChange={(e) => setEditProductIsCustomerOwned(e.target.checked)}
+                              />
+                              客户自有
+                            </label>
+                          ) : (
+                            <span className={`tag ${product.isCustomerOwned ? 'tag-rush' : 'tag-active'}`}>
+                              {product.isCustomerOwned ? '客户自有' : '标准产品'}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {editingProductId === product.id ? (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                onClick={() => handleUpdateProduct(product.id)}
+                                className="config-btn config-btn-success"
+                              >
+                                保存
+                              </button>
+                              <button
+                                onClick={() => setEditingProductId(null)}
+                                className="config-btn config-btn-secondary"
+                              >
+                                取消
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button
+                                onClick={() => {
+                                  setEditingProductId(product.id);
+                                  setEditProductName(product.name);
+                                  setEditProductImageUrl(product.imageUrl || '');
+                                  setEditProductIsCustomerOwned(product.isCustomerOwned);
+                                }}
+                                className="config-btn config-btn-secondary"
+                              >
+                                编辑
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="config-btn config-btn-danger"
+                              >
+                                删除
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {products.length === 0 && (
+                  <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>暂无产品配置</p>
+                )}
+              </div>
             </div>
           )}
         </div>

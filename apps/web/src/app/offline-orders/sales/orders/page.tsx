@@ -39,7 +39,16 @@ function StatusDropdown({
   }, [isOpen]);
 
   const currentLabel = statusOptions.find(opt => opt.value === currentValue)?.label || currentValue;
-  const statusClass = currentValue.toLowerCase().replace('_', '-');
+  const statusClass = currentValue.toLowerCase();
+  
+  // [2025-12-07 06:05:00] 确保状态类名正确映射
+  const getStatusClass = (status: string) => {
+    const lower = status.toLowerCase();
+    if (lower === 'active') return 'active';
+    if (lower === 'completed') return 'completed';
+    if (lower === 'cancelled') return 'cancelled';
+    return lower;
+  };
 
   return (
     <div className="sales-orders-status-dropdown" ref={dropdownRef}>
@@ -47,7 +56,7 @@ function StatusDropdown({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`tag tag-${statusClass}`}
+        className={`tag tag-${getStatusClass(currentValue)}`}
       >
         {currentLabel}
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginLeft: '0.25rem' }}>
@@ -88,19 +97,11 @@ export default function SalesOrdersPage() {
 
   // [2025-12-07 05:15:00] 订单状态选项
   const statusOptions = [
-    { value: 'ACTIVE', label: '进行中' },
-    { value: 'ACTIVE_RUSH', label: '进行中（加急）' },
-    { value: 'COMPLETED', label: '已完成' },
-    { value: 'CANCELLED', label: '已取消' },
+    { value: 'ACTIVE', label: 'ACTIVE' },
+    { value: 'COMPLETED', label: 'COMPLETED' },
+    { value: 'CANCELLED', label: 'CANCELLED' },
   ];
 
-  // [2025-12-07 05:25:00] 获取订单的显示状态值（考虑加急）
-  const getOrderStatusValue = (order: any) => {
-    if (order.status === 'ACTIVE' && order.rushOrder) {
-      return 'ACTIVE_RUSH';
-    }
-    return order.status;
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -199,24 +200,9 @@ export default function SalesOrdersPage() {
     
     setUpdatingStatus(orderId);
     try {
-      // [2025-12-07 05:25:00] 处理 ACTIVE_RUSH 状态（ACTIVE + rushOrder）
-      let actualStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED' = 'ACTIVE';
-      let rushOrder: boolean | undefined = undefined;
-      
-      if (newStatus === 'ACTIVE_RUSH') {
-        actualStatus = 'ACTIVE';
-        rushOrder = true;
-      } else if (newStatus === 'ACTIVE') {
-        actualStatus = 'ACTIVE';
-        rushOrder = false;
-      } else {
-        actualStatus = newStatus as 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
-        // COMPLETED 和 CANCELLED 时，清除加急标记
-        rushOrder = false;
-      }
-
-      // [2025-12-07 05:25:00] 更新状态和加急标记
-      await salesOrdersApi.updateStatus(orderId, actualStatus, rushOrder);
+      const actualStatus = newStatus as 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+      // [2025-12-07 06:00:00] 更新状态时，保持原有的加急标记不变
+      await salesOrdersApi.updateStatus(orderId, actualStatus);
       
       // 刷新订单列表
       const response = await salesOrdersApi.list({ page: 1, limit: 50 });
@@ -317,13 +303,18 @@ export default function SalesOrdersPage() {
                   <td>{order.quantity ?? '—'}</td>
                   <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
                   <td>
-                    <StatusDropdown
-                      orderId={order.id}
-                      currentValue={getOrderStatusValue(order)}
-                      statusOptions={statusOptions}
-                      onUpdate={handleQuickUpdateStatus}
-                      disabled={updatingStatus === order.id}
-                    />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <StatusDropdown
+                        orderId={order.id}
+                        currentValue={order.status}
+                        statusOptions={statusOptions}
+                        onUpdate={handleQuickUpdateStatus}
+                        disabled={updatingStatus === order.id}
+                      />
+                      {order.rushOrder && (
+                        <span className="tag tag-rush">加急</span>
+                      )}
+                    </div>
                   </td>
                   <td>
                     <div className="sales-orders-stage">
