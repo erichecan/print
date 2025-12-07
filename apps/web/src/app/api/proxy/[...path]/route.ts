@@ -119,7 +119,6 @@ async function handleProxyRequest(
       timestamp,
       url: upstreamUrl,
       method: request.method,
-      hasCookies,
       hasToken,
       hasBody: !!body
     });
