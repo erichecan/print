@@ -8,7 +8,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
 
-// [2025-12-07 06:15:00] 状态图标选择组件 - 使用图标按钮组，更友好的交互
+// [2025-12-07 06:20:00] 状态选择组件 - 圆角标签 + 下拉箭头
 function StatusSelector({
   orderId,
   currentValue,
@@ -22,36 +22,23 @@ function StatusSelector({
   onUpdate: (orderId: string, value: string) => void;
   disabled: boolean;
 }) {
-  // [2025-12-07 06:15:00] 获取状态图标
-  const getStatusIcon = (status: string) => {
-    const lower = status.toLowerCase();
-    if (lower === 'active') {
-      return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v6l4 2" strokeLinecap="round" />
-        </svg>
-      );
-    }
-    if (lower === 'completed') {
-      return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      );
-    }
-    if (lower === 'cancelled') {
-      return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M15 9l-6 6M9 9l6 6" strokeLinecap="round" />
-        </svg>
-      );
-    }
-    return null;
-  };
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // [2025-12-07 06:15:00] 获取状态颜色类名
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen]);
+
+  const currentOption = statusOptions.find(opt => opt.value === currentValue) || statusOptions[0];
   const getStatusClass = (status: string) => {
     const lower = status.toLowerCase();
     if (lower === 'active') return 'active';
@@ -61,23 +48,44 @@ function StatusSelector({
   };
 
   return (
-    <div className="sales-orders-status-selector">
-      {statusOptions.map((option) => {
-        const isActive = option.value === currentValue;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => !disabled && onUpdate(orderId, option.value)}
-            disabled={disabled}
-            className={`status-icon-btn status-icon-btn-${getStatusClass(option.value)} ${isActive ? 'active' : ''}`}
-            title={option.label}
-            aria-label={option.label}
-          >
-            {getStatusIcon(option.value)}
-          </button>
-        );
-      })}
+    <div className="sales-orders-status-selector" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`status-tag status-tag-${getStatusClass(currentValue)}`}
+      >
+        {currentOption.label}
+        <svg 
+          width="12" 
+          height="12" 
+          viewBox="0 0 12 12" 
+          fill="none" 
+          stroke="currentColor" 
+          strokeWidth="2" 
+          style={{ marginLeft: '0.375rem', transition: 'transform 0.2s' }}
+          className={isOpen ? 'arrow-open' : ''}
+        >
+          <path d="M3 4.5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="status-dropdown-menu">
+          {statusOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onUpdate(orderId, option.value);
+                setIsOpen(false);
+              }}
+              className={`status-menu-item ${currentValue === option.value ? 'active' : ''}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -477,55 +485,76 @@ export default function SalesOrdersPage() {
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
         .sales-orders-status-selector {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.25rem;
-          background: #f3f4f6;
-          padding: 0.25rem;
-          border-radius: 8px;
+          position: relative;
+          display: inline-block;
         }
-        .status-icon-btn {
+        .status-tag {
           display: inline-flex;
           align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
+          padding: 0.375rem 0.75rem;
+          border-radius: 9999px;
+          font-size: 0.875rem;
+          font-weight: 500;
           border: none;
-          border-radius: 6px;
           cursor: pointer;
           transition: all 0.2s;
-          background: transparent;
-          color: #6b7280;
+          user-select: none;
         }
-        .status-icon-btn:hover:not(:disabled) {
-          background: #e5e7eb;
-          transform: scale(1.1);
-        }
-        .status-icon-btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        .status-icon-btn.active {
-          background: #ffffff;
+        .status-tag:hover:not(:disabled) {
+          transform: translateY(-1px);
           box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        .status-icon-btn-active.active {
-          color: #16a34a;
+        .status-tag:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
-        .status-icon-btn-completed.active {
-          color: #2563eb;
+        .status-tag-active {
+          background: #dcfce7;
+          color: #166534;
         }
-        .status-icon-btn-cancelled.active {
-          color: #dc2626;
+        .status-tag-completed {
+          background: #eff6ff;
+          color: #1d4ed8;
         }
-        .status-icon-btn-active:not(.active):hover:not(:disabled) {
-          color: #16a34a;
+        .status-tag-cancelled {
+          background: #fef2f2;
+          color: #b91c1c;
         }
-        .status-icon-btn-completed:not(.active):hover:not(:disabled) {
-          color: #2563eb;
+        .status-tag .arrow-open {
+          transform: rotate(180deg);
         }
-        .status-icon-btn-cancelled:not(.active):hover:not(:disabled) {
-          color: #dc2626;
+        .status-dropdown-menu {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          margin-top: 0.25rem;
+          background: #ffffff;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          z-index: 100;
+          min-width: 140px;
+          overflow: hidden;
+        }
+        .status-menu-item {
+          display: block;
+          width: 100%;
+          padding: 0.5rem 1rem;
+          text-align: left;
+          background: transparent;
+          border: none;
+          color: #374151;
+          font-size: 0.875rem;
+          cursor: pointer;
+          transition: background 0.15s;
+        }
+        .status-menu-item:hover {
+          background: #f3f4f6;
+        }
+        .status-menu-item.active {
+          background: #eff6ff;
+          color: #1d4ed8;
+          font-weight: 500;
         }
         .tag-active-rush {
           background: #fef3c7;

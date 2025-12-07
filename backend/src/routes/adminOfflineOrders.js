@@ -1,12 +1,18 @@
 // [2025-11-08 06:57:02] Admin routes for offline POD orders
+// [2025-12-07 06:25:00] 允许 SALES_MANAGER 访问配置相关接口
 const express = require('express');
 const multer = require('multer');
 const offlineOrderController = require('../controllers/offlineOrderController');
 const { ensureOfflineUploadRoot, getAllowedExtensions, isExtensionAllowed } = require('../utils/offlineUpload');
-const { requireAdmin } = require('../middleware/auth');
+const { requireAdmin, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
 
+// [2025-12-07 06:25:00] 配置相关接口允许 SALES_MANAGER 访问
+router.get('/config/stages', authorizeRoles('SALES_MANAGER', 'ADMIN'), offlineOrderController.getOfflineWorkflowStages);
+router.put('/config/stages', requireAdmin); // 更新配置仍需要 ADMIN
+
+// [2025-12-07 06:25:00] 其他接口需要 ADMIN 权限
 router.use(requireAdmin);
 
 const uploadRoot = ensureOfflineUploadRoot();
