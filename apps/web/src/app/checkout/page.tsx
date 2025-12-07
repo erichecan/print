@@ -22,6 +22,9 @@ import {
   CheckoutAddressPayload,
   CartResponse,
   couponApi,
+  authApi,
+  paymentMethodsApi,
+  PaymentMethod,
 } from '@/lib/api';
 import { validateAddressForm, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
 import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:55:00] Toast 通知

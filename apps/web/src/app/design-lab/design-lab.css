@@ -325,10 +325,16 @@
 }
 
 /* [2025-01-30 23:20:00] 修复：Rail 按钮激活状态对齐 Custom Ink */
+/* [2025-12-06 12:40:00] 修复：确保激活状态样式正确应用，使用 !important 防止覆盖 */
 .dl-rail__btn.is-active {
-  background: rgba(255, 255, 255, 0.15); /* 激活时背景更亮 */
-  color: rgb(255, 255, 255); /* 激活时文本变白 */
-  border-left: 3px solid var(--dl-color-primary); /* 蓝色左边框 */
+  background: rgba(255, 255, 255, 0.15) !important; /* 激活时背景更亮 */
+  color: rgb(255, 255, 255) !important; /* 激活时文本变白 */
+  border-left: 3px solid var(--dl-color-primary) !important; /* 蓝色左边框 */
+}
+
+/* [2025-12-06 12:40:00] 修复：确保激活状态的标签颜色也变白 */
+.dl-rail__btn.is-active .dl-rail__btn-label {
+  color: rgb(255, 255, 255) !important; /* 激活时标签文本也变白 */
 }
 
 .dl-rail__btn-icon {
