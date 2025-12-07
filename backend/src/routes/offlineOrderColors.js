@@ -11,9 +11,13 @@ router.use((req, res, next) => {
   logger.info('[OfflineOrderColors Route] 🔵 Request received', {
     method: req.method,
     path: req.path,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    url: req.url,
     hasCookies: !!req.cookies,
     hasToken: !!req.cookies?.token,
-    tokenPreview: req.cookies?.token?.substring(0, 20) || 'none',
+    hasAuthHeader: !!req.headers.authorization,
+    tokenPreview: req.cookies?.token?.substring(0, 20) || req.headers.authorization?.substring(0, 30) || 'none',
     userAgent: req.headers['user-agent'],
     origin: req.headers.origin,
   });

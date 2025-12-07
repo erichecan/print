@@ -245,13 +245,22 @@ exports.authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
     logger.info('[Auth] 🔍 Authorization check', {
       path: req.path,
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl,
+      url: req.url,
       hasUser: !!req.user,
       userRole: req.user?.role,
+      userRoleType: typeof req.user?.role,
+      userRoleRaw: req.user?.role,
       allowedRoles: allowedRoles,
+      allowedRolesType: typeof allowedRoles[0],
     });
     
     if (!req.user) {
-      logger.warn('[Auth] ❌ No user in request', { path: req.path });
+      logger.warn('[Auth] ❌ No user in request', { 
+        path: req.path,
+        originalUrl: req.originalUrl,
+      });
       return next(new UnauthorizedError('Please login to access this resource'));
     }
     
@@ -260,16 +269,26 @@ exports.authorizeRoles = (...allowedRoles) => {
     const allowed = allowedRoles.map((r) => String(r).toUpperCase());
 
     logger.info('[Auth] 🔍 Role comparison', {
+      userRoleRaw,
       userRole,
+      allowedRolesRaw: allowedRoles,
       allowedRoles: allowed,
       isAllowed: allowed.includes(userRole),
+      comparison: {
+        'SALES_MANAGER' === 'SALES_MANAGER': 'SALES_MANAGER' === 'SALES_MANAGER',
+        'SALES_MANAGER' in allowed: allowed.includes('SALES_MANAGER'),
+        userRoleInAllowed: allowed.includes(userRole),
+      },
     });
 
     if (!allowed.includes(userRole)) {
       logger.warn('[Auth] ❌ Access denied', {
+        userRoleRaw,
         userRole,
+        allowedRolesRaw: allowedRoles,
         allowedRoles: allowed,
         path: req.path,
+        originalUrl: req.originalUrl,
       });
       return next(new ForbiddenError('You do not have permission to access this resource'));
     }
@@ -277,6 +296,7 @@ exports.authorizeRoles = (...allowedRoles) => {
     logger.info('[Auth] ✅ Authorization passed', {
       userRole,
       path: req.path,
+      originalUrl: req.originalUrl,
     });
 
     next();

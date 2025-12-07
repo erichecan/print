@@ -65,21 +65,21 @@
   },
   "suites": [
     {
-      "title": "localstorage-auth-test.spec.ts",
-      "file": "localstorage-auth-test.spec.ts",
+      "title": "token-parsing-debug.spec.ts",
+      "file": "token-parsing-debug.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "localStorage + Authorization Header 认证测试",
-          "file": "localstorage-auth-test.spec.ts",
+          "title": "Token 解析调试测试",
+          "file": "token-parsing-debug.spec.ts",
           "line": 11,
           "column": 6,
           "specs": [
             {
-              "title": "验证登录后 token 存储到 localStorage 并正确传递",
-              "ok": false,
+              "title": "使用 Chrome DevTools 验证 token 解析和传递",
+              "ok": true,
               "tags": [],
               "tests": [
                 {
@@ -92,84 +92,83 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "failed",
-                      "duration": 6821,
-                      "error": {
-                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
-                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:61:36",
-                        "location": {
-                          "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
-                          "column": 36,
-                          "line": 61
-                        },
-                        "snippet": "  59 |         authorizationPreview: req.authorization.substring(0, 50),\n  60 |       });\n> 61 |       expect(req.hasAuthorization).toBe(true);\n     |                                    ^\n  62 |     }\n  63 |\n  64 |     // 6. 检查响应"
-                      },
-                      "errors": [
-                        {
-                          "location": {
-                            "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
-                            "column": 36,
-                            "line": 61
-                          },
-                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  59 |         authorizationPreview: req.authorization.substring(0, 50),\n  60 |       });\n> 61 |       expect(req.hasAuthorization).toBe(true);\n     |                                    ^\n  62 |     }\n  63 |\n  64 |     // 6. 检查响应\n    at /Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts:61:36"
-                        }
-                      ],
+                      "status": "passed",
+                      "duration": 7528,
+                      "errors": [],
                       "stdout": [
                         {
-                          "text": "[Auth Test] 开始登录...\n"
+                          "text": "[Token Debug] 开始登录...\n"
                         },
                         {
-                          "text": "[Auth Test] 登录成功\n"
+                          "text": "[Token Debug] 登录成功\n"
                         },
                         {
-                          "text": "[Auth Test] Token in localStorage: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...\n"
+                          "text": "[Token Debug] Token in localStorage: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiO...\n"
                         },
                         {
-                          "text": "[Auth Test] 访问配置页面...\n"
+                          "text": "[Token Debug] Token 部分数量: 3\n"
                         },
                         {
-                          "text": "[Auth Test] 📤 Request: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  authorization: \u001b[32m'none'\u001b[39m\n}\n"
+                          "text": "[Token Debug] Token Payload: {\n  userId: \u001b[32m'4d844ff5-f0ec-43b1-806d-986def14a0ca'\u001b[39m,\n  iat: \u001b[33m1765092224\u001b[39m,\n  exp: \u001b[33m1765697024\u001b[39m,\n  expiresIn: \u001b[32m'2025-12-14T07:23:44.000Z'\u001b[39m\n}\n"
                         },
                         {
-                          "text": "[Auth Test] 找到 1 个相关请求\n"
+                          "text": "[Token Debug] 访问配置页面...\n"
                         },
                         {
-                          "text": "[Auth Test] 请求详情: { hasAuthorization: \u001b[33mfalse\u001b[39m, authorizationPreview: \u001b[32m'none'\u001b[39m }\n"
+                          "text": "[Token Debug] 📤 Request: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  hasAuthorization: \u001b[33mtrue\u001b[39m,\n  authorizationPreview: \u001b[32m'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2'\u001b[39m\n}\n"
+                        },
+                        {
+                          "text": "[Token Debug] 📥 Response: {\n  url: \u001b[32m'https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors'\u001b[39m,\n  status: \u001b[33m403\u001b[39m,\n  body: \u001b[32m'{\"success\":false,\"statusCode\":403,\"code\":\"FORBIDDEN\",\"message\":\"You do not have permission to access this resource\",\"timestamp\":\"2025-12-07T07:23:45.150Z\"}'\u001b[39m\n}\n"
+                        },
+                        {
+                          "text": "\n[Token Debug] ========== 测试结果 ==========\n"
+                        },
+                        {
+                          "text": "[Token Debug] Token 存在: true\n"
+                        },
+                        {
+                          "text": "[Token Debug] Token 长度: 192\n"
+                        },
+                        {
+                          "text": "[Token Debug] 请求数量: 1\n"
+                        },
+                        {
+                          "text": "[Token Debug] 响应数量: 1\n"
+                        },
+                        {
+                          "text": "[Token Debug] 控制台消息数量: 0\n"
+                        },
+                        {
+                          "text": "\n[Token Debug] 📤 请求详情:\n"
+                        },
+                        {
+                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"method\": \"GET\",\n  \"authorization\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI0ZDg0NGZmNS1mMGVjLTQzYjEtODA2ZC05ODZkZWYxNGEwY2EiLCJpYXQiOjE3NjUwOTIyMjQsImV4cCI6MTc2NTY5NzAyNH0.mjfQ3zxHtdrhmSzdpzto7eDhvQk6L6xmWPYiVSL7l6A\",\n  \"hasAuthorization\": true,\n  \"authorizationPreview\": \"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2\",\n  \"allHeaders\": [\n    \"sec-ch-ua-platform\",\n    \"authorization\",\n    \"referer\",\n    \"accept-language\",\n    \"sec-ch-ua\",\n    \"sec-ch-ua-mobile\",\n    \"user-agent\",\n    \"accept\",\n    \"content-type\",\n    \"x-playwright-e2e\"\n  ]\n}\n"
+                        },
+                        {
+                          "text": "\n[Token Debug] 📥 响应详情:\n"
+                        },
+                        {
+                          "text": "{\n  \"url\": \"https://print-main-frontend-234065158862.us-central1.run.app/api/proxy/admin/offline-order-colors\",\n  \"status\": 403,\n  \"headers\": {\n    \"content-type\": \"application/json; charset=utf-8\"\n  },\n  \"body\": \"{\\\"success\\\":false,\\\"statusCode\\\":403,\\\"code\\\":\\\"FORBIDDEN\\\",\\\"message\\\":\\\"You do not have permission to access this resource\\\",\\\"timestamp\\\":\\\"2025-12-07T07:23:45.150Z\\\"}\"\n}\n"
+                        },
+                        {
+                          "text": "\n[Token Debug] ❌ 403 错误详情:\n"
+                        },
+                        {
+                          "text": "{\n  \"success\": false,\n  \"statusCode\": 403,\n  \"code\": \"FORBIDDEN\",\n  \"message\": \"You do not have permission to access this resource\",\n  \"timestamp\": \"2025-12-07T07:23:45.150Z\"\n}\n"
                         }
                       ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-12-07T07:13:49.468Z",
+                      "startTime": "2025-12-07T07:23:41.211Z",
                       "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/localstorage-auth-test-loc-87a46-oken-存储到-localStorage-并正确传递-chromium/test-failed-1.png"
-                        },
-                        {
-                          "name": "video",
-                          "contentType": "video/webm",
-                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/localstorage-auth-test-loc-87a46-oken-存储到-localStorage-并正确传递-chromium/video.webm"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/eric/Desktop/print-main/apps/web/test-results/artifacts/localstorage-auth-test-loc-87a46-oken-存储到-localStorage-并正确传递-chromium/error-context.md"
-                        }
-                      ],
-                      "errorLocation": {
-                        "file": "/Users/eric/Desktop/print-main/apps/web/tests/e2e/localstorage-auth-test.spec.ts",
-                        "column": 36,
-                        "line": 61
-                      }
+                      "attachments": []
                     }
                   ],
-                  "status": "unexpected"
+                  "status": "expected"
                 }
               ],
-              "id": "0d2a33234edc5fb073a4-c4ae9a6157939a5dcc7c",
-              "file": "localstorage-auth-test.spec.ts",
+              "id": "e34c3bf51f7dcb825b84-f3f591e299146ddc9919",
+              "file": "token-parsing-debug.spec.ts",
               "line": 12,
               "column": 7
             }
@@ -180,11 +179,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-12-07T07:13:49.028Z",
-    "duration": 7501.79,
-    "expected": 0,
+    "startTime": "2025-12-07T07:23:40.945Z",
+    "duration": 7984.695000000001,
+    "expected": 1,
     "skipped": 0,
-    "unexpected": 1,
+    "unexpected": 0,
     "flaky": 0
   }
 }
