@@ -125,17 +125,26 @@ exports.authenticate = async (req, res, next) => {
       req.headers.authorization?.replace('Bearer ', '') ||
       null;
 
-    // [2025-12-02 03:30:00] 详细记录认证尝试
-    logger.debug('[Auth] Authentication attempt', {
+    // [2025-12-07 06:40:00] 增强日志输出
+    logger.info('[Auth] 🔍 Authentication attempt', {
+      path: req.path,
+      method: req.method,
       hasCookieToken: !!req.cookies?.token,
       hasAuthHeader: !!req.headers.authorization,
       hasToken: !!token,
-      path: req.path,
-      method: req.method
+      tokenLength: token?.length || 0,
+      tokenPreview: token?.substring(0, 20) || 'none',
+      cookies: Object.keys(req.cookies || {}),
+      origin: req.headers.origin,
+      referer: req.headers.referer,
     });
 
     if (!token) {
-      logger.debug('[Auth] No token provided', { path: req.path });
+      logger.warn('[Auth] ❌ No token provided', { 
+        path: req.path,
+        cookies: req.cookies,
+        cookieKeys: Object.keys(req.cookies || {}),
+      });
       // [2025-11-18 11:58:00] Avoid crashing server when auth is missing
       return next(new UnauthorizedError('Please login to access this resource'));
     }
@@ -194,7 +203,12 @@ exports.authenticate = async (req, res, next) => {
       return next(new UnauthorizedError('Invalid token: user not found'));
     }
 
-    logger.debug('[Auth] User authenticated successfully', { userId: user.id, email: user.email, role: user.role });
+    logger.info('[Auth] ✅ User authenticated', {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+      path: req.path,
+    });
     req.user = user;
     next();
   } catch (error) {
@@ -213,11 +227,11 @@ exports.authenticate = async (req, res, next) => {
       return next(new UnauthorizedError('Invalid or expired token'));
     }
     
-    logger.error('[Auth] Unexpected authentication error:', {
+    logger.error('[Auth] ❌ Authentication failed', {
       error: error.message,
       errorName: error.name,
+      path: req.path,
       stack: error.stack,
-      path: req.path
     });
     return next(new UnauthorizedError('Authentication failed'));
   }
@@ -229,16 +243,41 @@ exports.authenticate = async (req, res, next) => {
  */
 exports.authorizeRoles = (...allowedRoles) => {
   return (req, res, next) => {
+    logger.info('[Auth] 🔍 Authorization check', {
+      path: req.path,
+      hasUser: !!req.user,
+      userRole: req.user?.role,
+      allowedRoles: allowedRoles,
+    });
+    
     if (!req.user) {
+      logger.warn('[Auth] ❌ No user in request', { path: req.path });
       return next(new UnauthorizedError('Please login to access this resource'));
     }
+    
     const userRoleRaw = req.user.role || '';
     const userRole = String(userRoleRaw).toUpperCase();
     const allowed = allowedRoles.map((r) => String(r).toUpperCase());
 
+    logger.info('[Auth] 🔍 Role comparison', {
+      userRole,
+      allowedRoles: allowed,
+      isAllowed: allowed.includes(userRole),
+    });
+
     if (!allowed.includes(userRole)) {
+      logger.warn('[Auth] ❌ Access denied', {
+        userRole,
+        allowedRoles: allowed,
+        path: req.path,
+      });
       return next(new ForbiddenError('You do not have permission to access this resource'));
     }
+
+    logger.info('[Auth] ✅ Authorization passed', {
+      userRole,
+      path: req.path,
+    });
 
     next();
   };

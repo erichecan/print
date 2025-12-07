@@ -57,17 +57,57 @@ export default function OfflineOrdersConfigPage() {
   const { data: colorsData, mutate: mutateColors } = useSWR(
     activeTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
     async (url) => {
-      const response = await fetch(url, { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch colors');
-      return response.json();
+      console.log('[Config Page] 🔵 Fetching colors from:', url);
+      console.log('[Config Page] 🔵 Cookies:', document.cookie);
+      
+      try {
+        const response = await fetch(url, { 
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        console.log('[Config Page] 🔵 Response status:', response.status);
+        console.log('[Config Page] 🔵 Response headers:', {
+          'content-type': response.headers.get('content-type'),
+          'set-cookie': response.headers.get('set-cookie'),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('[Config Page] ❌ Fetch failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorText,
+          });
+          throw new Error(`Failed to fetch colors: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('[Config Page] ✅ Colors fetched successfully:', data);
+        return data;
+      } catch (error: any) {
+        console.error('[Config Page] ❌ Fetch error:', error);
+        throw error;
+      }
     }
   );
 
   const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(
     activeTab === 'sizeFees' ? '/api/proxy/admin/offline-order-size-fees' : null,
     async (url) => {
+      console.log('[Config Page] 🔵 Fetching size fees from:', url);
       const response = await fetch(url, { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch size fees');
+      console.log('[Config Page] 🔵 Size fees response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Config Page] ❌ Size fees fetch failed:', {
+          status: response.status,
+          error: errorText,
+        });
+        throw new Error(`Failed to fetch size fees: ${response.status}`);
+      }
       return response.json();
     }
   );
@@ -75,8 +115,17 @@ export default function OfflineOrdersConfigPage() {
   const { data: productsData, mutate: mutateProducts } = useSWR(
     activeTab === 'products' ? '/api/proxy/admin/offline-order-products' : null,
     async (url) => {
+      console.log('[Config Page] 🔵 Fetching products from:', url);
       const response = await fetch(url, { credentials: 'include' });
-      if (!response.ok) throw new Error('Failed to fetch products');
+      console.log('[Config Page] 🔵 Products response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Config Page] ❌ Products fetch failed:', {
+          status: response.status,
+          error: errorText,
+        });
+        throw new Error(`Failed to fetch products: ${response.status}`);
+      }
       return response.json();
     }
   );

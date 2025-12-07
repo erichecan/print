@@ -63,14 +63,19 @@ async function handleProxyRequest(
     const hasCookies = !!cookies;
     const hasToken = cookies.includes('token=');
     
-    console.log('[API Proxy] Request', {
+    // [2025-12-07 06:40:00] 增强日志输出
+    console.log('[API Proxy] 🔍 Request Details', {
       timestamp,
       method: request.method,
       path: backendPath,
       needsAuth,
       hasCookies,
       hasToken,
-      queryString: queryString || 'none'
+      cookieLength: cookies.length,
+      cookiePreview: cookies.substring(0, 100), // 只显示前100字符
+      queryString: queryString || 'none',
+      origin: request.headers.get('origin'),
+      referer: request.headers.get('referer'),
     });
     
     // [2025-12-02 04:15:00] 准备请求头
@@ -152,13 +157,15 @@ async function handleProxyRequest(
     const responseBody = await upstream.text();
     const responseContentType = upstream.headers.get('content-type') || 'application/json';
     
-    console.log('[API Proxy] Upstream response', {
+    // [2025-12-07 06:40:00] 增强响应日志
+    console.log('[API Proxy] 📥 Upstream Response', {
       timestamp,
       status: upstream.status,
       statusText: upstream.statusText,
-      hasSetCookie: !!upstream.headers.get('set-cookie'),
       contentType: responseContentType,
-      bodyLength: responseBody.length
+      bodyLength: responseBody.length,
+      hasSetCookie: !!upstream.headers.get('set-cookie'),
+      setCookieHeaders: upstream.headers.getSetCookie?.() || [],
     });
     
     // [2025-12-02 04:15:00] 创建响应头
@@ -203,17 +210,18 @@ async function handleProxyRequest(
     
     // [2025-12-02 04:15:00] 记录响应状态
     if (!upstream.ok) {
-      console.error('[API Proxy] Upstream error', {
+      console.error('[API Proxy] ❌ Upstream Error', {
         timestamp,
         status: upstream.status,
-        body: responseBody.substring(0, 200),
-        path: backendPath
+        statusText: upstream.statusText,
+        bodyPreview: responseBody.substring(0, 500), // 显示前500字符
+        path: backendPath,
       });
     } else {
-      console.log('[API Proxy] Upstream success', {
+      console.log('[API Proxy] ✅ Upstream Success', {
         timestamp,
         bodyLength: responseBody.length,
-        path: backendPath
+        path: backendPath,
       });
     }
     
