@@ -1,8 +1,10 @@
 /**
  * Sitemap generation for SEO
  * [2025-12-01 12:45:00] 实现动态 sitemap.xml，包含所有主要页面 URL
+ * [2025-12-06 21:00:00] 添加动态产品页面 for Issue #154
  */
 import { MetadataRoute } from 'next';
+import { API_BASE_URL } from '@/lib/api-config';
 
 // [2025-12-01 12:45:00] 获取站点基础 URL
 function getSiteUrl(): string {
@@ -12,16 +14,34 @@ function getSiteUrl(): string {
     return siteUrl.replace(/\/+$/, ''); // 移除末尾斜杠
   }
   
-  // 回退到当前 Cloud Run 前端地址
-  if (typeof window !== 'undefined' && window.location) {
-    return window.location.origin;
-  }
-  
   // SSR/构建时回退
-  return 'https://print-main-frontend-234065158862.us-central1.run.app';
+  return 'https://suvernireplus.com';
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+// [2025-12-06 21:00:00] 获取所有产品用于动态 sitemap for Issue #154
+async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: string }>> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/products?limit=1000&includeOutOfStock=false`, {
+      next: { revalidate: 3600 }, // 缓存 1 小时
+    });
+    
+    if (!response.ok) {
+      console.error('[Sitemap] Failed to fetch products:', response.statusText);
+      return [];
+    }
+    
+    const data = await response.json();
+    return (data.data || data || []).map((product: any) => ({
+      slug: product.slug,
+      updatedAt: product.updatedAt || product.updated_at,
+    }));
+  } catch (error) {
+    console.error('[Sitemap] Error fetching products:', error);
+    return [];
+  }
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
   const now = new Date();
   
@@ -131,6 +151,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
   
-  return staticPages;
+  // [2025-12-06 21:00:00] 动态添加产品页面 for Issue #154
+  const products = await getAllProducts();
+  const productPages: MetadataRoute.Sitemap = products.map((product) => ({
+    url: `${baseUrl}/products/${product.slug}`,
+    lastModified: product.updatedAt ? new Date(product.updatedAt) : now,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }));
+  
+  return [...staticPages, ...productPages];
 }
 

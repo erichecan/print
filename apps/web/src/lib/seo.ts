@@ -115,34 +115,43 @@ export function generateOrganizationSchema() {
 /**
  * 生成产品结构化数据 (JSON-LD)
  * [2025-01-27 16:35:00] 用于产品详情页
+ * [2025-12-06 21:00:00] 优化产品 schema，支持更多字段 for Issue #154
  */
 export function generateProductSchema(product: {
   name: string;
   description: string;
-  image?: string;
-  price?: number;
+  image?: string | string[];
+  price?: number | string;
   currency?: string;
   sku?: string;
   brand?: string;
   availability?: 'InStock' | 'OutOfStock' | 'PreOrder';
+  url?: string;
+  category?: string;
 }) {
   const {
     name,
     description,
     image = 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
     price,
-    currency = 'USD',
+    currency = 'CAD',
     sku,
     brand = 'suvernire plus',
     availability = 'InStock',
+    url,
+    category,
   } = product;
+
+  const images = Array.isArray(image) ? image : [image];
+  const productUrl = url || (sku ? `https://suvernireplus.com/products/${sku}` : `https://suvernireplus.com/products/${name.toLowerCase().replace(/\s+/g, '-')}`);
 
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name,
     description,
-    image,
+    image: images,
+    ...(category && { category }),
     brand: {
       '@type': 'Brand',
       name: brand,
@@ -150,9 +159,9 @@ export function generateProductSchema(product: {
     ...(sku && { sku }),
     offers: {
       '@type': 'Offer',
-      url: `https://suvernireplus.com/products/${sku || name.toLowerCase().replace(/\s+/g, '-')}`,
+      url: productUrl,
       priceCurrency: currency,
-      price,
+      price: typeof price === 'string' ? price : (price?.toFixed(2) || '0.00'),
       availability: `https://schema.org/${availability}`,
       seller: {
         '@type': 'Organization',
