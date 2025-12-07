@@ -87,9 +87,27 @@ export async function POST(request: Request) {
         timestamp,
         cookieCount: setCookieHeaders.length
       });
-      // 如果支持 getSetCookie()，使用它
+      // [2025-12-07 07:25:00] 如果支持 getSetCookie()，使用它
+      // 需要修改 Cookie 的 domain，确保 Cookie 可以在前端域名下使用
       setCookieHeaders.forEach(cookie => {
-        responseHeaders.append('set-cookie', cookie);
+        // [2025-12-07 07:25:00] 修改 Cookie 的 domain，移除后端域名，使用前端域名
+        // 或者不设置 domain，让浏览器自动使用当前域名
+        let modifiedCookie = cookie;
+        // 如果 Cookie 包含 domain，移除它（让浏览器使用当前域名）
+        if (modifiedCookie.includes('Domain=')) {
+          // 移除 Domain=xxx 部分
+          modifiedCookie = modifiedCookie.replace(/;\s*Domain=[^;]+/gi, '');
+        }
+        // 确保 SameSite=None 和 Secure=true（生产环境）
+        if (process.env.NODE_ENV === 'production') {
+          if (!modifiedCookie.includes('SameSite=None')) {
+            modifiedCookie += '; SameSite=None';
+          }
+          if (!modifiedCookie.includes('Secure')) {
+            modifiedCookie += '; Secure';
+          }
+        }
+        responseHeaders.append('set-cookie', modifiedCookie);
       });
     } else {
       // 降级：使用 get('set-cookie')
