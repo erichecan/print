@@ -61,7 +61,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   return (
     <div className="dl-upload-panel">
       <div className="dl-upload-panel__header">
-        <h2 className="dl-upload-panel__title">Choose File To Upload</h2>
+        <h2 className="dl-upload-panel__title" data-testid="upload-panel-title">Choose File To Upload</h2>
         <button 
           className="dl-upload-panel__close" 
           aria-label="Close" 

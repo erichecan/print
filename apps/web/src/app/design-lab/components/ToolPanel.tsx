@@ -61,7 +61,7 @@ const ToolPanel: React.FC<ToolPanelProps> = ({ panelType, onBack, children }) =>
       <div className="dl-tool-panel__content">
         {!hasCustomHeader && (
           <div className="dl-tool-panel__header">
-            <h2 className="dl-tool-panel__title">{getPanelTitle()}</h2>
+            <h2 className="dl-tool-panel__title" data-testid={`tool-panel-title-${panelType}`}>{getPanelTitle()}</h2>
             {showBackButton && (
               <button
                 className="dl-tool-panel__back-btn"

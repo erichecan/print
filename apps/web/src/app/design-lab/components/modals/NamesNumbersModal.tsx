@@ -157,7 +157,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
       <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
           {/* [2025-01-31 00:00:00] 根据截图，Tools 页标题应该是 "Names and Numbers Tools" */}
-          <h3 className="dl-modal__title">
+          <h3 className="dl-modal__title" data-testid="names-numbers-modal-title">
             {step === 'tools' ? 'Names and Numbers Tools' : step === 'list' ? 'My List' : step === 'quantities' ? 'My Quantities' : 'Names & Numbers'}
           </h3>
           <button

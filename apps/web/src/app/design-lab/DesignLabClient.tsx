@@ -703,8 +703,14 @@ const DesignLabClient: React.FC = () => {
   }, [productInfo?.color, productInfo?.baseImages?.front, productInfo?.baseImages?.back, productInfo?.baseImages?.sleeve, currentView, canvasInitialized, loadBackgroundImage]); // [2025-01-31 16:55:00] 添加 loadBackgroundImage 到依赖
 
   // [2025-01-30 14:00:00] 工具点击处理
+  // [2025-12-06 12:40:00] 修复：确保点击 Rail 按钮后保持激活状态，而不是切换
   const handleToolClick = (tool: string) => {
-    setActiveTool(activeTool === tool ? null : tool);
+    // 如果点击的是当前激活的工具，保持激活状态（不取消）
+    // 如果点击的是其他工具，切换到新工具
+    if (activeTool !== tool) {
+      setActiveTool(tool);
+    }
+    // 如果已经是激活状态，保持激活（不设置为 null）
     setShowGuidePanel(false);
     
     // [2025-01-30 17:00:00] 根据工具类型切换工具面板

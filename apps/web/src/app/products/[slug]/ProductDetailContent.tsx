@@ -337,7 +337,26 @@ export function ProductDetailContent() {
         {/* Right: Product Details */}
         <div className="max-w-[500px] flex flex-col gap-5 product-details-mobile">
           {/* Title */}
-          <h1 className="text-3xl font-bold leading-tight text-gray-900">{product.name}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <h1 className="text-3xl font-bold leading-tight text-gray-900 flex-1">{product.name}</h1>
+            {/* [2025-12-06 20:00:00] 社交媒体分享按钮 for Issue #142 */}
+            {typeof window !== 'undefined' && (
+              <SocialShareMenu
+                config={{
+                  url: window.location.href,
+                  title: product.name,
+                  description: product.description || `Check out ${product.name} on Suvernire Plus`,
+                  image: currentImage.startsWith('http') ? currentImage : `${window.location.origin}${currentImage}`,
+                  hashtags: ['CustomPrint', 'CustomMerch', 'SuvernirePlus'],
+                }}
+                onShare={(platform) => {
+                  // [2025-12-06 20:00:00] 分享统计（可选）for Issue #142
+                  console.log(`[2025-12-06 20:00:00] Shared to ${platform}:`, product.name);
+                  // TODO: 发送分享统计到后端 API
+                }}
+              />
+            )}
+          </div>
 
           {/* Brand/Artist Info */}
           {product.brand && (
