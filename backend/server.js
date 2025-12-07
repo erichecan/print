@@ -178,9 +178,20 @@ const runMigrationsIfEnabled = () => {
 testConnection().then(() => {
   // [2025-01-29 23:05:00] Prisma Client 已在导入应用前生成
   runMigrationsIfEnabled();
-  app.listen(PORT, () => {
+  
+  // [2025-12-07 01:30:00] Create HTTP server for Socket.IO integration (Issue #144)
+  const http = require('http');
+  const httpServer = http.createServer(app);
+  
+  // [2025-12-07 01:30:00] Initialize Socket.IO chat server
+  const { initializeChatServer } = require('./src/socket/chatServer');
+  const io = initializeChatServer(httpServer);
+  logger.info('✅ Socket.IO chat server initialized');
+  
+  httpServer.listen(PORT, () => {
     logger.info(`🚀 Server running on port ${PORT}`);
     logger.info(`📡 API available at http://localhost:${PORT}/api`);
+    logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
     logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 }).catch((error) => {

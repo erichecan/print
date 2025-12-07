@@ -2719,4 +2719,60 @@ export const paymentMethodsApi = {
     }),
 };
 
+// [2025-12-07 01:30:00] Customer Service Chat API for Issue #144
+export interface ChatRoom {
+  id: string;
+  status: 'OPEN' | 'ASSIGNED' | 'ACTIVE' | 'RESOLVED' | 'CLOSED';
+  customer: {
+    id?: string;
+    email?: string;
+    name: string;
+  };
+  agent: {
+    id: string;
+    email: string;
+    name: string;
+  } | null;
+  lastMessage: {
+    id: string;
+    content: string;
+    senderType: 'CUSTOMER' | 'AGENT' | 'SYSTEM';
+    createdAt: string;
+  } | null;
+  unreadCount: number;
+  lastMessageAt: string | null;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  roomId: string;
+  content: string;
+  senderType: 'CUSTOMER' | 'AGENT' | 'SYSTEM';
+  sender: {
+    id: string;
+    name: string;
+  } | null;
+  createdAt: string;
+  isRead: boolean;
+}
+
+export const chatApi = {
+  getRooms: () => api<{ rooms: ChatRoom[] }>('/chat/rooms'),
+  createRoom: (data?: { customerName?: string; customerEmail?: string }) =>
+    api<{ room: ChatRoom }>('/chat/rooms', { method: 'POST', body: data }),
+  getRoom: (id: string) => api<{ room: ChatRoom }>(`/chat/rooms/${id}`),
+  getMessages: (roomId: string, params?: { limit?: number; offset?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.offset) query.append('offset', params.offset.toString());
+    const queryString = query.toString();
+    return api<{ messages: ChatMessage[] }>(`/chat/rooms/${roomId}/messages${queryString ? `?${queryString}` : ''}`);
+  },
+  assignAgent: (roomId: string, agentId?: string) =>
+    api<{ room: ChatRoom }>(`/chat/rooms/${roomId}/assign`, { method: 'PATCH', body: { agentId } }),
+  updateStatus: (roomId: string, status: ChatRoom['status']) =>
+    api<{ room: ChatRoom }>(`/chat/rooms/${roomId}/status`, { method: 'PATCH', body: { status } }),
+};
+
 export default api;

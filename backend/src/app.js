@@ -231,6 +231,7 @@ app.use('/api/reviews', require('./routes/productReviews')); // [2025-01-27 21:4
 app.use('/api/contact', require('./routes/contact')); // [2025-01-27 19:10:00] Contact form routes
 app.use('/api/coupons', require('./routes/coupons')); // [2025-01-27 19:40:00] Coupon routes
 app.use('/api/payment-methods', require('./routes/paymentMethods')); // [2025-12-06 17:20:00] Payment method management routes for Issue #112
+app.use('/api/chat', require('./routes/chat')); // [2025-12-07 01:30:00] Customer service chat routes for Issue #144
 // app.use('/api/user', require('./routes/userRoutes'));
 // app.use('/api/admin', require('./routes/adminRoutes'));
 

@@ -27,15 +27,19 @@ model User {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  addresses      Address[]
-  cart           Cart?
-  orders         Order[]
-  sessions       Session[]
-  designs        Design[]
+  addresses           Address[]
+  cart                Cart?
+  orders              Order[]
+  sessions            Session[]
+  designs             Design[]
   // [2025-11-18 10:45:12] Users can own design projects synced to storefront
-  projects       Project[]
+  projects            Project[]
   // [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112)
-  paymentMethods PaymentMethod[]
+  paymentMethods      PaymentMethod[]
+  // [2025-12-07 01:30:00] Customer service chat rooms for Issue #144
+  chatRoomsAsCustomer ChatRoom[]      @relation("ChatRoomCustomer")
+  chatRoomsAsAgent    ChatRoom[]      @relation("ChatRoomAgent")
+  chatMessages        ChatMessage[]
 
   @@index([email])
   @@index([role])
@@ -905,4 +909,63 @@ model PaymentMethod {
   @@index([isDefault])
   @@index([stripePaymentMethodId])
   @@map("payment_methods")
+}
+
+// [2025-12-07 01:30:00] Customer Service Chat models for Issue #144
+model ChatRoom {
+  id            String         @id @default(uuid())
+  customerId    String?        @map("customer_id") // Nullable for guest users
+  customer      User?          @relation("ChatRoomCustomer", fields: [customerId], references: [id], onDelete: SetNull)
+  agentId       String?        @map("agent_id") // Assigned customer service agent
+  agent         User?          @relation("ChatRoomAgent", fields: [agentId], references: [id], onDelete: SetNull)
+  status        ChatRoomStatus @default(OPEN)
+  customerName  String?        @map("customer_name") // For guest users
+  customerEmail String?        @map("customer_email") // For guest users
+  sessionId     String?        @map("session_id") // For guest users
+  lastMessageAt DateTime?      @map("last_message_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  messages ChatMessage[]
+
+  @@index([customerId])
+  @@index([agentId])
+  @@index([status])
+  @@index([sessionId])
+  @@index([lastMessageAt])
+  @@map("chat_rooms")
+}
+
+enum ChatRoomStatus {
+  OPEN // Waiting for agent
+  ASSIGNED // Assigned to agent, waiting for response
+  ACTIVE // Active conversation
+  RESOLVED // Conversation resolved
+  CLOSED // Conversation closed
+}
+
+model ChatMessage {
+  id         String            @id @default(uuid())
+  roomId     String            @map("room_id")
+  room       ChatRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId   String?           @map("sender_id") // Nullable for system messages
+  sender     User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderType MessageSenderType @map("sender_type")
+  content    String            @db.Text
+  isRead     Boolean           @default(false) @map("is_read")
+  readAt     DateTime?         @map("read_at")
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  @@index([roomId])
+  @@index([senderId])
+  @@index([senderType])
+  @@index([createdAt])
+  @@index([isRead])
+  @@map("chat_messages")
+}
+
+enum MessageSenderType {
+  CUSTOMER
+  AGENT
+  SYSTEM
 }
