@@ -135,11 +135,28 @@ export default function OfflineOrdersConfigPage() {
 
     const bootstrap = async () => {
       try {
-        const me = await authApi.me().catch(() => null);
+        console.log('[Config Page] 🔍 Checking auth status...');
+        const me = await authApi.me().catch((e) => {
+          console.error('[Config Page] ❌ Auth API call failed:', e);
+          return null;
+        });
         const role = me?.role ? String(me.role).toUpperCase() : '';
         const isAuthorized = ['SALES_MANAGER', 'ADMIN'].includes(role);
+        
+        console.log('[Config Page] 👤 Current user:', {
+          user: me,
+          role: role,
+          isSalesManager: role === 'SALES_MANAGER',
+          isAdmin: role === 'ADMIN',
+          isAuthorized: isAuthorized,
+        });
 
         if (!me || !isAuthorized) {
+          console.warn('[Config Page] ⚠️ Unauthorized access, redirecting to login', {
+            hasUser: !!me,
+            role: role,
+            isAuthorized: isAuthorized,
+          });
           router.replace('/offline-orders/sales/login');
           return;
         }
@@ -148,6 +165,7 @@ export default function OfflineOrdersConfigPage() {
           setCurrentUser(me);
         }
       } catch (e) {
+        console.error('[Config Page] ❌ Auth check failed:', e);
         router.replace('/offline-orders/sales/login');
         return;
       } finally {
