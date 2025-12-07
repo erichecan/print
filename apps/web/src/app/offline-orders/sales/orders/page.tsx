@@ -55,9 +55,18 @@ export default function SalesOrdersPage() {
         }
 
         // [2025-12-07 04:55:00] 获取阶段配置（用于快速修改状态）
+        // [2025-12-07 05:30:00] 使用代理 API 访问，确保认证正确传递
         try {
-          const stagesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/admin/offline-orders/config/stages`)
-            .then(res => res.json())
+          const stagesRes = await fetch('/api/proxy/admin/offline-orders/config/stages', {
+            credentials: 'include',
+          })
+            .then(res => {
+              if (!res.ok) {
+                console.warn('[SalesOrders] Failed to fetch stages:', res.status);
+                return { stages: [] };
+              }
+              return res.json();
+            })
             .catch(() => ({ stages: [] }));
           if (!cancelled) {
             setStages(stagesRes.stages || []);

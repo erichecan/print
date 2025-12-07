@@ -407,10 +407,27 @@ exports.updateSalesOrderStatus = async (req, res) => {
       return res.status(403).json({ error: 'You do not have permission to update this order' });
     }
 
-    // [2025-12-07 05:15:00] 如果状态没有变化，直接返回
-    if (order.status === normalizedStatus) {
+    // [2025-12-07 05:15:00] 检查是否需要更新
+    const statusUnchanged = order.status === normalizedStatus;
+    const rushOrderNeedsUpdate = rushOrder !== undefined && order.rushOrder !== Boolean(rushOrder);
+    
+    // [2025-12-07 05:30:00] 如果状态和加急标记都没有变化，直接返回
+    if (statusUnchanged && !rushOrderNeedsUpdate) {
       const currentOrder = await prisma.offlineOrder.findUnique({
         where: { id },
+        include: {
+          assets: true,
+          histories: {
+            orderBy: { createdAt: 'desc' },
+          },
+          productionWorkOrder: {
+            include: {
+              events: {
+                orderBy: { createdAt: 'desc' },
+              },
+            },
+          },
+        },
       });
       return res.json({
         success: true,

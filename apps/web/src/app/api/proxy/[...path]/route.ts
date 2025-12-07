@@ -21,6 +21,7 @@ const AUTH_REQUIRED_PATHS = [
   '/addresses',
   '/designs',
   '/cart',
+  '/sales', // [2025-12-07 05:30:00] Sales API 需要认证
 ];
 
 /**
