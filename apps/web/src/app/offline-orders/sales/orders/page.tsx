@@ -6,7 +6,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, salesOrdersApi, SalesOfflineOrderSummary, api } from '@/lib/api';
+import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
+import api from '@/lib/api';
 import useSWR from 'swr';
 
 // [2025-12-07 06:20:00] 状态选择组件 - 圆角标签 + 下拉箭头
