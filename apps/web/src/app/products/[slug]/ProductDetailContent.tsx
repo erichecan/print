@@ -12,6 +12,8 @@ import { productsApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/useToast';
 import { SocialShareMenu, ShareConfig } from '@/components/social-share';
+import { StructuredData } from '@/components/seo/StructuredData';
+import { generateProductSchema } from '@/lib/seo';
 
 interface ProductVariant {
   id: string;
@@ -247,8 +249,33 @@ export function ProductDetailContent() {
     ).values()
   );
 
+  // [2025-12-06 21:00:00] 生成产品结构化数据 for Issue #154
+  const productSchema = product ? generateProductSchema({
+    name: product.name,
+    description: product.description || `${product.name} - Custom apparel from suvernire plus`,
+    image: currentImage.startsWith('http') ? currentImage : (typeof window !== 'undefined' ? `${window.location.origin}${currentImage}` : currentImage),
+    price: (salePrice / 100).toFixed(2),
+    currency: 'CAD',
+    sku: product.sku,
+    brand: product.brand?.name || 'suvernire plus',
+    availability: selectedVariant && selectedVariant.stockQuantity > 0 ? 'InStock' : 'OutOfStock',
+  }) : null;
+
+  // [2025-12-06 21:00:00] 添加评分结构化数据 for Issue #154
+  const aggregateRatingSchema = product && product.rating.count > 0 ? {
+    '@context': 'https://schema.org',
+    '@type': 'AggregateRating',
+    ratingValue: product.rating.average.toString(),
+    reviewCount: product.rating.count.toString(),
+    bestRating: '5',
+    worstRating: '1',
+  } : null;
+
   return (
     <div className="max-w-container mx-auto px-4 py-6">
+      {/* [2025-12-06 21:00:00] 结构化数据 (JSON-LD) for Issue #154 */}
+      {productSchema && <StructuredData data={[productSchema, ...(aggregateRatingSchema ? [aggregateRatingSchema] : [])]} />}
+      
       {/* Main Product Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-12 items-start">
         {/* Left: Image Gallery */}

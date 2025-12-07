@@ -28,23 +28,26 @@ def test_rail_button_colors(page, base_url):
     time.sleep(3)  # 等待页面完全加载
     
     # 查找 Rail 按钮
-    rail_buttons = page.locator('.dl-rail__btn').all()
-    if not rail_buttons:
+    rail_buttons = page.locator('.dl-rail__btn')
+    button_count = rail_buttons.count()
+    if button_count == 0:
         print("❌ 未找到 Rail 按钮")
         page.screenshot(path='test-results/design-lab-rail-buttons-not-found.png', full_page=True)
         return False
     
-    print(f"✅ 找到 {len(rail_buttons)} 个 Rail 按钮")
+    print(f"✅ 找到 {button_count} 个 Rail 按钮")
     
     # 检查第一个按钮的颜色
-    first_button = rail_buttons[0]
+    first_button = rail_buttons.nth(0)
     color = first_button.evaluate('el => window.getComputedStyle(el).color')
     print(f"   第一个按钮颜色: {color}")
     
     # 检查按钮标签颜色
-    label = first_button.locator('.dl-rail__btn-label').first()
-    if label.count() > 0:
-        label_color = label.evaluate('el => window.getComputedStyle(el).color')
+    labels = page.locator('.dl-rail__btn-label')
+    label_count = labels.count()
+    if label_count > 0:
+        first_label = labels.nth(0)
+        label_color = first_label.evaluate('el => window.getComputedStyle(el).color')
         print(f"   按钮标签颜色: {label_color}")
         
         # 验证颜色是否为 rgb(191, 191, 191)
@@ -88,7 +91,7 @@ def test_rail_button_layout(page, base_url):
         return False
     
     # 检查第一个按钮的位置
-    first_button = page.locator('.dl-rail__btn').first()
+    first_button = page.locator('.dl-rail__btn').nth(0)
     if first_button.count() == 0:
         print("❌ 未找到 Rail 按钮")
         return False
@@ -201,7 +204,7 @@ def test_rail_button_active_state(page, base_url):
     time.sleep(3)
     
     # 查找第一个 Rail 按钮（Upload）
-    upload_btn = page.locator('.dl-rail__btn').first()
+    upload_btn = page.locator('.dl-rail__btn').nth(0)
     if upload_btn.count() == 0:
         print("❌ 未找到 Rail 按钮")
         return False
