@@ -814,11 +814,13 @@ exports.getProducts = async (req, res) => {
     
     if (isConnectionError) {
       logger.warn('[2025-01-29 22:30:00] Database connection/table issue, returning empty products list');
+      // [2025-12-07 15:25:00] 修复：确保 limit 变量已定义
+      const defaultLimit = parseInt(req.query.limit, 10) || 20;
       return res.json({
         data: [],
         pagination: {
           page: 1,
-          limit,
+          limit: defaultLimit,
           total: 0,
           totalPages: 0,
         },
@@ -828,11 +830,13 @@ exports.getProducts = async (req, res) => {
     // [2025-01-29 22:30:00] 对于其他查询错误，也返回空数组（可能是数据不存在）
     // 这样可以避免前端因为数据问题而完全无法工作
     logger.warn('[2025-01-29 22:30:00] Query error, returning empty products list to prevent frontend failure');
+    // [2025-12-07 15:25:00] 修复：确保 limit 变量已定义
+    const defaultLimit = parseInt(req.query.limit, 10) || 20;
     return res.json({
       data: [],
       pagination: {
         page: 1,
-        limit,
+        limit: defaultLimit,
         total: 0,
         totalPages: 0,
       },

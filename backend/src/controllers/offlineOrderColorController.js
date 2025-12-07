@@ -80,7 +80,13 @@ exports.createColor = async (req, res, next) => {
     if (error.code === 'P2002') {
       return next(new ConflictError('Color with this name already exists'));
     }
-    logger.error('[offlineOrderColorController] Error creating color:', error);
+    logger.error('[offlineOrderColorController] Error creating color:', {
+      error: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack,
+      colorName: name,
+    });
     next(new InternalServerError('Failed to create color'));
   }
 };

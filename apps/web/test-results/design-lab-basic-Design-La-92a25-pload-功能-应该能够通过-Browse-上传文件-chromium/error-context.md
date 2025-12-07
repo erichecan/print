@@ -1,0 +1,99 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - link "Logo" [ref=e6] [cursor=pointer]:
+            - /url: /
+          - navigation "Breadcrumb" [ref=e7]:
+            - button "My Designs" [ref=e8] [cursor=pointer]
+            - generic [ref=e9]: ">"
+            - button "Untitled Design" [ref=e10] [cursor=pointer]
+        - generic [ref=e11]:
+          - link "Phone" [ref=e12] [cursor=pointer]:
+            - /url: tel:+1234567890
+            - text: 📞 1-800-000-0000
+          - button "Chat" [ref=e13] [cursor=pointer]
+          - button "Sign In" [ref=e14] [cursor=pointer]
+    - generic [ref=e15]:
+      - navigation "Design tools" [ref=e16]:
+        - button "Upload image" [active] [pressed] [ref=e17] [cursor=pointer]:
+          - img [ref=e19]
+          - generic [ref=e22]: Upload
+        - button "Add text" [ref=e23] [cursor=pointer]:
+          - generic [ref=e24]: T
+          - generic [ref=e25]: Add Text
+        - button "Add art" [ref=e26] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e32]: Add Art
+        - button "Product colors" [ref=e33] [cursor=pointer]:
+          - img [ref=e35]
+          - generic [ref=e41]: Product Colors
+        - button "Add names" [ref=e42] [cursor=pointer]:
+          - generic [ref=e44]: "00"
+          - generic [ref=e45]: Add Names
+      - complementary "Tool panel" [ref=e46]:
+        - generic [ref=e48]:
+          - generic [ref=e49]:
+            - heading "Choose File To Upload" [level=2] [ref=e50]
+            - button "Close" [ref=e51] [cursor=pointer]:
+              - img [ref=e52]
+          - generic [ref=e55]:
+            - button "Browse Your Computer" [ref=e57] [cursor=pointer]
+            - generic [ref=e59]: or
+            - paragraph [ref=e61] [cursor=pointer]: Drag & Drop Anywhere
+            - generic [ref=e62]:
+              - img [ref=e64]
+              - paragraph [ref=e66]:
+                - text: Vector or high resolution artwork of 300 DPI or more will look the best. Max size of
+                - strong [ref=e67]: 20 MB
+                - text: .
+            - link "Sign in to access your saved uploads." [ref=e69] [cursor=pointer]:
+              - /url: "#"
+            - generic [ref=e70]:
+              - paragraph [ref=e71]: Need help with your upload?
+              - generic [ref=e72]:
+                - link "Chat now" [ref=e73] [cursor=pointer]:
+                  - /url: "#"
+                - text: or
+                - link "email service@customink.com" [ref=e74] [cursor=pointer]:
+                  - /url: mailto:service@customink.com
+      - region "Design canvas" [ref=e75]
+      - complementary "View options" [ref=e79]:
+        - button "Front view" [pressed] [ref=e80] [cursor=pointer]:
+          - img "Front view thumbnail" [ref=e82]
+          - generic [ref=e83]: Front
+        - button "Back view" [ref=e84] [cursor=pointer]:
+          - img "Back view thumbnail" [ref=e86]
+          - generic [ref=e87]: Back
+        - button "Sleeve Design" [ref=e88] [cursor=pointer]:
+          - generic [ref=e89]: Sleeve Design
+        - button "Zoom" [ref=e90] [cursor=pointer]:
+          - img [ref=e92]
+          - generic [ref=e95]: Zoom
+    - contentinfo [ref=e96]:
+      - generic [ref=e97]:
+        - button "+ Add Products" [ref=e98] [cursor=pointer]
+        - generic [ref=e99]:
+          - generic [ref=e101]: T
+          - generic [ref=e102]:
+            - generic [ref=e103]: Gildan Softstyle Jersey T-shirt
+            - generic [ref=e104]:
+              - link "Change Product" [ref=e105] [cursor=pointer]:
+                - /url: "#"
+              - generic [ref=e106]:
+                - checkbox "White" [checked] [ref=e107]
+                - generic [ref=e108]: White
+              - button "Change Color" [ref=e109] [cursor=pointer]
+      - generic [ref=e110]:
+        - button "Save | Share" [ref=e111] [cursor=pointer]:
+          - img [ref=e112]
+          - text: Save | Share
+        - button "Get Price" [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+          - text: Get Price
+  - alert [ref=e119]
+```

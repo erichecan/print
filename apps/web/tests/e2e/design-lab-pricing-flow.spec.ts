@@ -249,9 +249,9 @@ test.describe('Design Lab M3: 报价与下单流程测试', () => {
       
       // 查找尺码网格
       const sizeGrid = page.locator('text=/YS|YM|YL|S|M|L|XL|2XL/i').first();
-      const isVisible = await sizeGrid.isVisible({ timeout: 3000 }).catch(() => false);
+      const hasSizeGrid = await sizeGrid.isVisible({ timeout: 3000 }).catch(() => false);
       
-      expect(isVisible).toBeTruthy();
+      expect(hasSizeGrid).toBeTruthy();
     });
 
     test('应该能够输入尺码数量', async ({ page }) => {
@@ -277,9 +277,9 @@ test.describe('Design Lab M3: 报价与下单流程测试', () => {
       
       // 查找数量输入框
       const qtyInput = page.locator('input[type="number"][name*="qty" i], input[type="number"][name*="quantity" i]').first();
-      const isVisible = await qtyInput.isVisible({ timeout: 3000 }).catch(() => false);
+      const hasQtyInput = await qtyInput.isVisible({ timeout: 3000 }).catch(() => false);
       
-      if (isVisible) {
+      if (hasQtyInput) {
         await qtyInput.fill('5');
         await page.waitForTimeout(500);
       }
@@ -308,10 +308,10 @@ test.describe('Design Lab M3: 报价与下单流程测试', () => {
       
       // 查找加价文案（如 +$2.50）
       const priceText = page.locator('text=/\+\$.*|\+.*\$.*/i').first();
-      const isVisible = await priceText.isVisible({ timeout: 3000 }).catch(() => false);
+      const hasPriceText = await priceText.isVisible({ timeout: 3000 }).catch(() => false);
       
       // 加价文案可能存在
-      if (isVisible) {
+      if (hasPriceText) {
         await expect(priceText).toBeVisible();
       }
     });
@@ -339,10 +339,10 @@ test.describe('Design Lab M3: 报价与下单流程测试', () => {
       
       // 查找 Total Quantity
       const totalQty = page.locator('text=/Total Quantity|Total/i').first();
-      const isVisible = await totalQty.isVisible({ timeout: 3000 }).catch(() => false);
+      const hasTotalQty = await totalQty.isVisible({ timeout: 3000 }).catch(() => false);
       
       // Total Quantity 可能存在
-      if (isVisible) {
+      if (hasTotalQty) {
         await expect(totalQty).toBeVisible();
       }
     });
