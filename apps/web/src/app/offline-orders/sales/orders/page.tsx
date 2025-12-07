@@ -14,6 +14,9 @@ export default function SalesOrdersPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [orders, setOrders] = useState<SalesOfflineOrderSummary[]>([]);
   const [error, setError] = useState('');
+  const [currentUser, setCurrentUser] = useState<{ role?: string } | null>(null);
+  const [stages, setStages] = useState<Array<{ key: string; label: string }>>([]);
+  const [updatingStage, setUpdatingStage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,6 +31,22 @@ export default function SalesOrdersPage() {
         if (!me || !isSales) {
           router.replace('/offline-orders/sales/login');
           return;
+        }
+
+        if (!cancelled) {
+          setCurrentUser(me);
+        }
+
+        // [2025-12-07 04:55:00] 获取阶段配置（用于快速修改状态）
+        try {
+          const stagesRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/admin/offline-orders/config/stages`)
+            .then(res => res.json())
+            .catch(() => ({ stages: [] }));
+          if (!cancelled) {
+            setStages(stagesRes.stages || []);
+          }
+        } catch (e) {
+          console.warn('Failed to load stages:', e);
         }
       } catch (e) {
         router.replace('/offline-orders/sales/login');
@@ -64,6 +83,25 @@ export default function SalesOrdersPage() {
     router.push(`/offline-orders/sales/orders/${orderId}`);
   };
 
+  // [2025-12-07 04:55:00] 快速修改订单状态
+  const handleQuickUpdateStage = async (orderId: string, newStageKey: string) => {
+    if (!newStageKey) return;
+    
+    setUpdatingStage(orderId);
+    try {
+      await salesOrdersApi.updateStage(orderId, { stageKey: newStageKey });
+      // 刷新订单列表
+      const response = await salesOrdersApi.list({ page: 1, limit: 50 });
+      setOrders(response.data);
+    } catch (err: any) {
+      setError(err.message || '更新订单状态失败。');
+    } finally {
+      setUpdatingStage(null);
+    }
+  };
+
+  const isManager = currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase());
+
   if (authChecking) {
     return (
       <div className="sales-orders-shell">
@@ -82,13 +120,24 @@ export default function SalesOrdersPage() {
             <h1>Sales 线下订单列表</h1>
             <p>在这里查看你创建的线下订单（主管可查看全部订单）。</p>
           </div>
-          <button
-            type="button"
-            className="sales-orders-new"
-            onClick={() => window.open('/offline-orders', '_blank')}
-          >
-            新建线下订单
-          </button>
+          <div className="sales-orders-header-actions">
+            {isManager && (
+              <button
+                type="button"
+                className="sales-orders-config-btn"
+                onClick={() => router.push('/admin/offline-orders/config')}
+              >
+                配置管理
+              </button>
+            )}
+            <button
+              type="button"
+              className="sales-orders-new"
+              onClick={() => window.open('/offline-orders', '_blank')}
+            >
+              新建线下订单
+            </button>
+          </div>
         </header>
 
         {error && <div className="sales-orders-error">{error}</div>}
@@ -104,10 +153,11 @@ export default function SalesOrdersPage() {
                 <th>订单编号</th>
                 <th>项目名称</th>
                 <th>客户</th>
+                {isManager && <th>创建者</th>}
                 <th>数量</th>
                 <th>交付日期</th>
                 <th>状态</th>
-                <th>优先级</th>
+                <th>阶段</th>
                 <th>操作</th>
               </tr>
             </thead>
@@ -124,6 +174,18 @@ export default function SalesOrdersPage() {
                       </span>
                     </div>
                   </td>
+                  {isManager && (
+                    <td>
+                      {order.creator ? (
+                        <div className="sales-orders-creator">
+                          <span>{order.creator.name}</span>
+                          <span className="sales-orders-creator-sub">{order.creator.email}</span>
+                        </div>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                  )}
                   <td>{order.quantity ?? '—'}</td>
                   <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
                   <td>
@@ -132,7 +194,27 @@ export default function SalesOrdersPage() {
                     </span>
                     {order.rushOrder && <span className="tag tag-rush">加急</span>}
                   </td>
-                  <td>{order.stage?.label || '—'}</td>
+                  <td>
+                    <div className="sales-orders-stage">
+                      {stages.length > 0 ? (
+                        <select
+                          value={order.stage?.key || ''}
+                          onChange={(e) => handleQuickUpdateStage(order.id, e.target.value)}
+                          disabled={updatingStage === order.id}
+                          className="sales-orders-stage-select"
+                        >
+                          <option value="">—</option>
+                          {stages.map((stage) => (
+                            <option key={stage.key} value={stage.key}>
+                              {stage.label}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span>{order.stage?.label || '—'}</span>
+                      )}
+                    </div>
+                  </td>
                   <td>
                     <button
                       type="button"
@@ -171,6 +253,26 @@ export default function SalesOrdersPage() {
           justify-content: space-between;
           gap: 1rem;
           margin-bottom: 1.5rem;
+        }
+        .sales-orders-header-actions {
+          display: flex;
+          gap: 0.75rem;
+          align-items: center;
+        }
+        .sales-orders-config-btn {
+          border: none;
+          border-radius: 999px;
+          padding: 0.6rem 1.3rem;
+          font-size: 0.9rem;
+          font-weight: 600;
+          background: linear-gradient(135deg, #7c3aed, #6d28d9);
+          color: #ffffff;
+          cursor: pointer;
+          transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .sales-orders-config-btn:hover {
+          box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+          transform: translateY(-1px);
         }
         .sales-orders-header h1 {
           margin: 0 0 0.4rem;
@@ -223,6 +325,36 @@ export default function SalesOrdersPage() {
         .sales-orders-contact-sub {
           font-size: 0.8rem;
           color: #6b7280;
+        }
+        .sales-orders-creator {
+          display: flex;
+          flex-direction: column;
+        }
+        .sales-orders-creator-sub {
+          font-size: 0.8rem;
+          color: #6b7280;
+        }
+        .sales-orders-stage {
+          display: flex;
+          align-items: center;
+        }
+        .sales-orders-stage-select {
+          padding: 0.25rem 0.5rem;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 0.85rem;
+          background: #ffffff;
+          cursor: pointer;
+          min-width: 120px;
+        }
+        .sales-orders-stage-select:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .sales-orders-stage-select:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
         .tag {
           display: inline-flex;

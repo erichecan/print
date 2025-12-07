@@ -82,6 +82,7 @@ exports.listSalesOrders = async (req, res) => {
       };
     }
 
+    // [2025-12-07 04:50:00] 查询订单时，同时获取创建者信息（用于销售主管查看）
     const [orders, total] = await prisma.$transaction([
       prisma.offlineOrder.findMany({
         where,
@@ -91,12 +92,45 @@ exports.listSalesOrders = async (req, res) => {
           { createdAt: 'desc' },
           { orderCode: 'desc' },
         ],
+        include: {
+          // [2025-12-07 04:50:00] 通过 metadata.submittedByUserId 查找创建者
+          // 注意：这里需要手动查询用户信息，因为 Prisma 不支持通过 JSON 字段关联
+        },
       }),
       prisma.offlineOrder.count({ where }),
     ]);
 
+    // [2025-12-07 04:50:00] 获取所有订单的创建者信息
+    const submittedByUserIds = orders
+      .map(order => order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id)
+      .filter(Boolean);
+    
+    const creators = submittedByUserIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: submittedByUserIds } },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        })
+      : [];
+    
+    const creatorMap = new Map(creators.map(u => [u.id, u]));
+
     res.json({
-      data: orders.map(mapSalesOfflineOrder),
+      data: orders.map(order => {
+        const mapped = mapSalesOfflineOrder(order);
+        // [2025-12-07 04:50:00] 添加创建者信息
+        const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id;
+        if (submittedByUserId && creatorMap.has(submittedByUserId)) {
+          const creator = creatorMap.get(submittedByUserId);
+          mapped.creator = {
+            id: creator.id,
+            email: creator.email,
+            name: creator.firstName && creator.lastName 
+              ? `${creator.firstName} ${creator.lastName}` 
+              : creator.email.split('@')[0],
+          };
+        }
+        return mapped;
+      }),
       pagination: {
         page,
         limit,

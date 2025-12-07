@@ -745,6 +745,12 @@ export interface SalesOfflineOrderSummary {
     email: string;
     phone: string | null;
   };
+  // [2025-12-07 04:50:00] 创建者信息（用于销售主管查看）
+  creator?: {
+    id: string;
+    email: string;
+    name: string;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
