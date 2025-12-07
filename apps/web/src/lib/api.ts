@@ -8,7 +8,7 @@ import { API_BASE_URL } from './api-config';
 
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
-  body?: any;
+  body?: unknown; // [2025-12-07 02:30:00] Issue #105 - Replace any with unknown for type safety
   headers?: Record<string, string>;
 }
 
@@ -130,15 +130,18 @@ export interface ProductReviewSummary {
   };
 }
 
+// [2025-12-07 02:30:00] Issue #105 - Common pagination response type
+export interface PaginationResponse {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
 export interface ProductReviewsResponse {
   reviews: ProductReview[];
   summary: ProductReviewSummary;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination?: PaginationResponse;
 }
 
 export interface ProductReviewPayload {
@@ -189,8 +192,8 @@ export interface AccountOrderDetail {
   currency: string;
   createdAt: string;
   updatedAt: string;
-  shippingAddress?: any;
-  billingAddress?: any;
+  shippingAddress?: CheckoutAddressPayload | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+  billingAddress?: CheckoutAddressPayload | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   items: Array<{
     id: string;
     sku: string;
@@ -305,7 +308,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   // [2025-01-27 16:10:00] 处理空响应
   if (!response || !response.ok) {
     let errorMessage = `API Error: ${response?.status || 'Unknown'}`;
-    let errorDetails: any = null;
+    let errorDetails: { error?: string; message?: string; details?: string | Record<string, unknown> } | null = null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
     try {
       const errorText = await response.text();
       if (errorText) {
@@ -512,7 +515,7 @@ export const checkoutApi = {
       method: 'POST',
       ...(payload ? { body: payload } : {}),
     }),
-  getShippingRates: (address: any) =>
+  getShippingRates: (address: CheckoutAddressPayload) => // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
     api('/checkout/shipping-rates', { method: 'POST', body: { address } }),
   // [2025-01-28 11:35:00] 添加优惠券支持
   createPaymentIntent: (
@@ -560,7 +563,7 @@ export interface UserDesign {
 
 export const designsApi = {
   list: () => api<{ designs: UserDesign[]; total: number }>('/user/designs'),
-  get: (id: string) => api<{ data: any }>(`/designs/${id}`),
+  get: (id: string) => api<{ data: DesignDraft }>(`/designs/${id}`), // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   delete: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),
 };
 
@@ -587,7 +590,7 @@ export const ordersApi = {
       if (sortBy) query.append('sortBy', sortBy);
       if (sortOrder) query.append('sortOrder', sortOrder);
     }
-    return api<{ orders: AccountOrderDetail[]; pagination?: any } | { data: AccountOrderDetail[]; pagination?: any }>(`/orders?${query.toString()}`);
+    return api<{ orders: AccountOrderDetail[]; pagination?: PaginationResponse } | { data: AccountOrderDetail[]; pagination?: PaginationResponse }>(`/orders?${query.toString()}`); // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   },
   getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`),
   getByOrderNumber: (orderNumber: string, email: string) =>
@@ -674,7 +677,7 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
     // [2025-12-03 03:55:00] 对于 401 错误，抛出特殊错误以便调用方识别
     if (response.status === 401) {
       const error = new Error('UNAUTHORIZED');
-      (error as any).status = 401;
+      (error as Error & { status?: number }).status = 401; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type assertion
       throw error;
     }
     const error = await response.json().catch(() => ({ error: response.statusText }));
@@ -702,9 +705,10 @@ export const authApi = {
   me: async () => {
     try {
       return await sameOriginApi<UserProfile>('/api/auth/me');
-    } catch (err: any) {
+    } catch (err: unknown) { // [2025-12-07 02:30:00] Issue #105 - Replace any with unknown for type safety
       // 401 错误表示用户未登录，这是正常状态，不抛出错误
-      if (err?.message?.includes('401') || err?.message?.includes('Unauthorized')) {
+      const error = err instanceof Error ? err : new Error(String(err));
+      if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         throw new Error('UNAUTHORIZED'); // 使用特殊错误标识，让调用方可以区分
       }
       throw err;
@@ -816,10 +820,10 @@ export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
   requiresMockups?: boolean;
   requiresProof?: boolean;
   configuration?: OfflineOrderConfiguration | null; // 完整配置信息
-  metadata?: any;
-  assets: any[];
-  histories: any[];
-  productionWorkOrder: any | null;
+  metadata?: Record<string, unknown>; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+  assets: Array<{ id: string; fileName: string; url: string; [key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+  histories: Array<{ id: string; action: string; timestamp: string; [key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+  productionWorkOrder: { id: string; status: string; [key: string]: unknown } | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
 }
 
 export const salesOrdersApi = {
@@ -1064,7 +1068,7 @@ export const adminCategoriesApi = {
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
     const queryString = query.toString();
-    return api<{ data: AdminCategorySummary[]; pagination: any }>(
+    return api<{ data: AdminCategorySummary[]; pagination: PaginationResponse }>( // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
       `/admin/categories${queryString ? `?${queryString}` : ''}`
     );
   },
@@ -1309,8 +1313,8 @@ export interface AdminDesignSummary {
 }
 
 export interface AdminDesignDetail extends AdminDesignSummary {
-  canvasSnapshot: any;
-  pricingSnapshot?: any;
+  canvasSnapshot: DesignCanvasSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+  pricingSnapshot?: PricingSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   assets: Array<{
     id: string;
     fileName: string;
@@ -1786,9 +1790,24 @@ export const adminCostManagementApi = {
 };
 
 // [2025-01-27 16:15:00] Design Lab API Types
+// [2025-12-07 02:30:00] Issue #105 - Define proper types for canvas objects
+export interface CanvasObject {
+  type: string;
+  [key: string]: unknown; // Fabric.js objects have dynamic properties
+}
+
 export interface DesignCanvasSnapshot {
   size: { width: number; height: number };
-  objects: any[];
+  objects: CanvasObject[]; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+}
+
+// [2025-12-07 02:30:00] Issue #105 - Define pricing snapshot type
+export interface PricingSnapshot {
+  basePrice?: number;
+  quantity?: number;
+  unitPrice?: number;
+  totalPrice?: number;
+  [key: string]: unknown; // Allow additional pricing fields
 }
 
 export interface DesignDraft {
@@ -1800,7 +1819,7 @@ export interface DesignDraft {
   status: string;
   currentVersion: number;
   canvasSnapshot: DesignCanvasSnapshot;
-  pricingSnapshot?: any | null;
+  pricingSnapshot?: PricingSnapshot | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   thumbnailUrl?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1810,13 +1829,13 @@ export interface CreateDesignDraftPayload {
   productVariantId: string;
   name?: string;
   canvas?: DesignCanvasSnapshot;
-  pricing?: any;
+  pricing?: PricingSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
 }
 
 export interface UpdateDesignDraftPayload {
   name?: string;
   canvas?: DesignCanvasSnapshot;
-  pricing?: any;
+  pricing?: PricingSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   thumbnailUrl?: string;
   summary?: string;
 }
@@ -1828,7 +1847,7 @@ export const productColorImageApi = {
   getImageUrlByColor: (productId: string, colorName: string, view: 'front' | 'back' | 'sleeve' = 'front') =>
     api<{ data: { colorId: string; colorName: string; colorHex: string | null; imageUrl: string; view: string; allViews: { front: string; back: string; sleeve: string } } }>(`/product-color-images/by-color/${productId}/${encodeURIComponent(colorName)}?view=${view}`),
   getAll: (productId?: string) =>
-    api<{ data: Array<any>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`),
+    api<{ data: Array<{ id: string; productId: string; colorName: string; imageUrl: string; [key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
 };
 
 // [2025-01-27 16:15:00] Design Lab API
@@ -2275,7 +2294,7 @@ export interface DesignTemplate {
   tags: string[];
   thumbnailUrl?: string | null;
   previewUrl?: string | null;
-  designData: any;
+  designData: DesignCanvasSnapshot | Record<string, unknown>; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   productCategoryId?: string | null;
   usageCount: number;
   likesCount: number;

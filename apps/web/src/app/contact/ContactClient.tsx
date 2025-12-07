@@ -44,8 +44,9 @@ export default function ContactClient() {
         message: '',
         orderNumber: '',
       });
-    } catch (err: any) {
-      setError(err.message || 'Failed to submit contact form. Please try again.');
+    } catch (err: unknown) { // [2025-12-07 02:30:00] Issue #105 - Replace any with unknown for type safety
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit contact form. Please try again.';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
