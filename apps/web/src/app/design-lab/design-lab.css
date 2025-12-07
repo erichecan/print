@@ -111,11 +111,13 @@
   font-family: var(--dl-font-family);
 }
 
+/* [2025-12-06 12:35:00] 修复：Header breadcrumb 定位 - element-1 x:41, element-2 x:177 */
 .dl-header__breadcrumb {
   display: flex;
   align-items: center;
   gap: var(--dl-space-2);
   font-size: var(--dl-font-base);
+  margin-left: 41px; /* element-1 x 位置 */
 }
 
 .dl-header__breadcrumb-link {
@@ -129,19 +131,21 @@
 }
 
 /* [2025-01-30 23:15:00] 修复：My Designs 按钮样式对齐 Custom Ink - element-1 */
+/* [2025-12-06 12:35:00] 修复：确保位置和颜色正确 - x:41, y:0, width:116, height:32, color: rgb(74, 74, 74) */
 .dl-header__breadcrumb-link--button {
   background: transparent;
   border: none;
   padding: 0;
   font-size: var(--dl-font-sm); /* MuiButton-sizeSmall */
   font-weight: var(--dl-font-weight-normal);
-  color: rgb(74, 74, 74); /* Custom Ink element-1 颜色 */
+  color: rgb(74, 74, 74) !important; /* Custom Ink element-1 颜色 - 使用 !important 防止覆盖 */
   cursor: pointer;
   text-align: left;
-  min-width: 116px; /* element-1 width */
-  height: 32px; /* element-1 height */
+  width: 116px !important; /* element-1 width - 使用固定宽度 */
+  height: 32px !important; /* element-1 height */
   display: flex;
   align-items: center;
+  margin-left: 0; /* breadcrumb 已经有 margin-left: 41px */
 }
 
 .dl-header__breadcrumb-link--button:hover {
@@ -165,20 +169,22 @@
 }
 
 /* [2025-01-30 23:15:00] 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */
+/* [2025-12-06 12:35:00] 修复：确保位置和颜色正确 - x:177, y:0, width:139, height:32, color: rgba(0, 0, 0, 0.57) */
 .dl-header__breadcrumb-current--button {
   background: transparent;
   border: none;
   padding: 0;
   font-size: var(--dl-font-sm); /* MuiButton-sizeSmall */
   font-weight: var(--dl-font-weight-normal);
-  color: rgba(0, 0, 0, 0.57); /* Custom Ink element-2 颜色 */
+  color: rgba(0, 0, 0, 0.57) !important; /* Custom Ink element-2 颜色 - 使用 !important 防止覆盖 */
   cursor: pointer;
   text-align: left;
-  min-width: 139px; /* element-2 width */
-  height: 32px; /* element-2 height */
+  width: 139px !important; /* element-2 width - 使用固定宽度 */
+  height: 32px !important; /* element-2 height */
   display: flex;
   align-items: center;
   outline: none;
+  margin-left: 20px; /* element-2 x 位置 (177 - 41 - 116 = 20px，考虑分隔符宽度) */
 }
 
 .dl-header__breadcrumb-current--button:hover {
@@ -241,32 +247,38 @@
    2. Dark Rail - 左侧深灰色工具栏
    ============================================ */
 /* [2025-01-30 23:20:00] 修复：Rail 背景色对齐 Custom Ink - rgb(34, 32, 32) */
+/* [2025-12-06 12:30:00] 修复：确保 Rail 宽度和布局正确 */
+/* [2025-12-06 12:35:00] 修复：确保 Rail 按钮位置正确 - 所有按钮 x:16 */
 .dl-rail {
   grid-column: 1;
   background: rgb(34, 32, 32); /* Custom Ink Rail 背景色，与 #2C2C2C 接近 */
-  width: var(--dl-rail-width);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: var(--dl-space-2) 0;
-  gap: var(--dl-space-1);
+  width: 80px !important; /* 确保 Rail 宽度为 80px */
+  display: flex !important; /* 确保使用 flex 布局 */
+  flex-direction: column !important; /* 确保垂直排列 */
+  align-items: flex-start !important; /* 按钮靠左对齐，x:16 */
+  padding: 0; /* 移除 padding，使用 margin 控制位置 */
+  padding-top: 137px; /* element-18 (vertical-toolbar) y:137，所以第一个按钮从 y:169 开始 */
+  gap: 0; /* 移除 gap，使用 margin 控制间距 */
   overflow-y: auto;
+  position: relative; /* 确保定位上下文 */
 }
 
 /* [2025-01-30 23:20:00] 修复：Rail 按钮样式对齐 Custom Ink - element-8 到 element-12 */
 /* [2025-01-31 00:00:00] 像素级对齐：element-9 (Add Text) - x:16, y:239, width:68, height:70, color: rgb(191, 191, 191) */
+/* [2025-12-06 12:30:00] 修复：确保 Rail 按钮颜色正确应用，防止被其他样式覆盖 */
+/* [2025-12-06 12:35:00] 修复：确保 Rail 按钮位置正确 - x:16, 垂直排列 */
 .dl-rail__btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--dl-space-1);
-  width: 68px; /* Custom Ink element-9 width */
-  min-height: 70px; /* Custom Ink element-9 height */
+  width: 68px !important; /* Custom Ink element-9 width */
+  height: 70px !important; /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
   padding: var(--dl-space-2) var(--dl-space-1);
   background: transparent;
   border: none;
-  color: rgb(191, 191, 191); /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 */
+  color: rgb(191, 191, 191) !important; /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 - 使用 !important 防止覆盖 */
   cursor: pointer !important; /* [2025-01-30 21:35:00] 强制启用指针事件 */
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
@@ -278,6 +290,32 @@
   z-index: 10;
   -webkit-user-select: none;
   user-select: none;
+  margin: 0; /* 确保没有外边距影响位置 */
+  margin-left: 16px !important; /* element-8 到 element-12 的 x 位置都是 16 */
+}
+
+/* [2025-12-06 12:35:00] 修复：Product Colors 和 Add Names 按钮高度为 86px */
+.dl-rail__btn[aria-label*="Product colors"],
+.dl-rail__btn[aria-label*="Product Colors"],
+.dl-rail__btn[aria-label*="Add names"],
+.dl-rail__btn[aria-label*="Add Names"] {
+  height: 86px !important; /* element-11 和 element-12 的高度 */
+}
+
+/* [2025-12-06 12:35:00] 修复：Rail 按钮垂直间距 - element-8 y:169, element-9 y:239 (间距 70px) */
+.dl-rail__btn:first-of-type {
+  margin-top: 32px; /* element-8 y:169 - Rail padding-top:137 = 32px */
+}
+
+/* [2025-12-06 12:35:00] 修复：Rail 按钮之间的间距 - 标准按钮高度 70px */
+.dl-rail__btn:not(:first-of-type) {
+  margin-top: 0; /* 按钮之间没有间距，因为高度已经包含了间距 */
+}
+
+/* [2025-12-06 12:35:00] 修复：Product Colors 和 Add Names 之间的间距 - element-11 y:379, element-12 y:466 (间距 87px) */
+.dl-rail__btn[aria-label*="Product colors"] + .dl-rail__btn,
+.dl-rail__btn[aria-label*="Product Colors"] + .dl-rail__btn {
+  margin-top: 1px; /* element-12 y:466 - (element-11 y:379 + element-11 height:86) = 1px */
 }
 
 /* [2025-01-30 23:20:00] 修复：Rail 按钮悬停效果对齐 Custom Ink */
@@ -326,6 +364,7 @@
 }
 
 /* [2025-01-31 00:00:00] 像素级对齐：element-24 (Add Text 文本) - x:19, y:285, width:64, height:16 */
+/* [2025-12-06 12:30:00] 修复：确保 Rail 按钮标签颜色正确应用 */
 .dl-rail__btn-label {
   font-size: var(--dl-font-sm);
   line-height: 1.2;
@@ -334,7 +373,8 @@
   width: 64px; /* Custom Ink element-24 width */
   height: 16px; /* Custom Ink element-24 height */
   display: block;
-  color: rgb(191, 191, 191); /* Custom Ink element-24 color */
+  color: rgb(191, 191, 191) !important; /* Custom Ink element-24 color - 使用 !important 防止覆盖 */
+  font-weight: var(--dl-font-weight-normal);
 }
 
 /* ============================================

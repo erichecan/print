@@ -401,6 +401,45 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
           )}
           </div>
+              {statusHistoryData?.data && statusHistoryData.data.length > 0 ? (
+                <div className="admin-table-wrapper">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>时间</th>
+                        <th>从状态</th>
+                        <th>到状态</th>
+                        <th>操作人</th>
+                        <th>备注</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {statusHistoryData.data.map((history: any) => (
+                        <tr key={history.id}>
+                          <td>{new Date(history.createdAt).toLocaleString('zh-CN')}</td>
+                          <td>
+                            <span className={`status-badge status-${history.fromStatus?.toLowerCase() || 'unknown'}`}>
+                              {history.fromStatus || '—'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`status-badge status-${history.toStatus?.toLowerCase()}`}>
+                              {history.toStatus}
+                            </span>
+                          </td>
+                          <td>{history.actorName || history.actorId || '系统'}</td>
+                          <td>{history.note || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p style={{ color: '#64748b', padding: '16px' }}>暂无状态历史记录</p>
+              )}
+            </div>
+          )}
+>>>>>>> feature/issue-139-promotion-enhancement
 
           <div className="admin-form">
             <h3>Order Items</h3>

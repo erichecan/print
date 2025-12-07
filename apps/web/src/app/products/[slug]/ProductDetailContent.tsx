@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/useToast';
+import { SocialShareMenu, ShareConfig } from '@/components/social-share';
 
 interface ProductVariant {
   id: string;

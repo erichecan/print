@@ -2,9 +2,14 @@
  * Design Gallery Page
  * [2025-11-12 00:04:20] Migrated inspirational design grid from legacy static page
  * [2025-01-27 17:55:00] 补充 SEO 元数据
+ * [2025-12-06 20:00:00] 添加社交媒体分享功能 for Issue #142
  */
+'use client';
+
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
+import { SocialShareMenu } from '@/components/social-share';
+import { useEffect, useState } from 'react';
 
 // [2025-01-27 17:55:00] 生成设计画廊页面 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
