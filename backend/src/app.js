@@ -212,7 +212,10 @@ app.use('/api/addresses', require('./routes/addresses')); // [2025-01-27 14:00:0
 app.use('/api/user/preferences', require('./routes/userPreferences')); // [2025-01-27 14:45:00] User preferences routes
 // [2025-12-07 08:00:00] 简化的产品管理路由（必须在 /api/offline-orders 之前，避免路由冲突）
 // [2025-01-27 11:20:00] 重构：使用统一的产品管理路由
-app.use('/api/offline-orders/products', require('./routes/offlineOrderProductsPublic'));
+// [2025-01-27 16:35:00] 添加日志确认路由加载
+const offlineOrderProductsPublicRouter = require('./routes/offlineOrderProductsPublic');
+logger.info('[App] Loading route: /api/offline-orders/products');
+app.use('/api/offline-orders/products', offlineOrderProductsPublicRouter);
 app.use('/api/offline-orders', require('./routes/offlineOrders'));
 app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
 // [2025-12-06] PRD v2.0: 线下订单配置数据管理路由

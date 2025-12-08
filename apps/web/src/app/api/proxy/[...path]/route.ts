@@ -133,16 +133,33 @@ async function handleProxyRequest(
         cache: 'no-store',
       });
     } catch (fetchError: any) {
-      console.error('[API Proxy] Fetch error:', {
+      console.error('[API Proxy] ❌ Fetch error:', {
         timestamp,
         error: fetchError?.message,
         url: upstreamUrl,
-        name: fetchError?.name
+        name: fetchError?.name,
+        stack: process.env.NODE_ENV === 'development' ? fetchError?.stack : undefined
       });
+      
+      // [2025-12-07 13:50:00] 提供更详细的错误信息
+      const errorMessage = fetchError?.message || 'Unknown error';
+      const isConnectionError = errorMessage.includes('ECONNREFUSED') || 
+                                errorMessage.includes('fetch failed') ||
+                                errorMessage.includes('Failed to fetch');
+      
       return NextResponse.json(
         {
-          error: 'Failed to connect to backend server',
-          details: process.env.NODE_ENV === 'development' ? fetchError?.message : undefined,
+          error: isConnectionError 
+            ? '无法连接到后端服务器' 
+            : '后端服务器错误',
+          message: isConnectionError 
+            ? '请检查后端服务是否正在运行' 
+            : errorMessage,
+          details: process.env.NODE_ENV === 'development' ? {
+            url: upstreamUrl,
+            error: errorMessage,
+            path: backendPath
+          } : undefined,
         },
         { status: 503 }
       );
@@ -255,16 +272,22 @@ async function handleProxyRequest(
       headers: responseHeaders,
     });
   } catch (error: any) {
-    console.error('[API Proxy] Proxy error:', {
+    console.error('[API Proxy] ❌ Proxy error:', {
       timestamp,
       error: error?.message,
-      stack: error?.stack,
-      name: error?.name
+      stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
+      name: error?.name,
+      path: params.path
     });
     return NextResponse.json(
       {
-        error: 'Failed to proxy request',
-        details: process.env.NODE_ENV === 'development' ? error?.message : undefined,
+        error: '代理请求失败',
+        message: error?.message || '未知错误',
+        details: process.env.NODE_ENV === 'development' ? {
+          error: error?.message,
+          stack: error?.stack,
+          path: params.path
+        } : undefined,
       },
       { status: 500 }
     );

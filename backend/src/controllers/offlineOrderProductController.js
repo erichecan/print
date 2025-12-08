@@ -11,6 +11,12 @@ const { v4: uuidv4 } = require('uuid');
  */
 exports.listProducts = async (req, res, next) => {
   try {
+    logger.info('[offlineOrderProductController] listProducts called', {
+      path: req.path,
+      originalUrl: req.originalUrl,
+      url: req.url,
+    });
+    
     const products = await prisma.offline_order_products.findMany({
       where: {
         is_active: true,
@@ -27,6 +33,10 @@ exports.listProducts = async (req, res, next) => {
       },
     });
 
+    logger.info('[offlineOrderProductController] Found products', {
+      count: products.length,
+    });
+
     res.json({
       success: true,
       data: products.map(p => ({
@@ -38,11 +48,7 @@ exports.listProducts = async (req, res, next) => {
     });
   } catch (error) {
     logger.error('[offlineOrderProductController] Error listing products:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch products',
-      message: error.message,
-    });
+    next(error); // 使用 next 传递错误，而不是直接返回
   }
 };
 

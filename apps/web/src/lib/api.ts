@@ -312,9 +312,17 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   try {
     response = await fetch(requestUrl, config);
   } catch (error: unknown) {
-    // [2025-01-27 16:10:00] 处理网络错误（连接被拒绝、空响应等）
-    if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error('Network error: Unable to connect to server. Please check if the backend server is running.');
+    // [2025-12-07 13:45:00] 处理网络错误（连接被拒绝、空响应等）
+    if (error instanceof TypeError) {
+      const errorMessage = error.message;
+      if (errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED')) {
+        // [2025-12-07 13:45:00] 本地开发环境：提供更友好的错误提示
+        const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+        if (isLocalhost) {
+          throw new Error('无法连接到后端服务器。请确保后端服务器正在运行（端口 3001）。运行命令：cd backend && npm run dev');
+        }
+        throw new Error('网络错误：无法连接到服务器。请稍后重试。');
+      }
     }
     throw error;
   }

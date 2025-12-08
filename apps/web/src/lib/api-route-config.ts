@@ -63,8 +63,9 @@ export function getBackendApiBase(): string {
   // [2025-01-29 12:30:00] 生产环境不应该回退到 localhost
   const isDevelopment = process.env.NODE_ENV === 'development';
   if (!isDevelopment) {
-    // [2025-12-07 04:30:00] 生产环境强制使用后端 API 地址，避免使用 localhost
-    const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
+    // [2025-12-07 13:40:00] 生产环境强制使用后端 API 地址，避免使用 localhost
+    // 使用正确的前端域名对应的后端地址
+    const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
     console.warn('[API Route Config] ⚠️ 检测到生产环境，但 NEXT_PUBLIC_API_URL 未配置或包含 localhost，使用后端地址:', backendApiUrl);
     console.warn('[API Route Config] 当前环境变量:', {
       NEXT_PUBLIC_API_URL: publicApiUrl || '未设置',
