@@ -540,15 +540,31 @@ export const checkoutApi = {
   getShippingRates: (address: CheckoutAddressPayload) => // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
     api('/checkout/shipping-rates', { method: 'POST', body: { address } }),
   // [2025-01-28 11:35:00] 添加优惠券支持
+  // [2025-01-29 14:30:00] Enhanced: Added draftOrderId, amount, currency, customerEmail, metadata
   createPaymentIntent: (
     shippingAddress: CheckoutAddressPayload,
     shippingMethod: string = 'standard',
     couponCode?: string,
-    couponId?: string
+    couponId?: string,
+    draftOrderId?: string,
+    amount?: number,
+    currency?: string,
+    customerEmail?: string,
+    metadata?: Record<string, unknown>
   ) =>
     api<CheckoutPaymentIntentResponse>('/checkout/create-payment-intent', {
       method: 'POST',
-      body: { shippingAddress, shippingMethod, ...(couponCode ? { couponCode } : {}), ...(couponId ? { couponId } : {}) },
+      body: { 
+        shippingAddress, 
+        shippingMethod, 
+        ...(couponCode ? { couponCode } : {}), 
+        ...(couponId ? { couponId } : {}),
+        ...(draftOrderId ? { draftOrderId } : {}),
+        ...(amount !== undefined ? { amount } : {}),
+        ...(currency ? { currency } : {}),
+        ...(customerEmail ? { customerEmail } : {}),
+        ...(metadata ? { metadata } : {}),
+      },
     }),
   // [2025-01-28 11:35:00] 添加优惠券支持
   confirm: (

@@ -769,6 +769,25 @@ model PaymentMethod {
   @@map("payment_methods")
 }
 
+// [2025-01-29 14:30:00] WebhookEvent model for idempotency
+model WebhookEvent {
+  id              String   @id @default(uuid())
+  stripeEventId   String   @unique @map("stripe_event_id")
+  eventType       String   @map("event_type")
+  processedAt     DateTime @default(now()) @map("processed_at")
+  orderId         String?  @map("order_id")
+  paymentIntentId String?  @map("payment_intent_id")
+  success         Boolean  @default(true)
+  errorMessage    String?  @map("error_message") @db.Text
+  metadata        Json?
+
+  @@index([stripeEventId])
+  @@index([eventType])
+  @@index([paymentIntentId])
+  @@index([orderId])
+  @@map("webhook_events")
+}
+
 model SequelizeMeta {
   name String @id @db.VarChar(255)
 }

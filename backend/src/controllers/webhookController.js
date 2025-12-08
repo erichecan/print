@@ -2,6 +2,7 @@
  * Webhook Controller
  * [2025-11-04 23:55:00]
  * [2025-01-27 10:30:00] Enhanced with email notifications and better error handling
+ * [2025-01-29 14:30:00] Enhanced with idempotency, payment summary recording
  */
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
@@ -42,28 +43,115 @@ exports.handleStripeWebhook = async (req, res) => {
   }
 
   try {
-    // Handle the event
-    switch (event.type) {
-      case 'payment_intent.succeeded':
-        await handlePaymentIntentSucceeded(event.data.object);
-        break;
+    // [2025-01-29 14:30:00] Check idempotency - prevent duplicate processing
+    const existingEvent = await prisma.webhookEvent.findUnique({
+      where: { stripeEventId: event.id },
+    });
 
-      case 'payment_intent.payment_failed':
-        await handlePaymentIntentFailed(event.data.object);
-        break;
-
-      case 'charge.refunded':
-        await handleChargeRefunded(event.data.object);
-        break;
-
-      default:
-        logger.debug('Unhandled webhook event type', {
-          type: event.type,
-          id: event.id,
-        });
+    if (existingEvent) {
+      logger.info('Webhook event already processed (idempotency)', {
+        eventId: event.id,
+        eventType: event.type,
+        processedAt: existingEvent.processedAt,
+      });
+      return res.json({ received: true, message: 'Event already processed' });
     }
 
-    res.json({ received: true });
+    // [2025-01-29 14:30:00] Create webhook event record for idempotency
+    let webhookEventRecord;
+    try {
+      webhookEventRecord = await prisma.webhookEvent.create({
+        data: {
+          stripeEventId: event.id,
+          eventType: event.type,
+          metadata: {
+            eventData: event.data?.object?.id || null,
+          },
+        },
+      });
+    } catch (createError) {
+      // If creation fails due to unique constraint, another process already handled it
+      if (createError.code === 'P2002') {
+        logger.info('Webhook event already processed (race condition)', {
+          eventId: event.id,
+          eventType: event.type,
+        });
+        return res.json({ received: true, message: 'Event already processed' });
+      }
+      throw createError;
+    }
+
+    // Handle the event
+    let handlerSuccess = false;
+    let handlerError = null;
+    let orderId = null;
+    let paymentIntentId = null;
+
+    try {
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const result1 = await handlePaymentIntentSucceeded(event.data.object);
+          orderId = result1?.orderId || null;
+          paymentIntentId = event.data.object.id;
+          handlerSuccess = true;
+          break;
+
+        case 'payment_intent.payment_failed':
+          const result2 = await handlePaymentIntentFailed(event.data.object);
+          orderId = result2?.orderId || null;
+          paymentIntentId = event.data.object.id;
+          handlerSuccess = true;
+          break;
+
+        case 'charge.refunded':
+          const result3 = await handleChargeRefunded(event.data.object);
+          orderId = result3?.orderId || null;
+          paymentIntentId = event.data.object.payment_intent || null;
+          handlerSuccess = true;
+          break;
+
+        case 'payment_intent.canceled':
+          // [2025-01-29 14:30:00] Handle canceled payment intent
+          const result4 = await handlePaymentIntentCanceled(event.data.object);
+          orderId = result4?.orderId || null;
+          paymentIntentId = event.data.object.id;
+          handlerSuccess = true;
+          break;
+
+        default:
+          logger.debug('Unhandled webhook event type', {
+            type: event.type,
+            id: event.id,
+          });
+          handlerSuccess = true; // Not an error, just unhandled
+      }
+
+      // [2025-01-29 14:30:00] Update webhook event record with result
+      await prisma.webhookEvent.update({
+        where: { id: webhookEventRecord.id },
+        data: {
+          success: handlerSuccess,
+          orderId,
+          paymentIntentId,
+          errorMessage: handlerError?.message || null,
+        },
+      });
+
+      res.json({ received: true });
+    } catch (handlerError) {
+      // [2025-01-29 14:30:00] Update webhook event record with error
+      await prisma.webhookEvent.update({
+        where: { id: webhookEventRecord.id },
+        data: {
+          success: false,
+          orderId,
+          paymentIntentId,
+          errorMessage: handlerError.message,
+        },
+      });
+
+      throw handlerError;
+    }
   } catch (error) {
     logger.error('Error handling webhook', {
       eventType: event.type,
@@ -84,6 +172,7 @@ exports.handleStripeWebhook = async (req, res) => {
  * Handle payment_intent.succeeded event
  * [2025-11-04 23:55:00]
  * [2025-01-27 10:30:00] Enhanced with email notification
+ * [2025-01-29 14:30:00] Enhanced with payment summary recording (balance_transaction, fee)
  */
 async function handlePaymentIntentSucceeded(paymentIntent) {
   try {
@@ -107,17 +196,51 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
       logger.warn('Order not found for payment intent', {
         paymentIntentId: paymentIntent.id,
       });
-      return;
+      return { orderId: null };
+    }
+
+    // [2025-01-29 14:30:00] Fetch charge details to get balance_transaction and fee
+    let balanceTransactionId = null;
+    let paymentFee = null;
+
+    if (paymentIntent.latest_charge) {
+      try {
+        const charge = await stripe.charges.retrieve(paymentIntent.latest_charge);
+        balanceTransactionId = charge.balance_transaction;
+        
+        // [2025-01-29 14:30:00] Get fee from balance transaction
+        if (balanceTransactionId) {
+          const balanceTransaction = await stripe.balanceTransactions.retrieve(balanceTransactionId);
+          // Fee is in the smallest currency unit (cents), convert to CAD
+          paymentFee = balanceTransaction.fee / 100;
+        }
+      } catch (stripeError) {
+        logger.warn('Failed to fetch charge/balance transaction details', {
+          paymentIntentId: paymentIntent.id,
+          error: stripeError.message,
+        });
+        // Don't fail webhook if we can't get fee details
+      }
     }
 
     // Update order status to PROCESSING if still PENDING
     if (order.status === 'PENDING' && order.paymentStatus === 'PENDING') {
+      const updateData = {
+        paymentStatus: 'COMPLETED',
+        status: 'PROCESSING',
+      };
+
+      // [2025-01-29 14:30:00] Add payment summary if available
+      if (balanceTransactionId) {
+        updateData.balanceTransactionId = balanceTransactionId;
+      }
+      if (paymentFee !== null) {
+        updateData.paymentFee = paymentFee;
+      }
+
       const updatedOrder = await prisma.order.update({
         where: { id: order.id },
-        data: {
-          paymentStatus: 'COMPLETED',
-          status: 'PROCESSING',
-        },
+        data: updateData,
         include: {
           items: {
             include: {
@@ -135,6 +258,8 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
         orderNumber: order.orderNumber,
         orderId: order.id,
         paymentIntentId: paymentIntent.id,
+        balanceTransactionId,
+        paymentFee,
       });
 
       // Send order confirmation email (don't fail webhook if email fails)
@@ -147,12 +272,15 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
         });
         // Don't throw - email failure shouldn't fail webhook
       }
+
+      return { orderId: order.id };
     } else {
       logger.debug('Order status not updated (already processed)', {
         orderNumber: order.orderNumber,
         currentStatus: order.status,
         currentPaymentStatus: order.paymentStatus,
       });
+      return { orderId: order.id };
     }
   } catch (error) {
     logger.error('Error handling payment_intent.succeeded', {
@@ -193,7 +321,7 @@ async function handlePaymentIntentFailed(paymentIntent) {
       logger.warn('Order not found for failed payment intent', {
         paymentIntentId: paymentIntent.id,
       });
-      return;
+      return { orderId: null };
     }
 
     // [2025-12-06 11:30:00] Restore inventory if order was created and payment failed
@@ -242,6 +370,7 @@ async function handlePaymentIntentFailed(paymentIntent) {
     });
 
     // TODO: Send payment failure notification email (optional)
+    return { orderId: order.id };
   } catch (error) {
     logger.error('Error handling payment_intent.payment_failed', {
       paymentIntentId: paymentIntent.id,
@@ -313,10 +442,87 @@ async function handleChargeRefunded(charge) {
 
     // Note: Refund confirmation email is sent from adminOrderController
     // when refund is initiated, not from webhook
+    return { orderId: order.id };
   } catch (error) {
     logger.error('Error handling charge.refunded', {
       paymentIntentId: charge.payment_intent,
       chargeId: charge.id,
+      error: error.message,
+      stack: error.stack,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Handle payment_intent.canceled event
+ * [2025-01-29 14:30:00] Handle canceled payment intents
+ */
+async function handlePaymentIntentCanceled(paymentIntent) {
+  try {
+    const order = await prisma.order.findUnique({
+      where: { paymentIntentId: paymentIntent.id },
+      include: {
+        items: {
+          include: {
+            variant: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      logger.warn('Order not found for canceled payment intent', {
+        paymentIntentId: paymentIntent.id,
+      });
+      return { orderId: null };
+    }
+
+    // Restore inventory if order was created
+    if (order.status === 'PENDING' && order.items && order.items.length > 0) {
+      try {
+        await increaseInventory(
+          order.items.map((item) => ({
+            variantId: item.variantId,
+            quantity: item.quantity,
+          }))
+        );
+
+        logger.info('Inventory restored for canceled payment', {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          paymentIntentId: paymentIntent.id,
+          itemsRestored: order.items.length,
+        });
+      } catch (inventoryError) {
+        logger.error('Failed to restore inventory for canceled payment', {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          paymentIntentId: paymentIntent.id,
+          error: inventoryError.message,
+        });
+      }
+    }
+
+    // Update order payment status to FAILED
+    await prisma.order.update({
+      where: { id: order.id },
+      data: {
+        paymentStatus: 'FAILED',
+        status: 'CANCELLED',
+      },
+    });
+
+    logger.info('Order payment canceled via webhook', {
+      orderNumber: order.orderNumber,
+      orderId: order.id,
+      paymentIntentId: paymentIntent.id,
+    });
+
+    return { orderId: order.id };
+  } catch (error) {
+    logger.error('Error handling payment_intent.canceled', {
+      paymentIntentId: paymentIntent.id,
       error: error.message,
       stack: error.stack,
     });

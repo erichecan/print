@@ -28,6 +28,7 @@ import {
 } from '@/lib/api';
 import { validateAddressForm, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
 import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:55:00] Toast 通知
+import { mapStripeError } from '@/utils/stripeErrorMapping'; // [2025-01-29 14:30:00] Stripe error mapping
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
@@ -687,11 +688,17 @@ function CheckoutForm({
       const billingPayload = sameBilling ? shippingPayload : mapAddressForApi(billingAddress);
 
       // [2025-01-28 11:35:00] 传递优惠券信息到 createPaymentIntent
+      // [2025-01-29 14:30:00] Enhanced: Pass amount for validation, customerEmail, metadata
       const paymentIntentResponse = await checkoutApi.createPaymentIntent(
         shippingPayload,
         selectedShipping,
         appliedCoupon?.code,
-        appliedCoupon?.id // 如果前端有存储 couponId，可以传递
+        appliedCoupon?.id, // 如果前端有存储 couponId，可以传递
+        undefined, // draftOrderId (not used currently)
+        totals.total, // amount for validation
+        'CAD', // currency
+        shippingPayload.email, // customerEmail
+        { cartId: cart.id } // metadata
       );
 
       // [2025-01-28 11:35:00] 更新优惠券状态（如果 paymentIntentResponse 包含优惠券信息）
@@ -708,9 +715,15 @@ function CheckoutForm({
 
       setPaymentStep('confirming');
 
+      // [2025-01-29 14:30:00] Use confirmPayment with return_url and receipt_email
       // [2025-12-06 17:20:00] Use saved payment method or new card (Issue #112)
       let paymentIntent;
       let stripeError = null;
+
+      // [2025-01-29 14:30:00] Build return URL for 3D Secure and other redirects
+      const returnUrl = typeof window !== 'undefined' 
+        ? `${window.location.origin}/checkout/success?payment_intent=${paymentIntentResponse.paymentIntentId}`
+        : '/checkout/success';
 
       if (selectedPaymentMethod && selectedPaymentMethod !== 'new') {
         // Use saved payment method
@@ -719,6 +732,8 @@ function CheckoutForm({
           throw new Error('Selected payment method not found');
         }
 
+        // [2025-01-29 14:30:00] Use confirmCardPayment for saved payment methods
+        // Note: receipt_email is set when creating PaymentIntent, return_url not supported by confirmCardPayment
         const { error, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
           paymentIntentResponse.clientSecret,
           {
@@ -729,12 +744,15 @@ function CheckoutForm({
         stripeError = error;
         paymentIntent = confirmedIntent;
       } else {
-        // Use new card
+        // Use new card with CardElement
         const cardElement = elements.getElement(CardElement);
         if (!cardElement) {
           throw new Error('Payment form is not ready. Please reload and try again.');
         }
 
+        // [2025-01-29 14:30:00] Use confirmCardPayment with CardElement
+        // Note: receipt_email is set when creating PaymentIntent (backend)
+        // For 3D Secure, Stripe will handle redirects automatically
         const { error, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
           paymentIntentResponse.clientSecret,
           {
@@ -792,13 +810,28 @@ function CheckoutForm({
         }
       }
 
+      // [2025-01-29 14:30:00] Handle payment result - check for redirect
+      // Note: With confirmCardPayment, 3D Secure is handled automatically
+      // If status is requires_action, Stripe Elements will show the authentication modal
+      // We don't need to handle redirects manually with confirmCardPayment
+
       if (stripeError) {
-        // [2025-01-27 10:30:00] 支付错误处理：不跳转页面，显示错误让用户重试
-        const errorMsg = stripeError.message || 'Payment failed. Please check your card details and try again.';
-        setSubmitError(errorMsg);
-        setCardError(stripeError.message || 'Card payment failed');
+        // [2025-01-29 14:30:00] Use error mapping for user-friendly messages
+        const errorMapping = mapStripeError(stripeError);
+        setSubmitError(errorMapping.userMessage);
+        setCardError(errorMapping.userMessage);
         setPaymentStep('form');
-        showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
+        showError(errorMapping.userMessage); // [2025-01-27 16:55:00] 显示 Toast 通知
+        
+        // [2025-01-29 14:30:00] Log error details for debugging
+        console.error('[Payment Error]', {
+          message: errorMapping.message,
+          userMessage: errorMapping.userMessage,
+          errorCode: errorMapping.errorCode,
+          canRetry: errorMapping.canRetry,
+          originalError: stripeError,
+        });
+        
         return; // 不跳转，让用户有机会重试
       }
 

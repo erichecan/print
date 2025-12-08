@@ -493,21 +493,31 @@ exports.getShippingRates = async (req, res) => {
 /**
  * POST /api/checkout/create-payment-intent - Create Stripe PaymentIntent
  * [2025-11-04 23:53:00]
+ * [2025-01-29 14:30:00] Enhanced: Added idempotencyKey, amount validation, draftOrderId support, capture_method
  */
 exports.createPaymentIntent = async (req, res) => {
   try {
-    const { shippingAddress, shippingMethod = 'standard', couponCode } = req.body; // [2025-01-28 11:30:00] 支持优惠券代码
+    const { 
+      shippingAddress, 
+      shippingMethod = 'standard', 
+      couponCode,
+      draftOrderId, // [2025-01-29 14:30:00] Optional draft order ID
+      amount, // [2025-01-29 14:30:00] Optional amount from frontend (for validation)
+      currency = 'CAD',
+      customerEmail, // [2025-01-29 14:30:00] Customer email for receipt
+      metadata: additionalMetadata = {}, // [2025-01-29 14:30:00] Additional metadata
+    } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
     if (!shippingAddress) {
-      return res.status(400).json({ error: 'Shipping address is required' });
+      return res.status(400).json({ error: 'Shipping address is required', errorCode: 'MISSING_ADDRESS' });
     }
 
     const cart = await getOrCreateCart(userId, sessionId);
 
     if (cart.items.length === 0) {
-      return res.status(400).json({ error: 'Cart is empty' });
+      return res.status(400).json({ error: 'Cart is empty', errorCode: 'EMPTY_CART' });
     }
 
     // Calculate totals
@@ -523,7 +533,7 @@ exports.createPaymentIntent = async (req, res) => {
     // [2025-01-28 11:30:00] Validate coupon and calculate discount (on subtotal after promotion)
     const couponResult = await validateCouponAndCalculateDiscount(couponCode, subtotalAfterPromotion, userId);
     if (couponResult.error) {
-      return res.status(400).json({ error: couponResult.error });
+      return res.status(400).json({ error: couponResult.error, errorCode: 'INVALID_COUPON' });
     }
     const couponDiscount = couponResult.discount || 0;
     const totalDiscount = promotionDiscount + couponDiscount; // [2025-01-28 12:25:00] 总折扣
@@ -531,7 +541,26 @@ exports.createPaymentIntent = async (req, res) => {
     const shippingCost = calculateShipping(shippingAddress.country, shippingAddress.province, shippingMethod);
     // [2025-01-28 12:25:00] Tax is calculated on subtotal minus all discounts
     const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
-    const total = subtotal - totalDiscount + shippingCost + tax;
+    const calculatedTotal = subtotal - totalDiscount + shippingCost + tax;
+
+    // [2025-01-29 14:30:00] Validate amount if provided (prevent frontend tampering)
+    if (amount !== undefined) {
+      const amountDiff = Math.abs(amount - calculatedTotal);
+      if (amountDiff > 0.01) { // Allow 1 cent tolerance for rounding
+        logger.warn('Amount mismatch detected', {
+          frontendAmount: amount,
+          calculatedAmount: calculatedTotal,
+          difference: amountDiff,
+          userId,
+          sessionId,
+        });
+        return res.status(400).json({ 
+          error: 'Order amount validation failed. Please refresh and try again.', 
+          errorCode: 'AMOUNT_MISMATCH',
+          details: 'The order total has changed. Please refresh the page.',
+        });
+      }
+    }
 
     // Create PaymentIntent with Stripe
     // [2025-11-21 10:55:00] 检查 Stripe 配置
@@ -543,46 +572,51 @@ exports.createPaymentIntent = async (req, res) => {
     // [2025-11-21 10:55:00] 延迟初始化 Stripe 客户端
     const stripe = getStripe();
 
+    // [2025-01-29 14:30:00] Generate idempotency key for safe retries
+    const idempotencyKey = `${userId || sessionId || 'guest'}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    // [2025-01-29 14:30:00] Build metadata
+    const paymentMetadata = {
+      userId: userId || '',
+      sessionId: sessionId || '',
+      itemCount: cart.items.length.toString(),
+      ...(draftOrderId ? { draftOrderId } : {}),
+      ...(couponResult.coupon ? { couponCode: couponResult.coupon.code, couponId: couponResult.coupon.id } : {}),
+      ...(promotionResult.promotions && promotionResult.promotions.length > 0
+        ? { promotionIds: promotionResult.promotions.map((p) => p.promotionId).join(',') }
+        : {}),
+      ...additionalMetadata, // [2025-01-29 14:30:00] Allow additional metadata
+    };
+
     logger.info('Creating PaymentIntent with:', {
-      amount: Math.round(total * 100),
-      currency: 'cad',
-      metadata: {
-        userId: userId || '',
-        sessionId: sessionId || '',
-        itemCount: cart.items.length.toString(),
-        ...(couponResult.coupon ? { couponCode: couponResult.coupon.code, couponId: couponResult.coupon.id } : {}),
-        ...(promotionResult.promotions && promotionResult.promotions.length > 0
-          ? { promotionIds: promotionResult.promotions.map((p) => p.promotionId).join(',') }
-          : {}), // [2025-01-28 12:25:00] 在 metadata 中记录促销活动信息
-      },
+      amount: Math.round(calculatedTotal * 100),
+      currency: currency.toLowerCase(),
+      idempotencyKey,
+      metadata: paymentMetadata,
     });
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(total * 100), // Convert to cents
-      currency: 'cad',
-      metadata: {
-        userId: userId || '',
-        sessionId: sessionId || '',
-        itemCount: cart.items.length.toString(),
-        ...(couponResult.coupon ? { couponCode: couponResult.coupon.code, couponId: couponResult.coupon.id } : {}), // [2025-01-28 11:30:00] 在 metadata 中记录优惠券信息
-        ...(promotionResult.promotions && promotionResult.promotions.length > 0
-          ? { promotionIds: promotionResult.promotions.map((p) => p.promotionId).join(',') }
-          : {}), // [2025-01-28 12:25:00] 在 metadata 中记录促销活动信息
-      },
+      amount: Math.round(calculatedTotal * 100), // Convert to cents
+      currency: currency.toLowerCase(),
+      capture_method: 'automatic', // [2025-01-29 14:30:00] Automatic capture
+      metadata: paymentMetadata,
+      receipt_email: customerEmail || shippingAddress.email, // [2025-01-29 14:30:00] Receipt email
+    }, {
+      idempotencyKey, // [2025-01-29 14:30:00] Prevent duplicate payment intents
     });
 
     res.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      amount: total,
-      currency: 'CAD',
+      amount: calculatedTotal,
+      currency: currency.toUpperCase(),
       breakdown: {
         subtotal: Math.round(subtotal * 100) / 100,
         promotionDiscount: Math.round(promotionDiscount * 100) / 100, // [2025-01-28 12:25:00] 促销折扣
         discount: Math.round(totalDiscount * 100) / 100, // [2025-01-28 12:25:00] 总折扣（促销+优惠券）
         shipping: Math.round(shippingCost * 100) / 100,
         tax: Math.round(tax * 100) / 100,
-        total: Math.round(total * 100) / 100,
+        total: Math.round(calculatedTotal * 100) / 100,
       }, // [2025-11-12 00:45:10] 返回费用明细供前端展示
       ...(promotionResult.promotions && promotionResult.promotions.length > 0
         ? { promotions: promotionResult.promotions }
@@ -591,16 +625,20 @@ exports.createPaymentIntent = async (req, res) => {
     });
   } catch (error) {
     // [2025-11-21 10:55:00] 改进错误处理和日志记录
+    // [2025-01-29 14:30:00] Enhanced error handling with error codes
     logger.error('Error creating payment intent:', {
       error: error.message,
       stack: error.stack,
       stripeError: error.raw || error.type || null,
+      userId,
+      sessionId,
     });
     
     // 如果是 Stripe 配置错误，返回更明确的错误信息
     if (error.message.includes('STRIPE_SECRET_KEY is not configured')) {
       return res.status(500).json({ 
         error: 'Stripe is not configured', 
+        errorCode: 'STRIPE_NOT_CONFIGURED',
         details: 'Please configure STRIPE_SECRET_KEY in environment variables' 
       });
     }
@@ -609,12 +647,26 @@ exports.createPaymentIntent = async (req, res) => {
     if (error.type && error.raw) {
       return res.status(500).json({ 
         error: 'Failed to create payment intent', 
+        errorCode: 'STRIPE_API_ERROR',
         details: error.message,
         stripeError: error.type,
       });
     }
     
-    res.status(500).json({ error: 'Failed to create payment intent', details: error.message });
+    // 网络错误
+    if (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('ECONNREFUSED')) {
+      return res.status(503).json({ 
+        error: 'Network error. Please try again later.', 
+        errorCode: 'NETWORK_ERROR',
+        details: error.message,
+      });
+    }
+    
+    res.status(500).json({ 
+      error: 'Failed to create payment intent', 
+      errorCode: 'INTERNAL_ERROR',
+      details: error.message 
+    });
   }
 };
 
