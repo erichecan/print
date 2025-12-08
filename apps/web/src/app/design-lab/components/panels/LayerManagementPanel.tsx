@@ -206,6 +206,29 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     }
   };
 
+  // [2025-12-08] 重命名图层
+  const handleRenameLayer = (layer: LayerItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!canvas) return;
+
+    const newName = prompt('Enter new layer name:', layer.name);
+    if (newName && newName.trim() && newName !== layer.name) {
+      // 更新对象的name属性
+      (layer.object as any).name = newName.trim();
+      // 如果是文本对象，也更新文本内容（如果名称来自文本内容）
+      if (layer.object.type === 'i-text' || layer.object.type === 'textbox' || layer.object.type === 'text') {
+        const textObj = layer.object as fabric.IText;
+        // 只有当名称来自文本内容时才更新文本
+        if (textObj.text === layer.name) {
+          textObj.set('text', newName.trim());
+        }
+      }
+      canvas.renderAll();
+      updateLayers();
+      onUpdate?.();
+    }
+  };
+
   // 拖拽开始
   const handleDragStart = (layerId: string, e: React.DragEvent) => {
     setDraggedLayerId(layerId);
@@ -481,40 +504,48 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
                             onDrop={(e) => handleDrop(layer.id, e)}
                             onClick={() => handleLayerSelect(layer)}
                           >
-                            <div className="dl-layer-management-panel__item-content">
-                              <span className="dl-layer-management-panel__item-icon">
-                                {getLayerIcon(layer.type)}
-                              </span>
-                              <span className="dl-layer-management-panel__item-name" title={layer.name}>
-                                {layer.name}
-                              </span>
-                            </div>
-                            <div className="dl-layer-management-panel__item-controls">
-                              <button
-                                className={`dl-layer-management-panel__control-btn ${layer.visible ? 'is-visible' : ''}`}
-                                onClick={(e) => handleToggleVisibility(layer, e)}
-                                title={layer.visible ? 'Hide' : 'Show'}
-                                type="button"
-                              >
-                                {layer.visible ? '👁' : '👁‍🗨'}
-                              </button>
-                              <button
-                                className={`dl-layer-management-panel__control-btn ${layer.locked ? 'is-locked' : ''}`}
-                                onClick={(e) => handleToggleLock(layer, e)}
-                                title={layer.locked ? 'Unlock' : 'Lock'}
-                                type="button"
-                              >
-                                {layer.locked ? '🔒' : '🔓'}
-                              </button>
-                              <button
-                                className="dl-layer-management-panel__control-btn"
-                                onClick={(e) => handleDeleteLayer(layer, e)}
-                                title="Delete"
-                                type="button"
-                              >
-                                🗑
-                              </button>
-                            </div>
+                <div className="dl-layer-management-panel__item-content">
+                  <span className="dl-layer-management-panel__item-icon">
+                    {getLayerIcon(layer.type)}
+                  </span>
+                  <span className="dl-layer-management-panel__item-name" title={layer.name}>
+                    {layer.name}
+                  </span>
+                </div>
+                <div className="dl-layer-management-panel__item-controls">
+                  <button
+                    className={`dl-layer-management-panel__control-btn ${layer.visible ? 'is-visible' : ''}`}
+                    onClick={(e) => handleToggleVisibility(layer, e)}
+                    title={layer.visible ? 'Hide' : 'Show'}
+                    type="button"
+                  >
+                    {layer.visible ? '👁' : '👁‍🗨'}
+                  </button>
+                  <button
+                    className={`dl-layer-management-panel__control-btn ${layer.locked ? 'is-locked' : ''}`}
+                    onClick={(e) => handleToggleLock(layer, e)}
+                    title={layer.locked ? 'Unlock' : 'Lock'}
+                    type="button"
+                  >
+                    {layer.locked ? '🔒' : '🔓'}
+                  </button>
+                  <button
+                    className="dl-layer-management-panel__control-btn"
+                    onClick={(e) => handleRenameLayer(layer, e)}
+                    title="Rename"
+                    type="button"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    className="dl-layer-management-panel__control-btn"
+                    onClick={(e) => handleDeleteLayer(layer, e)}
+                    title="Delete"
+                    type="button"
+                  >
+                    🗑
+                  </button>
+                </div>
                           </div>
                         );
                       })}
@@ -565,6 +596,14 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
                     type="button"
                   >
                     {layer.locked ? '🔒' : '🔓'}
+                  </button>
+                  <button
+                    className="dl-layer-management-panel__control-btn"
+                    onClick={(e) => handleRenameLayer(layer, e)}
+                    title="Rename"
+                    type="button"
+                  >
+                    ✏️
                   </button>
                   <button
                     className="dl-layer-management-panel__control-btn"

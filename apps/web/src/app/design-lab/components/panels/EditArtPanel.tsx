@@ -479,6 +479,30 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
           </button>
           <button
             className="dl-edit-art-panel__btn"
+            onClick={() => {
+              if (!selectedArt || !canvas) return;
+              canvas.bringForward(selectedArt);
+              canvas.renderAll();
+              onUpdate();
+            }}
+            type="button"
+          >
+            Bring Forward
+          </button>
+          <button
+            className="dl-edit-art-panel__btn"
+            onClick={() => {
+              if (!selectedArt || !canvas) return;
+              canvas.sendBackwards(selectedArt);
+              canvas.renderAll();
+              onUpdate();
+            }}
+            type="button"
+          >
+            Send Backward
+          </button>
+          <button
+            className="dl-edit-art-panel__btn"
             onClick={handleSendToBack}
             type="button"
           >

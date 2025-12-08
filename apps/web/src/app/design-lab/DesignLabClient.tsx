@@ -661,15 +661,25 @@ const DesignLabClient: React.FC = () => {
 
   // [2025-01-30 16:30:00] 从 DesignCanvasSnapshot 恢复 Fabric 画布
   // [2025-01-30 21:25:00] 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
+  // [2025-12-08 23:00:00] 修复：为恢复的对象添加删除控件
   const snapshotToCanvas = useCallback((snapshot: DesignCanvasSnapshot, canvas: fabric.Canvas) => {
     // 清除现有对象（保留背景）
     const objectsToRemove = canvas.getObjects().filter((obj: fabric.Object) => obj.name !== 'background');
     objectsToRemove.forEach((obj: fabric.Object) => canvas.remove(obj));
     
+    // [2025-12-08 23:00:00] 获取删除控件（如果已创建）
+    const deleteControl = (canvas as any).deleteControl;
+    
     // 恢复对象
     snapshot.objects.forEach((objData: any) => {
       fabric.util.enlivenObjects([objData], (objects: fabric.Object[]) => {
         objects.forEach(obj => {
+          // [2025-12-08 23:00:00] 为恢复的对象添加删除控件
+          const objName = (obj as any).name || '';
+          if (objName !== 'background' && deleteControl) {
+            obj.controls = obj.controls || {};
+            obj.controls.deleteControl = deleteControl;
+          }
           canvas.add(obj);
         });
         canvas.renderAll();
@@ -848,6 +858,12 @@ const DesignLabClient: React.FC = () => {
               originX: 'center',
               originY: 'center',
             });
+
+            // [2025-12-08 23:00:00] 为Names & Numbers文本对象添加删除控件
+            if ((canvas as any).deleteControl) {
+              textObj.controls = textObj.controls || {};
+              textObj.controls.deleteControl = (canvas as any).deleteControl;
+            }
 
             canvas.add(textObj);
           });
@@ -1032,8 +1048,14 @@ const DesignLabClient: React.FC = () => {
         originX: 'center',
         originY: 'center'
       });
-
+      
       const canvas = fabricCanvasRef.current;
+      
+      // [2025-12-08 23:00:00] 为文本对象添加删除控件
+      if (canvas && (canvas as any).deleteControl) {
+        textObj.controls = textObj.controls || {};
+        textObj.controls.deleteControl = (canvas as any).deleteControl;
+      }
       
       // [2025-01-30 22:15:00] 先添加对象到画布
       canvas.add(textObj);
@@ -1105,6 +1127,12 @@ const DesignLabClient: React.FC = () => {
         
         const canvas = fabricCanvasRef.current;
         if (canvas) {
+          // [2025-12-08 23:00:00] 为艺术素材对象添加删除控件
+          if ((canvas as any).deleteControl) {
+            fabricImage.controls = fabricImage.controls || {};
+            fabricImage.controls.deleteControl = (canvas as any).deleteControl;
+          }
+          
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
           canvas.renderAll();
@@ -1259,6 +1287,12 @@ const DesignLabClient: React.FC = () => {
           
           const canvas = fabricCanvasRef.current;
           if (canvas) {
+            // [2025-12-08 23:00:00] 为上传的图片对象添加删除控件
+            if ((canvas as any).deleteControl) {
+              fabricImage.controls = fabricImage.controls || {};
+              fabricImage.controls.deleteControl = (canvas as any).deleteControl;
+            }
+            
             console.log('[DesignLab] Adding image to canvas:', {
               canvasWidth: canvas.width,
               canvasHeight: canvas.height,
@@ -1421,6 +1455,12 @@ const DesignLabClient: React.FC = () => {
         
         const canvas = fabricCanvasRef.current;
         if (canvas) {
+          // [2025-12-08 23:00:00] 为最近上传的图片对象添加删除控件
+          if ((canvas as any).deleteControl) {
+            fabricImage.controls = fabricImage.controls || {};
+            fabricImage.controls.deleteControl = (canvas as any).deleteControl;
+          }
+          
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
           canvas.renderAll();
@@ -1692,13 +1732,204 @@ const DesignLabClient: React.FC = () => {
     }
   }, [currentDesignId, showPriceModal, priceLoading, currentView]);
 
+  // [2025-12-08 23:30:00] Zoom视图状态
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [zoomPan, setZoomPan] = useState({ x: 0, y: 0 });
+  const [isZoomDragging, setIsZoomDragging] = useState(false);
+  const [zoomDragStart, setZoomDragStart] = useState({ x: 0, y: 0 });
+
   // [2025-01-30 14:00:00] 视图切换处理
+  // [2025-12-08 23:30:00] 添加Zoom视图处理
   const handleViewChange = (view: 'front' | 'back' | 'sleeve' | 'zoom') => {
     setCurrentView(view);
     if (view !== 'zoom') {
       setView(view);
+      // 重置Zoom状态
+      setZoomLevel(1);
+      setZoomPan({ x: 0, y: 0 });
+    } else {
+      // 切换到Zoom视图时，保存当前画布状态
+      if (fabricCanvasRef.current) {
+        const snapshot = canvasToSnapshot(fabricCanvasRef.current);
+        setCanvas(snapshot, { pushHistory: false });
+      }
     }
   };
+
+  // [2025-12-08 23:30:00] Zoom视图：放大
+  const handleZoomIn = () => {
+    if (currentView !== 'zoom') return;
+    setZoomLevel(prev => Math.min(prev + 0.25, 3)); // 最大3倍
+  };
+
+  // [2025-12-08 23:30:00] Zoom视图：缩小
+  const handleZoomOut = () => {
+    if (currentView !== 'zoom') return;
+    setZoomLevel(prev => Math.max(prev - 0.25, 0.5)); // 最小0.5倍
+  };
+
+  // [2025-12-08 23:30:00] Zoom视图：重置
+  const handleZoomReset = () => {
+    if (currentView !== 'zoom') return;
+    setZoomLevel(1);
+    setZoomPan({ x: 0, y: 0 });
+  };
+
+  // [2025-12-08 23:30:00] Zoom视图：拖拽开始
+  const handleZoomMouseDown = (e: React.MouseEvent) => {
+    if (currentView !== 'zoom') return;
+    setIsZoomDragging(true);
+    setZoomDragStart({ x: e.clientX - zoomPan.x, y: e.clientY - zoomPan.y });
+  };
+
+  // [2025-12-08 23:30:00] Zoom视图：拖拽中
+  const handleZoomMouseMove = (e: React.MouseEvent) => {
+    if (currentView !== 'zoom' || !isZoomDragging) return;
+    setZoomPan({
+      x: e.clientX - zoomDragStart.x,
+      y: e.clientY - zoomDragStart.y
+    });
+  };
+
+  // [2025-12-08 23:30:00] Zoom视图：拖拽结束
+  const handleZoomMouseUp = () => {
+    setIsZoomDragging(false);
+  };
+
+  // [2025-12-08 23:30:00] Zoom视图：应用缩放和平移
+  useEffect(() => {
+    if (currentView === 'zoom' && fabricCanvasRef.current) {
+      const canvas = fabricCanvasRef.current;
+      const vpt = [zoomLevel, 0, 0, zoomLevel, zoomPan.x, zoomPan.y];
+      canvas.setViewportTransform(vpt);
+      canvas.renderAll();
+    } else if (currentView !== 'zoom' && fabricCanvasRef.current) {
+      // 重置viewport
+      const canvas = fabricCanvasRef.current;
+      canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+      canvas.renderAll();
+    }
+  }, [currentView, zoomLevel, zoomPan]);
+
+  // [2025-12-08 23:00:00] 快捷键支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 如果焦点在输入框或文本区域，不处理快捷键
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+
+      // Delete/Backspace: 删除选中的对象
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && !e.metaKey) {
+        const activeObject = canvas.getActiveObject();
+        if (activeObject) {
+          const objName = (activeObject as any).name || '';
+          if (objName !== 'background') {
+            // 保存到历史记录以便Undo
+            const snapshot = canvasToSnapshot(canvas);
+            setCanvas(snapshot, { pushHistory: true });
+            
+            canvas.remove(activeObject);
+            canvas.renderAll();
+            
+            // 更新画布状态
+            const newSnapshot = canvasToSnapshot(canvas);
+            setCanvas(newSnapshot, { pushHistory: true });
+            
+            e.preventDefault();
+          }
+        }
+        return;
+      }
+
+      // Ctrl/Cmd + A: 全选
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        const objects = canvas.getObjects().filter((obj: fabric.Object) => {
+          const objName = (obj as any).name || '';
+          return objName !== 'background';
+        });
+        
+        if (objects.length > 0) {
+          const selection = new fabric.ActiveSelection(objects, {
+            canvas: canvas,
+          });
+          canvas.setActiveObject(selection);
+          canvas.renderAll();
+        }
+        
+        e.preventDefault();
+        return;
+      }
+
+      // Ctrl/Cmd + C: 复制
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+        const activeObject = canvas.getActiveObject();
+        if (activeObject && activeObject !== canvas.getActiveObjects()[0]) {
+          // 将对象序列化为JSON并存储到剪贴板
+          const objectData = JSON.stringify(activeObject.toJSON(['name', 'data']));
+          (window as any).__fabricClipboard = objectData;
+        }
+        e.preventDefault();
+        return;
+      }
+
+      // Ctrl/Cmd + V: 粘贴
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        const clipboardData = (window as any).__fabricClipboard;
+        if (clipboardData) {
+          try {
+            const objectData = JSON.parse(clipboardData);
+            fabric.util.enlivenObjects([objectData], (objects: fabric.Object[]) => {
+              if (objects.length > 0) {
+                const obj = objects[0];
+                // 偏移粘贴的对象，避免完全重叠
+                obj.set({
+                  left: (obj.left || 0) + 20,
+                  top: (obj.top || 0) + 20,
+                });
+                
+                // 为新对象添加删除控件
+                const canvas = fabricCanvasRef.current;
+                if (canvas && (canvas as any).deleteControl) {
+                  obj.controls = obj.controls || {};
+                  obj.controls.deleteControl = (canvas as any).deleteControl;
+                }
+                
+                canvas.add(obj);
+                canvas.setActiveObject(obj);
+                canvas.renderAll();
+                
+                // 保存到历史记录
+                const snapshot = canvasToSnapshot(canvas);
+                setCanvas(snapshot, { pushHistory: true });
+              }
+            });
+          } catch (error) {
+            console.error('[DesignLab] Error pasting object:', error);
+          }
+        }
+        e.preventDefault();
+        return;
+      }
+
+      // ESC: 取消选择
+      if (e.key === 'Escape') {
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        e.preventDefault();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [canvasToSnapshot, setCanvas]);
 
   // [2025-01-30 14:00:00] 引导面板操作处理
   const handleGuideAction = (action: string) => {
@@ -1728,7 +1959,10 @@ const DesignLabClient: React.FC = () => {
           backgroundColor: 'transparent',
           preserveObjectStacking: true,
           selection: true,
-          stateful: true
+          stateful: true,
+          // [2025-12-08 23:00:00] 启用等比缩放和从中心缩放
+          uniformScaling: false, // 通过Shift键启用
+          centeredScaling: false, // 通过Alt键启用
         });
         
         console.log('[DesignLab] Fabric canvas initialized successfully');
@@ -1759,6 +1993,90 @@ const DesignLabClient: React.FC = () => {
           cornerStyle: 'circle',
           rotatingPointOffset: 40
         });
+
+        // [2025-12-08 23:00:00] 创建右上角删除按钮控件
+        const deleteControl = new fabric.Control({
+          x: 0.5,
+          y: -0.5,
+          offsetX: 0,
+          offsetY: -20,
+          actionHandler: (eventData, transformData, x, y) => {
+            const target = transformData.target;
+            if (target && fabricCanvas) {
+              // 保存到历史记录以便Undo
+              const snapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(snapshot, { pushHistory: true });
+              
+              // 删除对象
+              fabricCanvas.remove(target);
+              fabricCanvas.renderAll();
+              
+              // 更新画布状态
+              const newSnapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(newSnapshot, { pushHistory: true });
+              
+              return true;
+            }
+            return false;
+          },
+          cursorStyle: 'pointer',
+          render: (ctx, left, top, styleOverride, fabricObject) => {
+            const size = 20;
+            ctx.save();
+            ctx.translate(left, top);
+            ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
+            
+            // 绘制圆形背景
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 绘制X图标
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            const iconSize = size * 0.4;
+            ctx.beginPath();
+            ctx.moveTo(-iconSize / 2, -iconSize / 2);
+            ctx.lineTo(iconSize / 2, iconSize / 2);
+            ctx.moveTo(iconSize / 2, -iconSize / 2);
+            ctx.lineTo(-iconSize / 2, iconSize / 2);
+            ctx.stroke();
+            
+            ctx.restore();
+          },
+          mouseUpHandler: (eventData, transformData) => {
+            const target = transformData.target;
+            if (target && fabricCanvas) {
+              // 保存到历史记录以便Undo
+              const snapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(snapshot, { pushHistory: true });
+              
+              // 删除对象
+              fabricCanvas.remove(target);
+              fabricCanvas.renderAll();
+              
+              // 更新画布状态
+              const newSnapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(newSnapshot, { pushHistory: true });
+              
+              return true;
+            }
+            return false;
+          }
+        });
+
+        // [2025-12-08 23:00:00] 为所有对象添加删除控件（排除背景）
+        const addDeleteControlToObject = (obj: fabric.Object) => {
+          const objName = (obj as any).name || '';
+          if (objName !== 'background' && !obj.controls) {
+            obj.controls = {};
+          }
+          if (objName !== 'background') {
+            obj.controls.deleteControl = deleteControl;
+          }
+        };
 
         const handleSelection = () => {
           const activeObject = fabricCanvas.getActiveObject();
@@ -1824,6 +2142,158 @@ const DesignLabClient: React.FC = () => {
           setSelectedArt(null);
         };
 
+        // [2025-12-08 23:30:00] 吸附对齐线功能
+        let snapLines: { x?: number; y?: number } = {};
+        const SNAP_THRESHOLD = 5; // 吸附阈值（像素）
+
+        const drawSnapLines = () => {
+          if (!snapLines.x && !snapLines.y) return;
+          
+          const ctx = fabricCanvas.getContext();
+          const vpt = fabricCanvas.viewportTransform;
+          if (!vpt) return;
+
+          ctx.save();
+          ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([5, 5]);
+
+          if (snapLines.x !== undefined) {
+            const x = snapLines.x * vpt[0] + vpt[4];
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, fabricCanvas.height);
+            ctx.stroke();
+          }
+
+          if (snapLines.y !== undefined) {
+            const y = snapLines.y * vpt[3] + vpt[5];
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(fabricCanvas.width, y);
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        };
+
+        const findSnapPosition = (movingObject: fabric.Object, allObjects: fabric.Object[]): { x?: number; y?: number } => {
+          const snap: { x?: number; y?: number } = {};
+          const objBounds = movingObject.getBoundingRect();
+          const objCenterX = objBounds.left + objBounds.width / 2;
+          const objCenterY = objBounds.top + objBounds.height / 2;
+          const objLeft = objBounds.left;
+          const objRight = objBounds.right;
+          const objTop = objBounds.top;
+          const objBottom = objBounds.bottom;
+
+          // 画布中心线
+          const canvasCenterX = fabricCanvas.width / 2;
+          const canvasCenterY = fabricCanvas.height / 2;
+
+          // 检查是否接近画布中心
+          if (Math.abs(objCenterX - canvasCenterX) < SNAP_THRESHOLD) {
+            snap.x = canvasCenterX;
+          }
+          if (Math.abs(objCenterY - canvasCenterY) < SNAP_THRESHOLD) {
+            snap.y = canvasCenterY;
+          }
+
+          // 检查与其他对象的对齐
+          allObjects.forEach((obj) => {
+            if (obj === movingObject || (obj as any).name === 'background') return;
+            
+            const bounds = obj.getBoundingRect();
+            const otherCenterX = bounds.left + bounds.width / 2;
+            const otherCenterY = bounds.top + bounds.height / 2;
+            const otherLeft = bounds.left;
+            const otherRight = bounds.right;
+            const otherTop = bounds.top;
+            const otherBottom = bounds.bottom;
+
+            // 中心对齐
+            if (Math.abs(objCenterX - otherCenterX) < SNAP_THRESHOLD) {
+              snap.x = otherCenterX;
+            }
+            if (Math.abs(objCenterY - otherCenterY) < SNAP_THRESHOLD) {
+              snap.y = otherCenterY;
+            }
+
+            // 边缘对齐
+            if (Math.abs(objLeft - otherLeft) < SNAP_THRESHOLD) {
+              snap.x = otherLeft;
+            }
+            if (Math.abs(objRight - otherRight) < SNAP_THRESHOLD) {
+              snap.x = otherRight;
+            }
+            if (Math.abs(objTop - otherTop) < SNAP_THRESHOLD) {
+              snap.y = otherTop;
+            }
+            if (Math.abs(objBottom - otherBottom) < SNAP_THRESHOLD) {
+              snap.y = otherBottom;
+            }
+          });
+
+          return snap;
+        };
+
+        const handleObjectMoving = (e: fabric.IEvent) => {
+          const obj = e.target;
+          if (!obj) return;
+
+          const allObjects = fabricCanvas.getObjects();
+          const snap = findSnapPosition(obj, allObjects);
+
+          if (snap.x !== undefined) {
+            const objBounds = obj.getBoundingRect();
+            const offsetX = snap.x - (objBounds.left + objBounds.width / 2);
+            obj.set('left', (obj.left || 0) + offsetX);
+          }
+
+          if (snap.y !== undefined) {
+            const objBounds = obj.getBoundingRect();
+            const offsetY = snap.y - (objBounds.top + objBounds.height / 2);
+            obj.set('top', (obj.top || 0) + offsetY);
+          }
+
+          snapLines = snap;
+          fabricCanvas.renderAll();
+        };
+
+        const handleObjectMoved = () => {
+          snapLines = {};
+          fabricCanvas.renderAll();
+        };
+
+        // [2025-12-08 23:30:00] 打印安全区边界显示
+        const drawSafeArea = () => {
+          const ctx = fabricCanvas.getContext();
+          const SAFE_AREA_MARGIN = 0.1; // 10%边距
+          const safeLeft = fabricCanvas.width * SAFE_AREA_MARGIN;
+          const safeTop = fabricCanvas.height * SAFE_AREA_MARGIN;
+          const safeRight = fabricCanvas.width * (1 - SAFE_AREA_MARGIN);
+          const safeBottom = fabricCanvas.height * (1 - SAFE_AREA_MARGIN);
+
+          ctx.save();
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([10, 5]);
+          ctx.strokeRect(safeLeft, safeTop, safeRight - safeLeft, safeBottom - safeTop);
+          ctx.restore();
+        };
+
+        // [2025-12-08 23:30:00] 重写renderAll以包含安全区边界和吸附线
+        const originalRenderAll = fabricCanvas.renderAll.bind(fabricCanvas);
+        fabricCanvas.renderAll = function() {
+          originalRenderAll();
+          if (currentView !== 'zoom') {
+            drawSafeArea();
+          }
+          if (snapLines.x !== undefined || snapLines.y !== undefined) {
+            drawSnapLines();
+          }
+        };
+
         const handleObjectModified = () => {
           const snapshot = canvasToSnapshot(fabricCanvas);
           setCanvas(snapshot, { pushHistory: true });
@@ -1843,8 +2313,24 @@ const DesignLabClient: React.FC = () => {
         fabricCanvas.on('selection:updated', handleSelection);
         fabricCanvas.on('selection:cleared', handleSelectionCleared);
         fabricCanvas.on('object:modified', handleObjectModified);
-        fabricCanvas.on('object:added', handleObjectAdded);
+        fabricCanvas.on('object:moving', handleObjectMoving); // [2025-12-08 23:30:00] 吸附对齐线
+        fabricCanvas.on('object:moved', handleObjectMoved); // [2025-12-08 23:30:00] 清除吸附线
+        fabricCanvas.on('object:added', (e) => {
+          // [2025-12-08 23:00:00] 为新添加的对象添加删除控件
+          if (e.target) {
+            addDeleteControlToObject(e.target);
+          }
+          handleObjectAdded();
+        });
         fabricCanvas.on('object:removed', handleObjectRemoved);
+
+        // [2025-12-08 23:00:00] 为现有对象添加删除控件
+        fabricCanvas.getObjects().forEach((obj) => {
+          addDeleteControlToObject(obj);
+        });
+
+        // [2025-12-08 23:00:00] 保存删除控件到canvas，以便后续使用
+        (fabricCanvas as any).deleteControl = deleteControl;
 
         fabricCanvasRef.current = fabricCanvas;
         console.log('[DesignLab] Event listeners attached, canvas ready');
@@ -1910,11 +2396,19 @@ const DesignLabClient: React.FC = () => {
   }, [canvasInitialized, currentView, loadBackgroundImage]); // [2025-01-31 16:55:00] 添加 loadBackgroundImage 到依赖，但内部有重复检查
 
   // [2025-01-30 16:30:00] 视图切换时更新画布
+  // [2025-12-08 23:30:00] 更新Zoom视图处理
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
     
     const view = currentView;
-    if (view === 'zoom') return; // Zoom 视图不加载画布数据
+    if (view === 'zoom') {
+      // Zoom视图：显示当前视图的画布内容，但不加载背景
+      const currentViewCanvas = getCurrentViewCanvas();
+      if (currentViewCanvas) {
+        snapshotToCanvas(currentViewCanvas, fabricCanvasRef.current);
+      }
+      return;
+    }
     
     // [2025-01-30 16:30:00] 加载背景图片
     loadBackgroundImage(view);
@@ -1924,7 +2418,7 @@ const DesignLabClient: React.FC = () => {
     if (viewCanvas) {
       snapshotToCanvas(viewCanvas, fabricCanvasRef.current);
     }
-  }, [currentView, viewCanvases, snapshotToCanvas, loadBackgroundImage]);
+  }, [currentView, viewCanvases, snapshotToCanvas, loadBackgroundImage, getCurrentViewCanvas]);
 
   return (
     <div className="design-lab-new">
@@ -2129,6 +2623,7 @@ const DesignLabClient: React.FC = () => {
               }}
               aria-label="Undo"
               title="Undo"
+              disabled={!canUndo}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 7v6h6" />
@@ -2147,6 +2642,7 @@ const DesignLabClient: React.FC = () => {
               }}
               aria-label="Redo"
               title="Redo"
+              disabled={!canRedo}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 7v6h-6" />
@@ -2154,8 +2650,61 @@ const DesignLabClient: React.FC = () => {
               </svg>
             </button>
           </div>
+          {/* [2025-12-08] Zoom视图控制按钮 */}
+          {currentView === 'zoom' && (
+            <div className="dl-canvas__zoom-controls">
+              <button
+                className="dl-canvas__zoom-btn"
+                onClick={handleZoomIn}
+                aria-label="Zoom In"
+                title="Zoom In"
+                disabled={zoomLevel >= 3}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                  <line x1="11" y1="8" x2="11" y2="14" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+              </button>
+              <button
+                className="dl-canvas__zoom-btn"
+                onClick={handleZoomOut}
+                aria-label="Zoom Out"
+                title="Zoom Out"
+                disabled={zoomLevel <= 0.5}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                </svg>
+              </button>
+              <button
+                className="dl-canvas__zoom-btn"
+                onClick={handleZoomReset}
+                aria-label="Reset Zoom"
+                title="Reset Zoom"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                  <path d="M21 3v5h-5" />
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                  <path d="M3 21v-5h5" />
+                </svg>
+              </button>
+              <span className="dl-canvas__zoom-level">{Math.round(zoomLevel * 100)}%</span>
+            </div>
+          )}
           {/* 产品预览区域 */}
-          <div className="dl-canvas__preview">
+          <div 
+            className="dl-canvas__preview"
+            onMouseDown={currentView === 'zoom' ? handleZoomMouseDown : undefined}
+            onMouseMove={currentView === 'zoom' ? handleZoomMouseMove : undefined}
+            onMouseUp={currentView === 'zoom' ? handleZoomMouseUp : undefined}
+            onMouseLeave={currentView === 'zoom' ? handleZoomMouseUp : undefined}
+            style={{ cursor: currentView === 'zoom' && isZoomDragging ? 'grabbing' : currentView === 'zoom' ? 'grab' : 'default' }}
+          >
             <div className="dl-canvas__product">
               {/* [2025-01-30 22:35:00] Fabric.js 画布 */}
               {/* [2025-01-31 16:20:00] 移除 placeholder，直接显示画布，图片会在加载完成后自动显示 */}

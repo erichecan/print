@@ -657,6 +657,30 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
           </button>
           <button
             className="dl-edit-text-panel__btn"
+            onClick={() => {
+              if (!selectedText || !canvas) return;
+              canvas.bringForward(selectedText);
+              canvas.renderAll();
+              onUpdate();
+            }}
+            type="button"
+          >
+            Bring Forward
+          </button>
+          <button
+            className="dl-edit-text-panel__btn"
+            onClick={() => {
+              if (!selectedText || !canvas) return;
+              canvas.sendBackwards(selectedText);
+              canvas.renderAll();
+              onUpdate();
+            }}
+            type="button"
+          >
+            Send Backward
+          </button>
+          <button
+            className="dl-edit-text-panel__btn"
             onClick={handleSendToBack}
             type="button"
           >
