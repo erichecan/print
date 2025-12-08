@@ -107,7 +107,7 @@ type FormState = {
   // 第一步：产品配置
   productItems: ProductItem[]; // 产品列表
   globalPrintPositions: PrintPosition[]; // 总体印刷位置
-  orderNotes: string; // 订单备注（必填）
+  orderNotes: string; // 订单备注（非必填）
   dstFileFee: number; // DST File Fee（订单级别，仅当有Embroidery时）
   
   // 第二步：客户信息
@@ -743,12 +743,7 @@ export default function OfflineOrdersIntakePage() {
         }
       }
       
-      // 验证订单备注（必填）
-      if (!formState.orderNotes || !formState.orderNotes.trim()) {
-        setFieldErrors({ orderNotes: t('errorOrderNotes') || '订单备注是必填项' });
-        setStatus({ type: 'error', message: t('errorOrderNotes') || '订单备注是必填项' });
-        return false;
-      }
+      // [2025-12-08 05:15:00] 订单备注改为非必填，移除验证
       
       // 验证印刷位置：Height或Width至少一个
       if (formState.globalPrintPositions && formState.globalPrintPositions.length > 0) {
@@ -789,12 +784,8 @@ export default function OfflineOrdersIntakePage() {
       }
       
       // 如果选择Invoice，Invoice信息和支付信息必填
+      // [2025-12-08 05:15:00] 修改：companyName 改为非必填
       if (formState.requiresInvoice) {
-        if (!formState.invoiceInfo.companyName.trim()) {
-          setFieldErrors({ companyName: t('errorCompanyName') || '发票公司名称是必填项' });
-          setStatus({ type: 'error', message: t('errorCompanyName') || '发票公司名称是必填项' });
-          return false;
-        }
         if (!formState.invoiceInfo.taxNumber.trim()) {
           setFieldErrors({ taxNumber: t('errorTaxNumber') || '税号是必填项' });
           setStatus({ type: 'error', message: t('errorTaxNumber') || '税号是必填项' });
@@ -1295,6 +1286,20 @@ export default function OfflineOrdersIntakePage() {
                                   return (
                                     <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                                       <label className="block text-xs text-gray-600 mb-1">{size}</label>
+                                      {/* [2025-12-08 05:15:00] 单价输入框移到数量输入框上面，并始终显示 */}
+                                      <input
+                                        type="text"
+                                        value={sizeData?.unitPrice || ''}
+                                        onChange={(e) => {
+                                          const value = e.target.value.replace(/[^\d.]/g, '');
+                                          const unitPrice = parseFloat(value) || 0;
+                                          const quantity = sizeData?.quantity || 0;
+                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
+                                        }}
+                                        disabled={!isAvailable}
+                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-xs mb-1 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        placeholder="单价"
+                                      />
                                       <input
                                         type="number"
                                         min="0"
@@ -1310,19 +1315,9 @@ export default function OfflineOrdersIntakePage() {
                                         className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         placeholder="数量"
                                       />
-                                      {sizeData && sizeData.quantity > 0 && (
-                                        <div className="mt-1">
-                                          <input
-                                            type="text"
-                                            value={sizeData.unitPrice || ''}
-                                            onChange={(e) => {
-                                              const value = e.target.value.replace(/[^\d.]/g, '');
-                                              const unitPrice = parseFloat(value) || 0;
-                                              updateSizeQuantity(item.id, color.colorId, size, sizeData.quantity, unitPrice);
-                                            }}
-                                            className="w-16 border border-gray-300 rounded px-2 py-1 text-xs"
-                                            placeholder="单价"
-                                          />
+                                      {sizeData && sizeData.subtotal > 0 && (
+                                        <div className="text-xs text-blue-700 mt-1">
+                                          小计: ${sizeData.subtotal.toFixed(2)}
                                         </div>
                                       )}
                                     </div>
@@ -1348,6 +1343,20 @@ export default function OfflineOrdersIntakePage() {
                                           <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
                                         )}
                                       </label>
+                                      {/* [2025-12-08 05:15:00] 单价输入框移到数量输入框上面，并始终显示 */}
+                                      <input
+                                        type="text"
+                                        value={sizeData?.unitPrice || ''}
+                                        onChange={(e) => {
+                                          const value = e.target.value.replace(/[^\d.]/g, '');
+                                          const unitPrice = parseFloat(value) || 0;
+                                          const quantity = sizeData?.quantity || 0;
+                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
+                                        }}
+                                        disabled={!isAvailable}
+                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-xs mb-1 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        placeholder="单价"
+                                      />
                                       <input
                                         type="number"
                                         min="0"
@@ -1363,24 +1372,9 @@ export default function OfflineOrdersIntakePage() {
                                         className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         placeholder="数量"
                                       />
-                                      {sizeData && sizeData.quantity > 0 && (
-                                        <div className="mt-1">
-                                          <input
-                                            type="text"
-                                            value={sizeData.unitPrice || ''}
-                                            onChange={(e) => {
-                                              const value = e.target.value.replace(/[^\d.]/g, '');
-                                              const unitPrice = parseFloat(value) || 0;
-                                              updateSizeQuantity(item.id, color.colorId, size, sizeData.quantity, unitPrice);
-                                            }}
-                                            className="w-16 border border-gray-300 rounded px-2 py-1 text-xs"
-                                            placeholder="单价"
-                                          />
-                                          {sizeData.subtotal > 0 && (
-                                            <div className="text-xs text-blue-700 mt-1">
-                                              小计: ${sizeData.subtotal.toFixed(2)}
-                                            </div>
-                                          )}
+                                      {sizeData && sizeData.subtotal > 0 && (
+                                        <div className="text-xs text-blue-700 mt-1">
+                                          小计: ${sizeData.subtotal.toFixed(2)}
                                         </div>
                                       )}
                                     </div>
@@ -1628,24 +1622,19 @@ export default function OfflineOrdersIntakePage() {
           )}
         </div>
 
-        {/* 订单备注 - PRD v2.0: 必填 */}
+        {/* 订单备注 - PRD v2.0: 非必填 */}
+        {/* [2025-12-08 05:15:00] 修改：备注改为非必填 */}
         <div className="mt-6 p-5 bg-white border border-gray-200 rounded-xl">
           <label className="block">
             <span className="block text-sm font-medium text-gray-700 mb-2">
-              {t('orderNotes') || '订单备注'} *
+              {t('orderNotes') || '订单备注'}
             </span>
             <textarea
               value={formState.orderNotes}
               onChange={(e) => setFormState(prev => ({ ...prev, orderNotes: e.target.value }))}
-              className={`w-full border rounded-lg px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                fieldErrors.orderNotes ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-              }`}
-              placeholder={t('orderNotesPlaceholder') || '请输入订单备注...'}
-              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              placeholder={t('orderNotesPlaceholder') || '请输入订单备注（可选）...'}
             />
-            {fieldErrors.orderNotes && (
-              <p className="mt-1 text-sm text-red-600">{fieldErrors.orderNotes}</p>
-            )}
           </label>
         </div>
 
@@ -1778,7 +1767,7 @@ export default function OfflineOrdersIntakePage() {
                 <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('invoiceInfo') || 'Invoice信息'}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyName') || '公司名称'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyName') || '公司名称'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.companyName}
