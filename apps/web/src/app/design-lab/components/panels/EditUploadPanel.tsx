@@ -24,7 +24,8 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   onUpdate,
   onReset,
   onSave,
-  onClose
+  onClose,
+  onOpenRatingModal
 }) => {
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [rotation, setRotation] = useState(0);
@@ -450,7 +451,13 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
           <a 
             href="#" 
             className="dl-edit-upload-panel__feedback-link"
-            onClick={(e) => { e.preventDefault(); /* TODO: Open feedback */ }}
+            onClick={(e) => { 
+              e.preventDefault();
+              // [2025-12-08] 打开上传体验评分模态框
+              if (onOpenRatingModal) {
+                onOpenRatingModal();
+              }
+            }}
           >
             How would you rate our upload experience?
           </a>

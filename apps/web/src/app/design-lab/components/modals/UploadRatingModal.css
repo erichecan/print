@@ -1,0 +1,57 @@
+/**
+ * Upload Rating Modal Styles
+ * [2025-12-08]
+ */
+.dl-upload-rating-modal {
+  max-width: 500px;
+}
+
+.dl-upload-rating-modal__question {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.dl-upload-rating-modal__stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.dl-upload-rating-modal__star {
+  background: none;
+  border: none;
+  font-size: 48px;
+  color: #ddd;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s, transform 0.1s;
+}
+
+.dl-upload-rating-modal__star:hover {
+  color: #ffd700;
+  transform: scale(1.1);
+}
+
+.dl-upload-rating-modal__star.active {
+  color: #ffd700;
+}
+
+.dl-upload-rating-modal__comment {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+
+.dl-upload-rating-modal__comment:focus {
+  outline: none;
+  border-color: #0066cc;
+}
+

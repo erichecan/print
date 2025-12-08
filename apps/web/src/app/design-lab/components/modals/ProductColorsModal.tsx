@@ -40,6 +40,15 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
     if (color.isAvailable) {
       onSelectColor(color.name);
       // 不关闭模态，让用户可以继续选择其他颜色
+      
+      // [2025-12-08] 埋点：产品颜色切换
+      if (typeof window !== 'undefined') {
+        const { analytics } = require('@/lib/analytics');
+        analytics.track('product_color_changed', {
+          colorName: color.name,
+          productName: productName,
+        });
+      }
     }
   };
 

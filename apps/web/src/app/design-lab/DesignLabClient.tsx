@@ -32,8 +32,10 @@ import LayerManagementPanel from './components/panels/LayerManagementPanel';
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
 import PriceModal from './components/modals/PriceModal';
+import UploadRatingModal from './components/modals/UploadRatingModal';
 import { designLabApi } from '@/lib/api';
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
+import { analytics } from '@/lib/analytics';
 import './design-lab.css';
 
 interface ProductInfo {
@@ -108,6 +110,12 @@ const DesignLabClient: React.FC = () => {
     };
     
     getVersion();
+    
+    // [2025-12-08] 埋点：Design Lab 打开
+    analytics.track('design_lab_opened', {
+      productId: searchParams.get('productId'),
+      colorId: searchParams.get('colorId'),
+    });
   }, []);
   
   // [2025-01-30 14:00:00] 状态管理
@@ -158,6 +166,9 @@ const DesignLabClient: React.FC = () => {
   const [loadingProduct, setLoadingProduct] = useState(false);
   // [2025-01-30 20:00:00] Names & Numbers 状态
   const [showNamesNumbersModal, setShowNamesNumbersModal] = useState(false);
+  // [2025-12-08] 上传体验评分模态框状态
+  const [showUploadRatingModal, setShowUploadRatingModal] = useState(false);
+  const [currentUploadId, setCurrentUploadId] = useState<string>('');
   // [2025-01-30 23:30:00] Recent Uploads 状态
   const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
   // [2025-01-31 01:00:00] 防止选择清除事件在添加对象后立即触发
@@ -722,9 +733,13 @@ const DesignLabClient: React.FC = () => {
         break;
       case 'text':
         setToolPanelType('text');
+        // [2025-12-08] 埋点：文字添加
+        analytics.track('text_added', {});
         break;
       case 'art':
         setToolPanelType('art');
+        // [2025-12-08] 埋点：素材添加
+        analytics.track('art_added', {});
         break;
       case 'colors':
         // [2025-01-30 19:30:00] 打开颜色选择模态
@@ -1243,11 +1258,21 @@ const DesignLabClient: React.FC = () => {
               return newUploads.slice(0, 10);
             });
             
+            // [2025-12-08] 保存 uploadId 以便评分时使用
+            setCurrentUploadId(uploadId);
+            
             // [2025-01-30 17:30:00] 同步到 store
             const snapshot = canvasToSnapshot(canvas);
             setCanvas(snapshot, { pushHistory: true });
             
             console.log('[DesignLab] Image upload completed successfully');
+            
+            // [2025-12-08] 埋点：上传成功
+            analytics.track('upload_success', {
+              uploadId: uploadId,
+              fileSize: file.size,
+              fileType: file.type,
+            });
           } else {
             console.error('[DesignLab] Canvas is null after image creation');
           }
@@ -1262,6 +1287,14 @@ const DesignLabClient: React.FC = () => {
         console.error('[DesignLab] Image load error:', error);
         console.error('[DesignLab] Image URL (first 100 chars):', imageUrl.substring(0, 100));
         alert('Failed to load image. Please check the file format.');
+        
+        // [2025-12-08] 埋点：上传失败
+        analytics.track('upload_failed', {
+          fileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          error: 'Image load error',
+        });
       };
       
       imgElement.src = imageUrl;
@@ -1387,11 +1420,23 @@ const DesignLabClient: React.FC = () => {
       setCanvas(snapshot, { pushHistory: true });
       // TODO: 调用保存 API
       console.log('[DesignLab] Design saved');
+      
+      // [2025-12-08] 埋点：设计保存
+      analytics.track('design_saved', {
+        designId: currentDesignId,
+        designName: designName,
+      });
     }
-  }, [canvasToSnapshot, setCanvas]);
+  }, [canvasToSnapshot, setCanvas, currentDesignId, designName]);
 
   // [2025-12-06 12:30:00] Get Price 处理
   const handleGetPrice = useCallback(async () => {
+    // [2025-12-08] 埋点：Get Price 点击
+    analytics.track('get_price_clicked', {
+      designId: currentDesignId,
+      productId: productInfo?.productId,
+    });
+    
     if (!fabricCanvasRef.current || !productInfo) {
       console.warn('[DesignLab] Cannot get price: canvas or productInfo not available');
       alert('Please ensure the canvas is loaded and a product is selected.');
@@ -1485,6 +1530,13 @@ const DesignLabClient: React.FC = () => {
       if (response.success && response.data) {
         setPriceQuote(response.data);
         console.log('[DesignLab] Price quote received:', response.data);
+        
+        // [2025-12-08] 埋点：Get Price 完成
+        analytics.track('get_price_completed', {
+          designId: designId,
+          quantity: quoteQuantity,
+          price: response.data.total,
+        });
       } else {
         throw new Error('Failed to get price quote');
       }
@@ -1923,6 +1975,12 @@ const DesignLabClient: React.FC = () => {
               onReset={handleResetUpload}
               onSave={handleSaveDesign}
               onClose={handleBackToHome}
+              onOpenRatingModal={() => {
+                // [2025-12-08] 打开上传体验评分模态框
+                const uploadId = `upload_${Date.now()}`;
+                setCurrentUploadId(uploadId);
+                setShowUploadRatingModal(true);
+              }}
             />
           )}
           {toolPanelType === 'edit-text' && (

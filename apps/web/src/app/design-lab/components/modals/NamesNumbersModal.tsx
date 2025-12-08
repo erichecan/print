@@ -79,6 +79,15 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
       { name: '', number: '', size: '' },
       { name: '', number: '', size: '' },
     ]);
+    
+    // [2025-12-08] 埋点：Names & Numbers 添加
+    if (typeof window !== 'undefined') {
+      const { analytics } = require('@/lib/analytics');
+      analytics.track('names_numbers_added', {
+        addNames: config.addNames,
+        addNumbers: config.addNumbers,
+      });
+    }
   };
 
   const handleAddMoreRows = () => {

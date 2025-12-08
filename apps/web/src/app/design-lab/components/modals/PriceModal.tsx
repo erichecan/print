@@ -150,7 +150,18 @@ const PriceModal: React.FC<PriceModalProps> = ({
                 </button>
                 <button
                   className="dl-modal__btn dl-modal__btn--secondary"
-                  onClick={onClose}
+                  onClick={() => {
+                    // [2025-12-08] 埋点：加车点击
+                    if (typeof window !== 'undefined') {
+                      const { analytics } = require('@/lib/analytics');
+                      analytics.track('add_to_cart_clicked', {
+                        designId: quoteData?.metadata?.designId,
+                        quantity: quantity,
+                        price: quoteData?.total,
+                      });
+                    }
+                    onClose();
+                  }}
                 >
                   Add to Cart
                 </button>

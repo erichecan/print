@@ -31,6 +31,39 @@ model User {
   @@map("users")
 }
 
+// [2025-12-08] Design Lab Analytics Events
+model DesignLabAnalyticsEvent {
+  id         String   @id @default(uuid())
+  userId     String?  @map("user_id")
+  sessionId  String   @map("session_id")
+  eventType  String   @map("event_type")
+  designId   String?  @map("design_id")
+  metadata   Json?
+  timestamp  DateTime
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([eventType])
+  @@index([timestamp])
+  @@map("design_lab_analytics_events")
+}
+
+// [2025-12-08] Design Lab Upload Ratings
+model DesignLabUploadRating {
+  id        String    @id @default(uuid())
+  userId    String?   @map("user_id")
+  uploadId  String    @map("upload_id")
+  rating    Int       // 1-5
+  comment   String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([uploadId])
+  @@index([createdAt])
+  @@map("design_lab_upload_ratings")
+}
+
 model Address {
   id         String   @id @default(uuid())
   userId     String   @map("user_id")
