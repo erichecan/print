@@ -26,6 +26,8 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   const [rotation, setRotation] = useState(0);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 });
+  const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // [2025-12-08] 比例锁状态
+  const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // [2025-12-08] 原始宽高比
 
   // [2025-01-30 18:05:00] 更新艺术素材属性
   // [2025-12-04 21:55:00] 添加英寸单位转换
@@ -43,6 +45,11 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
         width: pixelsToInches(actualWidth),
         height: pixelsToInches(actualHeight)
       });
+      
+      // [2025-12-08] 保存原始宽高比
+      if (actualHeight > 0) {
+        setOriginalAspectRatio(actualWidth / actualHeight);
+      }
     }
   }, [selectedArt]);
 
@@ -140,23 +147,86 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
 
   // [2025-01-30 18:05:00] Art Size（大小控制）
   // [2025-12-04 21:55:00] 更新英寸单位显示
+  // [2025-12-08] 添加比例锁支持
   const handleSizeChange = (scale: number) => {
     if (!selectedArt) return;
-    selectedArt.set({
-      scaleX: scale,
-      scaleY: scale
-    });
+    
+    // [2025-12-08] 如果锁定比例，同时更新scaleX和scaleY
+    if (aspectRatioLocked) {
+      selectedArt.set({
+        scaleX: scale,
+        scaleY: scale
+      });
+    } else {
+      // 如果不锁定，只更新scaleX（scaleY保持不变）
+      selectedArt.set({
+        scaleX: scale
+      });
+    }
+    
     selectedArt.setCoords();
     
     // 更新显示的尺寸
-    const actualWidth = (selectedArt.width || 0) * scale;
-    const actualHeight = (selectedArt.height || 0) * scale;
+    const actualWidth = (selectedArt.width || 0) * (selectedArt.scaleX || 1);
+    const actualHeight = (selectedArt.height || 0) * (selectedArt.scaleY || 1);
     setSize({ width: actualWidth, height: actualHeight });
     
     // 更新英寸单位
     setSizeInches({
       width: pixelsToInches(actualWidth),
       height: pixelsToInches(actualHeight)
+    });
+    
+    if (canvas) {
+      canvas.renderAll();
+      onUpdate();
+    }
+  };
+  
+  // [2025-12-08] 处理宽度变化（当比例锁未锁定时）
+  const handleWidthChange = (widthInches: number) => {
+    if (!selectedArt || aspectRatioLocked) return;
+    
+    const dpi = 150;
+    const widthPixels = widthInches * dpi;
+    const originalWidth = selectedArt.width || 1;
+    const scaleX = widthPixels / originalWidth;
+    
+    selectedArt.set({ scaleX });
+    selectedArt.setCoords();
+    
+    const actualWidth = originalWidth * scaleX;
+    const actualHeight = (selectedArt.height || 0) * (selectedArt.scaleY || 1);
+    setSize({ width: actualWidth, height: actualHeight });
+    setSizeInches({
+      width: widthInches,
+      height: pixelsToInches(actualHeight)
+    });
+    
+    if (canvas) {
+      canvas.renderAll();
+      onUpdate();
+    }
+  };
+  
+  // [2025-12-08] 处理高度变化（当比例锁未锁定时）
+  const handleHeightChange = (heightInches: number) => {
+    if (!selectedArt || aspectRatioLocked) return;
+    
+    const dpi = 150;
+    const heightPixels = heightInches * dpi;
+    const originalHeight = selectedArt.height || 1;
+    const scaleY = heightPixels / originalHeight;
+    
+    selectedArt.set({ scaleY });
+    selectedArt.setCoords();
+    
+    const actualWidth = (selectedArt.width || 0) * (selectedArt.scaleX || 1);
+    const actualHeight = originalHeight * scaleY;
+    setSize({ width: actualWidth, height: actualHeight });
+    setSizeInches({
+      width: pixelsToInches(actualWidth),
+      height: heightInches
     });
     
     if (canvas) {
@@ -317,20 +387,72 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   // [2025-12-04 21:55:00] 按照 Custom Ink 顺序重新排列控件
   return (
     <div className="dl-edit-art-panel">
-      {/* 1. Art Size（宽×高，单位 in） */}
+      {/* 1. Art Size（宽×高，单位 in）- [2025-12-08] 添加比例锁 */}
       <div className="dl-edit-art-panel__section">
-        <label className="dl-edit-art-panel__label">
-          Art Size: {sizeInches.width.toFixed(2)} × {sizeInches.height.toFixed(2)} in
-        </label>
-        <input
-          type="range"
-          min="0.1"
-          max="2"
-          step="0.1"
-          value={currentScale}
-          onChange={(e) => handleSizeChange(parseFloat(e.target.value))}
-          className="dl-edit-art-panel__slider"
-        />
+        <div className="dl-edit-art-panel__size-header">
+          <label className="dl-edit-art-panel__label">
+            Art Size: {sizeInches.width.toFixed(2)} × {sizeInches.height.toFixed(2)} in
+          </label>
+          <button
+            type="button"
+            className={`dl-edit-art-panel__lock-btn ${aspectRatioLocked ? 'is-locked' : ''}`}
+            onClick={() => setAspectRatioLocked(!aspectRatioLocked)}
+            aria-label={aspectRatioLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+            title={aspectRatioLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+          >
+            {aspectRatioLocked ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+              </svg>
+            )}
+          </button>
+        </div>
+        {aspectRatioLocked ? (
+          // 锁定比例时，使用单个滑块
+          <input
+            type="range"
+            min="0.1"
+            max="2"
+            step="0.1"
+            value={currentScale}
+            onChange={(e) => handleSizeChange(parseFloat(e.target.value))}
+            className="dl-edit-art-panel__slider"
+          />
+        ) : (
+          // 未锁定比例时，显示宽度和高度输入框
+          <div className="dl-edit-art-panel__size-inputs">
+            <div className="dl-edit-art-panel__size-input-group">
+              <label className="dl-edit-art-panel__size-label">Width</label>
+              <input
+                type="number"
+                className="dl-edit-art-panel__size-input"
+                value={sizeInches.width.toFixed(2)}
+                onChange={(e) => handleWidthChange(parseFloat(e.target.value) || 0)}
+                step="0.01"
+                min="0.1"
+              />
+              <span className="dl-edit-art-panel__size-unit">in</span>
+            </div>
+            <div className="dl-edit-art-panel__size-input-group">
+              <label className="dl-edit-art-panel__size-label">Height</label>
+              <input
+                type="number"
+                className="dl-edit-art-panel__size-input"
+                value={sizeInches.height.toFixed(2)}
+                onChange={(e) => handleHeightChange(parseFloat(e.target.value) || 0)}
+                step="0.01"
+                min="0.1"
+              />
+              <span className="dl-edit-art-panel__size-unit">in</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Center */}

@@ -25,12 +25,27 @@ const ART_CATEGORIES = [
   'Activities'
 ];
 
+// [2025-12-08] 子分类定义（根据PRD要求）
+const ART_SUBCATEGORIES: Record<string, string[]> = {
+  'Emojis': [
+    'Animals',
+    'Food & Drink',
+    'Hands',
+    'Nature & Weather',
+    'Objects & Symbols',
+    'Smileys',
+    'View All'
+  ],
+  // 其他分类可以在这里添加子分类
+};
+
 interface ArtPanelProps {
   onSelectArt: (artUrl: string, artName: string) => void;
 }
 
 const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   const [currentCategory, setCurrentCategory] = useState<string | null>(null);
+  const [currentSubcategory, setCurrentSubcategory] = useState<string | null>(null); // [2025-12-08] 当前子分类
   const [artAssets, setArtAssets] = useState<Record<string, ArtAsset[]>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +78,26 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     const query = searchQuery.toLowerCase();
     return assets.filter(asset => 
       asset.name.toLowerCase().includes(query) ||
-      asset.category?.toLowerCase().includes(query)
+      asset.category?.toLowerCase().includes(query) ||
+      asset.subcategory?.toLowerCase().includes(query)
+    );
+  };
+  
+  // [2025-12-08] 获取当前分类的子分类
+  const getSubcategories = (category: string): string[] => {
+    return ART_SUBCATEGORIES[category] || [];
+  };
+  
+  // [2025-12-08] 根据子分类过滤素材
+  const getFilteredAssetsBySubcategory = (category: string, subcategory: string | null): ArtAsset[] => {
+    const allAssets = artAssets[category] || [];
+    if (!subcategory || subcategory === 'View All') {
+      return allAssets;
+    }
+    // 根据子分类名称过滤（简化版：按名称匹配）
+    return allAssets.filter(asset => 
+      asset.subcategory?.toLowerCase() === subcategory.toLowerCase() ||
+      asset.name.toLowerCase().includes(subcategory.toLowerCase())
     );
   };
 
@@ -136,8 +170,13 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   }
 
   // [2025-01-30 18:00:00] 显示分类下的素材列表
-  // [2025-12-08] 应用搜索过滤
-  const categoryAssets = filterAssets(artAssets[currentCategory] || []);
+  // [2025-12-08] 应用子分类和搜索过滤
+  const categoryAssets = filterAssets(
+    getFilteredAssetsBySubcategory(currentCategory, currentSubcategory)
+  );
+  
+  // [2025-12-08] 获取当前分类的子分类列表
+  const subcategories = getSubcategories(currentCategory);
 
   return (
     <div className="dl-art-panel">
@@ -146,6 +185,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
           className="dl-art-panel__back-btn"
           onClick={() => {
             setCurrentCategory(null);
+            setCurrentSubcategory(null); // [2025-12-08] 返回时清空子分类
             setSearchQuery(''); // [2025-12-08] 返回时清空搜索
           }}
           type="button"
@@ -171,6 +211,22 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
           </svg>
         </div>
       </div>
+
+      {/* [2025-12-08] 子分类导航 */}
+      {subcategories.length > 0 && (
+        <div className="dl-art-panel__subcategories">
+          {subcategories.map(subcategory => (
+            <button
+              key={subcategory}
+              className={`dl-art-panel__subcategory-btn ${currentSubcategory === subcategory ? 'is-active' : ''}`}
+              onClick={() => setCurrentSubcategory(subcategory)}
+              type="button"
+            >
+              {subcategory}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="dl-art-panel__assets">
         {loading && <p className="dl-art-panel__loading">Loading assets...</p>}

@@ -195,10 +195,104 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // [2025-01-30 17:20:00] Crop（简化版，提示功能）
+  // [2025-12-08] Crop功能实现
   const handleCrop = () => {
-    // TODO: 实现裁剪功能
-    alert('Crop feature coming soon');
+    if (!selectedImage || !canvas) return;
+    
+    try {
+      // 获取图片元素的原始尺寸
+      const imgElement = selectedImage.getElement() as HTMLImageElement;
+      if (!imgElement) {
+        alert('Unable to crop: image element not found');
+        return;
+      }
+      
+      // 创建临时canvas用于裁剪
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      if (!tempCtx) {
+        alert('Unable to crop: canvas context not available');
+        return;
+      }
+      
+      // 获取当前图片的边界框（考虑缩放和旋转）
+      const boundingRect = selectedImage.getBoundingRect();
+      const left = boundingRect.left;
+      const top = boundingRect.top;
+      const width = boundingRect.width;
+      const height = boundingRect.height;
+      
+      // 设置临时canvas尺寸
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      
+      // 保存当前变换
+      tempCtx.save();
+      
+      // 应用旋转和平移
+      const angle = selectedImage.angle || 0;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      
+      tempCtx.translate(centerX, centerY);
+      tempCtx.rotate((angle * Math.PI) / 180);
+      tempCtx.translate(-centerX, -centerY);
+      
+      // 绘制图片（考虑缩放）
+      const scaleX = selectedImage.scaleX || 1;
+      const scaleY = selectedImage.scaleY || 1;
+      const imgWidth = (selectedImage.width || 0) * scaleX;
+      const imgHeight = (selectedImage.height || 0) * scaleY;
+      
+      // 计算图片在canvas中的位置（居中）
+      const imgLeft = (width - imgWidth) / 2;
+      const imgTop = (height - imgHeight) / 2;
+      
+      tempCtx.drawImage(imgElement, imgLeft, imgTop, imgWidth, imgHeight);
+      tempCtx.restore();
+      
+      // 从临时canvas创建新的图片
+      tempCanvas.toBlob((blob) => {
+        if (!blob) {
+          alert('Failed to create cropped image');
+          return;
+        }
+        
+        const url = URL.createObjectURL(blob);
+        fabric.Image.fromURL(url, (croppedImage) => {
+          if (!croppedImage || !canvas || !selectedImage) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          
+          // 保持原有的位置和属性
+          croppedImage.set({
+            left: selectedImage.left,
+            top: selectedImage.top,
+            originX: selectedImage.originX,
+            originY: selectedImage.originY,
+            angle: 0, // 裁剪后重置旋转
+            scaleX: 1,
+            scaleY: 1,
+            name: selectedImage.name || `image_${Date.now()}`
+          });
+          
+          // 替换原始图片
+          canvas.remove(selectedImage);
+          canvas.add(croppedImage);
+          canvas.setActiveObject(croppedImage);
+          canvas.renderAll();
+          
+          // 清理URL
+          URL.revokeObjectURL(url);
+          
+          onUpdate();
+        });
+      }, 'image/png');
+    } catch (error) {
+      console.error('[EditUploadPanel] Error cropping image:', error);
+      alert('Failed to crop image. Please try again.');
+    }
   };
 
   // [2025-01-30 23:30:00] Reset To Original

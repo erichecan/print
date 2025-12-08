@@ -28,6 +28,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   const [outlineWidth, setOutlineWidth] = useState(0);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
   const [textShape, setTextShape] = useState<'straight' | 'arc' | 'circle' | 'wave'>('straight'); // [2025-12-08] 文本形状
+  const [isOutOfSafeArea, setIsOutOfSafeArea] = useState(false); // [2025-12-08] 是否超出安全区
   // [2025-01-30 18:15:00] 字体选择器下拉菜单状态
   const [showFontDropdown, setShowFontDropdown] = useState(false);
   const fontSelectorRef = useRef<HTMLDivElement>(null);
@@ -130,8 +131,61 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       } else {
         setTextShape('straight');
       }
+      
+      // [2025-12-08] 检查是否超出安全区
+      checkSafeArea(selectedText, canvas);
     }
-  }, [selectedText, fonts]);
+  }, [selectedText, fonts, canvas]);
+  
+  // [2025-12-08] 检查对象是否超出安全区
+  const checkSafeArea = (textObj: fabric.IText, canvasObj: fabric.Canvas | null) => {
+    if (!textObj || !canvasObj) {
+      setIsOutOfSafeArea(false);
+      return;
+    }
+    
+    // 安全区边距（假设为画布的10%）
+    const safeAreaMargin = 0.1;
+    const canvasWidth = canvasObj.width || 1000;
+    const canvasHeight = canvasObj.height || 1200;
+    const safeLeft = canvasWidth * safeAreaMargin;
+    const safeTop = canvasHeight * safeAreaMargin;
+    const safeRight = canvasWidth * (1 - safeAreaMargin);
+    const safeBottom = canvasHeight * (1 - safeAreaMargin);
+    
+    // 获取文本对象的边界框
+    const boundingRect = textObj.getBoundingRect();
+    const objLeft = boundingRect.left;
+    const objTop = boundingRect.top;
+    const objRight = objLeft + boundingRect.width;
+    const objBottom = objTop + boundingRect.height;
+    
+    // 检查是否超出安全区
+    const outOfBounds = 
+      objLeft < safeLeft ||
+      objTop < safeTop ||
+      objRight > safeRight ||
+      objBottom > safeBottom;
+    
+    setIsOutOfSafeArea(outOfBounds);
+  };
+  
+  // [2025-12-08] 监听对象移动和缩放，实时检查安全区
+  useEffect(() => {
+    if (!selectedText || !canvas) return;
+    
+    const handleObjectModified = () => {
+      checkSafeArea(selectedText, canvas);
+    };
+    
+    canvas.on('object:modified', handleObjectModified);
+    canvas.on('object:moving', handleObjectModified);
+    
+    return () => {
+      canvas.off('object:modified', handleObjectModified);
+      canvas.off('object:moving', handleObjectModified);
+    };
+  }, [selectedText, canvas]);
 
   // [2025-01-30 17:45:00] 更新文本内容
   const handleTextChange = (newText: string) => {
@@ -647,6 +701,25 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
           Duplicate
         </button>
       </div>
+
+      {/* [2025-12-08] 超出安全区警示 */}
+      {isOutOfSafeArea && (
+        <div className="dl-edit-text-panel__section dl-edit-text-panel__section--warning">
+          <div className="dl-edit-text-panel__warning">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: '#f59e0b', flexShrink: 0 }}>
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <div className="dl-edit-text-panel__warning-content">
+              <p className="dl-edit-text-panel__warning-title">Text is outside the safe print area</p>
+              <p className="dl-edit-text-panel__warning-text">
+                Parts of your text may be cut off during printing. Please adjust the position or size.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
