@@ -13,6 +13,7 @@ interface TextPanelProps {
 
 const TextPanel: React.FC<TextPanelProps> = ({ onAddText }) => {
   // [2025-01-31 00:00:00] 初始文本为空，匹配 Custom Ink 行为
+  // [2025-12-08] 修复：为空时禁用"Add To Design"按钮
   const [text, setText] = useState('');
 
   const handleAddToDesign = () => {
@@ -20,6 +21,9 @@ const TextPanel: React.FC<TextPanelProps> = ({ onAddText }) => {
     const trimmedText = text.trim() || 'Your Text';
     onAddText(trimmedText);
   };
+
+  // [2025-12-08] 检查文本是否为空（去除空白字符后）
+  const isTextEmpty = !text.trim();
 
   return (
     <div className="dl-text-panel">
@@ -30,7 +34,7 @@ const TextPanel: React.FC<TextPanelProps> = ({ onAddText }) => {
             className="dl-text-panel__input"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Your Text"
+            placeholder="Enter text here"
             rows={4}
             autoFocus
           />
@@ -40,6 +44,7 @@ const TextPanel: React.FC<TextPanelProps> = ({ onAddText }) => {
           className="dl-text-panel__add-btn"
           onClick={handleAddToDesign}
           type="button"
+          disabled={isTextEmpty} // [2025-12-08] 为空时禁用按钮
         >
           Add To Design
         </button>

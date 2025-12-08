@@ -16,6 +16,7 @@ interface EditUploadPanelProps {
   onReset?: () => void;
   onSave?: () => void;
   onClose?: () => void;
+  onOpenRatingModal?: () => void; // [2025-12-08] 添加可选的上传体验评分模态框回调
 }
 
 const EditUploadPanel: React.FC<EditUploadPanelProps> = ({ 
@@ -28,10 +29,13 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   onOpenRatingModal
 }) => {
   const [size, setSize] = useState({ width: 0, height: 0 });
+  const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 }); // [2025-12-08] 英寸单位尺寸
   const [rotation, setRotation] = useState(0);
   const [makeOneColor, setMakeOneColor] = useState(false);
   const [removeBackground, setRemoveBackground] = useState(false);
   const [originalImageData, setOriginalImageData] = useState<string | null>(null);
+  const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // [2025-12-08] 比例锁状态
+  const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // [2025-12-08] 原始宽高比
 
   // [2025-01-30 23:30:00] 保存原始图片数据用于 Reset
   useEffect(() => {
@@ -43,6 +47,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   }, [selectedImage, originalImageData]);
 
   // [2025-01-30 17:20:00] 更新尺寸和旋转值
+  // [2025-12-08] 添加英寸单位计算和原始宽高比保存
   useEffect(() => {
     if (selectedImage) {
       // 计算实际尺寸（考虑缩放）
@@ -54,8 +59,14 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       const widthInches = actualWidth / dpi;
       const heightInches = actualHeight / dpi;
       
-      setSize({ width: widthInches, height: heightInches });
+      setSize({ width: actualWidth, height: actualHeight }); // 像素单位
+      setSizeInches({ width: widthInches, height: heightInches }); // 英寸单位
       setRotation(selectedImage.angle || 0);
+      
+      // [2025-12-08] 保存原始宽高比
+      if (actualHeight > 0) {
+        setOriginalAspectRatio(actualWidth / actualHeight);
+      }
     }
   }, [selectedImage]);
 
@@ -136,6 +147,37 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       canvas.renderAll();
       onUpdate();
     });
+  };
+
+  // [2025-12-08] 处理尺寸变化
+  const handleSizeChange = (widthInches: number, heightInches: number) => {
+    if (!selectedImage) return;
+    
+    // 转换为像素（300 DPI）
+    const dpi = 300;
+    const widthPixels = widthInches * dpi;
+    const heightPixels = heightInches * dpi;
+    
+    // 计算缩放比例
+    const originalWidth = selectedImage.width || 1;
+    const originalHeight = selectedImage.height || 1;
+    const scaleX = widthPixels / originalWidth;
+    const scaleY = heightPixels / originalHeight;
+    
+    selectedImage.set({
+      scaleX,
+      scaleY
+    });
+    selectedImage.setCoords();
+    
+    // 更新状态
+    setSize({ width: widthPixels, height: heightPixels });
+    setSizeInches({ width: widthInches, height: heightInches });
+    
+    if (canvas) {
+      canvas.renderAll();
+      onUpdate();
+    }
   };
 
   // [2025-01-30 17:20:00] Rotation slider
@@ -229,23 +271,71 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       </div>
 
       <div className="dl-edit-upload-panel__content">
-        {/* Upload Size */}
+        {/* Upload Size - [2025-12-08] 添加编辑功能和比例锁 */}
         <div className="dl-edit-upload-panel__section">
-          <label className="dl-edit-upload-panel__label">Width x Height</label>
+          <div className="dl-edit-upload-panel__size-header">
+            <label className="dl-edit-upload-panel__label">Upload Size</label>
+            <button
+              type="button"
+              className={`dl-edit-upload-panel__lock-btn ${aspectRatioLocked ? 'is-locked' : ''}`}
+              onClick={() => setAspectRatioLocked(!aspectRatioLocked)}
+              aria-label={aspectRatioLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+              title={aspectRatioLocked ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+            >
+              {aspectRatioLocked ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+                </svg>
+              )}
+            </button>
+          </div>
           <div className="dl-edit-upload-panel__size-inputs">
             <input
-              type="text"
+              type="number"
               className="dl-edit-upload-panel__size-input"
-              value={`${size.width.toFixed(2)} in`}
-              readOnly
+              value={sizeInches.width.toFixed(2)}
+              onChange={(e) => {
+                const newWidth = parseFloat(e.target.value) || 0;
+                if (newWidth > 0) {
+                  let newHeight = sizeInches.height;
+                  if (aspectRatioLocked) {
+                    // [2025-12-08] 锁定比例时，按比例计算高度
+                    newHeight = newWidth / originalAspectRatio;
+                  }
+                  handleSizeChange(newWidth, newHeight);
+                }
+              }}
+              step="0.01"
+              min="0.1"
+              placeholder="Width"
             />
             <span className="dl-edit-upload-panel__size-separator">×</span>
             <input
-              type="text"
+              type="number"
               className="dl-edit-upload-panel__size-input"
-              value={`${size.height.toFixed(2)} in`}
-              readOnly
+              value={sizeInches.height.toFixed(2)}
+              onChange={(e) => {
+                const newHeight = parseFloat(e.target.value) || 0;
+                if (newHeight > 0) {
+                  let newWidth = sizeInches.width;
+                  if (aspectRatioLocked) {
+                    // [2025-12-08] 锁定比例时，按比例计算宽度
+                    newWidth = newHeight * originalAspectRatio;
+                  }
+                  handleSizeChange(newWidth, newHeight);
+                }
+              }}
+              step="0.01"
+              min="0.1"
+              placeholder="Height"
             />
+            <span className="dl-edit-upload-panel__size-unit">in</span>
           </div>
         </div>
 

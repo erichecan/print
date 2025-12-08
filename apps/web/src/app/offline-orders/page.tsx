@@ -109,6 +109,8 @@ type FormState = {
   globalPrintPositions: PrintPosition[]; // 总体印刷位置
   orderNotes: string; // 订单备注（非必填）
   dstFileFee: number; // DST File Fee（订单级别，仅当有Embroidery时）
+  globalUnitPrice: number; // [2025-12-08 05:25:00] 全局单价
+  globalQuantitySubtotal: number; // [2025-12-08 05:25:00] 全局件数小计
   
   // 第二步：客户信息
   contactName: string;
@@ -149,6 +151,8 @@ const initialFormState: FormState = {
   globalPrintPositions: [],
   orderNotes: '',
   dstFileFee: 0,
+  globalUnitPrice: 0, // [2025-12-08 05:25:00] 全局单价
+  globalQuantitySubtotal: 0, // [2025-12-08 05:25:00] 全局件数小计
   contactName: '',
   email: '',
   phone: '',
@@ -1302,28 +1306,7 @@ export default function OfflineOrdersIntakePage() {
                                   return (
                                     <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                                       <label className="block text-xs text-gray-600 mb-1">{size}</label>
-                                      {/* [2025-12-08 05:15:00] 单价输入框移到数量输入框上面，并始终显示 */}
-                                      {/* [2025-12-08 05:20:00] 单价输入框旁边显示该尺码的总数量小计 */}
-                                      <div className="flex items-center gap-1 mb-1">
-                                        <input
-                                          type="text"
-                                          value={sizeData?.unitPrice || ''}
-                                          onChange={(e) => {
-                                            const value = e.target.value.replace(/[^\d.]/g, '');
-                                            const unitPrice = parseFloat(value) || 0;
-                                            const quantity = sizeData?.quantity || 0;
-                                            updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                          }}
-                                          disabled={!isAvailable}
-                                          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                          placeholder="单价"
-                                        />
-                                        {calculateSizeTotalQuantity[size] > 0 && (
-                                          <span className="text-xs text-gray-500 whitespace-nowrap">
-                                            小计: {calculateSizeTotalQuantity[size]}
-                                          </span>
-                                        )}
-                                      </div>
+                                      {/* [2025-12-08 05:25:00] 移除单价输入框，只保留数量输入框 */}
                                       <input
                                         type="number"
                                         min="0"
@@ -1332,18 +1315,14 @@ export default function OfflineOrdersIntakePage() {
                                           // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
                                           const inputValue = e.target.value;
                                           const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                                          const unitPrice = sizeData?.unitPrice || 0;
+                                          // [2025-12-08 05:25:00] 使用全局单价
+                                          const unitPrice = formState.globalUnitPrice || 0;
                                           updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
                                         }}
                                         disabled={!isAvailable}
                                         className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         placeholder="数量"
                                       />
-                                      {sizeData && sizeData.subtotal > 0 && (
-                                        <div className="text-xs text-blue-700 mt-1">
-                                          小计: ${sizeData.subtotal.toFixed(2)}
-                                        </div>
-                                      )}
                                     </div>
                                   );
                                 })}
@@ -1367,28 +1346,7 @@ export default function OfflineOrdersIntakePage() {
                                           <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
                                         )}
                                       </label>
-                                      {/* [2025-12-08 05:15:00] 单价输入框移到数量输入框上面，并始终显示 */}
-                                      {/* [2025-12-08 05:20:00] 单价输入框旁边显示该尺码的总数量小计 */}
-                                      <div className="flex items-center gap-1 mb-1">
-                                        <input
-                                          type="text"
-                                          value={sizeData?.unitPrice || ''}
-                                          onChange={(e) => {
-                                            const value = e.target.value.replace(/[^\d.]/g, '');
-                                            const unitPrice = parseFloat(value) || 0;
-                                            const quantity = sizeData?.quantity || 0;
-                                            updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                          }}
-                                          disabled={!isAvailable}
-                                          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                          placeholder="单价"
-                                        />
-                                        {calculateSizeTotalQuantity[size] > 0 && (
-                                          <span className="text-xs text-gray-500 whitespace-nowrap">
-                                            小计: {calculateSizeTotalQuantity[size]}
-                                          </span>
-                                        )}
-                                      </div>
+                                      {/* [2025-12-08 05:25:00] 移除单价输入框，只保留数量输入框 */}
                                       <input
                                         type="number"
                                         min="0"
@@ -1397,18 +1355,14 @@ export default function OfflineOrdersIntakePage() {
                                           // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
                                           const inputValue = e.target.value;
                                           const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                                          const unitPrice = sizeData?.unitPrice || 0;
+                                          // [2025-12-08 05:25:00] 使用全局单价
+                                          const unitPrice = formState.globalUnitPrice || 0;
                                           updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
                                         }}
                                         disabled={!isAvailable}
                                         className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         placeholder="数量"
                                       />
-                                      {sizeData && sizeData.subtotal > 0 && (
-                                        <div className="text-xs text-blue-700 mt-1">
-                                          小计: ${sizeData.subtotal.toFixed(2)}
-                                        </div>
-                                      )}
                                     </div>
                                   );
                                 })}
@@ -1416,17 +1370,7 @@ export default function OfflineOrdersIntakePage() {
                             </div>
                           </div>
 
-                          {/* 颜色小计 */}
-                          {color.totalPrice > 0 && (
-                            <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-700">
-                                该颜色小计: {color.totalQuantity} 件
-                              </span>
-                              <span className="text-sm font-semibold text-blue-700">
-                                ${color.totalPrice.toFixed(2)} CAD
-                              </span>
-                            </div>
-                          )}
+                          {/* [2025-12-08 05:25:00] 移除颜色小计显示 */}
                         </div>
                       );
                     })}
@@ -1458,17 +1402,7 @@ export default function OfflineOrdersIntakePage() {
                     </div>
                   </div>
 
-                  {/* 产品小计 */}
-                  {item.totalPrice > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                      <span className="text-base font-medium text-gray-700">
-                        {t('productSubtotal') || '产品小计'}: {item.totalQuantity} {t('items') || '件'}
-                      </span>
-                      <span className="text-lg font-semibold text-blue-700">
-                        ${item.totalPrice.toFixed(2)} CAD
-                      </span>
-                    </div>
-                  )}
+                  {/* [2025-12-08 05:25:00] 移除产品小计显示 */}
                 </div>
               );
             })}
@@ -1668,6 +1602,46 @@ export default function OfflineOrdersIntakePage() {
               placeholder={t('orderNotesPlaceholder') || '请输入订单备注（可选）...'}
             />
           </label>
+        </div>
+
+        {/* [2025-12-08 05:25:00] 单价和件数小计输入框 - 在总价计算模块上面 */}
+        <div className="mt-6 p-5 bg-white border border-gray-200 rounded-xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">单价:</span>
+              <input
+                type="text"
+                value={formState.globalUnitPrice > 0 ? formState.globalUnitPrice.toString() : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^\d.]/g, '');
+                  const unitPrice = parseFloat(value) || 0;
+                  setFormState(prev => ({ ...prev, globalUnitPrice: unitPrice }));
+                  // [2025-12-08 05:25:00] 更新所有尺码的单价
+                  formState.productItems.forEach((item) => {
+                    item.colors.forEach((color) => {
+                      color.sizes.forEach((sizeData) => {
+                        if (sizeData.quantity > 0) {
+                          updateSizeQuantity(item.id, color.colorId, sizeData.size, sizeData.quantity, unitPrice);
+                        }
+                      });
+                    });
+                  });
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                placeholder="请输入单价"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">件数小计:</span>
+              <input
+                type="text"
+                value={calculateTotalQuantity > 0 ? calculateTotalQuantity.toString() : ''}
+                readOnly
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50"
+                placeholder="自动计算"
+              />
+            </label>
+          </div>
         </div>
 
         {/* 总计 - PRD v2.0 */}

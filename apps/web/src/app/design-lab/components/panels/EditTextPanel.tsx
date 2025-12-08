@@ -27,6 +27,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   const [outlineColor, setOutlineColor] = useState('#000000');
   const [outlineWidth, setOutlineWidth] = useState(0);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
+  const [textShape, setTextShape] = useState<'straight' | 'arc' | 'circle' | 'wave'>('straight'); // [2025-12-08] 文本形状
   // [2025-01-30 18:15:00] 字体选择器下拉菜单状态
   const [showFontDropdown, setShowFontDropdown] = useState(false);
   const fontSelectorRef = useRef<HTMLDivElement>(null);
@@ -110,6 +111,24 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       if (selectedText.stroke) {
         setOutlineColor(selectedText.stroke as string || '#000000');
         setOutlineWidth(selectedText.strokeWidth || 0);
+      }
+      
+      // [2025-12-08] 文本形状（如果有path属性，判断形状类型）
+      if ((selectedText as any).path) {
+        const path = (selectedText as any).path;
+        if (typeof path === 'string') {
+          if (path.includes('A') && path.includes('radius')) {
+            setTextShape('circle');
+          } else if (path.includes('Q')) {
+            setTextShape('arc');
+          } else if (path.includes('sin')) {
+            setTextShape('wave');
+          } else {
+            setTextShape('arc'); // 默认弧形
+          }
+        }
+      } else {
+        setTextShape('straight');
       }
     }
   }, [selectedText, fonts]);
@@ -213,6 +232,72 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       if (canvas) {
         canvas.renderAll();
         onUpdate();
+      }
+    }
+  };
+
+  // [2025-12-08] 处理文本形状变化
+  const handleTextShapeChange = (shape: 'straight' | 'arc' | 'circle' | 'wave') => {
+    setTextShape(shape);
+    if (!selectedText || !canvas) return;
+    
+    try {
+      // 获取文本对象的位置和属性
+      const left = selectedText.left || 0;
+      const top = selectedText.top || 0;
+      const text = selectedText.text || '';
+      const fontSize = selectedText.fontSize || 48;
+      const fontFamily = selectedText.fontFamily || 'Arial';
+      const fill = selectedText.fill as string || '#000000';
+      const stroke = selectedText.stroke as string || '';
+      const strokeWidth = selectedText.strokeWidth || 0;
+      
+      // 创建路径
+      let path: string;
+      const width = (selectedText.width || 200);
+      const height = (selectedText.height || 50);
+      
+      switch (shape) {
+        case 'straight':
+          // 直线：使用普通文本对象
+          selectedText.set('path', undefined);
+          break;
+        case 'arc':
+          // 弧形：使用SVG路径
+          path = `M ${left} ${top + height} Q ${left + width / 2} ${top} ${left + width} ${top + height}`;
+          selectedText.set('path', path);
+          break;
+        case 'circle':
+          // 圆形：使用圆形路径
+          const radius = Math.min(width, height) / 2;
+          const centerX = left + width / 2;
+          const centerY = top + height / 2;
+          path = `M ${centerX + radius} ${centerY} A ${radius} ${radius} 0 1 1 ${centerX - radius} ${centerY} A ${radius} ${radius} 0 1 1 ${centerX + radius} ${centerY}`;
+          selectedText.set('path', path);
+          break;
+        case 'wave':
+          // 波浪：使用波浪路径
+          const waveAmplitude = 10;
+          const waveLength = width / 4;
+          let wavePath = `M ${left} ${top + height / 2}`;
+          for (let i = 0; i <= width; i += waveLength) {
+            const x = left + i;
+            const y = top + height / 2 + Math.sin((i / waveLength) * Math.PI * 2) * waveAmplitude;
+            wavePath += ` L ${x} ${y}`;
+          }
+          selectedText.set('path', wavePath);
+          break;
+      }
+      
+      selectedText.setCoords();
+      canvas.renderAll();
+      onUpdate();
+    } catch (error) {
+      console.error('[EditTextPanel] Error applying text shape:', error);
+      // 如果路径设置失败，回退到直线
+      if (selectedText) {
+        selectedText.set('path', undefined);
+        canvas?.renderAll();
       }
     }
   };
@@ -441,6 +526,41 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
             className="dl-edit-text-panel__slider"
           />
           <span className="dl-edit-text-panel__slider-value">{outlineWidth.toFixed(0)}px</span>
+        </div>
+      </div>
+
+      {/* 5.5. Text Shape（文本形状） - [2025-12-08] 新增 */}
+      <div className="dl-edit-text-panel__section">
+        <label className="dl-edit-text-panel__label">Text Shape</label>
+        <div className="dl-edit-text-panel__btn-group">
+          <button
+            className={`dl-edit-text-panel__btn ${textShape === 'straight' ? 'is-active' : ''}`}
+            onClick={() => handleTextShapeChange('straight')}
+            type="button"
+          >
+            Straight
+          </button>
+          <button
+            className={`dl-edit-text-panel__btn ${textShape === 'arc' ? 'is-active' : ''}`}
+            onClick={() => handleTextShapeChange('arc')}
+            type="button"
+          >
+            Arc
+          </button>
+          <button
+            className={`dl-edit-text-panel__btn ${textShape === 'circle' ? 'is-active' : ''}`}
+            onClick={() => handleTextShapeChange('circle')}
+            type="button"
+          >
+            Circle
+          </button>
+          <button
+            className={`dl-edit-text-panel__btn ${textShape === 'wave' ? 'is-active' : ''}`}
+            onClick={() => handleTextShapeChange('wave')}
+            type="button"
+          >
+            Wave
+          </button>
         </div>
       </div>
 

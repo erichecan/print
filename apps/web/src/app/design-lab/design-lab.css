@@ -846,6 +846,56 @@
   font-size: var(--dl-font-sm);
 }
 
+/* [2025-12-08] Upload Size编辑功能样式 */
+.dl-edit-upload-panel__size-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-edit-upload-panel__lock-btn {
+  background: none;
+  border: none;
+  padding: var(--dl-space-1);
+  cursor: pointer;
+  color: var(--dl-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--dl-transition-base);
+}
+
+.dl-edit-upload-panel__lock-btn:hover {
+  color: var(--dl-color-primary);
+}
+
+.dl-edit-upload-panel__lock-btn.is-locked {
+  color: var(--dl-color-primary);
+}
+
+.dl-edit-upload-panel__size-input {
+  flex: 1;
+  padding: var(--dl-space-2) var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  background: var(--dl-bg-panel);
+}
+
+.dl-edit-upload-panel__size-input:focus {
+  outline: none;
+  border-color: var(--dl-color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.dl-edit-upload-panel__size-unit {
+  color: var(--dl-text-secondary);
+  font-size: var(--dl-font-sm);
+  padding: 0 var(--dl-space-2);
+}
+
 .dl-edit-upload-panel__colors {
   display: flex;
   gap: var(--dl-space-2);
@@ -1141,6 +1191,19 @@
 
 .dl-text-panel__add-btn:active {
   background: #003d7a;
+}
+
+/* [2025-12-08] 禁用状态样式 */
+.dl-text-panel__add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--dl-bg-secondary);
+  color: var(--dl-text-secondary);
+}
+
+.dl-text-panel__add-btn:disabled:hover {
+  background: var(--dl-bg-secondary);
+  color: var(--dl-text-secondary);
 }
 
 /* [2025-01-31 00:00:00] 像素级对齐 Custom Ink designlab-addtext03.jpeg - Edit Text 面板 */
@@ -1481,6 +1544,37 @@
 
 .dl-art-panel__categories {
   flex: 1;
+}
+
+/* [2025-12-08] Art Panel搜索框样式 */
+.dl-art-panel__search {
+  position: relative;
+  margin-bottom: var(--dl-space-4);
+}
+
+.dl-art-panel__search-input {
+  width: 100%;
+  padding: var(--dl-space-2) var(--dl-space-3) var(--dl-space-2) var(--dl-space-10);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  background: var(--dl-bg-panel);
+}
+
+.dl-art-panel__search-input:focus {
+  outline: none;
+  border-color: var(--dl-color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.dl-art-panel__search-icon {
+  position: absolute;
+  left: var(--dl-space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dl-text-secondary);
+  pointer-events: none;
 }
 
 .dl-art-panel__grid {

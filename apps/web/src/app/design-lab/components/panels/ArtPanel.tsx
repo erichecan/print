@@ -34,6 +34,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   const [artAssets, setArtAssets] = useState<Record<string, ArtAsset[]>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState(''); // [2025-12-08] 搜索关键词
 
   // [2025-01-30 18:00:00] 加载所有艺术素材
   useEffect(() => {
@@ -56,13 +57,38 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     loadArtAssets();
   }, []);
 
+  // [2025-12-08] 过滤素材（搜索功能）
+  const filterAssets = (assets: ArtAsset[]) => {
+    if (!searchQuery.trim()) return assets;
+    const query = searchQuery.toLowerCase();
+    return assets.filter(asset => 
+      asset.name.toLowerCase().includes(query) ||
+      asset.category?.toLowerCase().includes(query)
+    );
+  };
+
   // [2025-01-30 18:00:00] 显示分类网格
   // [2025-12-04 21:50:00] 优化分类网格 UI，添加 header 和更好的布局
+  // [2025-12-08] 添加搜索功能
   if (!currentCategory) {
     return (
       <div className="dl-art-panel">
         <div className="dl-art-panel__header">
           <h2 className="dl-art-panel__title">Artwork Categories</h2>
+          {/* [2025-12-08] 搜索框 */}
+          <div className="dl-art-panel__search">
+            <input
+              type="text"
+              className="dl-art-panel__search-input"
+              placeholder="Search For Artwork"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="dl-art-panel__search-icon">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+          </div>
         </div>
         <div className="dl-art-panel__categories">
           {loading && <p className="dl-art-panel__loading">Loading categories...</p>}
@@ -70,7 +96,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
           {!loading && !error && (
             <div className="dl-art-panel__grid">
               {ART_CATEGORIES.map(category => {
-                const assets = artAssets[category] || [];
+                const assets = filterAssets(artAssets[category] || []); // [2025-12-08] 应用搜索过滤
                 const hasAssets = assets.length > 0;
                 
                 return (
@@ -110,14 +136,18 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   }
 
   // [2025-01-30 18:00:00] 显示分类下的素材列表
-  const categoryAssets = artAssets[currentCategory] || [];
+  // [2025-12-08] 应用搜索过滤
+  const categoryAssets = filterAssets(artAssets[currentCategory] || []);
 
   return (
     <div className="dl-art-panel">
       <div className="dl-art-panel__header">
         <button
           className="dl-art-panel__back-btn"
-          onClick={() => setCurrentCategory(null)}
+          onClick={() => {
+            setCurrentCategory(null);
+            setSearchQuery(''); // [2025-12-08] 返回时清空搜索
+          }}
           type="button"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -126,6 +156,20 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
           Back to Categories
         </button>
         <h3 className="dl-art-panel__category-title">{currentCategory}</h3>
+        {/* [2025-12-08] 分类页面也显示搜索框 */}
+        <div className="dl-art-panel__search">
+          <input
+            type="text"
+            className="dl-art-panel__search-input"
+            placeholder="Search For Artwork"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="dl-art-panel__search-icon">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+        </div>
       </div>
 
       <div className="dl-art-panel__assets">
