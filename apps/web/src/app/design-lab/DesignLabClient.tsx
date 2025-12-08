@@ -1185,7 +1185,7 @@ const DesignLabClient: React.FC = () => {
       
       if (!imageUrl) {
         console.error('[DesignLab] Image URL is empty');
-        alert('Failed to read file');
+        showErrorToast('Failed to read the file. Please try again or choose a different file.');
         return;
       }
       
@@ -1301,20 +1301,24 @@ const DesignLabClient: React.FC = () => {
               fileSize: file.size,
               fileType: file.type,
             });
+            
+            // [2025-12-08] 上传成功提示
+            showSuccessToast(`Image "${file.name}" uploaded successfully!`);
           } else {
             console.error('[DesignLab] Canvas is null after image creation');
+            showErrorToast('Failed to add image to canvas. Please try again.');
           }
         } catch (error) {
           console.error('[DesignLab] Error creating Fabric image:', error);
           console.error('[DesignLab] Error stack:', (error as Error).stack);
-          alert('Failed to add image: ' + (error as Error).message);
+          showErrorToast(`Failed to process the image: ${(error as Error).message}. Please try a different file.`);
         }
       };
       
       imgElement.onerror = (error) => {
         console.error('[DesignLab] Image load error:', error);
         console.error('[DesignLab] Image URL (first 100 chars):', imageUrl.substring(0, 100));
-        alert('Failed to load image. Please check the file format.');
+        showErrorToast('Failed to load the image. The file may be corrupted. Please try a different file.');
         
         // [2025-12-08] 埋点：上传失败
         analytics.track('upload_failed', {
@@ -1330,7 +1334,12 @@ const DesignLabClient: React.FC = () => {
     
     reader.onerror = (error) => {
       console.error('[DesignLab] FileReader error:', error);
-      alert('Failed to read file');
+      showErrorToast('Failed to read the file. Please try again or choose a different file.');
+    };
+
+    reader.onabort = () => {
+      console.warn('[DesignLab] FileReader aborted');
+      showWarningToast('File upload was cancelled.');
     };
     
     reader.readAsDataURL(file);
