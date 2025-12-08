@@ -40,14 +40,52 @@ async function handleProxyRequest(
 ) {
   // [2025-12-02 04:25:00] 处理 Next.js 15 的异步 params
   // [2025-12-08 04:40:00] 修复：确保正确处理 params，包括空数组情况
-  const params = await Promise.resolve(context.params);
+  // [2025-12-08 04:50:00] 修复：处理 Next.js 15 中 params 可能是 Promise 的情况
+  let params: { path: string[] } | { path?: string[] };
+  try {
+    params = await Promise.resolve(context.params);
+  } catch (e) {
+    console.error('[API Proxy] ❌ Failed to resolve params:', e);
+    return NextResponse.json(
+      { error: 'Invalid request parameters', message: 'Failed to parse route parameters' },
+      { status: 400 }
+    );
+  }
+  
   const timestamp = new Date().toISOString();
   
   try {
     // [2025-12-02 04:15:00] 构建后端 API 路径
     // [2025-12-08 04:40:00] 修复：确保 path 存在且是数组
-    const pathSegments = Array.isArray(params?.path) ? params.path : (params?.path ? [params.path] : []);
+    // [2025-12-08 04:50:00] 增强：更健壮的路径解析
+    let pathSegments: string[] = [];
+    if (params?.path) {
+      if (Array.isArray(params.path)) {
+        pathSegments = params.path;
+      } else if (typeof params.path === 'string') {
+        pathSegments = [params.path];
+      }
+    }
+    
+    // [2025-12-08 04:50:00] 如果 pathSegments 为空，尝试从 URL 中提取
+    if (pathSegments.length === 0) {
+      const urlPath = request.nextUrl.pathname;
+      const match = urlPath.match(/^\/api\/proxy\/(.+)$/);
+      if (match && match[1]) {
+        pathSegments = match[1].split('/').filter(Boolean);
+      }
+    }
+    
     const backendPath = pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+    
+    // [2025-12-08 04:50:00] 增强日志：记录路径解析过程
+    console.log('[API Proxy] 📍 Path Resolution', {
+      timestamp,
+      originalParams: params?.path,
+      pathSegments,
+      backendPath,
+      urlPath: request.nextUrl.pathname,
+    });
     
     // [2025-12-02 04:15:00] 检查是否需要认证（可选，用于日志）
     const needsAuth = requiresAuth(backendPath);
@@ -58,7 +96,18 @@ async function handleProxyRequest(
     const fullPath = queryString ? `${backendPath}?${queryString}` : backendPath;
     
     // [2025-12-02 04:15:00] 构建后端 URL
+    // [2025-12-08 04:55:00] 修复：API_BASE 已经包含 /api，直接拼接 backendPath
+    // backendPath 已经以 / 开头（如 /cart, /sales/orders），所以直接拼接即可
     const upstreamUrl = `${API_BASE}${fullPath}`;
+    
+    // [2025-12-08 04:55:00] 增强日志：记录完整的 URL 构建过程
+    console.log('[API Proxy] 🔗 URL Construction', {
+      timestamp,
+      API_BASE,
+      backendPath,
+      fullPath,
+      upstreamUrl,
+    });
     
     // [2025-12-07 07:55:00] 简化：直接从 Authorization header 读取 token（不再使用 Cookie）
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
@@ -279,7 +328,9 @@ async function handleProxyRequest(
       error: error?.message,
       stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
       name: error?.name,
-      path: params.path
+      path: params?.path,
+      pathType: typeof params?.path,
+      pathIsArray: Array.isArray(params?.path),
     });
     return NextResponse.json(
       {
@@ -288,7 +339,8 @@ async function handleProxyRequest(
         details: process.env.NODE_ENV === 'development' ? {
           error: error?.message,
           stack: error?.stack,
-          path: params.path
+          path: params?.path,
+          pathType: typeof params?.path,
         } : undefined,
       },
       { status: 500 }
