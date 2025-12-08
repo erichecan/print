@@ -38,9 +38,9 @@ function requiresAuth(path: string): boolean {
  */
 async function handleProxyRequest(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> | { path: string[] } }
+  context: { params: { path: string[] } }
 ) {
-  // [2025-12-08 05:30:00] 兼容 Next.js 14 和 15：params 可能是 Promise 或同步对象
+  // [2025-12-08 05:45:00] 修复：Next.js 14.2.33 使用同步对象，直接使用 params
   const timestamp = new Date().toISOString();
   
   // [2025-12-08 05:35:00] 添加初始日志，确认函数被调用
@@ -48,16 +48,14 @@ async function handleProxyRequest(
     timestamp,
     url: request.nextUrl.pathname,
     method: request.method,
-    paramsType: typeof context.params,
-    isPromise: context.params instanceof Promise,
+    params: context.params,
+    path: context.params?.path,
   });
   
   let params: { path: string[] };
   try {
-    // [2025-12-08 05:30:00] 兼容性处理：检查 params 是否是 Promise
-    // [2025-12-08 05:35:00] 使用 Promise.resolve 确保兼容性（与 products/[slug] 路由一致）
-    const resolvedParams = await Promise.resolve(context.params);
-    params = resolvedParams;
+    // [2025-12-08 05:45:00] Next.js 14.2.33 使用同步对象，直接使用 params
+    params = context.params;
     
     // [2025-12-08 05:30:00] 验证 params 结构
     if (!params || typeof params !== 'object' || !('path' in params)) {
