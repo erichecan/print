@@ -433,9 +433,12 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
           </div>
         </div>
 
-        {/* Edit Colors */}
+        {/* Edit Colors - [2025-12-08] 完善分色槽位功能 */}
         <div className="dl-edit-upload-panel__section">
           <label className="dl-edit-upload-panel__label">Edit Colors</label>
+          <p className="dl-edit-upload-panel__hint" style={{ fontSize: '12px', color: '#666', marginTop: '4px', marginBottom: '8px' }}>
+            Click a color swatch to apply it to the image (for vector or colorable artwork)
+          </p>
           <div className="dl-edit-upload-panel__colors">
             {colorSwatches.map((color, index) => (
               <button
@@ -444,6 +447,62 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
                 style={{ backgroundColor: color.hex }}
                 aria-label={color.name}
                 type="button"
+                onClick={() => {
+                  // [2025-12-08] 应用颜色到图片（简化版：使用颜色叠加）
+                  if (!selectedImage || !canvas) return;
+                  
+                  try {
+                    const imgElement = selectedImage.getElement() as HTMLImageElement;
+                    if (!imgElement) return;
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    if (!tempCtx) return;
+                    
+                    tempCanvas.width = imgElement.width || selectedImage.width || 1;
+                    tempCanvas.height = imgElement.height || selectedImage.height || 1;
+                    
+                    // 绘制原始图像
+                    tempCtx.drawImage(imgElement, 0, 0);
+                    
+                    // 应用颜色叠加（multiply模式）
+                    tempCtx.globalCompositeOperation = 'multiply';
+                    tempCtx.fillStyle = color.hex;
+                    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    
+                    // 从处理后的Canvas创建新的Fabric Image
+                    tempCanvas.toBlob((blob) => {
+                      if (!blob) return;
+                      
+                      const url = URL.createObjectURL(blob);
+                      fabric.Image.fromURL(url, (coloredImage) => {
+                        if (coloredImage && canvas && selectedImage) {
+                          coloredImage.set({
+                            left: selectedImage.left,
+                            top: selectedImage.top,
+                            scaleX: selectedImage.scaleX,
+                            scaleY: selectedImage.scaleY,
+                            angle: selectedImage.angle,
+                            originX: selectedImage.originX,
+                            originY: selectedImage.originY,
+                            name: selectedImage.name || `image_${Date.now()}`
+                          });
+                          
+                          canvas.remove(selectedImage);
+                          canvas.add(coloredImage);
+                          canvas.setActiveObject(coloredImage);
+                          canvas.renderAll();
+                          
+                          URL.revokeObjectURL(url);
+                          onUpdate();
+                        }
+                      });
+                    }, 'image/png');
+                  } catch (error) {
+                    console.error('[EditUploadPanel] Error applying color:', error);
+                    alert('Failed to apply color. Please try again.');
+                  }
+                }}
               />
             ))}
           </div>
