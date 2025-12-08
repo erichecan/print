@@ -33,25 +33,25 @@ function requiresAuth(path: string): boolean {
 
 /**
  * 处理所有 HTTP 方法的代理请求
- * [2025-12-08 05:15:00] 修复：Next.js 15 中 catch-all 路由的参数类型
- * 注意：在 Next.js 15 中，params 总是 Promise，不再支持同步对象
+ * [2025-12-08 05:30:00] 修复：兼容 Next.js 14 和 15 的参数类型
+ * 注意：Next.js 14 使用同步对象，Next.js 15 使用 Promise
  */
 async function handleProxyRequest(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: { params: Promise<{ path: string[] }> | { path: string[] } }
 ) {
-  // [2025-12-02 04:25:00] 处理 Next.js 15 的异步 params
-  // [2025-12-08 05:10:00] 修复：使用与其他路由一致的方式处理 params
+  // [2025-12-08 05:30:00] 兼容 Next.js 14 和 15：params 可能是 Promise 或同步对象
   const timestamp = new Date().toISOString();
   
-  // [2025-12-08 05:15:00] Next.js 15: params 总是 Promise，必须 await
   let params: { path: string[] };
   try {
-    // [2025-12-08 05:15:00] 在 Next.js 15 中，params 总是 Promise
-    const resolvedParams = await context.params;
+    // [2025-12-08 05:30:00] 兼容性处理：检查 params 是否是 Promise
+    const resolvedParams = context.params instanceof Promise 
+      ? await context.params 
+      : context.params;
     params = resolvedParams;
     
-    // [2025-12-08 05:15:00] 验证 params 结构
+    // [2025-12-08 05:30:00] 验证 params 结构
     if (!params || typeof params !== 'object' || !('path' in params)) {
       console.error('[API Proxy] ❌ Invalid params structure:', {
         timestamp,
@@ -62,7 +62,7 @@ async function handleProxyRequest(
       throw new Error('Invalid params structure: missing path property');
     }
     
-    // [2025-12-08 05:15:00] 增强日志：记录参数解析过程
+    // [2025-12-08 05:30:00] 增强日志：记录参数解析过程
     console.log('[API Proxy] 📍 Params resolved', {
       timestamp,
       hasParams: !!params,
@@ -70,6 +70,7 @@ async function handleProxyRequest(
       pathIsArray: Array.isArray(params?.path),
       pathValue: params?.path,
       urlPath: request.nextUrl.pathname,
+      isPromise: context.params instanceof Promise,
     });
   } catch (e: any) {
     console.error('[API Proxy] ❌ Failed to resolve params:', {
@@ -381,53 +382,57 @@ async function handleProxyRequest(
 }
 
 // [2025-12-02 04:15:00] 导出所有 HTTP 方法处理器
-// [2025-12-08 05:15:00] 修复：Next.js 15 中 catch-all 路由的参数类型定义
-// 注意：在 Next.js 15 中，catch-all 路由的参数类型应该是 { params: Promise<{ path: string[] }> }
+// [2025-12-08 05:30:00] 修复：兼容 Next.js 14 和 15 的参数类型定义
+// 注意：Next.js 14 使用同步对象，Next.js 15 使用 Promise，使用联合类型兼容两者
+type RouteContext = {
+  params: Promise<{ path: string[] }> | { path: string[] };
+};
+
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: RouteContext
 ) {
   return handleProxyRequest(request, context);
 }
 
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: RouteContext
 ) {
   return handleProxyRequest(request, context);
 }
 
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: RouteContext
 ) {
   return handleProxyRequest(request, context);
 }
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: RouteContext
 ) {
   return handleProxyRequest(request, context);
 }
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: RouteContext
 ) {
   return handleProxyRequest(request, context);
 }
 
 export async function HEAD(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: RouteContext
 ) {
   return handleProxyRequest(request, context);
 }
 
 export async function OPTIONS(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> }
+  context: RouteContext
 ) {
   return handleProxyRequest(request, context);
 }
