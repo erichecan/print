@@ -391,10 +391,10 @@ async function handleProxyRequest(
 
 // [2025-12-02 04:15:00] 导出所有 HTTP 方法处理器
 // [2025-12-08 05:30:00] 修复：兼容 Next.js 14 和 15 的参数类型定义
-// 注意：Next.js 14 使用同步对象，Next.js 15 使用 Promise，使用联合类型兼容两者
-// [2025-12-08 05:35:00] 使用与 products/[slug] 路由相同的处理方式
+// [2025-12-08 05:45:00] 修复：Next.js 14.2.33 使用同步对象，直接使用 { params: { path: string[] } }
+// 注意：Next.js 15 使用 Promise，但当前版本是 14.2.33，使用同步对象
 type RouteContext = {
-  params: Promise<{ path: string[] }> | { path: string[] };
+  params: { path: string[] };
 };
 
 export async function GET(
@@ -405,8 +405,8 @@ export async function GET(
   console.log('[API Proxy] GET handler called', {
     timestamp: new Date().toISOString(),
     url: request.nextUrl.pathname,
-    paramsType: typeof context.params,
-    isPromise: context.params instanceof Promise,
+    params: context.params,
+    path: context.params?.path,
   });
   return handleProxyRequest(request, context);
 }
