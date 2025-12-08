@@ -20,6 +20,7 @@ import type { fabric } from 'fabric';
 import { useDesignLabStore } from '@/contexts/designLabStore';
 import { productsApi } from '@/lib/api';
 import type { DesignCanvasSnapshot } from '@/lib/api';
+import { useToast } from '@/hooks/useToast'; // [2025-12-08] 引入Toast
 import ToolPanel, { type ToolPanelType } from './components/ToolPanel';
 import HomePanel from './components/panels/HomePanel';
 import UploadPanel from './components/panels/UploadPanel';
@@ -63,6 +64,7 @@ interface ProductColor {
 
 const DesignLabClient: React.FC = () => {
   const searchParams = useSearchParams();
+  const { error: showErrorToast, warning: showWarningToast, success: showSuccessToast } = useToast(); // [2025-12-08] Toast hooks
   
   // [2025-01-31 00:30:00] 版本号显示 - 在 console 打印 SHA + UTC
   useEffect(() => {
@@ -763,7 +765,7 @@ const DesignLabClient: React.FC = () => {
   // [2025-01-30 20:00:00] 处理 Names & Numbers 添加到画布
   const handleAddNamesNumbers = useCallback(async (items: Array<{ name: string; number: string; size: string }>, config: any) => {
     if (!fabricCanvasRef.current) {
-      alert('Canvas not initialized');
+      showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
       return;
     }
 
@@ -1065,7 +1067,7 @@ const DesignLabClient: React.FC = () => {
   // [2025-01-30 18:10:00] 添加艺术素材功能
   const handleAddArt = useCallback((artUrl: string, artName: string) => {
     if (!fabricCanvasRef.current) {
-      alert('Canvas not initialized');
+      showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
       return;
     }
 
@@ -1117,12 +1119,12 @@ const DesignLabClient: React.FC = () => {
         }
       } catch (error) {
         console.error('[DesignLab] Error creating art image:', error);
-        alert('Failed to add art: ' + (error as Error).message);
+        showErrorToast(`Failed to add art: ${(error as Error).message}`);
       }
     };
     
     imgElement.onerror = () => {
-      alert('Failed to load art image');
+      showErrorToast('Failed to load art image. Please try again.');
     };
     
     imgElement.src = artUrl;
@@ -1136,6 +1138,7 @@ const DesignLabClient: React.FC = () => {
 
   // [2025-01-30 17:30:00] 文件上传处理
   // [2025-01-30 22:30:00] 添加详细的调试日志和错误处理
+  // [2025-12-08] 添加文件验证和Toast错误提示
   const handleFileUpload = useCallback((file: File) => {
     console.log('[DesignLab] handleFileUpload called:', {
       fileName: file.name,
@@ -1144,20 +1147,40 @@ const DesignLabClient: React.FC = () => {
       canvasInitialized: !!fabricCanvasRef.current
     });
 
+    // [2025-12-08] 文件格式验证
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file');
+      showErrorToast('Please upload an image file (JPG, PNG, GIF, etc.)');
+      return;
+    }
+
+    // [2025-12-08] 文件大小验证（20 MB = 20 * 1024 * 1024 bytes）
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      showErrorToast(`File size (${fileSizeMB} MB) exceeds the maximum limit of 20 MB. Please choose a smaller file.`);
+      return;
+    }
+
+    // [2025-12-08] 文件类型验证（只允许常见图片格式）
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      showErrorToast(`File type "${file.type}" is not supported. Please upload JPG, PNG, GIF, WebP, or SVG files.`);
       return;
     }
 
     if (!fabricCanvasRef.current) {
       console.error('[DesignLab] Canvas not initialized');
-      alert('Canvas not initialized');
+      showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
       return;
     }
 
+    // [2025-12-08] 显示上传进度提示
+    showSuccessToast(`Uploading "${file.name}"...`);
+
     const reader = new FileReader();
     reader.onload = (e) => {
-      const imageUrl = e.target?.result as string;
+      try {
+        const imageUrl = e.target?.result as string;
       console.log('[DesignLab] File read successfully, imageUrl length:', imageUrl?.length || 0);
       
       if (!imageUrl) {
