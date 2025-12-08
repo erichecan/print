@@ -57,12 +57,12 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
   // [2025-12-08] 初始化尺码数量
   React.useEffect(() => {
-    if (currentStep === 'quantity' && sizeQuantities.length === 0) {
+    if (currentStep === 'quantity' && sizeQuantities.length === 0 && orderingOptions.sizesQuantities === 'i-know-sizes') {
       setSizeQuantities(
         allSizes.map(size => ({ size, quantity: 0 }))
       );
     }
-  }, [currentStep]);
+  }, [currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length]);
 
   // [2025-12-08] 计算总数量
   const totalQuantity = React.useMemo(() => {
@@ -72,6 +72,22 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       return estimatedQuantity;
     }
   }, [sizeQuantities, estimatedQuantity, orderingOptions.sizesQuantities]);
+
+  // [2025-12-08] 重置状态当模态框关闭
+  React.useEffect(() => {
+    if (!isOpen) {
+      setCurrentStep('start');
+      setOrderType('buy-ship');
+      setOrderingOptions({
+        orderType: 'buy-ship',
+        shipping: 'single-address',
+        sizesQuantities: 'i-know-sizes',
+        payment: 'i-pay',
+      });
+      setSizeQuantities([]);
+      setEstimatedQuantity(1);
+    }
+  }, [isOpen]);
 
   // [2025-12-08] 重置状态当模态框关闭
   React.useEffect(() => {
