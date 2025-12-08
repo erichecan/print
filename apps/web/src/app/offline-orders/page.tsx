@@ -394,9 +394,19 @@ export default function OfflineOrdersIntakePage() {
     }
   );
 
-  const products: SimpleOfflineOrderProduct[] = productsData?.data || [];
+  // [2025-12-08 01:10:00] 获取完整的订单配置（包括颜色、尺码费用、可用性）
+  const { data: configData, error: configError, isLoading: configLoading } = useSWR(
+    'offline-order-config',
+    () => offlineOrderProductApi.getOrderConfig(),
+    {
+      revalidateOnFocus: false,
+    }
+  );
 
-  // [2025-12-07 08:00:00] 为了兼容现有代码，保留 orderConfig 结构
+  const products: SimpleOfflineOrderProduct[] = productsData?.data || [];
+  const fullConfig: OfflineOrderConfig | undefined = configData?.data;
+
+  // [2025-12-08 01:10:00] 合并产品数据和配置数据
   const orderConfig = {
     products: products.map(p => ({
       id: p.id,
@@ -404,9 +414,9 @@ export default function OfflineOrdersIntakePage() {
       imageUrl: p.imageUrl || undefined,
       isCustomerOwned: p.isCustomerOwned,
     })),
-    colors: [], // 暂时保留，后续删除
-    sizeFees: [], // 暂时保留，后续删除
-    availability: [], // 暂时保留，后续删除
+    colors: fullConfig?.colors || [],
+    sizeFees: fullConfig?.sizeFees || [],
+    availability: fullConfig?.availability || [],
   };
 
   // [2025-12-07 02:30:00] PRD v2.0: 构建尺码费用映射表
@@ -1129,12 +1139,12 @@ export default function OfflineOrdersIntakePage() {
         <div className="mb-8 p-4 bg-gray-50 rounded-lg">
           <label className="block">
             <span className="block text-sm font-medium text-gray-700 mb-2">{t('addProduct')}：</span>
-            {productsLoading ? (
+            {(productsLoading || configLoading) ? (
               <select
                 className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 disabled
               >
-                <option>加载产品列表中...</option>
+                <option>加载中...</option>
               </select>
             ) : (
               <>
@@ -1218,6 +1228,35 @@ export default function OfflineOrdersIntakePage() {
 
                   {/* 颜色选择区域 - PRD v2.0: 支持"Add another color" */}
                   <div className="mt-4 space-y-4">
+                    {/* [2025-12-08 01:15:00] 如果没有颜色，显示颜色下拉菜单 */}
+                    {item.colors.length === 0 ? (
+                      <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t('selectColor') || '选择颜色'}
+                        </label>
+                        <select
+                          value=""
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              const color = availableColors.find(c => c.id === e.target.value);
+                              if (color) {
+                                addColorToProduct(item.id, color.id, color.name);
+                                e.target.value = '';
+                              }
+                            }
+                          }}
+                          className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">{t('selectColor') || '选择颜色'}</option>
+                          {availableColors.map((color) => (
+                            <option key={color.id} value={color.id}>
+                              {color.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : null}
+                    
                     {item.colors.map((color, colorIndex) => {
                       // 获取该颜色的可用尺码（从配置读取）
                       const availableSizesForColor = color.availableSizes.length > 0 
@@ -1415,8 +1454,36 @@ export default function OfflineOrdersIntakePage() {
             {t('printPositions') || '印刷位置配置'}
           </h3>
           
-          {/* 总体印刷位置 */}
+          {/* 总体印刷位置 - [2025-12-08 01:20:00] 直接显示表单，不需要点击按钮 */}
           <div className="space-y-4">
+            {/* [2025-12-08 01:20:00] 如果没有印刷位置，初始化一个空表单 */}
+            {(!formState.globalPrintPositions || formState.globalPrintPositions.length === 0) && (
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="block">
+                    <span className="block text-sm font-medium text-gray-700 mb-2">位置</span>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          setFormState(prev => ({
+                            ...prev,
+                            globalPrintPositions: [{ position: e.target.value, printingStyle: '', width: '', height: '', notes: '' }]
+                          }));
+                        }
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="">选择位置</option>
+                      {PRINT_POSITION_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+            )}
+            
             {formState.globalPrintPositions && formState.globalPrintPositions.length > 0 ? (
               formState.globalPrintPositions.map((pos, index) => (
                 <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -1499,20 +1566,39 @@ export default function OfflineOrdersIntakePage() {
                       />
                     </label>
                   </div>
+                  {/* [2025-12-08 01:20:00] 添加删除按钮 */}
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newPositions = formState.globalPrintPositions?.filter((_, i) => i !== index) || [];
+                        setFormState(prev => ({
+                          ...prev,
+                          globalPrintPositions: newPositions.length > 0 ? newPositions : []
+                        }));
+                      }}
+                      className="px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      {t('remove') || '删除'}
+                    </button>
+                  </div>
                 </div>
               ))
-            ) : (
+            ) : null}
+            
+            {/* [2025-12-08 01:20:00] 添加更多印刷位置按钮（当已有位置时显示） */}
+            {formState.globalPrintPositions && formState.globalPrintPositions.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
                   setFormState(prev => ({
                     ...prev,
-                    globalPrintPositions: [{ position: '', printingStyle: '', width: '', height: '', notes: '' }]
+                    globalPrintPositions: [...(prev.globalPrintPositions || []), { position: '', printingStyle: '', width: '', height: '', notes: '' }]
                   }));
                 }}
                 className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
               >
-                {t('addPrintPosition') || '添加印刷位置'}
+                {t('addPrintPosition') || '添加更多印刷位置'}
               </button>
             )}
           </div>

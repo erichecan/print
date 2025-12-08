@@ -32,6 +32,13 @@ const remotePatterns = [
     port: '',
     pathname: '/**',
   },
+  // [2025-12-08 04:30:00] 允许 picsum.photos 演示图片域名
+  {
+    protocol: 'https',
+    hostname: 'picsum.photos',
+    port: '',
+    pathname: '/**',
+  },
 ];
 
 // [2025-11-15 23:09:50] Allow image optimizer to proxy the configured API host

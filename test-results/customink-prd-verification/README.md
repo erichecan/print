@@ -44,8 +44,8 @@ npx playwright test tests/e2e/customink-prd-verification.spec.ts --project=chrom
    - 可读性报告，包含：
      - 摘要统计
      - 各模块验证结果
-     - 错误描述列表（PRD 描述与实际不符）
-     - 未实现功能列表（PRD 有但 Custom Ink 未实现）
+     - 错误描述列表（PRD 描述与实际 Custom Ink 实现不符，需要修正 PRD）
+     - PRD 超出实际需求的功能列表（PRD 有但 Custom Ink 未实现，说明 PRD 写得太多了，需要退回到 Custom Ink 实际实现的程度）
 
 3. **截图**：`test-results/customink-prd-verification/screenshots/`
    - 按功能模块分类的截图
@@ -54,13 +54,17 @@ npx playwright test tests/e2e/customink-prd-verification.spec.ts --project=chrom
 
 ### 状态说明
 
-- ✅ **matched**: PRD 描述与实际实现完全匹配
+- ✅ **matched**: PRD 描述与实际 Custom Ink 实现完全匹配
 - ⚠️ **partial**: 部分匹配或需要特定条件才能验证
-- ❌ **mismatched**: PRD 描述与实际不符（错误描述）
-- ❌ **not_found**: PRD 有但 Custom Ink 未实现（缺失功能）
+- ❌ **mismatched**: PRD 描述与实际 Custom Ink 实现不符（需要修正 PRD 描述）
+- ❌ **not_found**: PRD 有但 Custom Ink 未实现（说明 PRD 写得太多了，需要退回到 Custom Ink 实际实现的程度）
 
 ### 重点关注
 
-1. **错误描述列表**：PRD 中描述的功能与实际实现不符的地方
-2. **未实现功能列表**：PRD 中要求但 Custom Ink 没有实现的功能
+1. **错误描述列表**：PRD 中描述的功能与实际 Custom Ink 实现不符的地方
+   - **处理方式**：修正 PRD 描述以匹配 Custom Ink 的实际实现
+
+2. **PRD 超出实际需求的功能列表**：PRD 中要求但 Custom Ink 没有实现的功能
+   - **说明**：这说明 PRD 写得太多了（over），需要退回到 Custom Ink 实际实现的程度
+   - **处理方式**：从 PRD 中移除或调整为可选功能
 

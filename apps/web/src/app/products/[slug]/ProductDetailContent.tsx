@@ -155,7 +155,7 @@ export function ProductDetailContent() {
   };
 
   // [2025-01-27 18:45:00] 添加到购物车
-  // [2025-01-29 12:00:00] 移除 Toast 提示，静默更新购物车图标
+  // [2025-12-08 04:35:00] 移除 Toast 提示，静默更新购物车图标，刷新页面以更新购物车数字
   const handleAddToCart = async () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
@@ -168,7 +168,8 @@ export function ProductDetailContent() {
     setAddingToCart(true);
     try {
       await addItem(selectedVariant.id, quantity);
-      // [2025-01-29 12:00:00] 移除成功提示，购物车图标会自动更新
+      // [2025-12-08 04:35:00] 刷新页面以更新购物车图标数字
+      router.refresh();
     } catch (err: any) {
       showError(err.message || 'Failed to add to cart. Please try again.');
     } finally {

@@ -39,13 +39,15 @@ async function handleProxyRequest(
   context: { params: Promise<{ path: string[] }> | { path: string[] } }
 ) {
   // [2025-12-02 04:25:00] 处理 Next.js 15 的异步 params
+  // [2025-12-08 04:40:00] 修复：确保正确处理 params，包括空数组情况
   const params = await Promise.resolve(context.params);
   const timestamp = new Date().toISOString();
   
   try {
     // [2025-12-02 04:15:00] 构建后端 API 路径
-    const pathSegments = params.path || [];
-    const backendPath = `/${pathSegments.join('/')}`;
+    // [2025-12-08 04:40:00] 修复：确保 path 存在且是数组
+    const pathSegments = Array.isArray(params?.path) ? params.path : (params?.path ? [params.path] : []);
+    const backendPath = pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
     
     // [2025-12-02 04:15:00] 检查是否需要认证（可选，用于日志）
     const needsAuth = requiresAuth(backendPath);

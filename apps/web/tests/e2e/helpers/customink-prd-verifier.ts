@@ -1286,11 +1286,13 @@ export async function generateComparisonReport(
       prdDescription: r.prdDescription,
       actualImplementation: r.actualImplementation,
       notes: r.notes,
+      recommendation: '修正 PRD 描述以匹配实际实现',
     })),
     missing: missing.map(r => ({
       feature: r.feature,
       prdDescription: r.prdDescription,
       notes: r.notes,
+      recommendation: '从 PRD 中移除或调整为可选功能',
     })),
     generatedAt: new Date().toISOString(),
   };
@@ -1308,8 +1310,11 @@ export async function generateComparisonReport(
   mdReport += `- **总功能点**: ${totalFeatures}\n`;
   mdReport += `- **匹配**: ${matchedCount} (${((matchedCount / totalFeatures) * 100).toFixed(2)}%)\n`;
   mdReport += `- **部分匹配**: ${partialCount} (${((partialCount / totalFeatures) * 100).toFixed(2)}%)\n`;
-  mdReport += `- **不匹配**: ${mismatchedCount}\n`;
-  mdReport += `- **未找到**: ${notFoundCount} (${((notFoundCount / totalFeatures) * 100).toFixed(2)}%)\n\n`;
+  mdReport += `- **不匹配（需修正 PRD）**: ${mismatchedCount}\n`;
+  mdReport += `- **未找到（PRD 超出实际需求）**: ${notFoundCount} (${((notFoundCount / totalFeatures) * 100).toFixed(2)}%)\n\n`;
+  mdReport += `### 关键发现\n\n`;
+  mdReport += `1. **错误描述** (${mismatchedCount} 个): PRD 描述与实际 Custom Ink 实现不符，需要修正 PRD 描述\n`;
+  mdReport += `2. **PRD 超出实际需求** (${notFoundCount} 个): PRD 描述的功能 Custom Ink 未实现，说明 PRD 写得太多了，需要退回到 Custom Ink 实际实现的程度\n\n`;
 
   mdReport += `## 各模块验证结果\n\n`;
   for (const [module, results] of Object.entries(allResults)) {
@@ -1331,11 +1336,13 @@ export async function generateComparisonReport(
   }
 
   if (errors.length > 0) {
-    mdReport += `## 错误描述列表（PRD 描述与实际不符）\n\n`;
+    mdReport += `## 错误描述列表（PRD 描述与实际 Custom Ink 实现不符）\n\n`;
+    mdReport += `> **说明**：以下功能的 PRD 描述与实际 Custom Ink 实现不符。需要修正 PRD 描述以匹配 Custom Ink 的实际实现。\n\n`;
     for (const error of errors) {
       mdReport += `### ${error.feature}\n\n`;
       mdReport += `- **PRD 描述**: ${error.prdDescription}\n`;
-      mdReport += `- **实际实现**: ${error.actualImplementation || '未找到'}\n`;
+      mdReport += `- **Custom Ink 实际实现**: ${error.actualImplementation || '未找到'}\n`;
+      mdReport += `- **建议**: 修正 PRD 描述以匹配实际实现\n`;
       if (error.notes) {
         mdReport += `- **备注**: ${error.notes}\n`;
       }
@@ -1344,10 +1351,13 @@ export async function generateComparisonReport(
   }
 
   if (missing.length > 0) {
-    mdReport += `## 未实现功能列表（PRD 有但 Custom Ink 未实现）\n\n`;
+    mdReport += `## PRD 超出实际需求的功能列表（需要从 PRD 中移除或调整）\n\n`;
+    mdReport += `> **说明**：以下功能在 PRD 中有描述，但 Custom Ink 实际未实现。这说明 PRD 描述超出了实际需求，需要退回到 Custom Ink 实际实现的程度。建议从 PRD 中移除或调整这些功能描述。\n\n`;
     for (const item of missing) {
       mdReport += `### ${item.feature}\n\n`;
       mdReport += `- **PRD 描述**: ${item.prdDescription}\n`;
+      mdReport += `- **Custom Ink 实际实现**: 未实现\n`;
+      mdReport += `- **建议**: 从 PRD 中移除或调整为可选功能\n`;
       if (item.notes) {
         mdReport += `- **备注**: ${item.notes}\n`;
       }

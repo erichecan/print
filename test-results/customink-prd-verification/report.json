@@ -1,0 +1,146 @@
+{
+  "summary": {
+    "totalFeatures": 20,
+    "matched": 7,
+    "mismatched": 0,
+    "notFound": 1,
+    "partial": 12,
+    "matchRate": "35.00%"
+  },
+  "modules": {
+    "namesAndNumbers": [
+      {
+        "feature": "Add Names 按钮",
+        "prdDescription": "Add Names（Names & Numbers）功能入口",
+        "status": "not_found"
+      }
+    ],
+    "canvas": [
+      {
+        "feature": "视图切换按钮",
+        "prdDescription": "Front / Back / Sleeve Design（切换当前面；各面独立图层）",
+        "status": "matched",
+        "actualImplementation": "Front: 找到, Back: 找到, Sleeve: 找到"
+      },
+      {
+        "feature": "Zoom 功能",
+        "prdDescription": "放大/缩小/拖拽/重置视图",
+        "status": "matched"
+      },
+      {
+        "feature": "对象选中",
+        "prdDescription": "右上角X：删除、角点缩放、旋转控制、拖拽移动、吸附对齐线、显示打印安全区边界",
+        "status": "partial",
+        "notes": "需要先添加对象（文本/图片/素材）才能验证"
+      },
+      {
+        "feature": "Layering - Bring to Front",
+        "prdDescription": "Bring to Front",
+        "status": "partial",
+        "notes": "可能需要先选中对象才能看到"
+      },
+      {
+        "feature": "Layering - Send to Back",
+        "prdDescription": "Send to Back",
+        "status": "partial",
+        "notes": "可能需要先选中对象才能看到"
+      },
+      {
+        "feature": "Layering - Forward",
+        "prdDescription": "Forward",
+        "status": "partial",
+        "notes": "可能需要先选中对象才能看到"
+      },
+      {
+        "feature": "Layering - Backward",
+        "prdDescription": "Backward",
+        "status": "partial",
+        "notes": "可能需要先选中对象才能看到"
+      },
+      {
+        "feature": "Center 功能",
+        "prdDescription": "居中（水平+垂直）；若超出安全区提示",
+        "status": "partial",
+        "notes": "可能需要先选中对象才能看到"
+      },
+      {
+        "feature": "安全区显示",
+        "prdDescription": "打印安全边界展示；越界警示与阻断提交",
+        "status": "partial",
+        "notes": "需要视觉检查画布上的安全区边界"
+      }
+    ],
+    "pricing": [
+      {
+        "feature": "Get Price 起始页",
+        "prdDescription": "Buy & Ship（默认选中）/ Start a Fundraiser",
+        "status": "matched",
+        "screenshot": "/Users/eric/Desktop/print-main/test-results/customink-prd-verification/screenshots/get-price-start.png",
+        "actualImplementation": "Buy & Ship: 找到, Fundraiser: 找到"
+      },
+      {
+        "feature": "Continue 按钮",
+        "prdDescription": "Continue：进入\"Ordering Options\"",
+        "status": "matched"
+      },
+      {
+        "feature": "Ordering Options",
+        "prdDescription": "Shipping、Sizes & Quantities、Payment",
+        "status": "matched",
+        "screenshot": "/Users/eric/Desktop/print-main/test-results/customink-prd-verification/screenshots/ordering-options.png",
+        "actualImplementation": "Shipping: 找到, Sizes & Quantities: 找到, Payment: 找到"
+      },
+      {
+        "feature": "Shipping 选项",
+        "prdDescription": "Ship to single address / Ship to multiple addresses",
+        "status": "matched",
+        "actualImplementation": "Single: 找到, Multiple: 找到"
+      },
+      {
+        "feature": "Sizes and Quantities 选项",
+        "prdDescription": "I know the sizes I need / Invite my group to choose their sizes",
+        "status": "matched",
+        "actualImplementation": "I know: 找到, Invite: 找到"
+      },
+      {
+        "feature": "Quantity 页面",
+        "prdDescription": "YOUTH与ADULT尺码网格、加价文案、+ Add Women's、Buy more save more推荐区、Total Quantity",
+        "status": "partial",
+        "notes": "需要完成 Ordering Options 才能进入 Quantity 页面"
+      },
+      {
+        "feature": "Order Options 报价结果页",
+        "prdDescription": "价格、统计徽章、促销文案、配送文案、YOUR ORDER列表、底部按钮",
+        "status": "partial",
+        "notes": "需要完成 Quantity 配置才能看到报价结果"
+      },
+      {
+        "feature": "Content Check",
+        "prdDescription": "内容合规确认：Edit Design / Agree & Continue",
+        "status": "partial",
+        "notes": "需要上传图片并进入下单流程才能触发"
+      },
+      {
+        "feature": "Add to Cart",
+        "prdDescription": "加入购物车功能",
+        "status": "partial",
+        "notes": "需要完成报价流程才能验证"
+      },
+      {
+        "feature": "购物车页（My Cart）",
+        "prdDescription": "订单项、Delivery Options、Order Summary",
+        "status": "partial",
+        "notes": "需要先加入购物车才能验证"
+      }
+    ]
+  },
+  "errors": [],
+  "missing": [
+    {
+      "feature": "Add Names 按钮",
+      "prdDescription": "Add Names（Names & Numbers）功能入口",
+      "recommendation": "从 PRD 中移除或调整为可选功能"
+    }
+  ],
+  "generatedAt": "2025-12-08T04:12:46.052Z"
+}
