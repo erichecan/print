@@ -493,6 +493,8 @@ model Design {
   canvasSnapshot  Json            @map("canvas_snapshot")
   pricingSnapshot Json?           @map("pricing_snapshot")
   thumbnailUrl    String?         @map("thumbnail_url")
+  shareToken      String?         @unique @map("share_token") // [2025-12-08] 分享token
+  isPublic        Boolean         @default(false) @map("is_public") // [2025-12-08] 是否公开分享
   lockedAt        DateTime?       @map("locked_at")
   lockedBy        String?         @map("locked_by")
   createdAt       DateTime        @default(now()) @map("created_at")
@@ -507,6 +509,7 @@ model Design {
   @@index([sessionId])
   @@index([variantId])
   @@index([status])
+  @@index([shareToken]) // [2025-12-08] 分享token索引
   @@map("designs")
 }
 

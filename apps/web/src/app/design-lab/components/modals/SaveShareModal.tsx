@@ -9,12 +9,20 @@ import { designLabApi } from '@/lib/api';
 import { SocialShareMenu } from '@/components/social-share/SocialShareMenu';
 import './SaveShareModal.css';
 
+// [2025-12-08] 修复：确保在客户端环境中使用window
+const getBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+};
+
 interface SaveShareModalProps {
   isOpen: boolean;
   onClose: () => void;
   designId: string | null;
   designName: string;
-  onSave?: (designId: string) => void;
+  onSave?: () => Promise<void>;
   onShare?: (shareUrl: string) => void;
 }
 
@@ -36,10 +44,24 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
     if (isOpen && designId && activeTab === 'share') {
       loadShareUrl();
     }
+    // 切换tab时重置shareUrl（如果需要）
+    if (activeTab === 'save') {
+      // 可以保留shareUrl，不需要重置
+    }
   }, [isOpen, designId, activeTab]);
 
+  // [2025-12-08] 当designId从外部更新时，如果正在share tab，重新加载分享链接
+  useEffect(() => {
+    if (isOpen && designId && activeTab === 'share' && !shareUrl) {
+      loadShareUrl();
+    }
+  }, [designId]);
+
   const loadShareUrl = async () => {
-    if (!designId) return;
+    if (!designId) {
+      // 如果没有designId，提示用户先保存
+      return;
+    }
 
     try {
       // 如果设计已有分享token，直接使用
@@ -47,7 +69,7 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
       const response = await designLabApi.getDesign(designId);
       if (response.success && response.data) {
         if (response.data.shareToken) {
-          const url = `${window.location.origin}/design-lab/share/${response.data.shareToken}`;
+          const url = `${getBaseUrl()}/design-lab/share/${response.data.shareToken}`;
           setShareUrl(url);
           setShareToken(response.data.shareToken);
         } else {
@@ -57,6 +79,10 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
       }
     } catch (error) {
       console.error('[SaveShareModal] Failed to load share URL:', error);
+      // 如果获取失败，尝试生成新链接
+      if (designId) {
+        await generateShareLink();
+      }
     }
   };
 
@@ -66,7 +92,7 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
     try {
       const response = await designLabApi.shareDesign(designId);
       if (response.success && response.data) {
-        const url = `${window.location.origin}/design-lab/share/${response.data.shareToken}`;
+        const url = `${getBaseUrl()}/design-lab/share/${response.data.shareToken}`;
         setShareUrl(url);
         setShareToken(response.data.shareToken);
         if (onShare) {
@@ -83,8 +109,11 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
     setSaving(true);
     try {
       // 保存设计逻辑在父组件中处理
-      if (onSave && designId) {
-        onSave(designId);
+      // onSave会处理创建或更新设计
+      if (onSave) {
+        await onSave();
+        // 保存成功后，如果还没有designId，等待父组件更新
+        // 这里可以触发重新加载designId（通过props更新）
       }
       // 显示成功消息
       setTimeout(() => {
@@ -158,14 +187,19 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
                     readOnly
                   />
                 </label>
+                {!designId && (
+                  <p className="dl-save-share-modal__hint" style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>
+                    Your design will be saved when you click "Save Design".
+                  </p>
+                )}
               </div>
               <div className="dl-save-share-modal__actions">
                 <button
                   className="dl-modal__btn dl-modal__btn--primary"
                   onClick={handleSave}
-                  disabled={saving || !designId}
+                  disabled={saving}
                 >
-                  {saving ? 'Saving...' : 'Save Design'}
+                  {saving ? 'Saving...' : designId ? 'Update Design' : 'Save Design'}
                 </button>
                 <button
                   className="dl-modal__btn dl-modal__btn--secondary"
@@ -185,9 +219,25 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
                 Share your design with others. They can view and comment on your design.
               </p>
               
-              {!shareUrl ? (
+              {!designId ? (
                 <div className="dl-save-share-modal__loading">
-                  <p>Generating share link...</p>
+                  <p style={{ color: '#6b7280', marginBottom: '16px' }}>
+                    Please save your design first before sharing.
+                  </p>
+                  <button
+                    className="dl-modal__btn dl-modal__btn--primary"
+                    onClick={() => {
+                      setActiveTab('save');
+                    }}
+                  >
+                    Go to Save Tab
+                  </button>
+                </div>
+              ) : !shareUrl ? (
+                <div className="dl-save-share-modal__loading">
+                  <p style={{ color: '#6b7280', marginBottom: '16px' }}>
+                    Click the button below to generate a share link.
+                  </p>
                   <button
                     className="dl-modal__btn dl-modal__btn--primary"
                     onClick={generateShareLink}

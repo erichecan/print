@@ -384,3 +384,105 @@ exports.uploadSignature = async (req, res) => {
     res.status(500).json({ error: 'Failed to process file upload.' });
   }
 };
+
+// [2025-12-08] 分享设计（生成分享链接）
+exports.shareDesign = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await fetchOwnedDesign(id, req);
+
+    if (result.error) {
+      return res.status(result.error.status).json({ error: result.error.message });
+    }
+
+    const design = result.design;
+
+    // 如果已有分享token，直接返回
+    if (design.shareToken) {
+      const shareUrl = `${req.protocol}://${req.get('host')}/design-lab/share/${design.shareToken}`;
+      return res.json({
+        success: true,
+        data: {
+          shareToken: design.shareToken,
+          shareUrl: shareUrl,
+        },
+      });
+    }
+
+    // 生成新的分享token
+    const shareToken = uuidv4().replace(/-/g, '').substring(0, 16);
+
+    // 更新设计，添加分享token并设置为公开
+    const updatedDesign = await prisma.design.update({
+      where: { id: design.id },
+      data: {
+        shareToken: shareToken,
+        isPublic: true,
+      },
+    });
+
+    const shareUrl = `${req.protocol}://${req.get('host')}/design-lab/share/${shareToken}`;
+
+    res.json({
+      success: true,
+      data: {
+        shareToken: shareToken,
+        shareUrl: shareUrl,
+      },
+    });
+  } catch (error) {
+    console.error('[2025-12-08] shareDesign error:', error);
+    return res.status(500).json({ error: 'Failed to share design' });
+  }
+};
+
+// [2025-12-08] 通过分享token获取设计（公开访问）
+exports.getDesignByShareToken = async (req, res) => {
+  try {
+    const { shareToken } = req.params;
+
+    if (!shareToken) {
+      return res.status(400).json({ error: 'Share token is required' });
+    }
+
+    const design = await prisma.design.findUnique({
+      where: { shareToken: shareToken },
+      include: {
+        variant: {
+          include: {
+            product: true,
+          },
+        },
+      },
+    });
+
+    if (!design || !design.isPublic) {
+      return res.status(404).json({ error: 'Design not found or not shared' });
+    }
+
+    // 返回设计数据（只读，不包含敏感信息）
+    res.json({
+      success: true,
+      data: {
+        id: design.id,
+        name: design.name,
+        canvasSnapshot: design.canvasSnapshot,
+        thumbnailUrl: design.thumbnailUrl,
+        shareToken: design.shareToken,
+        isPublic: design.isPublic,
+        variant: {
+          id: design.variant.id,
+          product: {
+            id: design.variant.product.id,
+            name: design.variant.product.name,
+          },
+        },
+        createdAt: design.createdAt,
+        updatedAt: design.updatedAt,
+      },
+    });
+  } catch (error) {
+    console.error('[2025-12-08] getDesignByShareToken error:', error);
+    return res.status(500).json({ error: 'Failed to get design by share token' });
+  }
+};

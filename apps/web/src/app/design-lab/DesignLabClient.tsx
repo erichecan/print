@@ -170,6 +170,8 @@ const DesignLabClient: React.FC = () => {
   // [2025-12-08] 上传体验评分模态框状态
   const [showUploadRatingModal, setShowUploadRatingModal] = useState(false);
   const [currentUploadId, setCurrentUploadId] = useState<string>('');
+  // [2025-12-08] Save & Share 模态框状态
+  const [showSaveShareModal, setShowSaveShareModal] = useState(false);
   // [2025-01-30 23:30:00] Recent Uploads 状态
   const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
   // [2025-01-31 01:00:00] 防止选择清除事件在添加对象后立即触发
@@ -1415,20 +1417,77 @@ const DesignLabClient: React.FC = () => {
   }, []);
 
   // [2025-01-30 23:30:00] Save Design 处理
+  // [2025-12-08] 更新：打开Save & Share模态框
   const handleSaveDesign = useCallback(() => {
-    if (fabricCanvasRef.current) {
+    setShowSaveShareModal(true);
+  }, []);
+
+  // [2025-12-08] 实际保存设计的处理函数
+  const handleSaveDesignConfirm = useCallback(async () => {
+    if (!fabricCanvasRef.current) return;
+
+    try {
       const snapshot = canvasToSnapshot(fabricCanvasRef.current);
       setCanvas(snapshot, { pushHistory: true });
-      // TODO: 调用保存 API
-      console.log('[DesignLab] Design saved');
+
+      let designId = currentDesignId;
       
+      // 如果还没有设计ID，先创建设计
+      if (!designId) {
+        let productVariantId = productInfo?.variantId;
+        if (productVariantId === 'default' && productInfo?.productId && productInfo.productId !== 'default') {
+          try {
+            const productSlug = productInfo.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+            const productData = await productsApi.getBySlug(productSlug);
+            if (productData.variants && productData.variants.length > 0) {
+              productVariantId = productData.variants[0].id;
+            }
+          } catch (error) {
+            console.warn('[DesignLab] Failed to get product variant:', error);
+          }
+        }
+
+        if (!productVariantId || productVariantId === 'default') {
+          // 尝试使用默认variant
+          productVariantId = 'default';
+        }
+
+        const payload = {
+          name: designName,
+          canvas: snapshot,
+          productVariantId: productVariantId,
+        };
+
+        const response = await designLabApi.createDraft(payload);
+        if (response.success && response.data) {
+          designId = response.data.id;
+          setCurrentDesignId(designId);
+        } else {
+          throw new Error('Failed to save design');
+        }
+      } else {
+        // 更新现有设计
+        const payload = {
+          name: designName,
+          canvas: snapshot,
+        };
+        await designLabApi.updateDraft(designId, payload);
+      }
+
       // [2025-12-08] 埋点：设计保存
       analytics.track('design_saved', {
-        designId: currentDesignId,
+        designId: designId,
         designName: designName,
       });
+
+      console.log('[DesignLab] Design saved:', designId);
+      return designId; // 返回designId以便后续使用
+    } catch (error) {
+      console.error('[DesignLab] Error saving design:', error);
+      alert('Failed to save design. Please try again.');
+      throw error;
     }
-  }, [canvasToSnapshot, setCanvas, currentDesignId, designName]);
+  }, [fabricCanvasRef, canvasToSnapshot, setCanvas, currentDesignId, designName, productInfo, setCurrentDesignId]);
 
   // [2025-12-06 12:30:00] Get Price 处理
   const handleGetPrice = useCallback(async () => {
@@ -2187,7 +2246,10 @@ const DesignLabClient: React.FC = () => {
           </div>
         </div>
         <div className="dl-bottom-bar__right">
-          <button className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary">
+          <button 
+            className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
+            onClick={handleSaveDesign}
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
@@ -2195,6 +2257,34 @@ const DesignLabClient: React.FC = () => {
             </svg>
             Save | Share
           </button>
+          {/* [2025-12-08] Save & Share 模态框 */}
+          <SaveShareModal
+            isOpen={showSaveShareModal}
+            onClose={() => setShowSaveShareModal(false)}
+            designId={currentDesignId}
+            designName={designName}
+            onSave={async () => {
+              try {
+                const savedDesignId = await handleSaveDesignConfirm();
+                // 保存成功后，如果切换到share tab，自动加载分享链接
+                if (savedDesignId) {
+                  // 可以在这里自动切换到share tab，或者保持当前tab
+                }
+                setShowSaveShareModal(false);
+              } catch (error) {
+                // 错误已在handleSaveDesignConfirm中处理
+                // 不关闭模态框，让用户重试
+              }
+            }}
+            onShare={(shareUrl) => {
+              console.log('[DesignLab] Design shared:', shareUrl);
+              // [2025-12-08] 埋点：设计分享
+              analytics.track('design_shared', {
+                designId: currentDesignId,
+                shareUrl: shareUrl,
+              });
+            }}
+          />
           <button 
             className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
             onClick={handleGetPrice}
