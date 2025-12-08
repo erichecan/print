@@ -651,6 +651,22 @@ export default function OfflineOrdersIntakePage() {
     return formState.productItems.reduce((sum, item) => sum + item.totalQuantity, 0);
   }, [formState.productItems]);
 
+  // [2025-12-08 05:20:00] 计算每个尺码在所有产品、所有颜色中的总数量
+  const calculateSizeTotalQuantity = useMemo(() => {
+    const sizeTotals: Record<string, number> = {};
+    formState.productItems.forEach((item) => {
+      item.colors.forEach((color) => {
+        color.sizes.forEach((sizeData) => {
+          if (!sizeTotals[sizeData.size]) {
+            sizeTotals[sizeData.size] = 0;
+          }
+          sizeTotals[sizeData.size] += sizeData.quantity;
+        });
+      });
+    });
+    return sizeTotals;
+  }, [formState.productItems]);
+
   // [2025-12-06 18:30:00] 计算税额（仅当需要Invoice时）
   const calculateTaxAmount = useMemo(() => {
     if (!formState.requiresInvoice) return 0;
@@ -1287,19 +1303,27 @@ export default function OfflineOrdersIntakePage() {
                                     <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                                       <label className="block text-xs text-gray-600 mb-1">{size}</label>
                                       {/* [2025-12-08 05:15:00] 单价输入框移到数量输入框上面，并始终显示 */}
-                                      <input
-                                        type="text"
-                                        value={sizeData?.unitPrice || ''}
-                                        onChange={(e) => {
-                                          const value = e.target.value.replace(/[^\d.]/g, '');
-                                          const unitPrice = parseFloat(value) || 0;
-                                          const quantity = sizeData?.quantity || 0;
-                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                        }}
-                                        disabled={!isAvailable}
-                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-xs mb-1 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                        placeholder="单价"
-                                      />
+                                      {/* [2025-12-08 05:20:00] 单价输入框旁边显示该尺码的总数量小计 */}
+                                      <div className="flex items-center gap-1 mb-1">
+                                        <input
+                                          type="text"
+                                          value={sizeData?.unitPrice || ''}
+                                          onChange={(e) => {
+                                            const value = e.target.value.replace(/[^\d.]/g, '');
+                                            const unitPrice = parseFloat(value) || 0;
+                                            const quantity = sizeData?.quantity || 0;
+                                            updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
+                                          }}
+                                          disabled={!isAvailable}
+                                          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                          placeholder="单价"
+                                        />
+                                        {calculateSizeTotalQuantity[size] > 0 && (
+                                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                                            小计: {calculateSizeTotalQuantity[size]}
+                                          </span>
+                                        )}
+                                      </div>
                                       <input
                                         type="number"
                                         min="0"
@@ -1344,19 +1368,27 @@ export default function OfflineOrdersIntakePage() {
                                         )}
                                       </label>
                                       {/* [2025-12-08 05:15:00] 单价输入框移到数量输入框上面，并始终显示 */}
-                                      <input
-                                        type="text"
-                                        value={sizeData?.unitPrice || ''}
-                                        onChange={(e) => {
-                                          const value = e.target.value.replace(/[^\d.]/g, '');
-                                          const unitPrice = parseFloat(value) || 0;
-                                          const quantity = sizeData?.quantity || 0;
-                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                        }}
-                                        disabled={!isAvailable}
-                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-xs mb-1 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                        placeholder="单价"
-                                      />
+                                      {/* [2025-12-08 05:20:00] 单价输入框旁边显示该尺码的总数量小计 */}
+                                      <div className="flex items-center gap-1 mb-1">
+                                        <input
+                                          type="text"
+                                          value={sizeData?.unitPrice || ''}
+                                          onChange={(e) => {
+                                            const value = e.target.value.replace(/[^\d.]/g, '');
+                                            const unitPrice = parseFloat(value) || 0;
+                                            const quantity = sizeData?.quantity || 0;
+                                            updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
+                                          }}
+                                          disabled={!isAvailable}
+                                          className="w-16 border border-gray-300 rounded px-2 py-1 text-xs disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                          placeholder="单价"
+                                        />
+                                        {calculateSizeTotalQuantity[size] > 0 && (
+                                          <span className="text-xs text-gray-500 whitespace-nowrap">
+                                            小计: {calculateSizeTotalQuantity[size]}
+                                          </span>
+                                        )}
+                                      </div>
                                       <input
                                         type="number"
                                         min="0"
