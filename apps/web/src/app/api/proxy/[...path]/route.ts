@@ -43,12 +43,20 @@ async function handleProxyRequest(
   // [2025-12-08 05:30:00] 兼容 Next.js 14 和 15：params 可能是 Promise 或同步对象
   const timestamp = new Date().toISOString();
   
+  // [2025-12-08 05:35:00] 添加初始日志，确认函数被调用
+  console.log('[API Proxy] handleProxyRequest called', {
+    timestamp,
+    url: request.nextUrl.pathname,
+    method: request.method,
+    paramsType: typeof context.params,
+    isPromise: context.params instanceof Promise,
+  });
+  
   let params: { path: string[] };
   try {
     // [2025-12-08 05:30:00] 兼容性处理：检查 params 是否是 Promise
-    const resolvedParams = context.params instanceof Promise 
-      ? await context.params 
-      : context.params;
+    // [2025-12-08 05:35:00] 使用 Promise.resolve 确保兼容性（与 products/[slug] 路由一致）
+    const resolvedParams = await Promise.resolve(context.params);
     params = resolvedParams;
     
     // [2025-12-08 05:30:00] 验证 params 结构
@@ -384,6 +392,7 @@ async function handleProxyRequest(
 // [2025-12-02 04:15:00] 导出所有 HTTP 方法处理器
 // [2025-12-08 05:30:00] 修复：兼容 Next.js 14 和 15 的参数类型定义
 // 注意：Next.js 14 使用同步对象，Next.js 15 使用 Promise，使用联合类型兼容两者
+// [2025-12-08 05:35:00] 使用与 products/[slug] 路由相同的处理方式
 type RouteContext = {
   params: Promise<{ path: string[] }> | { path: string[] };
 };
@@ -392,6 +401,13 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ) {
+  // [2025-12-08 05:35:00] 添加初始日志，确认路由被调用
+  console.log('[API Proxy] GET handler called', {
+    timestamp: new Date().toISOString(),
+    url: request.nextUrl.pathname,
+    paramsType: typeof context.params,
+    isPromise: context.params instanceof Promise,
+  });
   return handleProxyRequest(request, context);
 }
 
@@ -399,6 +415,10 @@ export async function POST(
   request: NextRequest,
   context: RouteContext
 ) {
+  console.log('[API Proxy] POST handler called', {
+    timestamp: new Date().toISOString(),
+    url: request.nextUrl.pathname,
+  });
   return handleProxyRequest(request, context);
 }
 
