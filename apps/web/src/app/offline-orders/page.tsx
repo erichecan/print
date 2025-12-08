@@ -1298,9 +1298,11 @@ export default function OfflineOrdersIntakePage() {
                                       <input
                                         type="number"
                                         min="0"
-                                        value={sizeData?.quantity || 0}
+                                        value={sizeData && sizeData.quantity > 0 ? sizeData.quantity : ''}
                                         onChange={(e) => {
-                                          const quantity = parseInt(e.target.value, 10) || 0;
+                                          // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
+                                          const inputValue = e.target.value;
+                                          const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
                                           const unitPrice = sizeData?.unitPrice || 0;
                                           updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
                                         }}
@@ -1349,9 +1351,11 @@ export default function OfflineOrdersIntakePage() {
                                       <input
                                         type="number"
                                         min="0"
-                                        value={sizeData?.quantity || 0}
+                                        value={sizeData && sizeData.quantity > 0 ? sizeData.quantity : ''}
                                         onChange={(e) => {
-                                          const quantity = parseInt(e.target.value, 10) || 0;
+                                          // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
+                                          const inputValue = e.target.value;
+                                          const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
                                           const unitPrice = sizeData?.unitPrice || 0;
                                           updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
                                         }}

@@ -34,6 +34,7 @@ import NamesNumbersModal from './components/modals/NamesNumbersModal';
 import PriceModal from './components/modals/PriceModal';
 import UploadRatingModal from './components/modals/UploadRatingModal';
 import SaveShareModal from './components/modals/SaveShareModal';
+import GetPriceFlowModal from './components/modals/GetPriceFlowModal';
 import { designLabApi } from '@/lib/api';
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import { analytics } from '@/lib/analytics';
@@ -124,7 +125,8 @@ const DesignLabClient: React.FC = () => {
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'zoom'>('front');
   const [showGuidePanel, setShowGuidePanel] = useState(false); // [2025-01-30 17:00:00] 默认隐藏，因为工具面板会显示
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false); // [2025-12-06 12:30:00] 模板库面板显示状态
-  const [showPriceModal, setShowPriceModal] = useState(false); // [2025-12-06 12:30:00] 价格模态框显示状态
+  const [showPriceModal, setShowPriceModal] = useState(false); // [2025-12-06 12:30:00] 价格模态框显示状态（旧版，保留兼容）
+  const [showGetPriceFlowModal, setShowGetPriceFlowModal] = useState(false); // [2025-12-08] Get Price流程模态框
   const [priceQuote, setPriceQuote] = useState<any>(null); // [2025-12-06 12:30:00] 价格报价数据
   const [priceLoading, setPriceLoading] = useState(false); // [2025-12-06 12:30:00] 价格加载状态
   const [priceError, setPriceError] = useState<string | null>(null); // [2025-12-06 12:30:00] 价格错误信息
@@ -1490,6 +1492,7 @@ const DesignLabClient: React.FC = () => {
   }, [fabricCanvasRef, canvasToSnapshot, setCanvas, currentDesignId, designName, productInfo, setCurrentDesignId]);
 
   // [2025-12-06 12:30:00] Get Price 处理
+  // [2025-12-08] 更新：打开完整的Get Price流程模态框
   const handleGetPrice = useCallback(async () => {
     // [2025-12-08] 埋点：Get Price 点击
     analytics.track('get_price_clicked', {
@@ -1502,6 +1505,10 @@ const DesignLabClient: React.FC = () => {
       alert('Please ensure the canvas is loaded and a product is selected.');
       return;
     }
+
+    // [2025-12-08] 打开Get Price流程模态框
+    setShowGetPriceFlowModal(true);
+    return;
 
     // 确保设计已保存
     let designId = currentDesignId;
@@ -2335,7 +2342,7 @@ const DesignLabClient: React.FC = () => {
         />
       )}
 
-      {/* [2025-12-06 12:30:00] Price Modal */}
+      {/* [2025-12-06 12:30:00] Price Modal（旧版，保留兼容） */}
       <PriceModal
         isOpen={showPriceModal}
         onClose={() => {
@@ -2347,6 +2354,31 @@ const DesignLabClient: React.FC = () => {
         error={priceError}
         quantity={quoteQuantity}
         onQuantityChange={handleQuantityChange}
+      />
+      
+      {/* [2025-12-08] Get Price流程模态框（新版完整流程） */}
+      <GetPriceFlowModal
+        isOpen={showGetPriceFlowModal}
+        onClose={() => setShowGetPriceFlowModal(false)}
+        designId={currentDesignId}
+        onAddToCart={async (orderData) => {
+          // [2025-12-08] 处理加车逻辑
+          try {
+            // TODO: 调用加车API
+            console.log('[DesignLab] Add to cart:', orderData);
+            
+            // [2025-12-08] 埋点：加车成功
+            analytics.track('add_to_cart_success', {
+              designId: orderData.designId,
+              totalQuantity: orderData.totalQuantity,
+            });
+            
+            alert('Added to cart successfully!');
+          } catch (error) {
+            console.error('[DesignLab] Failed to add to cart:', error);
+            alert('Failed to add to cart. Please try again.');
+          }
+        }}
       />
     </div>
   );
