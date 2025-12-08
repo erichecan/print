@@ -1236,19 +1236,19 @@ const DesignLabClient: React.FC = () => {
         }
         
         if (!imageUrl) {
-        console.error('[DesignLab] Image URL is empty');
-        showErrorToast('Failed to read the file. Please try again or choose a different file.');
-        return;
-      }
-      
-      // [2025-01-30 17:30:00] 使用原生 Image 对象加载图片
-      const imgElement = new Image();
-      // [2025-01-30 22:30:00] 对于 data URL，不需要设置 crossOrigin
-      if (!imageUrl.startsWith('data:')) {
-        imgElement.crossOrigin = 'anonymous';
-      }
-      
-      imgElement.onload = () => {
+          console.error('[DesignLab] Image URL is empty');
+          showErrorToast('Failed to read the file. Please try again or choose a different file.');
+          return;
+        }
+        
+        // [2025-01-30 17:30:00] 使用原生 Image 对象加载图片
+        const imgElement = new Image();
+        // [2025-01-30 22:30:00] 对于 data URL，不需要设置 crossOrigin
+        if (!imageUrl.startsWith('data:')) {
+          imgElement.crossOrigin = 'anonymous';
+        }
+        
+        imgElement.onload = () => {
         console.log('[DesignLab] Image loaded successfully:', {
           naturalWidth: imgElement.naturalWidth,
           naturalHeight: imgElement.naturalHeight,
@@ -1371,23 +1371,27 @@ const DesignLabClient: React.FC = () => {
           console.error('[DesignLab] Error stack:', (error as Error).stack);
           showErrorToast(`Failed to process the image: ${(error as Error).message}. Please try a different file.`);
         }
-      };
-      
-      imgElement.onerror = (error) => {
-        console.error('[DesignLab] Image load error:', error);
-        console.error('[DesignLab] Image URL (first 100 chars):', imageUrl.substring(0, 100));
-        showErrorToast('Failed to load the image. The file may be corrupted. Please try a different file.');
+        };
         
-        // [2025-12-08] 埋点：上传失败
-        analytics.track('upload_failed', {
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-          error: 'Image load error',
-        });
-      };
-      
-      imgElement.src = imageUrl;
+        imgElement.onerror = (error) => {
+          console.error('[DesignLab] Image load error:', error);
+          console.error('[DesignLab] Image URL (first 100 chars):', imageUrl.substring(0, 100));
+          showErrorToast('Failed to load the image. The file may be corrupted. Please try a different file.');
+          
+          // [2025-12-08] 埋点：上传失败
+          analytics.track('upload_failed', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            error: 'Image load error',
+          });
+        };
+        
+        imgElement.src = imageUrl;
+      } catch (error) {
+        console.error('[DesignLab] Error in reader.onload:', error);
+        showErrorToast('Failed to process the file. Please try again.');
+      }
     };
     
     reader.onerror = (error) => {

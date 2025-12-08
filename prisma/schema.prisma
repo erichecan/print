@@ -307,6 +307,8 @@ model Order {
   total             Decimal          @db.Decimal(10, 2)
   paymentStatus     PaymentStatus    @default(PENDING) @map("payment_status")
   paymentIntentId   String?          @unique @map("payment_intent_id")
+  balanceTransactionId String?       @map("balance_transaction_id") // [2025-01-29 14:30:00] Stripe balance transaction ID
+  paymentFee        Decimal?         @map("payment_fee") @db.Decimal(10, 2) // [2025-01-29 14:30:00] Stripe payment fee in CAD
   shippingAddress   Json             @map("shipping_address")
   billingAddress    Json             @map("billing_address")
   trackingNumber    String?          @map("tracking_number")
