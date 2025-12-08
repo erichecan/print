@@ -1281,18 +1281,19 @@ export default function OfflineOrdersIntakePage() {
                           </div>
 
                           {/* 尺码输入区域 - PRD v2.0: YOUTH/ADULT分类、可用性控制、额外费用显示 */}
+                          {/* [2025-12-08 05:00:00] 修复：改为单行布局，隐藏数字输入框的上下箭头 */}
                           <div className="space-y-3">
                             {/* YOUTH尺码 */}
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
-                              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                              <div className="flex flex-wrap gap-2">
                                 {YOUTH_SIZES.map((size) => {
                                   const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
                                   const sizeData = color.sizes.find(s => s.size === size);
                                   const additionalFee = sizeFeeMap[size] || 0;
                                   
                                   return (
-                                    <div key={size} className={`${!isAvailable ? 'opacity-50' : ''}`}>
+                                    <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                                       <label className="block text-xs text-gray-600 mb-1">{size}</label>
                                       <input
                                         type="number"
@@ -1304,7 +1305,7 @@ export default function OfflineOrdersIntakePage() {
                                           updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
                                         }}
                                         disabled={!isAvailable}
-                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         placeholder="数量"
                                       />
                                       {sizeData && sizeData.quantity > 0 && (
@@ -1317,7 +1318,7 @@ export default function OfflineOrdersIntakePage() {
                                               const unitPrice = parseFloat(value) || 0;
                                               updateSizeQuantity(item.id, color.colorId, size, sizeData.quantity, unitPrice);
                                             }}
-                                            className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                                            className="w-16 border border-gray-300 rounded px-2 py-1 text-xs"
                                             placeholder="单价"
                                           />
                                         </div>
@@ -1331,14 +1332,14 @@ export default function OfflineOrdersIntakePage() {
                             {/* ADULT尺码 */}
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
-                              <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                              <div className="flex flex-wrap gap-2">
                                 {ADULT_SIZES.map((size) => {
                                   const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
                                   const sizeData = color.sizes.find(s => s.size === size);
                                   const additionalFee = sizeFeeMap[size] || 0;
                                   
                                   return (
-                                    <div key={size} className={`${!isAvailable ? 'opacity-50' : ''}`}>
+                                    <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                                       <label className="block text-xs text-gray-600 mb-1">
                                         {size}
                                         {LARGE_SIZES.includes(size) && additionalFee > 0 && (
@@ -1355,7 +1356,7 @@ export default function OfflineOrdersIntakePage() {
                                           updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
                                         }}
                                         disabled={!isAvailable}
-                                        className="w-full border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         placeholder="数量"
                                       />
                                       {sizeData && sizeData.quantity > 0 && (
@@ -1368,7 +1369,7 @@ export default function OfflineOrdersIntakePage() {
                                               const unitPrice = parseFloat(value) || 0;
                                               updateSizeQuantity(item.id, color.colorId, size, sizeData.quantity, unitPrice);
                                             }}
-                                            className="w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                                            className="w-16 border border-gray-300 rounded px-2 py-1 text-xs"
                                             placeholder="单价"
                                           />
                                           {sizeData.subtotal > 0 && (

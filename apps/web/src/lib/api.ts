@@ -2036,6 +2036,10 @@ export const designLabApi = {
     api(`/designs/${designId}/quote`, { method: 'POST', body: payload || {} }),
   submitOrder: (designId: string, payload?: any) =>
     api(`/designs/${designId}/order`, { method: 'POST', body: payload || {} }),
+  // [2025-12-08] 获取设计详情（包含分享信息）
+  getDesign: (id: string) => api<{ success: boolean; data: DesignDraft & { shareToken?: string; shareUrl?: string } }>(`/designs/${id}`),
+  // [2025-12-08] 分享设计（生成分享链接）
+  shareDesign: (id: string) => api<{ success: boolean; data: { shareToken: string; shareUrl: string } }>(`/designs/${id}/share`, { method: 'POST' }),
 };
 
 // [2025-01-27 16:15:00] Admin Orders API Types

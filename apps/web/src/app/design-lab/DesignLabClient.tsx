@@ -33,6 +33,7 @@ import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
 import PriceModal from './components/modals/PriceModal';
 import UploadRatingModal from './components/modals/UploadRatingModal';
+import SaveShareModal from './components/modals/SaveShareModal';
 import { designLabApi } from '@/lib/api';
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import { analytics } from '@/lib/analytics';

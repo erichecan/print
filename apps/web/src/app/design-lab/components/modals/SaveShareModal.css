@@ -1,0 +1,123 @@
+/**
+ * Save & Share Modal Styles
+ * [2025-12-08]
+ */
+.dl-save-share-modal {
+  max-width: 600px;
+}
+
+.dl-save-share-modal__tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dl-save-share-modal__tab {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 16px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dl-save-share-modal__tab:hover {
+  color: #1e3a8a;
+}
+
+.dl-save-share-modal__tab.is-active {
+  color: #1e3a8a;
+  border-bottom-color: #1e3a8a;
+}
+
+.dl-save-share-modal__content {
+  padding: 16px 0;
+}
+
+.dl-save-share-modal__description {
+  margin-bottom: 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.dl-save-share-modal__form {
+  margin-bottom: 24px;
+}
+
+.dl-save-share-modal__label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dl-save-share-modal__input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.dl-save-share-modal__input:focus {
+  outline: none;
+  border-color: #1e3a8a;
+}
+
+.dl-save-share-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.dl-save-share-modal__link-input {
+  display: flex;
+  gap: 8px;
+}
+
+.dl-save-share-modal__link-input .dl-save-share-modal__input {
+  flex: 1;
+}
+
+.dl-save-share-modal__copy-btn {
+  padding: 12px 24px;
+  background: #1e3a8a;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dl-save-share-modal__copy-btn:hover {
+  background: #1e40af;
+}
+
+.dl-save-share-modal__share-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dl-save-share-modal__social-share {
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dl-save-share-modal__social-title {
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dl-save-share-modal__loading {
+  text-align: center;
+  padding: 24px;
+}
+
