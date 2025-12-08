@@ -8,6 +8,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // [2025-12-08] 修复：使用 router.push 替代 Link 避免 RSC 路由问题
 import { useMemo, useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { couponApi, promotionApi, Promotion } from '@/lib/api'; // [2025-01-28 12:40:00] 添加促销活动 API
@@ -22,6 +23,7 @@ interface AppliedCoupon {
 }
 
 export default function CartPage() {
+  const router = useRouter(); // [2025-12-08] 修复：使用 router.push 替代 Link 避免 RSC 路由问题
   const { cart, isLoading, updateItem, removeItem } = useCart();
   const { success, error: showError, info } = useToast(); // [2025-01-27 16:50:00] Toast 通知
   const [updating, setUpdating] = useState<string | null>(null);
@@ -32,6 +34,7 @@ export default function CartPage() {
   const [postalCode, setPostalCode] = useState('');
   const [postalError, setPostalError] = useState('Please enter a postal code to get your price.');
   const [showCouponForm, setShowCouponForm] = useState(false);
+  const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // [2025-12-08] 防止重复点击
   
   // [2025-01-28 12:40:00] 获取每个商品的促销活动信息
   const productIds = cart?.items.map((item) => item.productId).filter(Boolean) || [];
@@ -470,9 +473,56 @@ export default function CartPage() {
               <span>Total</span>
               <span>${calculateTotal().toFixed(2)}</span>
             </div>
-            <Link href="/checkout" className="summary-panel__primary">
-              Proceed to Checkout
-            </Link>
+            <button
+              type="button"
+              className="summary-panel__primary"
+              onClick={() => {
+                // [2025-12-08] 修复：使用 router.push 替代 Link，避免 RSC 路由问题和 404 错误
+                if (navigatingToCheckout) return; // 防止重复点击
+                setNavigatingToCheckout(true);
+                
+                try {
+                  // 埋点：记录 Checkout 按钮点击
+                  if (typeof window !== 'undefined' && (window as any).gtag) {
+                    try {
+                      (window as any).gtag('event', 'begin_checkout', {
+                        currency: 'CAD',
+                        value: calculateTotal(),
+                        items: cart?.items.map(item => ({
+                          item_id: item.variantId,
+                          item_name: item.productName,
+                          quantity: item.quantity,
+                          price: item.unitPrice,
+                        })) || [],
+                      });
+                    } catch (e) {
+                      console.warn('[CartPage] Failed to track checkout analytics:', e);
+                    }
+                  }
+                  
+                  // 使用绝对路径，确保正确导航
+                  router.push('/checkout');
+                } catch (error) {
+                  console.error('[CartPage] Failed to navigate to checkout:', error);
+                  // 错误上报
+                  if (typeof window !== 'undefined' && (window as any).Sentry) {
+                    try {
+                      (window as any).Sentry.captureException(error, {
+                        tags: { feature: 'cart-checkout' },
+                        extra: { cartItemCount: cart?.itemCount || 0 },
+                      });
+                    } catch (e) {
+                      console.warn('[CartPage] Failed to report to Sentry:', e);
+                    }
+                  }
+                  showError('Failed to navigate to checkout. Please try again.');
+                  setNavigatingToCheckout(false);
+                }
+              }}
+              disabled={navigatingToCheckout || !cart || cart.items.length === 0}
+            >
+              {navigatingToCheckout ? 'Loading...' : 'Proceed to Checkout'}
+            </button>
             <button type="button" className="summary-panel__secondary" onClick={() => setShowCouponForm(!showCouponForm)}>
               {showCouponForm ? 'Hide discount code' : 'Add discount code'}
             </button>

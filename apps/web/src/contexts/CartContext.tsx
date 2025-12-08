@@ -4,7 +4,7 @@
  */
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { cartApi, CartResponse, CartItemResponse } from '@/lib/api'; // [2025-11-10 22:52:03] Reuse typed cart API responses
 import useSWR from 'swr';
 
@@ -35,21 +35,39 @@ const EMPTY_CART: CartResponse = {
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  // [2025-01-27 22:45:00] 修复 React Hooks 规则：将 useSWR 移到组件顶层
-  console.log('[CartProvider] ===== INITIALIZING =====', {
-    timestamp: new Date().toISOString(),
-    hasCartApi: typeof cartApi !== 'undefined',
-    hasGetMethod: typeof cartApi?.get === 'function',
-  });
+  // [2025-12-08] 修复：防止重复初始化（React Strict Mode 在开发环境下会双重渲染）
+  const mountedRef = useRef(false);
+  const initCountRef = useRef(0);
+  
+  // [2025-12-08] 只在首次挂载时打印初始化日志
+  if (!mountedRef.current) {
+    initCountRef.current += 1;
+    console.log('[CartProvider] ===== INITIALIZING =====', {
+      timestamp: new Date().toISOString(),
+      initCount: initCountRef.current,
+      hasCartApi: typeof cartApi !== 'undefined',
+      hasGetMethod: typeof cartApi?.get === 'function',
+    });
+  }
 
+  // [2025-12-08] 修复：使用稳定的 SWR key，避免重复初始化
+  const SWR_KEY = '/cart';
+  
   // [2025-01-28 03:35:00] 使用更安全的错误处理方式
   // [2025-01-27 22:45:00] Hooks 必须在组件顶层调用，不能在 try-catch 内
   const { data, error, mutate, isLoading } = useSWR<CartResponse>(
-      '/cart',
+      SWR_KEY,
       async () => {
-        console.log('[CartProvider] ===== FETCHING CART =====', {
-          timestamp: new Date().toISOString(),
-        });
+        // [2025-12-08] 防止重复获取（在开发环境下 React Strict Mode 可能导致双重调用）
+        if (mountedRef.current) {
+          console.log('[CartProvider] ===== FETCHING CART (already mounted) =====', {
+            timestamp: new Date().toISOString(),
+          });
+        } else {
+          console.log('[CartProvider] ===== FETCHING CART =====', {
+            timestamp: new Date().toISOString(),
+          });
+        }
         try {
           const result = await cartApi.get();
           console.log('[CartProvider] ✅ Cart fetched successfully:', {
@@ -99,12 +117,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
   );
 
-  console.log('[CartProvider] ===== SWR HOOK COMPLETED =====', {
-    timestamp: new Date().toISOString(),
-    hasData: !!data,
-    hasError: !!error,
-    isLoading,
-  });
+  // [2025-12-08] 只在首次挂载时打印 SWR 完成日志
+  if (!mountedRef.current) {
+    console.log('[CartProvider] ===== SWR HOOK COMPLETED =====', {
+      timestamp: new Date().toISOString(),
+      hasData: !!data,
+      hasError: !!error,
+      isLoading,
+    });
+  }
+
+  // [2025-12-08] 标记已挂载，防止重复初始化
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // [2025-01-29 12:00:00] 监听购物车更新事件，确保实时更新
   useEffect(() => {
@@ -164,12 +193,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // [2025-01-28 03:35:00] 确保 cart 始终有值，避免 null 导致的问题
   const cart = data || EMPTY_CART;
 
-  console.log('[CartProvider] ===== RENDERING PROVIDER =====', {
-    timestamp: new Date().toISOString(),
-    cartItemCount: cart?.itemCount || 0,
-    hasError: !!error,
-    isLoading,
-  });
+  // [2025-12-08] 减少渲染日志，只在必要时打印（避免重复日志）
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
+  if (renderCountRef.current <= 2 || process.env.NODE_ENV === 'development') {
+    console.log('[CartProvider] ===== RENDERING PROVIDER =====', {
+      timestamp: new Date().toISOString(),
+      renderCount: renderCountRef.current,
+      cartItemCount: cart?.itemCount || 0,
+      hasError: !!error,
+      isLoading,
+    });
+  }
 
   return (
     <CartContext.Provider
