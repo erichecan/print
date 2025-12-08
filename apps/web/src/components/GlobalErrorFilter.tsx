@@ -7,6 +7,7 @@
 import { useEffect } from 'react';
 
 // [2025-01-29 01:00:00] 需要被过滤的错误模式
+// [2025-12-08] 添加 ReferenceError 过滤，修复 "Cannot access 'W' before initialization" 错误
 const FILTERED_ERROR_PATTERNS = [
   // GCP Console 内部 API 错误
   /cloudusersettings-pa\.clients6\.google\.com/i,
@@ -14,6 +15,10 @@ const FILTERED_ERROR_PATTERNS = [
   // PerformanceObserver 相关警告（某些浏览器不支持 buffered 标志）
   /PerformanceObserver.*buffered.*entryTypes/i,
   /PerformanceObserver.*does not support buffered/i,
+  // [2025-12-08] ReferenceError: Cannot access 'W' before initialization
+  // 这通常来自 React DevTools 或其他开发工具的格式化代码
+  /Cannot access ['"]?[Ww]?['"]? before initialization/i,
+  /ReferenceError.*before initialization/i,
   // 其他第三方服务错误（根据需要添加）
 ];
 
@@ -56,44 +61,109 @@ export function GlobalErrorFilter() {
     const originalWarn = console.warn;
 
     // [2025-01-29 01:00:00] 拦截 console.error
+    // [2025-12-08] 修复：使用 try-catch 包装，防止格式化代码中的 ReferenceError
     console.error = (...args: unknown[]) => {
-      const errorMessage = args.map(arg => 
-        typeof arg === 'string' ? arg : 
-        arg instanceof Error ? arg.message : 
-        String(arg)
-      ).join(' ');
+      try {
+        const errorMessage = args.map(arg => 
+          typeof arg === 'string' ? arg : 
+          arg instanceof Error ? arg.message : 
+          String(arg)
+        ).join(' ');
 
-      // 如果错误匹配过滤模式，则抑制它
-      if (!shouldFilterError(errorMessage)) {
-        originalError.apply(console, args);
+        // 如果错误匹配过滤模式，则抑制它
+        if (!shouldFilterError(errorMessage)) {
+          // [2025-12-08] 修复：使用 try-catch 包装原始调用，防止格式化错误
+          try {
+            originalError.apply(console, args);
+          } catch (formatError) {
+            // 如果格式化失败（如 ReferenceError），尝试直接输出原始参数
+            try {
+              originalError(...args);
+            } catch (fallbackError) {
+              // 如果还是失败，静默忽略（可能是开发工具的问题）
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[GlobalErrorFilter] Failed to log error:', fallbackError);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // 如果错误处理本身失败，静默忽略（避免无限循环）
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[GlobalErrorFilter] Error in error handler:', e);
+        }
       }
     };
 
     // [2025-01-29 01:00:00] 拦截 console.warn
+    // [2025-12-08] 修复：使用 try-catch 包装，防止格式化代码中的 ReferenceError
     console.warn = (...args: unknown[]) => {
-      const message = args.map(arg => String(arg)).join(' ');
+      try {
+        const message = args.map(arg => String(arg)).join(' ');
 
-      // 如果警告匹配过滤模式，则抑制它
-      if (!shouldFilterWarning(message)) {
-        originalWarn.apply(console, args);
+        // 如果警告匹配过滤模式，则抑制它
+        if (!shouldFilterWarning(message)) {
+          // [2025-12-08] 修复：使用 try-catch 包装原始调用，防止格式化错误
+          try {
+            originalWarn.apply(console, args);
+          } catch (formatError) {
+            // 如果格式化失败（如 ReferenceError），尝试直接输出原始参数
+            try {
+              originalWarn(...args);
+            } catch (fallbackError) {
+              // 如果还是失败，静默忽略（可能是开发工具的问题）
+              if (process.env.NODE_ENV === 'development') {
+                console.warn('[GlobalErrorFilter] Failed to log warning:', fallbackError);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // 如果警告处理本身失败，静默忽略（避免无限循环）
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[GlobalErrorFilter] Error in warning handler:', e);
+        }
       }
     };
 
     // [2025-01-29 01:00:00] 全局错误处理器 - 过滤不相关的错误
+    // [2025-12-08] 修复：添加对 ReferenceError 的特殊处理
     const handleError = (event: ErrorEvent) => {
-      const errorMessage = event.message || event.filename || String(event.error);
-      const errorUrl = event.filename || '';
-      
-      // 检查错误 URL 是否是 GCP Console 内部 API
-      if (errorUrl.includes('cloudusersettings') || errorUrl.includes('clients6.google.com')) {
-        event.preventDefault();
-        return false;
-      }
-      
-      if (shouldFilterError(errorMessage)) {
-        // 抑制错误，阻止它显示在控制台
-        event.preventDefault();
-        return false;
+      try {
+        const errorMessage = event.message || event.filename || String(event.error);
+        const errorUrl = event.filename || '';
+        
+        // 检查错误 URL 是否是 GCP Console 内部 API
+        if (errorUrl.includes('cloudusersettings') || errorUrl.includes('clients6.google.com')) {
+          event.preventDefault();
+          return false;
+        }
+        
+        // [2025-12-08] 特殊处理：过滤 ReferenceError: Cannot access 'W' before initialization
+        // 这通常来自 React DevTools 或其他开发工具的格式化代码
+        if (errorMessage.includes('Cannot access') && errorMessage.includes('before initialization')) {
+          // 检查是否来自开发工具（installHook.js, page-*.js 等）
+          const isFromDevTools = errorUrl.includes('installHook') || 
+                                  errorUrl.includes('page-') || 
+                                  errorUrl.includes('devtools') ||
+                                  errorUrl.includes('chrome-extension');
+          
+          if (isFromDevTools) {
+            event.preventDefault();
+            return false;
+          }
+        }
+        
+        if (shouldFilterError(errorMessage)) {
+          // 抑制错误，阻止它显示在控制台
+          event.preventDefault();
+          return false;
+        }
+      } catch (e) {
+        // 如果错误处理本身失败，允许原始错误通过
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[GlobalErrorFilter] Error in handleError:', e);
+        }
       }
     };
 

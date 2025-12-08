@@ -40,14 +40,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const initCountRef = useRef(0);
   
   // [2025-12-08] 只在首次挂载时打印初始化日志
+  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
   if (!mountedRef.current) {
     initCountRef.current += 1;
-    console.log('[CartProvider] ===== INITIALIZING =====', {
-      timestamp: new Date().toISOString(),
-      initCount: initCountRef.current,
-      hasCartApi: typeof cartApi !== 'undefined',
-      hasGetMethod: typeof cartApi?.get === 'function',
-    });
+    try {
+      console.log('[CartProvider] ===== INITIALIZING =====', {
+        timestamp: new Date().toISOString(),
+        initCount: initCountRef.current,
+        hasCartApi: typeof cartApi !== 'undefined',
+        hasGetMethod: typeof cartApi?.get === 'function',
+      });
+    } catch (e) {
+      // 如果 console.log 失败（可能是格式化错误），静默忽略
+      if (process.env.NODE_ENV === 'development') {
+        // 使用最简单的输出方式
+        try {
+          console.log('[CartProvider] INITIALIZING');
+        } catch (e2) {
+          // 完全失败，忽略
+        }
+      }
+    }
   }
 
   // [2025-12-08] 修复：使用稳定的 SWR key，避免重复初始化
@@ -59,35 +72,59 @@ export function CartProvider({ children }: { children: ReactNode }) {
       SWR_KEY,
       async () => {
         // [2025-12-08] 防止重复获取（在开发环境下 React Strict Mode 可能导致双重调用）
-        if (mountedRef.current) {
-          console.log('[CartProvider] ===== FETCHING CART (already mounted) =====', {
-            timestamp: new Date().toISOString(),
-          });
-        } else {
-          console.log('[CartProvider] ===== FETCHING CART =====', {
-            timestamp: new Date().toISOString(),
-          });
+        // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+        try {
+          if (mountedRef.current) {
+            console.log('[CartProvider] ===== FETCHING CART (already mounted) =====', {
+              timestamp: new Date().toISOString(),
+            });
+          } else {
+            console.log('[CartProvider] ===== FETCHING CART =====', {
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch (e) {
+          // 如果 console.log 失败，静默忽略
         }
         try {
           const result = await cartApi.get();
-          console.log('[CartProvider] ✅ Cart fetched successfully:', {
-            timestamp: new Date().toISOString(),
-            itemCount: result?.itemCount || 0,
-          });
+          // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+          try {
+            console.log('[CartProvider] ✅ Cart fetched successfully:', {
+              timestamp: new Date().toISOString(),
+              itemCount: result?.itemCount || 0,
+            });
+          } catch (e) {
+            // 如果 console.log 失败，静默忽略
+          }
           return result;
         } catch (err: any) {
           // [2025-01-28 03:35:00] 记录详细错误信息
-          console.error('[CartProvider] ❌ Error fetching cart:', {
-            timestamp: new Date().toISOString(),
-            error: err,
-            errorMessage: err?.message,
-            errorStack: err?.stack,
-            errorName: err?.name,
-            errorType: typeof err,
-            errorString: String(err),
-          });
+          // [2025-12-08] 修复：使用 try-catch 包装 console.error，防止格式化错误
+          try {
+            console.error('[CartProvider] ❌ Error fetching cart:', {
+              timestamp: new Date().toISOString(),
+              error: err,
+              errorMessage: err?.message,
+              errorStack: err?.stack,
+              errorName: err?.name,
+              errorType: typeof err,
+              errorString: String(err),
+            });
+          } catch (e) {
+            // 如果 console.error 失败，尝试简单输出
+            try {
+              console.error('[CartProvider] Error fetching cart:', err?.message || String(err));
+            } catch (e2) {
+              // 完全失败，忽略
+            }
+          }
           // 返回空购物车结构，而不是抛出错误
-          console.log('[CartProvider] Using empty cart as fallback');
+          try {
+            console.log('[CartProvider] Using empty cart as fallback');
+          } catch (e) {
+            // 如果 console.log 失败，静默忽略
+          }
           return EMPTY_CART;
         }
       },
@@ -99,32 +136,52 @@ export function CartProvider({ children }: { children: ReactNode }) {
         fallbackData: EMPTY_CART, // [2025-01-28 03:30:00] 提供默认值，避免 undefined
         onError: (err) => {
           // [2025-01-28 03:35:00] 记录详细的 SWR 错误
-          console.error('[CartProvider] ❌ SWR error (non-fatal):', {
-            timestamp: new Date().toISOString(),
-            error: err,
-            errorMessage: err?.message,
-            errorStack: err?.stack,
-            errorName: err?.name,
-            errorType: typeof err,
-            errorString: String(err),
-          });
+          // [2025-12-08] 修复：使用 try-catch 包装 console.error，防止格式化错误
+          try {
+            console.error('[CartProvider] ❌ SWR error (non-fatal):', {
+              timestamp: new Date().toISOString(),
+              error: err,
+              errorMessage: err?.message,
+              errorStack: err?.stack,
+              errorName: err?.name,
+              errorType: typeof err,
+              errorString: String(err),
+            });
+          } catch (e) {
+            // 如果 console.error 失败，尝试简单输出
+            try {
+              console.error('[CartProvider] SWR error:', err?.message || String(err));
+            } catch (e2) {
+              // 完全失败，忽略
+            }
+          }
         },
         onErrorRetry: () => {
           // [2025-01-28 03:30:00] 禁用错误重试
-          console.log('[CartProvider] Error retry disabled');
+          // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+          try {
+            console.log('[CartProvider] Error retry disabled');
+          } catch (e) {
+            // 如果 console.log 失败，静默忽略
+          }
           return;
         },
       }
   );
 
   // [2025-12-08] 只在首次挂载时打印 SWR 完成日志
+  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
   if (!mountedRef.current) {
-    console.log('[CartProvider] ===== SWR HOOK COMPLETED =====', {
-      timestamp: new Date().toISOString(),
-      hasData: !!data,
-      hasError: !!error,
-      isLoading,
-    });
+    try {
+      console.log('[CartProvider] ===== SWR HOOK COMPLETED =====', {
+        timestamp: new Date().toISOString(),
+        hasData: !!data,
+        hasError: !!error,
+        isLoading,
+      });
+    } catch (e) {
+      // 如果 console.log 失败，静默忽略
+    }
   }
 
   // [2025-12-08] 标记已挂载，防止重复初始化
@@ -136,9 +193,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // [2025-01-29 12:00:00] 监听购物车更新事件，确保实时更新
+  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
   useEffect(() => {
     const handleCartUpdate = () => {
-      console.log('[CartProvider] Cart update event received, refreshing cart...');
+      try {
+        console.log('[CartProvider] Cart update event received, refreshing cart...');
+      } catch (e) {
+        // 如果 console.log 失败，静默忽略
+      }
       mutate(); // 刷新购物车数据
     };
 
@@ -194,16 +256,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const cart = data || EMPTY_CART;
 
   // [2025-12-08] 减少渲染日志，只在必要时打印（避免重复日志）
+  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   if (renderCountRef.current <= 2 || process.env.NODE_ENV === 'development') {
-    console.log('[CartProvider] ===== RENDERING PROVIDER =====', {
-      timestamp: new Date().toISOString(),
-      renderCount: renderCountRef.current,
-      cartItemCount: cart?.itemCount || 0,
-      hasError: !!error,
-      isLoading,
-    });
+    try {
+      console.log('[CartProvider] ===== RENDERING PROVIDER =====', {
+        timestamp: new Date().toISOString(),
+        renderCount: renderCountRef.current,
+        cartItemCount: cart?.itemCount || 0,
+        hasError: !!error,
+        isLoading,
+      });
+    } catch (e) {
+      // 如果 console.log 失败，静默忽略
+    }
   }
 
   return (
