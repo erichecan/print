@@ -9,7 +9,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
-import { useCart } from '@/contexts/CartContext';
+import { useAddToCart } from '@/hooks/useAddToCart';
+import { useBuyNow } from '@/hooks/useBuyNow';
 import { useToast } from '@/hooks/useToast';
 import { SocialShareMenu, ShareConfig } from '@/components/social-share';
 import { StructuredData } from '@/components/seo/StructuredData';
@@ -71,8 +72,27 @@ export function ProductDetailContent() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
-  const { addItem } = useCart();
-  const { success, error: showError } = useToast();
+  const { error: showError } = useToast();
+  
+  // [2025-12-08] 使用新的 hooks
+  const { addToCart, isLoading: isAddingToCart } = useAddToCart({
+    onSuccess: (cartCount) => {
+      // 角标更新由 CartContext 自动处理
+      console.log('[ProductDetail] Item added to cart, new count:', cartCount);
+    },
+    onError: (error) => {
+      console.error('[ProductDetail] Failed to add to cart:', error);
+    },
+  });
+  
+  const { buyNow, isLoading: isBuyingNow } = useBuyNow({
+    onSuccess: () => {
+      console.log('[ProductDetail] Buy now successful, redirecting to checkout');
+    },
+    onError: (error) => {
+      console.error('[ProductDetail] Failed to buy now:', error);
+    },
+  });
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,11 +102,13 @@ export function ProductDetailContent() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedPrintLocation, setSelectedPrintLocation] = useState<'front' | 'back'>('front');
   const [quantity, setQuantity] = useState(1);
-  const [addingToCart, setAddingToCart] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
   // [2025-12-03 04:35:00] 悬停预览颜色状态
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  
+  // [2025-12-08] 统一加载状态
+  const isLoading = isAddingToCart || isBuyingNow;
 
   // Get unique colors and sizes from variants
   const colors = Array.from(new Set(product?.variants.map(v => v.color).filter(Boolean))) as string[];
@@ -154,50 +176,52 @@ export function ProductDetailContent() {
     window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
   };
 
-  // [2025-01-27 18:45:00] 添加到购物车
-  // [2025-12-08 04:35:00] 移除 Toast 提示，静默更新购物车图标，刷新页面以更新购物车数字
+  // [2025-12-08] 重构：添加到购物车
   const handleAddToCart = async () => {
+    // 校验：必须选择规格
     if (!selectedVariant) {
-      showError('Please select a color and size first');
+      showError('请选择规格后再加入购物车');
       return;
     }
+
+    // 校验：库存检查
     if (selectedVariant.stockQuantity < quantity) {
-      showError(`Only ${selectedVariant.stockQuantity} items available in stock`);
+      showError(`库存不足，仅剩 ${selectedVariant.stockQuantity} 件`);
       return;
     }
-    setAddingToCart(true);
-    try {
-      await addItem(selectedVariant.id, quantity);
-      // [2025-12-08 04:35:00] 刷新页面以更新购物车图标数字
-      router.refresh();
-    } catch (err: any) {
-      showError(err.message || 'Failed to add to cart. Please try again.');
-    } finally {
-      setAddingToCart(false);
+
+    // 校验：数量必须大于 0
+    if (quantity <= 0) {
+      showError('数量必须大于 0');
+      return;
     }
+
+    // 调用 hook 添加商品
+    await addToCart(selectedVariant.id, quantity);
   };
 
-  // [2025-01-27 18:45:00] 立即购买 - 添加到购物车并跳转到结算页
-  // [2025-01-29 12:00:00] 移除 Toast 提示，直接跳转
+  // [2025-12-08] 重构：立即购买
   const handleBuyNow = async () => {
+    // 校验：必须选择规格
     if (!selectedVariant) {
-      showError('Please select a color and size first');
+      showError('请选择规格后再购买');
       return;
     }
+
+    // 校验：库存检查
     if (selectedVariant.stockQuantity < quantity) {
-      showError(`Only ${selectedVariant.stockQuantity} items available in stock`);
+      showError(`库存不足，仅剩 ${selectedVariant.stockQuantity} 件`);
       return;
     }
-    setAddingToCart(true);
-    try {
-      await addItem(selectedVariant.id, quantity);
-      // [2025-01-29 12:00:00] 移除成功提示，直接跳转到结算页
-      router.push('/checkout');
-    } catch (err: any) {
-      showError(err.message || 'Failed to add to cart. Please try again.');
-    } finally {
-      setAddingToCart(false);
+
+    // 校验：数量必须大于 0
+    if (quantity <= 0) {
+      showError('数量必须大于 0');
+      return;
     }
+
+    // 调用 hook 立即购买（会自动跳转到结算页）
+    await buyNow(selectedVariant.id, quantity);
   };
 
   if (loading) {
@@ -586,21 +610,41 @@ export function ProductDetailContent() {
             {/* Add to Cart Button */}
             <button
               type="button"
-              className="flex-1 px-4 py-4 rounded border-2 border-gray-300 bg-white text-gray-900 text-base font-semibold text-center cursor-pointer transition-all hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
+              className="flex-1 px-4 py-4 rounded border-2 border-gray-300 bg-white text-gray-900 text-base font-semibold text-center cursor-pointer transition-all hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center gap-2"
               onClick={handleAddToCart}
-              disabled={addingToCart || !selectedVariant}
+              disabled={isLoading || !selectedVariant || (selectedVariant && selectedVariant.stockQuantity < quantity) || quantity <= 0}
             >
-              {addingToCart ? 'Adding...' : 'Add to cart'}
+              {isAddingToCart ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>添加中...</span>
+                </>
+              ) : (
+                'Add to cart'
+              )}
             </button>
 
             {/* Buy Now Button */}
             <button
               type="button"
-              className="flex-1 px-4 py-4 rounded bg-red-600 text-white text-base font-semibold text-center cursor-pointer transition-all border-none hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px]"
+              className="flex-1 px-4 py-4 rounded bg-red-600 text-white text-base font-semibold text-center cursor-pointer transition-all border-none hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center gap-2"
               onClick={handleBuyNow}
-              disabled={addingToCart || !selectedVariant}
+              disabled={isLoading || !selectedVariant || (selectedVariant && selectedVariant.stockQuantity < quantity) || quantity <= 0}
             >
-              {addingToCart ? 'Adding...' : 'Buy Now'}
+              {isBuyingNow ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>处理中...</span>
+                </>
+              ) : (
+                'Buy Now'
+              )}
             </button>
           </div>
 

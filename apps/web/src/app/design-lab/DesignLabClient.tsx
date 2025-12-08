@@ -36,7 +36,7 @@ import PriceModal from './components/modals/PriceModal';
 import UploadRatingModal from './components/modals/UploadRatingModal';
 import SaveShareModal from './components/modals/SaveShareModal';
 import GetPriceFlowModal from './components/modals/GetPriceFlowModal';
-import { designLabApi } from '@/lib/api';
+import { designLabApi, cartApi } from '@/lib/api';
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import { analytics } from '@/lib/analytics';
 import './design-lab.css';
@@ -1196,6 +1196,25 @@ const DesignLabClient: React.FC = () => {
       return;
     }
 
+    // [2025-12-07 15:30:00] 分辨率检查（警告，不阻止上传）
+    const checkImageResolution = (imageUrl: string) => {
+      const img = new Image();
+      img.onload = () => {
+        const MIN_DPI = 300;
+        const MIN_WIDTH = 1000; // 假设打印尺寸，可以根据实际需求调整
+        const MIN_HEIGHT = 1000;
+        
+        if (img.width < MIN_WIDTH || img.height < MIN_HEIGHT) {
+          showWarningToast(
+            `Low resolution detected (${img.width}×${img.height}px). Recommended: 300 DPI or higher for best print quality. You can continue, but we'll remind you again during checkout.`
+          );
+          // [2025-12-07 15:30:00] 标记为低分辨率，在 Content Check 时再次提醒
+          // 这个标记可以存储在对象的数据中
+        }
+      };
+      img.src = imageUrl;
+    };
+
     if (!fabricCanvasRef.current) {
       console.error('[DesignLab] Canvas not initialized');
       showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
@@ -1210,6 +1229,11 @@ const DesignLabClient: React.FC = () => {
       try {
         const imageUrl = e.target?.result as string;
       console.log('[DesignLab] File read successfully, imageUrl length:', imageUrl?.length || 0);
+      
+      // [2025-12-07 15:30:00] 检查分辨率（异步，不阻塞上传）
+      if (file.type !== 'image/svg+xml') {
+        checkImageResolution(imageUrl);
+      }
       
       if (!imageUrl) {
         console.error('[DesignLab] Image URL is empty');
@@ -2845,7 +2869,19 @@ const DesignLabClient: React.FC = () => {
       {/* 5. Bottom Bar - 底部操作栏 */}
       <footer className="dl-bottom-bar" role="contentinfo">
         <div className="dl-bottom-bar__left">
-          <button className="dl-bottom-bar__add-products">+ Add Products</button>
+          <button 
+            className="dl-bottom-bar__add-products"
+            onClick={() => {
+              // [2025-12-07 15:30:00] 打开产品选择器（跳转到产品列表页面，带返回参数）
+              if (typeof window !== 'undefined') {
+                const currentUrl = new URL(window.location.href);
+                const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
+                window.location.href = `/products?returnToDesignLab=${returnUrl}`;
+              }
+            }}
+          >
+            + Add Products
+          </button>
           <div className="dl-bottom-bar__product-info">
             <div className="dl-bottom-bar__product-thumb">
               <div className="dl-bottom-bar__product-thumb-placeholder">T</div>
@@ -2856,7 +2892,20 @@ const DesignLabClient: React.FC = () => {
                 {productInfo?.productName || 'Gildan Softstyle Jersey T-shirt'}
               </div>
               <div className="dl-bottom-bar__product-links">
-                <a href="#" className="dl-bottom-bar__link">Change Product</a>
+                <button
+                  className="dl-bottom-bar__link"
+                  onClick={() => {
+                    // [2025-12-07 15:30:00] 打开产品选择器（跳转到产品列表页面，带返回参数）
+                    if (typeof window !== 'undefined') {
+                      const currentUrl = new URL(window.location.href);
+                      const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
+                      window.location.href = `/products?returnToDesignLab=${returnUrl}&replaceProduct=true`;
+                    }
+                  }}
+                  type="button"
+                >
+                  Change Product
+                </button>
                 {productInfo?.color && (
                 <span className="dl-bottom-bar__color">
                     <input type="checkbox" id="color-selected" checked readOnly />
@@ -3016,21 +3065,42 @@ const DesignLabClient: React.FC = () => {
           return { sidesUsed, layerCount };
         }}
         onAddToCart={async (orderData) => {
-          // [2025-12-08] 处理加车逻辑
+          // [2025-12-07 15:30:00] 处理加车逻辑
           try {
-            // TODO: 调用加车API
-            console.log('[DesignLab] Add to cart:', orderData);
-            
-            // [2025-12-08] 埋点：加车成功
-            analytics.track('add_to_cart_success', {
-              designId: orderData.designId,
-              totalQuantity: orderData.totalQuantity,
-            });
-            
-            alert('Added to cart successfully!');
-          } catch (error) {
+            if (!productInfo?.variantId) {
+              throw new Error('Product variant not selected');
+            }
+
+            // [2025-12-07 15:30:00] 调用加车API
+            // 注意：当前API只支持简单的 variantId + quantity + designId
+            // 对于复杂的 sizeQuantities，我们需要在后端扩展API或在前端处理
+            const response = await cartApi.addItem(
+              productInfo.variantId,
+              orderData.totalQuantity,
+              orderData.designId || null
+            );
+
+            if (response.success) {
+              // [2025-12-07 15:30:00] 埋点：加车成功
+              analytics.track('add_to_cart_success', {
+                designId: orderData.designId,
+                totalQuantity: orderData.totalQuantity,
+                sizeQuantities: orderData.sizeQuantities,
+              });
+
+              // [2025-12-07 15:30:00] 触发购物车更新事件
+              if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('cart:updated'));
+              }
+
+              console.log('[DesignLab] Added to cart successfully:', response);
+            } else {
+              throw new Error('Failed to add to cart');
+            }
+          } catch (error: any) {
             console.error('[DesignLab] Failed to add to cart:', error);
-            alert('Failed to add to cart. Please try again.');
+            // [2025-12-07 15:30:00] 显示错误提示（不弹窗，使用toast）
+            throw error;
           }
         }}
       />

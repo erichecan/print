@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { designLabApi } from '@/lib/api';
 import './GetPriceFlowModal.css';
 
-export type GetPriceFlowStep = 'start' | 'ordering-options' | 'quantity' | 'order-options';
+export type GetPriceFlowStep = 'start' | 'ordering-options' | 'quantity' | 'order-options' | 'content-check' | 'added-to-cart';
 
 export type OrderType = 'buy-ship' | 'fundraiser';
 export type ShippingOption = 'single-address' | 'multiple-addresses';
@@ -57,11 +57,18 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   const [quoteData, setQuoteData] = useState<any>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  // [2025-12-07 15:30:00] Content Check 相关状态
+  const [needsContentCheck, setNeedsContentCheck] = useState(false);
+  const [hasUploadedImages, setHasUploadedImages] = useState(false);
+  // [2025-12-07 15:30:00] 加车成功相关状态
+  const [addedToCartData, setAddedToCartData] = useState<any>(null);
 
   // [2025-12-08] 初始化尺码列表
   const youthSizes = React.useMemo(() => ['YS', 'YM', 'YL'], []);
   const adultSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'], []);
   const allSizes = React.useMemo(() => [...youthSizes, ...adultSizes], [youthSizes, adultSizes]);
+  const womensSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], []); // [2025-12-07 15:30:00] 女性尺码
+  const [showWomensSizes, setShowWomensSizes] = useState(false); // [2025-12-07 15:30:00] 是否显示女性尺码
 
   // [2025-12-08] 初始化尺码数量
   React.useEffect(() => {
@@ -71,6 +78,19 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       );
     }
   }, [currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length]);
+
+  // [2025-12-07 15:30:00] 检查是否有上传的图片（用于 Content Check）
+  React.useEffect(() => {
+    if (getQuoteData && typeof getQuoteData === 'function') {
+      getQuoteData().then((data: any) => {
+        // 检查是否有上传的图片对象
+        if (data?.hasUploadedImages) {
+          setHasUploadedImages(true);
+          setNeedsContentCheck(true);
+        }
+      }).catch(() => {});
+    }
+  }, [getQuoteData]);
 
   // [2025-12-08] 计算总数量
   const totalQuantity = React.useMemo(() => {
@@ -290,15 +310,25 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         >
           Back
         </button>
-        <button
-          className="dl-modal__btn dl-modal__btn--primary"
-          onClick={() => setCurrentStep('quantity')}
-          disabled={
-            orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6
-          }
-        >
-          Continue to Sizes
-        </button>
+          <button
+            className="dl-modal__btn dl-modal__btn--primary"
+            onClick={() => setCurrentStep('quantity')}
+            disabled={
+              orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6
+            }
+            title={
+              orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6
+                ? 'Ship to multiple addresses requires at least 6 items'
+                : ''
+            }
+          >
+            Continue to Sizes
+          </button>
+          {orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6 && (
+            <p className="dl-get-price-flow__validation-hint">
+              Only available for orders of 6 or more items
+            </p>
+          )}
       </div>
     </div>
   );
@@ -429,6 +459,90 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           </div>
         </div>
 
+        {/* [2025-12-07 15:30:00] + Add Women's 按钮 */}
+        {!showWomensSizes && (
+          <div className="dl-get-price-flow__add-womens">
+            <button
+              className="dl-get-price-flow__add-womens-btn"
+              onClick={() => {
+                setShowWomensSizes(true);
+                // 添加女性尺码到列表
+                setSizeQuantities(prev => {
+                  const existingSizes = prev.map(sq => sq.size);
+                  const newWomensSizes = womensSizes
+                    .filter(size => !existingSizes.includes(size))
+                    .map(size => ({ size, quantity: 0 }));
+                  return [...prev, ...newWomensSizes];
+                });
+              }}
+            >
+              + Add Women's
+            </button>
+          </div>
+        )}
+
+        {/* [2025-12-07 15:30:00] WOMEN'S 尺码（如果已添加） */}
+        {showWomensSizes && (
+          <div className="dl-get-price-flow__size-section">
+            <h4 className="dl-get-price-flow__size-section-title">WOMEN'S</h4>
+            <div className="dl-get-price-flow__size-grid">
+              {womensSizes.map(size => {
+                const sizeFee = ['2XL', '3XL'].includes(size)
+                  ? `+$${size === '2XL' ? '2.50' : '3.50'}`
+                  : '';
+                return (
+                  <div key={`womens-${size}`} className="dl-get-price-flow__size-item">
+                    <label className="dl-get-price-flow__size-label">
+                      {size}
+                      {sizeFee && <span className="dl-get-price-flow__size-fee">{sizeFee}</span>}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={sizeQuantities.find(sq => sq.size === size)?.quantity || 0}
+                      onChange={(e) => {
+                        const value = Math.max(0, parseInt(e.target.value) || 0);
+                        setSizeQuantities(prev => {
+                          const existing = prev.find(sq => sq.size === size);
+                          if (existing) {
+                            return prev.map(sq => sq.size === size ? { ...sq, quantity: value } : sq);
+                          } else {
+                            return [...prev, { size, quantity: value }];
+                          }
+                        });
+                      }}
+                      className="dl-get-price-flow__size-input"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* [2025-12-07 15:30:00] Buy more, save more 推荐区 */}
+        <div className="dl-get-price-flow__recommendations">
+          <h4 className="dl-get-price-flow__recommendations-title">Buy more, save more</h4>
+          <div className="dl-get-price-flow__recommendations-grid">
+            <div className="dl-get-price-flow__recommendation-card">
+              <div className="dl-get-price-flow__recommendation-icon">👕</div>
+              <h5>WOMEN'S</h5>
+              <button className="dl-get-price-flow__recommendation-btn">+ Add style</button>
+            </div>
+            <div className="dl-get-price-flow__recommendation-card">
+              <div className="dl-get-price-flow__recommendation-icon">⭐</div>
+              <h5>RECOMMENDED</h5>
+              <button className="dl-get-price-flow__recommendation-btn">+ Add style</button>
+            </div>
+            <div className="dl-get-price-flow__recommendation-card">
+              <div className="dl-get-price-flow__recommendation-icon">🎨</div>
+              <h5>SAME ITEM, DIFFERENT COLOR</h5>
+              <button className="dl-get-price-flow__recommendation-btn">+ Add another color</button>
+            </div>
+          </div>
+          <button className="dl-get-price-flow__browse-more">Browse more styles</button>
+        </div>
+
         {/* Total Quantity */}
         <div className="dl-get-price-flow__total-quantity">
           <span className="dl-get-price-flow__total-label">Total Quantity:</span>
@@ -503,6 +617,164 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, designId, totalQuantity]);
 
+  // [2025-12-07 15:30:00] 处理加入购物车
+  const handleAddToCart = async () => {
+    if (!onAddToCart) {
+      console.warn('[GetPriceFlowModal] onAddToCart callback not provided');
+      return;
+    }
+
+    try {
+      const orderData = {
+        designId,
+        orderingOptions,
+        sizeQuantities: orderingOptions.sizesQuantities === 'i-know-sizes' ? sizeQuantities : null,
+        estimatedQuantity: orderingOptions.sizesQuantities === 'invite-group' ? estimatedQuantity : null,
+        totalQuantity,
+        quoteData,
+      };
+
+      await onAddToCart(orderData);
+      
+      // 标记内容已确认（如果通过了 Content Check）
+      if (needsContentCheck) {
+        setNeedsContentCheck(false);
+      }
+      
+      // 进入加车成功页
+      setAddedToCartData(orderData);
+      setCurrentStep('added-to-cart');
+    } catch (error) {
+      console.error('[GetPriceFlowModal] Error adding to cart:', error);
+      setQuoteError('Failed to add to cart. Please try again.');
+    }
+  };
+
+  // [2025-12-07 15:30:00] 步骤5：Content Check - 内容合规确认
+  const renderContentCheckStep = () => (
+    <div className="dl-get-price-flow__step">
+      <h2 className="dl-get-price-flow__step-title">Content Check</h2>
+      <p className="dl-get-price-flow__step-description">
+        By continuing with your order, you confirm that any uploaded images comply with our content standards and copyright requirements.
+      </p>
+      
+      <div className="dl-get-price-flow__content-check-warning">
+        <p>⚠️ Please ensure that:</p>
+        <ul>
+          <li>You have the right to use all uploaded images</li>
+          <li>Images do not contain offensive, illegal, or copyrighted content</li>
+          <li>Images meet our quality standards (recommended: 300 DPI or higher)</li>
+        </ul>
+      </div>
+
+      <div className="dl-get-price-flow__actions">
+        <button
+          className="dl-modal__btn dl-modal__btn--secondary"
+          onClick={() => {
+            onClose();
+            // [2025-12-07 15:30:00] 返回设计器（通过关闭模态框）
+          }}
+        >
+          Edit Design
+        </button>
+        <button
+          className="dl-modal__btn dl-modal__btn--primary"
+          onClick={() => {
+            // 同意并继续到加入购物车
+            setNeedsContentCheck(false);
+            handleAddToCart();
+          }}
+        >
+          Agree & Continue
+        </button>
+      </div>
+    </div>
+  );
+
+  // [2025-12-07 15:30:00] 步骤6：Added to Cart - 加车成功页
+  const renderAddedToCartStep = () => {
+    if (!addedToCartData) return null;
+
+    return (
+      <div className="dl-get-price-flow__step">
+        <h2 className="dl-get-price-flow__step-title">Added to Cart</h2>
+        
+        <div className="dl-get-price-flow__added-summary">
+          <div className="dl-get-price-flow__added-item">
+            <span className="dl-get-price-flow__added-label">Product:</span>
+            <span className="dl-get-price-flow__added-value">Design Item</span>
+          </div>
+          <div className="dl-get-price-flow__added-item">
+            <span className="dl-get-price-flow__added-label">Quantity:</span>
+            <span className="dl-get-price-flow__added-value">{addedToCartData.totalQuantity} items</span>
+          </div>
+          {addedToCartData.sizeQuantities && (
+            <div className="dl-get-price-flow__added-item">
+              <span className="dl-get-price-flow__added-label">Sizes:</span>
+              <span className="dl-get-price-flow__added-value">
+                {addedToCartData.sizeQuantities
+                  .filter((sq: SizeQuantity) => sq.quantity > 0)
+                  .map((sq: SizeQuantity) => `${sq.size}×${sq.quantity}`)
+                  .join(', ')}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="dl-get-price-flow__actions">
+          <button
+            className="dl-modal__btn dl-modal__btn--primary"
+            onClick={() => {
+              // [2025-12-07 15:30:00] 跳转到购物车页面
+              if (typeof window !== 'undefined') {
+                window.location.href = '/cart';
+              }
+            }}
+          >
+            Review Cart & Check Out
+          </button>
+        </div>
+
+        <div className="dl-get-price-flow__want-more">
+          <p className="dl-get-price-flow__want-more-title">Want to add more?</p>
+          <div className="dl-get-price-flow__want-more-options">
+            <button
+              className="dl-get-price-flow__want-more-btn"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/products';
+                }
+              }}
+            >
+              Browse the catalog
+            </button>
+            <button
+              className="dl-get-price-flow__want-more-btn"
+              onClick={() => {
+                onClose();
+                // [2025-12-07 15:30:00] 从当前设计继续
+              }}
+            >
+              Start from this design
+            </button>
+            <button
+              className="dl-get-price-flow__want-more-btn"
+              onClick={() => {
+                onClose();
+                // [2025-12-07 15:30:00] 开始新设计（重置画布）
+                if (typeof window !== 'undefined') {
+                  window.location.href = '/design-lab';
+                }
+              }}
+            >
+              Start a new design
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // [2025-12-08] 步骤4：Order Options - 报价结果页
   const renderOrderOptionsStep = () => {
     // 如果正在加载，显示加载状态
@@ -569,8 +841,12 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         {/* 价格 */}
         <div className="dl-get-price-flow__price-section">
           <div className="dl-get-price-flow__price-item">
-            <span>${quote.discountedUnitPrice?.toFixed(2) || quote.unitPrice?.toFixed(2) || '0.00'} each</span>
-            <span>${quote.total?.toFixed(2) || '0.00'} total</span>
+            <span className="dl-get-price-flow__price-each">
+              ${quote.discountedUnitPrice?.toFixed(2) || quote.unitPrice?.toFixed(2) || '0.00'} each
+            </span>
+            <span className="dl-get-price-flow__price-total">
+              ${quote.total?.toFixed(2) || '0.00'} total
+            </span>
           </div>
           {quote.breakdown?.quantityDiscount > 0 && (
             <div className="dl-get-price-flow__discount-hint">
@@ -607,8 +883,23 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         <div className="dl-get-price-flow__order-list">
           <h3 className="dl-get-price-flow__order-list-title">YOUR ORDER</h3>
           <div className="dl-get-price-flow__order-item">
-            <span>Product • Color • {totalQuantity} items</span>
-            <button className="dl-get-price-flow__link-btn">Edit</button>
+            <div className="dl-get-price-flow__order-item-details">
+              <span>Product • Color • {totalQuantity} items</span>
+              {orderingOptions.sizesQuantities === 'i-know-sizes' && sizeQuantities.filter(sq => sq.quantity > 0).length > 0 && (
+                <div className="dl-get-price-flow__order-item-sizes">
+                  Sizes: {sizeQuantities
+                    .filter(sq => sq.quantity > 0)
+                    .map(sq => `${sq.size}×${sq.quantity}`)
+                    .join(', ')}
+                </div>
+              )}
+            </div>
+            <button 
+              className="dl-get-price-flow__link-btn"
+              onClick={() => setCurrentStep('quantity')}
+            >
+              Edit
+            </button>
           </div>
         </div>
 
@@ -628,16 +919,13 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           <button
             className="dl-modal__btn dl-modal__btn--primary"
             onClick={() => {
-              if (onAddToCart) {
-                onAddToCart({
-                  designId,
-                  orderingOptions,
-                  sizeQuantities: orderingOptions.sizesQuantities === 'i-know-sizes' ? sizeQuantities : null,
-                  estimatedQuantity: orderingOptions.sizesQuantities === 'invite-group' ? estimatedQuantity : null,
-                  totalQuantity,
-                });
+              // [2025-12-07 15:30:00] 如果有上传图片，先进入 Content Check
+              if (needsContentCheck && hasUploadedImages) {
+                setCurrentStep('content-check');
+              } else {
+                // 直接加入购物车
+                handleAddToCart();
               }
-              onClose();
             }}
             disabled={totalQuantity === 0}
           >
@@ -686,6 +974,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           {currentStep === 'ordering-options' && renderOrderingOptionsStep()}
           {currentStep === 'quantity' && renderQuantityStep()}
           {currentStep === 'order-options' && renderOrderOptionsStep()}
+          {currentStep === 'content-check' && renderContentCheckStep()}
+          {currentStep === 'added-to-cart' && renderAddedToCartStep()}
         </div>
       </div>
     </div>

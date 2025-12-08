@@ -391,6 +391,16 @@
   font-weight: 600;
 }
 
+.dl-get-price-flow__price-each {
+  color: #6b7280;
+  font-size: 16px;
+}
+
+.dl-get-price-flow__price-total {
+  color: #111827;
+  font-size: 24px;
+}
+
 .dl-get-price-flow__badges {
   display: flex;
   gap: 8px;
@@ -453,6 +463,17 @@
   color: #374151;
 }
 
+.dl-get-price-flow__order-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dl-get-price-flow__order-item-sizes {
+  font-size: 12px;
+  color: #6b7280;
+}
+
 /* 操作按钮 */
 .dl-get-price-flow__actions {
   display: flex;
@@ -463,5 +484,202 @@
 
 .dl-get-price-flow__actions .dl-modal__btn {
   min-width: 120px;
+}
+
+/* [2025-12-07 15:30:00] Add Women's 按钮 */
+.dl-get-price-flow__add-womens {
+  margin: 24px 0;
+  text-align: center;
+}
+
+.dl-get-price-flow__add-womens-btn {
+  padding: 12px 24px;
+  border: 1px solid #1e3a8a;
+  border-radius: 4px;
+  background: white;
+  color: #1e3a8a;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dl-get-price-flow__add-womens-btn:hover {
+  background: #eff6ff;
+}
+
+/* [2025-12-07 15:30:00] Buy more, save more 推荐区 */
+.dl-get-price-flow__recommendations {
+  margin: 32px 0;
+  padding: 24px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.dl-get-price-flow__recommendations-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+.dl-get-price-flow__recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dl-get-price-flow__recommendation-card {
+  padding: 16px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.dl-get-price-flow__recommendation-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.dl-get-price-flow__recommendation-card h5 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #374151;
+}
+
+.dl-get-price-flow__recommendation-btn {
+  padding: 8px 16px;
+  border: 1px solid #1e3a8a;
+  border-radius: 4px;
+  background: white;
+  color: #1e3a8a;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dl-get-price-flow__recommendation-btn:hover {
+  background: #eff6ff;
+}
+
+.dl-get-price-flow__browse-more {
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed #d1d5db;
+  border-radius: 4px;
+  background: white;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dl-get-price-flow__browse-more:hover {
+  border-color: #1e3a8a;
+  color: #1e3a8a;
+}
+
+/* [2025-12-07 15:30:00] Content Check 样式 */
+.dl-get-price-flow__content-check-warning {
+  padding: 16px;
+  background: #fef3c7;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+  margin: 24px 0;
+}
+
+.dl-get-price-flow__content-check-warning p {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #92400e;
+}
+
+.dl-get-price-flow__content-check-warning ul {
+  margin: 8px 0 0 20px;
+  color: #78350f;
+}
+
+.dl-get-price-flow__content-check-warning li {
+  margin-bottom: 4px;
+}
+
+/* [2025-12-07 15:30:00] Added to Cart 样式 */
+.dl-get-price-flow__added-summary {
+  padding: 24px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin: 24px 0;
+}
+
+.dl-get-price-flow__added-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dl-get-price-flow__added-item:last-child {
+  border-bottom: none;
+}
+
+.dl-get-price-flow__added-label {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.dl-get-price-flow__added-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dl-get-price-flow__want-more {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dl-get-price-flow__want-more-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #111827;
+  text-align: center;
+}
+
+.dl-get-price-flow__want-more-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dl-get-price-flow__want-more-btn {
+  padding: 12px 24px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: white;
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.dl-get-price-flow__want-more-btn:hover {
+  border-color: #1e3a8a;
+  color: #1e3a8a;
+  background: #eff6ff;
+}
+
+/* [2025-12-07 15:30:00] 校验提示 */
+.dl-get-price-flow__validation-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #dc2626;
+  text-align: center;
 }
 
