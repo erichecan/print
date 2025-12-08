@@ -4,7 +4,8 @@
  */
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { designLabApi } from '@/lib/api';
 import './GetPriceFlowModal.css';
 
 export type GetPriceFlowStep = 'start' | 'ordering-options' | 'quantity' | 'order-options';
@@ -19,6 +20,8 @@ interface GetPriceFlowModalProps {
   onClose: () => void;
   designId: string | null;
   onAddToCart?: (orderData: any) => void;
+  // [2025-12-08] 报价所需的数据
+  getQuoteData?: () => Promise<{ sidesUsed: string[]; layerCount: number }> | { sidesUsed: string[]; layerCount: number };
 }
 
 interface OrderingOptions {
@@ -38,6 +41,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   onClose,
   designId,
   onAddToCart,
+  getQuoteData,
 }) => {
   const [currentStep, setCurrentStep] = useState<GetPriceFlowStep>('start');
   const [orderType, setOrderType] = useState<OrderType>('buy-ship');
@@ -49,6 +53,10 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   });
   const [sizeQuantities, setSizeQuantities] = useState<SizeQuantity[]>([]);
   const [estimatedQuantity, setEstimatedQuantity] = useState<number>(1);
+  // [2025-12-08] 报价相关状态
+  const [quoteData, setQuoteData] = useState<any>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   // [2025-12-08] 初始化尺码列表
   const youthSizes = React.useMemo(() => ['YS', 'YM', 'YL'], []);
@@ -446,15 +454,113 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     );
   };
 
+  // [2025-12-08] 获取报价数据
+  const fetchQuote = async () => {
+    if (!designId || totalQuantity === 0) {
+      return;
+    }
+
+    setQuoteLoading(true);
+    setQuoteError(null);
+
+    try {
+      // 获取报价所需的数据（使用的面和图层数）
+      let quoteParams: { sidesUsed: string[]; layerCount: number } = {
+        sidesUsed: ['front'], // 默认值
+        layerCount: 0,
+      };
+
+      if (getQuoteData) {
+        const data = await (typeof getQuoteData === 'function' ? getQuoteData() : Promise.resolve(getQuoteData));
+        quoteParams = data;
+      }
+
+      // 调用报价API
+      const response = await designLabApi.requestQuote(designId, {
+        quantity: totalQuantity,
+        sidesUsed: quoteParams.sidesUsed,
+        layerCount: quoteParams.layerCount,
+      });
+
+      if (response.success && response.data) {
+        setQuoteData(response.data);
+      } else {
+        throw new Error('Failed to get price quote');
+      }
+    } catch (error: any) {
+      console.error('[GetPriceFlowModal] Error fetching quote:', error);
+      setQuoteError(error?.message || 'Failed to get price quote. Please try again.');
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
+  // [2025-12-08] 当进入Order Options步骤时，自动获取报价
+  useEffect(() => {
+    if (currentStep === 'order-options' && designId && totalQuantity > 0 && !quoteData && !quoteLoading) {
+      fetchQuote();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, designId, totalQuantity]);
+
   // [2025-12-08] 步骤4：Order Options - 报价结果页
   const renderOrderOptionsStep = () => {
-    // 这里应该调用报价API获取实际价格
-    // 暂时使用模拟数据
-    const mockQuote = {
-      unitPrice: 32.47,
-      total: totalQuantity * 32.47,
-      currency: 'USD',
-    };
+    // 如果正在加载，显示加载状态
+    if (quoteLoading) {
+      return (
+        <div className="dl-get-price-flow__step">
+          <h2 className="dl-get-price-flow__step-title">Order Options</h2>
+          <div className="dl-get-price-flow__loading">
+            <p>Calculating price...</p>
+          </div>
+        </div>
+      );
+    }
+
+    // 如果有错误，显示错误信息
+    if (quoteError) {
+      return (
+        <div className="dl-get-price-flow__step">
+          <h2 className="dl-get-price-flow__step-title">Order Options</h2>
+          <div className="dl-get-price-flow__error">
+            <p>{quoteError}</p>
+            <button
+              className="dl-modal__btn dl-modal__btn--primary"
+              onClick={fetchQuote}
+            >
+              Retry
+            </button>
+            <button
+              className="dl-modal__btn dl-modal__btn--secondary"
+              onClick={() => setCurrentStep('quantity')}
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // 如果没有报价数据，显示提示
+    if (!quoteData) {
+      return (
+        <div className="dl-get-price-flow__step">
+          <h2 className="dl-get-price-flow__step-title">Order Options</h2>
+          <div className="dl-get-price-flow__error">
+            <p>Unable to calculate price. Please try again.</p>
+            <button
+              className="dl-modal__btn dl-modal__btn--primary"
+              onClick={fetchQuote}
+            >
+              Calculate Price
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // 使用实际的报价数据
+    const quote = quoteData;
 
     return (
       <div className="dl-get-price-flow__step">
@@ -463,16 +569,33 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         {/* 价格 */}
         <div className="dl-get-price-flow__price-section">
           <div className="dl-get-price-flow__price-item">
-            <span>${mockQuote.unitPrice.toFixed(2)} each</span>
-            <span>${mockQuote.total.toFixed(2)} total</span>
+            <span>${quote.discountedUnitPrice?.toFixed(2) || quote.unitPrice?.toFixed(2) || '0.00'} each</span>
+            <span>${quote.total?.toFixed(2) || '0.00'} total</span>
           </div>
+          {quote.breakdown?.quantityDiscount > 0 && (
+            <div className="dl-get-price-flow__discount-hint">
+              <p>You saved ${quote.discount?.toFixed(2) || '0.00'} with quantity discount!</p>
+            </div>
+          )}
         </div>
 
         {/* 统计徽章 */}
         <div className="dl-get-price-flow__badges">
-          <span className="dl-get-price-flow__badge">1 Color</span>
-          <span className="dl-get-price-flow__badge">{totalQuantity} Items</span>
+          {quote.breakdown?.sidesCount > 0 && (
+            <span className="dl-get-price-flow__badge">{quote.breakdown.sidesCount} Side{quote.breakdown.sidesCount > 1 ? 's' : ''}</span>
+          )}
+          {quote.breakdown?.layerCount > 0 && (
+            <span className="dl-get-price-flow__badge">{quote.breakdown.layerCount} Layer{quote.breakdown.layerCount > 1 ? 's' : ''}</span>
+          )}
+          <span className="dl-get-price-flow__badge">{totalQuantity} Item{totalQuantity > 1 ? 's' : ''}</span>
         </div>
+
+        {/* 促销文案 */}
+        {quote.breakdown?.quantityDiscount > 0 && (
+          <div className="dl-get-price-flow__promotion-hint">
+            <p>BUY MORE, SAVE MORE: {quote.breakdown.quantityDiscount}% discount applied for {totalQuantity} items</p>
+          </div>
+        )}
 
         {/* 配送文案 */}
         <div className="dl-get-price-flow__delivery-info">

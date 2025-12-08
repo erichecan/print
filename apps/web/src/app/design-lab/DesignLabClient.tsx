@@ -2361,6 +2361,38 @@ const DesignLabClient: React.FC = () => {
         isOpen={showGetPriceFlowModal}
         onClose={() => setShowGetPriceFlowModal(false)}
         designId={currentDesignId}
+        getQuoteData={async () => {
+          // [2025-12-08] 计算报价所需的数据（使用的面和图层数）
+          if (!fabricCanvasRef.current) {
+            return { sidesUsed: ['front'], layerCount: 0 };
+          }
+
+          const canvas = fabricCanvasRef.current;
+          const objects = canvas.getObjects().filter(obj => {
+            const fabricObj = obj as fabric.Object;
+            return fabricObj.name && fabricObj.name !== 'background';
+          });
+
+          // 确定使用的面（基于当前视图和画布对象）
+          const sidesUsed: string[] = [];
+          if (currentView === 'front' || objects.some(obj => (obj as any).name?.includes('front'))) {
+            sidesUsed.push('front');
+          }
+          if (currentView === 'back' || objects.some(obj => (obj as any).name?.includes('back'))) {
+            sidesUsed.push('back');
+          }
+          if (currentView === 'sleeve' || objects.some(obj => (obj as any).name?.includes('sleeve'))) {
+            sidesUsed.push('sleeve');
+          }
+          // 如果没有对象，至少包含当前视图
+          if (sidesUsed.length === 0 && currentView !== 'zoom') {
+            sidesUsed.push(currentView);
+          }
+
+          const layerCount = objects.length;
+
+          return { sidesUsed, layerCount };
+        }}
         onAddToCart={async (orderData) => {
           // [2025-12-08] 处理加车逻辑
           try {

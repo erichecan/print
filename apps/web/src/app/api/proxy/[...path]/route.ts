@@ -33,21 +33,38 @@ function requiresAuth(path: string): boolean {
 
 /**
  * 处理所有 HTTP 方法的代理请求
+ * [2025-12-08 05:00:00] 修复：Next.js 15 中 catch-all 路由的参数类型
  */
+type RouteContext = {
+  params: Promise<{ path: string[] }> | { path: string[] };
+};
+
 async function handleProxyRequest(
   request: NextRequest,
-  context: { params: Promise<{ path: string[] }> | { path: string[] } }
+  context: RouteContext
 ) {
   // [2025-12-02 04:25:00] 处理 Next.js 15 的异步 params
   // [2025-12-08 04:40:00] 修复：确保正确处理 params，包括空数组情况
-  // [2025-12-08 04:50:00] 修复：处理 Next.js 15 中 params 可能是 Promise 的情况
-  let params: { path: string[] } | { path?: string[] };
+  // [2025-12-08 05:00:00] 修复：Next.js 15 中 params 必须是 Promise，需要 await
+  let params: { path: string[] };
   try {
-    params = await Promise.resolve(context.params);
-  } catch (e) {
-    console.error('[API Proxy] ❌ Failed to resolve params:', e);
+    // [2025-12-08 05:00:00] Next.js 15: params 总是 Promise，必须 await
+    const resolvedParams = await Promise.resolve(context.params);
+    params = resolvedParams as { path: string[] };
+    
+    // [2025-12-08 05:00:00] 验证 params 结构
+    if (!params || typeof params !== 'object') {
+      throw new Error('Invalid params structure');
+    }
+  } catch (e: any) {
+    console.error('[API Proxy] ❌ Failed to resolve params:', {
+      error: e?.message,
+      stack: e?.stack,
+      params: context.params,
+      paramsType: typeof context.params,
+    });
     return NextResponse.json(
-      { error: 'Invalid request parameters', message: 'Failed to parse route parameters' },
+      { error: 'Invalid request parameters', message: e?.message || 'Failed to parse route parameters' },
       { status: 400 }
     );
   }
@@ -349,11 +366,32 @@ async function handleProxyRequest(
 }
 
 // [2025-12-02 04:15:00] 导出所有 HTTP 方法处理器
-export const GET = handleProxyRequest;
-export const POST = handleProxyRequest;
-export const PUT = handleProxyRequest;
-export const PATCH = handleProxyRequest;
-export const DELETE = handleProxyRequest;
-export const HEAD = handleProxyRequest;
-export const OPTIONS = handleProxyRequest;
+// [2025-12-08 05:00:00] 修复：确保函数签名匹配 Next.js 15 的要求
+export async function GET(request: NextRequest, context: RouteContext) {
+  return handleProxyRequest(request, context);
+}
+
+export async function POST(request: NextRequest, context: RouteContext) {
+  return handleProxyRequest(request, context);
+}
+
+export async function PUT(request: NextRequest, context: RouteContext) {
+  return handleProxyRequest(request, context);
+}
+
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  return handleProxyRequest(request, context);
+}
+
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  return handleProxyRequest(request, context);
+}
+
+export async function HEAD(request: NextRequest, context: RouteContext) {
+  return handleProxyRequest(request, context);
+}
+
+export async function OPTIONS(request: NextRequest, context: RouteContext) {
+  return handleProxyRequest(request, context);
+}
 

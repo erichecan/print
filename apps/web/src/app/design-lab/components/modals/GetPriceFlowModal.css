@@ -330,6 +330,59 @@
   margin-bottom: 24px;
 }
 
+.dl-get-price-flow__discount-hint {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #dcfce7;
+  border-radius: 4px;
+}
+
+.dl-get-price-flow__discount-hint p {
+  margin: 0;
+  font-size: 14px;
+  color: #166534;
+  font-weight: 500;
+}
+
+.dl-get-price-flow__promotion-hint {
+  padding: 12px;
+  background: #fef3c7;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.dl-get-price-flow__promotion-hint p {
+  margin: 0;
+  font-size: 14px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.dl-get-price-flow__loading {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.dl-get-price-flow__loading p {
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.dl-get-price-flow__error {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.dl-get-price-flow__error p {
+  font-size: 16px;
+  color: #dc2626;
+  margin-bottom: 24px;
+}
+
+.dl-get-price-flow__error .dl-modal__btn {
+  margin: 0 8px;
+}
+
 .dl-get-price-flow__price-item {
   display: flex;
   justify-content: space-between;
