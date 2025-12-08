@@ -10,14 +10,21 @@ function normalizeApiUrl(base: string): string {
 }
 
 function getApiBaseUrl(): string {
-  // [2025-01-29 12:30:00] 优先使用环境变量
+  // [2025-12-08 01:20:00] 优先使用环境变量
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL;
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // [2025-12-08 01:20:00] 如果环境变量存在，检查是否包含 localhost（生产环境不允许）
   if (envUrl) {
+    // [2025-12-08 01:20:00] 生产环境如果检测到 localhost，使用硬编码后端地址
+    if (!isDevelopment && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+      console.warn('[API Config] ⚠️ 生产环境检测到 localhost API 地址，使用硬编码后端地址替代');
+      const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
+      return backendApiUrl;
+    }
     return normalizeApiUrl(envUrl);
   }
 
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  
   // [2025-12-01 12:45:00] 浏览器环境：根据当前域名决定 API 地址
   if (typeof window !== 'undefined' && window.location && window.location.origin) {
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -47,11 +54,11 @@ function getApiBaseUrl(): string {
     return normalizeApiUrl(deployUrl);
   }
 
-  // [2025-12-07 18:50:00] 生产环境不应该回退到 localhost，应该使用硬编码的后端地址或相对路径
+  // [2025-12-08 01:20:00] 生产环境不应该回退到 localhost，应该使用硬编码的后端地址或相对路径
   if (!isDevelopment) {
-    // [2025-12-07 18:50:00] 生产环境：如果没有配置环境变量，使用硬编码的后端地址
-    // 避免使用 localhost 导致警告
-    const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
+    // [2025-12-08 01:20:00] 生产环境：如果没有配置环境变量，使用硬编码的后端地址
+    // 使用正确的前端域名对应的后端地址
+    const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
     console.warn('[API Config] ⚠️ 生产环境未配置 NEXT_PUBLIC_API_URL，使用硬编码后端地址:', backendApiUrl);
     return backendApiUrl;
   }

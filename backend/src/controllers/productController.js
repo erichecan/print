@@ -805,45 +805,45 @@ exports.getProducts = async (req, res) => {
     
     // [2025-01-29 22:30:00] 如果数据库连接失败或查询错误，返回空数组而不是错误
     // 这样可以避免前端因为数据库问题而完全无法工作
-    const isConnectionError = error.code === 'P1001' || 
-                             error.code === 'P2002' || 
-                             error.code === 'P2021' || // Table does not exist
-                             error.message.includes('connect') || 
-                             error.message.includes('timeout') ||
-                             error.message.includes('does not exist');
+    // const isConnectionError = error.code === 'P1001' || 
+    //                          error.code === 'P2002' || 
+    //                          error.code === 'P2021' || // Table does not exist
+    //                          error.message.includes('connect') || 
+    //                          error.message.includes('timeout') ||
+    //                          error.message.includes('does not exist');
     
-    if (isConnectionError) {
-      logger.warn('[2025-01-29 22:30:00] Database connection/table issue, returning empty products list');
-      // [2025-12-07 15:25:00] 修复：确保 limit 变量已定义
-      const defaultLimit = parseInt(req.query.limit, 10) || 20;
-      return res.json({
-        data: [],
-        pagination: {
-          page: 1,
-          limit: defaultLimit,
-          total: 0,
-          totalPages: 0,
-        },
-      });
-    }
+    // if (isConnectionError) {
+    //   logger.warn('[2025-01-29 22:30:00] Database connection/table issue, returning empty products list');
+    //   // [2025-12-07 15:25:00] 修复：确保 limit 变量已定义
+    //   const defaultLimit = parseInt(req.query.limit, 10) || 20;
+    //   return res.json({
+    //     data: [],
+    //     pagination: {
+    //       page: 1,
+    //       limit: defaultLimit,
+    //       total: 0,
+    //       totalPages: 0,
+    //     },
+    //   });
+    // }
     
-    // [2025-01-29 22:30:00] 对于其他查询错误，也返回空数组（可能是数据不存在）
-    // 这样可以避免前端因为数据问题而完全无法工作
-    logger.warn('[2025-01-29 22:30:00] Query error, returning empty products list to prevent frontend failure');
-    // [2025-12-07 15:25:00] 修复：确保 limit 变量已定义
-    const defaultLimit = parseInt(req.query.limit, 10) || 20;
-    return res.json({
-      data: [],
-      pagination: {
-        page: 1,
-        limit: defaultLimit,
-        total: 0,
-        totalPages: 0,
-      },
-    });
+    // // [2025-01-29 22:30:00] 对于其他查询错误，也返回空数组（可能是数据不存在）
+    // // 这样可以避免前端因为数据问题而完全无法工作
+    // logger.warn('[2025-01-29 22:30:00] Query error, returning empty products list to prevent frontend failure');
+    // // [2025-12-07 15:25:00] 修复：确保 limit 变量已定义
+    // const defaultLimit = parseInt(req.query.limit, 10) || 20;
+    // return res.json({
+    //   data: [],
+    //   pagination: {
+    //     page: 1,
+    //     limit: defaultLimit,
+    //     total: 0,
+    //     totalPages: 0,
+    //   },
+    // });
     
     // 保留原始错误响应代码（注释掉，改为返回空数组）
-    /*
+    
     const errorResponse = {
       error: 'Server Error',
       message: 'Failed to fetch products',
@@ -855,7 +855,7 @@ exports.getProducts = async (req, res) => {
     }
 
     res.status(500).json(errorResponse);
-    */
+    
   }
 };
 

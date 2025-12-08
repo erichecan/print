@@ -788,6 +788,8 @@ model offline_order_colors {
   created_at                        DateTime                            @default(now())
   updated_at                        DateTime
   offline_order_product_color_sizes offline_order_product_color_sizes[]
+
+  @@map("offline_order_colors")
 }
 
 model offline_order_product_color_sizes {
@@ -803,6 +805,7 @@ model offline_order_product_color_sizes {
 
   @@unique([product_id, color_id, size])
   @@index([product_id, color_id])
+  @@map("offline_order_product_color_sizes")
 }
 
 model offline_order_products {
@@ -815,6 +818,8 @@ model offline_order_products {
   created_at                        DateTime                            @default(now())
   updated_at                        DateTime                            @updatedAt
   offline_order_product_color_sizes offline_order_product_color_sizes[]
+
+  @@map("offline_order_products")
 }
 
 model offline_order_size_fees {
@@ -823,6 +828,8 @@ model offline_order_size_fees {
   additional_fee Decimal  @db.Decimal(10, 2)
   created_at     DateTime @default(now())
   updated_at     DateTime
+
+  @@map("offline_order_size_fees")
 }
 
 model settings {

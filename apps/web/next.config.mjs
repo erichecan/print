@@ -52,7 +52,32 @@ if (apiBaseUrl) {
 
 const nextConfig = {
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    // [2025-12-08 01:15:00] 修复：生产环境不应该回退到 localhost
+    // 优先使用环境变量，如果没有设置且是生产环境，使用硬编码的后端地址
+    let apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    
+    if (!apiUrl) {
+      // [2025-12-08 01:15:00] 如果没有设置环境变量，根据环境决定
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      if (isDevelopment) {
+        apiUrl = 'http://localhost:3001';
+      } else {
+        // [2025-12-08 01:15:00] 生产环境：使用硬编码的后端地址，避免回退到 localhost
+        apiUrl = 'https://print-main-backend-234065158862.us-central1.run.app';
+        console.warn('[next.config] ⚠️ NEXT_PUBLIC_API_URL 未设置，使用硬编码后端地址:', apiUrl);
+      }
+    }
+    
+    // [2025-12-08 01:15:00] 检查是否包含 localhost（生产环境不应该有）
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    if (!isDevelopment && (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1'))) {
+      console.warn('[next.config] ⚠️ 生产环境检测到 localhost API 地址，使用硬编码后端地址替代');
+      apiUrl = 'https://print-main-backend-234065158862.us-central1.run.app';
+    }
+    
+    // [2025-12-08 01:15:00] 确保 URL 不包含 /api 后缀（rewrites 会自动添加）
+    apiUrl = apiUrl.replace(/\/api\/?$/, '');
+    
     return [
       {
         source: '/api/proxy/:path*',

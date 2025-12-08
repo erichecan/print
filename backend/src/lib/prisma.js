@@ -56,9 +56,15 @@ function getPrisma() {
       const path = require('path');
       const prismaClientPath = path.join(__dirname, '../../node_modules/@prisma/client');
       
+      logger.info('[2025-12-08 00:57:00] 🔍 Checking Prisma Client path:', prismaClientPath);
+      logger.info('[2025-12-08 00:57:00] 🔍 Path exists:', fs.existsSync(prismaClientPath));
+      
       if (!fs.existsSync(prismaClientPath)) {
         logger.warn('[2025-01-29 14:50:00] ⚠️  Prisma Client not generated yet, will be generated on server startup');
-        return null;
+        logger.warn('[2025-12-08 00:57:00] ⚠️  Expected path:', prismaClientPath);
+        // [2025-12-08 00:57:00] 在生产环境中，Prisma Client 应该在构建时生成，如果不存在可能是路径问题
+        // 尝试直接创建 Prisma Client，让它在第一次查询时连接
+        logger.info('[2025-12-08 00:57:00] 🔧 Attempting to create Prisma Client anyway (may work if generated at build time)...');
       }
       
       logger.info('[2025-01-29 17:10:00] 📦 Creating Prisma Client instance (binary engine mode)...');

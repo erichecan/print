@@ -13,21 +13,20 @@ const DEFAULT_API_BASE_DEV = 'http://localhost:3001/api';
  * [2025-12-02 04:05:00] 添加 Cloud Run 生产环境兜底逻辑
  */
 export function getBackendApiBase(): string {
-  // [2025-12-07 18:50:00] 优先使用 NEXT_PUBLIC_API_URL（前端环境变量）
+  // [2025-12-08 01:25:00] 优先使用 NEXT_PUBLIC_API_URL（前端环境变量）
   // 注意：NEXT_PUBLIC_* 变量在构建时内联，运行时可能无法读取
   const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  
+  // [2025-12-08 01:25:00] 统一的后端地址（使用正确的前端域名对应的后端地址）
+  const productionBackendUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
+  
   if (publicApiUrl) {
-    // [2025-12-07 18:50:00] 如果包含 localhost，在生产环境应该警告但继续使用（开发环境允许）
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    // [2025-12-08 01:25:00] 生产环境如果包含 localhost，使用硬编码后端地址替代
     if (!isDevelopment && (publicApiUrl.includes('localhost') || publicApiUrl.includes('127.0.0.1'))) {
       console.warn('[API Route Config] ⚠️ 警告：生产环境检测到 localhost API 地址！', publicApiUrl);
-      console.warn('[API Route Config] 请设置 NEXT_PUBLIC_API_URL 环境变量指向生产环境的 API 服务器');
-    }
-    // [2025-12-07 18:50:00] 开发环境允许 localhost，生产环境如果包含 localhost 则使用硬编码后端地址
-    if (!isDevelopment && (publicApiUrl.includes('localhost') || publicApiUrl.includes('127.0.0.1'))) {
-      const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
-      console.warn('[API Route Config] 使用硬编码后端地址替代 localhost:', backendApiUrl);
-      return backendApiUrl;
+      console.warn('[API Route Config] 使用硬编码后端地址替代 localhost:', productionBackendUrl);
+      return productionBackendUrl;
     }
     const url = publicApiUrl.replace(/\/$/, '');
     // 确保包含 /api 路径
@@ -37,11 +36,9 @@ export function getBackendApiBase(): string {
   // 回退到 API_BASE_URL（服务器端环境变量）
   const apiBaseUrl = process.env.API_BASE_URL;
   if (apiBaseUrl) {
-    const isDevelopment = process.env.NODE_ENV === 'development';
     if (!isDevelopment && (apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1'))) {
-      const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
-      console.warn('[API Route Config] ⚠️ 警告：生产环境 API_BASE_URL 包含 localhost，使用硬编码后端地址:', backendApiUrl);
-      return backendApiUrl;
+      console.warn('[API Route Config] ⚠️ 警告：生产环境 API_BASE_URL 包含 localhost，使用硬编码后端地址:', productionBackendUrl);
+      return productionBackendUrl;
     }
     const url = apiBaseUrl.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
@@ -50,29 +47,25 @@ export function getBackendApiBase(): string {
   // 回退到 NEXT_PUBLIC_API_BASE_URL
   const publicApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (publicApiBaseUrl) {
-    const isDevelopment = process.env.NODE_ENV === 'development';
     if (!isDevelopment && (publicApiBaseUrl.includes('localhost') || publicApiBaseUrl.includes('127.0.0.1'))) {
-      const backendApiUrl = 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api';
-      console.warn('[API Route Config] ⚠️ 警告：生产环境 NEXT_PUBLIC_API_BASE_URL 包含 localhost，使用硬编码后端地址:', backendApiUrl);
-      return backendApiUrl;
+      console.warn('[API Route Config] ⚠️ 警告：生产环境 NEXT_PUBLIC_API_BASE_URL 包含 localhost，使用硬编码后端地址:', productionBackendUrl);
+      return productionBackendUrl;
     }
     const url = publicApiBaseUrl.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
   }
   
-  // [2025-01-29 12:30:00] 生产环境不应该回退到 localhost
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // [2025-12-08 01:25:00] 生产环境不应该回退到 localhost
   if (!isDevelopment) {
-    // [2025-12-07 13:40:00] 生产环境强制使用后端 API 地址，避免使用 localhost
-    // 使用正确的前端域名对应的后端地址
-    const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
-    console.warn('[API Route Config] ⚠️ 检测到生产环境，但 NEXT_PUBLIC_API_URL 未配置或包含 localhost，使用后端地址:', backendApiUrl);
+    // [2025-12-08 01:25:00] 生产环境强制使用后端 API 地址，避免使用 localhost
+    console.warn('[API Route Config] ⚠️ 检测到生产环境，但 NEXT_PUBLIC_API_URL 未配置，使用后端地址:', productionBackendUrl);
     console.warn('[API Route Config] 当前环境变量:', {
       NEXT_PUBLIC_API_URL: publicApiUrl || '未设置',
       API_BASE_URL: apiBaseUrl || '未设置',
+      NEXT_PUBLIC_API_BASE_URL: publicApiBaseUrl || '未设置',
       NODE_ENV: process.env.NODE_ENV
     });
-    return backendApiUrl;
+    return productionBackendUrl;
   }
   
   // [2025-12-02 04:10:00] 开发环境也不应该返回相对路径，应该返回完整 URL

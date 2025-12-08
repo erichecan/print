@@ -1222,8 +1222,28 @@ exports.getOrderConfig = async (req, res, next) => {
     let sizeFees = [];
     let availability = [];
 
+    // [2025-12-08 01:00:00] 调试：检查 Prisma Client 状态
+    logger.info('[getOrderConfig] Starting getOrderConfig...');
+    logger.info('[getOrderConfig] Prisma available:', !!prisma);
+    if (prisma) {
+      logger.info('[getOrderConfig] Prisma models:', Object.keys(prisma).filter(k => !k.startsWith('$') && !k.startsWith('_')).slice(0, 10));
+      logger.info('[getOrderConfig] offline_order_products available:', !!(prisma.offline_order_products));
+      logger.info('[getOrderConfig] offline_order_colors available:', !!(prisma.offline_order_colors));
+    }
+
     // 尝试获取产品列表（仅返回激活的产品）
     try {
+      logger.info('[getOrderConfig] Querying offline_order_products...');
+      // 检查 prisma 对象是否可用
+      if (!prisma) {
+        logger.error('[getOrderConfig] prisma is null or undefined');
+        throw new Error('Prisma Client is not available');
+      }
+      if (!prisma.offline_order_products) {
+        logger.error('[getOrderConfig] prisma.offline_order_products is not available');
+        logger.error('[getOrderConfig] Available models:', Object.keys(prisma).filter(k => k.includes('order') || k.includes('offline')).join(', '));
+        throw new Error('Prisma Client model offline_order_products is not available');
+      }
       products = await prisma.offline_order_products.findMany({
         where: {
           is_active: true,
@@ -1233,17 +1253,39 @@ exports.getOrderConfig = async (req, res, next) => {
           { name: 'asc' },
         ],
       });
+      logger.info(`[getOrderConfig] Found ${products.length} active products`);
     } catch (error) {
-      logger.warn('[getOrderConfig] offline_order_products table not found, returning empty array');
+      logger.error('[getOrderConfig] Error querying offline_order_products:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        prismaAvailable: !!prisma,
+        modelAvailable: !!(prisma && prisma.offline_order_products),
+      });
+      products = [];
     }
 
     // 尝试获取颜色列表
     try {
+      logger.info('[getOrderConfig] Querying offline_order_colors...');
+      // 检查 prisma 对象是否可用
+      if (!prisma || !prisma.offline_order_colors) {
+        logger.error('[getOrderConfig] prisma.offline_order_colors is not available');
+        throw new Error('Prisma Client model offline_order_colors is not available');
+      }
       colors = await prisma.offline_order_colors.findMany({
         orderBy: { name: 'asc' },
       });
+      logger.info(`[getOrderConfig] Found ${colors.length} colors`);
     } catch (error) {
-      logger.warn('[getOrderConfig] offline_order_colors table not found, returning empty array');
+      logger.error('[getOrderConfig] Error querying offline_order_colors:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        prismaAvailable: !!prisma,
+        modelAvailable: !!(prisma && prisma.offline_order_colors),
+      });
+      colors = [];
     }
 
     // 尝试获取尺码费用配置
