@@ -56,15 +56,15 @@
 - **锁定**：锁定对象位置和大小
 - **解锁**：解锁对象
 
-### 5.4 图层管理
+### 5.4 图层管理（Layering面板）
 
 #### 图层操作
-- **置顶**：将对象移到最上层
-- **置底**：将对象移到最下层
-- **上移一层**：将对象向上移动一层
-- **下移一层**：将对象向下移动一层
-- **图层列表**：显示所有对象的图层顺序
-- **重命名图层**：为对象命名以便识别
+- **Bring to Front**：将对象移到最上层
+- **Send to Back**：将对象移到最下层
+- **Forward**：将对象向上移动一层
+- **Backward**：将对象向下移动一层
+- **图层列表**：显示所有对象的图层顺序，支持拖拽排序
+- **重命名图层**：为对象命名以便识别（可选）
 
 ---
 
@@ -78,74 +78,83 @@
 
 **实现功能**：
 - ✅ Front/Back/Sleeve视图切换
-- ✅ Zoom视图（需要确认）
+- ✅ Zoom视图按钮（需要确认具体功能）
 - ✅ 每个视图独立保存画布状态
 - ✅ 切换视图时自动保存和加载画布状态
 
 **需要检查**：
-- [ ] Zoom视图的具体实现
+- [ ] Zoom视图的放大/缩小/拖拽/重置功能
 - [ ] 视图切换时的状态同步
 - [ ] 视图切换时的性能优化
 
-### 2.2 对象选择 ⚠️ 部分实现
+### 2.2 对象选择 ✅ 已实现（Fabric.js内置）
 
 **实现位置**：
 - Fabric.js 内置选择功能
 - `DesignLabClient.tsx`：选择事件处理
 
 **实现功能**：
-- ✅ 单击选择
-- ⚠️ 多选（需要确认Ctrl/Cmd + 点击）
-- ⚠️ 框选（需要确认）
-- ❓ 全选（需要检查）
+- ✅ 单击选择（Fabric.js内置）
+- ✅ 多选（Fabric.js支持Ctrl/Cmd + 点击）
+- ✅ 框选（Fabric.js支持拖拽框选）
+- ⚠️ 全选快捷键（Ctrl/Cmd + A，需要实现）
+- ⚠️ 取消选择（ESC键，需要实现）
 
 **需要检查**：
-- [ ] 多选功能的完整实现
-- [ ] 框选功能的实现
 - [ ] 全选快捷键（Ctrl/Cmd + A）
 - [ ] 取消选择（ESC键）
+- [ ] 右上角删除按钮（PRD要求）
 
-### 2.3 对象编辑 ⚠️ 部分实现
+### 2.3 对象编辑 ✅ 大部分在Edit Panel中实现
 
 **实现位置**：
-- Fabric.js 内置编辑功能
-- `DesignLabClient.tsx`：对象操作处理
+- **Edit Upload Panel**：`EditUploadPanel.tsx`
+- **Edit Text Panel**：`EditTextPanel.tsx`
+- **Edit Art Panel**：`EditArtPanel.tsx`
+- **Fabric.js画布**：拖拽、缩放、旋转
 
-**实现功能**：
-- ✅ 移动（拖拽）
-- ✅ 缩放（拖拽角点）
-- ⚠️ 等比缩放（Shift + 拖拽，需要确认）
-- ⚠️ 从中心缩放（Alt + 拖拽，需要确认）
-- ✅ 旋转（拖拽旋转控制点）
-- ⚠️ 删除（Delete/Backspace，需要确认）
-- ⚠️ 复制粘贴（需要检查）
-- ✅ 撤销重做（已实现Undo/Redo按钮）
-- ❓ 对齐功能（需要检查）
-- ❓ 分布功能（需要检查）
-- ❓ 锁定解锁（需要检查）
+**Edit Panel中已实现的功能**：
+- ✅ Center（居中）- 所有Edit Panel都有
+- ✅ Bring to Front / Send to Back - 所有Edit Panel都有
+- ✅ Duplicate - 所有Edit Panel都有
+- ✅ Flip Horizontal / Vertical - Upload和Art Panel有
+- ✅ Rotation（旋转滑杆）- 所有Edit Panel都有
+- ✅ Delete功能 - 在LayerManagementPanel中
+
+**画布上已实现的功能**：
+- ✅ 移动（拖拽）- Fabric.js内置
+- ✅ 缩放（拖拽角点）- Fabric.js内置
+- ⚠️ 等比缩放（Shift + 拖拽）- 需要确认Fabric.js配置
+- ⚠️ 从中心缩放（Alt + 拖拽）- 需要确认Fabric.js配置
+- ✅ 旋转（拖拽旋转控制点）- Fabric.js内置
+- ✅ 撤销重做（Undo/Redo按钮在画布左上角）
 
 **需要检查**：
-- [ ] 快捷键支持（Delete、Ctrl/C、Ctrl/V等）
-- [ ] 对齐功能的实现
-- [ ] 分布功能的实现
-- [ ] 锁定解锁功能的实现
+- [ ] 右上角删除按钮（PRD要求：对象选中时右上角显示X删除按钮）
+- [ ] 确认Shift+拖拽等比缩放
+- [ ] 确认Alt+拖拽从中心缩放
+- [ ] 对齐功能（PRD未明确要求，但可能需要）
+- [ ] 分布功能（PRD未明确要求，但可能需要）
 
-### 2.4 图层管理 ⚠️ 部分实现
+### 2.4 图层管理 ✅ 已实现
 
 **实现位置**：
 - `LayerManagementPanel.tsx`：图层管理面板
-- `DesignLabClient.tsx`：图层操作处理
 
-**实现功能**：
+**已实现功能**：
 - ✅ 图层列表显示
-- ⚠️ 置顶/置底（需要确认）
-- ⚠️ 上移/下移一层（需要确认）
-- ❓ 重命名图层（需要检查）
+- ✅ Bring to Front / Send to Back（在Edit Panel中）
+- ⚠️ Forward / Backward（上移/下移一层）- 需要检查LayerManagementPanel
+- ✅ 图层拖拽排序
+- ✅ 图层可见性切换
+- ✅ 图层锁定解锁
+- ✅ 图层分组功能
+- ❓ 图层重命名（需要检查）
 
 **需要检查**：
-- [ ] 图层操作的完整实现
-- [ ] 图层列表的实时更新
-- [ ] 图层重命名功能
+- [ ] Forward / Backward按钮（PRD要求在Layering面板中，当前通过拖拽排序实现，可能需要添加明确的Forward/Backward按钮）
+- [ ] 图层重命名功能（可选功能，当前使用自动生成的名称）
+- [ ] 确认Layering面板的完整功能（已基本实现，通过拖拽排序实现Forward/Backward）
 
 ---
 
@@ -345,6 +354,8 @@
 
 ### 8.1 画布视图切换 ✅ 已实现
 
+**实现位置**：右侧Sidebar（`DesignLabClient.tsx`）
+
 **实现状态**：
 - ✅ Front/Back/Sleeve视图切换已实现
 - ✅ 每个视图独立保存画布状态（通过`viewCanvases`状态管理）
@@ -355,55 +366,71 @@
 - `DesignLabClient.tsx`：`handleViewChange`函数
 - `viewCanvases`状态管理各视图的画布快照
 
-### 8.2 对象选择 ⚠️ 部分实现
+### 8.2 对象选择 ✅ 已实现（Fabric.js内置）
+
+**实现位置**：画布上直接操作（Fabric.js内置）
 
 **实现状态**：
 - ✅ 单击选择已实现（Fabric.js内置）
-- ⚠️ 多选：Fabric.js支持多选，但需要确认Ctrl/Cmd+点击是否正常工作
-- ⚠️ 框选：Fabric.js支持框选，但需要确认是否启用
-- ❌ 全选快捷键（Ctrl/Cmd+A）：未实现
-- ❌ 取消选择（ESC键）：未实现
+- ✅ 多选：Fabric.js支持Ctrl/Cmd+点击多选
+- ✅ 框选：Fabric.js支持拖拽框选
+- ⚠️ 全选快捷键（Ctrl/Cmd+A）：需要实现
+- ⚠️ 取消选择（ESC键）：需要实现
+- ⚠️ 右上角删除按钮（PRD要求）：需要实现（Fabric.js自定义控件）
 
 **需要开发**：
 - [ ] 实现全选快捷键（Ctrl/Cmd+A）
 - [ ] 实现取消选择（ESC键）
-- [ ] 测试并确认多选和框选功能
+- [ ] 实现右上角删除按钮（Fabric.js自定义控件）
 
-### 8.3 对象编辑 ⚠️ 部分实现
+### 8.3 对象编辑 ✅ 大部分在Edit Panel中实现
 
-**实现状态**：
-- ✅ 移动（拖拽）已实现
-- ✅ 缩放（拖拽角点）已实现
-- ⚠️ 等比缩放（Shift+拖拽）：Fabric.js支持，但需要确认是否已配置
-- ⚠️ 从中心缩放（Alt+拖拽）：Fabric.js支持，但需要确认是否已配置
-- ✅ 旋转（拖拽旋转控制点）已实现
-- ❌ 删除快捷键（Delete/Backspace）：未实现
-- ❌ 复制粘贴快捷键（Ctrl/Cmd+C/V）：未实现
-- ✅ 撤销重做已实现（Undo/Redo按钮）
-- ❌ 对齐功能：未实现
-- ❌ 分布功能：未实现
-- ❌ 锁定解锁：图层管理面板有锁定功能，但需要确认是否完整
+**实现位置**：
+- **Edit Upload Panel**：`EditUploadPanel.tsx`（左侧Rail工具面板）
+- **Edit Text Panel**：`EditTextPanel.tsx`（左侧Rail工具面板）
+- **Edit Art Panel**：`EditArtPanel.tsx`（左侧Rail工具面板）
+- **画布上**：拖拽、缩放、旋转（Fabric.js内置）
 
-**需要开发**：
-- [ ] 实现删除快捷键（Delete/Backspace）
-- [ ] 实现复制粘贴快捷键（Ctrl/Cmd+C/V）
-- [ ] 确认并完善等比缩放和从中心缩放
-- [ ] 实现对齐功能（左/中/右/顶部/垂直居中/底部）
-- [ ] 实现分布功能（水平/垂直分布）
+**Edit Panel中已实现的功能**：
+- ✅ **Center（居中）** - 所有Edit Panel都有
+- ✅ **Bring to Front / Send to Back** - 所有Edit Panel都有
+- ✅ **Duplicate** - 所有Edit Panel都有
+- ✅ **Flip Horizontal / Vertical** - Upload和Art Panel有
+- ✅ **Rotation（旋转滑杆）** - 所有Edit Panel都有
+- ✅ **删除功能** - 在LayerManagementPanel中（每个图层有删除按钮）
 
-### 8.4 图层管理 ✅ 大部分实现
+**画布上已实现的功能**：
+- ✅ 移动（拖拽）- Fabric.js内置
+- ✅ 缩放（拖拽角点）- Fabric.js内置
+- ⚠️ 等比缩放（Shift+拖拽）- 需要确认Fabric.js配置
+- ⚠️ 从中心缩放（Alt+拖拽）- 需要确认Fabric.js配置
+- ✅ 旋转（拖拽旋转控制点）- Fabric.js内置
+- ✅ 撤销重做（Undo/Redo按钮在画布左上角）
 
-**实现状态**：
-- ✅ 图层列表显示已实现
-- ✅ 置顶/置底已实现（`bringToFront`/`sendToBack`）
-- ✅ 上移/下移一层已实现（`bringForward`/`sendBackwards`）
-- ✅ 图层拖拽排序已实现
-- ✅ 图层可见性切换已实现
-- ✅ 图层锁定解锁已实现
-- ⚠️ 图层重命名：需要检查是否支持
+**需要检查/开发**：
+- [ ] 右上角删除按钮（PRD要求：对象选中时右上角显示X删除按钮）
+- [ ] 确认Shift+拖拽等比缩放
+- [ ] 确认Alt+拖拽从中心缩放
+- [ ] 吸附对齐线（PRD要求）
+- [ ] 打印安全区边界显示（PRD要求）
+
+### 8.4 图层管理（Layering面板）✅ 已实现
+
+**实现位置**：左侧Rail工具面板 - `LayerManagementPanel.tsx`（通过`toolPanelType === 'layers'`显示）
+
+**已实现功能**：
+- ✅ **图层列表显示** - 显示所有对象的图层顺序
+- ✅ **Bring to Front / Send to Back** - 在Edit Panel中实现
+- ✅ **Forward / Backward** - 通过图层拖拽排序实现（`bringForward`/`sendBackwards`）
+- ✅ **图层拖拽排序** - 支持列表拖拽顺序（PRD要求）
+- ✅ **图层可见性切换** - 每个图层有眼睛图标
+- ✅ **图层锁定解锁** - 每个图层有锁定图标
+- ✅ **图层分组功能** - 支持创建分组、展开/折叠、分组可见性和锁定
+- ⚠️ **图层重命名** - 需要检查是否支持（当前使用自动生成的名称）
 
 **代码位置**：
 - `LayerManagementPanel.tsx`：完整的图层管理功能
+- `EditUploadPanel.tsx`、`EditTextPanel.tsx`、`EditArtPanel.tsx`：Bring to Front / Send to Back按钮
 
 ### 8.5 其他功能检查
 
@@ -422,34 +449,39 @@
 
 ### P1（高优先级 - 核心功能）
 
-1. **快捷键支持**：
-   - [ ] Delete/Backspace删除对象
+1. **右上角删除按钮**（PRD明确要求）：
+   - [ ] 实现对象选中时右上角显示X删除按钮（Fabric.js自定义控件）
+   - [ ] 支持Undo恢复
+
+2. **快捷键支持**（增强体验）：
+   - [ ] Delete/Backspace删除对象（作为右上角删除按钮的补充）
    - [ ] Ctrl/Cmd+A全选
    - [ ] Ctrl/Cmd+C/V复制粘贴
    - [ ] ESC取消选择
 
-2. **缩放优化**：
-   - [ ] 确认Shift+拖拽等比缩放
-   - [ ] 确认Alt+拖拽从中心缩放
+3. **缩放优化**：
+   - [ ] 确认Shift+拖拽等比缩放（Fabric.js配置）
+   - [ ] 确认Alt+拖拽从中心缩放（Fabric.js配置）
 
-3. **Zoom视图完善**：
+4. **Zoom视图完善**：
    - [ ] 确认Zoom视图的放大/缩小功能
    - [ ] 实现Zoom视图的拖拽和重置
 
+5. **PRD明确要求的功能**：
+   - [ ] 吸附对齐线（对象移动时显示）
+   - [ ] 打印安全区边界显示
+
 ### P2（中优先级 - 增强功能）
 
-1. **对齐和分布**：
-   - [ ] 实现对齐功能
-   - [ ] 实现分布功能
+1. **Forward/Backward按钮**（PRD要求在Layering面板中）：
+   - [ ] 在LayerManagementPanel或Edit Panel中添加明确的Forward/Backward按钮（当前通过拖拽排序实现）
 
-2. **吸附对齐线**：
-   - [ ] 实现对象移动时的吸附对齐线
+2. **图层重命名**：
+   - [ ] 实现图层重命名功能（可选功能）
 
-3. **打印安全区边界**：
-   - [ ] 在画布上显示打印安全区边界
-
-4. **图层重命名**：
-   - [ ] 实现图层重命名功能
+3. **对齐和分布**（PRD未明确要求，但可能有用）：
+   - [ ] 实现对齐功能（左/中/右/顶部/垂直居中/底部）
+   - [ ] 实现分布功能（水平/垂直分布）
 
 ---
 
