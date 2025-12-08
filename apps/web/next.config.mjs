@@ -86,10 +86,13 @@ const nextConfig = {
     apiUrl = apiUrl.replace(/\/api\/?$/, '');
     
     return [
-      {
-        source: '/api/proxy/:path*',
-        destination: `${apiUrl}/:path*`,
-      },
+      // [2025-12-08 05:40:00] 移除 /api/proxy/:path* rewrite 规则
+      // 原因：/api/proxy/* 应该通过 Next.js API 路由处理器（apps/web/src/app/api/proxy/[...path]/route.ts）处理
+      // 而不是直接 rewrite 到后端，这样可以正确处理认证、Cookie 转发等
+      // {
+      //   source: '/api/proxy/:path*',
+      //   destination: `${apiUrl}/:path*`,
+      // },
       // [2025-01-29 02:20:00] 代理 /api/auth/login 和 /api/auth/me 以处理 Cookie
       {
         source: '/api/auth/login',
