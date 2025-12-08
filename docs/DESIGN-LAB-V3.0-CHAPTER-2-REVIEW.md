@@ -166,33 +166,37 @@
 
 3. **US-3: Buy & Ship流程**
    - ✅ Get Price按钮存在
-   - ✅ PriceModal存在
-   - ⚠️ 缺少Buy & Ship / Fundraiser选择页面
-   - ⚠️ 缺少Ordering Options页面
-   - ⚠️ 缺少完整流程
+   - ✅ GetPriceFlowModal完整流程实现
+   - ✅ Buy & Ship / Fundraiser选择页面
+   - ✅ Ordering Options页面（Shipping、Sizes & Quantities、Payment）
+   - ✅ Quantity页面（尺码网格和预估总量）
+   - ✅ Order Options报价结果页
+   - ✅ 步骤指示器和导航
+   - ✅ 状态管理和数据收集
 
 4. **US-2: 团队管理员功能**
-   - ❌ 完全缺失（P2优先级，延后开发）
+   - ❌ 已取消（根据用户要求移除）
 
 #### 📊 完成度统计
 
 | 用户故事 | 完成度 | 状态 |
 |---------|--------|------|
 | US-1 | 90% | ✅ 基础完成，需验证 |
-| US-2 | 0% | ❌ 延后开发 |
-| US-3 | 30% | ⚠️ 部分完成 |
+| US-2 | - | ❌ 已取消 |
+| US-3 | 85% | ✅ 主要功能完成 |
 | US-4 | 85% | ✅ 主要功能完成 |
 
-**总体完成度**: 约 60%
+**总体完成度**: 约 87%（排除已取消的US-2）
 
 #### 🎯 下一步
 
 1. **立即执行**：
-   - 运行E2E测试验证US-1和US-4
-   - 完善US-3 Buy & Ship流程
+   - 运行E2E测试验证US-1、US-3和US-4
+   - 集成实际报价API到GetPriceFlowModal
 
-2. **后续开发**：
-   - 实现US-2团队管理员功能（P2优先级）
+2. **后续优化**：
+   - 完善GetPriceFlowModal的报价计算逻辑
+   - 添加Content Check内容合规确认（如需要）
 
 ---
 
