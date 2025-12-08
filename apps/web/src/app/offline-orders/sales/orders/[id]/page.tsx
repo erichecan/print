@@ -92,7 +92,7 @@ export default function SalesOrderDetailPage() {
       grouped[key].push(pos);
     });
     return grouped;
-  }, [config?.printPositions]);
+  }, [config]);
   
   // [2025-12-03 23:30:00] 计算每个产品的总数量和总金额
   const productTotals = useMemo(() => {
