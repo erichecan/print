@@ -1228,14 +1228,14 @@ const DesignLabClient: React.FC = () => {
     reader.onload = (e) => {
       try {
         const imageUrl = e.target?.result as string;
-      console.log('[DesignLab] File read successfully, imageUrl length:', imageUrl?.length || 0);
-      
-      // [2025-12-07 15:30:00] 检查分辨率（异步，不阻塞上传）
-      if (file.type !== 'image/svg+xml') {
-        checkImageResolution(imageUrl);
-      }
-      
-      if (!imageUrl) {
+        console.log('[DesignLab] File read successfully, imageUrl length:', imageUrl?.length || 0);
+        
+        // [2025-12-07 15:30:00] 检查分辨率（异步，不阻塞上传）
+        if (file.type !== 'image/svg+xml') {
+          checkImageResolution(imageUrl);
+        }
+        
+        if (!imageUrl) {
         console.error('[DesignLab] Image URL is empty');
         showErrorToast('Failed to read the file. Please try again or choose a different file.');
         return;
