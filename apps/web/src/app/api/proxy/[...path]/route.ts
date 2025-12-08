@@ -33,43 +33,58 @@ function requiresAuth(path: string): boolean {
 
 /**
  * 处理所有 HTTP 方法的代理请求
- * [2025-12-08 05:00:00] 修复：Next.js 15 中 catch-all 路由的参数类型
+ * [2025-12-08 05:15:00] 修复：Next.js 15 中 catch-all 路由的参数类型
+ * 注意：在 Next.js 15 中，params 总是 Promise，不再支持同步对象
  */
-type RouteContext = {
-  params: Promise<{ path: string[] }> | { path: string[] };
-};
-
 async function handleProxyRequest(
   request: NextRequest,
-  context: RouteContext
+  context: { params: Promise<{ path: string[] }> }
 ) {
   // [2025-12-02 04:25:00] 处理 Next.js 15 的异步 params
-  // [2025-12-08 04:40:00] 修复：确保正确处理 params，包括空数组情况
-  // [2025-12-08 05:00:00] 修复：Next.js 15 中 params 必须是 Promise，需要 await
+  // [2025-12-08 05:10:00] 修复：使用与其他路由一致的方式处理 params
+  const timestamp = new Date().toISOString();
+  
+  // [2025-12-08 05:15:00] Next.js 15: params 总是 Promise，必须 await
   let params: { path: string[] };
   try {
-    // [2025-12-08 05:00:00] Next.js 15: params 总是 Promise，必须 await
-    const resolvedParams = await Promise.resolve(context.params);
-    params = resolvedParams as { path: string[] };
+    // [2025-12-08 05:15:00] 在 Next.js 15 中，params 总是 Promise
+    const resolvedParams = await context.params;
+    params = resolvedParams;
     
-    // [2025-12-08 05:00:00] 验证 params 结构
-    if (!params || typeof params !== 'object') {
-      throw new Error('Invalid params structure');
+    // [2025-12-08 05:15:00] 验证 params 结构
+    if (!params || typeof params !== 'object' || !('path' in params)) {
+      console.error('[API Proxy] ❌ Invalid params structure:', {
+        timestamp,
+        params,
+        paramsType: typeof params,
+        hasPath: 'path' in (params || {}),
+      });
+      throw new Error('Invalid params structure: missing path property');
     }
+    
+    // [2025-12-08 05:15:00] 增强日志：记录参数解析过程
+    console.log('[API Proxy] 📍 Params resolved', {
+      timestamp,
+      hasParams: !!params,
+      pathType: typeof params?.path,
+      pathIsArray: Array.isArray(params?.path),
+      pathValue: params?.path,
+      urlPath: request.nextUrl.pathname,
+    });
   } catch (e: any) {
     console.error('[API Proxy] ❌ Failed to resolve params:', {
+      timestamp,
       error: e?.message,
       stack: e?.stack,
       params: context.params,
       paramsType: typeof context.params,
+      isPromise: context.params instanceof Promise,
     });
     return NextResponse.json(
       { error: 'Invalid request parameters', message: e?.message || 'Failed to parse route parameters' },
       { status: 400 }
     );
   }
-  
-  const timestamp = new Date().toISOString();
   
   try {
     // [2025-12-02 04:15:00] 构建后端 API 路径
@@ -366,32 +381,54 @@ async function handleProxyRequest(
 }
 
 // [2025-12-02 04:15:00] 导出所有 HTTP 方法处理器
-// [2025-12-08 05:00:00] 修复：确保函数签名匹配 Next.js 15 的要求
-export async function GET(request: NextRequest, context: RouteContext) {
+// [2025-12-08 05:15:00] 修复：Next.js 15 中 catch-all 路由的参数类型定义
+// 注意：在 Next.js 15 中，catch-all 路由的参数类型应该是 { params: Promise<{ path: string[] }> }
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   return handleProxyRequest(request, context);
 }
 
-export async function POST(request: NextRequest, context: RouteContext) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   return handleProxyRequest(request, context);
 }
 
-export async function PUT(request: NextRequest, context: RouteContext) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   return handleProxyRequest(request, context);
 }
 
-export async function PATCH(request: NextRequest, context: RouteContext) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   return handleProxyRequest(request, context);
 }
 
-export async function DELETE(request: NextRequest, context: RouteContext) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   return handleProxyRequest(request, context);
 }
 
-export async function HEAD(request: NextRequest, context: RouteContext) {
+export async function HEAD(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   return handleProxyRequest(request, context);
 }
 
-export async function OPTIONS(request: NextRequest, context: RouteContext) {
+export async function OPTIONS(
+  request: NextRequest,
+  context: { params: Promise<{ path: string[] }> }
+) {
   return handleProxyRequest(request, context);
 }
 

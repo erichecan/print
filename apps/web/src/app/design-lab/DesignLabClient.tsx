@@ -1927,10 +1927,12 @@ const DesignLabClient: React.FC = () => {
             </nav>
           </div>
           <div className="dl-header__right">
-            <a href="tel:+1234567890" className="dl-header__link" aria-label="Phone">
-              📞 1-800-000-0000
+            {/* [2025-12-08] 修复：添加"Talk to a Real Person"文案 */}
+            <a href="tel:+1234567890" className="dl-header__link" aria-label="Talk to a Real Person">
+              📞 Talk to a Real Person: 1-800-000-0000
             </a>
-            <button className="dl-header__btn" aria-label="Chat">Chat</button>
+            {/* [2025-12-08] 修复：添加"Chat Now"文案 */}
+            <button className="dl-header__btn" aria-label="Chat Now">Chat Now</button>
             <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
           </div>
         </div>
@@ -2081,6 +2083,45 @@ const DesignLabClient: React.FC = () => {
 
         {/* 4. Canvas - 中央画布区域 */}
         <section className="dl-canvas" aria-label="Design canvas">
+          {/* [2025-12-08] 左上浮层：Undo/Redo按钮 */}
+          <div className="dl-canvas__floating-controls">
+            <button
+              className="dl-canvas__floating-btn"
+              onClick={() => {
+                undo();
+                // [2025-12-08] 从store获取更新后的canvas并应用到fabric canvas
+                const updatedSnapshot = getCurrentViewCanvas();
+                if (fabricCanvasRef.current) {
+                  snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
+                }
+              }}
+              aria-label="Undo"
+              title="Undo"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 7v6h6" />
+                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+              </svg>
+            </button>
+            <button
+              className="dl-canvas__floating-btn"
+              onClick={() => {
+                redo();
+                // [2025-12-08] 从store获取更新后的canvas并应用到fabric canvas
+                const updatedSnapshot = getCurrentViewCanvas();
+                if (fabricCanvasRef.current) {
+                  snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
+                }
+              }}
+              aria-label="Redo"
+              title="Redo"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 7v6h-6" />
+                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
+              </svg>
+            </button>
+          </div>
           {/* 产品预览区域 */}
           <div className="dl-canvas__preview">
             <div className="dl-canvas__product">
