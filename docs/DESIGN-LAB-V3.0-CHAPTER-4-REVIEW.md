@@ -250,7 +250,7 @@
 
 1. **Upload模块**:
    - [x] ✅ Upload Size编辑功能（Width × Height + 比例锁）
-   - [ ] ⚠️ 文件验证错误提示toast（待后续优化）
+   - [x] ✅ 文件验证错误提示toast（已完成：文件格式、大小、类型验证，使用Toast替代alert）
 
 2. **Add Text模块**:
    - [x] ✅ Add Text面板：为空时禁用"Add To Design"按钮
