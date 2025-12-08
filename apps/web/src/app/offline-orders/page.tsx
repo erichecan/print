@@ -578,61 +578,71 @@ export default function OfflineOrdersIntakePage() {
     });
   }, []);
 
-  // [2025-12-07 02:30:00] PRD v2.0: 更新尺码数量
-  const updateSizeQuantity = useCallback(
-    (itemId: string, colorId: string, size: string, quantity: number, unitPrice: number) => {
-      setFormState((prev) => {
-        const newItems = prev.productItems.map((item) => {
-          if (item.id === itemId) {
-            const newColors = item.colors.map((color) => {
-              if (color.colorId === colorId) {
-                const additionalFee = sizeFeeMap[size] || 0;
-                const existingSizeIndex = color.sizes.findIndex((s) => s.size === size);
-                const newSizeQuantity: SizeQuantity = {
-                  size,
-                  quantity,
-                  unitPrice,
-                  additionalFee,
-                  subtotal: quantity * (unitPrice + additionalFee),
-                };
+  // [2025-12-07 02:30:00] PRD v2.0: 更新尺码数量的辅助函数（纯函数）
+  const updateSizeQuantityInState = (
+    prevState: FormState,
+    itemId: string,
+    colorId: string,
+    size: string,
+    quantity: number,
+    unitPrice: number
+  ): FormState => {
+    const newItems = prevState.productItems.map((item) => {
+      if (item.id === itemId) {
+        const newColors = item.colors.map((color) => {
+          if (color.colorId === colorId) {
+            const additionalFee = sizeFeeMap[size] || 0;
+            const existingSizeIndex = color.sizes.findIndex((s) => s.size === size);
+            const newSizeQuantity: SizeQuantity = {
+              size,
+              quantity,
+              unitPrice,
+              additionalFee,
+              subtotal: quantity * (unitPrice + additionalFee),
+            };
 
-                let newSizes: SizeQuantity[];
-                if (existingSizeIndex >= 0) {
-                  newSizes = [...color.sizes];
-                  newSizes[existingSizeIndex] = newSizeQuantity;
-                } else {
-                  newSizes = [...color.sizes, newSizeQuantity];
-                }
+            let newSizes: SizeQuantity[];
+            if (existingSizeIndex >= 0) {
+              newSizes = [...color.sizes];
+              newSizes[existingSizeIndex] = newSizeQuantity;
+            } else {
+              newSizes = [...color.sizes, newSizeQuantity];
+            }
 
-                // 计算该颜色的总数量和总价
-                const totalQuantity = newSizes.reduce((sum, s) => sum + s.quantity, 0);
-                const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
-
-                return {
-                  ...color,
-                  sizes: newSizes,
-                  totalQuantity,
-                  totalPrice,
-                };
-              }
-              return color;
-            });
-
-            // 计算产品的总数量和总价
-            const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
-            const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
+            // 计算该颜色的总数量和总价
+            const totalQuantity = newSizes.reduce((sum, s) => sum + s.quantity, 0);
+            const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
 
             return {
-              ...item,
-              colors: newColors,
+              ...color,
+              sizes: newSizes,
               totalQuantity,
               totalPrice,
             };
           }
-          return item;
+          return color;
         });
-        return { ...prev, productItems: newItems };
-      });
+
+        // 计算产品的总数量和总价
+        const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
+        const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
+
+        return {
+          ...item,
+          colors: newColors,
+          totalQuantity,
+          totalPrice,
+        };
+      }
+      return item;
+    });
+    return { ...prevState, productItems: newItems };
+  };
+
+  // [2025-12-07 02:30:00] PRD v2.0: 更新尺码数量
+  const updateSizeQuantity = useCallback(
+    (itemId: string, colorId: string, size: string, quantity: number, unitPrice: number) => {
+      setFormState((prev) => updateSizeQuantityInState(prev, itemId, colorId, size, quantity, unitPrice));
     },
     [sizeFeeMap]
   );
@@ -1615,16 +1625,36 @@ export default function OfflineOrdersIntakePage() {
                 onChange={(e) => {
                   const value = e.target.value.replace(/[^\d.]/g, '');
                   const unitPrice = parseFloat(value) || 0;
-                  setFormState(prev => ({ ...prev, globalUnitPrice: unitPrice }));
-                  // [2025-12-08 05:25:00] 更新所有尺码的单价
-                  formState.productItems.forEach((item) => {
-                    item.colors.forEach((color) => {
-                      color.sizes.forEach((sizeData) => {
-                        if (sizeData.quantity > 0) {
-                          updateSizeQuantity(item.id, color.colorId, sizeData.size, sizeData.quantity, unitPrice);
-                        }
+                  // [2025-12-08 05:25:00] 更新全局单价，并更新所有尺码的单价
+                  setFormState((prev) => {
+                    const newItems = prev.productItems.map((item) => {
+                      const newColors = item.colors.map((color) => {
+                        const newSizes = color.sizes.map((sizeData) => {
+                          return {
+                            ...sizeData,
+                            unitPrice: unitPrice,
+                            subtotal: sizeData.quantity * (unitPrice + sizeData.additionalFee),
+                          };
+                        });
+                        const totalQuantity = newSizes.reduce((sum, s) => sum + s.quantity, 0);
+                        const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
+                        return {
+                          ...color,
+                          sizes: newSizes,
+                          totalQuantity,
+                          totalPrice,
+                        };
                       });
+                      const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
+                      const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
+                      return {
+                        ...item,
+                        colors: newColors,
+                        totalQuantity,
+                        totalPrice,
+                      };
                     });
+                    return { ...prev, globalUnitPrice: unitPrice, productItems: newItems };
                   });
                 }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
