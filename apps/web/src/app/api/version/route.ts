@@ -1,9 +1,13 @@
 /**
  * Version API Route
  * [2025-01-31 00:30:00] 返回当前 Git SHA 和构建时间
+ * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextResponse } from 'next/server';
 import { execSync } from 'child_process';
+
+// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {

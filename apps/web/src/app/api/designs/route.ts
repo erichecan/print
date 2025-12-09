@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getBackendApiBase } from '@/lib/api-route-config';
 
+// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+export const dynamic = 'force-dynamic';
+
 const API_BASE = getBackendApiBase();
 
 // [2025-01-27 22:10:00] POST /api/designs - 创建设计草稿

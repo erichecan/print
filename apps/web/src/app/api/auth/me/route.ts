@@ -2,10 +2,14 @@
  * Next.js API Route: GET /api/auth/me
  * [2025-01-29 02:15:00] 代理获取当前用户请求到后端，确保 Cookie 正确传递
  * [2025-12-02 03:35:00] Enhanced Cookie handling and error logging
+ * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextRequest, NextResponse } from 'next/server';
 
 import { getBackendApiBaseUrl } from '@/config/env';
+
+// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+export const dynamic = 'force-dynamic';
 
 // [2025-12-09] 修复：使用统一的环境变量配置模块
 // [2025-12-09] 延迟获取 API_BASE，确保在运行时获取正确的环境变量

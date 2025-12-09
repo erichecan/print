@@ -1,9 +1,13 @@
 /**
  * Next.js API Route: GET /api/offline-orders/config
  * [2025-12-07 04:35:00] 代理获取线下订单配置数据请求到后端
+ * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/config/env';
+
+// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+export const dynamic = 'force-dynamic';
 
 // [2025-12-09] 修复：使用统一的环境变量配置模块，延迟获取
 function getApiBase(): string {

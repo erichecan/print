@@ -1,9 +1,13 @@
 /**
  * Next.js API Route: Products Filters Options API 代理
  * [2025-12-03 03:30:00] 代理 /api/products/filters/options 请求到后端
+ * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBase } from '@/lib/api-route-config';
+
+// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+export const dynamic = 'force-dynamic';
 
 const API_BASE = getBackendApiBase();
 
