@@ -14,6 +14,9 @@ import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import SortSelect from './SortSelect';
+// [2025-12-09 14:45:00] 导入安全的数据获取和序列化工具
+import { safeFetch, HttpError, TimeoutError, NetworkError } from '@/lib/fetchers/safeFetch';
+import { ensureSerializable } from '@/lib/serialize';
 
 // [2025-01-27 16:45:00] 客户端筛选组件
 const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
@@ -255,71 +258,81 @@ async function fetchProducts(searchParams: SearchParams) {
     order,
   });
 
-  // [2025-12-09] 修复：在服务端组件中使用 fetch，确保正确处理错误
+  // [2025-12-09 14:45:00] 使用 safeFetch 统一错误处理，支持超时和重试
   try {
-    // [2025-12-09] 创建超时控制器（兼容性处理）
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 秒超时
-    
-    const response = await fetch(url, {
+    const data = await safeFetch<ProductsResponse>(url, {
       cache: 'no-store',
-      signal: controller.signal,
+      timeout: 10000, // 10 秒超时
+      retries: 1, // 重试 1 次
+      retryDelay: 1000, // 重试延迟 1 秒
     });
-    
-    clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('[ProductsPage] Failed to fetch products:', {
-        status: response.status,
-        statusText: response.statusText,
-        url,
-        error: errorText.substring(0, 200),
-      });
-      throw new Error(`Failed to fetch products (${response.status}): ${response.statusText}`);
-    }
+    // [2025-12-09 14:45:00] 确保数据可序列化
+    ensureSerializable(data);
 
-    const data = await response.json() as ProductsResponse;
     return data;
-  } catch (error: any) {
-    // [2025-12-09] 记录详细错误信息，便于调试
-    if (error.name === 'AbortError') {
-      console.error('[ProductsPage] Request timeout:', { url });
-      throw new Error('Request timeout: Failed to fetch products within 10 seconds');
+  } catch (error: unknown) {
+    // [2025-12-09 14:45:00] 详细错误日志，包含错误类型
+    if (error instanceof HttpError) {
+      console.error('[ProductsPage] HTTP error fetching products:', {
+        url,
+        status: error.status,
+        body: error.body,
+        message: error.message,
+      });
+      throw new Error(`Failed to fetch products: ${error.status} ${error.message}`);
+    } else if (error instanceof TimeoutError) {
+      console.error('[ProductsPage] Timeout fetching products:', {
+        url,
+        timeout: error.timeoutMs,
+        message: error.message,
+      });
+      throw new Error(`Request timeout: Failed to fetch products within ${error.timeoutMs}ms`);
+    } else if (error instanceof NetworkError) {
+      console.error('[ProductsPage] Network error fetching products:', {
+        url,
+        message: error.message,
+        originalError: error.originalError,
+      });
+      throw new Error(`Network error: ${error.message}`);
+    } else {
+      console.error('[ProductsPage] Unknown error fetching products:', {
+        url,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+      throw error;
     }
-    console.error('[ProductsPage] Error fetching products:', {
-      url,
-      error: error?.message || 'Unknown error',
-      stack: error?.stack,
-    });
-    throw error;
   }
 }
 
 async function fetchCollections() {
   try {
     const url = buildApiUrl('/collections', {});
-    // [2025-12-09] 创建超时控制器（兼容性处理）
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超时
-    
-    const response = await fetch(url, {
+    // [2025-12-09 14:45:00] 使用 safeFetch 统一错误处理
+    const data = await safeFetch<{ data: Collection[] }>(url, {
       cache: 'no-store',
-      signal: controller.signal,
+      timeout: 5000, // 5 秒超时
+      retries: 1,
     });
     
-    clearTimeout(timeoutId);
-    if (!response.ok) {
-      console.warn('[ProductsPage] Failed to fetch collections:', response.status);
-      return [] as Collection[];
-    }
-    return (await response.json()) as Collection[];
-  } catch (error: any) {
-    // [2025-12-09] 集合获取失败不影响产品列表显示
-    if (error.name === 'AbortError') {
-      console.warn('[ProductsPage] Request timeout while fetching collections');
+    ensureSerializable(data);
+    return data.data || [];
+  } catch (error: unknown) {
+    // [2025-12-09 14:45:00] 集合获取失败不影响产品列表显示，但记录详细错误
+    if (error instanceof HttpError) {
+      console.warn('[ProductsPage] HTTP error fetching collections:', {
+        status: error.status,
+        message: error.message,
+      });
+    } else if (error instanceof TimeoutError) {
+      console.warn('[ProductsPage] Timeout fetching collections:', {
+        timeout: error.timeoutMs,
+      });
     } else {
-      console.warn('[ProductsPage] Error fetching collections:', error?.message || 'Unknown error');
+      console.warn('[ProductsPage] Error fetching collections:', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
     return [] as Collection[];
   }
