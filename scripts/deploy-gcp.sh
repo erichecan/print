@@ -53,37 +53,7 @@ docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${
 echo -e "${GREEN}📤 Pushing backend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest
 
-# Get backend URL first (for build-time API URL)
-# [2025-12-09] 修复：在构建前端之前获取后端 URL，以便在构建时传入正确的 NEXT_PUBLIC_API_URL
-BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)' 2>/dev/null || echo "")
-if [ -z "$BACKEND_URL" ]; then
-  echo -e "${YELLOW}⚠️  后端服务尚未部署，将使用相对路径 /api（构建时可能无法访问后端 API）${NC}"
-  API_URL_FOR_BUILD=""
-else
-  API_URL_FOR_BUILD="${BACKEND_URL}/api"
-  echo -e "${GREEN}📌 使用后端 URL 构建前端: ${API_URL_FOR_BUILD}${NC}"
-fi
-
-# Build and push frontend
-echo -e "${GREEN}🏗️  Building frontend Docker image...${NC}"
-# [2025-12-09] 修复：在构建时传入 NEXT_PUBLIC_API_URL，确保客户端代码中内联正确的 API 地址
-if [ -n "$API_URL_FOR_BUILD" ]; then
-  docker build --platform linux/amd64 \
-    --build-arg NEXT_PUBLIC_API_URL="${API_URL_FOR_BUILD}" \
-    -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
-    -f apps/web/Dockerfile apps/web
-else
-  # 如果后端 URL 不可用，构建时不传入 NEXT_PUBLIC_API_URL，让代码在运行时回退到 /api
-  echo -e "${YELLOW}⚠️  构建时未设置 NEXT_PUBLIC_API_URL，代码将在运行时使用相对路径 /api${NC}"
-  docker build --platform linux/amd64 \
-    -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
-    -f apps/web/Dockerfile apps/web
-fi
-
-echo -e "${GREEN}📤 Pushing frontend image...${NC}"
-docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest
-
-# Deploy backend
+# Deploy backend first (to get the URL for frontend build)
 echo -e "${GREEN}🚀 Deploying backend to Cloud Run...${NC}"
 gcloud run deploy ${BACKEND_SERVICE} \
   --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
@@ -99,11 +69,28 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --max-instances 10 \
   --timeout 300
 
-# Get backend URL (if not already set)
-if [ -z "$BACKEND_URL" ]; then
-  BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
-  echo -e "${GREEN}✅ Backend deployed: ${BACKEND_URL}${NC}"
-fi
+# Get backend URL
+BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
+echo -e "${GREEN}✅ Backend deployed: ${BACKEND_URL}${NC}"
+
+# Update API URL secret
+API_URL="${BACKEND_URL}/api"
+echo -e "${GREEN}🔐 Updating API URL secret...${NC}"
+echo -n "${API_URL}" | gcloud secrets versions add api-url --data-file=- || \
+  echo -n "${API_URL}" | gcloud secrets create api-url --data-file=-
+
+# Build and push frontend (with backend URL for build-time API URL)
+echo -e "${GREEN}🏗️  Building frontend Docker image...${NC}"
+# [2025-12-09] 修复：在构建时传入 NEXT_PUBLIC_API_URL，确保客户端代码中内联正确的 API 地址
+# 注意：即使构建时传入了正确的 URL，如果浏览器环境检测到 localhost，也会自动回退到 /api
+echo -e "${GREEN}📌 使用后端 URL 构建前端: ${API_URL}${NC}"
+docker build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_API_URL="${API_URL}" \
+  -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
+  -f apps/web/Dockerfile apps/web
+
+echo -e "${GREEN}📤 Pushing frontend image...${NC}"
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest
 
 # Deploy frontend - FREE TIER CONFIGURATION
 echo -e "${GREEN}🚀 Deploying frontend to Cloud Run (FREE TIER)...${NC}"
