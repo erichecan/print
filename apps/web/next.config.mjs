@@ -77,34 +77,26 @@ if (apiBaseUrl) {
 const nextConfig = {
   async rewrites() {
     // [2025-12-09] 修复：统一使用环境变量，移除硬编码地址
-    // 构建时允许使用默认值，运行时再检查
+    // rewrites() 只在构建时执行，所以构建时允许使用默认值
+    // 运行时检查在 api-route-config.ts 中进行
     const isDevelopment = process.env.NODE_ENV === 'development';
-    // [2025-12-09] 检测是否在构建时：构建时 NEXT_RUNTIME 不存在
-    const isBuildTime = !process.env.NEXT_RUNTIME;
     let apiUrl = process.env.NEXT_PUBLIC_API_URL;
     
     if (!apiUrl) {
-      if (isDevelopment || isBuildTime) {
-        // 开发环境或构建时：使用默认 localhost
-        apiUrl = 'http://localhost:3001';
-        if (isBuildTime) {
-          console.warn('[next.config] ⚠️ 构建时 NEXT_PUBLIC_API_URL 未设置，使用默认值（运行时需要配置环境变量）:', apiUrl);
-        } else {
-          console.warn('[next.config] ⚠️ NEXT_PUBLIC_API_URL 未设置，使用开发环境默认值:', apiUrl);
-        }
+      // [2025-12-09] 构建时允许使用默认值（无论是开发还是生产构建）
+      // 运行时检查在 api-route-config.ts 中进行
+      apiUrl = 'http://localhost:3001';
+      if (isDevelopment) {
+        console.warn('[next.config] ⚠️ NEXT_PUBLIC_API_URL 未设置，使用开发环境默认值:', apiUrl);
       } else {
-        // 生产环境运行时：必须配置环境变量，否则抛出错误
-        const errorMsg = '生产环境必须设置 NEXT_PUBLIC_API_URL 环境变量';
-        console.error('[next.config] ❌', errorMsg);
-        throw new Error(errorMsg);
+        console.warn('[next.config] ⚠️ 构建时 NEXT_PUBLIC_API_URL 未设置，使用默认值（运行时需要配置环境变量）:', apiUrl);
       }
     }
     
-    // [2025-12-09] 构建时允许 localhost，运行时再检查
-    if (!isDevelopment && !isBuildTime && (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1'))) {
-      const errorMsg = `生产环境 API 配置错误：检测到 localhost 地址 (${apiUrl})。请设置 NEXT_PUBLIC_API_URL 环境变量指向正确的生产环境 API 服务器。`;
-      console.error('[next.config] ❌', errorMsg);
-      throw new Error(errorMsg);
+    // [2025-12-09] 构建时允许 localhost（运行时检查在 api-route-config.ts 中进行）
+    // 这里只做警告，不抛出错误
+    if (!isDevelopment && (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1'))) {
+      console.warn('[next.config] ⚠️ 构建时检测到 localhost API 地址，运行时需要配置正确的生产环境地址:', apiUrl);
     }
     
     // [2025-12-09] 确保 URL 不包含 /api 后缀（rewrites 会自动添加）
