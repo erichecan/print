@@ -457,23 +457,15 @@ export default async function ProductsPage({
     : 'T-shirts';
 
   // [2025-12-09] 错误状态：如果获取产品失败，显示统一的错误状态组件
+  // [2025-12-09 23:50:00] 修复：Server Component 不能传递函数给 Client Component
+  // 使用客户端组件处理重试逻辑
   if (fetchError && !productsResponse) {
-    const ErrorState = dynamic(() => import('@/components/ErrorState').then(mod => ({ default: mod.ErrorState })), { ssr: false });
+    const ProductsErrorClient = dynamic(() => import('./ProductsErrorClient').then(mod => ({ default: mod.default })), { ssr: false });
     return (
       <div className="catalog-page">
         <section className="plp-new">
           <div className="container">
-            <ErrorState
-              error={fetchError}
-              title="无法加载商品列表"
-              retryable={true}
-              onRetry={() => {
-                // 刷新页面以重试
-                if (typeof window !== 'undefined') {
-                  window.location.reload();
-                }
-              }}
-            />
+            <ProductsErrorClient error={fetchError} />
           </div>
         </section>
       </div>

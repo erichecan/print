@@ -1,0 +1,179 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - region "Promotional message" [ref=e3]: Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "Suvernire Plus home" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - img "Souvenir Plus Inc" [ref=e8]
+      - search [ref=e9]:
+        - form "Site search form" [ref=e10]:
+          - button "Search products" [ref=e11] [cursor=pointer]: 🔍
+          - searchbox "Search query" [ref=e12]
+      - generic "Contact options" [ref=e13]:
+        - generic [ref=e14]:
+          - img [ref=e15]
+          - generic [ref=e17]:
+            - generic [ref=e18]: Talk to a Real Person
+            - link "855-271-2660" [ref=e19] [cursor=pointer]:
+              - /url: tel:8552712660
+        - generic [ref=e20]:
+          - img [ref=e21]
+          - generic [ref=e23]:
+            - generic [ref=e24]: Chat with a Real Person
+            - link "Chat now" [ref=e25] [cursor=pointer]:
+              - /url: /help
+    - navigation "Primary" [ref=e26]:
+      - generic [ref=e27]:
+        - list [ref=e28]:
+          - listitem [ref=e29]:
+            - link "Custom T-shirts" [ref=e30] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e31]:
+            - link "Custom Apparel" [ref=e32] [cursor=pointer]:
+              - /url: /collections/apparel
+          - listitem [ref=e33]:
+            - link "Promotional Products" [ref=e34] [cursor=pointer]:
+              - /url: /promotional-products
+          - listitem [ref=e35]:
+            - link "Design Lab" [ref=e36] [cursor=pointer]:
+              - /url: /design-lab
+          - listitem [ref=e37]:
+            - link "Groups & Events" [ref=e38] [cursor=pointer]:
+              - /url: /group-orders
+        - generic [ref=e39]:
+          - link "Sign in" [ref=e40] [cursor=pointer]:
+            - /url: /login
+            - img [ref=e41]
+            - generic [ref=e42]: Sign in
+          - link "Shopping cart with 0 items" [ref=e43] [cursor=pointer]:
+            - /url: /cart
+            - img [ref=e44]
+            - generic [ref=e48]: Cart
+  - main [ref=e49]:
+    - generic [ref=e51]:
+      - heading "无法加载商品列表" [level=1] [ref=e52]
+      - paragraph [ref=e53]: 加载商品列表时出现问题，请稍后重试。
+      - paragraph [ref=e55]: "Event handlers cannot be passed to Client Component props. <... error=... title=... retryable=... onRetry={function onRetry}> ^^^^^^^^^^^^^^^^^^ If you need interactivity, consider converting part of this to a Client Component."
+      - generic [ref=e56]:
+        - paragraph [ref=e57]:
+          - strong [ref=e58]: "错误摘要:"
+          - code [ref=e59]: "3828351232"
+        - paragraph [ref=e60]:
+          - strong [ref=e61]: "追踪 ID:"
+          - code [ref=e62]: trace-miz8f7ob-ftc9ey7
+      - generic [ref=e63]:
+        - button "重试" [ref=e64] [cursor=pointer]
+        - link "返回首页" [ref=e65] [cursor=pointer]:
+          - /url: /
+  - contentinfo [ref=e66]:
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - heading "About Us" [level=4] [ref=e70]
+        - list [ref=e71]:
+          - listitem [ref=e72]:
+            - link "About Us" [ref=e73] [cursor=pointer]:
+              - /url: /about
+          - listitem [ref=e74]:
+            - link "Contact Us" [ref=e75] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e76]:
+            - link "Promotions" [ref=e77] [cursor=pointer]:
+              - /url: /promotions
+          - listitem [ref=e78]:
+            - link "Design Gallery" [ref=e79] [cursor=pointer]:
+              - /url: /design-gallery
+      - generic [ref=e80]:
+        - heading "Your Account" [level=4] [ref=e81]
+        - list [ref=e82]:
+          - listitem [ref=e83]:
+            - link "My Account" [ref=e84] [cursor=pointer]:
+              - /url: /account
+          - listitem [ref=e85]:
+            - link "My Designs" [ref=e86] [cursor=pointer]:
+              - /url: /account/designs
+          - listitem [ref=e87]:
+            - link "Track Your Order" [ref=e88] [cursor=pointer]:
+              - /url: /order-tracking
+          - listitem [ref=e89]:
+            - link "View Cart" [ref=e90] [cursor=pointer]:
+              - /url: /cart
+      - generic [ref=e91]:
+        - heading "Shop" [level=4] [ref=e92]
+        - list [ref=e93]:
+          - listitem [ref=e94]:
+            - link "All Products" [ref=e95] [cursor=pointer]:
+              - /url: /products
+          - listitem [ref=e96]:
+            - link "Design Lab" [ref=e97] [cursor=pointer]:
+              - /url: /design-lab
+          - listitem [ref=e98]:
+            - link "Promotions" [ref=e99] [cursor=pointer]:
+              - /url: /promotions
+          - listitem [ref=e100]:
+            - link "Help Center" [ref=e101] [cursor=pointer]:
+              - /url: /help
+      - generic [ref=e102]:
+        - heading "Support" [level=4] [ref=e103]
+        - list [ref=e104]:
+          - listitem [ref=e105]:
+            - link "Help Center" [ref=e106] [cursor=pointer]:
+              - /url: /help
+          - listitem [ref=e107]:
+            - link "Contact Us" [ref=e108] [cursor=pointer]:
+              - /url: /contact
+          - listitem [ref=e109]:
+            - link "Shipping Info" [ref=e110] [cursor=pointer]:
+              - /url: /shipping-info
+          - listitem [ref=e111]:
+            - link "Returns" [ref=e112] [cursor=pointer]:
+              - /url: /returns
+      - generic [ref=e113]:
+        - heading "Legal" [level=4] [ref=e114]
+        - list [ref=e115]:
+          - listitem [ref=e116]:
+            - link "Privacy Policy" [ref=e117] [cursor=pointer]:
+              - /url: /privacy-policy
+          - listitem [ref=e118]:
+            - link "Terms of Service" [ref=e119] [cursor=pointer]:
+              - /url: /terms-of-service
+          - listitem [ref=e120]:
+            - link "Size Guide" [ref=e121] [cursor=pointer]:
+              - /url: /size-guide
+          - listitem [ref=e122]:
+            - link "Sitemap" [ref=e123] [cursor=pointer]:
+              - /url: /sitemap.xml
+      - generic [ref=e124]:
+        - heading "Business" [level=4] [ref=e125]
+        - list [ref=e126]:
+          - listitem [ref=e127]:
+            - link "Offline Orders" [ref=e128] [cursor=pointer]:
+              - /url: /offline-orders/sales/login
+    - generic [ref=e129]:
+      - generic [ref=e130]: © 2025 Inkify LLC. All rights reserved.
+      - navigation "Legal links" [ref=e131]:
+        - generic [ref=e132]:
+          - link "Privacy Policy" [ref=e133] [cursor=pointer]:
+            - /url: /privacy-policy
+          - text: "|"
+        - generic [ref=e134]:
+          - link "Terms of Service" [ref=e135] [cursor=pointer]:
+            - /url: /terms-of-service
+          - text: "|"
+        - generic [ref=e136]:
+          - link "Size Guide" [ref=e137] [cursor=pointer]:
+            - /url: /size-guide
+          - text: "|"
+        - link "Sitemap" [ref=e139] [cursor=pointer]:
+          - /url: /sitemap.xml
+  - alert [ref=e140]
+  - generic [ref=e143] [cursor=pointer]:
+    - img [ref=e144]
+    - generic [ref=e146]: 1 error
+    - button "Hide Errors" [ref=e147]:
+      - img [ref=e148]
+```
