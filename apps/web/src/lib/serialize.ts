@@ -96,6 +96,7 @@ function isSerializable(value: unknown, path = '', visited = new WeakSet()): { v
 /**
  * 确保数据可序列化
  * 
+ * @deprecated 使用 cleanForSerialization 替代，它会主动清理数据而不是只检查
  * @param data - 要检查的数据
  * @param options - 选项
  * @throws {SerializationError} 如果数据不可序列化
@@ -131,11 +132,15 @@ export function ensureSerializable(
  * - 将 Date 转换为 ISO 字符串
  * - 移除函数
  * - 转换 BigInt 为字符串
+ * - 将 Map 转换为对象
+ * - 将 Set 转换为数组
+ * - 处理类实例（提取可枚举属性）
  * 
  * @param data - 要清理的数据
+ * @param visited - 用于检测循环引用的 WeakSet
  * @returns 清理后的数据
  */
-export function cleanForSerialization<T>(data: T): T {
+export function cleanForSerialization<T>(data: T, visited: WeakSet<object> = new WeakSet()): T {
   if (data === null || data === undefined) {
     return data;
   }
@@ -152,38 +157,90 @@ export function cleanForSerialization<T>(data: T): T {
     return data.toISOString() as unknown as T;
   }
 
+  // Map 转换为对象
+  if (data instanceof Map) {
+    const obj: Record<string, unknown> = {};
+    for (const [key, value] of data.entries()) {
+      const keyStr = typeof key === 'string' ? key : String(key);
+      obj[keyStr] = cleanForSerialization(value, visited);
+    }
+    return obj as unknown as T;
+  }
+
+  // Set 转换为数组
+  if (data instanceof Set) {
+    return Array.from(data).map(item => cleanForSerialization(item, visited)) as unknown as T;
+  }
+
   // 数组递归处理
   if (Array.isArray(data)) {
-    return data.map(item => cleanForSerialization(item)) as unknown as T;
+    return data.map(item => cleanForSerialization(item, visited)) as unknown as T;
   }
 
   // 对象递归处理
   if (type === 'object') {
-    const cleaned: Record<string, unknown> = {};
-    for (const key in data) {
-      if (Object.prototype.hasOwnProperty.call(data, key)) {
-        const value = (data as Record<string, unknown>)[key];
-        
-        // 跳过函数
-        if (typeof value === 'function') {
-          continue;
-        }
-
-        // 跳过 Symbol
-        if (typeof value === 'symbol') {
-          continue;
-        }
-
-        // 转换 BigInt
-        if (typeof value === 'bigint') {
-          cleaned[key] = value.toString();
-          continue;
-        }
-
-        cleaned[key] = cleanForSerialization(value);
-      }
+    // 检查循环引用
+    if (visited.has(data as object)) {
+      // 遇到循环引用，返回占位符对象
+      return { __circular: true } as unknown as T;
     }
-    return cleaned as T;
+
+    visited.add(data as object);
+
+    try {
+      const cleaned: Record<string, unknown> = {};
+      
+      // 处理普通对象和类实例
+      for (const key in data) {
+        if (Object.prototype.hasOwnProperty.call(data, key)) {
+          const value = (data as Record<string, unknown>)[key];
+          
+          // 跳过函数
+          if (typeof value === 'function') {
+            continue;
+          }
+
+          // 跳过 Symbol
+          if (typeof value === 'symbol') {
+            continue;
+          }
+
+          // 转换 BigInt
+          if (typeof value === 'bigint') {
+            cleaned[key] = value.toString();
+            continue;
+          }
+
+          cleaned[key] = cleanForSerialization(value, visited);
+        }
+      }
+
+      // 对于类实例，如果原型链上有可枚举属性，也尝试提取（但跳过方法）
+      const proto = Object.getPrototypeOf(data);
+      if (proto && proto !== Object.prototype) {
+        // 检查是否是类实例（有构造函数且不是普通对象）
+        const isClassInstance = proto.constructor && proto.constructor !== Object;
+        if (isClassInstance) {
+          // 只提取可枚举的非函数属性
+          for (const key in proto) {
+            if (Object.prototype.hasOwnProperty.call(proto, key) && !(key in cleaned)) {
+              const value = (proto as Record<string, unknown>)[key];
+              if (typeof value !== 'function' && typeof value !== 'symbol') {
+                try {
+                  cleaned[key] = cleanForSerialization(value, visited);
+                } catch {
+                  // 忽略无法序列化的属性
+                }
+              }
+            }
+          }
+        }
+      }
+
+      return cleaned as T;
+    } finally {
+      visited.delete(data as object);
+    }
   }
 
   return data;

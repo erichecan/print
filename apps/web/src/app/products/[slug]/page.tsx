@@ -1,33 +1,53 @@
 // [2025-11-19 09:50:00] 商品详情页面包装器
 // [2025-12-06 21:00:00] 优化 SEO 元数据，从 API 获取实际产品信息 for Issue #154
+// [2025-12-09 23:50:00] 使用 safeFetch 和 cleanForSerialization
 import { ProductDetail } from '@/components/product/detail/ProductDetail';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
-// [2025-12-09] 修复：不在模块顶层导入 API_BASE_URL，改为在函数内动态导入
+import { safeFetch, HttpError, TimeoutError, NetworkError } from '@/lib/fetchers/safeFetch';
+import { cleanForSerialization } from '@/lib/serialize';
 
 // [2025-12-06 21:00:00] 从 API 获取产品信息用于 SEO 元数据 for Issue #154
-// [2025-12-09] 修复：使用相对路径，通过 Next.js API 路由代理
+// [2025-12-09 23:50:00] 使用 safeFetch 统一错误处理
 async function getProductForSEO(slug: string) {
   try {
     // [2025-12-09] 在服务端组件中，使用相对路径通过 Next.js API 路由代理
     const apiUrl = `/api/products/${slug}`;
     
-    const response = await fetch(apiUrl, {
+    // [2025-12-09 23:50:00] 使用 safeFetch 替代普通 fetch
+    const product = await safeFetch<any>(apiUrl, {
+      cache: 'no-store',
       next: { revalidate: 3600 }, // 缓存 1 小时
-      cache: 'no-store', // 确保获取最新数据
+      timeout: 5000, // 5 秒超时
+      retries: 1,
     });
     
-    if (!response.ok) {
-      console.warn('[Product SEO] Failed to fetch product for SEO:', {
+    // [2025-12-09 23:50:00] 清理数据，确保可序列化
+    return cleanForSerialization(product);
+  } catch (error: unknown) {
+    // [2025-12-09 23:50:00] 详细错误日志
+    if (error instanceof HttpError) {
+      console.warn('[Product SEO] HTTP error fetching product for SEO:', {
         slug,
-        status: response.status,
+        status: error.status,
+        message: error.message,
       });
-      return null;
+    } else if (error instanceof TimeoutError) {
+      console.warn('[Product SEO] Timeout fetching product for SEO:', {
+        slug,
+        timeout: error.timeoutMs,
+      });
+    } else if (error instanceof NetworkError) {
+      console.warn('[Product SEO] Network error fetching product for SEO:', {
+        slug,
+        message: error.message,
+      });
+    } else {
+      console.error('[Product SEO] Unknown error fetching product:', {
+        slug,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('[Product SEO] Error fetching product:', error);
     return null;
   }
 }
@@ -86,9 +106,22 @@ export async function generateStaticParams() {
 }
 
 // [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+// [2025-12-09 23:50:00] 添加顶层错误处理，抛给 error.tsx
 export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
-  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
-  await (params instanceof Promise ? params : Promise.resolve(params));
-  // 实际 slug 由 ProductDetail 组件内部通过 useParams 解析
-  return <ProductDetail />;
+  try {
+    // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+    const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+    const slug = resolvedParams.slug;
+    
+    // [2025-12-09 23:50:00] 实际 slug 由 ProductDetail 组件内部通过 useParams 解析
+    // ProductDetail 是客户端组件，在客户端获取数据，所以这里不需要传递数据
+    return <ProductDetail />;
+  } catch (error: unknown) {
+    // [2025-12-09 23:50:00] 顶层错误处理，抛出错误给 error.tsx
+    console.error('[ProductDetailPage] Error in page component:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    throw error; // 抛出错误，让 Next.js 的 error.tsx 处理
+  }
 }
