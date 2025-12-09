@@ -234,6 +234,7 @@ inventoryAlertsRouter.get('/alerts', require('./controllers/inventoryController'
 app.use('/api/admin/inventory', inventoryAlertsRouter);
 app.use('/api/admin/categories', require('./routes/adminCategories')); // [2025-11-11 23:20:15] Admin category management routes
 app.use('/api/admin/orders', require('./routes/adminOrders')); // [2025-11-12 01:05:02] Admin order management routes
+app.use('/api/admin/all-orders', require('./routes/unifiedOrders')); // [2025-12-08] Unified order management routes (online + offline)
 app.use('/api/admin/users', require('./routes/adminUsers')); // [2025-11-15 14:05:00] Admin user management routes
 app.use('/api/admin/coupons', require('./routes/adminCoupons')); // [2025-11-15 15:15:00] Admin coupon management routes
 app.use('/api/admin/promotions', require('./routes/adminPromotions')); // [2025-11-15 15:20:00] Admin promotion management routes

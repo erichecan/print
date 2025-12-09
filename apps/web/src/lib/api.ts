@@ -2104,6 +2104,48 @@ export interface AdminOrderUpdatePayload {
   estimatedDelivery?: string | null;
 }
 
+// [2025-12-08] Unified Order Types (Online + Offline)
+export interface UnifiedOrderDTO {
+  id: string;
+  compositeId: string; // 'online-<id>' or 'offline-<id>'
+  type: 'online' | 'offline';
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'completed' | 'refunded';
+  orderNo: string;
+  customerName: string;
+  customerPhone?: string | null;
+  customerEmail?: string;
+  totalAmount: number;
+  currency: string;
+  itemsCount: number;
+  createdAt: string;
+  updatedAt?: string;
+  channelInfo?: {
+    channel: 'web' | 'pos' | 'manual' | 'other';
+    source?: string;
+  };
+  shippingAddressSummary?: string | null;
+  notes?: string | null;
+  paymentStatus?: string;
+  trackingNumber?: string | null;
+  carrier?: string | null;
+  stageKey?: string;
+  stageLabel?: string;
+  projectName?: string;
+}
+
+export interface UnifiedOrderListParams {
+  page?: number;
+  pageSize?: number;
+  type?: 'all' | 'online' | 'offline';
+  status?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  email?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 // [2025-01-28 08:30:00] Audit Logs 功能已移除
 
 // [2025-01-27 16:15:00] Admin Orders API
@@ -3066,6 +3108,64 @@ export const chatApi = {
     api<{ room: ChatRoom }>(`/chat/rooms/${roomId}/assign`, { method: 'PATCH', body: { agentId } }),
   updateStatus: (roomId: string, status: ChatRoom['status']) =>
     api<{ room: ChatRoom }>(`/chat/rooms/${roomId}/status`, { method: 'PATCH', body: { status } }),
+};
+
+// [2025-12-08] Unified Orders API (Online + Offline)
+export const unifiedOrdersApi = {
+  list: (params?: UnifiedOrderListParams) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.pageSize) query.append('pageSize', params.pageSize.toString());
+    if (params?.type) query.append('type', params.type);
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    if (params?.dateFrom) query.append('dateFrom', params.dateFrom);
+    if (params?.dateTo) query.append('dateTo', params.dateTo);
+    if (params?.email) query.append('email', params.email);
+    if (params?.sortBy) query.append('sortBy', params.sortBy);
+    if (params?.sortOrder) query.append('sortOrder', params.sortOrder);
+    const queryString = query.toString();
+    return api<{
+      success: boolean;
+      data: UnifiedOrderDTO[];
+      pagination: {
+        page: number;
+        pageSize: number;
+        total: number;
+        totalPages: number;
+      };
+      meta?: {
+        aggregated: boolean;
+        warnings?: string[];
+      };
+    }>(`/admin/all-orders${queryString ? `?${queryString}` : ''}`);
+  },
+  export: async (params?: UnifiedOrderListParams) => {
+    const query = new URLSearchParams();
+    if (params?.type) query.append('type', params.type);
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    if (params?.dateFrom) query.append('dateFrom', params.dateFrom);
+    if (params?.dateTo) query.append('dateTo', params.dateTo);
+    if (params?.email) query.append('email', params.email);
+    const queryString = query.toString();
+    const response = await fetch(`${API_BASE_URL}/admin/all-orders/export${queryString ? `?${queryString}` : ''}`, {
+      credentials: 'include',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `Export failed: ${response.status}`);
+    }
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all-orders-export-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
 };
 
 export default api;
