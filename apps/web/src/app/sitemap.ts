@@ -19,14 +19,22 @@ function getSiteUrl(): string {
 }
 
 // [2025-12-06 21:00:00] 获取所有产品用于动态 sitemap for Issue #154
+// [2025-12-09] 构建时如果无法获取产品，返回空数组（只包含静态页面）
 async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: string }>> {
   try {
+    // [2025-12-09] 构建时可能无法访问后端 API，使用 try-catch 处理
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超时
+    
     const response = await fetch(`${API_BASE_URL}/products?limit=1000&includeOutOfStock=false`, {
       next: { revalidate: 3600 }, // 缓存 1 小时
+      signal: controller.signal,
     });
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      console.error('[Sitemap] Failed to fetch products:', response.statusText);
+      console.warn('[Sitemap] Failed to fetch products:', response.statusText, '- 仅包含静态页面');
       return [];
     }
     
@@ -35,8 +43,13 @@ async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: strin
       slug: product.slug,
       updatedAt: product.updatedAt || product.updated_at,
     }));
-  } catch (error) {
-    console.error('[Sitemap] Error fetching products:', error);
+  } catch (error: any) {
+    // [2025-12-09] 构建时如果无法访问 API，只返回静态页面
+    if (error?.name === 'AbortError') {
+      console.warn('[Sitemap] 获取产品列表超时（构建时可能无法访问后端 API），仅包含静态页面');
+    } else {
+      console.warn('[Sitemap] 无法获取产品列表（构建时可能无法访问后端 API），仅包含静态页面:', error?.message || 'Unknown error');
+    }
     return [];
   }
 }
