@@ -16,9 +16,11 @@ const FILTERED_ERROR_PATTERNS = [
   /PerformanceObserver.*buffered.*entryTypes/i,
   /PerformanceObserver.*does not support buffered/i,
   // [2025-12-08] ReferenceError: Cannot access 'W' before initialization
-  // 这通常来自 React DevTools 或其他开发工具的格式化代码
+  // [2025-12-09 22:40:00] 更广泛的过滤：覆盖所有可能的变量名（打包后变量名会被压缩）
+  // 这通常来自 React DevTools 或其他开发工具的格式化代码，或打包后的代码
   /Cannot access ['"]?[Ww]?['"]? before initialization/i,
-  /ReferenceError.*before initialization/i,
+  /ReferenceError.*Cannot access.*before initialization/i,
+  /Cannot access ['"]?[A-Za-z0-9_]+['"]? before initialization/i,
   // 其他第三方服务错误（根据需要添加）
 ];
 

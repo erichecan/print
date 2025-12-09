@@ -16,7 +16,7 @@ import dynamic from 'next/dynamic';
 import SortSelect from './SortSelect';
 // [2025-12-09 14:45:00] 导入安全的数据获取和序列化工具
 import { safeFetch, HttpError, TimeoutError, NetworkError } from '@/lib/fetchers/safeFetch';
-import { ensureSerializable } from '@/lib/serialize';
+import { cleanForSerialization } from '@/lib/serialize';
 
 // [2025-01-27 16:45:00] 客户端筛选组件
 const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
@@ -267,20 +267,12 @@ async function fetchProducts(searchParams: SearchParams) {
       retryDelay: 1000, // 重试延迟 1 秒
     });
 
-    // [2025-12-09 22:35:00] 序列化检查可能会抛出错误，需要捕获
-    // 如果序列化检查失败，只记录警告，不阻止渲染
-    try {
-      ensureSerializable(data);
-    } catch (serializeError) {
-      // [2025-12-09 22:35:00] 序列化错误不应该阻止页面渲染，记录警告即可
-      console.warn('[ProductsPage] Serialization check failed for products:', {
-        error: serializeError instanceof Error ? serializeError.message : 'Unknown error',
-        url,
-      });
-      // 继续返回数据，让 React 处理
-    }
+    // [2025-12-09 22:40:00] 清理数据，确保可序列化
+    // 使用 cleanForSerialization 主动清理，而不是只检查
+    // 这样可以确保传递给 React 的数据始终可序列化，避免 RSC 序列化错误
+    const cleanedData = cleanForSerialization(data);
 
-    return data;
+    return cleanedData;
   } catch (error: unknown) {
     // [2025-12-09 14:45:00] 详细错误日志，包含错误类型
     if (error instanceof HttpError) {
@@ -327,24 +319,16 @@ async function fetchCollections() {
       retries: 1,
     });
     
-    // [2025-12-09 22:35:00] 确保数据是数组且可序列化
+    // [2025-12-09 22:40:00] 确保数据是数组
     if (!Array.isArray(data)) {
       console.warn('[ProductsPage] Collections API returned non-array:', typeof data);
       return [] as Collection[];
     }
     
-    // [2025-12-09 22:35:00] 序列化检查可能会抛出错误，需要捕获
-    try {
-      ensureSerializable(data);
-    } catch (serializeError) {
-      // [2025-12-09 22:35:00] 序列化错误不应该阻止页面渲染，记录警告即可
-      console.warn('[ProductsPage] Serialization check failed for collections:', {
-        error: serializeError instanceof Error ? serializeError.message : 'Unknown error',
-      });
-      // 继续返回数据，让 React 处理
-    }
+    // [2025-12-09 22:40:00] 清理数据，确保可序列化
+    const cleanedData = cleanForSerialization(data);
     
-    return data;
+    return cleanedData as Collection[];
   } catch (error: unknown) {
     // [2025-12-09 14:45:00] 集合获取失败不影响产品列表显示，但记录详细错误
     if (error instanceof HttpError) {
