@@ -42,12 +42,22 @@ export function getFrontendApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
   
   if (envUrl) {
-    // 生产环境运行时：严格检查 localhost
-    if (isProduction && containsLocalhost(envUrl)) {
+    // [2025-12-09] 修复：在浏览器环境中，如果检测到 localhost，自动回退到相对路径
+    // 这是因为 NEXT_PUBLIC_* 变量在构建时内联，如果构建时未设置正确的值，就会使用 localhost
+    // 在浏览器环境中，我们可以安全地回退到相对路径，通过 Next.js API 路由代理
+    if (typeof window !== 'undefined' && isProduction && containsLocalhost(envUrl)) {
+      console.warn('[Env Config] ⚠️ 检测到 localhost API 地址，自动回退到相对路径 /api');
+      console.warn('[Env Config] 提示：下次部署时请在构建时设置正确的 NEXT_PUBLIC_API_URL 环境变量');
+      return '/api';
+    }
+    
+    // 服务端环境（SSR）：如果检测到 localhost，抛出错误（因为服务端需要知道真实的后端地址）
+    if (typeof window === 'undefined' && isProduction && containsLocalhost(envUrl)) {
       const errorMsg = `生产环境 API 配置错误：NEXT_PUBLIC_API_URL 包含 localhost (${envUrl})。请设置正确的生产环境 API 服务器地址。`;
       console.error('[Env Config] ❌', errorMsg);
       throw new Error(errorMsg);
     }
+    
     return normalizeApiUrl(envUrl);
   }
   
