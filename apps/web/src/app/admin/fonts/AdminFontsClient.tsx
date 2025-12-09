@@ -182,12 +182,11 @@ export default function AdminFontsClient({
   }
 
   return (
-    <div style={{ marginTop: 24 }}>
-      <div className="admin-page-header">
-        <div>
-          <h1>Fonts Management</h1>
-          <p className="text-muted">Manage fonts for Design Lab</p>
-        </div>
+    <div>
+      {/* [2025-12-09] 移除重复的 admin-page-header，因为 AdminShell 已经提供了标题 */}
+      {/* 使用简单的操作栏替代 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <p className="text-muted" style={{ margin: 0 }}>Manage fonts for Design Lab</p>
         <div className="admin-btn-group">
           <button
             className="btn btn--primary"

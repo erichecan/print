@@ -10,17 +10,20 @@ function normalizeApiUrl(base: string): string {
 }
 
 function getApiBaseUrl(): string {
-  // [2025-12-08 01:20:00] 优先使用环境变量
-  const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL;
+  // [2025-12-09] 优先使用环境变量
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
   const isDevelopment = process.env.NODE_ENV === 'development';
   
-  // [2025-12-08 01:20:00] 如果环境变量存在，检查是否包含 localhost（生产环境不允许）
+  // [2025-12-09] 如果环境变量存在，检查是否包含 localhost（生产环境不允许）
   if (envUrl) {
-    // [2025-12-08 01:20:00] 生产环境如果检测到 localhost，使用硬编码后端地址
+    // 生产环境不允许 localhost
     if (!isDevelopment && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
-      console.warn('[API Config] ⚠️ 生产环境检测到 localhost API 地址，使用硬编码后端地址替代');
-      const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
-      return backendApiUrl;
+      console.error('[API Config] ❌ 错误：生产环境检测到 localhost API 地址！', envUrl);
+      console.error('[API Config] 请设置 NEXT_PUBLIC_API_URL 环境变量指向正确的生产环境 API 服务器');
+      // 在生产环境抛出错误，而不是使用硬编码地址
+      if (typeof window === 'undefined') {
+        throw new Error('生产环境 API 配置错误：检测到 localhost 地址。请设置 NEXT_PUBLIC_API_URL 环境变量。');
+      }
     }
     return normalizeApiUrl(envUrl);
   }
@@ -34,8 +37,7 @@ function getApiBaseUrl(): string {
       return 'http://localhost:3001/api';
     }
     
-    // [2025-12-01 12:45:00] Cloud Run 生产环境兜底：如果检测到是 print-main-frontend 域名，使用前端代理路由
-    // 这是为了解决 Cloud Run 上 NEXT_PUBLIC_API_URL 可能未正确配置的问题
+    // [2025-12-01 12:45:00] Cloud Run 生产环境：使用前端代理路由
     const hostname = window.location.hostname;
     if (hostname.includes('print-main-frontend') && hostname.endsWith('.us-central1.run.app')) {
       // [2025-12-07 13:40:00] 使用前端代理路由，而不是直接连接后端
@@ -44,7 +46,7 @@ function getApiBaseUrl(): string {
       return '/api'; // 使用相对路径，通过 Next.js API 路由代理
     }
     
-    // 生产环境或其他情况，使用同源 URL（避免硬编码 localhost）
+    // 生产环境或其他情况，使用同源 URL
     return normalizeApiUrl(window.location.origin);
   }
 
@@ -54,16 +56,20 @@ function getApiBaseUrl(): string {
     return normalizeApiUrl(deployUrl);
   }
 
-  // [2025-12-08 01:20:00] 生产环境不应该回退到 localhost，应该使用硬编码的后端地址或相对路径
+  // [2025-12-09] 生产环境必须配置环境变量
   if (!isDevelopment) {
-    // [2025-12-08 01:20:00] 生产环境：如果没有配置环境变量，使用硬编码的后端地址
-    // 使用正确的前端域名对应的后端地址
-    const backendApiUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
-    console.warn('[API Config] ⚠️ 生产环境未配置 NEXT_PUBLIC_API_URL，使用硬编码后端地址:', backendApiUrl);
-    return backendApiUrl;
+    const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL、API_BASE_URL 或 NEXT_PUBLIC_API_BASE_URL。';
+    console.error('[API Config] ❌', errorMsg);
+    // SSR 时抛出错误
+    if (typeof window === 'undefined') {
+      throw new Error(errorMsg);
+    }
+    // 浏览器环境回退到相对路径
+    return '/api';
   }
 
   // [2025-01-29 12:30:00] 仅开发环境使用 localhost 作为最终回退
+  console.warn('[API Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:3001/api');
   return 'http://localhost:3001/api';
 }
 

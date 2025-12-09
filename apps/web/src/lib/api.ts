@@ -949,10 +949,15 @@ export const salesOrdersApi = {
     return api<SalesOfflineOrderListResponse>(`/sales/orders${qs ? `?${qs}` : ''}`);
   },
   get: (id: string) =>
-    api<{ order: SalesOfflineOrderDetail }>(`/sales/orders/${id}`).then((res) => res.order),
+    api<{ order: SalesOfflineOrderDetail }>(`/api/sales/orders/${id}`).then((res) => {
+      if (!res || !res.order) {
+        throw new Error('订单不存在或已被删除');
+      }
+      return res.order;
+    }),
   // [2025-12-07 03:00:00] 更新订单阶段
   updateStage: (id: string, data: { stageKey: string; note?: string }) =>
-    api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/sales/orders/${id}/stage`, {
+    api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/api/proxy/sales/orders/${id}/stage`, {
       method: 'PATCH',
       body: data,
     }),

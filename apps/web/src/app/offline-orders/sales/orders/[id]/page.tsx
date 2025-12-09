@@ -59,7 +59,12 @@ export default function SalesOrderDetailPage() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err.message || '加载订单详情失败。');
+          // [2025-12-09] 友好的错误提示
+          if (err.message?.includes('404') || err.message?.includes('不存在') || err.message?.includes('Not Found')) {
+            setError('订单不存在或已被删除。');
+          } else {
+            setError(err.message || '加载订单详情失败，请稍后重试。');
+          }
         }
       } finally {
         if (!cancelled) {
@@ -194,7 +199,48 @@ export default function SalesOrderDetailPage() {
           </div>
         </header>
 
-        {error && <div className="order-detail-error">{error}</div>}
+        {error && (
+          <div className="order-detail-error">
+            <div style={{ fontWeight: 600, marginBottom: '8px' }}>无法加载订单</div>
+            <div>{error}</div>
+            <button
+              type="button"
+              onClick={() => {
+                setError('');
+                setLoading(true);
+                // 重新加载
+                const reloadOrder = async () => {
+                  try {
+                    const detail = await salesOrdersApi.get(orderId!);
+                    setOrder(detail);
+                    setError('');
+                  } catch (err: any) {
+                    if (err.message?.includes('404') || err.message?.includes('不存在') || err.message?.includes('Not Found')) {
+                      setError('订单不存在或已被删除。');
+                    } else {
+                      setError(err.message || '加载订单详情失败，请稍后重试。');
+                    }
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                reloadOrder();
+              }}
+              style={{
+                marginTop: '12px',
+                padding: '8px 16px',
+                backgroundColor: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+              }}
+            >
+              重试
+            </button>
+          </div>
+        )}
 
         {loading || !meta ? (
           <div className="order-detail-loading">
