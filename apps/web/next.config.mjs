@@ -79,7 +79,8 @@ const nextConfig = {
     // [2025-12-09] 修复：统一使用环境变量，移除硬编码地址
     // 构建时允许使用默认值，运行时再检查
     const isDevelopment = process.env.NODE_ENV === 'development';
-    const isBuildTime = !!process.env.NEXT_PHASE; // 构建时 NEXT_PHASE 会被设置
+    // [2025-12-09] 检测是否在构建时：构建时 NEXT_RUNTIME 不存在
+    const isBuildTime = !process.env.NEXT_RUNTIME;
     let apiUrl = process.env.NEXT_PUBLIC_API_URL;
     
     if (!apiUrl) {
