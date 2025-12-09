@@ -27,15 +27,20 @@ export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
   
   try {
-    // [2025-12-07 07:55:00] 简化：直接从 Authorization header 读取 token
+    // [2025-12-09] 修复：同时支持 Cookie 和 Authorization header
+    // 后端 authenticate 中间件会优先从 Cookie 读取 token，如果没有则从 Authorization header 读取
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
     const token = authHeader.replace(/^Bearer\s+/i, '') || null;
+    const cookieHeader = request.headers.get('cookie') || '';
     const hasToken = !!token;
+    const hasCookie = !!cookieHeader;
     
     console.log('[Next.js API Route] Get user request', {
       timestamp,
       hasToken,
+      hasCookie,
       tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
+      cookieKeys: cookieHeader ? cookieHeader.split(';').map(c => c.split('=')[0].trim()).filter(Boolean) : [],
     });
 
     // [2025-12-09] 修复：在运行时获取 API_BASE，确保使用最新的环境变量
@@ -46,15 +51,23 @@ export async function GET(request: NextRequest) {
     console.log('[Next.js API Route] Forwarding to upstream', {
       timestamp,
       url: upstreamUrl,
-      hasToken
+      hasToken,
+      hasCookie
     });
+
+    // [2025-12-09] 修复：同时转发 Cookie 和 Authorization header
+    // 后端 authenticate 中间件会优先从 Cookie 读取 token，如果没有则从 Authorization header 读取
+    const upstreamHeaders: HeadersInit = {};
+    if (cookieHeader) {
+      upstreamHeaders['Cookie'] = cookieHeader;
+    }
+    if (token) {
+      upstreamHeaders['Authorization'] = `Bearer ${token}`;
+    }
 
     const upstream = await fetch(upstreamUrl, {
       method: 'GET',
-      headers: {
-        // [2025-12-07 07:55:00] 只使用 Authorization header
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      },
+      headers: upstreamHeaders,
       cache: 'no-store',
     });
 
@@ -99,14 +112,45 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // [2025-12-02 03:35:00] 记录响应状态
+    // [2025-12-09] 修复：统一错误处理，401 返回结构化 JSON
     if (!upstream.ok) {
       console.error('[Next.js API Route] Upstream error', {
         timestamp,
         status: upstream.status,
         body: responseBody.substring(0, 200),
-        hasToken
+        hasToken,
+        hasCookie
       });
+      
+      // [2025-12-09] 修复：401 错误返回结构化 JSON，便于前端处理
+      if (upstream.status === 401) {
+        let errorData: any;
+        try {
+          errorData = JSON.parse(responseBody);
+        } catch {
+          errorData = { error: 'Not authenticated', code: 'UNAUTHORIZED' };
+        }
+        return NextResponse.json(
+          {
+            error: errorData.error || 'Not authenticated',
+            code: 'UNAUTHORIZED',
+            message: 'Please login to access this resource',
+          },
+          { status: 401, headers: responseHeaders }
+        );
+      }
+      
+      // 其他错误：尝试解析 JSON，如果失败则返回原始文本
+      let errorData: any;
+      try {
+        errorData = JSON.parse(responseBody);
+      } catch {
+        errorData = { error: responseBody || upstream.statusText };
+      }
+      return NextResponse.json(
+        errorData,
+        { status: upstream.status, headers: responseHeaders }
+      );
     } else {
       console.log('[Next.js API Route] Upstream success', {
         timestamp,

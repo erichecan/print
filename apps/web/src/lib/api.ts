@@ -748,18 +748,21 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
   
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
   
-  // [2025-12-07 07:55:00] 从 localStorage 读取 token 并添加到 Authorization header
+  // [2025-12-09] 修复：同时支持 Cookie 和 Authorization header
+  // 从 localStorage 读取 token 并添加到 Authorization header
   const token = getToken();
   
   const config: RequestInit = {
     method,
     headers: {
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
-      // [2025-12-07 07:55:00] 如果存在 token，添加到 Authorization header
+      // [2025-12-09] 修复：如果存在 token，添加到 Authorization header
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...headers,
     },
-    // [2025-12-07 07:55:00] 不再需要 credentials: 'include'（不使用 Cookie）
+    // [2025-12-09] 修复：添加 credentials: 'include' 以传递 Cookie
+    // 后端 authenticate 中间件会优先从 Cookie 读取 token，如果没有则从 Authorization header 读取
+    credentials: 'include',
   };
   
   if (body && method !== 'GET') {
