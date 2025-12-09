@@ -267,8 +267,18 @@ async function fetchProducts(searchParams: SearchParams) {
       retryDelay: 1000, // 重试延迟 1 秒
     });
 
-    // [2025-12-09 14:45:00] 确保数据可序列化
-    ensureSerializable(data);
+    // [2025-12-09 22:35:00] 序列化检查可能会抛出错误，需要捕获
+    // 如果序列化检查失败，只记录警告，不阻止渲染
+    try {
+      ensureSerializable(data);
+    } catch (serializeError) {
+      // [2025-12-09 22:35:00] 序列化错误不应该阻止页面渲染，记录警告即可
+      console.warn('[ProductsPage] Serialization check failed for products:', {
+        error: serializeError instanceof Error ? serializeError.message : 'Unknown error',
+        url,
+      });
+      // 继续返回数据，让 React 处理
+    }
 
     return data;
   } catch (error: unknown) {
@@ -310,14 +320,31 @@ async function fetchCollections() {
   try {
     const url = buildApiUrl('/collections', {});
     // [2025-12-09 14:45:00] 使用 safeFetch 统一错误处理
-    const data = await safeFetch<{ data: Collection[] }>(url, {
+    // [2025-12-09 22:35:00] 修复：后端直接返回数组，不是 { data: Collection[] } 格式
+    const data = await safeFetch<Collection[]>(url, {
       cache: 'no-store',
       timeout: 5000, // 5 秒超时
       retries: 1,
     });
     
-    ensureSerializable(data);
-    return data.data || [];
+    // [2025-12-09 22:35:00] 确保数据是数组且可序列化
+    if (!Array.isArray(data)) {
+      console.warn('[ProductsPage] Collections API returned non-array:', typeof data);
+      return [] as Collection[];
+    }
+    
+    // [2025-12-09 22:35:00] 序列化检查可能会抛出错误，需要捕获
+    try {
+      ensureSerializable(data);
+    } catch (serializeError) {
+      // [2025-12-09 22:35:00] 序列化错误不应该阻止页面渲染，记录警告即可
+      console.warn('[ProductsPage] Serialization check failed for collections:', {
+        error: serializeError instanceof Error ? serializeError.message : 'Unknown error',
+      });
+      // 继续返回数据，让 React 处理
+    }
+    
+    return data;
   } catch (error: unknown) {
     // [2025-12-09 14:45:00] 集合获取失败不影响产品列表显示，但记录详细错误
     if (error instanceof HttpError) {
