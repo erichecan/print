@@ -3,12 +3,17 @@
 import { ProductDetail } from '@/components/product/detail/ProductDetail';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
-import { API_BASE_URL } from '@/lib/api-config';
+// [2025-12-09] 修复：不在模块顶层导入 API_BASE_URL，改为在函数内动态导入
 
 // [2025-12-06 21:00:00] 从 API 获取产品信息用于 SEO 元数据 for Issue #154
+// [2025-12-09] 修复：在服务端组件中正确获取 API_BASE_URL
 async function getProductForSEO(slug: string) {
   try {
-    const response = await fetch(`${API_BASE_URL}/products/${slug}`, {
+    // [2025-12-09] 在服务端组件中，使用 getApiBaseUrlValue 确保正确获取环境变量
+    const { getApiBaseUrlValue } = await import('@/lib/api-config');
+    const apiBaseUrl = getApiBaseUrlValue();
+    
+    const response = await fetch(`${apiBaseUrl}/products/${slug}`, {
       next: { revalidate: 3600 }, // 缓存 1 小时
     });
     

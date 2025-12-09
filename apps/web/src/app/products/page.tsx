@@ -9,8 +9,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-11 06:07:23] 使用 Next Image 组件提升性能
-// [2025-11-15 11:20:00] 使用集中管理的 API 配置
-import { API_BASE_URL } from '@/lib/api-config';
+// [2025-12-09] 修复：服务端组件中不再需要导入 API 配置，直接使用相对路径
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
@@ -219,8 +218,13 @@ function mapSortValue(value: string | undefined) {
   }
 }
 
+// [2025-12-09] 修复：在服务端组件中使用相对路径，通过 Next.js API 路由代理
 function buildApiUrl(path: string, params: Record<string, string | undefined>) {
-  const url = new URL(path, API_BASE_URL);
+  // [2025-12-09] 在服务端组件中，使用相对路径 `/api/...`，通过 Next.js API 路由代理到后端
+  // 这样可以利用 Next.js 的 API 路由代理功能，确保 Cookie 和认证正确传递
+  const apiPath = path.startsWith('/') ? path : `/${path}`;
+  const url = new URL(apiPath, 'http://localhost'); // 临时 base 用于构建 URL 和查询参数
+  
   Object.entries(params)
     .filter(([, value]) => Boolean(value))
     .forEach(([key, value]) => {
@@ -228,7 +232,10 @@ function buildApiUrl(path: string, params: Record<string, string | undefined>) {
         url.searchParams.set(key, value);
       }
     });
-  return url.toString();
+  
+  // 返回相对路径格式：/api/products?page=1&limit=12
+  const queryString = url.search;
+  return `/api${apiPath}${queryString}`;
 }
 
 async function fetchProducts(searchParams: SearchParams) {
@@ -248,24 +255,74 @@ async function fetchProducts(searchParams: SearchParams) {
     order,
   });
 
-  const response = await fetch(url, {
-    cache: 'no-store',
-  });
+  // [2025-12-09] 修复：在服务端组件中使用 fetch，确保正确处理错误
+  try {
+    // [2025-12-09] 创建超时控制器（兼容性处理）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 秒超时
+    
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch products (${response.status})`);
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error('[ProductsPage] Failed to fetch products:', {
+        status: response.status,
+        statusText: response.statusText,
+        url,
+        error: errorText.substring(0, 200),
+      });
+      throw new Error(`Failed to fetch products (${response.status}): ${response.statusText}`);
+    }
+
+    const data = await response.json() as ProductsResponse;
+    return data;
+  } catch (error: any) {
+    // [2025-12-09] 记录详细错误信息，便于调试
+    if (error.name === 'AbortError') {
+      console.error('[ProductsPage] Request timeout:', { url });
+      throw new Error('Request timeout: Failed to fetch products within 10 seconds');
+    }
+    console.error('[ProductsPage] Error fetching products:', {
+      url,
+      error: error?.message || 'Unknown error',
+      stack: error?.stack,
+    });
+    throw error;
   }
-
-  return (await response.json()) as ProductsResponse;
 }
 
 async function fetchCollections() {
-  const url = buildApiUrl('/collections', {});
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) {
+  try {
+    const url = buildApiUrl('/collections', {});
+    // [2025-12-09] 创建超时控制器（兼容性处理）
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超时
+    
+    const response = await fetch(url, {
+      cache: 'no-store',
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    if (!response.ok) {
+      console.warn('[ProductsPage] Failed to fetch collections:', response.status);
+      return [] as Collection[];
+    }
+    return (await response.json()) as Collection[];
+  } catch (error: any) {
+    // [2025-12-09] 集合获取失败不影响产品列表显示
+    if (error.name === 'AbortError') {
+      console.warn('[ProductsPage] Request timeout while fetching collections');
+    } else {
+      console.warn('[ProductsPage] Error fetching collections:', error?.message || 'Unknown error');
+    }
     return [] as Collection[];
   }
-  return (await response.json()) as Collection[];
 }
 
 function buildRoute(searchParams: SearchParams, overrides: Partial<SearchParams>) {
@@ -318,11 +375,20 @@ export default async function ProductsPage({
   let fetchError: string | null = null;
 
   // [2025-11-16 16:28:00] 解耦列表与集合请求，避免 /collections 404 影响产品渲染
+  // [2025-12-09] 改进错误处理：提供更详细的错误信息
   const productsPromise = fetchProducts(normalizedParams).catch((error: unknown) => {
-    fetchError = error instanceof Error ? error.message : 'Unexpected error loading products.';
+    const errorMessage = error instanceof Error ? error.message : 'Unexpected error loading products.';
+    fetchError = errorMessage;
+    console.error('[ProductsPage] Failed to fetch products:', {
+      params: normalizedParams,
+      error: errorMessage,
+    });
     return null;
   });
-  const collectionsPromise = fetchCollections().catch(() => [] as Collection[]);
+  const collectionsPromise = fetchCollections().catch((error: unknown) => {
+    console.warn('[ProductsPage] Failed to fetch collections:', error instanceof Error ? error.message : 'Unknown error');
+    return [] as Collection[];
+  });
 
   [productsResponse, collections] = await Promise.all([productsPromise, collectionsPromise]);
 
@@ -365,6 +431,49 @@ export default async function ProductsPage({
   const currentCategoryName = currentCollection 
     ? collections.find(c => c.slug === currentCollection)?.name || 'T-shirts'
     : 'T-shirts';
+
+  // [2025-12-09] 错误状态：如果获取产品失败，显示友好的错误提示
+  if (fetchError && !productsResponse) {
+    return (
+      <div className="catalog-page">
+        <section className="plp-new">
+          <div className="container" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
+            <h1 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#1a202c' }}>无法加载商品列表</h1>
+            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>{fetchError}</p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <Link
+                href="/products"
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                }}
+              >
+                重试
+              </Link>
+              <Link
+                href="/"
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  backgroundColor: 'transparent',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                }}
+              >
+                返回首页
+              </Link>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="catalog-page">

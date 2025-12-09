@@ -68,26 +68,53 @@ export default function ProductsClient() {
     'multiAddress', 'noMinimum', 'category'
   ];
 
-  const apiUrl = new URL(`${API_BASE_URL}/products`);
-  apiUrl.searchParams.set('page', page);
-  apiUrl.searchParams.set('limit', limit);
-  if (search) apiUrl.searchParams.set('search', search);
-  if (collection) apiUrl.searchParams.set('collection', collection);
-  if (sortField) apiUrl.searchParams.set('sort', sortField);
-  if (sortOrder) apiUrl.searchParams.set('order', sortOrder);
-  
-  // [2025-11-28 11:00:00] 添加所有筛选参数到 API 请求
-  filterParams.forEach(filterName => {
-    const filterValue = params.get(filterName);
-    if (filterValue) {
-      apiUrl.searchParams.set(filterName, filterValue);
-    }
-  });
-  
-  // [2025-01-27 16:55:00] 开发阶段允许无库存商品也显示
-  apiUrl.searchParams.set('includeOutOfStock', 'true');
+  // [2025-12-09] 修复：构建 API URL，支持相对路径和绝对路径
+  let apiUrl: string;
+  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+    // 绝对 URL：使用 new URL
+    const url = new URL('/products', API_BASE_URL);
+    url.searchParams.set('page', page);
+    url.searchParams.set('limit', limit);
+    if (search) url.searchParams.set('search', search);
+    if (collection) url.searchParams.set('collection', collection);
+    if (sortField) url.searchParams.set('sort', sortField);
+    if (sortOrder) url.searchParams.set('order', sortOrder);
+    
+    // [2025-11-28 11:00:00] 添加所有筛选参数到 API 请求
+    filterParams.forEach(filterName => {
+      const filterValue = params.get(filterName);
+      if (filterValue) {
+        url.searchParams.set(filterName, filterValue);
+      }
+    });
+    
+    // [2025-01-27 16:55:00] 开发阶段允许无库存商品也显示
+    url.searchParams.set('includeOutOfStock', 'true');
+    apiUrl = url.toString();
+  } else {
+    // 相对路径：直接拼接
+    const searchParams = new URLSearchParams();
+    searchParams.set('page', page);
+    searchParams.set('limit', limit);
+    if (search) searchParams.set('search', search);
+    if (collection) searchParams.set('collection', collection);
+    if (sortField) searchParams.set('sort', sortField);
+    if (sortOrder) searchParams.set('order', sortOrder);
+    
+    // [2025-11-28 11:00:00] 添加所有筛选参数到 API 请求
+    filterParams.forEach(filterName => {
+      const filterValue = params.get(filterName);
+      if (filterValue) {
+        searchParams.set(filterName, filterValue);
+      }
+    });
+    
+    // [2025-01-27 16:55:00] 开发阶段允许无库存商品也显示
+    searchParams.set('includeOutOfStock', 'true');
+    apiUrl = `${API_BASE_URL}/products?${searchParams.toString()}`;
+  }
 
-  const { data, error, isLoading } = useSWR<ProductsResponse>(apiUrl.toString(), fetcher);
+  const { data, error, isLoading } = useSWR<ProductsResponse>(apiUrl, fetcher);
 
   // [2025-01-28 12:35:00] 为每个产品获取促销活动信息
   const productIds = data?.data?.map((p) => p.id) || [];
@@ -119,16 +146,50 @@ export default function ProductsClient() {
     }
   );
 
+  // [2025-12-09] 改进错误处理和空状态显示
   if (isLoading) {
-    return <div className="results-empty"><h2>Loading products…</h2></div>;
+    return (
+      <div className="results-empty" style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: '#1a202c' }}>Loading products…</h2>
+        <p style={{ color: '#6b7280' }}>Please wait while we fetch the latest products.</p>
+      </div>
+    );
   }
+  
   if (error) {
-    return <div className="results-empty"><h2>We hit a snag loading products</h2><p>Failed to fetch products ({String(error.message)})</p></div>;
+    return (
+      <div className="results-empty" style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: '#dc2626' }}>We hit a snag loading products</h2>
+        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+          Failed to fetch products: {String(error.message || 'Unknown error')}
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
+  
   const products = data?.data ?? [];
 
   if (products.length === 0) {
-    return <div className="results-empty"><h2>No products found</h2><p>Try expanding your filters or enter a different search.</p></div>;
+    return (
+      <div className="results-empty" style={{ padding: '3rem 1rem', textAlign: 'center' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: '#1a202c' }}>No products found</h2>
+        <p style={{ color: '#6b7280' }}>Try expanding your filters or enter a different search.</p>
+      </div>
+    );
   }
 
   // [2025-01-27 17:05:00] 颜色映射表（用于将颜色名称映射到hex值，如果没有colorHex）
