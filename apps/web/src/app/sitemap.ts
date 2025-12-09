@@ -4,7 +4,6 @@
  * [2025-12-06 21:00:00] 添加动态产品页面 for Issue #154
  */
 import { MetadataRoute } from 'next';
-import { API_BASE_URL } from '@/lib/api-config';
 
 // [2025-12-01 12:45:00] 获取站点基础 URL
 function getSiteUrl(): string {
@@ -22,11 +21,16 @@ function getSiteUrl(): string {
 // [2025-12-09] 构建时如果无法获取产品，返回空数组（只包含静态页面）
 async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: string }>> {
   try {
+    // [2025-12-09] 构建时直接使用环境变量，避免 api-config.ts 的构建时检查
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || 'http://localhost:3001';
+    const normalizedUrl = apiBaseUrl.replace(/\/+$/, '');
+    const apiUrl = normalizedUrl.endsWith('/api') ? normalizedUrl : `${normalizedUrl}/api`;
+    
     // [2025-12-09] 构建时可能无法访问后端 API，使用 try-catch 处理
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超时
     
-    const response = await fetch(`${API_BASE_URL}/products?limit=1000&includeOutOfStock=false`, {
+    const response = await fetch(`${apiUrl}/products?limit=1000&includeOutOfStock=false`, {
       next: { revalidate: 3600 }, // 缓存 1 小时
       signal: controller.signal,
     });
