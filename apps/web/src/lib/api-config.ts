@@ -13,14 +13,16 @@ function getApiBaseUrl(): string {
   // [2025-12-09] 优先使用环境变量
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
   const isDevelopment = process.env.NODE_ENV === 'development';
+  // [2025-12-09] 检测是否在构建时：构建时 NEXT_PHASE 会被设置
+  const isBuildTime = !!process.env.NEXT_PHASE;
   
   // [2025-12-09] 如果环境变量存在，检查是否包含 localhost（生产环境不允许）
   if (envUrl) {
-    // 生产环境不允许 localhost
-    if (!isDevelopment && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
+    // [2025-12-09] 构建时允许 localhost，运行时再检查
+    if (!isDevelopment && !isBuildTime && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1'))) {
       console.error('[API Config] ❌ 错误：生产环境检测到 localhost API 地址！', envUrl);
       console.error('[API Config] 请设置 NEXT_PUBLIC_API_URL 环境变量指向正确的生产环境 API 服务器');
-      // 在生产环境抛出错误，而不是使用硬编码地址
+      // 在生产环境运行时抛出错误
       if (typeof window === 'undefined') {
         throw new Error('生产环境 API 配置错误：检测到 localhost 地址。请设置 NEXT_PUBLIC_API_URL 环境变量。');
       }
@@ -56,11 +58,11 @@ function getApiBaseUrl(): string {
     return normalizeApiUrl(deployUrl);
   }
 
-  // [2025-12-09] 生产环境必须配置环境变量
-  if (!isDevelopment) {
+  // [2025-12-09] 构建时允许回退到默认值，运行时再检查
+  if (!isDevelopment && !isBuildTime) {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL、API_BASE_URL 或 NEXT_PUBLIC_API_BASE_URL。';
     console.error('[API Config] ❌', errorMsg);
-    // SSR 时抛出错误
+    // SSR 运行时抛出错误
     if (typeof window === 'undefined') {
       throw new Error(errorMsg);
     }
@@ -73,9 +75,22 @@ function getApiBaseUrl(): string {
   return 'http://localhost:3001/api';
 }
 
-export const API_BASE_URL = getApiBaseUrl();
+// [2025-12-09] 修复：延迟计算 API_BASE_URL，避免在模块顶层执行时出现问题
+// 在服务端组件中使用时，确保正确获取环境变量
+let cachedApiBaseUrl: string | null = null;
 
-// [2025-01-29 12:30:00] 配置检查和日志输出
+export function getApiBaseUrlValue(): string {
+  if (cachedApiBaseUrl === null) {
+    cachedApiBaseUrl = getApiBaseUrl();
+  }
+  return cachedApiBaseUrl;
+}
+
+// [2025-12-09] 保持向后兼容，但使用函数获取值
+// 注意：在服务端组件中，建议使用 getApiBaseUrlValue() 而不是直接使用 API_BASE_URL
+export const API_BASE_URL = getApiBaseUrlValue();
+
+// [2025-12-09] 配置检查和日志输出（仅在浏览器环境）
 if (typeof window !== 'undefined') {
   if (process.env.NODE_ENV === 'development') {
     // 开发环境：输出配置信息用于调试
@@ -87,6 +102,7 @@ if (typeof window !== 'undefined') {
       console.error('[API Config] ⚠️ 警告：生产环境检测到 localhost API 地址！');
       console.error('[API Config] 请设置 NEXT_PUBLIC_API_URL 环境变量指向生产环境的 API 服务器');
       console.error('[API Config] 当前 API_BASE_URL:', API_BASE_URL);
+      // [2025-12-09] 生产环境不允许 localhost，但不在浏览器环境抛出错误（避免阻塞页面）
     }
   }
 }
