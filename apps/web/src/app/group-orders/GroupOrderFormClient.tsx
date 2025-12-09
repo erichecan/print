@@ -6,6 +6,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
 import './group-orders.css';
 
 export function GroupOrderFormClient() {
@@ -90,7 +91,10 @@ export function GroupOrderFormClient() {
             <Link href="/design-gallery" className="group-order-btn group-order-btn--primary">
               Use an existing design
             </Link>
-            <Link href="/design-lab-native.html" className="group-order-btn group-order-btn--secondary">
+            <Link 
+              href={buildNewDesignUrl({ variantId: 'default', referrer: 'group_order' })} 
+              className="group-order-btn group-order-btn--secondary"
+            >
               Start a new design
             </Link>
           </div>
@@ -173,7 +177,10 @@ export function GroupOrderFormClient() {
             <Link href="/design-gallery" className="group-order-btn group-order-btn--primary group-order-btn--large">
               Use an existing design
             </Link>
-            <Link href="/design-lab-native.html" className="group-order-btn group-order-btn--secondary group-order-btn--large">
+            <Link 
+              href={buildNewDesignUrl({ variantId: 'default', referrer: 'group_order' })} 
+              className="group-order-btn group-order-btn--secondary group-order-btn--large"
+            >
               Start a new design
             </Link>
           </div>

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/useToast';
+import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
 
 interface ProductVariant {
   id: string;
@@ -297,16 +298,33 @@ export function PixelPerfectProductDetail() {
     }
   }, [selectedVariant, quantity, addItem, success, showError]);
 
-  // 开始设计
+  // [2025-12-08 14:40:00] 开始设计 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {
     if (!selectedVariant) {
       showError('请选择颜色和尺寸');
       return;
     }
-    persistDesignLabPayload(selectedVariant);
-    // [2025-01-28 04:00:00] 跳转到原生 HTML 版本的 Design Lab（功能完整）
-    window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
-  }, [selectedVariant, showError, persistDesignLabPayload]);
+
+    try {
+      // [2025-12-08 14:40:00] 保存设计器载荷（用于兼容）
+      persistDesignLabPayload(selectedVariant);
+
+      // [2025-12-08 14:40:00] 构建新的 Design Lab URL
+      const designUrl = buildNewDesignUrl({
+        variantId: selectedVariant.id,
+        productId: product?.id,
+        color: selectedVariant.color || undefined,
+        size: selectedVariant.size || undefined,
+        referrer: 'product_detail',
+      });
+
+      // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航
+      router.push(designUrl);
+    } catch (error) {
+      console.error('[PixelPerfectProductDetail] Failed to build design URL:', error);
+      showError('无法开始设计：缺少必要参数。请刷新页面后重试。');
+    }
+  }, [selectedVariant, showError, persistDesignLabPayload, router, product]);
 
   // 加载状态
   if (loadingState.isLoading) {

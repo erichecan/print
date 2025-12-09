@@ -5,6 +5,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
 import Link from 'next/link';
 import styles from './BuyBox.module.css';
 
@@ -131,6 +133,7 @@ export function BuyBox({
   }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, quantity, price, onBuyNow]);
 
   // [2025-01-28 04:00:00] 开始设计处理函数 - 跳转到原生 HTML 版本（功能完整）
+  // [2025-12-08 14:40:00] 开始设计处理函数 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {
     const payload = {
       productId: 'prod-001',
@@ -142,13 +145,18 @@ export function BuyBox({
     };
     
     console.log('[Start Design]', payload);
+    
+    // [2025-12-08 14:40:00] 如果提供了自定义处理函数，使用它
     if (onStartDesign) {
       onStartDesign(payload);
-    } else {
-      // [2025-01-28 04:00:00] 默认跳转到原生 HTML 版本的 Design Lab（功能完整）
-      window.location.href = `/design-lab-native.html`;
+      return;
     }
-  }, [title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, onStartDesign]);
+
+    // [2025-12-08 14:40:00] 默认行为：跳转到新的 Design Lab 页面
+    // 注意：BuyBox 组件可能没有 variantId，所以直接跳转到 Design Lab 首页
+    // 实际使用中，应该通过 onStartDesign 回调传递完整的 variantId
+    router.push('/design-lab');
+  }, [title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, onStartDesign, router]);
 
   const formatPrice = (amount: number) => {
     return new Intl.NumberFormat('en-CA', {

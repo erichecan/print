@@ -12,6 +12,7 @@ import { productsApi } from '@/lib/api';
 import { useAddToCart } from '@/hooks/useAddToCart';
 import { useBuyNow } from '@/hooks/useBuyNow';
 import { useToast } from '@/hooks/useToast';
+import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
 import { SocialShareMenu, ShareConfig } from '@/components/social-share';
 import { StructuredData } from '@/components/seo/StructuredData';
 import { generateProductSchema } from '@/lib/seo';
@@ -167,13 +168,28 @@ export function ProductDetailContent() {
     fetchRelated();
   }, [slug, product]);
 
-  // [2025-01-28 04:00:00] 开始设计 - 跳转到原生 HTML 版本的 Design Lab（功能完整）
+  // [2025-12-08 14:40:00] 开始设计 - 跳转到新的 Design Lab 页面
   const handleStartDesign = () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
       return;
     }
-    window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
+
+    try {
+      const designUrl = buildNewDesignUrl({
+        variantId: selectedVariant.id,
+        productId: product?.id,
+        color: selectedVariant.color || undefined,
+        size: selectedVariant.size || undefined,
+        referrer: 'product_detail',
+      });
+      
+      // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航
+      router.push(designUrl);
+    } catch (error) {
+      console.error('[ProductDetailContent] Failed to build design URL:', error);
+      showError('无法开始设计：缺少必要参数。请刷新页面后重试。');
+    }
   };
 
   // [2025-12-08] 重构：添加到购物车

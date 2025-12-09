@@ -6,6 +6,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
 import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
 
@@ -76,7 +78,7 @@ export function HomeClient() {
       title: "We'll Do the Work",
       description: 'Ship to one place or every place. Choose your design and we handle the rest—from packing to delivery tracking.',
       ctaLabel: 'Start Designing',
-      ctaHref: '/design-lab-native.html', // [2025-01-28 20:05:00] 使用和商品详情页相同的设计链接格式
+      ctaHref: '/design-lab', // [2025-12-08 14:40:00] 使用新的 Design Lab 路径
       ctaVariant: 'outline',
     },
   ];
@@ -93,8 +95,8 @@ export function HomeClient() {
               {heroSubtitle}
             </p>
             <div className="hero__actions">
-              {/* [2025-01-28 20:05:00] 使用和商品详情页相同的设计链接格式 */}
-              <Link className="btn" href="/design-lab-native.html">
+              {/* [2025-12-08 14:40:00] 使用新的 Design Lab 路径 */}
+              <Link className="btn" href="/design-lab">
                 Start Designing
               </Link>
               <Link className="btn btn--outline" href="/products">
