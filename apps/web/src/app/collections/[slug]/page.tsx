@@ -8,8 +8,7 @@
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-11 06:06:54] 使用 Next Image 提升性能
 import { notFound, redirect } from 'next/navigation';
-// [2025-11-15 11:20:00] 使用集中管理的 API 配置
-import { API_BASE_URL } from '@/lib/api-config';
+// [2025-12-09] 修复：使用相对路径，通过 Next.js API 路由代理
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
@@ -55,20 +54,43 @@ const currencyFormatter = new Intl.NumberFormat('en-CA', {
   currency: 'CAD',
 });
 
+// [2025-12-09] 修复：使用相对路径，通过 Next.js API 路由代理
 async function fetchCollection(slug: string) {
-  const response = await fetch(`${API_BASE_URL}/collections/${slug}`, {
-    cache: 'no-store',
-  });
+  // [2025-12-09] 使用相对路径，通过 Next.js API 路由代理到后端
+  // 这样可以确保在服务端组件中正确获取数据，避免环境变量问题
+  const apiUrl = `/api/collections/${slug}`;
+  
+  try {
+    const response = await fetch(apiUrl, {
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  if (response.status === 404) {
-    return null;
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[CollectionPage] Failed to fetch collection:', {
+        slug,
+        status: response.status,
+        error: errorText.substring(0, 200),
+      });
+      throw new Error(`Failed to load collection (${response.status})`);
+    }
+
+    return (await response.json()) as CollectionDetail;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[CollectionPage] Error fetching collection:', {
+      slug,
+      error: errorMessage,
+    });
+    throw error;
   }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load collection (${response.status})`);
-  }
-
-  return (await response.json()) as CollectionDetail;
 }
 
 // [2025-01-27 14:25:00] 为静态导出模式添加 generateStaticParams

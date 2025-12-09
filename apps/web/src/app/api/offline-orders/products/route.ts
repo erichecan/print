@@ -3,14 +3,29 @@
  * [2025-01-27 15:30:00] 代理公开的产品列表请求到后端
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendApiBase } from '@/lib/api-route-config';
+import { getBackendApiBaseUrl } from '@/config/env';
 
-const API_BASE = getBackendApiBase();
+// [2025-12-09] 修复：使用统一的环境变量配置模块，延迟获取
+function getApiBase(): string {
+  try {
+    return getBackendApiBaseUrl();
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[API Offline Orders Products] Failed to get backend API base:', errorMessage);
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
+    }
+    return 'http://localhost:3001/api';
+  }
+}
 
 export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
   
   try {
+    // [2025-12-09] 修复：在运行时获取 API_BASE，确保使用最新的环境变量
+    const API_BASE = getApiBase();
+    
     // 构建后端 URL
     const upstreamUrl = `${API_BASE}/offline-orders/products`;
     

@@ -5,9 +5,21 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 
-import { getBackendApiBase } from '@/lib/api-route-config';
+import { getBackendApiBaseUrl } from '@/config/env';
 
-const API_BASE = getBackendApiBase();
+// [2025-12-09] 修复：使用统一的环境变量配置模块，延迟获取
+function getApiBase(): string {
+  try {
+    return getBackendApiBaseUrl();
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[API Auth Login] Failed to get backend API base:', errorMessage);
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
+    }
+    return 'http://localhost:3001/api';
+  }
+}
 
 export async function POST(request: Request) {
   const timestamp = new Date().toISOString();
@@ -26,6 +38,9 @@ export async function POST(request: Request) {
       email: body.email ? body.email.substring(0, 3) + '***' : 'missing'
     });
 
+    // [2025-12-09] 修复：在运行时获取 API_BASE，确保使用最新的环境变量
+    const API_BASE = getApiBase();
+    
     // [2025-12-02 03:35:00] 转发请求到后端
     const upstreamUrl = `${API_BASE}/auth/login`;
     console.log('[Next.js API Route] Forwarding to upstream', {

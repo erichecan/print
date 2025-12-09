@@ -432,43 +432,24 @@ export default async function ProductsPage({
     ? collections.find(c => c.slug === currentCollection)?.name || 'T-shirts'
     : 'T-shirts';
 
-  // [2025-12-09] 错误状态：如果获取产品失败，显示友好的错误提示
+  // [2025-12-09] 错误状态：如果获取产品失败，显示统一的错误状态组件
   if (fetchError && !productsResponse) {
+    const ErrorState = dynamic(() => import('@/components/ErrorState').then(mod => ({ default: mod.ErrorState })), { ssr: false });
     return (
       <div className="catalog-page">
         <section className="plp-new">
-          <div className="container" style={{ padding: '4rem 2rem', textAlign: 'center' }}>
-            <h1 style={{ fontSize: '2rem', marginBottom: '1rem', color: '#1a202c' }}>无法加载商品列表</h1>
-            <p style={{ color: '#6b7280', marginBottom: '2rem' }}>{fetchError}</p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <Link
-                href="/products"
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                重试
-              </Link>
-              <Link
-                href="/"
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  backgroundColor: 'transparent',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                }}
-              >
-                返回首页
-              </Link>
-            </div>
+          <div className="container">
+            <ErrorState
+              error={fetchError}
+              title="无法加载商品列表"
+              retryable={true}
+              onRetry={() => {
+                // 刷新页面以重试
+                if (typeof window !== 'undefined') {
+                  window.location.reload();
+                }
+              }}
+            />
           </div>
         </section>
       </div>

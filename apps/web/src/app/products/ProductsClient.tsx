@@ -10,7 +10,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 import Link from 'next/link';
 import Image from 'next/image';
-import { API_BASE_URL } from '@/lib/api-config';
+import { getFrontendApiBaseUrl } from '@/config/env';
 import { useSearchParams } from 'next/navigation';
 import { Pagination } from '@/components/ui/Pagination'; // [2025-01-27 16:40:00] 分页组件
 import { promotionApi, Promotion } from '@/lib/api'; // [2025-01-28 12:35:00] 促销活动 API
@@ -68,9 +68,11 @@ export default function ProductsClient() {
     'multiAddress', 'noMinimum', 'category'
   ];
 
-  // [2025-12-09] 修复：构建 API URL，支持相对路径和绝对路径
+  // [2025-12-09] 修复：使用统一的环境变量配置，在运行时获取
+  // [2025-12-09] 构建 API URL，支持相对路径和绝对路径
+  const apiBaseUrl = getFrontendApiBaseUrl();
   let apiUrl: string;
-  if (API_BASE_URL.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
+  if (apiBaseUrl.startsWith('http://') || API_BASE_URL.startsWith('https://')) {
     // 绝对 URL：使用 new URL
     const url = new URL('/products', API_BASE_URL);
     url.searchParams.set('page', page);
@@ -111,7 +113,7 @@ export default function ProductsClient() {
     
     // [2025-01-27 16:55:00] 开发阶段允许无库存商品也显示
     searchParams.set('includeOutOfStock', 'true');
-    apiUrl = `${API_BASE_URL}/products?${searchParams.toString()}`;
+    apiUrl = `${apiBaseUrl}/products?${searchParams.toString()}`;
   }
 
   const { data, error, isLoading } = useSWR<ProductsResponse>(apiUrl, fetcher);

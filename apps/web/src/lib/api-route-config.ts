@@ -1,18 +1,22 @@
 /**
  * API Route Configuration
  * [2025-01-29 23:25:00] 统一管理 Next.js API 路由的后端 URL 配置
- * [2025-12-09] 修复：移除硬编码地址，统一使用环境变量
+ * [2025-12-09] 修复：使用统一的环境变量配置模块
+ * 
+ * @deprecated 请使用 @/config/env 中的 getBackendApiBaseUrl()
+ * 保留此文件以保持向后兼容
  */
 
-// [2025-01-29 12:30:00] 开发环境默认 API 地址
-const DEFAULT_API_BASE_DEV = 'http://localhost:3001/api';
+import { getBackendApiBaseUrl } from '@/config/env';
 
 /**
  * 获取后端 API 基础 URL
- * [2025-01-29 23:25:00] 优先使用环境变量，确保生产环境正确配置
- * [2025-12-09] 修复：移除硬编码地址，统一从环境变量读取
+ * [2025-12-09] 修复：委托给统一的环境变量配置模块
+ * 
+ * @deprecated 请直接使用 getBackendApiBaseUrl() from @/config/env
  */
 export function getBackendApiBase(): string {
+  return getBackendApiBaseUrl();
   const isDevelopment = process.env.NODE_ENV === 'development';
   // [2025-12-09] 检测是否在构建时（Next.js 构建阶段）
   // 构建时允许使用默认值，运行时再严格检查

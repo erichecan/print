@@ -6,18 +6,22 @@ import type { Metadata } from 'next';
 // [2025-12-09] 修复：不在模块顶层导入 API_BASE_URL，改为在函数内动态导入
 
 // [2025-12-06 21:00:00] 从 API 获取产品信息用于 SEO 元数据 for Issue #154
-// [2025-12-09] 修复：在服务端组件中正确获取 API_BASE_URL
+// [2025-12-09] 修复：使用相对路径，通过 Next.js API 路由代理
 async function getProductForSEO(slug: string) {
   try {
-    // [2025-12-09] 在服务端组件中，使用 getApiBaseUrlValue 确保正确获取环境变量
-    const { getApiBaseUrlValue } = await import('@/lib/api-config');
-    const apiBaseUrl = getApiBaseUrlValue();
+    // [2025-12-09] 在服务端组件中，使用相对路径通过 Next.js API 路由代理
+    const apiUrl = `/api/products/${slug}`;
     
-    const response = await fetch(`${apiBaseUrl}/products/${slug}`, {
+    const response = await fetch(apiUrl, {
       next: { revalidate: 3600 }, // 缓存 1 小时
+      cache: 'no-store', // 确保获取最新数据
     });
     
     if (!response.ok) {
+      console.warn('[Product SEO] Failed to fetch product for SEO:', {
+        slug,
+        status: response.status,
+      });
       return null;
     }
     

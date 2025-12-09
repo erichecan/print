@@ -2,16 +2,18 @@
  * Unified API Client
  * [2025-12-09] 统一 API 请求客户端，禁止硬编码 URL
  * 所有 API 请求必须通过此客户端，确保环境变量正确使用
+ * [2025-12-09] 修复：使用统一的环境变量配置模块
  */
 
-import { getApiBaseUrlValue } from './api-config';
+import { getFrontendApiBaseUrl } from '@/config/env';
 
 /**
  * 构建完整的 API URL
  * [2025-12-09] 支持相对路径和绝对路径
  */
 function buildApiUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
-  const apiBase = getApiBaseUrlValue();
+  // [2025-12-09] 修复：使用统一的环境变量配置，在运行时获取
+  const apiBase = getFrontendApiBaseUrl();
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   
   if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {

@@ -3,9 +3,23 @@
  * [2025-12-03 03:30:00] 代理所有 /api/products 请求到后端
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { getBackendApiBase } from '@/lib/api-route-config';
+import { getBackendApiBaseUrl } from '@/config/env';
 
-const API_BASE = getBackendApiBase();
+// [2025-12-09] 修复：使用统一的环境变量配置模块
+// [2025-12-09] 延迟获取 API_BASE，确保在运行时获取正确的环境变量
+function getApiBase(): string {
+  try {
+    return getBackendApiBaseUrl();
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[API Products] Failed to get backend API base:', errorMessage);
+    // [2025-12-09] 如果获取失败，在生产环境抛出错误，开发环境回退到 localhost
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
+    }
+    return 'http://localhost:3001/api';
+  }
+}
 
 export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
@@ -15,6 +29,9 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const queryString = searchParams.toString();
     const fullPath = queryString ? `/products?${queryString}` : '/products';
+    
+    // [2025-12-09] 修复：在运行时获取 API_BASE，确保使用最新的环境变量
+    const API_BASE = getApiBase();
     
     // 构建后端 URL
     const upstreamUrl = `${API_BASE}${fullPath}`;
