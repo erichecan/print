@@ -310,20 +310,20 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         >
           Back
         </button>
-          <button
-            className="dl-modal__btn dl-modal__btn--primary"
-            onClick={() => setCurrentStep('quantity')}
-            disabled={
-              orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6
-            }
+        <button
+          className="dl-modal__btn dl-modal__btn--primary"
+          onClick={() => setCurrentStep('quantity')}
+          disabled={
+            orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6
+          }
             title={
               orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6
                 ? 'Ship to multiple addresses requires at least 6 items'
                 : ''
             }
-          >
-            Continue to Sizes
-          </button>
+        >
+          Continue to Sizes
+        </button>
           {orderingOptions.shipping === 'multiple-addresses' && totalQuantity < 6 && (
             <p className="dl-get-price-flow__validation-hint">
               Only available for orders of 6 or more items
@@ -884,7 +884,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           <h3 className="dl-get-price-flow__order-list-title">YOUR ORDER</h3>
           <div className="dl-get-price-flow__order-item">
             <div className="dl-get-price-flow__order-item-details">
-              <span>Product • Color • {totalQuantity} items</span>
+            <span>Product • Color • {totalQuantity} items</span>
               {orderingOptions.sizesQuantities === 'i-know-sizes' && sizeQuantities.filter(sq => sq.quantity > 0).length > 0 && (
                 <div className="dl-get-price-flow__order-item-sizes">
                   Sizes: {sizeQuantities

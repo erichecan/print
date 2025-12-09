@@ -10,7 +10,9 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function OrderDetailPage({ params }: { params: { orderNumber: string } }) {
-  // [2025-01-27 15:45:00] Next.js 14: params 是同步的
-  return <OrderDetailContent orderNumber={params.orderNumber} />;
+// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+export default async function OrderDetailPage({ params }: { params: Promise<{ orderNumber: string }> | { orderNumber: string } }) {
+  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+  const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+  return <OrderDetailContent orderNumber={resolvedParams.orderNumber} />;
 }

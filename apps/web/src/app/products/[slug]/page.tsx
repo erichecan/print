@@ -34,37 +34,47 @@ async function getProductForSEO(slug: string) {
 
 // [2025-11-19] 生成产品详情页基础 SEO 元数据
 // [2025-12-06 21:00:00] 优化为从 API 获取实际产品信息 for Issue #154
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const product = await getProductForSEO(params.slug);
+// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> | { slug: string } }): Promise<Metadata> {
+  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+  const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+  const slug = resolvedParams.slug;
   
-  if (product) {
-    const productName = product.name || params.slug.replace(/-/g, ' ');
-    const description = product.description || `Custom ${productName} - Design your own custom apparel. Free shipping, satisfaction guaranteed.`;
-    const image = product.images?.[0]?.url || product.imageUrl || 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg';
-    const fullImageUrl = image.startsWith('http') ? image : `https://suvernireplus.com${image}`;
+  try {
+    const product = await getProductForSEO(slug);
     
-    return generateSEOMetadata({
-      title: productName,
-      description: description.substring(0, 160), // 限制描述长度
-      keywords: [
-        productName.toLowerCase(),
-        'custom apparel',
-        'custom t-shirt',
-        product.category?.name?.toLowerCase() || '',
-        product.brand?.name?.toLowerCase() || '',
-      ].filter(Boolean),
-      url: `https://suvernireplus.com/products/${params.slug}`,
-      image: fullImageUrl,
-      type: 'article',
-    });
+    if (product) {
+      const productName = product.name || slug.replace(/-/g, ' ');
+      const description = product.description || `Custom ${productName} - Design your own custom apparel. Free shipping, satisfaction guaranteed.`;
+      const image = product.images?.[0]?.url || product.imageUrl || 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg';
+      const fullImageUrl = image.startsWith('http') ? image : `https://suvernireplus.com${image}`;
+      
+      return generateSEOMetadata({
+        title: productName,
+        description: description.substring(0, 160), // 限制描述长度
+        keywords: [
+          productName.toLowerCase(),
+          'custom apparel',
+          'custom t-shirt',
+          product.category?.name?.toLowerCase() || '',
+          product.brand?.name?.toLowerCase() || '',
+        ].filter(Boolean),
+        url: `https://suvernireplus.com/products/${slug}`,
+        image: fullImageUrl,
+        type: 'article',
+      });
+    }
+  } catch (error) {
+    // [2025-12-09 14:30:00] 如果获取产品信息失败，使用默认元数据
+    console.error('[Product SEO] Error in generateMetadata:', error);
   }
   
   // 回退到默认元数据
   return generateSEOMetadata({
-    title: `商品详情 - ${params.slug.replace(/-/g, ' ')}`,
+    title: `商品详情 - ${slug.replace(/-/g, ' ')}`,
     description: '查看商品详情、价格和定制选项。添加到购物车并开始设计您的定制商品。',
     keywords: ['商品', '定制商品', 'T恤', '卫衣', '服装'],
-    url: `https://suvernireplus.com/products/${params.slug}`,
+    url: `https://suvernireplus.com/products/${slug}`,
     image: 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
     type: 'article',
   });
@@ -75,7 +85,10 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function ProductDetailPage({ params }: { params: { slug: string } }) {
-  void params; // 满足静态导出要求，实际 slug 由组件内部解析
+// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
+  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+  await (params instanceof Promise ? params : Promise.resolve(params));
+  // 实际 slug 由 ProductDetail 组件内部通过 useParams 解析
   return <ProductDetail />;
 }

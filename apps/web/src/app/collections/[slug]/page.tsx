@@ -14,13 +14,17 @@ import type { Metadata } from 'next';
 
 // [2025-01-27 18:05:00] 生成分类页面 SEO 元数据
 // 注意：由于是客户端数据获取，这里使用基础元数据模板
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const categoryName = params.slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> | { slug: string } }): Promise<Metadata> {
+  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+  const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+  const slug = resolvedParams.slug;
+  const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   return generateSEOMetadata({
     title: `${categoryName} - Custom Products Collection`,
     description: `Browse our ${categoryName} collection. Custom ${categoryName} with free shipping and satisfaction guarantee.`,
     keywords: [categoryName, 'custom products', 'custom merchandise', 'apparel', 'promotional products'],
-    url: `https://suvernireplus.com/collections/${params.slug}`,
+    url: `https://suvernireplus.com/collections/${slug}`,
     image: 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
   });
 }
@@ -100,9 +104,11 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function CollectionPage({ params }: { params: { slug: string } }) {
-  // [2025-01-27 15:55:00] Next.js 14: params 是同步的
-  const { slug } = params;
+// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
+  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+  const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+  const { slug } = resolvedParams;
   
   // [2025-01-30 12:00:00] 特殊处理：promotional-products 重定向到新的页面路由
   if (slug === 'promotional-products') {

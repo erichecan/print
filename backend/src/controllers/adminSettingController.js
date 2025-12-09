@@ -277,7 +277,7 @@ const DEFAULT_CONTENT_CONFIG = {
         title: "We'll Do the Work",
         description: 'Ship to one place or every place. Choose your design and we handle the rest—from packing to delivery tracking.',
         ctaLabel: 'Start Designing',
-        ctaHref: '/design-lab', // [2025-12-08 14:40:00] 使用新的 Design Lab 路径
+        ctaHref: '/design-lab', // [2025-12-08 14:40:00] 使用新的 Design Lab 页面
         ctaVariant: 'outline',
       },
     ],

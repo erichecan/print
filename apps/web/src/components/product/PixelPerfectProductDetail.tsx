@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import { useToast } from '@/hooks/useToast';
-import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
+import { buildNewDesignUrlSafe } from '@/utils/designUrl';
 
 interface ProductVariant {
   id: string;
@@ -304,25 +304,24 @@ export function PixelPerfectProductDetail() {
       showError('请选择颜色和尺寸');
       return;
     }
-
+    
     try {
-      // [2025-12-08 14:40:00] 保存设计器载荷（用于兼容）
       persistDesignLabPayload(selectedVariant);
-
-      // [2025-12-08 14:40:00] 构建新的 Design Lab URL
-      const designUrl = buildNewDesignUrl({
+      
+      // [2025-12-08 14:40:00] 使用新的 URL 构建函数
+      const designUrl = buildNewDesignUrlSafe({
         variantId: selectedVariant.id,
         productId: product?.id,
         color: selectedVariant.color || undefined,
         size: selectedVariant.size || undefined,
         referrer: 'product_detail',
       });
-
+      
       // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航
       router.push(designUrl);
     } catch (error) {
       console.error('[PixelPerfectProductDetail] Failed to build design URL:', error);
-      showError('无法开始设计：缺少必要参数。请刷新页面后重试。');
+      showError('无法开始设计，请重试');
     }
   }, [selectedVariant, showError, persistDesignLabPayload, router, product]);
 

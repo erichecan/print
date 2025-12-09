@@ -12,10 +12,11 @@ import { productsApi } from '@/lib/api';
 import { useAddToCart } from '@/hooks/useAddToCart';
 import { useBuyNow } from '@/hooks/useBuyNow';
 import { useToast } from '@/hooks/useToast';
-import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
 import { SocialShareMenu, ShareConfig } from '@/components/social-share';
 import { StructuredData } from '@/components/seo/StructuredData';
 import { generateProductSchema } from '@/lib/seo';
+import { buildNewDesignUrlSafe } from '@/utils/designUrl';
+import { useRouter } from 'next/navigation';
 
 interface ProductVariant {
   id: string;
@@ -174,9 +175,9 @@ export function ProductDetailContent() {
       showError('Please select a color and size first');
       return;
     }
-
+    
     try {
-      const designUrl = buildNewDesignUrl({
+      const designUrl = buildNewDesignUrlSafe({
         variantId: selectedVariant.id,
         productId: product?.id,
         color: selectedVariant.color || undefined,
@@ -184,11 +185,11 @@ export function ProductDetailContent() {
         referrer: 'product_detail',
       });
       
-      // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航
+      // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航，避免整页刷新
       router.push(designUrl);
     } catch (error) {
-      console.error('[ProductDetailContent] Failed to build design URL:', error);
-      showError('无法开始设计：缺少必要参数。请刷新页面后重试。');
+      console.error('[ProductDetail] Failed to build design URL:', error);
+      showError('Unable to start design. Please try again.');
     }
   };
 
@@ -270,24 +271,9 @@ export function ProductDetailContent() {
   
   const previewImage = hoveredColor ? getImageForColor(hoveredColor) : null;
   const selectedImage = selectedVariant?.imageUrl || null;
-  // [2025-12-09] 修复：确保图片 URL 格式正确，支持相对路径和绝对路径
-  const getImageUrl = (url: string | null | undefined): string => {
-    if (!url) return fallbackImage;
-    // 如果已经是完整的 URL（http/https），直接返回
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // 如果是相对路径，确保以 / 开头
-    if (url.startsWith('/')) {
-      return url;
-    }
-    // 否则添加 / 前缀
-    return `/${url}`;
-  };
-  
   const currentImage = previewImage 
-    ? getImageUrl(previewImage)
-    : getImageUrl(selectedImage || product.images[selectedImageIndex]?.url || product.images[0]?.url || fallbackImage);
+    ? previewImage 
+    : (selectedImage || product.images[selectedImageIndex]?.url || product.images[0]?.url || fallbackImage);
   const price = selectedVariant
     ? Number(product.basePrice) + Number(selectedVariant.priceAdjustment || 0)
     : Number(product.basePrice);
@@ -349,13 +335,7 @@ export function ProductDetailContent() {
                   onClick={() => setSelectedImageIndex(index)}
                   aria-label={`View image ${index + 1}`}
                 >
-                  <Image 
-                    src={getImageUrl(img.url)} 
-                    alt={img.alt || `${product.name} view ${index + 1}`} 
-                    width={80} 
-                    height={80} 
-                    className="w-full h-full object-cover" 
-                  />
+                  <Image src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
                 </button>
               ))
             ) : (
@@ -415,13 +395,7 @@ export function ProductDetailContent() {
                     onClick={() => setSelectedImageIndex(index)}
                     aria-label={`View image ${index + 1}`}
                   >
-                    <Image 
-                      src={getImageUrl(img.url)} 
-                      alt={img.alt || `${product.name} view ${index + 1}`} 
-                      width={80} 
-                      height={80} 
-                      className="w-full h-full object-cover" 
-                    />
+                    <Image src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -754,13 +728,7 @@ export function ProductDetailContent() {
                 return (
                   <Link key={related.id} href={`/products/${related.slug}`} className="flex flex-col gap-3 no-underline text-inherit transition-transform hover:-translate-y-1">
                     <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
-                      <Image 
-                        src={getImageUrl(relatedImage)} 
-                        alt={related.name} 
-                        width={280} 
-                        height={350} 
-                        className="w-full h-full object-cover" 
-                      />
+                      <Image src={relatedImage} alt={related.name} width={280} height={350} className="w-full h-full object-cover" />
                     </div>
                     <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{related.name}</h3>
                     <div className="text-lg font-bold text-gray-900">
@@ -786,13 +754,7 @@ export function ProductDetailContent() {
                 return (
                   <Link key={brandProduct.id} href={`/products/${brandProduct.slug}`} className="flex flex-col gap-3 no-underline text-inherit transition-transform hover:-translate-y-1">
                     <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
-                      <Image 
-                        src={getImageUrl(brandImage)} 
-                        alt={brandProduct.name} 
-                        width={280} 
-                        height={350} 
-                        className="w-full h-full object-cover" 
-                      />
+                      <Image src={brandImage} alt={brandProduct.name} width={280} height={350} className="w-full h-full object-cover" />
                     </div>
                     <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{brandProduct.name}</h3>
                     <div className="text-lg font-bold text-gray-900">

@@ -21,18 +21,47 @@ export const metadata: Metadata = generateSEOMetadata({
 });
 
 export default function Home() {
-  const websiteSchema = generateWebsiteSchema();
-  const organizationSchema = generateOrganizationSchema();
+  // [2025-12-09 14:30:00] 安全地序列化结构化数据，添加错误处理
+  let websiteSchemaHtml = '';
+  let organizationSchemaHtml = '';
+  
+  try {
+    const websiteSchema = generateWebsiteSchema();
+    websiteSchemaHtml = JSON.stringify(websiteSchema);
+  } catch (error) {
+    console.error('[Home] Failed to generate website schema:', error);
+    // 使用默认 schema
+    websiteSchemaHtml = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'suvernire plus',
+      url: 'https://suvernireplus.com',
+    });
+  }
+  
+  try {
+    const organizationSchema = generateOrganizationSchema();
+    organizationSchemaHtml = JSON.stringify(organizationSchema);
+  } catch (error) {
+    console.error('[Home] Failed to generate organization schema:', error);
+    // 使用默认 schema
+    organizationSchemaHtml = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'suvernire plus',
+      url: 'https://suvernireplus.com',
+    });
+  }
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        dangerouslySetInnerHTML={{ __html: websiteSchemaHtml }}
       />{/* [2025-11-16 11:55:00] Website schema */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        dangerouslySetInnerHTML={{ __html: organizationSchemaHtml }}
       />{/* [2025-11-16 11:55:00] Organization schema */}
       <div>
         {/* [2025-01-29 04:00:00] 使用 HomePageWrapper 根据设备类型显示桌面端或移动端页面 */}

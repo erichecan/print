@@ -8,7 +8,6 @@ import { useState, useCallback, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { productsApi } from '@/lib/api';
-import { buildNewDesignUrl } from '@/utils/designUrl'; // [2025-12-08 14:40:00] 使用新的 Design Lab URL 构建器
 import { Breadcrumb } from './Breadcrumb';
 import { Gallery } from './Gallery';
 import { BuyBox } from './BuyBox';
@@ -21,6 +20,7 @@ import { TagsTrending } from './TagsTrending';
 import { adaptProductData } from './dataAdapter';
 import { ProductData } from './types';
 import styles from './ProductDetail.module.css';
+import { buildNewDesignUrlSafe } from '@/utils/designUrl';
 
 const DESIGN_LAB_PAYLOAD_KEY = 'designLab:productPayload';
 
@@ -166,48 +166,48 @@ export function ProductDetail() {
   const handleStartDesign = useCallback((payload: any) => {
     console.log('[Start Design]', payload);
 
+    // [2025-12-08 14:40:00] 根据选中的颜色和尺码找到对应的 variantId
+    let targetVariant: any = null;
+    
+    if (apiProduct && apiProduct.variants) {
+      const matchingVariant = apiProduct.variants.find((v: any) => {
+        const colorMatch = !payload.color || v.color === payload.color || !v.color;
+        const sizeMatch = !payload.size || v.size === payload.size || !v.size;
+        return colorMatch && sizeMatch;
+      });
+
+      if (matchingVariant && matchingVariant.id) {
+        targetVariant = matchingVariant;
+      } else if (apiProduct.variants.length > 0) {
+        // [2025-12-08 14:40:00] 如果没有找到匹配的 variant，使用第一个可用的 variant
+        targetVariant = apiProduct.variants[0];
+      }
+    }
+
+    if (!targetVariant || !targetVariant.id) {
+      console.error('[ProductDetail] No variant found for Start Design');
+      // [2025-12-08 14:40:00] 如果没有 variant，显示错误提示
+      alert('Unable to start design: Product variant not found. Please select a color and size.');
+      return;
+    }
+
     try {
-      // [2025-12-08 14:40:00] 根据选中的颜色和尺码找到对应的 variantId
-      let targetVariant: any = null;
-      
-      if (apiProduct && apiProduct.variants) {
-        const matchingVariant = apiProduct.variants.find((v: any) => {
-          const colorMatch = !payload.color || v.color === payload.color || !v.color;
-          const sizeMatch = !payload.size || v.size === payload.size || !v.size;
-          return colorMatch && sizeMatch;
-        });
-
-        if (matchingVariant && matchingVariant.id) {
-          targetVariant = matchingVariant;
-        } else if (apiProduct.variants.length > 0) {
-          // [2025-12-08 14:40:00] 如果没有找到匹配的 variant，使用第一个可用的
-          targetVariant = apiProduct.variants[0];
-        }
-      }
-
-      if (!targetVariant || !targetVariant.id) {
-        console.error('[Start Design] No variant found');
-        alert('无法开始设计：缺少产品变体信息。请刷新页面后重试。');
-        return;
-      }
-
-      // [2025-12-08 14:40:00] 保存设计器载荷（用于兼容）
       persistDesignLabPayload(targetVariant);
-
-      // [2025-12-08 14:40:00] 构建新的 Design Lab URL
-      const designUrl = buildNewDesignUrl({
+      
+      // [2025-12-08 14:40:00] 使用新的 URL 构建函数
+      const designUrl = buildNewDesignUrlSafe({
         variantId: targetVariant.id,
         productId: apiProduct?.id,
         color: targetVariant.color || payload.color || undefined,
         size: targetVariant.size || payload.size || undefined,
         referrer: 'product_detail',
       });
-
+      
       // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航
       router.push(designUrl);
     } catch (error) {
-      console.error('[Start Design] Failed to build design URL:', error);
-      alert('无法开始设计：缺少必要参数。请刷新页面后重试。');
+      console.error('[ProductDetail] Failed to build design URL:', error);
+      alert('Unable to start design. Please try again.');
     }
   }, [apiProduct, persistDesignLabPayload, router]);
 

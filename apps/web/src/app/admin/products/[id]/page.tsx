@@ -8,11 +8,13 @@ export async function generateStaticParams() {
   return [];
 }
 
-export default function AdminProductEditPage({
+// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+export default async function AdminProductEditPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }> | { id: string };
 }) {
-  // [2025-11-14 05:48:10] Next.js 14: params 保持同步，可直接读取
-  return <AdminProductEditClient id={params.id} />;
+  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+  const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
+  return <AdminProductEditClient id={resolvedParams.id} />;
 }

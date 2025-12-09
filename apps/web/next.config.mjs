@@ -132,6 +132,9 @@ const nextConfig = {
     NEXT_PUBLIC_GCS_IMAGE_BASE_URL: process.env.NEXT_PUBLIC_GCS_IMAGE_BASE_URL || process.env.GCP_IMAGE_BASE_URL || 'https://storage.googleapis.com/print-main-product-images',
     // [2025-01-31 00:45:00] 添加 Git SHA 环境变量（在构建时设置）
     NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'dev',
+    // [2025-12-08 14:40:00] 新的 Design Lab 页面 URL 配置
+    NEXT_PUBLIC_NEW_DESIGN_URL: process.env.NEXT_PUBLIC_NEW_DESIGN_URL || '',
+    NEXT_PUBLIC_NEW_DESIGN_PATH: process.env.NEXT_PUBLIC_NEW_DESIGN_PATH || '/design-lab',
   },
   // [2025-01-27 15:30:00] 临时禁用类型检查以避免 Next.js 15 类型生成问题
   typescript: {
