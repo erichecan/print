@@ -565,21 +565,43 @@ const DesignLabClient: React.FC = () => {
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, loadFallbackImage]); // [2025-01-31 16:30:00] 移除 productInfo 依赖，使用 ref 访问
 
   // [2025-01-30 19:30:00] 加载产品信息
+  // [2025-12-08 23:30:00] 增强：添加variantId验证、错误处理和默认图片展示逻辑
   const loadProductInfo = useCallback(async (variantId?: string) => {
     if (!variantId) {
       // 如果没有 variantId，使用默认值或从 URL 获取
       const urlVariantId = searchParams?.get('variantId');
       if (!urlVariantId) {
         console.log('[DesignLab] No variantId provided, using default product');
+        // [2025-12-08 23:30:00] 埋点：缺少variantId
+        analytics.track('designer_open_failed_missing_variant', {
+          referrer: searchParams?.get('referrer') || 'unknown',
+        });
         // 可以设置一个默认产品
         return;
       }
       variantId = urlVariantId;
     }
 
+    // [2025-12-08 23:30:00] 验证variantId格式（UUID格式）
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(variantId)) {
+      console.error('[DesignLab] Invalid variantId format:', variantId);
+      // [2025-12-08 23:30:00] 埋点：无效variantId
+      analytics.track('designer_open_failed_invalid_variant', {
+        variantId: variantId,
+        referrer: searchParams?.get('referrer') || 'unknown',
+      });
+      showErrorToast('Invalid product variant ID. Please return to the product page and try again.');
+      return;
+    }
+
     setLoadingProduct(true);
     try {
       const data = await productsApi.getByVariant(variantId);
+      
+      // [2025-12-08 23:30:00] 检查是否有默认图片
+      const hasDefaultImage = data.baseImages?.front || data.baseImages?.back || data.baseImages?.sleeve;
+      
       setProductInfo(data);
       
       // [2025-01-30 19:30:00] 使用 API 返回的颜色详细信息
@@ -635,16 +657,81 @@ const DesignLabClient: React.FC = () => {
         setProductColors(colors);
       }
       
-      // [2025-01-30 19:30:00] 更新背景图片
-      if (fabricCanvasRef.current) {
+      // [2025-12-08 23:30:00] 检查画布是否有用户内容
+      const hasUserContent = fabricCanvasRef.current && fabricCanvasRef.current.getObjects().some((obj: fabric.Object) => {
+        const objName = (obj as any).name || '';
+        return objName && objName !== 'background';
+      });
+      
+      // [2025-12-08 23:30:00] 如果没有用户内容且有默认图片，显示默认图片
+      if (!hasUserContent && hasDefaultImage && fabricCanvasRef.current) {
+        // [2025-12-08 23:30:00] 埋点：显示默认图片
+        analytics.track('designer_default_image_shown', {
+          variantId: variantId,
+          imageUrl: data.baseImages?.front || data.baseImages?.back || data.baseImages?.sleeve,
+          productId: data.productId,
+        });
+        loadBackgroundImage(currentView);
+      } else if (fabricCanvasRef.current) {
+        // [2025-01-30 19:30:00] 更新背景图片（即使有用户内容，也要更新背景）
         loadBackgroundImage(currentView);
       }
-    } catch (error) {
+      
+      // [2025-12-08 23:30:00] 埋点：设计器打开成功
+      analytics.track('designer_open_success', {
+        variantId: variantId,
+        productId: data.productId,
+        referrer: searchParams?.get('referrer') || 'unknown',
+        hasDefaultImage: hasDefaultImage,
+      });
+    } catch (error: any) {
       console.error('[DesignLab] Error loading product info:', error);
+      
+      // [2025-12-08 23:30:00] 错误处理：如果获取默认图失败，使用占位图
+      const errorMessage = error?.message || 'Unknown error';
+      const isNotFound = errorMessage.includes('404') || errorMessage.includes('not found');
+      
+      if (isNotFound) {
+        // [2025-12-08 23:30:00] 埋点：variantId不存在
+        analytics.track('designer_open_failed_missing_variant', {
+          variantId: variantId,
+          referrer: searchParams?.get('referrer') || 'unknown',
+        });
+        showErrorToast('Product variant not found. Please return to the product page and try again.');
+      } else {
+        // [2025-12-08 23:30:00] 埋点：获取默认图失败，使用占位图
+        analytics.track('designer_default_image_fallback', {
+          variantId: variantId,
+          error: errorMessage,
+        });
+        
+        // 使用占位图
+        const placeholderImage = '/assets/placeholder.png';
+        const fallbackProductInfo: ProductInfo = {
+          productId: 'fallback',
+          productName: 'Product',
+          variantId: variantId || 'fallback',
+          color: 'White',
+          colors: ['White'],
+          baseImages: {
+            front: placeholderImage,
+            back: placeholderImage,
+            sleeve: placeholderImage,
+          },
+          gallery: [],
+        };
+        setProductInfo(fallbackProductInfo);
+        
+        if (fabricCanvasRef.current) {
+          loadBackgroundImage(currentView);
+        }
+        
+        showWarningToast('Unable to load product image. Using placeholder image.');
+      }
     } finally {
       setLoadingProduct(false);
     }
-  }, [searchParams, currentView, loadBackgroundImage]);
+  }, [searchParams, currentView, loadBackgroundImage, showErrorToast, showWarningToast]);
 
   // [2025-01-30 16:30:00] 将 Fabric 画布状态转换为 DesignCanvasSnapshot
   // [2025-01-30 21:25:00] 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
@@ -689,13 +776,33 @@ const DesignLabClient: React.FC = () => {
 
   // [2025-01-30 19:30:00] 初始化时加载产品信息
   // [2025-01-30 23:55:00] 修复：即使没有 variantId，也要加载默认产品图片
+  // [2025-12-08 23:30:00] 增强：添加variantId验证和错误处理
   useEffect(() => {
     const variantId = searchParams?.get('variantId');
     if (variantId) {
-      loadProductInfo(variantId);
+      // [2025-12-08 23:30:00] 验证variantId格式（UUID格式）
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(variantId)) {
+        loadProductInfo(variantId);
+      } else {
+        // [2025-12-08 23:30:00] 无效的variantId格式
+        console.error('[DesignLab] Invalid variantId format:', variantId);
+        analytics.track('designer_open_failed_invalid_variant', {
+          variantId: variantId,
+          referrer: searchParams?.get('referrer') || 'unknown',
+        });
+        showErrorToast('Invalid product variant ID. Please return to the product page and try again.');
+      }
     } else {
       // [2025-01-30 23:55:00] 没有 variantId 时，设置默认产品信息以显示默认图片
       // [2025-01-30 23:55:00] 使用 Custom Ink 的真实图片 URL
+      // [2025-12-08 23:30:00] 埋点：缺少variantId（仅在非直接访问时记录）
+      const referrer = searchParams?.get('referrer');
+      if (referrer && referrer !== 'direct') {
+        analytics.track('designer_open_failed_missing_variant', {
+          referrer: referrer,
+        });
+      }
       const defaultColor = 'White';
       const defaultProductInfo: ProductInfo = {
         productId: 'default',
@@ -708,7 +815,7 @@ const DesignLabClient: React.FC = () => {
       };
       setProductInfo(defaultProductInfo);
     }
-  }, [searchParams, loadProductInfo]);
+  }, [searchParams, loadProductInfo, showErrorToast]);
 
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，移除依赖 fabricCanvasRef.current 的 useEffect
   // 因为 ref 不能作为依赖项，会导致问题。改为使用 canvasInitialized 状态标志
