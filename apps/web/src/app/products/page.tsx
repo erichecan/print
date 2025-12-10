@@ -9,14 +9,12 @@
 
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-11 06:07:23] 使用 Next Image 组件提升性能
-// [2025-12-09] 修复：服务端组件中不再需要导入 API 配置，直接使用相对路径
+// [2025-11-15 11:20:00] 使用集中管理的 API 配置
+import { API_BASE_URL } from '@/lib/api-config';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import SortSelect from './SortSelect';
-// [2025-12-09 14:45:00] 导入安全的数据获取和序列化工具
-import { safeFetch, HttpError, TimeoutError, NetworkError } from '@/lib/fetchers/safeFetch';
-import { cleanForSerialization } from '@/lib/serialize';
 
 // [2025-01-27 16:45:00] 客户端筛选组件
 const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
@@ -221,13 +219,8 @@ function mapSortValue(value: string | undefined) {
   }
 }
 
-// [2025-12-09] 修复：在服务端组件中使用相对路径，通过 Next.js API 路由代理
 function buildApiUrl(path: string, params: Record<string, string | undefined>) {
-  // [2025-12-09] 在服务端组件中，使用相对路径 `/api/...`，通过 Next.js API 路由代理到后端
-  // 这样可以利用 Next.js 的 API 路由代理功能，确保 Cookie 和认证正确传递
-  const apiPath = path.startsWith('/') ? path : `/${path}`;
-  const url = new URL(apiPath, 'http://localhost'); // 临时 base 用于构建 URL 和查询参数
-  
+  const url = new URL(path, API_BASE_URL);
   Object.entries(params)
     .filter(([, value]) => Boolean(value))
     .forEach(([key, value]) => {
@@ -235,10 +228,7 @@ function buildApiUrl(path: string, params: Record<string, string | undefined>) {
         url.searchParams.set(key, value);
       }
     });
-  
-  // 返回相对路径格式：/api/products?page=1&limit=12
-  const queryString = url.search;
-  return `/api${apiPath}${queryString}`;
+  return url.toString();
 }
 
 async function fetchProducts(searchParams: SearchParams) {
@@ -258,95 +248,24 @@ async function fetchProducts(searchParams: SearchParams) {
     order,
   });
 
-  // [2025-12-09 14:45:00] 使用 safeFetch 统一错误处理，支持超时和重试
-  try {
-    const data = await safeFetch<ProductsResponse>(url, {
-      cache: 'no-store',
-      timeout: 10000, // 10 秒超时
-      retries: 1, // 重试 1 次
-      retryDelay: 1000, // 重试延迟 1 秒
-    });
+  const response = await fetch(url, {
+    cache: 'no-store',
+  });
 
-    // [2025-12-09 22:40:00] 清理数据，确保可序列化
-    // 使用 cleanForSerialization 主动清理，而不是只检查
-    // 这样可以确保传递给 React 的数据始终可序列化，避免 RSC 序列化错误
-    const cleanedData = cleanForSerialization(data);
-
-    return cleanedData;
-  } catch (error: unknown) {
-    // [2025-12-09 14:45:00] 详细错误日志，包含错误类型
-    if (error instanceof HttpError) {
-      console.error('[ProductsPage] HTTP error fetching products:', {
-        url,
-        status: error.status,
-        body: error.body,
-        message: error.message,
-      });
-      throw new Error(`Failed to fetch products: ${error.status} ${error.message}`);
-    } else if (error instanceof TimeoutError) {
-      console.error('[ProductsPage] Timeout fetching products:', {
-        url,
-        timeout: error.timeoutMs,
-        message: error.message,
-      });
-      throw new Error(`Request timeout: Failed to fetch products within ${error.timeoutMs}ms`);
-    } else if (error instanceof NetworkError) {
-      console.error('[ProductsPage] Network error fetching products:', {
-        url,
-        message: error.message,
-        originalError: error.originalError,
-      });
-      throw new Error(`Network error: ${error.message}`);
-    } else {
-      console.error('[ProductsPage] Unknown error fetching products:', {
-        url,
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-      throw error;
-    }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch products (${response.status})`);
   }
+
+  return (await response.json()) as ProductsResponse;
 }
 
 async function fetchCollections() {
-  try {
-    const url = buildApiUrl('/collections', {});
-    // [2025-12-09 14:45:00] 使用 safeFetch 统一错误处理
-    // [2025-12-09 22:35:00] 修复：后端直接返回数组，不是 { data: Collection[] } 格式
-    const data = await safeFetch<Collection[]>(url, {
-      cache: 'no-store',
-      timeout: 5000, // 5 秒超时
-      retries: 1,
-    });
-    
-    // [2025-12-09 22:40:00] 确保数据是数组
-    if (!Array.isArray(data)) {
-      console.warn('[ProductsPage] Collections API returned non-array:', typeof data);
-      return [] as Collection[];
-    }
-    
-    // [2025-12-09 22:40:00] 清理数据，确保可序列化
-    const cleanedData = cleanForSerialization(data);
-    
-    return cleanedData as Collection[];
-  } catch (error: unknown) {
-    // [2025-12-09 14:45:00] 集合获取失败不影响产品列表显示，但记录详细错误
-    if (error instanceof HttpError) {
-      console.warn('[ProductsPage] HTTP error fetching collections:', {
-        status: error.status,
-        message: error.message,
-      });
-    } else if (error instanceof TimeoutError) {
-      console.warn('[ProductsPage] Timeout fetching collections:', {
-        timeout: error.timeoutMs,
-      });
-    } else {
-      console.warn('[ProductsPage] Error fetching collections:', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+  const url = buildApiUrl('/collections', {});
+  const response = await fetch(url, { cache: 'no-store' });
+  if (!response.ok) {
     return [] as Collection[];
   }
+  return (await response.json()) as Collection[];
 }
 
 function buildRoute(searchParams: SearchParams, overrides: Partial<SearchParams>) {
@@ -399,20 +318,11 @@ export default async function ProductsPage({
   let fetchError: string | null = null;
 
   // [2025-11-16 16:28:00] 解耦列表与集合请求，避免 /collections 404 影响产品渲染
-  // [2025-12-09] 改进错误处理：提供更详细的错误信息
   const productsPromise = fetchProducts(normalizedParams).catch((error: unknown) => {
-    const errorMessage = error instanceof Error ? error.message : 'Unexpected error loading products.';
-    fetchError = errorMessage;
-    console.error('[ProductsPage] Failed to fetch products:', {
-      params: normalizedParams,
-      error: errorMessage,
-    });
+    fetchError = error instanceof Error ? error.message : 'Unexpected error loading products.';
     return null;
   });
-  const collectionsPromise = fetchCollections().catch((error: unknown) => {
-    console.warn('[ProductsPage] Failed to fetch collections:', error instanceof Error ? error.message : 'Unknown error');
-    return [] as Collection[];
-  });
+  const collectionsPromise = fetchCollections().catch(() => [] as Collection[]);
 
   [productsResponse, collections] = await Promise.all([productsPromise, collectionsPromise]);
 
@@ -455,22 +365,6 @@ export default async function ProductsPage({
   const currentCategoryName = currentCollection 
     ? collections.find(c => c.slug === currentCollection)?.name || 'T-shirts'
     : 'T-shirts';
-
-  // [2025-12-09] 错误状态：如果获取产品失败，显示统一的错误状态组件
-  // [2025-12-09 23:50:00] 修复：Server Component 不能传递函数给 Client Component
-  // 使用客户端组件处理重试逻辑
-  if (fetchError && !productsResponse) {
-    const ProductsErrorClient = dynamic(() => import('./ProductsErrorClient').then(mod => ({ default: mod.default })), { ssr: false });
-    return (
-      <div className="catalog-page">
-        <section className="plp-new">
-          <div className="container">
-            <ProductsErrorClient error={fetchError} />
-          </div>
-        </section>
-      </div>
-    );
-  }
 
   return (
     <div className="catalog-page">
