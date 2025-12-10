@@ -215,8 +215,14 @@ const DesignLabClient: React.FC = () => {
     setCanvas, 
     canvas: storeCanvas,
     viewCanvases,
-    getCurrentViewCanvas
+    getCurrentViewCanvas,
+    history,
+    future
   } = useDesignLabStore();
+  
+  // [2025-12-08] 计算 Undo/Redo 可用状态
+  const canUndo = history.length > 0;
+  const canRedo = future.length > 0;
   
   // [2025-01-30 16:30:00] 画布尺寸常量
   const CANVAS_WIDTH = 1000;
