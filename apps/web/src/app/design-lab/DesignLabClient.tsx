@@ -2210,6 +2210,10 @@ const DesignLabClient: React.FC = () => {
         });
 
         // [2025-12-08 23:00:00] 创建右上角删除按钮控件
+        // [2025-12-10] 修复：确保 fabric.Control 存在后再创建
+        if (!fabric.Control) {
+          throw new Error('fabric.Control is not available');
+        }
         const deleteControl = new fabric.Control({
           x: 0.5,
           y: -0.5,
@@ -2550,10 +2554,17 @@ const DesignLabClient: React.FC = () => {
         fabricCanvasRef.current = fabricCanvas;
         console.log('[DesignLab] Event listeners attached, canvas ready');
 
-        const currentViewCanvas = getCurrentViewCanvas();
-        if (currentViewCanvas && currentViewCanvas.objects.length > 0) {
-          snapshotToCanvas(currentViewCanvas, fabricCanvas);
-        }
+        // [2025-12-10] 延迟恢复画布状态，确保所有初始化完成
+        setTimeout(() => {
+          try {
+            const currentViewCanvas = getCurrentViewCanvas();
+            if (currentViewCanvas && currentViewCanvas.objects.length > 0 && fabricRef.current) {
+              snapshotToCanvas(currentViewCanvas, fabricCanvas);
+            }
+          } catch (error) {
+            console.warn('[DesignLab] Failed to restore canvas snapshot:', error);
+          }
+        }, 100);
 
         if (!productInfo) {
           console.log('[DesignLab] Canvas initialized but no productInfo, setting default');
@@ -2571,12 +2582,15 @@ const DesignLabClient: React.FC = () => {
         }
 
         setCanvasInitialized(true);
-        console.log('[DesignLab] Fabric.js canvas initialized');
+        console.log('[DesignLab] Fabric.js canvas initialized successfully');
 
       } catch (error) {
         console.error('[DesignLab] Error initializing Fabric.js canvas:', error);
-        alert('Failed to initialize design canvas. Please refresh the page.');
+        showErrorToast('Failed to initialize design canvas. Please refresh the page.');
       }
+    }).catch((error) => {
+      console.error('[DesignLab] Error loading fabric.js:', error);
+      showErrorToast('Failed to load design canvas library. Please refresh the page.');
     });
 
     return () => {
@@ -2591,10 +2605,11 @@ const DesignLabClient: React.FC = () => {
           console.error('[DesignLab] Error cleaning up canvas:', error);
         }
         fabricCanvasRef.current = null;
+        fabricRef.current = null;
         setCanvasInitialized(false);
       }
     };
-  }, [canvasToSnapshot, snapshotToCanvas, setCanvas, getCurrentViewCanvas]);
+  }, []); // [2025-12-10] 修复：移除依赖项，避免重复初始化
 
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，使用 canvasInitialized 状态标志确保在画布和产品信息都准备好后加载背景图片
   // [2025-01-31 13:45:00] 修复：productInfo 现在总是非 null，移除多余的 null 检查
