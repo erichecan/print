@@ -9,8 +9,8 @@
 
 import Link from 'next/link';
 import Image from 'next/image'; // [2025-11-11 06:07:23] 使用 Next Image 组件提升性能
-// [2025-11-15 11:20:00] 使用集中管理的 API 配置
-import { API_BASE_URL } from '@/lib/api-config';
+// [2025-12-10] 使用统一的 API 客户端
+import { apiGet } from '@/lib/apiClient';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
@@ -219,53 +219,47 @@ function mapSortValue(value: string | undefined) {
   }
 }
 
-function buildApiUrl(path: string, params: Record<string, string | undefined>) {
-  const url = new URL(path, API_BASE_URL);
-  Object.entries(params)
-    .filter(([, value]) => Boolean(value))
-    .forEach(([key, value]) => {
-      if (value) {
-        url.searchParams.set(key, value);
-      }
-    });
-  return url.toString();
-}
-
+// [2025-12-10] 使用统一的 API 客户端，移除 buildApiUrl
 async function fetchProducts(searchParams: SearchParams) {
   const page = Number(searchParams.page || '1');
   const limit = Number(searchParams.limit || '12');
   const { sort, order } = mapSortValue(searchParams.sort);
 
-  const url = buildApiUrl('/products', {
-    page: page.toString(),
-    limit: limit.toString(),
-    search: searchParams.search,
-    collection: searchParams.collection,
-    brand: searchParams.brand, // [2025-01-27 14:00:00] 品牌筛选
-    minPrice: searchParams.minPrice, // [2025-01-27 14:00:00] 最低价格
-    maxPrice: searchParams.maxPrice, // [2025-01-27 14:00:00] 最高价格
-    sort,
-    order,
-  });
+  try {
+    const response = await apiGet<ProductsResponse>('/products', {
+      page: page.toString(),
+      limit: limit.toString(),
+      search: searchParams.search,
+      collection: searchParams.collection,
+      brand: searchParams.brand, // [2025-01-27 14:00:00] 品牌筛选
+      minPrice: searchParams.minPrice, // [2025-01-27 14:00:00] 最低价格
+      maxPrice: searchParams.maxPrice, // [2025-01-27 14:00:00] 最高价格
+      sort,
+      order,
+    }, {
+      timeout: 10000,
+    });
 
-  const response = await fetch(url, {
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch products (${response.status})`);
+    return response;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('timeout')) {
+      throw new Error('Request timeout: Failed to fetch products');
+    }
+    throw error;
   }
-
-  return (await response.json()) as ProductsResponse;
 }
 
 async function fetchCollections() {
-  const url = buildApiUrl('/collections', {});
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) {
+  try {
+    const response = await apiGet<Collection[]>('/collections', {}, {
+      timeout: 10000,
+    });
+    return response;
+  } catch (error) {
+    // [2025-12-10] 如果获取 collections 失败，返回空数组而不是抛出错误
+    console.warn('[Products Page] Failed to fetch collections:', error);
     return [] as Collection[];
   }
-  return (await response.json()) as Collection[];
 }
 
 function buildRoute(searchParams: SearchParams, overrides: Partial<SearchParams>) {

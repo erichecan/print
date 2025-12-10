@@ -1,9 +1,9 @@
 /**
- * Environment Configuration
- * [2025-12-09] 统一环境变量管理，强校验，禁止隐式回退
+ * Environment Configuration - 统一环境变量管理
+ * [2025-12-10] 强校验，禁止隐式回退，生产环境必须配置
  * 
  * 原则：
- * 1. 生产环境必须配置环境变量，不允许 localhost
+ * 1. 生产环境必须配置环境变量，不允许 localhost 或空值
  * 2. 开发环境允许 localhost 作为默认值
  * 3. 构建时允许默认值，运行时严格检查
  * 4. 禁止隐式回退到 /api，必须明确配置
@@ -29,8 +29,35 @@ function normalizeApiUrl(base: string): string {
 }
 
 /**
+ * 验证环境变量（生产环境强制校验）
+ * [2025-12-10] 在构建时和生产运行时进行严格校验
+ */
+function validateEnvVar(name: string, value: string | undefined, allowEmpty = false): string {
+  if (!value || value.trim() === '') {
+    if (isProduction && !allowEmpty) {
+      const errorMsg = `生产环境必须配置环境变量 ${name}。请设置正确的值。`;
+      console.error(`[Env Config] ❌ ${errorMsg}`);
+      throw new Error(errorMsg);
+    }
+    if (isBuildTime && !allowEmpty) {
+      console.warn(`[Env Config] ⚠️ 构建时 ${name} 未设置，运行时需要配置环境变量`);
+    }
+    return '';
+  }
+  
+  // 生产环境禁止 localhost
+  if (isProduction && containsLocalhost(value)) {
+    const errorMsg = `生产环境 ${name} 不能包含 localhost (${value})。请设置正确的生产环境地址。`;
+    console.error(`[Env Config] ❌ ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+  
+  return value.trim();
+}
+
+/**
  * 获取前端 API 基础 URL
- * [2025-12-09] 用于浏览器环境的 API 请求
+ * [2025-12-10] 用于浏览器环境的 API 请求
  * 
  * 优先级：
  * 1. NEXT_PUBLIC_API_URL（前端环境变量，构建时内联）
@@ -42,16 +69,14 @@ export function getFrontendApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
   
   if (envUrl) {
-    // [2025-12-09] 修复：在浏览器环境中，如果检测到 localhost，自动回退到相对路径
-    // 这是因为 NEXT_PUBLIC_* 变量在构建时内联，如果构建时未设置正确的值，就会使用 localhost
-    // 在浏览器环境中，我们可以安全地回退到相对路径，通过 Next.js API 路由代理
+    // [2025-12-10] 浏览器环境：如果检测到 localhost，自动回退到相对路径
     if (typeof window !== 'undefined' && isProduction && containsLocalhost(envUrl)) {
       console.warn('[Env Config] ⚠️ 检测到 localhost API 地址，自动回退到相对路径 /api');
       console.warn('[Env Config] 提示：下次部署时请在构建时设置正确的 NEXT_PUBLIC_API_URL 环境变量');
       return '/api';
     }
     
-    // 服务端环境（SSR）：如果检测到 localhost，抛出错误（因为服务端需要知道真实的后端地址）
+    // 服务端环境（SSR）：如果检测到 localhost，抛出错误
     if (typeof window === 'undefined' && isProduction && containsLocalhost(envUrl)) {
       const errorMsg = `生产环境 API 配置错误：NEXT_PUBLIC_API_URL 包含 localhost (${envUrl})。请设置正确的生产环境 API 服务器地址。`;
       console.error('[Env Config] ❌', errorMsg);
@@ -76,7 +101,6 @@ export function getFrontendApiBaseUrl(): string {
       if (isLocalhost) {
         throw new Error('生产环境不应在 localhost 上运行。请检查部署配置。');
       }
-      // [2025-12-09] 生产环境统一使用相对路径，通过 Next.js API 路由代理
       return '/api';
     }
     
@@ -108,7 +132,7 @@ export function getFrontendApiBaseUrl(): string {
 
 /**
  * 获取后端 API 基础 URL
- * [2025-12-09] 用于 Next.js API 路由代理到后端
+ * [2025-12-10] 用于 Next.js API 路由代理到后端
  * 
  * 优先级：
  * 1. NEXT_PUBLIC_API_URL（前端环境变量）
@@ -119,37 +143,22 @@ export function getFrontendApiBaseUrl(): string {
  */
 export function getBackendApiBaseUrl(): string {
   // 优先使用 NEXT_PUBLIC_API_URL
-  const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const publicApiUrl = validateEnvVar('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL, true);
   if (publicApiUrl) {
-    if (isProduction && containsLocalhost(publicApiUrl)) {
-      const errorMsg = `生产环境 API 配置错误：NEXT_PUBLIC_API_URL 包含 localhost (${publicApiUrl})。请设置正确的生产环境 API 服务器地址。`;
-      console.error('[Env Config] ❌', errorMsg);
-      throw new Error(errorMsg);
-    }
     const url = publicApiUrl.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
   }
   
   // 回退到 API_BASE_URL（服务器端环境变量）
-  const apiBaseUrl = process.env.API_BASE_URL;
+  const apiBaseUrl = validateEnvVar('API_BASE_URL', process.env.API_BASE_URL, true);
   if (apiBaseUrl) {
-    if (isProduction && containsLocalhost(apiBaseUrl)) {
-      const errorMsg = `生产环境 API 配置错误：API_BASE_URL 包含 localhost (${apiBaseUrl})。请设置正确的生产环境 API 服务器地址。`;
-      console.error('[Env Config] ❌', errorMsg);
-      throw new Error(errorMsg);
-    }
     const url = apiBaseUrl.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
   }
   
   // 回退到 NEXT_PUBLIC_API_BASE_URL
-  const publicApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const publicApiBaseUrl = validateEnvVar('NEXT_PUBLIC_API_BASE_URL', process.env.NEXT_PUBLIC_API_BASE_URL, true);
   if (publicApiBaseUrl) {
-    if (isProduction && containsLocalhost(publicApiBaseUrl)) {
-      const errorMsg = `生产环境 API 配置错误：NEXT_PUBLIC_API_BASE_URL 包含 localhost (${publicApiBaseUrl})。请设置正确的生产环境 API 服务器地址。`;
-      console.error('[Env Config] ❌', errorMsg);
-      throw new Error(errorMsg);
-    }
     const url = publicApiBaseUrl.replace(/\/$/, '');
     return url.endsWith('/api') ? url : `${url}/api`;
   }
@@ -159,9 +168,9 @@ export function getBackendApiBaseUrl(): string {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL、API_BASE_URL 或 NEXT_PUBLIC_API_BASE_URL。';
     console.error('[Env Config] ❌', errorMsg);
     console.error('[Env Config] 当前环境变量:', {
-      NEXT_PUBLIC_API_URL: publicApiUrl || '未设置',
-      API_BASE_URL: apiBaseUrl || '未设置',
-      NEXT_PUBLIC_API_BASE_URL: publicApiBaseUrl || '未设置',
+      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '未设置',
+      API_BASE_URL: process.env.API_BASE_URL || '未设置',
+      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '未设置',
       NODE_ENV: process.env.NODE_ENV,
       NEXT_PHASE: process.env.NEXT_PHASE,
     });
@@ -179,17 +188,65 @@ export function getBackendApiBaseUrl(): string {
 }
 
 /**
+ * 获取 Stripe Publishable Key（客户端）
+ * [2025-12-10] 用于客户端 Stripe 初始化
+ * 
+ * 生产环境必须配置，不允许空值
+ */
+export function getStripePublishableKey(): string {
+  const key = validateEnvVar('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, false);
+  
+  if (!key || key.trim() === '') {
+    if (isProduction) {
+      const errorMsg = '生产环境必须配置 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 环境变量。';
+      console.error('[Env Config] ❌', errorMsg);
+      throw new Error(errorMsg);
+    }
+    // 开发环境：允许空值，但会警告
+    console.warn('[Env Config] ⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 未设置，Stripe 功能将不可用');
+    return '';
+  }
+  
+  return key;
+}
+
+/**
+ * 获取 Stripe Secret Key（服务端）
+ * [2025-12-10] 用于服务端 Stripe 操作
+ * 
+ * 生产环境必须配置，不允许空值
+ */
+export function getStripeSecretKey(): string {
+  const key = validateEnvVar('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY, false);
+  
+  if (!key || key.trim() === '') {
+    if (isProduction) {
+      const errorMsg = '生产环境必须配置 STRIPE_SECRET_KEY 环境变量。';
+      console.error('[Env Config] ❌', errorMsg);
+      throw new Error(errorMsg);
+    }
+    // 开发环境：允许空值，但会警告
+    console.warn('[Env Config] ⚠️ STRIPE_SECRET_KEY 未设置，服务端 Stripe 功能将不可用');
+    return '';
+  }
+  
+  return key;
+}
+
+/**
  * 验证环境变量配置
- * [2025-12-09] 在应用启动时调用，确保配置正确
+ * [2025-12-10] 在应用启动时调用，确保配置正确
  */
 export function validateEnvConfig(): void {
   try {
     if (typeof window === 'undefined') {
-      // 服务端：验证后端 API URL
+      // 服务端：验证后端 API URL 和 Stripe Secret Key
       getBackendApiBaseUrl();
+      getStripeSecretKey();
     } else {
-      // 客户端：验证前端 API URL
+      // 客户端：验证前端 API URL 和 Stripe Publishable Key
       getFrontendApiBaseUrl();
+      getStripePublishableKey();
     }
   } catch (error) {
     // 在开发环境只警告，不阻止启动
@@ -201,4 +258,3 @@ export function validateEnvConfig(): void {
     }
   }
 }
-

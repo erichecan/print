@@ -90,15 +90,70 @@ export async function apiClient<T = any>(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      console.error('[API Client] Request failed:', {
-        url,
-        method,
+      // [2025-12-10] 分类处理错误状态码
+      const contentType = response.headers.get('content-type');
+      let errorData: any = null;
+      
+      try {
+        if (contentType?.includes('application/json')) {
+          errorData = await response.json();
+        } else {
+          const errorText = await response.text();
+          // 如果返回的是 HTML（可能是错误页面），不解析为 JSON
+          if (errorText.trim().startsWith('<!')) {
+            errorData = { message: `HTTP ${response.status} ${response.statusText}` };
+          } else {
+            errorData = { message: errorText.substring(0, 200) };
+          }
+        }
+      } catch (parseError) {
+        errorData = { message: `HTTP ${response.status} ${response.statusText}` };
+      }
+      
+      // [2025-12-10] 结构化错误对象
+      const apiError = {
         status: response.status,
         statusText: response.statusText,
-        error: errorText.substring(0, 200),
-      });
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+        message: errorData?.message || errorData?.error || `API request failed: ${response.status} ${response.statusText}`,
+        data: errorData,
+        url,
+        method,
+      };
+      
+      console.error('[API Client] Request failed:', apiError);
+      
+      // [2025-12-10] 根据状态码抛出不同类型的错误
+      if (response.status === 401) {
+        const error = new Error('Unauthorized') as any;
+        error.code = 'UNAUTHORIZED';
+        error.status = 401;
+        error.data = errorData;
+        throw error;
+      } else if (response.status === 403) {
+        const error = new Error('Forbidden') as any;
+        error.code = 'FORBIDDEN';
+        error.status = 403;
+        error.data = errorData;
+        throw error;
+      } else if (response.status === 404) {
+        const error = new Error('Not Found') as any;
+        error.code = 'NOT_FOUND';
+        error.status = 404;
+        error.data = errorData;
+        throw error;
+      } else if (response.status >= 500) {
+        const error = new Error('Server Error') as any;
+        error.code = 'SERVER_ERROR';
+        error.status = response.status;
+        error.data = errorData;
+        throw error;
+      } else {
+        const error = new Error(apiError.message) as any;
+        error.code = 'CLIENT_ERROR';
+        error.status = response.status;
+        error.data = errorData;
+        throw error;
+      }
     }
 
     const contentType = response.headers.get('content-type');

@@ -9,7 +9,6 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
   CardElement,
@@ -29,10 +28,10 @@ import {
 import { validateAddressForm, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
 import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:55:00] Toast 通知
 import { mapStripeError } from '@/utils/stripeErrorMapping'; // [2025-01-29 14:30:00] Stripe error mapping
+import { getStripe, isStripeConfigured } from '@/lib/stripe'; // [2025-12-10] 使用统一的 Stripe 初始化
 
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
-);
+// [2025-12-10] 使用统一的 Stripe 初始化，确保 key 正确配置
+const stripePromise = isStripeConfigured() ? getStripe() : Promise.resolve(null);
 
 interface ShippingAddressForm {
   fullName: string;
