@@ -31,6 +31,7 @@ import EditTextPanel from './components/panels/EditTextPanel';
 import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
 import LayerManagementPanel from './components/panels/LayerManagementPanel';
+import DesignCommentSection from './components/DesignCommentSection';
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
 import PriceModal from './components/modals/PriceModal';
@@ -3330,6 +3331,19 @@ const DesignLabClient: React.FC = () => {
           }
         }}
       />
+      
+      {/* [2025-12-10] 设计评论区域 */}
+      {currentDesignId && (
+        <div className="dl-comments-container">
+          <DesignCommentSection
+            designId={currentDesignId}
+            onCommentAdded={() => {
+              console.log('[DesignLab] Comment added');
+            }}
+          />
+        </div>
+      )}
+      
     </div>
   );
 };

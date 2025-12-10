@@ -1,0 +1,212 @@
+/* Design Comment Section 样式 */
+/* [2025-12-10] 设计评论组件样式 */
+.dl-comment-section {
+  padding: var(--dl-space-4);
+  background: var(--dl-bg-panel);
+  border-radius: var(--dl-radius-md);
+  margin-top: var(--dl-space-4);
+}
+
+.dl-comment-section__title {
+  font-size: var(--dl-font-lg);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-4) 0;
+}
+
+.dl-comment-section__loading {
+  text-align: center;
+  padding: var(--dl-space-6);
+  color: var(--dl-text-secondary);
+}
+
+.dl-comment-section__form {
+  margin-bottom: var(--dl-space-6);
+}
+
+.dl-comment-section__textarea {
+  width: 100%;
+  padding: var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-base);
+  font-family: var(--dl-font-family);
+  resize: vertical;
+  min-height: 80px;
+}
+
+.dl-comment-section__textarea:focus {
+  outline: none;
+  border-color: var(--dl-color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.dl-comment-section__form-fields {
+  display: flex;
+  gap: var(--dl-space-2);
+  margin-top: var(--dl-space-2);
+}
+
+.dl-comment-section__input {
+  flex: 1;
+  padding: var(--dl-space-2) var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+}
+
+.dl-comment-section__input:focus {
+  outline: none;
+  border-color: var(--dl-color-primary);
+}
+
+.dl-comment-section__submit {
+  margin-top: var(--dl-space-2);
+  padding: var(--dl-space-2) var(--dl-space-4);
+  background: var(--dl-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-base);
+  font-weight: var(--dl-font-weight-medium);
+  cursor: pointer;
+  transition: background var(--dl-transition-base);
+}
+
+.dl-comment-section__submit:hover:not(:disabled) {
+  background: #0052a3;
+}
+
+.dl-comment-section__submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dl-comment-section__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-4);
+}
+
+.dl-comment-section__empty {
+  text-align: center;
+  padding: var(--dl-space-6);
+  color: var(--dl-text-secondary);
+}
+
+.dl-comment-section__item {
+  padding: var(--dl-space-4);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-bg-primary);
+}
+
+.dl-comment-section__item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-comment-section__author {
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+}
+
+.dl-comment-section__date {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+}
+
+.dl-comment-section__content {
+  color: var(--dl-text-primary);
+  line-height: 1.6;
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-comment-section__actions {
+  display: flex;
+  gap: var(--dl-space-3);
+  margin-top: var(--dl-space-2);
+}
+
+.dl-comment-section__like-btn,
+.dl-comment-section__reply-btn {
+  padding: var(--dl-space-1) var(--dl-space-2);
+  background: none;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+}
+
+.dl-comment-section__like-btn:hover,
+.dl-comment-section__reply-btn:hover {
+  background: var(--dl-bg-hover);
+  color: var(--dl-text-primary);
+}
+
+.dl-comment-section__reply-form {
+  margin-top: var(--dl-space-3);
+  padding-top: var(--dl-space-3);
+  border-top: 1px solid var(--dl-border-color);
+}
+
+.dl-comment-section__reply-actions {
+  display: flex;
+  gap: var(--dl-space-2);
+  margin-top: var(--dl-space-2);
+  justify-content: flex-end;
+}
+
+.dl-comment-section__cancel-btn,
+.dl-comment-section__submit-btn {
+  padding: var(--dl-space-1) var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+}
+
+.dl-comment-section__cancel-btn {
+  background: var(--dl-bg-primary);
+  color: var(--dl-text-secondary);
+}
+
+.dl-comment-section__cancel-btn:hover {
+  background: var(--dl-bg-hover);
+}
+
+.dl-comment-section__submit-btn {
+  background: var(--dl-color-primary);
+  color: white;
+  border-color: var(--dl-color-primary);
+}
+
+.dl-comment-section__submit-btn:hover:not(:disabled) {
+  background: #0052a3;
+}
+
+.dl-comment-section__submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dl-comment-section__replies {
+  margin-top: var(--dl-space-3);
+  padding-left: var(--dl-space-4);
+  border-left: 2px solid var(--dl-border-color);
+}
+
+.dl-comment-section__reply-item {
+  padding: var(--dl-space-2) 0;
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-comment-section__reply-item:last-child {
+  border-bottom: none;
+}
+
