@@ -1,11 +1,38 @@
 /**
  * Unified API Client
- * [2025-12-09] 统一 API 请求客户端，禁止硬编码 URL
+ * [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类，浏览器端 credentials: 'include'
  * 所有 API 请求必须通过此客户端，确保环境变量正确使用
- * [2025-12-09] 修复：使用统一的环境变量配置模块
  */
 
 import { getFrontendApiBaseUrl } from '@/config/env';
+
+/**
+ * API 错误分类
+ * [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类，便于错误处理
+ */
+export enum ApiErrorType {
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  TIMEOUT = 'TIMEOUT',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  NOT_FOUND = 'NOT_FOUND',
+  SERVER_ERROR = 'SERVER_ERROR',
+  CLIENT_ERROR = 'CLIENT_ERROR',
+  UNKNOWN = 'UNKNOWN',
+}
+
+export class ApiError extends Error {
+  constructor(
+    public type: ApiErrorType,
+    message: string,
+    public statusCode?: number,
+    public originalError?: Error,
+    public data?: any
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
 
 /**
  * 构建完整的 API URL
@@ -63,7 +90,7 @@ export async function apiClient<T = any>(
     params,
     headers = {},
     timeout = 10000,
-    credentials = 'include',
+    credentials = 'include', // [2025-01-30 23:00:00] Design Lab 4.0: 浏览器端默认 'include'
   } = options;
 
   const url = buildApiUrl(path, params);
@@ -90,7 +117,7 @@ export async function apiClient<T = any>(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      // [2025-12-10] 分类处理错误状态码
+      // [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类
       const contentType = response.headers.get('content-type');
       let errorData: any = null;
       
@@ -110,50 +137,40 @@ export async function apiClient<T = any>(
         errorData = { message: `HTTP ${response.status} ${response.statusText}` };
       }
       
-      // [2025-12-10] 结构化错误对象
-      const apiError = {
-        status: response.status,
-        statusText: response.statusText,
-        message: errorData?.message || errorData?.error || `API request failed: ${response.status} ${response.statusText}`,
-        data: errorData,
+      // [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类
+      let errorType: ApiErrorType;
+      if (response.status === 401) {
+        errorType = ApiErrorType.UNAUTHORIZED;
+      } else if (response.status === 403) {
+        errorType = ApiErrorType.FORBIDDEN;
+      } else if (response.status === 404) {
+        errorType = ApiErrorType.NOT_FOUND;
+      } else if (response.status >= 500) {
+        errorType = ApiErrorType.SERVER_ERROR;
+      } else if (response.status >= 400) {
+        errorType = ApiErrorType.CLIENT_ERROR;
+      } else {
+        errorType = ApiErrorType.UNKNOWN;
+      }
+      
+      const errorMessage = errorData?.message || errorData?.error || `API request failed: ${response.status} ${response.statusText}`;
+      
+      console.error('[API Client] Request failed:', {
         url,
         method,
-      };
+        status: response.status,
+        statusText: response.statusText,
+        errorType,
+        error: errorMessage.substring(0, 200),
+      });
       
-      console.error('[API Client] Request failed:', apiError);
-      
-      // [2025-12-10] 根据状态码抛出不同类型的错误
-      if (response.status === 401) {
-        const error = new Error('Unauthorized') as any;
-        error.code = 'UNAUTHORIZED';
-        error.status = 401;
-        error.data = errorData;
-        throw error;
-      } else if (response.status === 403) {
-        const error = new Error('Forbidden') as any;
-        error.code = 'FORBIDDEN';
-        error.status = 403;
-        error.data = errorData;
-        throw error;
-      } else if (response.status === 404) {
-        const error = new Error('Not Found') as any;
-        error.code = 'NOT_FOUND';
-        error.status = 404;
-        error.data = errorData;
-        throw error;
-      } else if (response.status >= 500) {
-        const error = new Error('Server Error') as any;
-        error.code = 'SERVER_ERROR';
-        error.status = response.status;
-        error.data = errorData;
-        throw error;
-      } else {
-        const error = new Error(apiError.message) as any;
-        error.code = 'CLIENT_ERROR';
-        error.status = response.status;
-        error.data = errorData;
-        throw error;
-      }
+      throw new ApiError(
+        errorType,
+        errorMessage,
+        response.status,
+        new Error(errorMessage),
+        errorData
+      );
     }
 
     const contentType = response.headers.get('content-type');
@@ -165,8 +182,28 @@ export async function apiClient<T = any>(
   } catch (error: any) {
     clearTimeout(timeoutId);
     
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    
+    // [2025-01-30 23:00:00] Design Lab 4.0: 网络错误分类
     if (error.name === 'AbortError') {
-      throw new Error(`Request timeout after ${timeout}ms`);
+      throw new ApiError(
+        ApiErrorType.TIMEOUT,
+        `Request timeout after ${timeout}ms`,
+        undefined,
+        error
+      );
+    }
+    
+    // [2025-01-30 23:00:00] Design Lab 4.0: 网络错误分类
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new ApiError(
+        ApiErrorType.NETWORK_ERROR,
+        'Network error: Failed to fetch',
+        undefined,
+        error
+      );
     }
     
     console.error('[API Client] Request error:', {
@@ -174,7 +211,13 @@ export async function apiClient<T = any>(
       method,
       error: error?.message || 'Unknown error',
     });
-    throw error;
+    
+    throw new ApiError(
+      ApiErrorType.UNKNOWN,
+      error?.message || 'Unknown error',
+      undefined,
+      error
+    );
   }
 }
 

@@ -1,9 +1,25 @@
 /**
  * Next.js config
+ * [2025-01-30 23:00:00] Design Lab 4.0: 构建时环境变量校验
  * Updated: 2025-11-04 00:00:00
  * [2025-01-27 12:00:00] Added Netlify output configuration
  * [2025-01-27 14:10:00] 移除 Sentry 配置，使用简单的错误处理方案
  */
+
+// [2025-01-30 23:00:00] Design Lab 4.0: 构建时环境变量校验
+import { validateEnvAtBuildTime } from './src/config/env.js';
+import { validateStripeConfig } from './src/lib/stripe.js';
+
+// 构建时校验环境变量
+if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'production') {
+  try {
+    validateEnvAtBuildTime();
+    validateStripeConfig();
+  } catch (error) {
+    console.error('❌ 环境变量校验失败:', error.message);
+    process.exit(1);
+  }
+}
 
 const remotePatterns = [
   // [2025-12-09] 开发环境：允许 localhost
@@ -180,6 +196,8 @@ const nextConfig = {
   // [2025-01-27 14:20:00] 代码分割优化
   experimental: {
     optimizePackageImports: ['@stripe/stripe-js', '@stripe/react-stripe-js', 'fabric'], // 优化大型库的导入
+    // [2025-01-30 23:00:00] Design Lab 4.0: 移除对不存在页面的预取（可选，根据需要）
+    // prefetch: false,
   },
   // [2025-01-27 14:20:00] Webpack 优化配置
   // [2025-01-31 16:25:00] 修复：移除 vendor.css 和 layout.css 的生成，避免 404 错误

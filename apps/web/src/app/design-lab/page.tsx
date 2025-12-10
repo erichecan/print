@@ -1,16 +1,12 @@
 /**
  * Design Lab Page
- * [2025-11-11 15:47:58] 服务端入口，挂载 Fabric.js 客户端编辑器
- * [2025-01-27 15:10:00] Next.js 15: 直接导入客户端组件，无需 dynamic
- * [2025-01-27 17:05:00] 补充 SEO 元数据
- * [2025-01-28 03:15:00] 添加错误边界处理
- * [2025-01-30 20:30:00] 恢复使用 DesignLabClient 组件
+ * [2025-01-30 23:00:00] Design Lab 4.0: 服务端组件仅做数据拼装与可序列化返回
  */
 import { Suspense } from 'react';
 import { generateSEOMetadata } from '@/lib/seo';
-import { DesignLabErrorBoundary } from './DesignLabErrorBoundary';
 import DesignLabClient from './DesignLabClient';
 import type { Metadata } from 'next';
+import { getBackendApiBaseUrl } from '@/config/env';
 
 // [2025-01-27 17:05:00] 生成 Design Lab 页面 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
@@ -21,10 +17,53 @@ export const metadata: Metadata = generateSEOMetadata({
   image: 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg',
 });
 
-export default function DesignLabPage() {
-  // [2025-11-14 06:07:05] 使用 Suspense 包裹 DesignLabClient 以满足 useSearchParams 要求
-  // [2025-01-28 03:15:00] 添加错误边界处理
-  // [2025-01-30 20:30:00] 恢复使用 DesignLabClient 组件
+/**
+ * 服务端组件：仅做数据拼装与可序列化返回
+ * [2025-01-30 23:00:00] Design Lab 4.0: 严格 RSC 边界，不包含客户端 API
+ */
+export default async function DesignLabPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ productId?: string; colorId?: string; designId?: string; variantId?: string }>;
+}) {
+  // [2025-01-30 23:00:00] Design Lab 4.0: 服务端预取产品数据（可选，不阻塞）
+  const params = await searchParams;
+  let initialProductData = null;
+  
+  if (params?.productId || params?.variantId) {
+    try {
+      const apiBaseUrl = getBackendApiBaseUrl();
+      const productId = params.productId || (params.variantId ? undefined : null);
+      const variantId = params.variantId;
+      
+      // 使用服务端 fetch，不依赖客户端 API
+      if (variantId) {
+        const response = await fetch(`${apiBaseUrl}/products/variant/${variantId}`, {
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          initialProductData = await response.json();
+        }
+      } else if (productId) {
+        const response = await fetch(`${apiBaseUrl}/products/${productId}`, {
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        if (response.ok) {
+          initialProductData = await response.json();
+        }
+      }
+    } catch (error) {
+      // 服务端预取失败不影响页面加载，客户端会重试
+      console.warn('[Design Lab] 服务端预取产品数据失败:', error);
+    }
+  }
+
   return (
     <Suspense
       fallback={
@@ -33,9 +72,7 @@ export default function DesignLabPage() {
         </section>
       }
     >
-      <DesignLabErrorBoundary>
-        <DesignLabClient />
-      </DesignLabErrorBoundary>
+      <DesignLabClient initialProductData={initialProductData} />
     </Suspense>
   );
 }

@@ -57,28 +57,44 @@ function validateEnvVar(name: string, value: string | undefined, allowEmpty = fa
 }
 
 /**
+ * 构建时环境变量校验
+ * [2025-01-30 23:00:00] Design Lab 4.0: 构建时 fail，无隐式回退
+ */
+export function validateEnvAtBuildTime(): void {
+  if (isBuildTime || isProduction) {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+    
+    if (!apiUrl) {
+      throw new Error(
+        '❌ 构建时环境变量缺失: NEXT_PUBLIC_API_URL 或 NEXT_PUBLIC_API_BASE_URL 必须设置'
+      );
+    }
+    
+    if (containsLocalhost(apiUrl)) {
+      throw new Error(
+        `❌ 构建时环境变量非法: NEXT_PUBLIC_API_URL 包含 localhost (${apiUrl})，生产环境不允许使用 localhost`
+      );
+    }
+  }
+}
+
+/**
  * 获取前端 API 基础 URL
- * [2025-12-10] 用于浏览器环境的 API 请求
+ * [2025-01-30 23:00:00] Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
  * 
  * 优先级：
  * 1. NEXT_PUBLIC_API_URL（前端环境变量，构建时内联）
- * 2. 浏览器环境检测（生产环境使用相对路径 /api）
- * 3. 开发环境回退到 localhost:3001/api
+ * 2. NEXT_PUBLIC_API_BASE_URL（备选前端变量）
+ * 3. 生产环境运行时：必须配置，不允许回退
+ * 4. 开发环境：允许回退到 localhost:3001/api
  */
 export function getFrontendApiBaseUrl(): string {
   // 优先使用环境变量
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
   
   if (envUrl) {
-    // [2025-12-10] 浏览器环境：如果检测到 localhost，自动回退到相对路径
-    if (typeof window !== 'undefined' && isProduction && containsLocalhost(envUrl)) {
-      console.warn('[Env Config] ⚠️ 检测到 localhost API 地址，自动回退到相对路径 /api');
-      console.warn('[Env Config] 提示：下次部署时请在构建时设置正确的 NEXT_PUBLIC_API_URL 环境变量');
-      return '/api';
-    }
-    
-    // 服务端环境（SSR）：如果检测到 localhost，抛出错误
-    if (typeof window === 'undefined' && isProduction && containsLocalhost(envUrl)) {
+    // [2025-01-30 23:00:00] Design Lab 4.0: 生产环境检测到 localhost，直接 fail
+    if (isProduction && containsLocalhost(envUrl)) {
       const errorMsg = `生产环境 API 配置错误：NEXT_PUBLIC_API_URL 包含 localhost (${envUrl})。请设置正确的生产环境 API 服务器地址。`;
       console.error('[Env Config] ❌', errorMsg);
       throw new Error(errorMsg);
@@ -87,47 +103,15 @@ export function getFrontendApiBaseUrl(): string {
     return normalizeApiUrl(envUrl);
   }
   
-  // 浏览器环境：根据当前域名决定
-  if (typeof window !== 'undefined' && window.location) {
-    const isLocalhost = window.location.hostname === 'localhost' || 
-                        window.location.hostname === '127.0.0.1';
-    
-    // 开发环境且是 localhost，直接指向后端服务器
-    if (isLocalhost && isDevelopment) {
-      return 'http://localhost:3001/api';
-    }
-    
-    // 生产环境：统一使用相对路径，通过 Next.js API 路由代理
-    if (isProduction) {
-      if (isLocalhost) {
-        throw new Error('生产环境不应在 localhost 上运行。请检查部署配置。');
-      }
-      return '/api';
-    }
-    
-    // 开发环境其他情况，使用同源 URL
-    return normalizeApiUrl(window.location.origin);
-  }
-  
-  // SSR/构建时：检查部署 URL
-  const deployUrl = process.env.DEPLOY_URL || process.env.URL;
-  if (deployUrl) {
-    return normalizeApiUrl(deployUrl);
-  }
-  
-  // 生产环境运行时：必须配置环境变量
+  // [2025-01-30 23:00:00] Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
   if (isProduction) {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL 或 NEXT_PUBLIC_API_BASE_URL。';
     console.error('[Env Config] ❌', errorMsg);
     throw new Error(errorMsg);
   }
   
-  // 开发环境或构建时：允许回退到 localhost
-  if (isBuildTime) {
-    console.warn('[Env Config] ⚠️ 构建时未配置 API 地址，使用默认值（运行时需要配置环境变量）: http://localhost:3001/api');
-  } else {
-    console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:3001/api');
-  }
+  // 开发环境：允许回退到 localhost
+  console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:3001/api');
   return 'http://localhost:3001/api';
 }
 
