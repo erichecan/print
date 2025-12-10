@@ -21,6 +21,7 @@ import { useDesignLabStore } from '@/contexts/designLabStore';
 import { productsApi } from '@/lib/api';
 import type { DesignCanvasSnapshot } from '@/lib/api';
 import { useToast } from '@/hooks/useToast'; // [2025-12-08] 引入Toast
+import { canvasEngine, CanvasEventType } from '@/design/canvas/engine'; // [2025-01-30 23:30:00] Design Lab 4.0: 使用画布引擎
 import ToolPanel, { type ToolPanelType } from './components/ToolPanel';
 import HomePanel from './components/panels/HomePanel';
 import TemplateLibraryPanel from './components/panels/TemplateLibraryPanel';
@@ -64,7 +65,11 @@ interface ProductColor {
   isAvailable: boolean;
 }
 
-const DesignLabClient: React.FC = () => {
+interface DesignLabClientProps {
+  initialProductData?: any; // [2025-01-30 23:30:00] Design Lab 4.0: 服务端预取的产品数据
+}
+
+const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData }) => {
   const searchParams = useSearchParams();
   const { error: showErrorToast, warning: showWarningToast, success: showSuccessToast } = useToast(); // [2025-12-08] Toast hooks
   
@@ -2149,7 +2154,7 @@ const DesignLabClient: React.FC = () => {
     handleToolClick(action);
   };
 
-  // [2025-01-30 16:30:00] 初始化 Fabric.js 画布
+  // [2025-01-30 23:30:00] Design Lab 4.0: 使用 canvasEngine 初始化画布
   useEffect(() => {
     if (!canvasRef.current) {
       console.warn('[DesignLab] Canvas ref not available');
@@ -2159,55 +2164,136 @@ const DesignLabClient: React.FC = () => {
     const canvasElement = canvasRef.current;
     let isMounted = true;
 
-    // Dynamically import fabric
-    import('fabric').then(({ fabric }) => {
+    // [2025-01-30 23:30:00] Design Lab 4.0: 使用 canvasEngine 初始化
+    const initCanvas = async () => {
+      try {
+        // 动态导入 fabric
+        const { fabric } = await import('fabric');
       if (!isMounted || !canvasRef.current) return;
 
-      // [2025-12-10] 存储 fabric 对象到 ref，供其他函数使用
+        // 存储 fabric 对象到 ref
       fabricRef.current = fabric;
 
-      try {
-        // [2025-01-30 16:30:00] 初始化 Fabric Canvas
-        const fabricCanvas = new fabric.Canvas(canvasElement, {
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
-          backgroundColor: 'transparent',
-          preserveObjectStacking: true,
-          selection: true,
-          stateful: true,
-          // [2025-12-08 23:00:00] 启用等比缩放和从中心缩放
-          uniformScaling: false, // 通过Shift键启用
-          centeredScaling: false, // 通过Alt键启用
-        });
+        // 使用 canvasEngine 初始化画布
+        await canvasEngine.initialize(canvasElement, fabric);
         
-        console.log('[DesignLab] Fabric canvas initialized successfully');
-
-        // [2025-01-30 16:30:00] 高 DPI 适配
-        const devicePixelRatio = window.devicePixelRatio || 1;
-        const scale = devicePixelRatio;
-        
-        fabricCanvas.setWidth(CANVAS_WIDTH * scale);
-        fabricCanvas.setHeight(CANVAS_HEIGHT * scale);
-        
-        const canvasEl = fabricCanvas.getElement();
-        if (canvasEl) {
-          canvasEl.style.width = CANVAS_WIDTH + 'px';
-          canvasEl.style.height = CANVAS_HEIGHT + 'px';
+        // 获取画布实例
+        const fabricCanvas = canvasEngine.getCanvas();
+        if (!fabricCanvas) {
+          throw new Error('Canvas engine failed to initialize');
         }
         
-        fabricCanvas.setZoom(1);
-        fabricCanvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+        console.log('[DesignLab] Fabric canvas initialized successfully via canvasEngine');
 
-        // [2025-01-30 16:30:00] 设置对象默认属性
-        fabric.Object.prototype.set({
-          borderColor: '#3b82f6',
-          cornerColor: '#3b82f6',
-          cornerSize: 10,
-          transparentCorners: false,
-          borderScaleFactor: 2,
-          cornerStyle: 'circle',
-          rotatingPointOffset: 40
+        // [2025-01-30 23:30:00] Design Lab 4.0: canvasEngine 已处理高 DPI 适配和对象默认属性
+        // 监听画布事件
+        canvasEngine.on(CanvasEventType.OBJECT_ADDED, (event) => {
+          console.log('[DesignLab] Object added:', event.payload);
         });
+
+        canvasEngine.on(CanvasEventType.OBJECT_REMOVED, (event) => {
+          console.log('[DesignLab] Object removed:', event.payload);
+        });
+
+        canvasEngine.on(CanvasEventType.OBJECT_MODIFIED, (event) => {
+          console.log('[DesignLab] Object modified:', event.payload);
+          // 保存到历史记录
+          const snapshot = canvasToSnapshot(fabricCanvas);
+          setCanvas(snapshot, { pushHistory: true });
+        });
+
+        // [2025-01-30 23:30:00] Design Lab 4.0: 设置 fabricCanvasRef
+        fabricCanvasRef.current = fabricCanvas;
+
+        // [2025-12-08 23:00:00] 创建右上角删除按钮控件
+        // [2025-12-10] 修复：确保 fabric.Control 存在后再创建
+        if (!fabric.Control) {
+          throw new Error('fabric.Control is not available');
+        }
+        const deleteControl = new fabric.Control({
+          x: 0.5,
+          y: -0.5,
+          offsetX: 0,
+          offsetY: -20,
+          actionHandler: (eventData, transformData, x, y) => {
+            const target = transformData.target;
+            if (target && fabricCanvas) {
+              // 保存到历史记录以便Undo
+              const snapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(snapshot, { pushHistory: true });
+              
+              // 删除对象
+              fabricCanvas.remove(target);
+              fabricCanvas.renderAll();
+              
+              // 更新画布状态
+              const newSnapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(newSnapshot, { pushHistory: true });
+              
+              return true;
+            }
+            return false;
+          },
+          cursorStyle: 'pointer',
+          render: (ctx, left, top, styleOverride, fabricObject) => {
+            const size = 20;
+            ctx.save();
+            ctx.translate(left, top);
+            ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
+            
+            // 绘制圆形背景
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // 绘制X图标
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            const iconSize = size * 0.4;
+            ctx.beginPath();
+            ctx.moveTo(-iconSize / 2, -iconSize / 2);
+            ctx.lineTo(iconSize / 2, iconSize / 2);
+            ctx.moveTo(iconSize / 2, -iconSize / 2);
+            ctx.lineTo(-iconSize / 2, iconSize / 2);
+            ctx.stroke();
+            
+            ctx.restore();
+          },
+          mouseUpHandler: (eventData, transformData) => {
+            const target = transformData.target;
+            if (target && fabricCanvas) {
+              // 保存到历史记录以便Undo
+              const snapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(snapshot, { pushHistory: true });
+              
+              // 删除对象
+              fabricCanvas.remove(target);
+              fabricCanvas.renderAll();
+              
+              // 更新画布状态
+              const newSnapshot = canvasToSnapshot(fabricCanvas);
+              setCanvas(newSnapshot, { pushHistory: true });
+              
+              return true;
+            }
+            return false;
+          }
+        });
+
+        // [2025-12-08 23:00:00] 为所有对象添加删除控件（排除背景）
+        const addDeleteControlToObject = (obj: fabric.Object) => {
+          const objName = (obj as any).name || '';
+          if (objName !== 'background' && !obj.controls) {
+            obj.controls = {};
+          }
+          if (objName !== 'background') {
+            obj.controls.deleteControl = deleteControl;
+          }
+        };
+
+        // [2025-01-30 23:30:00] Design Lab 4.0: 继续原有的画布事件绑定逻辑
 
         // [2025-12-08 23:00:00] 创建右上角删除按钮控件
         // [2025-12-10] 修复：确保 fabric.Control 存在后再创建
@@ -2551,7 +2637,6 @@ const DesignLabClient: React.FC = () => {
         // [2025-12-08 23:00:00] 保存删除控件到canvas，以便后续使用
         (fabricCanvas as any).deleteControl = deleteControl;
 
-        fabricCanvasRef.current = fabricCanvas;
         console.log('[DesignLab] Event listeners attached, canvas ready');
 
         // [2025-12-10] 延迟恢复画布状态，确保所有初始化完成
@@ -2581,35 +2666,37 @@ const DesignLabClient: React.FC = () => {
           setProductInfo(defaultProductInfo);
         }
 
+        // [2025-01-30 23:30:00] Design Lab 4.0: 标记画布已初始化
         setCanvasInitialized(true);
-        console.log('[DesignLab] Fabric.js canvas initialized successfully');
+        console.log('[DesignLab] Fabric.js canvas initialized successfully via canvasEngine');
 
       } catch (error) {
         console.error('[DesignLab] Error initializing Fabric.js canvas:', error);
         showErrorToast('Failed to initialize design canvas. Please refresh the page.');
+        setCanvasInitialized(false);
       }
-    }).catch((error) => {
+    };
+
+    initCanvas().catch((error) => {
       console.error('[DesignLab] Error loading fabric.js:', error);
       showErrorToast('Failed to load design canvas library. Please refresh the page.');
+      setCanvasInitialized(false);
     });
 
     return () => {
       isMounted = false;
-      if (fabricCanvasRef.current) {
-        try {
-          console.log('[DesignLab] Cleaning up Fabric.js canvas');
-          // Remove all event listeners
-          fabricCanvasRef.current.off();
-          fabricCanvasRef.current.dispose();
+      // [2025-01-30 23:30:00] Design Lab 4.0: 使用 canvasEngine 清理资源
+      try {
+        console.log('[DesignLab] Cleaning up canvas engine');
+        canvasEngine.dispose();
         } catch (error) {
-          console.error('[DesignLab] Error cleaning up canvas:', error);
+        console.error('[DesignLab] Error cleaning up canvas engine:', error);
         }
         fabricCanvasRef.current = null;
         fabricRef.current = null;
         setCanvasInitialized(false);
-      }
     };
-  }, []); // [2025-12-10] 修复：移除依赖项，避免重复初始化
+  }, [canvasToSnapshot, setCanvas, getCurrentViewCanvas]); // [2025-01-30 23:30:00] Design Lab 4.0: 添加必要的依赖
 
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，使用 canvasInitialized 状态标志确保在画布和产品信息都准备好后加载背景图片
   // [2025-01-31 13:45:00] 修复：productInfo 现在总是非 null，移除多余的 null 检查

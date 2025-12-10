@@ -64,16 +64,10 @@ export default async function DesignLabPage({
     }
   }
 
+  // [2025-01-30 23:30:00] Design Lab 4.0: 使用 layout 的分阶段初始化
+  // layout.tsx 会自动处理 Boot/Config/Data Prefetch/Feature Hydration 阶段
   return (
-    <Suspense
-      fallback={
-        <section style={{ minHeight: '60vh', display: 'grid', placeItems: 'center' }}>
-          <p>Preparing the Design Lab…</p>
-        </section>
-      }
-    >
-      <DesignLabClient initialProductData={initialProductData} />
-    </Suspense>
+    <DesignLabClient initialProductData={initialProductData} />
   );
 }
 
