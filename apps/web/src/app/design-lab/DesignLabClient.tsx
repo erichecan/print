@@ -779,7 +779,16 @@ const DesignLabClient: React.FC = () => {
   // [2025-01-30 16:30:00] 从 DesignCanvasSnapshot 恢复 Fabric 画布
   // [2025-01-30 21:25:00] 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
   // [2025-12-08 23:00:00] 修复：为恢复的对象添加删除控件
+  // [2025-12-10] 修复：使用 fabricRef 确保 fabric 对象已加载
   const snapshotToCanvas = useCallback((snapshot: DesignCanvasSnapshot, canvas: fabric.Canvas) => {
+    // [2025-12-10] 检查 fabric 对象是否已加载
+    if (!fabricRef.current) {
+      console.warn('[DesignLab] Fabric not loaded yet, cannot restore canvas snapshot');
+      return;
+    }
+    
+    const fabric = fabricRef.current;
+    
     // 清除现有对象（保留背景）
     const objectsToRemove = canvas.getObjects().filter((obj: fabric.Object) => obj.name !== 'background');
     objectsToRemove.forEach((obj: fabric.Object) => canvas.remove(obj));
@@ -1144,11 +1153,20 @@ const DesignLabClient: React.FC = () => {
 
   // [2025-01-30 17:50:00] 添加文本功能
   // [2025-01-30 22:15:00] 修复：确保添加文本后正确切换到 Edit Text 面板，不会被 selection:cleared 事件覆盖
+  // [2025-12-10] 修复：使用 fabricRef 确保 fabric 对象已加载
   const handleAddText = useCallback((text: string) => {
     if (!fabricCanvasRef.current) {
       alert('Canvas not initialized');
       return;
     }
+    
+    // [2025-12-10] 检查 fabric 对象是否已加载
+    if (!fabricRef.current) {
+      alert('Design Lab is still loading. Please wait...');
+      return;
+    }
+
+    const fabric = fabricRef.current;
 
     try {
       // [2025-01-31 01:00:00] 设置标志，防止选择清除事件在添加对象后立即触发
@@ -1204,11 +1222,20 @@ const DesignLabClient: React.FC = () => {
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
   // [2025-01-30 18:10:00] 添加艺术素材功能
+  // [2025-12-10] 修复：使用 fabricRef 确保 fabric 对象已加载
   const handleAddArt = useCallback((artUrl: string, artName: string) => {
     if (!fabricCanvasRef.current) {
       showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
       return;
     }
+    
+    // [2025-12-10] 检查 fabric 对象是否已加载
+    if (!fabricRef.current) {
+      showErrorToast('Design Lab is still loading. Please wait...');
+      return;
+    }
+
+    const fabric = fabricRef.current;
 
     // [2025-01-30 18:10:00] 使用原生 Image 对象加载图片
     const imgElement = new Image();
@@ -1374,6 +1401,13 @@ const DesignLabClient: React.FC = () => {
         });
 
         try {
+          // [2025-12-10] 检查 fabric 对象是否已加载
+          if (!fabricRef.current) {
+            console.error('[DesignLab] Fabric not loaded yet, cannot create Fabric Image');
+            return;
+          }
+          const fabric = fabricRef.current;
+          
           // [2025-01-30 17:30:00] 创建 Fabric Image 对象
           const fabricImage = new fabric.Image(imgElement, {
             // [2025-01-30 22:30:00] 确保图片对象是可选择和可编辑的
@@ -1580,6 +1614,13 @@ const DesignLabClient: React.FC = () => {
     
     imgElement.onload = () => {
       try {
+        // [2025-12-10] 检查 fabric 对象是否已加载
+        if (!fabricRef.current) {
+          console.error('[DesignLab] Fabric not loaded yet, cannot create Fabric Image');
+          return;
+        }
+        const fabric = fabricRef.current;
+        
         const fabricImage = new fabric.Image(imgElement, {
           selectable: true,
           evented: true,
@@ -1993,6 +2034,13 @@ const DesignLabClient: React.FC = () => {
 
       // Ctrl/Cmd + A: 全选
       if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        // [2025-12-10] 检查 fabric 对象是否已加载
+        if (!fabricRef.current) {
+          console.warn('[DesignLab] Fabric not loaded yet, cannot select all');
+          return;
+        }
+        const fabric = fabricRef.current;
+        
         const objects = canvas.getObjects().filter((obj: fabric.Object) => {
           const objName = (obj as any).name || '';
           return objName !== 'background';
@@ -2024,6 +2072,13 @@ const DesignLabClient: React.FC = () => {
 
       // Ctrl/Cmd + V: 粘贴
       if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+        // [2025-12-10] 检查 fabric 对象是否已加载
+        if (!fabricRef.current) {
+          console.warn('[DesignLab] Fabric not loaded yet, cannot paste');
+          return;
+        }
+        const fabric = fabricRef.current;
+        
         const clipboardData = (window as any).__fabricClipboard;
         if (clipboardData) {
           try {
