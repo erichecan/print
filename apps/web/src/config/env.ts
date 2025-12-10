@@ -1,12 +1,13 @@
 /**
  * Environment Configuration - 统一环境变量管理
- * [2025-12-10] 强校验，禁止隐式回退，生产环境必须配置
+ * [2025-01-30 23:00:00] Design Lab 4.0: 构建时 fail，无隐式回退
  * 
  * 原则：
  * 1. 生产环境必须配置环境变量，不允许 localhost 或空值
  * 2. 开发环境允许 localhost 作为默认值
- * 3. 构建时允许默认值，运行时严格检查
- * 4. 禁止隐式回退到 /api，必须明确配置
+ * 3. 构建时严格检查，缺失或 localhost 直接 fail
+ * 4. 运行时严格检查，缺失或 localhost 直接 fail
+ * 5. 禁止所有隐式回退逻辑
  */
 
 const isDevelopment = process.env.NODE_ENV === 'development';

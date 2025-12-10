@@ -153,10 +153,12 @@ const nextConfig = {
     // [2025-01-29 23:30:00] 在 Cloud Run 上禁用图片优化器，避免静态资源 400 错误
     // [2025-01-29 23:55:00] 对于 GCS 图片，由于已经配置了 remotePatterns，可以启用优化
     // 但在 Cloud Run 上，由于静态资源路径问题，仍然禁用优化
+    // [2025-01-30 12:00:00] 修复：在 Cloud Run 生产环境禁用图片优化，避免 400 错误
     unoptimized:
       process.env.NETLIFY === 'true' ||
       process.env.NEXT_IMAGE_UNOPTIMIZED === 'true' ||
-      process.env.DISABLE_IMAGE_OPTIMIZATION === 'true',
+      process.env.DISABLE_IMAGE_OPTIMIZATION === 'true' ||
+      (process.env.NODE_ENV === 'production' && process.env.GCP_DEPLOY === 'true'),
     formats: ['image/avif', 'image/webp'], // [2025-01-27 14:20:00] 支持现代图片格式
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840], // [2025-01-27 14:20:00] 响应式图片尺寸
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384], // [2025-01-27 14:20:00] 图片尺寸配置

@@ -31,6 +31,7 @@ import { mapStripeError } from '@/utils/stripeErrorMapping'; // [2025-01-29 14:3
 import { getStripe, isStripeConfigured } from '@/lib/stripe'; // [2025-12-10] 使用统一的 Stripe 初始化
 
 // [2025-12-10] 使用统一的 Stripe 初始化，确保 key 正确配置
+// [2025-01-30 12:00:00] 修复：使用统一的 Stripe 初始化函数，避免配置错误
 const stripePromise = isStripeConfigured() ? getStripe() : Promise.resolve(null);
 
 interface ShippingAddressForm {
@@ -218,17 +219,31 @@ function CheckoutForm({
   const router = useRouter();
   const { error: showError, warning: showWarning } = useToast(); // [2025-01-27 16:55:00] Toast 通知
 
+  // [2025-01-30 12:00:00] 修复TDZ错误：将cardComplete定义移到useEffect之前
+  const [cardComplete, setCardComplete] = useState(false);
+
   // [2025-11-29 21:25:00] 调试日志：监控 Stripe 加载状态
   // [2025-01-29 12:00:00] 增强 Stripe 加载状态监控
+  // [2025-01-30 12:00:00] 使用统一的 Stripe 配置获取函数
+  // [2025-01-30 12:00:00] 修复TDZ错误：将useEffect移到cardComplete定义之后
   useEffect(() => {
-    console.log('[Checkout Debug] Stripe state:', JSON.stringify({
-      stripe: stripe ? 'loaded' : 'not-loaded',
-      hasStripeKey: !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-      stripeKeyLength: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.length || 0,
-      stripeKeyPrefix: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 7) || 'none',
-      elements: elements ? 'loaded' : 'not-loaded',
-      cardComplete,
-    }, null, 2));
+    try {
+      // [2025-01-30 12:00:00] 使用统一的 Stripe 配置检查
+      const stripeKey = isStripeConfigured() ? 'configured' : 'not-configured';
+      console.log('[Checkout Debug] Stripe state:', JSON.stringify({
+        stripe: stripe ? 'loaded' : 'not-loaded',
+        hasStripeKey: !!stripeKey && stripeKey.trim() !== '',
+        stripeKeyLength: stripeKey?.length || 0,
+        stripeKeyPrefix: stripeKey?.substring(0, 7) || 'none',
+        elements: elements ? 'loaded' : 'not-loaded',
+        cardComplete,
+      }, null, 2));
+    } catch (e) {
+      // 如果日志输出失败，静默忽略
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Checkout Debug] Failed to log Stripe state:', e);
+      }
+    }
   }, [stripe, elements, cardComplete]);
 
   const [address, setAddress] = useState<ShippingAddressForm>({
@@ -272,7 +287,7 @@ function CheckoutForm({
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [cardError, setCardError] = useState<string | null>(null);
-  const [cardComplete, setCardComplete] = useState(false);
+  // [2025-01-30 12:00:00] cardComplete已移到组件顶部，避免TDZ错误
   const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'confirming'>('form');
   // [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112)
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);

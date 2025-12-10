@@ -1,110 +1,117 @@
 /**
  * Error State Component
- * [2025-12-09] 统一的错误状态显示组件，支持重试
+ * [2025-01-30 12:00:00] 统一的错误状态显示组件
+ * 
+ * 用途：
+ * 1. 显示API错误、网络错误等
+ * 2. 提供重试功能
+ * 3. 统一的错误UI样式
  */
-
 'use client';
 
 import React from 'react';
 
-export interface ErrorStateProps {
-  /** 错误消息 */
-  error?: string | Error | null;
-  /** 错误标题（可选） */
+interface ErrorStateProps {
   title?: string;
-  /** 是否可重试 */
-  retryable?: boolean;
-  /** 重试回调 */
+  message: string;
   onRetry?: () => void;
-  /** 自定义样式类名 */
-  className?: string;
-  /** 最小高度（用于占位） */
-  minHeight?: string;
+  retryLabel?: string;
+  showDetails?: boolean;
+  details?: string;
 }
 
-/**
- * 统一的错误状态组件
- * [2025-12-09] 用于显示 API 错误、网络错误等
- */
 export function ErrorState({
-  error,
-  title = '出错了',
-  retryable = true,
+  title = '出现错误',
+  message,
   onRetry,
-  className = '',
-  minHeight = '40vh',
+  retryLabel = '重试',
+  showDetails = false,
+  details,
 }: ErrorStateProps) {
-  const errorMessage = error instanceof Error 
-    ? error.message 
-    : typeof error === 'string' 
-      ? error 
-      : '发生未知错误，请稍后重试';
-
   return (
-    <div
-      className={`error-state ${className}`}
-      style={{
-        minHeight,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 20px',
-        textAlign: 'center',
-      }}
-    >
-      <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-      <h2
-        style={{
-          fontSize: '20px',
-          fontWeight: 600,
-          color: '#ef4444',
-          marginBottom: '8px',
-        }}
-      >
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '3rem 1.5rem',
+      textAlign: 'center',
+      minHeight: '400px',
+    }}>
+      <div style={{
+        fontSize: '3rem',
+        marginBottom: '1rem',
+      }}>
+        ⚠️
+      </div>
+      <h2 style={{
+        fontSize: '1.5rem',
+        fontWeight: '600',
+        marginBottom: '0.5rem',
+        color: '#1f2937',
+      }}>
         {title}
       </h2>
-      <p
-        style={{
-          fontSize: '14px',
-          color: '#666',
-          maxWidth: '500px',
-          marginBottom: '24px',
-          lineHeight: '1.5',
-        }}
-      >
-        {errorMessage}
+      <p style={{
+        fontSize: '1rem',
+        color: '#6b7280',
+        marginBottom: '1.5rem',
+        maxWidth: '500px',
+      }}>
+        {message}
       </p>
-      {retryable && onRetry && (
+      {showDetails && details && (
+        <details style={{
+          marginBottom: '1.5rem',
+          textAlign: 'left',
+          maxWidth: '500px',
+          width: '100%',
+        }}>
+          <summary style={{
+            cursor: 'pointer',
+            color: '#6b7280',
+            fontSize: '0.875rem',
+          }}>
+            查看详细信息
+          </summary>
+          <pre style={{
+            marginTop: '0.5rem',
+            padding: '1rem',
+            background: '#f3f4f6',
+            borderRadius: '8px',
+            fontSize: '0.875rem',
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}>
+            {details}
+          </pre>
+        </details>
+      )}
+      {onRetry && (
         <button
           onClick={onRetry}
           style={{
-            padding: '10px 24px',
-            fontSize: '14px',
-            fontWeight: 500,
-            color: '#fff',
-            backgroundColor: '#ef4444',
+            padding: '0.75rem 1.5rem',
+            background: '#ff1f3d',
+            color: '#ffffff',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '8px',
+            fontSize: '1rem',
+            fontWeight: '600',
             cursor: 'pointer',
-            transition: 'background-color 0.2s',
+            transition: 'background 0.2s ease',
           }}
           onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = '#dc2626';
+            e.currentTarget.style.background = '#e3002b';
           }}
           onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = '#ef4444';
+            e.currentTarget.style.background = '#ff1f3d';
           }}
         >
-          重试
+          {retryLabel}
         </button>
       )}
-      <style jsx>{`
-        .error-state {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-      `}</style>
     </div>
   );
 }
-

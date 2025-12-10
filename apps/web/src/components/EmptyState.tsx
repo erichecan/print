@@ -1,85 +1,87 @@
 /**
  * Empty State Component
- * [2025-12-09] 统一的空状态显示组件
+ * [2025-01-30 12:00:00] 统一的空状态显示组件
+ * 
+ * 用途：
+ * 1. 显示空列表、空搜索结果等
+ * 2. 提供操作建议
  */
-
 'use client';
 
 import React from 'react';
 
-export interface EmptyStateProps {
-  /** 标题 */
-  title?: string;
-  /** 描述信息 */
-  description?: string;
-  /** 图标（emoji 或 React 节点） */
-  icon?: string | React.ReactNode;
-  /** 操作按钮 */
-  action?: React.ReactNode;
-  /** 自定义样式类名 */
-  className?: string;
-  /** 最小高度（用于占位） */
-  minHeight?: string;
+interface EmptyStateProps {
+  title: string;
+  message: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
+  icon?: string;
 }
 
-/**
- * 统一的空状态组件
- * [2025-12-09] 用于显示列表为空、资源不存在等情况
- */
 export function EmptyState({
-  title = '暂无数据',
-  description,
-  icon = '📭',
+  title,
+  message,
   action,
-  className = '',
-  minHeight = '40vh',
+  icon = '📦',
 }: EmptyStateProps) {
   return (
-    <div
-      className={`empty-state ${className}`}
-      style={{
-        minHeight,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 20px',
-        textAlign: 'center',
-      }}
-    >
-      <div style={{ fontSize: '48px', marginBottom: '16px' }}>
-        {typeof icon === 'string' ? icon : icon}
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '3rem 1.5rem',
+      textAlign: 'center',
+      minHeight: '400px',
+    }}>
+      <div style={{
+        fontSize: '3rem',
+        marginBottom: '1rem',
+      }}>
+        {icon}
       </div>
-      <h2
-        style={{
-          fontSize: '20px',
-          fontWeight: 600,
-          color: '#333',
-          marginBottom: '8px',
-        }}
-      >
+      <h2 style={{
+        fontSize: '1.5rem',
+        fontWeight: '600',
+        marginBottom: '0.5rem',
+        color: '#1f2937',
+      }}>
         {title}
       </h2>
-      {description && (
-        <p
+      <p style={{
+        fontSize: '1rem',
+        color: '#6b7280',
+        marginBottom: action ? '1.5rem' : '0',
+        maxWidth: '500px',
+      }}>
+        {message}
+      </p>
+      {action && (
+        <button
+          onClick={action.onClick}
           style={{
-            fontSize: '14px',
-            color: '#666',
-            maxWidth: '500px',
-            marginBottom: '24px',
-            lineHeight: '1.5',
+            padding: '0.75rem 1.5rem',
+            background: '#ff1f3d',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '1rem',
+            fontWeight: '600',
+            cursor: 'pointer',
+            transition: 'background 0.2s ease',
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = '#e3002b';
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = '#ff1f3d';
           }}
         >
-          {description}
-        </p>
+          {action.label}
+        </button>
       )}
-      {action && <div style={{ marginTop: '16px' }}>{action}</div>}
-      <style jsx>{`
-        .empty-state {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        }
-      `}</style>
     </div>
   );
 }
-
