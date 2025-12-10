@@ -187,6 +187,8 @@ const DesignLabClient: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const backgroundImageRef = useRef<fabric.Image | null>(null);
+  // [2025-12-10] 使用 ref 存储 fabric 对象，确保在 loadFallbackImage 和 loadBackgroundImage 中使用时 fabric 已加载
+  const fabricRef = useRef<typeof fabric | null>(null);
   // [2025-01-30 22:20:00] 使用 ref 跟踪当前面板类型，避免闭包问题
   const toolPanelTypeRef = useRef<ToolPanelType>('home');
   // [2025-01-31 16:30:00] 使用 ref 跟踪已加载的背景图片，避免重复加载和无限循环
@@ -234,8 +236,17 @@ const DesignLabClient: React.FC = () => {
   // [2025-01-30 21:35:00] 支持 zoom 视图（虽然不会加载背景）
   // [2025-01-31 14:00:00] 加载占位图片的辅助函数，确保至少显示一个图片
   // [2025-01-31 16:00:00] 修复：添加错误处理，如果占位图加载失败，创建纯色矩形作为备用方案
+  // [2025-12-10] 修复：使用 fabricRef 确保 fabric 对象已加载
   const loadFallbackImage = useCallback((viewKey: 'front' | 'back' | 'sleeve', canvas: fabric.Canvas) => {
     if (!canvas) return;
+    
+    // [2025-12-10] 检查 fabric 对象是否已加载
+    if (!fabricRef.current) {
+      console.warn('[DesignLab] Fabric not loaded yet, skipping fallback image');
+      return;
+    }
+    
+    const fabric = fabricRef.current;
     
     // [2025-01-31 16:00:00] 创建一个简单的纯色矩形作为备用背景，避免依赖外部图片服务
     const createSolidColorBackground = () => {
@@ -364,8 +375,15 @@ const DesignLabClient: React.FC = () => {
       console.warn('[DesignLab] Cannot load background image: canvas not initialized');
       return;
     }
+    
+    // [2025-12-10] 检查 fabric 对象是否已加载
+    if (!fabricRef.current) {
+      console.warn('[DesignLab] Fabric not loaded yet, skipping background image load');
+      return;
+    }
 
     const canvas = fabricCanvasRef.current;
+    const fabric = fabricRef.current;
     
     // [2025-01-31 16:55:00] 检查是否正在加载，避免重复加载
     const imageKey = `${view}-${productInfoRef.current?.color || 'White'}-${productInfoRef.current?.baseImages?.[view] || ''}`;
@@ -546,7 +564,13 @@ const DesignLabClient: React.FC = () => {
     imgElement.onload = () => {
       console.log('[DesignLab] Native Image loaded successfully, creating Fabric Image');
       try {
-        const fabricImg = new fabric.Image(imgElement);
+        // [2025-12-10] 使用 fabricRef 确保 fabric 对象已加载
+        if (!fabricRef.current) {
+          console.error('[DesignLab] Fabric not loaded yet, cannot create Fabric Image');
+          onImageError(new Error('Fabric not loaded'));
+          return;
+        }
+        const fabricImg = new fabricRef.current.Image(imgElement);
         console.log('[DesignLab] Fabric Image created, calling onImageLoaded');
         onImageLoaded(fabricImg);
       } catch (error) {
@@ -2071,6 +2095,9 @@ const DesignLabClient: React.FC = () => {
     // Dynamically import fabric
     import('fabric').then(({ fabric }) => {
       if (!isMounted || !canvasRef.current) return;
+
+      // [2025-12-10] 存储 fabric 对象到 ref，供其他函数使用
+      fabricRef.current = fabric;
 
       try {
         // [2025-01-30 16:30:00] 初始化 Fabric Canvas
