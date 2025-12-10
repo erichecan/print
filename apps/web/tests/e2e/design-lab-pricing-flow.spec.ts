@@ -210,9 +210,9 @@ test.describe('Design Lab M3: 报价与下单流程测试', () => {
       
       // 查找 Continue to Sizes 按钮
       const continueToSizes = page.locator('button:has-text("Continue to Sizes"), button:has-text("Continue")').first();
-      const isVisible = await continueToSizes.isVisible({ timeout: 3000 }).catch(() => false);
+      const isContinueVisible = await continueToSizes.isVisible({ timeout: 3000 }).catch(() => false);
       
-      if (isVisible) {
+      if (isContinueVisible) {
         await continueToSizes.click();
         await page.waitForTimeout(2000);
         
