@@ -7,7 +7,7 @@
 import React from 'react';
 
 interface HomePanelProps {
-  onAction: (action: 'upload' | 'text' | 'art' | 'products' | 'layers' | 'templates') => void; // [2025-12-10] 添加模板库
+  onAction: (action: 'upload' | 'text' | 'art' | 'products' | 'layers' | 'templates' | 'export') => void; // [2025-12-10] 添加模板库和导出
 }
 
 const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
@@ -89,6 +89,20 @@ const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
             <rect x="14" y="14" width="7" height="7" />
           </svg>
           <span>Templates</span>
+        </button>
+        
+        {/* [2025-12-10] 导出按钮 */}
+        <button
+          className="dl-home-panel__action"
+          onClick={() => onAction('export')}
+          aria-label="Export Design"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>Export</span>
         </button>
       </div>
       

@@ -1128,7 +1128,7 @@ const DesignLabClient: React.FC = () => {
   }, [productInfo, currentView, loadBackgroundImage, loadProductInfo]);
 
   // [2025-01-30 17:00:00] Home 面板操作处理
-  const handleHomeAction = (action: 'upload' | 'text' | 'art' | 'products' | 'layers' | 'templates') => {
+  const handleHomeAction = (action: 'upload' | 'text' | 'art' | 'products' | 'layers' | 'templates' | 'export') => {
     if (action === 'products') {
       // TODO: 实现产品切换功能
       console.log('[DesignLab] Change products');
@@ -1143,6 +1143,11 @@ const DesignLabClient: React.FC = () => {
     if (action === 'templates') {
       // [2025-12-10] 打开模板库面板
       setShowTemplateLibrary(true);
+      return;
+    }
+    if (action === 'export') {
+      // [2025-12-10] 显示导出菜单
+      handleShowExportMenu();
       return;
     }
     handleToolClick(action);
