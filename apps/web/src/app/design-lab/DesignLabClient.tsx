@@ -33,6 +33,7 @@ import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
 import LayerManagementPanel from './components/panels/LayerManagementPanel';
 import DesignCommentSection from './components/DesignCommentSection';
+import { CanvasLoadingError } from './components/CanvasLoadingError'; // [2025-12-10 18:40:00] Canvas加载错误组件
 import ProductColorsModal from './components/modals/ProductColorsModal';
 import NamesNumbersModal from './components/modals/NamesNumbersModal';
 import PriceModal from './components/modals/PriceModal';
@@ -189,6 +190,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   const isAddingObjectRef = useRef(false);
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，添加画布初始化状态跟踪
   const [canvasInitialized, setCanvasInitialized] = useState(false);
+  // [2025-12-10 18:40:00] Canvas初始化错误状态
+  const [canvasInitError, setCanvasInitError] = useState<Error | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -2165,14 +2168,25 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     let isMounted = true;
 
     // [2025-01-30 23:30:00] Design Lab 4.0: 使用 canvasEngine 初始化
+    // [2025-12-10 18:40:00] 修复：正确处理fabric.js的动态导入，fabric包导出结构为 { fabric: ... }
     const initCanvas = async () => {
       try {
         // 动态导入 fabric
-        const { fabric } = await import('fabric');
-      if (!isMounted || !canvasRef.current) return;
+        // [2025-12-10 18:40:00] 修复：fabric包导出为 { fabric: ... }，需要访问fabric.fabric
+        const fabricModule = await import('fabric');
+        if (!isMounted || !canvasRef.current) return;
+
+        // [2025-12-10 18:40:00] 修复：获取实际的fabric对象
+        // fabric包可能导出为 { fabric: ... } 或 { default: ... } 或直接导出
+        const fabric = fabricModule.fabric || fabricModule.default || fabricModule;
+        
+        // 验证fabric对象是否有效
+        if (!fabric || typeof fabric.Canvas !== 'function') {
+          throw new Error('Fabric.js module is not properly loaded. Canvas constructor is missing.');
+        }
 
         // 存储 fabric 对象到 ref
-      fabricRef.current = fabric;
+        fabricRef.current = fabric;
 
         // 使用 canvasEngine 初始化画布
         await canvasEngine.initialize(canvasElement, fabric);
@@ -2671,9 +2685,43 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         console.log('[DesignLab] Fabric.js canvas initialized successfully via canvasEngine');
 
       } catch (error) {
-        console.error('[DesignLab] Error initializing Fabric.js canvas:', error);
-        showErrorToast('Failed to initialize design canvas. Please refresh the page.');
+        // [2025-12-10 18:40:00] 增强错误处理和日志记录
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        
+        console.error('[DesignLab] Error initializing Fabric.js canvas:', {
+          error: errorMessage,
+          stack: errorStack,
+          fabricAvailable: !!fabricRef.current,
+          canvasElementAvailable: !!canvasRef.current,
+          timestamp: new Date().toISOString(),
+        });
+        
+        // [2025-12-10 18:40:00] 提供更详细的错误信息
+        if (errorMessage.includes('Canvas') || errorMessage.includes('fabric')) {
+          showErrorToast('Failed to load design canvas library. Please refresh the page or check your internet connection.');
+        } else {
+          showErrorToast('Failed to initialize design canvas. Please refresh the page.');
+        }
+        
         setCanvasInitialized(false);
+        // [2025-12-10 18:40:00] 保存错误状态用于UI显示
+        setCanvasInitError(error instanceof Error ? error : new Error(String(error)));
+        
+        // [2025-12-10 18:40:00] 上报错误到监控系统（如果有）
+        if (typeof window !== 'undefined' && (window as any).Sentry) {
+          try {
+            (window as any).Sentry.captureException(error, {
+              tags: { component: 'DesignLab', action: 'canvas-init' },
+              extra: {
+                fabricAvailable: !!fabricRef.current,
+                canvasElementAvailable: !!canvasRef.current,
+              },
+            });
+          } catch (sentryError) {
+            // 忽略Sentry错误
+          }
+        }
       }
     };
 
@@ -2681,6 +2729,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.error('[DesignLab] Error loading fabric.js:', error);
       showErrorToast('Failed to load design canvas library. Please refresh the page.');
       setCanvasInitialized(false);
+      // [2025-12-10 18:40:00] 保存错误状态用于UI显示
+      setCanvasInitError(error instanceof Error ? error : new Error(String(error)));
     });
 
     return () => {
@@ -3003,8 +3053,22 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               </svg>
             </button>
           </div>
+          {/* [2025-12-10 18:40:00] Canvas初始化错误显示 */}
+          {canvasInitError && !canvasInitialized && (
+            <CanvasLoadingError
+              error={canvasInitError}
+              onRetry={() => {
+                setCanvasInitError(null);
+                setCanvasInitialized(false);
+                // 触发重新初始化（通过重新挂载或重新执行useEffect）
+                window.location.reload();
+              }}
+              showDetails={process.env.NODE_ENV === 'development'}
+            />
+          )}
+          
           {/* [2025-12-08] Zoom视图控制按钮 */}
-          {currentView === 'zoom' && (
+          {currentView === 'zoom' && !canvasInitError && (
             <div className="dl-canvas__zoom-controls">
               <button
                 className="dl-canvas__zoom-btn"
@@ -3061,7 +3125,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             <div className="dl-canvas__product">
               {/* [2025-01-30 22:35:00] Fabric.js 画布 */}
               {/* [2025-01-31 16:20:00] 移除 placeholder，直接显示画布，图片会在加载完成后自动显示 */}
-              <canvas ref={canvasRef} className="dl-canvas__fabric" />
+              {/* [2025-12-10 18:40:00] 只在Canvas未初始化错误时显示Canvas元素 */}
+              {!canvasInitError && (
+                <canvas ref={canvasRef} className="dl-canvas__fabric" />
+              )}
             </div>
 
             {/* 引导面板 - "What's next for you?" */}
