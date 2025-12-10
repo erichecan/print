@@ -23,6 +23,7 @@ import type { DesignCanvasSnapshot } from '@/lib/api';
 import { useToast } from '@/hooks/useToast'; // [2025-12-08] 引入Toast
 import ToolPanel, { type ToolPanelType } from './components/ToolPanel';
 import HomePanel from './components/panels/HomePanel';
+import TemplateLibraryPanel from './components/panels/TemplateLibraryPanel';
 import UploadPanel from './components/panels/UploadPanel';
 import EditUploadPanel from './components/panels/EditUploadPanel';
 import TextPanel from './components/panels/TextPanel';
@@ -1127,7 +1128,7 @@ const DesignLabClient: React.FC = () => {
   }, [productInfo, currentView, loadBackgroundImage, loadProductInfo]);
 
   // [2025-01-30 17:00:00] Home 面板操作处理
-  const handleHomeAction = (action: 'upload' | 'text' | 'art' | 'products' | 'layers') => {
+  const handleHomeAction = (action: 'upload' | 'text' | 'art' | 'products' | 'layers' | 'templates') => {
     if (action === 'products') {
       // TODO: 实现产品切换功能
       console.log('[DesignLab] Change products');
@@ -1137,6 +1138,11 @@ const DesignLabClient: React.FC = () => {
       // [2025-12-06 13:00:00] 打开图层管理面板
       setToolPanelType('layers');
       setActiveTool('layers');
+      return;
+    }
+    if (action === 'templates') {
+      // [2025-12-10] 打开模板库面板
+      setShowTemplateLibrary(true);
       return;
     }
     handleToolClick(action);
@@ -2809,6 +2815,42 @@ const DesignLabClient: React.FC = () => {
             />
           )}
         </ToolPanel>
+
+        {/* [2025-12-10] 模板库面板 - 作为模态框显示 */}
+        {showTemplateLibrary && (
+          <div className="dl-modal-overlay" onClick={() => setShowTemplateLibrary(false)}>
+            <div className="dl-modal-content" onClick={(e) => e.stopPropagation()}>
+              <TemplateLibraryPanel
+                onApplyTemplate={(template) => {
+                  // [2025-12-10] 应用模板到画布
+                  if (!fabricCanvasRef.current || !fabricRef.current) {
+                    showError('Canvas not initialized');
+                    return;
+                  }
+                  
+                  try {
+                    // 如果模板有 canvasData，加载到画布
+                    if (template.canvasData) {
+                      const canvas = fabricCanvasRef.current;
+                      canvas.loadFromJSON(template.canvasData, () => {
+                        canvas.renderAll();
+                        handleCanvasUpdate();
+                        setShowTemplateLibrary(false);
+                        success('Template applied successfully');
+                      });
+                    } else {
+                      showError('Template data not available');
+                    }
+                  } catch (error) {
+                    console.error('[DesignLab] Error applying template:', error);
+                    showError('Failed to apply template');
+                  }
+                }}
+                onClose={() => setShowTemplateLibrary(false)}
+              />
+            </div>
+          </div>
+        )}
 
         {/* 4. Canvas - 中央画布区域 */}
         <section className="dl-canvas" aria-label="Design canvas">

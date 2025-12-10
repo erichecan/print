@@ -7,7 +7,7 @@
 import React from 'react';
 
 interface HomePanelProps {
-  onAction: (action: 'upload' | 'text' | 'art' | 'products' | 'layers') => void; // [2025-12-06 13:00:00] 添加图层管理
+  onAction: (action: 'upload' | 'text' | 'art' | 'products' | 'layers' | 'templates') => void; // [2025-12-10] 添加模板库
 }
 
 const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
@@ -74,6 +74,21 @@ const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
             <line x1="3" y1="15" x2="21" y2="15" />
           </svg>
           <span>Layers</span>
+        </button>
+        
+        {/* [2025-12-10] 模板库按钮 */}
+        <button
+          className="dl-home-panel__action"
+          onClick={() => onAction('templates')}
+          aria-label="Browse Templates"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+          </svg>
+          <span>Templates</span>
         </button>
       </div>
       
