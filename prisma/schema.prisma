@@ -101,6 +101,7 @@ model Category {
   children            Category[]          @relation("CategoryTree")
   designTemplates     DesignTemplate[]
   products            Product[]
+  productCategories   ProductCategory[]   // [2025-12-11 09:21:35] 多对多关系
   promotionCategories PromotionCategory[]
 
   @@index([slug])
@@ -142,7 +143,7 @@ model Product {
   isActive           Boolean             @default(true) @map("is_active")
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
-  categoryId         String              @map("category_id")
+  categoryId         String              @map("category_id") // [2025-12-11 09:21:35] 保留主分类（向后兼容）
   brandId            String?             @map("brand_id")
   collectionProducts CollectionProduct[]
   colorImages        ProductColorImage[]
@@ -150,6 +151,7 @@ model Product {
   reviews            ProductReview[]
   brand              Brand?              @relation(fields: [brandId], references: [id])
   category           Category            @relation(fields: [categoryId], references: [id])
+  productCategories  ProductCategory[]   // [2025-12-11 09:21:35] 多对多关系
   projects           Project[]
   promotionProducts  PromotionProduct[]
   variants           Variant[]
@@ -161,6 +163,20 @@ model Product {
   @@index([createdAt], map: "idx_products_created_at")
   @@index([name(ops: raw("gin_trgm_ops"))], map: "idx_products_name_trgm", type: Gin)
   @@map("products")
+}
+
+// [2025-12-11 09:21:35] ProductCategory - 产品与分类的多对多关系表
+model ProductCategory {
+  productId  String   @map("product_id")
+  categoryId String   @map("category_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
+  @@map("product_categories")
 }
 
 model Variant {

@@ -16,6 +16,8 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import SortSelect from './SortSelect';
 
+// [2025-12-11 09:21:35] 树状分类导航组件
+const CategorySidebar = dynamic(() => import('@/components/catalog/CategorySidebar').then(mod => mod.CategorySidebar), { ssr: false });
 // [2025-01-27 16:45:00] 客户端筛选组件
 const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
 // [2025-01-27 17:00:00] 动态筛选器组件（从API获取筛选选项和数量）
@@ -367,6 +369,8 @@ export default async function ProductsPage({
         <div className="container plp-new__grid">
           {/* 左侧筛选器 */}
           <aside className="plp-new__sidebar">
+            {/* [2025-12-11 09:21:35] 使用树状分类导航组件 */}
+            <CategorySidebar currentCategorySlug={searchParams?.category as string} />
             {/* [2025-01-27 16:45:00] 使用客户端筛选组件处理筛选逻辑 */}
             <ProductFiltersClient currentCollection={currentCollection} currentBrand={currentBrand} brands={brands} />
             {/* [2025-01-27 17:00:00] 使用动态筛选器组件（从API获取筛选选项和数量） */}

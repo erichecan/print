@@ -13,10 +13,8 @@ import { Gallery } from './Gallery';
 import { BuyBox } from './BuyBox';
 import { DeliveryReturns } from './DeliveryReturns';
 import { ProductFeatures } from './ProductFeatures';
-import { AlsoAvailable } from './AlsoAvailable';
 import { MoreByArtist } from './MoreByArtist';
 import { YouMightLike } from './YouMightLike';
-import { TagsTrending } from './TagsTrending';
 import { adaptProductData } from './dataAdapter';
 import { ProductData } from './types';
 import styles from './ProductDetail.module.css';
@@ -294,8 +292,7 @@ export function ProductDetail() {
           </div>
         </div>
 
-        {/* [2025-11-19 09:30:00] 参考图一位置："Also available on" 横滑 */}
-        <AlsoAvailable items={productData.alsoAvailableOn} />
+        {/* [2025-12-11 09:21:35] 移除 Also Available On 模块（按需求） */}
 
         {/* [2025-11-19 09:30:00] 参考图一位置："More by this artist" */}
         <MoreByArtist
@@ -310,12 +307,7 @@ export function ProductDetail() {
           products={productData.youMightLike}
         />
 
-        {/* [2025-11-19 09:30:00] 参考图一位置：搜索与标签 */}
-        <TagsTrending
-          tags={productData.tags}
-          trending={productData.trending}
-          onSearch={handleSearch}
-        />
+        {/* [2025-12-11 09:21:35] 移除 Trending Topics 模块（按需求） */}
       </div>
     </div>
   );

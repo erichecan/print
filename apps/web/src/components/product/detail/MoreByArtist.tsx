@@ -56,7 +56,12 @@ export function MoreByArtist({ artistName, artistShopUrl, products }: MoreByArti
               />
             </div>
             <div className="more-by-artist-info">
-              <div className="more-by-artist-title-text">{product.title}</div>
+              <div 
+                className="more-by-artist-title-text" 
+                title={product.title}
+              >
+                {product.title}
+              </div>
               <div className="more-by-artist-price">{formatPrice(product.price)}</div>
             </div>
           </Link>

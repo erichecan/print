@@ -2,9 +2,11 @@
  * Category Controller (Public)
  * [2025-01-27 18:50:00] 提供公共分类列表接口，用于首页展示
  * [2025-12-02 14:13:10] 分类公共接口说明：所有前台分类展示统一从 category 表读取，不再直接依赖静态类目配置
+ * [2025-12-11 09:21:35] 添加树状分类 API 端点
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
+const { getCategoryTree } = require('../services/categories');
 
 // [2025-01-27 18:50:00] 获取所有活跃的分类（用于首页展示）
 exports.listCategories = async (req, res) => {
@@ -75,6 +77,22 @@ exports.getCategoryBySlug = async (req, res) => {
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch category',
+    });
+  }
+};
+
+// [2025-12-11 09:21:35] 获取树状分类（含产品计数）
+exports.getCategoryTree = async (req, res) => {
+  try {
+    const tree = await getCategoryTree();
+    res.json({
+      data: tree,
+    });
+  } catch (error) {
+    logger.error('[2025-12-11 09:21:35] getCategoryTree error:', error);
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to fetch category tree',
     });
   }
 };
