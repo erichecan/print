@@ -45,8 +45,10 @@ const AUTH_REQUIRED_PATHS = [
 ];
 
 // [2025-01-27 18:00:00] 代理配置：超时和重试
-const PROXY_TIMEOUT_MS = 5000; // 5秒超时
-const MAX_RETRIES = 1; // 最多重试1次
+// [2025-01-27 19:00:00] 修复：增加超时时间以覆盖 Cloud Run 冷启动（2-5秒）
+const PROXY_TIMEOUT_MS = 15000; // 15秒超时（覆盖冷启动 + 处理时间）
+const MAX_RETRIES = 2; // 最多重试2次（给冷启动更多机会）
+const RETRY_DELAY_MS = 1000; // 重试间隔1秒（给冷启动时间）
 
 /**
  * 检查路径是否需要认证
@@ -103,8 +105,8 @@ async function fetchWithRetry(
       if (attempt === maxRetries) {
         throw error;
       }
-      // 等待一小段时间后重试（指数退避）
-      await new Promise(resolve => setTimeout(resolve, 100 * (attempt + 1)));
+      // [2025-01-27 19:00:00] 修复：增加重试间隔，给冷启动更多时间
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
     }
   }
   
@@ -332,11 +334,13 @@ async function handleProxyRequest(
       
       // [2025-12-07 13:50:00] 提供更详细的错误信息
       // [2025-01-27 18:00:00] 使用统一错误响应格式
+      // [2025-01-27 19:00:00] 修复：更准确地识别超时和连接错误
       const errorMessage = fetchError?.message || 'Unknown error';
-      const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('AbortError');
+      const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('AbortError') || errorMessage.includes('aborted');
       const isConnectionError = errorMessage.includes('ECONNREFUSED') || 
                                 errorMessage.includes('fetch failed') ||
-                                errorMessage.includes('Failed to fetch');
+                                errorMessage.includes('Failed to fetch') ||
+                                errorMessage.includes('NetworkError');
       
       const errorCode = isTimeout 
         ? ErrorCode.UPSTREAM_TIMEOUT 
@@ -347,16 +351,19 @@ async function handleProxyRequest(
       const errorResponse = createErrorResponse(
         errorCode,
         isConnectionError 
-          ? '无法连接到后端服务器' 
+          ? '无法连接到后端服务器，请稍后重试' 
           : isTimeout
-          ? '请求超时'
+          ? '请求超时，请稍后重试'
           : '后端服务器错误',
         traceId,
-        process.env.NODE_ENV === 'development' ? {
+        // [2025-01-27 19:00:00] 修复：生产环境也提供基本错误信息，便于排查
+        {
           url: upstreamUrl,
           error: errorMessage,
-          path: backendPath
-        } : undefined
+          path: backendPath,
+          // 生产环境隐藏详细堆栈，但保留关键信息
+          ...(process.env.NODE_ENV === 'development' ? { stack: fetchError?.stack } : {}),
+        }
       );
       
       return NextResponse.json(
