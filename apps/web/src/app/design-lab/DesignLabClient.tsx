@@ -44,6 +44,7 @@ import { designLabApi, cartApi } from '@/lib/api';
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import { analytics } from '@/lib/analytics';
 import { debugLog } from '@/utils/debugLogger'; // [2025-01-30 21:50:00] 调试日志工具
+import { calculateImageFit } from '@/design/utils/fit'; // [2025-01-31 18:00:00] 统一使用 calculateImageFit 确保商品主图尺寸和位置一致性
 import './design-lab.css';
 
 interface ProductInfo {
@@ -269,18 +270,24 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         backgroundImageRef.current = null;
       }
       
-      // 创建一个简单的矩形作为背景
-      const targetWidth = CANVAS_WIDTH * 0.65;
-      const targetHeight = CANVAS_HEIGHT * 0.75;
-      const left = CANVAS_WIDTH / 2 - targetWidth / 2;
-      const top = CANVAS_HEIGHT / 2 - targetHeight / 2;
+      // [2025-01-31 18:00:00] 统一使用 calculateImageFit 函数计算占位背景的位置和尺寸
+      // 使用一个假设的图片尺寸来计算安全区
+      const fit = calculateImageFit({
+        canvasWidth: CANVAS_WIDTH,
+        canvasHeight: CANVAS_HEIGHT,
+        imageWidth: CANVAS_WIDTH * 0.65,
+        imageHeight: CANVAS_HEIGHT * 0.75,
+        safeAreaWidth: 0.65,
+        safeAreaHeight: 0.75,
+        fit: 'contain',
+      });
       
       // 使用浅灰色矩形作为占位背景
       const rect = new fabric.Rect({
-        left,
-        top,
-        width: targetWidth,
-        height: targetHeight,
+        left: fit.left, // [2025-01-31 18:00:00] 使用画布中心坐标
+        top: fit.top,
+        width: fit.width,
+        height: fit.height,
         fill: '#f0f0f0',
         stroke: '#d0d0d0',
         strokeWidth: 2,
@@ -288,8 +295,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         evented: false,
         excludeFromExport: true,
         name: 'background',
-        originX: 'left',
-        originY: 'top'
+        originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
+        originY: 'center',
       });
       
       canvas.add(rect);
@@ -354,31 +361,35 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           }
         }
         
-        // 设置图片属性
+        // [2025-01-31 18:00:00] 设置图片属性，统一使用 center 原点
         fabricImg.set({
           selectable: false,
           evented: false,
           excludeFromExport: true,
           name: 'background',
-          originX: 'left',
-          originY: 'top'
+          originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
+          originY: 'center',
         });
         
-        // 缩放以适应画布
-        const targetWidth = CANVAS_WIDTH * 0.65;
-        const targetHeight = CANVAS_HEIGHT * 0.75;
-        const scaleX = targetWidth / (fabricImg.width || 1);
-        const scaleY = targetHeight / (fabricImg.height || 1);
-        const scale = Math.min(scaleX, scaleY);
-        fabricImg.scale(scale);
+        // [2025-01-31 18:00:00] 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
+        const fit = calculateImageFit({
+          canvasWidth: CANVAS_WIDTH,
+          canvasHeight: CANVAS_HEIGHT,
+          imageWidth: fabricImg.width || 1,
+          imageHeight: fabricImg.height || 1,
+          safeAreaWidth: 0.65,
+          safeAreaHeight: 0.75,
+          fit: 'contain',
+        });
         
-        // 居中
-        const scaledWidth = (fabricImg.width || 0) * scale;
-        const scaledHeight = (fabricImg.height || 0) * scale;
-        const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
-        const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
-        
-        fabricImg.set({ left, top });
+        // [2025-01-31 18:00:00] 应用 fit 结果（居中 + 缩放）
+        fabricImg.scale(fit.scale);
+        fabricImg.set({
+          left: fit.left,
+          top: fit.top,
+          originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
+          originY: 'center',
+        });
         fabricImg.setCoords();
         
         canvas.add(fabricImg);
@@ -935,32 +946,35 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       
       try {
         // [2025-01-31 15:30:00] 设置图片属性，确保底图不可选择和不可交互，但始终显示在最底层
+        // [2025-01-31 18:00:00] 统一使用 center 原点
         fabricImg.set({
           selectable: false,
           evented: false,
           excludeFromExport: true,
           name: 'background',
-          originX: 'left',
-          originY: 'top'
+          originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
+          originY: 'center',
         });
         
-        // [2025-01-30 16:30:00] 产品图片占据画布中间约 65% 宽、75% 高的区域
-        const targetWidth = CANVAS_WIDTH * 0.65;
-        const targetHeight = CANVAS_HEIGHT * 0.75;
+        // [2025-01-31 18:00:00] 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
+        const fit = calculateImageFit({
+          canvasWidth: CANVAS_WIDTH,
+          canvasHeight: CANVAS_HEIGHT,
+          imageWidth: fabricImg.width || 1,
+          imageHeight: fabricImg.height || 1,
+          safeAreaWidth: 0.65,
+          safeAreaHeight: 0.75,
+          fit: 'contain',
+        });
         
-        // [2025-01-30 16:30:00] 计算缩放比例，保持宽高比
-        const scaleX = targetWidth / (fabricImg.width || 1);
-        const scaleY = targetHeight / (fabricImg.height || 1);
-        const scale = Math.min(scaleX, scaleY);
-        fabricImg.scale(scale);
-        
-        // [2025-01-30 16:30:00] 居中图片
-        const scaledWidth = (fabricImg.width || 0) * scale;
-        const scaledHeight = (fabricImg.height || 0) * scale;
-        const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
-        const top = CANVAS_HEIGHT / 2 - scaledHeight / 2;
-        
-        fabricImg.set({ left, top });
+        // [2025-01-31 18:00:00] 应用 fit 结果（居中 + 缩放）
+        fabricImg.scale(fit.scale);
+        fabricImg.set({
+          left: fit.left,
+          top: fit.top,
+          originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
+          originY: 'center',
+        });
         fabricImg.setCoords();
         
         // [2025-01-30 16:30:00] 移除旧背景
