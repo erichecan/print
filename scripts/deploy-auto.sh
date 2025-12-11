@@ -190,8 +190,8 @@ echo -e "${YELLOW}这可能需要 5-10 分钟...${NC}"
 echo ""
 
 # 构建并推送后端
-echo -e "${BLUE}[后端] 构建 Docker 镜像...${NC}"
-docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
+echo -e "${BLUE}[后端] 构建 Docker 镜像 (linux/amd64)...${NC}"
+docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest \
   -f backend/Dockerfile . 2>&1 | grep -E "(Step|Successfully)" || true
 
 echo -e "${BLUE}[后端] 推送镜像...${NC}"
@@ -210,7 +210,7 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --cpu 1 \
   --timeout 300 \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production,PORT=8080 \
+  --set-env-vars NODE_ENV=production \
   --quiet
 
 BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
@@ -229,8 +229,8 @@ gcloud secrets add-iam-policy-binding api-url \
 
 # 构建并推送前端
 echo ""
-echo -e "${BLUE}[前端] 构建 Docker 镜像...${NC}"
-docker build -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
+echo -e "${BLUE}[前端] 构建 Docker 镜像 (linux/amd64)...${NC}"
+docker build --platform linux/amd64 -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
   -f apps/web/Dockerfile apps/web 2>&1 | grep -E "(Step|Successfully)" || true
 
 echo -e "${BLUE}[前端] 推送镜像...${NC}"
