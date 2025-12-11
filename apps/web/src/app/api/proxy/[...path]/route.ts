@@ -101,18 +101,25 @@ async function fetchWithRetry(
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const attemptStartTime = Date.now();
+    console.log(`[API Proxy] 🔄 Attempt ${attempt + 1}/${maxRetries + 1}`, {
+      traceId,
+      url,
+      attempt: attempt + 1,
+      totalAttempts: maxRetries + 1,
+    });
     try {
       const response = await fetchWithTimeout(url, options);
       // [2025-01-27 19:30:00] 记录成功信息
-      if (attempt > 0) {
-        console.log('[API Proxy] ✅ Retry succeeded', {
-          traceId,
-          url,
-          attempt,
-          totalAttempts: attempt + 1,
-          latency: Date.now() - attemptStartTime,
-        });
-      }
+      // [2025-01-27 20:00:00] 修复：记录所有尝试的成功信息
+      console.log(`[API Proxy] ✅ Attempt ${attempt + 1} succeeded`, {
+        traceId,
+        url,
+        attempt: attempt + 1,
+        totalAttempts: attempt + 1,
+        latency: Date.now() - attemptStartTime,
+        status: response.status,
+        statusText: response.statusText,
+      });
       return response;
     } catch (error: any) {
       const errorInfo = {
@@ -361,8 +368,17 @@ async function handleProxyRequest(
     // [2025-12-02 04:15:00] 转发请求到后端
     // [2025-01-27 18:00:00] 使用带超时和重试的 fetch
     // [2025-01-27 19:30:00] 修复：增强错误诊断和日志
+    // [2025-01-27 20:00:00] 修复：添加更多日志点，确保请求生命周期可追踪
     let upstream: Response;
     const requestStartTime = Date.now();
+    console.log('[API Proxy] 🚀 Starting fetchWithRetry', {
+      timestamp,
+      traceId,
+      url: upstreamUrl,
+      method: request.method,
+      maxRetries: MAX_RETRIES,
+      timeout: PROXY_TIMEOUT_MS,
+    });
     try {
       upstream = await fetchWithRetry(
         upstreamUrl,
@@ -375,6 +391,15 @@ async function handleProxyRequest(
         MAX_RETRIES,
         traceId
       );
+      
+      console.log('[API Proxy] ✅ fetchWithRetry completed', {
+        timestamp,
+        traceId,
+        url: upstreamUrl,
+        status: upstream.status,
+        statusText: upstream.statusText,
+        duration: Date.now() - requestStartTime,
+      });
       
       const requestDuration = Date.now() - requestStartTime;
       console.log('[API Proxy] ✅ Request succeeded', {
@@ -389,6 +414,7 @@ async function handleProxyRequest(
       const requestDuration = Date.now() - requestStartTime;
       
       // [2025-01-27 19:30:00] 增强错误日志，包含所有重试尝试的信息
+      // [2025-01-27 20:00:00] 修复：确保错误日志一定会输出
       console.error('[API Proxy] ❌ Fetch error (all attempts failed):', {
         timestamp,
         traceId,
@@ -491,6 +517,14 @@ async function handleProxyRequest(
         }
       );
       
+      console.error('[API Proxy] ❌ Returning error response', {
+        timestamp,
+        traceId,
+        errorCode,
+        status: isTimeout ? 504 : 503,
+        userMessage,
+      });
+      
       return NextResponse.json(
         errorResponse,
         { status: isTimeout ? 504 : 503 }
@@ -498,6 +532,13 @@ async function handleProxyRequest(
     }
     
     // [2025-12-02 04:15:00] 读取响应体
+    // [2025-01-27 20:00:00] 修复：添加响应体读取前的日志
+    console.log('[API Proxy] 📖 Reading response body', {
+      timestamp,
+      traceId,
+      status: upstream.status,
+      contentType: upstream.headers.get('content-type'),
+    });
     const responseBody = await upstream.text();
     const responseContentType = upstream.headers.get('content-type') || 'application/json';
     
@@ -637,6 +678,14 @@ async function handleProxyRequest(
       responseHeaders.set('X-Trace-Id', traceId);
       responseHeaders.set('X-Request-Id', traceId);
       
+      console.log('[API Proxy] 📤 Returning error response to client', {
+        timestamp,
+        traceId,
+        status: upstream.status,
+        errorCode,
+        path: backendPath,
+      });
+      
       return NextResponse.json(
         wrappedError,
         {
@@ -656,6 +705,16 @@ async function handleProxyRequest(
       responseHeaders.set('X-Trace-Id', traceId);
       responseHeaders.set('X-Request-Id', traceId);
     }
+    
+    // [2025-01-27 20:00:00] 修复：添加最终响应返回日志
+    console.log('[API Proxy] 📤 Returning success response to client', {
+      timestamp,
+      traceId,
+      status: upstream.status,
+      path: backendPath,
+      bodyLength: responseBody.length,
+      contentType: responseContentType,
+    });
     
     return new NextResponse(responseBody, {
       status: upstream.status,
