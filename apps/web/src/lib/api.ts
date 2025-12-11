@@ -1392,21 +1392,23 @@ export const adminProductsApi = {
   updateStatus: (id: string, isActive: boolean) =>
     api<AdminProductDetail>(`/admin/products/${id}/status`, { method: 'PATCH', body: { isActive } }),
   uploadImages: async (productId: string, files: File[], altTexts?: string[]) => {
+    // [2025-01-27 19:30:00] 修复：使用代理路由，确保认证头正确传递
     const formData = new FormData();
     files.forEach((file) => formData.append('images', file));
     if (altTexts && altTexts.length > 0) {
       formData.append('alt', altTexts.join(','));
     }
-    const response = await fetch(`${API_BASE_URL}/admin/products/${productId}/images`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-    });
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: response.statusText }));
-      throw new Error(error.error || `API Error: ${response.status}`);
-    }
-    return response.json();
+    
+    // 使用统一的 api 函数，自动走代理并包含认证头
+    return api<{ images: Array<{ id: string; url: string; alt?: string | null }> }>(
+      `/admin/products/${productId}/images`,
+      {
+        method: 'POST',
+        body: formData,
+        // FormData 不需要 Content-Type header，浏览器会自动设置
+        headers: {},
+      }
+    );
   },
   deleteImage: (productId: string, imageId: string) =>
     api(`/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' }),

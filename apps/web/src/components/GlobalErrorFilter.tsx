@@ -8,6 +8,7 @@ import { useEffect } from 'react';
 
 // [2025-01-29 01:00:00] 需要被过滤的错误模式
 // [2025-12-08] 添加 ReferenceError 过滤，修复 "Cannot access 'W' before initialization" 错误
+// [2025-01-27 19:30:00] 修复：添加浏览器扩展异步监听错误过滤
 const FILTERED_ERROR_PATTERNS = [
   // GCP Console 内部 API 错误
   /cloudusersettings-pa\.clients6\.google\.com/i,
@@ -21,6 +22,10 @@ const FILTERED_ERROR_PATTERNS = [
   /Cannot access ['"]?[Ww]?['"]? before initialization/i,
   /ReferenceError.*Cannot access.*before initialization/i,
   /Cannot access ['"]?[A-Za-z0-9_]+['"]? before initialization/i,
+  // [2025-01-27 19:30:00] 浏览器扩展异步监听错误（React DevTools、Redux DevTools 等）
+  /A listener indicated an asynchronous response by returning true, but the message channel closed/i,
+  /listener.*asynchronous.*response.*message channel closed/i,
+  /message channel closed before.*response.*received/i,
   // 其他第三方服务错误（根据需要添加）
 ];
 
@@ -156,6 +161,24 @@ export function GlobalErrorFilter() {
           }
         }
         
+        // [2025-01-27 19:30:00] 特殊处理：过滤浏览器扩展异步监听错误
+        if (errorMessage.includes('listener') && 
+            errorMessage.includes('asynchronous response') && 
+            errorMessage.includes('message channel closed')) {
+          // 检查是否来自浏览器扩展（installHook.js 通常是扩展注入的）
+          const isFromExtension = errorUrl.includes('installHook') || 
+                                   errorUrl.includes('chrome-extension') ||
+                                   errorUrl.includes('moz-extension') ||
+                                   errorUrl.includes('safari-extension') ||
+                                   !errorUrl || // 某些扩展错误没有 URL
+                                   errorUrl === '';
+          
+          if (isFromExtension) {
+            event.preventDefault();
+            return false;
+          }
+        }
+        
         if (shouldFilterError(errorMessage)) {
           // 抑制错误，阻止它显示在控制台
           event.preventDefault();
@@ -170,10 +193,19 @@ export function GlobalErrorFilter() {
     };
 
     // [2025-01-29 01:00:00] 全局未捕获 Promise 错误处理器
+    // [2025-01-27 19:30:00] 修复：增强异步监听错误的过滤
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const errorMessage = event.reason 
         ? (event.reason instanceof Error ? event.reason.message : String(event.reason))
         : 'Unhandled promise rejection';
+      
+      // [2025-01-27 19:30:00] 特殊处理：过滤浏览器扩展异步监听错误
+      if (errorMessage.includes('listener') && 
+          errorMessage.includes('asynchronous response') && 
+          errorMessage.includes('message channel closed')) {
+        event.preventDefault();
+        return false;
+      }
       
       if (shouldFilterError(errorMessage)) {
         // 抑制错误

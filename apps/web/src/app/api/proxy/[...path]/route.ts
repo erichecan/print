@@ -88,25 +88,71 @@ async function fetchWithTimeout(
 /**
  * 带重试的请求转发
  * [2025-01-27 18:00:00] 添加重试机制，提高可靠性
+ * [2025-01-27 19:30:00] 修复：增强错误捕获和诊断日志
  */
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
-  maxRetries: number = MAX_RETRIES
+  maxRetries: number = MAX_RETRIES,
+  traceId?: string
 ): Promise<Response> {
   let lastError: Error | null = null;
+  const errors: Array<{ attempt: number; error: string; timestamp: string }> = [];
   
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const attemptStartTime = Date.now();
     try {
-      return await fetchWithTimeout(url, options);
-    } catch (error: any) {
-      lastError = error;
-      // 如果是最后一次尝试，抛出错误
-      if (attempt === maxRetries) {
-        throw error;
+      const response = await fetchWithTimeout(url, options);
+      // [2025-01-27 19:30:00] 记录成功信息
+      if (attempt > 0) {
+        console.log('[API Proxy] ✅ Retry succeeded', {
+          traceId,
+          url,
+          attempt,
+          totalAttempts: attempt + 1,
+          latency: Date.now() - attemptStartTime,
+        });
       }
+      return response;
+    } catch (error: any) {
+      const errorInfo = {
+        attempt,
+        error: error?.message || String(error),
+        name: error?.name,
+        timestamp: new Date().toISOString(),
+        latency: Date.now() - attemptStartTime,
+      };
+      errors.push(errorInfo);
+      lastError = error;
+      
+      // [2025-01-27 19:30:00] 记录每次尝试的详细错误信息
+      console.error(`[API Proxy] ❌ Fetch attempt ${attempt + 1}/${maxRetries + 1} failed:`, {
+        traceId,
+        url,
+        ...errorInfo,
+        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
+      });
+      
+      // 如果是最后一次尝试，抛出包含所有错误信息的错误
+      if (attempt === maxRetries) {
+        const enhancedError = new Error(
+          `Request failed after ${maxRetries + 1} attempts. Last error: ${error?.message || 'Unknown error'}`
+        ) as any;
+        enhancedError.originalError = error;
+        enhancedError.allErrors = errors;
+        enhancedError.url = url;
+        throw enhancedError;
+      }
+      
       // [2025-01-27 19:00:00] 修复：增加重试间隔，给冷启动更多时间
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
+      const retryDelay = RETRY_DELAY_MS * (attempt + 1);
+      console.log(`[API Proxy] ⏳ Retrying in ${retryDelay}ms...`, {
+        traceId,
+        url,
+        attempt: attempt + 1,
+        nextAttempt: attempt + 2,
+      });
+      await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
   }
   
@@ -314,55 +360,134 @@ async function handleProxyRequest(
     
     // [2025-12-02 04:15:00] 转发请求到后端
     // [2025-01-27 18:00:00] 使用带超时和重试的 fetch
+    // [2025-01-27 19:30:00] 修复：增强错误诊断和日志
     let upstream: Response;
+    const requestStartTime = Date.now();
     try {
-      upstream = await fetchWithRetry(upstreamUrl, {
+      upstream = await fetchWithRetry(
+        upstreamUrl,
+        {
+          method: request.method,
+          headers,
+          body,
+          cache: 'no-store',
+        },
+        MAX_RETRIES,
+        traceId
+      );
+      
+      const requestDuration = Date.now() - requestStartTime;
+      console.log('[API Proxy] ✅ Request succeeded', {
+        timestamp,
+        traceId,
+        url: upstreamUrl,
         method: request.method,
-        headers,
-        body,
-        cache: 'no-store',
+        status: upstream.status,
+        duration: requestDuration,
       });
     } catch (fetchError: any) {
-      console.error('[API Proxy] ❌ Fetch error:', {
+      const requestDuration = Date.now() - requestStartTime;
+      
+      // [2025-01-27 19:30:00] 增强错误日志，包含所有重试尝试的信息
+      console.error('[API Proxy] ❌ Fetch error (all attempts failed):', {
         timestamp,
         traceId,
         error: fetchError?.message,
+        originalError: fetchError?.originalError?.message,
         url: upstreamUrl,
-        name: fetchError?.name,
-        stack: process.env.NODE_ENV === 'development' ? fetchError?.stack : undefined
+        method: request.method,
+        name: fetchError?.name || fetchError?.originalError?.name,
+        duration: requestDuration,
+        attempts: fetchError?.allErrors?.length || 1,
+        allErrors: fetchError?.allErrors || [{ error: fetchError?.message, attempt: 0 }],
+        headers: Object.keys(headers),
+        hasBody: !!body,
+        bodySize: body ? (typeof body === 'string' ? body.length : 'FormData/Blob') : 0,
+        stack: process.env.NODE_ENV === 'development' ? (fetchError?.stack || fetchError?.originalError?.stack) : undefined,
       });
       
       // [2025-12-07 13:50:00] 提供更详细的错误信息
       // [2025-01-27 18:00:00] 使用统一错误响应格式
       // [2025-01-27 19:00:00] 修复：更准确地识别超时和连接错误
-      const errorMessage = fetchError?.message || 'Unknown error';
-      const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('AbortError') || errorMessage.includes('aborted');
-      const isConnectionError = errorMessage.includes('ECONNREFUSED') || 
-                                errorMessage.includes('fetch failed') ||
-                                errorMessage.includes('Failed to fetch') ||
-                                errorMessage.includes('NetworkError');
+      // [2025-01-27 19:30:00] 修复：检查所有错误尝试，更准确分类
+      const errorMessage = fetchError?.message || fetchError?.originalError?.message || 'Unknown error';
+      const allErrorMessages = [
+        errorMessage,
+        ...(fetchError?.allErrors?.map((e: any) => e.error) || []),
+      ].join('; ');
       
-      const errorCode = isTimeout 
-        ? ErrorCode.UPSTREAM_TIMEOUT 
-        : isConnectionError 
-        ? ErrorCode.NETWORK_ERROR 
-        : ErrorCode.PROXY_ERROR;
+      // [2025-01-27 19:30:00] 改进错误分类：更准确地识别不同类型的错误
+      const isTimeout = allErrorMessages.includes('timeout') || 
+                        allErrorMessages.includes('AbortError') || 
+                        allErrorMessages.includes('aborted') ||
+                        fetchError?.name === 'AbortError' ||
+                        fetchError?.originalError?.name === 'AbortError';
+      
+      // 网络连接错误：无法建立连接、DNS 解析失败、网络不可达等
+      const isConnectionError = allErrorMessages.includes('ECONNREFUSED') || 
+                                allErrorMessages.includes('ENOTFOUND') ||
+                                allErrorMessages.includes('ECONNRESET') ||
+                                allErrorMessages.includes('ETIMEDOUT') ||
+                                allErrorMessages.includes('fetch failed') ||
+                                allErrorMessages.includes('Failed to fetch') ||
+                                allErrorMessages.includes('NetworkError') ||
+                                allErrorMessages.includes('Network request failed') ||
+                                allErrorMessages.includes('ERR_NETWORK') ||
+                                allErrorMessages.includes('ERR_CONNECTION_REFUSED') ||
+                                allErrorMessages.includes('ERR_CONNECTION_RESET') ||
+                                allErrorMessages.includes('ERR_CONNECTION_TIMED_OUT') ||
+                                (fetchError?.name === 'TypeError' && 
+                                 (allErrorMessages.includes('fetch') || 
+                                  allErrorMessages.includes('network'))) ||
+                                (fetchError?.originalError?.name === 'TypeError' && 
+                                 (allErrorMessages.includes('fetch') || 
+                                  allErrorMessages.includes('network')));
+      
+      // 服务器错误：5xx 状态码、服务器内部错误等
+      const isServerError = allErrorMessages.includes('500') ||
+                            allErrorMessages.includes('Internal Server Error') ||
+                            allErrorMessages.includes('UPSTREAM_500');
+      
+      // 根据错误类型选择错误码
+      let errorCode: ErrorCode;
+      if (isTimeout) {
+        errorCode = ErrorCode.UPSTREAM_TIMEOUT;
+      } else if (isConnectionError) {
+        errorCode = ErrorCode.NETWORK_ERROR;
+      } else if (isServerError) {
+        errorCode = ErrorCode.UPSTREAM_500;
+      } else {
+        errorCode = ErrorCode.PROXY_ERROR;
+      }
+      
+      // [2025-01-27 19:30:00] 根据错误类型提供用户友好的错误消息
+      let userMessage: string;
+      if (isTimeout) {
+        userMessage = '请求超时，请稍后重试';
+      } else if (isConnectionError) {
+        userMessage = '无法连接到后端服务器，请稍后重试';
+      } else if (isServerError) {
+        userMessage = '后端服务器错误，请稍后重试';
+      } else {
+        userMessage = '请求处理失败，请稍后重试';
+      }
       
       const errorResponse = createErrorResponse(
         errorCode,
-        isConnectionError 
-          ? '无法连接到后端服务器，请稍后重试' 
-          : isTimeout
-          ? '请求超时，请稍后重试'
-          : '后端服务器错误',
+        userMessage,
         traceId,
         // [2025-01-27 19:00:00] 修复：生产环境也提供基本错误信息，便于排查
         {
           url: upstreamUrl,
           error: errorMessage,
           path: backendPath,
+          duration: requestDuration,
+          attempts: fetchError?.allErrors?.length || 1,
           // 生产环境隐藏详细堆栈，但保留关键信息
-          ...(process.env.NODE_ENV === 'development' ? { stack: fetchError?.stack } : {}),
+          ...(process.env.NODE_ENV === 'development' ? { 
+            stack: fetchError?.stack || fetchError?.originalError?.stack,
+            allErrors: fetchError?.allErrors,
+          } : {}),
         }
       );
       
