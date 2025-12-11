@@ -964,6 +964,41 @@
   display: flex;
   gap: var(--dl-space-2);
   flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+/* [2025-01-30 10:45:00] 工具组样式 - 支持带标签的工具（Center、Layering、Flip） */
+.dl-edit-upload-panel__tool-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--dl-space-1);
+}
+
+.dl-edit-upload-panel__tool-buttons {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  overflow: hidden;
+}
+
+.dl-edit-upload-panel__tool-buttons .dl-edit-upload-panel__control-btn {
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-upload-panel__tool-buttons .dl-edit-upload-panel__control-btn:last-child {
+  border-right: none;
+}
+
+.dl-edit-upload-panel__tool-label {
+  font-size: 11px;
+  color: var(--dl-text-secondary);
+  text-align: center;
+  margin-top: 2px;
+  line-height: 1.2;
 }
 
 .dl-edit-upload-panel__control-btn {
@@ -985,6 +1020,13 @@
   background: var(--dl-bg-primary);
   border-color: var(--dl-color-primary);
   color: var(--dl-color-primary);
+}
+
+.dl-edit-upload-panel__control-btn svg {
+  width: 100%;
+  height: 100%;
+  max-width: 20px;
+  max-height: 20px;
 }
 
 .dl-edit-upload-panel__rotation {

@@ -40,14 +40,19 @@ export function ProductDetail() {
   );
 
   // [2025-01-30 10:00:00] 获取同一品牌的其它商品
+  const productWithBrand = apiProduct as any;
   const { data: brandProductsData } = useSWR(
-    apiProduct?.brand?.id && apiProduct?.id
-      ? `brand-products-${apiProduct.brand.id}-${apiProduct.id}`
+    productWithBrand?.brand?.id && productWithBrand?.id
+      ? `brand-products-${productWithBrand.brand.id}-${productWithBrand.id}`
       : null,
-    () =>
-      productsApi
-        .getBrandProducts(apiProduct!.brand!.id, apiProduct!.id, 12)
-        .catch(() => ({ items: [], brand: null }))
+    () => {
+      if (productWithBrand?.brand?.id && productWithBrand?.id) {
+        return productsApi
+          .getBrandProducts(productWithBrand.brand.id, productWithBrand.id, 12)
+          .catch(() => ({ items: [], brand: null }));
+      }
+      return Promise.resolve({ items: [], brand: null });
+    }
   );
 
   // [2025-11-19 09:45:00] 转换数据格式
