@@ -176,7 +176,131 @@ async function getProductsByCategorySlug(slug, options = {}) {
   };
 }
 
+/**
+ * [2025-12-11 23:05:00] 获取分组分类树（含精确计数）
+ * @param {Object} options - 配置选项
+ * @param {string} options.strategy - 计数策略：'direct'（仅本类）或 'aggregate'（包含子类）
+ * @returns {Promise<Array>} 分组分类数组
+ */
+async function getTreeWithCounts({ strategy = 'direct' } = {}) {
+  // 获取所有一级分类（groups）
+  const rootCategories = await prisma.category.findMany({
+    where: {
+      isActive: true,
+      parentId: null,
+    },
+    include: {
+      children: {
+        where: { isActive: true },
+        include: {
+          productCategories: {
+            select: {
+              productId: true,
+            },
+          },
+        },
+        orderBy: { sortOrder: 'asc' },
+      },
+    },
+    orderBy: { sortOrder: 'asc' },
+  });
+
+  // 获取所有子分类的 ID（用于 aggregate 策略）
+  const allChildCategoryIds = rootCategories.flatMap((group) =>
+    group.children.map((child) => child.id)
+  );
+
+  // 计算每个子分类的产品计数
+  const countMap = new Map();
+
+  if (strategy === 'direct') {
+    // 直接计数：仅统计该分类直接关联的产品
+    const counts = await prisma.productCategory.groupBy({
+      by: ['categoryId'],
+      where: {
+        categoryId: { in: allChildCategoryIds },
+      },
+      _count: {
+        productId: true,
+      },
+    });
+
+    counts.forEach((item) => {
+      countMap.set(item.categoryId, item._count.productId);
+    });
+  } else {
+    // Aggregate 策略：统计该分类及其所有子孙分类的产品
+    for (const childId of allChildCategoryIds) {
+      // 获取该分类及其所有子孙分类的 ID
+      const categoryIds = await getCategoryAndDescendantsIds(childId);
+      
+      // 统计这些分类下的产品数量（去重）
+      const count = await prisma.productCategory.groupBy({
+        by: ['productId'],
+        where: {
+          categoryId: { in: categoryIds },
+        },
+      });
+
+      countMap.set(childId, count.length);
+    }
+  }
+
+  // 构建分组结构
+  const groups = rootCategories
+    .filter((group) => {
+      // 只返回有子分类的组
+      return group.children && group.children.length > 0;
+    })
+    .map((group) => {
+      const children = group.children
+        .map((child) => {
+          const count = countMap.get(child.id) || 0;
+          return {
+            id: child.id,
+            name: child.name,
+            slug: child.slug,
+            count,
+          };
+        })
+        .filter((child) => child.count > 0); // 只返回有产品的子分类
+
+      return {
+        id: group.id,
+        name: group.name,
+        slug: group.slug,
+        children,
+      };
+    })
+    .filter((group) => group.children.length > 0); // 只返回有子分类的组
+
+  return groups;
+}
+
+/**
+ * [2025-12-11 23:05:00] 递归获取分类及其所有子孙分类的 ID
+ */
+async function getCategoryAndDescendantsIds(categoryId) {
+  const categoryIds = [categoryId];
+  
+  const children = await prisma.category.findMany({
+    where: {
+      parentId: categoryId,
+      isActive: true,
+    },
+    select: { id: true },
+  });
+
+  for (const child of children) {
+    const descendantIds = await getCategoryAndDescendantsIds(child.id);
+    categoryIds.push(...descendantIds);
+  }
+
+  return categoryIds;
+}
+
 module.exports = {
   getCategoryTree,
   getProductsByCategorySlug,
+  getTreeWithCounts,
 };

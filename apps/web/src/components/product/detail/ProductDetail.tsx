@@ -39,6 +39,17 @@ export function ProductDetail() {
     () => productsApi.getRelated(slug, 8).catch(() => ({ data: [] }))
   );
 
+  // [2025-01-30 10:00:00] 获取同一品牌的其它商品
+  const { data: brandProductsData } = useSWR(
+    apiProduct?.brand?.id && apiProduct?.id
+      ? `brand-products-${apiProduct.brand.id}-${apiProduct.id}`
+      : null,
+    () =>
+      productsApi
+        .getBrandProducts(apiProduct!.brand!.id, apiProduct!.id, 12)
+        .catch(() => ({ items: [], brand: null }))
+  );
+
   // [2025-11-19 09:45:00] 转换数据格式
   const [productData, setProductData] = useState<ProductData | null>(null);
   const [selectedColor, setSelectedColor] = useState('');
@@ -295,10 +306,19 @@ export function ProductDetail() {
         {/* [2025-12-11 09:21:35] 移除 Also Available On 模块（按需求） */}
 
         {/* [2025-11-19 09:30:00] 参考图一位置："More by this artist" */}
+        {/* [2025-01-30 10:00:00] 使用新 API 获取同一品牌的产品 */}
         <MoreByArtist
           artistName={productData.artist.name}
           artistShopUrl={productData.artist.shopUrl}
-          products={productData.moreByArtist}
+          products={
+            brandProductsData?.items?.map((item) => ({
+              id: item.id,
+              title: item.title,
+              url: item.coverImageUrl || '/assets/hero/hero-card-tee.jpg',
+              price: item.price,
+              link: `/products/${item.slug}`,
+            })) || []
+          }
         />
 
         {/* [2025-11-19 09:30:00] 参考图一位置："T-shirts you might like" */}

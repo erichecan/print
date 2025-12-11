@@ -1,6 +1,7 @@
 /**
  * MoreByArtist Component - Redbubble Style
  * [2025-11-19 09:18:00] 参考图一："More by this artist" 卡片栅格
+ * [2025-01-30 10:00:00] 添加条件渲染：无商品时隐藏整个板块
  */
 'use client';
 
@@ -22,6 +23,11 @@ interface MoreByArtistProps {
 }
 
 export function MoreByArtist({ artistName, artistShopUrl, products }: MoreByArtistProps) {
+  // [2025-01-30 10:00:00] 条件渲染：无商品或商品数量为0时，完全不渲染该板块
+  if (!products || products.length === 0) {
+    return null;
+  }
+
   const formatPrice = (amount: number) => {
     return new Intl.NumberFormat('en-CA', {
       style: 'currency',
@@ -31,42 +37,51 @@ export function MoreByArtist({ artistName, artistShopUrl, products }: MoreByArti
   };
 
   return (
-    <section className="more-by-artist" aria-label={`More products by ${artistName}`}>
+    <section 
+      className="more-by-artist" 
+      aria-label={`More products by ${artistName}`}
+      data-testid="artist-more-section"
+    >
       <div className="more-by-artist-header">
         <h2 className="more-by-artist-title">More by this artist</h2>
-        <Link href={artistShopUrl} className="more-by-artist-link">
-          View shop
-        </Link>
-      </div>
-      <div className="more-by-artist-grid">
-        {products.map((product) => (
-          <Link
-            key={product.id}
-            href={product.link}
-            className="more-by-artist-item"
-            aria-label={`${product.title} - ${formatPrice(product.price)}`}
-          >
-            <div className="more-by-artist-image-wrapper">
-              <Image
-                src={product.url}
-                alt={product.title}
-                width={300}
-                height={300}
-                className="more-by-artist-image"
-              />
-            </div>
-            <div className="more-by-artist-info">
-              <div 
-                className="more-by-artist-title-text" 
-                title={product.title}
-              >
-                {product.title}
-              </div>
-              <div className="more-by-artist-price">{formatPrice(product.price)}</div>
-            </div>
+        {artistShopUrl && (
+          <Link href={artistShopUrl} className="more-by-artist-link">
+            View shop
           </Link>
-        ))}
+        )}
       </div>
+      <ul className="more-by-artist-grid">
+        {products.map((product) => (
+          <li key={product.id}>
+            <Link
+              href={product.link}
+              className="more-by-artist-item"
+              aria-label={`${product.title} - ${formatPrice(product.price)}`}
+              data-testid={`artist-more-card-${product.id}`}
+            >
+              <div className="more-by-artist-image-wrapper">
+                <Image
+                  src={product.url}
+                  alt={product.title}
+                  width={300}
+                  height={300}
+                  className="more-by-artist-image"
+                  loading="lazy"
+                />
+              </div>
+              <div className="more-by-artist-info">
+                <div 
+                  className="more-by-artist-title-text" 
+                  title={product.title}
+                >
+                  {product.title}
+                </div>
+                <div className="more-by-artist-price">{formatPrice(product.price)}</div>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

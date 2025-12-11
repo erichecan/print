@@ -6,7 +6,7 @@
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
-const { getCategoryTree } = require('../services/categories');
+const { getCategoryTree, getTreeWithCounts, getProductsByCategorySlug } = require('../services/categories');
 
 // [2025-01-27 18:50:00] 获取所有活跃的分类（用于首页展示）
 exports.listCategories = async (req, res) => {
@@ -93,6 +93,57 @@ exports.getCategoryTree = async (req, res) => {
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch category tree',
+    });
+  }
+};
+
+// [2025-12-11 23:05:00] 获取分组分类树（含精确计数）
+exports.getTreeWithCounts = async (req, res) => {
+  try {
+    const strategy = (req.query.strategy === 'aggregate') ? 'aggregate' : 'direct';
+    const groups = await getTreeWithCounts({ strategy });
+    
+    res.json({
+      groups,
+      meta: {
+        countStrategy: strategy,
+      },
+    });
+  } catch (error) {
+    logger.error('[2025-12-11 23:05:00] getTreeWithCounts error:', error);
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to fetch category tree with counts',
+    });
+  }
+};
+
+// [2025-12-11 23:05:00] 根据分类 slug 获取产品列表
+exports.getProductsByCategorySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 24;
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = req.query.sortOrder || 'desc';
+
+    const result = await getProductsByCategorySlug(slug, {
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+    });
+
+    res.json({
+      data: result.products,
+      pagination: result.pagination,
+      category: result.category,
+    });
+  } catch (error) {
+    logger.error('[2025-12-11 23:05:00] getProductsByCategorySlug error:', error);
+    res.status(500).json({
+      error: 'Server Error',
+      message: 'Failed to fetch products by category',
     });
   }
 };

@@ -809,26 +809,72 @@ model SequelizeMeta {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+// [2025-12-11 23:00:00] Artwork Categories - 树状分类表
+model artwork_categories {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  parent_id   String?  @map("parent_id") @db.Uuid
+  sort_order  Int      @default(0) @map("sort_order")
+  is_active   Boolean  @default(true) @map("is_active")
+  created_at  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  parent      artwork_categories? @relation("CategoryTree", fields: [parent_id], references: [id], onDelete: Cascade)
+  children    artwork_categories[] @relation("CategoryTree")
+  top_artworks    art_assets[] @relation("TopCategory")
+  sub_artworks    art_assets[] @relation("SubCategory")
+
+  @@index([parent_id], map: "idx_artwork_categories_parent_id")
+  @@index([slug], map: "idx_artwork_categories_slug")
+  @@index([is_active], map: "idx_artwork_categories_is_active")
+  @@map("artwork_categories")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+// [2025-12-11 23:00:00] 扩展 art_assets 表，支持 GCS 存储、子分类、标签、授权信息
 model art_assets {
-  id            String   @id @db.Uuid
-  category      String   @db.VarChar(100)
-  name          String   @db.VarChar(255)
-  image_url     String   @db.VarChar(500)
-  thumbnail_url String?  @db.VarChar(500)
-  file_size     Int?
-  width         Int?
-  height        Int?
-  mime_type     String?  @db.VarChar(100)
-  is_active     Boolean? @default(true)
-  sort_order    Int?     @default(0)
-  created_by    String?  @db.Uuid
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime @default(now()) @db.Timestamptz(6)
+  id              String   @id @db.Uuid
+  category        String   @db.VarChar(100) // [2025-12-11 23:00:00] 保留向后兼容
+  name            String   @db.VarChar(255)
+  slug            String?  @unique @db.VarChar(255) // [2025-12-11 23:00:00] 新增：URL 友好的标识符
+  description     String?  @db.Text // [2025-12-11 23:00:00] 新增：描述
+  image_url       String   @db.VarChar(500)
+  thumbnail_url   String?  @db.VarChar(500)
+  file_size       Int?
+  width           Int?
+  height          Int?
+  mime_type       String?  @db.VarChar(100)
+  is_active       Boolean? @default(true)
+  sort_order      Int?     @default(0)
+  created_by      String?  @db.Uuid
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+  
+  // [2025-12-11 23:00:00] 新增字段：GCS 存储、分类关系、标签、授权
+  top_category_id     String?  @map("top_category_id") @db.Uuid // [2025-12-11 23:00:00] 一级分类 ID
+  sub_category_id     String?  @map("sub_category_id") @db.Uuid // [2025-12-11 23:00:00] 二级分类 ID
+  gcs_key             String?  @map("gcs_key") @db.VarChar(500) // [2025-12-11 23:00:00] GCS 对象路径
+  gcs_bucket           String?  @map("gcs_bucket") @db.VarChar(255) // [2025-12-11 23:00:00] GCS Bucket 名称
+  source_url           String?  @map("source_url") @db.VarChar(500) // [2025-12-11 23:00:00] 原始来源 URL
+  tags                 String[] @default([]) // [2025-12-11 23:00:00] 标签数组
+  license              String?  @db.VarChar(100) // [2025-12-11 23:00:00] 授权类型（Public Domain, CC0, 等）
+  attribution          String?  @db.Text // [2025-12-11 23:00:00] 署名信息
+  dominant_color       String?  @map("dominant_color") @db.VarChar(7) // [2025-12-11 23:00:00] 主色调（hex）
+  status               String?  @default("active") @db.VarChar(50) // [2025-12-11 23:00:00] 状态（active/archived）
+
+  top_category         artwork_categories? @relation("TopCategory", fields: [top_category_id], references: [id], onDelete: SetNull)
+  sub_category         artwork_categories? @relation("SubCategory", fields: [sub_category_id], references: [id], onDelete: SetNull)
 
   @@index([category], map: "idx_art_assets_category")
   @@index([created_at], map: "idx_art_assets_created_at")
   @@index([is_active], map: "idx_art_assets_is_active")
   @@index([sort_order], map: "idx_art_assets_sort_order")
+  @@index([top_category_id], map: "idx_art_assets_top_category_id")
+  @@index([sub_category_id], map: "idx_art_assets_sub_category_id")
+  @@index([gcs_key], map: "idx_art_assets_gcs_key")
+  @@index([status], map: "idx_art_assets_status")
+  @@index([tags(ops: raw("gin_trgm_ops"))], map: "idx_art_assets_tags", type: Gin) // [2025-12-11 23:00:00] GIN 索引用于标签搜索
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

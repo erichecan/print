@@ -1,0 +1,6 @@
+{
+  "server": "apify",
+  "apiTokenEnv": "APIFY_TOKEN",
+  "defaultDataset": "designer-art-import",
+  "defaultStorage": "local"
+}
