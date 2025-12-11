@@ -142,6 +142,23 @@ test.describe('Design Lab M1: 基础功能测试', () => {
       await verifyCanvasHasObjects(page, 1);
     });
 
+    test('添加文字后不应被快照回灌误删（回归测试）', async ({ page }) => {
+      await addTextToCanvas(page, TEST_TEXTS.simple);
+
+      // [2025-12-11 23:59:30] 等待可能发生的“旧快照回灌”窗口（此前会把刚添加的 text_* 清掉）
+      await page.waitForTimeout(800);
+
+      // 通过浏览器上下文直接检查 fabricCanvas 中是否仍存在 text 对象
+      const textCount = await page.evaluate(() => {
+        const canvas = (window as any).fabricCanvas;
+        if (!canvas || typeof canvas.getObjects !== 'function') return 0;
+        const objs = canvas.getObjects();
+        return objs.filter((o: any) => o && (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox')).length;
+      });
+
+      expect(textCount).toBeGreaterThan(0);
+    });
+
     test('应该能够打开 Edit Text 面板', async ({ page }) => {
       // 先添加文字
       await addTextToCanvas(page, TEST_TEXTS.simple);

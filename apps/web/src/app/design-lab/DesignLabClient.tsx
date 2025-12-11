@@ -3655,6 +3655,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   // [2025-12-08 23:30:00] 更新Zoom视图处理
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
+
+    // [2025-12-11 23:59:30] 修复：添加对象过程中，禁止从 store 快照回灌当前画布
+    // 原因：Add Text 会先 canvas.add(textObj) 再 setCanvas(snapshot)；
+    // viewCanvases 更新触发该 effect 时，可能拿到旧快照并调用 snapshotToCanvas，导致刚添加的 text_* 被清理掉
+    if (isAddingObjectRef.current) {
+      console.log('[DesignLab] Skipping snapshotToCanvas while adding object (protect new object from stale snapshot overwrite)');
+      return;
+    }
     
     const view = currentView;
     if (view === 'zoom') {
