@@ -266,7 +266,9 @@ function requiresAuthProxy(path: string): boolean {
 }
 
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+  // [2025-01-27 18:00:00] 添加超时控制和取消支持
   const { method = 'GET', body, headers = {} } = options;
+  const timeout = 10000; // 10秒超时
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
@@ -293,6 +295,10 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   // [2025-12-07 07:55:00] 从 localStorage 读取 token 并添加到 Authorization header
   const token = getToken();
 
+  // [2025-01-27 18:00:00] 创建 AbortController 用于超时和取消
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
   const config: RequestInit = {
     method,
     headers: {
@@ -301,6 +307,8 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...headers,
     },
+    // [2025-01-27 18:00:00] 添加 signal 用于取消请求
+    signal: controller.signal,
     // [2025-12-07 07:55:00] 不再需要 credentials: 'include'（不使用 Cookie）
   };
 
@@ -311,10 +319,17 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   let response: Response;
   try {
     response = await fetch(requestUrl, config);
+    clearTimeout(timeoutId);
   } catch (error: unknown) {
+    clearTimeout(timeoutId);
+    
     // [2025-12-07 13:45:00] 处理网络错误（连接被拒绝、空响应等）
-    if (error instanceof TypeError) {
-      const errorMessage = error.message;
+    // [2025-01-27 18:00:00] 统一错误处理，包含超时错误
+    if (error instanceof TypeError || (error as any)?.name === 'AbortError') {
+      const errorMessage = (error as any)?.message || '';
+      if (errorMessage.includes('aborted') || (error as any)?.name === 'AbortError') {
+        throw new Error(`请求超时（${timeout}ms）。请稍后重试。`);
+      }
       if (errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED')) {
         // [2025-12-07 13:45:00] 本地开发环境：提供更友好的错误提示
         const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -328,18 +343,35 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   }
 
   // [2025-01-27 16:10:00] 处理空响应
+  // [2025-01-27 18:00:00] 统一错误处理，提取 traceId 和错误码
   if (!response || !response.ok) {
     let errorMessage = `API Error: ${response?.status || 'Unknown'}`;
-    let errorDetails: { error?: string; message?: string; details?: string | Record<string, unknown> } | null = null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+    let errorDetails: { error?: { code?: string; message?: string; details?: string | Record<string, unknown> }; message?: string; details?: string | Record<string, unknown>; traceId?: string } | null = null;
+    let traceId: string | undefined;
+    
     try {
       const errorText = await response.text();
       if (errorText) {
         try {
           errorDetails = JSON.parse(errorText);
-          errorMessage = errorDetails.error || errorDetails.message || errorMessage;
+          // [2025-01-27 18:00:00] 提取标准错误格式
+          if (errorDetails && errorDetails.error) {
+            errorMessage = typeof errorDetails.error === 'string' 
+              ? errorDetails.error 
+              : (errorDetails.error.message || errorMessage);
+            traceId = errorDetails.traceId;
+          } else if (errorDetails) {
+            errorMessage = typeof errorDetails.error === 'string'
+              ? errorDetails.error
+              : (errorDetails.message || errorMessage);
+            traceId = errorDetails.traceId;
+          }
           // [2025-01-27] 如果有详细信息，添加到错误消息中
-          if (errorDetails.details && process.env.NODE_ENV === 'development') {
-            errorMessage += `: ${errorDetails.details}`;
+          if (errorDetails && errorDetails.details && process.env.NODE_ENV === 'development') {
+            const detailsStr = typeof errorDetails.details === 'string' 
+              ? errorDetails.details 
+              : JSON.stringify(errorDetails.details);
+            errorMessage += `: ${detailsStr}`;
           }
         } catch {
           // 如果不是 JSON，使用原始文本
@@ -353,10 +385,17 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
       errorMessage = response?.statusText || 'Network error: Empty response from server';
     }
     
+    // [2025-01-27 18:00:00] 从响应头提取 traceId
+    if (!traceId) {
+      traceId = response.headers.get('X-Trace-Id') || response.headers.get('X-Request-Id') || undefined;
+    }
+    
     // [2025-01-27] 添加更详细的错误信息用于调试
     const fullError = new Error(errorMessage);
     (fullError as any).status = response?.status;
     (fullError as any).details = errorDetails;
+    (fullError as any).traceId = traceId;
+    (fullError as any).errorCode = errorDetails?.error?.code;
     throw fullError;
   }
 

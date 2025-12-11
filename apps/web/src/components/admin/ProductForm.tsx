@@ -47,7 +47,9 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
   const [imagePreviews, setImagePreviews] = useState<{ [key: number]: string }>({});
+  const [traceId, setTraceId] = useState<string | null>(null); // [2025-01-27 18:00:00] 添加 traceId 状态
   const fileRefs = useRef<{ [key: number]: File }>({});
+  const abortControllerRef = useRef<AbortController | null>(null); // [2025-01-27 18:00:00] 用于取消请求
 
   const { data: categoryResponse } = useSWR(
     ['admin-categories', 'all'],
@@ -255,8 +257,18 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   }, [product, reset]);
 
   const onSubmit = async (values: AdminProductPayload) => {
+    // [2025-01-27 18:00:00] 防止重复提交
+    if (submitting) {
+      return;
+    }
+    
     setSubmitError(null);
+    setTraceId(null);
     setSubmitting(true);
+    
+    // [2025-01-27 18:00:00] 创建新的 AbortController
+    abortControllerRef.current = new AbortController();
+    
     try {
       // [2025-01-27 15:15:00] Store files to upload after product creation
       const filesToUpload: { [index: number]: File } = {};
@@ -346,9 +358,51 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         onSuccess(response);
       }
     } catch (error: any) {
-      setSubmitError(error?.message || '提交失败，请稍后再试');
+      // [2025-01-27 18:00:00] 统一错误处理，提取 traceId 和错误码
+      const errorMessage = error?.message || '提交失败，请稍后再试';
+      const errorTraceId = error?.traceId || null;
+      const errorCode = error?.errorCode || null;
+      
+      // 构建用户友好的错误消息
+      let userMessage = errorMessage;
+      if (errorCode) {
+        // 根据错误码提供更友好的提示
+        if (errorCode === 'VALIDATION_ERROR') {
+          userMessage = '数据验证失败，请检查输入信息';
+        } else if (errorCode === 'UNAUTHORIZED') {
+          userMessage = '登录已过期，请重新登录';
+        } else if (errorCode === 'FORBIDDEN') {
+          userMessage = '没有权限执行此操作';
+        } else if (errorCode === 'UPSTREAM_TIMEOUT') {
+          userMessage = '请求超时，请稍后重试';
+        } else if (errorCode === 'NETWORK_ERROR') {
+          userMessage = '网络错误，请检查网络连接';
+        }
+      }
+      
+      setSubmitError(userMessage);
+      setTraceId(errorTraceId);
+      
+      console.error('[ProductForm] Submit error:', {
+        error: errorMessage,
+        traceId: errorTraceId,
+        errorCode,
+        status: error?.status,
+        details: error?.details,
+      });
     } finally {
       setSubmitting(false);
+      abortControllerRef.current = null;
+    }
+  };
+  
+  // [2025-01-27 18:00:00] 重试函数
+  const handleRetry = () => {
+    if (submitting) return;
+    // 重新触发表单提交
+    const form = document.querySelector('form.admin-form') as HTMLFormElement;
+    if (form) {
+      form.requestSubmit();
     }
   };
 
@@ -633,7 +687,32 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         ))}
       </div>
 
-      {submitError && <div className="form-error">{submitError}</div>}
+      {submitError && (
+        <div className="form-error">
+          <div>{submitError}</div>
+          {traceId && (
+            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+              追踪ID: {traceId}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleRetry}
+            disabled={submitting}
+            style={{
+              marginTop: '8px',
+              padding: '6px 12px',
+              background: '#f1f5f9',
+              border: '1px solid #e2e8f0',
+              borderRadius: '4px',
+              cursor: submitting ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+            }}
+          >
+            重试
+          </button>
+        </div>
+      )}
 
       <div className="form-actions">
         <button type="submit" className="primary-btn" disabled={submitting}>
@@ -770,6 +849,14 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         .error {
           font-size: 12px;
           color: #ef4444;
+        }
+        .form-error {
+          padding: 12px;
+          background: #fef2f2;
+          border: 1px solid #fecaca;
+          border-radius: 8px;
+          color: #991b1b;
+          margin-bottom: 16px;
         }
         /* [2025-01-27 15:10:00] Image Upload Styles */
         .image-preview-container {
