@@ -291,11 +291,18 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   };
 
   // [2025-12-08] 处理文本形状变化
+  // [2025-12-11 23:59:30] 修复：添加参数验证和错误处理，防止 TypeError "t is not iterable"
   const handleTextShapeChange = (shape: 'straight' | 'arc' | 'circle' | 'wave') => {
     setTextShape(shape);
     if (!selectedText || !canvas) return;
     
     try {
+      // [2025-12-11 23:59:30] 验证 selectedText 是有效的文本对象
+      if (selectedText.type !== 'i-text' && selectedText.type !== 'textbox') {
+        console.warn('[EditTextPanel] Selected object is not a text object, skipping shape change');
+        return;
+      }
+      
       // 获取文本对象的位置和属性
       const left = selectedText.left || 0;
       const top = selectedText.top || 0;
@@ -307,30 +314,28 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       const strokeWidth = selectedText.strokeWidth || 0;
       
       // 创建路径
-      let path: string;
+      let path: string | undefined;
       const width = (selectedText.width || 200);
       const height = (selectedText.height || 50);
       
       switch (shape) {
         case 'straight':
-          // 直线：使用普通文本对象
-          selectedText.set('path', undefined);
+          // 直线：使用普通文本对象，清除路径
+          path = undefined;
           break;
         case 'arc':
-          // 弧形：使用SVG路径
+          // 弧形：使用SVG路径字符串
           path = `M ${left} ${top + height} Q ${left + width / 2} ${top} ${left + width} ${top + height}`;
-          selectedText.set('path', path);
           break;
         case 'circle':
-          // 圆形：使用圆形路径
+          // 圆形：使用圆形路径字符串
           const radius = Math.min(width, height) / 2;
           const centerX = left + width / 2;
           const centerY = top + height / 2;
           path = `M ${centerX + radius} ${centerY} A ${radius} ${radius} 0 1 1 ${centerX - radius} ${centerY} A ${radius} ${radius} 0 1 1 ${centerX + radius} ${centerY}`;
-          selectedText.set('path', path);
           break;
         case 'wave':
-          // 波浪：使用波浪路径
+          // 波浪：使用波浪路径字符串
           const waveAmplitude = 10;
           const waveLength = width / 4;
           let wavePath = `M ${left} ${top + height / 2}`;
@@ -339,19 +344,42 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
             const y = top + height / 2 + Math.sin((i / waveLength) * Math.PI * 2) * waveAmplitude;
             wavePath += ` L ${x} ${y}`;
           }
-          selectedText.set('path', wavePath);
+          path = wavePath;
           break;
+        default:
+          console.warn('[EditTextPanel] Unknown shape type:', shape);
+          path = undefined;
+      }
+      
+      // [2025-12-11 23:59:30] 验证路径格式：必须是字符串或 undefined
+      if (path !== undefined && typeof path !== 'string') {
+        console.error('[EditTextPanel] Invalid path format, expected string or undefined, got:', typeof path, path);
+        path = undefined;
+      }
+      
+      // [2025-12-11 23:59:30] 安全地设置路径属性
+      if (path === undefined) {
+        selectedText.set('path', undefined);
+      } else {
+        // 确保路径是有效的字符串
+        selectedText.set('path', path);
       }
       
       selectedText.setCoords();
       canvas.renderAll();
       onUpdate();
     } catch (error) {
+      // [2025-12-11 23:59:30] 仅打印错误，不弹窗也不改变面板状态
       console.error('[EditTextPanel] Error applying text shape:', error);
       // 如果路径设置失败，回退到直线
-      if (selectedText) {
-        selectedText.set('path', undefined);
-        canvas?.renderAll();
+      try {
+        if (selectedText) {
+          selectedText.set('path', undefined);
+          selectedText.setCoords();
+          canvas?.renderAll();
+        }
+      } catch (recoveryError) {
+        console.error('[EditTextPanel] Error during recovery:', recoveryError);
       }
     }
   };

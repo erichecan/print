@@ -190,6 +190,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
   // [2025-01-31 01:00:00] 防止选择清除事件在添加对象后立即触发
   const isAddingObjectRef = useRef(false);
+  // [2025-12-11 23:59:30] 防止快照清理在编辑对象期间误删活动对象
+  const isEditingObjectRef = useRef(false);
+  // [2025-12-11 23:59:30] 跟踪对象删除的来源，用于区分用户删除和快照清理
+  const removalContextRef = useRef<'user-delete' | 'snapshot-cleanup' | 'background-reload' | 'unknown'>('unknown');
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，添加画布初始化状态跟踪
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   // [2025-12-10 18:40:00] Canvas初始化错误状态
@@ -1361,6 +1365,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   // [2025-01-30 21:25:00] 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
   // [2025-12-08 23:00:00] 修复：为恢复的对象添加删除控件
   // [2025-12-10] 修复：使用 fabricRef 确保 fabric 对象已加载
+  // [2025-12-11 23:59:30] 修复：添加编辑会话保护，防止在编辑期间误删活动对象
   const snapshotToCanvas = useCallback((snapshot: DesignCanvasSnapshot, canvas: fabric.Canvas) => {
     // [2025-12-10] 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
@@ -1370,18 +1375,41 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     
     const fabric = fabricRef.current;
     
+    // [2025-12-11 23:59:30] 编辑会话保护：如果正在编辑对象，跳过快照清理
+    if (isEditingObjectRef.current) {
+      console.log('[DesignLab] Skipping snapshotToCanvas while editing object (protect editing object from stale snapshot overwrite)');
+      return;
+    }
+    
+    // [2025-12-11 23:59:30] 获取当前活动对象，在编辑会话期间保护它
+    const activeObject = canvas.getActiveObject();
+    const isActiveText = activeObject && (activeObject.type === 'i-text' || activeObject.type === 'textbox');
+    const currentPanel = toolPanelTypeRef.current;
+    const isEditTextPanel = currentPanel === 'edit-text';
+    
     // [2025-01-30 21:55:00] 修复：清除现有对象（保留背景、产品图片和上传图片）
     // [2025-01-31 19:35:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
+    // [2025-12-11 23:59:30] 重要：在编辑文本面板期间，保护当前活动的文本对象
     const objectsToRemove = canvas.getObjects().filter((obj: fabric.Object) => {
       const objName = (obj as any).name || '';
       const objLayerType = (obj as any).data?.layerType;
       const isUploadImage = objLayerType === 'upload';
+      
+      // [2025-12-11 23:59:30] 编辑会话保护：如果对象是当前活动的文本对象，且正在编辑面板，则保护它
+      if (isEditTextPanel && isActiveText && obj === activeObject) {
+        console.log('[DesignLab] Protecting active text object during edit session:', objName);
+        return false;
+      }
       
       // [2025-01-31 19:35:00] 保留背景、产品图片和上传图片
       return objName !== 'background' && 
              !objName.startsWith('product-image-') && 
              !isUploadImage; // 重要：不移除上传图片
     });
+    
+    // [2025-12-11 23:59:30] 标记删除来源为快照清理
+    removalContextRef.current = 'snapshot-cleanup';
+    
     objectsToRemove.forEach((obj: fabric.Object) => {
       const objName = (obj as any).name || 'unnamed';
       const objLayerType = (obj as any).data?.layerType;
@@ -1393,6 +1421,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       });
       canvas.remove(obj);
     });
+    
+    // [2025-12-11 23:59:30] 重置删除来源标记
+    removalContextRef.current = 'unknown';
     
     // [2025-12-08 23:00:00] 获取删除控件（如果已创建）
     const deleteControl = (canvas as any).deleteControl;
@@ -3009,25 +3040,55 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const obj = event.payload?.object;
           const objName = obj?.name || 'unnamed';
           const layerType = obj?.data?.layerType || 'unknown';
+          const removalContext = removalContextRef.current;
           
           // #region agent log
           debugLog({
             location: 'DesignLabClient.tsx:2315',
             message: 'OBJECT_REMOVED event',
-            data: { objName, layerType, zIndex: obj?.data?.zIndex, isProductImage: objName.startsWith('product-image-'), backgroundImageMatches: obj===backgroundImageRef.current },
+            data: { objName, layerType, zIndex: obj?.data?.zIndex, isProductImage: objName.startsWith('product-image-'), backgroundImageMatches: obj===backgroundImageRef.current, removalContext },
             hypothesisId: 'A',
           });
           // #endregion
+          
+          // [2025-12-11 23:59:30] 编辑会话保护：如果删除的是活动文本对象，且来源不是用户删除，则恢复对象
+          const currentPanel = toolPanelTypeRef.current;
+          const isText = obj && (obj.type === 'i-text' || obj.type === 'textbox');
+          const isEditTextPanel = currentPanel === 'edit-text';
+          const isActiveText = obj && fabricCanvas.getActiveObject() === null && selectedText === obj;
+          
+          if (isText && isEditTextPanel && removalContext !== 'user-delete') {
+            console.warn('[DesignLab] Prevent unintended removal during edit; restoring object:', {
+              objName,
+              removalContext,
+              currentPanel,
+            });
+            // 恢复对象到画布
+            fabricCanvas.add(obj);
+            fabricCanvas.setActiveObject(obj);
+            fabricCanvas.renderAll();
+            // 不切到 Home，保持编辑面板
+            removalContextRef.current = 'unknown';
+            return;
+          }
           
           if (removeCount <= maxLogCount) {
             console.log('[DesignLab] Object removed:', { 
               name: objName, 
               layerType,
               zIndex: obj?.data?.zIndex,
-              totalRemoves: removeCount 
+              totalRemoves: removeCount,
+              removalContext,
             });
           } else if (removeCount === maxLogCount + 1) {
             console.warn('[DesignLab] ⚠️ Object removed count exceeded limit, suppressing further logs');
+          }
+          
+          // [2025-12-11 23:59:30] 仅在用户显式删除时才允许面板回退到 Home
+          if (removalContext === 'user-delete' && isText && isEditTextPanel) {
+            console.log('[DesignLab] User deleted text object, switching to home panel');
+            setToolPanelType('home');
+            setSelectedText(null);
           }
           
           // 记录移除时间（用于检测循环）
@@ -3049,6 +3110,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               // #endregion
             }
           }
+          
+          // [2025-12-11 23:59:30] 重置删除来源标记
+          removalContextRef.current = 'unknown';
         });
 
         canvasEngine.on(CanvasEventType.OBJECT_MODIFIED, (event) => {
@@ -3082,6 +3146,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
                 location: 'deleteControl actionHandler (inline)',
                 callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
               });
+              // [2025-12-11 23:59:30] 标记删除来源为用户删除
+              removalContextRef.current = 'user-delete';
               // 保存到历史记录以便Undo
               const snapshot = canvasToSnapshot(fabricCanvas);
               setCanvas(snapshot, { pushHistory: true });
@@ -3128,6 +3194,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           mouseUpHandler: (eventData, transformData) => {
             const target = transformData.target;
             if (target && fabricCanvas) {
+              // [2025-12-11 23:59:30] 标记删除来源为用户删除
+              removalContextRef.current = 'user-delete';
               // 保存到历史记录以便Undo
               const snapshot = canvasToSnapshot(fabricCanvas);
               setCanvas(snapshot, { pushHistory: true });
@@ -3217,12 +3285,19 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const currentPanel = toolPanelTypeRef.current;
           
           // [2025-01-31 19:15:00] 如果当前在编辑面板，且有选中的对象，保持面板不切换
+          // [2025-12-11 23:59:30] 增强：检查画布上是否还有文本对象，如果有则保持编辑面板
           if (currentPanel === 'edit-text' || currentPanel === 'edit-upload' || currentPanel === 'edit-art') {
             const hasSelectedText = selectedText !== null;
             const hasSelectedImage = selectedImage !== null;
             const hasSelectedArt = selectedArt !== null;
-            if (hasSelectedText || hasSelectedImage || hasSelectedArt) {
-              console.log('[DesignLab] Selection cleared but edit panel has selected object, keeping panel');
+            
+            // [2025-12-11 23:59:30] 检查画布上是否还有文本对象（即使未选中）
+            const hasTextObjects = fabricCanvas.getObjects().some((obj: any) => 
+              obj.type === 'i-text' || obj.type === 'textbox'
+            );
+            
+            if (hasSelectedText || hasSelectedImage || hasSelectedArt || (currentPanel === 'edit-text' && hasTextObjects)) {
+              console.log('[DesignLab] Selection cleared but edit panel has selected object or text objects on canvas, keeping panel');
               return;
             }
           }
@@ -3650,6 +3725,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       loadBackgroundImage(currentView);
     }
   }, [canvasInitialized, currentView, loadBackgroundImage]); // [2025-01-31 16:55:00] 添加 loadBackgroundImage 到依赖，但内部有重复检查
+
+  // [2025-12-11 23:59:30] 编辑会话保护：当进入/离开编辑面板时设置/清除编辑保护标志
+  useEffect(() => {
+    if (toolPanelType === 'edit-text' || toolPanelType === 'edit-upload' || toolPanelType === 'edit-art') {
+      isEditingObjectRef.current = true;
+      console.log('[DesignLab] Entering edit panel, enabling edit protection:', toolPanelType);
+    } else {
+      isEditingObjectRef.current = false;
+      console.log('[DesignLab] Leaving edit panel, disabling edit protection');
+    }
+  }, [toolPanelType]);
 
   // [2025-01-30 16:30:00] 视图切换时更新画布
   // [2025-12-08 23:30:00] 更新Zoom视图处理
