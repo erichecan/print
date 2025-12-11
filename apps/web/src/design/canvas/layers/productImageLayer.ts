@@ -357,6 +357,11 @@ function removeExistingProductImage(
         });
         // #endregion
         
+        console.log('[ProductImageLayer] 🗑️ Executing canvas.remove() for product image:', {
+          objName,
+          location: 'removeExistingProductImage',
+          callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+        });
         canvas.remove(obj);
         manager.markRemoved(obj as fabric.Image);
         removed = true;
@@ -485,31 +490,68 @@ export async function loadProductImageLayer(
     // 先移除匹配稳定键的图片
     removeExistingProductImage(canvas, stableKey, null);
     
-    // [2025-01-31 19:00:00] 然后移除所有其他以 product-image- 开头的图片（切换产品/颜色时）
+    // [2025-01-31 19:30:00] 然后移除所有其他以 product-image- 开头的图片（切换产品/颜色时）
+    // [2025-01-31 19:30:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
     const allObjects = canvas.getObjects();
+    console.log('[ProductImageLayer] 🔍 Before cleanup - all canvas objects:', allObjects.map((obj, idx) => ({
+      index: idx,
+      name: (obj as any).name || 'unnamed',
+      type: obj.type,
+      layerType: (obj as any).data?.layerType || 'unknown',
+      stableKey: (obj as any).data?.stableKey || (obj as any).name,
+      isProductImage: ((obj as any).name || '').startsWith('product-image-'),
+    })));
+    
     for (const obj of allObjects) {
       const objName = obj.name || '';
       const objStableKey = (obj as any).data?.stableKey || objName;
+      const objLayerType = (obj as any).data?.layerType;
       const isProductImage = objName.startsWith('product-image-');
       const isCurrentKey = objName === stableKey || objStableKey === stableKey;
+      const isUploadImage = objLayerType === 'upload';
       
-      // [2025-01-31 19:00:00] 移除所有产品图片，除了当前要加载的这个
+      // [2025-01-31 19:30:00] 安全检查：绝对不移除上传图片
+      if (isUploadImage) {
+        console.log('[ProductImageLayer] ⚠️ Skipping upload image (protected from removal):', {
+          objName,
+          objLayerType,
+          objStableKey,
+        });
+        continue;
+      }
+      
+      // [2025-01-31 19:30:00] 移除所有产品图片，除了当前要加载的这个
       // 如果 stableKey 不匹配，强制移除，不经过 canRemove 状态检查
       if (isProductImage && !isCurrentKey) {
-        // [2025-01-31 19:00:00] stableKey 不匹配，强制移除（绕过 canRemove 状态检查）
+        // [2025-01-31 19:30:00] stableKey 不匹配，强制移除（绕过 canRemove 状态检查）
         // 因为已经在 startLoading 之前通过 clearOldImageState 清除了旧图片的管理状态
-        console.log('[ProductImageLayer] Force removing old product image (different stableKey):', {
+        console.log('[ProductImageLayer] 🗑️ Force removing old product image (different stableKey):', {
           objName,
           objStableKey,
           newStableKey: stableKey,
+          layerType: objLayerType,
           managerState: manager.getState(),
           isCurrentImage: obj === manager.getCurrentImage(),
           managerCurrentStableKey: manager.getCurrentStableKey(),
+        });
+        console.log('[ProductImageLayer] 📍 Removal call stack:', new Error().stack?.split('\n').slice(1, 5).join('\n'));
+        console.log('[ProductImageLayer] 🗑️ Executing canvas.remove() for old product image:', {
+          objName,
+          location: 'loadProductImageLayer cleanup loop',
+          callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
         });
         canvas.remove(obj);
         manager.markRemoved(obj as fabric.Image);
       }
     }
+    
+    const remainingObjects = canvas.getObjects();
+    console.log('[ProductImageLayer] ✅ After cleanup - remaining objects:', remainingObjects.map((obj, idx) => ({
+      index: idx,
+      name: (obj as any).name || 'unnamed',
+      type: obj.type,
+      layerType: (obj as any).data?.layerType || 'unknown',
+    })));
     canvas.renderAll();
     
     // 6. 加载图片（使用原生 Image 对象，然后转换为 Fabric Image）

@@ -266,6 +266,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     const createSolidColorBackground = () => {
       // 移除旧背景
       if (backgroundImageRef.current) {
+        const objName = (backgroundImageRef.current as any).name || 'unnamed';
+        const objLayerType = (backgroundImageRef.current as any).data?.layerType;
+        console.log('[DesignLab] 🗑️ Removing background image (createSolidColorBackground):', {
+          objName,
+          objLayerType,
+          location: 'createSolidColorBackground',
+          callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+        });
         canvas.remove(backgroundImageRef.current);
         backgroundImageRef.current = null;
       }
@@ -356,8 +364,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           
           // [2025-01-30 21:55:00] 修复：如果是产品图片，不应该移除
           if (!isProductImage) {
-          canvas.remove(backgroundImageRef.current);
-          backgroundImageRef.current = null;
+            const objName = (backgroundImageRef.current as any).name || 'unnamed';
+            const objLayerType = (backgroundImageRef.current as any).data?.layerType;
+            console.log('[DesignLab] 🗑️ Removing background image (loadFallbackImage):', {
+              objName,
+              objLayerType,
+              isProductImage,
+              location: 'loadFallbackImage',
+              callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+            });
+            canvas.remove(backgroundImageRef.current);
+            backgroundImageRef.current = null;
           }
         }
         
@@ -491,25 +508,60 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     );
     
     // [2025-01-31 18:45:00] 如果存在相同稳定键的图片，检查是否需要移除其他旧图片
+    // [2025-01-31 19:30:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
     if (existingProductImage && backgroundImageRef.current === existingProductImage) {
       // 即使已存在，也要检查是否有其他旧的产品图片需要移除
       const allObjects = canvas.getObjects();
+      console.log('[DesignLab] 🔍 Before cleanup (loadBackgroundImage) - all canvas objects:', allObjects.map((obj, idx) => ({
+        index: idx,
+        name: (obj as any).name || 'unnamed',
+        type: obj.type,
+        layerType: (obj as any).data?.layerType || 'unknown',
+        stableKey: (obj as any).data?.stableKey || (obj as any).name,
+        isProductImage: ((obj as any).name || '').startsWith('product-image-'),
+      })));
+      
       let hasOtherProductImages = false;
       for (const obj of allObjects) {
         const objName = obj.name || '';
+        const objLayerType = (obj as any).data?.layerType;
         const isProductImage = objName.startsWith('product-image-');
         const isCurrentKey = objName === stableKey || (obj as any).data?.stableKey === stableKey;
+        const isUploadImage = objLayerType === 'upload';
+        
+        // [2025-01-31 19:30:00] 安全检查：绝对不移除上传图片
+        if (isUploadImage) {
+          console.log('[DesignLab] ⚠️ Skipping upload image (protected from removal):', {
+            objName,
+            objLayerType,
+          });
+          continue;
+        }
         
         if (isProductImage && !isCurrentKey) {
           hasOtherProductImages = true;
-          console.log('[DesignLab] Found old product image to remove:', objName);
+          console.log('[DesignLab] 🗑️ Found old product image to remove:', {
+            objName,
+            objLayerType,
+            stableKey: (obj as any).data?.stableKey || objName,
+            currentStableKey: stableKey,
+          });
+          console.log('[DesignLab] 📍 Removal call stack:', new Error().stack?.split('\n').slice(1, 5).join('\n'));
           canvas.remove(obj);
         }
       }
       
       if (hasOtherProductImages) {
         canvas.renderAll();
-        console.log('[DesignLab] Removed old product images, keeping current:', stableKey);
+        const remainingObjects = canvas.getObjects();
+        console.log('[DesignLab] ✅ Removed old product images, keeping current:', {
+          stableKey,
+          remainingObjectsCount: remainingObjects.length,
+          remainingObjects: remainingObjects.map((obj) => ({
+            name: (obj as any).name || 'unnamed',
+            layerType: (obj as any).data?.layerType || 'unknown',
+          })),
+        });
       }
       
       console.log('[DesignLab] Product image already loaded and matches ref, skipping:', stableKey);
@@ -889,7 +941,13 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         return; // 如果是产品图片，直接返回，不继续使用旧方法
       }
       
-      console.log('[DesignLab] Removing old background image (non-product):', objName);
+      const objLayerType = (backgroundImageRef.current as any).data?.layerType;
+      console.log('[DesignLab] 🗑️ Removing old background image (non-product):', {
+        objName,
+        objLayerType,
+        location: 'loadBackgroundImage (fallback path)',
+        callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+      });
       canvas.remove(backgroundImageRef.current);
       backgroundImageRef.current = null;
     }
@@ -1000,6 +1058,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         
         // [2025-01-30 16:30:00] 移除旧背景
         if (backgroundImageRef.current) {
+          const objName = (backgroundImageRef.current as any).name || 'unnamed';
+          const objLayerType = (backgroundImageRef.current as any).data?.layerType;
+          console.log('[DesignLab] 🗑️ Removing old background image (onImageLoaded):', {
+            objName,
+            objLayerType,
+            location: 'onImageLoaded',
+            callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+          });
           canvas.remove(backgroundImageRef.current);
           backgroundImageRef.current = null;
         }
@@ -1304,13 +1370,29 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     
     const fabric = fabricRef.current;
     
-    // [2025-01-30 21:55:00] 修复：清除现有对象（保留背景和产品图片）
+    // [2025-01-30 21:55:00] 修复：清除现有对象（保留背景、产品图片和上传图片）
+    // [2025-01-31 19:35:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
     const objectsToRemove = canvas.getObjects().filter((obj: fabric.Object) => {
       const objName = (obj as any).name || '';
-      // 保留背景和产品图片
-      return objName !== 'background' && !objName.startsWith('product-image-');
+      const objLayerType = (obj as any).data?.layerType;
+      const isUploadImage = objLayerType === 'upload';
+      
+      // [2025-01-31 19:35:00] 保留背景、产品图片和上传图片
+      return objName !== 'background' && 
+             !objName.startsWith('product-image-') && 
+             !isUploadImage; // 重要：不移除上传图片
     });
-    objectsToRemove.forEach((obj: fabric.Object) => canvas.remove(obj));
+    objectsToRemove.forEach((obj: fabric.Object) => {
+      const objName = (obj as any).name || 'unnamed';
+      const objLayerType = (obj as any).data?.layerType;
+      console.log('[DesignLab] 🗑️ Removing object (snapshotToCanvas):', {
+        objName,
+        objLayerType,
+        location: 'snapshotToCanvas',
+        callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+      });
+      canvas.remove(obj);
+    });
     
     // [2025-12-08 23:00:00] 获取删除控件（如果已创建）
     const deleteControl = (canvas as any).deleteControl;
@@ -2656,6 +2738,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             const snapshot = canvasToSnapshot(canvas);
             setCanvas(snapshot, { pushHistory: true });
             
+            const objName = (activeObject as any).name || 'unnamed';
+            const objLayerType = (activeObject as any).data?.layerType;
+            console.log('[DesignLab] 🗑️ Removing active object (Delete key handler):', {
+              objName,
+              objLayerType,
+              location: 'Delete key handler',
+              callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+            });
             canvas.remove(activeObject);
             canvas.renderAll();
             
@@ -2943,6 +3033,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           actionHandler: (eventData, transformData, x, y) => {
             const target = transformData.target;
             if (target && fabricCanvas) {
+              const objName = (target as any).name || 'unnamed';
+              const objLayerType = (target as any).data?.layerType;
+              console.log('[DesignLab] 🗑️ Removing object (deleteControl actionHandler inline):', {
+                objName,
+                objLayerType,
+                location: 'deleteControl actionHandler (inline)',
+                callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
+              });
               // 保存到历史记录以便Undo
               const snapshot = canvasToSnapshot(fabricCanvas);
               setCanvas(snapshot, { pushHistory: true });
@@ -3288,32 +3386,77 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           if (removedObject) {
             const objName = (removedObject as any).name || 'unnamed';
             const objType = (removedObject as any).data?.layerType || 'unknown';
+            const objStableKey = (removedObject as any).data?.stableKey;
+            const timestamp = new Date().toISOString();
             
-            // [2025-01-30 22:40:00] 详细调试：记录移除的对象信息
-            console.log('[DesignLab] Object removed via fabric event:', { 
+            // [2025-01-31 19:30:00] 增强日志：记录移除的对象完整信息
+            const objectInfo = {
               name: objName,
               type: objType,
+              objectType: removedObject.type,
+              stableKey: objStableKey,
               visible: removedObject.visible,
               opacity: removedObject.opacity,
+              selectable: removedObject.selectable,
+              evented: removedObject.evented,
+              zIndex: (removedObject as any).data?.zIndex,
+              left: removedObject.left,
+              top: removedObject.top,
+              width: removedObject.width,
+              height: removedObject.height,
+              scaleX: removedObject.scaleX,
+              scaleY: removedObject.scaleY,
+              timestamp,
+            };
+            
+            console.log('[DesignLab] 🗑️ Object removed via fabric event:', objectInfo);
+            
+            // [2025-01-31 19:30:00] 记录完整的调用栈
+            const stackTrace = new Error().stack;
+            console.log('[DesignLab] 📍 Removal call stack:', stackTrace?.split('\n').slice(1, 10).join('\n'));
+            
+            // [2025-01-31 19:30:00] 检查移除前的画布状态（如果可能）
+            const remainingObjs = fabricCanvas.getObjects();
+            const beforeRemovalObjects = [...remainingObjs, removedObject]; // 重建移除前的列表
+            
+            console.log('[DesignLab] 🔍 Removal context:', {
+              beforeRemovalCount: beforeRemovalObjects.length,
+              afterRemovalCount: remainingObjs.length,
+              removedObjectIndex: beforeRemovalObjects.indexOf(removedObject),
+              isAddingObject: isAddingObjectRef.current,
+              currentPanel: toolPanelTypeRef.current,
+              hasSelectedImage: selectedImage !== null,
+              hasSelectedText: selectedText !== null,
+              hasSelectedArt: selectedArt !== null,
             });
             
             // [2025-01-30 22:40:00] 检查移除后的画布状态
-            const remainingObjs = fabricCanvas.getObjects();
             console.log('[DesignLab] 🔍 After removal - canvas state:', {
               objectCount: remainingObjs.length,
               objects: remainingObjs.map((obj, idx) => ({
                 index: idx,
-                name: (obj as any).name,
+                name: (obj as any).name || 'unnamed',
                 type: obj.type,
+                layerType: (obj as any).data?.layerType || 'unknown',
                 visible: obj.visible,
                 opacity: obj.opacity,
                 zIndex: (obj as any).data?.zIndex,
+                stableKey: (obj as any).data?.stableKey || (obj as any).name,
               })),
             });
             
-            // [2025-01-30 22:40:00] 如果是上传图片被移除，记录堆栈跟踪
+            // [2025-01-30 22:40:00] 如果是上传图片被移除，记录详细警告
             if (objType === 'upload') {
-              console.warn('[DesignLab] ⚠️ Upload image removed! Stack trace:', new Error().stack);
+              console.error('[DesignLab] ⚠️⚠️⚠️ UPLOAD IMAGE REMOVED! ⚠️⚠️⚠️', {
+                objectInfo,
+                callStack: stackTrace,
+                canvasState: {
+                  remainingObjects: remainingObjs.length,
+                  isAddingObject: isAddingObjectRef.current,
+                  currentPanel: toolPanelTypeRef.current,
+                },
+              });
+              console.error('[DesignLab] ⚠️ Upload image removed! Full stack trace:', stackTrace);
             }
           }
           const snapshot = canvasToSnapshot(fabricCanvas);

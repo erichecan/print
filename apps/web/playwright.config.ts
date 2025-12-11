@@ -59,20 +59,21 @@ export default defineConfig({
     },
   ],
   // [2025-11-24 11:12:30] 允许通过 SKIP_WEB_SERVER=1 手动控制服务启动
+  // [2025-01-31 19:35:00] 如果本地服务器已运行，复用现有服务器
   webServer: process.env.SKIP_WEB_SERVER === '1'
     ? undefined
     : [
         {
           command: `cd ${backendDir} && cross-env NODE_ENV=test PORT=${new URL(apiURL).port || 4000} npm run dev`,
           url: apiReadyUrl,
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: true, // [2025-01-31 19:35:00] 复用现有服务器
           stdout: 'pipe',
           stderr: 'pipe',
         },
         {
           command: `cd ${frontendDir} && npm run dev`,
           url: baseURL,
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: true, // [2025-01-31 19:35:00] 复用现有服务器
           stdout: 'pipe',
           stderr: 'pipe',
         },
