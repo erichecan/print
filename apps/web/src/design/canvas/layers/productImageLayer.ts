@@ -202,6 +202,35 @@ class ProductImageLayerManager {
   }
 
   /**
+   * 获取当前稳定键
+   */
+  getCurrentStableKey(): string | null {
+    return this.currentStableKey;
+  }
+
+  /**
+   * [2025-01-31 19:00:00] 清除旧图片的管理状态（当 stableKey 改变时调用）
+   * 这允许旧图片被移除，即使它当前被 manager 管理
+   */
+  clearOldImageState(): void {
+    if (this.currentImage) {
+      const oldStableKey = this.currentStableKey;
+      const oldState = this.state;
+      console.log('[ProductImageLayer] Clearing old image state to allow removal:', {
+        oldStableKey,
+        oldState,
+        oldRemovalCount: this.removalCount,
+      });
+      // 重置移除计数，允许移除旧图片
+      this.removalCount = 0;
+      // [2025-01-31 19:00:00] 清除 currentImage，这样在移除时不会被识别为当前管理的图片
+      // 移除逻辑会正常工作，因为 image !== this.currentImage 会返回 true
+      this.currentImage = null;
+      // 注意：保留 currentStableKey，这样 startLoading 可以正确设置新的 stableKey
+    }
+  }
+
+  /**
    * 重置（用于测试或清理）
    */
   reset(): void {
@@ -248,10 +277,20 @@ function removeExistingProductImage(
   let removed = false;
   
   // #region agent log
+  const currentStableKey = manager.getCurrentStableKey();
   debugLog({
     location: 'productImageLayer.ts:241',
     message: 'removeExistingProductImage called',
-    data: { stableKey, excludeImage: !!excludeImage, objectsCount: objects.length, objects: objects.map((o:any)=>({name:o.name,stableKey:o.data?.stableKey,isProduct:o.name?.startsWith('product-image-')||o.name==='background'})), managerState: manager.getState(), managerCurrentImage: !!manager.getCurrentImage() },
+    data: { 
+      stableKey, 
+      currentStableKey,
+      excludeImage: !!excludeImage, 
+      objectsCount: objects.length, 
+      objects: objects.map((o:any)=>({name:o.name,stableKey:o.data?.stableKey,isProduct:o.name?.startsWith('product-image-')||o.name==='background'})), 
+      managerState: manager.getState(), 
+      managerCurrentImage: !!manager.getCurrentImage(),
+      managerCurrentStableKey: currentStableKey,
+    },
     hypothesisId: 'A',
   });
   // #endregion
@@ -259,24 +298,61 @@ function removeExistingProductImage(
   // [2025-01-30 21:55:00] 修复：只移除匹配稳定键的图片（严格匹配）
   // 不按名称前缀移除，避免误移除正在加载的图片
   for (const obj of objects) {
-    const objStableKey = obj.name === stableKey || (obj as any).data?.stableKey === stableKey;
+    const objName = obj.name || '';
+    const objDataStableKey = (obj as any).data?.stableKey;
+    const objStableKeyMatch = objName === stableKey || objDataStableKey === stableKey;
     
-    // 只移除匹配稳定键的图片，且不是要排除的图片
-    if (objStableKey && obj !== excludeImage) {
+    // [2025-01-31 19:00:00] 只移除匹配稳定键的图片，且不是要排除的图片
+    if (objStableKeyMatch && obj !== excludeImage) {
+      const isCurrentImage = obj === manager.getCurrentImage();
+      const managerState = manager.getState();
+      
+      // [2025-01-31 19:00:00] 详细日志记录移除决策过程
+      console.log('[ProductImageLayer] Evaluating removal for object:', {
+        objName,
+        objStableKey: objDataStableKey || objName,
+        targetStableKey: stableKey,
+        isCurrentImage,
+        managerState,
+        currentStableKey,
+        isExcluded: obj === excludeImage,
+      });
+      
       // [2025-01-30 21:55:00] 额外检查：如果对象是当前正在管理的图片，且状态是 LOADING 或 LOADED，不移除
-      if (obj === manager.getCurrentImage() && 
-          (manager.getState() === ProductImageLayerState.LOADING || 
-           manager.getState() === ProductImageLayerState.LOADED)) {
-        console.warn('[ProductImageLayer] Prevented removal of image currently being loaded:', obj.name || 'unnamed');
+      if (isCurrentImage && 
+          (managerState === ProductImageLayerState.LOADING || 
+           managerState === ProductImageLayerState.LOADED)) {
+        console.warn('[ProductImageLayer] Prevented removal of image currently being loaded:', {
+          objName: objName || 'unnamed',
+          reason: 'Object is currentImage and state is LOADING/LOADED',
+          managerState,
+        });
         continue;
       }
       
-      if (manager.canRemove(obj as fabric.Image)) {
+      const canRemove = manager.canRemove(obj as fabric.Image);
+      console.log('[ProductImageLayer] canRemove check result:', {
+        objName,
+        canRemove,
+        managerState,
+        isCurrentImage,
+        currentStableKey,
+        targetStableKey: stableKey,
+      });
+      
+      if (canRemove) {
         // #region agent log
         debugLog({
           location: 'productImageLayer.ts:265',
           message: 'removing object',
-          data: { objName: obj.name, objStableKey: (obj as any).data?.stableKey, targetStableKey: stableKey, canRemove: manager.canRemove(obj as fabric.Image), managerState: manager.getState() },
+          data: { 
+            objName, 
+            objStableKey: objDataStableKey || objName, 
+            targetStableKey: stableKey, 
+            canRemove, 
+            managerState,
+            currentStableKey,
+          },
           hypothesisId: 'A',
         });
         // #endregion
@@ -284,9 +360,15 @@ function removeExistingProductImage(
         canvas.remove(obj);
         manager.markRemoved(obj as fabric.Image);
         removed = true;
-        console.log('[ProductImageLayer] Removed existing product image:', obj.name || 'unnamed');
+        console.log('[ProductImageLayer] ✅ Removed existing product image:', objName || 'unnamed');
       } else {
-        console.warn('[ProductImageLayer] Prevented removal of product image:', obj.name || 'unnamed');
+        console.warn('[ProductImageLayer] ❌ Prevented removal of product image:', {
+          objName: objName || 'unnamed',
+          reason: 'canRemove returned false',
+          managerState,
+          isCurrentImage,
+          currentStableKey,
+        });
       }
     }
   }
@@ -328,7 +410,18 @@ export async function loadProductImageLayer(
   });
   // #endregion
   
-  // 2. 检查是否可以加载（幂等保护）
+  // 2. [2025-01-31 19:00:00] 如果 stableKey 改变，先清除旧图片的管理状态，允许移除旧图片
+  const currentStableKey = manager.getCurrentStableKey();
+  if (currentStableKey && currentStableKey !== stableKey) {
+    console.log('[ProductImageLayer] Stable key changed, clearing old image state to allow removal:', {
+      oldKey: currentStableKey,
+      newKey: stableKey,
+    });
+    // 清除旧图片的管理状态，重置移除计数，允许移除旧图片
+    manager.clearOldImageState();
+  }
+
+  // 3. 检查是否可以加载（幂等保护）
   if (!manager.canLoad(stableKey)) {
     const existingImage = findExistingProductImage(canvas, stableKey);
     if (existingImage) {
@@ -351,7 +444,7 @@ export async function loadProductImageLayer(
     }
   }
   
-  // 3. 标记开始加载
+  // 4. 标记开始加载
   manager.startLoading(stableKey);
   
   // #region agent log
@@ -388,25 +481,33 @@ export async function loadProductImageLayer(
     });
     // #endregion
     
-    // 5. [2025-01-31 18:30:00] 移除所有旧的产品图片（匹配稳定键的，以及所有其他 product-image- 开头的图片）
+    // 5. [2025-01-31 19:00:00] 移除所有旧的产品图片（匹配稳定键的，以及所有其他 product-image- 开头的图片）
     // 先移除匹配稳定键的图片
     removeExistingProductImage(canvas, stableKey, null);
     
-    // [2025-01-31 18:30:00] 然后移除所有其他以 product-image- 开头的图片（切换产品/颜色时）
+    // [2025-01-31 19:00:00] 然后移除所有其他以 product-image- 开头的图片（切换产品/颜色时）
     const allObjects = canvas.getObjects();
     for (const obj of allObjects) {
       const objName = obj.name || '';
+      const objStableKey = (obj as any).data?.stableKey || objName;
       const isProductImage = objName.startsWith('product-image-');
-      const isCurrentKey = objName === stableKey || (obj as any).data?.stableKey === stableKey;
+      const isCurrentKey = objName === stableKey || objStableKey === stableKey;
       
-      // 移除所有产品图片，除了当前要加载的这个
+      // [2025-01-31 19:00:00] 移除所有产品图片，除了当前要加载的这个
+      // 如果 stableKey 不匹配，强制移除，不经过 canRemove 状态检查
       if (isProductImage && !isCurrentKey) {
-        // 检查是否可以移除（幂等保护）
-        if (manager.canRemove(obj as fabric.Image)) {
-          console.log('[ProductImageLayer] Removing old product image (different key):', objName);
-          canvas.remove(obj);
-          manager.markRemoved(obj as fabric.Image);
-        }
+        // [2025-01-31 19:00:00] stableKey 不匹配，强制移除（绕过 canRemove 状态检查）
+        // 因为已经在 startLoading 之前通过 clearOldImageState 清除了旧图片的管理状态
+        console.log('[ProductImageLayer] Force removing old product image (different stableKey):', {
+          objName,
+          objStableKey,
+          newStableKey: stableKey,
+          managerState: manager.getState(),
+          isCurrentImage: obj === manager.getCurrentImage(),
+          managerCurrentStableKey: manager.getCurrentStableKey(),
+        });
+        canvas.remove(obj);
+        manager.markRemoved(obj as fabric.Image);
       }
     }
     canvas.renderAll();
