@@ -1789,10 +1789,31 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     }
 
     const fabric = fabricRef.current;
+    const canvas = fabricCanvasRef.current;
 
     try {
       // [2025-01-31 01:00:00] 设置标志，防止选择清除事件在添加对象后立即触发
       isAddingObjectRef.current = true;
+      
+      // [2025-12-11 23:15:00] 获取画布逻辑尺寸
+      // Fabric.js 的坐标系统基于逻辑尺寸（1000x1200），而不是实际像素尺寸
+      // 即使画布的实际像素尺寸是 1000 * devicePixelRatio，坐标系统仍然是 1000x1200
+      // 所以直接使用常量 CANVAS_WIDTH 和 CANVAS_HEIGHT 是正确的
+      // 但为了更健壮，我们从画布获取逻辑尺寸（考虑 viewport transform）
+      const vpt = canvas.viewportTransform;
+      const scaleX = vpt ? vpt[0] : 1;
+      const scaleY = vpt ? vpt[3] : 1;
+      
+      // [2025-12-11 23:15:00] 获取画布的逻辑尺寸
+      // canvas.width 返回的是实际像素尺寸，需要除以缩放因子得到逻辑尺寸
+      // 如果 viewport transform 是单位矩阵，scaleX 和 scaleY 都是 1
+      const canvasLogicalWidth = (canvas.width || CANVAS_WIDTH) / scaleX;
+      const canvasLogicalHeight = (canvas.height || CANVAS_HEIGHT) / scaleY;
+      
+      // [2025-12-11 23:15:00] 计算画布逻辑中心点
+      // 由于 originX 和 originY 设置为 'center'，文本对象的 left/top 应该指向中心点
+      const centerX = canvasLogicalWidth / 2;
+      const centerY = canvasLogicalHeight / 2;
       
       // [2025-01-30 17:50:00] 创建 Fabric IText 对象
       // [2025-01-30 20:55:00] 修复：设置 zIndex 确保在文字图层（最上层）
@@ -1801,8 +1822,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           layerType: 'text',
           zIndex: 20, // [2025-01-30 20:55:00] 文字图层 zIndex 为 20（最上层，高于上传图层的 10）
         },
-        left: CANVAS_WIDTH / 2,
-        top: CANVAS_HEIGHT / 2,
+        left: centerX,
+        top: centerY,
         fontSize: 48,
         fontFamily: 'Arial',
         fill: '#000000',
@@ -1810,8 +1831,6 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         originX: 'center',
         originY: 'center'
       });
-      
-      const canvas = fabricCanvasRef.current;
       
       // [2025-12-08 23:00:00] 为文本对象添加删除控件
       if (canvas && (canvas as any).deleteControl) {
@@ -1822,9 +1841,31 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       // [2025-01-30 22:15:00] 先添加对象到画布
       canvas.add(textObj);
       
+      // [2025-12-11 23:15:00] 确保坐标正确更新
+      textObj.setCoords();
+      
       // [2025-01-30 22:25:00] 设置对象并选中，这会触发 selection:created 事件
       canvas.setActiveObject(textObj);
       canvas.renderAll();
+      
+      // [2025-12-11 23:15:00] 添加调试日志，记录画布尺寸、文本位置和 viewport transform
+      console.log('[DesignLab] Text added at center:', {
+        canvasActualWidth: canvas.width,
+        canvasActualHeight: canvas.height,
+        canvasLogicalWidth,
+        canvasLogicalHeight,
+        scaleX,
+        scaleY,
+        centerX,
+        centerY,
+        textObjLeft: textObj.left,
+        textObjTop: textObj.top,
+        textObjWidth: textObj.width,
+        textObjHeight: textObj.height,
+        viewportTransform: vpt,
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT,
+      });
       
       // [2025-01-30 22:25:00] 设置状态，handleSelection 会识别文本对象并切换到 Edit Text 面板
       // 但我们也在这里设置，确保即使 handleSelection 没有正确触发，面板也会切换
