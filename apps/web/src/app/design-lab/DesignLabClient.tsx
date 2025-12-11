@@ -2052,17 +2052,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               imageScale: scale
             });
 
+            // [2025-01-31 19:15:00] 1. 先添加对象到画布
             canvas.add(fabricImage);
-            canvas.setActiveObject(fabricImage);
             canvas.renderAll();
             
-            // [2025-01-30 22:10:00] 验证图片是否真的在画布上
+            // [2025-01-31 19:15:00] 验证图片是否真的在画布上
             const allObjects = canvas.getObjects();
             const addedImage = allObjects.find((obj: any) => obj === fabricImage);
             
             if (!addedImage) {
               console.error('[DesignLab] ❌ Image was not found on canvas after adding!');
               showErrorToast('Failed to add image to canvas. Please try again.');
+              isAddingObjectRef.current = false;
               return;
             }
             
@@ -2075,9 +2076,29 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               imageIndex: allObjects.indexOf(fabricImage),
             });
             
-            // [2025-01-30 17:30:00] 自动切换到 Edit Upload 面板
-            setSelectedImage(fabricImage);
-            setToolPanelType('edit-upload');
+            // [2025-01-31 19:15:00] 2. 使用 requestAnimationFrame 确保渲染完成后再选中对象
+            // 这样可以确保 selection:created 事件正确触发
+            console.log('[DesignLab] Scheduling setActiveObject in requestAnimationFrame');
+            requestAnimationFrame(() => {
+              console.log('[DesignLab] Executing setActiveObject for uploaded image');
+              // [2025-01-31 19:15:00] 选中对象，这会触发 selection:created 事件
+              canvas.setActiveObject(fabricImage);
+              canvas.renderAll();
+              
+              // [2025-01-31 19:15:00] 3. 在下一个帧设置状态和切换面板，确保 selection:created 事件先处理
+              requestAnimationFrame(() => {
+                console.log('[DesignLab] Setting selectedImage and switching to edit-upload panel');
+                // [2025-01-30 17:30:00] 自动切换到 Edit Upload 面板
+                setSelectedImage(fabricImage);
+                setToolPanelType('edit-upload');
+                
+                // [2025-01-31 19:15:00] 强制触发图层列表更新
+                console.log('[DesignLab] Triggering handleCanvasUpdate to refresh layer list');
+                handleCanvasUpdate();
+                
+                console.log('[DesignLab] ✅ Image selected and panel switched to edit-upload, layer list should update');
+              });
+            });
             
             // [2025-01-30 23:30:00] 保存到 Recent Uploads
             const uploadId = `upload_${Date.now()}`;
@@ -2091,7 +2112,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             // [2025-12-08] 保存 uploadId 以便评分时使用
             setCurrentUploadId(uploadId);
             
-            // [2025-01-30 17:30:00] 同步到 store
+            // [2025-01-30 17:30:00] 同步到 store（在上传成功后立即同步，不等待选中）
             const snapshot = canvasToSnapshot(canvas);
             setCanvas(snapshot, { pushHistory: true });
             
@@ -2107,12 +2128,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             // [2025-12-08] 上传成功提示
             showSuccessToast(`Image "${file.name}" uploaded successfully!`);
             
-            // [2025-01-31 18:45:00] 延长延迟重置标志，确保 selection:created 事件先触发，并且给用户足够的时间与对象交互
-            // 从100ms延长到300ms，防止 selection:cleared 事件过早触发导致图片被移除
+            // [2025-01-31 19:15:00] 延长延迟重置标志，确保 selection:created 事件先触发，并且给用户足够的时间与对象交互
+            // 从300ms延长到500ms，给更多时间让 selection:created 事件处理完成
             setTimeout(() => {
               isAddingObjectRef.current = false;
               console.log('[DesignLab] isAddingObjectRef reset after image upload');
-            }, 300);
+            }, 500);
           } else {
             console.error('[DesignLab] Canvas is null after image creation');
             showErrorToast('Failed to add image to canvas. Please try again.');
@@ -3002,7 +3023,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         const handleSelection = () => {
           const activeObject = fabricCanvas.getActiveObject();
           if (activeObject) {
-            isAddingObjectRef.current = false;
+            // [2025-01-31 19:15:00] 不在 handleSelection 中重置 isAddingObjectRef
+            // 让上传/添加流程的 setTimeout 来控制重置时机，避免时序问题
+            // 只有在确认对象选择完成且不是正在添加的对象时，才重置标志
+            // isAddingObjectRef 的重置由各自的添加流程控制（上传、文本、art）
+            
             const objType = activeObject.type;
             const objName = (activeObject as any).name || '';
             let newPanelType: ToolPanelType = 'home';
@@ -3037,28 +3062,22 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         };
 
         const handleSelectionCleared = () => {
+          // [2025-01-31 19:15:00] 如果正在添加对象，忽略选择清除事件
           if (isAddingObjectRef.current) {
             console.log('[DesignLab] Selection cleared but object is being added, ignoring');
             return;
           }
           
-          // [2025-01-31 18:45:00] 检查画布上是否有上传的图片（layerType: 'upload'），如果有则不应切换面板
-          const allObjs = fabricCanvas.getObjects();
-          const hasUploadImages = allObjs.some((obj: any) => 
-            (obj as any).data?.layerType === 'upload' || (obj as any).name?.startsWith('image_')
-          );
-          
-          if (hasUploadImages) {
-            console.log('[DesignLab] Selection cleared but canvas has upload images, keeping current panel');
-            return;
-          }
-          
           const activeObject = fabricCanvas.getActiveObject();
+          // [2025-01-31 19:15:00] 如果有活动对象，不应该切换面板
           if (activeObject) {
             console.log('[DesignLab] Selection cleared but active object exists, ignoring');
             return;
           }
+          
           const currentPanel = toolPanelTypeRef.current;
+          
+          // [2025-01-31 19:15:00] 如果当前在编辑面板，且有选中的对象，保持面板不切换
           if (currentPanel === 'edit-text' || currentPanel === 'edit-upload' || currentPanel === 'edit-art') {
             const hasSelectedText = selectedText !== null;
             const hasSelectedImage = selectedImage !== null;
@@ -3067,6 +3086,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               console.log('[DesignLab] Selection cleared but edit panel has selected object, keeping panel');
               return;
             }
+          }
+          
+          // [2025-01-31 19:15:00] 检查画布上是否有上传的图片（layerType: 'upload'），如果有则不应切换面板
+          const allObjs = fabricCanvas.getObjects();
+          const hasUploadImages = allObjs.some((obj: any) => 
+            (obj as any).data?.layerType === 'upload' || (obj as any).name?.startsWith('image_')
+          );
+          
+          // [2025-01-31 19:15:00] 如果画布上有上传的图片，且当前在 edit-upload 面板，保持面板
+          if (hasUploadImages && currentPanel === 'edit-upload') {
+            console.log('[DesignLab] Selection cleared but canvas has upload images and in edit-upload panel, keeping panel');
+            return;
           }
           
           // [2025-01-30 22:40:00] 调试：记录选择清除时的画布状态
