@@ -484,13 +484,34 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     });
     // #endregion
     
-    // [2025-01-30 21:30:00] 修复：先检查画布中是否已存在相同稳定键的图片
+    // [2025-01-31 18:45:00] 修复：在加载新图片前，先移除所有旧的产品图片（不同稳定键的）
     const existingObjects = canvas.getObjects();
     const existingProductImage = existingObjects.find((obj: any) => 
       obj.name === stableKey || obj.data?.stableKey === stableKey
     );
     
+    // [2025-01-31 18:45:00] 如果存在相同稳定键的图片，检查是否需要移除其他旧图片
     if (existingProductImage && backgroundImageRef.current === existingProductImage) {
+      // 即使已存在，也要检查是否有其他旧的产品图片需要移除
+      const allObjects = canvas.getObjects();
+      let hasOtherProductImages = false;
+      for (const obj of allObjects) {
+        const objName = obj.name || '';
+        const isProductImage = objName.startsWith('product-image-');
+        const isCurrentKey = objName === stableKey || (obj as any).data?.stableKey === stableKey;
+        
+        if (isProductImage && !isCurrentKey) {
+          hasOtherProductImages = true;
+          console.log('[DesignLab] Found old product image to remove:', objName);
+          canvas.remove(obj);
+        }
+      }
+      
+      if (hasOtherProductImages) {
+        canvas.renderAll();
+        console.log('[DesignLab] Removed old product images, keeping current:', stableKey);
+      }
+      
       console.log('[DesignLab] Product image already loaded and matches ref, skipping:', stableKey);
       // #region agent log
       debugLog({
@@ -2086,10 +2107,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             // [2025-12-08] 上传成功提示
             showSuccessToast(`Image "${file.name}" uploaded successfully!`);
             
-            // [2025-01-30 22:20:00] 延迟重置标志，确保 selection:created 事件先触发
+            // [2025-01-31 18:45:00] 延长延迟重置标志，确保 selection:created 事件先触发，并且给用户足够的时间与对象交互
+            // 从100ms延长到300ms，防止 selection:cleared 事件过早触发导致图片被移除
             setTimeout(() => {
               isAddingObjectRef.current = false;
-            }, 100);
+              console.log('[DesignLab] isAddingObjectRef reset after image upload');
+            }, 300);
           } else {
             console.error('[DesignLab] Canvas is null after image creation');
             showErrorToast('Failed to add image to canvas. Please try again.');
@@ -3018,6 +3041,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             console.log('[DesignLab] Selection cleared but object is being added, ignoring');
             return;
           }
+          
+          // [2025-01-31 18:45:00] 检查画布上是否有上传的图片（layerType: 'upload'），如果有则不应切换面板
+          const allObjs = fabricCanvas.getObjects();
+          const hasUploadImages = allObjs.some((obj: any) => 
+            (obj as any).data?.layerType === 'upload' || (obj as any).name?.startsWith('image_')
+          );
+          
+          if (hasUploadImages) {
+            console.log('[DesignLab] Selection cleared but canvas has upload images, keeping current panel');
+            return;
+          }
+          
           const activeObject = fabricCanvas.getActiveObject();
           if (activeObject) {
             console.log('[DesignLab] Selection cleared but active object exists, ignoring');
@@ -3035,7 +3070,6 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           }
           
           // [2025-01-30 22:40:00] 调试：记录选择清除时的画布状态
-          const allObjs = fabricCanvas.getObjects();
           console.log('[DesignLab] 🔍 Selection cleared - canvas state:', {
             objectCount: allObjs.length,
             objects: allObjs.map((obj, idx) => ({
