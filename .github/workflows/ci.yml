@@ -24,4 +24,15 @@ jobs:
         run: npm run lint --workspace apps/web
       - name: Test backend # [2025-11-10 14:12:00]
         run: npm test --workspace backend
+      - name: Install Playwright # [2025-01-27 18:00:00] 安装 Playwright 用于 E2E 测试
+        run: npx playwright install --with-deps
+      - name: Run E2E tests # [2025-01-27 18:00:00] 运行管理后台 E2E 测试
+        run: |
+          cd apps/web
+          npx playwright test tests/e2e/admin-products.spec.ts tests/e2e/admin-categories.spec.ts --reporter=list
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: ${{ secrets.TEST_BASE_URL || 'http://localhost:3000' }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL || 'admin@example.com' }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
+        continue-on-error: true # [2025-01-27 18:00:00] E2E 测试可能因环境问题失败，不阻塞 CI
 

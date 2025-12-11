@@ -1,0 +1,51 @@
+{
+  "testRun": {
+    "timestamp": "2025-01-27T18:00:00Z",
+    "description": "管理后台代理层错误修复测试记录",
+    "version": "1.0.0"
+  },
+  "fixes": {
+    "proxyLayer": {
+      "traceId": "已添加 traceId 生成和传递",
+      "timeout": "已添加 5 秒超时控制",
+      "retry": "已添加最多 1 次重试机制",
+      "errorWrapping": "已统一错误响应格式，包含 error.code, error.message, traceId"
+    },
+    "frontendService": {
+      "timeout": "已添加 10 秒超时和 AbortController",
+      "errorHandling": "已统一错误处理，提取 traceId 和 errorCode",
+      "asyncListener": "已移除可能导致异步监听问题的代码"
+    },
+    "pageComponents": {
+      "errorDisplay": "已完善错误提示，显示 traceId 和重试按钮",
+      "retry": "已添加重试机制",
+      "duplicateSubmit": "已防止重复提交"
+    }
+  },
+  "testCases": {
+    "adminProducts": {
+      "success": "商品编辑成功提交流程",
+      "validationError": "商品编辑失败场景 - 验证错误 (400)",
+      "serverError": "商品编辑失败场景 - 服务器错误 (500)",
+      "duplicateSubmit": "防止重复提交"
+    },
+    "adminCategories": {
+      "success": "分类编辑成功提交流程",
+      "validationError": "分类编辑失败场景 - 验证错误 (400)",
+      "serverError": "分类编辑失败场景 - 服务器错误 (500)",
+      "duplicateSubmit": "防止重复提交"
+    }
+  },
+  "errorCodes": {
+    "VALIDATION_ERROR": "400 - 数据验证失败",
+    "UNAUTHORIZED": "401 - 未授权",
+    "FORBIDDEN": "403 - 禁止访问",
+    "NOT_FOUND": "404 - 资源不存在",
+    "CONFLICT": "409 - 冲突",
+    "UPSTREAM_TIMEOUT": "504 - 上游超时",
+    "UPSTREAM_500": "500 - 上游服务器错误",
+    "PROXY_ERROR": "500 - 代理错误",
+    "NETWORK_ERROR": "网络错误",
+    "UNKNOWN": "未知错误"
+  }
+}
