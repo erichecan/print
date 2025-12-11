@@ -388,8 +388,28 @@ export async function loadProductImageLayer(
     });
     // #endregion
     
-    // 5. 移除旧的产品图片（如果有）- 只移除匹配稳定键的图片
+    // 5. [2025-01-31 18:30:00] 移除所有旧的产品图片（匹配稳定键的，以及所有其他 product-image- 开头的图片）
+    // 先移除匹配稳定键的图片
     removeExistingProductImage(canvas, stableKey, null);
+    
+    // [2025-01-31 18:30:00] 然后移除所有其他以 product-image- 开头的图片（切换产品/颜色时）
+    const allObjects = canvas.getObjects();
+    for (const obj of allObjects) {
+      const objName = obj.name || '';
+      const isProductImage = objName.startsWith('product-image-');
+      const isCurrentKey = objName === stableKey || (obj as any).data?.stableKey === stableKey;
+      
+      // 移除所有产品图片，除了当前要加载的这个
+      if (isProductImage && !isCurrentKey) {
+        // 检查是否可以移除（幂等保护）
+        if (manager.canRemove(obj as fabric.Image)) {
+          console.log('[ProductImageLayer] Removing old product image (different key):', objName);
+          canvas.remove(obj);
+          manager.markRemoved(obj as fabric.Image);
+        }
+      }
+    }
+    canvas.renderAll();
     
     // 6. 加载图片（使用原生 Image 对象，然后转换为 Fabric Image）
     return new Promise((resolve, reject) => {
