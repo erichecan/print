@@ -676,11 +676,24 @@ exports.updateProduct = async (req, res) => {
 
     return res.json(normalizedResult);
   } catch (error) {
-    console.error('[2025-11-11 23:18:42] updateProduct error:', error);
+    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
+    console.error('[2025-11-11 23:18:42] updateProduct error:', {
+      error: error.message,
+      code: error.code,
+      stack: error.stack,
+      name: error.name,
+      productId: id,
+    });
     if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'Duplicate SKU or slug' });
+      return res.status(409).json({ 
+        error: 'Duplicate SKU or slug',
+        message: error.meta?.target ? `Duplicate value for ${error.meta.target}` : undefined,
+      });
     }
-    return res.status(500).json({ error: 'Failed to update product' });
+    return res.status(500).json({ 
+      error: 'Failed to update product',
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 

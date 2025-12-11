@@ -303,7 +303,11 @@ async function getAllSuppliersSyncStatus() {
       latestSync: supplier.syncs[0] || null,
     }));
   } catch (error) {
+    // [2025-01-27 18:00:00] 增强错误日志
     logger.error('Error fetching suppliers sync status', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
       error: error.message,
     });
     throw error;

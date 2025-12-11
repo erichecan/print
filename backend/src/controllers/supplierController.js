@@ -231,13 +231,15 @@ exports.getSyncStatus = async (req, res) => {
     const status = await inventorySyncService.getAllSuppliersSyncStatus();
     res.json({ suppliers: status });
   } catch (error) {
+    // [2025-01-27 18:00:00] 增强错误日志
     logger.error('[Admin] Error getting sync status:', {
       error: error.message,
       stack: error.stack,
+      name: error.name,
     });
     res.status(500).json({
       error: 'Failed to get sync status',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });
   }
 };

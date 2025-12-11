@@ -1,9 +1,9 @@
 /**
  * Admin Analytics Controller
  * [2025-12-06 21:30:00] 管理后台报表和分析控制器 for Issue #160
+ * [2025-01-27 18:00:00] 修复：使用共享的 prisma 实例，避免连接池问题
  */
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../lib/prisma');
 
 /**
  * Get sales analytics
@@ -147,8 +147,16 @@ exports.getSalesAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[adminAnalyticsController] getSalesAnalytics error:', error);
-    res.status(500).json({ error: 'Failed to fetch sales analytics' });
+    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
+    console.error('[adminAnalyticsController] getSalesAnalytics error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+    res.status(500).json({ 
+      error: 'Failed to fetch sales analytics',
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 
@@ -277,8 +285,16 @@ exports.getUserAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[adminAnalyticsController] getUserAnalytics error:', error);
-    res.status(500).json({ error: 'Failed to fetch user analytics' });
+    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
+    console.error('[adminAnalyticsController] getUserAnalytics error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+    res.status(500).json({ 
+      error: 'Failed to fetch user analytics',
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 
@@ -410,8 +426,16 @@ exports.getProductAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[adminAnalyticsController] getProductAnalytics error:', error);
-    res.status(500).json({ error: 'Failed to fetch product analytics' });
+    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
+    console.error('[adminAnalyticsController] getProductAnalytics error:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
+    res.status(500).json({ 
+      error: 'Failed to fetch product analytics',
+      message: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
   }
 };
 
