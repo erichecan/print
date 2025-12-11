@@ -83,8 +83,12 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
   };
 
   // [2025-12-11 23:05:00] 构建分类链接 URL
-  const buildCategoryUrl = (groupSlug: string, childSlug: string) => {
-    return `/catalog/${groupSlug}/${childSlug}`;
+  // [2025-12-11 23:10:00] 支持一级分类（group）和二级分类（child）链接
+  const buildCategoryUrl = (groupSlug: string, childSlug?: string) => {
+    if (childSlug) {
+      return `/catalog/${groupSlug}/${childSlug}`;
+    }
+    return `/catalog/${groupSlug}`;
   };
 
   if (isLoading) {
@@ -116,7 +120,14 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
 
           return (
             <section key={group.id} className={styles.group}>
-              <h3 className={styles.groupTitle}>{group.name}</h3>
+              {/* [2025-12-11 23:10:00] 一级分类标题可点击，跳转到分组页面 */}
+              <Link
+                href={buildCategoryUrl(group.slug)}
+                className={styles.groupTitleLink}
+                data-testid={`group-${group.slug}`}
+              >
+                <h3 className={styles.groupTitle}>{group.name}</h3>
+              </Link>
               <ul className={styles.childList}>
                 {visibleChildren.map((child) => {
                   const isActive =
