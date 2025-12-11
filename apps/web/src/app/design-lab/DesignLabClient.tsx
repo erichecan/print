@@ -3488,6 +3488,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
         console.log('[DesignLab] Event listeners attached, canvas ready');
 
+        // [2025-01-31 19:40:00] 暴露 canvas 到 window，便于测试和调试
+        (window as any).fabricCanvas = fabricCanvas;
+        (window as any).DesignLabCanvas = {
+          getCanvas: () => fabricCanvas,
+        };
+
         // [2025-12-10] 延迟恢复画布状态，确保所有初始化完成
         setTimeout(() => {
           try {

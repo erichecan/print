@@ -177,11 +177,19 @@ async function testDesignLabUpload() {
     await page.waitForTimeout(3000);
 
     console.log('6️⃣  验证上传图片是否在画布上...');
+    // [2025-01-31 19:40:00] 等待更长时间，确保所有异步操作完成
+    await page.waitForTimeout(2000);
+    
     const canvasObjects = await page.evaluate(() => {
       const canvas = window.fabricCanvas || (window.DesignLabCanvas && window.DesignLabCanvas.getCanvas());
-      if (!canvas) return [];
+      if (!canvas) {
+        console.log('[Test] Canvas not found on window');
+        return [];
+      }
       
-      return canvas.getObjects().map((obj) => ({
+      const objects = canvas.getObjects();
+      console.log('[Test] Canvas objects count:', objects.length);
+      return objects.map((obj) => ({
         name: obj.name || 'unnamed',
         type: obj.type,
         layerType: (obj.data && obj.data.layerType) ? obj.data.layerType : 'unknown',
@@ -220,13 +228,18 @@ async function testDesignLabUpload() {
     }
 
     console.log('8️⃣  再次验证上传图片是否仍然存在...');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000); // [2025-01-31 19:40:00] 等待更长时间，确保所有异步操作完成
     
     const canvasObjectsAfterReload = await page.evaluate(() => {
       const canvas = window.fabricCanvas || (window.DesignLabCanvas && window.DesignLabCanvas.getCanvas());
-      if (!canvas) return [];
+      if (!canvas) {
+        console.log('[Test] Canvas not found on window (after reload)');
+        return [];
+      }
       
-      return canvas.getObjects().map((obj) => ({
+      const objects = canvas.getObjects();
+      console.log('[Test] Canvas objects count (after reload):', objects.length);
+      return objects.map((obj) => ({
         name: obj.name || 'unnamed',
         type: obj.type,
         layerType: (obj.data && obj.data.layerType) ? obj.data.layerType : 'unknown',
