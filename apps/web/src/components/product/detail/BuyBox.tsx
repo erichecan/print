@@ -88,7 +88,7 @@ export function BuyBox({
   const [selectedStyle, setSelectedStyle] = useState(style.options[0]?.value || '');
   const [selectedColor, setSelectedColor] = useState(colors.find(c => c.available)?.name || '');
   const [selectedSize, setSelectedSize] = useState(sizes.find(s => s.available)?.value || '');
-  const [selectedPrintLocation, setSelectedPrintLocation] = useState(printLocations[0]?.value || 'front');
+  // [2025-12-11 22:55:00] 移除 Print Location 状态（模块已移除）
   const [quantity, setQuantity] = useState(1);
 
   const selectedSizeData = sizes.find(s => s.value === selectedSize);
@@ -104,7 +104,7 @@ export function BuyBox({
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      printLocation: selectedPrintLocation,
+      // [2025-12-11 22:55:00] 移除 printLocation（模块已移除）
       quantity,
       unitPrice: price.sale,
       salePrice: price.sale,
@@ -114,7 +114,7 @@ export function BuyBox({
     
     console.log('[Add to Cart]', payload);
     onAddToCart(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, quantity, price, onAddToCart]);
+  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onAddToCart]);
 
   const handleBuyNow = useCallback(() => {
     if (!canAddToCart) return;
@@ -125,7 +125,7 @@ export function BuyBox({
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      printLocation: selectedPrintLocation,
+      // [2025-12-11 22:55:00] 移除 printLocation（模块已移除）
       quantity,
       unitPrice: price.sale,
       salePrice: price.sale,
@@ -135,7 +135,7 @@ export function BuyBox({
     
     console.log('[Buy Now]', payload);
     onBuyNow(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, quantity, price, onBuyNow]);
+  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onBuyNow]);
 
   // [2025-12-08 14:40:00] 开始设计处理函数 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {
@@ -145,7 +145,7 @@ export function BuyBox({
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      printLocation: selectedPrintLocation,
+      // [2025-12-11 22:55:00] 移除 printLocation（模块已移除）
     };
     
     console.log('[Start Design]', payload);
@@ -179,7 +179,7 @@ export function BuyBox({
       console.error('[BuyBox] Failed to build design URL:', error);
       alert('Unable to start design. Please try again.');
     }
-  }, [title, selectedStyle, selectedColor, selectedSize, selectedPrintLocation, onStartDesign, variantId, productId, router]);
+  }, [title, selectedStyle, selectedColor, selectedSize, onStartDesign, variantId, productId, router]);
 
   const formatPrice = (amount: number) => {
     return new Intl.NumberFormat('en-CA', {
@@ -294,25 +294,7 @@ export function BuyBox({
         </div>
       </div>
 
-      {/* [2025-11-19 09:05:00] 参考图一位置：Print Location 单选 */}
-      <div className={styles.buyboxField}>
-        <label className={styles.buyboxLabel}>Print Location</label>
-        <div className={styles.buyboxPrintLocations} role="radiogroup" aria-label="Select print location">
-          {printLocations.map((location) => (
-            <label key={location.value} className={styles.buyboxPrintLocation}>
-              <input
-                type="radio"
-                name="printLocation"
-                value={location.value}
-                checked={selectedPrintLocation === location.value}
-                onChange={(e) => setSelectedPrintLocation(e.target.value)}
-                aria-label={`Print on ${location.label}`}
-              />
-              <span>{location.label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      {/* [2025-12-11 22:55:00] 移除 Print Location 模块（按需求） */}
 
       {/* [2025-11-19 09:05:00] 参考图一位置：数量步进器 */}
       <div className={styles.buyboxField}>
