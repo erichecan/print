@@ -32,7 +32,7 @@
   text-decoration: underline;
 }
 
-/* [2025-12-11 09:21:35] 修复栅格系统：移动端一列、平板两列、桌面三或四列 */
+/* [2025-12-11 22:58:00] 修复栅格系统：移动端一列、平板两列、桌面四列 */
 .more-by-artist-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -47,16 +47,8 @@
   }
 }
 
-/* 桌面：三列 */
+/* 桌面：四列（从 1024px 开始） */
 @media (min-width: 1024px) {
-  .more-by-artist-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-  }
-}
-
-/* 大桌面：四列 */
-@media (min-width: 1280px) {
   .more-by-artist-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 24px;
