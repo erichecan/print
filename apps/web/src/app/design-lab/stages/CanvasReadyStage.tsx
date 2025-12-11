@@ -20,9 +20,23 @@ interface CanvasReadyStageProps {
   children: ReactNode | ((canvas: any) => ReactNode);
   canvasRef: React.RefObject<HTMLCanvasElement>;
   onCanvasReady?: (canvas: any) => void;
+  /** 产品图片加载选项 [2025-01-30 20:30:00] */
+  productImageOptions?: {
+    colorName?: string | null;
+    view: 'front' | 'back' | 'sleeve';
+    useAPI?: boolean;
+  };
+  /** Git SHA [2025-01-30 20:30:00] */
+  gitSha?: string;
 }
 
-export function CanvasReadyStage({ children, canvasRef, onCanvasReady }: CanvasReadyStageProps) {
+export function CanvasReadyStage({ 
+  children, 
+  canvasRef, 
+  onCanvasReady,
+  productImageOptions,
+  gitSha,
+}: CanvasReadyStageProps) {
   const [canvasStatus, setCanvasStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [error, setError] = useState<Error | null>(null);
   const fabricModuleRef = useRef<any>(null);
@@ -41,8 +55,12 @@ export function CanvasReadyStage({ children, canvasRef, onCanvasReady }: CanvasR
           fabricModuleRef.current = fabric.fabric;
         }
 
-        // 2. 初始化画布引擎
-        await canvasEngine.initialize(canvasRef.current, fabricModuleRef.current);
+        // 2. 初始化画布引擎（可选加载产品主图）
+        await canvasEngine.initialize(canvasRef.current, fabricModuleRef.current, {
+          loadProductImage: !!productImageOptions,
+          productImageOptions,
+          gitSha,
+        });
 
         // 3. 监听画布就绪事件
         canvasEngine.on(CanvasEventType.READY, (event) => {

@@ -2287,29 +2287,45 @@
   grid-column: 3;
   background: var(--dl-bg-primary);
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* [2025-01-30 22:50:00] 修复：改为 flex-start，避免垂直居中导致定位问题 */
   justify-content: center;
   overflow: auto;
   position: relative;
+  /* [2025-01-30 22:50:00] 修复：确保画布容器可以正确滚动 */
+  min-height: 0; /* 允许 flex 子元素缩小 */
+  /* [2025-01-30 23:00:00] 修复：确保画布容器从顶部开始，不被推到视口外 */
+  padding-top: 0;
+  margin-top: 0;
 }
 
 .dl-canvas__preview {
   width: 100%;
-  height: 100%;
+  /* [2025-01-30 23:00:00] 修复：移除 height: 100%，使用 min-height 确保最小高度，但允许根据内容扩展 */
+  min-height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* [2025-01-30 22:50:00] 修复：改为 flex-start，避免垂直居中导致定位问题 */
   justify-content: center;
   position: relative;
+  /* [2025-01-30 22:50:00] 修复：确保预览容器可以正确滚动 */
+  padding: var(--dl-space-4); /* 添加内边距，避免内容贴边 */
+  /* [2025-01-30 23:00:00] 修复：确保预览容器从顶部开始 */
+  padding-top: var(--dl-space-4);
+  margin-top: 0;
 }
 
 .dl-canvas__product {
   position: relative;
   width: 100%;
-  height: 100%;
+  /* [2025-01-30 22:50:00] 修复：移除 height: 100%，让容器根据内容自适应 */
   /* [2025-01-30 23:55:00] 修复：移除 max-width 限制，使画布填满可用空间 */
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* [2025-01-30 22:50:00] 修复：改为 flex-start，避免垂直居中导致定位问题 */
   justify-content: center;
+  /* [2025-01-30 22:50:00] 修复：确保产品容器不会导致布局偏移 */
+  flex-shrink: 0; /* 防止 flex 子元素被压缩 */
+  /* [2025-01-30 23:00:00] 修复：确保产品容器从顶部开始 */
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .dl-canvas__fabric {

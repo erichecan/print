@@ -35,6 +35,7 @@ export default function DesignLabLayout({
 }
 
 function DesignLabSkeleton() {
+  // [2025-01-30 17:35:00] 修复：移除 styled-jsx，使用纯内联样式（Server Component 兼容）
   return (
     <section style={{ 
       minHeight: '100vh', 
@@ -52,16 +53,9 @@ function DesignLabSkeleton() {
           border: '4px solid #f3f3f3', 
           borderTop: '4px solid #3498db', 
           borderRadius: '50%', 
-          animation: 'spin 1s linear infinite', 
           margin: '0 auto' 
         }} />
       </div>
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </section>
   );
 }

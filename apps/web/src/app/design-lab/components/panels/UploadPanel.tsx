@@ -87,7 +87,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml"  // [2025-01-30 20:35:00] 明确支持 AVIF 和 WebP 格式
             onChange={handleFileChange}
             style={{ display: 'none' }}
             aria-label="Choose file to upload"
@@ -117,7 +117,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             </svg>
           </div>
           <p className="dl-upload-panel__info-text">
-            Vector or high resolution artwork of 300 DPI or more will look the best. Max size of <strong>20 MB</strong>.
+            Vector or high resolution artwork of 300 DPI or more will look the best. Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>20 MB</strong>.  {/* [2025-01-30 20:35:00] 添加支持的格式说明，包括 AVIF 和 WebP */}
           </p>
         </div>
 

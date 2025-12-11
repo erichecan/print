@@ -75,8 +75,9 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     }
 
     const objects = canvas.getObjects().filter((obj: fabric.Object) => {
-      // 排除背景图片
-      return (obj as any).name !== 'background';
+      const objName = (obj as any).name || '';
+      // [2025-01-30 23:30:00] 排除背景图片和产品主图（产品主图不显示在图层列表中）
+      return objName !== 'background' && !objName.startsWith('product-image-');
     });
 
     const layerItems: LayerItem[] = objects.map((obj: fabric.Object, index: number) => {
@@ -113,19 +114,21 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     setLayers(layerItems.reverse());
   }, [canvas]);
 
-  // 监听画布变化
+  // [2025-01-30 23:25:00] 监听画布变化
   useEffect(() => {
     if (!canvas) return;
 
     // 初始更新
     updateLayers();
 
-    // 监听对象添加/删除/修改
+    // [2025-01-30 23:25:00] 监听对象添加/删除/修改
     const handleObjectAdded = () => {
+      console.log('[LayerManagementPanel] Object added, updating layers');
       updateLayers();
     };
 
     const handleObjectRemoved = () => {
+      console.log('[LayerManagementPanel] Object removed, updating layers');
       updateLayers();
     };
 
@@ -141,11 +144,17 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
       updateLayers();
     };
 
+    // [2025-01-30 23:25:00] 监听渲染完成事件，确保图层列表在对象渲染后更新
+    const handleAfterRender = () => {
+      updateLayers();
+    };
+
     canvas.on('object:added', handleObjectAdded);
     canvas.on('object:removed', handleObjectRemoved);
     canvas.on('object:modified', handleObjectModified);
     canvas.on('selection:created', handleSelectionCreated);
     canvas.on('selection:updated', handleSelectionUpdated);
+    canvas.on('after:render', handleAfterRender);
 
     return () => {
       canvas.off('object:added', handleObjectAdded);
@@ -153,8 +162,17 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
       canvas.off('object:modified', handleObjectModified);
       canvas.off('selection:created', handleSelectionCreated);
       canvas.off('selection:updated', handleSelectionUpdated);
+      canvas.off('after:render', handleAfterRender);
     };
   }, [canvas, updateLayers]);
+  
+  // [2025-01-30 23:25:00] 监听 onUpdate 回调（当画布状态变化时触发）
+  useEffect(() => {
+    if (onUpdate && canvas) {
+      // 当 onUpdate 被调用时，也更新图层列表
+      updateLayers();
+    }
+  }, [onUpdate, canvas, updateLayers]);
 
   // 选择图层
   const handleLayerSelect = (layer: LayerItem) => {

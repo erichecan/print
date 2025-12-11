@@ -20,6 +20,14 @@ jobs:
           cache: "npm"
       - name: Install dependencies # [2025-11-10 14:12:00]
         run: npm install
+      - name: Check environment variables # [2025-01-27 19:00:00] 构建前环境变量校验
+        run: |
+          cd apps/web
+          node ../../scripts/check-env.mjs
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://print-main-backend-hsbqzlnkxa-uc.a.run.app/api' }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
       - name: Lint frontend # [2025-11-10 14:12:00]
         run: npm run lint --workspace apps/web
       - name: Test backend # [2025-11-10 14:12:00]

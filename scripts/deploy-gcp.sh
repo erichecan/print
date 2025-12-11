@@ -81,11 +81,20 @@ echo -n "${API_URL}" | gcloud secrets versions add api-url --data-file=- || \
 
 # Build and push frontend (with backend URL for build-time API URL)
 echo -e "${GREEN}🏗️  Building frontend Docker image...${NC}"
-# [2025-12-09] 修复：在构建时传入 NEXT_PUBLIC_API_URL，确保客户端代码中内联正确的 API 地址
-# 注意：即使构建时传入了正确的 URL，如果浏览器环境检测到 localhost，也会自动回退到 /api
+# [2025-01-30 17:50:00] 修复：在构建时从 Secret Manager 读取 Stripe key 并传入，确保 NEXT_PUBLIC_* 变量在构建时内联
 echo -e "${GREEN}📌 使用后端 URL 构建前端: ${API_URL}${NC}"
+# [2025-01-30 17:50:00] 从 Secret Manager 读取 Stripe publishable key（构建时必须）
+STRIPE_PUBLISHABLE_KEY=$(gcloud secrets versions access latest --secret=stripe-publishable-key --project=${PROJECT_ID} 2>/dev/null || echo "")
+if [ -z "$STRIPE_PUBLISHABLE_KEY" ]; then
+    echo -e "${RED}❌ 错误: 无法从 Secret Manager 读取 stripe-publishable-key${NC}"
+    echo -e "${YELLOW}请先创建 Secret:${NC}"
+    echo -e "  echo 'YOUR_STRIPE_KEY' | gcloud secrets create stripe-publishable-key --data-file=- --project=${PROJECT_ID}"
+    exit 1
+fi
+echo -e "${GREEN}✅ 已从 Secret Manager 读取 Stripe publishable key (长度: ${#STRIPE_PUBLISHABLE_KEY} 字符)${NC}"
 docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_URL="${API_URL}" \
+  --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
   -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
   -f apps/web/Dockerfile apps/web
 

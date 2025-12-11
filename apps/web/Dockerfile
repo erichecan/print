@@ -18,6 +18,20 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
 ENV NEXT_PUBLIC_BUILD_SHA=${NEXT_PUBLIC_BUILD_SHA}
 ENV NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME}
+# [2025-01-30 18:20:00] 构建前检查必需的环境变量（使用 POSIX 兼容语法）
+RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ "$NEXT_PUBLIC_API_URL" = "" ]; then \
+      echo "❌ 错误: NEXT_PUBLIC_API_URL 未设置"; \
+      exit 1; \
+    fi && \
+    if [ -z "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" ] || [ "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" = "" ]; then \
+      echo "❌ 错误: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 未设置（必须在构建时传入）"; \
+      exit 1; \
+    fi && \
+    if ! echo "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | grep -qE "^pk_(test|live)_"; then \
+      echo "❌ 错误: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 格式错误（必须以 pk_test_ 或 pk_live_ 开头）"; \
+      exit 1; \
+    fi && \
+    echo "✅ 环境变量检查通过"
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

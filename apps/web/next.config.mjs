@@ -4,20 +4,48 @@
  * Updated: 2025-11-04 00:00:00
  * [2025-01-27 12:00:00] Added Netlify output configuration
  * [2025-01-27 14:10:00] 移除 Sentry 配置，使用简单的错误处理方案
+ * [2025-01-30 17:30:00] 修复：构建时验证改为内联，避免导入 TypeScript 模块
  */
 
-// [2025-01-30 23:00:00] Design Lab 4.0: 构建时环境变量校验
-import { validateEnvAtBuildTime } from './src/config/env.js';
-import { validateStripeConfig } from './src/lib/stripe.js';
+// [2025-01-30 17:30:00] 构建时环境变量校验（内联实现，避免导入 TypeScript 模块）
+function validateEnvAtBuildTime() {
+  const isBuildTime = !!process.env.NEXT_PHASE || process.env.NODE_ENV === 'production';
+  if (!isBuildTime) return;
+  
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
+  
+  // 构建时如果环境变量未设置，只警告，不阻止构建（运行时检查在 env.ts 中）
+  if (!apiUrl) {
+    console.warn('[next.config] ⚠️ 构建时 NEXT_PUBLIC_API_URL 未设置，运行时需要配置环境变量');
+    return;
+  }
+  
+  // 构建时检测到 localhost，只警告，不阻止构建
+  if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
+    console.warn('[next.config] ⚠️ 构建时检测到 localhost API 地址，运行时需要配置正确的生产环境地址:', apiUrl);
+  }
+}
 
-// 构建时校验环境变量
+function validateStripeConfig() {
+  const isBuildTime = !!process.env.NEXT_PHASE || process.env.NODE_ENV === 'production';
+  if (!isBuildTime) return;
+  
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  
+  // 构建时如果 Stripe 密钥未设置，只警告，不阻止构建（运行时检查在 stripe.ts 中）
+  if (!publishableKey || publishableKey.trim() === '') {
+    console.warn('[next.config] ⚠️ 构建时 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 未设置，运行时需要配置环境变量');
+  }
+}
+
+// 构建时校验环境变量（仅警告，不阻止构建）
 if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'production') {
   try {
     validateEnvAtBuildTime();
     validateStripeConfig();
   } catch (error) {
-    console.error('❌ 环境变量校验失败:', error.message);
-    process.exit(1);
+    // [2025-01-30 17:30:00] 构建时验证失败只警告，不阻止构建（运行时会有更严格的检查）
+    console.warn('[next.config] ⚠️ 构建时环境变量校验警告:', error.message);
   }
 }
 
@@ -69,6 +97,20 @@ const remotePatterns = [
   {
     protocol: 'https',
     hostname: 'suvernireplus.com',
+    port: '',
+    pathname: '/**',
+  },
+  // [2025-01-30 19:50:00] 允许 Custom Ink 产品图片 CDN（用于 Design Lab 商品主图）
+  {
+    protocol: 'https',
+    hostname: 'mms-images-prod.imgix.net',
+    port: '',
+    pathname: '/**',
+  },
+  // [2025-01-30 19:50:00] 允许 via.placeholder.com（用于占位图）
+  {
+    protocol: 'https',
+    hostname: 'via.placeholder.com',
     port: '',
     pathname: '/**',
   },

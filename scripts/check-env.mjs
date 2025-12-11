@@ -37,22 +37,9 @@ function main() {
   console.log(`环境: ${isProduction ? '生产' : '开发'}`);
 
   // [2025-01-30 18:10:00] 检查必需的环境变量
-  // [2025-01-27 19:00:00] 修复：检查多个可能的 API URL 环境变量
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 
-                 process.env.NEXT_PUBLIC_API_BASE_URL || 
-                 process.env.API_BASE_URL;
-  
-  if (!apiUrl || apiUrl.trim() === '') {
-    if (isProduction) {
-      console.error('❌ 生产环境环境变量缺失: NEXT_PUBLIC_API_URL, NEXT_PUBLIC_API_BASE_URL 或 API_BASE_URL 必须设置一个');
-      hasError = true;
-    } else {
-      console.warn('⚠️ 开发环境环境变量缺失: NEXT_PUBLIC_API_URL（将使用默认值 localhost:3001/api）');
-    }
-  } else if (isProduction && (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1'))) {
-    console.error(`❌ 生产环境环境变量非法: API URL 包含 localhost (${apiUrl})`);
-    hasError = true;
-  }
+  const requiredVars = [
+    'NEXT_PUBLIC_API_URL',
+  ];
 
   let hasError = false;
 

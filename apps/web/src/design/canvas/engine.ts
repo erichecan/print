@@ -28,10 +28,23 @@ export class CanvasEngine {
   /**
    * 初始化画布
    * [2025-01-30 23:00:00] Design Lab 4.0: 初始化顺序与事件总线
+   * [2025-01-30 20:10:00] 修复：分阶段初始化（skeleton→主图加载→fit+center）
    */
   async initialize(
     canvasElement: HTMLCanvasElement,
-    fabricModule: typeof fabric
+    fabricModule: typeof fabric,
+    options?: {
+      /** 是否加载产品主图 */
+      loadProductImage?: boolean;
+      /** 产品图片加载选项 */
+      productImageOptions?: {
+        colorName?: string | null;
+        view: 'front' | 'back' | 'sleeve';
+        useAPI?: boolean;
+      };
+      /** Git SHA（用于版本戳） */
+      gitSha?: string;
+    }
   ): Promise<void> {
     if (this.isInitialized) {
       console.warn('[Canvas Engine] 画布已初始化，跳过重复初始化');
@@ -39,7 +52,7 @@ export class CanvasEngine {
     }
 
     try {
-      // 1. 创建 Fabric Canvas 实例
+      // 阶段 1: 创建 Fabric Canvas 实例（Skeleton）
       this.canvas = new fabricModule.Canvas(canvasElement, {
         width: 1000,
         height: 1200,
@@ -79,11 +92,71 @@ export class CanvasEngine {
       // 4. 绑定画布事件
       this.setupEventListeners();
 
-      // 5. 标记为已初始化
+      // 5. 阶段 2: 加载产品主图（如果启用）
+      // [2025-01-30 20:55:00] 修复：使用一次性 ready 事件，防止重复触发
+      if (options?.loadProductImage && options?.productImageOptions) {
+        try {
+          const { loadProductImageLayer } = await import('./layers/productImageLayer');
+          
+          // 监听一次性 ready 事件
+          let readyHandlerFired = false;
+          const readyHandler = (e: any) => {
+            if (readyHandlerFired) {
+              return; // 防止重复触发
+            }
+            readyHandlerFired = true;
+            console.log('[Canvas Engine] ✅ Product image ready (one-time event)');
+            this.canvas?.off('product-image:ready', readyHandler);
+            // 触发 canvas:ready 事件
+            this.emit(CanvasEventType.READY, { 
+              canvas: this.canvas,
+              productImageReady: true,
+            });
+          };
+          this.canvas.on('product-image:ready', readyHandler);
+          
+          const productImageResult = await loadProductImageLayer({
+            canvas: this.canvas,
+            fabric: fabricModule,
+            canvasWidth: 1000,
+            canvasHeight: 1200,
+            imageOptions: options.productImageOptions,
+            gitSha: options.gitSha,
+          });
+          
+          if (!productImageResult.success) {
+            this.canvas?.off('product-image:ready', readyHandler);
+            console.warn('[Canvas Engine] Failed to load product image:', productImageResult.error);
+            // 触发错误事件，但不阻止初始化
+            this.emit(CanvasEventType.ERROR, {
+              error: productImageResult.error || new Error('Failed to load product image'),
+              type: 'product-image-load-failed',
+            });
+            // 即使失败也触发 ready 事件
+            this.emit(CanvasEventType.READY, { canvas: this.canvas });
+          } else {
+            // 成功加载，ready 事件将由 product-image:ready 触发
+            console.log('[Canvas Engine] Product image loading initiated, waiting for ready event');
+          }
+        } catch (error) {
+          console.error('[Canvas Engine] Error loading product image:', error);
+          this.emit(CanvasEventType.ERROR, {
+            error: error instanceof Error ? error : new Error(String(error)),
+            type: 'product-image-load-error',
+          });
+          // 即使出错也触发 ready 事件
+          this.emit(CanvasEventType.READY, { canvas: this.canvas });
+        }
+      } else {
+        // 没有加载产品图片，直接触发 ready 事件
+        this.emit(CanvasEventType.READY, { canvas: this.canvas });
+      }
+
+      // 6. 标记为已初始化
       this.isInitialized = true;
 
-      // 6. 触发 READY 事件
-      this.emit(CanvasEventType.READY, { canvas: this.canvas });
+      // 7. READY 事件由产品图片加载完成后触发（或立即触发如果没有加载产品图片）
+      // 见上面的阶段 2 处理
     } catch (error) {
       this.emit(CanvasEventType.ERROR, { error });
       throw error;

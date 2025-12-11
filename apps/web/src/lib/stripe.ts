@@ -31,6 +31,15 @@ export function getStripe(): Promise<Stripe | null> {
 }
 
 /**
+ * 检查 Stripe 是否已配置
+ * [2025-01-30 17:45:00] 检查 Stripe publishable key 是否存在
+ */
+export function isStripeConfigured(): boolean {
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  return !!(publishableKey && publishableKey.trim() !== '');
+}
+
+/**
  * 验证 Stripe 配置
  * [2025-01-30 23:00:00] Design Lab 4.0: 构建时校验
  */

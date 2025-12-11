@@ -175,15 +175,24 @@ export function getBackendApiBaseUrl(): string {
 /**
  * 获取 Stripe Publishable Key（客户端）
  * [2025-12-10] 用于客户端 Stripe 初始化
+ * [2025-01-30 18:00:00] 修复：生产环境缺失时抛出明确的错误信息，包含配置指导
  * 
  * 生产环境必须配置，不允许空值
  */
 export function getStripePublishableKey(): string {
-  const key = validateEnvVar('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY', process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, false);
+  const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   
+  // [2025-01-30 18:00:00] 生产环境严格校验
   if (!key || key.trim() === '') {
     if (isProduction) {
-      const errorMsg = '生产环境必须配置 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 环境变量。';
+      const errorMsg = `生产环境必须配置环境变量 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY。请设置正确的值。
+      
+配置方法：
+1. 确保 Secret Manager 中存在 'stripe-publishable-key' secret
+2. 在构建时传入: --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=\$(gcloud secrets versions access latest --secret=stripe-publishable-key)
+3. 或使用 cloudbuild.yaml 自动从 Secret Manager 读取
+
+当前环境变量状态: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${key || '未设置'}`;
       console.error('[Env Config] ❌', errorMsg);
       throw new Error(errorMsg);
     }
@@ -192,7 +201,18 @@ export function getStripePublishableKey(): string {
     return '';
   }
   
-  return key;
+  // [2025-01-30 18:00:00] 验证 key 格式（以 pk_ 开头）
+  const trimmedKey = key.trim();
+  if (!trimmedKey.startsWith('pk_test_') && !trimmedKey.startsWith('pk_live_')) {
+    if (isProduction) {
+      const errorMsg = `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 格式错误：必须以 pk_test_ 或 pk_live_ 开头。当前值: ${trimmedKey.substring(0, 20)}...`;
+      console.error('[Env Config] ❌', errorMsg);
+      throw new Error(errorMsg);
+    }
+    console.warn('[Env Config] ⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 格式可能不正确');
+  }
+  
+  return trimmedKey;
 }
 
 /**
