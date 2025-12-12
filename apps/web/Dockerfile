@@ -45,9 +45,8 @@ COPY apps/web/src ./src
 # [2025-01-27 20:50:00] 复制 Prisma schema（从项目根目录）
 COPY prisma ./prisma
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
-# 使用与 @prisma/client 匹配的 prisma 版本（5.22.0）
-RUN npm install -g prisma@5.22.0
-RUN prisma generate --schema=./prisma/schema.prisma
+# [2025-12-12 14:15:00] 修复：使用 npx prisma generate 以确保使用 node_modules 中的 prisma 版本，与 @prisma/client 版本匹配
+RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-alpine AS runner
