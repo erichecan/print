@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent } from 'react'; // [2025-12-19] 添加useRef用于定位下拉菜单
+import { createPortal } from 'react-dom'; // [2025-12-19] 使用Portal将下拉菜单渲染到body，彻底解决遮挡问题
 import { useRouter } from 'next/navigation';
 import Link from 'next/link'; // [2025-01-31 20:15:00] 添加 Link 用于导航
 import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
@@ -196,15 +197,35 @@ function UserMenu() {
   const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement>(null); // [2025-12-19] 用于获取按钮位置以计算菜单位置
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 }); // [2025-12-19] 菜单位置状态
+  const [mounted, setMounted] = useState(false); // [2025-12-19] Portal挂载状态
+
+  // [2025-12-19] 客户端挂载后启用Portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // [2025-12-19] 计算菜单位置
   useEffect(() => {
     if (showMenu && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + 8, // mt-2 = 8px
-        right: window.innerWidth - rect.right, // 从右边距计算
-      });
+      const updatePosition = () => {
+        if (buttonRef.current) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          setMenuPosition({
+            top: rect.bottom + 8, // mt-2 = 8px
+            right: window.innerWidth - rect.right, // 从右边距计算
+          });
+        }
+      };
+      
+      updatePosition();
+      // [2025-12-19] 监听滚动和窗口大小变化，实时更新位置
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
   }, [showMenu]);
 
@@ -257,8 +278,60 @@ function UserMenu() {
     ? `${user.firstName} ${user.lastName}`.trim()
     : user.email?.split('@')[0] || '用户';
 
+  // [2025-12-19] 下拉菜单内容（使用Portal渲染到body）
+  const menuContent = showMenu && mounted ? (
+    <>
+      <div 
+        className="fixed inset-0" // [2025-12-19] 遮罩层
+        style={{ zIndex: 99998 }} // [2025-12-19] 使用内联样式确保z-index足够高
+        onClick={() => setShowMenu(false)}
+      />
+      <div 
+        className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" // [2025-12-19] 使用fixed定位，避免被main区域遮挡
+        style={{ 
+          top: `${menuPosition.top}px`, 
+          right: `${menuPosition.right}px`,
+          zIndex: 99999, // [2025-12-19] 使用内联样式设置极高的z-index，确保菜单始终在最上层
+          position: 'fixed', // [2025-12-19] 明确指定position，确保创建新的堆叠上下文
+        }}
+      >
+        <div className="px-4 py-2 border-b border-gray-200">
+          <p className="text-sm font-medium text-gray-900">{userName}</p>
+          <p className="text-xs text-gray-500 truncate">{user.email}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMenu(false);
+            router.push('/offline-orders/sales/orders');
+          }}
+          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          订单管理
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMenu(false);
+            router.push('/account/settings');
+          }}
+          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          修改密码
+        </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200"
+        >
+          退出登录
+        </button>
+      </div>
+    </>
+  ) : null;
+
   return (
-    <div className="relative" style={{ zIndex: 10000 }}> {/* [2025-12-19] 确保父容器也有足够高的z-index */}
+    <div className="relative">
       <button
         ref={buttonRef} // [2025-12-19] 添加ref用于定位菜单
         type="button"
@@ -272,57 +345,8 @@ function UserMenu() {
         <span className="text-sm font-medium text-gray-700 hidden sm:inline">{userName}</span>
       </button>
       
-      {showMenu && (
-        <>
-          <div 
-            className="fixed inset-0" // [2025-12-19] 遮罩层
-            style={{ zIndex: 99998 }} // [2025-12-19] 使用内联样式确保z-index足够高
-            onClick={() => setShowMenu(false)}
-          />
-          <div 
-            className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" // [2025-12-19] 使用fixed定位，避免被main区域遮挡
-            style={{ 
-              top: `${menuPosition.top}px`, 
-              right: `${menuPosition.right}px`,
-              zIndex: 99999, // [2025-12-19] 使用内联样式设置极高的z-index，确保菜单始终在最上层
-              position: 'fixed', // [2025-12-19] 明确指定position，确保创建新的堆叠上下文
-              isolation: 'isolate' // [2025-12-19] 创建新的堆叠上下文，避免被其他元素遮挡
-            }}
-          >
-            <div className="px-4 py-2 border-b border-gray-200">
-              <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMenu(false);
-                router.push('/offline-orders/sales/orders');
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              订单管理
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMenu(false);
-                router.push('/account/settings');
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              修改密码
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200"
-            >
-              退出登录
-            </button>
-          </div>
-        </>
-      )}
+      {/* [2025-12-19] 使用Portal将下拉菜单渲染到document.body，完全脱离DOM层级，彻底解决遮挡问题 */}
+      {mounted && typeof document !== 'undefined' && createPortal(menuContent, document.body)}
     </div>
   );
 }
