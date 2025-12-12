@@ -1,10 +1,13 @@
 /**
  * Account Error Boundary
  * [2025-01-27 15:00:00] 账户页面错误边界组件
+ * [2025-01-27 18:25:00] 增强错误追踪和可观测性
  */
 'use client';
 
 import { useEffect } from 'react';
+import { logServerError, getErrorLogInfo } from '@/lib/error-tracking';
+import { reportServerError } from '@/server/telemetry';
 
 interface AccountErrorProps {
   error: Error & { digest?: string };
@@ -13,8 +16,24 @@ interface AccountErrorProps {
 
 export default function AccountError({ error, reset }: AccountErrorProps) {
   useEffect(() => {
-    // [2025-01-27 15:00:00] 错误仅在控制台打印
-    console.error('[Account] error:', error);
+    // [2025-01-27 18:25:00] 记录错误并获取追踪信息
+    const traceId = logServerError(error, {
+      path: typeof window !== 'undefined' ? window.location.pathname : '/account',
+      method: 'GET',
+    });
+    
+    // [2025-01-27 18:25:00] 上报错误到遥测服务
+    reportServerError({
+      digest: error.digest,
+      traceId,
+      route: '/account',
+      message: error.message,
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      },
+    });
   }, [error]);
 
   return (

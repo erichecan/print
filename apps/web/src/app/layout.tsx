@@ -17,6 +17,8 @@ import { StripeConfigValidator } from '@/components/StripeConfigValidator'; // [
 import LayoutWrapper from './LayoutWrapper';
 import './globals.css';
 import './globals-mobile.css';
+// [2025-01-27 18:35:00] 启动时环境变量校验
+import '@/server/env-check';
 
 const inter = Inter({
   subsets: ['latin'],
