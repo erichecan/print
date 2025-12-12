@@ -500,21 +500,23 @@ export default function SalesOrdersPage() {
   return (
     <div className="sales-orders-shell">
       {/* [2025-01-31 20:15:00] 顶部导航链接 */}
-      <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginBottom: '1rem' }}>
-        <Link 
-          href="/admin/offline-orders" 
-          className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-        >
-          进入主站管理后台
-        </Link>
-        <Link 
-          href="/" 
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:underline"
-        >
-          返回主站
-        </Link>
+      <div className="sales-orders-nav-bar">
+        <div className="sales-orders-nav-links">
+          <Link 
+            href="/admin/offline-orders" 
+            className="sales-orders-nav-link sales-orders-nav-link-primary"
+          >
+            进入主站管理后台
+          </Link>
+          <Link 
+            href="/" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="sales-orders-nav-link sales-orders-nav-link-secondary"
+          >
+            返回主站
+          </Link>
+        </div>
       </div>
       <div className="sales-orders-card">
         <header className="sales-orders-header">
@@ -953,7 +955,48 @@ export default function SalesOrdersPage() {
           padding: 2rem 1rem;
           background: radial-gradient(circle at top, #e0f2fe, #f9fafb);
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
+        }
+        /* [2025-01-31 20:20:00] 顶部导航栏样式 */
+        .sales-orders-nav-bar {
+          width: 100%;
+          max-width: 1200px;
+          margin-bottom: 1rem;
+          background: white;
+          border-bottom: 1px solid #e5e7eb;
+          padding: 1rem;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .sales-orders-nav-links {
+          display: flex;
+          gap: 0.75rem;
+          justify-content: flex-end;
+          align-items: center;
+        }
+        .sales-orders-nav-link {
+          padding: 0.5rem 1rem;
+          font-size: 0.875rem;
+          font-weight: 500;
+          text-decoration: none;
+          border-radius: 0.375rem;
+          transition: all 0.2s;
+        }
+        .sales-orders-nav-link-primary {
+          color: #2563eb;
+        }
+        .sales-orders-nav-link-primary:hover {
+          color: #1e40af;
+          text-decoration: underline;
+          background-color: #eff6ff;
+        }
+        .sales-orders-nav-link-secondary {
+          color: #4b5563;
+        }
+        .sales-orders-nav-link-secondary:hover {
+          color: #1f2937;
+          text-decoration: underline;
+          background-color: #f3f4f6;
         }
         .sales-orders-card {
           width: 100%;
