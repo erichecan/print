@@ -323,6 +323,23 @@ export default function AdminOfflineOrdersPage() {
 
   return (
     <div style={{ marginTop: 24 }}>
+      {/* [2025-01-31 20:15:00] 顶部导航链接 */}
+      <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginTop: 0, marginBottom: '1rem' }}>
+        <Link 
+          href="/admin/orders" 
+          className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          进入主站管理后台
+        </Link>
+        <Link 
+          href="/" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:underline"
+        >
+          返回主站
+        </Link>
+      </div>
       <div className="kanban-page">
         <section className="kanban-toolbar">
           <div className="kanban-toolbar-main">

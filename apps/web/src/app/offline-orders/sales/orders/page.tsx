@@ -6,6 +6,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // [2025-01-31 20:15:00] 添加 Link 用于导航
 import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
 import api from '@/lib/api';
 import useSWR from 'swr';
@@ -498,6 +499,23 @@ export default function SalesOrdersPage() {
 
   return (
     <div className="sales-orders-shell">
+      {/* [2025-01-31 20:15:00] 顶部导航链接 */}
+      <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginBottom: '1rem' }}>
+        <Link 
+          href="/admin/offline-orders" 
+          className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          进入主站管理后台
+        </Link>
+        <Link 
+          href="/" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:underline"
+        >
+          返回主站
+        </Link>
+      </div>
       <div className="sales-orders-card">
         <header className="sales-orders-header">
           <div>

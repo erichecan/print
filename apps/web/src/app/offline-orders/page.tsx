@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent } from 'react'; // [2025-12-19] 添加useRef用于定位下拉菜单
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // [2025-01-31 20:15:00] 添加 Link 用于导航
 import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
 import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct } from '@/lib/api'; // [2025-12-07 08:00:00] 简化的产品 API
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
@@ -2124,8 +2125,15 @@ export default function OfflineOrdersIntakePage() {
     <div className="min-h-screen bg-gray-100">
       <header className="relative py-12 px-6 bg-gradient-to-br from-yellow-200 via-yellow-100 to-yellow-50 z-10">
         <div>
-          {/* [2025-12-07 03:00:00] 右上角：登录按钮/用户菜单 + 语言切换 */}
+          {/* [2025-12-07 03:00:00] 右上角：回到主站 + 登录按钮/用户菜单 + 语言切换 */}
           <div className="absolute top-6 right-6 flex items-center gap-3">
+            {/* [2025-01-31 20:15:00] 回到主站按钮 */}
+            <Link
+              href="/"
+              className="px-4 py-2 bg-white/90 hover:bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 shadow-md transition-colors"
+            >
+              回到主站
+            </Link>
             {/* 登录按钮/用户菜单 */}
             <UserMenu />
             {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
