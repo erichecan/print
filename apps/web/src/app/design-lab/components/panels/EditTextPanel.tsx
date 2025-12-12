@@ -203,34 +203,58 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   // [2025-01-30 17:45:00] 更新字体
   // [2025-01-30 18:40:00] 支持多语言字体，需要加载 Google Fonts
   // [2025-01-30 22:00:00] 修复：使用从 API 加载的 fonts 数据或从 fonts.ts 导入的配置
+  // [2025-12-12 00:00:00] 修复：添加错误处理和调试日志，确保字体更改正确应用
   const handleFontChange = (font: string) => {
+    console.log('[EditTextPanel] handleFontChange called:', { font, hasSelectedText: !!selectedText, hasCanvas: !!canvas });
     setFontFamily(font);
-    if (selectedText) {
-      // [2025-01-30 18:40:00] 对于 Google Fonts，需要确保字体已加载
-      // [2025-01-30 22:00:00] 从加载的 fonts 数据中查找字体信息
-      const allFonts = Object.values(fonts).flat();
-      const fontInfo = allFonts.find(f => f.name === font);
-      
-      // [2025-01-30 22:00:00] 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
-      selectedText.set('fontFamily', font);
-      selectedText.setCoords();
-      if (canvas) {
+    if (selectedText && canvas) {
+      try {
+        // [2025-01-30 18:40:00] 对于 Google Fonts，需要确保字体已加载
+        // [2025-01-30 22:00:00] 从加载的 fonts 数据中查找字体信息
+        const allFonts = Object.values(fonts).flat();
+        const fontInfo = allFonts.find(f => f.name === font);
+        
+        // [2025-01-30 22:00:00] 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
+        selectedText.set('fontFamily', font);
+        selectedText.setCoords();
         canvas.renderAll();
-        onUpdate();
+        
+        console.log('[EditTextPanel] Font changed successfully:', { font, textObjectName: (selectedText as any).name });
+        
+        // [2025-12-12 00:00:00] 延迟调用 onUpdate，确保字体更改已应用
+        setTimeout(() => {
+          onUpdate();
+        }, 100);
+      } catch (error) {
+        console.error('[EditTextPanel] Error changing font:', error);
       }
+    } else {
+      console.warn('[EditTextPanel] Cannot change font: selectedText or canvas is null');
     }
   };
 
   // [2025-01-30 17:45:00] 更新颜色
+  // [2025-12-12 00:00:00] 修复：添加错误处理和调试日志，确保颜色更改正确应用
   const handleColorChange = (newColor: string) => {
+    console.log('[EditTextPanel] handleColorChange called:', { newColor, hasSelectedText: !!selectedText, hasCanvas: !!canvas });
     setColor(newColor);
-    if (selectedText) {
-      selectedText.set('fill', newColor);
-      selectedText.setCoords();
-      if (canvas) {
+    if (selectedText && canvas) {
+      try {
+        selectedText.set('fill', newColor);
+        selectedText.setCoords();
         canvas.renderAll();
-        onUpdate();
+        
+        console.log('[EditTextPanel] Color changed successfully:', { newColor, textObjectName: (selectedText as any).name });
+        
+        // [2025-12-12 00:00:00] 延迟调用 onUpdate，确保颜色更改已应用
+        setTimeout(() => {
+          onUpdate();
+        }, 100);
+      } catch (error) {
+        console.error('[EditTextPanel] Error changing color:', error);
       }
+    } else {
+      console.warn('[EditTextPanel] Cannot change color: selectedText or canvas is null');
     }
   };
 
