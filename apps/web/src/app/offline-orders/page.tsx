@@ -847,53 +847,20 @@ export default function OfflineOrdersIntakePage() {
       return true;
     }
     
-    // [2025-12-07 02:30:00] PRD v2.0: 第二步验证（客户信息和Invoice）
+    // [2025-12-19] PRD v2.0: 第二步验证（客户信息和Invoice - 全部改为非必填）
     if (step === 2) {
-      // 客户信息必填：联系人姓名、邮箱
-      if (!formState.contactName.trim()) {
-        setFieldErrors({ contactName: t('errorContactName') || '联系人姓名是必填项' });
-        setStatus({ type: 'error', message: t('errorContactName') || '联系人姓名是必填项' });
-        return false;
-      }
-      if (!formState.email.trim()) {
-        setFieldErrors({ email: t('errorEmail') || '邮箱是必填项' });
-        setStatus({ type: 'error', message: t('errorEmail') || '邮箱是必填项' });
-        return false;
-      }
-      // 邮箱格式验证
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formState.email)) {
-        setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
-        setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
-        return false;
+      // [2025-12-19] 所有字段都改为非必填，只保留格式验证（如果填写了的话）
+      // 邮箱格式验证（仅在填写了邮箱时验证）
+      if (formState.email.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formState.email)) {
+          setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
+          setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
+          return false;
+        }
       }
       
-      // 如果选择Invoice，Invoice信息和支付信息必填
-      // [2025-12-08 05:15:00] 修改：companyName 改为非必填
-      if (formState.requiresInvoice) {
-        if (!formState.invoiceInfo.taxNumber.trim()) {
-          setFieldErrors({ taxNumber: t('errorTaxNumber') || '税号是必填项' });
-          setStatus({ type: 'error', message: t('errorTaxNumber') || '税号是必填项' });
-          return false;
-        }
-        if (!formState.invoiceInfo.address.trim()) {
-          setFieldErrors({ address: t('errorAddress') || '发票地址是必填项' });
-          setStatus({ type: 'error', message: t('errorAddress') || '发票地址是必填项' });
-          return false;
-        }
-        // 支付信息必填（Invoice时）
-        if (!formState.invoiceInfo.paymentMethod) {
-          setFieldErrors({ paymentMethod: t('errorPaymentMethod') || '支付方式是必填项' });
-          setStatus({ type: 'error', message: t('errorPaymentMethod') || '支付方式是必填项' });
-          return false;
-        }
-        // 如果选择Etransfer，Reference Number必填
-        if (formState.invoiceInfo.paymentMethod === 'etrans' && !formState.invoiceInfo.referenceNumber?.trim()) {
-          setFieldErrors({ referenceNumber: t('errorReferenceNumber') || 'Reference Number是必填项' });
-          setStatus({ type: 'error', message: t('errorReferenceNumber') || 'Reference Number是必填项' });
-          return false;
-        }
-      }
+      // [2025-12-19] 所有Invoice相关字段都改为非必填，不再进行验证
       return true;
     }
     // [2025-12-19] PRD v2.0: 第三步验证（印刷位配置）
@@ -1798,18 +1765,17 @@ export default function OfflineOrdersIntakePage() {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading') || '客户信息'}</h2>
-        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息'}</p>
+        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息（所有字段均为可选）'}</p>
 
         {/* 客户基本信息 */}
       <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
           <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo') || '客户基本信息'}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'} *</span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'}</span>
             <input
               type="text"
               name="contactName"
-              required
               value={formState.contactName}
               onChange={handleInputChange}
               className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
@@ -1822,11 +1788,10 @@ export default function OfflineOrdersIntakePage() {
           </label>
             
           <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">{t('email') || '邮箱'} *</span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('email') || '邮箱'}</span>
             <input
               type="email"
               name="email"
-              required
               value={formState.email}
               onChange={handleInputChange}
               className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
@@ -1908,7 +1873,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail') || '公司邮箱'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail') || '公司邮箱'}</span>
                 <input
                   type="email"
                   value={formState.invoiceInfo.companyEmail}
@@ -1923,7 +1888,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber') || 'GST/HST Number'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber') || 'GST/HST Number'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.taxNumber}
@@ -1934,7 +1899,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('city') || '城市'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('city') || '城市'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.city}
@@ -1949,7 +1914,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('province') || '省份'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('province') || '省份'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.province}
@@ -1965,7 +1930,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode') || '邮编'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode') || '邮编'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.postalCode}
@@ -1982,7 +1947,7 @@ export default function OfflineOrdersIntakePage() {
             </div>
                 
             <label className="block mt-4">
-                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('address') || '地址'} *</span>
+                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('address') || '地址'}</span>
               <input
                 type="text"
                 value={formState.invoiceInfo.address}
@@ -1999,13 +1964,13 @@ export default function OfflineOrdersIntakePage() {
           </div>
         )}
 
-        {/* [2025-12-07 02:30:00] PRD v2.0: 支付信息（Invoice时必填） */}
+        {/* [2025-12-19] PRD v2.0: 支付信息（Invoice时，全部改为非必填） */}
         {formState.requiresInvoice && (
           <div className="mt-4 p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('paymentInfo') || '支付信息'} *</h4>
+            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('paymentInfo') || '支付信息'}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'} *</span>
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'}</span>
                 <select
                   value={formState.invoiceInfo.paymentMethod || ''}
                   onChange={(e) => {
@@ -2034,7 +1999,6 @@ export default function OfflineOrdersIntakePage() {
               <label className="block">
                 <span className="block text-sm font-medium text-gray-700 mb-2">
                   {t('referenceNumber') || 'Reference Number'}
-                  {formState.invoiceInfo.paymentMethod === 'etrans' ? ' *' : ''}
                 </span>
                 <input
                   type="text"
