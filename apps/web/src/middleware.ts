@@ -18,6 +18,19 @@ export function middleware(request: NextRequest) {
   response.headers.set('x-request-id', existingRequestId);
   response.headers.set('x-trace-id', existingRequestId);
   
+  // [2025-01-27 19:30:00] 增强可观测性：记录图片请求
+  if (request.nextUrl.pathname.startsWith('/_next/image')) {
+    const src = request.nextUrl.searchParams.get('url');
+    if (src) {
+      console.info('[Middleware] Image request', {
+        requestId: existingRequestId,
+        path: request.nextUrl.pathname,
+        src: src.substring(0, 100), // 只记录前100个字符
+        timestamp: new Date().toISOString(),
+      });
+    }
+  }
+  
   // [2025-01-27 18:15:00] 在开发环境记录请求信息
   if (process.env.NODE_ENV === 'development') {
     console.log('[Middleware] Request', {

@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
+import SafeImage from '@/components/SafeImage';
 import Link from 'next/link';
 import { productsApi } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
@@ -291,7 +291,7 @@ export function ProductDetailContent() {
                   onClick={() => setSelectedImageIndex(index)}
                   aria-label={`View image ${index + 1}`}
                 >
-                  <Image src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
+                  <SafeImage src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
                 </button>
               ))
             ) : (
@@ -318,7 +318,7 @@ export function ProductDetailContent() {
                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
                 </button>
-                <Image
+                <SafeImage
                   src={currentImage}
                   alt={product.images[selectedImageIndex]?.alt || product.name}
                   width={600}
@@ -351,7 +351,7 @@ export function ProductDetailContent() {
                     onClick={() => setSelectedImageIndex(index)}
                     aria-label={`View image ${index + 1}`}
                   >
-                    <Image src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
+                    <SafeImage src={img.url} alt={img.alt || `${product.name} view ${index + 1}`} width={80} height={80} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -664,7 +664,7 @@ export function ProductDetailContent() {
                 return (
                   <Link key={related.id} href={`/products/${related.slug}`} className="flex flex-col gap-3 no-underline text-inherit transition-transform hover:-translate-y-1">
                     <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
-                      <Image src={relatedImage} alt={related.name} width={280} height={350} className="w-full h-full object-cover" />
+                      <SafeImage src={relatedImage} alt={related.name} width={280} height={350} className="w-full h-full object-cover" />
                     </div>
                     <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{related.name}</h3>
                     <div className="text-lg font-bold text-gray-900">
@@ -690,7 +690,7 @@ export function ProductDetailContent() {
                 return (
                   <Link key={brandProduct.id} href={`/products/${brandProduct.slug}`} className="flex flex-col gap-3 no-underline text-inherit transition-transform hover:-translate-y-1">
                     <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
-                      <Image src={brandImage} alt={brandProduct.name} width={280} height={350} className="w-full h-full object-cover" />
+                      <SafeImage src={brandImage} alt={brandProduct.name} width={280} height={350} className="w-full h-full object-cover" />
                     </div>
                     <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{brandProduct.name}</h3>
                     <div className="text-lg font-bold text-gray-900">
