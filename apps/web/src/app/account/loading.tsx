@@ -1,6 +1,7 @@
 /**
  * Account Loading Skeleton
  * [2025-01-27 14:55:00] 账户页面加载骨架
+ * [2025-01-27 17:00:00] 修复：移除 styled-jsx，使用纯内联样式（Server Component 兼容）
  */
 export default function AccountLoading() {
   return (
@@ -20,7 +21,7 @@ export default function AccountLoading() {
           height: '60px',
           borderRadius: '50%',
           backgroundColor: '#e5e7eb',
-          animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          opacity: 0.7,
         }} />
         <div style={{ flex: 1 }}>
           <div style={{
@@ -29,14 +30,14 @@ export default function AccountLoading() {
             backgroundColor: '#e5e7eb',
             borderRadius: '4px',
             marginBottom: '8px',
-            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            opacity: 0.7,
           }} />
           <div style={{
             height: '16px',
             width: '150px',
             backgroundColor: '#e5e7eb',
             borderRadius: '4px',
-            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            opacity: 0.7,
           }} />
         </div>
       </div>
@@ -44,18 +45,8 @@ export default function AccountLoading() {
         height: '200px',
         backgroundColor: '#e5e7eb',
         borderRadius: '8px',
-        animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        opacity: 0.7,
       }} />
-      <style jsx>{`
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.5;
-          }
-        }
-      `}</style>
     </div>
   );
 }
