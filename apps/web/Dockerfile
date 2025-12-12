@@ -33,11 +33,16 @@ RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ "$NEXT_PUBLIC_API_URL" = "" ]; then \
     fi && \
     echo "✅ 环境变量检查通过"
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# [2025-01-27 20:50:00] 复制 apps/web 目录内容（构建上下文现在是项目根目录）
+COPY apps/web/package*.json ./
+COPY apps/web/next.config.mjs ./
+COPY apps/web/tsconfig.json ./
+COPY apps/web/public ./public
+COPY apps/web/src ./src
+# [2025-01-27 20:50:00] 复制 Prisma schema（从项目根目录）
+COPY prisma ./prisma
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
-# 注意：在 Docker 构建中，工作目录是 /app，需要从 apps/web 访问 ../../prisma/schema.prisma
-# 但 COPY . . 已经复制了整个项目，所以路径应该是相对于 /app 的
-RUN cd /app && npx prisma generate --schema=./prisma/schema.prisma
+RUN npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-alpine AS runner
