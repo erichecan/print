@@ -93,7 +93,7 @@ docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_BUILD_SHA="${GIT_SHA}" \
   --build-arg NEXT_PUBLIC_BUILD_TIME="${BUILD_TIME}" \
   -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
-  -f apps/web/Dockerfile apps/web
+  -f apps/web/Dockerfile .
 
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest
