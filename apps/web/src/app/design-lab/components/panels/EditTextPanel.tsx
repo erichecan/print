@@ -611,40 +611,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         </div>
       </div>
 
-      {/* 5.5. Text Shape（文本形状） - [2025-12-08] 新增 */}
-      <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Text Shape</label>
-        <div className="dl-edit-text-panel__btn-group">
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'straight' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('straight')}
-            type="button"
-          >
-            Straight
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'arc' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('arc')}
-            type="button"
-          >
-            Arc
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'circle' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('circle')}
-            type="button"
-          >
-            Circle
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'wave' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('wave')}
-            type="button"
-          >
-            Wave
-          </button>
-        </div>
-      </div>
+      {/* 5.5. Text Shape（文本形状） - [2025-12-12 00:00:00] 已移除 */}
 
       {/* 6. Text Size（字体大小滑块） */}
       {/* [2025-01-31 00:00:00] 像素级对齐：根据 Custom Ink designlab-addtext03.jpeg，Text Size 应在 Outline 之后 */}
@@ -662,97 +629,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         />
       </div>
 
-      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate */}
-      <div className="dl-edit-text-panel__section">
-        <button
-          className="dl-edit-text-panel__btn"
-          onClick={handleCenter}
-          type="button"
-        >
-          Center
-        </button>
-      </div>
-
-      <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Layering</label>
-        <div className="dl-edit-text-panel__btn-group">
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={handleBringToFront}
-            type="button"
-          >
-            Bring to Front
-          </button>
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={() => {
-              if (!selectedText || !canvas) return;
-              canvas.bringForward(selectedText);
-              canvas.renderAll();
-              onUpdate();
-            }}
-            type="button"
-          >
-            Bring Forward
-          </button>
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={() => {
-              if (!selectedText || !canvas) return;
-              canvas.sendBackwards(selectedText);
-              canvas.renderAll();
-              onUpdate();
-            }}
-            type="button"
-          >
-            Send Backward
-          </button>
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={handleSendToBack}
-            type="button"
-          >
-            Send to Back
-          </button>
-        </div>
-      </div>
-
-      <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Text Alignment</label>
-        <div className="dl-edit-text-panel__btn-group">
-          <button
-            className={`dl-edit-text-panel__btn ${textAlign === 'left' ? 'is-active' : ''}`}
-            onClick={() => handleTextAlignChange('left')}
-            type="button"
-          >
-            Left
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textAlign === 'center' ? 'is-active' : ''}`}
-            onClick={() => handleTextAlignChange('center')}
-            type="button"
-          >
-            Center
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textAlign === 'right' ? 'is-active' : ''}`}
-            onClick={() => handleTextAlignChange('right')}
-            type="button"
-          >
-            Right
-          </button>
-        </div>
-      </div>
-
-      <div className="dl-edit-text-panel__section">
-        <button
-          className="dl-edit-text-panel__btn"
-          onClick={handleDuplicate}
-          type="button"
-        >
-          Duplicate
-        </button>
-      </div>
+      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate - [2025-12-12 00:00:00] 已移除 */}
 
       {/* [2025-12-08] 超出安全区警示 */}
       {isOutOfSafeArea && (
