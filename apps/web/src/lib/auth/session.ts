@@ -19,7 +19,7 @@ export async function getSessionToken(): Promise<string | null> {
 /**
  * Check if user is authenticated (server-side)
  * [2025-01-27 14:35:00]
- * [2025-01-27 17:10:00] 修复：直接调用后端 API，确保 Cookie 正确传递
+ * [2025-01-27 17:10:00] 修复：直接调用后端 API，使用 Authorization header 传递 token
  */
 export async function getSession(): Promise<{ userId?: string; email?: string } | null> {
   try {
@@ -28,13 +28,13 @@ export async function getSession(): Promise<{ userId?: string; email?: string } 
       return null;
     }
 
-    // [2025-01-27 17:10:00] 直接调用后端 API，而不是通过 Next.js API 路由
-    // 这样可以确保 Cookie 正确传递
+    // [2025-01-27 17:10:00] 直接调用后端 API，使用 Authorization header 传递 token
+    // 后端 authenticate 中间件支持从 Cookie 或 Authorization header 读取 token
     const backendApiUrl = getBackendApiBaseUrl();
     const response = await fetch(`${backendApiUrl}/auth/me`, {
       method: 'GET',
       headers: {
-        Cookie: `token=${token}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
       cache: 'no-store',
