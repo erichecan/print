@@ -22,7 +22,8 @@ interface ColorGroupCardIntegratedProps {
   onSizeQuantityChange: (size: string, quantity: number) => void;
 }
 
-const YOUTH_SIZES = ['YS', 'YM', 'YL', 'YXL'];
+// [2025-12-19] 尺码定义（与page.tsx保持一致）
+const YOUTH_SIZES = ['YS', 'YM', 'YL'];
 const ADULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
 const LARGE_SIZES = ['2XL', '3XL', '4XL', '5XL'];
 

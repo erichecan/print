@@ -40,6 +40,7 @@ export type OrderItemColorGroup = {
     overrides: PositionConfig[]; // 该尺码的覆盖配置
   }>;
   inheritFromPrevious?: boolean; // [2025-12-19] 是否继承上一个颜色的配置
+  inheritsFromColorId?: string | null; // [2025-12-19] 继承自哪个颜色组ID
 };
 
 export type PrintConfig = {

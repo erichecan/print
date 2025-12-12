@@ -852,39 +852,7 @@ export default function OfflineOrdersIntakePage() {
   }, [files, t]);
 
   // [2025-01-27 18:00:00] 第二步：印刷位置管理方法
-  const updateSideCount = useCallback((count: number) => {
-    if (count < 1) count = 1;
-    if (count > 10) count = 10; // 限制最多10个位置
-    setFormState((prev) => {
-      const currentPositions = prev.printPositions || [];
-      const newPositions: PrintPosition[] = [];
-      for (let i = 0; i < count; i++) {
-        if (currentPositions[i]) {
-          newPositions.push(currentPositions[i]);
-        } else {
-          newPositions.push({ position: '', width: '', height: '', notes: '' });
-        }
-      }
-      return {
-        ...prev,
-        sideCount: count,
-        printPositions: newPositions,
-      };
-    });
-  }, []);
-
-  const updatePrintPosition = useCallback((index: number, field: keyof PrintPosition, value: string) => {
-    setFormState((prev) => {
-      const newPositions = [...prev.printPositions];
-      if (newPositions[index]) {
-        newPositions[index] = { ...newPositions[index], [field]: value };
-      }
-      return {
-        ...prev,
-        printPositions: newPositions,
-      };
-    });
-  }, []);
+  // [2025-12-19] updateSideCount和updatePrintPosition已移除，印刷位置现在由颜色卡片管理
 
   // [2025-12-07 02:30:00] PRD v2.0: 步骤验证
   const validateStep = useCallback((step: number): boolean => {
