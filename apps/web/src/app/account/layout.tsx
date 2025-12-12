@@ -15,14 +15,16 @@ interface AccountLayoutProps {
 export default async function AccountLayout({ children }: AccountLayoutProps) {
   // [2025-01-27 14:50:00] 服务端认证检查，未登录时重定向到登录页
   // [2025-01-27 17:25:00] 增强错误处理，避免因认证检查失败导致页面崩溃
+  let session;
   try {
-    const session = await getSession();
-    if (!session) {
-      redirect('/login?redirect=/account');
-    }
+    session = await getSession();
   } catch (error) {
     // [2025-01-27 17:25:00] 如果认证检查失败，记录错误并重定向到登录页
     console.error('[AccountLayout] Session check failed:', error);
+    redirect('/login?redirect=/account');
+  }
+  
+  if (!session) {
     redirect('/login?redirect=/account');
   }
 
