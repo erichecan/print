@@ -171,19 +171,35 @@ exports.createOfflineOrder = async (req, res) => {
       requiresMockups,
       requiresProof,
       rushOrder,
-      configuration
+      configuration,
+      orderNotes // [2025-12-19] PRD v2.0: 支持从orderNotes字段获取
     } = req.body;
 
+    // [2025-12-19] PRD v2.0: 解析configuration以获取orderNotes（如果projectName不存在）
+    const configData = safeJsonParse(configuration);
+    
+    // [2025-12-19] PRD v2.0: projectName现在是可选字段，如果不存在则从orderNotes或configuration中提取
+    // 优先级：projectName > orderNotes > configuration.orderNotes > 订单编号（默认值）
+    let finalProjectName = projectName?.trim() || null;
+    if (!finalProjectName) {
+      finalProjectName = orderNotes?.trim() || 
+                        configData?.orderNotes?.trim() || 
+                        null;
+    }
+    
+    // [2025-12-19] PRD v2.0: 如果仍然没有projectName，使用订单编号作为默认值（在生成订单编号后设置）
+    // 这里先设置为null，稍后在生成订单编号后设置默认值
+
     // [2025-11-28 16:00:00] 改进验证错误信息
+    // [2025-12-19] PRD v2.0: 移除projectName的必填验证，只验证contactName和email
     const missingFields = [];
-    if (!projectName) missingFields.push('projectName');
     if (!contactName) missingFields.push('contactName');
     if (!email) missingFields.push('email');
     
     if (missingFields.length > 0) {
       logger.warn('[offlineOrderController] Validation failed. Missing fields:', missingFields);
       logger.warn('[offlineOrderController] Request body received:', {
-        projectName: projectName || 'MISSING',
+        projectName: projectName || 'NOT_PROVIDED',
         contactName: contactName || 'MISSING',
         email: email || 'MISSING',
       });
@@ -206,9 +222,16 @@ exports.createOfflineOrder = async (req, res) => {
       });
     }
 
+    // [2025-12-19] PRD v2.0: 生成订单编号，如果projectName仍然为空，使用订单编号作为默认值
+    const generatedOrderCode = generateOrderCode();
+    if (!finalProjectName) {
+      finalProjectName = generatedOrderCode; // [2025-12-19] 使用订单编号作为默认projectName
+      logger.info('[offlineOrderController] projectName not provided, using orderCode as default:', finalProjectName);
+    }
+
     const orderPayload = {
-      orderCode: generateOrderCode(),
-      projectName: projectName.trim(),
+      orderCode: generatedOrderCode,
+      projectName: finalProjectName, // [2025-12-19] 使用处理后的projectName（可能来自orderNotes或订单编号）
       primaryProduct: primaryProduct?.trim() || null,
       quantity: quantity ? parseInt(quantity, 10) || null : null,
       deliveryDate: parseDate(deliveryDate),
@@ -224,9 +247,10 @@ exports.createOfflineOrder = async (req, res) => {
       company: company?.trim() || null,
       email: email.trim(),
       phone: phone?.trim() || null,
-      configuration: safeJsonParse(configuration) || {
+      configuration: configData || {
         source: 'web-intake',
-        artworkNotes: artworkNotes?.trim() || null
+        artworkNotes: artworkNotes?.trim() || null,
+        orderNotes: orderNotes?.trim() || null // [2025-12-19] PRD v2.0: 包含orderNotes到configuration
       },
       metadata: {
         submittedFrom: 'offline-pod-intake',
