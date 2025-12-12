@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent } from 'react'; // [2025-12-19] 添加useRef用于定位下拉菜单
+import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent } from 'react'; // [2025-12-19] 添加useRef用于定位下拉菜单，useMemo用于颜色组初始化
 import { createPortal } from 'react-dom'; // [2025-12-19] 使用Portal将下拉菜单渲染到body，彻底解决遮挡问题
 import { useRouter } from 'next/navigation';
 import Link from 'next/link'; // [2025-01-31 20:15:00] 添加 Link 用于导航
@@ -8,6 +8,9 @@ import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用
 import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct } from '@/lib/api'; // [2025-12-07 08:00:00] 简化的产品 API
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // [2025-01-27 20:00:00] 引入翻译
+import { OrderItemColorGroup } from '@/types/order'; // [2025-12-19] 导入颜色组类型
+import { ProductItemColorConfig } from './components/ProductItemColorConfig'; // [2025-12-19] 导入产品项颜色配置组件
+import { validateColorGroups } from '@/lib/services/orderItemPricing'; // [2025-12-19] 导入验证函数
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -108,11 +111,13 @@ type FormState = {
   
   // 第一步：产品配置
   productItems: ProductItem[]; // 产品列表
-  globalPrintPositions: PrintPosition[]; // 总体印刷位置
+  globalPrintPositions: PrintPosition[]; // 总体印刷位置（保留用于向后兼容）
   orderNotes: string; // 订单备注（非必填）
   dstFileFee: number; // DST File Fee（订单级别，仅当有Embroidery时）
   globalUnitPrice: number; // [2025-12-08 05:25:00] 全局单价
   globalQuantitySubtotal: number; // [2025-12-08 05:25:00] 全局件数小计
+  // [2025-12-19] 按颜色分组的印刷位配置（新功能）
+  colorGroupsByProduct: Record<string, import('@/types/order').OrderItemColorGroup[]>; // 产品ID -> 颜色组列表
   
   // 第二步：客户信息
   contactName: string;
@@ -155,6 +160,7 @@ const initialFormState: FormState = {
   dstFileFee: 0,
   globalUnitPrice: 0, // [2025-12-08 05:25:00] 全局单价
   globalQuantitySubtotal: 0, // [2025-12-08 05:25:00] 全局件数小计
+  colorGroupsByProduct: {}, // [2025-12-19] 按颜色分组的印刷位配置
   contactName: '',
   email: '',
   phone: '',
@@ -890,9 +896,43 @@ export default function OfflineOrdersIntakePage() {
       }
       return true;
     }
-    // [2025-12-07 02:00:00] PRD v2.0: 第三步验证（文件上传，非必填，无需验证）
+    // [2025-12-19] PRD v2.0: 第三步验证（印刷位配置）
     if (step === 3) {
-      // 文件上传是非必填的，可以直接通过
+      // [2025-12-19] 验证每个产品项的颜色组配置
+      const itemsWithColors = formState.productItems.filter(item => item.colors.length > 0);
+      
+      if (itemsWithColors.length === 0) {
+        setStatus({ type: 'error', message: '请先在步骤1中添加产品并选择颜色' });
+        return false;
+      }
+      
+      // [2025-12-19] 验证每个产品的颜色组配置
+      for (const item of itemsWithColors) {
+        const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+        
+        // [2025-12-19] 如果没有颜色组配置，尝试从colors转换
+        if (colorGroups.length === 0 && item.colors.length > 0) {
+          // [2025-12-19] 颜色组会在renderStep3中自动初始化，这里只验证已存在的
+          continue;
+        }
+        
+        // [2025-12-19] 使用定价服务的验证函数
+        const validation = validateColorGroups(colorGroups);
+        
+        if (!validation.valid) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [`printPositions-${item.id}`]: validation.errors.join('; ')
+          }));
+          setStatus({ 
+            type: 'error', 
+            message: `产品"${item.productName}"的印刷位配置有误：${validation.errors.join('; ')}` 
+          });
+          return false;
+        }
+      }
+      
+      // [2025-12-19] 文件上传是非必填的，无需验证
       return true;
     }
     return true;
@@ -1098,6 +1138,7 @@ export default function OfflineOrdersIntakePage() {
             productItems: formState.productItems, // 新数据结构
             globalPrintPositions: formState.globalPrintPositions,
             printPositions: allPrintPositions, // 聚合后的所有印刷位置
+            colorGroupsByProduct: formState.colorGroupsByProduct, // [2025-12-19] 按颜色分组的印刷位配置
             requiresInvoice: formState.requiresInvoice,
             invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null,
             paymentMethod: formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null,
@@ -2077,12 +2118,24 @@ export default function OfflineOrdersIntakePage() {
     }
   }, [fieldErrors]);
 
-  // [2025-12-06] PRD v2.0: 渲染第三步 - 文件上传（非必填）
+  // [2025-12-19] PRD v2.0: 渲染第三步 - 印刷位选择（按颜色分组）
   const renderStep3 = () => {
+    // [2025-12-19] 获取所有有颜色的产品项
+    const itemsWithColors = formState.productItems.filter(item => item.colors.length > 0);
+    
+    if (itemsWithColors.length === 0) {
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">选择印刷位</h2>
+          <p className="text-gray-600 mb-6 text-sm">请先在步骤1中添加产品并选择颜色</p>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step3Heading') || '文件上传'}</h2>
-      <p className="text-gray-600 mb-6 text-sm">{t('step3Intro') || '上传设计文件（非必填，可以不传文件直接提交）'}</p>
+      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">选择印刷位</h2>
+      <p className="text-gray-600 mb-6 text-sm">为每个颜色配置印刷位置。您可以继承上一颜色的配置，或为特定尺码设置不同的印刷位。</p>
       
       {/* [2025-12-04 00:15:00] 移动设备提示 */}
       {isMobile && (
@@ -2138,10 +2191,101 @@ export default function OfflineOrdersIntakePage() {
         </ul>
       )}
       
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-sm text-yellow-800">
-          <strong>注意：</strong>文件上传是非必填的，您可以不传文件直接提交订单。
-        </p>
+      {/* [2025-12-19] 为每个产品项显示颜色组配置器 */}
+      {itemsWithColors.map((item) => {
+        const existingGroups = formState.colorGroupsByProduct[item.id] || [];
+
+        return (
+          <ProductItemColorConfig
+            key={item.id}
+            productItemId={item.id}
+            productName={item.productName}
+            colors={item.colors}
+            existingGroups={existingGroups}
+            onUpdate={(updatedGroups) => {
+              setFormState(prev => ({
+                ...prev,
+                colorGroupsByProduct: {
+                  ...prev.colorGroupsByProduct,
+                  [item.id]: updatedGroups
+                }
+              }));
+            }}
+            onValidationChange={(isValid, errors) => {
+              if (!isValid) {
+                setFieldErrors(prev => ({
+                  ...prev,
+                  [`printPositions-${item.id}`]: errors.join('; ')
+                }));
+              } else {
+                setFieldErrors(prev => {
+                  const newErrors = { ...prev };
+                  delete newErrors[`printPositions-${item.id}`];
+                  return newErrors;
+                });
+              }
+            }}
+          />
+        );
+      })}
+
+      {/* [2025-12-19] 文件上传（可选，移到步骤3下方） */}
+      <div className="mt-8 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">文件上传（可选）</h3>
+        <p className="text-sm text-gray-600 mb-4">您可以上传设计文件，也可以不传文件直接提交订单。</p>
+        
+        {isMobile && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-sm font-semibold text-blue-900 mb-1">{t('mobileUploadTip') || '移动设备提示'}</p>
+            <p className="text-xs text-blue-700">{t('mobileUploadDescription') || '您可以使用相机拍照上传文件'}</p>
+          </div>
+        )}
+        
+        <div
+          className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          role="button"
+          tabIndex={0}
+        >
+          <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
+          <p className="text-xs text-gray-600">
+            {isMobile ? (t('mobileUploadOrBrowse') || '点击上传或拍照') : (t('dragDropOrBrowse') || '拖拽文件到此处或点击浏览')} 
+            ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB }) || `最多 ${ MAX_FILES} 个文件，每个文件最大 ${MAX_FILE_SIZE_MB}MB`})
+          </p>
+          <input
+            type="file"
+            accept={isMobile ? `${ACCEPTED_EXTENSIONS.join(',')},image/*` : ACCEPTED_EXTENSIONS.join(',')}
+            capture={isMobile ? 'environment' : undefined}
+            multiple
+            onChange={handleFileInputChange}
+            aria-label="Upload artwork files"
+            className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
+        
+        {files.length > 0 && (
+          <ul className="list-none m-0 p-0 grid gap-3 mt-4">
+            {files.map((file, index) => (
+              <li
+                key={`${file.name}-${index}`}
+                className="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center"
+              >
+                <div className="flex flex-col gap-1">
+                  <strong className="text-sm text-gray-900">{file.name}</strong>
+                  <span className="text-xs text-gray-600">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFile(index)}
+                  className="border-none bg-transparent text-red-600 cursor-pointer text-sm font-medium hover:text-red-700 transition-colors"
+                >
+                  {t('remove') || '删除'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
     );
