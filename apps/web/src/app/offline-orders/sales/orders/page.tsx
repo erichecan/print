@@ -487,32 +487,9 @@ export default function SalesOrdersPage() {
     }
   };
 
-  // [2025-01-31 20:30:00] 统一的导航栏组件，确保在所有状态下都显示
-  const renderNavBar = () => (
-    <div className="sales-orders-nav-bar">
-      <div className="sales-orders-nav-links">
-        <Link 
-          href="/admin/offline-orders" 
-          className="sales-orders-nav-link sales-orders-nav-link-primary"
-        >
-          进入主站管理后台
-        </Link>
-        <Link 
-          href="/" 
-          target="_blank"
-          rel="noopener noreferrer"
-          className="sales-orders-nav-link sales-orders-nav-link-secondary"
-        >
-          返回主站
-        </Link>
-      </div>
-    </div>
-  );
-
   if (authChecking) {
     return (
       <div className="sales-orders-shell">
-        {renderNavBar()}
         <div className="sales-orders-card">
           <p>正在检查登录状态...</p>
         </div>
@@ -522,8 +499,6 @@ export default function SalesOrdersPage() {
 
   return (
     <div className="sales-orders-shell">
-      {/* [2025-01-31 20:15:00] 顶部导航链接 */}
-      {renderNavBar()}
       <div className="sales-orders-card">
         <header className="sales-orders-header">
           <div>
@@ -531,6 +506,21 @@ export default function SalesOrdersPage() {
             <p>在这里查看你创建的线下订单（主管可查看全部订单）。</p>
           </div>
           <div className="sales-orders-header-actions">
+            {/* [2025-01-31 20:35:00] 顶部导航按钮 - 放在新建订单按钮旁边 */}
+            <button
+              type="button"
+              className="sales-orders-nav-btn sales-orders-nav-btn-secondary"
+              onClick={() => window.open('/', '_blank')}
+            >
+              返回主站
+            </button>
+            <button
+              type="button"
+              className="sales-orders-nav-btn sales-orders-nav-btn-primary"
+              onClick={() => router.push('/admin/offline-orders')}
+            >
+              进入主站管理后台
+            </button>
             <button
               type="button"
               className="sales-orders-new"
@@ -964,46 +954,6 @@ export default function SalesOrdersPage() {
           flex-direction: column;
           align-items: center;
         }
-        /* [2025-01-31 20:20:00] 顶部导航栏样式 */
-        .sales-orders-nav-bar {
-          width: 100%;
-          max-width: 1200px;
-          margin-bottom: 1rem;
-          background: white;
-          border-bottom: 1px solid #e5e7eb;
-          padding: 1rem;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        .sales-orders-nav-links {
-          display: flex;
-          gap: 0.75rem;
-          justify-content: flex-end;
-          align-items: center;
-        }
-        .sales-orders-nav-link {
-          padding: 0.5rem 1rem;
-          font-size: 0.875rem;
-          font-weight: 500;
-          text-decoration: none;
-          border-radius: 0.375rem;
-          transition: all 0.2s;
-        }
-        .sales-orders-nav-link-primary {
-          color: #2563eb;
-        }
-        .sales-orders-nav-link-primary:hover {
-          color: #1e40af;
-          text-decoration: underline;
-          background-color: #eff6ff;
-        }
-        .sales-orders-nav-link-secondary {
-          color: #4b5563;
-        }
-        .sales-orders-nav-link-secondary:hover {
-          color: #1f2937;
-          text-decoration: underline;
-          background-color: #f3f4f6;
-        }
         .sales-orders-card {
           width: 100%;
           max-width: 1200px;
@@ -1023,6 +973,34 @@ export default function SalesOrdersPage() {
           display: flex;
           gap: 0.75rem;
           align-items: center;
+          flex-wrap: wrap;
+        }
+        /* [2025-01-31 20:35:00] 顶部导航按钮样式 */
+        .sales-orders-nav-btn {
+          border: none;
+          border-radius: 999px;
+          padding: 0.6rem 1.3rem;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .sales-orders-nav-btn-primary {
+          color: #2563eb;
+          background: #eff6ff;
+        }
+        .sales-orders-nav-btn-primary:hover {
+          background: #dbeafe;
+          color: #1d4ed8;
+        }
+        .sales-orders-nav-btn-secondary {
+          color: #4b5563;
+          background: #f3f4f6;
+        }
+        .sales-orders-nav-btn-secondary:hover {
+          background: #e5e7eb;
+          color: #1f2937;
         }
         /* [2025-01-27 13:50:00] Tab样式 */
         .sales-orders-tabs {
