@@ -35,31 +35,59 @@ const SALES_PASSWORD = 'manager123456';
     
     // 4. 检查导航按钮
     console.log('4️⃣ 检查导航按钮...');
+    await page.waitForTimeout(3000); // 等待页面完全渲染
+    
     const navButtons = await page.evaluate(() => {
       const actions = document.querySelector('.sales-orders-header-actions');
-      if (!actions) return { found: false };
+      if (!actions) {
+        // 检查 header 是否存在
+        const header = document.querySelector('.sales-orders-header');
+        return { 
+          found: false, 
+          headerExists: !!header,
+          actionsHTML: header ? header.innerHTML.substring(0, 200) : null
+        };
+      }
       
       const buttons = Array.from(actions.querySelectorAll('button'));
+      const navBtnSecondary = actions.querySelector('.sales-orders-nav-btn-secondary');
+      const navBtnPrimary = actions.querySelector('.sales-orders-nav-btn-primary');
+      const newBtn = actions.querySelector('.sales-orders-new');
+      
       return {
         found: true,
+        totalButtons: buttons.length,
+        navBtnSecondaryExists: !!navBtnSecondary,
+        navBtnPrimaryExists: !!navBtnPrimary,
+        newBtnExists: !!newBtn,
         buttons: buttons.map(btn => ({
           text: btn.textContent?.trim(),
           className: btn.className,
+          classList: Array.from(btn.classList),
           visible: window.getComputedStyle(btn).display !== 'none',
-          rect: btn.getBoundingClientRect()
-        }))
+          rect: btn.getBoundingClientRect(),
+          innerHTML: btn.innerHTML.substring(0, 50)
+        })),
+        actionsHTML: actions.innerHTML.substring(0, 1000)
       };
     });
     
     console.log('导航按钮检查结果:', JSON.stringify(navButtons, null, 2));
     
     if (navButtons.found && navButtons.buttons.length > 0) {
-      console.log('✅ 找到导航按钮');
+      console.log(`✅ 找到 ${navButtons.buttons.length} 个按钮`);
       navButtons.buttons.forEach((btn, i) => {
-        console.log(`  按钮 ${i + 1}: "${btn.text}" - 可见: ${btn.visible}`);
+        console.log(`  按钮 ${i + 1}: "${btn.text}" - 可见: ${btn.visible} - 类: ${btn.className}`);
       });
+      
+      if (navButtons.buttons.length < 3) {
+        console.warn(`⚠️ 警告：应该有三个按钮，但只找到了 ${navButtons.buttons.length} 个`);
+      }
     } else {
       console.error('❌ 未找到导航按钮');
+      if (navButtons.actionsHTML) {
+        console.log('Actions HTML:', navButtons.actionsHTML);
+      }
     }
     
     // 5. 检查状态选择器样式
