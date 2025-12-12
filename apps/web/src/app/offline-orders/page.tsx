@@ -916,19 +916,7 @@ export default function OfflineOrdersIntakePage() {
       
       // [2025-12-08 05:15:00] 订单备注改为非必填，移除验证
       
-      // 验证印刷位置：Height或Width至少一个
-      if (formState.globalPrintPositions && formState.globalPrintPositions.length > 0) {
-        for (let i = 0; i < formState.globalPrintPositions.length; i++) {
-          const pos = formState.globalPrintPositions[i];
-          const width = parseFloat(pos.width || '0');
-          const height = parseFloat(pos.height || '0');
-          if ((!pos.width || width <= 0) && (!pos.height || height <= 0)) {
-            setFieldErrors({ [`globalPrintPosition-${i}`]: t('errorPrintPositionSize') || '印刷位置：Height或Width至少填写一个' });
-            setStatus({ type: 'error', message: t('errorPrintPositionSize') || '印刷位置：Height或Width至少填写一个' });
-            return false;
-          }
-        }
-      }
+      // [2025-12-19] 印刷位置验证已移至步骤3（颜色组配置验证），此处不再验证globalPrintPositions
       
       return true;
     }
@@ -1152,32 +1140,29 @@ export default function OfflineOrdersIntakePage() {
         payload.append('company', formState.requiresInvoice && formState.invoiceInfo.companyName ? formState.invoiceInfo.companyName.trim() : formState.company || '');
         
         // [2025-12-06] PRD v2.0: 聚合印刷位置（全局 + 产品级别）
-        const allPrintPositions: Array<PrintPosition & { productItemId?: string; index?: number }> = [];
+        // [2025-12-19] 从colorGroupsByProduct中提取所有印刷位置
+        const allPrintPositions: Array<PrintPosition & { productItemId?: string; colorGroupId?: string; index?: number }> = [];
         
-        // 添加全局印刷位置（如果存在）
-        const globalPositions = formState.globalPrintPositions || [];
-        globalPositions.forEach((pos, index) => {
-          if (pos.position && (pos.width || pos.height)) {
-            allPrintPositions.push({
-                  ...pos,
-                  index,
-            });
-          }
-        });
-        
-        // [2025-12-07 02:30:00] PRD v2.0: 添加产品级别的印刷位置（从 item.printPositions 获取）
+        // [2025-12-19] 遍历所有产品的颜色组，提取印刷位置
         formState.productItems.forEach((item) => {
-          if (item.printPositions && item.printPositions.length > 0) {
-            item.printPositions.forEach((pos, index) => {
-              if (pos.position && (pos.width || pos.height)) {
+          const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+          colorGroups.forEach((group) => {
+            group.positions.forEach((pos, index) => {
+              if (pos.enabled) {
+                // [2025-12-19] 将PositionConfig转换为PrintPosition格式（用于向后兼容）
                 allPrintPositions.push({
-                  ...pos,
+                  position: pos.positionKey,
+                  printingStyle: pos.method,
+                  width: pos.widthMm ? (pos.widthMm / 25.4).toFixed(2) : '', // 转换为inch
+                  height: pos.heightMm ? (pos.heightMm / 25.4).toFixed(2) : '', // 转换为inch
+                  notes: pos.notes || '',
                   productItemId: item.id,
+                  colorGroupId: group.id,
                   index,
                 });
               }
             });
-          }
+          });
         });
 
         // [2025-12-06] PRD v2.0: 构建配置数据（使用新数据结构）
@@ -1189,9 +1174,9 @@ export default function OfflineOrdersIntakePage() {
             orderNotes: formState.orderNotes, // [2025-12-06] 订单备注（PRD v2.0）
             dstFileFee: formState.dstFileFee || null, // [2025-12-06] DST File Fee
             productItems: formState.productItems, // 新数据结构
-            globalPrintPositions: formState.globalPrintPositions,
-            printPositions: allPrintPositions, // 聚合后的所有印刷位置
-            colorGroupsByProduct: formState.colorGroupsByProduct, // [2025-12-19] 按颜色分组的印刷位配置
+            globalPrintPositions: [], // [2025-12-19] 已废弃，保留字段用于向后兼容
+            printPositions: allPrintPositions, // [2025-12-19] 从colorGroupsByProduct聚合的印刷位置（用于向后兼容）
+            colorGroupsByProduct: formState.colorGroupsByProduct, // [2025-12-19] 按颜色分组的印刷位配置（主要数据源）
             requiresInvoice: formState.requiresInvoice,
             invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null,
             paymentMethod: formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null,
@@ -1624,180 +1609,7 @@ export default function OfflineOrdersIntakePage() {
           </div>
         )}
 
-        {/* 印刷位置配置 - PRD v2.0: PrintingStyle、DST File Fee */}
-        <div className="mt-8 p-5 bg-white border border-gray-200 rounded-xl">
-          <h3 className="text-lg font-semibold text-gray-900 m-0 mb-4">
-            {t('printPositions') || '印刷位置配置'}
-          </h3>
-          
-          {/* 总体印刷位置 - [2025-12-08 01:20:00] 直接显示表单，不需要点击按钮 */}
-          <div className="space-y-4">
-            {/* [2025-12-08 01:20:00] 如果没有印刷位置，初始化一个空表单 */}
-            {(!formState.globalPrintPositions || formState.globalPrintPositions.length === 0) && (
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">位置</span>
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          setFormState(prev => ({
-                            ...prev,
-                            globalPrintPositions: [{ position: e.target.value, printingStyle: '', width: '', height: '', notes: '' }]
-                          }));
-                        }
-                      }}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    >
-                      <option value="">选择位置</option>
-                      {PRINT_POSITION_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              </div>
-            )}
-            
-            {formState.globalPrintPositions && formState.globalPrintPositions.length > 0 ? (
-              formState.globalPrintPositions.map((pos, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">位置</span>
-                      <select
-                        value={pos.position}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], position: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="">选择位置</option>
-                        {PRINT_POSITION_OPTIONS.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">工艺 (PrintingStyle)</span>
-                      <select
-                        value={pos.printingStyle || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], printingStyle: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="">选择工艺</option>
-                        <option value="DTF">DTF</option>
-                        <option value="Embroidery">Embroidery</option>
-                        <option value="UV">UV</option>
-                        <option value="Vinyl">Vinyl</option>
-                        <option value="其他">其他</option>
-                      </select>
-                    </label>
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">宽度 (inch)</span>
-                      <input
-                        type="text"
-                        value={pos.width || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], width: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                        placeholder="可选"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">高度 (inch)</span>
-                      <input
-                        type="text"
-                        value={pos.height || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], height: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                        placeholder="可选"
-                      />
-                    </label>
-                    <label className="block md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">备注</span>
-                      <input
-                        type="text"
-                        value={pos.notes || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], notes: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      />
-                    </label>
-                  </div>
-                  {/* [2025-12-08 01:20:00] 添加删除按钮 */}
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newPositions = formState.globalPrintPositions?.filter((_, i) => i !== index) || [];
-                        setFormState(prev => ({
-                          ...prev,
-                          globalPrintPositions: newPositions.length > 0 ? newPositions : []
-                        }));
-                      }}
-                      className="px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      {t('remove') || '删除'}
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : null}
-            
-            {/* [2025-12-08 01:20:00] 添加更多印刷位置按钮（当已有位置时显示） */}
-            {formState.globalPrintPositions && formState.globalPrintPositions.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormState(prev => ({
-                    ...prev,
-                    globalPrintPositions: [...(prev.globalPrintPositions || []), { position: '', printingStyle: '', width: '', height: '', notes: '' }]
-                  }));
-                }}
-                className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
-              >
-                {t('addPrintPosition') || '添加更多印刷位置'}
-              </button>
-            )}
-          </div>
-
-          {/* DST File Fee - 仅当选择Embroidery时显示 */}
-          {formState.globalPrintPositions?.some(pos => pos.printingStyle === 'Embroidery') && (
-            <div className="mt-4">
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">DST File Fee (订单级别)</span>
-                <input
-                  type="text"
-                  value={formState.dstFileFee || ''}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^\d.]/g, '');
-                    setFormState(prev => ({ ...prev, dstFileFee: parseFloat(value) || 0 }));
-                  }}
-                  className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  placeholder="0.00"
-                />
-              </label>
-            </div>
-          )}
-        </div>
+        {/* [2025-12-19] 印刷位置配置已整合到颜色卡片内部，独立的printPositions组件已移除 */}
 
         {/* 订单备注 - PRD v2.0: 非必填 */}
         {/* [2025-12-08 05:15:00] 修改：备注改为非必填 */}
