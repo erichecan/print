@@ -487,9 +487,32 @@ export default function SalesOrdersPage() {
     }
   };
 
+  // [2025-01-31 20:30:00] 统一的导航栏组件，确保在所有状态下都显示
+  const renderNavBar = () => (
+    <div className="sales-orders-nav-bar">
+      <div className="sales-orders-nav-links">
+        <Link 
+          href="/admin/offline-orders" 
+          className="sales-orders-nav-link sales-orders-nav-link-primary"
+        >
+          进入主站管理后台
+        </Link>
+        <Link 
+          href="/" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="sales-orders-nav-link sales-orders-nav-link-secondary"
+        >
+          返回主站
+        </Link>
+      </div>
+    </div>
+  );
+
   if (authChecking) {
     return (
       <div className="sales-orders-shell">
+        {renderNavBar()}
         <div className="sales-orders-card">
           <p>正在检查登录状态...</p>
         </div>
@@ -500,24 +523,7 @@ export default function SalesOrdersPage() {
   return (
     <div className="sales-orders-shell">
       {/* [2025-01-31 20:15:00] 顶部导航链接 */}
-      <div className="sales-orders-nav-bar">
-        <div className="sales-orders-nav-links">
-          <Link 
-            href="/admin/offline-orders" 
-            className="sales-orders-nav-link sales-orders-nav-link-primary"
-          >
-            进入主站管理后台
-          </Link>
-          <Link 
-            href="/" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="sales-orders-nav-link sales-orders-nav-link-secondary"
-          >
-            返回主站
-          </Link>
-        </div>
-      </div>
+      {renderNavBar()}
       <div className="sales-orders-card">
         <header className="sales-orders-header">
           <div>
