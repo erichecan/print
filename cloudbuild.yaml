@@ -45,7 +45,7 @@ steps:
           --build-arg NEXT_PUBLIC_BUILD_TIME="$$BUILD_TIME" \
           -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest \
           -f apps/web/Dockerfile \
-          apps/web
+          . # [2025-12-19] 修复：构建上下文改为项目根目录，与Dockerfile匹配
     waitFor: ['read-stripe-key']
 
   # Push backend image to Artifact Registry

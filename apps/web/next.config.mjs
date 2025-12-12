@@ -73,11 +73,18 @@ const remotePatterns = [
     pathname: '/**',
   },
   // [2025-12-01 22:20:00] 允许 GCP Cloud Storage 图片域名
+  // [2025-01-27 19:35:00] 修复：明确指定 print-main-product-images bucket 路径
   {
     protocol: 'https',
     hostname: 'storage.googleapis.com',
     port: '',
-    pathname: '/**',
+    pathname: '/print-main-product-images/**',
+  },
+  {
+    protocol: 'https',
+    hostname: 'storage.googleapis.com',
+    port: '',
+    pathname: '/print-main-assets/**',
   },
   // [2025-12-08 04:30:00] 允许 picsum.photos 演示图片域名
   {

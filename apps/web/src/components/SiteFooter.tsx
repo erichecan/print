@@ -57,10 +57,12 @@ const defaultFooterColumns = [
     ],
   },
   // [2025-12-07 05:10:00] 添加线下订单入口
+  // [2025-01-31 20:15:00] 添加管理后台入口
   {
     title: 'Business',
     links: [
       { href: '/offline-orders/sales/login', label: 'Offline Orders' },
+      { href: '/admin/offline-orders', label: 'Admin Panel' }, // [2025-01-31 20:15:00] 管理后台链接
     ],
   },
 ];

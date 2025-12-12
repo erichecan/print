@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { paymentMethodsApi, PaymentMethod } from '@/lib/api';
 import { useToast } from '@/hooks/useToast';
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 16:00:00] 使用路由映射
 
 export default function PaymentMethodsPage() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
@@ -87,7 +88,7 @@ export default function PaymentMethodsPage() {
     return (
       <div className="container" style={{ padding: '72px 0', maxWidth: '800px' }}>
         <div style={{ marginBottom: '32px' }}>
-          <Link href="/account" style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
+          <Link href={ACCOUNT_ROUTES.dashboard} style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
             ← Back to Account
           </Link>
           <h1>Payment Methods</h1>

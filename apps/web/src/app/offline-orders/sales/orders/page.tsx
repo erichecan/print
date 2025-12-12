@@ -505,6 +505,21 @@ export default function SalesOrdersPage() {
             <p>在这里查看你创建的线下订单（主管可查看全部订单）。</p>
           </div>
           <div className="sales-orders-header-actions">
+            {/* [2025-01-31 20:35:00] 顶部导航按钮 - 放在新建订单按钮旁边 */}
+            <button
+              type="button"
+              className="sales-orders-nav-btn sales-orders-nav-btn-secondary"
+              onClick={() => window.open('/', '_blank')}
+            >
+              返回主站
+            </button>
+            <button
+              type="button"
+              className="sales-orders-nav-btn sales-orders-nav-btn-primary"
+              onClick={() => router.push('/admin/offline-orders')}
+            >
+              进入主站管理后台
+            </button>
             <button
               type="button"
               className="sales-orders-new"
@@ -935,7 +950,8 @@ export default function SalesOrdersPage() {
           padding: 2rem 1rem;
           background: radial-gradient(circle at top, #e0f2fe, #f9fafb);
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
         }
         .sales-orders-card {
           width: 100%;
@@ -956,6 +972,37 @@ export default function SalesOrdersPage() {
           display: flex;
           gap: 0.75rem;
           align-items: center;
+          flex-wrap: wrap;
+        }
+        /* [2025-01-31 20:35:00] 顶部导航按钮样式 - 确保显示和圆角 */
+        .sales-orders-nav-btn {
+          border: none !important;
+          border-radius: 999px !important;
+          padding: 0.6rem 1.3rem !important;
+          font-size: 0.9rem !important;
+          font-weight: 600 !important;
+          cursor: pointer !important;
+          transition: all 0.2s !important;
+          white-space: nowrap !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+        .sales-orders-nav-btn-primary {
+          color: #2563eb !important;
+          background: #eff6ff !important;
+        }
+        .sales-orders-nav-btn-primary:hover {
+          background: #dbeafe !important;
+          color: #1d4ed8 !important;
+        }
+        .sales-orders-nav-btn-secondary {
+          color: #4b5563 !important;
+          background: #f3f4f6 !important;
+        }
+        .sales-orders-nav-btn-secondary:hover {
+          background: #e5e7eb !important;
+          color: #1f2937 !important;
         }
         /* [2025-01-27 13:50:00] Tab样式 */
         .sales-orders-tabs {
@@ -1209,7 +1256,20 @@ export default function SalesOrdersPage() {
           border-color: #2563eb;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
-        /* [2025-12-07 08:15:00] StatusSelector 样式已迁移到 Tailwind CSS，移除旧样式 */
+        /* [2025-12-07 08:15:00] StatusSelector 样式已迁移到 Tailwind CSS */
+        /* [2025-01-31 20:40:00] 添加 fallback 样式确保圆角正确显示 */
+        button[aria-haspopup="listbox"] {
+          border-radius: 0.75rem !important; /* rounded-xl fallback */
+        }
+        button[aria-haspopup="listbox"] > span[class*="rounded-full"] {
+          border-radius: 9999px !important; /* rounded-full fallback */
+        }
+        ul[role="listbox"] {
+          border-radius: 0.75rem !important; /* rounded-xl fallback */
+        }
+        ul[role="listbox"] > li {
+          border-radius: 0.5rem !important; /* rounded-lg fallback */
+        }
         .tag-active-rush {
           background: #fef3c7;
           color: #b45309;

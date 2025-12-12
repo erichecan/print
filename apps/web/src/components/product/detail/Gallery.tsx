@@ -5,7 +5,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
+import SafeImage from '@/components/SafeImage';
 import styles from './Gallery.module.css';
 
 interface GalleryImage {
@@ -67,7 +67,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
                 aria-label={`View image ${index + 1}: ${img.alt}`}
                 aria-pressed={index === selectedIndex}
               >
-                <Image
+                <SafeImage
                   src={img.thumbnail || img.url}
                   alt={img.alt}
                   width={80}
@@ -94,7 +94,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
               }}
             >
               {currentImage && (
-                <Image
+                <SafeImage
                   src={currentImage.url}
                   alt={currentImage.alt}
                   width={800}
@@ -150,7 +150,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
           
           <div className={styles.galleryLightboxContent} onClick={(e) => e.stopPropagation()}>
             {currentImage && (
-              <Image
+              <SafeImage
                 src={currentImage.url}
                 alt={currentImage.alt}
                 width={1200}

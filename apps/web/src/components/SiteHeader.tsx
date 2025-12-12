@@ -13,6 +13,7 @@ import useSWR from 'swr';
 import { contentApi, NavigationMenuItem } from '@/lib/api';
 import { CartIcon } from '@/components/CartIcon';
 import { useAuth } from '@/contexts/AuthContext'; // [2025-01-28 07:30:00] 使用认证状态
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:50:00] 使用路由映射
 
 export function SiteHeader() {
   const router = useRouter();
@@ -176,7 +177,7 @@ export function SiteHeader() {
             {authLoading ? (
               <span style={{ opacity: 0.6 }}>Loading...</span>
             ) : user ? (
-              <Link href="/account" className="mobile-account-link" aria-label="My Account">
+              <Link href={ACCOUNT_ROUTES.dashboard} className="mobile-account-link" aria-label="My Account">
                 <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
               </Link>
             ) : (
@@ -222,7 +223,7 @@ export function SiteHeader() {
               {authLoading ? (
                 <span style={{ opacity: 0.6 }}>Loading...</span>
               ) : user ? (
-                <Link href="/account" className="primary-nav__account">
+                <Link href={ACCOUNT_ROUTES.dashboard} className="primary-nav__account">
                   <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
                   <span>My Account</span>
                 </Link>
@@ -309,7 +310,7 @@ export function SiteHeader() {
             <span style={{ opacity: 0.6 }}>Loading...</span>
           ) : user ? (
             <Link 
-              href="/account" 
+              href={ACCOUNT_ROUTES.dashboard} 
               className="mobile-nav__account-link"
               onClick={() => setIsMobileMenuOpen(false)}
             >

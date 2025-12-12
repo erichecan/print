@@ -33,7 +33,21 @@ RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ "$NEXT_PUBLIC_API_URL" = "" ]; then \
     fi && \
     echo "✅ 环境变量检查通过"
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# [2025-01-27 20:50:00] 复制 apps/web 目录内容（构建上下文现在是项目根目录）
+COPY apps/web/package*.json ./
+COPY apps/web/next.config.mjs ./
+COPY apps/web/tsconfig.json ./
+# [2025-12-19] 添加Tailwind和PostCSS配置文件，确保CSS正确编译
+COPY apps/web/tailwind.config.js ./tailwind.config.js
+COPY apps/web/postcss.config.js ./postcss.config.js
+COPY apps/web/public ./public
+COPY apps/web/src ./src
+# [2025-01-27 20:50:00] 复制 Prisma schema（从项目根目录）
+COPY prisma ./prisma
+# [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
+# 使用与 @prisma/client 匹配的 prisma 版本（5.22.0）
+RUN npm install -g prisma@5.22.0
+RUN prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-alpine AS runner

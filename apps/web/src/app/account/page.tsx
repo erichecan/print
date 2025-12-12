@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, ordersApi, designsApi, type UserProfile } from '@/lib/api';
+import { ACCOUNT_ROUTES } from '@/lib/routes/account';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -379,7 +380,7 @@ export default function AccountPage() {
               You have {designsCount} saved design{designsCount !== 1 ? 's' : ''}.
             </p>
             <Link
-              href="/account/designs"
+              href={ACCOUNT_ROUTES.designs}
               style={{
                 display: 'inline-block',
                 marginTop: '16px',
@@ -518,7 +519,7 @@ export default function AccountPage() {
               You have {ordersCount} order{ordersCount !== 1 ? 's' : ''}.
             </p>
             <Link
-              href="/account/orders"
+              href={ACCOUNT_ROUTES.orders}
               style={{
                 display: 'inline-block',
                 marginTop: '16px',

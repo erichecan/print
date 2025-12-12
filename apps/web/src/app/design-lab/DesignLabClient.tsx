@@ -1612,7 +1612,23 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const canvas = fabricCanvasRef.current;
           
           texts.forEach((textData, textIndex) => {
+            // [2025-01-27 20:30:00] 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
             const textObj = new fabric.IText(textData.text, {
+              // [2025-01-27 20:30:00] 交互属性：确保对象可选择、可编辑、有控制点和边框
+              selectable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+              // [2025-01-27 20:30:00] 锁定属性：允许所有变换操作
+              lockRotation: false,
+              lockScalingX: false,
+              lockScalingY: false,
+              lockUniScaling: false,
+              lockMovementX: false,
+              lockMovementY: false,
+              // [2025-01-27 20:30:00] 变换中心：使用中心点进行缩放和旋转
+              centeredScaling: true,
+              centeredRotation: true,
               left: CANVAS_WIDTH / 2,
               top: CANVAS_HEIGHT / 2 + (textIndex * 60),
               fontSize: textData.fontSize,
@@ -1848,7 +1864,23 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       
       // [2025-01-30 17:50:00] 创建 Fabric IText 对象
       // [2025-01-30 20:55:00] 修复：设置 zIndex 确保在文字图层（最上层）
+      // [2025-01-27 20:30:00] 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
       const textObj = new fabric.IText(text, {
+        // [2025-01-27 20:30:00] 交互属性：确保对象可选择、可编辑、有控制点和边框
+        selectable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: true,
+        // [2025-01-27 20:30:00] 锁定属性：允许所有变换操作
+        lockRotation: false,
+        lockScalingX: false,
+        lockScalingY: false,
+        lockUniScaling: false,
+        lockMovementX: false,
+        lockMovementY: false,
+        // [2025-01-27 20:30:00] 变换中心：使用中心点进行缩放和旋转
+        centeredScaling: true,
+        centeredRotation: true,
         data: {
           layerType: 'text',
           zIndex: 20, // [2025-01-30 20:55:00] 文字图层 zIndex 为 20（最上层，高于上传图层的 10）
@@ -1943,7 +1975,24 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     imgElement.onload = () => {
       try {
         // [2025-01-30 18:10:00] 创建 Fabric Image 对象
-        const fabricImage = new fabric.Image(imgElement);
+        // [2025-01-27 20:30:00] 修复：添加完整的交互属性，确保艺术素材对象可以拖动、缩放、旋转
+        const fabricImage = new fabric.Image(imgElement, {
+          // [2025-01-27 20:30:00] 交互属性：确保对象可选择、可编辑、有控制点和边框
+          selectable: true,
+          evented: true,
+          hasControls: true,
+          hasBorders: true,
+          // [2025-01-27 20:30:00] 锁定属性：允许所有变换操作
+          lockRotation: false,
+          lockScalingX: false,
+          lockScalingY: false,
+          lockUniScaling: false,
+          lockMovementX: false,
+          lockMovementY: false,
+          // [2025-01-27 20:30:00] 变换中心：使用中心点进行缩放和旋转
+          centeredScaling: true,
+          centeredRotation: true,
+        });
         
         // [2025-01-30 18:10:00] 智能缩放：缩放到画布的 30%
         const SCALE_RATIO = 0.3;
@@ -1965,7 +2014,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           top: CANVAS_HEIGHT / 2,
           originX: 'center',
           originY: 'center',
-          name: `art_${Date.now()}` // [2025-01-30 18:10:00] 使用 art_ 前缀标识艺术素材
+          name: `art_${Date.now()}`, // [2025-01-30 18:10:00] 使用 art_ 前缀标识艺术素材
+          data: {
+            layerType: 'art',
+            zIndex: 15, // [2025-01-27 20:30:00] 艺术素材图层 zIndex 为 15（介于上传图层的 10 和文字图层的 20 之间）
+          },
         });
         
         const canvas = fabricCanvasRef.current;
@@ -2137,10 +2190,21 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           // [2025-01-30 20:55:00] 修复：设置 zIndex 确保在上传图层（高于产品图片）
           const fabricImage = new fabric.Image(imgElement, {
             // [2025-01-30 22:30:00] 确保图片对象是可选择和可编辑的
+            // [2025-01-27 20:30:00] 修复：添加完整的交互属性，确保图片对象可以拖动、缩放、旋转
             selectable: true,
             evented: true,
             hasControls: true,
             hasBorders: true,
+            // [2025-01-27 20:30:00] 锁定属性：允许所有变换操作
+            lockRotation: false,
+            lockScalingX: false,
+            lockScalingY: false,
+            lockUniScaling: false,
+            lockMovementX: false,
+            lockMovementY: false,
+            // [2025-01-27 20:30:00] 变换中心：使用中心点进行缩放和旋转
+            centeredScaling: true,
+            centeredRotation: true,
             data: {
               layerType: 'upload',
               zIndex: 10, // [2025-01-30 20:55:00] 上传图层 zIndex 为 10（高于产品图片的 0）

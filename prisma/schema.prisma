@@ -33,14 +33,14 @@ model User {
 
 // [2025-12-08] Design Lab Analytics Events
 model DesignLabAnalyticsEvent {
-  id         String   @id @default(uuid())
-  userId     String?  @map("user_id")
-  sessionId  String   @map("session_id")
-  eventType  String   @map("event_type")
-  designId   String?  @map("design_id")
-  metadata   Json?
-  timestamp  DateTime
-  createdAt  DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  sessionId String   @map("session_id")
+  eventType String   @map("event_type")
+  designId  String?  @map("design_id")
+  metadata  Json?
+  timestamp DateTime
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([sessionId])
@@ -51,12 +51,12 @@ model DesignLabAnalyticsEvent {
 
 // [2025-12-08] Design Lab Upload Ratings
 model DesignLabUploadRating {
-  id        String    @id @default(uuid())
-  userId    String?   @map("user_id")
-  uploadId  String    @map("upload_id")
-  rating    Int       // 1-5
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  uploadId  String   @map("upload_id")
+  rating    Int // 1-5
   comment   String?
-  createdAt DateTime  @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
   @@index([uploadId])
@@ -310,34 +310,34 @@ model CartItem {
 }
 
 model Order {
-  id                String           @id @default(uuid())
-  orderNumber       String           @unique @map("order_number")
-  userId            String?          @map("user_id")
-  email             String
-  status            OrderStatus      @default(PENDING)
-  currency          String           @default("CAD")
-  subtotal          Decimal          @db.Decimal(10, 2)
-  shippingCost      Decimal          @default(0) @map("shipping_cost") @db.Decimal(10, 2)
-  tax               Decimal          @default(0) @db.Decimal(10, 2)
-  discount          Decimal          @default(0) @db.Decimal(10, 2)
-  total             Decimal          @db.Decimal(10, 2)
-  paymentStatus     PaymentStatus    @default(PENDING) @map("payment_status")
-  paymentIntentId   String?          @unique @map("payment_intent_id")
-  balanceTransactionId String?       @map("balance_transaction_id") // [2025-01-29 14:30:00] Stripe balance transaction ID
-  paymentFee        Decimal?         @map("payment_fee") @db.Decimal(10, 2) // [2025-01-29 14:30:00] Stripe payment fee in CAD
-  shippingAddress   Json             @map("shipping_address")
-  billingAddress    Json             @map("billing_address")
-  trackingNumber    String?          @map("tracking_number")
-  carrier           String?
-  estimatedDelivery DateTime?        @map("estimated_delivery")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  orderCoupons      OrderCoupon[]
-  items             OrderItem[]
-  orderPromotions   OrderPromotion[]
-  user              User?            @relation(fields: [userId], references: [id])
-  projects          Project[]
-  shipments         Shipment[]
+  id                   String           @id @default(uuid())
+  orderNumber          String           @unique @map("order_number")
+  userId               String?          @map("user_id")
+  email                String
+  status               OrderStatus      @default(PENDING)
+  currency             String           @default("CAD")
+  subtotal             Decimal          @db.Decimal(10, 2)
+  shippingCost         Decimal          @default(0) @map("shipping_cost") @db.Decimal(10, 2)
+  tax                  Decimal          @default(0) @db.Decimal(10, 2)
+  discount             Decimal          @default(0) @db.Decimal(10, 2)
+  total                Decimal          @db.Decimal(10, 2)
+  paymentStatus        PaymentStatus    @default(PENDING) @map("payment_status")
+  paymentIntentId      String?          @unique @map("payment_intent_id")
+  balanceTransactionId String?          @map("balance_transaction_id") // [2025-01-29 14:30:00] Stripe balance transaction ID
+  paymentFee           Decimal?         @map("payment_fee") @db.Decimal(10, 2) // [2025-01-29 14:30:00] Stripe payment fee in CAD
+  shippingAddress      Json             @map("shipping_address")
+  billingAddress       Json             @map("billing_address")
+  trackingNumber       String?          @map("tracking_number")
+  carrier              String?
+  estimatedDelivery    DateTime?        @map("estimated_delivery")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+  orderCoupons         OrderCoupon[]
+  items                OrderItem[]
+  orderPromotions      OrderPromotion[]
+  user                 User?            @relation(fields: [userId], references: [id])
+  projects             Project[]
+  shipments            Shipment[]
 
   @@index([userId])
   @@index([orderNumber])
@@ -350,18 +350,56 @@ model Order {
 }
 
 model OrderItem {
-  id            String   @id @default(uuid())
-  orderId       String   @map("order_id")
-  variantId     String   @map("variant_id")
+  id            String           @id @default(uuid())
+  orderId       String           @map("order_id")
+  variantId     String           @map("variant_id")
   quantity      Int
-  priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
-  createdAt     DateTime @default(now()) @map("created_at")
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  variant       Variant  @relation(fields: [variantId], references: [id])
+  priceSnapshot Decimal          @map("price_snapshot") @db.Decimal(10, 2)
+  createdAt     DateTime         @default(now()) @map("created_at")
+  order         Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant       Variant          @relation(fields: [variantId], references: [id])
+  colors        OrderItemColor[] // [2025-01-31 19:50:00] 颜色级别印刷配置
 
   @@index([orderId])
   @@index([variantId])
   @@map("order_items")
+}
+
+// [2025-01-31 19:50:00] 订单项颜色级别印刷配置模型
+model OrderItemColor {
+  id                 Int                          @id @default(autoincrement())
+  orderItemId        String                       @map("order_item_id")
+  colorCode          String                       @map("color_code")
+  colorName          String                       @map("color_name")
+  allowSizeOverrides Boolean                      @default(false) @map("allow_size_overrides")
+  printConfigs       Json                         @default("[]") @map("print_configs")
+  sizeBreakdown      Json                         @default("[]") @map("size_breakdown")
+  createdAt          DateTime                     @default(now()) @map("created_at")
+  updatedAt          DateTime                     @updatedAt @map("updated_at")
+  orderItem          OrderItem                    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  sizeOverrides      OrderItemColorSizeOverride[]
+
+  @@unique([orderItemId, colorCode])
+  @@index([orderItemId])
+  @@index([colorCode])
+  @@map("order_item_colors")
+}
+
+// [2025-01-31 19:50:00] 订单项颜色尺码覆盖模型（高级模式）
+model OrderItemColorSizeOverride {
+  id                   Int            @id @default(autoincrement())
+  orderItemColorId     Int            @map("order_item_color_id")
+  sizeCode             String         @map("size_code")
+  overridePrintConfigs Json           @map("override_print_configs")
+  reason               String?
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+  color                OrderItemColor @relation(fields: [orderItemColorId], references: [id], onDelete: Cascade)
+
+  @@unique([orderItemColorId, sizeCode])
+  @@index([orderItemColorId])
+  @@index([sizeCode])
+  @@map("order_item_color_size_overrides")
 }
 
 model Shipment {

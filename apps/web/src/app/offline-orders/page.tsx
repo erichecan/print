@@ -1,11 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, ChangeEvent, FormEvent, DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent } from 'react'; // [2025-12-19] 添加useRef用于定位下拉菜单，useMemo用于颜色组初始化
+import { createPortal } from 'react-dom'; // [2025-12-19] 使用Portal将下拉菜单渲染到body，彻底解决遮挡问题
 import { useRouter } from 'next/navigation';
+import Link from 'next/link'; // [2025-01-31 20:15:00] 添加 Link 用于导航
 import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
 import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct } from '@/lib/api'; // [2025-12-07 08:00:00] 简化的产品 API
 import useSWR from 'swr'; // [2025-01-27 18:00:00] 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // [2025-01-27 20:00:00] 引入翻译
+import { OrderItemColorGroup } from '@/types/order'; // [2025-12-19] 导入颜色组类型
+import { ProductItemColorConfig } from './components/ProductItemColorConfig'; // [2025-12-19] 导入产品项颜色配置组件
+import { validateColorGroups } from '@/lib/services/orderItemPricing'; // [2025-12-19] 导入验证函数
+import { ColorGroupCardIntegrated } from './components/ColorGroupCardIntegrated'; // [2025-12-19] 导入整合的颜色组卡片组件
+import { AddColorModal } from './components/AddColorModal'; // [2025-12-19] 导入添加颜色弹窗组件
+import { convertProductColorsToColorGroups, convertColorGroupToProductColor } from './components/utils/colorGroupConverter'; // [2025-12-19] 导入转换函数
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -106,11 +114,13 @@ type FormState = {
   
   // 第一步：产品配置
   productItems: ProductItem[]; // 产品列表
-  globalPrintPositions: PrintPosition[]; // 总体印刷位置
+  globalPrintPositions: PrintPosition[]; // 总体印刷位置（保留用于向后兼容）
   orderNotes: string; // 订单备注（非必填）
   dstFileFee: number; // DST File Fee（订单级别，仅当有Embroidery时）
   globalUnitPrice: number; // [2025-12-08 05:25:00] 全局单价
   globalQuantitySubtotal: number; // [2025-12-08 05:25:00] 全局件数小计
+  // [2025-12-19] 按颜色分组的印刷位配置（新功能）
+  colorGroupsByProduct: Record<string, import('@/types/order').OrderItemColorGroup[]>; // 产品ID -> 颜色组列表
   
   // 第二步：客户信息
   contactName: string;
@@ -153,6 +163,7 @@ const initialFormState: FormState = {
   dstFileFee: 0,
   globalUnitPrice: 0, // [2025-12-08 05:25:00] 全局单价
   globalQuantitySubtotal: 0, // [2025-12-08 05:25:00] 全局件数小计
+  colorGroupsByProduct: {}, // [2025-12-19] 按颜色分组的印刷位配置
   contactName: '',
   email: '',
   phone: '',
@@ -193,6 +204,39 @@ function UserMenu() {
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
+  const buttonRef = useRef<HTMLButtonElement>(null); // [2025-12-19] 用于获取按钮位置以计算菜单位置
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 }); // [2025-12-19] 菜单位置状态
+  const [mounted, setMounted] = useState(false); // [2025-12-19] Portal挂载状态
+
+  // [2025-12-19] 客户端挂载后启用Portal
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // [2025-12-19] 计算菜单位置
+  useEffect(() => {
+    if (showMenu && buttonRef.current) {
+      const updatePosition = () => {
+        if (buttonRef.current) {
+          const rect = buttonRef.current.getBoundingClientRect();
+          setMenuPosition({
+            top: rect.bottom + 8, // mt-2 = 8px
+            right: window.innerWidth - rect.right, // 从右边距计算
+          });
+        }
+      };
+      
+      updatePosition();
+      // [2025-12-19] 监听滚动和窗口大小变化，实时更新位置
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [showMenu]);
 
   useEffect(() => {
     setIsClient(true);
@@ -243,9 +287,62 @@ function UserMenu() {
     ? `${user.firstName} ${user.lastName}`.trim()
     : user.email?.split('@')[0] || '用户';
 
+  // [2025-12-19] 下拉菜单内容（使用Portal渲染到body）
+  const menuContent = showMenu && mounted ? (
+    <>
+      <div 
+        className="fixed inset-0" // [2025-12-19] 遮罩层
+        style={{ zIndex: 99998 }} // [2025-12-19] 使用内联样式确保z-index足够高
+        onClick={() => setShowMenu(false)}
+      />
+      <div 
+        className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" // [2025-12-19] 使用fixed定位，避免被main区域遮挡
+        style={{ 
+          top: `${menuPosition.top}px`, 
+          right: `${menuPosition.right}px`,
+          zIndex: 99999, // [2025-12-19] 使用内联样式设置极高的z-index，确保菜单始终在最上层
+          position: 'fixed', // [2025-12-19] 明确指定position，确保创建新的堆叠上下文
+        }}
+      >
+        <div className="px-4 py-2 border-b border-gray-200">
+          <p className="text-sm font-medium text-gray-900">{userName}</p>
+          <p className="text-xs text-gray-500 truncate">{user.email}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMenu(false);
+            router.push('/offline-orders/sales/orders');
+          }}
+          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          订单管理
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setShowMenu(false);
+            router.push('/account/settings');
+          }}
+          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          修改密码
+        </button>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200"
+        >
+          退出登录
+        </button>
+      </div>
+    </>
+  ) : null;
+
   return (
     <div className="relative">
       <button
+        ref={buttonRef} // [2025-12-19] 添加ref用于定位菜单
         type="button"
         onClick={() => setShowMenu(!showMenu)}
         className="flex items-center gap-2 px-3 py-2 bg-white/90 rounded-lg shadow-md hover:bg-white transition-colors"
@@ -257,47 +354,8 @@ function UserMenu() {
         <span className="text-sm font-medium text-gray-700 hidden sm:inline">{userName}</span>
       </button>
       
-      {showMenu && (
-        <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setShowMenu(false)}
-          />
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
-            <div className="px-4 py-2 border-b border-gray-200">
-              <p className="text-sm font-medium text-gray-900">{userName}</p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMenu(false);
-                router.push('/offline-orders/sales/orders');
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              订单管理
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowMenu(false);
-                router.push('/account/settings');
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              修改密码
-            </button>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200"
-            >
-              退出登录
-            </button>
-          </div>
-        </>
-      )}
+      {/* [2025-12-19] 使用Portal将下拉菜单渲染到document.body，完全脱离DOM层级，彻底解决遮挡问题 */}
+      {mounted && typeof document !== 'undefined' && createPortal(menuContent, document.body)}
     </div>
   );
 }
@@ -312,6 +370,13 @@ export default function OfflineOrdersIntakePage() {
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [files, setFiles] = useState<File[]>([]);
   const [currentStep, setCurrentStep] = useState<number>(1); // [2025-01-27 18:00:00] 当前步骤
+  // [2025-12-19] 添加颜色弹窗状态
+  const [addColorModal, setAddColorModal] = useState<{
+    isOpen: boolean;
+    itemId: string;
+    colorId: string;
+    colorName: string;
+  } | null>(null);
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({
     type: 'idle',
   });
@@ -534,8 +599,8 @@ export default function OfflineOrdersIntakePage() {
     }));
   }, []);
 
-  // [2025-12-07 02:30:00] PRD v2.0: 为产品添加颜色
-  const addColorToProduct = useCallback((itemId: string, colorId: string, colorName: string) => {
+  // [2025-12-19] PRD v2.0: 为产品添加颜色（支持继承选项）
+  const addColorToProduct = useCallback((itemId: string, colorId: string, colorName: string, inheritFromPrev: boolean = false) => {
     setFormState((prev) => {
       const newItems = prev.productItems.map((item) => {
         if (item.id === itemId) {
@@ -543,6 +608,24 @@ export default function OfflineOrdersIntakePage() {
           if (item.colors.some((c) => c.colorId === colorId)) {
             return item;
           }
+          
+          // [2025-12-19] 获取上一颜色的positions（如果选择继承）
+          let initialPositions: OrderItemColorGroup['positions'] = [];
+          let inheritsFromColorId: string | null = null;
+          
+          if (inheritFromPrev && item.colors.length > 0) {
+            const lastColor = item.colors[item.colors.length - 1];
+            const lastColorGroups = prev.colorGroupsByProduct[itemId] || [];
+            const lastGroup = lastColorGroups.find(g => g.colorCode === lastColor.colorId);
+            if (lastGroup && lastGroup.positions.length > 0) {
+              initialPositions = lastGroup.positions.map(pos => ({
+                ...pos,
+                designAssetId: pos.designAssetId || null // 保留引用，不复制文件
+              }));
+              inheritsFromColorId = lastGroup.id;
+            }
+          }
+          
           const newColor: ProductColor = {
             colorId,
             colorName,
@@ -551,6 +634,17 @@ export default function OfflineOrdersIntakePage() {
             totalQuantity: 0,
             totalPrice: 0,
           };
+          
+          // [2025-12-19] 同时创建颜色组配置
+          const newColorGroup: OrderItemColorGroup = {
+            id: `${colorId}-${Date.now()}`,
+            colorCode: colorId,
+            colorName,
+            quantities: {},
+            positions: initialPositions,
+            inheritsFromColorId
+          };
+          
           return {
             ...item,
             colors: [...item.colors, newColor],
@@ -558,6 +652,53 @@ export default function OfflineOrdersIntakePage() {
         }
         return item;
       });
+      
+      // [2025-12-19] 更新colorGroupsByProduct
+      const item = newItems.find(i => i.id === itemId);
+      if (item) {
+        const lastColor = item.colors[item.colors.length - 1];
+        const newColorGroup: OrderItemColorGroup = {
+          id: `${colorId}-${Date.now()}`,
+          colorCode: colorId,
+          colorName,
+          quantities: {},
+          positions: inheritFromPrev && item.colors.length > 1
+            ? (() => {
+                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+                const prevColor = item.colors[item.colors.length - 2];
+                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+                if (prevGroup && prevGroup.positions.length > 0) {
+                  return prevGroup.positions.map(pos => ({
+                    ...pos,
+                    designAssetId: pos.designAssetId || null
+                  }));
+                }
+                return [];
+              })()
+            : [],
+          inheritsFromColorId: inheritFromPrev && item.colors.length > 1
+            ? (() => {
+                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+                const prevColor = item.colors[item.colors.length - 2];
+                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+                return prevGroup?.id || null;
+              })()
+            : null
+        };
+        
+        return {
+          ...prev,
+          productItems: newItems,
+          colorGroupsByProduct: {
+            ...prev.colorGroupsByProduct,
+            [itemId]: [
+              ...(prev.colorGroupsByProduct[itemId] || []),
+              newColorGroup
+            ]
+          }
+        };
+      }
+      
       return { ...prev, productItems: newItems };
     });
   }, []);
@@ -711,39 +852,7 @@ export default function OfflineOrdersIntakePage() {
   }, [files, t]);
 
   // [2025-01-27 18:00:00] 第二步：印刷位置管理方法
-  const updateSideCount = useCallback((count: number) => {
-    if (count < 1) count = 1;
-    if (count > 10) count = 10; // 限制最多10个位置
-    setFormState((prev) => {
-      const currentPositions = prev.printPositions || [];
-      const newPositions: PrintPosition[] = [];
-      for (let i = 0; i < count; i++) {
-        if (currentPositions[i]) {
-          newPositions.push(currentPositions[i]);
-        } else {
-          newPositions.push({ position: '', width: '', height: '', notes: '' });
-        }
-      }
-      return {
-        ...prev,
-        sideCount: count,
-        printPositions: newPositions,
-      };
-    });
-  }, []);
-
-  const updatePrintPosition = useCallback((index: number, field: keyof PrintPosition, value: string) => {
-    setFormState((prev) => {
-      const newPositions = [...prev.printPositions];
-      if (newPositions[index]) {
-        newPositions[index] = { ...newPositions[index], [field]: value };
-      }
-      return {
-        ...prev,
-        printPositions: newPositions,
-      };
-    });
-  }, []);
+  // [2025-12-19] updateSideCount和updatePrintPosition已移除，印刷位置现在由颜色卡片管理
 
   // [2025-12-07 02:30:00] PRD v2.0: 步骤验证
   const validateStep = useCallback((step: number): boolean => {
@@ -775,75 +884,64 @@ export default function OfflineOrdersIntakePage() {
       
       // [2025-12-08 05:15:00] 订单备注改为非必填，移除验证
       
-      // 验证印刷位置：Height或Width至少一个
-      if (formState.globalPrintPositions && formState.globalPrintPositions.length > 0) {
-        for (let i = 0; i < formState.globalPrintPositions.length; i++) {
-          const pos = formState.globalPrintPositions[i];
-          const width = parseFloat(pos.width || '0');
-          const height = parseFloat(pos.height || '0');
-          if ((!pos.width || width <= 0) && (!pos.height || height <= 0)) {
-            setFieldErrors({ [`globalPrintPosition-${i}`]: t('errorPrintPositionSize') || '印刷位置：Height或Width至少填写一个' });
-            setStatus({ type: 'error', message: t('errorPrintPositionSize') || '印刷位置：Height或Width至少填写一个' });
-            return false;
-          }
-        }
-      }
+      // [2025-12-19] 印刷位置验证已移至步骤3（颜色组配置验证），此处不再验证globalPrintPositions
       
       return true;
     }
     
-    // [2025-12-07 02:30:00] PRD v2.0: 第二步验证（客户信息和Invoice）
+    // [2025-12-19] PRD v2.0: 第二步验证（客户信息和Invoice - 全部改为非必填）
     if (step === 2) {
-      // 客户信息必填：联系人姓名、邮箱
-      if (!formState.contactName.trim()) {
-        setFieldErrors({ contactName: t('errorContactName') || '联系人姓名是必填项' });
-        setStatus({ type: 'error', message: t('errorContactName') || '联系人姓名是必填项' });
-        return false;
+      // [2025-12-19] 所有字段都改为非必填，只保留格式验证（如果填写了的话）
+      // 邮箱格式验证（仅在填写了邮箱时验证）
+      if (formState.email.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formState.email)) {
+          setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
+          setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
+          return false;
+        }
       }
-      if (!formState.email.trim()) {
-        setFieldErrors({ email: t('errorEmail') || '邮箱是必填项' });
-        setStatus({ type: 'error', message: t('errorEmail') || '邮箱是必填项' });
-        return false;
-      }
-      // 邮箱格式验证
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formState.email)) {
-        setFieldErrors({ email: t('errorEmailFormat') || '邮箱格式不正确' });
-        setStatus({ type: 'error', message: t('errorEmailFormat') || '邮箱格式不正确' });
+      
+      // [2025-12-19] 所有Invoice相关字段都改为非必填，不再进行验证
+      return true;
+    }
+    // [2025-12-19] PRD v2.0: 第三步验证（印刷位配置）
+    if (step === 3) {
+      // [2025-12-19] 验证每个产品项的颜色组配置
+      const itemsWithColors = formState.productItems.filter(item => item.colors.length > 0);
+      
+      if (itemsWithColors.length === 0) {
+        setStatus({ type: 'error', message: '请先在步骤1中添加产品并选择颜色' });
         return false;
       }
       
-      // 如果选择Invoice，Invoice信息和支付信息必填
-      // [2025-12-08 05:15:00] 修改：companyName 改为非必填
-      if (formState.requiresInvoice) {
-        if (!formState.invoiceInfo.taxNumber.trim()) {
-          setFieldErrors({ taxNumber: t('errorTaxNumber') || '税号是必填项' });
-          setStatus({ type: 'error', message: t('errorTaxNumber') || '税号是必填项' });
-          return false;
+      // [2025-12-19] 验证每个产品的颜色组配置
+      for (const item of itemsWithColors) {
+        const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+        
+        // [2025-12-19] 如果没有颜色组配置，尝试从colors转换
+        if (colorGroups.length === 0 && item.colors.length > 0) {
+          // [2025-12-19] 颜色组会在renderStep3中自动初始化，这里只验证已存在的
+          continue;
         }
-        if (!formState.invoiceInfo.address.trim()) {
-          setFieldErrors({ address: t('errorAddress') || '发票地址是必填项' });
-          setStatus({ type: 'error', message: t('errorAddress') || '发票地址是必填项' });
-          return false;
-        }
-        // 支付信息必填（Invoice时）
-        if (!formState.invoiceInfo.paymentMethod) {
-          setFieldErrors({ paymentMethod: t('errorPaymentMethod') || '支付方式是必填项' });
-          setStatus({ type: 'error', message: t('errorPaymentMethod') || '支付方式是必填项' });
-          return false;
-        }
-        // 如果选择Etransfer，Reference Number必填
-        if (formState.invoiceInfo.paymentMethod === 'etrans' && !formState.invoiceInfo.referenceNumber?.trim()) {
-          setFieldErrors({ referenceNumber: t('errorReferenceNumber') || 'Reference Number是必填项' });
-          setStatus({ type: 'error', message: t('errorReferenceNumber') || 'Reference Number是必填项' });
+        
+        // [2025-12-19] 使用定价服务的验证函数
+        const validation = validateColorGroups(colorGroups);
+        
+        if (!validation.valid) {
+          setFieldErrors(prev => ({
+            ...prev,
+            [`printPositions-${item.id}`]: validation.errors.join('; ')
+          }));
+          setStatus({ 
+            type: 'error', 
+            message: `产品"${item.productName}"的印刷位配置有误：${validation.errors.join('; ')}` 
+          });
           return false;
         }
       }
-      return true;
-    }
-    // [2025-12-07 02:00:00] PRD v2.0: 第三步验证（文件上传，非必填，无需验证）
-    if (step === 3) {
-      // 文件上传是非必填的，可以直接通过
+      
+      // [2025-12-19] 文件上传是非必填的，无需验证
       return true;
     }
     return true;
@@ -1010,32 +1108,29 @@ export default function OfflineOrdersIntakePage() {
         payload.append('company', formState.requiresInvoice && formState.invoiceInfo.companyName ? formState.invoiceInfo.companyName.trim() : formState.company || '');
         
         // [2025-12-06] PRD v2.0: 聚合印刷位置（全局 + 产品级别）
-        const allPrintPositions: Array<PrintPosition & { productItemId?: string; index?: number }> = [];
+        // [2025-12-19] 从colorGroupsByProduct中提取所有印刷位置
+        const allPrintPositions: Array<PrintPosition & { productItemId?: string; colorGroupId?: string; index?: number }> = [];
         
-        // 添加全局印刷位置（如果存在）
-        const globalPositions = formState.globalPrintPositions || [];
-        globalPositions.forEach((pos, index) => {
-          if (pos.position && (pos.width || pos.height)) {
-            allPrintPositions.push({
-                  ...pos,
-                  index,
-            });
-          }
-        });
-        
-        // [2025-12-07 02:30:00] PRD v2.0: 添加产品级别的印刷位置（从 item.printPositions 获取）
+        // [2025-12-19] 遍历所有产品的颜色组，提取印刷位置
         formState.productItems.forEach((item) => {
-          if (item.printPositions && item.printPositions.length > 0) {
-            item.printPositions.forEach((pos, index) => {
-              if (pos.position && (pos.width || pos.height)) {
+          const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+          colorGroups.forEach((group) => {
+            group.positions.forEach((pos, index) => {
+              if (pos.enabled) {
+                // [2025-12-19] 将PositionConfig转换为PrintPosition格式（用于向后兼容）
                 allPrintPositions.push({
-                  ...pos,
+                  position: pos.positionKey,
+                  printingStyle: pos.method,
+                  width: pos.widthMm ? (pos.widthMm / 25.4).toFixed(2) : '', // 转换为inch
+                  height: pos.heightMm ? (pos.heightMm / 25.4).toFixed(2) : '', // 转换为inch
+                  notes: pos.notes || '',
                   productItemId: item.id,
+                  colorGroupId: group.id,
                   index,
                 });
               }
             });
-          }
+          });
         });
 
         // [2025-12-06] PRD v2.0: 构建配置数据（使用新数据结构）
@@ -1047,8 +1142,9 @@ export default function OfflineOrdersIntakePage() {
             orderNotes: formState.orderNotes, // [2025-12-06] 订单备注（PRD v2.0）
             dstFileFee: formState.dstFileFee || null, // [2025-12-06] DST File Fee
             productItems: formState.productItems, // 新数据结构
-            globalPrintPositions: formState.globalPrintPositions,
-            printPositions: allPrintPositions, // 聚合后的所有印刷位置
+            globalPrintPositions: [], // [2025-12-19] 已废弃，保留字段用于向后兼容
+            printPositions: allPrintPositions, // [2025-12-19] 从colorGroupsByProduct聚合的印刷位置（用于向后兼容）
+            colorGroupsByProduct: formState.colorGroupsByProduct, // [2025-12-19] 按颜色分组的印刷位配置（主要数据源）
             requiresInvoice: formState.requiresInvoice,
             invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null,
             paymentMethod: formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null,
@@ -1261,7 +1357,13 @@ export default function OfflineOrdersIntakePage() {
                             if (e.target.value) {
                               const color = availableColors.find(c => c.id === e.target.value);
                               if (color) {
-                                addColorToProduct(item.id, color.id, color.name);
+                                // [2025-12-19] 显示添加颜色弹窗
+                                setAddColorModal({
+                                  isOpen: true,
+                                  itemId: item.id,
+                                  colorId: color.id,
+                                  colorName: color.name
+                                });
                                 e.target.value = '';
                               }
                             }
@@ -1278,110 +1380,156 @@ export default function OfflineOrdersIntakePage() {
                       </div>
                     ) : null}
                     
+                    {/* [2025-12-19] 使用整合的颜色组卡片组件 */}
                     {item.colors.map((color, colorIndex) => {
-                      // 获取该颜色的可用尺码（从配置读取）
-                      const availableSizesForColor = color.availableSizes.length > 0 
-                        ? color.availableSizes 
-                        : ALL_SIZES; // 默认所有尺码可用
+                      // [2025-12-19] 获取或创建颜色组配置
+                      const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+                      const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
+                      
+                      // [2025-12-19] 如果颜色组不存在，从ProductColor转换
+                      let group: OrderItemColorGroup;
+                      if (colorGroup) {
+                        group = colorGroup;
+                      } else {
+                        // [2025-12-19] 从sizes数组转换为quantities对象
+                        const quantities: Record<string, number> = {};
+                        color.sizes.forEach(sizeQty => {
+                          quantities[sizeQty.size] = sizeQty.quantity;
+                        });
+                        
+                        group = {
+                          id: `${color.colorId}-${Date.now()}`,
+                          colorCode: color.colorId,
+                          colorName: color.colorName,
+                          quantities,
+                          positions: [],
+                          inheritsFromColorId: null
+                        };
+                        
+                        // [2025-12-19] 初始化颜色组到state
+                        setFormState(prev => ({
+                          ...prev,
+                          colorGroupsByProduct: {
+                            ...prev.colorGroupsByProduct,
+                            [item.id]: [
+                              ...(prev.colorGroupsByProduct[item.id] || []),
+                              group
+                            ]
+                          }
+                        }));
+                      }
+                      
+                      // [2025-12-19] 获取上一颜色组（用于继承）
+                      const previousGroup = colorIndex > 0
+                        ? colorGroups.find(g => g.colorCode === item.colors[colorIndex - 1].colorId)
+        : null;
 
                       return (
-                        <div key={color.colorId} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                          <div className="flex justify-between items-center mb-3">
-                            <h4 className="text-lg font-medium text-gray-800">
-                              {color.colorName}
-                            </h4>
-                            {item.colors.length > 1 && (
-                              <button
-                                type="button"
-                                className="text-red-600 hover:text-red-700 text-sm font-medium"
-                                onClick={() => removeColorFromProduct(item.id, color.colorId)}
-                              >
-                                {t('remove') || '移除颜色'}
-                              </button>
-                            )}
-                          </div>
-
-                          {/* 尺码输入区域 - PRD v2.0: YOUTH/ADULT分类、可用性控制、额外费用显示 */}
-                          {/* [2025-12-08 05:00:00] 修复：改为单行布局，隐藏数字输入框的上下箭头 */}
-                          <div className="space-y-3">
-                            {/* YOUTH尺码 */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
-                              <div className="flex flex-wrap gap-2">
-                                {YOUTH_SIZES.map((size) => {
-                                  const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
-                                  const sizeData = color.sizes.find(s => s.size === size);
-                                  const additionalFee = sizeFeeMap[size] || 0;
+                        <ColorGroupCardIntegrated
+                          key={color.colorId}
+                          group={group}
+                          productItemId={item.productId}
+                          availableSizes={color.availableSizes.length > 0 ? color.availableSizes : ALL_SIZES}
+                          sizeFeeMap={sizeFeeMap}
+                          isSizeAvailable={isSizeAvailable}
+                          onUpdate={(updated) => {
+                            // [2025-12-19] 更新颜色组配置
+                            setFormState(prev => {
+                              const groups = prev.colorGroupsByProduct[item.id] || [];
+                              const newGroups = groups.map(g => 
+                                g.id === updated.id ? updated : g
+                              );
+                              
+                              // [2025-12-19] 同步更新ProductColor的sizes
+                              const newItems = prev.productItems.map(productItem => {
+                                if (productItem.id === item.id) {
+                                  const newColors = productItem.colors.map(c => {
+                                    if (c.colorId === color.colorId) {
+                                      // [2025-12-19] 从quantities更新sizes
+                                      const newSizes = Object.entries(updated.quantities)
+                                        .filter(([_, qty]) => qty > 0)
+                                        .map(([size, qty]) => ({
+                                          size,
+                                          quantity: qty,
+                                          unitPrice: formState.globalUnitPrice || 0,
+                                          additionalFee: sizeFeeMap[size] || 0,
+                                          subtotal: qty * ((formState.globalUnitPrice || 0) + (sizeFeeMap[size] || 0))
+                                        }));
+                                      
+                                      return {
+                                        ...c,
+                                        sizes: newSizes,
+                                        totalQuantity: Object.values(updated.quantities).reduce((sum, qty) => sum + qty, 0)
+                                      };
+                                    }
+                                    return c;
+                                  });
                                   
-                                  return (
-                                    <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
-                                      <label className="block text-xs text-gray-600 mb-1">{size}</label>
-                                      {/* [2025-12-08 05:25:00] 移除单价输入框，只保留数量输入框 */}
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={sizeData && sizeData.quantity > 0 ? sizeData.quantity : ''}
-                                        onChange={(e) => {
-                                          // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
-                                          const inputValue = e.target.value;
-                                          const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                                          // [2025-12-08 05:25:00] 使用全局单价
-                                          const unitPrice = formState.globalUnitPrice || 0;
-                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                        }}
-                                        disabled={!isAvailable}
-                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        placeholder="数量"
-                                      />
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* ADULT尺码 */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
-                              <div className="flex flex-wrap gap-2">
-                                {ADULT_SIZES.map((size) => {
-                                  const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
-                                  const sizeData = color.sizes.find(s => s.size === size);
-                                  const additionalFee = sizeFeeMap[size] || 0;
-                                  
-                                  return (
-                                    <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
-                                      <label className="block text-xs text-gray-600 mb-1">
-                                        {size}
-                                        {LARGE_SIZES.includes(size) && additionalFee > 0 && (
-                                          <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
-                                        )}
-                                      </label>
-                                      {/* [2025-12-08 05:25:00] 移除单价输入框，只保留数量输入框 */}
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={sizeData && sizeData.quantity > 0 ? sizeData.quantity : ''}
-                                        onChange={(e) => {
-                                          // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
-                                          const inputValue = e.target.value;
-                                          const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                                          // [2025-12-08 05:25:00] 使用全局单价
-                                          const unitPrice = formState.globalUnitPrice || 0;
-                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                        }}
-                                        disabled={!isAvailable}
-                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        placeholder="数量"
-                                      />
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* [2025-12-08 05:25:00] 移除颜色小计显示 */}
-                        </div>
+                                  return {
+                                    ...productItem,
+                                    colors: newColors
+                                  };
+                                }
+                                return productItem;
+                              });
+                              
+                              return {
+                                ...prev,
+                                productItems: newItems,
+                                colorGroupsByProduct: {
+                                  ...prev.colorGroupsByProduct,
+                                  [item.id]: newGroups
+                                }
+                              };
+                            });
+                          }}
+                          onRemove={() => removeColorFromProduct(item.id, color.colorId)}
+                          onCopyToOthers={() => {
+                            // [2025-12-19] 复制到其他颜色的逻辑
+                            const otherColors = item.colors.filter(c => c.colorId !== color.colorId);
+                            if (otherColors.length === 0) {
+                              alert('没有其他颜色可以复制到');
+                              return;
+                            }
+                            
+                            if (confirm(`确定要将"${color.colorName}"的配置复制到其他 ${otherColors.length} 个颜色吗？`)) {
+                              setFormState(prev => {
+                                const groups = prev.colorGroupsByProduct[item.id] || [];
+                                const sourceGroup = groups.find(g => g.colorCode === color.colorId);
+                                if (!sourceGroup) return prev;
+                                
+                                const sourcePositions = sourceGroup.positions.map(pos => ({
+                                  ...pos,
+                                  designAssetId: pos.designAssetId || null
+                                }));
+                                
+                                const newGroups = groups.map(g => {
+                                  if (otherColors.some(c => c.colorId === g.colorCode)) {
+                                    return {
+                                      ...g,
+                                      positions: sourcePositions,
+                                      inheritsFromColorId: sourceGroup.id
+                                    };
+                                  }
+                                  return g;
+                                });
+                                
+                                return {
+                                  ...prev,
+                                  colorGroupsByProduct: {
+                                    ...prev.colorGroupsByProduct,
+                                    [item.id]: newGroups
+                                  }
+                                };
+                              });
+                            }
+                          }}
+                          previousGroup={previousGroup}
+                          globalUnitPrice={formState.globalUnitPrice || 0}
+                          onSizeQuantityChange={(size, quantity) => {
+                            updateSizeQuantity(item.id, color.colorId, size, quantity, formState.globalUnitPrice || 0);
+                          }}
+                        />
                       );
                     })}
 
@@ -1393,7 +1541,13 @@ export default function OfflineOrdersIntakePage() {
                           if (e.target.value) {
                             const color = availableColors.find(c => c.id === e.target.value);
                             if (color && !item.colors.some(c => c.colorId === color.id)) {
-                              addColorToProduct(item.id, color.id, color.name);
+                              // [2025-12-19] 显示添加颜色弹窗
+                              setAddColorModal({
+                                isOpen: true,
+                                itemId: item.id,
+                                colorId: color.id,
+                                colorName: color.name
+                              });
                               e.target.value = '';
                             }
                           }
@@ -1423,180 +1577,7 @@ export default function OfflineOrdersIntakePage() {
           </div>
         )}
 
-        {/* 印刷位置配置 - PRD v2.0: PrintingStyle、DST File Fee */}
-        <div className="mt-8 p-5 bg-white border border-gray-200 rounded-xl">
-          <h3 className="text-lg font-semibold text-gray-900 m-0 mb-4">
-            {t('printPositions') || '印刷位置配置'}
-          </h3>
-          
-          {/* 总体印刷位置 - [2025-12-08 01:20:00] 直接显示表单，不需要点击按钮 */}
-          <div className="space-y-4">
-            {/* [2025-12-08 01:20:00] 如果没有印刷位置，初始化一个空表单 */}
-            {(!formState.globalPrintPositions || formState.globalPrintPositions.length === 0) && (
-              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">位置</span>
-                    <select
-                      value=""
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          setFormState(prev => ({
-                            ...prev,
-                            globalPrintPositions: [{ position: e.target.value, printingStyle: '', width: '', height: '', notes: '' }]
-                          }));
-                        }
-                      }}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                    >
-                      <option value="">选择位置</option>
-                      {PRINT_POSITION_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-              </div>
-            )}
-            
-            {formState.globalPrintPositions && formState.globalPrintPositions.length > 0 ? (
-              formState.globalPrintPositions.map((pos, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">位置</span>
-                      <select
-                        value={pos.position}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], position: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="">选择位置</option>
-                        {PRINT_POSITION_OPTIONS.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">工艺 (PrintingStyle)</span>
-                      <select
-                        value={pos.printingStyle || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], printingStyle: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      >
-                        <option value="">选择工艺</option>
-                        <option value="DTF">DTF</option>
-                        <option value="Embroidery">Embroidery</option>
-                        <option value="UV">UV</option>
-                        <option value="Vinyl">Vinyl</option>
-                        <option value="其他">其他</option>
-                      </select>
-                    </label>
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">宽度 (inch)</span>
-                      <input
-                        type="text"
-                        value={pos.width || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], width: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                        placeholder="可选"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">高度 (inch)</span>
-                      <input
-                        type="text"
-                        value={pos.height || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], height: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                        placeholder="可选"
-                      />
-                    </label>
-                    <label className="block md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-700 mb-2">备注</span>
-                      <input
-                        type="text"
-                        value={pos.notes || ''}
-                        onChange={(e) => {
-                          const newPositions = [...formState.globalPrintPositions || []];
-                          newPositions[index] = { ...newPositions[index], notes: e.target.value };
-                          setFormState(prev => ({ ...prev, globalPrintPositions: newPositions }));
-                        }}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                      />
-                    </label>
-                  </div>
-                  {/* [2025-12-08 01:20:00] 添加删除按钮 */}
-                  <div className="mt-3 flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const newPositions = formState.globalPrintPositions?.filter((_, i) => i !== index) || [];
-                        setFormState(prev => ({
-                          ...prev,
-                          globalPrintPositions: newPositions.length > 0 ? newPositions : []
-                        }));
-                      }}
-                      className="px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      {t('remove') || '删除'}
-                    </button>
-                  </div>
-                </div>
-              ))
-            ) : null}
-            
-            {/* [2025-12-08 01:20:00] 添加更多印刷位置按钮（当已有位置时显示） */}
-            {formState.globalPrintPositions && formState.globalPrintPositions.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setFormState(prev => ({
-                    ...prev,
-                    globalPrintPositions: [...(prev.globalPrintPositions || []), { position: '', printingStyle: '', width: '', height: '', notes: '' }]
-                  }));
-                }}
-                className="px-4 py-2 rounded-lg font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm"
-              >
-                {t('addPrintPosition') || '添加更多印刷位置'}
-              </button>
-            )}
-          </div>
-
-          {/* DST File Fee - 仅当选择Embroidery时显示 */}
-          {formState.globalPrintPositions?.some(pos => pos.printingStyle === 'Embroidery') && (
-            <div className="mt-4">
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">DST File Fee (订单级别)</span>
-                <input
-                  type="text"
-                  value={formState.dstFileFee || ''}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/[^\d.]/g, '');
-                    setFormState(prev => ({ ...prev, dstFileFee: parseFloat(value) || 0 }));
-                  }}
-                  className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  placeholder="0.00"
-                />
-              </label>
-            </div>
-          )}
-        </div>
+        {/* [2025-12-19] 印刷位置配置已整合到颜色卡片内部，独立的printPositions组件已移除 */}
 
         {/* 订单备注 - PRD v2.0: 非必填 */}
         {/* [2025-12-08 05:15:00] 修改：备注改为非必填 */}
@@ -1708,18 +1689,17 @@ export default function OfflineOrdersIntakePage() {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading') || '客户信息'}</h2>
-        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息'}</p>
+        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息（所有字段均为可选）'}</p>
 
         {/* 客户基本信息 */}
       <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
           <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo') || '客户基本信息'}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'} *</span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'}</span>
             <input
               type="text"
               name="contactName"
-              required
               value={formState.contactName}
               onChange={handleInputChange}
               className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
@@ -1732,11 +1712,10 @@ export default function OfflineOrdersIntakePage() {
           </label>
             
           <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">{t('email') || '邮箱'} *</span>
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('email') || '邮箱'}</span>
             <input
               type="email"
               name="email"
-              required
               value={formState.email}
               onChange={handleInputChange}
               className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
@@ -1818,7 +1797,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail') || '公司邮箱'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail') || '公司邮箱'}</span>
                 <input
                   type="email"
                   value={formState.invoiceInfo.companyEmail}
@@ -1833,7 +1812,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber') || 'GST/HST Number'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber') || 'GST/HST Number'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.taxNumber}
@@ -1844,7 +1823,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('city') || '城市'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('city') || '城市'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.city}
@@ -1859,7 +1838,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('province') || '省份'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('province') || '省份'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.province}
@@ -1875,7 +1854,7 @@ export default function OfflineOrdersIntakePage() {
               </label>
                   
               <label className="block">
-                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode') || '邮编'} *</span>
+                    <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode') || '邮编'}</span>
                 <input
                   type="text"
                   value={formState.invoiceInfo.postalCode}
@@ -1892,7 +1871,7 @@ export default function OfflineOrdersIntakePage() {
             </div>
                 
             <label className="block mt-4">
-                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('address') || '地址'} *</span>
+                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('address') || '地址'}</span>
               <input
                 type="text"
                 value={formState.invoiceInfo.address}
@@ -1909,13 +1888,13 @@ export default function OfflineOrdersIntakePage() {
           </div>
         )}
 
-        {/* [2025-12-07 02:30:00] PRD v2.0: 支付信息（Invoice时必填） */}
+        {/* [2025-12-19] PRD v2.0: 支付信息（Invoice时，全部改为非必填） */}
         {formState.requiresInvoice && (
           <div className="mt-4 p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('paymentInfo') || '支付信息'} *</h4>
+            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('paymentInfo') || '支付信息'}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'} *</span>
+                <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'}</span>
                 <select
                   value={formState.invoiceInfo.paymentMethod || ''}
                   onChange={(e) => {
@@ -1944,7 +1923,6 @@ export default function OfflineOrdersIntakePage() {
               <label className="block">
                 <span className="block text-sm font-medium text-gray-700 mb-2">
                   {t('referenceNumber') || 'Reference Number'}
-                  {formState.invoiceInfo.paymentMethod === 'etrans' ? ' *' : ''}
                 </span>
                 <input
                   type="text"
@@ -2028,12 +2006,24 @@ export default function OfflineOrdersIntakePage() {
     }
   }, [fieldErrors]);
 
-  // [2025-12-06] PRD v2.0: 渲染第三步 - 文件上传（非必填）
+  // [2025-12-19] PRD v2.0: 渲染第三步 - 印刷位选择（按颜色分组）
   const renderStep3 = () => {
+    // [2025-12-19] 获取所有有颜色的产品项
+    const itemsWithColors = formState.productItems.filter(item => item.colors.length > 0);
+    
+    if (itemsWithColors.length === 0) {
+      return (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">选择印刷位</h2>
+          <p className="text-gray-600 mb-6 text-sm">请先在步骤1中添加产品并选择颜色</p>
+        </div>
+      );
+    }
+
     return (
       <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step3Heading') || '文件上传'}</h2>
-      <p className="text-gray-600 mb-6 text-sm">{t('step3Intro') || '上传设计文件（非必填，可以不传文件直接提交）'}</p>
+      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">选择印刷位</h2>
+      <p className="text-gray-600 mb-6 text-sm">为每个颜色配置印刷位置。您可以继承上一颜色的配置，或为特定尺码设置不同的印刷位。</p>
       
       {/* [2025-12-04 00:15:00] 移动设备提示 */}
       {isMobile && (
@@ -2089,10 +2079,101 @@ export default function OfflineOrdersIntakePage() {
         </ul>
       )}
       
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <p className="text-sm text-yellow-800">
-          <strong>注意：</strong>文件上传是非必填的，您可以不传文件直接提交订单。
-        </p>
+      {/* [2025-12-19] 为每个产品项显示颜色组配置器 */}
+      {itemsWithColors.map((item) => {
+        const existingGroups = formState.colorGroupsByProduct[item.id] || [];
+
+        return (
+          <ProductItemColorConfig
+            key={item.id}
+            productItemId={item.id}
+            productName={item.productName}
+            colors={item.colors}
+            existingGroups={existingGroups}
+            onUpdate={(updatedGroups) => {
+              setFormState(prev => ({
+                ...prev,
+                colorGroupsByProduct: {
+                  ...prev.colorGroupsByProduct,
+                  [item.id]: updatedGroups
+                }
+              }));
+            }}
+            onValidationChange={(isValid, errors) => {
+              if (!isValid) {
+                setFieldErrors(prev => ({
+                  ...prev,
+                  [`printPositions-${item.id}`]: errors.join('; ')
+                }));
+              } else {
+                setFieldErrors(prev => {
+                  const newErrors = { ...prev };
+                  delete newErrors[`printPositions-${item.id}`];
+                  return newErrors;
+                });
+              }
+            }}
+          />
+        );
+      })}
+
+      {/* [2025-12-19] 文件上传（可选，移到步骤3下方） */}
+      <div className="mt-8 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">文件上传（可选）</h3>
+        <p className="text-sm text-gray-600 mb-4">您可以上传设计文件，也可以不传文件直接提交订单。</p>
+        
+        {isMobile && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <p className="text-sm font-semibold text-blue-900 mb-1">{t('mobileUploadTip') || '移动设备提示'}</p>
+            <p className="text-xs text-blue-700">{t('mobileUploadDescription') || '您可以使用相机拍照上传文件'}</p>
+          </div>
+        )}
+        
+        <div
+          className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          role="button"
+          tabIndex={0}
+        >
+          <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
+          <p className="text-xs text-gray-600">
+            {isMobile ? (t('mobileUploadOrBrowse') || '点击上传或拍照') : (t('dragDropOrBrowse') || '拖拽文件到此处或点击浏览')} 
+            ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB }) || `最多 ${ MAX_FILES} 个文件，每个文件最大 ${MAX_FILE_SIZE_MB}MB`})
+          </p>
+          <input
+            type="file"
+            accept={isMobile ? `${ACCEPTED_EXTENSIONS.join(',')},image/*` : ACCEPTED_EXTENSIONS.join(',')}
+            capture={isMobile ? 'environment' : undefined}
+            multiple
+            onChange={handleFileInputChange}
+            aria-label="Upload artwork files"
+            className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+          />
+        </div>
+        
+        {files.length > 0 && (
+          <ul className="list-none m-0 p-0 grid gap-3 mt-4">
+            {files.map((file, index) => (
+              <li
+                key={`${file.name}-${index}`}
+                className="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center"
+              >
+                <div className="flex flex-col gap-1">
+                  <strong className="text-sm text-gray-900">{file.name}</strong>
+                  <span className="text-xs text-gray-600">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeFile(index)}
+                  className="border-none bg-transparent text-red-600 cursor-pointer text-sm font-medium hover:text-red-700 transition-colors"
+                >
+                  {t('remove') || '删除'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
     );
@@ -2104,8 +2185,15 @@ export default function OfflineOrdersIntakePage() {
     <div className="min-h-screen bg-gray-100">
       <header className="relative py-12 px-6 bg-gradient-to-br from-yellow-200 via-yellow-100 to-yellow-50 z-10">
         <div>
-          {/* [2025-12-07 03:00:00] 右上角：登录按钮/用户菜单 + 语言切换 */}
+          {/* [2025-12-07 03:00:00] 右上角：回到主站 + 登录按钮/用户菜单 + 语言切换 */}
           <div className="absolute top-6 right-6 flex items-center gap-3">
+            {/* [2025-01-31 20:15:00] 回到主站按钮 */}
+            <Link
+              href="/"
+              className="px-4 py-2 bg-white/90 hover:bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 shadow-md transition-colors"
+            >
+              回到主站
+            </Link>
             {/* 登录按钮/用户菜单 */}
             <UserMenu />
             {/* [2025-01-27 20:45:00] 语言切换按钮 - 使用 Tailwind */}
@@ -2145,7 +2233,7 @@ export default function OfflineOrdersIntakePage() {
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto -mt-8 mb-10 px-6 relative z-20">
+      <main className="max-w-[1400px] mx-auto -mt-8 mb-10 px-6 relative z-10"> {/* [2025-12-19] 降低main区域的z-index，避免遮挡下拉菜单 */}
         <form className="bg-white rounded-2xl p-8 shadow-xl grid gap-8" onSubmit={handleSubmit}>
           {status.type !== 'idle' && (
             <div
@@ -2215,6 +2303,38 @@ export default function OfflineOrdersIntakePage() {
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
           </div>
+          )}
+          
+          {/* [2025-12-19] 添加颜色弹窗 */}
+          {addColorModal && (
+            <AddColorModal
+              isOpen={addColorModal.isOpen}
+              previousColorName={
+                (() => {
+                  const item = formState.productItems.find(i => i.id === addColorModal.itemId);
+                  if (item && item.colors.length > 0) {
+                    return item.colors[item.colors.length - 1].colorName;
+                  }
+                  return undefined;
+                })()
+              }
+              hasPreviousColor={
+                (() => {
+                  const item = formState.productItems.find(i => i.id === addColorModal.itemId);
+                  return item ? item.colors.length > 0 : false;
+                })()
+              }
+              onConfirm={(inheritFromPrev) => {
+                addColorToProduct(
+                  addColorModal.itemId,
+                  addColorModal.colorId,
+                  addColorModal.colorName,
+                  inheritFromPrev
+                );
+                setAddColorModal(null);
+              }}
+              onCancel={() => setAddColorModal(null)}
+            />
           )}
 
           {/* [2025-01-27 18:00:00] 步骤导航按钮 - 使用 Tailwind */}

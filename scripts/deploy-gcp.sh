@@ -92,11 +92,12 @@ if [ -z "$STRIPE_PUBLISHABLE_KEY" ]; then
     exit 1
 fi
 echo -e "${GREEN}✅ 已从 Secret Manager 读取 Stripe publishable key (长度: ${#STRIPE_PUBLISHABLE_KEY} 字符)${NC}"
+# [2025-01-27 20:50:00] 修复：使用项目根目录作为构建上下文，以便访问 prisma 目录
 docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_URL="${API_URL}" \
   --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
   -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
-  -f apps/web/Dockerfile apps/web
+  -f apps/web/Dockerfile .
 
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest
