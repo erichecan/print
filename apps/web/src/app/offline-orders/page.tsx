@@ -258,7 +258,7 @@ function UserMenu() {
     : user.email?.split('@')[0] || '用户';
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ zIndex: 10000 }}> {/* [2025-12-19] 确保父容器也有足够高的z-index */}
       <button
         ref={buttonRef} // [2025-12-19] 添加ref用于定位菜单
         type="button"
@@ -275,14 +275,18 @@ function UserMenu() {
       {showMenu && (
         <>
           <div 
-            className="fixed inset-0 z-[9998]" // [2025-12-19] 提升z-index，确保遮罩层在最上层
+            className="fixed inset-0" // [2025-12-19] 遮罩层
+            style={{ zIndex: 99998 }} // [2025-12-19] 使用内联样式确保z-index足够高
             onClick={() => setShowMenu(false)}
           />
           <div 
-            className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[9999] overflow-hidden" // [2025-12-19] 使用fixed定位并提升z-index，避免被main区域遮挡
+            className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" // [2025-12-19] 使用fixed定位，避免被main区域遮挡
             style={{ 
               top: `${menuPosition.top}px`, 
-              right: `${menuPosition.right}px` 
+              right: `${menuPosition.right}px`,
+              zIndex: 99999, // [2025-12-19] 使用内联样式设置极高的z-index，确保菜单始终在最上层
+              position: 'fixed', // [2025-12-19] 明确指定position，确保创建新的堆叠上下文
+              isolation: 'isolate' // [2025-12-19] 创建新的堆叠上下文，避免被其他元素遮挡
             }}
           >
             <div className="px-4 py-2 border-b border-gray-200">
@@ -2173,7 +2177,7 @@ export default function OfflineOrdersIntakePage() {
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto -mt-8 mb-10 px-6 relative z-20">
+      <main className="max-w-[1400px] mx-auto -mt-8 mb-10 px-6 relative z-10"> {/* [2025-12-19] 降低main区域的z-index，避免遮挡下拉菜单 */}
         <form className="bg-white rounded-2xl p-8 shadow-xl grid gap-8" onSubmit={handleSubmit}>
           {status.type !== 'idle' && (
             <div
