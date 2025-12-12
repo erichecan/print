@@ -35,7 +35,9 @@ RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ "$NEXT_PUBLIC_API_URL" = "" ]; then \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
-RUN npx prisma generate --schema=../../prisma/schema.prisma || echo "⚠️ Prisma generate failed, continuing..."
+# 注意：在 Docker 构建中，工作目录是 /app，需要从 apps/web 访问 ../../prisma/schema.prisma
+# 但 COPY . . 已经复制了整个项目，所以路径应该是相对于 /app 的
+RUN cd /app && npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-alpine AS runner
