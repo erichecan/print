@@ -76,11 +76,54 @@ describe('Account Server Components', () => {
     });
 
     it('should handle network errors gracefully', async () => {
-      (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+      (global.fetch as jest.Mock).mockRejectedValueOnce(new TypeError('Failed to fetch'));
 
       const result = await getSessionSafe();
       expect(result.ok).toBe(false);
-      expect(result.code).toBe('UNKNOWN_ERROR');
+      expect(result.code).toBe('NETWORK_ERROR');
+    });
+
+    it('should handle timeout errors', async () => {
+      // Mock AbortController
+      const mockAbortController = {
+        signal: { aborted: false },
+        abort: jest.fn(),
+      };
+      global.AbortController = jest.fn(() => mockAbortController) as any;
+      
+      (global.fetch as jest.Mock).mockRejectedValueOnce(
+        Object.assign(new Error('Request aborted'), { name: 'AbortError' })
+      );
+
+      const result = await getSessionSafe();
+      expect(result.ok).toBe(false);
+      expect(result.code).toBe('TIMEOUT');
+    });
+
+    it('should handle JSON parse errors', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => {
+          throw new SyntaxError('Unexpected token');
+        },
+      });
+
+      const result = await getSessionSafe();
+      expect(result.ok).toBe(false);
+      expect(result.code).toBe('PARSE_ERROR');
+    });
+
+    it('should handle config errors (missing env vars)', async () => {
+      const { getBackendApiBaseUrl } = require('@/config/env');
+      getBackendApiBaseUrl.mockImplementationOnce(() => {
+        throw new Error('生产环境未配置 API 地址环境变量');
+      });
+
+      const result = await getSessionSafe();
+      expect(result.ok).toBe(false);
+      expect(result.code).toBe('CONFIG_ERROR');
     });
   });
 

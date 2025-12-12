@@ -126,38 +126,98 @@ export function getFrontendApiBaseUrl(): string {
  * 4. 生产环境运行时：必须配置，不允许回退
  * 5. 开发环境或构建时：允许回退到 localhost:3001/api
  */
+/**
+ * 获取后端 API 基础 URL
+ * [2025-12-10] 用于 Next.js API 路由代理到后端
+ * [2025-12-12 14:15:00] 增强错误处理和日志记录
+ * 
+ * 优先级：
+ * 1. NEXT_PUBLIC_API_URL（前端环境变量）
+ * 2. API_BASE_URL（服务器端环境变量）
+ * 3. NEXT_PUBLIC_API_BASE_URL（备选前端变量）
+ * 4. 生产环境运行时：必须配置，不允许回退
+ * 5. 开发环境或构建时：允许回退到 localhost:3001/api
+ */
 export function getBackendApiBaseUrl(): string {
+  const traceId = `env-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const timestamp = new Date().toISOString();
+  
+  // [2025-12-12 14:15:00] 增强：记录环境变量检查过程
+  console.debug('[Env Config] getBackendApiBaseUrl called', {
+    traceId,
+    timestamp,
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PHASE: process.env.NEXT_PHASE,
+    isProduction,
+    isBuildTime,
+  });
+  
   // 优先使用 NEXT_PUBLIC_API_URL
-  const publicApiUrl = validateEnvVar('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL, true);
-  if (publicApiUrl) {
-    const url = publicApiUrl.replace(/\/$/, '');
-    return url.endsWith('/api') ? url : `${url}/api`;
+  try {
+    const publicApiUrl = validateEnvVar('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL, true);
+    if (publicApiUrl) {
+      const url = publicApiUrl.replace(/\/$/, '');
+      const finalUrl = url.endsWith('/api') ? url : `${url}/api`;
+      console.debug('[Env Config] Using NEXT_PUBLIC_API_URL', { traceId, url: finalUrl });
+      return finalUrl;
+    }
+  } catch (error) {
+    // [2025-12-12 14:15:00] 增强：记录环境变量验证错误
+    console.error('[Env Config] NEXT_PUBLIC_API_URL validation failed', {
+      traceId,
+      timestamp,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // 继续尝试其他环境变量
   }
   
   // 回退到 API_BASE_URL（服务器端环境变量）
-  const apiBaseUrl = validateEnvVar('API_BASE_URL', process.env.API_BASE_URL, true);
-  if (apiBaseUrl) {
-    const url = apiBaseUrl.replace(/\/$/, '');
-    return url.endsWith('/api') ? url : `${url}/api`;
+  try {
+    const apiBaseUrl = validateEnvVar('API_BASE_URL', process.env.API_BASE_URL, true);
+    if (apiBaseUrl) {
+      const url = apiBaseUrl.replace(/\/$/, '');
+      const finalUrl = url.endsWith('/api') ? url : `${url}/api`;
+      console.debug('[Env Config] Using API_BASE_URL', { traceId, url: finalUrl });
+      return finalUrl;
+    }
+  } catch (error) {
+    console.error('[Env Config] API_BASE_URL validation failed', {
+      traceId,
+      timestamp,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
   
   // 回退到 NEXT_PUBLIC_API_BASE_URL
-  const publicApiBaseUrl = validateEnvVar('NEXT_PUBLIC_API_BASE_URL', process.env.NEXT_PUBLIC_API_BASE_URL, true);
-  if (publicApiBaseUrl) {
-    const url = publicApiBaseUrl.replace(/\/$/, '');
-    return url.endsWith('/api') ? url : `${url}/api`;
+  try {
+    const publicApiBaseUrl = validateEnvVar('NEXT_PUBLIC_API_BASE_URL', process.env.NEXT_PUBLIC_API_BASE_URL, true);
+    if (publicApiBaseUrl) {
+      const url = publicApiBaseUrl.replace(/\/$/, '');
+      const finalUrl = url.endsWith('/api') ? url : `${url}/api`;
+      console.debug('[Env Config] Using NEXT_PUBLIC_API_BASE_URL', { traceId, url: finalUrl });
+      return finalUrl;
+    }
+  } catch (error) {
+    console.error('[Env Config] NEXT_PUBLIC_API_BASE_URL validation failed', {
+      traceId,
+      timestamp,
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
   
   // 生产环境运行时：必须配置环境变量
   if (isProduction) {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL、API_BASE_URL 或 NEXT_PUBLIC_API_BASE_URL。';
-    console.error('[Env Config] ❌', errorMsg);
-    console.error('[Env Config] 当前环境变量:', {
-      NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '未设置',
-      API_BASE_URL: process.env.API_BASE_URL || '未设置',
-      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '未设置',
-      NODE_ENV: process.env.NODE_ENV,
-      NEXT_PHASE: process.env.NEXT_PHASE,
+    console.error('[Env Config] ❌', errorMsg, {
+      traceId,
+      timestamp,
+      envVars: {
+        NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || '未设置',
+        API_BASE_URL: process.env.API_BASE_URL || '未设置',
+        NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || '未设置',
+        NODE_ENV: process.env.NODE_ENV,
+        NEXT_PHASE: process.env.NEXT_PHASE,
+      },
     });
     throw new Error(errorMsg);
   }
@@ -165,9 +225,15 @@ export function getBackendApiBaseUrl(): string {
   // 开发环境或构建时：允许回退到 localhost
   const DEFAULT_API_BASE_DEV = 'http://localhost:3001/api';
   if (isBuildTime) {
-    console.warn('[Env Config] ⚠️ 构建时未配置 API 地址，使用默认值（运行时需要配置环境变量）:', DEFAULT_API_BASE_DEV);
+    console.warn('[Env Config] ⚠️ 构建时未配置 API 地址，使用默认值（运行时需要配置环境变量）:', DEFAULT_API_BASE_DEV, {
+      traceId,
+      timestamp,
+    });
   } else {
-    console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值:', DEFAULT_API_BASE_DEV);
+    console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值:', DEFAULT_API_BASE_DEV, {
+      traceId,
+      timestamp,
+    });
   }
   return DEFAULT_API_BASE_DEV;
 }
