@@ -55,21 +55,20 @@ export function PositionEditorModal({
     initialConfig?.heightMm?.toString() || defaultConfig?.heightMm?.toString() || ''
   );
   const [inkOrFilm, setInkOrFilm] = useState(initialConfig?.inkOrFilm || defaultConfig?.inkOrFilm || '');
-  const [unitPrice, setUnitPrice] = useState<string>(
-    initialConfig?.unitPrice?.toString() || defaultConfig?.unitPrice?.toString() || '0'
-  );
+  // [2025-01-30 11:15:00] 移除单价字段（非必填，已移除）
   const [notes, setNotes] = useState(initialConfig?.notes || defaultConfig?.notes || '');
   const [dstFileFee, setDstFileFee] = useState<string>(
     initialConfig?.dstFileFee?.toString() || defaultConfig?.dstFileFee?.toString() || ''
   );
 
   // [2025-12-19] 处理保存
+  // [2025-01-30 11:15:00] 单价字段已移除，使用默认值0
   const handleSave = () => {
     const config: PositionConfig = {
       positionKey,
       enabled,
       method,
-      unitPrice: parseFloat(unitPrice) || 0,
+      unitPrice: 0, // [2025-01-30 11:15:00] 单价字段已移除，使用默认值0
       widthMm: widthMm ? parseFloat(widthMm) : undefined,
       heightMm: heightMm ? parseFloat(heightMm) : undefined,
       inkOrFilm: inkOrFilm || undefined,
@@ -117,8 +116,8 @@ export function PositionEditorModal({
                   ? `宽${defaultConfig.widthMm}mm`
                   : defaultConfig.heightMm
                   ? `高${defaultConfig.heightMm}mm`
-                  : '未设置'} | 
-                单价: ${defaultConfig.unitPrice.toFixed(2)}
+                  : '未设置'}
+                {/* [2025-01-30 11:15:00] 移除单价显示 */}
               </div>
               <div className="text-xs text-blue-600 mt-1">
                 下方设置将覆盖默认配置，未设置的字段将继承默认值
@@ -202,22 +201,7 @@ export function PositionEditorModal({
               />
             </div>
 
-            {/* 单价 */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                单价（CAD） <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0.00"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
+            {/* [2025-01-30 11:15:00] 单价字段已移除（非必填） */}
 
             {/* DST File Fee（仅Embroidery） */}
             {method === 'Embroidery' && (
