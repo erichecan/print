@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, ChangeEvent, FormEvent, DragEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent } from 'react'; // [2025-12-19] 添加useRef用于定位下拉菜单
 import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api-config'; // [2025-11-16 09:50:00] 使用统一 API 基址，避免指向 Next.js 自身路由
 import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct } from '@/lib/api'; // [2025-12-07 08:00:00] 简化的产品 API
@@ -193,6 +193,19 @@ function UserMenu() {
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const router = useRouter();
+  const buttonRef = useRef<HTMLButtonElement>(null); // [2025-12-19] 用于获取按钮位置以计算菜单位置
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 }); // [2025-12-19] 菜单位置状态
+
+  // [2025-12-19] 计算菜单位置
+  useEffect(() => {
+    if (showMenu && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 8, // mt-2 = 8px
+        right: window.innerWidth - rect.right, // 从右边距计算
+      });
+    }
+  }, [showMenu]);
 
   useEffect(() => {
     setIsClient(true);
@@ -246,6 +259,7 @@ function UserMenu() {
   return (
     <div className="relative">
       <button
+        ref={buttonRef} // [2025-12-19] 添加ref用于定位菜单
         type="button"
         onClick={() => setShowMenu(!showMenu)}
         className="flex items-center gap-2 px-3 py-2 bg-white/90 rounded-lg shadow-md hover:bg-white transition-colors"
@@ -260,10 +274,16 @@ function UserMenu() {
       {showMenu && (
         <>
           <div 
-            className="fixed inset-0 z-40" 
+            className="fixed inset-0 z-[9998]" // [2025-12-19] 提升z-index，确保遮罩层在最上层
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 overflow-hidden">
+          <div 
+            className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[9999] overflow-hidden" // [2025-12-19] 使用fixed定位并提升z-index，避免被main区域遮挡
+            style={{ 
+              top: `${menuPosition.top}px`, 
+              right: `${menuPosition.right}px` 
+            }}
+          >
             <div className="px-4 py-2 border-b border-gray-200">
               <p className="text-sm font-medium text-gray-900">{userName}</p>
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
