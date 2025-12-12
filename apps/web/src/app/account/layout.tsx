@@ -17,38 +17,53 @@ interface AccountLayoutProps {
 }
 
 export default async function AccountLayout({ children }: AccountLayoutProps) {
-  // [2025-01-27 18:20:00] 获取 request ID 用于日志追踪
-  const headersList = await headers();
-  const requestId = headersList.get('x-request-id') || 
+  // [2025-01-27 19:05:00] 将整个函数体包装在 try-catch 中，捕获所有可能的错误
+  try {
+    // [2025-01-27 18:20:00] 获取 request ID 用于日志追踪
+    let requestId: string;
+    let timestamp: string;
+    
+    try {
+      const headersList = await headers();
+      requestId = headersList.get('x-request-id') || 
                    headersList.get('x-trace-id') || 
                    generateTraceId();
-  const timestamp = new Date().toISOString();
-  
-  console.info('[AccountLayout] SSR start', { requestId, timestamp, path: '/account' });
-  
-  // [2025-01-27 18:20:00] 使用安全封装函数获取会话，不抛错
-  const sessionResult = await getSessionSafe(requestId);
-  
-  if (!sessionResult.ok) {
-    // [2025-01-27 18:20:00] 记录未登录或认证失败，但不抛错
-    console.warn('[AccountLayout] Session check failed, redirecting to login', { 
+      timestamp = new Date().toISOString();
+    } catch (headerError) {
+      // [2025-01-27 19:05:00] headers() 调用失败时，使用默认值
+      requestId = generateTraceId();
+      timestamp = new Date().toISOString();
+      console.warn('[AccountLayout] Failed to get headers, using default requestId', {
+        requestId,
+        timestamp,
+        error: headerError instanceof Error ? headerError.message : String(headerError)
+      });
+    }
+    
+    console.info('[AccountLayout] SSR start', { requestId, timestamp, path: '/account' });
+    
+    // [2025-01-27 18:20:00] 使用安全封装函数获取会话，不抛错
+    const sessionResult = await getSessionSafe(requestId);
+    
+    if (!sessionResult.ok) {
+      // [2025-01-27 18:20:00] 记录未登录或认证失败，但不抛错
+      console.warn('[AccountLayout] Session check failed, redirecting to login', { 
+        requestId, 
+        timestamp,
+        code: sessionResult.code,
+        message: sessionResult.message
+      });
+      redirect('/login?redirect=/account');
+    }
+    
+    // [2025-01-27 18:20:00] 会话获取成功，继续渲染
+    console.info('[AccountLayout] Session valid, rendering layout', { 
       requestId, 
       timestamp,
-      code: sessionResult.code,
-      message: sessionResult.message
+      userId: sessionResult.data.userId
     });
-    redirect('/login?redirect=/account');
-  }
-  
-  // [2025-01-27 18:20:00] 会话获取成功，继续渲染
-  console.info('[AccountLayout] Session valid, rendering layout', { 
-    requestId, 
-    timestamp,
-    userId: sessionResult.data.userId
-  });
 
-  // [2025-01-27 18:45:00] 如果出现意外错误，上报并重定向
-  try {
+    // [2025-01-27 18:45:00] 渲染布局
     return (
       <div style={{
         display: 'flex', 
@@ -81,18 +96,22 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
       </div>
     );
   } catch (error) {
-    // [2025-01-27 18:45:00] 捕获渲染期间的任何错误，上报并重定向
-    console.error('[AccountLayout] Rendering error', {
-      requestId,
-      timestamp: new Date().toISOString(),
+    // [2025-01-27 19:05:00] 捕获所有错误，包括 headers()、getSessionSafe() 和渲染期间的错误
+    const errorRequestId = generateTraceId();
+    const errorTimestamp = new Date().toISOString();
+    
+    console.error('[AccountLayout] Error caught', {
+      requestId: errorRequestId,
+      timestamp: errorTimestamp,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
+      errorName: error instanceof Error ? error.name : 'Unknown'
     });
     
     reportServerError({
-      traceId: requestId,
+      traceId: errorRequestId,
       route: '/account',
-      message: error instanceof Error ? error.message : 'Layout rendering error',
+      message: error instanceof Error ? error.message : 'AccountLayout error',
       error: {
         name: error instanceof Error ? error.name : 'Unknown',
         message: error instanceof Error ? error.message : String(error),
