@@ -34,6 +34,8 @@ RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ "$NEXT_PUBLIC_API_URL" = "" ]; then \
     echo "✅ 环境变量检查通过"
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
+RUN npx prisma generate --schema=../../prisma/schema.prisma || echo "⚠️ Prisma generate failed, continuing..."
 RUN npm run build
 
 FROM node:18-alpine AS runner
