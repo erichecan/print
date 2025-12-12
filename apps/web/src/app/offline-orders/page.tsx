@@ -11,6 +11,9 @@ import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations
 import { OrderItemColorGroup } from '@/types/order'; // [2025-12-19] 导入颜色组类型
 import { ProductItemColorConfig } from './components/ProductItemColorConfig'; // [2025-12-19] 导入产品项颜色配置组件
 import { validateColorGroups } from '@/lib/services/orderItemPricing'; // [2025-12-19] 导入验证函数
+import { ColorGroupCardIntegrated } from './components/ColorGroupCardIntegrated'; // [2025-12-19] 导入整合的颜色组卡片组件
+import { AddColorModal } from './components/AddColorModal'; // [2025-12-19] 导入添加颜色弹窗组件
+import { convertProductColorsToColorGroups, convertColorGroupToProductColor } from './components/utils/colorGroupConverter'; // [2025-12-19] 导入转换函数
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -367,6 +370,13 @@ export default function OfflineOrdersIntakePage() {
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [files, setFiles] = useState<File[]>([]);
   const [currentStep, setCurrentStep] = useState<number>(1); // [2025-01-27 18:00:00] 当前步骤
+  // [2025-12-19] 添加颜色弹窗状态
+  const [addColorModal, setAddColorModal] = useState<{
+    isOpen: boolean;
+    itemId: string;
+    colorId: string;
+    colorName: string;
+  } | null>(null);
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message?: string }>({
     type: 'idle',
   });
@@ -589,8 +599,8 @@ export default function OfflineOrdersIntakePage() {
     }));
   }, []);
 
-  // [2025-12-07 02:30:00] PRD v2.0: 为产品添加颜色
-  const addColorToProduct = useCallback((itemId: string, colorId: string, colorName: string) => {
+  // [2025-12-19] PRD v2.0: 为产品添加颜色（支持继承选项）
+  const addColorToProduct = useCallback((itemId: string, colorId: string, colorName: string, inheritFromPrev: boolean = false) => {
     setFormState((prev) => {
       const newItems = prev.productItems.map((item) => {
         if (item.id === itemId) {
@@ -598,6 +608,24 @@ export default function OfflineOrdersIntakePage() {
           if (item.colors.some((c) => c.colorId === colorId)) {
             return item;
           }
+          
+          // [2025-12-19] 获取上一颜色的positions（如果选择继承）
+          let initialPositions: OrderItemColorGroup['positions'] = [];
+          let inheritsFromColorId: string | null = null;
+          
+          if (inheritFromPrev && item.colors.length > 0) {
+            const lastColor = item.colors[item.colors.length - 1];
+            const lastColorGroups = prev.colorGroupsByProduct[itemId] || [];
+            const lastGroup = lastColorGroups.find(g => g.colorCode === lastColor.colorId);
+            if (lastGroup && lastGroup.positions.length > 0) {
+              initialPositions = lastGroup.positions.map(pos => ({
+                ...pos,
+                designAssetId: pos.designAssetId || null // 保留引用，不复制文件
+              }));
+              inheritsFromColorId = lastGroup.id;
+            }
+          }
+          
           const newColor: ProductColor = {
             colorId,
             colorName,
@@ -606,6 +634,17 @@ export default function OfflineOrdersIntakePage() {
             totalQuantity: 0,
             totalPrice: 0,
           };
+          
+          // [2025-12-19] 同时创建颜色组配置
+          const newColorGroup: OrderItemColorGroup = {
+            id: `${colorId}-${Date.now()}`,
+            colorCode: colorId,
+            colorName,
+            quantities: {},
+            positions: initialPositions,
+            inheritsFromColorId
+          };
+          
           return {
             ...item,
             colors: [...item.colors, newColor],
@@ -613,6 +652,53 @@ export default function OfflineOrdersIntakePage() {
         }
         return item;
       });
+      
+      // [2025-12-19] 更新colorGroupsByProduct
+      const item = newItems.find(i => i.id === itemId);
+      if (item) {
+        const lastColor = item.colors[item.colors.length - 1];
+        const newColorGroup: OrderItemColorGroup = {
+          id: `${colorId}-${Date.now()}`,
+          colorCode: colorId,
+          colorName,
+          quantities: {},
+          positions: inheritFromPrev && item.colors.length > 1
+            ? (() => {
+                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+                const prevColor = item.colors[item.colors.length - 2];
+                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+                if (prevGroup && prevGroup.positions.length > 0) {
+                  return prevGroup.positions.map(pos => ({
+                    ...pos,
+                    designAssetId: pos.designAssetId || null
+                  }));
+                }
+                return [];
+              })()
+            : [],
+          inheritsFromColorId: inheritFromPrev && item.colors.length > 1
+            ? (() => {
+                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+                const prevColor = item.colors[item.colors.length - 2];
+                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+                return prevGroup?.id || null;
+              })()
+            : null
+        };
+        
+        return {
+          ...prev,
+          productItems: newItems,
+          colorGroupsByProduct: {
+            ...prev.colorGroupsByProduct,
+            [itemId]: [
+              ...(prev.colorGroupsByProduct[itemId] || []),
+              newColorGroup
+            ]
+          }
+        };
+      }
+      
       return { ...prev, productItems: newItems };
     });
   }, []);
@@ -1318,7 +1404,13 @@ export default function OfflineOrdersIntakePage() {
                             if (e.target.value) {
                               const color = availableColors.find(c => c.id === e.target.value);
                               if (color) {
-                                addColorToProduct(item.id, color.id, color.name);
+                                // [2025-12-19] 显示添加颜色弹窗
+                                setAddColorModal({
+                                  isOpen: true,
+                                  itemId: item.id,
+                                  colorId: color.id,
+                                  colorName: color.name
+                                });
                                 e.target.value = '';
                               }
                             }
@@ -1335,110 +1427,156 @@ export default function OfflineOrdersIntakePage() {
                       </div>
                     ) : null}
                     
+                    {/* [2025-12-19] 使用整合的颜色组卡片组件 */}
                     {item.colors.map((color, colorIndex) => {
-                      // 获取该颜色的可用尺码（从配置读取）
-                      const availableSizesForColor = color.availableSizes.length > 0 
-                        ? color.availableSizes 
-                        : ALL_SIZES; // 默认所有尺码可用
+                      // [2025-12-19] 获取或创建颜色组配置
+                      const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+                      const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
+                      
+                      // [2025-12-19] 如果颜色组不存在，从ProductColor转换
+                      let group: OrderItemColorGroup;
+                      if (colorGroup) {
+                        group = colorGroup;
+                      } else {
+                        // [2025-12-19] 从sizes数组转换为quantities对象
+                        const quantities: Record<string, number> = {};
+                        color.sizes.forEach(sizeQty => {
+                          quantities[sizeQty.size] = sizeQty.quantity;
+                        });
+                        
+                        group = {
+                          id: `${color.colorId}-${Date.now()}`,
+                          colorCode: color.colorId,
+                          colorName: color.colorName,
+                          quantities,
+                          positions: [],
+                          inheritsFromColorId: null
+                        };
+                        
+                        // [2025-12-19] 初始化颜色组到state
+                        setFormState(prev => ({
+                          ...prev,
+                          colorGroupsByProduct: {
+                            ...prev.colorGroupsByProduct,
+                            [item.id]: [
+                              ...(prev.colorGroupsByProduct[item.id] || []),
+                              group
+                            ]
+                          }
+                        }));
+                      }
+                      
+                      // [2025-12-19] 获取上一颜色组（用于继承）
+                      const previousGroup = colorIndex > 0
+                        ? colorGroups.find(g => g.colorCode === item.colors[colorIndex - 1].colorId)
+        : null;
 
                       return (
-                        <div key={color.colorId} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                          <div className="flex justify-between items-center mb-3">
-                            <h4 className="text-lg font-medium text-gray-800">
-                              {color.colorName}
-                            </h4>
-                            {item.colors.length > 1 && (
-                              <button
-                                type="button"
-                                className="text-red-600 hover:text-red-700 text-sm font-medium"
-                                onClick={() => removeColorFromProduct(item.id, color.colorId)}
-                              >
-                                {t('remove') || '移除颜色'}
-                              </button>
-                            )}
-                          </div>
-
-                          {/* 尺码输入区域 - PRD v2.0: YOUTH/ADULT分类、可用性控制、额外费用显示 */}
-                          {/* [2025-12-08 05:00:00] 修复：改为单行布局，隐藏数字输入框的上下箭头 */}
-                          <div className="space-y-3">
-                            {/* YOUTH尺码 */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
-                              <div className="flex flex-wrap gap-2">
-                                {YOUTH_SIZES.map((size) => {
-                                  const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
-                                  const sizeData = color.sizes.find(s => s.size === size);
-                                  const additionalFee = sizeFeeMap[size] || 0;
+                        <ColorGroupCardIntegrated
+                          key={color.colorId}
+                          group={group}
+                          productItemId={item.productId}
+                          availableSizes={color.availableSizes.length > 0 ? color.availableSizes : ALL_SIZES}
+                          sizeFeeMap={sizeFeeMap}
+                          isSizeAvailable={isSizeAvailable}
+                          onUpdate={(updated) => {
+                            // [2025-12-19] 更新颜色组配置
+                            setFormState(prev => {
+                              const groups = prev.colorGroupsByProduct[item.id] || [];
+                              const newGroups = groups.map(g => 
+                                g.id === updated.id ? updated : g
+                              );
+                              
+                              // [2025-12-19] 同步更新ProductColor的sizes
+                              const newItems = prev.productItems.map(productItem => {
+                                if (productItem.id === item.id) {
+                                  const newColors = productItem.colors.map(c => {
+                                    if (c.colorId === color.colorId) {
+                                      // [2025-12-19] 从quantities更新sizes
+                                      const newSizes = Object.entries(updated.quantities)
+                                        .filter(([_, qty]) => qty > 0)
+                                        .map(([size, qty]) => ({
+                                          size,
+                                          quantity: qty,
+                                          unitPrice: formState.globalUnitPrice || 0,
+                                          additionalFee: sizeFeeMap[size] || 0,
+                                          subtotal: qty * ((formState.globalUnitPrice || 0) + (sizeFeeMap[size] || 0))
+                                        }));
+                                      
+                                      return {
+                                        ...c,
+                                        sizes: newSizes,
+                                        totalQuantity: Object.values(updated.quantities).reduce((sum, qty) => sum + qty, 0)
+                                      };
+                                    }
+                                    return c;
+                                  });
                                   
-                                  return (
-                                    <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
-                                      <label className="block text-xs text-gray-600 mb-1">{size}</label>
-                                      {/* [2025-12-08 05:25:00] 移除单价输入框，只保留数量输入框 */}
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={sizeData && sizeData.quantity > 0 ? sizeData.quantity : ''}
-                                        onChange={(e) => {
-                                          // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
-                                          const inputValue = e.target.value;
-                                          const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                                          // [2025-12-08 05:25:00] 使用全局单价
-                                          const unitPrice = formState.globalUnitPrice || 0;
-                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                        }}
-                                        disabled={!isAvailable}
-                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        placeholder="数量"
-                                      />
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-
-                            {/* ADULT尺码 */}
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
-                              <div className="flex flex-wrap gap-2">
-                                {ADULT_SIZES.map((size) => {
-                                  const isAvailable = isSizeAvailable(item.productId, color.colorId, size);
-                                  const sizeData = color.sizes.find(s => s.size === size);
-                                  const additionalFee = sizeFeeMap[size] || 0;
-                                  
-                                  return (
-                                    <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
-                                      <label className="block text-xs text-gray-600 mb-1">
-                                        {size}
-                                        {LARGE_SIZES.includes(size) && additionalFee > 0 && (
-                                          <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
-                                        )}
-                                      </label>
-                                      {/* [2025-12-08 05:25:00] 移除单价输入框，只保留数量输入框 */}
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={sizeData && sizeData.quantity > 0 ? sizeData.quantity : ''}
-                                        onChange={(e) => {
-                                          // [2025-12-08 05:10:00] 允许输入框为空，空值时 quantity 为 0
-                                          const inputValue = e.target.value;
-                                          const quantity = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                                          // [2025-12-08 05:25:00] 使用全局单价
-                                          const unitPrice = formState.globalUnitPrice || 0;
-                                          updateSizeQuantity(item.id, color.colorId, size, quantity, unitPrice);
-                                        }}
-                                        disabled={!isAvailable}
-                                        className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        placeholder="数量"
-                                      />
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* [2025-12-08 05:25:00] 移除颜色小计显示 */}
-                        </div>
+                                  return {
+                                    ...productItem,
+                                    colors: newColors
+                                  };
+                                }
+                                return productItem;
+                              });
+                              
+                              return {
+                                ...prev,
+                                productItems: newItems,
+                                colorGroupsByProduct: {
+                                  ...prev.colorGroupsByProduct,
+                                  [item.id]: newGroups
+                                }
+                              };
+                            });
+                          }}
+                          onRemove={() => removeColorFromProduct(item.id, color.colorId)}
+                          onCopyToOthers={() => {
+                            // [2025-12-19] 复制到其他颜色的逻辑
+                            const otherColors = item.colors.filter(c => c.colorId !== color.colorId);
+                            if (otherColors.length === 0) {
+                              alert('没有其他颜色可以复制到');
+                              return;
+                            }
+                            
+                            if (confirm(`确定要将"${color.colorName}"的配置复制到其他 ${otherColors.length} 个颜色吗？`)) {
+                              setFormState(prev => {
+                                const groups = prev.colorGroupsByProduct[item.id] || [];
+                                const sourceGroup = groups.find(g => g.colorCode === color.colorId);
+                                if (!sourceGroup) return prev;
+                                
+                                const sourcePositions = sourceGroup.positions.map(pos => ({
+                                  ...pos,
+                                  designAssetId: pos.designAssetId || null
+                                }));
+                                
+                                const newGroups = groups.map(g => {
+                                  if (otherColors.some(c => c.colorId === g.colorCode)) {
+                                    return {
+                                      ...g,
+                                      positions: sourcePositions,
+                                      inheritsFromColorId: sourceGroup.id
+                                    };
+                                  }
+                                  return g;
+                                });
+                                
+                                return {
+                                  ...prev,
+                                  colorGroupsByProduct: {
+                                    ...prev.colorGroupsByProduct,
+                                    [item.id]: newGroups
+                                  }
+                                };
+                              });
+                            }
+                          }}
+                          previousGroup={previousGroup}
+                          globalUnitPrice={formState.globalUnitPrice || 0}
+                          onSizeQuantityChange={(size, quantity) => {
+                            updateSizeQuantity(item.id, color.colorId, size, quantity, formState.globalUnitPrice || 0);
+                          }}
+                        />
                       );
                     })}
 
@@ -1450,7 +1588,13 @@ export default function OfflineOrdersIntakePage() {
                           if (e.target.value) {
                             const color = availableColors.find(c => c.id === e.target.value);
                             if (color && !item.colors.some(c => c.colorId === color.id)) {
-                              addColorToProduct(item.id, color.id, color.name);
+                              // [2025-12-19] 显示添加颜色弹窗
+                              setAddColorModal({
+                                isOpen: true,
+                                itemId: item.id,
+                                colorId: color.id,
+                                colorName: color.name
+                              });
                               e.target.value = '';
                             }
                           }
@@ -2379,6 +2523,38 @@ export default function OfflineOrdersIntakePage() {
             {currentStep === 2 && renderStep2()}
             {currentStep === 3 && renderStep3()}
           </div>
+          )}
+          
+          {/* [2025-12-19] 添加颜色弹窗 */}
+          {addColorModal && (
+            <AddColorModal
+              isOpen={addColorModal.isOpen}
+              previousColorName={
+                (() => {
+                  const item = formState.productItems.find(i => i.id === addColorModal.itemId);
+                  if (item && item.colors.length > 0) {
+                    return item.colors[item.colors.length - 1].colorName;
+                  }
+                  return undefined;
+                })()
+              }
+              hasPreviousColor={
+                (() => {
+                  const item = formState.productItems.find(i => i.id === addColorModal.itemId);
+                  return item ? item.colors.length > 0 : false;
+                })()
+              }
+              onConfirm={(inheritFromPrev) => {
+                addColorToProduct(
+                  addColorModal.itemId,
+                  addColorModal.colorId,
+                  addColorModal.colorName,
+                  inheritFromPrev
+                );
+                setAddColorModal(null);
+              }}
+              onCancel={() => setAddColorModal(null)}
+            />
           )}
 
           {/* [2025-01-27 18:00:00] 步骤导航按钮 - 使用 Tailwind */}
