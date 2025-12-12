@@ -103,28 +103,5 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
     // 重定向到登录页，避免显示 500
     redirect('/login?redirect=/account');
   }
-} catch (error) {
-    // [2025-01-27 18:45:00] 捕获渲染期间的任何错误，上报并重定向
-    console.error('[AccountLayout] Rendering error', {
-      requestId,
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
-    });
-    
-    reportServerError({
-      traceId: requestId,
-      route: '/account',
-      message: error instanceof Error ? error.message : 'Layout rendering error',
-      error: {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : String(error),
-        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined,
-      },
-    });
-    
-    // 重定向到登录页，避免显示 500
-    redirect('/login?redirect=/account');
-  }
 }
 
