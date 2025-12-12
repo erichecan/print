@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, addressesApi, type Address, type AddressPayload } from '@/lib/api';
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:55:00] 使用路由映射
 
 export default function AddressesPage() {
   const router = useRouter();
@@ -156,7 +157,7 @@ export default function AddressesPage() {
   return (
     <div className="container" style={{ padding: '72px 0', maxWidth: '960px' }}>
       <div style={{ marginBottom: '32px' }}>
-        <Link href="/account" style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
+        <Link href={ACCOUNT_ROUTES.dashboard} style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
           ← Back to Account
         </Link>
         <h1>Addresses</h1>

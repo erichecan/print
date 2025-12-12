@@ -10,6 +10,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { authApi, ordersApi, AccountOrderDetail } from '@/lib/api'; // [2025-11-12 06:42:30] Import AccountOrderDetail type from api.ts
 import { OrderTimeline } from '@/components/OrderTimeline'; // [2025-01-27 12:15:00] 导入订单时间线组件
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:45:00] 使用路由映射
 
 export default function AccountOrderDetailClient({ id }: { id: string }) {
   const router = useRouter();
@@ -33,9 +34,14 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
       setUserEmail(profile.email);
       const data = await ordersApi.getById(id);
       setOrder(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error('[2025-11-12 01:12:05] 加载订单失败', err);
-      setError('Unable to load this order. Please confirm you are signed in.');
+      // [2025-01-27 16:20:00] 区分 404 和其他错误
+      if (err?.message?.includes('404') || err?.message?.includes('Not Found') || err?.message?.includes('not found')) {
+        setError('NOT_FOUND');
+      } else {
+        setError('Unable to load this order. Please confirm you are signed in.');
+      }
     } finally {
       setLoading(false);
     }
@@ -136,13 +142,51 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
     );
   }
 
-  if (error || !order) {
+  // [2025-01-27 16:25:00] 404 错误处理：显示友好的空状态
+  if (error === 'NOT_FOUND' || (!loading && !order && error)) {
     return (
-      <section className="container">
-        <h1>Order details</h1>
-        <p className="error">{error || 'Order not found.'}</p>
-        <button type="button" className="btn" onClick={() => router.back()}>
-          Back
+      <section className="container" style={{ padding: '48px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '16px' }}>订单未找到</h1>
+        <p style={{ color: '#666', marginBottom: '24px' }}>
+          请检查订单号或返回订单列表。
+        </p>
+        <Link
+          href={ACCOUNT_ROUTES.orders}
+          className="btn"
+          style={{
+            display: 'inline-block',
+            padding: '12px 24px',
+            backgroundColor: '#2563eb',
+            color: '#ffffff',
+            textDecoration: 'none',
+            borderRadius: '6px',
+          }}
+        >
+          返回订单列表
+        </Link>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="container" style={{ padding: '48px', textAlign: 'center' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '16px' }}>加载订单失败</h1>
+        <p style={{ color: '#666', marginBottom: '24px' }}>{error}</p>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => loadOrder()}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: '#2563eb',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+        >
+          重试
         </button>
       </section>
     );
@@ -196,7 +240,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
         >
           Open guest view
         </Link>
-        <Link className="btn btn--text" href="/account/orders">
+        <Link className="btn btn--text" href={ACCOUNT_ROUTES.orders}>
           Back to history
         </Link>
       </div>
