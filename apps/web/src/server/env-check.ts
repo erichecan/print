@@ -26,8 +26,22 @@ const RECOMMENDED_ENV_VARS = [
 /**
  * 验证环境变量
  * [2025-01-27 18:30:00] 在生产环境启动时校验必需变量
+ * [2025-12-12 14:15:00] 增强：添加更详细的错误信息和日志
  */
 export function validateRequiredEnvVars(): void {
+  const traceId = `env-check-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  const timestamp = new Date().toISOString();
+  
+  // [2025-12-12 14:15:00] 增强：记录校验开始
+  console.debug('[Env Check] Starting environment variable validation', {
+    traceId,
+    timestamp,
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PHASE: process.env.NEXT_PHASE,
+    isProduction,
+    isBuildTime,
+  });
+  
   const missing: string[] = [];
   const warnings: string[] = [];
 
@@ -36,6 +50,16 @@ export function validateRequiredEnvVars(): void {
     const value = process.env[varName];
     if (!value || value.trim() === '') {
       missing.push(varName);
+      console.debug('[Env Check] Missing required env var', { traceId, varName });
+    } else {
+      // [2025-12-12 14:15:00] 增强：记录已设置的变量（不记录值，只记录状态）
+      console.debug('[Env Check] Required env var found', { 
+        traceId, 
+        varName,
+        valueLength: value.length,
+        // 不记录完整值，只记录是否包含 localhost（用于调试）
+        containsLocalhost: value.includes('localhost') || value.includes('127.0.0.1'),
+      });
     }
   }
 
@@ -44,30 +68,51 @@ export function validateRequiredEnvVars(): void {
     const value = process.env[varName];
     if (!value || value.trim() === '') {
       warnings.push(varName);
+      console.debug('[Env Check] Missing recommended env var', { traceId, varName });
     }
   }
 
   // 生产环境：缺失必需变量时抛出错误
   if (isProduction && missing.length > 0) {
     const errorMsg = `❌ 生产环境缺少必需的环境变量: ${missing.join(', ')}\n` +
-      `请设置这些环境变量后再启动应用。`;
-    console.error('[Env Check]', errorMsg);
+      `请设置这些环境变量后再启动应用。\n` +
+      `当前环境: NODE_ENV=${process.env.NODE_ENV}, NEXT_PHASE=${process.env.NEXT_PHASE || '未设置'}`;
+    console.error('[Env Check] ❌ Validation failed', {
+      traceId,
+      timestamp,
+      missing,
+      error: errorMsg,
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        NEXT_PHASE: process.env.NEXT_PHASE,
+      },
+    });
     throw new Error(errorMsg);
   }
 
   // 开发环境：仅警告
   if (isDevelopment && missing.length > 0) {
-    console.warn('[Env Check] ⚠️ 开发环境缺少环境变量（将使用默认值）:', missing.join(', '));
+    console.warn('[Env Check] ⚠️ 开发环境缺少环境变量（将使用默认值）:', missing.join(', '), {
+      traceId,
+      timestamp,
+    });
   }
 
   // 警告推荐变量缺失
   if (warnings.length > 0) {
-    console.warn('[Env Check] ⚠️ 推荐的环境变量未设置:', warnings.join(', '));
+    console.warn('[Env Check] ⚠️ 推荐的环境变量未设置:', warnings.join(', '), {
+      traceId,
+      timestamp,
+    });
   }
 
   // 成功日志
   if (missing.length === 0) {
-    console.info('[Env Check] ✅ 所有必需的环境变量已配置');
+    console.info('[Env Check] ✅ 所有必需的环境变量已配置', {
+      traceId,
+      timestamp,
+      checkedVars: REQUIRED_ENV_VARS.length,
+    });
   }
 }
 

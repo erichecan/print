@@ -142,6 +142,74 @@ test.describe('Design Lab M1: 基础功能测试', () => {
       await verifyCanvasHasObjects(page, 1);
     });
 
+    test('添加文字后不应被快照回灌误删（回归测试）', async ({ page }) => {
+      await addTextToCanvas(page, TEST_TEXTS.simple);
+
+      // [2025-12-11 23:59:30] 等待可能发生的“旧快照回灌”窗口（此前会把刚添加的 text_* 清掉）
+      await page.waitForTimeout(800);
+
+      // 通过浏览器上下文直接检查 fabricCanvas 中是否仍存在 text 对象
+      const textCount = await page.evaluate(() => {
+        const canvas = (window as any).fabricCanvas;
+        if (!canvas || typeof canvas.getObjects !== 'function') return 0;
+        const objs = canvas.getObjects();
+        return objs.filter((o: any) => o && (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox')).length;
+      });
+
+      expect(textCount).toBeGreaterThan(0);
+    });
+
+    test('Edit Text 面板操作不应导致文本被删除（修复测试）', async ({ page }) => {
+      // [2025-12-11 23:59:30] 添加文本并进入编辑面板
+      await addTextToCanvas(page, TEST_TEXTS.simple);
+      await page.waitForTimeout(1000);
+
+      // 验证 Edit Text 面板已打开
+      const editPanel = page.locator('.dl-edit-text-panel, .dl-panel--edit-text').first();
+      const isEditPanelVisible = await editPanel.isVisible({ timeout: 3000 }).catch(() => false);
+      
+      if (!isEditPanelVisible) {
+        // 如果面板未自动打开，尝试点击文本对象
+        await page.click('canvas');
+        await page.waitForTimeout(500);
+      }
+
+      // 记录初始文本对象数量
+      const initialTextCount = await page.evaluate(() => {
+        const canvas = (window as any).fabricCanvas;
+        if (!canvas || typeof canvas.getObjects !== 'function') return 0;
+        const objs = canvas.getObjects();
+        return objs.filter((o: any) => o && (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox')).length;
+      });
+
+      // 尝试点击编辑面板中的各种按钮（加粗、斜体、形状等）
+      // 查找文本形状按钮（Straight, Arc, Circle, Wave）
+      const shapeButtons = page.locator('.dl-edit-text-panel button:has-text("Arc"), .dl-edit-text-panel button:has-text("Circle"), .dl-edit-text-panel button:has-text("Wave")');
+      const shapeButtonCount = await shapeButtons.count();
+      
+      if (shapeButtonCount > 0) {
+        // 点击第一个形状按钮（如果不是 Straight）
+        const firstShapeButton = shapeButtons.first();
+        await firstShapeButton.click({ timeout: 3000 }).catch(() => {});
+        await page.waitForTimeout(500);
+      }
+
+      // 验证文本对象仍然存在
+      const finalTextCount = await page.evaluate(() => {
+        const canvas = (window as any).fabricCanvas;
+        if (!canvas || typeof canvas.getObjects !== 'function') return 0;
+        const objs = canvas.getObjects();
+        return objs.filter((o: any) => o && (o.type === 'i-text' || o.type === 'text' || o.type === 'textbox')).length;
+      });
+
+      // 文本对象数量应该保持不变
+      expect(finalTextCount).toBeGreaterThanOrEqual(initialTextCount);
+      
+      // 验证编辑面板仍然打开（不应该切回 Home）
+      const isStillEditPanel = await editPanel.isVisible({ timeout: 1000 }).catch(() => false);
+      expect(isStillEditPanel).toBeTruthy();
+    });
+
     test('应该能够打开 Edit Text 面板', async ({ page }) => {
       // 先添加文字
       await addTextToCanvas(page, TEST_TEXTS.simple);

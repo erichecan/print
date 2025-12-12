@@ -13,10 +13,8 @@ import { Gallery } from './Gallery';
 import { BuyBox } from './BuyBox';
 import { DeliveryReturns } from './DeliveryReturns';
 import { ProductFeatures } from './ProductFeatures';
-import { AlsoAvailable } from './AlsoAvailable';
 import { MoreByArtist } from './MoreByArtist';
 import { YouMightLike } from './YouMightLike';
-import { TagsTrending } from './TagsTrending';
 import { adaptProductData } from './dataAdapter';
 import { ProductData } from './types';
 import styles from './ProductDetail.module.css';
@@ -39,6 +37,22 @@ export function ProductDetail() {
   const { data: relatedData } = useSWR(
     slug ? `related-${slug}` : null,
     () => productsApi.getRelated(slug, 8).catch(() => ({ data: [] }))
+  );
+
+  // [2025-01-30 10:00:00] 获取同一品牌的其它商品
+  const productWithBrand = apiProduct as any;
+  const { data: brandProductsData } = useSWR(
+    productWithBrand?.brand?.id && productWithBrand?.id
+      ? `brand-products-${productWithBrand.brand.id}-${productWithBrand.id}`
+      : null,
+    () => {
+      if (productWithBrand?.brand?.id && productWithBrand?.id) {
+        return productsApi
+          .getBrandProducts(productWithBrand.brand.id, productWithBrand.id, 12)
+          .catch(() => ({ items: [], brand: null }));
+      }
+      return Promise.resolve({ items: [], brand: null });
+    }
   );
 
   // [2025-11-19 09:45:00] 转换数据格式
@@ -294,14 +308,22 @@ export function ProductDetail() {
           </div>
         </div>
 
-        {/* [2025-11-19 09:30:00] 参考图一位置："Also available on" 横滑 */}
-        <AlsoAvailable items={productData.alsoAvailableOn} />
+        {/* [2025-12-11 09:21:35] 移除 Also Available On 模块（按需求） */}
 
         {/* [2025-11-19 09:30:00] 参考图一位置："More by this artist" */}
+        {/* [2025-01-30 10:00:00] 使用新 API 获取同一品牌的产品 */}
         <MoreByArtist
           artistName={productData.artist.name}
           artistShopUrl={productData.artist.shopUrl}
-          products={productData.moreByArtist}
+          products={
+            brandProductsData?.items?.map((item) => ({
+              id: item.id,
+              title: item.title,
+              url: item.coverImageUrl || '/assets/hero/hero-card-tee.jpg',
+              price: item.price,
+              link: `/products/${item.slug}`,
+            })) || []
+          }
         />
 
         {/* [2025-11-19 09:30:00] 参考图一位置："T-shirts you might like" */}
@@ -310,12 +332,7 @@ export function ProductDetail() {
           products={productData.youMightLike}
         />
 
-        {/* [2025-11-19 09:30:00] 参考图一位置：搜索与标签 */}
-        <TagsTrending
-          tags={productData.tags}
-          trending={productData.trending}
-          onSearch={handleSearch}
-        />
+        {/* [2025-12-11 09:21:35] 移除 Trending Topics 模块（按需求） */}
       </div>
     </div>
   );

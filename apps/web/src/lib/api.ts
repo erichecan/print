@@ -534,6 +534,27 @@ export const productsApi = {
       method: 'POST',
       body: data,
     }), // [2025-01-27 13:35:00] 提交产品评价API（需要后端实现）
+  // [2025-01-30 10:00:00] 获取指定品牌的其它商品列表
+  getBrandProducts: (brandId: string, excludeProductId?: string, limit?: number) => {
+    const query = new URLSearchParams();
+    if (excludeProductId) query.append('excludeProductId', excludeProductId);
+    if (limit) query.append('limit', limit.toString());
+    const queryString = query.toString();
+    return api<{
+      items: Array<{
+        id: string;
+        title: string;
+        slug: string;
+        price: number;
+        coverImageUrl: string | null;
+      }>;
+      brand: {
+        id: string;
+        name: string;
+        slug: string;
+      };
+    }>(`/brands/${brandId}/products${queryString ? `?${queryString}` : ''}`);
+  },
 };
 
 // Collections API
@@ -2723,6 +2744,91 @@ export const artAssetsApi = {
   // [2025-01-28 01:00:00] Get art assets by category (public)
   getByCategory: async (category: string): Promise<ArtAssetsByCategoryResponse> => {
     return api<ArtAssetsByCategoryResponse>(`/art-assets/category/${encodeURIComponent(category)}`);
+  },
+};
+
+// [2025-12-11 23:35:00] Artworks API - 新的艺术作品 API，支持分类树、分页、搜索
+export interface Artwork {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  imageUrl: string;
+  thumbnailUrl?: string;
+  width?: number;
+  height?: number;
+  tags: string[];
+  license?: string;
+  attribution?: string;
+  topCategory?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  subCategory?: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+}
+
+export interface ArtworksResponse {
+  success: boolean;
+  data: Artwork[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface CategoryNode {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+  children: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    count: number;
+  }>;
+}
+
+export interface CategoriesTreeResponse {
+  success: boolean;
+  data: CategoryNode[];
+}
+
+export const artworksApi = {
+  // [2025-12-11 23:35:00] Get artworks with pagination, filtering, and search
+  getArtworks: async (params?: {
+    top?: string;
+    sub?: string;
+    query?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<ArtworksResponse> => {
+    const query = new URLSearchParams();
+    if (params?.top) query.append('top', params.top);
+    if (params?.sub) query.append('sub', params.sub);
+    if (params?.query) query.append('query', params.query);
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.pageSize) query.append('pageSize', params.pageSize.toString());
+    
+    const queryString = query.toString();
+    return api<ArtworksResponse>(`/artworks${queryString ? `?${queryString}` : ''}`);
+  },
+
+  // [2025-12-11 23:35:00] Get categories tree with counts
+  getCategoriesTree: async (): Promise<CategoriesTreeResponse> => {
+    return api<CategoriesTreeResponse>('/artworks/categories/tree');
+  },
+
+  // [2025-12-11 23:35:00] Get single artwork
+  getArtwork: async (id: string): Promise<{ success: boolean; data: Artwork }> => {
+    return api<{ success: boolean; data: Artwork }>(`/artworks/${id}`);
   },
 };
 

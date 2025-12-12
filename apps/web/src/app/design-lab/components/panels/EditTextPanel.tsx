@@ -203,34 +203,58 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   // [2025-01-30 17:45:00] 更新字体
   // [2025-01-30 18:40:00] 支持多语言字体，需要加载 Google Fonts
   // [2025-01-30 22:00:00] 修复：使用从 API 加载的 fonts 数据或从 fonts.ts 导入的配置
+  // [2025-12-12 00:00:00] 修复：添加错误处理和调试日志，确保字体更改正确应用
   const handleFontChange = (font: string) => {
+    console.log('[EditTextPanel] handleFontChange called:', { font, hasSelectedText: !!selectedText, hasCanvas: !!canvas });
     setFontFamily(font);
-    if (selectedText) {
-      // [2025-01-30 18:40:00] 对于 Google Fonts，需要确保字体已加载
-      // [2025-01-30 22:00:00] 从加载的 fonts 数据中查找字体信息
-      const allFonts = Object.values(fonts).flat();
-      const fontInfo = allFonts.find(f => f.name === font);
-      
-      // [2025-01-30 22:00:00] 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
-      selectedText.set('fontFamily', font);
-      selectedText.setCoords();
-      if (canvas) {
+    if (selectedText && canvas) {
+      try {
+        // [2025-01-30 18:40:00] 对于 Google Fonts，需要确保字体已加载
+        // [2025-01-30 22:00:00] 从加载的 fonts 数据中查找字体信息
+        const allFonts = Object.values(fonts).flat();
+        const fontInfo = allFonts.find(f => f.name === font);
+        
+        // [2025-01-30 22:00:00] 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
+        selectedText.set('fontFamily', font);
+        selectedText.setCoords();
         canvas.renderAll();
-        onUpdate();
+        
+        console.log('[EditTextPanel] Font changed successfully:', { font, textObjectName: (selectedText as any).name });
+        
+        // [2025-12-12 00:00:00] 延迟调用 onUpdate，确保字体更改已应用
+        setTimeout(() => {
+          onUpdate();
+        }, 100);
+      } catch (error) {
+        console.error('[EditTextPanel] Error changing font:', error);
       }
+    } else {
+      console.warn('[EditTextPanel] Cannot change font: selectedText or canvas is null');
     }
   };
 
   // [2025-01-30 17:45:00] 更新颜色
+  // [2025-12-12 00:00:00] 修复：添加错误处理和调试日志，确保颜色更改正确应用
   const handleColorChange = (newColor: string) => {
+    console.log('[EditTextPanel] handleColorChange called:', { newColor, hasSelectedText: !!selectedText, hasCanvas: !!canvas });
     setColor(newColor);
-    if (selectedText) {
-      selectedText.set('fill', newColor);
-      selectedText.setCoords();
-      if (canvas) {
+    if (selectedText && canvas) {
+      try {
+        selectedText.set('fill', newColor);
+        selectedText.setCoords();
         canvas.renderAll();
-        onUpdate();
+        
+        console.log('[EditTextPanel] Color changed successfully:', { newColor, textObjectName: (selectedText as any).name });
+        
+        // [2025-12-12 00:00:00] 延迟调用 onUpdate，确保颜色更改已应用
+        setTimeout(() => {
+          onUpdate();
+        }, 100);
+      } catch (error) {
+        console.error('[EditTextPanel] Error changing color:', error);
       }
+    } else {
+      console.warn('[EditTextPanel] Cannot change color: selectedText or canvas is null');
     }
   };
 
@@ -291,11 +315,18 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   };
 
   // [2025-12-08] 处理文本形状变化
+  // [2025-12-11 23:59:30] 修复：添加参数验证和错误处理，防止 TypeError "t is not iterable"
   const handleTextShapeChange = (shape: 'straight' | 'arc' | 'circle' | 'wave') => {
     setTextShape(shape);
     if (!selectedText || !canvas) return;
     
     try {
+      // [2025-12-11 23:59:30] 验证 selectedText 是有效的文本对象
+      if (selectedText.type !== 'i-text' && selectedText.type !== 'textbox') {
+        console.warn('[EditTextPanel] Selected object is not a text object, skipping shape change');
+        return;
+      }
+      
       // 获取文本对象的位置和属性
       const left = selectedText.left || 0;
       const top = selectedText.top || 0;
@@ -307,30 +338,28 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       const strokeWidth = selectedText.strokeWidth || 0;
       
       // 创建路径
-      let path: string;
+      let path: string | undefined;
       const width = (selectedText.width || 200);
       const height = (selectedText.height || 50);
       
       switch (shape) {
         case 'straight':
-          // 直线：使用普通文本对象
-          selectedText.set('path', undefined);
+          // 直线：使用普通文本对象，清除路径
+          path = undefined;
           break;
         case 'arc':
-          // 弧形：使用SVG路径
+          // 弧形：使用SVG路径字符串
           path = `M ${left} ${top + height} Q ${left + width / 2} ${top} ${left + width} ${top + height}`;
-          selectedText.set('path', path);
           break;
         case 'circle':
-          // 圆形：使用圆形路径
+          // 圆形：使用圆形路径字符串
           const radius = Math.min(width, height) / 2;
           const centerX = left + width / 2;
           const centerY = top + height / 2;
           path = `M ${centerX + radius} ${centerY} A ${radius} ${radius} 0 1 1 ${centerX - radius} ${centerY} A ${radius} ${radius} 0 1 1 ${centerX + radius} ${centerY}`;
-          selectedText.set('path', path);
           break;
         case 'wave':
-          // 波浪：使用波浪路径
+          // 波浪：使用波浪路径字符串
           const waveAmplitude = 10;
           const waveLength = width / 4;
           let wavePath = `M ${left} ${top + height / 2}`;
@@ -339,19 +368,42 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
             const y = top + height / 2 + Math.sin((i / waveLength) * Math.PI * 2) * waveAmplitude;
             wavePath += ` L ${x} ${y}`;
           }
-          selectedText.set('path', wavePath);
+          path = wavePath;
           break;
+        default:
+          console.warn('[EditTextPanel] Unknown shape type:', shape);
+          path = undefined;
+      }
+      
+      // [2025-12-11 23:59:30] 验证路径格式：必须是字符串或 undefined
+      if (path !== undefined && typeof path !== 'string') {
+        console.error('[EditTextPanel] Invalid path format, expected string or undefined, got:', typeof path, path);
+        path = undefined;
+      }
+      
+      // [2025-12-11 23:59:30] 安全地设置路径属性
+      if (path === undefined) {
+        selectedText.set('path', undefined);
+      } else {
+        // 确保路径是有效的字符串
+        selectedText.set('path', path);
       }
       
       selectedText.setCoords();
       canvas.renderAll();
       onUpdate();
     } catch (error) {
+      // [2025-12-11 23:59:30] 仅打印错误，不弹窗也不改变面板状态
       console.error('[EditTextPanel] Error applying text shape:', error);
       // 如果路径设置失败，回退到直线
-      if (selectedText) {
-        selectedText.set('path', undefined);
-        canvas?.renderAll();
+      try {
+        if (selectedText) {
+          selectedText.set('path', undefined);
+          selectedText.setCoords();
+          canvas?.renderAll();
+        }
+      } catch (recoveryError) {
+        console.error('[EditTextPanel] Error during recovery:', recoveryError);
       }
     }
   };
@@ -583,40 +635,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         </div>
       </div>
 
-      {/* 5.5. Text Shape（文本形状） - [2025-12-08] 新增 */}
-      <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Text Shape</label>
-        <div className="dl-edit-text-panel__btn-group">
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'straight' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('straight')}
-            type="button"
-          >
-            Straight
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'arc' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('arc')}
-            type="button"
-          >
-            Arc
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'circle' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('circle')}
-            type="button"
-          >
-            Circle
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textShape === 'wave' ? 'is-active' : ''}`}
-            onClick={() => handleTextShapeChange('wave')}
-            type="button"
-          >
-            Wave
-          </button>
-        </div>
-      </div>
+      {/* 5.5. Text Shape（文本形状） - [2025-12-12 00:00:00] 已移除 */}
 
       {/* 6. Text Size（字体大小滑块） */}
       {/* [2025-01-31 00:00:00] 像素级对齐：根据 Custom Ink designlab-addtext03.jpeg，Text Size 应在 Outline 之后 */}
@@ -634,97 +653,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         />
       </div>
 
-      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate */}
-      <div className="dl-edit-text-panel__section">
-        <button
-          className="dl-edit-text-panel__btn"
-          onClick={handleCenter}
-          type="button"
-        >
-          Center
-        </button>
-      </div>
-
-      <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Layering</label>
-        <div className="dl-edit-text-panel__btn-group">
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={handleBringToFront}
-            type="button"
-          >
-            Bring to Front
-          </button>
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={() => {
-              if (!selectedText || !canvas) return;
-              canvas.bringForward(selectedText);
-              canvas.renderAll();
-              onUpdate();
-            }}
-            type="button"
-          >
-            Bring Forward
-          </button>
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={() => {
-              if (!selectedText || !canvas) return;
-              canvas.sendBackwards(selectedText);
-              canvas.renderAll();
-              onUpdate();
-            }}
-            type="button"
-          >
-            Send Backward
-          </button>
-          <button
-            className="dl-edit-text-panel__btn"
-            onClick={handleSendToBack}
-            type="button"
-          >
-            Send to Back
-          </button>
-        </div>
-      </div>
-
-      <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Text Alignment</label>
-        <div className="dl-edit-text-panel__btn-group">
-          <button
-            className={`dl-edit-text-panel__btn ${textAlign === 'left' ? 'is-active' : ''}`}
-            onClick={() => handleTextAlignChange('left')}
-            type="button"
-          >
-            Left
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textAlign === 'center' ? 'is-active' : ''}`}
-            onClick={() => handleTextAlignChange('center')}
-            type="button"
-          >
-            Center
-          </button>
-          <button
-            className={`dl-edit-text-panel__btn ${textAlign === 'right' ? 'is-active' : ''}`}
-            onClick={() => handleTextAlignChange('right')}
-            type="button"
-          >
-            Right
-          </button>
-        </div>
-      </div>
-
-      <div className="dl-edit-text-panel__section">
-        <button
-          className="dl-edit-text-panel__btn"
-          onClick={handleDuplicate}
-          type="button"
-        >
-          Duplicate
-        </button>
-      </div>
+      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate - [2025-12-12 00:00:00] 已移除 */}
 
       {/* [2025-12-08] 超出安全区警示 */}
       {isOutOfSafeArea && (

@@ -16,6 +16,7 @@ import { useBuyNow } from '@/hooks/useBuyNow';
 import { SocialShareMenu, ShareConfig } from '@/components/social-share';
 import { StructuredData } from '@/components/seo/StructuredData';
 import { generateProductSchema } from '@/lib/seo';
+import { CategorySidebar } from '@/components/catalog/CategorySidebar'; // [2025-12-11 22:35:00] 商品详情页左侧分类导航
 
 interface ProductVariant {
   id: string;
@@ -98,7 +99,7 @@ export function ProductDetailContent() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [selectedPrintLocation, setSelectedPrintLocation] = useState<'front' | 'back'>('front');
+  // [2025-12-11 09:21:35] 移除 Print Location 状态（模块已移除）
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -274,8 +275,15 @@ export function ProductDetailContent() {
       {/* [2025-12-06 21:00:00] 结构化数据 (JSON-LD) for Issue #154 */}
       {productSchema && <StructuredData data={[productSchema, ...(aggregateRatingSchema ? [aggregateRatingSchema] : [])]} />}
       
-      {/* Main Product Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-12 items-start">
+      {/* [2025-12-11 22:35:00] 商品详情页布局：左侧分类导航 + 右侧产品内容 */}
+      <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
+        {/* [2025-12-11 22:35:00] 左侧分类导航（只显示有产品的分类） */}
+        <aside className="hidden lg:block">
+          <CategorySidebar currentCategorySlug={product.category?.slug ? String(product.category.slug) : undefined} />
+        </aside>
+        
+        {/* Main Product Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-12 items-start w-full">
         {/* Left: Image Gallery */}
         <div className="flex flex-col md:flex-row gap-4 items-start">
           {/* Thumbnails - Vertical on desktop, horizontal on mobile */}
@@ -484,7 +492,7 @@ export function ProductDetailContent() {
                         setHoveredColor(null);
                       }}
                       disabled={!isAvailable}
-                      title={color.name}
+                      title={color.name ?? undefined}
                     >
                       {isSelected && (
                         <span className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white text-lg font-bold drop-shadow pointer-events-none">
@@ -539,34 +547,7 @@ export function ProductDetailContent() {
             </div>
           )}
 
-          {/* Print Location */}
-          <div className="flex flex-col gap-3">
-            <label className="font-bold text-sm text-gray-900 block">Print Location</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                className={`flex-1 px-5 py-2.5 border-2 rounded bg-white text-sm font-medium cursor-pointer transition-all text-center ${
-                  selectedPrintLocation === 'front'
-                    ? 'border-blue-600 text-blue-600 bg-blue-50'
-                    : 'border-gray-300 hover:border-blue-600 hover:bg-blue-50'
-                }`}
-                onClick={() => setSelectedPrintLocation('front')}
-              >
-                Front
-              </button>
-              <button
-                type="button"
-                className={`flex-1 px-5 py-2.5 border-2 rounded bg-white text-sm font-medium cursor-pointer transition-all text-center ${
-                  selectedPrintLocation === 'back'
-                    ? 'border-blue-600 text-blue-600 bg-blue-50'
-                    : 'border-gray-300 hover:border-blue-600 hover:bg-blue-50'
-                }`}
-                onClick={() => setSelectedPrintLocation('back')}
-              >
-                Back
-              </button>
-            </div>
-          </div>
+          {/* [2025-12-11 09:21:35] 移除 Print Location 模块（按需求） */}
 
           {/* Action Buttons - 3 buttons in a row */}
           <div className="flex gap-3 flex-col sm:flex-row product-actions-mobile">
@@ -650,6 +631,7 @@ export function ProductDetailContent() {
             </ul>
           </div>
         </div>
+      </div>
       </div>
 
       {/* [2025-01-27 17:25:00] 相关产品推荐 */}

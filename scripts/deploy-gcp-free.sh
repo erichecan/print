@@ -59,19 +59,41 @@ docker build --platform linux/amd64 \
 echo -e "${GREEN}📤 Pushing backend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest
 
+# Get backend URL for frontend build (use existing or get from deployed service)
+# [2025-12-11 22:50:00] 获取后端 URL 用于前端构建
+BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)' 2>/dev/null || echo "")
+if [ -z "$BACKEND_URL" ]; then
+    echo -e "${YELLOW}⚠️  Backend service not found, will use placeholder URL${NC}"
+    BACKEND_URL="https://print-main-backend-234065158862.us-central1.run.app"
+fi
+API_URL="${BACKEND_URL}/api"
+echo -e "${GREEN}📌 Using API URL for frontend build: ${API_URL}${NC}"
+
+# Get Stripe publishable key from Secret Manager
+# [2025-12-11 22:50:00] 从 Secret Manager 读取 Stripe publishable key
+STRIPE_PUBLISHABLE_KEY=$(gcloud secrets versions access latest --secret=stripe-publishable-key --project=${PROJECT_ID} 2>/dev/null || echo "")
+if [ -z "$STRIPE_PUBLISHABLE_KEY" ]; then
+    echo -e "${RED}❌ 错误: 无法从 Secret Manager 读取 stripe-publishable-key${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✅ 已从 Secret Manager 读取 Stripe publishable key${NC}"
+
 # Build and push frontend
 # [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
 # [2025-12-04 21:50:00] 注入构建版本信息（Git SHA 和构建时间）
+# [2025-12-11 22:50:00] 传递必需的环境变量
 echo -e "${GREEN}🏗️  Building frontend Docker image (linux/amd64)...${NC}"
 GIT_SHA=$(git rev-parse --short HEAD)
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 echo -e "${YELLOW}📌 Build version: ${GIT_SHA} at ${BUILD_TIME}${NC}"
 
 docker build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_API_URL="${API_URL}" \
+  --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \
   --build-arg NEXT_PUBLIC_BUILD_SHA="${GIT_SHA}" \
   --build-arg NEXT_PUBLIC_BUILD_TIME="${BUILD_TIME}" \
   -t ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest \
-  -f apps/web/Dockerfile apps/web
+  -f apps/web/Dockerfile .
 
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/frontend:latest
@@ -106,15 +128,15 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --set-env-vars NODE_ENV=production,AUTO_MIGRATE=false \
   --cpu-boost
 
-# Get backend URL
-BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
-echo -e "${GREEN}✅ Backend deployed: ${BACKEND_URL}${NC}"
+# Get backend URL (update if changed)
+BACKEND_URL_NEW=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
+echo -e "${GREEN}✅ Backend deployed: ${BACKEND_URL_NEW}${NC}"
 
 # Update API URL secret
-API_URL="${BACKEND_URL}/api"
+API_URL_NEW="${BACKEND_URL_NEW}/api"
 echo -e "${GREEN}🔐 Updating API URL secret...${NC}"
-echo -n "${API_URL}" | gcloud secrets versions add api-url --data-file=- 2>/dev/null || \
-  echo -n "${API_URL}" | gcloud secrets create api-url --data-file=-
+echo -n "${API_URL_NEW}" | gcloud secrets versions add api-url --data-file=- 2>/dev/null || \
+  echo -n "${API_URL_NEW}" | gcloud secrets create api-url --data-file=-
 
 # Deploy frontend - FREE TIER CONFIGURATION
 echo -e "${GREEN}🚀 Deploying frontend to Cloud Run (FREE TIER)...${NC}"

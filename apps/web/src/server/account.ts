@@ -21,6 +21,9 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
   const traceId = requestId || generateTraceId();
   const timestamp = new Date().toISOString();
   
+  // [2025-12-12 14:15:00] 增强：记录函数调用开始
+  console.debug('[Account] getSessionSafe called', { traceId, timestamp, hasRequestId: !!requestId });
+  
   try {
     // 导入 cookies（Next.js 14 App Router）
     const { cookies } = await import('next/headers');
@@ -31,42 +34,109 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       console.info('[Account] No token found', { traceId, timestamp });
       return { ok: false, code: 'NO_TOKEN', message: 'No authentication token found' };
     }
+    
+    // [2025-12-12 14:15:00] 增强：记录 token 存在（不记录完整 token）
+    console.debug('[Account] Token found, proceeding to fetch session', { 
+      traceId, 
+      timestamp,
+      tokenLength: token?.length || 0,
+      tokenPrefix: token ? token.substring(0, 10) + '...' : 'null',
+    });
 
-    // 获取后端 API URL（可能抛出错误）
+    // [2025-12-12 14:15:00] 获取后端 API URL（可能抛出错误）
     let backendApiUrl: string;
     try {
       backendApiUrl = getBackendApiBaseUrl();
+      // [2025-12-12 14:15:00] 增强：记录成功获取 API URL（不记录完整 URL 以避免泄露）
+      console.debug('[Account] Backend API URL retrieved', {
+        traceId,
+        timestamp,
+        urlLength: backendApiUrl.length,
+        urlHost: new URL(backendApiUrl).hostname,
+      });
     } catch (configError) {
+      // [2025-12-12 14:15:00] 增强：记录详细的配置错误信息
       console.error('[Account] Failed to get backend API URL', { 
         traceId, 
         timestamp,
-        error: configError instanceof Error ? configError.message : String(configError)
+        error: configError instanceof Error ? configError.message : String(configError),
+        errorName: configError instanceof Error ? configError.name : 'Unknown',
+        errorStack: configError instanceof Error ? configError.stack : undefined,
+        // [2025-12-12 14:15:00] 记录当前环境变量状态（用于调试）
+        envVars: {
+          NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ? '已设置' : '未设置',
+          API_BASE_URL: process.env.API_BASE_URL ? '已设置' : '未设置',
+          NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL ? '已设置' : '未设置',
+          NODE_ENV: process.env.NODE_ENV,
+          NEXT_PHASE: process.env.NEXT_PHASE,
+        },
       });
       return { 
         ok: false, 
         code: 'CONFIG_ERROR', 
-        message: 'Backend API configuration error' 
+        message: configError instanceof Error ? configError.message : 'Backend API configuration error',
       };
     }
 
-    // 调用后端 API
-    const response = await fetch(`${backendApiUrl}/auth/me`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'X-Request-Id': traceId,
-        'X-Trace-Id': traceId,
-      },
-      cache: 'no-store',
-    });
+    // [2025-12-12 14:15:00] 修复：添加 fetch 超时和网络错误处理
+    // 创建 AbortController 用于超时控制
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+    
+    let response: Response;
+    try {
+      // 调用后端 API
+      response = await fetch(`${backendApiUrl}/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'X-Request-Id': traceId,
+          'X-Trace-Id': traceId,
+        },
+        cache: 'no-store',
+        signal: controller.signal, // [2025-12-12 14:15:00] 添加超时控制
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      // [2025-12-12 14:15:00] 处理网络错误、超时等 fetch 异常
+      const isAbortError = fetchError instanceof Error && fetchError.name === 'AbortError';
+      const isNetworkError = fetchError instanceof TypeError && 
+                            (fetchError.message.includes('fetch') || 
+                             fetchError.message.includes('network') ||
+                             fetchError.message.includes('Failed to fetch'));
+      
+      console.error('[Account] Fetch error in getSessionSafe', {
+        traceId,
+        timestamp,
+        error: fetchError instanceof Error ? fetchError.message : String(fetchError),
+        errorName: fetchError instanceof Error ? fetchError.name : 'Unknown',
+        isAbortError,
+        isNetworkError,
+      });
+      
+      return {
+        ok: false,
+        code: isAbortError ? 'TIMEOUT' : isNetworkError ? 'NETWORK_ERROR' : 'FETCH_ERROR',
+        message: isAbortError 
+          ? 'Request timeout: Backend API did not respond in time'
+          : isNetworkError
+          ? 'Network error: Unable to connect to backend API'
+          : 'Failed to fetch user session',
+      };
+    }
+    
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.warn('[Account] Backend API returned non-OK status', { 
         traceId, 
         timestamp,
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
+        // [2025-12-12 14:15:00] 添加响应头信息用于调试
+        headers: Object.fromEntries(response.headers.entries()),
       });
       return { 
         ok: false, 
@@ -76,12 +146,36 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       };
     }
 
-    const user = await response.json();
+    // [2025-12-12 14:15:00] 修复：添加 JSON 解析错误处理
+    let user: any;
+    try {
+      user = await response.json();
+    } catch (jsonError) {
+      console.error('[Account] Failed to parse response JSON', {
+        traceId,
+        timestamp,
+        error: jsonError instanceof Error ? jsonError.message : String(jsonError),
+        status: response.status,
+        statusText: response.statusText,
+      });
+      return {
+        ok: false,
+        code: 'PARSE_ERROR',
+        message: 'Failed to parse backend response',
+      };
+    }
+    // [2025-12-12 14:15:00] 增强：记录成功获取会话的详细信息
     console.info('[Account] Session retrieved successfully', { 
       traceId, 
       timestamp,
       userId: user.id || user.userId,
-      email: user.email?.substring(0, 3) + '***'
+      email: user.email ? user.email.substring(0, 3) + '***' : 'no-email',
+      // [2025-12-12 14:15:00] 记录响应状态用于调试
+      responseStatus: response.status,
+      responseHeaders: {
+        contentType: response.headers.get('content-type'),
+        requestId: response.headers.get('x-request-id'),
+      },
     });
     
     return { 
@@ -93,11 +187,22 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       }
     };
   } catch (error) {
+    // [2025-12-12 14:15:00] 增强：记录详细的错误信息，包括错误类型和上下文
     console.error('[Account] getSessionSafe error', {
       traceId,
       timestamp,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : undefined,
+      // [2025-12-12 14:15:00] 记录错误类型用于分类
+      errorType: error instanceof TypeError ? 'TypeError' :
+                 error instanceof Error && error.name === 'AbortError' ? 'AbortError' :
+                 error instanceof Error ? error.constructor.name : 'Unknown',
+      // [2025-12-12 14:15:00] 记录环境信息用于调试
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        NEXT_PHASE: process.env.NEXT_PHASE,
+      },
     });
     return { 
       ok: false, 

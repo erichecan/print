@@ -2,121 +2,111 @@
  * Art Panel - 艺术素材面板
  * [2025-01-30 18:00:00] 实现 Artwork Categories 界面
  * [2025-12-04 21:50:00] 优化大类网格 UI，调整为 3 列布局，对齐 Custom Ink 设计
+ * [2025-12-11 23:40:00] 重构：使用新的 artworks API，支持分类树、分页、搜索
  */
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { artAssetsApi, type ArtAsset } from '@/lib/api';
-
-// [2025-01-30 18:00:00] 艺术素材分类
-const ART_CATEGORIES = [
-  'Emojis',
-  'Shapes & Symbols',
-  'Sports & Games',
-  'Letters & Numbers',
-  'Animals',
-  'Mascots',
-  'Nature',
-  'America',
-  'Food & Drink',
-  'Travel',
-  'Objects',
-  'Clothing',
-  'Activities'
-];
-
-// [2025-12-08] 子分类定义（根据PRD要求）
-const ART_SUBCATEGORIES: Record<string, string[]> = {
-  'Emojis': [
-    'Animals',
-    'Food & Drink',
-    'Hands',
-    'Nature & Weather',
-    'Objects & Symbols',
-    'Smileys',
-    'View All'
-  ],
-  // 其他分类可以在这里添加子分类
-};
+import React, { useState, useEffect, useCallback } from 'react';
+import { artworksApi, type Artwork, type CategoryNode } from '@/lib/api';
 
 interface ArtPanelProps {
   onSelectArt: (artUrl: string, artName: string) => void;
 }
 
 const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
-  const [currentCategory, setCurrentCategory] = useState<string | null>(null);
-  const [currentSubcategory, setCurrentSubcategory] = useState<string | null>(null); // [2025-12-08] 当前子分类
-  const [artAssets, setArtAssets] = useState<Record<string, ArtAsset[]>>({});
+  const [categoriesTree, setCategoriesTree] = useState<CategoryNode[]>([]);
+  const [currentTopCategory, setCurrentTopCategory] = useState<CategoryNode | null>(null);
+  const [currentSubcategory, setCurrentSubcategory] = useState<{ id: string; name: string; slug: string; count: number } | null>(null);
+  const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState(''); // [2025-12-08] 搜索关键词
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 48;
 
-  // [2025-01-30 18:00:00] 加载所有艺术素材
+  // [2025-12-11 23:40:00] 加载分类树
   useEffect(() => {
-    const loadArtAssets = async () => {
-      setLoading(true);
-      setError(null);
+    const loadCategoriesTree = async () => {
       try {
-        const response = await artAssetsApi.getAll();
+        setLoading(true);
+        setError(null);
+        const response = await artworksApi.getCategoriesTree();
         if (response.success && response.data) {
-          setArtAssets(response.data);
+          setCategoriesTree(response.data);
         }
       } catch (err) {
-        console.error('[ArtPanel] Error loading art assets:', err);
-        setError('Failed to load art assets');
+        console.error('[ArtPanel] Error loading categories tree:', err);
+        setError('Failed to load categories');
       } finally {
         setLoading(false);
       }
     };
 
-    loadArtAssets();
+    loadCategoriesTree();
   }, []);
 
-  // [2025-12-08] 过滤素材（搜索功能）
-  const filterAssets = (assets: ArtAsset[]) => {
-    if (!searchQuery.trim()) return assets;
-    const query = searchQuery.toLowerCase();
-    return assets.filter(asset => 
-      asset.name.toLowerCase().includes(query) ||
-      asset.category?.toLowerCase().includes(query) ||
-      asset.subcategory?.toLowerCase().includes(query)
-    );
-  };
-  
-  // [2025-12-08] 获取当前分类的子分类
-  const getSubcategories = (category: string): string[] => {
-    return ART_SUBCATEGORIES[category] || [];
-  };
-  
-  // [2025-12-08] 根据子分类过滤素材
-  const getFilteredAssetsBySubcategory = (category: string, subcategory: string | null): ArtAsset[] => {
-    const allAssets = artAssets[category] || [];
-    if (!subcategory || subcategory === 'View All') {
-      return allAssets;
+  // [2025-12-11 23:40:00] 加载艺术作品
+  const loadArtworks = useCallback(async (topSlug?: string, subSlug?: string, query?: string, pageNum = 1) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await artworksApi.getArtworks({
+        top: topSlug,
+        sub: subSlug,
+        query: query || undefined,
+        page: pageNum,
+        pageSize,
+      });
+      if (response.success && response.data) {
+        setArtworks(response.data);
+        setTotalPages(response.pagination.totalPages);
+        setPage(response.pagination.page);
+      }
+    } catch (err) {
+      console.error('[ArtPanel] Error loading artworks:', err);
+      setError('Failed to load artworks');
+    } finally {
+      setLoading(false);
     }
-    // 根据子分类名称过滤（简化版：按名称匹配）
-    return allAssets.filter(asset => 
-      asset.subcategory?.toLowerCase() === subcategory.toLowerCase() ||
-      asset.name.toLowerCase().includes(subcategory.toLowerCase())
-    );
-  };
+  }, [pageSize]);
 
-  // [2025-01-30 18:00:00] 显示分类网格
-  // [2025-12-04 21:50:00] 优化分类网格 UI，添加 header 和更好的布局
-  // [2025-12-08] 添加搜索功能
-  if (!currentCategory) {
+  // [2025-12-11 23:40:00] 当选择分类或搜索时加载素材
+  useEffect(() => {
+    if (currentTopCategory) {
+      loadArtworks(
+        currentTopCategory.slug,
+        currentSubcategory?.slug,
+        searchQuery || undefined,
+        1
+      );
+    }
+  }, [currentTopCategory, currentSubcategory, searchQuery, loadArtworks]);
+
+  // [2025-12-11 23:40:00] 显示分类网格（一级分类）
+  if (!currentTopCategory) {
     return (
       <div className="dl-art-panel">
         <div className="dl-art-panel__header">
           <h2 className="dl-art-panel__title">Artwork Categories</h2>
-          {/* [2025-12-08] 搜索框 */}
+          {/* [2025-12-11 23:40:00] 搜索框 */}
           <div className="dl-art-panel__search">
             <input
               type="text"
               className="dl-art-panel__search-input"
               placeholder="Search For Artwork"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                // [2025-12-11 23:40:00] 如果有搜索词，直接加载搜索结果
+                if (e.target.value.trim()) {
+                  loadArtworks(undefined, undefined, e.target.value, 1);
+                  setCurrentTopCategory({ id: '', name: 'Search Results', slug: 'search', count: 0, children: [] });
+                } else {
+                  setCurrentTopCategory(null);
+                }
+              }}
+              data-testid="art-search-input"
             />
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="dl-art-panel__search-icon">
               <circle cx="11" cy="11" r="8" />
@@ -129,39 +119,24 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
           {error && <p className="dl-art-panel__error">{error}</p>}
           {!loading && !error && (
             <div className="dl-art-panel__grid">
-              {ART_CATEGORIES.map(category => {
-                const assets = filterAssets(artAssets[category] || []); // [2025-12-08] 应用搜索过滤
-                const hasAssets = assets.length > 0;
-                
-                return (
-                  <button
-                    key={category}
-                    className={`dl-art-panel__category-card ${hasAssets ? '' : 'is-empty'}`}
-                    onClick={() => setCurrentCategory(category)}
-                    disabled={!hasAssets}
-                    type="button"
-                  >
-                    <div className="dl-art-panel__category-icon">
-                      {hasAssets && assets[0]?.thumbnailUrl ? (
-                        <img
-                          src={assets[0].thumbnailUrl}
-                          alt={category}
-                          onError={(e) => {
-                            // 如果缩略图加载失败，显示占位符
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      ) : (
-                        <span>🎨</span>
-                      )}
-                    </div>
-                    <div className="dl-art-panel__category-name">{category}</div>
-                    {hasAssets && (
-                      <div className="dl-art-panel__category-count">{assets.length} items</div>
-                    )}
-                  </button>
-                );
-              })}
+              {categoriesTree.map(category => (
+                <button
+                  key={category.id}
+                  className={`dl-art-panel__category-card ${category.count > 0 ? '' : 'is-empty'}`}
+                  onClick={() => setCurrentTopCategory(category)}
+                  disabled={category.count === 0}
+                  type="button"
+                  data-testid={`art-category-${category.slug}`}
+                >
+                  <div className="dl-art-panel__category-icon">
+                    <span>🎨</span>
+                  </div>
+                  <div className="dl-art-panel__category-name">{category.name}</div>
+                  {category.count > 0 && (
+                    <div className="dl-art-panel__category-count">{category.count} items</div>
+                  )}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -169,14 +144,8 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     );
   }
 
-  // [2025-01-30 18:00:00] 显示分类下的素材列表
-  // [2025-12-08] 应用子分类和搜索过滤
-  const categoryAssets = filterAssets(
-    getFilteredAssetsBySubcategory(currentCategory, currentSubcategory)
-  );
-  
-  // [2025-12-08] 获取当前分类的子分类列表
-  const subcategories = getSubcategories(currentCategory);
+  // [2025-12-11 23:40:00] 显示分类下的素材列表
+  const subcategories = currentTopCategory.children || [];
 
   return (
     <div className="dl-art-panel">
@@ -184,26 +153,32 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
         <button
           className="dl-art-panel__back-btn"
           onClick={() => {
-            setCurrentCategory(null);
-            setCurrentSubcategory(null); // [2025-12-08] 返回时清空子分类
-            setSearchQuery(''); // [2025-12-08] 返回时清空搜索
+            setCurrentTopCategory(null);
+            setCurrentSubcategory(null);
+            setSearchQuery('');
+            setArtworks([]);
           }}
           type="button"
+          data-testid="art-back-button"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
           Back to Categories
         </button>
-        <h3 className="dl-art-panel__category-title">{currentCategory}</h3>
-        {/* [2025-12-08] 分类页面也显示搜索框 */}
+        <h3 className="dl-art-panel__category-title">{currentTopCategory.name}</h3>
+        {/* [2025-12-11 23:40:00] 分类页面也显示搜索框 */}
         <div className="dl-art-panel__search">
           <input
             type="text"
             className="dl-art-panel__search-input"
             placeholder="Search For Artwork"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              loadArtworks(currentTopCategory.slug, currentSubcategory?.slug, e.target.value || undefined, 1);
+            }}
+            data-testid="art-search-input"
           />
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="dl-art-panel__search-icon">
             <circle cx="11" cy="11" r="8" />
@@ -212,17 +187,32 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
         </div>
       </div>
 
-      {/* [2025-12-08] 子分类导航 */}
+      {/* [2025-12-11 23:40:00] 子分类导航 */}
       {subcategories.length > 0 && (
         <div className="dl-art-panel__subcategories">
+          <button
+            className={`dl-art-panel__subcategory-btn ${!currentSubcategory ? 'is-active' : ''}`}
+            onClick={() => {
+              setCurrentSubcategory(null);
+              loadArtworks(currentTopCategory.slug, undefined, searchQuery || undefined, 1);
+            }}
+            type="button"
+            data-testid="art-subcategory-view-all"
+          >
+            View All
+          </button>
           {subcategories.map(subcategory => (
             <button
-              key={subcategory}
-              className={`dl-art-panel__subcategory-btn ${currentSubcategory === subcategory ? 'is-active' : ''}`}
-              onClick={() => setCurrentSubcategory(subcategory)}
+              key={subcategory.id}
+              className={`dl-art-panel__subcategory-btn ${currentSubcategory?.id === subcategory.id ? 'is-active' : ''}`}
+              onClick={() => {
+                setCurrentSubcategory(subcategory);
+                loadArtworks(currentTopCategory.slug, subcategory.slug, searchQuery || undefined, 1);
+              }}
               type="button"
+              data-testid={`art-subcategory-${subcategory.slug}`}
             >
-              {subcategory}
+              {subcategory.name} ({subcategory.count})
             </button>
           ))}
         </div>
@@ -233,39 +223,72 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
         {error && <p className="dl-art-panel__error">{error}</p>}
         {!loading && !error && (
           <>
-            {categoryAssets.length === 0 ? (
+            {artworks.length === 0 ? (
               <p className="dl-art-panel__empty">No assets in this category</p>
             ) : (
-              <div className="dl-art-panel__assets-grid">
-                {categoryAssets.map(asset => (
-                  <button
-                    key={asset.id}
-                    className="dl-art-panel__asset-item"
-                    onClick={() => onSelectArt(asset.imageUrl, asset.name)}
-                    type="button"
-                    title={asset.name}
-                  >
-                    {asset.thumbnailUrl ? (
-                      <img
-                        src={asset.thumbnailUrl}
-                        alt={asset.name}
-                        onError={(e) => {
-                          // 如果缩略图加载失败，使用主图
-                          const img = e.target as HTMLImageElement;
-                          if (asset.imageUrl) {
-                            img.src = asset.imageUrl;
-                          }
-                        }}
-                      />
-                    ) : asset.imageUrl ? (
-                      <img src={asset.imageUrl} alt={asset.name} />
-                    ) : (
-                      <div className="dl-art-panel__asset-placeholder">🎨</div>
-                    )}
-                    <div className="dl-art-panel__asset-name">{asset.name}</div>
-                  </button>
-                ))}
-              </div>
+              <>
+                <div className="dl-art-panel__assets-grid">
+                  {artworks.map(artwork => (
+                    <button
+                      key={artwork.id}
+                      className="dl-art-panel__asset-item"
+                      onClick={() => onSelectArt(artwork.imageUrl, artwork.title)}
+                      type="button"
+                      title={artwork.title}
+                      data-testid={`artwork-${artwork.slug}`}
+                    >
+                      {artwork.thumbnailUrl ? (
+                        <img
+                          src={artwork.thumbnailUrl}
+                          alt={artwork.title}
+                          loading="lazy"
+                          onError={(e) => {
+                            const img = e.target as HTMLImageElement;
+                            if (artwork.imageUrl) {
+                              img.src = artwork.imageUrl;
+                            }
+                          }}
+                        />
+                      ) : artwork.imageUrl ? (
+                        <img src={artwork.imageUrl} alt={artwork.title} loading="lazy" />
+                      ) : (
+                        <div className="dl-art-panel__asset-placeholder">🎨</div>
+                      )}
+                      <div className="dl-art-panel__asset-name">{artwork.title}</div>
+                    </button>
+                  ))}
+                </div>
+                {/* [2025-12-11 23:40:00] 分页控件 */}
+                {totalPages > 1 && (
+                  <div className="dl-art-panel__pagination">
+                    <button
+                      onClick={() => {
+                        const newPage = page - 1;
+                        if (newPage >= 1) {
+                          loadArtworks(currentTopCategory.slug, currentSubcategory?.slug, searchQuery || undefined, newPage);
+                        }
+                      }}
+                      disabled={page <= 1}
+                      type="button"
+                    >
+                      Previous
+                    </button>
+                    <span>Page {page} of {totalPages}</span>
+                    <button
+                      onClick={() => {
+                        const newPage = page + 1;
+                        if (newPage <= totalPages) {
+                          loadArtworks(currentTopCategory.slug, currentSubcategory?.slug, searchQuery || undefined, newPage);
+                        }
+                      }}
+                      disabled={page >= totalPages}
+                      type="button"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
@@ -275,4 +298,3 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
 };
 
 export default ArtPanel;
-

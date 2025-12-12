@@ -190,6 +190,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
   // [2025-01-31 01:00:00] 防止选择清除事件在添加对象后立即触发
   const isAddingObjectRef = useRef(false);
+  // [2025-12-11 23:59:30] 防止快照清理在编辑对象期间误删活动对象
+  const isEditingObjectRef = useRef(false);
+  // [2025-12-11 23:59:30] 跟踪对象删除的来源，用于区分用户删除和快照清理
+  const removalContextRef = useRef<'user-delete' | 'snapshot-cleanup' | 'background-reload' | 'unknown'>('unknown');
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，添加画布初始化状态跟踪
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   // [2025-12-10 18:40:00] Canvas初始化错误状态
@@ -1361,6 +1365,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   // [2025-01-30 21:25:00] 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
   // [2025-12-08 23:00:00] 修复：为恢复的对象添加删除控件
   // [2025-12-10] 修复：使用 fabricRef 确保 fabric 对象已加载
+  // [2025-12-11 23:59:30] 修复：添加编辑会话保护，防止在编辑期间误删活动对象
   const snapshotToCanvas = useCallback((snapshot: DesignCanvasSnapshot, canvas: fabric.Canvas) => {
     // [2025-12-10] 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
@@ -1370,18 +1375,41 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     
     const fabric = fabricRef.current;
     
+    // [2025-12-11 23:59:30] 编辑会话保护：如果正在编辑对象，跳过快照清理
+    if (isEditingObjectRef.current) {
+      console.log('[DesignLab] Skipping snapshotToCanvas while editing object (protect editing object from stale snapshot overwrite)');
+      return;
+    }
+    
+    // [2025-12-11 23:59:30] 获取当前活动对象，在编辑会话期间保护它
+    const activeObject = canvas.getActiveObject();
+    const isActiveText = activeObject && (activeObject.type === 'i-text' || activeObject.type === 'textbox');
+    const currentPanel = toolPanelTypeRef.current;
+    const isEditTextPanel = currentPanel === 'edit-text';
+    
     // [2025-01-30 21:55:00] 修复：清除现有对象（保留背景、产品图片和上传图片）
     // [2025-01-31 19:35:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
+    // [2025-12-11 23:59:30] 重要：在编辑文本面板期间，保护当前活动的文本对象
     const objectsToRemove = canvas.getObjects().filter((obj: fabric.Object) => {
       const objName = (obj as any).name || '';
       const objLayerType = (obj as any).data?.layerType;
       const isUploadImage = objLayerType === 'upload';
+      
+      // [2025-12-11 23:59:30] 编辑会话保护：如果对象是当前活动的文本对象，且正在编辑面板，则保护它
+      if (isEditTextPanel && isActiveText && obj === activeObject) {
+        console.log('[DesignLab] Protecting active text object during edit session:', objName);
+        return false;
+      }
       
       // [2025-01-31 19:35:00] 保留背景、产品图片和上传图片
       return objName !== 'background' && 
              !objName.startsWith('product-image-') && 
              !isUploadImage; // 重要：不移除上传图片
     });
+    
+    // [2025-12-11 23:59:30] 标记删除来源为快照清理
+    removalContextRef.current = 'snapshot-cleanup';
+    
     objectsToRemove.forEach((obj: fabric.Object) => {
       const objName = (obj as any).name || 'unnamed';
       const objLayerType = (obj as any).data?.layerType;
@@ -1393,6 +1421,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       });
       canvas.remove(obj);
     });
+    
+    // [2025-12-11 23:59:30] 重置删除来源标记
+    removalContextRef.current = 'unknown';
     
     // [2025-12-08 23:00:00] 获取删除控件（如果已创建）
     const deleteControl = (canvas as any).deleteControl;
@@ -1805,10 +1836,31 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     }
 
     const fabric = fabricRef.current;
+    const canvas = fabricCanvasRef.current;
 
     try {
       // [2025-01-31 01:00:00] 设置标志，防止选择清除事件在添加对象后立即触发
       isAddingObjectRef.current = true;
+      
+      // [2025-12-11 23:15:00] 获取画布逻辑尺寸
+      // Fabric.js 的坐标系统基于逻辑尺寸（1000x1200），而不是实际像素尺寸
+      // 即使画布的实际像素尺寸是 1000 * devicePixelRatio，坐标系统仍然是 1000x1200
+      // 所以直接使用常量 CANVAS_WIDTH 和 CANVAS_HEIGHT 是正确的
+      // 但为了更健壮，我们从画布获取逻辑尺寸（考虑 viewport transform）
+      const vpt = canvas.viewportTransform;
+      const scaleX = vpt ? vpt[0] : 1;
+      const scaleY = vpt ? vpt[3] : 1;
+      
+      // [2025-12-11 23:15:00] 获取画布的逻辑尺寸
+      // canvas.width 返回的是实际像素尺寸，需要除以缩放因子得到逻辑尺寸
+      // 如果 viewport transform 是单位矩阵，scaleX 和 scaleY 都是 1
+      const canvasLogicalWidth = (canvas.width || CANVAS_WIDTH) / scaleX;
+      const canvasLogicalHeight = (canvas.height || CANVAS_HEIGHT) / scaleY;
+      
+      // [2025-12-11 23:15:00] 计算画布逻辑中心点
+      // 由于 originX 和 originY 设置为 'center'，文本对象的 left/top 应该指向中心点
+      const centerX = canvasLogicalWidth / 2;
+      const centerY = canvasLogicalHeight / 2;
       
       // [2025-01-30 17:50:00] 创建 Fabric IText 对象
       // [2025-01-30 20:55:00] 修复：设置 zIndex 确保在文字图层（最上层）
@@ -1833,8 +1885,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           layerType: 'text',
           zIndex: 20, // [2025-01-30 20:55:00] 文字图层 zIndex 为 20（最上层，高于上传图层的 10）
         },
-        left: CANVAS_WIDTH / 2,
-        top: CANVAS_HEIGHT / 2,
+        left: centerX,
+        top: centerY,
         fontSize: 48,
         fontFamily: 'Arial',
         fill: '#000000',
@@ -1842,8 +1894,6 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         originX: 'center',
         originY: 'center'
       });
-      
-      const canvas = fabricCanvasRef.current;
       
       // [2025-12-08 23:00:00] 为文本对象添加删除控件
       if (canvas && (canvas as any).deleteControl) {
@@ -1854,9 +1904,31 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       // [2025-01-30 22:15:00] 先添加对象到画布
       canvas.add(textObj);
       
+      // [2025-12-11 23:15:00] 确保坐标正确更新
+      textObj.setCoords();
+      
       // [2025-01-30 22:25:00] 设置对象并选中，这会触发 selection:created 事件
       canvas.setActiveObject(textObj);
       canvas.renderAll();
+      
+      // [2025-12-11 23:15:00] 添加调试日志，记录画布尺寸、文本位置和 viewport transform
+      console.log('[DesignLab] Text added at center:', {
+        canvasActualWidth: canvas.width,
+        canvasActualHeight: canvas.height,
+        canvasLogicalWidth,
+        canvasLogicalHeight,
+        scaleX,
+        scaleY,
+        centerX,
+        centerY,
+        textObjLeft: textObj.left,
+        textObjTop: textObj.top,
+        textObjWidth: textObj.width,
+        textObjHeight: textObj.height,
+        viewportTransform: vpt,
+        CANVAS_WIDTH,
+        CANVAS_HEIGHT,
+      });
       
       // [2025-01-30 22:25:00] 设置状态，handleSelection 会识别文本对象并切换到 Edit Text 面板
       // 但我们也在这里设置，确保即使 handleSelection 没有正确触发，面板也会切换
@@ -3032,25 +3104,55 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const obj = event.payload?.object;
           const objName = obj?.name || 'unnamed';
           const layerType = obj?.data?.layerType || 'unknown';
+          const removalContext = removalContextRef.current;
           
           // #region agent log
           debugLog({
             location: 'DesignLabClient.tsx:2315',
             message: 'OBJECT_REMOVED event',
-            data: { objName, layerType, zIndex: obj?.data?.zIndex, isProductImage: objName.startsWith('product-image-'), backgroundImageMatches: obj===backgroundImageRef.current },
+            data: { objName, layerType, zIndex: obj?.data?.zIndex, isProductImage: objName.startsWith('product-image-'), backgroundImageMatches: obj===backgroundImageRef.current, removalContext },
             hypothesisId: 'A',
           });
           // #endregion
+          
+          // [2025-12-11 23:59:30] 编辑会话保护：如果删除的是活动文本对象，且来源不是用户删除，则恢复对象
+          const currentPanel = toolPanelTypeRef.current;
+          const isText = obj && (obj.type === 'i-text' || obj.type === 'textbox');
+          const isEditTextPanel = currentPanel === 'edit-text';
+          const isActiveText = obj && fabricCanvas.getActiveObject() === null && selectedText === obj;
+          
+          if (isText && isEditTextPanel && removalContext !== 'user-delete') {
+            console.warn('[DesignLab] Prevent unintended removal during edit; restoring object:', {
+              objName,
+              removalContext,
+              currentPanel,
+            });
+            // 恢复对象到画布
+            fabricCanvas.add(obj);
+            fabricCanvas.setActiveObject(obj);
+            fabricCanvas.renderAll();
+            // 不切到 Home，保持编辑面板
+            removalContextRef.current = 'unknown';
+            return;
+          }
           
           if (removeCount <= maxLogCount) {
             console.log('[DesignLab] Object removed:', { 
               name: objName, 
               layerType,
               zIndex: obj?.data?.zIndex,
-              totalRemoves: removeCount 
+              totalRemoves: removeCount,
+              removalContext,
             });
           } else if (removeCount === maxLogCount + 1) {
             console.warn('[DesignLab] ⚠️ Object removed count exceeded limit, suppressing further logs');
+          }
+          
+          // [2025-12-11 23:59:30] 仅在用户显式删除时才允许面板回退到 Home
+          if (removalContext === 'user-delete' && isText && isEditTextPanel) {
+            console.log('[DesignLab] User deleted text object, switching to home panel');
+            setToolPanelType('home');
+            setSelectedText(null);
           }
           
           // 记录移除时间（用于检测循环）
@@ -3072,6 +3174,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               // #endregion
             }
           }
+          
+          // [2025-12-11 23:59:30] 重置删除来源标记
+          removalContextRef.current = 'unknown';
         });
 
         canvasEngine.on(CanvasEventType.OBJECT_MODIFIED, (event) => {
@@ -3105,6 +3210,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
                 location: 'deleteControl actionHandler (inline)',
                 callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
               });
+              // [2025-12-11 23:59:30] 标记删除来源为用户删除
+              removalContextRef.current = 'user-delete';
               // 保存到历史记录以便Undo
               const snapshot = canvasToSnapshot(fabricCanvas);
               setCanvas(snapshot, { pushHistory: true });
@@ -3151,6 +3258,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           mouseUpHandler: (eventData, transformData) => {
             const target = transformData.target;
             if (target && fabricCanvas) {
+              // [2025-12-11 23:59:30] 标记删除来源为用户删除
+              removalContextRef.current = 'user-delete';
               // 保存到历史记录以便Undo
               const snapshot = canvasToSnapshot(fabricCanvas);
               setCanvas(snapshot, { pushHistory: true });
@@ -3240,12 +3349,19 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const currentPanel = toolPanelTypeRef.current;
           
           // [2025-01-31 19:15:00] 如果当前在编辑面板，且有选中的对象，保持面板不切换
+          // [2025-12-11 23:59:30] 增强：检查画布上是否还有文本对象，如果有则保持编辑面板
           if (currentPanel === 'edit-text' || currentPanel === 'edit-upload' || currentPanel === 'edit-art') {
             const hasSelectedText = selectedText !== null;
             const hasSelectedImage = selectedImage !== null;
             const hasSelectedArt = selectedArt !== null;
-            if (hasSelectedText || hasSelectedImage || hasSelectedArt) {
-              console.log('[DesignLab] Selection cleared but edit panel has selected object, keeping panel');
+            
+            // [2025-12-11 23:59:30] 检查画布上是否还有文本对象（即使未选中）
+            const hasTextObjects = fabricCanvas.getObjects().some((obj: any) => 
+              obj.type === 'i-text' || obj.type === 'textbox'
+            );
+            
+            if (hasSelectedText || hasSelectedImage || hasSelectedArt || (currentPanel === 'edit-text' && hasTextObjects)) {
+              console.log('[DesignLab] Selection cleared but edit panel has selected object or text objects on canvas, keeping panel');
               return;
             }
           }
@@ -3674,10 +3790,29 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     }
   }, [canvasInitialized, currentView, loadBackgroundImage]); // [2025-01-31 16:55:00] 添加 loadBackgroundImage 到依赖，但内部有重复检查
 
+  // [2025-12-11 23:59:30] 编辑会话保护：当进入/离开编辑面板时设置/清除编辑保护标志
+  useEffect(() => {
+    if (toolPanelType === 'edit-text' || toolPanelType === 'edit-upload' || toolPanelType === 'edit-art') {
+      isEditingObjectRef.current = true;
+      console.log('[DesignLab] Entering edit panel, enabling edit protection:', toolPanelType);
+    } else {
+      isEditingObjectRef.current = false;
+      console.log('[DesignLab] Leaving edit panel, disabling edit protection');
+    }
+  }, [toolPanelType]);
+
   // [2025-01-30 16:30:00] 视图切换时更新画布
   // [2025-12-08 23:30:00] 更新Zoom视图处理
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
+
+    // [2025-12-11 23:59:30] 修复：添加对象过程中，禁止从 store 快照回灌当前画布
+    // 原因：Add Text 会先 canvas.add(textObj) 再 setCanvas(snapshot)；
+    // viewCanvases 更新触发该 effect 时，可能拿到旧快照并调用 snapshotToCanvas，导致刚添加的 text_* 被清理掉
+    if (isAddingObjectRef.current) {
+      console.log('[DesignLab] Skipping snapshotToCanvas while adding object (protect new object from stale snapshot overwrite)');
+      return;
+    }
     
     const view = currentView;
     if (view === 'zoom') {
@@ -3789,36 +3924,42 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             <span className="dl-rail__btn-label">Add Art</span>
           </button>
 
-          <button
-            className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
-            onClick={() => handleToolClick('colors')}
-            aria-label="Product colors"
-            aria-pressed={activeTool === 'colors'}
-          >
-            <span className="dl-rail__btn-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
-              </svg>
-            </span>
-            <span className="dl-rail__btn-label">Product Colors</span>
-          </button>
+          {/* [2025-12-11 23:00:00] 暂时屏蔽 Product Colors 功能 */}
+          {false && (
+            <button
+              className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
+              onClick={() => handleToolClick('colors')}
+              aria-label="Product colors"
+              aria-pressed={activeTool === 'colors'}
+            >
+              <span className="dl-rail__btn-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                  <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                  <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+                  <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
+                </svg>
+              </span>
+              <span className="dl-rail__btn-label">Product Colors</span>
+            </button>
+          )}
 
-          <button
-            className={`dl-rail__btn ${activeTool === 'names' ? 'is-active' : ''}`}
-            onClick={() => handleToolClick('names')}
-            aria-label="Add names"
-            aria-pressed={activeTool === 'names'}
-          >
-            {/* [2025-01-31 00:00:00] 根据截图，Add Names 按钮应该显示 "00" 图标 */}
-            <span className="dl-rail__btn-icon dl-rail__icon--names">
-              <span className="dl-rail__icon-text">00</span>
-            </span>
-            <span className="dl-rail__btn-label">Add Names</span>
-          </button>
+          {/* [2025-12-11 23:00:00] 暂时屏蔽 Add Names 功能 */}
+          {false && (
+            <button
+              className={`dl-rail__btn ${activeTool === 'names' ? 'is-active' : ''}`}
+              onClick={() => handleToolClick('names')}
+              aria-label="Add names"
+              aria-pressed={activeTool === 'names'}
+            >
+              {/* [2025-01-31 00:00:00] 根据截图，Add Names 按钮应该显示 "00" 图标 */}
+              <span className="dl-rail__btn-icon dl-rail__icon--names">
+                <span className="dl-rail__icon-text">00</span>
+              </span>
+              <span className="dl-rail__btn-label">Add Names</span>
+            </button>
+          )}
         </nav>
 
         {/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */}

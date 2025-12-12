@@ -201,8 +201,10 @@ app.use('/api/promotions', require('./routes/promotions'));
 app.use('/api/admin-setup', require('./routes/admin-setup')); // [2025-01-28 12:20:00] Public promotion API
 app.use('/api/admin-seed', require('./routes/admin-seed')); // [2025-01-29 22:30:00] Admin seed route
 app.use('/api/art-assets', require('./routes/artAssets')); // [2025-01-28 00:55:00] Art assets public API // [2025-01-27 18:50:00] Public category routes
+app.use('/api/artworks', require('./routes/artworks')); // [2025-12-11 23:30:00] Artworks API with categories tree and pagination
 app.use('/api/fonts', require('./routes/fonts')); // [2025-01-30 19:00:00] Fonts public API
 app.use('/api/collections', require('./routes/collections'));
+app.use('/api/brands', require('./routes/brands')); // [2025-01-30 10:00:00] Brands API
 app.use('/api/cart', require('./routes/cart'));
 app.use('/api/checkout', require('./routes/checkout'));
 app.use('/api/orders', require('./routes/orders'));
