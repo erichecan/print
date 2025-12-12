@@ -38,9 +38,8 @@ COPY apps/web/package*.json ./
 COPY apps/web/next.config.mjs ./
 COPY apps/web/tsconfig.json ./
 # [2025-12-19] 添加Tailwind和PostCSS配置文件，确保CSS正确编译
-# 使用通配符以确保文件被包含在构建上下文中
-COPY apps/web/tailwind.config.js* ./tailwind.config.js
-COPY apps/web/postcss.config.js* ./postcss.config.js
+COPY apps/web/tailwind.config.js ./tailwind.config.js
+COPY apps/web/postcss.config.js ./postcss.config.js
 COPY apps/web/public ./public
 COPY apps/web/src ./src
 # [2025-01-27 20:50:00] 复制 Prisma schema（从项目根目录）
