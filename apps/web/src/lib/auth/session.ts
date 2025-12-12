@@ -1,9 +1,11 @@
 /**
  * Server-side Session Utilities
  * [2025-01-27 14:35:00] 服务端认证检查工具函数
+ * [2025-01-27 17:10:00] 修复：直接调用后端 API，而不是通过 Next.js API 路由
  */
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getBackendApiBaseUrl } from '@/config/env';
 
 /**
  * Get session token from cookies
@@ -17,6 +19,7 @@ export async function getSessionToken(): Promise<string | null> {
 /**
  * Check if user is authenticated (server-side)
  * [2025-01-27 14:35:00]
+ * [2025-01-27 17:10:00] 修复：直接调用后端 API，确保 Cookie 正确传递
  */
 export async function getSession(): Promise<{ userId?: string; email?: string } | null> {
   try {
@@ -25,16 +28,14 @@ export async function getSession(): Promise<{ userId?: string; email?: string } 
       return null;
     }
 
-    // [2025-01-27 16:15:00] 在服务端组件中，使用绝对 URL 调用内部 API 路由
-    // 获取当前请求的 host，用于构建完整的 URL
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const host = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || 'localhost:3000';
-    const baseUrl = `${protocol}://${host}`;
-    
-    const response = await fetch(`${baseUrl}/api/auth/me`, {
+    // [2025-01-27 17:10:00] 直接调用后端 API，而不是通过 Next.js API 路由
+    // 这样可以确保 Cookie 正确传递
+    const backendApiUrl = getBackendApiBaseUrl();
+    const response = await fetch(`${backendApiUrl}/auth/me`, {
       method: 'GET',
       headers: {
         Cookie: `token=${token}`,
+        'Content-Type': 'application/json',
       },
       cache: 'no-store',
     });
