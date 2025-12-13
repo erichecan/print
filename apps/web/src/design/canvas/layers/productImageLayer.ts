@@ -325,10 +325,10 @@ function applyProductImageLayout(params: {
   let sectionVisualCenterX = logicalCanvasWidth / 2;
   let sectionVisualCenterY = logicalCanvasHeight / 2;
   
-  const canvasElementForCenter = canvas.getElement();
-  if (canvasElement && typeof window !== 'undefined') {
+  const canvasElementForCenterCalc = canvas.getElement();
+  if (canvasElementForCenterCalc && typeof window !== 'undefined') {
     // 向上查找.dl-canvas section元素
-    let parent: HTMLElement | null = canvasElement.parentElement;
+    let parent: HTMLElement | null = canvasElementForCenterCalc.parentElement;
     while (parent && !parent.classList.contains('dl-canvas')) {
       parent = parent.parentElement;
     }
@@ -337,7 +337,7 @@ function applyProductImageLayout(params: {
       const dlCanvasRect = parent.getBoundingClientRect();
       
       // 获取canvas-container的位置
-      const containerElement = canvasElement.closest('.canvas-container');
+      const containerElement = canvasElementForCenterCalc.closest('.canvas-container');
       if (containerElement) {
         const containerRect = containerElement.getBoundingClientRect();
         
