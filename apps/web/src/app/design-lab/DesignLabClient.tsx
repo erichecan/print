@@ -292,8 +292,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         canvasHeight: CANVAS_HEIGHT,
         imageWidth: CANVAS_WIDTH * 0.8, // [2025-12-19 21:15:00] 修复：增大占位图片尺寸，从65%改为80%
         imageHeight: CANVAS_HEIGHT * 0.9, // [2025-12-19 21:15:00] 修复：增大占位图片尺寸，从75%改为90%
-        safeAreaWidth: 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%
-        safeAreaHeight: 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%
+        safeAreaWidth: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+        safeAreaHeight: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
         fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
       });
       
@@ -401,8 +401,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvasHeight: CANVAS_HEIGHT,
           imageWidth: fabricImg.width || 1,
           imageHeight: fabricImg.height || 1,
-          safeAreaWidth: 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%
-          safeAreaHeight: 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%
+          safeAreaWidth: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+          safeAreaHeight: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
           fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
         
@@ -1048,8 +1048,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvasHeight: CANVAS_HEIGHT,
           imageWidth: fabricImg.width || 1,
           imageHeight: fabricImg.height || 1,
-          safeAreaWidth: 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%
-          safeAreaHeight: 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%
+          safeAreaWidth: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+          safeAreaHeight: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
           fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
         
@@ -2828,10 +2828,55 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       canvas.setViewportTransform(vpt);
       canvas.renderAll();
     } else if (currentView !== 'zoom' && fabricCanvasRef.current) {
-      // 重置viewport
+      // [2025-12-19 22:00:00] 重置viewport（zoom退出后）
       const canvas = fabricCanvasRef.current;
       canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-      canvas.renderAll();
+      
+      // [2025-12-19 22:00:00] 重新应用product-image布局（确保zoom退出后底图居中）
+      // 使用立即执行的async函数，因为useEffect回调不能是async
+      (async () => {
+        const objects = canvas.getObjects();
+        const productImage = objects.find((obj: any) => {
+          const name = obj.name || '';
+          return name.startsWith('product-image-');
+        });
+        
+        if (productImage) {
+          try {
+            const { loadProductImageLayer } = await import('@/design/canvas/layers/productImageLayer');
+            // 获取view信息（从productImage的data中）
+            const view = (productImage as any).data?.view || 'front';
+            const colorName = (productImage as any).data?.imageOptions?.colorName || currentProductInfo?.color || 'White';
+            
+            // 重新应用布局（通过loadProductImageLayer的内部逻辑，会复用existingImage并重新应用布局）
+            const result = await loadProductImageLayer({
+              canvas,
+              fabric,
+              canvasWidth: CANVAS_WIDTH,
+              canvasHeight: CANVAS_HEIGHT,
+              imageOptions: {
+                colorName,
+                view: view as 'front' | 'back' | 'sleeve',
+                useAPI: false,
+              },
+              gitSha: process.env.NEXT_PUBLIC_GIT_SHA,
+              productId: currentProductInfo?.productId,
+              safeAreaWidth: 0.9,
+              safeAreaHeight: 0.9,
+            });
+            
+            console.log('[DesignLab] Reapplied product-image layout after zoom exit:', {
+              success: result.success,
+              view,
+            });
+            canvas.renderAll();
+          } catch (error) {
+            console.warn('[DesignLab] Failed to reapply product-image layout after zoom exit:', error);
+          }
+        } else {
+          canvas.renderAll();
+        }
+      })();
     }
   }, [currentView, zoomLevel, zoomPan]);
 

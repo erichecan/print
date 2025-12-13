@@ -294,14 +294,26 @@ function applyProductImageLayout(params: {
     return;
   }
 
-  // [2025-12-19 21:30:00] 计算fit（使用逻辑坐标系）
+  // [2025-12-19 22:00:00] 计算fit（使用逻辑坐标系）
+  // 根据视图类型调整safeArea配置（sleeve视图更窄，需要单独配置）
+  let effectiveSafeAreaWidth = safeAreaWidth;
+  let effectiveSafeAreaHeight = safeAreaHeight;
+  
+  // 如果传入的imageOptions包含view信息，为sleeve视图调整配置
+  const view = (image as any).data?.view || (image as any).data?.imageOptions?.view;
+  if (view === 'sleeve') {
+    // sleeve视图更窄，使用更高的safeAreaWidth（接近填满宽度）
+    effectiveSafeAreaWidth = 0.95; // [2025-12-19 22:00:00] sleeve视图使用95%宽度
+    effectiveSafeAreaHeight = safeAreaHeight; // 保持高度不变
+  }
+  
   const fit = calculateImageFit({
     canvasWidth: logicalCanvasWidth,
     canvasHeight: logicalCanvasHeight,
     imageWidth: imageNaturalWidth,
     imageHeight: imageNaturalHeight,
-    safeAreaWidth,
-    safeAreaHeight,
+    safeAreaWidth: effectiveSafeAreaWidth,
+    safeAreaHeight: effectiveSafeAreaHeight,
     fit: fitMode,
   });
 
@@ -335,6 +347,7 @@ function applyProductImageLayout(params: {
   });
 
   console.log('[ProductImageLayer] Layout applied:', {
+    view: (image as any).data?.view || 'unknown',
     centerX,
     centerY,
     scale: fit.scale,
@@ -344,6 +357,8 @@ function applyProductImageLayout(params: {
     originY: image.originY,
     left: image.left,
     top: image.top,
+    safeAreaWidth: effectiveSafeAreaWidth,
+    safeAreaHeight: effectiveSafeAreaHeight,
   });
 }
 
@@ -499,8 +514,8 @@ export async function loadProductImageLayer(
     canvasWidth,
     canvasHeight,
     imageOptions,
-    safeAreaWidth = 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%（占据画布主要区域，更接近CustomInk效果）
-    safeAreaHeight = 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%（占据画布主要区域，更接近CustomInk效果）
+    safeAreaWidth = 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+    safeAreaHeight = 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
     gitSha,
     productId,
   } = options;
@@ -717,12 +732,14 @@ export async function loadProductImageLayer(
             evented: false,
             excludeFromExport: false, // 允许导出
             name: stableKey, // 使用稳定键作为名称
-            originX: 'center', // [2025-12-19 21:30:00] 修复：初始就使用center原点，避免布局问题
+            originX: 'center', // [2025-12-19 22:00:00] 修复：初始就使用center原点，避免布局问题
             originY: 'center',
             data: {
               stableKey,
               layerType: 'product-image',
               zIndex: 0, // 底层
+              view: imageOptions.view, // [2025-12-19 22:00:00] 保存view信息，用于sleeve视图的特殊配置
+              imageOptions, // [2025-12-19 22:00:00] 保存完整imageOptions，便于后续查询view
             },
           });
           

@@ -58,8 +58,8 @@ export function calculateImageFit(options: FitOptions): FitResult {
     canvasHeight,
     imageWidth,
     imageHeight,
-    safeAreaWidth = 0.8, // [2025-12-19 21:15:00] 修复：增大默认安全区宽度，从65%改为80%（占据画布主要区域）
-    safeAreaHeight = 0.9, // [2025-12-19 21:15:00] 修复：增大默认安全区高度，从75%改为90%（占据画布主要区域）
+    safeAreaWidth = 0.9, // [2025-12-19 22:00:00] 修复：增大默认安全区至90%（CustomInk风格：铺满画布主要区域）
+    safeAreaHeight = 0.9, // [2025-12-19 22:00:00] 修复：增大默认安全区至90%（CustomInk风格：铺满画布主要区域）
     fit = 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，可能裁剪边缘，但视觉更大更突出）
     physicalWidth,
     physicalHeight,

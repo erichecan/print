@@ -158,7 +158,7 @@ test.describe('Design Lab 底图大小与位置', () => {
     }
   });
 
-  test('底图尺寸应该达到80%×90%目标占比', async ({ page }) => {
+  test('底图尺寸应该达到90%×90%目标占比（CustomInk风格：铺满画布主要区域）', async ({ page }) => {
     // [2025-12-19 21:30:00] 等待canvas初始化
     await page.waitForSelector('canvas', { timeout: 15000 });
     await page.waitForTimeout(3000);
@@ -189,8 +189,8 @@ test.describe('Design Lab 底图大小与位置', () => {
       const actualWidth = (productImage.width || 0) * scaleX;
       const actualHeight = (productImage.height || 0) * scaleY;
       
-      const targetWidth = logicalCanvasWidth * 0.8;
-      const targetHeight = logicalCanvasHeight * 0.9;
+      const targetWidth = logicalCanvasWidth * 0.9; // [2025-12-19 22:00:00] 更新为90%
+      const targetHeight = logicalCanvasHeight * 0.9; // [2025-12-19 22:00:00] 保持90%
       
       return {
         found: true,
@@ -209,10 +209,15 @@ test.describe('Design Lab 底图大小与位置', () => {
     expect(productImageInfo?.found).toBe(true);
     
     if (productImageInfo) {
-      // [2025-12-19 21:30:00] cover模式：至少一边应该达到或超过目标
+      // [2025-12-19 22:00:00] cover模式：至少一边应该达到或超过目标（90%）
       const widthOk = productImageInfo.widthRatio >= 1.0;
       const heightOk = productImageInfo.heightRatio >= 1.0;
-      expect(widthOk || heightOk, 'cover模式：至少一边应该达到目标尺寸').toBe(true);
+      expect(widthOk || heightOk, 'cover模式：至少一边应该达到目标尺寸（90%）').toBe(true);
+      
+      // [2025-12-19 22:00:00] 验证尺寸应该接近90%（cover模式下，至少有一边达到或超过90%）
+      const isWidthNear90 = productImageInfo.widthRatio >= 0.95 && productImageInfo.widthRatio <= 1.05;
+      const isHeightNear90 = productImageInfo.heightRatio >= 0.95 && productImageInfo.heightRatio <= 1.05;
+      expect(isWidthNear90 || isHeightNear90, 'cover模式：至少一边应该接近90%目标尺寸').toBe(true);
       
       // [2025-12-19 21:30:00] 尺寸不应该过大（不超过1.2倍）
       expect(productImageInfo.widthRatio).toBeLessThanOrEqual(1.2);
