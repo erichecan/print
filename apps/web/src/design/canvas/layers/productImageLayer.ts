@@ -318,9 +318,63 @@ function applyProductImageLayout(params: {
     fit: fitMode,
   });
 
-  // [2025-12-19 21:30:00] 计算画布逻辑中心（使用逻辑坐标系）
-  const centerX = logicalCanvasWidth / 2;
-  const centerY = logicalCanvasHeight / 2;
+  // [2025-12-19 23:30:00] 计算商品图片的目标位置：基于.dl-canvas section的视觉中心
+  // 获取.dl-canvas section的实际尺寸和位置
+  let targetCenterX = logicalCanvasWidth / 2; // 默认使用Fabric.js逻辑中心
+  let targetCenterY = logicalCanvasHeight / 2;
+  let sectionVisualCenterX = logicalCanvasWidth / 2;
+  let sectionVisualCenterY = logicalCanvasHeight / 2;
+  
+  const canvasElement = canvas.getElement();
+  if (canvasElement && typeof window !== 'undefined') {
+    // 向上查找.dl-canvas section元素
+    let parent: HTMLElement | null = canvasElement.parentElement;
+    while (parent && !parent.classList.contains('dl-canvas')) {
+      parent = parent.parentElement;
+    }
+    
+    if (parent && parent.classList.contains('dl-canvas')) {
+      const dlCanvasRect = parent.getBoundingClientRect();
+      
+      // 获取canvas-container的位置
+      const containerElement = canvasElement.closest('.canvas-container');
+      if (containerElement) {
+        const containerRect = containerElement.getBoundingClientRect();
+        
+        // 计算container相对于.dl-canvas的偏移
+        const containerOffsetX = containerRect.left - dlCanvasRect.left;
+        const containerOffsetY = containerRect.top - dlCanvasRect.top;
+        
+        // .dl-canvas section的视觉中心（相对于section本身）
+        const sectionCenterXInSection = dlCanvasRect.width / 2;
+        const sectionCenterYInSection = dlCanvasRect.height / 2;
+        
+        // section中心在container坐标系中的位置
+        const sectionCenterXInContainer = sectionCenterXInSection - containerOffsetX;
+        const sectionCenterYInContainer = sectionCenterYInSection - containerOffsetY;
+        
+        // 将container坐标系转换为Fabric.js逻辑坐标系
+        const scaleX = logicalCanvasWidth / containerRect.width;
+        const scaleY = logicalCanvasHeight / containerRect.height;
+        
+        // 计算section视觉中心在Fabric.js逻辑坐标系中的位置
+        targetCenterX = sectionCenterXInContainer * scaleX;
+        targetCenterY = sectionCenterYInContainer * scaleY;
+        
+        sectionVisualCenterX = targetCenterX;
+        sectionVisualCenterY = targetCenterY;
+        
+        console.log('🎯 [ProductImageLayer] 基于.dl-canvas section视觉中心计算目标位置:');
+        console.log(`   .dl-canvas section尺寸: ${dlCanvasRect.width.toFixed(0)} × ${dlCanvasRect.height.toFixed(0)}`);
+        console.log(`   section视觉中心（相对于section）: (${sectionCenterXInSection.toFixed(2)}, ${sectionCenterYInSection.toFixed(2)})`);
+        console.log(`   container偏移: (${containerOffsetX.toFixed(2)}, ${containerOffsetY.toFixed(2)})`);
+        console.log(`   section中心在container坐标系: (${sectionCenterXInContainer.toFixed(2)}, ${sectionCenterYInContainer.toFixed(2)})`);
+        console.log(`   缩放比例: (${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`);
+        console.log(`   Fabric.js逻辑坐标系中的目标位置: (${targetCenterX.toFixed(2)}, ${targetCenterY.toFixed(2)})`);
+        console.log(`   Fabric.js逻辑中心（对比）: (${(logicalCanvasWidth / 2).toFixed(2)}, ${(logicalCanvasHeight / 2).toFixed(2)})`);
+      }
+    }
+  }
 
   // [2025-12-19 21:30:00] 强制设置布局属性（无条件覆盖旧值）
   // 1. 先设置origin为center（必须在scale之前）
@@ -332,10 +386,10 @@ function applyProductImageLayout(params: {
   // 2. 设置缩放
   image.scale(fit.scale);
 
-  // 3. 设置位置为画布中心（基于center原点）
+  // 3. 设置位置为section视觉中心（基于center原点）
   image.set({
-    left: centerX,
-    top: centerY,
+    left: targetCenterX,
+    top: targetCenterY,
   });
 
   // 4. 更新坐标系统
@@ -347,9 +401,9 @@ function applyProductImageLayout(params: {
     evented: false,
   });
 
-  // [2025-12-19 22:30:00] 计算误差（用于验证是否居中）
-  const leftDiff = Math.abs(image.left - centerX);
-  const topDiff = Math.abs(image.top - centerY);
+  // [2025-12-19 23:30:00] 计算误差（用于验证是否居中）- 基于section视觉中心
+  const leftDiff = Math.abs(image.left - targetCenterX);
+  const topDiff = Math.abs(image.top - targetCenterY);
   const isCentered = leftDiff <= 2 && topDiff <= 2;
   
   // [2025-12-19 22:30:00] 计算尺寸占比（用于验证是否铺满）
@@ -394,11 +448,12 @@ function applyProductImageLayout(params: {
   console.log(`   画布逻辑尺寸: ${logicalCanvasWidth.toFixed(2)} × ${logicalCanvasHeight.toFixed(2)}`);
   console.log('');
   console.log('📍 位置信息:');
-  console.log(`   画布逻辑中心: (${centerX.toFixed(2)}, ${centerY.toFixed(2)})`);
+  console.log(`   .dl-canvas section视觉中心（Fabric.js坐标）: (${sectionVisualCenterX.toFixed(2)}, ${sectionVisualCenterY.toFixed(2)})`);
+  console.log(`   Fabric.js逻辑中心（对比）: (${(logicalCanvasWidth / 2).toFixed(2)}, ${(logicalCanvasHeight / 2).toFixed(2)})`);
   console.log(`   底图位置: (${image.left?.toFixed(2) || '0'}, ${image.top?.toFixed(2) || '0'})`);
-  console.log(`   位置误差: left=${leftDiff.toFixed(2)}px, top=${topDiff.toFixed(2)}px`);
+  console.log(`   位置误差（相对于section视觉中心）: left=${leftDiff.toFixed(2)}px, top=${topDiff.toFixed(2)}px`);
   console.log(`   原点设置: originX='${image.originX}', originY='${image.originY}'`);
-  console.log(`   ✅ 居中验证: ${isCentered ? '✓ 通过（误差≤2px）' : '✗ 失败'}`);
+  console.log(`   ✅ 居中验证（基于section视觉中心）: ${isCentered ? '✓ 通过（误差≤2px）' : '✗ 失败'}`);
   console.log('');
   console.log('📐 尺寸信息:');
   console.log(`   原始尺寸: ${imageNaturalWidth.toFixed(2)} × ${imageNaturalHeight.toFixed(2)}`);
@@ -458,10 +513,14 @@ function applyProductImageLayout(params: {
             canvas.remove(existingLabel);
           }
           
+          // [2025-12-19 23:30:00] 红色方块应该标记section视觉中心，而不是Fabric.js逻辑中心
+          const debugCenterX = sectionVisualCenterX;
+          const debugCenterY = sectionVisualCenterY;
+          
           // 创建红色正方形（50x50像素，足够大且明显）
           const centerSquare = new fabricMod.Rect({
-            left: centerX,
-            top: centerY,
+            left: debugCenterX,
+            top: debugCenterY,
             width: 50,
             height: 50,
             fill: 'rgba(255, 0, 0, 0.8)', // 半透明红色，足够醒目
@@ -479,9 +538,9 @@ function applyProductImageLayout(params: {
           });
           
           // 添加文本标签
-          const centerLabel = new fabricMod.Text(`中心\n(${centerX}, ${centerY})`, {
-            left: centerX,
-            top: centerY - 40,
+          const centerLabel = new fabricMod.Text(`中心\n(${debugCenterX.toFixed(0)}, ${debugCenterY.toFixed(0)})`, {
+            left: debugCenterX,
+            top: debugCenterY - 40,
             fontSize: 14,
             fill: 'red',
             fontFamily: 'Arial',
