@@ -23,10 +23,12 @@ test.describe('购物车与优惠券', () => {
     await qtyInput.blur();
     await expect(page.locator('.cart-card__qty input').first()).toHaveValue('2');
 
-    const postalInput = page.locator('#cart-zip');
+    // [2025-12-13 14:30:00] 修复：使用右侧 Summary 区域的邮编输入（顶部红框已删除）
+    const postalInput = page.locator('#summary-zip');
     await postalInput.fill('M5V2T6');
-    await page.locator('.cart-new__alert-form button:has-text("Update")').click();
-    await expect(page.locator('.cart-new__alert')).not.toHaveClass(/has-error/);
+    await page.locator('.summary-panel__zip button:has-text("Update")').click();
+    // [2025-12-13 14:30:00] 验证错误提示不显示（有效邮编）
+    await expect(page.locator('.summary-panel__zip-error')).not.toBeVisible();
 
     const couponCode = process.env.E2E_COUPON_FIXED || 'SAVE10CAD';
     await page.getByRole('button', { name: 'Add discount code' }).click();
