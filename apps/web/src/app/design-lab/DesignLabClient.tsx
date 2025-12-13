@@ -290,11 +290,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       const fit = calculateImageFit({
         canvasWidth: CANVAS_WIDTH,
         canvasHeight: CANVAS_HEIGHT,
-        imageWidth: CANVAS_WIDTH * 0.65,
-        imageHeight: CANVAS_HEIGHT * 0.75,
-        safeAreaWidth: 0.65,
-        safeAreaHeight: 0.75,
-        fit: 'contain',
+        imageWidth: CANVAS_WIDTH * 0.8, // [2025-12-19 21:15:00] 修复：增大占位图片尺寸，从65%改为80%
+        imageHeight: CANVAS_HEIGHT * 0.9, // [2025-12-19 21:15:00] 修复：增大占位图片尺寸，从75%改为90%
+        safeAreaWidth: 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%
+        safeAreaHeight: 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%
+        fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
       });
       
       // 使用浅灰色矩形作为占位背景

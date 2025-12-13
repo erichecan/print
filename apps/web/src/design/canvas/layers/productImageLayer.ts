@@ -397,8 +397,8 @@ export async function loadProductImageLayer(
     canvasWidth,
     canvasHeight,
     imageOptions,
-    safeAreaWidth = 0.65,
-    safeAreaHeight = 0.75,
+    safeAreaWidth = 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%（占据画布主要区域，更接近CustomInk效果）
+    safeAreaHeight = 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%（占据画布主要区域，更接近CustomInk效果）
     gitSha,
     productId,
   } = options;
@@ -601,7 +601,7 @@ export async function loadProductImageLayer(
             imageHeight: imgElement.naturalHeight || imgElement.height,
             safeAreaWidth,
             safeAreaHeight,
-            fit: 'contain',
+            fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，可能裁剪边缘，但视觉更大更突出）
           });
           
           // 9. 应用 fit 结果（居中 + 缩放）
