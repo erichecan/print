@@ -499,16 +499,56 @@ function applyProductImageLayout(params: {
           canvas.add(centerSquare);
           canvas.add(centerLabel);
           
+          // [2025-12-19 23:00:00] 添加基准线：水平线和垂直线，用于验证canvas区域和中心点
+          // 移除旧的基准线（如果存在）
+          const oldHorizontalLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_horizontal_line');
+          const oldVerticalLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_vertical_line');
+          if (oldHorizontalLine) canvas.remove(oldHorizontalLine);
+          if (oldVerticalLine) canvas.remove(oldVerticalLine);
+          
+          // 绘制水平基准线（从canvas左边到右边，y=centerY）
+          const horizontalLine = new fabricMod.Line(
+            [0, centerY, logicalCanvasWidth, centerY],
+            {
+              stroke: '#ff0000',
+              strokeWidth: 2,
+              selectable: false,
+              evented: false,
+              name: '__debug_horizontal_line',
+              excludeFromExport: true,
+            }
+          );
+          
+          // 绘制垂直基准线（从canvas顶部到底部，x=centerX）
+          const verticalLine = new fabricMod.Line(
+            [centerX, 0, centerX, logicalCanvasHeight],
+            {
+              stroke: '#ff0000',
+              strokeWidth: 2,
+              selectable: false,
+              evented: false,
+              name: '__debug_vertical_line',
+              excludeFromExport: true,
+            }
+          );
+          
+          canvas.add(horizontalLine);
+          canvas.add(verticalLine);
+          
           // 移到最上层（在底图之上，但可能被用户内容覆盖）
           // [2025-12-19 22:40:00] 修复：使用canvas的方法而不是对象的bringToFront
           try {
             canvas.bringObjectToFront(centerSquare);
             canvas.bringObjectToFront(centerLabel);
+            canvas.bringObjectToFront(horizontalLine);
+            canvas.bringObjectToFront(verticalLine);
           } catch (e) {
             // 降级：手动移到数组末尾
             const objs = canvas.getObjects();
             const sqIdx = objs.indexOf(centerSquare);
             const lbIdx = objs.indexOf(centerLabel);
+            const hIdx = objs.indexOf(horizontalLine);
+            const vIdx = objs.indexOf(verticalLine);
             if (sqIdx >= 0) {
               objs.splice(sqIdx, 1);
               objs.push(centerSquare);
@@ -517,7 +557,22 @@ function applyProductImageLayout(params: {
               objs.splice(lbIdx, 1);
               objs.push(centerLabel);
             }
+            if (hIdx >= 0) {
+              objs.splice(hIdx, 1);
+              objs.push(horizontalLine);
+            }
+            if (vIdx >= 0) {
+              objs.splice(vIdx, 1);
+              objs.push(verticalLine);
+            }
           }
+          
+          console.log('🔴 [ProductImageLayer] 已添加基准线：');
+          console.log(`   水平线: (0, ${centerY.toFixed(0)}) → (${logicalCanvasWidth.toFixed(0)}, ${centerY.toFixed(0)})`);
+          console.log(`   垂直线: (${centerX.toFixed(0)}, 0) → (${centerX.toFixed(0)}, ${logicalCanvasHeight.toFixed(0)})`);
+          console.log(`   红色方块位置: (${centerX.toFixed(0)}, ${centerY.toFixed(0)})`);
+          console.log(`   如果水平线的起点和终点在canvas区域的左右边框，且垂直线在上下边框，则说明canvas区域识别正确`);
+          console.log(`   如果红色方块正好在两条线的交点，则说明它是canvas区域的中心点`);
           
           canvas.renderAll();
           

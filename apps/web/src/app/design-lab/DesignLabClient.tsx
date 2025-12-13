@@ -1441,11 +1441,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       
       // [2025-01-31 19:35:00] 保留背景、产品图片和上传图片
       // [2025-12-19 22:45:00] 修复：保留debug标记对象（__debug_开头的对象），用于视觉验证
+      // [2025-12-19 23:00:00] 修复：保留debug基准线（__debug_horizontal_line和__debug_vertical_line）
       const isDebugMarker = objName.startsWith('__debug_');
       return objName !== 'background' && 
              !objName.startsWith('product-image-') && 
              !isUploadImage && 
-             !isDebugMarker; // 重要：不移除上传图片和debug标记
+             !isDebugMarker; // 重要：不移除上传图片、debug标记和debug基准线
     });
     
     // [2025-12-11 23:59:30] 标记删除来源为快照清理
