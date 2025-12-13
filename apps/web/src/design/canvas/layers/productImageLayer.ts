@@ -246,6 +246,108 @@ class ProductImageLayerManager {
 const manager = new ProductImageLayerManager();
 
 /**
+ * [2025-12-19 21:30:00] 幂等的底图布局函数 - 强制居中并设置正确的尺寸
+ * 统一处理所有路径的底图布局，确保底图始终居中且尺寸正确
+ */
+function applyProductImageLayout(params: {
+  image: fabric.Image;
+  canvas: fabric.Canvas;
+  canvasWidth: number;
+  canvasHeight: number;
+  safeAreaWidth: number;
+  safeAreaHeight: number;
+  fitMode?: 'contain' | 'cover';
+}): void {
+  const {
+    image,
+    canvas,
+    canvasWidth,
+    canvasHeight,
+    safeAreaWidth,
+    safeAreaHeight,
+    fitMode = 'cover',
+  } = params;
+
+  // [2025-12-19 21:30:00] 获取图片原始尺寸（考虑viewportTransform）
+  // 如果canvas有viewportTransform，需要使用逻辑尺寸计算
+  const vpt = canvas.viewportTransform;
+  let logicalCanvasWidth = canvasWidth;
+  let logicalCanvasHeight = canvasHeight;
+  
+  if (vpt && (vpt[0] !== 1 || vpt[3] !== 1)) {
+    // 存在缩放：逻辑尺寸 = 实际尺寸 / 缩放比例
+    logicalCanvasWidth = (canvas.width || canvasWidth) / vpt[0];
+    logicalCanvasHeight = (canvas.height || canvasHeight) / vpt[3];
+    console.log('[ProductImageLayer] ViewportTransform detected, using logical size:', {
+      canvasSize: { width: canvas.width, height: canvas.height },
+      logicalSize: { width: logicalCanvasWidth, height: logicalCanvasHeight },
+      vpt: vpt,
+    });
+  }
+
+  // [2025-12-19 21:30:00] 获取图片原始尺寸（Fabric Image的内部尺寸，不受scale影响）
+  const imageNaturalWidth = (image as any).width || 0;
+  const imageNaturalHeight = (image as any).height || 0;
+
+  if (imageNaturalWidth === 0 || imageNaturalHeight === 0) {
+    console.warn('[ProductImageLayer] Image has zero dimensions, skipping layout');
+    return;
+  }
+
+  // [2025-12-19 21:30:00] 计算fit（使用逻辑坐标系）
+  const fit = calculateImageFit({
+    canvasWidth: logicalCanvasWidth,
+    canvasHeight: logicalCanvasHeight,
+    imageWidth: imageNaturalWidth,
+    imageHeight: imageNaturalHeight,
+    safeAreaWidth,
+    safeAreaHeight,
+    fit: fitMode,
+  });
+
+  // [2025-12-19 21:30:00] 计算画布逻辑中心（使用逻辑坐标系）
+  const centerX = logicalCanvasWidth / 2;
+  const centerY = logicalCanvasHeight / 2;
+
+  // [2025-12-19 21:30:00] 强制设置布局属性（无条件覆盖旧值）
+  // 1. 先设置origin为center（必须在scale之前）
+  image.set({
+    originX: 'center',
+    originY: 'center',
+  });
+
+  // 2. 设置缩放
+  image.scale(fit.scale);
+
+  // 3. 设置位置为画布中心（基于center原点）
+  image.set({
+    left: centerX,
+    top: centerY,
+  });
+
+  // 4. 更新坐标系统
+  image.setCoords();
+
+  // [2025-12-19 21:30:00] 确保不可选中且不在交互层
+  image.set({
+    selectable: false,
+    evented: false,
+  });
+
+  console.log('[ProductImageLayer] Layout applied:', {
+    centerX,
+    centerY,
+    scale: fit.scale,
+    scaledWidth: imageNaturalWidth * fit.scale,
+    scaledHeight: imageNaturalHeight * fit.scale,
+    originX: image.originX,
+    originY: image.originY,
+    left: image.left,
+    top: image.top,
+  });
+}
+
+/**
  * 查找画布中已存在的产品图片对象
  * [2025-01-30 20:50:00] 通过稳定键查找，避免重复创建
  */
@@ -430,18 +532,49 @@ export async function loadProductImageLayer(
   if (!manager.canLoad(stableKey)) {
     const existingImage = findExistingProductImage(canvas, stableKey);
     if (existingImage) {
-      console.log('[ProductImageLayer] Using existing product image:', stableKey);
+      console.log('[ProductImageLayer] Using existing product image, reapplying layout:', stableKey);
+      
+      // [2025-12-19 21:30:00] 强制重新应用布局，确保居中（幂等）
+      applyProductImageLayout({
+        image: existingImage,
+        canvas,
+        canvasWidth,
+        canvasHeight,
+        safeAreaWidth,
+        safeAreaHeight,
+        fitMode: 'cover',
+      });
+      
+      // [2025-12-19 21:30:00] 确保在最底层且不可选中
+      try {
+        const objs = canvas.getObjects();
+        const idx = objs.indexOf(existingImage);
+        if (idx > 0) {
+          objs.splice(idx, 1);
+          objs.unshift(existingImage);
+          canvas.renderAll();
+        }
+        existingImage.set({ selectable: false, evented: false });
+      } catch (e) {
+        console.warn('[ProductImageLayer] Error ensuring image at back:', e);
+      }
+      
+      canvas.renderAll();
+      
+      // [2025-12-19 21:30:00] 计算fit结果用于返回值（使用当前实际值）
+      const fit: FitResult = {
+        width: (existingImage.width || 0) * (existingImage.scaleX || 1),
+        height: (existingImage.height || 0) * (existingImage.scaleY || 1),
+        left: existingImage.left || 0,
+        top: existingImage.top || 0,
+        scale: existingImage.scaleX || 1,
+        safeAreaWidth: canvasWidth * safeAreaWidth,
+        safeAreaHeight: canvasHeight * safeAreaHeight,
+      };
+      
       return {
         image: existingImage,
-        fit: {
-          width: existingImage.width || 0,
-          height: existingImage.height || 0,
-          left: existingImage.left || 0,
-          top: existingImage.top || 0,
-          scale: existingImage.scaleX || 1,
-          safeAreaWidth: canvasWidth * safeAreaWidth,
-          safeAreaHeight: canvasHeight * safeAreaHeight,
-        },
+        fit,
         success: true,
         state: ProductImageLayerState.ATTACHED,
         stableKey,
@@ -584,8 +717,8 @@ export async function loadProductImageLayer(
             evented: false,
             excludeFromExport: false, // 允许导出
             name: stableKey, // 使用稳定键作为名称
-            originX: 'left',
-            originY: 'top',
+            originX: 'center', // [2025-12-19 21:30:00] 修复：初始就使用center原点，避免布局问题
+            originY: 'center',
             data: {
               stableKey,
               layerType: 'product-image',
@@ -593,35 +726,27 @@ export async function loadProductImageLayer(
             },
           });
           
-          // 8. 计算 fit（等比缩放 + 居中）- 必须在 image.onload 之后
-          const fit = calculateImageFit({
+          // 8. [2025-12-19 21:30:00] 使用统一的幂等布局函数（强制居中且尺寸正确）
+          applyProductImageLayout({
+            image: fabricImg,
+            canvas,
             canvasWidth,
             canvasHeight,
-            imageWidth: imgElement.naturalWidth || imgElement.width,
-            imageHeight: imgElement.naturalHeight || imgElement.height,
             safeAreaWidth,
             safeAreaHeight,
-            fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，可能裁剪边缘，但视觉更大更突出）
+            fitMode: 'cover',
           });
           
-          // 9. 应用 fit 结果（居中 + 缩放）
-          fabricImg.scale(fit.scale);
-          fabricImg.set({
-            left: fit.left,
-            top: fit.top,
-            originX: 'center', // 改为 center 以实现真正的居中
-            originY: 'center',
-          });
-          
-          // 重新计算居中位置（基于 center 原点）
-          const centerLeft = canvasWidth / 2;
-          const centerTop = canvasHeight / 2;
-          fabricImg.set({
-            left: centerLeft,
-            top: centerTop,
-          });
-          
-          fabricImg.setCoords();
+          // [2025-12-19 21:30:00] 获取fit结果用于返回值
+          const fit: FitResult = {
+            width: (fabricImg.width || 0) * (fabricImg.scaleX || 1),
+            height: (fabricImg.height || 0) * (fabricImg.scaleY || 1),
+            left: fabricImg.left || 0,
+            top: fabricImg.top || 0,
+            scale: fabricImg.scaleX || 1,
+            safeAreaWidth: canvasWidth * safeAreaWidth,
+            safeAreaHeight: canvasHeight * safeAreaHeight,
+          };
           
           // 10. 添加到画布
           canvas.add(fabricImg);
@@ -735,9 +860,45 @@ export async function loadProductImageLayer(
           });
           // #endregion
           
-          // 12. 标记加载完成和已附加
+          // 12. [2025-12-19 21:30:00] 在标记加载完成前，最后一次强制应用布局（幂等保证）
+          applyProductImageLayout({
+            image: fabricImg,
+            canvas,
+            canvasWidth,
+            canvasHeight,
+            safeAreaWidth,
+            safeAreaHeight,
+            fitMode: 'cover',
+          });
+          
+          // 确保在最底层
+          try {
+            const objs = canvas.getObjects();
+            const idx = objs.indexOf(fabricImg);
+            if (idx > 0) {
+              objs.splice(idx, 1);
+              objs.unshift(fabricImg);
+            }
+          } catch (e) {
+            console.warn('[ProductImageLayer] Error ensuring image at back:', e);
+          }
+          
+          canvas.renderAll();
+          
+          // 13. 标记加载完成和已附加
           manager.markLoaded(fabricImg, stableKey);
           manager.markAttached();
+          
+          // [2025-12-19 21:30:00] 使用最新的fit值（从image获取）
+          const finalFit: FitResult = {
+            width: (fabricImg.width || 0) * (fabricImg.scaleX || 1),
+            height: (fabricImg.height || 0) * (fabricImg.scaleY || 1),
+            left: fabricImg.left || 0,
+            top: fabricImg.top || 0,
+            scale: fabricImg.scaleX || 1,
+            safeAreaWidth: canvasWidth * safeAreaWidth,
+            safeAreaHeight: canvasHeight * safeAreaHeight,
+          };
           
           // [2025-01-30 22:30:00] 详细调试：检查图片是否真的可见
           const imgProps = {
@@ -757,14 +918,19 @@ export async function loadProductImageLayer(
             onCanvas: canvas.getObjects().includes(fabricImg),
             canvasWidth: canvas.width,
             canvasHeight: canvas.height,
+            originX: fabricImg.originX,
+            originY: fabricImg.originY,
           };
           
           console.log('[ProductImageLayer] ✅ Product image loaded and positioned:', {
             stableKey,
             url: imageUrl,
-            dimensions: { width: fit.width, height: fit.height },
-            position: { left: centerLeft, top: centerTop },
-            scale: fit.scale,
+            dimensions: { width: finalFit.width, height: finalFit.height },
+            position: { left: finalFit.left, top: finalFit.top },
+            center: { x: canvasWidth / 2, y: canvasHeight / 2 },
+            scale: finalFit.scale,
+            originX: fabricImg.originX,
+            originY: fabricImg.originY,
             state: manager.getState(),
           });
           
@@ -846,16 +1012,12 @@ export async function loadProductImageLayer(
             console.error('[ProductImageLayer] ❌ ERROR: Image is not on canvas!');
           }
           
-          // 13. 触发一次性 ready 事件（通过 canvas 事件）
+          // 14. 触发一次性 ready 事件（通过 canvas 事件）
           canvas.fire('product-image:ready', { image: fabricImg, stableKey });
           
           resolve({
             image: fabricImg,
-            fit: {
-              ...fit,
-              left: centerLeft,
-              top: centerTop,
-            },
+            fit: finalFit,
             success: true,
             state: ProductImageLayerState.ATTACHED,
             stableKey,

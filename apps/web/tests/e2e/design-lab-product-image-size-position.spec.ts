@@ -15,7 +15,7 @@ test.describe('Design Lab 底图大小与位置', () => {
     await waitForDesignLabReady(page);
   });
 
-  test('底图应该占据画布80%宽×90%高并居中', async ({ page }) => {
+  test('底图应该严格居中（left/top等于画布中心，误差≤2px）', async ({ page }) => {
     // [2025-12-19 21:15:00] 等待canvas初始化
     await page.waitForSelector('canvas', { timeout: 15000 });
     await page.waitForTimeout(3000); // 等待底图加载完成
@@ -100,6 +100,68 @@ test.describe('Design Lab 底图大小与位置', () => {
       expect(widthOk || heightOk).toBe(true); // 至少一边达到目标
       
       // [2025-12-19 21:15:00] 验证尺寸不会过大（不超过目标太多，例如1.2倍）
+      expect(productImageInfo.widthRatio).toBeLessThanOrEqual(1.2);
+      expect(productImageInfo.heightRatio).toBeLessThanOrEqual(1.2);
+    }
+  });
+
+  test('底图尺寸应该达到80%×90%目标占比', async ({ page }) => {
+    // [2025-12-19 21:30:00] 等待canvas初始化
+    await page.waitForSelector('canvas', { timeout: 15000 });
+    await page.waitForTimeout(3000);
+    
+    const productImageInfo = await page.evaluate(() => {
+      const fabricCanvas = (window as any).fabricCanvas || (window as any).DesignLabCanvas?.getCanvas();
+      if (!fabricCanvas) return null;
+      
+      const objects = fabricCanvas.getObjects();
+      const productImage = objects.find((obj: any) => {
+        const name = obj.name || '';
+        return name.startsWith('product-image-');
+      });
+      
+      if (!productImage) return null;
+      
+      const vpt = fabricCanvas.viewportTransform;
+      let logicalCanvasWidth = fabricCanvas.width || 1000;
+      let logicalCanvasHeight = fabricCanvas.height || 1200;
+      
+      if (vpt && (vpt[0] !== 1 || vpt[3] !== 1)) {
+        logicalCanvasWidth = (fabricCanvas.width || 1000) / vpt[0];
+        logicalCanvasHeight = (fabricCanvas.height || 1200) / vpt[3];
+      }
+      
+      const scaleX = productImage.scaleX || 1;
+      const scaleY = productImage.scaleY || 1;
+      const actualWidth = (productImage.width || 0) * scaleX;
+      const actualHeight = (productImage.height || 0) * scaleY;
+      
+      const targetWidth = logicalCanvasWidth * 0.8;
+      const targetHeight = logicalCanvasHeight * 0.9;
+      
+      return {
+        found: true,
+        logicalCanvasWidth,
+        logicalCanvasHeight,
+        productImageWidth: actualWidth,
+        productImageHeight: actualHeight,
+        targetWidth,
+        targetHeight,
+        widthRatio: actualWidth / targetWidth,
+        heightRatio: actualHeight / targetHeight,
+      };
+    });
+    
+    expect(productImageInfo).toBeTruthy();
+    expect(productImageInfo?.found).toBe(true);
+    
+    if (productImageInfo) {
+      // [2025-12-19 21:30:00] cover模式：至少一边应该达到或超过目标
+      const widthOk = productImageInfo.widthRatio >= 1.0;
+      const heightOk = productImageInfo.heightRatio >= 1.0;
+      expect(widthOk || heightOk, 'cover模式：至少一边应该达到目标尺寸').toBe(true);
+      
+      // [2025-12-19 21:30:00] 尺寸不应该过大（不超过1.2倍）
       expect(productImageInfo.widthRatio).toBeLessThanOrEqual(1.2);
       expect(productImageInfo.heightRatio).toBeLessThanOrEqual(1.2);
     }
