@@ -414,14 +414,14 @@ function applyProductImageLayout(params: {
   const isFull = widthRatio >= 1.0 || heightRatio >= 1.0;
   
   // [2025-12-19 22:30:00] 获取Canvas DOM元素的实际渲染尺寸（用于诊断视觉偏差）
-  const canvasElement = canvas.getElement();
+  const canvasElementForDOM = canvas.getElement();
   let canvasDOMWidth = 0;
   let canvasDOMHeight = 0;
   let canvasActualWidth = 0;
   let canvasActualHeight = 0;
-  if (canvasElement) {
-    canvasDOMWidth = canvasElement.offsetWidth || 0;
-    canvasDOMHeight = canvasElement.offsetHeight || 0;
+  if (canvasElementForDOM) {
+    canvasDOMWidth = canvasElementForDOM.offsetWidth || 0;
+    canvasDOMHeight = canvasElementForDOM.offsetHeight || 0;
     canvasActualWidth = canvas.width || 0;
     canvasActualHeight = canvas.height || 0;
   }
