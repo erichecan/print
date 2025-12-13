@@ -18,36 +18,43 @@ interface AccountLayoutProps {
 
 /**
  * 检查是否是 Next.js redirect 错误
- * [2025-12-12 14:15:00] Next.js redirect() 通过抛出特殊错误实现重定向
+ * [2025-12-13 14:40:00] 使用 Next.js 官方的 isRedirectError 函数
  */
 function isNextRedirectError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false;
-  
-  // Next.js redirect 错误通常有特定的特征
-  // 检查 error 对象是否有 digest 属性，且包含 NEXT_REDIRECT
-  const errorObj = error as any;
-  if (errorObj.digest && typeof errorObj.digest === 'string') {
-    return errorObj.digest.includes('NEXT_REDIRECT') || 
-           errorObj.digest.includes('redirect');
+  // [2025-12-13 14:40:00] 尝试使用 Next.js 官方的 isRedirectError
+  try {
+    // 动态导入 Next.js 的 isRedirectError（从内部路径）
+    // 注意：这是 Next.js 内部 API，但这是检测 redirect 错误的标准方法
+    const { isRedirectError: nextIsRedirectError } = require('next/dist/client/components/redirect');
+    if (nextIsRedirectError && typeof nextIsRedirectError === 'function') {
+      return nextIsRedirectError(error);
+    }
+  } catch {
+    // 如果无法导入，使用 fallback 检测逻辑
   }
   
-  // 检查错误消息
-  if (errorObj.message && typeof errorObj.message === 'string') {
-    return errorObj.message.includes('NEXT_REDIRECT') ||
-           errorObj.message.includes('redirect');
+  // [2025-12-13 14:40:00] Fallback: 检查 digest 格式
+  // Next.js redirect 错误的 digest 格式：NEXT_REDIRECT;${type};${url};${statusCode};
+  if (!error || typeof error !== 'object') return false;
+  
+  const errorObj = error as any;
+  if (errorObj.digest && typeof errorObj.digest === 'string') {
+    // 检查是否以 NEXT_REDIRECT 开头（更精确的匹配）
+    return errorObj.digest.startsWith('NEXT_REDIRECT;');
   }
   
   return false;
 }
 
 export default async function AccountLayout({ children }: AccountLayoutProps) {
-  // [2025-12-12 14:15:00] 修复：将 redirect 移出 catch 块，避免 NEXT_REDIRECT 错误被捕获
-  // [2025-01-27 19:05:00] 将整个函数体包装在 try-catch 中，捕获所有可能的错误
+  // [2025-12-13 14:50:00] 修复：将 redirect 调用移出 try-catch，避免 NEXT_REDIRECT 错误被捕获
+  // [2025-01-27 19:05:00] 获取 request ID 和会话信息
+  let requestId: string;
+  let timestamp: string;
+  let sessionResult: Awaited<ReturnType<typeof getSessionSafe>>;
+  
   try {
     // [2025-01-27 18:20:00] 获取 request ID 用于日志追踪
-    let requestId: string;
-    let timestamp: string;
-    
     try {
       const headersList = await headers();
       requestId = headersList.get('x-request-id') || 
@@ -68,22 +75,65 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
     console.info('[AccountLayout] SSR start', { requestId, timestamp, path: '/account' });
     
     // [2025-01-27 18:20:00] 使用安全封装函数获取会话，不抛错
-    const sessionResult = await getSessionSafe(requestId);
-    
-    // [2025-12-12 14:15:00] 修复：在 try 块内处理未登录情况，直接 redirect（不在 catch 中）
-    if (!sessionResult.ok) {
-      // [2025-01-27 18:20:00] 记录未登录或认证失败，但不抛错
-      console.warn('[AccountLayout] Session check failed, redirecting to login', { 
-        requestId, 
-        timestamp,
-        code: sessionResult.code,
-        message: sessionResult.message
-      });
-      // [2025-12-12 14:15:00] 在 try 块内调用 redirect，让 NEXT_REDIRECT 错误正常传播
-      redirect('/login?redirect=/account');
+    sessionResult = await getSessionSafe(requestId);
+  } catch (error) {
+    // [2025-12-13 14:50:00] 捕获获取 session 过程中的错误（不包括 redirect）
+    // 如果这是 redirect 错误，立即重新抛出
+    if (isNextRedirectError(error)) {
+      throw error; // 重新抛出 redirect 错误，让 Next.js 处理
     }
     
-    // [2025-01-27 18:20:00] 会话获取成功，继续渲染
+    // [2025-12-13 14:50:00] 记录其他错误并上报
+    const errorRequestId = generateTraceId();
+    const errorTimestamp = new Date().toISOString();
+    
+    console.error('[AccountLayout] Error during session check', {
+      requestId: errorRequestId,
+      timestamp: errorTimestamp,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      errorName: error instanceof Error ? error.name : 'Unknown',
+      digest: (error as any)?.digest,
+    });
+    
+    reportServerError({
+      traceId: errorRequestId,
+      route: '/account',
+      message: error instanceof Error ? error.message : 'AccountLayout session check error',
+      error: {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined,
+      },
+      digest: (error as any)?.digest,
+    });
+    
+    // [2025-12-13 14:55:00] 修复：不在 catch 块中调用 redirect，而是抛出错误
+    // 这样会让错误边界处理，或者如果是严重错误，Next.js 会处理
+    // 但为了确保用户体验，我们设置一个默认的 sessionResult 以便后续重定向
+    sessionResult = { 
+      ok: false, 
+      code: 'UNKNOWN_ERROR', 
+      message: error instanceof Error ? error.message : 'Unknown error during session check' 
+    };
+  }
+  
+  // [2025-12-13 14:50:00] 在 try-catch 外检查 sessionResult 并调用 redirect
+  // 这样可以确保 redirect() 抛出的 NEXT_REDIRECT 错误不会被 catch 捕获
+  if (!sessionResult.ok) {
+    console.warn('[AccountLayout] Session check failed, redirecting to login', { 
+      requestId, 
+      timestamp,
+      code: sessionResult.code,
+      message: sessionResult.message
+    });
+    // [2025-12-13 14:50:00] redirect() 在 try-catch 外调用，确保 NEXT_REDIRECT 错误正常传播，不被捕获
+    redirect('/login?redirect=/account');
+  }
+  
+  // [2025-12-13 14:50:00] 会话获取成功，继续渲染（包装在 try-catch 中以防渲染错误）
+  try {
+    
     console.info('[AccountLayout] Session valid, rendering layout', { 
       requestId, 
       timestamp,
@@ -123,44 +173,38 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
       </div>
     );
   } catch (error) {
-    // [2025-12-12 14:15:00] 修复：检查是否是 NEXT_REDIRECT 错误，如果是则重新抛出，不捕获
+    // [2025-12-13 14:45:00] 捕获渲染期间的错误
+    // 如果是 redirect 错误，立即重新抛出
     if (isNextRedirectError(error)) {
-      console.info('[AccountLayout] NEXT_REDIRECT error detected, re-throwing to allow redirect', {
-        error: error instanceof Error ? error.message : String(error),
-      });
-      // 重新抛出 redirect 错误，让 Next.js 正常处理重定向
-      throw error;
+      throw error; // 重新抛出 redirect 错误
     }
     
-    // [2025-01-27 19:05:00] 捕获所有其他错误，包括 headers()、getSessionSafe() 和渲染期间的错误
-    const errorRequestId = generateTraceId();
+    // [2025-12-13 14:45:00] 记录渲染错误
+    const errorRequestId = requestId || generateTraceId();
     const errorTimestamp = new Date().toISOString();
     
-    console.error('[AccountLayout] Error caught (non-redirect)', {
+    console.error('[AccountLayout] Rendering error', {
       requestId: errorRequestId,
       timestamp: errorTimestamp,
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       errorName: error instanceof Error ? error.name : 'Unknown',
-      // [2025-12-12 14:15:00] 添加 digest 信息用于追踪
       digest: (error as any)?.digest,
     });
     
     reportServerError({
       traceId: errorRequestId,
       route: '/account',
-      message: error instanceof Error ? error.message : 'AccountLayout error',
+      message: error instanceof Error ? error.message : 'AccountLayout rendering error',
       error: {
         name: error instanceof Error ? error.name : 'Unknown',
         message: error instanceof Error ? error.message : String(error),
         stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined,
       },
-      // [2025-12-12 14:15:00] 添加 digest 用于关联客户端错误
       digest: (error as any)?.digest,
     });
     
-    // [2025-12-12 14:15:00] 修复：不在 catch 块中调用 redirect，而是抛出错误让错误边界处理
-    // 错误边界会显示友好的错误页面，而不是尝试重定向（可能导致循环）
+    // [2025-12-13 14:45:00] 渲染错误时抛出，让错误边界处理
     throw error;
   }
 }
