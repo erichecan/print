@@ -633,6 +633,41 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         stableKey: result.stableKey,
       });
       
+      // [2025-12-19 22:15:00] 验证底图位置和尺寸（用于确认修复）
+      if (result.success && result.image) {
+        const productImage = result.image;
+        const vpt = canvas.viewportTransform;
+        let logicalCanvasWidth = CANVAS_WIDTH;
+        let logicalCanvasHeight = CANVAS_HEIGHT;
+        
+        if (vpt && (vpt[0] !== 1 || vpt[3] !== 1)) {
+          logicalCanvasWidth = (canvas.width || CANVAS_WIDTH) / vpt[0];
+          logicalCanvasHeight = (canvas.height || CANVAS_HEIGHT) / vpt[3];
+        }
+        
+        const centerX = logicalCanvasWidth / 2;
+        const centerY = logicalCanvasHeight / 2;
+        const leftDiff = Math.abs((productImage.left || 0) - centerX);
+        const topDiff = Math.abs((productImage.top || 0) - centerY);
+        const isCentered = leftDiff <= 2 && topDiff <= 2;
+        
+        const scaledWidth = (productImage.width || 0) * (productImage.scaleX || 1);
+        const scaledHeight = (productImage.height || 0) * (productImage.scaleY || 1);
+        const targetWidth = logicalCanvasWidth * 0.9;
+        const targetHeight = logicalCanvasHeight * 0.9;
+        const widthRatio = scaledWidth / targetWidth;
+        const heightRatio = scaledHeight / targetHeight;
+        const isFull = widthRatio >= 1.0 || heightRatio >= 1.0;
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ [DesignLab] 底图加载成功 - 验证结果');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`📍 位置验证: ${isCentered ? '✓ 通过' : '✗ 失败'} (误差: left=${leftDiff.toFixed(2)}px, top=${topDiff.toFixed(2)}px)`);
+        console.log(`📐 尺寸验证: ${isFull ? '✓ 通过' : '✗ 失败'} (占比: 宽度=${(widthRatio * 100).toFixed(1)}%, 高度=${(heightRatio * 100).toFixed(1)}%)`);
+        console.log(`🎯 最终状态: ${isCentered && isFull ? '✅ 全部通过' : '❌ 存在问题'}`);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      }
+      
       if (result.success && result.image) {
         // #region agent log
         const objectsAfterLoad = canvas.getObjects();
@@ -2869,6 +2904,25 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               success: result.success,
               view,
             });
+            
+            // [2025-12-19 22:15:00] 验证zoom退出后的布局（用于确认修复）
+            if (result.success && result.image) {
+              const productImage = result.image;
+              const centerX = CANVAS_WIDTH / 2;
+              const centerY = CANVAS_HEIGHT / 2;
+              const leftDiff = Math.abs((productImage.left || 0) - centerX);
+              const topDiff = Math.abs((productImage.top || 0) - centerY);
+              const isCentered = leftDiff <= 2 && topDiff <= 2;
+              
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log('✅ [DesignLab] Zoom退出后布局恢复验证');
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+              console.log(`📍 居中验证: ${isCentered ? '✓ 通过' : '✗ 失败'} (误差: left=${leftDiff.toFixed(2)}px, top=${topDiff.toFixed(2)}px)`);
+              console.log(`   画布中心: (${centerX}, ${centerY})`);
+              console.log(`   底图位置: (${productImage.left?.toFixed(2) || '0'}, ${productImage.top?.toFixed(2) || '0'})`);
+              console.log(`🎯 最终状态: ${isCentered ? '✅ 通过' : '❌ 失败'}`);
+              console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            }
             canvas.renderAll();
           } catch (error) {
             console.warn('[DesignLab] Failed to reapply product-image layout after zoom exit:', error);

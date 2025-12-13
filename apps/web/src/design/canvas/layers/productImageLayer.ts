@@ -346,20 +346,159 @@ function applyProductImageLayout(params: {
     evented: false,
   });
 
-  console.log('[ProductImageLayer] Layout applied:', {
-    view: (image as any).data?.view || 'unknown',
-    centerX,
-    centerY,
-    scale: fit.scale,
-    scaledWidth: imageNaturalWidth * fit.scale,
-    scaledHeight: imageNaturalHeight * fit.scale,
-    originX: image.originX,
-    originY: image.originY,
-    left: image.left,
-    top: image.top,
-    safeAreaWidth: effectiveSafeAreaWidth,
-    safeAreaHeight: effectiveSafeAreaHeight,
-  });
+  // [2025-12-19 22:15:00] 计算误差（用于验证是否居中）
+  const leftDiff = Math.abs(image.left - centerX);
+  const topDiff = Math.abs(image.top - centerY);
+  const isCentered = leftDiff <= 2 && topDiff <= 2;
+  
+  // [2025-12-19 22:15:00] 计算尺寸占比（用于验证是否铺满）
+  const scaledWidth = imageNaturalWidth * fit.scale;
+  const scaledHeight = imageNaturalHeight * fit.scale;
+  const widthRatio = scaledWidth / (logicalCanvasWidth * effectiveSafeAreaWidth);
+  const heightRatio = scaledHeight / (logicalCanvasHeight * effectiveSafeAreaHeight);
+  const isFull = widthRatio >= 1.0 || heightRatio >= 1.0;
+  
+  // [2025-12-19 22:15:00] 详细日志输出（用于验证修复）
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('📍 [ProductImageLayer] 底图布局验证报告');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log('🎯 视图信息:');
+  console.log(`   视图类型: ${(image as any).data?.view || 'unknown'}`);
+  console.log(`   画布逻辑尺寸: ${logicalCanvasWidth.toFixed(2)} × ${logicalCanvasHeight.toFixed(2)}`);
+  console.log('');
+  console.log('📍 位置信息:');
+  console.log(`   画布逻辑中心: (${centerX.toFixed(2)}, ${centerY.toFixed(2)})`);
+  console.log(`   底图位置: (${image.left?.toFixed(2) || '0'}, ${image.top?.toFixed(2) || '0'})`);
+  console.log(`   位置误差: left=${leftDiff.toFixed(2)}px, top=${topDiff.toFixed(2)}px`);
+  console.log(`   原点设置: originX='${image.originX}', originY='${image.originY}'`);
+  console.log(`   ✅ 居中验证: ${isCentered ? '✓ 通过（误差≤2px）' : '✗ 失败'}`);
+  console.log('');
+  console.log('📐 尺寸信息:');
+  console.log(`   原始尺寸: ${imageNaturalWidth.toFixed(2)} × ${imageNaturalHeight.toFixed(2)}`);
+  console.log(`   缩放比例: ${fit.scale.toFixed(4)}`);
+  console.log(`   缩放后尺寸: ${scaledWidth.toFixed(2)} × ${scaledHeight.toFixed(2)}`);
+  console.log(`   目标安全区: ${(logicalCanvasWidth * effectiveSafeAreaWidth).toFixed(2)} × ${(logicalCanvasHeight * effectiveSafeAreaHeight).toFixed(2)}`);
+  console.log(`   尺寸占比: 宽度=${(widthRatio * 100).toFixed(1)}%, 高度=${(heightRatio * 100).toFixed(1)}%`);
+  console.log(`   SafeArea配置: 宽度=${(effectiveSafeAreaWidth * 100).toFixed(0)}%, 高度=${(effectiveSafeAreaHeight * 100).toFixed(0)}%`);
+  console.log(`   ✅ 铺满验证: ${isFull ? '✓ 通过（至少一边≥100%）' : '✗ 失败'}`);
+  console.log('');
+  console.log('🎨 其他属性:');
+  console.log(`   可选中: ${image.selectable ? '✗ 是（错误）' : '✓ 否（正确）'}`);
+  console.log(`   可交互: ${image.evented ? '✗ 是（错误）' : '✓ 否（正确）'}`);
+  console.log('');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`🎉 最终验证: ${isCentered && isFull ? '✅ 全部通过' : '❌ 存在问题'}`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  
+  // [2025-12-19 22:15:00] 在画布上添加临时坐标标记（开发环境或手动启用）
+  // 启用方法：在浏览器Console中执行 window.__DEBUG_PRODUCT_IMAGE__ = true; location.reload();
+  if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && (window as any).__DEBUG_PRODUCT_IMAGE__)) {
+    try {
+      // 移除旧的标记
+      const existingMarkers = canvas.getObjects().filter((obj: any) => 
+        obj.name?.startsWith('__debug_marker_')
+      );
+      existingMarkers.forEach(obj => canvas.remove(obj));
+      
+      // 添加中心点标记
+      const centerCircle = new (fabricModule as any).Circle({
+        left: centerX,
+        top: centerY,
+        radius: 5,
+        fill: 'red',
+        stroke: 'white',
+        strokeWidth: 2,
+        selectable: false,
+        evented: false,
+        name: '__debug_marker_center',
+        originX: 'center',
+        originY: 'center',
+      });
+      
+      // 添加底图位置标记
+      const imageCircle = new (fabricModule as any).Circle({
+        left: image.left,
+        top: image.top,
+        radius: 3,
+        fill: 'blue',
+        stroke: 'white',
+        strokeWidth: 2,
+        selectable: false,
+        evented: false,
+        name: '__debug_marker_image',
+        originX: 'center',
+        originY: 'center',
+      });
+      
+      // 添加坐标文本（画布中心）
+      const centerText = new (fabricModule as any).Text(`中心\n(${centerX.toFixed(0)}, ${centerY.toFixed(0)})`, {
+        left: centerX,
+        top: centerY - 30,
+        fontSize: 12,
+        fill: 'red',
+        fontFamily: 'Arial',
+        textAlign: 'center',
+        selectable: false,
+        evented: false,
+        name: '__debug_marker_center_text',
+        originX: 'center',
+        originY: 'bottom',
+      });
+      
+      // 添加坐标文本（底图位置）
+      const imageText = new (fabricModule as any).Text(`底图\n(${image.left?.toFixed(0) || '0'}, ${image.top?.toFixed(0) || '0'})\n误差: (${leftDiff.toFixed(1)}, ${topDiff.toFixed(1)})`, {
+        left: image.left,
+        top: image.top + 30,
+        fontSize: 11,
+        fill: 'blue',
+        fontFamily: 'Arial',
+        textAlign: 'center',
+        backgroundColor: 'rgba(255,255,255,0.8)',
+        selectable: false,
+        evented: false,
+        name: '__debug_marker_image_text',
+        originX: 'center',
+        originY: 'top',
+      });
+      
+      // 添加尺寸信息文本
+      const sizeText = new (fabricModule as any).Text(`尺寸: ${scaledWidth.toFixed(0)}×${scaledHeight.toFixed(0)}\n占比: ${(widthRatio * 100).toFixed(0)}%×${(heightRatio * 100).toFixed(0)}%`, {
+        left: 10,
+        top: 10,
+        fontSize: 11,
+        fill: 'green',
+        fontFamily: 'Arial',
+        textAlign: 'left',
+        backgroundColor: 'rgba(255,255,255,0.9)',
+        padding: 5,
+        selectable: false,
+        evented: false,
+        name: '__debug_marker_size_text',
+        originX: 'left',
+        originY: 'top',
+      });
+      
+      // 添加到画布（在所有对象之上）
+      canvas.add(centerCircle);
+      canvas.add(imageCircle);
+      canvas.add(centerText);
+      canvas.add(imageText);
+      canvas.add(sizeText);
+      
+      // 将标记移到最上层
+      centerCircle.bringToFront();
+      imageCircle.bringToFront();
+      centerText.bringToFront();
+      imageText.bringToFront();
+      sizeText.bringToFront();
+      
+      canvas.renderAll();
+      
+      console.log('🎨 [ProductImageLayer] 已添加坐标标记到画布（红色=中心，蓝色=底图位置）');
+    } catch (error) {
+      console.warn('[ProductImageLayer] 添加坐标标记失败:', error);
+    }
+  }
 }
 
 /**
