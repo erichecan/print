@@ -66,13 +66,32 @@ export class CanvasEngine {
       const devicePixelRatio = window.devicePixelRatio || 1;
       const scale = devicePixelRatio;
       
+      // [2025-12-19 22:40:00] 设置画布实际像素尺寸（考虑devicePixelRatio）
       this.canvas.setWidth(1000 * scale);
       this.canvas.setHeight(1200 * scale);
       
+      // [2025-12-19 22:40:00] 确保所有canvas元素（lower-canvas和upper-canvas）的CSS尺寸正确
+      const container = (this.canvas as any).containerEl || (this.canvas as any).wrapperEl;
+      if (container) {
+        container.style.width = '1000px';
+        container.style.height = '1200px';
+        container.style.position = 'relative';
+        container.style.margin = '0 auto';
+      }
+      
       const canvasEl = this.canvas.getElement();
+      const upperCanvasEl = (this.canvas as any).upperCanvasEl;
+      
       if (canvasEl) {
+        // lower-canvas的CSS尺寸
         canvasEl.style.width = '1000px';
         canvasEl.style.height = '1200px';
+      }
+      
+      if (upperCanvasEl) {
+        // upper-canvas的CSS尺寸
+        upperCanvasEl.style.width = '1000px';
+        upperCanvasEl.style.height = '1200px';
       }
       
       this.canvas.setZoom(1);

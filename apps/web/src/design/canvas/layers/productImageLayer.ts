@@ -500,8 +500,24 @@ function applyProductImageLayout(params: {
           canvas.add(centerLabel);
           
           // 移到最上层（在底图之上，但可能被用户内容覆盖）
-          centerSquare.bringToFront();
-          centerLabel.bringToFront();
+          // [2025-12-19 22:40:00] 修复：使用canvas的方法而不是对象的bringToFront
+          try {
+            canvas.bringObjectToFront(centerSquare);
+            canvas.bringObjectToFront(centerLabel);
+          } catch (e) {
+            // 降级：手动移到数组末尾
+            const objs = canvas.getObjects();
+            const sqIdx = objs.indexOf(centerSquare);
+            const lbIdx = objs.indexOf(centerLabel);
+            if (sqIdx >= 0) {
+              objs.splice(sqIdx, 1);
+              objs.push(centerSquare);
+            }
+            if (lbIdx >= 0) {
+              objs.splice(lbIdx, 1);
+              objs.push(centerLabel);
+            }
+          }
           
           canvas.renderAll();
           
