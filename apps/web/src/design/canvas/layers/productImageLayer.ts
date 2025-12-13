@@ -539,38 +539,40 @@ function applyProductImageLayout(params: {
                 const scaleX = logicalCanvasWidth / (containerRect.width || logicalCanvasWidth);
                 const scaleY = logicalCanvasHeight / (containerRect.height || logicalCanvasHeight);
                 
-                // 计算.dl-canvas边界在Fabric.js坐标系中的位置
-                // 左边界：containerOffsetX * scaleX（如果container在section左边，则为负值或0）
-                // 右边界：containerOffsetX * scaleX + containerRect.width * scaleX
-                // 但由于Fabric.js坐标系是从(0,0)开始的，我们需要考虑container在section中的位置
+                // [2025-12-19 23:15:00] 计算.dl-canvas边界在Fabric.js逻辑坐标系中的位置
+                // Fabric.js坐标系是从(0,0)开始的，对应container的左上角
+                // .dl-canvas的左边界对应Fabric.js坐标：-containerOffsetX * scaleX（如果container在section内部，则为负值）
+                const sectionLeftInFabric = -containerOffsetX * scaleX;
+                // .dl-canvas的右边界对应Fabric.js坐标：logicalCanvasWidth + (dlCanvasRect.width - containerRect.width - containerOffsetX) * scaleX
+                const sectionRightInFabric = logicalCanvasWidth + (canvasSectionRect.width - containerRect.width - containerOffsetX) * scaleX;
+                // 顶部边界
+                const sectionTopInFabric = -containerOffsetY * scaleY;
+                // 底部边界
+                const sectionBottomInFabric = logicalCanvasHeight + (canvasSectionRect.height - containerRect.height - containerOffsetY) * scaleY;
                 
-                // 简化方案：基准线应该覆盖整个Fabric.js canvas（因为canvas-container就是1000×1200）
-                // 但为了显示真实的.dl-canvas边界，我们需要计算边界位置
+                // 但是Fabric.js只能在canvas范围内绘制，所以需要限制到canvas边界
+                const lineLeft = Math.max(0, sectionLeftInFabric);
+                const lineRight = Math.min(logicalCanvasWidth, sectionRightInFabric);
+                const lineTop = Math.max(0, sectionTopInFabric);
+                const lineBottom = Math.min(logicalCanvasHeight, sectionBottomInFabric);
                 
-                // 如果container没有填满section，我们需要扩展基准线
-                // 暂时先用container的尺寸，因为Fabric.js canvas就是1000×1200
-                const lineLeft = 0;
-                const lineRight = logicalCanvasWidth;
-                const lineTop = 0;
-                const lineBottom = logicalCanvasHeight;
+                console.log('🔴 [ProductImageLayer] .dl-canvas section尺寸映射到Fabric.js坐标系:');
+                console.log(`   .dl-canvas section实际尺寸: ${canvasSectionRect.width.toFixed(0)} × ${canvasSectionRect.height.toFixed(0)}`);
+                console.log(`   canvas-container尺寸: ${containerRect.width.toFixed(0)} × ${containerRect.height.toFixed(0)}`);
+                console.log(`   container偏移: (${containerOffsetX.toFixed(0)}, ${containerOffsetY.toFixed(0)})`);
+                console.log(`   Fabric.js坐标系中的section边界:`);
+                console.log(`     左: ${sectionLeftInFabric.toFixed(2)}, 右: ${sectionRightInFabric.toFixed(2)}`);
+                console.log(`     上: ${sectionTopInFabric.toFixed(2)}, 下: ${sectionBottomInFabric.toFixed(2)}`);
+                console.log(`   Fabric.js canvas尺寸: ${logicalCanvasWidth.toFixed(0)} × ${logicalCanvasHeight.toFixed(0)}`);
+                console.log(`   中心点: (${centerX.toFixed(0)}, ${centerY.toFixed(0)})`);
                 
-                console.log('🔴 [ProductImageLayer] .dl-canvas section实际尺寸:', {
-                  sectionWidth: actualCanvasSectionWidth,
-                  sectionHeight: actualCanvasSectionHeight,
-                  containerWidth: containerRect.width,
-                  containerHeight: containerRect.height,
-                  containerOffsetX,
-                  containerOffsetY,
-                  logicalCanvasWidth,
-                  logicalCanvasHeight,
-                });
-                
-                // 绘制水平基准线（从Fabric.js canvas左边到右边，y=centerY）
+                // [2025-12-19 23:15:00] 绘制基准线：从.dl-canvas section的左边界到右边界，从顶部到底部
+                // 注意：如果section边界超出Fabric.js canvas范围，我们只能绘制到canvas边界
                 const horizontalLine = new fabricMod.Line(
                   [lineLeft, centerY, lineRight, centerY],
                   {
                     stroke: '#ff0000',
-                    strokeWidth: 3, // [2025-12-19 23:10:00] 增加线宽，更明显
+                    strokeWidth: 3,
                     selectable: false,
                     evented: false,
                     name: '__debug_horizontal_line',
@@ -578,12 +580,11 @@ function applyProductImageLayout(params: {
                   }
                 );
                 
-                // 绘制垂直基准线（从Fabric.js canvas顶部到底部，x=centerX）
                 const verticalLine = new fabricMod.Line(
                   [centerX, lineTop, centerX, lineBottom],
                   {
                     stroke: '#ff0000',
-                    strokeWidth: 3, // [2025-12-19 23:10:00] 增加线宽，更明显
+                    strokeWidth: 3,
                     selectable: false,
                     evented: false,
                     name: '__debug_vertical_line',
@@ -594,13 +595,12 @@ function applyProductImageLayout(params: {
                 canvas.add(horizontalLine);
                 canvas.add(verticalLine);
                 
-                console.log('🔴 [ProductImageLayer] 已添加基准线（基于Fabric.js canvas边界）：');
+                console.log('🔴 [ProductImageLayer] 已添加基准线（基于.dl-canvas section边界）：');
                 console.log(`   水平线: (${lineLeft.toFixed(0)}, ${centerY.toFixed(0)}) → (${lineRight.toFixed(0)}, ${centerY.toFixed(0)})`);
                 console.log(`   垂直线: (${centerX.toFixed(0)}, ${lineTop.toFixed(0)}) → (${centerX.toFixed(0)}, ${lineBottom.toFixed(0)})`);
                 console.log(`   红色方块位置: (${centerX.toFixed(0)}, ${centerY.toFixed(0)})`);
-                console.log(`   .dl-canvas section实际尺寸: ${actualCanvasSectionWidth.toFixed(0)} × ${actualCanvasSectionHeight.toFixed(0)}`);
-                console.log(`   canvas-container尺寸: ${containerRect.width.toFixed(0)} × ${containerRect.height.toFixed(0)}`);
-                console.log(`   注意：基准线基于Fabric.js canvas边界（1000×1200），如果section更大，线不会到达section边界`);
+                console.log(`   如果水平线从${lineLeft.toFixed(0)}到${lineRight.toFixed(0)}，应该对应section的左右边界`);
+                console.log(`   如果垂直线从${lineTop.toFixed(0)}到${lineBottom.toFixed(0)}，应该对应section的上下边界`);
               } else {
                 // 降级：使用Fabric.js逻辑尺寸
                 const horizontalLine = new fabricMod.Line(
