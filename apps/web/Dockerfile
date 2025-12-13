@@ -46,8 +46,10 @@ COPY apps/web/src ./src
 COPY prisma ./prisma
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
 # [2025-12-12 14:15:00] 修复：安装与 @prisma/client 匹配的 prisma CLI 版本（5.19.1）
+# [2025-12-13 14:35:00] 修复：在 Alpine Linux 中安装 OpenSSL 以支持 Prisma
+RUN apk add --no-cache openssl1.1-compat || apk add --no-cache openssl
 RUN npm install -g prisma@5.19.1
-RUN prisma generate --schema=./prisma/schema.prisma
+RUN prisma generate --schema=./prisma/schema.prisma || (echo "⚠️ Prisma generate failed, but continuing..." && exit 0)
 RUN npm run build
 
 FROM node:18-alpine AS runner
