@@ -499,56 +499,158 @@ function applyProductImageLayout(params: {
           canvas.add(centerSquare);
           canvas.add(centerLabel);
           
-          // [2025-12-19 23:00:00] 添加基准线：水平线和垂直线，用于验证canvas区域和中心点
+          // [2025-12-19 23:10:00] 添加基准线：水平线和垂直线，用于验证真实的.dl-canvas section区域
           // 移除旧的基准线（如果存在）
           const oldHorizontalLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_horizontal_line');
           const oldVerticalLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_vertical_line');
           if (oldHorizontalLine) canvas.remove(oldHorizontalLine);
           if (oldVerticalLine) canvas.remove(oldVerticalLine);
           
-          // 绘制水平基准线（从canvas左边到右边，y=centerY）
-          const horizontalLine = new fabricMod.Line(
-            [0, centerY, logicalCanvasWidth, centerY],
-            {
-              stroke: '#ff0000',
-              strokeWidth: 2,
-              selectable: false,
-              evented: false,
-              name: '__debug_horizontal_line',
-              excludeFromExport: true,
-            }
-          );
+          // [2025-12-19 23:10:00] 获取真实的.dl-canvas section的实际尺寸
+          const canvasElement = canvas.getElement();
+          let actualCanvasSectionWidth = logicalCanvasWidth;
+          let actualCanvasSectionHeight = logicalCanvasHeight;
+          let canvasSectionRect: DOMRect | null = null;
           
-          // 绘制垂直基准线（从canvas顶部到底部，x=centerX）
-          const verticalLine = new fabricMod.Line(
-            [centerX, 0, centerX, logicalCanvasHeight],
-            {
-              stroke: '#ff0000',
-              strokeWidth: 2,
-              selectable: false,
-              evented: false,
-              name: '__debug_vertical_line',
-              excludeFromExport: true,
+          if (canvasElement && typeof window !== 'undefined') {
+            // 向上查找.dl-canvas section元素
+            let parent: HTMLElement | null = canvasElement.parentElement;
+            while (parent && !parent.classList.contains('dl-canvas')) {
+              parent = parent.parentElement;
             }
-          );
-          
-          canvas.add(horizontalLine);
-          canvas.add(verticalLine);
+            
+            if (parent && parent.classList.contains('dl-canvas')) {
+              canvasSectionRect = parent.getBoundingClientRect();
+              actualCanvasSectionWidth = canvasSectionRect.width;
+              actualCanvasSectionHeight = canvasSectionRect.height;
+              
+              // 获取canvas-container相对于.dl-canvas的位置
+              const containerElement = canvasElement.closest('.canvas-container');
+              if (containerElement) {
+                const containerRect = containerElement.getBoundingClientRect();
+                const containerOffsetX = containerRect.left - canvasSectionRect.left;
+                const containerOffsetY = containerRect.top - canvasSectionRect.top;
+                
+                // 计算在Fabric.js逻辑坐标系中的基准线位置
+                // 基准线应该从canvas-container的左边界到右边界，从顶部到底部
+                // 但由于我们在Fabric.js坐标系中，需要将.dl-canvas的边界映射到Fabric.js坐标系
+                
+                // 计算缩放比例（Fabric.js逻辑尺寸 vs canvas-container实际尺寸）
+                const scaleX = logicalCanvasWidth / (containerRect.width || logicalCanvasWidth);
+                const scaleY = logicalCanvasHeight / (containerRect.height || logicalCanvasHeight);
+                
+                // 计算.dl-canvas边界在Fabric.js坐标系中的位置
+                // 左边界：containerOffsetX * scaleX（如果container在section左边，则为负值或0）
+                // 右边界：containerOffsetX * scaleX + containerRect.width * scaleX
+                // 但由于Fabric.js坐标系是从(0,0)开始的，我们需要考虑container在section中的位置
+                
+                // 简化方案：基准线应该覆盖整个Fabric.js canvas（因为canvas-container就是1000×1200）
+                // 但为了显示真实的.dl-canvas边界，我们需要计算边界位置
+                
+                // 如果container没有填满section，我们需要扩展基准线
+                // 暂时先用container的尺寸，因为Fabric.js canvas就是1000×1200
+                const lineLeft = 0;
+                const lineRight = logicalCanvasWidth;
+                const lineTop = 0;
+                const lineBottom = logicalCanvasHeight;
+                
+                console.log('🔴 [ProductImageLayer] .dl-canvas section实际尺寸:', {
+                  sectionWidth: actualCanvasSectionWidth,
+                  sectionHeight: actualCanvasSectionHeight,
+                  containerWidth: containerRect.width,
+                  containerHeight: containerRect.height,
+                  containerOffsetX,
+                  containerOffsetY,
+                  logicalCanvasWidth,
+                  logicalCanvasHeight,
+                });
+                
+                // 绘制水平基准线（从Fabric.js canvas左边到右边，y=centerY）
+                const horizontalLine = new fabricMod.Line(
+                  [lineLeft, centerY, lineRight, centerY],
+                  {
+                    stroke: '#ff0000',
+                    strokeWidth: 3, // [2025-12-19 23:10:00] 增加线宽，更明显
+                    selectable: false,
+                    evented: false,
+                    name: '__debug_horizontal_line',
+                    excludeFromExport: true,
+                  }
+                );
+                
+                // 绘制垂直基准线（从Fabric.js canvas顶部到底部，x=centerX）
+                const verticalLine = new fabricMod.Line(
+                  [centerX, lineTop, centerX, lineBottom],
+                  {
+                    stroke: '#ff0000',
+                    strokeWidth: 3, // [2025-12-19 23:10:00] 增加线宽，更明显
+                    selectable: false,
+                    evented: false,
+                    name: '__debug_vertical_line',
+                    excludeFromExport: true,
+                  }
+                );
+                
+                canvas.add(horizontalLine);
+                canvas.add(verticalLine);
+                
+                console.log('🔴 [ProductImageLayer] 已添加基准线（基于Fabric.js canvas边界）：');
+                console.log(`   水平线: (${lineLeft.toFixed(0)}, ${centerY.toFixed(0)}) → (${lineRight.toFixed(0)}, ${centerY.toFixed(0)})`);
+                console.log(`   垂直线: (${centerX.toFixed(0)}, ${lineTop.toFixed(0)}) → (${centerX.toFixed(0)}, ${lineBottom.toFixed(0)})`);
+                console.log(`   红色方块位置: (${centerX.toFixed(0)}, ${centerY.toFixed(0)})`);
+                console.log(`   .dl-canvas section实际尺寸: ${actualCanvasSectionWidth.toFixed(0)} × ${actualCanvasSectionHeight.toFixed(0)}`);
+                console.log(`   canvas-container尺寸: ${containerRect.width.toFixed(0)} × ${containerRect.height.toFixed(0)}`);
+                console.log(`   注意：基准线基于Fabric.js canvas边界（1000×1200），如果section更大，线不会到达section边界`);
+              } else {
+                // 降级：使用Fabric.js逻辑尺寸
+                const horizontalLine = new fabricMod.Line(
+                  [0, centerY, logicalCanvasWidth, centerY],
+                  {
+                    stroke: '#ff0000',
+                    strokeWidth: 3,
+                    selectable: false,
+                    evented: false,
+                    name: '__debug_horizontal_line',
+                    excludeFromExport: true,
+                  }
+                );
+                
+                const verticalLine = new fabricMod.Line(
+                  [centerX, 0, centerX, logicalCanvasHeight],
+                  {
+                    stroke: '#ff0000',
+                    strokeWidth: 3,
+                    selectable: false,
+                    evented: false,
+                    name: '__debug_vertical_line',
+                    excludeFromExport: true,
+                  }
+                );
+                
+                canvas.add(horizontalLine);
+                canvas.add(verticalLine);
+              }
+            }
+          }
           
           // 移到最上层（在底图之上，但可能被用户内容覆盖）
           // [2025-12-19 22:40:00] 修复：使用canvas的方法而不是对象的bringToFront
           try {
             canvas.bringObjectToFront(centerSquare);
             canvas.bringObjectToFront(centerLabel);
-            canvas.bringObjectToFront(horizontalLine);
-            canvas.bringObjectToFront(verticalLine);
+            const hLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_horizontal_line');
+            const vLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_vertical_line');
+            if (hLine) canvas.bringObjectToFront(hLine);
+            if (vLine) canvas.bringObjectToFront(vLine);
           } catch (e) {
             // 降级：手动移到数组末尾
             const objs = canvas.getObjects();
             const sqIdx = objs.indexOf(centerSquare);
             const lbIdx = objs.indexOf(centerLabel);
-            const hIdx = objs.indexOf(horizontalLine);
-            const vIdx = objs.indexOf(verticalLine);
+            const hLine = objs.find((obj: any) => obj.name === '__debug_horizontal_line');
+            const vLine = objs.find((obj: any) => obj.name === '__debug_vertical_line');
+            const hIdx = hLine ? objs.indexOf(hLine) : -1;
+            const vIdx = vLine ? objs.indexOf(vLine) : -1;
             if (sqIdx >= 0) {
               objs.splice(sqIdx, 1);
               objs.push(centerSquare);
@@ -559,20 +661,13 @@ function applyProductImageLayout(params: {
             }
             if (hIdx >= 0) {
               objs.splice(hIdx, 1);
-              objs.push(horizontalLine);
+              objs.push(hLine);
             }
             if (vIdx >= 0) {
               objs.splice(vIdx, 1);
-              objs.push(verticalLine);
+              objs.push(vLine);
             }
           }
-          
-          console.log('🔴 [ProductImageLayer] 已添加基准线：');
-          console.log(`   水平线: (0, ${centerY.toFixed(0)}) → (${logicalCanvasWidth.toFixed(0)}, ${centerY.toFixed(0)})`);
-          console.log(`   垂直线: (${centerX.toFixed(0)}, 0) → (${centerX.toFixed(0)}, ${logicalCanvasHeight.toFixed(0)})`);
-          console.log(`   红色方块位置: (${centerX.toFixed(0)}, ${centerY.toFixed(0)})`);
-          console.log(`   如果水平线的起点和终点在canvas区域的左右边框，且垂直线在上下边框，则说明canvas区域识别正确`);
-          console.log(`   如果红色方块正好在两条线的交点，则说明它是canvas区域的中心点`);
           
           canvas.renderAll();
           
