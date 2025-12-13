@@ -193,8 +193,10 @@ export function SiteHeader() {
           <div className="container primary-nav__inner">
             <ul className="mega">
               {/* [2025-01-28 06:25:00] 从 CMS 渲染导航菜单 */}
+              {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
               {navigation.length > 0 ? (
                 navigation
+                  .filter((item) => item.href !== '/collections/apparel') // [2025-12-13 15:10:00] 过滤掉 Custom Apparel
                   .sort((a, b) => (a.order || 0) - (b.order || 0))
                   .map((item) => renderNavigationItem(item))
               ) : (
@@ -203,9 +205,10 @@ export function SiteHeader() {
                   <li className="mega__item">
                     <Link href="/products" className="mega__trigger">Custom T-shirts</Link>
                   </li>
-                  <li className="mega__item">
+                  {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
+                  {/* <li className="mega__item">
                     <Link href="/collections/apparel" className="mega__trigger">Custom Apparel</Link>
-                  </li>
+                  </li> */}
                   <li className="mega__item">
                     <Link href="/promotional-products" className="mega__trigger">Promotional Products</Link>
                   </li>
@@ -270,8 +273,10 @@ export function SiteHeader() {
         </div>
         <ul className="mobile-nav__list">
           {/* [2025-01-28 15:00:00] 从 CMS 渲染移动端导航菜单 */}
+          {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
           {navigation.length > 0 ? (
             navigation
+              .filter((item) => item.href !== '/collections/apparel') // [2025-12-13 15:10:00] 过滤掉 Custom Apparel
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((item) => renderMobileNavigationItem(item))
           ) : (
@@ -282,11 +287,12 @@ export function SiteHeader() {
                   Custom T-shirts
                 </Link>
               </li>
-              <li>
+              {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
+              {/* <li>
                 <Link href="/collections/apparel" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
                   Custom Apparel
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link href="/promotional-products" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
                   Promotional Products
