@@ -325,7 +325,7 @@ function applyProductImageLayout(params: {
   let sectionVisualCenterX = logicalCanvasWidth / 2;
   let sectionVisualCenterY = logicalCanvasHeight / 2;
   
-  const canvasElement = canvas.getElement();
+  const canvasElementForCenter = canvas.getElement();
   if (canvasElement && typeof window !== 'undefined') {
     // 向上查找.dl-canvas section元素
     let parent: HTMLElement | null = canvasElement.parentElement;
@@ -623,12 +623,12 @@ function applyProductImageLayout(params: {
                 console.log(`     左: ${sectionLeftInFabric.toFixed(2)}, 右: ${sectionRightInFabric.toFixed(2)}`);
                 console.log(`     上: ${sectionTopInFabric.toFixed(2)}, 下: ${sectionBottomInFabric.toFixed(2)}`);
                 console.log(`   Fabric.js canvas尺寸: ${logicalCanvasWidth.toFixed(0)} × ${logicalCanvasHeight.toFixed(0)}`);
-                console.log(`   中心点: (${centerX.toFixed(0)}, ${centerY.toFixed(0)})`);
+                console.log(`   section视觉中心: (${sectionVisualCenterX.toFixed(0)}, ${sectionVisualCenterY.toFixed(0)})`);
                 
                 // [2025-12-19 23:15:00] 绘制基准线：从.dl-canvas section的左边界到右边界，从顶部到底部
                 // 注意：如果section边界超出Fabric.js canvas范围，我们只能绘制到canvas边界
                 const horizontalLine = new fabricMod.Line(
-                  [lineLeft, centerY, lineRight, centerY],
+                  [lineLeft, sectionVisualCenterY, lineRight, sectionVisualCenterY],
                   {
                     stroke: '#ff0000',
                     strokeWidth: 3,
@@ -640,7 +640,7 @@ function applyProductImageLayout(params: {
                 );
                 
                 const verticalLine = new fabricMod.Line(
-                  [centerX, lineTop, centerX, lineBottom],
+                  [sectionVisualCenterX, lineTop, sectionVisualCenterX, lineBottom],
                   {
                     stroke: '#ff0000',
                     strokeWidth: 3,
@@ -655,15 +655,15 @@ function applyProductImageLayout(params: {
                 canvas.add(verticalLine);
                 
                 console.log('🔴 [ProductImageLayer] 已添加基准线（基于.dl-canvas section边界）：');
-                console.log(`   水平线: (${lineLeft.toFixed(0)}, ${centerY.toFixed(0)}) → (${lineRight.toFixed(0)}, ${centerY.toFixed(0)})`);
-                console.log(`   垂直线: (${centerX.toFixed(0)}, ${lineTop.toFixed(0)}) → (${centerX.toFixed(0)}, ${lineBottom.toFixed(0)})`);
-                console.log(`   红色方块位置: (${centerX.toFixed(0)}, ${centerY.toFixed(0)})`);
+                console.log(`   水平线: (${lineLeft.toFixed(0)}, ${sectionVisualCenterY.toFixed(0)}) → (${lineRight.toFixed(0)}, ${sectionVisualCenterY.toFixed(0)})`);
+                console.log(`   垂直线: (${sectionVisualCenterX.toFixed(0)}, ${lineTop.toFixed(0)}) → (${sectionVisualCenterX.toFixed(0)}, ${lineBottom.toFixed(0)})`);
+                console.log(`   红色方块位置: (${sectionVisualCenterX.toFixed(0)}, ${sectionVisualCenterY.toFixed(0)})`);
                 console.log(`   如果水平线从${lineLeft.toFixed(0)}到${lineRight.toFixed(0)}，应该对应section的左右边界`);
                 console.log(`   如果垂直线从${lineTop.toFixed(0)}到${lineBottom.toFixed(0)}，应该对应section的上下边界`);
               } else {
                 // 降级：使用Fabric.js逻辑尺寸
                 const horizontalLine = new fabricMod.Line(
-                  [0, centerY, logicalCanvasWidth, centerY],
+                  [0, sectionVisualCenterY, logicalCanvasWidth, sectionVisualCenterY],
                   {
                     stroke: '#ff0000',
                     strokeWidth: 3,
@@ -675,7 +675,7 @@ function applyProductImageLayout(params: {
                 );
                 
                 const verticalLine = new fabricMod.Line(
-                  [centerX, 0, centerX, logicalCanvasHeight],
+                  [sectionVisualCenterX, 0, sectionVisualCenterX, logicalCanvasHeight],
                   {
                     stroke: '#ff0000',
                     strokeWidth: 3,
@@ -749,10 +749,10 @@ function applyProductImageLayout(params: {
       );
       existingMarkers.forEach(obj => canvas.remove(obj));
       
-      // 添加中心点标记
+      // 添加中心点标记（使用section视觉中心）
       const centerCircle = new fabricMod.Circle({
-            left: centerX,
-            top: centerY,
+            left: sectionVisualCenterX,
+            top: sectionVisualCenterY,
             radius: 5,
             fill: 'red',
             stroke: 'white',
@@ -779,10 +779,10 @@ function applyProductImageLayout(params: {
         originY: 'center',
       });
       
-      // 添加坐标文本（画布中心）
-      const centerText = new fabricMod.Text(`中心\n(${centerX.toFixed(0)}, ${centerY.toFixed(0)})`, {
-        left: centerX,
-        top: centerY - 30,
+      // 添加坐标文本（section视觉中心）
+      const centerText = new fabricMod.Text(`中心\n(${sectionVisualCenterX.toFixed(0)}, ${sectionVisualCenterY.toFixed(0)})`, {
+        left: sectionVisualCenterX,
+        top: sectionVisualCenterY - 30,
         fontSize: 12,
         fill: 'red',
         fontFamily: 'Arial',
