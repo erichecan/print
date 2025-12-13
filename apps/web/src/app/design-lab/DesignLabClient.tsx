@@ -26,14 +26,14 @@ import { useToast } from '@/hooks/useToast'; // [2025-12-08] 引入Toast
 import { canvasEngine, CanvasEventType } from '@/design/canvas/engine'; // [2025-01-30 23:30:00] Design Lab 4.0: 使用画布引擎
 import ToolPanel, { type ToolPanelType } from './components/ToolPanel';
 import HomePanel from './components/panels/HomePanel';
-import TemplateLibraryPanel from './components/panels/TemplateLibraryPanel';
+// [2025-12-19 21:25:00] 移除：TemplateLibraryPanel 导入（已移除模板库功能）
 import UploadPanel from './components/panels/UploadPanel';
 import EditUploadPanel from './components/panels/EditUploadPanel';
 import TextPanel from './components/panels/TextPanel';
 import EditTextPanel from './components/panels/EditTextPanel';
 import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
-import LayerManagementPanel from './components/panels/LayerManagementPanel';
+// [2025-12-19 21:25:00] 移除：LayerManagementPanel 导入（已移除图层管理功能）
 import DesignCommentSection from './components/DesignCommentSection';
 import { CanvasLoadingError } from './components/CanvasLoadingError'; // [2025-12-10 18:40:00] Canvas加载错误组件
 import ProductColorsModal from './components/modals/ProductColorsModal';
@@ -138,7 +138,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'zoom'>('front');
   const [showGuidePanel, setShowGuidePanel] = useState(false); // [2025-01-30 17:00:00] 默认隐藏，因为工具面板会显示
-  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false); // [2025-12-06 12:30:00] 模板库面板显示状态
+  // [2025-12-19 21:25:00] 移除：showTemplateLibrary 状态（已移除模板库功能）
   const [showPriceModal, setShowPriceModal] = useState(false); // [2025-12-06 12:30:00] 价格模态框显示状态（旧版，保留兼容）
   const [showGetPriceFlowModal, setShowGetPriceFlowModal] = useState(false); // [2025-12-08] Get Price流程模态框
   const [priceQuote, setPriceQuote] = useState<any>(null); // [2025-12-06 12:30:00] 价格报价数据
@@ -401,9 +401,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvasHeight: CANVAS_HEIGHT,
           imageWidth: fabricImg.width || 1,
           imageHeight: fabricImg.height || 1,
-          safeAreaWidth: 0.65,
-          safeAreaHeight: 0.75,
-          fit: 'contain',
+          safeAreaWidth: 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%
+          safeAreaHeight: 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%
+          fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
         
         // [2025-01-31 18:00:00] 应用 fit 结果（居中 + 缩放）
@@ -1048,9 +1048,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvasHeight: CANVAS_HEIGHT,
           imageWidth: fabricImg.width || 1,
           imageHeight: fabricImg.height || 1,
-          safeAreaWidth: 0.65,
-          safeAreaHeight: 0.75,
-          fit: 'contain',
+          safeAreaWidth: 0.8, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从65%改为80%
+          safeAreaHeight: 0.9, // [2025-12-19 21:15:00] 修复：增大底图尺寸占比，从75%改为90%
+          fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
         
         // [2025-01-31 18:00:00] 应用 fit 结果（居中 + 缩放）
@@ -1789,28 +1789,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   }, [productInfo, currentView, loadBackgroundImage, loadProductInfo]);
 
   // [2025-01-30 17:00:00] Home 面板操作处理
-  const handleHomeAction = (action: 'upload' | 'text' | 'art' | 'products' | 'layers' | 'templates' | 'export') => {
-    if (action === 'products') {
-      // TODO: 实现产品切换功能
-      console.log('[DesignLab] Change products');
-      return;
-    }
-    if (action === 'layers') {
-      // [2025-12-06 13:00:00] 打开图层管理面板
-      setToolPanelType('layers');
-      setActiveTool('layers');
-      return;
-    }
-    if (action === 'templates') {
-      // [2025-12-10] 打开模板库面板
-      setShowTemplateLibrary(true);
-      return;
-    }
-    if (action === 'export') {
-      // [2025-12-10] 显示导出菜单
-      handleShowExportMenu();
-      return;
-    }
+  // [2025-12-19 21:25:00] 移除：products、layers、templates、export 四个功能
+  const handleHomeAction = (action: 'upload' | 'text' | 'art') => {
     handleToolClick(action);
   };
 
@@ -4139,55 +4119,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               onChangeArt={handleChangeArt}
             />
           )}
-          {toolPanelType === 'layers' && (
-            <LayerManagementPanel
-              canvas={fabricCanvasRef.current}
-              onSelectLayer={(object) => {
-                if (fabricCanvasRef.current) {
-                  fabricCanvasRef.current.setActiveObject(object);
-                  fabricCanvasRef.current.renderAll();
-                }
-              }}
-              onUpdate={handleCanvasUpdate}
-            />
-          )}
+          {/* [2025-12-19 21:25:00] 移除：layers 功能 */}
         </ToolPanel>
 
-        {/* [2025-12-10] 模板库面板 - 作为模态框显示 */}
-        {showTemplateLibrary && (
-          <div className="dl-modal-overlay" onClick={() => setShowTemplateLibrary(false)}>
-            <div className="dl-modal-content" onClick={(e) => e.stopPropagation()}>
-              <TemplateLibraryPanel
-                onApplyTemplate={(template) => {
-                  // [2025-12-10] 应用模板到画布
-                  if (!fabricCanvasRef.current || !fabricRef.current) {
-                    showError('Canvas not initialized');
-                    return;
-                  }
-                  
-                  try {
-                    // 如果模板有 canvasData，加载到画布
-                    if (template.canvasData) {
-                      const canvas = fabricCanvasRef.current;
-                      canvas.loadFromJSON(template.canvasData, () => {
-                        canvas.renderAll();
-                        handleCanvasUpdate();
-                        setShowTemplateLibrary(false);
-                        success('Template applied successfully');
-                      });
-                    } else {
-                      showError('Template data not available');
-                    }
-                  } catch (error) {
-                    console.error('[DesignLab] Error applying template:', error);
-                    showError('Failed to apply template');
-                  }
-                }}
-                onClose={() => setShowTemplateLibrary(false)}
-              />
-            </div>
-          </div>
-        )}
+        {/* [2025-12-19 21:25:00] 移除：模板库面板功能 */}
 
         {/* 4. Canvas - 中央画布区域 */}
         <section className="dl-canvas" aria-label="Design canvas">
