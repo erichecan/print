@@ -32,7 +32,8 @@ export default function CartPage() {
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [postalCode, setPostalCode] = useState('');
-  const [postalError, setPostalError] = useState('Please enter a postal code to get your price.');
+  // [2025-12-13 14:30:00] 修复：初始值为空，仅在用户点击 Update 且输入无效时才显示错误
+  const [postalError, setPostalError] = useState('');
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // [2025-12-08] 防止重复点击
   
@@ -183,6 +184,7 @@ export default function CartPage() {
   };
 
   // [2025-01-27 16:50:00] 优化邮政编码更新交互反馈
+  // [2025-12-13 14:30:00] 修复：仅在用户点击 Update 且输入无效时才显示错误
   const handlePostalUpdate = () => {
     if (!postalCode.trim() || postalCode.trim().length < 5) {
       const errorMsg = 'Please enter a valid zip/postal code.';
@@ -190,7 +192,8 @@ export default function CartPage() {
       showError(errorMsg);
       return;
     }
-    setPostalError(null);
+    // [2025-12-13 14:30:00] 修复：清除错误提示（使用空字符串而非 null）
+    setPostalError('');
     success('Postal code updated. Prices will be calculated at checkout.');
   };
 
@@ -255,30 +258,10 @@ export default function CartPage() {
 
       <div className="cart-new__hero">
         <h1>My Cart</h1>
-        <p className="cart-new__subtitle">Please enter a postal code to get your price.</p>
+        {/* [2025-12-13 14:30:00] 删除：移除顶部重复的邮编提示文案 */}
       </div>
 
-      <div className={`cart-new__alert ${postalError ? 'has-error' : ''}`}>
-        <div className="cart-new__alert-icon">!</div>
-        <div className="cart-new__alert-content">
-          <p>{postalError || 'Great! We\'ll keep this ZIP on file for delivery estimates.'}</p>
-          <div className="cart-new__alert-form">
-            <label htmlFor="cart-zip" className="sr-only">
-              Enter postal code
-            </label>
-            <input
-              id="cart-zip"
-              type="text"
-              value={postalCode}
-              placeholder="Enter postal code"
-              onChange={(event) => setPostalCode(event.target.value)}
-            />
-            <button type="button" onClick={handlePostalUpdate}>
-              Update
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* [2025-12-13 14:30:00] 删除：移除顶部红框邮编输入模块，邮编输入仅保留在右侧 Summary 区域 */}
 
       <div className="cart-new__grid">
         <div className="cart-new__main">

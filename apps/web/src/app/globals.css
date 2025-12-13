@@ -8978,49 +8978,9 @@ details:not([open]) .filter-toggle-icon::before {
   margin: 0;
   color: #1a202c;
 }
-.cart-new__subtitle {
-  margin: 4px 0 0;
-  color: #718096;
-}
-.cart-new__alert {
-  display: flex;
-  gap: 16px;
-  border: 1px solid #e53e3e;
-  background: #fff5f5;
-  padding: 16px;
-  border-radius: 12px;
-  align-items: flex-start;
-}
-.cart-new__alert-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #e53e3e;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-}
-.cart-new__alert-form {
-  margin-top: 8px;
-  display: flex;
-  gap: 12px;
-}
-.cart-new__alert-form input {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  width: 220px;
-}
-.cart-new__alert-form button {
-  background: #1a202c;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 20px;
-  cursor: pointer;
-}
+/* [2025-12-13 14:30:00] 删除：移除不再使用的顶部提示和红框样式 */
+/* .cart-new__subtitle 已删除 */
+/* .cart-new__alert* 相关样式已删除（顶部红框模块已移除） */
 .cart-new__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
