@@ -3887,7 +3887,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         const result = saveDesignToLocalStorage(
           designName,
           updatedViewCanvases,
-          currentStoreView,
+          currentStoreView as 'front' | 'back' | 'sleeve',
           {
             productId: productInfo.productId,
             productName: productInfo.productName,

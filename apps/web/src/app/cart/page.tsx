@@ -203,37 +203,119 @@ export default function CartPage() {
     return Math.max(0, cart.total - discount);
   };
 
+  // [2025-12-13 15:55:00] CustomInk风格：优化空购物车状态显示
   const renderEmptyState = () => (
-    <section className="cart">
-      <div className="container">
-        <nav className="breadcrumb" aria-label="Breadcrumb">
-          <ol>
-            <li>
-              <Link href="/">Home</Link>
-            </li>
-            <li aria-current="page">Shopping Cart</li>
-          </ol>
-        </nav>
-        <div className="cart__grid">
-          <div className="cart__items">
-            <h1>Shopping Cart</h1>
-            <div className="no-reviews cart-empty">
-              <p>Your cart is empty.</p>
-              <Link href="/products" className="btn btn--outline">
-                Continue Shopping
-              </Link>
-            </div>
-          </div>
+    <section className="cart-new">
+      <div className="cart-new__top">
+        <div className="cart-new__breadcrumbs">
+          <Link href="/">Custom T-shirts</Link>
+          <span>My Cart</span>
         </div>
+      </div>
+      <div className="cart-new__hero">
+        <h1>My Cart</h1>
+      </div>
+      <div className="cart-empty-state" style={{
+        maxWidth: '600px',
+        margin: '64px auto',
+        textAlign: 'center',
+        padding: '48px 24px',
+        background: 'var(--color-bg)',
+        borderRadius: '12px',
+        border: '1px solid var(--color-border)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
+      }}>
+        <div style={{ fontSize: '64px', marginBottom: '24px', opacity: 0.3 }}>🛒</div>
+        <h2 style={{ 
+          fontSize: '24px', 
+          fontWeight: 700, 
+          color: 'var(--color-text)', 
+          marginBottom: '12px' 
+        }}>
+          Your cart is empty
+        </h2>
+        <p style={{ 
+          fontSize: '16px', 
+          color: 'var(--color-text-muted)', 
+          marginBottom: '32px',
+          lineHeight: 1.6
+        }}>
+          Start adding items to your cart to get started!
+        </p>
+        <Link 
+          href="/products" 
+          style={{
+            display: 'inline-block',
+            padding: '14px 32px',
+            background: 'var(--color-primary)',
+            color: '#fff',
+            borderRadius: '8px',
+            fontWeight: 700,
+            fontSize: '16px',
+            textDecoration: 'none',
+            transition: 'all 0.2s ease',
+            border: 'none',
+            cursor: 'pointer'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-primary-600)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 31, 61, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--color-primary)';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          Continue Shopping
+        </Link>
       </div>
     </section>
   );
 
+  // [2025-12-13 15:55:00] CustomInk风格：优化加载状态显示
   if (isLoading) {
     return (
-      <section className="cart">
-        <div className="container">
-          <p>Loading cart...</p>
+      <section className="cart-new">
+        <div className="cart-new__top">
+          <div className="cart-new__breadcrumbs">
+            <Link href="/">Custom T-shirts</Link>
+            <span>My Cart</span>
+          </div>
+        </div>
+        <div className="cart-new__hero">
+          <h1>My Cart</h1>
+        </div>
+        <div style={{
+          maxWidth: '600px',
+          margin: '64px auto',
+          textAlign: 'center',
+          padding: '48px 24px'
+        }}>
+          <div style={{
+            display: 'inline-block',
+            width: '48px',
+            height: '48px',
+            border: '4px solid var(--color-bg-subtle)',
+            borderTop: '4px solid var(--color-primary)',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+            marginBottom: '24px'
+          }} />
+          <p style={{ 
+            fontSize: '16px', 
+            color: 'var(--color-text-muted)',
+            margin: 0
+          }}>
+            Loading cart...
+          </p>
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </section>
     );
@@ -286,7 +368,20 @@ export default function CartPage() {
                     unoptimized={item.thumbnail.startsWith('http') && !item.thumbnail.includes('storage.googleapis.com')}
                   />
                 ) : null}
-                <div className="cart-card__placeholder" style={{ display: item.thumbnail ? 'none' : 'flex' }}>
+                {/* [2025-12-13 15:50:00] 图片占位符：当图片加载失败或无图片时显示 */}
+                <div 
+                  className="cart-card__placeholder" 
+                  style={{ 
+                    display: item.thumbnail ? 'none' : 'flex',
+                    position: 'absolute',
+                    inset: 0,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                    color: 'var(--color-text-muted)',
+                    fontWeight: 500
+                  }}
+                >
                   {item.thumbnail ? 'Image' : 'Design Preview'}
                 </div>
               </div>
@@ -294,9 +389,10 @@ export default function CartPage() {
                 <div className="cart-card__top">
                   <div>
                     <p className="cart-card__design-name">{item.productName}</p>
-                    <button type="button" className="cart-card__link">
+                    {/* [2025-12-13 15:45:00] 暂时隐藏 Edit Design 按钮（功能待实现） */}
+                    {/* <button type="button" className="cart-card__link">
                       Edit Design
-                    </button>
+                    </button> */}
                   </div>
                   <button
                     type="button"
@@ -311,17 +407,9 @@ export default function CartPage() {
                   {item.productName}
                   <span>{item.variantDescription || 'Heather Dark Grey | Printing'}</span>
                   {/* [2025-01-28 12:40:00] 显示促销活动标签 */}
+                  {/* [2025-12-13 15:55:00] CustomInk风格：优化促销标签样式 */}
                   {promotionsData?.[item.productId] && (
-                    <span style={{ 
-                      display: 'inline-block', 
-                      marginLeft: '8px', 
-                      padding: '2px 8px', 
-                      backgroundColor: '#e74c3c', 
-                      color: 'white', 
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
+                    <span className="cart-card__promotion-badge">
                       {promotionsData[item.productId].discountType === 'percentage'
                         ? `${promotionsData[item.productId].discountValue}% OFF`
                         : `$${promotionsData[item.productId].discountValue.toFixed(2)} OFF`}
@@ -371,7 +459,8 @@ export default function CartPage() {
             </article>
           ))}
 
-          <section className="cart-delivery">
+          {/* [2025-12-13 15:45:00] 注释掉 Delivery Options 板块（暂时下线） */}
+          {/* <section className="cart-delivery">
             <h3>Delivery Options</h3>
             <div className="cart-delivery__options">
               <div className="cart-delivery__card is-disabled">
@@ -381,9 +470,10 @@ export default function CartPage() {
                 <span>Only available for orders of 6 or more items</span>
               </div>
             </div>
-          </section>
+          </section> */}
 
-          <section className="cart-upsell">
+          {/* [2025-12-13 15:45:00] 注释掉 Add Your Design to More Styles 板块（暂时下线） */}
+          {/* <section className="cart-upsell">
             <div className="cart-upsell__header">
               <h3>Add Your Design to More Styles</h3>
               <p>Only available for orders of 6 or more items.</p>
@@ -403,7 +493,7 @@ export default function CartPage() {
                 </div>
               </div>
             </div>
-          </section>
+          </section> */}
         </div>
 
         <aside className="cart-new__summary">
@@ -503,6 +593,7 @@ export default function CartPage() {
                 }
               }}
               disabled={navigatingToCheckout || !cart || cart.items.length === 0}
+              aria-label={navigatingToCheckout ? 'Processing checkout...' : 'Proceed to checkout'}
             >
               {navigatingToCheckout ? 'Loading...' : 'Proceed to Checkout'}
             </button>
