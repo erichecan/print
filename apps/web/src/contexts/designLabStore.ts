@@ -47,6 +47,7 @@ interface DesignLabState {
   bringToFront: (layerId: string) => void;
   sendToBack: (layerId: string) => void;
   moveLayer: (layerId: string, newIndex: number) => void;
+  setViewCanvases: (viewCanvases: Record<DesignView, DesignCanvasSnapshot>) => void; // [2025-12-19 16:30:00] 批量更新所有视图画布
 }
 
 const defaultSnapshot: DesignCanvasSnapshot = {
@@ -192,7 +193,7 @@ export const useDesignLabStore = create<DesignLabState>()(
           });
         }
       }),
-    moveLayer: (layerId: string, newIndex: number) =>
+      moveLayer: (layerId: string, newIndex: number) =>
       set((state) => {
         const layerIndex = state.layers.findIndex((l) => l.id === layerId);
         if (layerIndex !== -1 && newIndex >= 0 && newIndex < state.layers.length) {
@@ -204,6 +205,13 @@ export const useDesignLabStore = create<DesignLabState>()(
             l.zIndex = index;
           });
         }
+      }),
+    // [2025-12-19 16:30:00] 批量更新所有视图画布（用于恢复本地草稿）
+    setViewCanvases: (viewCanvases: Record<DesignView, DesignCanvasSnapshot>) =>
+      set((state) => {
+        state.viewCanvases = viewCanvases;
+        // 同时更新当前视图的canvas
+        state.canvas = viewCanvases[state.currentView];
       }),
   }))
 );

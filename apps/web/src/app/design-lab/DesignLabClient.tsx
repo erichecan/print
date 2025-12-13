@@ -14,12 +14,14 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; // [2025-12-19 16:30:00] 导入Image组件用于Logo
 import { useSearchParams } from 'next/navigation';
 // [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用动态导入
 import type { fabric } from 'fabric';
 import { useDesignLabStore } from '@/contexts/designLabStore';
 import { productsApi } from '@/lib/api';
 import type { DesignCanvasSnapshot } from '@/lib/api';
+import { saveDesignToLocalStorage, loadDesignFromLocalStorage, clearDesignFromLocalStorage } from './utils/localStorage'; // [2025-12-19 16:30:00] 导入本地存储工具
 import { useToast } from '@/hooks/useToast'; // [2025-12-08] 引入Toast
 import { canvasEngine, CanvasEventType } from '@/design/canvas/engine'; // [2025-01-30 23:30:00] Design Lab 4.0: 使用画布引擎
 import ToolPanel, { type ToolPanelType } from './components/ToolPanel';
@@ -236,6 +238,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     canvas: storeCanvas,
     viewCanvases,
     getCurrentViewCanvas,
+    setViewCanvases, // [2025-12-19 16:30:00] 批量更新视图画布
     history,
     future
   } = useDesignLabStore();
@@ -3790,6 +3793,136 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     }
   }, [canvasInitialized, currentView, loadBackgroundImage]); // [2025-01-31 16:55:00] 添加 loadBackgroundImage 到依赖，但内部有重复检查
 
+  // [2025-12-19 16:30:00] 页面加载时自动恢复本地草稿
+  useEffect(() => {
+    if (!canvasInitialized || !fabricCanvasRef.current || !fabricRef.current) {
+      return; // 等待canvas初始化完成
+    }
+
+    const restoreDraft = async () => {
+      try {
+        const draft = loadDesignFromLocalStorage();
+        if (!draft) {
+          console.log('[DesignLab] No local draft found, starting fresh');
+          return;
+        }
+
+        console.log('[DesignLab] Restoring local draft:', {
+          designName: draft.designName,
+          currentView: draft.currentView,
+          savedAt: draft.savedAt,
+        });
+
+        // [2025-12-19 16:30:00] 恢复设计名称
+        if (draft.designName) {
+          setDesignName(draft.designName);
+        }
+
+        // [2025-12-19 16:30:00] 恢复产品信息
+        if (draft.productInfo) {
+          setProductInfo((prev) => ({
+            ...prev,
+            productId: draft.productInfo.productId,
+            productName: draft.productInfo.productName,
+            variantId: draft.productInfo.variantId,
+            color: draft.productInfo.color,
+          }));
+        }
+
+        // [2025-12-19 16:30:00] 恢复视图画布（需要等待fabric加载）
+        if (draft.viewCanvases) {
+          // [2025-12-19 16:30:00] 批量恢复所有视图的画布到store
+          setViewCanvases(draft.viewCanvases);
+          
+          // [2025-12-19 16:30:00] 切换到保存时的视图
+          if (draft.currentView) {
+            setView(draft.currentView);
+            // 加载当前视图的画布到fabric canvas
+            setTimeout(() => {
+              if (fabricCanvasRef.current && draft.viewCanvases[draft.currentView]) {
+                snapshotToCanvas(draft.viewCanvases[draft.currentView], fabricCanvasRef.current);
+                // 加载背景图片
+                loadBackgroundImage(draft.currentView);
+              }
+            }, 200);
+          }
+        }
+      } catch (error) {
+        console.error('[DesignLab] Failed to restore local draft:', error);
+        // [2025-12-19 16:30:00] 恢复失败不影响使用，只是从空白开始
+      }
+    };
+
+    // [2025-12-19 16:30:00] 延迟恢复，确保所有初始化完成
+    const timeoutId = setTimeout(restoreDraft, 500);
+    return () => clearTimeout(timeoutId);
+  }, [canvasInitialized, snapshotToCanvas, loadBackgroundImage, setView, setViewCanvases, currentView]);
+
+  // [2025-12-19 16:30:00] 自动保存功能：定期保存到localStorage
+  useEffect(() => {
+    if (!canvasInitialized) {
+      return;
+    }
+
+    // [2025-12-19 16:30:00] 自动保存函数
+    const autoSave = () => {
+      if (!fabricCanvasRef.current) {
+        return;
+      }
+
+      try {
+        // [2025-12-19 16:30:00] 获取当前画布快照（当前视图）
+        const currentSnapshot = canvasToSnapshot(fabricCanvasRef.current);
+        
+        // [2025-12-19 16:30:00] 使用store中的viewCanvases并更新当前视图
+        // 直接从store获取最新状态，避免闭包问题
+        const storeState = useDesignLabStore.getState();
+        const currentStoreView = storeState.currentView;
+        const updatedViewCanvases = {
+          ...storeState.viewCanvases,
+          [currentStoreView]: currentSnapshot, // 更新当前视图的快照
+        };
+
+        // [2025-12-19 16:30:00] 保存到localStorage（使用store中的最新状态）
+        const result = saveDesignToLocalStorage(
+          designName,
+          updatedViewCanvases,
+          currentStoreView,
+          {
+            productId: productInfo.productId,
+            productName: productInfo.productName,
+            variantId: productInfo.variantId,
+            color: productInfo.color,
+          }
+        );
+
+        if (!result.success) {
+          console.warn('[DesignLab] Auto-save failed:', result.error);
+        } else {
+          console.log('[DesignLab] Auto-saved to localStorage');
+        }
+      } catch (error) {
+        console.error('[DesignLab] Auto-save error:', error);
+      }
+    };
+
+    // [2025-12-19 16:30:00] 定期自动保存（每30秒）
+    const autoSaveInterval = setInterval(autoSave, 30000);
+
+    // [2025-12-19 16:30:00] 页面卸载前保存
+    const handleBeforeUnload = () => {
+      autoSave();
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(autoSaveInterval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // [2025-12-19 16:30:00] 组件卸载时最后一次保存
+      autoSave();
+    };
+  }, [canvasInitialized, designName, currentView, productInfo, canvasToSnapshot]);
+
   // [2025-12-11 23:59:30] 编辑会话保护：当进入/离开编辑面板时设置/清除编辑保护标志
   useEffect(() => {
     if (toolPanelType === 'edit-text' || toolPanelType === 'edit-upload' || toolPanelType === 'edit-art') {
@@ -3840,19 +3973,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       <header className="dl-header">
         <div className="dl-header__content">
           <div className="dl-header__left">
-            <Link href="/" className="dl-header__logo">
-              Logo
+            {/* [2025-12-19 16:30:00] 使用主站Logo图片，点击跳转到主站首页 */}
+            <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
+              <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
             </Link>
             <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
-              {/* [2025-01-30 23:15:00] 修复：My Designs 按钮样式对齐 Custom Ink - element-1 */}
-              <button 
-                className="dl-header__breadcrumb-link dl-header__breadcrumb-link--button"
-                onClick={() => window.location.href = '/products'}
-                type="button"
-              >
-                My Designs
-              </button>
-              <span className="dl-header__breadcrumb-separator"> &gt; </span>
+              {/* [2025-12-19 16:30:00] 移除My Designs按钮，改用本地存储，无需跳转 */}
               {/* [2025-01-30 23:15:00] 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
               <button 
                 className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
