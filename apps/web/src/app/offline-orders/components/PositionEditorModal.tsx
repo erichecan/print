@@ -36,6 +36,19 @@ const PRINT_METHODS = [
   { value: '其他', label: '其他' }
 ] as const;
 
+// [2025-12-13 15:20:00] 单位转换工具函数
+const INCH_TO_MM = 25.4;
+const mmToInch = (mm: number | undefined): string => {
+  if (mm === undefined || mm === null || isNaN(mm)) return '';
+  return (mm / INCH_TO_MM).toFixed(2);
+};
+
+const inchToMm = (inch: string): number | undefined => {
+  const inchValue = parseFloat(inch);
+  if (isNaN(inchValue) || inchValue < 0) return undefined;
+  return Math.round(inchValue * INCH_TO_MM * 10) / 10; // 保留一位小数
+};
+
 export function PositionEditorModal({
   positionKey,
   size,
@@ -48,29 +61,40 @@ export function PositionEditorModal({
   const [method, setMethod] = useState<PositionConfig['method']>(
     initialConfig?.method || defaultConfig?.method || 'DTF'
   );
-  const [widthMm, setWidthMm] = useState<string>(
-    initialConfig?.widthMm?.toString() || defaultConfig?.widthMm?.toString() || ''
-  );
-  const [heightMm, setHeightMm] = useState<string>(
-    initialConfig?.heightMm?.toString() || defaultConfig?.heightMm?.toString() || ''
-  );
+  
+  // [2025-12-13 15:20:00] 将输入单位改为 inch，内部仍存储 mm
+  // 初始化时将 mm 转换为 inch 显示
+  const [widthInch, setWidthInch] = useState<string>(() => {
+    const mm = initialConfig?.widthMm || defaultConfig?.widthMm;
+    return mmToInch(mm);
+  });
+  const [heightInch, setHeightInch] = useState<string>(() => {
+    const mm = initialConfig?.heightMm || defaultConfig?.heightMm;
+    return mmToInch(mm);
+  });
+  
   const [inkOrFilm, setInkOrFilm] = useState(initialConfig?.inkOrFilm || defaultConfig?.inkOrFilm || '');
   // [2025-01-30 11:15:00] 移除单价字段（非必填，已移除）
   const [notes, setNotes] = useState(initialConfig?.notes || defaultConfig?.notes || '');
   const [dstFileFee, setDstFileFee] = useState<string>(
     initialConfig?.dstFileFee?.toString() || defaultConfig?.dstFileFee?.toString() || ''
   );
+  
+  // [2025-12-13 15:20:00] 计算显示用的 mm 值（从 inch 转换）
+  const widthMmDisplay = widthInch ? inchToMm(widthInch) : undefined;
+  const heightMmDisplay = heightInch ? inchToMm(heightInch) : undefined;
 
   // [2025-12-19] 处理保存
   // [2025-01-30 11:15:00] 单价字段已移除，使用默认值0
+  // [2025-12-13 15:20:00] 保存时将 inch 转换为 mm
   const handleSave = () => {
     const config: PositionConfig = {
       positionKey,
       enabled,
       method,
       unitPrice: 0, // [2025-01-30 11:15:00] 单价字段已移除，使用默认值0
-      widthMm: widthMm ? parseFloat(widthMm) : undefined,
-      heightMm: heightMm ? parseFloat(heightMm) : undefined,
+      widthMm: inchToMm(widthInch),
+      heightMm: inchToMm(heightInch),
       inkOrFilm: inkOrFilm || undefined,
       notes: notes || undefined,
       dstFileFee: dstFileFee ? parseFloat(dstFileFee) : undefined,
@@ -155,35 +179,47 @@ export function PositionEditorModal({
               </select>
             </div>
 
-            {/* 尺寸输入 */}
+            {/* [2025-12-13 15:20:00] 尺寸输入：改为 inch 单位，自动显示 mm 换算值 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  宽度（mm）
+                  宽度（inch）
                 </label>
                 <input
                   type="number"
-                  value={widthMm}
-                  onChange={(e) => setWidthMm(e.target.value)}
+                  value={widthInch}
+                  onChange={(e) => setWidthInch(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例如：100"
+                  placeholder="例如：4"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                 />
+                {/* [2025-12-13 15:20:00] 在输入框下方显示换算后的 mm 值 */}
+                {widthInch && widthMmDisplay !== undefined && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    约 {widthMmDisplay}mm
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  高度（mm）
+                  高度（inch）
                 </label>
                 <input
                   type="number"
-                  value={heightMm}
-                  onChange={(e) => setHeightMm(e.target.value)}
+                  value={heightInch}
+                  onChange={(e) => setHeightInch(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例如：150"
+                  placeholder="例如：6"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                 />
+                {/* [2025-12-13 15:20:00] 在输入框下方显示换算后的 mm 值 */}
+                {heightInch && heightMmDisplay !== undefined && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    约 {heightMmDisplay}mm
+                  </div>
+                )}
               </div>
             </div>
 
