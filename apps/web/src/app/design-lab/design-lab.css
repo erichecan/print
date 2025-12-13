@@ -2345,7 +2345,7 @@
   /* [2025-01-30 23:00:00] 修复：移除 height: 100%，使用 min-height 确保最小高度，但允许根据内容扩展 */
   min-height: 100%;
   display: flex;
-  align-items: flex-start; /* [2025-01-30 22:50:00] 修复：改为 flex-start，避免垂直居中导致定位问题 */
+  align-items: center; /* [2025-12-19 22:50:00] 修复：改为center，确保dl-canvas__product在预览容器中垂直居中 */
   justify-content: center;
   position: relative;
   /* [2025-01-30 22:50:00] 修复：确保预览容器可以正确滚动 */
