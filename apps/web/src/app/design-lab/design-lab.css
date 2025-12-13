@@ -2361,13 +2361,13 @@
   /* [2025-01-30 22:50:00] 修复：移除 height: 100%，让容器根据内容自适应 */
   /* [2025-01-30 23:55:00] 修复：移除 max-width 限制，使画布填满可用空间 */
   display: flex;
-  align-items: flex-start; /* [2025-01-30 22:50:00] 修复：改为 flex-start，避免垂直居中导致定位问题 */
-  justify-content: center;
+  align-items: center; /* [2025-12-19 22:30:00] 修复：改为center，确保Canvas在容器中垂直居中 */
+  justify-content: center; /* [2025-12-19 22:30:00] 确保Canvas在容器中水平居中 */
   /* [2025-01-30 22:50:00] 修复：确保产品容器不会导致布局偏移 */
   flex-shrink: 0; /* 防止 flex 子元素被压缩 */
   /* [2025-01-30 23:00:00] 修复：确保产品容器从顶部开始 */
-  margin-top: 0;
-  padding-top: 0;
+  margin: 0 auto; /* [2025-12-19 22:30:00] 确保容器本身也居中 */
+  padding: 0; /* [2025-12-19 22:30:00] 移除所有padding，避免影响Canvas居中 */
 }
 
 .dl-canvas__fabric {

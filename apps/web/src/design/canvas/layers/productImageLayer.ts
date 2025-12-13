@@ -346,17 +346,43 @@ function applyProductImageLayout(params: {
     evented: false,
   });
 
-  // [2025-12-19 22:15:00] 计算误差（用于验证是否居中）
+  // [2025-12-19 22:30:00] 计算误差（用于验证是否居中）
   const leftDiff = Math.abs(image.left - centerX);
   const topDiff = Math.abs(image.top - centerY);
   const isCentered = leftDiff <= 2 && topDiff <= 2;
   
-  // [2025-12-19 22:15:00] 计算尺寸占比（用于验证是否铺满）
+  // [2025-12-19 22:30:00] 计算尺寸占比（用于验证是否铺满）
   const scaledWidth = imageNaturalWidth * fit.scale;
   const scaledHeight = imageNaturalHeight * fit.scale;
   const widthRatio = scaledWidth / (logicalCanvasWidth * effectiveSafeAreaWidth);
   const heightRatio = scaledHeight / (logicalCanvasHeight * effectiveSafeAreaHeight);
   const isFull = widthRatio >= 1.0 || heightRatio >= 1.0;
+  
+  // [2025-12-19 22:30:00] 获取Canvas DOM元素的实际渲染尺寸（用于诊断视觉偏差）
+  const canvasElement = canvas.getElement();
+  let canvasDOMWidth = 0;
+  let canvasDOMHeight = 0;
+  let canvasActualWidth = 0;
+  let canvasActualHeight = 0;
+  if (canvasElement) {
+    canvasDOMWidth = canvasElement.offsetWidth || 0;
+    canvasDOMHeight = canvasElement.offsetHeight || 0;
+    canvasActualWidth = canvas.width || 0;
+    canvasActualHeight = canvas.height || 0;
+  }
+  
+  // [2025-12-19 22:30:00] 计算视觉中心（基于Canvas DOM元素的实际尺寸）
+  const visualCenterX = canvasDOMWidth / 2;
+  const visualCenterY = canvasDOMHeight / 2;
+  
+  // [2025-12-19 22:30:00] 计算底图在DOM坐标系中的视觉位置
+  // 需要将逻辑坐标转换为DOM像素坐标
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const logicalToDOMScale = canvasDOMWidth / logicalCanvasWidth; // 逻辑尺寸到DOM尺寸的缩放比例
+  const imageDOMLeft = (image.left || 0) * logicalToDOMScale;
+  const imageDOMTop = (image.top || 0) * logicalToDOMScale;
+  const visualLeftDiff = Math.abs(imageDOMLeft - visualCenterX);
+  const visualTopDiff = Math.abs(imageDOMTop - visualCenterY);
   
   // [2025-12-19 22:15:00] 详细日志输出（用于验证修复）
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -386,8 +412,25 @@ function applyProductImageLayout(params: {
   console.log(`   可选中: ${image.selectable ? '✗ 是（错误）' : '✓ 否（正确）'}`);
   console.log(`   可交互: ${image.evented ? '✗ 是（错误）' : '✓ 否（正确）'}`);
   console.log('');
+  console.log('🖥️  Canvas DOM信息（用于诊断视觉偏差）:');
+  console.log(`   Canvas DOM尺寸（CSS）: ${canvasDOMWidth.toFixed(2)} × ${canvasDOMHeight.toFixed(2)}px`);
+  console.log(`   Canvas实际像素尺寸: ${canvasActualWidth.toFixed(2)} × ${canvasActualHeight.toFixed(2)}px`);
+  console.log(`   devicePixelRatio: ${devicePixelRatio}`);
+  console.log(`   逻辑到DOM缩放比: ${logicalToDOMScale.toFixed(4)}`);
+  console.log(`   DOM视觉中心: (${visualCenterX.toFixed(2)}, ${visualCenterY.toFixed(2)})`);
+  console.log(`   底图DOM视觉位置: (${imageDOMLeft.toFixed(2)}, ${imageDOMTop.toFixed(2)})`);
+  console.log(`   视觉位置误差: left=${visualLeftDiff.toFixed(2)}px, top=${visualTopDiff.toFixed(2)}px`);
+  if (visualLeftDiff > 5 || visualTopDiff > 5) {
+    console.log(`   ⚠️  警告: Canvas DOM尺寸与逻辑尺寸不一致可能导致视觉偏差！`);
+    console.log(`   建议: 检查.dl-canvas__fabric的CSS样式，确保width/height与逻辑尺寸匹配`);
+  }
+  console.log('');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`🎉 最终验证: ${isCentered && isFull ? '✅ 全部通过' : '❌ 存在问题'}`);
+  console.log(`🎉 逻辑坐标验证: ${isCentered && isFull ? '✅ 全部通过' : '❌ 存在问题'}`);
+  if (visualLeftDiff > 5 || visualTopDiff > 5) {
+    console.log(`⚠️  视觉偏差警告: DOM视觉位置与DOM中心差异较大（>5px）`);
+    console.log(`   这可能是因为Canvas的CSS尺寸与逻辑尺寸不匹配`);
+  }
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   
   // [2025-12-19 22:15:00] 在画布上添加临时坐标标记（开发环境或手动启用）
