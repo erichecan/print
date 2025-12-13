@@ -257,6 +257,7 @@ function applyProductImageLayout(params: {
   safeAreaWidth: number;
   safeAreaHeight: number;
   fitMode?: 'contain' | 'cover';
+  fabricModule?: typeof fabric; // [2025-12-19 22:35:00] 添加fabric模块参数，用于创建调试标记
 }): void {
   const {
     image,
@@ -433,33 +434,113 @@ function applyProductImageLayout(params: {
   }
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   
-  // [2025-12-19 22:15:00] 在画布上添加临时坐标标记（开发环境或手动启用）
+  // [2025-12-19 22:35:00] 在画布上添加临时坐标标记（开发环境或手动启用）
   // 启用方法：在浏览器Console中执行 window.__DEBUG_PRODUCT_IMAGE__ = true; location.reload();
-  if (process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && (window as any).__DEBUG_PRODUCT_IMAGE__)) {
+  const shouldShowMarkers = process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && (window as any).__DEBUG_PRODUCT_IMAGE__);
+  const shouldShowCenterSquare = true; // [2025-12-19 22:35:00] 总是显示红色中心标记，用于验证CSS布局
+  
+  // [2025-12-19 22:35:00] 添加红色正方形标记在逻辑中心（用于验证CSS布局）
+  if (shouldShowCenterSquare && params.fabricModule) {
+        try {
+          const fabricMod = params.fabricModule;
+          
+          // 移除旧的中心标记（如果存在）
+          const existingCenterMarker = canvas.getObjects().find((obj: any) => 
+            obj.name === '__debug_center_square' || obj.name === '__debug_center_label'
+          );
+          if (existingCenterMarker) {
+            canvas.remove(existingCenterMarker);
+          }
+          const existingLabel = canvas.getObjects().find((obj: any) => 
+            obj.name === '__debug_center_label'
+          );
+          if (existingLabel) {
+            canvas.remove(existingLabel);
+          }
+          
+          // 创建红色正方形（50x50像素，足够大且明显）
+          const centerSquare = new fabricMod.Rect({
+            left: centerX,
+            top: centerY,
+            width: 50,
+            height: 50,
+            fill: 'rgba(255, 0, 0, 0.8)', // 半透明红色，足够醒目
+            stroke: 'red',
+            strokeWidth: 3,
+            selectable: false,
+            evented: false,
+            name: '__debug_center_square',
+            originX: 'center',
+            originY: 'center',
+            data: {
+              debugMarker: true,
+              type: 'center-verification',
+            },
+          });
+          
+          // 添加文本标签
+          const centerLabel = new fabricMod.Text(`中心\n(${centerX}, ${centerY})`, {
+            left: centerX,
+            top: centerY - 40,
+            fontSize: 14,
+            fill: 'red',
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            padding: 4,
+            selectable: false,
+            evented: false,
+            name: '__debug_center_label',
+            originX: 'center',
+            originY: 'bottom',
+          });
+          
+          canvas.add(centerSquare);
+          canvas.add(centerLabel);
+          
+          // 移到最上层（在底图之上，但可能被用户内容覆盖）
+          centerSquare.bringToFront();
+          centerLabel.bringToFront();
+          
+          canvas.renderAll();
+          
+          console.log('🔴 [ProductImageLayer] 已添加红色中心标记正方形（50×50px，位置500×600）');
+          console.log('   如果红色方块不在Canvas视觉中心，说明CSS布局或坐标计算有问题');
+          console.log('   如果红色方块在Canvas视觉中心，说明逻辑坐标正确，但底图位置计算有误');
+    } catch (error) {
+      console.warn('[ProductImageLayer] 添加中心标记正方形失败:', error);
+    }
+  }
+  
+  // [2025-12-19 22:15:00] 添加详细的调试标记（仅在开发环境或手动启用时）
+  if (shouldShowMarkers && params.fabricModule) {
     try {
+      const fabricMod = params.fabricModule;
+      
       // 移除旧的标记
       const existingMarkers = canvas.getObjects().filter((obj: any) => 
-        obj.name?.startsWith('__debug_marker_')
+        obj.name?.startsWith('__debug_marker_') && !obj.name?.includes('center')
       );
       existingMarkers.forEach(obj => canvas.remove(obj));
       
       // 添加中心点标记
-      const centerCircle = new (fabricModule as any).Circle({
-        left: centerX,
-        top: centerY,
-        radius: 5,
-        fill: 'red',
-        stroke: 'white',
-        strokeWidth: 2,
-        selectable: false,
-        evented: false,
-        name: '__debug_marker_center',
-        originX: 'center',
-        originY: 'center',
+      const centerCircle = new fabricMod.Circle({
+            left: centerX,
+            top: centerY,
+            radius: 5,
+            fill: 'red',
+            stroke: 'white',
+            strokeWidth: 2,
+            selectable: false,
+            evented: false,
+            name: '__debug_marker_center',
+            originX: 'center',
+            originY: 'center',
       });
       
       // 添加底图位置标记
-      const imageCircle = new (fabricModule as any).Circle({
+      const imageCircle = new fabricMod.Circle({
         left: image.left,
         top: image.top,
         radius: 3,
@@ -474,7 +555,7 @@ function applyProductImageLayout(params: {
       });
       
       // 添加坐标文本（画布中心）
-      const centerText = new (fabricModule as any).Text(`中心\n(${centerX.toFixed(0)}, ${centerY.toFixed(0)})`, {
+      const centerText = new fabricMod.Text(`中心\n(${centerX.toFixed(0)}, ${centerY.toFixed(0)})`, {
         left: centerX,
         top: centerY - 30,
         fontSize: 12,
@@ -489,7 +570,7 @@ function applyProductImageLayout(params: {
       });
       
       // 添加坐标文本（底图位置）
-      const imageText = new (fabricModule as any).Text(`底图\n(${image.left?.toFixed(0) || '0'}, ${image.top?.toFixed(0) || '0'})\n误差: (${leftDiff.toFixed(1)}, ${topDiff.toFixed(1)})`, {
+      const imageText = new fabricMod.Text(`底图\n(${image.left?.toFixed(0) || '0'}, ${image.top?.toFixed(0) || '0'})\n误差: (${leftDiff.toFixed(1)}, ${topDiff.toFixed(1)})`, {
         left: image.left,
         top: image.top + 30,
         fontSize: 11,
@@ -505,7 +586,7 @@ function applyProductImageLayout(params: {
       });
       
       // 添加尺寸信息文本
-      const sizeText = new (fabricModule as any).Text(`尺寸: ${scaledWidth.toFixed(0)}×${scaledHeight.toFixed(0)}\n占比: ${(widthRatio * 100).toFixed(0)}%×${(heightRatio * 100).toFixed(0)}%`, {
+      const sizeText = new fabricMod.Text(`尺寸: ${scaledWidth.toFixed(0)}×${scaledHeight.toFixed(0)}\n占比: ${(widthRatio * 100).toFixed(0)}%×${(heightRatio * 100).toFixed(0)}%`, {
         left: 10,
         top: 10,
         fontSize: 11,
@@ -537,9 +618,9 @@ function applyProductImageLayout(params: {
       
       canvas.renderAll();
       
-      console.log('🎨 [ProductImageLayer] 已添加坐标标记到画布（红色=中心，蓝色=底图位置）');
+      console.log('🎨 [ProductImageLayer] 已添加详细坐标标记到画布（红色=中心，蓝色=底图位置）');
     } catch (error) {
-      console.warn('[ProductImageLayer] 添加坐标标记失败:', error);
+      console.warn('[ProductImageLayer] 添加详细坐标标记失败:', error);
     }
   }
 }
@@ -740,6 +821,7 @@ export async function loadProductImageLayer(
         safeAreaWidth,
         safeAreaHeight,
         fitMode: 'cover',
+        fabricModule, // [2025-12-19 22:35:00] 传递fabric模块用于创建调试标记
       });
       
       // [2025-12-19 21:30:00] 确保在最底层且不可选中
@@ -934,6 +1016,7 @@ export async function loadProductImageLayer(
             safeAreaWidth,
             safeAreaHeight,
             fitMode: 'cover',
+            fabricModule, // [2025-12-19 22:35:00] 传递fabric模块用于创建调试标记
           });
           
           // [2025-12-19 21:30:00] 获取fit结果用于返回值
@@ -1068,6 +1151,7 @@ export async function loadProductImageLayer(
             safeAreaWidth,
             safeAreaHeight,
             fitMode: 'cover',
+            fabricModule, // [2025-12-19 22:35:00] 传递fabric模块用于创建调试标记
           });
           
           // 确保在最底层
