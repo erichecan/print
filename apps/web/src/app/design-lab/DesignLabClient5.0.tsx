@@ -235,8 +235,19 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const CANVAS_HEIGHT = 4800;
 
   // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 添加商品图片到 canvas 的辅助函数
+  // [2025-12-20 03:25:00] 修复：添加更详细的日志和错误处理
   const addProductImageToCanvas = (imageUrl: string) => {
-    if (!fabricCanvasRef.current || !fabricRef.current || !imageUrl) return;
+    if (!fabricCanvasRef.current || !fabricRef.current) {
+      console.warn('[DesignLab 5.0] Cannot add product image: Canvas not initialized');
+      return;
+    }
+    
+    if (!imageUrl) {
+      console.warn('[DesignLab 5.0] Cannot add product image: Image URL is empty');
+      return;
+    }
+    
+    console.log('[DesignLab 5.0] addProductImageToCanvas called:', { imageUrl });
     
     const fabric = fabricRef.current;
     const canvas = fabricCanvasRef.current;
@@ -249,7 +260,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     
     if (fabric.Image) {
       fabric.Image.fromURL(imageUrl, (img) => {
-        if (!fabricCanvasRef.current) return;
+        if (!fabricCanvasRef.current) {
+          console.warn('[DesignLab 5.0] Fabric image loaded but canvas is not available');
+          return;
+        }
+        
+        console.log('[DesignLab 5.0] Fabric image loaded:', {
+          naturalWidth: img.width,
+          naturalHeight: img.height,
+        });
         
         // 缩放图片以适应 canvas（contain 模式）
         const scale = Math.min(
@@ -278,7 +297,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         fabricCanvasRef.current.sendToBack(img); // 确保在底层
         fabricCanvasRef.current.renderAll();
         
-        console.log('[DesignLab 5.0] Product image added to canvas');
+        console.log('[DesignLab 5.0] Product image added to canvas:', {
+          imageUrl,
+          position: { left: img.left, top: img.top },
+          scale: { scaleX: img.scaleX, scaleY: img.scaleY },
+          size: { width: img.width, height: img.height },
+        });
       });
     }
   };
@@ -323,13 +347,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           height: CANVAS_HEIGHT,
         });
 
-        // [2025-12-20 03:20:00] 初始添加商品图片（延迟执行，确保 productInfo 已初始化）
-        setTimeout(() => {
-          const productImageUrl = productInfo.baseImages[currentView];
-          if (productImageUrl) {
-            addProductImageToCanvas(productImageUrl);
-          }
-        }, 100);
+        // [2025-12-20 03:25:00] 初始添加商品图片（等待 productInfo 准备好）
+        // 注意：不在这里立即加载，而是通过下面的 useEffect 监听 productInfo.baseImages 变化来加载
 
       } catch (error) {
         console.error('[DesignLab 5.0] Failed to initialize Fabric canvas:', error);
@@ -348,13 +367,30 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   }, []); // [2025-12-20 03:20:00] 只在组件挂载时初始化一次
 
   // [2025-12-20 03:20:00] 步骤2 - 当视图切换或产品信息改变时更新商品图片
+  // [2025-12-20 03:25:00] 修复：确保在 Canvas 和 productInfo 都准备好后再加载图片
   useEffect(() => {
-    if (!fabricCanvasRef.current || !fabricRef.current) return;
-    
-    const imageUrl = productInfo.baseImages[currentView];
-    if (imageUrl) {
-      addProductImageToCanvas(imageUrl);
+    // [2025-12-20 03:25:00] 检查 Canvas 是否已初始化
+    if (!fabricCanvasRef.current || !fabricRef.current) {
+      console.log('[DesignLab 5.0] Canvas not ready, waiting...');
+      return;
     }
+    
+    // [2025-12-20 03:25:00] 检查 productInfo 是否有有效的图片 URL
+    const imageUrl = productInfo.baseImages?.[currentView];
+    if (!imageUrl) {
+      console.log('[DesignLab 5.0] Product image URL not available:', {
+        currentView,
+        baseImages: productInfo.baseImages,
+      });
+      return;
+    }
+    
+    console.log('[DesignLab 5.0] Loading product image:', {
+      currentView,
+      imageUrl,
+    });
+    
+    addProductImageToCanvas(imageUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, productInfo.baseImages]); // [2025-12-20 03:20:00] 当视图或产品图片改变时更新（addProductImageToCanvas 是稳定函数）
 
