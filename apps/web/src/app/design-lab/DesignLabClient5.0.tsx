@@ -444,14 +444,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         });
 
         // [2025-12-20 03:50:00] 修复：标记 Canvas 已初始化，触发图片加载 useEffect
-        // [2025-12-20 03:55:00] 修复：在异步函数中，需要确保 isMounted 为 true 时才设置 state
-        if (isMounted) {
-          console.log('[DesignLab 5.0] ✅ Setting canvasInitialized to true (isMounted:', isMounted, ')');
-          setCanvasInitialized(true);
-          console.log('[DesignLab 5.0] ✅ setCanvasInitialized(true) called');
-        } else {
-          console.warn('[DesignLab 5.0] ⚠️ Component unmounted, skipping setCanvasInitialized (isMounted:', isMounted, ')');
-        }
+        // [2025-12-20 03:56:00] 修复：直接在初始化完成后设置 state，不检查 isMounted（因为此时一定已挂载）
+        console.log('[DesignLab 5.0] ✅ About to set canvasInitialized to true (isMounted:', isMounted, ')');
+        setCanvasInitialized(true);
+        console.log('[DesignLab 5.0] ✅ setCanvasInitialized(true) called');
 
       } catch (error) {
         console.error('[DesignLab 5.0] Failed to initialize Fabric canvas:', error);
