@@ -2438,17 +2438,24 @@
 }
 
 /* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 自动创建的 canvas-container 样式 */
+/* [2025-12-20 03:45:00] 修复：关键问题 - Fabric.js 会设置 inline style width/height 为逻辑尺寸（4000x4800） */
+/* 我们需要用 !important 强制覆盖这些 inline style，让容器自适应父元素 */
 .dl-canvas__preview .canvas-container,
 .dl-canvas__fabric-container {
   position: relative !important;
-  width: 100% !important;
-  height: 100% !important;
+  width: 100% !important; /* 覆盖 Fabric.js 的 inline style width: 4000px */
+  height: 100% !important; /* 覆盖 Fabric.js 的 inline style height: 4800px */
+  max-width: 100% !important;
+  max-height: 100% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  /* [2025-12-20 03:45:00] 确保容器能够正确缩放 */
+  box-sizing: border-box !important;
 }
 
 /* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 的 upper-canvas 和 lower-canvas 样式 */
+/* [2025-12-20 03:45:00] 修复：upper-canvas 和 lower-canvas 应该填充 container，但逻辑尺寸（4000x4800）应该在 canvas 元素上 */
 .dl-canvas__preview .canvas-container .upper-canvas,
 .dl-canvas__preview .canvas-container .lower-canvas,
 .dl-canvas__fabric-container .upper-canvas,
@@ -2456,9 +2463,11 @@
   position: absolute !important;
   left: 0 !important;
   top: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
+  width: 100% !important; /* 填充 container */
+  height: 100% !important; /* 填充 container */
   display: block !important;
+  /* [2025-12-20 03:45:00] canvas 元素本身会保持逻辑尺寸（4000x4800），但通过 CSS 缩放显示 */
+  object-fit: contain !important;
 }
 
 .dl-canvas__placeholder {

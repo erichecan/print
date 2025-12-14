@@ -405,13 +405,28 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         });
 
         // [2025-12-20 03:40:00] 修复：Fabric.js 会自动创建 .canvas-container，需要确保它使用正确的 CSS 类
-        // Fabric.js 会在 canvas 元素外面创建一个 div.canova-container 包裹 canvas
-        // 我们需要确保这个容器能够正确显示
+        // [2025-12-20 03:45:00] 修复：关键问题 - Fabric.js 的 canvas-container 会设置 inline style width/height 为逻辑尺寸
+        // 我们需要覆盖这些 inline style，让容器自适应父元素
         const canvasContainer = canvasElement.parentElement;
         if (canvasContainer && canvasContainer.classList.contains('canvas-container')) {
           // 添加自定义类，确保 CSS 样式生效
           canvasContainer.classList.add('dl-canvas__fabric-container');
-          console.log('[DesignLab 5.0] Canvas container found and styled:', canvasContainer);
+          
+          // [2025-12-20 03:45:00] 关键修复：覆盖 Fabric.js 设置的 inline style
+          // Fabric.js 会设置 width: 4000px, height: 4800px（逻辑尺寸）
+          // 但我们需要容器自适应父元素（100%），逻辑尺寸应该只用于 canvas 元素本身
+          canvasContainer.style.width = '100%';
+          canvasContainer.style.height = '100%';
+          canvasContainer.style.maxWidth = '100%';
+          canvasContainer.style.maxHeight = '100%';
+          
+          console.log('[DesignLab 5.0] Canvas container found and styled:', {
+            container: canvasContainer,
+            width: canvasContainer.style.width,
+            height: canvasContainer.style.height,
+            computedWidth: window.getComputedStyle(canvasContainer).width,
+            computedHeight: window.getComputedStyle(canvasContainer).height,
+          });
         }
 
         fabricCanvasRef.current = fabricCanvas;
