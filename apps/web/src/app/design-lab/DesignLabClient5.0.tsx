@@ -13,7 +13,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { getDefaultProductBaseImages, getThumbnailImageUrl } from '@/lib/customink-images';
+import { useSearchParams } from 'next/navigation'; // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
+import { getDefaultProductBaseImages, getThumbnailImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import './design-lab.css';
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
@@ -22,20 +23,91 @@ interface DesignLabClient5Props {
 }
 
 const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData }) => {
+  // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
+  const searchParams = useSearchParams();
+
   // [2025-12-20 02:20:00] 5.0 版本：只保留最基本的 state
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve'>('front');
-  const [productInfo] = useState({
+  
+  // [2025-12-20 03:05:00] 5.0 版本：功能2 - 改为 useState，支持动态更新
+  const [productInfo, setProductInfo] = useState<{
+    color: string;
+    baseImages: {
+      front: string;
+      back: string;
+      sleeve: string;
+    };
+    productId?: string;
+    colorId?: string;
+  }>({
     color: 'White',
     baseImages: getDefaultProductBaseImages('White'),
   });
 
-  // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 记录初始产品数据（暂时未使用）
+  // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数加载商品信息
   useEffect(() => {
-    if (initialProductData) {
-      console.log('[DesignLab 5.0] 接收到初始产品数据:', initialProductData);
-      // TODO: 后续功能会使用这个数据来更新 productInfo
+    const productId = searchParams?.get('productId') || undefined;
+    const colorId = searchParams?.get('colorId') || undefined;
+    const variantId = searchParams?.get('variantId') || undefined;
+
+    console.log('[DesignLab 5.0] 功能2 - URL 参数:', { productId, colorId, variantId });
+
+    // 如果有 variantId，优先从服务端预取的数据中获取
+    if (initialProductData && variantId) {
+      console.log('[DesignLab 5.0] 功能2 - 使用服务端预取的数据:', initialProductData);
+      const color = initialProductData.color || initialProductData.colorName || 'White';
+      const baseImages = initialProductData.baseImages || getDefaultProductBaseImages(color);
+      
+      setProductInfo({
+        color,
+        baseImages,
+        productId: initialProductData.productId || productId,
+        colorId: initialProductData.colorId || colorId,
+      });
+      return;
     }
-  }, [initialProductData]);
+
+    // 如果只有 colorId，根据 colorId 更新颜色
+    if (colorId && !initialProductData) {
+      // 简单实现：假设 colorId 对应的颜色名称（后续可以从 API 获取映射）
+      const colorName = 'White'; // 默认值，TODO: 从 API 获取 colorId 到 colorName 的映射
+      
+      console.log('[DesignLab 5.0] 功能2 - 根据 colorId 更新颜色:', { colorId, colorName });
+      const baseImages = getDefaultProductBaseImages(colorName);
+      
+      setProductInfo(prev => ({
+        ...prev,
+        color: colorName,
+        baseImages,
+        colorId,
+      }));
+      return;
+    }
+
+    // 如果有 productId 和 colorName，尝试从 API 获取图片
+    if (productId && !initialProductData) {
+      const colorName = productInfo.color || 'White';
+      
+      console.log('[DesignLab 5.0] 功能2 - 尝试从 API 获取商品图片:', { productId, colorName });
+      
+      getProductBaseImagesFromAPI(colorName, productId)
+        .then(apiImages => {
+          if (apiImages) {
+            console.log('[DesignLab 5.0] 功能2 - API 返回图片:', apiImages);
+            setProductInfo(prev => ({
+              ...prev,
+              baseImages: apiImages,
+              productId,
+            }));
+          } else {
+            console.log('[DesignLab 5.0] 功能2 - API 未返回图片，使用默认图片');
+          }
+        })
+        .catch(error => {
+          console.warn('[DesignLab 5.0] 功能2 - API 获取失败，使用默认图片:', error);
+        });
+    }
+  }, [searchParams, initialProductData]); // [2025-12-20 03:05:00] 依赖 searchParams 和 initialProductData
 
   // [2025-12-20 02:50:00] 5.0 版本：添加调试日志，确保元素正确渲染
   const railRef = useRef<HTMLElement>(null);
