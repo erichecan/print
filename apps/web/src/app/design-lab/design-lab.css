@@ -277,24 +277,26 @@
 /* [2025-01-31 00:00:00] 像素级对齐：element-9 (Add Text) - x:16, y:239, width:68, height:70, color: rgb(191, 191, 191) */
 /* [2025-12-06 12:30:00] 修复：确保 Rail 按钮颜色正确应用，防止被其他样式覆盖 */
 /* [2025-12-06 12:35:00] 修复：确保 Rail 按钮位置正确 - x:16, 垂直排列 */
+/* [2025-12-20 02:40:00] 5.0 版本：修复 Rail 按钮高度，确保覆盖 globals.css 中的样式 */
 .dl-rail__btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
   gap: var(--dl-space-1);
   width: 68px !important; /* Custom Ink element-9 width */
   height: 70px !important; /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
+  min-height: 70px !important; /* [2025-12-20 02:40:00] 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
   padding: var(--dl-space-2) var(--dl-space-1);
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
   color: rgb(191, 191, 191) !important; /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 - 使用 !important 防止覆盖 */
   cursor: pointer !important; /* [2025-01-30 21:35:00] 强制启用指针事件 */
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-normal);
   font-family: var(--dl-font-family);
-  border-radius: 0;
+  border-radius: 0 !important;
   pointer-events: auto !important; /* [2025-01-30 21:35:00] 确保按钮可点击 */
   position: relative;
   z-index: 10;
@@ -414,6 +416,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-4);
+}
+
+/* [2025-12-20 02:25:00] 5.0 版本：ToolPanel 占位符样式 */
+.dl-tool-panel__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dl-space-6);
+  text-align: center;
+  color: var(--dl-text-secondary);
 }
 
 .dl-tool-panel__header {
@@ -2325,14 +2338,14 @@
 /* ============================================
    4. Canvas - 中央画布区域
    ============================================ */
+/* [2025-12-20 02:55:00] 5.0 版本：Canvas 在 .dl-main 容器内，不需要 grid-row: 2 */
 .dl-canvas {
-  grid-column: 3;
-  grid-row: 2; /* [2025-12-20 02:00:00] 明确指定 grid row */
+  grid-column: 3; /* 在 .dl-main 的 grid 中，Canvas 是第 3 列 */
+  /* [2025-12-20 02:55:00] 5.0 版本：移除 grid-row: 2，因为 .dl-main 内部只有一个 grid row */
   background: var(--dl-bg-primary);
   display: flex;
-  align-items: center; /* [2025-12-20 02:00:00] 改为 center，让内容垂直居中 */
+  align-items: center; /* 垂直居中 */
   justify-content: center; /* 水平居中 */
-  /* [2025-12-20 02:00:00] 移除 overflow: auto，避免滚动条 */
   overflow: hidden;
   position: relative;
   min-height: 0; /* 允许 flex 子元素缩小 */
@@ -2371,6 +2384,7 @@
 }
 
 /* [2025-12-20 01:55:00] 阶段2修复：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
+/* [2025-12-20 02:25:00] 5.0 版本：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
 .dl-canvas__product-image {
   position: absolute;
   top: 0;
@@ -2379,7 +2393,7 @@
   height: 100%;
   object-fit: contain; /* 完整显示图片，不裁剪，可能有留白 */
   object-position: center; /* 居中显示 */
-  z-index: 0; /* 在 Fabric.js canvas 下方 */
+  z-index: 0;
 }
 
 /* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */

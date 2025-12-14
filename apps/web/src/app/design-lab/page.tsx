@@ -4,7 +4,9 @@
  */
 import { Suspense } from 'react';
 import { generateSEOMetadata } from '@/lib/seo';
-import DesignLabClient from './DesignLabClient';
+// [2025-12-20 02:25:00] 5.0 版本：临时切换到极简版本进行开发
+import DesignLabClient from './DesignLabClient5.0';
+// import DesignLabClient from './DesignLabClient'; // 4.0 版本（已备份）
 import type { Metadata } from 'next';
 import { getBackendApiBaseUrl } from '@/config/env';
 
