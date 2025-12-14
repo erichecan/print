@@ -457,14 +457,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   }, []); // [2025-12-20 03:20:00] 只在组件挂载时初始化一次
 
   // [2025-12-20 03:20:00] 步骤2 - 当视图切换或产品信息改变时更新商品图片
-  // [2025-12-20 03:25:00] 修复：确保在 Canvas 和 productInfo 都准备好后再加载图片
-  // [2025-12-20 03:40:00] 修复：添加延迟，确保 Canvas 完全初始化后再加载图片
+  // [2025-12-20 03:50:00] 修复：添加 canvasInitialized state 作为依赖，确保 Canvas 初始化完成后触发加载
   useEffect(() => {
-    // [2025-12-20 03:25:00] 检查 Canvas 是否已初始化
-    if (!fabricCanvasRef.current || !fabricRef.current) {
+    // [2025-12-20 03:50:00] 检查 Canvas 是否已初始化（包括 canvasInitialized state）
+    if (!fabricCanvasRef.current || !fabricRef.current || !canvasInitialized) {
       console.log('[DesignLab 5.0] Canvas not ready, waiting...', {
         fabricCanvas: !!fabricCanvasRef.current,
         fabric: !!fabricRef.current,
+        canvasInitialized,
       });
       return;
     }
@@ -485,16 +485,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       imageUrl: imageUrl.substring(0, 100) + '...',
       canvasReady: !!fabricCanvasRef.current,
       fabricReady: !!fabricRef.current,
+      canvasInitialized,
     });
     
-    // [2025-12-20 03:40:00] 添加小延迟，确保 Canvas DOM 结构完全就绪
+    // [2025-12-20 03:40:00] 添加小延迟，确保 Canvas DOM 结构完全就绪（包括 container 样式修复）
     const timer = setTimeout(() => {
       addProductImageToCanvas(imageUrl);
-    }, 100);
+    }, 150);
     
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentView, JSON.stringify(productInfo.baseImages)]); // [2025-12-20 03:45:00] 使用 JSON.stringify 确保对象变化时触发更新
+  }, [currentView, JSON.stringify(productInfo.baseImages), canvasInitialized]); // [2025-12-20 03:50:00] 添加 canvasInitialized 作为依赖，确保 Canvas 初始化完成后触发
 
   // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 文件上传处理函数
   // [2025-12-20 03:20:00] 步骤2 - 更新：添加图片到 Fabric canvas
