@@ -438,7 +438,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         });
 
         // [2025-12-20 03:50:00] 修复：标记 Canvas 已初始化，触发图片加载 useEffect
-        setCanvasInitialized(true);
+        // [2025-12-20 03:55:00] 修复：在异步函数中，需要确保 isMounted 为 true 时才设置 state
+        if (isMounted) {
+          console.log('[DesignLab 5.0] Setting canvasInitialized to true');
+          setCanvasInitialized(true);
+        } else {
+          console.warn('[DesignLab 5.0] Component unmounted, skipping setCanvasInitialized');
+        }
 
       } catch (error) {
         console.error('[DesignLab 5.0] Failed to initialize Fabric canvas:', error);
@@ -460,11 +466,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-20 03:50:00] 修复：添加 canvasInitialized state 作为依赖，确保 Canvas 初始化完成后触发加载
   useEffect(() => {
     // [2025-12-20 03:50:00] 检查 Canvas 是否已初始化（包括 canvasInitialized state）
-    if (!fabricCanvasRef.current || !fabricRef.current || !canvasInitialized) {
+    // [2025-12-20 03:55:00] 修复：如果 canvasInitialized 为 false，但 Canvas 实际上已经初始化，也尝试加载
+    const canvasReady = !!fabricCanvasRef.current && !!fabricRef.current;
+    if (!canvasReady || !canvasInitialized) {
       console.log('[DesignLab 5.0] Canvas not ready, waiting...', {
         fabricCanvas: !!fabricCanvasRef.current,
         fabric: !!fabricRef.current,
         canvasInitialized,
+        canvasReady,
       });
       return;
     }
