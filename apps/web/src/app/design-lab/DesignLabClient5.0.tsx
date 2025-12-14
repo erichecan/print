@@ -302,75 +302,151 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
     
     if (fabric.Image) {
-      console.log('[DesignLab 5.0] Loading image from URL...');
-      fabric.Image.fromURL(imageUrl, (img) => {
-        if (!fabricCanvasRef.current) {
-          console.warn('[DesignLab 5.0] Fabric image loaded but canvas is not available');
+      console.log('[DesignLab 5.0] Loading image from URL using native Image object...', { imageUrl });
+      
+      // [2025-12-14 05:35:00] 使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
+      // [2025-12-14 05:35:00] 注意：必须使用 window.Image 而不是 Image，因为文件顶部导入了 next/image
+      const imgElement = new window.Image();
+      imgElement.crossOrigin = 'anonymous';
+      
+      let imageLoaded = false;
+      const timeoutId = setTimeout(() => {
+        if (!imageLoaded) {
+          console.error('[DesignLab 5.0] ❌ Image load timeout after 10 seconds');
+        }
+      }, 10000);
+      
+      imgElement.onload = () => {
+        if (imageLoaded) {
+          console.warn('[DesignLab 5.0] Image onload called multiple times, skipping');
+          return;
+        }
+        imageLoaded = true;
+        clearTimeout(timeoutId);
+        
+        if (!fabricCanvasRef.current || !fabricRef.current) {
+          console.warn('[DesignLab 5.0] Fabric canvas or fabric ref not available after image loaded');
           return;
         }
         
-        console.log('[DesignLab 5.0] Fabric image loaded:', {
-          naturalWidth: img.width,
-          naturalHeight: img.height,
+        console.log('[DesignLab 5.0] ✅ Native image loaded:', {
+          naturalWidth: imgElement.naturalWidth,
+          naturalHeight: imgElement.naturalHeight,
           canvasWidth: fabricCanvasRef.current.width,
           canvasHeight: fabricCanvasRef.current.height,
         });
         
-        // [2025-12-20 03:40:00] 缩放图片以适应 canvas（contain 模式）
-        const scale = Math.min(
-          CANVAS_WIDTH / (img.width || 1),
-          CANVAS_HEIGHT / (img.height || 1),
-          1 // 不超过原始尺寸
-        );
-        
-        console.log('[DesignLab 5.0] Calculating scale:', {
-          canvasSize: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT },
-          imageSize: { width: img.width, height: img.height },
-          calculatedScale: scale,
-        });
-        
-        img.set({
-          left: CANVAS_WIDTH / 2,
-          top: CANVAS_HEIGHT / 2,
-          originX: 'center',
-          originY: 'center',
-          scaleX: scale,
-          scaleY: scale,
-          selectable: false,
-          evented: false,
-          data: {
-            layerType: 'product-image',
-            zIndex: 0,
-          },
-          name: 'product-image-base',
-        });
+        try {
+          // [2025-12-14 05:40:00] 检查 fabric.Image 是否可用
+          if (!fabric.Image || typeof fabric.Image !== 'function') {
+            console.error('[DesignLab 5.0] ❌ fabric.Image is not available!', {
+              hasFabricImage: !!fabric.Image,
+              fabricImageType: typeof fabric.Image,
+            });
+            return;
+          }
+          
+          console.log('[DesignLab 5.0] Creating Fabric Image from native Image element...', {
+            imgElementReady: !!imgElement,
+            imgElementComplete: imgElement.complete,
+            imgElementWidth: imgElement.width,
+            imgElementHeight: imgElement.height,
+          });
+          
+          // [2025-12-14 05:40:00] 直接使用 new fabric.Image() 创建 Fabric Image（参考 4.0 版本）
+          const fabricImg = new fabric.Image(imgElement);
+          
+          if (!fabricCanvasRef.current) {
+            console.warn('[DesignLab 5.0] Fabric canvas not available when creating Fabric Image');
+            return;
+          }
+          
+          console.log('[DesignLab 5.0] ✅ Fabric image created:', {
+            fabricWidth: fabricImg.width,
+            fabricHeight: fabricImg.height,
+          });
+          
+          // [2025-12-14 05:45:00] 缩放图片以适应 canvas（cover 模式 - 填充 container）
+          // [2025-12-14 05:45:00] 使用 Math.max 而不是 Math.min，确保图片填充整个 canvas 区域
+          const scale = Math.max(
+            CANVAS_WIDTH / (fabricImg.width || 1),
+            CANVAS_HEIGHT / (fabricImg.height || 1)
+          );
+          
+          console.log('[DesignLab 5.0] Calculating scale:', {
+            canvasSize: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT },
+            imageSize: { width: fabricImg.width, height: fabricImg.height },
+            calculatedScale: scale,
+          });
+          
+          fabricImg.set({
+            left: CANVAS_WIDTH / 2,
+            top: CANVAS_HEIGHT / 2,
+            originX: 'center',
+            originY: 'center',
+            scaleX: scale,
+            scaleY: scale,
+            selectable: false,
+            evented: false,
+            data: {
+              layerType: 'product-image',
+              zIndex: 0,
+            },
+            name: 'product-image-base',
+          });
 
-        console.log('[DesignLab 5.0] Adding image to canvas...');
-        fabricCanvasRef.current.add(img);
-        fabricCanvasRef.current.sendToBack(img); // 确保在底层
-        
-        // [2025-12-20 03:40:00] 强制渲染，确保图片显示
-        fabricCanvasRef.current.renderAll();
-        
-        // [2025-12-20 03:40:00] 验证图片是否真的被添加到 canvas
-        const allObjects = fabricCanvasRef.current.getObjects();
-        const addedImage = allObjects.find((obj: any) => obj.name === 'product-image-base');
-        
-        console.log('[DesignLab 5.0] Product image added to canvas:', {
-          imageUrl: imageUrl.substring(0, 50) + '...',
-          position: { left: img.left, top: img.top },
-          scale: { scaleX: img.scaleX, scaleY: img.scaleY },
-          size: { width: img.width, height: img.height },
-          addedToCanvas: !!addedImage,
-          totalObjects: allObjects.length,
-        });
-        
-        if (!addedImage) {
-          console.error('[DesignLab 5.0] ❌ Image was not found on canvas after adding!');
+          console.log('[DesignLab 5.0] Adding image to canvas...');
+          fabricCanvasRef.current.add(fabricImg);
+          // [2025-12-14 05:45:00] 使用 sendObjectToBack 方法将图片置于底层（如果方法存在）
+          if (typeof (fabricCanvasRef.current as any).sendObjectToBack === 'function') {
+            (fabricCanvasRef.current as any).sendObjectToBack(fabricImg);
+          } else if (typeof (fabricCanvasRef.current as any).sendToBack === 'function') {
+            (fabricCanvasRef.current as any).sendToBack(fabricImg);
+          } else {
+            // [2025-12-14 05:45:00] 如果方法不存在，直接移动对象到索引 0
+            const objects = fabricCanvasRef.current.getObjects();
+            const index = objects.indexOf(fabricImg);
+            if (index > 0) {
+              fabricCanvasRef.current.moveObjectTo(fabricImg, 0);
+            }
+          }
+          
+          // [2025-12-20 03:40:00] 强制渲染，确保图片显示
+          fabricCanvasRef.current.renderAll();
+          
+          // [2025-12-20 03:40:00] 验证图片是否真的被添加到 canvas
+          const allObjects = fabricCanvasRef.current.getObjects();
+          const addedImage = allObjects.find((obj: any) => obj.name === 'product-image-base');
+          
+          console.log('[DesignLab 5.0] ✅ Product image added to canvas:', {
+            imageUrl: imageUrl.substring(0, 50) + '...',
+            position: { left: fabricImg.left, top: fabricImg.top },
+            scale: { scaleX: fabricImg.scaleX, scaleY: fabricImg.scaleY },
+            size: { width: fabricImg.width, height: fabricImg.height },
+            addedToCanvas: !!addedImage,
+            totalObjects: allObjects.length,
+          });
+          
+          if (!addedImage) {
+            console.error('[DesignLab 5.0] ❌ Image was not found on canvas after adding!');
+          }
+        } catch (error) {
+          console.error('[DesignLab 5.0] ❌ Error creating Fabric Image:', error);
         }
-      }, {
-        crossOrigin: 'anonymous',
-      });
+      };
+      
+      imgElement.onerror = (error) => {
+        clearTimeout(timeoutId);
+        imageLoaded = false;
+        console.error('[DesignLab 5.0] ❌ Failed to load image from URL:', {
+          imageUrl: imageUrl.substring(0, 50) + '...',
+          error,
+          errorType: error?.type,
+        });
+      };
+      
+      console.log('[DesignLab 5.0] Setting image src...');
+      imgElement.src = imageUrl;
     } else {
       console.error('[DesignLab 5.0] fabric.Image is not available!');
     }
@@ -573,8 +649,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           return;
         }
 
-        // [2025-12-20 03:20:00] 创建 Image 对象并加载
-        const imgElement = new Image();
+        // [2025-12-14 05:45:00] 创建 Image 对象并加载（使用 window.Image 避免与 next/image 冲突）
+        const imgElement = new window.Image();
         if (!imageUrl.startsWith('data:')) {
           imgElement.crossOrigin = 'anonymous';
         }
