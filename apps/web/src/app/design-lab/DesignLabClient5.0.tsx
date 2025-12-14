@@ -16,13 +16,26 @@ import Image from 'next/image';
 import { getDefaultProductBaseImages, getThumbnailImageUrl } from '@/lib/customink-images';
 import './design-lab.css';
 
-const DesignLabClient5: React.FC = () => {
+// [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
+interface DesignLabClient5Props {
+  initialProductData?: any; // [2025-12-20 03:00:00] 服务端预取的产品数据（暂时未使用）
+}
+
+const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData }) => {
   // [2025-12-20 02:20:00] 5.0 版本：只保留最基本的 state
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve'>('front');
   const [productInfo] = useState({
     color: 'White',
     baseImages: getDefaultProductBaseImages('White'),
   });
+
+  // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 记录初始产品数据（暂时未使用）
+  useEffect(() => {
+    if (initialProductData) {
+      console.log('[DesignLab 5.0] 接收到初始产品数据:', initialProductData);
+      // TODO: 后续功能会使用这个数据来更新 productInfo
+    }
+  }, [initialProductData]);
 
   // [2025-12-20 02:50:00] 5.0 版本：添加调试日志，确保元素正确渲染
   const railRef = useRef<HTMLElement>(null);
@@ -107,15 +120,28 @@ const DesignLabClient5: React.FC = () => {
     }
   }, []);
 
-  // [2025-12-20 02:20:00] 5.0 版本：简单的视图切换（无功能）
+  // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换功能
   const handleViewChange = (view: 'front' | 'back' | 'sleeve') => {
+    console.log('[DesignLab 5.0] 视图切换:', { from: currentView, to: view }); // [2025-12-20 03:00:00] 添加调试日志
     setCurrentView(view);
   };
 
   // [2025-12-20 02:20:00] 5.0 版本：获取当前视图的图片 URL
   const getCurrentImageUrl = () => {
-    return productInfo.baseImages[currentView];
+    const url = productInfo.baseImages[currentView];
+    console.log('[DesignLab 5.0] 获取图片 URL:', { currentView, url }); // [2025-12-20 03:00:00] 添加调试日志
+    return url;
   };
+
+  // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 监听视图变化，验证图片切换
+  useEffect(() => {
+    const imageUrl = getCurrentImageUrl();
+    console.log('[DesignLab 5.0] 视图已切换:', { 
+      currentView, 
+      imageUrl,
+      hasImage: !!imageUrl 
+    });
+  }, [currentView]);
 
   return (
     <div className="design-lab-new">
@@ -227,16 +253,21 @@ const DesignLabClient5: React.FC = () => {
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
         <section ref={canvasRef} className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
           <div className="dl-canvas__preview">
-            <div className="dl-canvas__product">
-              {/* [2025-12-20 02:20:00] 5.0 版本：使用简单的 HTML <img> 标签显示商品图片 */}
-              {getCurrentImageUrl() && (
+          <div className="dl-canvas__product">
+            {/* [2025-12-20 02:20:00] 5.0 版本：使用简单的 HTML <img> 标签显示商品图片 */}
+            {/* [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换时图片自动更新 */}
+            {(() => {
+              const imageUrl = getCurrentImageUrl();
+              return imageUrl ? (
                 <img
-                  src={getCurrentImageUrl()}
+                  key={currentView} // [2025-12-20 03:00:00] 使用 key 强制重新渲染，确保图片切换
+                  src={imageUrl}
                   alt={`Product ${currentView} view`}
                   className="dl-canvas__product-image"
                 />
-              )}
-            </div>
+              ) : null;
+            })()}
+          </div>
           </div>
         </section>
 
