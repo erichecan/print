@@ -32,6 +32,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve'>('front');
   
   // [2025-12-20 03:05:00] 5.0 版本：功能2 - 改为 useState，支持动态更新
+  // [2025-12-20 03:30:00] 修复：初始状态使用默认白色 T 恤图片，确保用户直接从导航进入时也能正常显示
   const [productInfo, setProductInfo] = useState<{
     color: string;
     baseImages: {
@@ -41,12 +42,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     };
     productId?: string;
     colorId?: string;
-  }>({
-    color: 'White',
-    baseImages: getDefaultProductBaseImages('White'),
+  }>(() => {
+    // [2025-12-20 03:30:00] 使用函数初始化，确保默认图片在组件创建时就设置好
+    const defaultImages = getDefaultProductBaseImages('White');
+    console.log('[DesignLab 5.0] 初始化默认商品信息（白色 T 恤）:', defaultImages);
+    return {
+      color: 'White',
+      baseImages: defaultImages,
+    };
   });
 
   // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数加载商品信息
+  // [2025-12-20 03:30:00] 修复：添加默认图片机制，如果用户直接从导航进入，显示默认白色 T 恤
   useEffect(() => {
     const productId = searchParams?.get('productId') || undefined;
     const colorId = searchParams?.get('colorId') || undefined;
@@ -54,7 +61,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     console.log('[DesignLab 5.0] 功能2 - URL 参数:', { productId, colorId, variantId });
 
-    // 如果有 variantId，优先从服务端预取的数据中获取
+    // [2025-12-20 03:30:00] 如果有 variantId，优先从服务端预取的数据中获取
     if (initialProductData && variantId) {
       console.log('[DesignLab 5.0] 功能2 - 使用服务端预取的数据:', initialProductData);
       const color = initialProductData.color || initialProductData.colorName || 'White';
@@ -69,7 +76,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
-    // 如果只有 colorId，根据 colorId 更新颜色
+    // [2025-12-20 03:30:00] 如果只有 colorId，根据 colorId 更新颜色
     if (colorId && !initialProductData) {
       // 简单实现：假设 colorId 对应的颜色名称（后续可以从 API 获取映射）
       const colorName = 'White'; // 默认值，TODO: 从 API 获取 colorId 到 colorName 的映射
@@ -86,7 +93,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
-    // 如果有 productId 和 colorName，尝试从 API 获取图片
+    // [2025-12-20 03:30:00] 如果有 productId，尝试从 API 获取图片
     if (productId && !initialProductData) {
       const colorName = productInfo.color || 'White';
       
@@ -102,12 +109,42 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               productId,
             }));
           } else {
-            console.log('[DesignLab 5.0] 功能2 - API 未返回图片，使用默认图片');
+            console.log('[DesignLab 5.0] 功能2 - API 未返回图片，使用默认白色 T 恤图片');
+            // [2025-12-20 03:30:00] API 失败时回退到默认图片
+            const defaultImages = getDefaultProductBaseImages('White');
+            setProductInfo(prev => ({
+              ...prev,
+              baseImages: defaultImages,
+              productId,
+            }));
           }
         })
         .catch(error => {
-          console.warn('[DesignLab 5.0] 功能2 - API 获取失败，使用默认图片:', error);
+          console.warn('[DesignLab 5.0] 功能2 - API 获取失败，使用默认白色 T 恤图片:', error);
+          // [2025-12-20 03:30:00] API 错误时回退到默认图片
+          const defaultImages = getDefaultProductBaseImages('White');
+          setProductInfo(prev => ({
+            ...prev,
+            baseImages: defaultImages,
+            productId,
+          }));
         });
+      return;
+    }
+
+    // [2025-12-20 03:30:00] 如果没有 URL 参数（用户直接从导航进入），使用默认白色 T 恤
+    if (!productId && !colorId && !variantId && !initialProductData) {
+      console.log('[DesignLab 5.0] 功能2 - 没有 URL 参数，使用默认白色 T 恤图片');
+      const defaultImages = getDefaultProductBaseImages('White');
+      
+      // [2025-12-20 03:30:00] 只在 productInfo 还没有设置过默认图片时才更新
+      if (!productInfo.baseImages || Object.keys(productInfo.baseImages).length === 0) {
+        setProductInfo(prev => ({
+          ...prev,
+          color: 'White',
+          baseImages: defaultImages,
+        }));
+      }
     }
   }, [searchParams, initialProductData]); // [2025-12-20 03:05:00] 依赖 searchParams 和 initialProductData
 
