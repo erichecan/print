@@ -192,10 +192,38 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
   }, []);
 
+  // [2025-12-20 03:10:00] 5.0 版本：功能3 - ToolPanel 面板类型 state
+  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | null;
+  const [toolPanelType, setToolPanelType] = useState<ToolPanelType>('home');
+  const [activeTool, setActiveTool] = useState<string | null>(null);
+
   // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换功能
   const handleViewChange = (view: 'front' | 'back' | 'sleeve') => {
     console.log('[DesignLab 5.0] 视图切换:', { from: currentView, to: view }); // [2025-12-20 03:00:00] 添加调试日志
     setCurrentView(view);
+  };
+
+  // [2025-12-20 03:10:00] 5.0 版本：功能3 - Rail 按钮点击处理
+  const handleToolClick = (tool: 'upload' | 'text' | 'art') => {
+    console.log('[DesignLab 5.0] 功能3 - Rail 按钮点击:', { tool, previousTool: activeTool }); // [2025-12-20 03:10:00] 添加调试日志
+    
+    // 如果点击的是已激活的工具，切换回 home
+    if (activeTool === tool) {
+      setActiveTool(null);
+      setToolPanelType('home');
+      console.log('[DesignLab 5.0] 功能3 - 切换回 home 面板');
+    } else {
+      setActiveTool(tool);
+      setToolPanelType(tool);
+      console.log('[DesignLab 5.0] 功能3 - 切换到面板:', tool);
+    }
+  };
+
+  // [2025-12-20 03:10:00] 5.0 版本：功能3 - 返回 home 面板
+  const handleBackToHome = () => {
+    console.log('[DesignLab 5.0] 功能3 - 返回 home 面板');
+    setActiveTool(null);
+    setToolPanelType('home');
   };
 
   // [2025-12-20 02:20:00] 5.0 版本：获取当前视图的图片 URL
@@ -247,8 +275,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* 2. Rail - 左侧深灰色工具栏 */}
         {/* [2025-12-20 02:30:00] 5.0 版本：与 4.0 版本 UI 一致 - Rail 工具栏 */}
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
+        {/* [2025-12-20 03:10:00] 5.0 版本：功能3 - Rail 按钮点击交互 */}
         <nav ref={railRef} className="dl-rail" aria-label="Design tools" data-testid="rail">
-          <button className="dl-rail__btn" aria-label="Upload image" title="Upload">
+          <button 
+            className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
+            onClick={() => handleToolClick('upload')}
+            aria-label="Upload image"
+            aria-pressed={activeTool === 'upload'}
+            title="Upload"
+          >
             <span className="dl-rail__btn-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -259,12 +294,24 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             <span className="dl-rail__btn-label">Upload</span>
           </button>
 
-          <button className="dl-rail__btn" aria-label="Add text" title="Add Text">
+          <button 
+            className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''}`}
+            onClick={() => handleToolClick('text')}
+            aria-label="Add text"
+            aria-pressed={activeTool === 'text'}
+            title="Add Text"
+          >
             <span className="dl-rail__btn-icon dl-rail__icon--text">T</span>
             <span className="dl-rail__btn-label">Add Text</span>
           </button>
 
-          <button className="dl-rail__btn" aria-label="Add art" title="Add Art">
+          <button 
+            className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''}`}
+            onClick={() => handleToolClick('art')}
+            aria-label="Add art"
+            aria-pressed={activeTool === 'art'}
+            title="Add Art"
+          >
             <span className="dl-rail__btn-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -277,49 +324,134 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         </nav>
 
         {/* 3. ToolPanel - 左侧工具面板 */}
-        {/* [2025-12-20 02:30:00] 5.0 版本：与 4.0 版本 UI 一致 - HomePanel 内容 */}
-        <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="panel">
-          <div className="dl-tool-panel__content">
-            <div className="dl-tool-panel__header">
-              <h2 className="dl-tool-panel__title">What&apos;s next for you?</h2>
+        {/* [2025-12-20 03:10:00] 5.0 版本：功能3 - ToolPanel 面板切换 */}
+        {toolPanelType && (
+          <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="panel">
+            <div className="dl-tool-panel__content">
+              {/* Home 面板 */}
+              {toolPanelType === 'home' && (
+                <>
+                  <div className="dl-tool-panel__header">
+                    <h2 className="dl-tool-panel__title">What&apos;s next for you?</h2>
+                  </div>
+                  <div className="dl-home-panel">
+                    <div className="dl-home-panel__actions">
+                      <button 
+                        className="dl-home-panel__action" 
+                        aria-label="Upload"
+                        onClick={() => handleToolClick('upload')}
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span>Upload</span>
+                      </button>
+                      
+                      <button 
+                        className="dl-home-panel__action" 
+                        aria-label="Add Text"
+                        onClick={() => handleToolClick('text')}
+                      >
+                        <span className="dl-home-panel__text-icon">abc</span>
+                        <span>Add Text</span>
+                      </button>
+                      
+                      <button 
+                        className="dl-home-panel__action" 
+                        aria-label="Add Art"
+                        onClick={() => handleToolClick('art')}
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                        <span>Add Art</span>
+                      </button>
+                    </div>
+                    
+                    <p className="dl-home-panel__hint">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                      </svg>
+                      Drag & drop a file anywhere to upload
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Upload 面板 */}
+              {toolPanelType === 'upload' && (
+                <>
+                  <div className="dl-tool-panel__header">
+                    <h2 className="dl-tool-panel__title">Choose File To Upload</h2>
+                    <button
+                      className="dl-tool-panel__back-btn"
+                      onClick={handleBackToHome}
+                      aria-label="Back to home"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                      </svg>
+                      Back
+                    </button>
+                  </div>
+                  <div className="dl-tool-panel__placeholder">
+                    <p>5.0 版本：Upload 功能待实现</p>
+                  </div>
+                </>
+              )}
+
+              {/* Text 面板 */}
+              {toolPanelType === 'text' && (
+                <>
+                  <div className="dl-tool-panel__header">
+                    <h2 className="dl-tool-panel__title">Add Text</h2>
+                    <button
+                      className="dl-tool-panel__back-btn"
+                      onClick={handleBackToHome}
+                      aria-label="Back to home"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                      </svg>
+                      Back
+                    </button>
+                  </div>
+                  <div className="dl-tool-panel__placeholder">
+                    <p>5.0 版本：Add Text 功能待实现</p>
+                  </div>
+                </>
+              )}
+
+              {/* Art 面板 */}
+              {toolPanelType === 'art' && (
+                <>
+                  <div className="dl-tool-panel__header">
+                    <h2 className="dl-tool-panel__title">Add Art</h2>
+                    <button
+                      className="dl-tool-panel__back-btn"
+                      onClick={handleBackToHome}
+                      aria-label="Back to home"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7" />
+                      </svg>
+                      Back
+                    </button>
+                  </div>
+                  <div className="dl-tool-panel__placeholder">
+                    <p>5.0 版本：Add Art 功能待实现</p>
+                  </div>
+                </>
+              )}
             </div>
-            <div className="dl-home-panel">
-              <div className="dl-home-panel__actions">
-                <button className="dl-home-panel__action" aria-label="Upload">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  <span>Upload</span>
-                </button>
-                
-                <button className="dl-home-panel__action" aria-label="Add Text">
-                  <span className="dl-home-panel__text-icon">abc</span>
-                  <span>Add Text</span>
-                </button>
-                
-                <button className="dl-home-panel__action" aria-label="Add Art">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                  </svg>
-                  <span>Add Art</span>
-                </button>
-              </div>
-              
-              <p className="dl-home-panel__hint">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-                Drag & drop a file anywhere to upload
-              </p>
-            </div>
-          </div>
-        </aside>
+          </aside>
+        )}
 
         {/* 4. Canvas - 中央画布区域 */}
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
