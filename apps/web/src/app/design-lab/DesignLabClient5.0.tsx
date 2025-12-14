@@ -154,6 +154,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const canvasRef = useRef<HTMLCanvasElement>(null); // [2025-12-20 03:20:00] 步骤2 - 改为 HTMLCanvasElement
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric canvas ref
   const fabricRef = useRef<typeof fabric | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric 对象 ref
+  const [canvasInitialized, setCanvasInitialized] = useState(false); // [2025-12-20 03:50:00] 用于触发图片加载的 state
 
   useEffect(() => {
     // 检查 Rail（第一列）
@@ -436,8 +437,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           height: CANVAS_HEIGHT,
         });
 
-        // [2025-12-20 03:25:00] 初始添加商品图片（等待 productInfo 准备好）
-        // 注意：不在这里立即加载，而是通过下面的 useEffect 监听 productInfo.baseImages 变化来加载
+        // [2025-12-20 03:50:00] 修复：标记 Canvas 已初始化，触发图片加载 useEffect
+        setCanvasInitialized(true);
 
       } catch (error) {
         console.error('[DesignLab 5.0] Failed to initialize Fabric canvas:', error);
