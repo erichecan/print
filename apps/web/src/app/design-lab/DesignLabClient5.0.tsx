@@ -296,6 +296,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
     
     if (fabric.Image) {
+      console.log('[DesignLab 5.0] Loading image from URL...');
       fabric.Image.fromURL(imageUrl, (img) => {
         if (!fabricCanvasRef.current) {
           console.warn('[DesignLab 5.0] Fabric image loaded but canvas is not available');
@@ -305,14 +306,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         console.log('[DesignLab 5.0] Fabric image loaded:', {
           naturalWidth: img.width,
           naturalHeight: img.height,
+          canvasWidth: fabricCanvasRef.current.width,
+          canvasHeight: fabricCanvasRef.current.height,
         });
         
-        // 缩放图片以适应 canvas（contain 模式）
+        // [2025-12-20 03:40:00] 缩放图片以适应 canvas（contain 模式）
         const scale = Math.min(
           CANVAS_WIDTH / (img.width || 1),
           CANVAS_HEIGHT / (img.height || 1),
           1 // 不超过原始尺寸
         );
+        
+        console.log('[DesignLab 5.0] Calculating scale:', {
+          canvasSize: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT },
+          imageSize: { width: img.width, height: img.height },
+          calculatedScale: scale,
+        });
         
         img.set({
           left: CANVAS_WIDTH / 2,
@@ -330,17 +339,34 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           name: 'product-image-base',
         });
 
+        console.log('[DesignLab 5.0] Adding image to canvas...');
         fabricCanvasRef.current.add(img);
         fabricCanvasRef.current.sendToBack(img); // 确保在底层
+        
+        // [2025-12-20 03:40:00] 强制渲染，确保图片显示
         fabricCanvasRef.current.renderAll();
         
+        // [2025-12-20 03:40:00] 验证图片是否真的被添加到 canvas
+        const allObjects = fabricCanvasRef.current.getObjects();
+        const addedImage = allObjects.find((obj: any) => obj.name === 'product-image-base');
+        
         console.log('[DesignLab 5.0] Product image added to canvas:', {
-          imageUrl,
+          imageUrl: imageUrl.substring(0, 50) + '...',
           position: { left: img.left, top: img.top },
           scale: { scaleX: img.scaleX, scaleY: img.scaleY },
           size: { width: img.width, height: img.height },
+          addedToCanvas: !!addedImage,
+          totalObjects: allObjects.length,
         });
+        
+        if (!addedImage) {
+          console.error('[DesignLab 5.0] ❌ Image was not found on canvas after adding!');
+        }
+      }, {
+        crossOrigin: 'anonymous',
       });
+    } else {
+      console.error('[DesignLab 5.0] fabric.Image is not available!');
     }
   };
 
@@ -371,11 +397,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         fabricRef.current = fabric;
 
         // [2025-12-20 03:20:00] 创建 Fabric Canvas
+        // [2025-12-20 03:40:00] 修复：Fabric.js 需要正确的容器尺寸来缩放显示
         const fabricCanvas = new fabric.Canvas(canvasElement, {
           width: CANVAS_WIDTH,
           height: CANVAS_HEIGHT,
           backgroundColor: 'transparent',
         });
+
+        // [2025-12-20 03:40:00] 修复：Fabric.js 会自动创建 .canvas-container，需要确保它使用正确的 CSS 类
+        // Fabric.js 会在 canvas 元素外面创建一个 div.canova-container 包裹 canvas
+        // 我们需要确保这个容器能够正确显示
+        const canvasContainer = canvasElement.parentElement;
+        if (canvasContainer && canvasContainer.classList.contains('canvas-container')) {
+          // 添加自定义类，确保 CSS 样式生效
+          canvasContainer.classList.add('dl-canvas__fabric-container');
+          console.log('[DesignLab 5.0] Canvas container found and styled:', canvasContainer);
+        }
 
         fabricCanvasRef.current = fabricCanvas;
 
@@ -405,10 +442,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-12-20 03:20:00] 步骤2 - 当视图切换或产品信息改变时更新商品图片
   // [2025-12-20 03:25:00] 修复：确保在 Canvas 和 productInfo 都准备好后再加载图片
+  // [2025-12-20 03:40:00] 修复：添加延迟，确保 Canvas 完全初始化后再加载图片
   useEffect(() => {
     // [2025-12-20 03:25:00] 检查 Canvas 是否已初始化
     if (!fabricCanvasRef.current || !fabricRef.current) {
-      console.log('[DesignLab 5.0] Canvas not ready, waiting...');
+      console.log('[DesignLab 5.0] Canvas not ready, waiting...', {
+        fabricCanvas: !!fabricCanvasRef.current,
+        fabric: !!fabricRef.current,
+      });
       return;
     }
     
@@ -418,16 +459,24 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       console.log('[DesignLab 5.0] Product image URL not available:', {
         currentView,
         baseImages: productInfo.baseImages,
+        hasBaseImages: !!productInfo.baseImages,
       });
       return;
     }
     
     console.log('[DesignLab 5.0] Loading product image:', {
       currentView,
-      imageUrl,
+      imageUrl: imageUrl.substring(0, 100) + '...',
+      canvasReady: !!fabricCanvasRef.current,
+      fabricReady: !!fabricRef.current,
     });
     
-    addProductImageToCanvas(imageUrl);
+    // [2025-12-20 03:40:00] 添加小延迟，确保 Canvas DOM 结构完全就绪
+    const timer = setTimeout(() => {
+      addProductImageToCanvas(imageUrl);
+    }, 100);
+    
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentView, productInfo.baseImages]); // [2025-12-20 03:20:00] 当视图或产品图片改变时更新（addProductImageToCanvas 是稳定函数）
 

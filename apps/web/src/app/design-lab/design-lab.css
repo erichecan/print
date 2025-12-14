@@ -2421,6 +2421,7 @@
   height: 100% !important;
 }
 
+/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js Canvas 容器样式 */
 .dl-canvas__fabric {
   /* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
   /* [2025-01-30 22:35:00] 确保画布可见且可交互 */
@@ -2434,6 +2435,30 @@
   z-index: 1;
   background: transparent;
   object-fit: contain; /* 保持比例，填满容器 */
+}
+
+/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 自动创建的 canvas-container 样式 */
+.dl-canvas__preview .canvas-container,
+.dl-canvas__fabric-container {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 的 upper-canvas 和 lower-canvas 样式 */
+.dl-canvas__preview .canvas-container .upper-canvas,
+.dl-canvas__preview .canvas-container .lower-canvas,
+.dl-canvas__fabric-container .upper-canvas,
+.dl-canvas__fabric-container .lower-canvas {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
 }
 
 .dl-canvas__placeholder {
