@@ -2327,75 +2327,92 @@
    ============================================ */
 .dl-canvas {
   grid-column: 3;
+  grid-row: 2; /* [2025-12-20 02:00:00] 明确指定 grid row */
   background: var(--dl-bg-primary);
   display: flex;
-  align-items: flex-start; /* [2025-01-30 22:50:00] 修复：改为 flex-start，避免垂直居中导致定位问题 */
-  justify-content: center;
-  overflow: auto;
+  align-items: center; /* [2025-12-20 02:00:00] 改为 center，让内容垂直居中 */
+  justify-content: center; /* 水平居中 */
+  /* [2025-12-20 02:00:00] 移除 overflow: auto，避免滚动条 */
+  overflow: hidden;
   position: relative;
-  /* [2025-01-30 22:50:00] 修复：确保画布容器可以正确滚动 */
   min-height: 0; /* 允许 flex 子元素缩小 */
-  /* [2025-01-30 23:00:00] 修复：确保画布容器从顶部开始，不被推到视口外 */
-  padding-top: 0;
-  margin-top: 0;
+  padding: 0;
+  margin: 0;
   /* [2025-12-19 23:30:00] 临时添加边框，用于确认section区域 */
   border: 3px solid #00ff00; /* 绿色边框，非常明显 */
 }
 
 .dl-canvas__preview {
   width: 100%;
-  /* [2025-01-30 23:00:00] 修复：移除 height: 100%，使用 min-height 确保最小高度，但允许根据内容扩展 */
-  min-height: 100%;
+  /* [2025-12-20 02:00:00] 阶段2修复：使用 height: 100% 限制在可视区域内，避免产生滚动条 */
+  height: 100%;
   display: flex;
-  align-items: center; /* [2025-12-19 22:50:00] 修复：改为center，确保dl-canvas__product在预览容器中垂直居中 */
-  justify-content: center;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
   position: relative;
-  /* [2025-01-30 22:50:00] 修复：确保预览容器可以正确滚动 */
-  padding: var(--dl-space-4); /* 添加内边距，避免内容贴边 */
-  /* [2025-01-30 23:00:00] 修复：确保预览容器从顶部开始 */
-  padding-top: var(--dl-space-4);
-  margin-top: 0;
+  /* [2025-12-20 02:00:00] 移除 padding，避免占用额外空间导致滚动 */
+  padding: 0;
+  margin: 0;
+  /* [2025-12-20 02:00:00] 限制容器不超出父容器 */
+  overflow: hidden;
 }
 
 .dl-canvas__product {
   position: relative;
   width: 100%;
-  /* [2025-01-30 22:50:00] 修复：移除 height: 100%，让容器根据内容自适应 */
-  /* [2025-01-30 23:55:00] 修复：移除 max-width 限制，使画布填满可用空间 */
+  height: 100%;
+  /* [2025-12-20 01:55:00] 阶段2修复：使用简单的 flexbox 居中 */
   display: flex;
-  align-items: center; /* [2025-12-19 22:30:00] 修复：改为center，确保Canvas在容器中垂直居中 */
-  justify-content: center; /* [2025-12-19 22:30:00] 确保Canvas在容器中水平居中 */
-  /* [2025-01-30 22:50:00] 修复：确保产品容器不会导致布局偏移 */
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
   flex-shrink: 0; /* 防止 flex 子元素被压缩 */
-  /* [2025-01-30 23:00:00] 修复：确保产品容器从顶部开始 */
-  margin: 0 auto; /* [2025-12-19 22:30:00] 确保容器本身也居中 */
-  padding: 0; /* [2025-12-19 22:30:00] 移除所有padding，避免影响Canvas居中 */
+  margin: 0 auto;
+  padding: 0;
 }
 
-/* [2025-12-19 22:40:00] Fabric.js自动创建的canvas-container，需要确保居中 */
+/* [2025-12-20 01:55:00] 阶段2修复：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
+.dl-canvas__product-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 完整显示图片，不裁剪，可能有留白 */
+  object-position: center; /* 居中显示 */
+  z-index: 0; /* 在 Fabric.js canvas 下方 */
+}
+
+/* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
+/* Fabric.js自动创建的canvas-container，需要确保居中 */
 .dl-canvas__product .canvas-container {
   position: relative !important; /* 覆盖Fabric.js的绝对定位 */
   margin: 0 auto !important; /* 水平居中 */
-  width: 1000px !important; /* 固定宽度，匹配逻辑尺寸 */
-  height: 1200px !important; /* 固定高度，匹配逻辑尺寸 */
+  /* [2025-12-20 01:25:00] 自适应 .dl-canvas section，填满可用空间 */
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  /* [2025-12-20 01:25:00] 保持宽高比（逻辑尺寸比例：4000/4800 = 5/6），但允许自适应容器 */
+  /* 如果容器比例与逻辑比例不一致，会通过 CSS object-fit 处理 */
 }
 
-/* [2025-12-19 22:40:00] 确保upper-canvas和lower-canvas都使用正确的CSS尺寸 */
+/* [2025-12-20 01:25:00] 确保upper-canvas和lower-canvas都使用自适应CSS尺寸 */
 .dl-canvas__product .canvas-container .upper-canvas,
 .dl-canvas__product .canvas-container .lower-canvas {
   position: absolute !important; /* Fabric.js要求绝对定位 */
   left: 0 !important;
   top: 0 !important;
-  width: 1000px !important; /* CSS尺寸：1000×1200（匹配逻辑尺寸） */
-  height: 1200px !important;
+  /* [2025-12-20 01:25:00] 使用 100% 填充 container，由 container 的 aspect-ratio 控制尺寸 */
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .dl-canvas__fabric {
+  /* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
   /* [2025-01-30 22:35:00] 确保画布可见且可交互 */
-  /* [2025-01-30 23:55:00] 修复：使画布填满可用空间，类似 Custom Ink */
-  /* [2025-01-31 16:15:00] 修复：确保画布正确显示，使用固定尺寸而不是百分比 */
-  width: 1000px;
-  height: 1200px;
+  /* [2025-12-20 01:25:00] 移除固定尺寸，使用自适应尺寸 */
+  width: 100%;
+  height: 100%;
   max-width: 100%;
   max-height: 100%;
   display: block;

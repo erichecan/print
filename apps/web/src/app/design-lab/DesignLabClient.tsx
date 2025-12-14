@@ -247,9 +247,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   const canUndo = history.length > 0;
   const canRedo = future.length > 0;
   
-  // [2025-01-30 16:30:00] 画布尺寸常量
-  const CANVAS_WIDTH = 1000;
-  const CANVAS_HEIGHT = 1200;
+  // [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - 固定高分辨率逻辑尺寸
+  // 逻辑尺寸：4000 × 4800（高分辨率，用于 Fabric.js 坐标系）
+  // DOM 显示尺寸：基于 .dl-canvas section 自适应（通过 CSS 或 viewportTransform 缩放）
+  const CANVAS_WIDTH = 4000;
+  const CANVAS_HEIGHT = 4800;
 
   // [2025-01-30 16:30:00] 加载产品背景图片
   // [2025-01-30 19:30:00] 更新为使用实际产品图片
@@ -514,9 +516,16 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       obj.name === stableKey || obj.data?.stableKey === stableKey
     );
     
-    // [2025-01-31 18:45:00] 如果存在相同稳定键的图片，检查是否需要移除其他旧图片
+    // [2025-12-20 01:20:00] 阶段2修复：如果已存在相同稳定键的图片，更新 ref 并跳过加载
     // [2025-01-31 19:30:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
-    if (existingProductImage && backgroundImageRef.current === existingProductImage) {
+    if (existingProductImage) {
+      // [2025-12-20 01:20:00] 修复：热重载时 backgroundImageRef.current 可能未设置，需要更新它
+      if (backgroundImageRef.current !== existingProductImage) {
+        console.log('[DesignLab] 🔄 Updating backgroundImageRef to existing image (hot reload fix):', stableKey);
+        backgroundImageRef.current = existingProductImage as fabric.Image;
+        backgroundImageLoadedRef.current = imageKey;
+      }
+      
       // 即使已存在，也要检查是否有其他旧的产品图片需要移除
       const allObjects = canvas.getObjects();
       console.log('[DesignLab] 🔍 Before cleanup (loadBackgroundImage) - all canvas objects:', allObjects.map((obj, idx) => ({
@@ -574,7 +583,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.log('[DesignLab] Product image already loaded and matches ref, skipping:', stableKey);
       // #region agent log
       debugLog({
-        location: 'DesignLabClient.tsx:418',
+        location: 'DesignLabClient.tsx:518',
         message: 'skipped duplicate load - existing image found',
         data: { stableKey, imageKey },
         hypothesisId: 'B',
@@ -3609,18 +3618,23 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         };
 
         // [2025-12-08 23:30:00] 打印安全区边界显示
+        // [2025-12-20 01:15:00] 阶段2更新：安全区域 = 整个绿色区域（.dl-canvas section）
         const drawSafeArea = () => {
           const ctx = fabricCanvas.getContext();
-          const SAFE_AREA_MARGIN = 0.1; // 10%边距
+          // [2025-12-20 01:15:00] 安全区域 = 整个 Fabric Canvas 区域（等于 .dl-canvas section 的实际尺寸）
+          // Fabric Canvas 的逻辑尺寸已经在 applyCoverCentered() 中设置为等于 .dl-canvas section 的尺寸
+          // 所以安全区域就是整个 Canvas，边距为 0
+          const SAFE_AREA_MARGIN = 0; // 0%边距，安全区域等于整个 Canvas（即绿色区域）
           const safeLeft = fabricCanvas.width * SAFE_AREA_MARGIN;
           const safeTop = fabricCanvas.height * SAFE_AREA_MARGIN;
           const safeRight = fabricCanvas.width * (1 - SAFE_AREA_MARGIN);
           const safeBottom = fabricCanvas.height * (1 - SAFE_AREA_MARGIN);
 
           ctx.save();
-          ctx.strokeStyle = '#f59e0b';
+          ctx.strokeStyle = '#f59e0b'; // 橙色虚线
           ctx.lineWidth = 2;
-          ctx.setLineDash([10, 5]);
+          ctx.setLineDash([10, 5]); // 虚线样式
+          // [2025-12-20 01:15:00] 绘制安全区域边框，现在等于整个 Canvas（即整个绿色区域）
           ctx.strokeRect(safeLeft, safeTop, safeRight - safeLeft, safeBottom - safeTop);
           ctx.restore();
         };
@@ -4053,7 +4067,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   return (
     <div className="design-lab-new">
       {/* 1. Header - 顶部导航栏 */}
-      <header className="dl-header">
+      {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
+      <header className="dl-header" data-testid="header">
         <div className="dl-header__content">
           <div className="dl-header__left">
             {/* [2025-12-19 16:30:00] 使用主站Logo图片，点击跳转到主站首页 */}
@@ -4090,7 +4105,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */}
       <div className="dl-main">
         {/* 2. Dark Rail - 左侧深灰色工具栏 */}
-        <nav className="dl-rail" aria-label="Design tools">
+        {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
+        <nav className="dl-rail" aria-label="Design tools" data-testid="rail">
           <button
             className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
             onClick={() => handleToolClick('upload')}
@@ -4228,7 +4244,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         {/* [2025-12-19 21:25:00] 移除：模板库面板功能 */}
 
         {/* 4. Canvas - 中央画布区域 */}
-        <section className="dl-canvas" aria-label="Design canvas">
+        {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
+        <section className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
           {/* [2025-12-08] 左上浮层：Undo/Redo按钮 */}
           <div className="dl-canvas__floating-controls">
             <button
@@ -4340,6 +4357,20 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             style={{ cursor: currentView === 'zoom' && isZoomDragging ? 'grabbing' : currentView === 'zoom' ? 'grab' : 'default' }}
           >
             <div className="dl-canvas__product">
+              {/* [2025-12-20 01:55:00] 阶段2修复：使用简单的 HTML <img> 标签显示商品图片 */}
+              {/* 不使用 Fabric.js 逻辑定位，使用简单的 HTML/CSS 居中铺满 */}
+              {(() => {
+                // [2025-12-20 01:56:00] 处理 zoom 视图：使用 front 视图的图片
+                const viewForImage = currentView === 'zoom' ? 'front' : currentView;
+                const imageUrl = productInfo?.baseImages?.[viewForImage];
+                return imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={`Product ${viewForImage} view`}
+                    className="dl-canvas__product-image"
+                  />
+                ) : null;
+              })()}
               {/* [2025-01-30 22:35:00] Fabric.js 画布 */}
               {/* [2025-01-31 16:20:00] 移除 placeholder，直接显示画布，图片会在加载完成后自动显示 */}
               {/* [2025-12-10 18:40:00] 只在Canvas未初始化错误时显示Canvas元素 */}
@@ -4412,7 +4443,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         </section>
 
         {/* 5. Sidebar - 右侧视图切换面板 */}
-        <aside className="dl-sidebar" aria-label="View options">
+        {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
+        <aside className="dl-sidebar" aria-label="View options" data-testid="sidebar">
           <button
             className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
             onClick={() => handleViewChange('front')}
@@ -4480,7 +4512,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       </div>
 
       {/* 5. Bottom Bar - 底部操作栏 */}
-      <footer className="dl-bottom-bar" role="contentinfo">
+      {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
+      <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
         <div className="dl-bottom-bar__left">
           <button 
             className="dl-bottom-bar__add-products"
