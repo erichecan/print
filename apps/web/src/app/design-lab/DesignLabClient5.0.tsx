@@ -440,15 +440,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         console.log('[DesignLab 5.0] Fabric canvas initialized:', {
           width: CANVAS_WIDTH,
           height: CANVAS_HEIGHT,
+          isMounted,
         });
 
         // [2025-12-20 03:50:00] 修复：标记 Canvas 已初始化，触发图片加载 useEffect
         // [2025-12-20 03:55:00] 修复：在异步函数中，需要确保 isMounted 为 true 时才设置 state
         if (isMounted) {
-          console.log('[DesignLab 5.0] Setting canvasInitialized to true');
+          console.log('[DesignLab 5.0] ✅ Setting canvasInitialized to true (isMounted:', isMounted, ')');
           setCanvasInitialized(true);
+          console.log('[DesignLab 5.0] ✅ setCanvasInitialized(true) called');
         } else {
-          console.warn('[DesignLab 5.0] Component unmounted, skipping setCanvasInitialized');
+          console.warn('[DesignLab 5.0] ⚠️ Component unmounted, skipping setCanvasInitialized (isMounted:', isMounted, ')');
         }
 
       } catch (error) {
