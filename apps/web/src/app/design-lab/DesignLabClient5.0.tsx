@@ -493,7 +493,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentView, productInfo.baseImages]); // [2025-12-20 03:20:00] 当视图或产品图片改变时更新（addProductImageToCanvas 是稳定函数）
+  }, [currentView, JSON.stringify(productInfo.baseImages)]); // [2025-12-20 03:45:00] 使用 JSON.stringify 确保对象变化时触发更新
 
   // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 文件上传处理函数
   // [2025-12-20 03:20:00] 步骤2 - 更新：添加图片到 Fabric canvas
