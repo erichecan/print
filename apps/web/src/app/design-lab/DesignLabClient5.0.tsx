@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation'; // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import UploadPanel from './components/panels/UploadPanel'; // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 集成 UploadPanel 组件
+import type { fabric } from 'fabric'; // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 导入 Fabric.js 类型
 import './design-lab.css';
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
@@ -113,7 +114,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-20 02:50:00] 5.0 版本：添加调试日志，确保元素正确渲染
   const railRef = useRef<HTMLElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
-  const canvasRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null); // [2025-12-20 03:20:00] 步骤2 - 改为 HTMLCanvasElement
+  const fabricCanvasRef = useRef<fabric.Canvas | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric canvas ref
+  const fabricRef = useRef<typeof fabric | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric 对象 ref
 
   useEffect(() => {
     // 检查 Rail（第一列）
@@ -227,12 +230,142 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     setToolPanelType('home');
   };
 
+  // [2025-12-20 03:20:00] 5.0 版本：步骤2 - Canvas 尺寸常量
+  const CANVAS_WIDTH = 4000;
+  const CANVAS_HEIGHT = 4800;
+
+  // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 添加商品图片到 canvas 的辅助函数
+  const addProductImageToCanvas = (imageUrl: string) => {
+    if (!fabricCanvasRef.current || !fabricRef.current || !imageUrl) return;
+    
+    const fabric = fabricRef.current;
+    const canvas = fabricCanvasRef.current;
+    
+    // [2025-12-20 03:20:00] 移除旧的商品图片
+    const oldProductImage = canvas.getObjects().find((obj: any) => obj.name === 'product-image-base');
+    if (oldProductImage) {
+      canvas.remove(oldProductImage);
+    }
+    
+    if (fabric.Image) {
+      fabric.Image.fromURL(imageUrl, (img) => {
+        if (!fabricCanvasRef.current) return;
+        
+        // 缩放图片以适应 canvas（contain 模式）
+        const scale = Math.min(
+          CANVAS_WIDTH / (img.width || 1),
+          CANVAS_HEIGHT / (img.height || 1),
+          1 // 不超过原始尺寸
+        );
+        
+        img.set({
+          left: CANVAS_WIDTH / 2,
+          top: CANVAS_HEIGHT / 2,
+          originX: 'center',
+          originY: 'center',
+          scaleX: scale,
+          scaleY: scale,
+          selectable: false,
+          evented: false,
+          data: {
+            layerType: 'product-image',
+            zIndex: 0,
+          },
+          name: 'product-image-base',
+        });
+
+        fabricCanvasRef.current.add(img);
+        fabricCanvasRef.current.sendToBack(img); // 确保在底层
+        fabricCanvasRef.current.renderAll();
+        
+        console.log('[DesignLab 5.0] Product image added to canvas');
+      });
+    }
+  };
+
+  // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 初始化 Fabric.js Canvas
+  useEffect(() => {
+    if (!canvasRef.current) {
+      console.warn('[DesignLab 5.0] Canvas ref not available');
+      return;
+    }
+
+    const canvasElement = canvasRef.current;
+    let isMounted = true;
+
+    const initCanvas = async () => {
+      try {
+        // [2025-12-20 03:20:00] 动态导入 fabric
+        const fabricModule = await import('fabric');
+        if (!isMounted || !canvasRef.current) return;
+
+        // [2025-12-20 03:20:00] 获取 fabric 对象
+        const fabric = fabricModule.fabric || fabricModule.default || fabricModule;
+        
+        if (!fabric || typeof fabric.Canvas !== 'function') {
+          throw new Error('Fabric.js module is not properly loaded.');
+        }
+
+        // [2025-12-20 03:20:00] 存储 fabric 对象
+        fabricRef.current = fabric;
+
+        // [2025-12-20 03:20:00] 创建 Fabric Canvas
+        const fabricCanvas = new fabric.Canvas(canvasElement, {
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          backgroundColor: 'transparent',
+        });
+
+        fabricCanvasRef.current = fabricCanvas;
+
+        console.log('[DesignLab 5.0] Fabric canvas initialized:', {
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+        });
+
+        // [2025-12-20 03:20:00] 初始添加商品图片（延迟执行，确保 productInfo 已初始化）
+        setTimeout(() => {
+          const productImageUrl = productInfo.baseImages[currentView];
+          if (productImageUrl) {
+            addProductImageToCanvas(productImageUrl);
+          }
+        }, 100);
+
+      } catch (error) {
+        console.error('[DesignLab 5.0] Failed to initialize Fabric canvas:', error);
+      }
+    };
+
+    initCanvas();
+
+    return () => {
+      isMounted = false;
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+        fabricCanvasRef.current = null;
+      }
+    };
+  }, []); // [2025-12-20 03:20:00] 只在组件挂载时初始化一次
+
+  // [2025-12-20 03:20:00] 步骤2 - 当视图切换或产品信息改变时更新商品图片
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !fabricRef.current) return;
+    
+    const imageUrl = productInfo.baseImages[currentView];
+    if (imageUrl) {
+      addProductImageToCanvas(imageUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, productInfo.baseImages]); // [2025-12-20 03:20:00] 当视图或产品图片改变时更新（addProductImageToCanvas 是稳定函数）
+
   // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 文件上传处理函数
+  // [2025-12-20 03:20:00] 步骤2 - 更新：添加图片到 Fabric canvas
   const handleFileUpload = (file: File) => {
-    console.log('[DesignLab 5.0] 步骤1 - 文件上传:', {
+    console.log('[DesignLab 5.0] 步骤2 - 文件上传:', {
       fileName: file.name,
       fileType: file.type,
       fileSize: file.size,
+      canvasReady: !!fabricCanvasRef.current,
     });
 
     // [2025-12-20 03:15:00] 文件格式验证
@@ -265,9 +398,115 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
-    // [2025-12-20 03:15:00] TODO: 步骤2 - 将在下一步集成 Fabric.js 并添加到 canvas
-    console.log('[DesignLab 5.0] 步骤1 - 文件验证通过，待步骤2实现 canvas 添加功能');
-    alert('文件上传功能：文件验证通过，canvas 添加功能将在步骤2实现');
+    // [2025-12-20 03:20:00] 步骤2 - 检查 Canvas 是否已初始化
+    if (!fabricCanvasRef.current || !fabricRef.current) {
+      alert('Canvas is not ready. Please wait for the design lab to load.');
+      return;
+    }
+
+    const fabric = fabricRef.current;
+    const canvas = fabricCanvasRef.current;
+
+    // [2025-12-20 03:20:00] 步骤2 - 读取文件并添加到 canvas
+    const reader = new FileReader();
+    reader.onerror = (error) => {
+      console.error('[DesignLab 5.0] FileReader error:', error);
+      alert('Failed to read the file. Please try again.');
+    };
+    
+    reader.onload = (e) => {
+      try {
+        const imageUrl = e.target?.result as string;
+        if (!imageUrl) {
+          alert('Failed to read the file.');
+          return;
+        }
+
+        // [2025-12-20 03:20:00] 创建 Image 对象并加载
+        const imgElement = new Image();
+        if (!imageUrl.startsWith('data:')) {
+          imgElement.crossOrigin = 'anonymous';
+        }
+        
+        imgElement.onload = () => {
+          try {
+            // [2025-12-20 03:20:00] 创建 Fabric Image 对象
+            const fabricImage = new fabric.Image(imgElement, {
+              selectable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+              lockRotation: false,
+              lockScalingX: false,
+              lockScalingY: false,
+              lockMovementX: false,
+              lockMovementY: false,
+              centeredScaling: true,
+              centeredRotation: true,
+              data: {
+                layerType: 'upload',
+                zIndex: 10,
+              },
+            });
+
+            // [2025-12-20 03:20:00] 智能缩放：缩放到画布的 30%
+            const SCALE_RATIO = 0.3;
+            const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
+            const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
+            
+            const originalWidth = fabricImage.width || 1;
+            const originalHeight = fabricImage.height || 1;
+            
+            const scaleX = targetMaxWidth / originalWidth;
+            const scaleY = targetMaxHeight / originalHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
+            
+            fabricImage.scale(scale);
+
+            // [2025-12-20 03:20:00] 居中位置（canvas 中心）
+            fabricImage.set({
+              left: CANVAS_WIDTH / 2,
+              top: CANVAS_HEIGHT / 2,
+              originX: 'center',
+              originY: 'center',
+              name: `image_${Date.now()}`,
+            });
+            
+            fabricImage.setCoords();
+
+            // [2025-12-20 03:20:00] 添加到 canvas
+            canvas.add(fabricImage);
+            canvas.setActiveObject(fabricImage); // 自动选中
+            canvas.renderAll();
+
+            console.log('[DesignLab 5.0] Image added to canvas:', {
+              name: fabricImage.name,
+              position: { left: fabricImage.left, top: fabricImage.top },
+              scale,
+            });
+
+            // [2025-12-20 03:20:00] 切换到 EditUploadPanel（将在步骤3实现）
+            // TODO: setToolPanelType('edit-upload');
+
+          } catch (error) {
+            console.error('[DesignLab 5.0] Error creating Fabric image:', error);
+            alert('Failed to add image to canvas. Please try again.');
+          }
+        };
+
+        imgElement.onerror = () => {
+          alert('Failed to load the image. Please try again.');
+        };
+
+        imgElement.src = imageUrl;
+
+      } catch (error) {
+        console.error('[DesignLab 5.0] Error processing file:', error);
+        alert('Failed to process the file. Please try again.');
+      }
+    };
+
+    reader.readAsDataURL(file);
   };
 
   // [2025-12-20 02:20:00] 5.0 版本：获取当前视图的图片 URL
@@ -487,23 +726,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
         {/* 4. Canvas - 中央画布区域 */}
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
-        <section ref={canvasRef} className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
+        {/* [2025-12-20 03:20:00] 步骤2 - 替换为 Fabric.js canvas */}
+        <section className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
           <div className="dl-canvas__preview">
-          <div className="dl-canvas__product">
-            {/* [2025-12-20 02:20:00] 5.0 版本：使用简单的 HTML <img> 标签显示商品图片 */}
-            {/* [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换时图片自动更新 */}
-            {(() => {
-              const imageUrl = getCurrentImageUrl();
-              return imageUrl ? (
-                <img
-                  key={currentView} // [2025-12-20 03:00:00] 使用 key 强制重新渲染，确保图片切换
-                  src={imageUrl}
-                  alt={`Product ${currentView} view`}
-                  className="dl-canvas__product-image"
-                />
-              ) : null;
-            })()}
-          </div>
+            <canvas
+              ref={canvasRef}
+              className="dl-canvas__fabric"
+              style={{ width: '100%', height: '100%' }}
+            />
           </div>
         </section>
 
