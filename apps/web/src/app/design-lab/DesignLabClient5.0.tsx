@@ -155,6 +155,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric canvas ref
   const fabricRef = useRef<typeof fabric | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric 对象 ref
   const [canvasInitialized, setCanvasInitialized] = useState(false); // [2025-12-20 03:50:00] 用于触发图片加载的 state
+  
+  // [2025-12-20 03:55:00] 调试：监听 canvasInitialized 变化
+  useEffect(() => {
+    console.log('[DesignLab 5.0] canvasInitialized state changed:', canvasInitialized);
+  }, [canvasInitialized]);
 
   useEffect(() => {
     // 检查 Rail（第一列）
