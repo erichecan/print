@@ -15,6 +15,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation'; // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
+import UploadPanel from './components/panels/UploadPanel'; // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 集成 UploadPanel 组件
 import './design-lab.css';
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
@@ -226,6 +227,49 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     setToolPanelType('home');
   };
 
+  // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 文件上传处理函数
+  const handleFileUpload = (file: File) => {
+    console.log('[DesignLab 5.0] 步骤1 - 文件上传:', {
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+    });
+
+    // [2025-12-20 03:15:00] 文件格式验证
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file (JPG, PNG, GIF, WebP, AVIF, etc.)');
+      return;
+    }
+
+    // [2025-12-20 03:15:00] 文件大小验证（20 MB）
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      alert(`File size (${fileSizeMB} MB) exceeds the maximum limit of 20 MB. Please choose a smaller file.`);
+      return;
+    }
+
+    // [2025-12-20 03:15:00] 文件类型验证
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/avif',
+      'image/svg+xml'
+    ];
+    const normalizedFileType = file.type.toLowerCase();
+    if (!allowedTypes.includes(normalizedFileType)) {
+      alert(`File type "${file.type}" is not supported. Please upload JPG, PNG, GIF, WebP, AVIF, or SVG files.`);
+      return;
+    }
+
+    // [2025-12-20 03:15:00] TODO: 步骤2 - 将在下一步集成 Fabric.js 并添加到 canvas
+    console.log('[DesignLab 5.0] 步骤1 - 文件验证通过，待步骤2实现 canvas 添加功能');
+    alert('文件上传功能：文件验证通过，canvas 添加功能将在步骤2实现');
+  };
+
   // [2025-12-20 02:20:00] 5.0 版本：获取当前视图的图片 URL
   const getCurrentImageUrl = () => {
     const url = productInfo.baseImages[currentView];
@@ -385,25 +429,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               )}
 
               {/* Upload 面板 */}
+              {/* [2025-12-20 03:15:00] 5.0 版本：步骤1 - 集成 UploadPanel 组件 */}
               {toolPanelType === 'upload' && (
-                <>
-                  <div className="dl-tool-panel__header">
-                    <h2 className="dl-tool-panel__title">Choose File To Upload</h2>
-                    <button
-                      className="dl-tool-panel__back-btn"
-                      onClick={handleBackToHome}
-                      aria-label="Back to home"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      </svg>
-                      Back
-                    </button>
-                  </div>
-                  <div className="dl-tool-panel__placeholder">
-                    <p>5.0 版本：Upload 功能待实现</p>
-                  </div>
-                </>
+                <UploadPanel
+                  onFileSelect={handleFileUpload}
+                  onBrowseClick={() => {}}
+                  onClose={handleBackToHome}
+                />
               )}
 
               {/* Text 面板 */}
