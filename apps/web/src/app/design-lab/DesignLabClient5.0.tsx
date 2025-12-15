@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation'; // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import UploadPanel from './components/panels/UploadPanel'; // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 集成 UploadPanel 组件
+import EditUploadPanel from './components/panels/EditUploadPanel'; // [2025-12-14 05:50:00] 5.0 版本：上传图片编辑面板
 import type { fabric } from 'fabric'; // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 导入 Fabric.js 类型
 import './design-lab.css';
 
@@ -155,6 +156,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric canvas ref
   const fabricRef = useRef<typeof fabric | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric 对象 ref
   const [canvasInitialized, setCanvasInitialized] = useState(false); // [2025-12-20 03:50:00] 用于触发图片加载的 state
+  const cleanupMouseListenerRef = useRef<(() => void) | null>(null); // [2025-12-14 06:35:00] 保存鼠标监听器清理函数
   
   // [2025-12-20 03:55:00] 调试：监听 canvasInitialized 变化
   useEffect(() => {
@@ -240,9 +242,24 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   }, []);
 
   // [2025-12-20 03:10:00] 5.0 版本：功能3 - ToolPanel 面板类型 state
-  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | null;
+  // [2025-12-14 05:50:00] 添加 edit-upload 面板类型
+  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | 'edit-upload' | null;
   const [toolPanelType, setToolPanelType] = useState<ToolPanelType>('home');
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  
+  // [2025-12-14 05:50:00] 当前选中的上传图片对象
+  const [selectedImage, setSelectedImage] = useState<fabric.Image | null>(null);
+  
+  // [2025-12-14 06:35:00] 鼠标位置调试信息
+  const [mouseDebug, setMouseDebug] = useState<{
+    x: number;
+    y: number;
+    canvasX: number;
+    canvasY: number;
+    onControl: boolean;
+    controlType: string | null;
+    targetObject: string | null;
+  } | null>(null);
 
   // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换功能
   const handleViewChange = (view: 'front' | 'back' | 'sleeve') => {
@@ -271,6 +288,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     console.log('[DesignLab 5.0] 功能3 - 返回 home 面板');
     setActiveTool(null);
     setToolPanelType('home');
+    setSelectedImage(null);
+  };
+  
+  // [2025-12-14 05:50:00] Canvas 更新处理函数（EditUploadPanel 需要）
+  const handleCanvasUpdate = () => {
+    if (fabricCanvasRef.current) {
+      fabricCanvasRef.current.renderAll();
+    }
   };
 
   // [2025-12-20 03:20:00] 5.0 版本：步骤2 - Canvas 尺寸常量
@@ -466,7 +491,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       try {
         // [2025-12-20 03:20:00] 动态导入 fabric
         const fabricModule = await import('fabric');
-        if (!isMounted || !canvasRef.current) return;
+        if (!isMounted || !canvasRef.current) {
+          // [2025-12-14 06:35:00] 如果组件已卸载，返回 undefined
+          return undefined;
+        }
 
         // [2025-12-20 03:20:00] 获取 fabric 对象
         const fabric = fabricModule.fabric || fabricModule.default || fabricModule;
@@ -480,10 +508,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
         // [2025-12-20 03:20:00] 创建 Fabric Canvas
         // [2025-12-20 03:40:00] 修复：Fabric.js 需要正确的容器尺寸来缩放显示
+        // [2025-12-14 06:30:00] 添加 preserveObjectStacking 等选项（参考 4.0 版本）
         const fabricCanvas = new fabric.Canvas(canvasElement, {
           width: CANVAS_WIDTH,
           height: CANVAS_HEIGHT,
           backgroundColor: 'transparent',
+          preserveObjectStacking: true, // [2025-12-14 06:30:00] 保持对象堆叠顺序（参考 4.0 版本）
+          selection: true, // [2025-12-14 06:30:00] 启用选择功能
+          stateful: true, // [2025-12-14 06:30:00] 启用状态管理
         });
 
         // [2025-12-20 03:40:00] 修复：Fabric.js 会自动创建 .canvas-container，需要确保它使用正确的 CSS 类
@@ -513,6 +545,24 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
         fabricCanvasRef.current = fabricCanvas;
 
+        // [2025-12-14 07:30:00] 步骤2：设置选中对象的边框样式（灰色，2px）
+        // [2025-12-14 07:30:00] 步骤1：确保基本拖拽功能可用（Fabric.js 默认支持，只需确保 selectable 和 evented 为 true）
+        if (fabric.Object) {
+          fabric.Object.prototype.set({
+            borderColor: '#808080', // [2025-12-14 07:30:00] 步骤2：灰色边框
+            borderScaleFactor: 2, // [2025-12-14 07:30:00] 步骤2：边框宽度 2px（默认 1px × 2 = 2px）
+            // [2025-12-14 07:30:00] 注释掉角点和旋转控件相关设置，简化初始实现
+            // cornerColor: '#0066CC',
+            // cornerSize: 28,
+            // transparentCorners: false,
+            // cornerStyle: 'circle',
+            // rotatingPointOffset: 70,
+            // hasRotatingPoint: true,
+            // touchCornerSize: 28,
+          });
+          console.log('[DesignLab 5.0] Fabric.js 基本样式已设置（灰色边框 2px）');
+        }
+
         console.log('[DesignLab 5.0] Fabric canvas initialized:', {
           width: CANVAS_WIDTH,
           height: CANVAS_HEIGHT,
@@ -524,16 +574,812 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         console.log('[DesignLab 5.0] ✅ About to set canvasInitialized to true (isMounted:', isMounted, ')');
         setCanvasInitialized(true);
         console.log('[DesignLab 5.0] ✅ setCanvasInitialized(true) called');
+        
+        // [2025-12-14 06:20:00] 保存图层顺序的 Map（用于防止拖拽时自动 bringToFront）
+        const layerOrderMap = new Map<fabric.Object, number>();
+        
+        // [2025-12-14 05:50:00] 添加 canvas 对象选择事件监听
+        fabricCanvas.on('selection:created', (e) => {
+          const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
+          if (activeObject && activeObject.type === 'image') {
+            const fabricImage = activeObject as fabric.Image;
+            // [2025-12-14 05:50:00] 检查是否是上传的图片（不是商品底图）
+            if (fabricImage.name && fabricImage.name.startsWith('image_')) {
+              // [2025-12-14 07:35:00] 步骤2：确保选中时边框为灰色 2px
+              fabricImage.set({
+                hasBorders: true,
+                borderColor: '#808080', // 灰色边框
+                borderScaleFactor: 2, // 2px 宽度
+              });
+              fabricImage.setCoords();
+              
+              // [2025-12-14 06:20:00] 保存当前图层顺序
+              const allObjects = fabricCanvas.getObjects();
+              const currentIndex = allObjects.indexOf(fabricImage);
+              layerOrderMap.set(fabricImage, currentIndex);
+              console.log('[DesignLab 5.0] 上传图片被选中，切换到 edit panel，保存图层顺序:', currentIndex);
+              
+              // [2025-12-14 06:20:00] 延迟恢复图层顺序（Fabric.js 可能在 setActiveObject 时自动 bringToFront）
+              setTimeout(() => {
+                const savedIndex = layerOrderMap.get(fabricImage);
+                if (savedIndex !== undefined) {
+                  const currentIndex = fabricCanvas.getObjects().indexOf(fabricImage);
+                  if (currentIndex !== savedIndex) {
+                    console.log('[DesignLab 5.0] 恢复图层顺序:', { from: currentIndex, to: savedIndex });
+                    fabricCanvas.moveObjectTo(fabricImage, savedIndex);
+                    fabricCanvas.renderAll();
+                  }
+                }
+              }, 0);
+              
+              fabricCanvas.renderAll();
+              setSelectedImage(fabricImage);
+              setToolPanelType('edit-upload');
+            }
+          }
+        });
+        
+        fabricCanvas.on('selection:updated', (e) => {
+          const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
+          if (activeObject && activeObject.type === 'image') {
+            const fabricImage = activeObject as fabric.Image;
+            if (fabricImage.name && fabricImage.name.startsWith('image_')) {
+              // [2025-12-14 07:35:00] 步骤2：确保选中时边框为灰色 2px
+              fabricImage.set({
+                hasBorders: true,
+                borderColor: '#808080', // 灰色边框
+                borderScaleFactor: 2, // 2px 宽度
+              });
+              fabricImage.setCoords();
+              
+              // [2025-12-14 06:20:00] 保存当前图层顺序
+              const allObjects = fabricCanvas.getObjects();
+              const currentIndex = allObjects.indexOf(fabricImage);
+              layerOrderMap.set(fabricImage, currentIndex);
+              
+              // [2025-12-14 06:20:00] 延迟恢复图层顺序
+              setTimeout(() => {
+                const savedIndex = layerOrderMap.get(fabricImage);
+                if (savedIndex !== undefined) {
+                  const currentIndex = fabricCanvas.getObjects().indexOf(fabricImage);
+                  if (currentIndex !== savedIndex) {
+                    fabricCanvas.moveObjectTo(fabricImage, savedIndex);
+                    fabricCanvas.renderAll();
+                  }
+                }
+              }, 0);
+              
+              fabricCanvas.renderAll();
+              console.log('[DesignLab 5.0] 上传图片选择更新，切换到 edit panel');
+              setSelectedImage(fabricImage);
+              setToolPanelType('edit-upload');
+            }
+          }
+        });
+        
+        fabricCanvas.on('selection:cleared', () => {
+          console.log('[DesignLab 5.0] 选择已清除');
+          // [2025-12-14 05:50:00] 如果当前在 edit panel，清除选中状态但保持面板（用户可以继续编辑其他对象）
+          // 或者切换回 home 面板（根据需求决定）
+          // setSelectedImage(null);
+          // setToolPanelType('home');
+        });
+        
+        // [2025-12-14 06:15:00] 添加缩放和旋转事件监听，用于调试
+        // [2025-12-14 06:25:00] 添加更详细的缩放调试信息
+        fabricCanvas.on('object:scaling', (e) => {
+          const obj = e.target;
+          console.log('[DesignLab 5.0] 🔍 对象缩放事件:', {
+            objectName: (obj as any).name,
+            objectType: obj.type,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+            width: obj.width,
+            height: obj.height,
+            hasControls: obj.hasControls,
+            hasBorders: obj.hasBorders,
+            selectable: obj.selectable,
+            evented: obj.evented,
+            lockScalingX: obj.lockScalingX,
+            lockScalingY: obj.lockScalingY,
+            lockUniScaling: obj.lockUniScaling,
+            cornerSize: obj.cornerSize,
+          });
+        });
+        
+        // [2025-12-14 06:25:00] 添加鼠标悬停在控件上的事件监听（用于调试）
+        fabricCanvas.on('mouse:over', (e) => {
+          const obj = e.target;
+          if (obj) {
+            console.log('[DesignLab 5.0] 🖱️ 鼠标悬停在对象上:', {
+              objectName: (obj as any).name,
+              objectType: obj.type,
+              hasControls: obj.hasControls,
+            });
+          }
+        });
+        
+        // [2025-12-14 06:35:00] 添加全局鼠标移动监听（确保始终跟踪鼠标位置）
+        const handleGlobalMouseMove = (e: MouseEvent) => {
+          if (!fabricCanvasRef.current) return;
+          
+          const canvas = fabricCanvasRef.current;
+          const canvasElement = canvas.getElement();
+          if (!canvasElement) return;
+          
+          // [2025-12-14 06:35:00] 检查鼠标是否在 canvas 区域内
+          const rect = canvasElement.getBoundingClientRect();
+          const canvasX = e.clientX - rect.left;
+          const canvasY = e.clientY - rect.top;
+          
+          // [2025-12-14 06:35:00] 转换为画布逻辑坐标
+          const pointer = canvas.getPointer({ clientX: e.clientX, clientY: e.clientY } as any);
+          
+          // [2025-12-14 06:35:00] 检测鼠标是否在控件上
+          let onControl = false;
+          let controlType: string | null = null;
+          let targetObject: string | null = null;
+          
+          // [2025-12-14 06:35:00] 检查是否有对象被选中
+          const activeObj = canvas.getActiveObject();
+          
+          // [2025-12-14 06:35:00] 如果有对象被选中，检查鼠标是否在控件的交互区域内
+          if (activeObj && activeObj.selectable && activeObj.hasControls) {
+            // [2025-12-14 06:35:00] 获取对象的控制点位置
+            const cornerSize = (activeObj as any).cornerSize || 28;
+            // [2025-12-14 06:35:00] 使用 oCoords（对象坐标缓存）或重新计算
+            let coords: any;
+            try {
+              coords = (activeObj as any).oCoords || activeObj.getCoords(true);
+            } catch (e) {
+              // [2025-12-14 06:35:00] 如果获取坐标失败，先设置坐标再获取
+              activeObj.setCoords();
+              coords = (activeObj as any).oCoords || activeObj.getCoords(true);
+            }
+            
+            // [2025-12-14 06:35:00] 检查鼠标是否在任何一个角点上
+            const corners = [
+              { name: 'tl', point: coords.tl }, // top-left
+              { name: 'tr', point: coords.tr }, // top-right
+              { name: 'bl', point: coords.bl }, // bottom-left
+              { name: 'br', point: coords.br }, // bottom-right
+              { name: 'ml', point: coords.ml }, // middle-left
+              { name: 'mt', point: coords.mt }, // middle-top
+              { name: 'mr', point: coords.mr }, // middle-right
+              { name: 'mb', point: coords.mb }, // middle-bottom
+            ];
+            
+            // [2025-12-14 06:35:00] 检查旋转控件
+            const angle = activeObj.angle || 0;
+            const rad = (angle * Math.PI) / 180;
+            const rotatingPointOffset = (activeObj as any).rotatingPointOffset || 70;
+            const centerX = (coords.tl.x + coords.br.x) / 2;
+            const centerY = (coords.tl.y + coords.br.y) / 2;
+            const rotX = centerX + Math.sin(rad) * rotatingPointOffset;
+            const rotY = centerY - Math.cos(rad) * rotatingPointOffset;
+            
+            // [2025-12-14 06:35:00] 检查鼠标是否在旋转控件附近
+            const distToRot = Math.sqrt(Math.pow(pointer.x - rotX, 2) + Math.pow(pointer.y - rotY, 2));
+            if (distToRot < cornerSize * 2) {
+              onControl = true;
+              controlType = 'rotation';
+              targetObject = (activeObj as any).name || 'unknown';
+            } else {
+              // [2025-12-14 06:35:00] 检查鼠标是否在任何角点附近
+              for (const corner of corners) {
+                if (!corner.point || typeof corner.point.x !== 'number' || typeof corner.point.y !== 'number') {
+                  continue;
+                }
+                const dist = Math.sqrt(
+                  Math.pow(pointer.x - corner.point.x, 2) + Math.pow(pointer.y - corner.point.y, 2)
+                );
+                if (dist < cornerSize * 1.5) {
+                  onControl = true;
+                  controlType = `corner-${corner.name}`;
+                  targetObject = (activeObj as any).name || 'unknown';
+                  break;
+                }
+              }
+            }
+          }
+          
+          // [2025-12-14 06:35:00] 更新鼠标调试信息
+          setMouseDebug({
+            x: e.clientX,
+            y: e.clientY,
+            canvasX: Math.round(pointer.x),
+            canvasY: Math.round(pointer.y),
+            onControl,
+            controlType,
+            targetObject,
+          });
+          
+          // [2025-12-14 06:35:00] 如果鼠标在控件上，改变鼠标样式
+          if (onControl && canvas.upperCanvasEl) {
+            (canvas.upperCanvasEl as HTMLElement).style.cursor = 'crosshair';
+          } else if (canvas.upperCanvasEl) {
+            // [2025-12-14 06:35:00] 如果在 canvas 上，检查是否在对象上
+            const target = canvas.findTarget(e as any, false);
+            if (target && target.selectable) {
+              (canvas.upperCanvasEl as HTMLElement).style.cursor = 'move';
+            } else {
+              (canvas.upperCanvasEl as HTMLElement).style.cursor = 'default';
+            }
+          }
+        };
+        
+        // [2025-12-14 06:25:00] 添加鼠标按下事件监听（用于调试缩放控件的交互）
+        fabricCanvas.on('mouse:down', (e) => {
+          const obj = e.target;
+          const pointer = fabricCanvas.getPointer(e.e);
+          console.log('[DesignLab 5.0] 🖱️ 鼠标按下:', {
+            target: obj ? (obj as any).name : 'canvas',
+            pointer: { x: pointer.x, y: pointer.y },
+            isControl: e.e && (e.e.target as HTMLElement)?.classList?.contains('canvas-container'),
+          });
+        });
+        
+        fabricCanvas.on('object:rotating', (e) => {
+          const obj = e.target;
+          console.log('[DesignLab 5.0] 🔄 对象旋转事件:', {
+            objectName: (obj as any).name,
+            objectType: obj.type,
+            angle: obj.angle,
+            hasControls: obj.hasControls,
+            hasBorders: obj.hasBorders,
+            selectable: obj.selectable,
+            evented: obj.evented,
+            lockRotation: obj.lockRotation,
+          });
+        });
+        
+        // [2025-12-14 06:20:00] 保存移动前的图层顺序
+        fabricCanvas.on('object:moving', (e) => {
+          const obj = e.target;
+          // [2025-12-14 06:20:00] 保存移动前的图层顺序（如果还没有保存）
+          if (!layerOrderMap.has(obj)) {
+            const allObjects = fabricCanvas.getObjects();
+            const currentIndex = allObjects.indexOf(obj);
+            layerOrderMap.set(obj, currentIndex);
+            console.log('[DesignLab 5.0] 📍 对象开始移动，保存图层顺序:', {
+              objectName: (obj as any).name,
+              savedIndex: currentIndex,
+            });
+          }
+          console.log('[DesignLab 5.0] 📍 对象移动中:', {
+            objectName: (obj as any).name,
+            objectType: obj.type,
+            left: obj.left,
+            top: obj.top,
+          });
+        });
+        
+        // [2025-12-14 06:20:00] 对象移动完成后恢复图层顺序
+        fabricCanvas.on('object:moved', (e) => {
+          const obj = e.target;
+          const savedIndex = layerOrderMap.get(obj);
+          if (savedIndex !== undefined) {
+            const allObjects = fabricCanvas.getObjects();
+            const currentIndex = allObjects.indexOf(obj);
+            if (currentIndex !== savedIndex) {
+              console.log('[DesignLab 5.0] 📍 对象移动完成，恢复图层顺序:', {
+                objectName: (obj as any).name,
+                from: currentIndex,
+                to: savedIndex,
+              });
+              fabricCanvas.moveObjectTo(obj, savedIndex);
+              fabricCanvas.renderAll();
+            }
+            // [2025-12-14 06:20:00] 清除保存的图层顺序（允许下次移动时重新保存）
+            layerOrderMap.delete(obj);
+          }
+        });
+        
+        fabricCanvas.on('object:modified', (e) => {
+          const obj = e.target;
+          console.log('[DesignLab 5.0] ✏️ 对象修改完成:', {
+            objectName: (obj as any).name,
+            objectType: obj.type,
+            scaleX: obj.scaleX,
+            scaleY: obj.scaleY,
+            angle: obj.angle,
+            left: obj.left,
+            top: obj.top,
+          });
+        });
+        
+        // [2025-12-14 06:40:00] 创建 Custom Ink 样式的自定义控件（参考 Custom Ink 实现）
+        // [2025-12-14 06:40:00] 1. 左上角删除控件
+        if (!fabric.Control) {
+          console.warn('[DesignLab 5.0] fabric.Control is not available');
+        } else {
+          // [2025-12-14 07:30:00] 步骤3：创建自定义图标控件（只显示图标，暂不做功能）
+          // [2025-12-14 07:30:00] 注释：之前的完整实现代码已注释，现在从简单开始
+          
+          /* ========== 旧代码（已注释）开始 ==========
+          // [2025-12-14 07:00:00] 修复：添加 sizeX/sizeY 定义可点击区域，增大控件尺寸以匹配 Custom Ink
+          const deleteControl = new fabric.Control({
+            x: -0.5, // [2025-12-14 06:40:00] 左上角：x=-0.5（左边缘）
+            y: -0.5, // [2025-12-14 06:40:00] 左上角：y=-0.5（上边缘）
+            offsetX: -16, // [2025-12-14 07:00:00] 向左偏移 16px（根据 32px 控件大小调整）
+            offsetY: -16, // [2025-12-14 07:00:00] 向上偏移 16px
+            sizeX: 32, // [2025-12-14 07:00:00] 关键：设置可点击区域宽度（像素）
+            sizeY: 32, // [2025-12-14 07:00:00] 关键：设置可点击区域高度（像素）
+            cursorStyle: 'pointer',
+            render: function(ctx, left, top, styleOverride, fabricObject) {
+              // [2025-12-14 07:15:00] 使用 this.sizeX 获取控件尺寸（普通函数确保 this 绑定到 Control 实例）
+              const size = this.sizeX || this.sizeY || 32;
+              ctx.save();
+              ctx.translate(left, top);
+              ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
+              
+              // [2025-12-14 07:00:00] 绘制圆形背景（红色）
+              ctx.fillStyle = '#ef4444';
+              ctx.beginPath();
+              ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              // [2025-12-14 07:00:00] 绘制 X 图标（白色），图标大小约为背景的 55%，线宽 3px
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 3; // [2025-12-14 07:00:00] 增大线宽到 3px，更清晰
+              ctx.lineCap = 'round';
+              const iconSize = size * 0.55; // [2025-12-14 07:00:00] 图标大小为背景的 55%
+              ctx.beginPath();
+              ctx.moveTo(-iconSize / 2, -iconSize / 2);
+              ctx.lineTo(iconSize / 2, iconSize / 2);
+              ctx.moveTo(iconSize / 2, -iconSize / 2);
+              ctx.lineTo(-iconSize / 2, iconSize / 2);
+              ctx.stroke();
+              
+              ctx.restore();
+            },
+            mouseDownHandler: function(eventData, transformData) {
+              // [2025-12-14 07:20:00] 关键：返回 true 阻止事件冒泡，防止对象被取消选中
+              return true;
+            },
+            mouseUpHandler: function(eventData, transformData) {
+              const target = transformData.target;
+              if (target && fabricCanvas) {
+                console.log('[DesignLab 5.0] 🗑️ 删除控件被点击:', {
+                  objectName: (target as any).name,
+                  objectType: target.type,
+                  timestamp: new Date().toISOString(),
+                });
+                // [2025-12-14 07:00:00] 删除对象
+                fabricCanvas.remove(target);
+                fabricCanvas.renderAll();
+                // [2025-12-14 06:40:00] 如果删除的是当前选中的图片，清除选中状态
+                if (selectedImage === target) {
+                  setSelectedImage(null);
+                  setToolPanelType('home');
+                }
+                // [2025-12-14 07:00:00] 返回 true 表示事件已处理，阻止默认行为
+                return true;
+              }
+              return false;
+            }
+          });
+          
+          // [2025-12-14 06:40:00] 添加自定义控件到对象的辅助函数（必须在控件定义之前，以便在控件中使用）
+          const addCustomControlsToObject = (obj: fabric.Object) => {
+            const objName = (obj as any).name || '';
+            // [2025-12-14 06:40:00] 只为上传的图片添加自定义控件（排除商品底图）
+            if (objName.startsWith('image_')) {
+              if (!obj.controls) {
+                obj.controls = {};
+              }
+              // [2025-12-14 06:40:00] 添加删除控件（左上角）
+              obj.controls.deleteControl = deleteControl;
+              // [2025-12-14 06:40:00] 添加复制控件（左下角）
+              obj.controls.duplicateControl = duplicateControl;
+              // [2025-12-14 06:40:00] 注意：右下角缩放功能使用 Fabric.js 的默认 br 控件
+              // Custom Ink 可能只是使用了默认的缩放控件，不需要自定义
+              // 如果需要隐藏默认的 br 控件，可以使用：obj.setControlsVisibility({ br: false });
+            }
+          };
+          
+          // [2025-12-14 06:40:00] 2. 左下角复制控件
+          // [2025-12-14 07:00:00] 修复：添加 sizeX/sizeY 定义可点击区域，增大控件尺寸以匹配 Custom Ink
+          const duplicateControl = new fabric.Control({
+            x: -0.5, // [2025-12-14 06:40:00] 左下角：x=-0.5（左边缘）
+            y: 0.5, // [2025-12-14 06:40:00] 左下角：y=0.5（下边缘）
+            offsetX: -16, // [2025-12-14 07:00:00] 向左偏移 16px（根据 32px 控件大小调整）
+            offsetY: 16, // [2025-12-14 07:00:00] 向下偏移 16px
+            sizeX: 32, // [2025-12-14 07:00:00] 关键：设置可点击区域宽度（像素）
+            sizeY: 32, // [2025-12-14 07:00:00] 关键：设置可点击区域高度（像素）
+            cursorStyle: 'pointer',
+            render: function(ctx, left, top, styleOverride, fabricObject) {
+              // [2025-12-14 07:15:00] 使用 this.sizeX 获取控件尺寸（普通函数确保 this 绑定到 Control 实例）
+              const size = this.sizeX || this.sizeY || 32;
+              ctx.save();
+              ctx.translate(left, top);
+              ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
+              
+              // [2025-12-14 07:00:00] 绘制圆形背景（蓝色）
+              ctx.fillStyle = '#0066CC';
+              ctx.beginPath();
+              ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              // [2025-12-14 07:00:00] 绘制复制图标（两个重叠的矩形，白色），优化尺寸比例
+              ctx.fillStyle = '#ffffff';
+              // 后面的矩形（稍微偏右下）
+              ctx.fillRect(-size * 0.25, -size * 0.35, size * 0.35, size * 0.45);
+              // 前面的矩形（稍微偏左上）
+              ctx.fillRect(-size * 0.15, -size * 0.25, size * 0.35, size * 0.45);
+              
+              ctx.restore();
+            },
+            mouseDownHandler: function(eventData, transformData) {
+              // [2025-12-14 07:20:00] 关键：返回 true 阻止事件冒泡，防止对象被取消选中
+              return true;
+            },
+            mouseUpHandler: async function(eventData, transformData) {
+              const target = transformData.target;
+              if (target && fabricCanvas && target.type === 'image') {
+                try {
+                  console.log('[DesignLab 5.0] 📋 复制控件被点击:', {
+                    objectName: (target as any).name,
+                    objectType: target.type,
+                    timestamp: new Date().toISOString(),
+                  });
+                  const cloned = await (target as fabric.Image).clone();
+                  cloned.set({
+                    left: (target.left || 0) + 20,
+                    top: (target.top || 0) + 20,
+                    name: `image_${Date.now()}`,
+                    selectable: true,
+                    evented: true,
+                    hasControls: true,
+                    hasBorders: true,
+                  });
+                  cloned.setCoords();
+                  fabricCanvas.add(cloned);
+                  
+                  // [2025-12-14 06:40:00] 为新复制的对象添加自定义控件
+                  addCustomControlsToObject(cloned);
+                  
+                  fabricCanvas.setActiveObject(cloned);
+                  fabricCanvas.renderAll();
+                  
+                  // [2025-12-14 07:00:00] 返回 true 表示事件已处理，阻止默认行为
+                  return true;
+                } catch (error) {
+                  console.error('[DesignLab 5.0] 复制失败:', error);
+                  return false;
+                }
+              }
+              return false;
+            }
+          });
+          
+          // [2025-12-14 06:40:00] 3. 右下角缩放控件
+          // 注意：Custom Ink 使用 Fabric.js 的默认右下角（br）缩放控件，不需要自定义
+          // Fabric.js 的默认 br 控件已经提供了缩放功能
+          
+          // [2025-12-14 06:40:00] 保存控件到 canvas，以便后续使用
+          (fabricCanvas as any).deleteControl = deleteControl;
+          (fabricCanvas as any).duplicateControl = duplicateControl;
+          (fabricCanvas as any).addCustomControlsToObject = addCustomControlsToObject;
+          
+          console.log('[DesignLab 5.0] ✅ Custom Ink 样式的自定义控件已创建');
+          ========== 旧代码（已注释）结束 ========== */
+          
+          // [2025-12-14 07:30:00] 步骤3：创建三个图标控件（只显示，不做功能）
+          
+          // 1. 左上角删除图标
+          const deleteIconControl = new fabric.Control({
+            x: -0.5, // 左上角
+            y: -0.5,
+            offsetX: -80, // [2025-12-14 07:42:00] 放大 5 倍：从 -16 调整为 -80（32*5/2）
+            offsetY: -80, // [2025-12-14 07:42:00] 放大 5 倍：从 -16 调整为 -80
+            sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
+            sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
+            cursorStyle: 'pointer',
+            render: function(ctx, left, top, styleOverride, fabricObject) {
+              const size = this.sizeX || 160; // [2025-12-14 07:42:00] 放大 5 倍：默认值从 32 调整为 160
+              ctx.save();
+              ctx.translate(left, top);
+              ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
+              
+              // 绘制红色圆形背景
+              ctx.fillStyle = '#ef4444';
+              ctx.beginPath();
+              ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              // 绘制白色 X 图标（线宽也相应放大）
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 15; // [2025-12-14 07:42:00] 放大 5 倍：从 3 调整为 15
+              ctx.lineCap = 'round';
+              const iconSize = size * 0.55;
+              ctx.beginPath();
+              ctx.moveTo(-iconSize / 2, -iconSize / 2);
+              ctx.lineTo(iconSize / 2, iconSize / 2);
+              ctx.moveTo(iconSize / 2, -iconSize / 2);
+              ctx.lineTo(-iconSize / 2, iconSize / 2);
+              ctx.stroke();
+              
+              ctx.restore();
+            },
+            // [2025-12-14 07:45:00] 功能1：删除图标 - 添加鼠标事件处理
+            mouseDownHandler: function(eventData, transformData) {
+              // [2025-12-14 07:45:00] 返回 true 阻止事件冒泡，防止对象被取消选中
+              return true;
+            },
+            mouseUpHandler: function(eventData, transformData) {
+              const target = transformData.target;
+              if (target && fabricCanvas) {
+                console.log('[DesignLab 5.0] 🗑️ 删除图标被点击:', {
+                  objectName: (target as any).name,
+                  objectType: target.type,
+                  timestamp: new Date().toISOString(),
+                });
+                
+                // [2025-12-14 07:45:00] 功能1：删除对象
+                fabricCanvas.remove(target);
+                fabricCanvas.renderAll();
+                
+                // [2025-12-14 07:45:00] 如果删除的是当前选中的图片，清除选中状态并切换回 home 面板
+                if (target.type === 'image' && (target as any).name && (target as any).name.startsWith('image_')) {
+                  setSelectedImage(null);
+                  setToolPanelType('home');
+                }
+                
+                // [2025-12-14 07:45:00] 返回 true 表示事件已处理，阻止默认行为
+                return true;
+              }
+              return false;
+            },
+          });
+          
+          // 2. 左下角 duplicate 图标
+          const duplicateIconControl = new fabric.Control({
+            x: -0.5, // 左下角
+            y: 0.5,
+            offsetX: -80, // [2025-12-14 07:42:00] 放大 5 倍：从 -16 调整为 -80
+            offsetY: 80, // [2025-12-14 07:42:00] 放大 5 倍：从 16 调整为 80
+            sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
+            sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
+            cursorStyle: 'pointer',
+            render: function(ctx, left, top, styleOverride, fabricObject) {
+              const size = this.sizeX || 160; // [2025-12-14 07:42:00] 放大 5 倍：默认值从 32 调整为 160
+              ctx.save();
+              ctx.translate(left, top);
+              ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
+              
+              // 绘制蓝色圆形背景
+              ctx.fillStyle = '#0066CC';
+              ctx.beginPath();
+              ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              // 绘制白色复制图标（两个重叠的矩形）
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(-size * 0.25, -size * 0.35, size * 0.35, size * 0.45);
+              ctx.fillRect(-size * 0.15, -size * 0.25, size * 0.35, size * 0.45);
+              
+              ctx.restore();
+            },
+            // [2025-12-14 07:45:00] 功能2：复制图标 - 添加鼠标事件处理
+            mouseDownHandler: function(eventData, transformData) {
+              // [2025-12-14 07:45:00] 返回 true 阻止事件冒泡，防止对象被取消选中
+              return true;
+            },
+            mouseUpHandler: async function(eventData, transformData) {
+              const target = transformData.target;
+              if (target && fabricCanvas && target.type === 'image') {
+                try {
+                  console.log('[DesignLab 5.0] 📋 复制图标被点击:', {
+                    objectName: (target as any).name,
+                    objectType: target.type,
+                    timestamp: new Date().toISOString(),
+                  });
+                  
+                  // [2025-12-14 07:45:00] 功能2：克隆对象
+                  const cloned = await (target as fabric.Image).clone();
+                  cloned.set({
+                    left: (target.left || 0) + 20,
+                    top: (target.top || 0) + 20,
+                    name: `image_${Date.now()}`,
+                    selectable: true,
+                    evented: true,
+                    hasControls: true,
+                    hasBorders: true,
+                    borderColor: '#808080',
+                    borderScaleFactor: 2,
+                  });
+                  cloned.setCoords();
+                  
+                  // [2025-12-14 07:45:00] 添加到画布
+                  fabricCanvas.add(cloned);
+                  
+                  // [2025-12-14 07:45:00] 为新复制的对象添加图标控件
+                  if ((fabricCanvas as any).addIconControlsToObject) {
+                    (fabricCanvas as any).addIconControlsToObject(cloned);
+                  }
+                  
+                  // [2025-12-14 07:45:00] 选中新复制的对象
+                  fabricCanvas.setActiveObject(cloned);
+                  if (cloned.type === 'image' && (cloned as any).name && (cloned as any).name.startsWith('image_')) {
+                    setSelectedImage(cloned as fabric.Image);
+                    setToolPanelType('edit-upload');
+                  }
+                  
+                  fabricCanvas.renderAll();
+                  
+                  // [2025-12-14 07:45:00] 返回 true 表示事件已处理，阻止默认行为
+                  return true;
+                } catch (error) {
+                  console.error('[DesignLab 5.0] ❌ 复制失败:', error);
+                  return false;
+                }
+              }
+              return false;
+            },
+          });
+          
+          // 3. 右下角 resize 图标
+          const resizeIconControl = new fabric.Control({
+            x: 0.5, // 右下角
+            y: 0.5,
+            offsetX: 80, // [2025-12-14 07:42:00] 放大 5 倍：从 16 调整为 80
+            offsetY: 80, // [2025-12-14 07:42:00] 放大 5 倍：从 16 调整为 80
+            sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
+            sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
+            cursorStyle: 'se-resize',
+            render: function(ctx, left, top, styleOverride, fabricObject) {
+              const size = this.sizeX || 160; // [2025-12-14 07:42:00] 放大 5 倍：默认值从 32 调整为 160
+              ctx.save();
+              ctx.translate(left, top);
+              ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
+              
+              // 绘制蓝色圆形背景
+              ctx.fillStyle = '#0066CC';
+              ctx.beginPath();
+              ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
+              ctx.fill();
+              
+              // 绘制白色 resize 图标（对角线箭头，线宽也相应放大）
+              ctx.strokeStyle = '#ffffff';
+              ctx.lineWidth = 12.5; // [2025-12-14 07:42:00] 放大 5 倍：从 2.5 调整为 12.5
+              ctx.lineCap = 'round';
+              const arrowSize = size * 0.4;
+              ctx.beginPath();
+              // 绘制对角线
+              ctx.moveTo(-arrowSize / 2, -arrowSize / 2);
+              ctx.lineTo(arrowSize / 2, arrowSize / 2);
+              // 绘制箭头
+              ctx.moveTo(arrowSize / 2 - arrowSize * 0.2, arrowSize / 2 - arrowSize * 0.2);
+              ctx.lineTo(arrowSize / 2, arrowSize / 2);
+              ctx.lineTo(arrowSize / 2 - arrowSize * 0.2, arrowSize / 2 + arrowSize * 0.2);
+              ctx.stroke();
+              
+              ctx.restore();
+            },
+            // [2025-12-14 07:45:00] 功能3：resize 图标 - 使用 actionHandler 实现缩放功能
+            // 使用 Fabric.js 的 controlsUtils 工具函数（如果可用），否则使用自定义实现
+            actionHandler: (fabric.controlsUtils && fabric.controlsUtils.scalingEqually) 
+              ? fabric.controlsUtils.scalingEqually
+              : function(eventData, transformData, x, y) {
+                  // [2025-12-14 07:45:00] 功能3：自定义缩放实现（当 controlsUtils 不可用时）
+                  const target = transformData.target;
+                  // 将全局坐标转换为对象的局部坐标
+                  const localPoint = target.toLocalPoint(
+                    new fabric.Point(x, y),
+                    transformData.originX || 'left',
+                    transformData.originY || 'top'
+                  );
+                  
+                  // 获取对象的变换后尺寸
+                  const targetDim = target._getTransformedDimensions();
+                  
+                  // 计算新的缩放比例
+                  const scaleX = localPoint.x / (targetDim.x / (target.scaleX || 1));
+                  const scaleY = localPoint.y / (targetDim.y / (target.scaleY || 1));
+                  
+                  // 返回新的坐标（Fabric.js 会使用这些值来更新对象的 scaleX 和 scaleY）
+                  return {
+                    x: Math.max(0.1, scaleX), // 最小缩放比例 0.1
+                    y: Math.max(0.1, scaleY),
+                  };
+                },
+            // [2025-12-14 07:45:00] 使用 Fabric.js 的缩放光标样式（如果可用）
+            cursorStyleHandler: (fabric.controlsUtils && fabric.controlsUtils.scaleCursorStyleHandler)
+              ? fabric.controlsUtils.scaleCursorStyleHandler
+              : 'se-resize',
+          });
+          
+          // [2025-12-14 07:30:00] 添加图标控件到对象的辅助函数
+          const addIconControlsToObject = (obj: fabric.Object) => {
+            const objName = (obj as any).name || '';
+            // 只为上传的图片添加图标控件（排除商品底图）
+            if (objName.startsWith('image_')) {
+              if (!obj.controls) {
+                obj.controls = {};
+              }
+              
+              // [2025-12-14 07:35:00] 步骤3：添加三个图标控件
+              obj.controls.deleteIcon = deleteIconControl;
+              obj.controls.duplicateIcon = duplicateIconControl;
+              obj.controls.resizeIcon = resizeIconControl;
+              
+              // [2025-12-14 07:35:00] 隐藏默认的角点控件（tl, tr, bl, br, ml, mt, mr, mb, mtr）
+              // [2025-12-14 07:45:00] 注意：保留 br（右下角）控件，因为我们使用自定义的 resizeIcon，但也可以隐藏 br
+              // 方法：将默认控件的 sizeX 和 sizeY 设为 0，隐藏它们
+              const defaultControls = ['tl', 'tr', 'bl', 'br', 'ml', 'mt', 'mr', 'mb', 'mtr'];
+              defaultControls.forEach(controlKey => {
+                if (obj.controls && obj.controls[controlKey]) {
+                  const defaultControl = obj.controls[controlKey];
+                  // 将默认控件的 sizeX 和 sizeY 设为 0，隐藏它们
+                  defaultControl.sizeX = 0;
+                  defaultControl.sizeY = 0;
+                }
+              });
+              
+              // [2025-12-14 07:35:00] 步骤2：确保边框颜色和宽度正确
+              obj.set({
+                hasBorders: true,
+                borderColor: '#808080', // 灰色边框
+                borderScaleFactor: 2, // 2px 宽度
+              });
+              
+              obj.setCoords();
+              console.log('[DesignLab 5.0] 图标控件已添加到对象:', {
+                objectName: objName,
+                customControls: Object.keys(obj.controls).filter(k => k.includes('Icon')),
+                hasBorders: obj.hasBorders,
+                borderColor: obj.borderColor,
+                borderScaleFactor: (obj as any).borderScaleFactor,
+              });
+            }
+          };
+          
+          // 保存到 canvas，以便后续使用
+          (fabricCanvas as any).addIconControlsToObject = addIconControlsToObject;
+          
+          console.log('[DesignLab 5.0] ✅ 图标控件已创建（功能已实现：删除、复制、缩放）');
+        }
+        
+        // [2025-12-14 06:35:00] 在 canvas 元素上添加鼠标移动监听
+        const canvasElementForMouse = fabricCanvas.getElement();
+        let cleanupMouseListener: (() => void) | undefined;
+        if (canvasElementForMouse) {
+          canvasElementForMouse.addEventListener('mousemove', handleGlobalMouseMove);
+          cleanupMouseListener = () => {
+            canvasElementForMouse.removeEventListener('mousemove', handleGlobalMouseMove);
+          };
+        }
+        
+        // [2025-12-14 06:35:00] 返回清理函数（确保在所有情况下都返回一个函数或 undefined）
+        return cleanupMouseListener;
 
       } catch (error) {
         console.error('[DesignLab 5.0] Failed to initialize Fabric canvas:', error);
+        // [2025-12-14 06:35:00] 发生错误时返回 undefined
+        return undefined;
       }
     };
 
-    initCanvas();
+    initCanvas().then((cleanup) => {
+      if (cleanup) {
+        cleanupMouseListenerRef.current = cleanup;
+      }
+    }).catch((error) => {
+      console.error('[DesignLab 5.0] Canvas initialization error:', error);
+    });
 
     return () => {
       isMounted = false;
+      // [2025-12-14 06:35:00] 清理鼠标移动监听器
+      if (cleanupMouseListenerRef.current && typeof cleanupMouseListenerRef.current === 'function') {
+        try {
+          cleanupMouseListenerRef.current();
+        } catch (error) {
+          console.error('[DesignLab 5.0] Error cleaning up mouse listener:', error);
+        }
+        cleanupMouseListenerRef.current = null;
+      }
       if (fabricCanvasRef.current) {
         fabricCanvasRef.current.dispose();
         fabricCanvasRef.current = null;
@@ -658,18 +1504,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         imgElement.onload = () => {
           try {
             // [2025-12-20 03:20:00] 创建 Fabric Image 对象
+            // [2025-12-14 07:30:00] 步骤1：确保基本的拖拽功能可用
+            // [2025-12-14 07:30:00] 步骤2：设置选中时的灰色边框（2px）
+            // [2025-12-14 07:30:00] 步骤3：隐藏默认控件，稍后添加自定义图标
             const fabricImage = new fabric.Image(imgElement, {
-              selectable: true,
-              evented: true,
-              hasControls: true,
-              hasBorders: true,
-              lockRotation: false,
-              lockScalingX: false,
-              lockScalingY: false,
-              lockMovementX: false,
-              lockMovementY: false,
-              centeredScaling: true,
-              centeredRotation: true,
+              selectable: true, // [2025-12-14 07:30:00] 步骤1：可选择
+              evented: true, // [2025-12-14 07:30:00] 步骤1：可交互
+              hasControls: true, // [2025-12-14 07:35:00] 必须为 true 才能显示自定义控件（默认控件会在 addIconControlsToObject 中隐藏）
+              hasBorders: true, // [2025-12-14 07:30:00] 步骤2：显示边框
+              borderColor: '#808080', // [2025-12-14 07:30:00] 步骤2：灰色边框
+              borderScaleFactor: 2, // [2025-12-14 07:30:00] 步骤2：边框宽度 2px（默认 1px × 2 = 2px）
+              lockMovementX: false, // [2025-12-14 07:30:00] 步骤1：允许拖拽移动
+              lockMovementY: false, // [2025-12-14 07:30:00] 步骤1：允许拖拽移动
               data: {
                 layerType: 'upload',
                 zIndex: 10,
@@ -699,11 +1545,42 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               name: `image_${Date.now()}`,
             });
             
+            // [2025-12-14 06:30:00] 确保坐标已更新（参考 4.0 版本）
             fabricImage.setCoords();
 
-            // [2025-12-20 03:20:00] 添加到 canvas
+            // [2025-12-20 03:20:00] 步骤1：添加到 canvas，确保基本的拖拽功能可用
             canvas.add(fabricImage);
-            canvas.setActiveObject(fabricImage); // 自动选中
+            
+            // [2025-12-14 07:30:00] 步骤3：为上传的图片添加图标控件
+            if ((canvas as any).addIconControlsToObject) {
+              (canvas as any).addIconControlsToObject(fabricImage);
+            }
+            
+            // [2025-12-14 07:30:00] 步骤2：自动选中图片，显示灰色边框
+            canvas.setActiveObject(fabricImage);
+            // [2025-12-14 07:35:00] 步骤2：确保选中时边框正确显示
+            fabricImage.set({
+              hasBorders: true,
+              borderColor: '#808080', // 灰色边框
+              borderScaleFactor: 2, // 2px 宽度
+            });
+            fabricImage.setCoords();
+            canvas.renderAll();
+            
+            // [2025-12-14 07:30:00] 记录对象属性用于调试
+            console.log('[DesignLab 5.0] ✅ Image added to canvas with properties:', {
+              name: fabricImage.name,
+              position: { left: fabricImage.left, top: fabricImage.top },
+              scale,
+              selectable: fabricImage.selectable, // 步骤1：应该为 true
+              evented: fabricImage.evented, // 步骤1：应该为 true
+              hasControls: fabricImage.hasControls, // 步骤3：应该为 false（隐藏默认控件）
+              hasBorders: fabricImage.hasBorders, // 步骤2：应该为 true（显示边框）
+              borderColor: fabricImage.borderColor, // 步骤2：应该是 '#808080'
+              borderScaleFactor: (fabricImage as any).borderScaleFactor, // 步骤2：应该是 2
+            });
+            
+            // [2025-12-14 06:30:00] 渲染画布（参考 4.0 版本）
             canvas.renderAll();
 
             console.log('[DesignLab 5.0] Image added to canvas:', {
@@ -712,8 +1589,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               scale,
             });
 
-            // [2025-12-20 03:20:00] 切换到 EditUploadPanel（将在步骤3实现）
-            // TODO: setToolPanelType('edit-upload');
+            // [2025-12-14 05:50:00] 上传图片后自动切换到 EditUploadPanel
+            setSelectedImage(fabricImage);
+            setToolPanelType('edit-upload');
+            console.log('[DesignLab 5.0] 切换到 edit-upload 面板');
 
           } catch (error) {
             console.error('[DesignLab 5.0] Error creating Fabric image:', error);
@@ -904,6 +1783,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 />
               )}
 
+              {/* Edit Upload 面板 */}
+              {/* [2025-12-14 05:50:00] 上传图片后显示的编辑面板 */}
+              {toolPanelType === 'edit-upload' && (
+                <EditUploadPanel
+                  selectedImage={selectedImage}
+                  canvas={fabricCanvasRef.current}
+                  onUpdate={handleCanvasUpdate}
+                  onClose={handleBackToHome}
+                />
+              )}
+
               {/* Text 面板 */}
               {toolPanelType === 'text' && (
                 <>
@@ -1032,6 +1922,46 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         </button>
         </aside>
       </div>
+
+      {/* [2025-12-14 06:35:00] 鼠标位置调试面板 */}
+      {mouseDebug && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '10px',
+            right: '10px',
+            backgroundColor: mouseDebug.onControl ? '#4CAF50' : 'rgba(0, 0, 0, 0.8)',
+            color: mouseDebug.onControl ? '#fff' : '#fff',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            fontFamily: 'monospace',
+            fontSize: '12px',
+            zIndex: 10000,
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+            pointerEvents: 'none',
+            border: mouseDebug.onControl ? '2px solid #4CAF50' : '1px solid #333',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>
+            🖱️ 鼠标位置 {mouseDebug.onControl && '✅ 在控件上'}
+          </div>
+          <div style={{ lineHeight: '1.6' }}>
+            <div>屏幕: ({mouseDebug.x}, {mouseDebug.y})</div>
+            <div>画布: ({mouseDebug.canvasX}, {mouseDebug.canvasY})</div>
+            {mouseDebug.targetObject && (
+              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                <div>对象: {mouseDebug.targetObject}</div>
+                {mouseDebug.controlType && (
+                  <div style={{ color: mouseDebug.onControl ? '#FFD700' : '#fff' }}>
+                    控件: {mouseDebug.controlType}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 6. BottomBar - 底部操作栏 */}
       {/* [2025-12-20 02:30:00] 5.0 版本：与 4.0 版本 UI 一致 - BottomBar 完整内容 */}
