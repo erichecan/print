@@ -14,7 +14,7 @@
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image'; // [2025-12-19 16:30:00] 导入Image组件用于Logo
+import NextImage from 'next/image'; // [2025-12-15 16:05:00] 修复：避免与浏览器全局 Image 构造函数冲突（上传/解析图片依赖 new Image()）
 import { useSearchParams } from 'next/navigation';
 // [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用动态导入
 import type { fabric } from 'fabric';
@@ -47,6 +47,7 @@ import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductIma
 import { analytics } from '@/lib/analytics';
 import { debugLog } from '@/utils/debugLogger'; // [2025-01-30 21:50:00] 调试日志工具
 import { calculateImageFit } from '@/design/utils/fit'; // [2025-01-31 18:00:00] 统一使用 calculateImageFit 确保商品主图尺寸和位置一致性
+import { registerUploadCornerControls, applyUploadCornerControlsToObject as applyUploadCornerControlsToObjectV51 } from '@/app/design-lab5/upload-controls/registerUploadCornerControls'; // [2025-12-15 16:05:00] Design Lab 5.1: 上传图片三按钮角控件（删除/复制/等比缩放）
 import './design-lab.css';
 
 interface ProductInfo {
@@ -2278,11 +2279,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           
           const canvas = fabricCanvasRef.current;
           if (canvas) {
-            // [2025-12-08 23:00:00] 为上传的图片对象添加删除控件
-            if ((canvas as any).deleteControl) {
-              fabricImage.controls = fabricImage.controls || {};
-              fabricImage.controls.deleteControl = (canvas as any).deleteControl;
-            }
+            // [2025-12-15 16:05:00] Design Lab 5.1: 上传图片使用独立三按钮角控件（删除/复制/等比缩放）
+            // 说明：必须在 registerUploadCornerControls 之后调用；若尚未注册则会跳过（并打印 warn）
+            applyUploadCornerControlsToObjectV51({ canvas, obj: fabricImage });
             
             console.log('[DesignLab] Adding image to canvas:', {
               canvasWidth: canvas.width,
@@ -3275,6 +3274,21 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-01-30 23:30:00] Design Lab 4.0: 设置 fabricCanvasRef
         fabricCanvasRef.current = fabricCanvas;
 
+        // [2025-12-15 16:05:00] Design Lab 5.1: 注册上传图片三按钮角控件（删除/复制/等比缩放）
+        // 说明：从零实现，仅对 data.layerType === 'upload' 的 image 生效；不复用现有 deleteControl 逻辑，避免耦合
+        registerUploadCornerControls({
+          fabric,
+          canvas: fabricCanvas,
+          options: {
+            // [2025-12-15 16:05:00] UI 风格：灰色选中框 + 白底灰边按钮
+            controlSize: 28,
+            borderColor: '#BDBDBD',
+            buttonBackground: '#FFFFFF',
+            buttonBorder: '#BDBDBD',
+            iconColor: '#4B5563',
+          },
+        });
+
         // [2025-12-08 23:00:00] 创建右上角删除按钮控件
         // [2025-12-10] 修复：确保 fabric.Control 存在后再创建
         if (!fabric.Control) {
@@ -3367,6 +3381,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-12-08 23:00:00] 为所有对象添加删除控件（排除背景）
         const addDeleteControlToObject = (obj: fabric.Object) => {
           const objName = (obj as any).name || '';
+          const objLayerType = (obj as any).data?.layerType;
+          // [2025-12-15 16:05:00] Design Lab 5.1: 上传图片使用独立三按钮角控件，禁止再挂载旧 deleteControl，避免出现多余按钮/耦合
+          if (objLayerType === 'upload') {
+            return;
+          }
           if (objName !== 'background' && !obj.controls) {
             obj.controls = {};
           }
@@ -4058,7 +4077,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           <div className="dl-header__left">
             {/* [2025-12-19 16:30:00] 使用主站Logo图片，点击跳转到主站首页 */}
             <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
-              <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
+              <NextImage src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
             </Link>
             <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
               {/* [2025-12-19 16:30:00] 移除My Designs按钮，改用本地存储，无需跳转 */}
