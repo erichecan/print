@@ -52,10 +52,16 @@ export class CanvasEngine {
     }
 
     try {
+      // [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - 固定高分辨率逻辑尺寸
+      // 逻辑尺寸：4000 × 4800（高分辨率，用于 Fabric.js 坐标系）
+      // DOM 显示尺寸：由 CSS 自适应（基于 .dl-canvas section）
+      const LOGICAL_WIDTH = 4000;
+      const LOGICAL_HEIGHT = 4800;
+      
       // 阶段 1: 创建 Fabric Canvas 实例（Skeleton）
       this.canvas = new fabricModule.Canvas(canvasElement, {
-        width: 1000,
-        height: 1200,
+        width: LOGICAL_WIDTH,
+        height: LOGICAL_HEIGHT,
         backgroundColor: 'transparent',
         preserveObjectStacking: true,
         selection: true,
@@ -66,33 +72,22 @@ export class CanvasEngine {
       const devicePixelRatio = window.devicePixelRatio || 1;
       const scale = devicePixelRatio;
       
-      // [2025-12-19 22:40:00] 设置画布实际像素尺寸（考虑devicePixelRatio）
-      this.canvas.setWidth(1000 * scale);
-      this.canvas.setHeight(1200 * scale);
+      // [2025-12-20 01:25:00] 设置画布实际像素尺寸（逻辑尺寸 × devicePixelRatio）
+      // 这是 Fabric.js 内部使用的实际像素尺寸，用于高 DPI 显示
+      this.canvas.setWidth(LOGICAL_WIDTH * scale);
+      this.canvas.setHeight(LOGICAL_HEIGHT * scale);
       
-      // [2025-12-19 22:40:00] 确保所有canvas元素（lower-canvas和upper-canvas）的CSS尺寸正确
+      // [2025-12-20 01:25:00] DOM 显示尺寸由 CSS 控制（自适应 .dl-canvas section）
+      // 不再在这里设置固定的 CSS 尺寸，让 CSS 来处理显示尺寸
       const container = (this.canvas as any).containerEl || (this.canvas as any).wrapperEl;
       if (container) {
-        container.style.width = '1000px';
-        container.style.height = '1200px';
+        // 移除固定尺寸，让 CSS 控制
         container.style.position = 'relative';
         container.style.margin = '0 auto';
       }
       
-      const canvasEl = this.canvas.getElement();
-      const upperCanvasEl = (this.canvas as any).upperCanvasEl;
-      
-      if (canvasEl) {
-        // lower-canvas的CSS尺寸
-        canvasEl.style.width = '1000px';
-        canvasEl.style.height = '1200px';
-      }
-      
-      if (upperCanvasEl) {
-        // upper-canvas的CSS尺寸
-        upperCanvasEl.style.width = '1000px';
-        upperCanvasEl.style.height = '1200px';
-      }
+      // [2025-12-20 01:25:00] Canvas 元素的 CSS 尺寸由 CSS 文件控制（自适应）
+      // 这里不再设置固定尺寸
       
       this.canvas.setZoom(1);
       this.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
@@ -134,11 +129,12 @@ export class CanvasEngine {
           };
           this.canvas.on('product-image:ready', readyHandler);
           
+          // [2025-12-20 01:25:00] 使用固定的高分辨率逻辑尺寸
           const productImageResult = await loadProductImageLayer({
             canvas: this.canvas,
             fabric: fabricModule,
-            canvasWidth: 1000,
-            canvasHeight: 1200,
+            canvasWidth: 4000,
+            canvasHeight: 4800,
             imageOptions: options.productImageOptions,
             gitSha: options.gitSha,
           });

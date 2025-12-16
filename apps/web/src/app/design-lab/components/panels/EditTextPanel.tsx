@@ -11,6 +11,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { fontsApi, type Font } from '@/lib/api';
 import { FONT_CATEGORY_LABELS, type FontCategory } from '@/data/fonts';
+import { TextEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:40:00 复用 Text 工具栏组件
 
 interface EditTextPanelProps {
   selectedText: fabric.IText | null;
@@ -35,6 +36,42 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   // [2025-01-30 19:00:00] 从 API 加载字体
   const [fonts, setFonts] = useState<Record<string, Font[]>>({});
   const [fontsLoading, setFontsLoading] = useState(true);
+  const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // [2025-12-16 07:20:05] 记录已加载的 Google Fonts，避免重复插入 <link>
+
+  // [2025-12-16 07:20:05] 确保 Google Font 已加载（否则下拉预览看起来“都一样”）
+  const ensureGoogleFontLoaded = (fontInfo?: Font) => {
+    if (!fontInfo) return;
+    if (typeof document === 'undefined') return;
+    if (fontInfo.source !== 'google') return;
+
+    const family = (fontInfo.googleFontFamily || fontInfo.name || '').trim();
+    if (!family) return;
+
+    const weights = Array.isArray(fontInfo.weights) && fontInfo.weights.length > 0 ? fontInfo.weights : undefined;
+    const key = `${family}|${weights ? weights.join(',') : 'default'}`;
+    if (loadedGoogleFontsRef.current.has(key)) return;
+
+    // Google Fonts family param uses + for spaces
+    const familyParam = encodeURIComponent(family).replace(/%20/g, '+');
+    const weightParam = weights ? `:wght@${weights.join(';')}` : '';
+    const href = `https://fonts.googleapis.com/css2?family=${familyParam}${weightParam}&display=swap`;
+
+    // 避免重复：如果页面上已经存在同 href 的 link，也认为已加载
+    const alreadyInDom = Array.from(document.querySelectorAll('link[rel=\"stylesheet\"]')).some(
+      (l) => (l as HTMLLinkElement).href === href,
+    );
+    if (alreadyInDom) {
+      loadedGoogleFontsRef.current.add(key);
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.setAttribute('data-dl-font', key);
+    document.head.appendChild(link);
+    loadedGoogleFontsRef.current.add(key);
+  };
 
   // [2025-01-30 18:15:00] 点击外部关闭下拉菜单
   useEffect(() => {
@@ -213,9 +250,13 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         // [2025-01-30 22:00:00] 从加载的 fonts 数据中查找字体信息
         const allFonts = Object.values(fonts).flat();
         const fontInfo = allFonts.find(f => f.name === font);
+        // [2025-12-16 07:20:05] 选择时触发加载，确保 Fabric/预览都能用到真实字体
+        ensureGoogleFontLoaded(fontInfo);
         
         // [2025-01-30 22:00:00] 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
-        selectedText.set('fontFamily', font);
+        // [2025-12-16 07:20:05] 优先使用 googleFontFamily（有些字体 name/displayName 不等于 Google 的 family）
+        selectedText.set('fontFamily', fontInfo?.googleFontFamily || font);
+        (selectedText as any).dirty = true; // [2025-12-16 07:20:05] 强制标记为 dirty，避免缓存导致“看起来没变”
         selectedText.setCoords();
         canvas.renderAll();
         
@@ -232,6 +273,14 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       console.warn('[EditTextPanel] Cannot change font: selectedText or canvas is null');
     }
   };
+
+  // [2025-12-16 07:20:05] 当字体列表加载完成或当前 fontFamily 变化时，预加载当前字体（让下拉/预览立即有差异）
+  useEffect(() => {
+    const allFonts = Object.values(fonts).flat();
+    const fontInfo = allFonts.find(f => f.name === fontFamily || f.googleFontFamily === fontFamily);
+    ensureGoogleFontLoaded(fontInfo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fontsLoading, fontFamily]);
 
   // [2025-01-30 17:45:00] 更新颜色
   // [2025-12-12 00:00:00] 修复：添加错误处理和调试日志，确保颜色更改正确应用
@@ -432,37 +481,132 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
     onUpdate();
   };
 
-  // [2025-01-30 17:45:00] Bring to Front
+  // [2025-12-16 04:05:00] Bring to Front - 修复 Fabric.js v6 API
   const handleBringToFront = () => {
     if (!selectedText || !canvas) return;
-    canvas.bringToFront(selectedText);
-    canvas.renderAll();
-    onUpdate();
+    try {
+      if (typeof (canvas as any).bringObjectToFront === 'function') {
+        (canvas as any).bringObjectToFront(selectedText);
+      } else if (typeof (selectedText as any).bringToFront === 'function') {
+        (selectedText as any).bringToFront();
+      } else {
+        const objects = canvas.getObjects();
+        const index = objects.indexOf(selectedText);
+        if (index >= 0 && index < objects.length - 1) {
+          objects.splice(index, 1);
+          objects.push(selectedText);
+          canvas.renderAll();
+        }
+      }
+      canvas.renderAll();
+      onUpdate();
+    } catch (error) {
+      console.error('[EditTextPanel] bringToFront failed:', error);
+    }
   };
 
-  // [2025-01-30 17:45:00] Send to Back
-  const handleSendToBack = () => {
+  // [2025-12-16 04:05:00] Send to Back - 修复 Fabric.js v6 API
+  // [2025-12-16 04:15:00] 限制：不能将对象移到商品底图（background）下面
+  const handleSendToBack = async () => {
     if (!selectedText || !canvas) return;
-    canvas.sendToBack(selectedText);
-    canvas.renderAll();
-    onUpdate();
-  };
+    try {
+      const objects = canvas.getObjects();
+      const currentIndex = objects.indexOf(selectedText);
+      if (currentIndex === -1) return;
 
-  // [2025-01-30 17:45:00] Duplicate
-  const handleDuplicate = () => {
-    if (!selectedText || !canvas) return;
-    
-    selectedText.clone((cloned: fabric.IText) => {
-      cloned.set({
-        left: (selectedText.left || 0) + 20,
-        top: (selectedText.top || 0) + 20,
-        name: `text_${Date.now()}`
+      // 找到商品底图的位置（name === 'background' 或 name.startsWith('product-image-') 或 layerType === 'product'/'product-image'）
+      const backgroundIndex = objects.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        // [2025-12-16 07:10:00] 兼容 5.0：底图名称为 product-image-base
+        return (
+          name === 'background' ||
+          name === 'product-image-base' ||
+          name.startsWith('product-image-') ||
+          layerType === 'product' ||
+          layerType === 'product-image' ||
+          layerType === 'product-image-base'
+        );
       });
+
+      // 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
+      const targetIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
+
+      // [2025-12-16 04:30:00] 添加调试日志
+      console.log('[EditTextPanel] sendToBack called:', {
+        currentIndex,
+        backgroundIndex,
+        targetIndex,
+        objectsCount: objects.length,
+      });
+
+      // [2025-12-16 04:20:00] 如果已经在目标位置，不需要移动
+      if (currentIndex === targetIndex) {
+        console.log('[EditTextPanel] Already at target position, skipping');
+        return;
+      }
+
+      // [2025-12-16 07:10:00] 修复根因：不再先 sendObjectToBack（会把对象送到绝对底层，必然跑到商品底图后面）
+      // 直接将对象移动到“商品底图之后的第一个位置”（backgroundIndex + 1），使用 Fabric API 保证顺序生效
+      if (typeof (canvas as any).moveObjectTo === 'function') {
+        (canvas as any).moveObjectTo(selectedText, targetIndex);
+      } else {
+        // 兜底：手动调整顺序（如果 moveObjectTo 不可用）
+        const objs = canvas.getObjects();
+        const idx = objs.indexOf(selectedText);
+        if (idx >= 0) {
+          objs.splice(idx, 1);
+          const insertIndex = Math.max(0, Math.min(targetIndex, objs.length));
+          objs.splice(insertIndex, 0, selectedText);
+        }
+      }
+
+      canvas.renderAll();
+      onUpdate();
+    } catch (error) {
+      console.error('[EditTextPanel] sendToBack failed:', error);
+    }
+  };
+
+  // [2025-12-16 04:05:00] Duplicate - 修复 clone API 兼容性问题
+  const handleDuplicate = async () => {
+    if (!selectedText || !canvas) return;
+    try {
+      const cloneResult = (selectedText as any).clone();
+      const cloned = cloneResult instanceof Promise 
+        ? await cloneResult 
+        : typeof cloneResult === 'function'
+          ? await new Promise<fabric.IText>((resolve) => {
+              (selectedText as any).clone(resolve);
+            })
+          : cloneResult;
+
+      if (!cloned) {
+        console.error('[EditTextPanel] clone returned null/undefined');
+        return;
+      }
+
+      cloned.set({
+        left: (selectedText.left || 0) + 40,
+        top: (selectedText.top || 0) + 40,
+        name: `text_${Date.now()}`,
+      });
+
+      if ((selectedText as any).data) {
+        (cloned as any).data = { ...(selectedText as any).data };
+      }
+
       canvas.add(cloned);
+      // [2025-12-16 07:10:00] Add Text: 复用 5.0 图标角控件（delete/duplicate/resize）
+      if (typeof (canvas as any).addIconControlsToObject === 'function') {
+        (canvas as any).addIconControlsToObject(cloned);
+      }
       canvas.setActiveObject(cloned);
       canvas.renderAll();
       onUpdate();
-    });
+    } catch (error) {
+      console.error('[EditTextPanel] duplicate failed:', error);
+    }
   };
 
   if (!selectedText) {
@@ -544,11 +688,14 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
                             role="option"
                             aria-selected={font.name === fontFamily}
                             className={`dl-edit-text-panel__font-option ${font.name === fontFamily ? 'is-selected' : ''}`}
+                            // [2025-12-16 07:20:05] 悬停时懒加载字体，确保下拉预览“像字体应该有的样子”
+                            onMouseEnter={() => ensureGoogleFontLoaded(font)}
                             onClick={() => {
                               handleFontChange(font.name);
                               setShowFontDropdown(false);
                             }}
-                            style={{ fontFamily: font.name }}
+                            // [2025-12-16 07:20:05] 优先用 googleFontFamily 渲染预览
+                            style={{ fontFamily: `${font.googleFontFamily || font.name}, Arial, sans-serif` }}
                           >
                             <span className="dl-edit-text-panel__font-option-preview">
                               {font.previewText}
@@ -653,7 +800,15 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         />
       </div>
 
-      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate - [2025-12-12 00:00:00] 已移除 */}
+      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate / Rotation */}
+      <TextEditControls
+        onCenter={handleCenter}
+        onBringToFront={handleBringToFront}
+        onSendToBack={handleSendToBack}
+        textAlign={textAlign}
+        onTextAlignChange={handleTextAlignChange}
+        onDuplicate={handleDuplicate}
+      />
 
       {/* [2025-12-08] 超出安全区警示 */}
       {isOutOfSafeArea && (

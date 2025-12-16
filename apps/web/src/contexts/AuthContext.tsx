@@ -30,13 +30,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data);
     } catch (err: any) {
       // [2025-12-03 03:55:00] 静默处理 401 错误（未登录是正常状态）
+      // [2025-12-20 03:35:00] 静默处理后端服务不可用错误（500/503），这些错误不影响应用核心功能
       setUser(null);
       // UNAUTHORIZED 是预期的错误（用户未登录），不设置 error
       if (err instanceof Error && err.message === 'UNAUTHORIZED') {
         setError(null);
       } else if (err instanceof Error) {
-        // 其他错误才设置 error
-        setError(err);
+        // [2025-12-20 03:35:00] 如果是后端服务错误（500/503），静默处理，不影响应用使用
+        const isServerError = err.message?.includes('500') || 
+                             err.message?.includes('503') ||
+                             err.message?.includes('Service Unavailable') ||
+                             err.message?.includes('Internal Server Error');
+        if (isServerError) {
+          // 后端服务不可用时，用户仍然可以使用应用（未登录状态），不设置 error
+          setError(null);
+          // 在开发环境记录警告，生产环境完全静默
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('[AuthContext] 后端认证服务暂时不可用，应用将以未登录状态运行');
+          }
+        } else {
+          // 其他错误才设置 error
+          setError(err);
+        }
       } else {
         setError(null);
       }

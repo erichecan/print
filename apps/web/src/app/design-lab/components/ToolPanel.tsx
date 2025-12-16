@@ -60,7 +60,8 @@ const ToolPanel: React.FC<ToolPanelProps> = ({ panelType, onBack, children }) =>
   const hasCustomHeader = panelType === 'upload' || panelType === 'edit-upload' || panelType === 'edit-text' || panelType === 'edit-art';
 
   return (
-    <aside className="dl-tool-panel" aria-label="Tool panel">
+    // [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试
+    <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="tool-panel">
       <div className="dl-tool-panel__content">
         {!hasCustomHeader && (
           <div className="dl-tool-panel__header">

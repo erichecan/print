@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 // [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用命名空间导入
 import * as fabric from 'fabric';
+import { ArtEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:42:00 复用 Art 工具栏组件
 
 interface EditArtPanelProps {
   selectedArt: fabric.Image | null;
@@ -77,20 +78,141 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
     onUpdate();
   };
 
-  // [2025-01-30 18:05:00] Bring to Front
+  // [2025-12-16 04:06:00] Bring to Front - 修复 Fabric.js v6 API
   const handleBringToFront = () => {
     if (!selectedArt || !canvas) return;
-    canvas.bringToFront(selectedArt);
-    canvas.renderAll();
-    onUpdate();
+    try {
+      if (typeof (canvas as any).bringObjectToFront === 'function') {
+        (canvas as any).bringObjectToFront(selectedArt);
+      } else if (typeof (selectedArt as any).bringToFront === 'function') {
+        (selectedArt as any).bringToFront();
+      } else {
+        const objects = canvas.getObjects();
+        const index = objects.indexOf(selectedArt);
+        if (index >= 0 && index < objects.length - 1) {
+          objects.splice(index, 1);
+          objects.push(selectedArt);
+          canvas.renderAll();
+        }
+      }
+      canvas.renderAll();
+      onUpdate();
+    } catch (error) {
+      console.error('[EditArtPanel] bringToFront failed:', error);
+    }
   };
 
-  // [2025-01-30 18:05:00] Send to Back
-  const handleSendToBack = () => {
+  // [2025-12-16 04:06:00] Send to Back - 修复 Fabric.js v6 API
+  // [2025-12-16 04:15:00] 限制：不能将对象移到商品底图（background）下面
+  const handleSendToBack = async () => {
     if (!selectedArt || !canvas) return;
-    canvas.sendToBack(selectedArt);
-    canvas.renderAll();
-    onUpdate();
+    try {
+      const objects = canvas.getObjects();
+      const currentIndex = objects.indexOf(selectedArt);
+      if (currentIndex === -1) return;
+
+      // 找到商品底图的位置（name === 'background' 或 name.startsWith('product-image-') 或 layerType === 'product'/'product-image'）
+      const backgroundIndex = objects.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
+      });
+
+      // 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
+      const targetIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
+
+      // [2025-12-16 04:30:00] 添加调试日志
+      console.log('[EditArtPanel] sendToBack called:', {
+        currentIndex,
+        backgroundIndex,
+        targetIndex,
+        objectsCount: objects.length,
+      });
+
+      // [2025-12-16 04:20:00] 如果已经在目标位置，不需要移动
+      if (currentIndex === targetIndex) {
+        console.log('[EditArtPanel] Already at target position, skipping');
+        return;
+      }
+
+      // [2025-12-16 05:00:00] 使用原生方法 sendObjectToBack，然后检查并调整位置
+      // 先使用 Fabric.js 原生方法将对象移到底部
+      if (typeof (canvas as any).sendObjectToBack === 'function') {
+        try {
+          (canvas as any).sendObjectToBack(selectedArt);
+        } catch (e) {
+          console.warn('[EditArtPanel] sendObjectToBack failed:', e);
+        }
+      } else if (typeof (selectedArt as any).sendToBack === 'function') {
+        try {
+          (selectedArt as any).sendToBack();
+        } catch (e) {
+          console.warn('[EditArtPanel] sendToBack failed:', e);
+        }
+      } else {
+        // 如果原生方法不可用，使用手动方法
+        const adjustedTargetIndex = currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
+        objects.splice(currentIndex, 1);
+        objects.splice(adjustedTargetIndex, 0, selectedArt);
+        canvas.renderAll();
+        onUpdate();
+        return;
+      }
+
+      // [2025-12-16 05:10:00] 检查并调整：确保对象在商品底图之后
+      // 等待一个 tick 确保原生方法执行完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const objectsAfter = canvas.getObjects();
+      const indexAfter = objectsAfter.indexOf(selectedArt);
+      const backgroundIndexAfter = objectsAfter.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
+      });
+
+      console.log('[EditArtPanel] After native sendObjectToBack:', {
+        indexAfter,
+        backgroundIndexAfter,
+        shouldBeAt: backgroundIndexAfter >= 0 ? backgroundIndexAfter + 1 : 0,
+      });
+
+      // 如果对象在商品底图之前或等于商品底图索引，需要调整到商品底图之后
+      if (backgroundIndexAfter >= 0 && indexAfter <= backgroundIndexAfter) {
+        console.log('[EditArtPanel] ⚠️ Object is at or below background, adjusting...');
+        const adjustedTargetIndex = backgroundIndexAfter + 1;
+        objectsAfter.splice(indexAfter, 1);
+        objectsAfter.splice(adjustedTargetIndex, 0, selectedArt);
+        canvas.renderAll();
+        console.log('[EditArtPanel] ✅ Adjusted from index', indexAfter, 'to index', adjustedTargetIndex);
+      } else if (backgroundIndexAfter >= 0 && indexAfter !== backgroundIndexAfter + 1) {
+        const adjustedTargetIndex = backgroundIndexAfter + 1;
+        objectsAfter.splice(indexAfter, 1);
+        const finalAdjustedIndex = indexAfter < adjustedTargetIndex ? adjustedTargetIndex - 1 : adjustedTargetIndex;
+        objectsAfter.splice(finalAdjustedIndex, 0, selectedArt);
+        canvas.renderAll();
+        console.log('[EditArtPanel] ✅ Adjusted from index', indexAfter, 'to index', finalAdjustedIndex);
+      }
+
+      const finalObjects = canvas.getObjects();
+      const finalIndex = finalObjects.indexOf(selectedArt);
+      const finalBackgroundIndex = finalObjects.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
+      });
+      const finalTargetIndex = finalBackgroundIndex >= 0 ? finalBackgroundIndex + 1 : 0;
+
+      console.log('[EditArtPanel] sendToBack completed:', {
+        finalIndex,
+        finalTargetIndex,
+        isCorrect: finalIndex === finalTargetIndex,
+      });
+      canvas.renderAll();
+      onUpdate();
+    } catch (error) {
+      console.error('[EditArtPanel] sendToBack failed:', error);
+    }
   };
 
   // [2025-01-30 18:05:00] Flip Horizontal
@@ -115,21 +237,41 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
     }
   };
 
-  // [2025-01-30 18:05:00] Duplicate
-  const handleDuplicate = () => {
+  // [2025-12-16 04:06:00] Duplicate - 修复 clone API 兼容性问题
+  const handleDuplicate = async () => {
     if (!selectedArt || !canvas) return;
-    
-    selectedArt.clone((cloned: fabric.Image) => {
+    try {
+      const cloneResult = (selectedArt as any).clone();
+      const cloned = cloneResult instanceof Promise 
+        ? await cloneResult 
+        : typeof cloneResult === 'function'
+          ? await new Promise<fabric.Image>((resolve) => {
+              (selectedArt as any).clone(resolve);
+            })
+          : cloneResult;
+
+      if (!cloned) {
+        console.error('[EditArtPanel] clone returned null/undefined');
+        return;
+      }
+
       cloned.set({
-        left: (selectedArt.left || 0) + 20,
-        top: (selectedArt.top || 0) + 20,
-        name: `art_${Date.now()}`
+        left: (selectedArt.left || 0) + 40,
+        top: (selectedArt.top || 0) + 40,
+        name: `art_${Date.now()}`,
       });
+
+      if ((selectedArt as any).data) {
+        (cloned as any).data = { ...(selectedArt as any).data };
+      }
+
       canvas.add(cloned);
       canvas.setActiveObject(cloned);
       canvas.renderAll();
       onUpdate();
-    });
+    } catch (error) {
+      console.error('[EditArtPanel] duplicate failed:', error);
+    }
   };
 
   // [2025-01-30 18:05:00] Rotation slider
@@ -455,108 +597,29 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
         )}
       </div>
 
-      {/* 2. Center */}
-      <div className="dl-edit-art-panel__section">
-        <button
-          className="dl-edit-art-panel__btn"
-          onClick={handleCenter}
-          type="button"
-        >
-          Center
-        </button>
-      </div>
-
-      {/* 3. Layering */}
-      <div className="dl-edit-art-panel__section">
-        <label className="dl-edit-art-panel__label">Layering</label>
-        <div className="dl-edit-art-panel__btn-group">
-          <button
-            className="dl-edit-art-panel__btn"
-            onClick={handleBringToFront}
-            type="button"
-          >
-            Bring to Front
-          </button>
-          <button
-            className="dl-edit-art-panel__btn"
-            onClick={() => {
-              if (!selectedArt || !canvas) return;
-              canvas.bringForward(selectedArt);
-              canvas.renderAll();
-              onUpdate();
-            }}
-            type="button"
-          >
-            Bring Forward
-          </button>
-          <button
-            className="dl-edit-art-panel__btn"
-            onClick={() => {
-              if (!selectedArt || !canvas) return;
-              canvas.sendBackwards(selectedArt);
-              canvas.renderAll();
-              onUpdate();
-            }}
-            type="button"
-          >
-            Send Backward
-          </button>
-          <button
-            className="dl-edit-art-panel__btn"
-            onClick={handleSendToBack}
-            type="button"
-          >
-            Send to Back
-          </button>
-        </div>
-      </div>
-
-      {/* 4. Flip */}
-      <div className="dl-edit-art-panel__section">
-        <label className="dl-edit-art-panel__label">Flip</label>
-        <div className="dl-edit-art-panel__btn-group">
-          <button
-            className="dl-edit-art-panel__btn"
-            onClick={handleFlipHorizontal}
-            type="button"
-          >
-            Flip Horizontal
-          </button>
-          <button
-            className="dl-edit-art-panel__btn"
-            onClick={handleFlipVertical}
-            type="button"
-          >
-            Flip Vertical
-          </button>
-        </div>
-      </div>
-
-      {/* 5. Duplicate */}
-      <div className="dl-edit-art-panel__section">
-        <button
-          className="dl-edit-art-panel__btn"
-          onClick={handleDuplicate}
-          type="button"
-        >
-          Duplicate
-        </button>
-      </div>
-
-      {/* 6. Rotation slider */}
-      <div className="dl-edit-art-panel__section">
-        <label className="dl-edit-art-panel__label">
-          Rotation: {rotation.toFixed(0)}°
-        </label>
-        <input
-          type="range"
-          min="0"
-          max="360"
-          value={rotation}
-          onChange={(e) => handleRotationChange(parseFloat(e.target.value))}
-          className="dl-edit-art-panel__slider"
-        />
-      </div>
+      {/* 2-6. Center / Layering / Flip / Duplicate / Rotation - 统一封装为 ArtEditControls */}
+      <ArtEditControls
+        onCenter={handleCenter}
+        onBringToFront={handleBringToFront}
+        onBringForward={() => {
+          if (!selectedArt || !canvas) return;
+          canvas.bringForward(selectedArt);
+          canvas.renderAll();
+          onUpdate();
+        }}
+        onSendBackward={() => {
+          if (!selectedArt || !canvas) return;
+          canvas.sendBackwards(selectedArt);
+          canvas.renderAll();
+          onUpdate();
+        }}
+        onSendToBack={handleSendToBack}
+        onFlipHorizontal={handleFlipHorizontal}
+        onFlipVertical={handleFlipVertical}
+        onDuplicate={handleDuplicate}
+        rotation={rotation}
+        onRotationChange={handleRotationChange}
+      />
 
       {/* 7. Make One Color */}
       <div className="dl-edit-art-panel__section">

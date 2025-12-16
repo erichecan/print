@@ -277,24 +277,26 @@
 /* [2025-01-31 00:00:00] 像素级对齐：element-9 (Add Text) - x:16, y:239, width:68, height:70, color: rgb(191, 191, 191) */
 /* [2025-12-06 12:30:00] 修复：确保 Rail 按钮颜色正确应用，防止被其他样式覆盖 */
 /* [2025-12-06 12:35:00] 修复：确保 Rail 按钮位置正确 - x:16, 垂直排列 */
+/* [2025-12-20 02:40:00] 5.0 版本：修复 Rail 按钮高度，确保覆盖 globals.css 中的样式 */
 .dl-rail__btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
   gap: var(--dl-space-1);
   width: 68px !important; /* Custom Ink element-9 width */
   height: 70px !important; /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
+  min-height: 70px !important; /* [2025-12-20 02:40:00] 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
   padding: var(--dl-space-2) var(--dl-space-1);
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
   color: rgb(191, 191, 191) !important; /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 - 使用 !important 防止覆盖 */
   cursor: pointer !important; /* [2025-01-30 21:35:00] 强制启用指针事件 */
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-normal);
   font-family: var(--dl-font-family);
-  border-radius: 0;
+  border-radius: 0 !important;
   pointer-events: auto !important; /* [2025-01-30 21:35:00] 确保按钮可点击 */
   position: relative;
   z-index: 10;
@@ -414,6 +416,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-4);
+}
+
+/* [2025-12-20 02:25:00] 5.0 版本：ToolPanel 占位符样式 */
+.dl-tool-panel__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dl-space-6);
+  text-align: center;
+  color: var(--dl-text-secondary);
 }
 
 .dl-tool-panel__header {
@@ -1270,6 +1283,103 @@
   padding-bottom: 0;
 }
 
+/* [2025-12-16 03:02:00] Text 面板工具栏样式 */
+.dl-edit-text-panel__section--toolbar {
+  padding-bottom: var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-text-panel__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+}
+
+.dl-edit-text-panel__toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-bg-panel);
+  color: var(--dl-text-primary);
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+  flex-shrink: 0;
+}
+
+.dl-edit-text-panel__toolbar-btn:hover {
+  background: var(--dl-bg-primary);
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-text-panel__toolbar-btn.is-active {
+  background: var(--dl-color-primary);
+  color: white;
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-text-panel__toolbar-group {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  overflow: hidden;
+}
+
+.dl-edit-text-panel__toolbar-group .dl-edit-text-panel__toolbar-btn {
+  border-radius: 0;
+  border-right: 1px solid var(--dl-border-color);
+  border-top: none;
+  border-bottom: none;
+  border-left: none;
+}
+
+.dl-edit-text-panel__toolbar-group .dl-edit-text-panel__toolbar-btn:first-child {
+  border-left: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-text-panel__toolbar-rotation {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex: 1;
+  min-width: 120px;
+}
+
+.dl-edit-text-panel__toolbar-slider {
+  flex: 1;
+  min-width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--dl-bg-primary);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.dl-edit-text-panel__toolbar-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dl-color-primary);
+  cursor: pointer;
+}
+
+.dl-edit-text-panel__toolbar-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dl-color-primary);
+  cursor: pointer;
+  border: none;
+}
+
 .dl-edit-text-panel__label {
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-medium);
@@ -1889,6 +1999,27 @@
   padding-bottom: 0;
 }
 
+/* [2025-12-16 03:05:00] Art 面板工具栏样式 */
+.dl-edit-art-panel__section--toolbar {
+  padding-bottom: var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-art-panel__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+}
+
+.dl-edit-art-panel__toolbar-rotation {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex: 1;
+  min-width: 120px;
+}
+
 .dl-edit-art-panel__label {
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-medium);
@@ -2325,77 +2456,96 @@
 /* ============================================
    4. Canvas - 中央画布区域
    ============================================ */
+/* [2025-12-20 02:55:00] 5.0 版本：Canvas 在 .dl-main 容器内，不需要 grid-row: 2 */
 .dl-canvas {
-  grid-column: 3;
+  grid-column: 3; /* 在 .dl-main 的 grid 中，Canvas 是第 3 列 */
+  /* [2025-12-20 02:55:00] 5.0 版本：移除 grid-row: 2，因为 .dl-main 内部只有一个 grid row */
   background: var(--dl-bg-primary);
   display: flex;
-  align-items: flex-start; /* [2025-01-30 22:50:00] 修复：改为 flex-start，避免垂直居中导致定位问题 */
-  justify-content: center;
-  overflow: auto;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
+  overflow: hidden;
   position: relative;
-  /* [2025-01-30 22:50:00] 修复：确保画布容器可以正确滚动 */
   min-height: 0; /* 允许 flex 子元素缩小 */
-  /* [2025-01-30 23:00:00] 修复：确保画布容器从顶部开始，不被推到视口外 */
-  padding-top: 0;
-  margin-top: 0;
+  padding: 0;
+  margin: 0;
   /* [2025-12-19 23:30:00] 临时添加边框，用于确认section区域 */
   border: 3px solid #00ff00; /* 绿色边框，非常明显 */
 }
 
 .dl-canvas__preview {
   width: 100%;
-  /* [2025-01-30 23:00:00] 修复：移除 height: 100%，使用 min-height 确保最小高度，但允许根据内容扩展 */
-  min-height: 100%;
+  /* [2025-12-20 02:00:00] 阶段2修复：使用 height: 100% 限制在可视区域内，避免产生滚动条 */
+  height: 100%;
   display: flex;
-  align-items: center; /* [2025-12-19 22:50:00] 修复：改为center，确保dl-canvas__product在预览容器中垂直居中 */
-  justify-content: center;
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
   position: relative;
-  /* [2025-01-30 22:50:00] 修复：确保预览容器可以正确滚动 */
-  padding: var(--dl-space-4); /* 添加内边距，避免内容贴边 */
-  /* [2025-01-30 23:00:00] 修复：确保预览容器从顶部开始 */
-  padding-top: var(--dl-space-4);
-  margin-top: 0;
+  /* [2025-12-20 02:00:00] 移除 padding，避免占用额外空间导致滚动 */
+  padding: 0;
+  margin: 0;
+  /* [2025-12-20 02:00:00] 限制容器不超出父容器 */
+  overflow: hidden;
 }
 
 .dl-canvas__product {
   position: relative;
   width: 100%;
-  /* [2025-01-30 22:50:00] 修复：移除 height: 100%，让容器根据内容自适应 */
-  /* [2025-01-30 23:55:00] 修复：移除 max-width 限制，使画布填满可用空间 */
+  height: 100%;
+  /* [2025-12-20 01:55:00] 阶段2修复：使用简单的 flexbox 居中 */
   display: flex;
-  align-items: center; /* [2025-12-19 22:30:00] 修复：改为center，确保Canvas在容器中垂直居中 */
-  justify-content: center; /* [2025-12-19 22:30:00] 确保Canvas在容器中水平居中 */
-  /* [2025-01-30 22:50:00] 修复：确保产品容器不会导致布局偏移 */
+  align-items: center; /* 垂直居中 */
+  justify-content: center; /* 水平居中 */
   flex-shrink: 0; /* 防止 flex 子元素被压缩 */
-  /* [2025-01-30 23:00:00] 修复：确保产品容器从顶部开始 */
-  margin: 0 auto; /* [2025-12-19 22:30:00] 确保容器本身也居中 */
-  padding: 0; /* [2025-12-19 22:30:00] 移除所有padding，避免影响Canvas居中 */
+  margin: 0 auto;
+  padding: 0;
 }
 
-/* [2025-12-19 22:40:00] Fabric.js自动创建的canvas-container，需要确保居中 */
+/* [2025-12-20 01:55:00] 阶段2修复：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
+/* [2025-12-20 02:25:00] 5.0 版本：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
+.dl-canvas__product-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* 完整显示图片，不裁剪，可能有留白 */
+  object-position: center; /* 居中显示 */
+  z-index: 0;
+}
+
+/* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
+/* Fabric.js自动创建的canvas-container，需要确保居中 */
 .dl-canvas__product .canvas-container {
   position: relative !important; /* 覆盖Fabric.js的绝对定位 */
   margin: 0 auto !important; /* 水平居中 */
-  width: 1000px !important; /* 固定宽度，匹配逻辑尺寸 */
-  height: 1200px !important; /* 固定高度，匹配逻辑尺寸 */
+  /* [2025-12-20 01:25:00] 自适应 .dl-canvas section，填满可用空间 */
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  /* [2025-12-20 01:25:00] 保持宽高比（逻辑尺寸比例：4000/4800 = 5/6），但允许自适应容器 */
+  /* 如果容器比例与逻辑比例不一致，会通过 CSS object-fit 处理 */
 }
 
-/* [2025-12-19 22:40:00] 确保upper-canvas和lower-canvas都使用正确的CSS尺寸 */
+/* [2025-12-20 01:25:00] 确保upper-canvas和lower-canvas都使用自适应CSS尺寸 */
 .dl-canvas__product .canvas-container .upper-canvas,
 .dl-canvas__product .canvas-container .lower-canvas {
   position: absolute !important; /* Fabric.js要求绝对定位 */
   left: 0 !important;
   top: 0 !important;
-  width: 1000px !important; /* CSS尺寸：1000×1200（匹配逻辑尺寸） */
-  height: 1200px !important;
+  /* [2025-12-20 01:25:00] 使用 100% 填充 container，由 container 的 aspect-ratio 控制尺寸 */
+  width: 100% !important;
+  height: 100% !important;
 }
 
+/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js Canvas 容器样式 */
 .dl-canvas__fabric {
+  /* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
   /* [2025-01-30 22:35:00] 确保画布可见且可交互 */
-  /* [2025-01-30 23:55:00] 修复：使画布填满可用空间，类似 Custom Ink */
-  /* [2025-01-31 16:15:00] 修复：确保画布正确显示，使用固定尺寸而不是百分比 */
-  width: 1000px;
-  height: 1200px;
+  /* [2025-12-20 01:25:00] 移除固定尺寸，使用自适应尺寸 */
+  width: 100%;
+  height: 100%;
   max-width: 100%;
   max-height: 100%;
   display: block;
@@ -2403,6 +2553,39 @@
   z-index: 1;
   background: transparent;
   object-fit: contain; /* 保持比例，填满容器 */
+}
+
+/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 自动创建的 canvas-container 样式 */
+/* [2025-12-20 03:45:00] 修复：关键问题 - Fabric.js 会设置 inline style width/height 为逻辑尺寸（4000x4800） */
+/* 我们需要用 !important 强制覆盖这些 inline style，让容器自适应父元素 */
+.dl-canvas__preview .canvas-container,
+.dl-canvas__fabric-container {
+  position: relative !important;
+  width: 100% !important; /* 覆盖 Fabric.js 的 inline style width: 4000px */
+  height: 100% !important; /* 覆盖 Fabric.js 的 inline style height: 4800px */
+  max-width: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  /* [2025-12-20 03:45:00] 确保容器能够正确缩放 */
+  box-sizing: border-box !important;
+}
+
+/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 的 upper-canvas 和 lower-canvas 样式 */
+/* [2025-12-20 03:45:00] 修复：upper-canvas 和 lower-canvas 应该填充 container，但逻辑尺寸（4000x4800）应该在 canvas 元素上 */
+.dl-canvas__preview .canvas-container .upper-canvas,
+.dl-canvas__preview .canvas-container .lower-canvas,
+.dl-canvas__fabric-container .upper-canvas,
+.dl-canvas__fabric-container .lower-canvas {
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important; /* 填充 container */
+  height: 100% !important; /* 填充 container */
+  display: block !important;
+  /* [2025-12-20 03:45:00] canvas 元素本身会保持逻辑尺寸（4000x4800），但通过 CSS 缩放显示 */
+  object-fit: contain !important;
 }
 
 .dl-canvas__placeholder {

@@ -94,8 +94,10 @@ export function generateCustomInkImageUrl(
   
   const baseUrl = `https://mms-images-prod.imgix.net/mms/images/catalog/${productId}/colors/${colorId}/views/alt/${viewToUse}_${size}.png`;
   
+  // [2025-12-20 01:50:00] 阶段2修复：增大图片尺寸，确保能够铺满绿色边框区域
+  // 使用 w=4000 获取更大的图片，以确保在高分辨率显示时也能铺满
   if (highQuality) {
-    return `${baseUrl}?w=2000&q=100`;
+    return `${baseUrl}?w=4000&q=100`;
   }
   
   return baseUrl;

@@ -100,31 +100,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return result;
         } catch (err: any) {
           // [2025-01-28 03:35:00] 记录详细错误信息
-          // [2025-12-08] 修复：使用 try-catch 包装 console.error，防止格式化错误
-          try {
-            console.error('[CartProvider] ❌ Error fetching cart:', {
-              timestamp: new Date().toISOString(),
-              error: err,
-              errorMessage: err?.message,
-              errorStack: err?.stack,
-              errorName: err?.name,
-              errorType: typeof err,
-              errorString: String(err),
-            });
-          } catch (e) {
-            // 如果 console.error 失败，尝试简单输出
+          // [2025-12-20 03:35:00] 优化：如果是后端服务错误（500/503），静默处理，减少控制台噪音
+          const isServerError = err?.message?.includes('500') || 
+                               err?.message?.includes('503') ||
+                               err?.message?.includes('Service Unavailable') ||
+                               err?.message?.includes('Internal Server Error') ||
+                               err?.message?.includes('无法连接到后端服务器');
+          
+          // [2025-12-20 03:35:00] 只有在非服务错误时才详细记录错误（保留对真正错误的可见性）
+          if (!isServerError && process.env.NODE_ENV === 'development') {
+            // [2025-12-08] 修复：使用 try-catch 包装 console.error，防止格式化错误
             try {
-              console.error('[CartProvider] Error fetching cart:', err?.message || String(err));
-            } catch (e2) {
-              // 完全失败，忽略
+              console.error('[CartProvider] ❌ Error fetching cart:', {
+                timestamp: new Date().toISOString(),
+                error: err,
+                errorMessage: err?.message,
+                errorStack: err?.stack,
+                errorName: err?.name,
+                errorType: typeof err,
+                errorString: String(err),
+              });
+            } catch (e) {
+              // 如果 console.error 失败，尝试简单输出
+              try {
+                console.error('[CartProvider] Error fetching cart:', err?.message || String(err));
+              } catch (e2) {
+                // 完全失败，忽略
+              }
+            }
+          } else if (isServerError && process.env.NODE_ENV === 'development') {
+            // [2025-12-20 03:35:00] 后端服务不可用时，只记录一个警告（而不是错误）
+            try {
+              console.warn('[CartProvider] 后端购物车服务暂时不可用，使用空购物车');
+            } catch (e) {
+              // 如果 console.warn 失败，静默忽略
             }
           }
           // 返回空购物车结构，而不是抛出错误
-          try {
-            console.log('[CartProvider] Using empty cart as fallback');
-          } catch (e) {
-            // 如果 console.log 失败，静默忽略
-          }
           return EMPTY_CART;
         }
       },

@@ -121,11 +121,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           </p>
         </div>
 
-        <div className="dl-upload-panel__signin">
-          <a href="#" className="dl-upload-panel__signin-link" onClick={(e) => { e.preventDefault(); /* TODO: Open sign in */ }}>
-            Sign in to access your saved uploads.
-          </a>
-        </div>
+        {/* [2025-12-16 07:16:40] 按产品要求移除：Sign in to access your saved uploads 模块（截图区域） */}
 
         {recentUploads.length > 0 && (
           <div className="dl-upload-panel__recent">
@@ -148,18 +144,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           </div>
         )}
 
-        <div className="dl-upload-panel__help">
-          <p className="dl-upload-panel__help-title">Need help with your upload?</p>
-          <div className="dl-upload-panel__help-links">
-            <a href="#" className="dl-upload-panel__help-link" onClick={(e) => { e.preventDefault(); /* TODO: Open chat */ }}>
-              Chat now
-            </a>
-            <span> or </span>
-            <a href="mailto:service@customink.com" className="dl-upload-panel__help-link">
-              email service@customink.com
-            </a>
-          </div>
-        </div>
+        {/* [2025-12-16 07:16:40] 按产品要求移除：Need help with your upload / Chat / email 模块（截图区域） */}
       </div>
     </div>
   );

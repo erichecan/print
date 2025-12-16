@@ -2,6 +2,7 @@
  * Product Image Layer
  * [2025-01-30 20:05:00] 产品主图图层管理
  * [2025-01-30 20:50:00] 修复：引入有限状态机（FSM）和幂等保护，防止重复加载-移除循环
+ * [2025-12-20 00:20:00] 阶段2：添加 applyCoverCentered() 函数，实现单一真理的幂等布局
  * 
  * 职责：
  * - 加载产品主图
@@ -39,6 +40,111 @@ function generateStableKey(
   const colorId = colorName || 'White';
   const pid = productId || 'default';
   return `product-image-${pid}-${colorId}-${view}`;
+}
+
+/**
+ * 应用居中布局（阶段2：单一真理的幂等布局函数）
+ * [2025-12-20 01:00:00] 阶段2修复：直接使用 .dl-canvas section 的实际 DOM 尺寸，不依赖 Fabric 逻辑坐标系
+ * [2025-12-20 01:10:00] 阶段2更新：支持 contain 策略（不裁剪图片）
+ * 
+ * 要求：
+ * - originX/originY = 'center'
+ * - left/top = .dl-canvas section 的实际中心（使用 section 的 DOM 尺寸作为 Fabric Canvas 逻辑尺寸）
+ * - scale = contain/cover（按 .dl-canvas section 尺寸计算）
+ * - 禁止任何分支沿用旧 left/top（不能出现 || 0 这种）
+ * 
+ * @param image - Fabric Image 对象
+ * @param canvas - Fabric Canvas 实例（用于访问 DOM 元素）
+ * @param canvasWidth - Canvas 逻辑宽度（传入参数，但会被 .dl-canvas section 实际尺寸覆盖）
+ * @param canvasHeight - Canvas 逻辑高度（传入参数，但会被 .dl-canvas section 实际尺寸覆盖）
+ * @param fabricModule - Fabric 模块（用于类型）
+ * @param fitMode - 填充策略：'contain'（完整显示，不裁剪）或 'cover'（填满，可能裁剪）
+ */
+function applyCoverCentered(params: {
+  image: fabric.Image;
+  canvas: fabric.Canvas;
+  canvasWidth: number;
+  canvasHeight: number;
+  fabricModule: typeof fabric;
+  fitMode?: 'contain' | 'cover';
+}): void {
+  const { image, canvas, canvasWidth, canvasHeight, fitMode = 'contain' } = params; // [2025-12-20 01:30:00] 修复：解构 canvasWidth 和 canvasHeight
+  
+  // [2025-12-20 01:00:00] 阶段2修复：获取图片原始尺寸
+  const imgWidth = (image as any).width || 0;
+  const imgHeight = (image as any).height || 0;
+  
+  if (imgWidth === 0 || imgHeight === 0) {
+    console.warn('[ProductImageLayer] applyCoverCentered: Image has zero dimensions, skipping layout');
+    return;
+  }
+  
+  // [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - 使用固定高分辨率逻辑尺寸
+  // 逻辑尺寸：使用传入的 canvasWidth × canvasHeight（4000 × 4800）
+  // DOM 显示尺寸：由 CSS 自适应（基于 .dl-canvas section）
+  // 不修改 Canvas 的逻辑尺寸，使用固定值
+  const logicalCanvasWidth = canvasWidth;
+  const logicalCanvasHeight = canvasHeight;
+  const logicalCenterX = logicalCanvasWidth / 2;
+  const logicalCenterY = logicalCanvasHeight / 2;
+  
+  // [2025-12-20 01:25:00] 确保 Canvas 的逻辑尺寸正确（初始化时应该已经设置）
+  // 只在逻辑尺寸不匹配时才更新（避免重复设置）
+  if (canvas.width !== logicalCanvasWidth || canvas.height !== logicalCanvasHeight) {
+    console.log('[ProductImageLayer] applyCoverCentered: Setting canvas logical dimensions:', {
+      current: { width: canvas.width, height: canvas.height },
+      target: { width: logicalCanvasWidth, height: logicalCanvasHeight },
+    });
+    canvas.setDimensions({
+      width: logicalCanvasWidth,
+      height: logicalCanvasHeight,
+    }, { cssOnly: false }); // 更新逻辑尺寸，不仅仅是 CSS
+  }
+  
+  // [2025-12-20 01:25:00] 阶段2修复：根据 fitMode 计算缩放比例（使用逻辑尺寸）
+  // contain: 使用较小的缩放比例，确保完整显示（不裁剪，可能有留白）
+  // cover: 使用较大的缩放比例，确保填满逻辑 Canvas（允许裁切边缘）
+  // [2025-12-20 01:15:00] 用户需求：填充整个绿色区域但不裁剪图片 = contain 模式（完整显示，留白是正常的）
+  const scaleX = logicalCanvasWidth / imgWidth;
+  const scaleY = logicalCanvasHeight / imgHeight;
+  const scale = fitMode === 'contain' 
+    ? Math.min(scaleX, scaleY) // contain: 使用较小值，完整显示图片，不裁剪
+    : Math.max(scaleX, scaleY); // cover: 使用较大值，填满逻辑 Canvas，可能裁剪边缘
+  
+  // [2025-12-20 01:00:00] 阶段2修复：设置 origin 为 center（必须在 scale 之前）
+  image.set({
+    originX: 'center',
+    originY: 'center',
+  });
+  
+  // [2025-12-20 01:00:00] 阶段2修复：设置缩放
+  image.set({
+    scaleX: scale,
+    scaleY: scale,
+  });
+  
+  // [2025-12-20 01:25:00] 阶段2修复：设置位置为逻辑 Canvas 中心（固定高分辨率中心点）
+  // 严格使用 logicalCenterX 和 logicalCenterY，不使用 || 0 回退
+  image.set({
+    left: logicalCenterX,
+    top: logicalCenterY,
+  });
+  
+  // [2025-12-20 01:00:00] 阶段2修复：更新坐标系统
+  image.setCoords();
+  
+  // [2025-12-20 01:00:00] 阶段2修复：确保不可选中且不在交互层
+  image.set({
+    selectable: false,
+    evented: false,
+  });
+  
+  console.log(`[ProductImageLayer] applyCoverCentered applied (${fitMode} 模式，Custom Ink 方式 - 固定逻辑尺寸):`);
+  console.log(`   Canvas 逻辑尺寸: ${logicalCanvasWidth.toFixed(0)} × ${logicalCanvasHeight.toFixed(0)}`);
+  console.log(`   逻辑中心: (${logicalCenterX.toFixed(2)}, ${logicalCenterY.toFixed(2)})`);
+  console.log(`   图片原始尺寸: ${imgWidth.toFixed(0)} × ${imgHeight.toFixed(0)}`);
+  console.log(`   ${fitMode}缩放比例: ${scale.toFixed(4)}`);
+  console.log(`   图片位置（逻辑坐标）: (${logicalCenterX.toFixed(2)}, ${logicalCenterY.toFixed(2)})`);
 }
 
 export interface ProductImageLayerOptions {
@@ -1037,16 +1143,16 @@ export async function loadProductImageLayer(
     if (existingImage) {
       console.log('[ProductImageLayer] Using existing product image, reapplying layout:', stableKey);
       
-      // [2025-12-19 21:30:00] 强制重新应用布局，确保居中（幂等）
-      applyProductImageLayout({
+      // [2025-12-20 00:20:00] 阶段2：使用 applyCoverCentered() 确保底图居中
+      // [2025-12-20 00:50:00] 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
+      // [2025-12-20 01:10:00] 阶段2更新：使用 contain 策略（不裁剪图片）
+      applyCoverCentered({
         image: existingImage,
         canvas,
         canvasWidth,
         canvasHeight,
-        safeAreaWidth,
-        safeAreaHeight,
-        fitMode: 'cover',
-        fabricModule, // [2025-12-19 22:35:00] 传递fabric模块用于创建调试标记
+        fabricModule,
+        fitMode: 'contain', // [2025-12-20 01:15:00] 使用 contain 策略：完整显示图片，不裁剪（可能留白）
       });
       
       // [2025-12-19 21:30:00] 确保在最底层且不可选中
@@ -1232,27 +1338,27 @@ export async function loadProductImageLayer(
             },
           });
           
-          // 8. [2025-12-19 21:30:00] 使用统一的幂等布局函数（强制居中且尺寸正确）
-          applyProductImageLayout({
+          // [2025-12-20 00:20:00] 阶段2：使用 applyCoverCentered() 确保底图居中
+          // [2025-12-20 00:50:00] 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
+          // [2025-12-20 01:10:00] 阶段2更新：使用 contain 策略（不裁剪图片）
+          applyCoverCentered({
             image: fabricImg,
             canvas,
             canvasWidth,
             canvasHeight,
-            safeAreaWidth,
-            safeAreaHeight,
-            fitMode: 'cover',
-            fabricModule, // [2025-12-19 22:35:00] 传递fabric模块用于创建调试标记
+            fabricModule,
+            fitMode: 'contain', // [2025-12-20 01:15:00] 使用 contain 策略：完整显示图片，不裁剪（可能留白）
           });
           
-          // [2025-12-19 21:30:00] 获取fit结果用于返回值
+          // [2025-12-20 00:20:00] 阶段2：获取fit结果用于返回值
           const fit: FitResult = {
             width: (fabricImg.width || 0) * (fabricImg.scaleX || 1),
             height: (fabricImg.height || 0) * (fabricImg.scaleY || 1),
             left: fabricImg.left || 0,
             top: fabricImg.top || 0,
             scale: fabricImg.scaleX || 1,
-            safeAreaWidth: canvasWidth * safeAreaWidth,
-            safeAreaHeight: canvasHeight * safeAreaHeight,
+            safeAreaWidth: canvasWidth, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
+            safeAreaHeight: canvasHeight, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
           };
           
           // 10. 添加到画布
@@ -1367,16 +1473,16 @@ export async function loadProductImageLayer(
           });
           // #endregion
           
-          // 12. [2025-12-19 21:30:00] 在标记加载完成前，最后一次强制应用布局（幂等保证）
-          applyProductImageLayout({
+          // [2025-12-20 00:20:00] 阶段2：在标记加载完成前，最后一次强制应用布局（幂等保证）
+          // [2025-12-20 00:50:00] 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
+          // [2025-12-20 01:10:00] 阶段2更新：使用 contain 策略（不裁剪图片）
+          applyCoverCentered({
             image: fabricImg,
             canvas,
             canvasWidth,
             canvasHeight,
-            safeAreaWidth,
-            safeAreaHeight,
-            fitMode: 'cover',
-            fabricModule, // [2025-12-19 22:35:00] 传递fabric模块用于创建调试标记
+            fabricModule,
+            fitMode: 'contain', // [2025-12-20 01:15:00] 使用 contain 策略：完整显示图片，不裁剪（可能留白）
           });
           
           // 确保在最底层
@@ -1397,15 +1503,15 @@ export async function loadProductImageLayer(
           manager.markLoaded(fabricImg, stableKey);
           manager.markAttached();
           
-          // [2025-12-19 21:30:00] 使用最新的fit值（从image获取）
+          // [2025-12-20 00:20:00] 阶段2：使用最新的fit值（从image获取）
           const finalFit: FitResult = {
             width: (fabricImg.width || 0) * (fabricImg.scaleX || 1),
             height: (fabricImg.height || 0) * (fabricImg.scaleY || 1),
             left: fabricImg.left || 0,
             top: fabricImg.top || 0,
             scale: fabricImg.scaleX || 1,
-            safeAreaWidth: canvasWidth * safeAreaWidth,
-            safeAreaHeight: canvasHeight * safeAreaHeight,
+            safeAreaWidth: canvasWidth, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
+            safeAreaHeight: canvasHeight, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
           };
           
           // [2025-01-30 22:30:00] 详细调试：检查图片是否真的可见

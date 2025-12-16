@@ -9,6 +9,7 @@ import { useEffect } from 'react';
 // [2025-01-29 01:00:00] 需要被过滤的错误模式
 // [2025-12-08] 添加 ReferenceError 过滤，修复 "Cannot access 'W' before initialization" 错误
 // [2025-01-27 19:30:00] 修复：添加浏览器扩展异步监听错误过滤
+// [2025-12-20 03:35:00] 添加后端服务错误过滤（当后端服务不可用时，这些错误已被优雅处理）
 const FILTERED_ERROR_PATTERNS = [
   // GCP Console 内部 API 错误
   /cloudusersettings-pa\.clients6\.google\.com/i,
@@ -26,6 +27,12 @@ const FILTERED_ERROR_PATTERNS = [
   /A listener indicated an asynchronous response by returning true, but the message channel closed/i,
   /listener.*asynchronous.*response.*message channel closed/i,
   /message channel closed before.*response.*received/i,
+  // [2025-12-20 03:35:00] 后端服务错误（当后端服务不可用时，这些错误已被优雅处理，不需要在控制台显示）
+  // 注意：这些错误已经在对应的 Context 中被捕获和处理（返回空数据或默认值）
+  // 过滤这些错误可以减少控制台噪音，但保留网络错误的原始信息
+  /GET.*\/api\/auth\/me.*50[0-9]/i, // 认证 API 500/503 错误
+  /GET.*\/api\/proxy\/cart.*50[0-9]/i, // 购物车 API 500/503 错误
+  /GET.*\/api\/.*\/50[0-9]/i, // 其他 API 5xx 错误（可选，如果需要可以删除这一行）
   // 其他第三方服务错误（根据需要添加）
 ];
 
