@@ -470,7 +470,15 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       const backgroundIndex = objects.findIndex((obj: any) => {
         const name = (obj as any).name || '';
         const layerType = (obj as any).data?.layerType;
-        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
+        // [2025-12-16 07:10:00] 兼容 5.0：底图名称为 product-image-base
+        return (
+          name === 'background' ||
+          name === 'product-image-base' ||
+          name.startsWith('product-image-') ||
+          layerType === 'product' ||
+          layerType === 'product-image' ||
+          layerType === 'product-image-base'
+        );
       });
 
       // 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
@@ -490,80 +498,21 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         return;
       }
 
-      // [2025-12-16 05:00:00] 使用原生方法 sendObjectToBack，然后检查并调整位置
-      // 先使用 Fabric.js 原生方法将对象移到底部
-      if (typeof (canvas as any).sendObjectToBack === 'function') {
-        try {
-          (canvas as any).sendObjectToBack(selectedText);
-        } catch (e) {
-          console.warn('[EditTextPanel] sendObjectToBack failed:', e);
-        }
-      } else if (typeof (selectedText as any).sendToBack === 'function') {
-        try {
-          (selectedText as any).sendToBack();
-        } catch (e) {
-          console.warn('[EditTextPanel] sendToBack failed:', e);
-        }
+      // [2025-12-16 07:10:00] 修复根因：不再先 sendObjectToBack（会把对象送到绝对底层，必然跑到商品底图后面）
+      // 直接将对象移动到“商品底图之后的第一个位置”（backgroundIndex + 1），使用 Fabric API 保证顺序生效
+      if (typeof (canvas as any).moveObjectTo === 'function') {
+        (canvas as any).moveObjectTo(selectedText, targetIndex);
       } else {
-        // 如果原生方法不可用，使用手动方法
-        const adjustedTargetIndex = currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
-        objects.splice(currentIndex, 1);
-        objects.splice(adjustedTargetIndex, 0, selectedText);
-        canvas.renderAll();
-        onUpdate();
-        return;
+        // 兜底：手动调整顺序（如果 moveObjectTo 不可用）
+        const objs = canvas.getObjects();
+        const idx = objs.indexOf(selectedText);
+        if (idx >= 0) {
+          objs.splice(idx, 1);
+          const insertIndex = Math.max(0, Math.min(targetIndex, objs.length));
+          objs.splice(insertIndex, 0, selectedText);
+        }
       }
 
-      // [2025-12-16 05:10:00] 检查并调整：确保对象在商品底图之后
-      // 等待一个 tick 确保原生方法执行完成
-      await new Promise(resolve => setTimeout(resolve, 0));
-      
-      const objectsAfter = canvas.getObjects();
-      const indexAfter = objectsAfter.indexOf(selectedText);
-      const backgroundIndexAfter = objectsAfter.findIndex((obj: any) => {
-        const name = (obj as any).name || '';
-        const layerType = (obj as any).data?.layerType;
-        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
-      });
-
-      console.log('[EditTextPanel] After native sendObjectToBack:', {
-        indexAfter,
-        backgroundIndexAfter,
-        shouldBeAt: backgroundIndexAfter >= 0 ? backgroundIndexAfter + 1 : 0,
-      });
-
-      // 如果对象在商品底图之前或等于商品底图索引，需要调整到商品底图之后
-      if (backgroundIndexAfter >= 0 && indexAfter <= backgroundIndexAfter) {
-        console.log('[EditTextPanel] ⚠️ Object is at or below background, adjusting...');
-        const adjustedTargetIndex = backgroundIndexAfter + 1;
-        objectsAfter.splice(indexAfter, 1);
-        objectsAfter.splice(adjustedTargetIndex, 0, selectedText);
-        canvas.renderAll();
-        console.log('[EditTextPanel] ✅ Adjusted from index', indexAfter, 'to index', adjustedTargetIndex);
-      } else if (backgroundIndexAfter >= 0 && indexAfter !== backgroundIndexAfter + 1) {
-        const adjustedTargetIndex = backgroundIndexAfter + 1;
-        objectsAfter.splice(indexAfter, 1);
-        const finalAdjustedIndex = indexAfter < adjustedTargetIndex ? adjustedTargetIndex - 1 : adjustedTargetIndex;
-        objectsAfter.splice(finalAdjustedIndex, 0, selectedText);
-        canvas.renderAll();
-        console.log('[EditTextPanel] ✅ Adjusted from index', indexAfter, 'to index', finalAdjustedIndex);
-      }
-
-      const finalObjects = canvas.getObjects();
-      const finalIndex = finalObjects.indexOf(selectedText);
-      const finalBackgroundIndex = finalObjects.findIndex((obj: any) => {
-        const name = (obj as any).name || '';
-        const layerType = (obj as any).data?.layerType;
-        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
-      });
-      const finalTargetIndex = finalBackgroundIndex >= 0 ? finalBackgroundIndex + 1 : 0;
-
-      console.log('[EditTextPanel] sendToBack completed:', {
-        finalIndex,
-        finalTargetIndex,
-        isCorrect: finalIndex === finalTargetIndex,
-      });
-      
       canvas.renderAll();
       onUpdate();
     } catch (error) {
@@ -600,6 +549,10 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       }
 
       canvas.add(cloned);
+      // [2025-12-16 07:10:00] Add Text: 复用 5.0 图标角控件（delete/duplicate/resize）
+      if (typeof (canvas as any).addIconControlsToObject === 'function') {
+        (canvas as any).addIconControlsToObject(cloned);
+      }
       canvas.setActiveObject(cloned);
       canvas.renderAll();
       onUpdate();
