@@ -36,6 +36,42 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   // [2025-01-30 19:00:00] 从 API 加载字体
   const [fonts, setFonts] = useState<Record<string, Font[]>>({});
   const [fontsLoading, setFontsLoading] = useState(true);
+  const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // [2025-12-16 07:20:05] 记录已加载的 Google Fonts，避免重复插入 <link>
+
+  // [2025-12-16 07:20:05] 确保 Google Font 已加载（否则下拉预览看起来“都一样”）
+  const ensureGoogleFontLoaded = (fontInfo?: Font) => {
+    if (!fontInfo) return;
+    if (typeof document === 'undefined') return;
+    if (fontInfo.source !== 'google') return;
+
+    const family = (fontInfo.googleFontFamily || fontInfo.name || '').trim();
+    if (!family) return;
+
+    const weights = Array.isArray(fontInfo.weights) && fontInfo.weights.length > 0 ? fontInfo.weights : undefined;
+    const key = `${family}|${weights ? weights.join(',') : 'default'}`;
+    if (loadedGoogleFontsRef.current.has(key)) return;
+
+    // Google Fonts family param uses + for spaces
+    const familyParam = encodeURIComponent(family).replace(/%20/g, '+');
+    const weightParam = weights ? `:wght@${weights.join(';')}` : '';
+    const href = `https://fonts.googleapis.com/css2?family=${familyParam}${weightParam}&display=swap`;
+
+    // 避免重复：如果页面上已经存在同 href 的 link，也认为已加载
+    const alreadyInDom = Array.from(document.querySelectorAll('link[rel=\"stylesheet\"]')).some(
+      (l) => (l as HTMLLinkElement).href === href,
+    );
+    if (alreadyInDom) {
+      loadedGoogleFontsRef.current.add(key);
+      return;
+    }
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.setAttribute('data-dl-font', key);
+    document.head.appendChild(link);
+    loadedGoogleFontsRef.current.add(key);
+  };
 
   // [2025-01-30 18:15:00] 点击外部关闭下拉菜单
   useEffect(() => {
@@ -214,9 +250,13 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         // [2025-01-30 22:00:00] 从加载的 fonts 数据中查找字体信息
         const allFonts = Object.values(fonts).flat();
         const fontInfo = allFonts.find(f => f.name === font);
+        // [2025-12-16 07:20:05] 选择时触发加载，确保 Fabric/预览都能用到真实字体
+        ensureGoogleFontLoaded(fontInfo);
         
         // [2025-01-30 22:00:00] 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
-        selectedText.set('fontFamily', font);
+        // [2025-12-16 07:20:05] 优先使用 googleFontFamily（有些字体 name/displayName 不等于 Google 的 family）
+        selectedText.set('fontFamily', fontInfo?.googleFontFamily || font);
+        (selectedText as any).dirty = true; // [2025-12-16 07:20:05] 强制标记为 dirty，避免缓存导致“看起来没变”
         selectedText.setCoords();
         canvas.renderAll();
         
@@ -233,6 +273,14 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       console.warn('[EditTextPanel] Cannot change font: selectedText or canvas is null');
     }
   };
+
+  // [2025-12-16 07:20:05] 当字体列表加载完成或当前 fontFamily 变化时，预加载当前字体（让下拉/预览立即有差异）
+  useEffect(() => {
+    const allFonts = Object.values(fonts).flat();
+    const fontInfo = allFonts.find(f => f.name === fontFamily || f.googleFontFamily === fontFamily);
+    ensureGoogleFontLoaded(fontInfo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fontsLoading, fontFamily]);
 
   // [2025-01-30 17:45:00] 更新颜色
   // [2025-12-12 00:00:00] 修复：添加错误处理和调试日志，确保颜色更改正确应用
@@ -640,11 +688,14 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
                             role="option"
                             aria-selected={font.name === fontFamily}
                             className={`dl-edit-text-panel__font-option ${font.name === fontFamily ? 'is-selected' : ''}`}
+                            // [2025-12-16 07:20:05] 悬停时懒加载字体，确保下拉预览“像字体应该有的样子”
+                            onMouseEnter={() => ensureGoogleFontLoaded(font)}
                             onClick={() => {
                               handleFontChange(font.name);
                               setShowFontDropdown(false);
                             }}
-                            style={{ fontFamily: font.name }}
+                            // [2025-12-16 07:20:05] 优先用 googleFontFamily 渲染预览
+                            style={{ fontFamily: `${font.googleFontFamily || font.name}, Arial, sans-serif` }}
                           >
                             <span className="dl-edit-text-panel__font-option-preview">
                               {font.previewText}
