@@ -174,8 +174,6 @@ export interface TextEditControlsProps {
   textAlign: 'left' | 'center' | 'right';
   onTextAlignChange: (align: 'left' | 'center' | 'right') => void;
   onDuplicate: () => void;
-  rotation: number;
-  onRotationChange: (angle: number) => void;
 }
 
 export const TextEditControls: React.FC<TextEditControlsProps> = ({
@@ -185,8 +183,6 @@ export const TextEditControls: React.FC<TextEditControlsProps> = ({
   textAlign,
   onTextAlignChange,
   onDuplicate,
-  rotation,
-  onRotationChange,
 }) => {
   return (
     <div className="dl-edit-text-panel__section dl-edit-text-panel__section--toolbar">
@@ -266,18 +262,7 @@ export const TextEditControls: React.FC<TextEditControlsProps> = ({
           <DuplicateIcon size={18} />
         </button>
 
-        {/* Rotation (compact slider) */}
-        <div className="dl-edit-text-panel__toolbar-rotation">
-          <RotationIcon size={14} />
-          <input
-            type="range"
-            min="0"
-            max="360"
-            value={rotation}
-            onChange={(e) => onRotationChange(parseFloat(e.target.value) || 0)}
-            className="dl-edit-text-panel__toolbar-slider"
-          />
-        </div>
+        {/* [2025-12-16 07:12:00] 旋转控件去重：移除底部工具栏的旋转条（保留上方 Rotation 区块） */}
       </div>
     </div>
   );

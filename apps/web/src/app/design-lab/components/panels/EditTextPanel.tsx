@@ -757,8 +757,6 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         textAlign={textAlign}
         onTextAlignChange={handleTextAlignChange}
         onDuplicate={handleDuplicate}
-        rotation={rotation}
-        onRotationChange={handleRotationChange}
       />
 
       {/* [2025-12-08] 超出安全区警示 */}
