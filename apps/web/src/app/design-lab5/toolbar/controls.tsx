@@ -273,8 +273,6 @@ export const TextEditControls: React.FC<TextEditControlsProps> = ({
 export interface ArtEditControlsProps {
   onCenter: () => void;
   onBringToFront: () => void;
-  onBringForward: () => void;
-  onSendBackward: () => void;
   onSendToBack: () => void;
   onFlipHorizontal: () => void;
   onFlipVertical: () => void;
@@ -286,8 +284,6 @@ export interface ArtEditControlsProps {
 export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
   onCenter,
   onBringToFront,
-  onBringForward,
-  onSendBackward,
   onSendToBack,
   onFlipHorizontal,
   onFlipVertical,
@@ -296,79 +292,98 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
   onRotationChange,
 }) => {
   return (
-    <div className="dl-edit-art-panel__section dl-edit-art-panel__section--toolbar">
-      <div className="dl-edit-art-panel__toolbar">
-        {/* Center */}
-        <button
-          type="button"
-          className="dl-edit-art-panel__btn"
-          onClick={onCenter}
-        >
-          <CenterIcon size={18} />
-        </button>
+    <>
+      {/* Positioning Controls - [2025-01-30 13:50:00] 布局与 upload/text 保持一致 */}
+      <div className="dl-edit-art-panel__section">
+        <div className="dl-edit-art-panel__controls">
+          {/* Center Tool */}
+          <div className="dl-edit-art-panel__tool-group">
+            <button
+              className="dl-edit-art-panel__control-btn"
+              onClick={onCenter}
+              type="button"
+              aria-label="Center"
+              title="Center"
+            >
+              <CenterIcon size={20} />
+            </button>
+            <div className="dl-edit-art-panel__tool-label">Center</div>
+          </div>
 
-        {/* Layering 四个按钮：Bring Front / Forward / Backward / To Back */}
-        <div className="dl-edit-art-panel__btn-group" aria-label="Layering">
-          <button
-            type="button"
-            className="dl-edit-art-panel__btn"
-            onClick={onBringToFront}
-          >
-            <LayeringUpIcon size={18} />
-          </button>
-          <button
-            type="button"
-            className="dl-edit-art-panel__btn"
-            onClick={onBringForward}
-          >
-            +1
-          </button>
-          <button
-            type="button"
-            className="dl-edit-art-panel__btn"
-            onClick={onSendBackward}
-          >
-            -1
-          </button>
-          <button
-            type="button"
-            className="dl-edit-art-panel__btn"
-            onClick={onSendToBack}
-          >
-            <LayeringDownIcon size={18} />
-          </button>
+          {/* Layering Tool - [2025-01-30 14:00:00] 只保留 Bring to Front 和 Send to Back（删除 +1 和 -1） */}
+          <div className="dl-edit-art-panel__tool-group">
+            <div className="dl-edit-art-panel__tool-buttons">
+              <button
+                className="dl-edit-art-panel__control-btn"
+                onClick={onBringToFront}
+                type="button"
+                aria-label="Bring to Front"
+                title="Bring to Front"
+              >
+                <LayeringUpIcon size={20} />
+              </button>
+              <button
+                className="dl-edit-art-panel__control-btn"
+                onClick={onSendToBack}
+                type="button"
+                aria-label="Send to Back"
+                title="Send to Back"
+              >
+                <LayeringDownIcon size={20} />
+              </button>
+            </div>
+            <div className="dl-edit-art-panel__tool-label">Layering</div>
+          </div>
+
+          {/* Flip Tool */}
+          <div className="dl-edit-art-panel__tool-group">
+            <div className="dl-edit-art-panel__tool-buttons">
+              <button
+                className="dl-edit-art-panel__control-btn"
+                onClick={onFlipHorizontal}
+                type="button"
+                aria-label="Flip Horizontal"
+                title="Flip Horizontal"
+              >
+                <FlipHorizontalIcon size={18} />
+              </button>
+              <button
+                className="dl-edit-art-panel__control-btn"
+                onClick={onFlipVertical}
+                type="button"
+                aria-label="Flip Vertical"
+                title="Flip Vertical"
+              >
+                <FlipVerticalIcon size={18} />
+              </button>
+            </div>
+            <div className="dl-edit-art-panel__tool-label">Flip</div>
+          </div>
+
+          {/* Duplicate Tool */}
+          <div className="dl-edit-art-panel__tool-group">
+            <button
+              className="dl-edit-art-panel__control-btn"
+              onClick={onDuplicate}
+              type="button"
+              aria-label="Duplicate"
+              title="Duplicate"
+            >
+              <DuplicateIcon size={20} />
+            </button>
+            <div className="dl-edit-art-panel__tool-label">Duplicate</div>
+          </div>
         </div>
+      </div>
 
-        {/* Flip */}
-        <div className="dl-edit-art-panel__btn-group" aria-label="Flip">
-          <button
-            type="button"
-            className="dl-edit-art-panel__btn"
-            onClick={onFlipHorizontal}
-          >
-            <FlipHorizontalIcon size={18} />
-          </button>
-          <button
-            type="button"
-            className="dl-edit-art-panel__btn"
-            onClick={onFlipVertical}
-          >
-            <FlipVerticalIcon size={18} />
-          </button>
-        </div>
-
-        {/* Duplicate */}
-        <button
-          type="button"
-          className="dl-edit-art-panel__btn"
-          onClick={onDuplicate}
-        >
-          <DuplicateIcon size={18} />
-        </button>
-
-        {/* Rotation */}
-        <div className="dl-edit-art-panel__toolbar-rotation">
-          <RotationIcon size={14} />
+      {/* Rotation - [2025-01-30 13:50:00] 布局与 upload 保持一致 */}
+      <div className="dl-edit-art-panel__section">
+        <label className="dl-edit-art-panel__label">
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <RotationIcon size={14} /> Rotation
+          </span>
+        </label>
+        <div className="dl-edit-art-panel__rotation">
           <input
             type="range"
             min="0"
@@ -377,9 +392,20 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
             onChange={(e) => onRotationChange(parseFloat(e.target.value) || 0)}
             className="dl-edit-art-panel__slider"
           />
+          <input
+            type="number"
+            className="dl-edit-art-panel__rotation-input"
+            value={rotation.toFixed(0)}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value) || 0;
+              onRotationChange(value);
+            }}
+            min="0"
+            max="360"
+          />
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

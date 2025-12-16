@@ -9,6 +9,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { artworksApi, type Artwork, type CategoryNode } from '@/lib/api';
 
+// [2025-01-30 13:25:00] CORS 修复：将 GCS URL 转换为代理 URL
+const getProxyUrl = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  // [2025-01-30 13:25:00] 如果是 GCS URL，使用图片代理
+  if (url.includes('storage.googleapis.com') || url.includes('.storage.googleapis.com')) {
+    return `/api/image-proxy?src=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
 interface ArtPanelProps {
   onSelectArt: (artUrl: string, artName: string) => void;
 }
@@ -237,23 +247,31 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                       title={artwork.title}
                       data-testid={`artwork-${artwork.slug}`}
                     >
-                      {artwork.thumbnailUrl ? (
-                        <img
-                          src={artwork.thumbnailUrl}
-                          alt={artwork.title}
-                          loading="lazy"
-                          onError={(e) => {
-                            const img = e.target as HTMLImageElement;
-                            if (artwork.imageUrl) {
-                              img.src = artwork.imageUrl;
-                            }
-                          }}
-                        />
-                      ) : artwork.imageUrl ? (
-                        <img src={artwork.imageUrl} alt={artwork.title} loading="lazy" />
-                      ) : (
-                        <div className="dl-art-panel__asset-placeholder">🎨</div>
-                      )}
+                      {(() => {
+                        // [2025-01-30 13:25:00] CORS 修复：使用代理 URL
+                        const thumbnailUrl = getProxyUrl(artwork.thumbnailUrl);
+                        const imageUrl = getProxyUrl(artwork.imageUrl);
+                        
+                        if (thumbnailUrl) {
+                          return (
+                            <img
+                              src={thumbnailUrl}
+                              alt={artwork.title}
+                              loading="lazy"
+                              onError={(e) => {
+                                const img = e.target as HTMLImageElement;
+                                if (imageUrl) {
+                                  img.src = imageUrl;
+                                }
+                              }}
+                            />
+                          );
+                        } else if (imageUrl) {
+                          return <img src={imageUrl} alt={artwork.title} loading="lazy" />;
+                        } else {
+                          return <div className="dl-art-panel__asset-placeholder">🎨</div>;
+                        }
+                      })()}
                       <div className="dl-art-panel__asset-name">{artwork.title}</div>
                     </button>
                   ))}

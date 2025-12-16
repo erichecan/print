@@ -19,6 +19,8 @@ import UploadPanel from './components/panels/UploadPanel'; // [2025-12-20 03:15:
 import EditUploadPanel from './components/panels/EditUploadPanel'; // [2025-12-14 05:50:00] 5.0 版本：上传图片编辑面板
 import TextPanel from './components/panels/TextPanel'; // [2025-12-16 07:10:00] 5.0 版本：Add Text - 复用 4.0 TextPanel
 import EditTextPanel from './components/panels/EditTextPanel'; // [2025-12-16 07:10:00] 5.0 版本：Add Text - 复用 4.0 EditTextPanel
+import ArtPanel from './components/panels/ArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 素材库面板
+import EditArtPanel from './components/panels/EditArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 编辑面板
 import type { fabric } from 'fabric'; // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 导入 Fabric.js 类型
 import './design-lab.css';
 
@@ -245,7 +247,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-12-20 03:10:00] 5.0 版本：功能3 - ToolPanel 面板类型 state
   // [2025-12-14 05:50:00] 添加 edit-upload 面板类型
-  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | 'edit-upload' | 'edit-text' | null; // [2025-12-16 07:10:00] Add Text: 增加 edit-text
+  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | 'edit-upload' | 'edit-text' | 'edit-art' | null; // [2025-01-30 12:58:00] Add Art: 增加 edit-art
   const [toolPanelType, setToolPanelType] = useState<ToolPanelType>('home');
   const [activeTool, setActiveTool] = useState<string | null>(null);
   
@@ -253,6 +255,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [selectedImage, setSelectedImage] = useState<fabric.Image | null>(null);
   // [2025-12-16 07:10:00] Add Text: 当前选中的文本对象
   const [selectedText, setSelectedText] = useState<fabric.IText | null>(null);
+  // [2025-01-30 12:58:00] Add Art: 当前选中的艺术素材对象
+  const [selectedArt, setSelectedArt] = useState<fabric.Image | null>(null);
   
   // [2025-12-14 06:35:00] 鼠标位置调试信息
   const [mouseDebug, setMouseDebug] = useState<{
@@ -294,6 +298,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     setToolPanelType('home');
     setSelectedImage(null);
     setSelectedText(null); // [2025-12-16 07:10:00] Add Text: 清理文本选中状态
+    setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 清理艺术素材选中状态
     // [2025-12-16 07:10:00] 返回 Home 时清理画布选中，避免 selection:created 立刻把面板切回编辑态
     try {
       const c = fabricCanvasRef.current;
@@ -603,6 +608,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
           if (!activeObject) return;
 
+          const objectName = (activeObject as any).name || '';
+          const layerType = (activeObject as any).data?.layerType;
+
+          // -------- Art Image (优先检查) --------
+          if (layerType === 'art' || objectName.startsWith('art_')) {
+            const artImage = activeObject as fabric.Image;
+            console.log('[DesignLab 5.0] Art 对象被选中，切换到 edit panel');
+            setSelectedArt(artImage);
+            setSelectedImage(null);
+            setSelectedText(null);
+            setToolPanelType('edit-art');
+            setActiveTool('art');
+            fabricCanvas.renderAll();
+            return;
+          }
+
           // -------- Upload Image (保持原逻辑) --------
           if (activeObject.type === 'image') {
             const fabricImage = activeObject as fabric.Image;
@@ -638,7 +659,31 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               fabricCanvas.renderAll();
               setSelectedImage(fabricImage);
               setSelectedText(null); // [2025-12-16 07:10:00] Add Text: 切换到上传编辑时清理文本
+              setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到上传编辑时清理艺术素材
               setToolPanelType('edit-upload');
+              return;
+            }
+          }
+
+          // -------- Art Image (新增) --------
+          if (activeObject.type === 'image') {
+            const objName = (activeObject as any).name || '';
+            const layerType = (activeObject as any).data?.layerType;
+            // [2025-01-30 12:58:00] Add Art: 仅对 art_* 或 layerType=art 的对象切换到 Edit Art
+            if (objName.startsWith('art_') || layerType === 'art') {
+              const artImage = activeObject as fabric.Image;
+              artImage.set({
+                hasBorders: true,
+                borderColor: '#808080',
+                borderScaleFactor: 2,
+              });
+              artImage.setCoords();
+              setSelectedArt(artImage);
+              setSelectedImage(null);
+              setSelectedText(null);
+              setToolPanelType('edit-art');
+              setActiveTool('art');
+              fabricCanvas.renderAll();
               return;
             }
           }
@@ -651,6 +696,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             if (objName.startsWith('text_') || layerType === 'text') {
               setSelectedText(activeObject as any);
               setSelectedImage(null);
+              setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到文本编辑时清理艺术素材
               setToolPanelType('edit-text');
             }
           }
@@ -659,6 +705,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         fabricCanvas.on('selection:updated', (e) => {
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
           if (!activeObject) return;
+
+          const objectName = (activeObject as any).name || '';
+          const layerType = (activeObject as any).data?.layerType;
+
+          // -------- Art Image (优先检查) --------
+          if (layerType === 'art' || objectName.startsWith('art_')) {
+            const artImage = activeObject as fabric.Image;
+            console.log('[DesignLab 5.0] Art 对象选择更新，切换到 edit panel');
+            setSelectedArt(artImage);
+            setSelectedImage(null);
+            setSelectedText(null);
+            setToolPanelType('edit-art');
+            setActiveTool('art');
+            fabricCanvas.renderAll();
+            return;
+          }
 
           // Upload Image
           if (activeObject.type === 'image') {
@@ -693,7 +755,31 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               console.log('[DesignLab 5.0] 上传图片选择更新，切换到 edit panel');
               setSelectedImage(fabricImage);
               setSelectedText(null);
+              setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到上传编辑时清理艺术素材
               setToolPanelType('edit-upload');
+              return;
+            }
+          }
+
+          // Art Image
+          if (activeObject.type === 'image') {
+            const objName = (activeObject as any).name || '';
+            const layerType = (activeObject as any).data?.layerType;
+            // [2025-01-30 12:58:00] Add Art: 仅对 art_* 或 layerType=art 的对象切换到 Edit Art
+            if (objName.startsWith('art_') || layerType === 'art') {
+              const artImage = activeObject as fabric.Image;
+              artImage.set({
+                hasBorders: true,
+                borderColor: '#808080',
+                borderScaleFactor: 2,
+              });
+              artImage.setCoords();
+              setSelectedArt(artImage);
+              setSelectedImage(null);
+              setSelectedText(null);
+              setToolPanelType('edit-art');
+              setActiveTool('art');
+              fabricCanvas.renderAll();
               return;
             }
           }
@@ -705,6 +791,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             if (objName.startsWith('text_') || layerType === 'text') {
               setSelectedText(activeObject as any);
               setSelectedImage(null);
+              setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到文本编辑时清理艺术素材
               setToolPanelType('edit-text');
             }
           }
@@ -1174,13 +1261,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 fabricCanvas.renderAll();
                 
                 // [2025-12-16 07:10:00] Add Text: 如果删除的是当前选中的对象，清除选中状态并切换回 home 面板
+                // [2025-01-30 12:58:00] Add Art: 添加 art 对象的删除处理
                 const targetName = (target as any).name || '';
+                const layerType = (target as any).data?.layerType;
                 if (
                   (target.type === 'image' && targetName.startsWith('image_')) ||
-                  ((target.type === 'i-text' || target.type === 'textbox' || target.type === 'text') && targetName.startsWith('text_'))
+                  ((target.type === 'i-text' || target.type === 'textbox' || target.type === 'text') && targetName.startsWith('text_')) ||
+                  (target.type === 'image' && (targetName.startsWith('art_') || layerType === 'art'))
                 ) {
                   setSelectedImage(null);
                   setSelectedText(null);
+                  setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 删除时清理艺术素材选中状态
                   setToolPanelType('home');
                 }
                 
@@ -1252,6 +1343,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   const targetName = (target as any).name || '';
                   const targetLayerType = (target as any).data?.layerType;
                   // 保护商品底图：不允许复制底图
+                  // [2025-01-30 12:58:00] Add Art: 允许复制 art 对象
                   if (
                     targetName === 'product-image-base' ||
                     targetName.startsWith('product-image-') ||
@@ -1263,11 +1355,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   }
 
                   // [2025-12-16 07:10:00] 根据对象类型决定 name 前缀与 layerType
+                  // [2025-01-30 12:58:00] Add Art: 添加 art 对象的判断
                   const isText =
                     target.type === 'i-text' || target.type === 'textbox' || target.type === 'text' || targetName.startsWith('text_');
                   const isUploadImage = target.type === 'image' && (targetName.startsWith('image_') || targetLayerType === 'upload');
-                  const namePrefix = isText ? 'text_' : isUploadImage ? 'image_' : 'object_';
-                  const layerType = isText ? 'text' : isUploadImage ? 'upload' : targetLayerType;
+                  const isArtImage = target.type === 'image' && (targetName.startsWith('art_') || targetLayerType === 'art');
+                  const namePrefix = isText ? 'text_' : isArtImage ? 'art_' : isUploadImage ? 'image_' : 'object_';
+                  const layerType = isText ? 'text' : isArtImage ? 'art' : isUploadImage ? 'upload' : targetLayerType;
 
                   cloned.set({
                     left: (target.left || 0) + 20,
@@ -1298,9 +1392,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   fabricCanvas.setActiveObject(cloned);
                   // [2025-12-16 07:10:00] Add Text: 立即切换编辑面板（selection:created/updated 也会兜底）
                   const clonedName = (cloned as any).name || '';
-                  if (cloned.type === 'image' && clonedName.startsWith('image_')) {
+                  const clonedLayerType = (cloned as any).data?.layerType;
+                  // [2025-01-30 12:58:00] Add Art: 复制后切换到对应的编辑面板
+                  if (cloned.type === 'image' && (clonedName.startsWith('art_') || clonedLayerType === 'art')) {
+                    setSelectedArt(cloned as any);
+                    setSelectedImage(null);
+                    setSelectedText(null);
+                    setToolPanelType('edit-art');
+                  } else if (cloned.type === 'image' && clonedName.startsWith('image_')) {
                     setSelectedImage(cloned as any);
                     setSelectedText(null);
+                    setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到上传编辑时清理艺术素材
                     setToolPanelType('edit-upload');
                   } else if (
                     (cloned.type === 'i-text' || cloned.type === 'textbox' || cloned.type === 'text') &&
@@ -1308,6 +1410,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   ) {
                     setSelectedText(cloned as any);
                     setSelectedImage(null);
+                    setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到文本编辑时清理艺术素材
                     setToolPanelType('edit-text');
                   }
                   
@@ -1415,8 +1518,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               obj.type === 'i-text' ||
               obj.type === 'textbox' ||
               obj.type === 'text';
+            // [2025-01-30 13:30:00] Add Art: 添加 art 对象识别
+            const isArt = objName.startsWith('art_') || layerType === 'art';
 
-            if (isUpload || isText) {
+            if (isUpload || isText || isArt) {
               if (!obj.controls) {
                 obj.controls = {};
               }
@@ -1793,11 +1898,118 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       // [2025-12-16 07:10:00] 切换面板到 Edit Text（selection:created/updated 也会兜底）
       setSelectedText(textObj);
       setSelectedImage(null);
+      setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到文本编辑时清理艺术素材
       setToolPanelType('edit-text');
       setActiveTool('text');
     } catch (error) {
       console.error('[DesignLab 5.0] Add Text failed:', error);
     }
+  };
+
+  // [2025-01-30 12:58:00] Add Art: 添加艺术素材到 Fabric canvas（与 4.0/PRD 一致：Add Art → 画布生成图片对象 → 自动进入 Edit Art）
+  const handleAddArt = (artUrl: string, artName: string) => {
+    const canvas = fabricCanvasRef.current;
+    const fabric = fabricRef.current;
+    if (!canvas || !fabric) {
+      console.warn('[DesignLab 5.0] Add Art: canvas not ready');
+      return;
+    }
+
+    // [2025-01-30 13:20:00] CORS 修复：如果是 GCS URL，使用图片代理绕过 CORS
+    let imageUrl = artUrl;
+    if (artUrl && (artUrl.includes('storage.googleapis.com') || artUrl.includes('.storage.googleapis.com'))) {
+      // [2025-01-30 13:20:00] 使用前端图片代理 API 绕过 CORS
+      imageUrl = `/api/image-proxy?src=${encodeURIComponent(artUrl)}`;
+      console.log('[DesignLab 5.0] Using image proxy for GCS URL:', { original: artUrl.substring(0, 60) + '...', proxy: imageUrl });
+    }
+
+    // [2025-01-30 12:58:00] 使用原生 Image 对象加载图片
+    const imgElement = new window.Image();
+    // [2025-01-30 13:20:00] 如果使用代理 URL，不需要 crossOrigin（代理服务器会处理）
+    if (!imageUrl.includes('/api/image-proxy')) {
+      imgElement.crossOrigin = 'anonymous';
+    }
+    
+    imgElement.onload = () => {
+      try {
+        // [2025-01-30 12:58:00] 创建 Fabric Image 对象
+        const fabricImage = new fabric.Image(imgElement, {
+          selectable: true,
+          evented: true,
+          hasControls: true,
+          hasBorders: true,
+          borderColor: '#808080',
+          borderScaleFactor: 2,
+          lockRotation: false,
+          lockScalingX: false,
+          lockScalingY: false,
+          lockUniScaling: false,
+          lockMovementX: false,
+          lockMovementY: false,
+          centeredScaling: true,
+          centeredRotation: true,
+        });
+        
+        // [2025-01-30 12:58:00] 智能缩放：缩放到画布的 30%
+        const SCALE_RATIO = 0.3;
+        const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
+        const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
+        
+        const originalWidth = fabricImage.width || 1;
+        const originalHeight = fabricImage.height || 1;
+        
+        const scaleX = targetMaxWidth / originalWidth;
+        const scaleY = targetMaxHeight / originalHeight;
+        const scale = Math.min(scaleX, scaleY, 1);
+        
+        fabricImage.scale(scale);
+        
+        // [2025-01-30 12:58:00] 居中位置
+        fabricImage.set({
+          left: CANVAS_WIDTH / 2,
+          top: CANVAS_HEIGHT / 2,
+          originX: 'center',
+          originY: 'center',
+          name: `art_${Date.now()}`, // [2025-01-30 12:58:00] 使用 art_ 前缀标识艺术素材
+          data: {
+            layerType: 'art',
+            zIndex: 15, // [2025-01-30 12:58:00] 艺术素材图层 zIndex 为 15（介于上传图层的 10 和文字图层的 20 之间）
+          },
+        });
+        
+        fabricImage.setCoords();
+        canvas.add(fabricImage);
+        
+        // [2025-01-30 12:58:00] 复用 5.0 大尺寸图标控件（delete/duplicate/resize）
+        if (typeof (canvas as any).addIconControlsToObject === 'function') {
+          (canvas as any).addIconControlsToObject(fabricImage);
+        }
+        
+        canvas.setActiveObject(fabricImage);
+        canvas.renderAll();
+        
+        // [2025-01-30 12:58:00] 自动切换到 Edit Art 面板
+        setSelectedArt(fabricImage);
+        setSelectedImage(null);
+        setSelectedText(null);
+        setToolPanelType('edit-art');
+        setActiveTool('art');
+        
+        console.log('[DesignLab 5.0] ✅ Art added to canvas:', {
+          name: fabricImage.name,
+          url: artUrl.substring(0, 50) + '...',
+        });
+      } catch (error) {
+        console.error('[DesignLab 5.0] Add Art failed:', error);
+      }
+    };
+    
+    imgElement.onerror = (error) => {
+      console.error('[DesignLab 5.0] ❌ Failed to load art image:', error);
+      console.error('[DesignLab 5.0] Failed URL:', imageUrl);
+    };
+    
+    imgElement.src = imageUrl;
   };
 
   // [2025-12-20 02:20:00] 5.0 版本：获取当前视图的图片 URL
@@ -2023,9 +2235,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
               {/* Art 面板 */}
               {toolPanelType === 'art' && (
+                <ArtPanel onSelectArt={handleAddArt} />
+              )}
+
+              {/* Edit Art 面板 */}
+              {toolPanelType === 'edit-art' && (
                 <>
                   <div className="dl-tool-panel__header">
-                    <h2 className="dl-tool-panel__title">Add Art</h2>
+                    <h2 className="dl-tool-panel__title">Edit Art</h2>
                     <button
                       className="dl-tool-panel__back-btn"
                       onClick={handleBackToHome}
@@ -2037,9 +2254,16 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       Back
                     </button>
                   </div>
-                  <div className="dl-tool-panel__placeholder">
-                    <p>5.0 版本：Add Art 功能待实现</p>
-                  </div>
+                  <EditArtPanel
+                    selectedArt={selectedArt}
+                    canvas={fabricCanvasRef.current}
+                    onUpdate={handleCanvasUpdate}
+                    onChangeArt={() => {
+                      // [2025-01-30 12:58:00] 返回 Art 选择面板
+                      setSelectedArt(null);
+                      setToolPanelType('art');
+                    }}
+                  />
                 </>
               )}
             </div>

@@ -82,13 +82,29 @@ async function importCategory(topCategory: string, subCategory: string) {
   
   for (const artwork of metadata) {
     try {
-      if (!artwork.gcsKey) {
-        console.log(`  ⚠️  跳过（无 GCS key）: ${artwork.title}`);
+      // [2025-01-30 12:30:00] 支持两种模式：GCS 存储或外部 URL
+      let imageUrl: string;
+      let thumbnailUrl: string | null = null;
+      let gcsKey: string | null = null;
+      let gcsBucket: string | null = null;
+      
+      if (artwork.gcsKey) {
+        // [2025-01-30 12:30:00] 使用 GCS URL
+        imageUrl = `${BASE_URL}/${artwork.gcsKey}`;
+        thumbnailUrl = artwork.thumbnailKey ? `${BASE_URL}/${artwork.thumbnailKey}` : null;
+        gcsKey = artwork.gcsKey;
+        gcsBucket = BUCKET_NAME;
+      } else if (artwork.sourceUrl) {
+        // [2025-01-30 12:30:00] 使用外部 URL（临时方案，用于测试）
+        imageUrl = artwork.sourceUrl;
+        thumbnailUrl = null;
+        gcsKey = null;
+        gcsBucket = null;
+        console.log(`  ℹ️  使用外部 URL: ${artwork.title}`);
+      } else {
+        console.log(`  ⚠️  跳过（无 GCS key 和 sourceUrl）: ${artwork.title}`);
         continue;
       }
-      
-      const imageUrl = `${BASE_URL}/${artwork.gcsKey}`;
-      const thumbnailUrl = artwork.thumbnailKey ? `${BASE_URL}/${artwork.thumbnailKey}` : null;
       
       // [2025-12-11 23:25:00] 检查是否已存在
       const existing = await prisma.art_assets.findUnique({
@@ -100,15 +116,15 @@ async function importCategory(topCategory: string, subCategory: string) {
         continue;
       }
       
-      // [2025-12-12 00:30:00] 创建素材记录（使用 Prisma create，让数据库自动生成 UUID）
+      // [2025-01-30 12:35:00] 创建素材记录（使用 uuid_generate_v4() 生成 UUID）
       await prisma.$executeRawUnsafe(`
         INSERT INTO art_assets (
-          category, name, slug, description, image_url, thumbnail_url,
+          id, category, name, slug, description, image_url, thumbnail_url,
           file_size, width, height, mime_type, is_active, sort_order,
           top_category_id, sub_category_id, gcs_key, gcs_bucket, source_url,
           tags, license, attribution, status, created_at, updated_at
         ) VALUES (
-          $1::varchar, $2::varchar, $3::varchar, $4::text, $5::varchar, $6::varchar,
+          uuid_generate_v4(), $1::varchar, $2::varchar, $3::varchar, $4::text, $5::varchar, $6::varchar,
           $7::integer, $8::integer, $9::integer, $10::varchar, $11::boolean, $12::integer,
           $13::uuid, $14::uuid, $15::varchar, $16::varchar, $17::varchar,
           $18::text[], $19::varchar, $20::text, $21::varchar, NOW(), NOW()
@@ -129,8 +145,8 @@ async function importCategory(topCategory: string, subCategory: string) {
         0,
         topCategoryId,
         subCategoryId,
-        artwork.gcsKey,
-        BUCKET_NAME,
+        gcsKey,
+        gcsBucket,
         artwork.sourceUrl,
         artwork.tags,
         artwork.license,

@@ -29,6 +29,7 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 });
   const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // [2025-12-08] 比例锁状态
   const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // [2025-12-08] 原始宽高比
+  const [color, setColor] = useState('#000000'); // [2025-01-30 13:40:00] Edit Colors 状态
 
   // [2025-01-30 18:05:00] 更新艺术素材属性
   // [2025-12-04 21:55:00] 添加英寸单位转换
@@ -290,86 +291,32 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   // [2025-01-30 18:05:00] Art Size（大小控制）
   // [2025-12-04 21:55:00] 更新英寸单位显示
   // [2025-12-08] 添加比例锁支持
-  const handleSizeChange = (scale: number) => {
+  // [2025-01-30 13:35:00] 修复：参考 upload 和 text 的实现，使用英寸输入框
+  const handleSizeChange = (widthInches: number, heightInches: number) => {
     if (!selectedArt) return;
     
-    // [2025-12-08] 如果锁定比例，同时更新scaleX和scaleY
-    if (aspectRatioLocked) {
-      selectedArt.set({
-        scaleX: scale,
-        scaleY: scale
-      });
-    } else {
-      // 如果不锁定，只更新scaleX（scaleY保持不变）
-      selectedArt.set({
-        scaleX: scale
-      });
-    }
-    
-    selectedArt.setCoords();
-    
-    // 更新显示的尺寸
-    const actualWidth = (selectedArt.width || 0) * (selectedArt.scaleX || 1);
-    const actualHeight = (selectedArt.height || 0) * (selectedArt.scaleY || 1);
-    setSize({ width: actualWidth, height: actualHeight });
-    
-    // 更新英寸单位
-    setSizeInches({
-      width: pixelsToInches(actualWidth),
-      height: pixelsToInches(actualHeight)
-    });
-    
-    if (canvas) {
-      canvas.renderAll();
-      onUpdate();
-    }
-  };
-  
-  // [2025-12-08] 处理宽度变化（当比例锁未锁定时）
-  const handleWidthChange = (widthInches: number) => {
-    if (!selectedArt || aspectRatioLocked) return;
-    
+    // 转换为像素（150 DPI，与 pixelsToInches 保持一致）
     const dpi = 150;
     const widthPixels = widthInches * dpi;
-    const originalWidth = selectedArt.width || 1;
-    const scaleX = widthPixels / originalWidth;
-    
-    selectedArt.set({ scaleX });
-    selectedArt.setCoords();
-    
-    const actualWidth = originalWidth * scaleX;
-    const actualHeight = (selectedArt.height || 0) * (selectedArt.scaleY || 1);
-    setSize({ width: actualWidth, height: actualHeight });
-    setSizeInches({
-      width: widthInches,
-      height: pixelsToInches(actualHeight)
-    });
-    
-    if (canvas) {
-      canvas.renderAll();
-      onUpdate();
-    }
-  };
-  
-  // [2025-12-08] 处理高度变化（当比例锁未锁定时）
-  const handleHeightChange = (heightInches: number) => {
-    if (!selectedArt || aspectRatioLocked) return;
-    
-    const dpi = 150;
     const heightPixels = heightInches * dpi;
+    
+    // 计算缩放比例
+    const originalWidth = selectedArt.width || 1;
     const originalHeight = selectedArt.height || 1;
+    const scaleX = widthPixels / originalWidth;
     const scaleY = heightPixels / originalHeight;
     
-    selectedArt.set({ scaleY });
+    selectedArt.set({
+      scaleX,
+      scaleY
+    });
     selectedArt.setCoords();
     
-    const actualWidth = (selectedArt.width || 0) * (selectedArt.scaleX || 1);
+    // 更新状态
+    const actualWidth = originalWidth * scaleX;
     const actualHeight = originalHeight * scaleY;
     setSize({ width: actualWidth, height: actualHeight });
-    setSizeInches({
-      width: pixelsToInches(actualWidth),
-      height: heightInches
-    });
+    setSizeInches({ width: widthInches, height: heightInches });
     
     if (canvas) {
       canvas.renderAll();
@@ -377,89 +324,24 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
     }
   };
 
-  // [2025-01-30 18:05:00] Make One Color（简化版）
-  // [2025-12-04 22:00:00] 实现单色化功能：将图像转换为灰度
-  const handleMakeOneColor = () => {
-    if (!selectedArt || !canvas) return;
-    
-    try {
-      // 使用 Canvas API 将图像转换为灰度
-      const imgElement = selectedArt.getElement() as HTMLImageElement;
-      if (!imgElement) return;
-      
-      const tempCanvas = document.createElement('canvas');
-      const tempCtx = tempCanvas.getContext('2d');
-      if (!tempCtx) return;
-      
-      tempCanvas.width = imgElement.width || selectedArt.width || 1;
-      tempCanvas.height = imgElement.height || selectedArt.height || 1;
-      
-      // 绘制原始图像
-      tempCtx.drawImage(imgElement, 0, 0);
-      
-      // 获取图像数据并转换为灰度
-      const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-      const data = imageData.data;
-      
-      for (let i = 0; i < data.length; i += 4) {
-        // 灰度公式：0.299*R + 0.587*G + 0.114*B
-        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        data[i] = gray;     // R
-        data[i + 1] = gray; // G
-        data[i + 2] = gray; // B
-        // data[i + 3] 保持 alpha 不变
-      }
-      
-      tempCtx.putImageData(imageData, 0, 0);
-      
-      // 从处理后的 Canvas 创建新的 Fabric Image
-      tempCanvas.toBlob((blob) => {
-        if (!blob) return;
-        
-        const url = URL.createObjectURL(blob);
-        fabric.Image.fromURL(url, (fabricImage) => {
-          if (fabricImage && canvas && selectedArt) {
-            // 保持原有的位置和缩放
-            fabricImage.set({
-              left: selectedArt.left,
-              top: selectedArt.top,
-              scaleX: selectedArt.scaleX,
-              scaleY: selectedArt.scaleY,
-              angle: selectedArt.angle,
-              originX: selectedArt.originX,
-              originY: selectedArt.originY,
-              name: selectedArt.name || `art_${Date.now()}`
-            });
-            
-            // 替换原始图像
-            canvas.remove(selectedArt);
-            canvas.add(fabricImage);
-            canvas.setActiveObject(fabricImage);
-            canvas.renderAll();
-            
-            // 清理 URL
-            URL.revokeObjectURL(url);
-            
-            onUpdate();
-          }
-        });
-      }, 'image/png');
-    } catch (error) {
-      console.error('[EditArtPanel] Error making one color:', error);
-      alert('Failed to apply Make One Color effect');
+  // [2025-01-30 18:05:00] Edit Colors
+  // [2025-01-30 13:40:00] 修复：交互形式保持和 add text 一样（使用颜色选择器）
+  
+  // [2025-01-30 13:40:00] 初始化颜色（从对象获取，如果有的话）
+  useEffect(() => {
+    if (selectedArt) {
+      // Art 对象可能没有 fill 属性，使用默认黑色
+      const artColor = (selectedArt as any).fill || '#000000';
+      setColor(typeof artColor === 'string' ? artColor : '#000000');
     }
-  };
-
-  // [2025-01-30 18:05:00] Edit Colors（简化版）
-  // [2025-12-04 22:00:00] 实现颜色编辑功能：颜色叠加（简化版）
-  const handleEditColors = () => {
+  }, [selectedArt]);
+  
+  const handleColorChange = (newColor: string) => {
+    setColor(newColor);
     if (!selectedArt || !canvas) return;
     
-    // 简化版：显示颜色选择器，应用颜色叠加效果
-    const color = prompt('Enter a hex color (e.g., #FF0000 for red):', '#000000');
-    if (!color) return;
-    
     try {
+      // [2025-01-30 13:40:00] 对于图片对象，应用颜色叠加效果
       const imgElement = selectedArt.getElement() as HTMLImageElement;
       if (!imgElement) return;
       
@@ -475,7 +357,7 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
       
       // 应用颜色叠加
       tempCtx.globalCompositeOperation = 'multiply';
-      tempCtx.fillStyle = color;
+      tempCtx.fillStyle = newColor;
       tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
       
       // 从处理后的 Canvas 创建新的 Fabric Image
@@ -485,7 +367,7 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
         const url = URL.createObjectURL(blob);
         fabric.Image.fromURL(url, (fabricImage) => {
           if (fabricImage && canvas && selectedArt) {
-            // 保持原有的位置和缩放
+            // 保持原有的位置、缩放和属性
             fabricImage.set({
               left: selectedArt.left,
               top: selectedArt.top,
@@ -494,13 +376,21 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
               angle: selectedArt.angle,
               originX: selectedArt.originX,
               originY: selectedArt.originY,
-              name: selectedArt.name || `art_${Date.now()}`
+              name: selectedArt.name || `art_${Date.now()}`,
+              data: (selectedArt as any).data,
             });
             
             // 替换原始图像
+            const oldIndex = canvas.getObjects().indexOf(selectedArt);
             canvas.remove(selectedArt);
-            canvas.add(fabricImage);
+            canvas.insertAt(fabricImage, oldIndex, false);
             canvas.setActiveObject(fabricImage);
+            
+            // 应用角控件
+            if (typeof (canvas as any).addIconControlsToObject === 'function') {
+              (canvas as any).addIconControlsToObject(fabricImage);
+            }
+            
             canvas.renderAll();
             
             // 清理 URL
@@ -512,7 +402,6 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
       }, 'image/png');
     } catch (error) {
       console.error('[EditArtPanel] Error editing colors:', error);
-      alert('Failed to apply color edit effect');
     }
   };
 
@@ -530,11 +419,10 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   return (
     <div className="dl-edit-art-panel">
       {/* 1. Art Size（宽×高，单位 in）- [2025-12-08] 添加比例锁 */}
+      {/* [2025-01-30 13:35:00] 修复：参考 upload 和 text 的实现，使用英寸输入框 */}
       <div className="dl-edit-art-panel__section">
         <div className="dl-edit-art-panel__size-header">
-          <label className="dl-edit-art-panel__label">
-            Art Size: {sizeInches.width.toFixed(2)} × {sizeInches.height.toFixed(2)} in
-          </label>
+          <label className="dl-edit-art-panel__label">Art Size</label>
           <button
             type="button"
             className={`dl-edit-art-panel__lock-btn ${aspectRatioLocked ? 'is-locked' : ''}`}
@@ -555,64 +443,56 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
             )}
           </button>
         </div>
-        {aspectRatioLocked ? (
-          // 锁定比例时，使用单个滑块
+        <div className="dl-edit-art-panel__size-inputs">
           <input
-            type="range"
+            type="number"
+            className="dl-edit-art-panel__size-input"
+            value={sizeInches.width.toFixed(2)}
+            onChange={(e) => {
+              const newWidth = parseFloat(e.target.value) || 0;
+              if (newWidth > 0) {
+                let newHeight = sizeInches.height;
+                if (aspectRatioLocked) {
+                  // [2025-01-30 13:35:00] 锁定比例时，按比例计算高度
+                  newHeight = newWidth / originalAspectRatio;
+                }
+                handleSizeChange(newWidth, newHeight);
+              }
+            }}
+            step="0.01"
             min="0.1"
-            max="2"
-            step="0.1"
-            value={currentScale}
-            onChange={(e) => handleSizeChange(parseFloat(e.target.value))}
-            className="dl-edit-art-panel__slider"
+            placeholder="Width"
           />
-        ) : (
-          // 未锁定比例时，显示宽度和高度输入框
-          <div className="dl-edit-art-panel__size-inputs">
-            <div className="dl-edit-art-panel__size-input-group">
-              <label className="dl-edit-art-panel__size-label">Width</label>
-              <input
-                type="number"
-                className="dl-edit-art-panel__size-input"
-                value={sizeInches.width.toFixed(2)}
-                onChange={(e) => handleWidthChange(parseFloat(e.target.value) || 0)}
-                step="0.01"
-                min="0.1"
-              />
-              <span className="dl-edit-art-panel__size-unit">in</span>
-            </div>
-            <div className="dl-edit-art-panel__size-input-group">
-              <label className="dl-edit-art-panel__size-label">Height</label>
-              <input
-                type="number"
-                className="dl-edit-art-panel__size-input"
-                value={sizeInches.height.toFixed(2)}
-                onChange={(e) => handleHeightChange(parseFloat(e.target.value) || 0)}
-                step="0.01"
-                min="0.1"
-              />
-              <span className="dl-edit-art-panel__size-unit">in</span>
-            </div>
-          </div>
-        )}
+          <span className="dl-edit-art-panel__size-separator">×</span>
+          <input
+            type="number"
+            className="dl-edit-art-panel__size-input"
+            value={sizeInches.height.toFixed(2)}
+            onChange={(e) => {
+              const newHeight = parseFloat(e.target.value) || 0;
+              if (newHeight > 0) {
+                let newWidth = sizeInches.width;
+                if (aspectRatioLocked) {
+                  // [2025-01-30 13:35:00] 锁定比例时，按比例计算宽度
+                  newWidth = newHeight * originalAspectRatio;
+                }
+                handleSizeChange(newWidth, newHeight);
+              }
+            }}
+            step="0.01"
+            min="0.1"
+            placeholder="Height"
+          />
+          <span className="dl-edit-art-panel__size-unit">in</span>
+        </div>
       </div>
 
       {/* 2-6. Center / Layering / Flip / Duplicate / Rotation - 统一封装为 ArtEditControls */}
+      {/* [2025-01-30 13:50:00] 确保操作按钮布局与 upload/text 一致 */}
+      {/* [2025-01-30 14:00:00] 删除 +1 和 -1 按钮（Bring Forward 和 Send Backward） */}
       <ArtEditControls
         onCenter={handleCenter}
         onBringToFront={handleBringToFront}
-        onBringForward={() => {
-          if (!selectedArt || !canvas) return;
-          canvas.bringForward(selectedArt);
-          canvas.renderAll();
-          onUpdate();
-        }}
-        onSendBackward={() => {
-          if (!selectedArt || !canvas) return;
-          canvas.sendBackwards(selectedArt);
-          canvas.renderAll();
-          onUpdate();
-        }}
         onSendToBack={handleSendToBack}
         onFlipHorizontal={handleFlipHorizontal}
         onFlipVertical={handleFlipVertical}
@@ -621,36 +501,33 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
         onRotationChange={handleRotationChange}
       />
 
-      {/* 7. Make One Color */}
+      {/* 7. Edit Colors - [2025-01-30 13:40:00] 交互形式保持和 add text 一样 */}
       <div className="dl-edit-art-panel__section">
-        <button
-          className="dl-edit-art-panel__btn"
-          onClick={handleMakeOneColor}
-          type="button"
-        >
-          Make One Color
-        </button>
+        <label className="dl-edit-art-panel__label">Edit Color</label>
+        <div className="dl-edit-art-panel__color-group">
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => handleColorChange(e.target.value)}
+            className="dl-edit-art-panel__color-input"
+          />
+          <input
+            type="text"
+            value={color}
+            onChange={(e) => handleColorChange(e.target.value)}
+            className="dl-edit-art-panel__color-text"
+          />
+        </div>
       </div>
 
-      {/* 8. Edit Colors */}
-      <div className="dl-edit-art-panel__section">
-        <button
-          className="dl-edit-art-panel__btn"
-          onClick={handleEditColors}
-          type="button"
-        >
-          Edit Colors
-        </button>
-      </div>
-
-      {/* 9. Change Art */}
+      {/* 8. Add New Art - [2025-01-30 13:45:00] 修改为 Add New Art（不是替换） */}
       <div className="dl-edit-art-panel__section">
         <button
           className="dl-edit-art-panel__btn dl-edit-art-panel__btn--primary"
           onClick={onChangeArt}
           type="button"
         >
-          Change Art
+          Add New Art
         </button>
       </div>
     </div>

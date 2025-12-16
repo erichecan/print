@@ -2000,9 +2000,76 @@
 }
 
 /* [2025-12-16 03:05:00] Art 面板工具栏样式 */
+/* [2025-01-30 13:50:00] 修复：布局与 upload/text 保持一致 */
 .dl-edit-art-panel__section--toolbar {
   padding-bottom: var(--dl-space-4);
   border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-art-panel__controls {
+  display: flex;
+  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+/* [2025-01-30 13:50:00] 工具组样式 - 支持带标签的工具（Center、Layering、Flip） */
+.dl-edit-art-panel__tool-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--dl-space-1);
+}
+
+.dl-edit-art-panel__tool-buttons {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  overflow: hidden;
+}
+
+.dl-edit-art-panel__tool-buttons .dl-edit-art-panel__control-btn {
+  border: none;
+  border-radius: 0;
+  border-right: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-art-panel__tool-buttons .dl-edit-art-panel__control-btn:last-child {
+  border-right: none;
+}
+
+.dl-edit-art-panel__tool-label {
+  font-size: 11px;
+  color: var(--dl-text-secondary);
+  text-align: center;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.dl-edit-art-panel__control-btn {
+  width: 40px;
+  height: 40px;
+  padding: var(--dl-space-2);
+  background: var(--dl-bg-panel);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  color: var(--dl-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dl-transition-base);
+}
+
+.dl-edit-art-panel__control-btn:hover:not(:disabled) {
+  background: var(--dl-bg-primary);
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-art-panel__control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .dl-edit-art-panel__toolbar {
@@ -2018,6 +2085,21 @@
   gap: var(--dl-space-2);
   flex: 1;
   min-width: 120px;
+}
+
+.dl-edit-art-panel__rotation {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+}
+
+.dl-edit-art-panel__rotation-input {
+  width: 60px;
+  padding: var(--dl-space-1) var(--dl-space-2);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  text-align: center;
 }
 
 .dl-edit-art-panel__label {
@@ -2097,6 +2179,94 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
+}
+
+/* [2025-01-30 13:50:00] Art Size 输入框样式 - 参考 upload 实现 */
+.dl-edit-art-panel__size-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+}
+
+.dl-edit-art-panel__size-input {
+  flex: 1;
+  padding: var(--dl-space-2) var(--dl-space-3);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+}
+
+.dl-edit-art-panel__size-input:focus {
+  outline: none;
+  border-color: var(--dl-color-primary);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.dl-edit-art-panel__size-separator {
+  color: var(--dl-text-secondary);
+  font-size: var(--dl-font-sm);
+}
+
+.dl-edit-art-panel__size-unit {
+  color: var(--dl-text-secondary);
+  font-size: var(--dl-font-sm);
+  padding: 0 var(--dl-space-2);
+}
+
+.dl-edit-art-panel__size-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-edit-art-panel__lock-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  color: var(--dl-text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dl-transition-base);
+}
+
+.dl-edit-art-panel__lock-btn:hover {
+  background: var(--dl-bg-primary);
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-art-panel__lock-btn.is-locked {
+  background: var(--dl-color-primary);
+  color: var(--dl-text-inverse);
+  border-color: var(--dl-color-primary);
+}
+
+/* [2025-01-30 13:40:00] Edit Color 样式 - 参考 text 实现 */
+.dl-edit-art-panel__color-group {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+}
+
+.dl-edit-art-panel__color-input {
+  width: 50px;
+  height: 40px;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  cursor: pointer;
+}
+
+.dl-edit-art-panel__color-text {
+  flex: 1;
+  padding: var(--dl-space-2);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
   background: var(--dl-color-primary);
   cursor: pointer;
   border: none;

@@ -86,33 +86,48 @@ exports.getArtworks = async (req, res) => {
     ]);
 
     // [2025-12-11 23:30:00] 格式化响应
-    const formattedArtworks = artworks.map(artwork => ({
-      id: artwork.id,
-      title: artwork.name,
-      slug: artwork.slug,
-      description: artwork.description,
-      imageUrl: artwork.gcs_key
-        ? `${gcsUtils.getImageBaseUrl()}/${artwork.gcs_key}`
-        : artwork.image_url,
-      thumbnailUrl: artwork.thumbnail_url || (artwork.gcs_key
-        ? `${gcsUtils.getImageBaseUrl()}/${artwork.gcs_key.replace(/\.(png|jpg|jpeg|svg)$/i, '@200x200.jpg')}`
-        : null),
-      width: artwork.width,
-      height: artwork.height,
-      tags: artwork.tags,
-      license: artwork.license,
-      attribution: artwork.attribution,
-      topCategory: artwork.top_category ? {
-        id: artwork.top_category.id,
-        name: artwork.top_category.name,
-        slug: artwork.top_category.slug,
-      } : null,
-      subCategory: artwork.sub_category ? {
-        id: artwork.sub_category.id,
-        name: artwork.sub_category.name,
-        slug: artwork.sub_category.slug,
-      } : null,
-    }));
+    // [2025-01-30 13:15:00] 修复：只有当 gcs_key 存在时才使用 GCS URL，否则直接使用 image_url（支持外部 URL）
+    const formattedArtworks = artworks.map(artwork => {
+      let imageUrl = artwork.image_url; // 默认使用 image_url（可能是外部 URL）
+      let thumbnailUrl = artwork.thumbnail_url;
+      
+      // [2025-01-30 13:15:00] 如果存在 gcs_key，尝试构建 GCS URL（需要 GCS 配置）
+      if (artwork.gcs_key) {
+        try {
+          const baseUrl = gcsUtils.getImageBaseUrl();
+          imageUrl = `${baseUrl}/${artwork.gcs_key}`;
+          thumbnailUrl = artwork.thumbnail_url || `${baseUrl}/${artwork.gcs_key.replace(/\.(png|jpg|jpeg|svg)$/i, '@200x200.jpg')}`;
+        } catch (error) {
+          // [2025-01-30 13:15:00] GCS 配置缺失时，回退到 image_url（外部 URL）
+          console.warn(`[getArtworks] GCS not configured, using image_url for artwork ${artwork.id}:`, error.message);
+          // imageUrl 和 thumbnailUrl 保持默认值（使用 image_url）
+        }
+      }
+      
+      return {
+        id: artwork.id,
+        title: artwork.name,
+        slug: artwork.slug,
+        description: artwork.description,
+        imageUrl,
+        thumbnailUrl,
+        width: artwork.width,
+        height: artwork.height,
+        tags: artwork.tags,
+        license: artwork.license,
+        attribution: artwork.attribution,
+        topCategory: artwork.top_category ? {
+          id: artwork.top_category.id,
+          name: artwork.top_category.name,
+          slug: artwork.top_category.slug,
+        } : null,
+        subCategory: artwork.sub_category ? {
+          id: artwork.sub_category.id,
+          name: artwork.sub_category.name,
+          slug: artwork.sub_category.slug,
+        } : null,
+      };
+    });
 
     res.json({
       success: true,
@@ -247,9 +262,17 @@ exports.getArtwork = async (req, res) => {
         title: artwork.name,
         slug: artwork.slug,
         description: artwork.description,
-        imageUrl: artwork.gcs_key
-          ? `${gcsUtils.getImageBaseUrl()}/${artwork.gcs_key}`
-          : artwork.image_url,
+        imageUrl: (() => {
+          if (artwork.gcs_key) {
+            try {
+              return `${gcsUtils.getImageBaseUrl()}/${artwork.gcs_key}`;
+            } catch (error) {
+              console.warn(`[getArtwork] GCS not configured, using image_url:`, error.message);
+              return artwork.image_url;
+            }
+          }
+          return artwork.image_url;
+        })(),
         thumbnailUrl: artwork.thumbnail_url,
         width: artwork.width,
         height: artwork.height,

@@ -16,8 +16,10 @@
     "db:seed": "prisma db seed",
     "// [2025-12-11 23:55:00] Artwork crawler and import scripts": "",
     "crawl:emojis:animals": "ts-node scripts/crawler/apify/emojis-animals.ts",
+    "crawl:freepik": "ts-node scripts/crawler/freepik/freepik-stock.ts",
     "ingest:upload": "ts-node scripts/ingest/upload-to-gcs.ts",
-    "ingest:db": "ts-node scripts/ingest/import-artworks.ts"
+    "ingest:db": "ts-node scripts/ingest/import-artworks.ts",
+    "check:art-assets": "node scripts/check-art-assets.js"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
