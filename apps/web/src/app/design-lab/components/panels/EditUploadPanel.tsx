@@ -18,7 +18,8 @@ interface EditUploadPanelProps {
   onReset?: () => void;
   onSave?: () => void;
   onClose?: () => void;
-  onOpenRatingModal?: () => void; // [2025-12-08] 添加可选的上传体验评分模态框回调
+  // [2025-12-16 07:14:10] 已移除上传评分模块：保留回调仅为兼容旧调用点（当前面板不再渲染入口）
+  onOpenRatingModal?: () => void;
 }
 
 const EditUploadPanel: React.FC<EditUploadPanelProps> = ({ 
@@ -507,38 +508,10 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
         </div>
 
         {/* Information Box */}
-        <div className="dl-edit-upload-panel__section">
-          <div className="dl-edit-upload-panel__info-box">
-            <svg className="dl-edit-upload-panel__info-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="8" cy="8" r="7" />
-              <line x1="8" y1="4" x2="8" y2="8" />
-              <line x1="8" y1="12" x2="8" y2="12" />
-            </svg>
-            <div className="dl-edit-upload-panel__info-content">
-              <p className="dl-edit-upload-panel__info-title">Need A Pantone Color Match?</p>
-              <p className="dl-edit-upload-panel__info-text">
-                Add your brand colors to orders of 6 items or more.
-              </p>
-            </div>
-          </div>
-        </div>
+        {/* [2025-12-16 07:14:10] 按产品要求移除：Pantone 提示模块（避免 Upload 面板出现无关营销信息） */}
 
         {/* Feedback Link */}
-        <div className="dl-edit-upload-panel__section">
-          <a 
-            href="#" 
-            className="dl-edit-upload-panel__feedback-link"
-            onClick={(e) => { 
-              e.preventDefault();
-              // [2025-12-08] 打开上传体验评分模态框
-              if (onOpenRatingModal) {
-                onOpenRatingModal();
-              }
-            }}
-          >
-            How would you rate our upload experience?
-          </a>
-        </div>
+        {/* [2025-12-16 07:14:10] 按产品要求移除：Upload 体验评分入口（截图中的模块） */}
       </div>
     </div>
   );
