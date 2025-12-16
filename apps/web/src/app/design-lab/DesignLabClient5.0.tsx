@@ -545,6 +545,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
         fabricCanvasRef.current = fabricCanvas;
 
+        // [2025-12-16 06:22:10] 暴露 canvas 到 window，便于 Playwright/DevTools 自动化测试读取对象与控件状态
+        // 注意：不包含任何敏感信息，仅保障测试可观测性
+        (window as any).fabricCanvas = fabricCanvas;
+        (window as any).DesignLabCanvas = { getCanvas: () => fabricCanvas };
+
         // [2025-12-14 07:30:00] 步骤2：设置选中对象的边框样式（灰色，2px）
         // [2025-12-14 07:30:00] 步骤1：确保基本拖拽功能可用（Fabric.js 默认支持，只需确保 selectable 和 evented 为 true）
         if (fabric.Object) {

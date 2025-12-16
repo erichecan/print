@@ -47,6 +47,7 @@ import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductIma
 import { analytics } from '@/lib/analytics';
 import { debugLog } from '@/utils/debugLogger'; // [2025-01-30 21:50:00] 调试日志工具
 import { calculateImageFit } from '@/design/utils/fit'; // [2025-01-31 18:00:00] 统一使用 calculateImageFit 确保商品主图尺寸和位置一致性
+import { registerCornerControls, applyUploadCornerControlsToObject } from './design-lab5/upload-controls/registerUploadCornerControls'; // 2025-12-16 02:50:00 导入通用角控件模块
 import './design-lab.css';
 
 interface ProductInfo {
@@ -1475,20 +1476,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     
     // [2025-12-11 23:59:30] 重置删除来源标记
     removalContextRef.current = 'unknown';
-    
-    // [2025-12-08 23:00:00] 获取删除控件（如果已创建）
-    const deleteControl = (canvas as any).deleteControl;
-    
+
+    // [2025-12-16 02:52:00] 移除旧 deleteControl 逻辑，新的角控件系统会自动通过 object:added 事件应用
+
     // 恢复对象
     snapshot.objects.forEach((objData: any) => {
       fabric.util.enlivenObjects([objData], (objects: fabric.Object[]) => {
         objects.forEach(obj => {
-          // [2025-12-08 23:00:00] 为恢复的对象添加删除控件
-          const objName = (obj as any).name || '';
-          if (objName !== 'background' && deleteControl) {
-            obj.controls = obj.controls || {};
-            obj.controls.deleteControl = deleteControl;
-          }
+          // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
           canvas.add(obj);
         });
         canvas.renderAll();
@@ -1695,11 +1690,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               },
             });
 
-            // [2025-12-08 23:00:00] 为Names & Numbers文本对象添加删除控件
-            if ((canvas as any).deleteControl) {
-              textObj.controls = textObj.controls || {};
-              textObj.controls.deleteControl = (canvas as any).deleteControl;
-            }
+            // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
 
             canvas.add(textObj);
           });
@@ -1926,11 +1917,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         originY: 'center'
       });
       
-      // [2025-12-08 23:00:00] 为文本对象添加删除控件
-      if (canvas && (canvas as any).deleteControl) {
-        textObj.controls = textObj.controls || {};
-        textObj.controls.deleteControl = (canvas as any).deleteControl;
-      }
+      // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
       
       // [2025-01-30 22:15:00] 先添加对象到画布
       canvas.add(textObj);
@@ -2054,11 +2041,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         
         const canvas = fabricCanvasRef.current;
         if (canvas) {
-          // [2025-12-08 23:00:00] 为艺术素材对象添加删除控件
-          if ((canvas as any).deleteControl) {
-            fabricImage.controls = fabricImage.controls || {};
-            fabricImage.controls.deleteControl = (canvas as any).deleteControl;
-          }
+          // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
           
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
@@ -2287,11 +2270,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           
           const canvas = fabricCanvasRef.current;
           if (canvas) {
-            // [2025-12-08 23:00:00] 为上传的图片对象添加删除控件
-            if ((canvas as any).deleteControl) {
-              fabricImage.controls = fabricImage.controls || {};
-              fabricImage.controls.deleteControl = (canvas as any).deleteControl;
-            }
+            // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
             
             console.log('[DesignLab] Adding image to canvas:', {
               canvasWidth: canvas.width,
@@ -2527,11 +2506,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         
         const canvas = fabricCanvasRef.current;
         if (canvas) {
-          // [2025-12-08 23:00:00] 为最近上传的图片对象添加删除控件
-          if ((canvas as any).deleteControl) {
-            fabricImage.controls = fabricImage.controls || {};
-            fabricImage.controls.deleteControl = (canvas as any).deleteControl;
-          }
+          // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
           
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
@@ -3050,12 +3025,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
                   top: (obj.top || 0) + 20,
                 });
                 
-                // 为新对象添加删除控件
+                // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
                 const canvas = fabricCanvasRef.current;
-                if (canvas && (canvas as any).deleteControl) {
-                  obj.controls = obj.controls || {};
-                  obj.controls.deleteControl = (canvas as any).deleteControl;
-                }
                 
                 canvas.add(obj);
                 canvas.setActiveObject(obj);
@@ -3284,105 +3255,78 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-01-30 23:30:00] Design Lab 4.0: 设置 fabricCanvasRef
         fabricCanvasRef.current = fabricCanvas;
 
-        // [2025-12-08 23:00:00] 创建右上角删除按钮控件
-        // [2025-12-10] 修复：确保 fabric.Control 存在后再创建
-        if (!fabric.Control) {
-          throw new Error('fabric.Control is not available');
-        }
-        const deleteControl = new fabric.Control({
-          x: 0.5,
-          y: -0.5,
-          offsetX: 0,
-          offsetY: -20,
-          actionHandler: (eventData, transformData, x, y) => {
-            const target = transformData.target;
-            if (target && fabricCanvas) {
-              const objName = (target as any).name || 'unnamed';
-              const objLayerType = (target as any).data?.layerType;
-              console.log('[DesignLab] 🗑️ Removing object (deleteControl actionHandler inline):', {
-                objName,
-                objLayerType,
-                location: 'deleteControl actionHandler (inline)',
-                callStack: new Error().stack?.split('\n').slice(1, 5).join('\n'),
-              });
-              // [2025-12-11 23:59:30] 标记删除来源为用户删除
-              removalContextRef.current = 'user-delete';
-              // 保存到历史记录以便Undo
-              const snapshot = canvasToSnapshot(fabricCanvas);
-              setCanvas(snapshot, { pushHistory: true });
-              
-              // 删除对象
-              fabricCanvas.remove(target);
-              fabricCanvas.renderAll();
-              
-              // 更新画布状态
-              const newSnapshot = canvasToSnapshot(fabricCanvas);
-              setCanvas(newSnapshot, { pushHistory: true });
-              
-              return true;
-            }
-            return false;
-          },
-          cursorStyle: 'pointer',
-          render: (ctx, left, top, styleOverride, fabricObject) => {
-            const size = 20;
-            ctx.save();
-            ctx.translate(left, top);
-            ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
-            
-            // 绘制圆形背景
-            ctx.fillStyle = '#ef4444';
-            ctx.beginPath();
-            ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            // 绘制X图标
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.lineCap = 'round';
-            const iconSize = size * 0.4;
-            ctx.beginPath();
-            ctx.moveTo(-iconSize / 2, -iconSize / 2);
-            ctx.lineTo(iconSize / 2, iconSize / 2);
-            ctx.moveTo(iconSize / 2, -iconSize / 2);
-            ctx.lineTo(-iconSize / 2, iconSize / 2);
-            ctx.stroke();
-            
-            ctx.restore();
-          },
-          mouseUpHandler: (eventData, transformData) => {
-            const target = transformData.target;
-            if (target && fabricCanvas) {
-              // [2025-12-11 23:59:30] 标记删除来源为用户删除
-              removalContextRef.current = 'user-delete';
-              // 保存到历史记录以便Undo
-              const snapshot = canvasToSnapshot(fabricCanvas);
-              setCanvas(snapshot, { pushHistory: true });
-              
-              // 删除对象
-              fabricCanvas.remove(target);
-              fabricCanvas.renderAll();
-              
-              // 更新画布状态
-              const newSnapshot = canvasToSnapshot(fabricCanvas);
-              setCanvas(newSnapshot, { pushHistory: true });
-              
-              return true;
-            }
-            return false;
+        // [2025-12-16 02:50:00] 注册通用角控件（删除/复制/缩放）for upload/text/art 三类对象
+        // 替换旧的 deleteControl 实现，使用新的模块化角控件系统
+        const matcher = (obj: fabric.Object) => {
+          const layerType = (obj as any).data?.layerType;
+          const name = (obj as any).name || '';
+          const objType = obj.type;
+          
+          // upload 对象：layerType === 'upload' 或 name 以 image_ 开头（排除 art_）
+          if (layerType === 'upload' || (name.startsWith('image_') && !name.startsWith('art_'))) {
+            return true;
           }
-        });
-
-        // [2025-12-08 23:00:00] 为所有对象添加删除控件（排除背景）
-        const addDeleteControlToObject = (obj: fabric.Object) => {
-          const objName = (obj as any).name || '';
-          if (objName !== 'background' && !obj.controls) {
-            obj.controls = {};
+          
+          // text 对象：layerType === 'text' 或 type 是 i-text/text/textbox
+          if (layerType === 'text' || objType === 'i-text' || objType === 'text' || objType === 'textbox' || name.startsWith('text_')) {
+            return true;
           }
-          if (objName !== 'background') {
-            obj.controls.deleteControl = deleteControl;
+          
+          // art 对象：layerType === 'art' 或 name 以 art_ 开头
+          if (layerType === 'art' || name.startsWith('art_')) {
+            return true;
           }
+          
+          return false;
         };
+
+        try {
+          registerCornerControls({
+            fabric: fabricModule,
+            canvas: fabricCanvas,
+            matcher,
+            options: {
+              controlSize: 160, // [2025-12-16 02:50:00] 5倍放大，匹配用户要求
+              buttonBackground: '#ffffff',
+              buttonBorder: '#e5e7eb',
+              buttonBorderWidth: 3,
+              deleteIconColor: '#ef4444',
+              copyIconColor: '#2563eb',
+              resizeIconColor: '#2563eb',
+              // [2025-12-16 02:58:00] 删除回调：保存历史记录（删除前和删除后各保存一次）
+              onObjectDeleted: (target, targetCanvas) => {
+                removalContextRef.current = 'user-delete';
+                const snapshot = canvasToSnapshot(targetCanvas);
+                setCanvas(snapshot, { pushHistory: true });
+              },
+              // [2025-12-16 02:58:00] 修改回调：当对象被修改（缩放/移动等）时保存历史记录
+              // 注意：resize 操作通过 actionHandler 触发，会在 object:modified 事件中处理
+              onObjectModified: (target, targetCanvas) => {
+                const snapshot = canvasToSnapshot(targetCanvas);
+                setCanvas(snapshot, { pushHistory: true });
+              },
+            },
+          });
+          
+          console.log('[DesignLab] ✅ 通用角控件已注册（upload/text/art 三类对象）');
+          
+          // [2025-12-16 02:50:00] 为现有对象应用角控件（如果 canvas 上已有对象）
+          fabricCanvas.getObjects().forEach((obj) => {
+            if (matcher(obj)) {
+              applyUploadCornerControlsToObject({ canvas: fabricCanvas, obj });
+            }
+          });
+        } catch (error) {
+          console.error('[DesignLab] ❌ 注册通用角控件失败:', error);
+          // 不阻断初始化，但记录错误
+        }
+
+        // [2025-12-16 02:50:00] 保持向后兼容：保留 deleteControl 引用（但实际使用新系统）
+        // 为了兼容旧代码中对 (canvas as any).deleteControl 的引用
+        const legacyDeleteControl = {
+          // 兼容旧代码，但实际上不会使用
+        };
+        (fabricCanvas as any).deleteControl = legacyDeleteControl;
 
         // [2025-01-30 23:30:00] Design Lab 4.0: 继续原有的画布事件绑定逻辑
 
@@ -3750,21 +3694,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         fabricCanvas.on('object:moving', handleObjectMoving); // [2025-12-08 23:30:00] 吸附对齐线
         fabricCanvas.on('object:moved', handleObjectMoved); // [2025-12-08 23:30:00] 清除吸附线
         fabricCanvas.on('object:added', (e) => {
-          // [2025-12-08 23:00:00] 为新添加的对象添加删除控件
-          if (e.target) {
-            addDeleteControlToObject(e.target);
-          }
+          // [2025-12-16 02:52:00] 角控件会在 registerCornerControls 的 object:added 监听器中自动应用
           handleObjectAdded();
         });
         fabricCanvas.on('object:removed', handleObjectRemoved);
 
-        // [2025-12-08 23:00:00] 为现有对象添加删除控件
-        fabricCanvas.getObjects().forEach((obj) => {
-          addDeleteControlToObject(obj);
-        });
-
-        // [2025-12-08 23:00:00] 保存删除控件到canvas，以便后续使用
-        (fabricCanvas as any).deleteControl = deleteControl;
+        // [2025-12-16 02:52:00] 角控件已在 registerCornerControls 中为现有对象应用（见上方代码）
 
         console.log('[DesignLab] Event listeners attached, canvas ready');
 

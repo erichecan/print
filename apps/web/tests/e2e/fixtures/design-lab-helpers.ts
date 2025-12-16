@@ -57,8 +57,14 @@ export async function clickRailButton(page: Page, buttonText: string): Promise<v
  * [2025-01-27 12:00:00]
  */
 export async function openUploadPanel(page: Page): Promise<void> {
-  await clickRailButton(page, 'Upload');
+  // [2025-12-16 06:24:10] 兼容 5.0：Rail 的 Upload 按钮是 toggle，首次点击可能从 edit-upload 回到 home
+  // 因此这里最多点击两次，直到 UploadPanel 出现
   const panel = page.locator('.dl-upload-panel, .dl-panel--upload').first();
+  for (let i = 0; i < 2; i++) {
+    await clickRailButton(page, 'Upload');
+    const ok = await panel.isVisible({ timeout: 1500 }).catch(() => false);
+    if (ok) break;
+  }
   await expect(panel).toBeVisible({ timeout: 5000 });
 }
 
@@ -252,8 +258,10 @@ export async function verifyCanvasHasObjects(page: Page, minCount = 1): Promise<
  * [2025-01-27 12:00:00]
  */
 export async function waitForObjectSelected(page: Page, timeout = 5000): Promise<void> {
-  // 检查是否有选中状态的对象（通过检查编辑面板是否出现）
-  const editPanel = page.locator('.dl-edit-panel, .dl-panel--edit').first();
+  // [2025-12-16 06:24:10] 兼容 4.0/5.0：5.0 的编辑面板是 ToolPanel 内的 “Edit Upload” 标题
+  const editPanel = page.locator(
+    '.dl-edit-panel, .dl-panel--edit, .dl-upload-panel__title:has-text("Edit Upload"), h2:has-text("Edit Upload")'
+  ).first();
   await editPanel.waitFor({ state: 'visible', timeout }).catch(() => {
     console.warn('[Design Lab Helpers] Edit panel not found, object may not be selected');
   });

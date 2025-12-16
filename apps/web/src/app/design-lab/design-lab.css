@@ -1283,6 +1283,103 @@
   padding-bottom: 0;
 }
 
+/* [2025-12-16 03:02:00] Text 面板工具栏样式 */
+.dl-edit-text-panel__section--toolbar {
+  padding-bottom: var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-text-panel__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+}
+
+.dl-edit-text-panel__toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-bg-panel);
+  color: var(--dl-text-primary);
+  cursor: pointer;
+  transition: all var(--dl-transition-base);
+  flex-shrink: 0;
+}
+
+.dl-edit-text-panel__toolbar-btn:hover {
+  background: var(--dl-bg-primary);
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-text-panel__toolbar-btn.is-active {
+  background: var(--dl-color-primary);
+  color: white;
+  border-color: var(--dl-color-primary);
+}
+
+.dl-edit-text-panel__toolbar-group {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  overflow: hidden;
+}
+
+.dl-edit-text-panel__toolbar-group .dl-edit-text-panel__toolbar-btn {
+  border-radius: 0;
+  border-right: 1px solid var(--dl-border-color);
+  border-top: none;
+  border-bottom: none;
+  border-left: none;
+}
+
+.dl-edit-text-panel__toolbar-group .dl-edit-text-panel__toolbar-btn:first-child {
+  border-left: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-text-panel__toolbar-rotation {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex: 1;
+  min-width: 120px;
+}
+
+.dl-edit-text-panel__toolbar-slider {
+  flex: 1;
+  min-width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--dl-bg-primary);
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.dl-edit-text-panel__toolbar-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dl-color-primary);
+  cursor: pointer;
+}
+
+.dl-edit-text-panel__toolbar-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--dl-color-primary);
+  cursor: pointer;
+  border: none;
+}
+
 .dl-edit-text-panel__label {
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-medium);
@@ -1900,6 +1997,27 @@
 .dl-edit-art-panel__section:last-child {
   border-bottom: none;
   padding-bottom: 0;
+}
+
+/* [2025-12-16 03:05:00] Art 面板工具栏样式 */
+.dl-edit-art-panel__section--toolbar {
+  padding-bottom: var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-edit-art-panel__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex-wrap: wrap;
+}
+
+.dl-edit-art-panel__toolbar-rotation {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex: 1;
+  min-width: 120px;
 }
 
 .dl-edit-art-panel__label {

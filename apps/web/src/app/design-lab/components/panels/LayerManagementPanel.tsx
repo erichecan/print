@@ -280,19 +280,43 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
 
     if (draggedIndex === -1 || targetIndex === -1) return;
 
-    // 移动对象
-    if (draggedIndex < targetIndex) {
-      // 向下移动
-      canvas.sendToBack(draggedLayer.object);
-      for (let i = 0; i < targetIndex - draggedIndex; i++) {
-        canvas.bringForward(draggedLayer.object);
+    // [2025-12-16 04:10:00] 移动对象 - 修复 Fabric.js v6 API
+    // [2025-12-16 04:15:00] 限制：不能将对象移到商品底图（background/product-image）下面
+    try {
+      const objects = canvas.getObjects();
+      
+      // 找到商品底图的位置（name === 'background' 或 name.startsWith('product-image-') 或 layerType === 'product'/'product-image'）
+      const backgroundIndex = objects.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
+      });
+      
+      // 计算实际的目标索引：确保不在商品底图之后
+      // 如果目标索引在商品底图之后，调整为商品底图之后（backgroundIndex + 1）
+      const minAllowedIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
+      const actualTargetIndex = Math.max(targetIndex, minAllowedIndex);
+      
+      if (draggedIndex < actualTargetIndex) {
+        // 向下移动（但仍然在商品底图之后）
+        // 使用手动移动，确保不会移到商品底图下面
+        const obj = draggedLayer.object;
+        const currentIdx = objects.indexOf(obj);
+        if (currentIdx >= 0 && currentIdx !== actualTargetIndex) {
+          objects.splice(currentIdx, 1);
+          objects.splice(actualTargetIndex, 0, obj);
+        }
+      } else {
+        // 向上移动
+        const obj = draggedLayer.object;
+        const currentIdx = objects.indexOf(obj);
+        if (currentIdx >= 0 && currentIdx !== actualTargetIndex) {
+          objects.splice(currentIdx, 1);
+          objects.splice(actualTargetIndex, 0, obj);
+        }
       }
-    } else {
-      // 向上移动
-      canvas.bringToFront(draggedLayer.object);
-      for (let i = 0; i < draggedIndex - targetIndex; i++) {
-        canvas.sendBackwards(draggedLayer.object);
-      }
+    } catch (error) {
+      console.error('[LayerManagementPanel] Layer move failed:', error);
     }
 
     canvas.renderAll();

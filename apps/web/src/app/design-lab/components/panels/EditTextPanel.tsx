@@ -11,6 +11,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
 import { fontsApi, type Font } from '@/lib/api';
 import { FONT_CATEGORY_LABELS, type FontCategory } from '@/data/fonts';
+import { TextEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:40:00 复用 Text 工具栏组件
 
 interface EditTextPanelProps {
   selectedText: fabric.IText | null;
@@ -432,37 +433,179 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
     onUpdate();
   };
 
-  // [2025-01-30 17:45:00] Bring to Front
+  // [2025-12-16 04:05:00] Bring to Front - 修复 Fabric.js v6 API
   const handleBringToFront = () => {
     if (!selectedText || !canvas) return;
-    canvas.bringToFront(selectedText);
-    canvas.renderAll();
-    onUpdate();
+    try {
+      if (typeof (canvas as any).bringObjectToFront === 'function') {
+        (canvas as any).bringObjectToFront(selectedText);
+      } else if (typeof (selectedText as any).bringToFront === 'function') {
+        (selectedText as any).bringToFront();
+      } else {
+        const objects = canvas.getObjects();
+        const index = objects.indexOf(selectedText);
+        if (index >= 0 && index < objects.length - 1) {
+          objects.splice(index, 1);
+          objects.push(selectedText);
+          canvas.renderAll();
+        }
+      }
+      canvas.renderAll();
+      onUpdate();
+    } catch (error) {
+      console.error('[EditTextPanel] bringToFront failed:', error);
+    }
   };
 
-  // [2025-01-30 17:45:00] Send to Back
-  const handleSendToBack = () => {
+  // [2025-12-16 04:05:00] Send to Back - 修复 Fabric.js v6 API
+  // [2025-12-16 04:15:00] 限制：不能将对象移到商品底图（background）下面
+  const handleSendToBack = async () => {
     if (!selectedText || !canvas) return;
-    canvas.sendToBack(selectedText);
-    canvas.renderAll();
-    onUpdate();
-  };
+    try {
+      const objects = canvas.getObjects();
+      const currentIndex = objects.indexOf(selectedText);
+      if (currentIndex === -1) return;
 
-  // [2025-01-30 17:45:00] Duplicate
-  const handleDuplicate = () => {
-    if (!selectedText || !canvas) return;
-    
-    selectedText.clone((cloned: fabric.IText) => {
-      cloned.set({
-        left: (selectedText.left || 0) + 20,
-        top: (selectedText.top || 0) + 20,
-        name: `text_${Date.now()}`
+      // 找到商品底图的位置（name === 'background' 或 name.startsWith('product-image-') 或 layerType === 'product'/'product-image'）
+      const backgroundIndex = objects.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
       });
+
+      // 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
+      const targetIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
+
+      // [2025-12-16 04:30:00] 添加调试日志
+      console.log('[EditTextPanel] sendToBack called:', {
+        currentIndex,
+        backgroundIndex,
+        targetIndex,
+        objectsCount: objects.length,
+      });
+
+      // [2025-12-16 04:20:00] 如果已经在目标位置，不需要移动
+      if (currentIndex === targetIndex) {
+        console.log('[EditTextPanel] Already at target position, skipping');
+        return;
+      }
+
+      // [2025-12-16 05:00:00] 使用原生方法 sendObjectToBack，然后检查并调整位置
+      // 先使用 Fabric.js 原生方法将对象移到底部
+      if (typeof (canvas as any).sendObjectToBack === 'function') {
+        try {
+          (canvas as any).sendObjectToBack(selectedText);
+        } catch (e) {
+          console.warn('[EditTextPanel] sendObjectToBack failed:', e);
+        }
+      } else if (typeof (selectedText as any).sendToBack === 'function') {
+        try {
+          (selectedText as any).sendToBack();
+        } catch (e) {
+          console.warn('[EditTextPanel] sendToBack failed:', e);
+        }
+      } else {
+        // 如果原生方法不可用，使用手动方法
+        const adjustedTargetIndex = currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
+        objects.splice(currentIndex, 1);
+        objects.splice(adjustedTargetIndex, 0, selectedText);
+        canvas.renderAll();
+        onUpdate();
+        return;
+      }
+
+      // [2025-12-16 05:10:00] 检查并调整：确保对象在商品底图之后
+      // 等待一个 tick 确保原生方法执行完成
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const objectsAfter = canvas.getObjects();
+      const indexAfter = objectsAfter.indexOf(selectedText);
+      const backgroundIndexAfter = objectsAfter.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
+      });
+
+      console.log('[EditTextPanel] After native sendObjectToBack:', {
+        indexAfter,
+        backgroundIndexAfter,
+        shouldBeAt: backgroundIndexAfter >= 0 ? backgroundIndexAfter + 1 : 0,
+      });
+
+      // 如果对象在商品底图之前或等于商品底图索引，需要调整到商品底图之后
+      if (backgroundIndexAfter >= 0 && indexAfter <= backgroundIndexAfter) {
+        console.log('[EditTextPanel] ⚠️ Object is at or below background, adjusting...');
+        const adjustedTargetIndex = backgroundIndexAfter + 1;
+        objectsAfter.splice(indexAfter, 1);
+        objectsAfter.splice(adjustedTargetIndex, 0, selectedText);
+        canvas.renderAll();
+        console.log('[EditTextPanel] ✅ Adjusted from index', indexAfter, 'to index', adjustedTargetIndex);
+      } else if (backgroundIndexAfter >= 0 && indexAfter !== backgroundIndexAfter + 1) {
+        const adjustedTargetIndex = backgroundIndexAfter + 1;
+        objectsAfter.splice(indexAfter, 1);
+        const finalAdjustedIndex = indexAfter < adjustedTargetIndex ? adjustedTargetIndex - 1 : adjustedTargetIndex;
+        objectsAfter.splice(finalAdjustedIndex, 0, selectedText);
+        canvas.renderAll();
+        console.log('[EditTextPanel] ✅ Adjusted from index', indexAfter, 'to index', finalAdjustedIndex);
+      }
+
+      const finalObjects = canvas.getObjects();
+      const finalIndex = finalObjects.indexOf(selectedText);
+      const finalBackgroundIndex = finalObjects.findIndex((obj: any) => {
+        const name = (obj as any).name || '';
+        const layerType = (obj as any).data?.layerType;
+        return name === 'background' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
+      });
+      const finalTargetIndex = finalBackgroundIndex >= 0 ? finalBackgroundIndex + 1 : 0;
+
+      console.log('[EditTextPanel] sendToBack completed:', {
+        finalIndex,
+        finalTargetIndex,
+        isCorrect: finalIndex === finalTargetIndex,
+      });
+      
+      canvas.renderAll();
+      onUpdate();
+    } catch (error) {
+      console.error('[EditTextPanel] sendToBack failed:', error);
+    }
+  };
+
+  // [2025-12-16 04:05:00] Duplicate - 修复 clone API 兼容性问题
+  const handleDuplicate = async () => {
+    if (!selectedText || !canvas) return;
+    try {
+      const cloneResult = (selectedText as any).clone();
+      const cloned = cloneResult instanceof Promise 
+        ? await cloneResult 
+        : typeof cloneResult === 'function'
+          ? await new Promise<fabric.IText>((resolve) => {
+              (selectedText as any).clone(resolve);
+            })
+          : cloneResult;
+
+      if (!cloned) {
+        console.error('[EditTextPanel] clone returned null/undefined');
+        return;
+      }
+
+      cloned.set({
+        left: (selectedText.left || 0) + 40,
+        top: (selectedText.top || 0) + 40,
+        name: `text_${Date.now()}`,
+      });
+
+      if ((selectedText as any).data) {
+        (cloned as any).data = { ...(selectedText as any).data };
+      }
+
       canvas.add(cloned);
       canvas.setActiveObject(cloned);
       canvas.renderAll();
       onUpdate();
-    });
+    } catch (error) {
+      console.error('[EditTextPanel] duplicate failed:', error);
+    }
   };
 
   if (!selectedText) {
@@ -653,7 +796,17 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         />
       </div>
 
-      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate - [2025-12-12 00:00:00] 已移除 */}
+      {/* 8. 底部操作：Center / Layering / Text Alignment / Duplicate / Rotation */}
+      <TextEditControls
+        onCenter={handleCenter}
+        onBringToFront={handleBringToFront}
+        onSendToBack={handleSendToBack}
+        textAlign={textAlign}
+        onTextAlignChange={handleTextAlignChange}
+        onDuplicate={handleDuplicate}
+        rotation={rotation}
+        onRotationChange={handleRotationChange}
+      />
 
       {/* [2025-12-08] 超出安全区警示 */}
       {isOutOfSafeArea && (
