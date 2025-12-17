@@ -827,20 +827,27 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           });
         });
         
-        // [2025-12-14 06:25:00] 添加鼠标悬停在控件上的事件监听（用于调试）
-        fabricCanvas.on('mouse:over', (e) => {
-          const obj = e.target;
-          if (obj) {
-            console.log('[DesignLab 5.0] 🖱️ 鼠标悬停在对象上:', {
-              objectName: (obj as any).name,
-              objectType: obj.type,
-              hasControls: obj.hasControls,
-            });
-          }
-        });
+        // [2025-12-16 22:18:55] 生产环境修复：禁用“鼠标控件调试光标覆盖”
+        // 根因：此调试逻辑会用近似距离计算并强制设置 canvas cursor，导致控件图标的真实 hover/click 命中行为被“错位覆盖”（表现为离图标约 100px 才触发手势变化）
+        const ENABLE_MOUSE_DEBUG = process.env.NODE_ENV !== 'production';
+
+        // [2025-12-14 06:25:00] 添加鼠标悬停在对象上的事件监听（仅调试）
+        if (ENABLE_MOUSE_DEBUG) {
+          fabricCanvas.on('mouse:over', (e) => {
+            const obj = e.target;
+            if (obj) {
+              console.log('[DesignLab 5.0] 🖱️ 鼠标悬停在对象上:', {
+                objectName: (obj as any).name,
+                objectType: obj.type,
+                hasControls: obj.hasControls,
+              });
+            }
+          });
+        }
         
-        // [2025-12-14 06:35:00] 添加全局鼠标移动监听（确保始终跟踪鼠标位置）
+        // [2025-12-14 06:35:00] 添加鼠标移动监听（仅调试）
         const handleGlobalMouseMove = (e: MouseEvent) => {
+          if (!ENABLE_MOUSE_DEBUG) return;
           if (!fabricCanvasRef.current) return;
           
           const canvas = fabricCanvasRef.current;
@@ -934,18 +941,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             targetObject,
           });
           
-          // [2025-12-14 06:35:00] 如果鼠标在控件上，改变鼠标样式
-          if (onControl && canvas.upperCanvasEl) {
-            (canvas.upperCanvasEl as HTMLElement).style.cursor = 'crosshair';
-          } else if (canvas.upperCanvasEl) {
-            // [2025-12-14 06:35:00] 如果在 canvas 上，检查是否在对象上
-            const target = canvas.findTarget(e as any, false);
-            if (target && target.selectable) {
-              (canvas.upperCanvasEl as HTMLElement).style.cursor = 'move';
-            } else {
-              (canvas.upperCanvasEl as HTMLElement).style.cursor = 'default';
-            }
-          }
+          // [2025-12-16 22:18:55] 不再强制覆盖 cursor（避免与 Fabric 控件真实命中逻辑冲突）
         };
         
         // [2025-12-14 06:25:00] 添加鼠标按下事件监听（用于调试缩放控件的交互）
@@ -1533,6 +1529,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               ? fabric.controlsUtils.scaleCursorStyleHandler
               : 'se-resize',
           });
+
+          // [2025-12-16 22:18:55] 生产环境验证日志：打印三角控件配置，确认 offsetX/offsetY/size 是否符合预期
+          try {
+            console.log('[DesignLab 5.0] 🔎 iconControls config (prod verify):', {
+              deleteIcon: { offsetX: (deleteIconControl as any).offsetX, offsetY: (deleteIconControl as any).offsetY, sizeX: (deleteIconControl as any).sizeX, sizeY: (deleteIconControl as any).sizeY },
+              duplicateIcon: { offsetX: (duplicateIconControl as any).offsetX, offsetY: (duplicateIconControl as any).offsetY, sizeX: (duplicateIconControl as any).sizeX, sizeY: (duplicateIconControl as any).sizeY },
+              resizeIcon: { offsetX: (resizeIconControl as any).offsetX, offsetY: (resizeIconControl as any).offsetY, sizeX: (resizeIconControl as any).sizeX, sizeY: (resizeIconControl as any).sizeY },
+            });
+          } catch (e) {
+            // ignore
+          }
           
           // [2025-12-14 07:30:00] 添加图标控件到对象的辅助函数
           const addIconControlsToObject = (obj: fabric.Object) => {
@@ -1605,10 +1612,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           console.log('[DesignLab 5.0] ✅ 图标控件已创建（功能已实现：删除、复制、缩放）');
         }
         
-        // [2025-12-14 06:35:00] 在 canvas 元素上添加鼠标移动监听
+        // [2025-12-16 22:18:55] 仅在调试模式绑定鼠标移动监听（生产环境禁用，避免影响控件 hover/click）
         const canvasElementForMouse = fabricCanvas.getElement();
         let cleanupMouseListener: (() => void) | undefined;
-        if (canvasElementForMouse) {
+        if (ENABLE_MOUSE_DEBUG && canvasElementForMouse) {
           canvasElementForMouse.addEventListener('mousemove', handleGlobalMouseMove);
           cleanupMouseListener = () => {
             canvasElementForMouse.removeEventListener('mousemove', handleGlobalMouseMove);
