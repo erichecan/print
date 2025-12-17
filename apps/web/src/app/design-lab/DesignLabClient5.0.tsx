@@ -885,10 +885,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   active.setCoords?.();
                   const o = active.oCoords;
                   const rect = upper.getBoundingClientRect();
-                  // [2025-12-16 23:12:43] 修复：Fabric 的 oCoords 通常已经是 viewport 坐标（包含 zoom/pan），不应再次乘 viewportTransform
-                  // 否则会把探测点算到屏幕外，导致错误结论（cursor 永远 default）
+                  // [2025-12-16 23:22:02] 修复：oCoords 使用的是 canvas 内部坐标（结合 viewportTransform），但还需要考虑 canvas 在页面上的 CSS 缩放比例
+                  // 否则会得到远超屏幕范围的 clientX/clientY（导致探测点落在画布外 → cursor 永远 default）
+                  const scaleX = rect.width / (upper.width || rect.width || 1);
+                  const scaleY = rect.height / (upper.height || rect.height || 1);
                   const toClient = (pt: any) => {
-                    return { clientX: rect.left + pt.x, clientY: rect.top + pt.y };
+                    return {
+                      clientX: rect.left + pt.x * scaleX,
+                      clientY: rect.top + pt.y * scaleY,
+                    };
                   };
 
                   const points = [
