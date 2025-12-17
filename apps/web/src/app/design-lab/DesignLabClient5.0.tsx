@@ -885,17 +885,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   active.setCoords?.();
                   const o = active.oCoords;
                   const rect = upper.getBoundingClientRect();
-                  const vt = fabricCanvas.viewportTransform;
-                  const PointCtor: any = (fabric as any).Point;
-                  const transformPoint = (fabric as any).util?.transformPoint;
-                  if (!PointCtor || !transformPoint || !vt) return { ok: false, reason: 'missing fabric.util.transformPoint' };
-
+                  // [2025-12-16 23:12:43] 修复：Fabric 的 oCoords 通常已经是 viewport 坐标（包含 zoom/pan），不应再次乘 viewportTransform
+                  // 否则会把探测点算到屏幕外，导致错误结论（cursor 永远 default）
                   const toClient = (pt: any) => {
-                    const vpt = transformPoint(new PointCtor(pt.x, pt.y), vt);
-                    return { clientX: rect.left + vpt.x, clientY: rect.top + vpt.y };
+                    return { clientX: rect.left + pt.x, clientY: rect.top + pt.y };
                   };
 
-                  const corners = [
+                  const points = [
+                    // 优先用自定义控件坐标（如果 Fabric 写入了 oCoords）
+                    { name: 'deleteIcon', pt: o?.deleteIcon },
+                    { name: 'duplicateIcon', pt: o?.duplicateIcon },
+                    { name: 'resizeIcon', pt: o?.resizeIcon },
+                    // fallback：对象四角（用于对比）
                     { name: 'tl', pt: o?.tl },
                     { name: 'bl', pt: o?.bl },
                     { name: 'br', pt: o?.br },
@@ -907,13 +908,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   };
 
                   const results: any[] = [];
-                  for (const c of corners) {
+                  for (const c of points) {
                     const center = toClient(c.pt);
                     const near = fire(center);
                     const far = fire({ clientX: center.clientX + 120, clientY: center.clientY });
-                    results.push({ corner: c.name, center, cursorAtCenter: near, cursorAtCenterPlus120px: far });
+                    results.push({ point: c.name, center, cursorAtCenter: near, cursorAtCenterPlus120px: far });
                   }
-                  return { ok: true, results };
+                  return { ok: true, oCoordsKeys: Object.keys(o || {}), results };
                 } catch (e: any) {
                   return { ok: false, reason: String(e?.message || e) };
                 }
