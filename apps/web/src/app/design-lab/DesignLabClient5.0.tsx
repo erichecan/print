@@ -1322,7 +1322,30 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             cursorStyle: 'pointer',
+            // [2025-12-16 23:30:22] 修复：显式提供 cursorStyleHandler，避免 Fabric 在 hover 时错误落到 resize 光标
+            cursorStyleHandler: () => 'pointer',
             render: function(ctx, left, top, styleOverride, fabricObject) {
+              // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top（用于对齐命中区域）
+              try {
+                const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+                if (qs && qs.get('dlDebug') === '1') {
+                  const w: any = window as any;
+                  w.__DL5_RENDER_LOGGED__ = w.__DL5_RENDER_LOGGED__ || {};
+                  if (!w.__DL5_RENDER_LOGGED__.deleteIcon) {
+                    w.__DL5_RENDER_LOGGED__.deleteIcon = true;
+                    console.log('[DesignLab 5.0] 🧭 render(deleteIcon):', {
+                      left,
+                      top,
+                      offsetX: (this as any).offsetX,
+                      offsetY: (this as any).offsetY,
+                      sizeX: (this as any).sizeX,
+                      sizeY: (this as any).sizeY,
+                    });
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
               const size = this.sizeX || 160; // [2025-12-14 07:42:00] 放大 5 倍：默认值从 32 调整为 160
               ctx.save();
               ctx.translate(left, top);
@@ -1398,7 +1421,30 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             cursorStyle: 'pointer',
+            // [2025-12-16 23:30:22] 修复：显式提供 cursorStyleHandler，确保 hover 时为 pointer
+            cursorStyleHandler: () => 'pointer',
             render: function(ctx, left, top, styleOverride, fabricObject) {
+              // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
+              try {
+                const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+                if (qs && qs.get('dlDebug') === '1') {
+                  const w: any = window as any;
+                  w.__DL5_RENDER_LOGGED__ = w.__DL5_RENDER_LOGGED__ || {};
+                  if (!w.__DL5_RENDER_LOGGED__.duplicateIcon) {
+                    w.__DL5_RENDER_LOGGED__.duplicateIcon = true;
+                    console.log('[DesignLab 5.0] 🧭 render(duplicateIcon):', {
+                      left,
+                      top,
+                      offsetX: (this as any).offsetX,
+                      offsetY: (this as any).offsetY,
+                      sizeX: (this as any).sizeX,
+                      sizeY: (this as any).sizeY,
+                    });
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
               const size = this.sizeX || 160; // [2025-12-14 07:42:00] 放大 5 倍：默认值从 32 调整为 160
               ctx.save();
               ctx.translate(left, top);
@@ -1545,6 +1591,27 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             cursorStyle: 'se-resize',
             render: function(ctx, left, top, styleOverride, fabricObject) {
+              // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
+              try {
+                const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+                if (qs && qs.get('dlDebug') === '1') {
+                  const w: any = window as any;
+                  w.__DL5_RENDER_LOGGED__ = w.__DL5_RENDER_LOGGED__ || {};
+                  if (!w.__DL5_RENDER_LOGGED__.resizeIcon) {
+                    w.__DL5_RENDER_LOGGED__.resizeIcon = true;
+                    console.log('[DesignLab 5.0] 🧭 render(resizeIcon):', {
+                      left,
+                      top,
+                      offsetX: (this as any).offsetX,
+                      offsetY: (this as any).offsetY,
+                      sizeX: (this as any).sizeX,
+                      sizeY: (this as any).sizeY,
+                    });
+                  }
+                }
+              } catch (e) {
+                // ignore
+              }
               const size = this.sizeX || 160; // [2025-12-14 07:42:00] 放大 5 倍：默认值从 32 调整为 160
               ctx.save();
               ctx.translate(left, top);
