@@ -1218,8 +1218,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const deleteIconControl = new fabric.Control({
             x: -0.5, // 左上角
             y: -0.5,
-            offsetX: -80, // [2025-12-14 07:42:00] 放大 5 倍：从 -16 调整为 -80（32*5/2）
-            offsetY: -80, // [2025-12-14 07:42:00] 放大 5 倍：从 -16 调整为 -80
+            // [2025-12-16 21:35:41] 修复：Fabric v6 下 offsetX/offsetY 会导致控件命中区域与图标渲染位置偏移（表现为需要离图标很远才触发 hover）
+            // 这里先强制为 0，确保“看到的图标位置”和“可点击/悬停区域”一致
+            offsetX: 0,
+            offsetY: 0,
             sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             cursorStyle: 'pointer',
@@ -1293,8 +1295,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const duplicateIconControl = new fabric.Control({
             x: -0.5, // 左下角
             y: 0.5,
-            offsetX: -80, // [2025-12-14 07:42:00] 放大 5 倍：从 -16 调整为 -80
-            offsetY: 80, // [2025-12-14 07:42:00] 放大 5 倍：从 16 调整为 80
+            // [2025-12-16 21:35:41] 修复：同 deleteIconControl，避免命中区偏移
+            offsetX: 0,
+            offsetY: 0,
             sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             cursorStyle: 'pointer',
@@ -1438,8 +1441,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const resizeIconControl = new fabric.Control({
             x: 0.5, // 右下角
             y: 0.5,
-            offsetX: 80, // [2025-12-14 07:42:00] 放大 5 倍：从 16 调整为 80
-            offsetY: 80, // [2025-12-14 07:42:00] 放大 5 倍：从 16 调整为 80
+            // [2025-12-16 21:35:41] 修复：同 delete/duplicate，避免命中区偏移
+            offsetX: 0,
+            offsetY: 0,
             sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             cursorStyle: 'se-resize',
