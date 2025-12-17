@@ -912,7 +912,8 @@ model art_assets {
   @@index([sub_category_id], map: "idx_art_assets_sub_category_id")
   @@index([gcs_key], map: "idx_art_assets_gcs_key")
   @@index([status], map: "idx_art_assets_status")
-  @@index([tags(ops: raw("gin_trgm_ops"))], map: "idx_art_assets_tags", type: Gin) // [2025-12-11 23:00:00] GIN 索引用于标签搜索
+  // [2025-12-16 21:23:59] 修复：tags 是 text[]，gin_trgm_ops 仅适用于 text；改为默认 GIN array 索引，避免 db push/migrate 报错
+  @@index([tags], map: "idx_art_assets_tags", type: Gin)
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

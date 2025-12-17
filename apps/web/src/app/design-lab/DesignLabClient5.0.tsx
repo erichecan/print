@@ -1017,6 +1017,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         
         fabricCanvas.on('object:modified', (e) => {
           const obj = e.target;
+          // [2025-12-16 21:36:31] 修复：任何缩放/旋转/移动完成后强制 setCoords，避免控件命中区域与渲染位置偏离
+          try {
+            obj?.setCoords?.();
+            fabricCanvas.requestRenderAll();
+          } catch (err) {
+            // ignore
+          }
           console.log('[DesignLab 5.0] ✏️ 对象修改完成:', {
             objectName: (obj as any).name,
             objectType: obj.type,
@@ -1467,31 +1474,56 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             },
             // [2025-12-14 07:45:00] 功能3：resize 图标 - 使用 actionHandler 实现缩放功能
             // 使用 Fabric.js 的 controlsUtils 工具函数（如果可用），否则使用自定义实现
-            actionHandler: (fabric.controlsUtils && fabric.controlsUtils.scalingEqually) 
-              ? fabric.controlsUtils.scalingEqually
-              : function(eventData, transformData, x, y) {
+            // [2025-12-16 21:35:41] 修复：缩放后必须 setCoords，否则控件命中区域与图标渲染位置会逐渐偏离（放大后更明显）
+            actionHandler: function(eventData, transformData, x, y) {
+              const target = transformData?.target as any;
+              const controlsUtils = (fabric as any).controlsUtils;
+
+              if (controlsUtils && typeof controlsUtils.scalingEqually === 'function') {
+                const result = controlsUtils.scalingEqually(eventData, transformData, x, y);
+                // [2025-12-16 21:35:41] 关键：实时更新坐标，确保 hover/click 命中区与图标一致
+                try {
+                  target?.setCoords?.();
+                  (target?.canvas as any)?.requestRenderAll?.();
+                } catch (e) {
+                  // ignore
+                }
+                return result;
+              }
+
+              // fallback：自定义缩放实现（当 controlsUtils 不可用时）
+              return (function(eventData2, transformData2, x2, y2) {
                   // [2025-12-14 07:45:00] 功能3：自定义缩放实现（当 controlsUtils 不可用时）
-                  const target = transformData.target;
+                  const target2 = transformData2.target;
                   // 将全局坐标转换为对象的局部坐标
-                  const localPoint = target.toLocalPoint(
-                    new fabric.Point(x, y),
-                    transformData.originX || 'left',
-                    transformData.originY || 'top'
+                  const localPoint = target2.toLocalPoint(
+                    new fabric.Point(x2, y2),
+                    transformData2.originX || 'left',
+                    transformData2.originY || 'top'
                   );
                   
                   // 获取对象的变换后尺寸
-                  const targetDim = target._getTransformedDimensions();
+                  const targetDim = target2._getTransformedDimensions();
                   
                   // 计算新的缩放比例
-                  const scaleX = localPoint.x / (targetDim.x / (target.scaleX || 1));
-                  const scaleY = localPoint.y / (targetDim.y / (target.scaleY || 1));
+                  const scaleX = localPoint.x / (targetDim.x / (target2.scaleX || 1));
+                  const scaleY = localPoint.y / (targetDim.y / (target2.scaleY || 1));
                   
                   // 返回新的坐标（Fabric.js 会使用这些值来更新对象的 scaleX 和 scaleY）
-                  return {
+                  const result2 = {
                     x: Math.max(0.1, scaleX), // 最小缩放比例 0.1
                     y: Math.max(0.1, scaleY),
                   };
-                },
+                  // [2025-12-16 21:35:41] 关键：实时更新坐标，确保 hover/click 命中区与图标一致
+                  try {
+                    target2?.setCoords?.();
+                    (target2?.canvas as any)?.requestRenderAll?.();
+                  } catch (e) {
+                    // ignore
+                  }
+                  return result2;
+                })(eventData, transformData, x, y);
+            },
             // [2025-12-14 07:45:00] 使用 Fabric.js 的缩放光标样式（如果可用）
             cursorStyleHandler: (fabric.controlsUtils && fabric.controlsUtils.scaleCursorStyleHandler)
               ? fabric.controlsUtils.scaleCursorStyleHandler
