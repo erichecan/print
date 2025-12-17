@@ -831,6 +831,101 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         // 根因：此调试逻辑会用近似距离计算并强制设置 canvas cursor，导致控件图标的真实 hover/click 命中行为被“错位覆盖”（表现为离图标约 100px 才触发手势变化）
         const ENABLE_MOUSE_DEBUG = process.env.NODE_ENV !== 'production';
 
+        // [2025-12-16 22:50:22] Debug 辅助：仅在显式 query 参数开启时暴露 canvas/fabric，便于生产环境用 DevTools 验证 hover 命中
+        // 使用方式：在 URL 加上 ?dlDebug=1
+        try {
+          const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const enabled = !!qs && qs.get('dlDebug') === '1';
+          if (enabled) {
+            (window as any).__DL5_CANVAS__ = fabricCanvas;
+            (window as any).__DL5_FABRIC__ = fabric;
+
+            // 提供便捷方法：添加一个测试对象并应用控件 + 程序化探测控件 hover 的 cursor
+            (window as any).__DL5_DEBUG__ = {
+              addTestObject: () => {
+                try {
+                  const RectCtor: any = (fabric as any).Rect;
+                  if (!RectCtor) return { ok: false, reason: 'fabric.Rect not available' };
+                  const rect = new RectCtor({
+                    left: 2000,
+                    top: 2400,
+                    width: 600,
+                    height: 600,
+                    fill: 'rgba(37,99,235,0.25)',
+                    stroke: '#2563eb',
+                    strokeWidth: 10,
+                    originX: 'center',
+                    originY: 'center',
+                    selectable: true,
+                    evented: true,
+                    hasControls: true,
+                    hasBorders: true,
+                    borderColor: '#808080',
+                    borderScaleFactor: 2,
+                    name: `debug_${Date.now()}`,
+                    data: { layerType: 'upload' },
+                  });
+                  fabricCanvas.add(rect);
+                  if (typeof (fabricCanvas as any).addIconControlsToObject === 'function') {
+                    (fabricCanvas as any).addIconControlsToObject(rect);
+                  }
+                  fabricCanvas.setActiveObject(rect);
+                  rect.setCoords?.();
+                  fabricCanvas.requestRenderAll();
+                  return { ok: true, name: (rect as any).name };
+                } catch (e: any) {
+                  return { ok: false, reason: String(e?.message || e) };
+                }
+              },
+              probeControlCursors: () => {
+                const active = fabricCanvas.getActiveObject() as any;
+                const upper = (fabricCanvas as any).upperCanvasEl as any;
+                if (!active || !upper) return { ok: false, reason: 'no active object / upperCanvasEl' };
+                try {
+                  active.setCoords?.();
+                  const o = active.oCoords;
+                  const rect = upper.getBoundingClientRect();
+                  const vt = fabricCanvas.viewportTransform;
+                  const PointCtor: any = (fabric as any).Point;
+                  const transformPoint = (fabric as any).util?.transformPoint;
+                  if (!PointCtor || !transformPoint || !vt) return { ok: false, reason: 'missing fabric.util.transformPoint' };
+
+                  const toClient = (pt: any) => {
+                    const vpt = transformPoint(new PointCtor(pt.x, pt.y), vt);
+                    return { clientX: rect.left + vpt.x, clientY: rect.top + vpt.y };
+                  };
+
+                  const corners = [
+                    { name: 'tl', pt: o?.tl },
+                    { name: 'bl', pt: o?.bl },
+                    { name: 'br', pt: o?.br },
+                  ].filter((c) => c.pt && typeof c.pt.x === 'number' && typeof c.pt.y === 'number');
+
+                  const fire = (pos: any) => {
+                    upper.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: pos.clientX, clientY: pos.clientY }));
+                    return upper.style.cursor || 'unset';
+                  };
+
+                  const results: any[] = [];
+                  for (const c of corners) {
+                    const center = toClient(c.pt);
+                    const near = fire(center);
+                    const far = fire({ clientX: center.clientX + 120, clientY: center.clientY });
+                    results.push({ corner: c.name, center, cursorAtCenter: near, cursorAtCenterPlus120px: far });
+                  }
+                  return { ok: true, results };
+                } catch (e: any) {
+                  return { ok: false, reason: String(e?.message || e) };
+                }
+              },
+            };
+
+            console.log('[DesignLab 5.0] ✅ dlDebug enabled: window.__DL5_DEBUG__ available');
+          }
+        } catch (e) {
+          // ignore
+        }
+
         // [2025-12-14 06:25:00] 添加鼠标悬停在对象上的事件监听（仅调试）
         if (ENABLE_MOUSE_DEBUG) {
           fabricCanvas.on('mouse:over', (e) => {
@@ -1530,13 +1625,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               : 'se-resize',
           });
 
-          // [2025-12-16 22:18:55] 生产环境验证日志：打印三角控件配置，确认 offsetX/offsetY/size 是否符合预期
+          // [2025-12-16 22:50:22] 生产环境验证日志：打印三角控件配置，确认 offsetX/offsetY/size 是否符合预期（用 JSON 输出，避免线上控制台折叠为 [object Object]）
           try {
-            console.log('[DesignLab 5.0] 🔎 iconControls config (prod verify):', {
+            const payload = {
+              env: process.env.NODE_ENV,
               deleteIcon: { offsetX: (deleteIconControl as any).offsetX, offsetY: (deleteIconControl as any).offsetY, sizeX: (deleteIconControl as any).sizeX, sizeY: (deleteIconControl as any).sizeY },
               duplicateIcon: { offsetX: (duplicateIconControl as any).offsetX, offsetY: (duplicateIconControl as any).offsetY, sizeX: (duplicateIconControl as any).sizeX, sizeY: (duplicateIconControl as any).sizeY },
               resizeIcon: { offsetX: (resizeIconControl as any).offsetX, offsetY: (resizeIconControl as any).offsetY, sizeX: (resizeIconControl as any).sizeX, sizeY: (resizeIconControl as any).sizeY },
-            });
+            };
+            console.log('[DesignLab 5.0] 🔎 iconControls config (prod verify): ' + JSON.stringify(payload));
           } catch (e) {
             // ignore
           }
