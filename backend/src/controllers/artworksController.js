@@ -8,6 +8,28 @@ const gcsUtils = require('../utils/gcsStorage');
 
 const prisma = new PrismaClient();
 
+// [2025-12-16 21:12:24] Dev 稳定性：当艺术素材表未迁移时，降级为返回空数据（避免前端 ArtPanel 报 500）
+const isMissingArtworkTablesError = (error) => {
+  const message = String(error?.message || '');
+  const code = String(error?.code || '');
+
+  // Prisma 常见：P2021（table does not exist）或底层报错信息包含 "does not exist"
+  const looksLikeMissingTable =
+    code === 'P2021' ||
+    message.includes('does not exist') ||
+    message.includes('does not exist in the current database');
+
+  if (!looksLikeMissingTable) return false;
+
+  // 只针对 art 相关表
+  return (
+    message.includes('artwork_categories') ||
+    message.includes('art_assets') ||
+    message.includes('public.artwork_categories') ||
+    message.includes('public.art_assets')
+  );
+};
+
 /**
  * [2025-12-11 23:30:00] Get artworks with pagination, filtering, and search
  * GET /api/artworks?top=emojis&sub=animals&query=lion&page=1&pageSize=48
@@ -140,6 +162,21 @@ exports.getArtworks = async (req, res) => {
       },
     });
   } catch (error) {
+    // [2025-12-16 21:12:24] Dev 降级：表未创建时返回空列表，避免页面报 500（生产环境仍返回 500）
+    if (process.env.NODE_ENV === 'development' && isMissingArtworkTablesError(error)) {
+      console.warn('[getArtworks] Missing artwork tables in dev DB, returning empty data:', error?.message);
+      return res.json({
+        success: true,
+        data: [],
+        pagination: {
+          page: parseInt(req.query.page || 1, 10),
+          pageSize: parseInt(req.query.pageSize || 48, 10),
+          total: 0,
+          totalPages: 0,
+        },
+      });
+    }
+
     logger.error('[getArtworks] Error:', error);
     res.status(500).json({
       success: false,
@@ -219,6 +256,15 @@ exports.getCategoriesTree = async (req, res) => {
       data: tree,
     });
   } catch (error) {
+    // [2025-12-16 21:12:24] Dev 降级：表未创建时返回空分类树，避免前端 ArtPanel 报错阻断
+    if (process.env.NODE_ENV === 'development' && isMissingArtworkTablesError(error)) {
+      console.warn('[getCategoriesTree] Missing artwork tables in dev DB, returning empty tree:', error?.message);
+      return res.json({
+        success: true,
+        data: [],
+      });
+    }
+
     logger.error('[getCategoriesTree] Error:', error);
     res.status(500).json({
       success: false,
