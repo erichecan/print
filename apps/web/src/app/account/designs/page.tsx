@@ -6,10 +6,10 @@
 
 import { useState, useEffect } from 'react';
 import { designsApi } from '@/lib/api';
-import type { Design } from '@/lib/api';
+import type { UserDesign } from '@/lib/api';
 
 export default function AccountDesignsPage() {
-  const [designs, setDesigns] = useState<Design[]>([]);
+  const [designs, setDesigns] = useState<UserDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,9 +102,9 @@ export default function AccountDesignsPage() {
               }}
               onClick={() => window.location.href = `/design-lab?design=${design.id}`}
             >
-              {design.thumbnail && (
+              {design.thumbnailUrl && (
                 <img 
-                  src={design.thumbnail} 
+                  src={design.thumbnailUrl} 
                   alt={design.name || 'Design'}
                   style={{
                     width: '100%',
