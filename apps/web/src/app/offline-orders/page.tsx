@@ -384,6 +384,10 @@ export default function OfflineOrdersIntakePage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
+  
+  // [2025-12-18 17:05:00] 使用 ref 跟踪是否是按钮点击触发的提交
+  const submitButtonRef = useRef<HTMLButtonElement | null>(null);
+  const isSubmittingFromButtonRef = useRef(false);
 
   // [2025-01-27 20:35:00] 确保客户端渲染后再读取localStorage，避免hydration错误
   // [2025-01-28 09:30:00] 在客户端生成订单编号，避免 hydration 错误
@@ -1132,9 +1136,11 @@ export default function OfflineOrdersIntakePage() {
       
       // [2025-12-18 16:45:00] 修复：防止在输入框中按Enter键时自动提交
       // [2025-12-18 17:00:00] 添加详细调试日志
+      // [2025-12-18 17:05:00] 改进：使用多种方法检查是否是提交按钮触发的
       const nativeEvent = event.nativeEvent as any;
       const submitter = nativeEvent.submitter as HTMLElement | null;
       const target = event.target as HTMLElement;
+      const form = event.currentTarget;
       
       console.log('[OfflineOrder] handleSubmit called', {
         timestamp: new Date().toISOString(),
@@ -1145,23 +1151,40 @@ export default function OfflineOrdersIntakePage() {
         targetType: (target as HTMLInputElement)?.type,
         isInput: target?.tagName === 'INPUT',
         isTextarea: target?.tagName === 'TEXTAREA',
+        isSubmittingFromButton: isSubmittingFromButtonRef.current,
+        activeElement: document.activeElement?.tagName,
+        activeElementType: (document.activeElement as HTMLInputElement)?.type,
       });
       
-      // 如果事件不是来自提交按钮（type="submit"），则忽略（可能是输入框的Enter键）
-      // [2025-12-18 17:00:00] 改进：检查 submitter 是否存在且是提交按钮
-      const isFromSubmitButton = submitter && (
+      // [2025-12-18 17:05:00] 方法1：检查 submitter（HTML5标准，但可能不支持）
+      const isFromSubmitButtonBySubmitter = submitter && (
         (submitter.tagName === 'BUTTON' && submitter.getAttribute('type') === 'submit') ||
         (submitter.tagName === 'INPUT' && (submitter as HTMLInputElement).type === 'submit')
       );
       
-      if (!isFromSubmitButton) {
-        // 这是输入框中的Enter键触发的，应该忽略
+      // [2025-12-18 17:05:00] 方法2：检查 ref 标记（按钮点击时设置）
+      const isFromSubmitButtonByRef = isSubmittingFromButtonRef.current;
+      
+      // [2025-12-18 17:05:00] 方法3：检查当前焦点元素（如果焦点在输入框，可能是Enter键）
+      const activeElement = document.activeElement;
+      const isFocusOnInput = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA'
+      ) && (activeElement as HTMLInputElement).type !== 'submit';
+      
+      // [2025-12-18 17:05:00] 如果焦点在输入框且不是从提交按钮触发的，则忽略
+      if (!isFromSubmitButtonBySubmitter && !isFromSubmitButtonByRef && isFocusOnInput) {
         console.log('[OfflineOrder] ⚠️ Form submit triggered by Enter key in input, ignoring...', {
           submitter: submitter ? { tag: submitter.tagName, type: submitter.getAttribute('type') } : null,
-          target: { tag: target?.tagName, type: (target as HTMLInputElement)?.type },
+          activeElement: { tag: activeElement?.tagName, type: (activeElement as HTMLInputElement)?.type },
         });
+        // 重置 ref 标记
+        isSubmittingFromButtonRef.current = false;
         return;
       }
+      
+      // [2025-12-18 17:05:00] 重置 ref 标记
+      isSubmittingFromButtonRef.current = false;
       
       console.log('[OfflineOrder] ✅ Form submit triggered by submit button, proceeding...');
       resetStatus();
@@ -2462,7 +2485,13 @@ export default function OfflineOrdersIntakePage() {
                 </button>
               ) : (
                 <button
+                  ref={submitButtonRef}
                   type="submit"
+                  onClick={() => {
+                    // [2025-12-18 17:05:00] 标记这是按钮点击触发的提交
+                    isSubmittingFromButtonRef.current = true;
+                    console.log('[OfflineOrder] Submit button clicked, setting flag');
+                  }}
                   className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
