@@ -285,7 +285,8 @@ exports.getOrderByOrderNumber = async (req, res) => {
     }
 
     // Verify email matches
-    if (order.email.toLowerCase() !== email.toLowerCase()) {
+    // [2025-12-18 16:30:00] 修复：email 可能为 null，需要先检查
+    if (!order.email || !email || order.email.toLowerCase() !== email.toLowerCase()) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -610,7 +611,8 @@ exports.downloadInvoiceByOrderNumber = async (req, res, next) => {
       return next(new NotFoundError('订单不存在'));
     }
 
-    if (order.email.toLowerCase() !== String(email).toLowerCase()) {
+    // [2025-12-18 16:30:00] 修复：email 可能为 null，需要先检查
+    if (!order.email || !email || order.email.toLowerCase() !== String(email).toLowerCase()) {
       return next(new ForbiddenError('无权访问此订单的发票'));
     }
 

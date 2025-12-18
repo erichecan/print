@@ -113,7 +113,7 @@ const mapOfflineOrderToDTO = (order) => {
     orderNo: order.orderCode,
     customerName: order.contactName || '—',
     customerPhone: order.phone || null,
-    customerEmail: order.email,
+    customerEmail: order.email || null, // [2025-12-18 16:30:00] email 可能为 null
     totalAmount,
     currency: configuration.currency || 'CAD',
     itemsCount,

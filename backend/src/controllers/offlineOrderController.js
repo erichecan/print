@@ -190,24 +190,19 @@ exports.createOfflineOrder = async (req, res) => {
     // [2025-12-19] PRD v2.0: 如果仍然没有projectName，使用订单编号作为默认值（在生成订单编号后设置）
     // 这里先设置为null，稍后在生成订单编号后设置默认值
 
-    // [2025-11-28 16:00:00] 改进验证错误信息
-    // [2025-12-19] PRD v2.0: 移除projectName的必填验证，只验证contactName和email
-    const missingFields = [];
-    if (!contactName) missingFields.push('contactName');
-    if (!email) missingFields.push('email');
-    
-    if (missingFields.length > 0) {
-      logger.warn('[offlineOrderController] Validation failed. Missing fields:', missingFields);
-      logger.warn('[offlineOrderController] Request body received:', {
-        projectName: projectName || 'NOT_PROVIDED',
-        contactName: contactName || 'MISSING',
-        email: email || 'MISSING',
-      });
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: `Missing required fields: ${missingFields.join(', ')}`,
-        missingFields,
-      });
+    // [2025-12-19] PRD v2.0: 移除所有必填验证，所有字段都改为可选
+    // [2025-12-18 16:30:00] 修复：移除 contactName 和 email 的必填验证，与前端保持一致
+    // 只保留邮箱格式验证（如果提供了邮箱）
+    if (email && email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        logger.warn('[offlineOrderController] Invalid email format:', email);
+        return res.status(400).json({
+          error: 'Validation Error',
+          message: 'Invalid email format',
+          field: 'email',
+        });
+      }
     }
 
     // [2025-01-28 19:20:00] 获取初始阶段，确保不为 undefined
@@ -243,9 +238,10 @@ exports.createOfflineOrder = async (req, res) => {
       stageLabel: initialStage.label,
       stagePosition: initialStage.position ?? 0,
       status: 'ACTIVE',
-      contactName: contactName.trim(),
+      // [2025-12-18 16:30:00] 修复：contactName 和 email 改为可选字段，使用默认值或null
+      contactName: contactName?.trim() || '未提供',
       company: company?.trim() || null,
-      email: email.trim(),
+      email: email?.trim() || null,
       phone: phone?.trim() || null,
       configuration: configData || {
         source: 'web-intake',
@@ -689,26 +685,28 @@ exports.updateOfflineOrder = async (req, res) => {
     if (requiresMockups !== undefined) data.requiresMockups = parseBoolean(requiresMockups);
     if (requiresProof !== undefined) data.requiresProof = parseBoolean(requiresProof);
     if (rushOrder !== undefined) data.rushOrder = parseBoolean(rushOrder);
+    // [2025-12-18 16:30:00] 修复：contactName 和 email 改为可选字段，允许为空或null
     if (contactName !== undefined) {
       const trimmedName = contactName?.toString().trim();
-      if (!trimmedName) {
-        return res.status(400).json({
-          error: 'Validation Error',
-          message: 'contactName cannot be empty'
-        });
-      }
-      data.contactName = trimmedName;
+      data.contactName = trimmedName || null;
     }
     if (company !== undefined) data.company = company?.trim() || null;
     if (email !== undefined) {
       const trimmedEmail = email?.toString().trim();
-      if (!trimmedEmail) {
-        return res.status(400).json({
-          error: 'Validation Error',
-          message: 'email cannot be empty'
-        });
+      // [2025-12-18 16:30:00] 如果提供了邮箱，验证格式；如果为空，允许设置为null
+      if (trimmedEmail) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(trimmedEmail)) {
+          return res.status(400).json({
+            error: 'Validation Error',
+            message: 'Invalid email format',
+            field: 'email',
+          });
+        }
+        data.email = trimmedEmail;
+      } else {
+        data.email = null;
       }
-      data.email = trimmedEmail;
     }
     if (phone !== undefined) data.phone = phone?.trim() || null;
     if (configuration !== undefined) data.configuration = safeJsonParse(configuration) || configuration || null;
