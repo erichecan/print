@@ -1012,11 +1012,21 @@ export const salesOrdersApi = {
     return api<SalesOfflineOrderListResponse>(`/sales/orders${qs ? `?${qs}` : ''}`);
   },
   get: (id: string) =>
-    api<{ order: SalesOfflineOrderDetail }>(`/api/sales/orders/${id}`).then((res) => {
-      if (!res || !res.order) {
-        throw new Error('订单不存在或已被删除');
+    api<{ order: SalesOfflineOrderDetail } | SalesOfflineOrderDetail>(`/api/sales/orders/${id}`).then((res) => {
+      // [2025-12-18 17:35:00] 修复：处理两种可能的返回格式
+      // 格式1: { order: SalesOfflineOrderDetail }
+      // 格式2: SalesOfflineOrderDetail (直接返回订单对象)
+      if (res && typeof res === 'object' && 'order' in res) {
+        if (!res.order) {
+          throw new Error('订单不存在或已被删除');
+        }
+        return res.order;
       }
-      return res.order;
+      // 如果直接返回订单对象
+      if (res && typeof res === 'object' && 'id' in res) {
+        return res as SalesOfflineOrderDetail;
+      }
+      throw new Error('订单不存在或已被删除');
     }),
   // [2025-12-07 03:00:00] 更新订单阶段
   updateStage: (id: string, data: { stageKey: string; note?: string }) =>
@@ -1036,6 +1046,11 @@ export const salesOrdersApi = {
       body,
     });
   },
+  // [2025-12-18 17:30:00] 删除订单
+  delete: (id: string) =>
+    sameOriginApi(`/api/proxy/admin/offline-orders/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // [2025-12-06 17:00:00] Offline Order Product Configuration API

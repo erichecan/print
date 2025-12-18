@@ -72,5 +72,8 @@ router.post(
 
 router.post('/:id/production', offlineOrderController.createOrUpdateProductionWorkOrder);
 
+// [2025-12-18 17:30:00] 删除订单
+router.delete('/:id', offlineOrderController.deleteOfflineOrder);
+
 module.exports = router;
 

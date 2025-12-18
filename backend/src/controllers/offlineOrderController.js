@@ -1370,3 +1370,49 @@ exports.getOrderConfig = async (req, res, next) => {
   }
 };
 
+/**
+ * DELETE /api/admin/offline-orders/:id
+ * [2025-12-18 17:30:00] 删除线下订单
+ */
+exports.deleteOfflineOrder = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // [2025-12-18 17:30:00] 检查订单是否存在
+    const existing = await prisma.offlineOrder.findUnique({
+      where: { id },
+      select: { id: true, orderCode: true },
+    });
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: '订单不存在',
+      });
+    }
+
+    // [2025-12-18 17:30:00] 删除订单（级联删除相关数据）
+    await prisma.offlineOrder.delete({
+      where: { id },
+    });
+
+    logger.info(`[deleteOfflineOrder] Order deleted: ${existing.orderCode} (${id})`);
+
+    res.json({
+      success: true,
+      message: '订单已删除',
+    });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        success: false,
+        error: 'Not Found',
+        message: '订单不存在',
+      });
+    }
+    logger.error('[deleteOfflineOrder] Error deleting order:', error);
+    next(new InternalServerError('删除订单失败'));
+  }
+};
+

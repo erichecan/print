@@ -206,6 +206,7 @@ export default function SalesOrdersPage() {
   const [stages, setStages] = useState<Array<{ key: string; label: string }>>([]);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+  const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
   
   // [2025-01-27 13:00:00] Tab状态管理
   const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
@@ -309,6 +310,45 @@ export default function SalesOrdersPage() {
 
   const handleViewDetail = (orderId: string) => {
     router.push(`/offline-orders/sales/orders/${orderId}`);
+  };
+
+  // [2025-12-18 17:30:00] 删除订单
+  const handleDeleteOrder = async (orderId: string, orderCode: string) => {
+    if (!confirm(`确定要删除订单 ${orderCode} 吗？此操作不可恢复。`)) {
+      return;
+    }
+
+    setDeletingOrder(orderId);
+    try {
+      await salesOrdersApi.delete(orderId);
+      // [2025-12-18 17:30:00] 删除成功后刷新列表
+      setOrders(orders.filter(o => o.id !== orderId));
+      alert('订单已删除');
+    } catch (err: any) {
+      alert(err.message || '删除失败，请稍后重试');
+    } finally {
+      setDeletingOrder(null);
+    }
+  };
+
+  // [2025-12-18 17:30:00] 删除订单
+  const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
+  const handleDeleteOrder = async (orderId: string, orderCode: string) => {
+    if (!confirm(`确定要删除订单 ${orderCode} 吗？此操作不可恢复。`)) {
+      return;
+    }
+
+    setDeletingOrder(orderId);
+    try {
+      await salesOrdersApi.delete(orderId);
+      // [2025-12-18 17:30:00] 删除成功后刷新列表
+      setOrders(orders.filter(o => o.id !== orderId));
+      alert('订单已删除');
+    } catch (err: any) {
+      alert(err.message || '删除失败，请稍后重试');
+    } finally {
+      setDeletingOrder(null);
+    }
   };
 
   // [2025-12-07 04:55:00] 快速修改订单阶段
@@ -638,13 +678,24 @@ export default function SalesOrdersPage() {
                     </div>
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="sales-orders-detail-btn"
-                      onClick={() => handleViewDetail(order.id)}
-                    >
-                      详情
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        type="button"
+                        className="sales-orders-detail-btn-small"
+                        onClick={() => handleViewDetail(order.id)}
+                      >
+                        详情
+                      </button>
+                      <button
+                        type="button"
+                        className="sales-orders-delete-btn"
+                        onClick={() => handleDeleteOrder(order.id, order.orderCode)}
+                        disabled={deletingOrder === order.id}
+                        title="删除订单"
+                      >
+                        {deletingOrder === order.id ? '删除中...' : '🗑️'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1299,15 +1350,43 @@ export default function SalesOrdersPage() {
           background: #fef3c7;
           color: #b45309;
         }
-        .sales-orders-detail-btn {
+        .sales-orders-detail-btn-small {
           border: none;
-          border-radius: 999px;
-          padding: 0.35rem 0.9rem;
-          font-size: 0.82rem;
+          border-radius: 6px;
+          padding: 0.25rem 0.6rem;
+          font-size: 0.75rem;
           font-weight: 600;
           color: #2563eb;
           background: #eff6ff;
           cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .sales-orders-detail-btn-small:hover {
+          background: #dbeafe;
+          color: #1d4ed8;
+        }
+        .sales-orders-delete-btn {
+          border: none;
+          border-radius: 6px;
+          padding: 0.25rem 0.5rem;
+          font-size: 0.9rem;
+          background: #fef2f2;
+          color: #dc2626;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 28px;
+          height: 28px;
+        }
+        .sales-orders-delete-btn:hover:not(:disabled) {
+          background: #fee2e2;
+          color: #b91c1c;
+        }
+        .sales-orders-delete-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         @media (max-width: 768px) {
           .sales-orders-card {
