@@ -1,18 +1,25 @@
 // [2025-01-31 19:50:00] 订单数据层服务（Prisma）
+// [2025-12-18 23:10:00] 修复：使用动态导入避免构建时 Prisma Client 初始化失败
 
-import { PrismaClient } from '@prisma/client';
 import type { OrderItemColorInput, SizeOverride } from '@/types/order';
+import type { PrismaClient } from '@prisma/client';
 
-// [2025-01-31 19:50:00] 使用全局 prisma 实例，避免在开发环境中创建过多连接
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
-
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// [2025-12-18 23:10:00] 动态获取 Prisma Client，避免构建时导入失败
+async function getPrisma(): Promise<PrismaClient> {
+  // 动态导入 Prisma Client，只在运行时执行
+  const { PrismaClient } = await import('@prisma/client');
+  
+  // [2025-01-31 19:50:00] 使用全局 prisma 实例，避免在开发环境中创建过多连接
+  const globalForPrisma = global as unknown as { prisma: PrismaClient };
+  
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+  }
+  
+  return globalForPrisma.prisma;
+}
 
 /**
  * [2025-01-31 19:50:00] 批量 upsert 订单项颜色配置
@@ -21,6 +28,7 @@ export async function upsertItemColors(
   itemId: string,
   colors: OrderItemColorInput[]
 ): Promise<void> {
+  const prisma = await getPrisma();
   for (const c of colors) {
     await prisma.orderItemColor.upsert({
       where: {
@@ -70,6 +78,7 @@ export async function upsertItemColorSizeOverrides(
   orderItemColorId: number,
   overrides: SizeOverride[]
 ): Promise<void> {
+  const prisma = await getPrisma();
   for (const o of overrides) {
     await prisma.orderItemColorSizeOverride.upsert({
       where: {
@@ -96,6 +105,7 @@ export async function upsertItemColorSizeOverrides(
  * [2025-01-31 19:50:00] 获取订单项的所有颜色配置（包含尺码覆盖）
  */
 export async function getItemColors(itemId: string) {
+  const prisma = await getPrisma();
   return prisma.orderItemColor.findMany({
     where: { orderItemId: itemId },
     include: {
