@@ -12,7 +12,7 @@ CREATE TABLE "guest_messages" (
     "order_number" TEXT,
     "status" "GuestMessageStatus" NOT NULL DEFAULT 'UNREAD',
     "read_at" TIMESTAMP(3),
-    "read_by" UUID,
+    "read_by" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
