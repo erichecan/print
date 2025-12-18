@@ -951,14 +951,26 @@ export default function OfflineOrdersIntakePage() {
   const resetStatus = useCallback(() => setStatus({ type: 'idle' }), []);
 
   const goToNextStep = useCallback(() => {
+    console.log('[OfflineOrder] goToNextStep called', {
+      timestamp: new Date().toISOString(),
+      currentStep,
+      stepsLength: STEPS.length,
+      isLastStep: currentStep >= STEPS.length,
+    });
+    
     if (!validateStep(currentStep)) {
+      console.log('[OfflineOrder] ⚠️ Step validation failed, not moving to next step');
       return;
     }
     resetStatus();
     if (currentStep < STEPS.length) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      console.log('[OfflineOrder] ✅ Moving to next step:', nextStep);
+      setCurrentStep(nextStep);
+    } else {
+      console.log('[OfflineOrder] ⚠️ Already at last step, cannot go to next step');
     }
-  }, [currentStep, validateStep, resetStatus]);
+  }, [currentStep, validateStep, resetStatus, STEPS.length]);
 
   const goToPreviousStep = useCallback(() => {
     resetStatus();
@@ -977,17 +989,28 @@ export default function OfflineOrdersIntakePage() {
   }, [resetStatus]);
 
   // [2025-12-18 16:45:00] 修复：阻止输入框中Enter键触发表单提交
+  // [2025-12-18 17:00:00] 添加详细调试日志
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     if (event.key === 'Enter' && !event.shiftKey) {
+      console.log('[OfflineOrder] Enter key pressed in input/textarea', {
+        timestamp: new Date().toISOString(),
+        targetTag: (event.target as HTMLElement)?.tagName,
+        targetType: (event.target as HTMLInputElement)?.type,
+        isTextarea: event.target instanceof HTMLTextAreaElement,
+        shiftKey: event.shiftKey,
+      });
+      
       // 对于textarea，允许Shift+Enter换行，但阻止单独的Enter键
       if (event.target instanceof HTMLTextAreaElement) {
         // textarea中，只有单独的Enter键才阻止（Shift+Enter允许换行）
         if (!event.shiftKey) {
+          console.log('[OfflineOrder] ⚠️ Preventing Enter key in textarea (use Shift+Enter for new line)');
           event.preventDefault();
           event.stopPropagation();
         }
       } else {
         // input中，阻止所有Enter键
+        console.log('[OfflineOrder] ⚠️ Preventing Enter key in input field');
         event.preventDefault();
         event.stopPropagation();
       }
@@ -1108,16 +1131,39 @@ export default function OfflineOrdersIntakePage() {
       event.preventDefault();
       
       // [2025-12-18 16:45:00] 修复：防止在输入框中按Enter键时自动提交
-      // 检查事件是否来自提交按钮点击，而不是输入框的Enter键
+      // [2025-12-18 17:00:00] 添加详细调试日志
       const nativeEvent = event.nativeEvent as any;
       const submitter = nativeEvent.submitter as HTMLElement | null;
+      const target = event.target as HTMLElement;
+      
+      console.log('[OfflineOrder] handleSubmit called', {
+        timestamp: new Date().toISOString(),
+        hasSubmitter: !!submitter,
+        submitterTag: submitter?.tagName,
+        submitterType: submitter?.getAttribute('type'),
+        targetTag: target?.tagName,
+        targetType: (target as HTMLInputElement)?.type,
+        isInput: target?.tagName === 'INPUT',
+        isTextarea: target?.tagName === 'TEXTAREA',
+      });
       
       // 如果事件不是来自提交按钮（type="submit"），则忽略（可能是输入框的Enter键）
-      if (!submitter || (submitter.tagName === 'BUTTON' && submitter.getAttribute('type') !== 'submit')) {
+      // [2025-12-18 17:00:00] 改进：检查 submitter 是否存在且是提交按钮
+      const isFromSubmitButton = submitter && (
+        (submitter.tagName === 'BUTTON' && submitter.getAttribute('type') === 'submit') ||
+        (submitter.tagName === 'INPUT' && (submitter as HTMLInputElement).type === 'submit')
+      );
+      
+      if (!isFromSubmitButton) {
         // 这是输入框中的Enter键触发的，应该忽略
+        console.log('[OfflineOrder] ⚠️ Form submit triggered by Enter key in input, ignoring...', {
+          submitter: submitter ? { tag: submitter.tagName, type: submitter.getAttribute('type') } : null,
+          target: { tag: target?.tagName, type: (target as HTMLInputElement)?.type },
+        });
         return;
       }
       
+      console.log('[OfflineOrder] ✅ Form submit triggered by submit button, proceeding...');
       resetStatus();
       
       // [2025-12-06] PRD v2.0: 验证3个步骤

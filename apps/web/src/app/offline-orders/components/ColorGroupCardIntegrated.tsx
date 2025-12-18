@@ -141,6 +141,13 @@ export function ColorGroupCardIntegrated({
                       const qty = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
                       handleSizeQuantityChange(size, qty);
                     }}
+                    onKeyDown={(e) => {
+                      // [2025-12-18 17:00:00] 修复：阻止Enter键触发表单提交
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
                     disabled={!isAvailable}
                     className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     placeholder="数量"
@@ -176,6 +183,13 @@ export function ColorGroupCardIntegrated({
                       const inputValue = e.target.value;
                       const qty = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
                       handleSizeQuantityChange(size, qty);
+                    }}
+                    onKeyDown={(e) => {
+                      // [2025-12-18 17:00:00] 修复：阻止Enter键触发表单提交
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
                     }}
                     disabled={!isAvailable}
                     className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
