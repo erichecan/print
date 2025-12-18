@@ -52,11 +52,10 @@ COPY prisma ./prisma
 # [2025-12-18 17:30:00] 修复：安装 apps/web 的依赖（next 等）
 RUN npm install --production=false
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
-# [2025-12-12 14:15:00] 修复：安装与 @prisma/client 匹配的 prisma CLI 版本（5.19.1）
-# [2025-12-18 22:59:00] 修复：改用 Debian 基础镜像后，Prisma generate 应该可以正常工作
-RUN npm install -g prisma@5.19.1
-# [2025-12-18 22:59:00] 使用占位符 DATABASE_URL 生成 Prisma Client（构建时不需要真实数据库连接）
-RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" prisma generate --schema=./prisma/schema.prisma
+# [2025-12-18 23:00:00] 修复：前端 API 路由不使用 Prisma，跳过 Prisma generate 步骤
+# 注意：如果将来需要在前端 API 路由中使用 Prisma，需要修复 Prisma generate 问题
+# RUN npm install -g prisma@5.19.1
+# RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-bullseye-slim AS runner
