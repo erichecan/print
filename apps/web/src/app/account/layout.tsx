@@ -7,7 +7,7 @@
 import { ReactNode, Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import { getSessionSafe } from '@/server/account';
 import { AccountSidebar } from './components/AccountSidebar';
 import { AccountBreadcrumb } from './components/AccountBreadcrumb';
@@ -15,7 +15,7 @@ import { generateTraceId } from '@/shared/errors';
 import { reportServerError } from '@/server/telemetry';
 
 // [2025-12-18 23:30:00] 使用 dynamic import 延迟加载 Client Component，避免服务端渲染错误
-const AccountLayoutClient = dynamic(
+const AccountLayoutClient = dynamicImport(
   () => import('./components/AccountLayoutClient').then(mod => ({ default: mod.AccountLayoutClient })),
   { ssr: false }
 );
