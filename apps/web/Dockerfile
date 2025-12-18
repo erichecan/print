@@ -52,10 +52,11 @@ COPY prisma ./prisma
 # [2025-12-18 17:30:00] 修复：安装 apps/web 的依赖（next 等）
 RUN npm install --production=false
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
-# [2025-12-18 23:00:00] 修复：前端 API 路由不使用 Prisma，跳过 Prisma generate 步骤
-# 注意：如果将来需要在前端 API 路由中使用 Prisma，需要修复 Prisma generate 问题
-# RUN npm install -g prisma@5.19.1
-# RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" prisma generate --schema=./prisma/schema.prisma
+# [2025-12-18 23:06:00] 修复：在 Docker 构建时生成 Prisma Client
+# 使用 --ignore-scripts 避免 postinstall 脚本干扰，然后手动生成
+RUN npm install prisma@5.19.1 --save-dev --ignore-scripts || true
+# [2025-12-18 23:06:00] 尝试生成 Prisma Client，如果失败则继续（构建可能会失败，但至少尝试）
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate --schema=./prisma/schema.prisma || (echo "⚠️ Prisma generate failed, trying to continue..." && sleep 1)
 RUN npm run build
 
 FROM node:18-bullseye-slim AS runner

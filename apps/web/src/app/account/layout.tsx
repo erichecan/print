@@ -10,6 +10,7 @@ import { headers } from 'next/headers';
 import { getSessionSafe } from '@/server/account';
 import { AccountSidebar } from './components/AccountSidebar';
 import { AccountBreadcrumb } from './components/AccountBreadcrumb';
+import { AccountLayoutClient } from './components/AccountLayoutClient';
 import { generateTraceId } from '@/shared/errors';
 import { reportServerError } from '@/server/telemetry';
 
@@ -158,7 +159,8 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
           width: '100%',
         }}>
           <AccountBreadcrumb />
-          {children}
+          {/* [2025-12-18 22:55:00] 使用 AccountProvider 包装子组件 */}
+          <AccountLayoutClient>{children}</AccountLayoutClient>
         </main>
       </div>
     );

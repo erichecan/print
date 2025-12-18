@@ -8,19 +8,12 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ACCOUNT_ROUTES } from '@/lib/routes/account';
 
+// [2025-12-18 22:40:00] 精简菜单：移除未实现的功能
 const MENU = [
   { href: ACCOUNT_ROUTES.dashboard, label: '概览', icon: '🏠', exact: true },
   { href: ACCOUNT_ROUTES.orders, label: '订单', icon: '📋' },
-  { href: ACCOUNT_ROUTES.billing, label: '账单与发票', icon: '💳' },
-  { href: ACCOUNT_ROUTES.paymentMethods, label: '支付方式', icon: '💵' },
   { href: ACCOUNT_ROUTES.addresses, label: '地址簿', icon: '📍' },
   { href: ACCOUNT_ROUTES.profile, label: '个人资料', icon: '👤' },
-  { href: ACCOUNT_ROUTES.team, label: '团队', icon: '👥' },
-  { href: ACCOUNT_ROUTES.assets, label: '素材库', icon: '📁' },
-  { href: ACCOUNT_ROUTES.notifications, label: '通知设置', icon: '🔔' },
-  { href: ACCOUNT_ROUTES.support, label: '支持与工单', icon: '🎫' },
-  { href: ACCOUNT_ROUTES.rewards, label: '折扣与积分', icon: '🎁' },
-  { href: ACCOUNT_ROUTES.designs, label: '我的设计', icon: '🎨' },
   { href: ACCOUNT_ROUTES.settings, label: '账户设置', icon: '⚙️' },
 ];
 

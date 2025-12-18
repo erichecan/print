@@ -7,82 +7,32 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { authApi, ordersApi, designsApi, type UserProfile } from '@/lib/api';
+import { authApi, ordersApi } from '@/lib/api';
 import { ACCOUNT_ROUTES } from '@/lib/routes/account';
+import { useAccount, useOrders } from '@/hooks/useAccount';
 
 export default function AccountPage() {
   const router = useRouter();
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [designsCount, setDesignsCount] = useState(0);
-  const [ordersCount, setOrdersCount] = useState(0);
+  // [2025-12-18 22:55:00] 使用统一的 hooks 获取数据
+  const { user, isLoading: userLoading, refreshUser } = useAccount();
+  const { pagination, isLoading: ordersLoading } = useOrders({ page: 1, limit: 1 });
+  const ordersCount = pagination?.total || 0;
+  
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [nameSuccess, setNameSuccess] = useState(false);
 
+  // [2025-12-18 22:55:00] 初始化显示名称
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadUser() {
-      try {
-        const data = await authApi.me();
-        if (cancelled) return;
-        setUser(data);
-        const name = [data.firstName, data.lastName].filter(Boolean).join(' ') || data.email?.split('@')[0] || 'User';
-        setDisplayName(name);
-        
-        // 加载设计数量
-        try {
-          const designsData = await designsApi.list();
-          if (!cancelled) {
-            setDesignsCount(designsData.designs?.length || 0);
-          }
-        } catch {
-          // 忽略错误
-        }
-        
-        // 加载订单数量
-        // [2025-01-30 18:30:00] 修复：正确从 pagination.total 获取订单总数
-        try {
-          const ordersData = await ordersApi.list(1, 1);
-          if (!cancelled) {
-            // 后端返回格式：{ orders: [], pagination: { total: ... } }
-            if ('pagination' in ordersData && ordersData.pagination) {
-              setOrdersCount(ordersData.pagination.total || 0);
-            } else if ('orders' in ordersData && Array.isArray(ordersData.orders)) {
-              // 如果没有 pagination，使用 orders 数组长度作为后备
-              setOrdersCount(ordersData.orders.length || 0);
-            }
-          }
-        } catch {
-          // 忽略错误
-        }
-      } catch (err: unknown) {
-        if (cancelled) return;
-        // [2025-01-30 19:10:00] 增强：明确处理 UNAUTHORIZED 错误
-        const error = err instanceof Error ? err : new Error(String(err));
-        if (error.message === 'UNAUTHORIZED' || error.message?.includes('401')) {
-          // 用户未登录，但 layout 应该已经处理了重定向
-          // 这里只是设置 user 为 null，让组件显示未登录状态
-          setUser(null);
-        } else {
-          // 其他错误，记录但不影响 UI
-          console.error('[AccountPage] Failed to load user:', error);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+    if (user) {
+      const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email?.split('@')[0] || 'User';
+      setDisplayName(name);
     }
+  }, [user]);
 
-    loadUser();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const loading = userLoading || ordersLoading;
 
   // [2025-12-06 13:00:00] 实现名称编辑功能
   const handleNameSave = async () => {
@@ -134,13 +84,10 @@ export default function AccountPage() {
         lastName: lastName || undefined,
       });
       
-      // [2025-12-06 13:00:00] 重新加载用户信息
-      const updatedUser = await authApi.me();
-      setUser(updatedUser);
+      // [2025-12-18 22:55:00] 重新加载用户信息（通过 refreshUser）
+      await refreshUser();
       
-      // [2025-12-06 13:00:00] 更新显示名称
-      const updatedDisplayName = [updatedUser.firstName, updatedUser.lastName].filter(Boolean).join(' ') || updatedUser.email?.split('@')[0] || 'User';
-      setDisplayName(updatedDisplayName);
+      // [2025-12-06 13:00:00] 更新显示名称（useEffect 会自动处理）
       
       setNameSuccess(true);
       setEditingName(false);
@@ -281,134 +228,6 @@ export default function AccountPage() {
         <p style={{ fontSize: '16px', color: '#6b7280', margin: 0 }}>
           Here&apos;s an overview of your account.
         </p>
-      </div>
-
-      {/* My Designs 部分 */}
-      <div style={{ marginBottom: '48px' }}>
-        <h2 style={{ 
-          fontSize: '24px', 
-          fontWeight: 700, 
-          margin: '0 0 24px 0',
-          color: '#1f2937'
-        }}>
-          My Designs
-        </h2>
-        {designsCount === 0 ? (
-          <div style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '12px',
-            padding: '64px 32px',
-            textAlign: 'center',
-          }}>
-            <div style={{
-              width: '120px',
-              height: '120px',
-              margin: '0 auto 24px',
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              {/* 文件夹图标 */}
-              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" style={{ color: '#9ca3af' }}>
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" fill="currentColor" />
-              </svg>
-              {/* 鼠标光标图标 */}
-              <svg 
-                width="32" 
-                height="32" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                style={{ 
-                  position: 'absolute',
-                  top: '20px',
-                  right: '20px',
-                  color: '#3b82f6',
-                  transform: 'rotate(-15deg)'
-                }}
-              >
-                <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" fill="currentColor" />
-              </svg>
-              {/* 闪光效果 */}
-              <div style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#60a5fa',
-                boxShadow: '0 0 12px rgba(96, 165, 250, 0.6)',
-                animation: 'pulse 2s infinite',
-              }} />
-            </div>
-            <h3 style={{ 
-              fontSize: '20px', 
-              fontWeight: 600, 
-              margin: '0 0 8px 0',
-              color: '#1f2937'
-            }}>
-              No designs yet
-            </h3>
-            <p style={{ 
-              fontSize: '16px', 
-              color: '#6b7280', 
-              margin: '0 0 24px 0'
-            }}>
-              Bring your first idea to life.
-            </p>
-            <Link
-              href="/products"
-              style={{
-                display: 'inline-block',
-                padding: '12px 24px',
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: '16px',
-                transition: 'background-color 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#1d4ed8';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#2563eb';
-              }}
-            >
-              Start Designing
-            </Link>
-          </div>
-        ) : (
-          <div style={{
-            backgroundColor: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '12px',
-            padding: '24px',
-          }}>
-            <p style={{ margin: 0, color: '#6b7280' }}>
-              You have {designsCount} saved design{designsCount !== 1 ? 's' : ''}.
-            </p>
-            <Link
-              href={ACCOUNT_ROUTES.designs}
-              style={{
-                display: 'inline-block',
-                marginTop: '16px',
-                padding: '12px 24px',
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                fontWeight: 600,
-                fontSize: '16px',
-              }}
-            >
-              View All Designs
-            </Link>
-          </div>
-        )}
       </div>
 
       {/* Order History 部分 */}
