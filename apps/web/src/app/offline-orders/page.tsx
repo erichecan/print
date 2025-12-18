@@ -2457,8 +2457,9 @@ export default function OfflineOrdersIntakePage() {
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {/* [2025-12-18 17:15:00] 修复：将提交按钮移到中间，避免与下一步按钮位置重叠导致误触 */}
           {/* [2025-12-18 17:20:00] 使用 grid 布局确保提交按钮真正居中 */}
+          {/* [2025-12-18 17:25:00] 修复：使用绝对定位确保提交按钮真正居中 */}
           {isClient && (
-          <div className={`pt-6 border-t border-gray-200 ${
+          <div className={`pt-6 border-t border-gray-200 relative ${
             currentStep === STEPS.length 
               ? 'grid grid-cols-3 items-center gap-3' 
               : 'flex justify-between items-center gap-3'
@@ -2475,9 +2476,9 @@ export default function OfflineOrdersIntakePage() {
               </button>
             </div>
             
-            {/* 中间：提交订单按钮（仅在第3步显示，使用 grid 居中） */}
+            {/* 中间：提交订单按钮（仅在第3步显示，使用绝对定位居中） */}
             {currentStep === STEPS.length && (
-              <div className="flex justify-center">
+              <div className="absolute left-1/2 transform -translate-x-1/2">
                 <button
                   ref={submitButtonRef}
                   type="submit"
