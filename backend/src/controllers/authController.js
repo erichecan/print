@@ -4,6 +4,7 @@
  * [2025-12-06 12:30:00] Enhanced with unified error handling
  */
 const prisma = require('../lib/prisma');
+const { isConnectionError } = require('../lib/prisma');
 // [2025-11-09 20:50:12] Switch to bcryptjs to avoid native build dependency on Windows
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -93,24 +94,55 @@ exports.register = async (req, res) => {
     });
 
     // [2025-01-30 19:40:00] Check if user already exists with detailed error handling
+    // [2025-01-30 20:05:00] 添加连接错误重试逻辑
     let existingUser;
     try {
       existingUser = await prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
     } catch (dbError) {
-      console.error('[Auth] Database error checking existing user', {
-        timestamp,
-        error: dbError.message,
-        errorCode: dbError.code,
-        errorName: dbError.name,
-        email: normalizedEmail.substring(0, 3) + '***',
-        stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
-      });
-      return res.status(500).json({ 
-        error: 'Database error', 
-        details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
-      });
+      // [2025-01-30 20:05:00] 如果是连接错误，尝试断开并重连
+      if (isConnectionError(dbError)) {
+        console.warn('[Auth] Database connection error, attempting to reconnect...', {
+          timestamp,
+          errorCode: dbError.code,
+          errorName: dbError.name
+        });
+        try {
+          await prisma.$disconnect();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          // 重试一次
+          existingUser = await prisma.user.findUnique({
+            where: { email: normalizedEmail },
+          });
+        } catch (retryError) {
+          console.error('[Auth] Database error checking existing user (after retry)', {
+            timestamp,
+            error: retryError.message,
+            errorCode: retryError.code,
+            errorName: retryError.name,
+            email: normalizedEmail.substring(0, 3) + '***',
+            stack: process.env.NODE_ENV === 'development' ? retryError.stack : undefined
+          });
+          return res.status(500).json({ 
+            error: 'Database connection error', 
+            details: process.env.NODE_ENV === 'development' ? retryError.message : 'Internal server error' 
+          });
+        }
+      } else {
+        console.error('[Auth] Database error checking existing user', {
+          timestamp,
+          error: dbError.message,
+          errorCode: dbError.code,
+          errorName: dbError.name,
+          email: normalizedEmail.substring(0, 3) + '***',
+          stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
+        });
+        return res.status(500).json({ 
+          error: 'Database error', 
+          details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
+        });
+      }
     }
 
     if (existingUser) {
@@ -139,6 +171,7 @@ exports.register = async (req, res) => {
     }
 
     // [2025-01-30 19:40:00] Create user with detailed error handling
+    // [2025-01-30 20:05:00] 添加连接错误重试逻辑
     let user;
     try {
       user = await prisma.user.create({
@@ -166,19 +199,72 @@ exports.register = async (req, res) => {
         role: user.role
       });
     } catch (dbError) {
-      console.error('[Auth] Database error creating user', {
-        timestamp,
-        error: dbError.message,
-        errorCode: dbError.code,
-        errorName: dbError.name,
-        email: normalizedEmail.substring(0, 3) + '***',
-        stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined,
-        meta: dbError.meta || undefined
-      });
-      return res.status(500).json({ 
-        error: 'Database error', 
-        details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
-      });
+      // [2025-01-30 20:05:00] 如果是连接错误，尝试断开并重连
+      if (isConnectionError(dbError)) {
+        console.warn('[Auth] Database connection error creating user, attempting to reconnect...', {
+          timestamp,
+          errorCode: dbError.code,
+          errorName: dbError.name,
+          email: normalizedEmail.substring(0, 3) + '***'
+        });
+        try {
+          await prisma.$disconnect();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          // 重试一次
+          user = await prisma.user.create({
+            data: {
+              email: normalizedEmail,
+              passwordHash,
+              firstName: firstName || null,
+              lastName: lastName || null,
+              role: 'CUSTOMER',
+            },
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              role: true,
+              emailVerified: true,
+              createdAt: true,
+            },
+          });
+          console.log('[Auth] User created (after retry)', {
+            timestamp,
+            userId: user.id,
+            email: user.email.substring(0, 3) + '***',
+            role: user.role
+          });
+        } catch (retryError) {
+          console.error('[Auth] Database error creating user (after retry)', {
+            timestamp,
+            error: retryError.message,
+            errorCode: retryError.code,
+            errorName: retryError.name,
+            email: normalizedEmail.substring(0, 3) + '***',
+            stack: process.env.NODE_ENV === 'development' ? retryError.stack : undefined,
+            meta: retryError.meta || undefined
+          });
+          return res.status(500).json({ 
+            error: 'Database connection error', 
+            details: process.env.NODE_ENV === 'development' ? retryError.message : 'Internal server error' 
+          });
+        }
+      } else {
+        console.error('[Auth] Database error creating user', {
+          timestamp,
+          error: dbError.message,
+          errorCode: dbError.code,
+          errorName: dbError.name,
+          email: normalizedEmail.substring(0, 3) + '***',
+          stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined,
+          meta: dbError.meta || undefined
+        });
+        return res.status(500).json({ 
+          error: 'Database error', 
+          details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
+        });
+      }
     }
 
     // [2025-01-30 19:40:00] Generate token with error handling
@@ -277,23 +363,54 @@ exports.login = async (req, res) => {
     });
 
     // [2025-12-02 03:40:00] Find user with detailed error handling
+    // [2025-01-30 20:05:00] 添加连接错误重试逻辑
     let user;
     try {
       user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
     } catch (dbError) {
-      console.error('[Auth] Database error finding user', {
-        timestamp,
-        error: dbError.message,
-        errorCode: dbError.code,
-        email: normalizedEmail.substring(0, 3) + '***',
-        stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
-      });
-      return res.status(500).json({ 
-        error: 'Database error', 
-        details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
-      });
+      // [2025-01-30 20:05:00] 如果是连接错误，尝试断开并重连
+      if (isConnectionError(dbError)) {
+        console.warn('[Auth] Database connection error finding user, attempting to reconnect...', {
+          timestamp,
+          errorCode: dbError.code,
+          errorName: dbError.name,
+          email: normalizedEmail.substring(0, 3) + '***'
+        });
+        try {
+          await prisma.$disconnect();
+          await new Promise(resolve => setTimeout(resolve, 100));
+          // 重试一次
+          user = await prisma.user.findUnique({
+            where: { email: normalizedEmail },
+          });
+        } catch (retryError) {
+          console.error('[Auth] Database error finding user (after retry)', {
+            timestamp,
+            error: retryError.message,
+            errorCode: retryError.code,
+            email: normalizedEmail.substring(0, 3) + '***',
+            stack: process.env.NODE_ENV === 'development' ? retryError.stack : undefined
+          });
+          return res.status(500).json({ 
+            error: 'Database connection error', 
+            details: process.env.NODE_ENV === 'development' ? retryError.message : 'Internal server error' 
+          });
+        }
+      } else {
+        console.error('[Auth] Database error finding user', {
+          timestamp,
+          error: dbError.message,
+          errorCode: dbError.code,
+          email: normalizedEmail.substring(0, 3) + '***',
+          stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
+        });
+        return res.status(500).json({ 
+          error: 'Database error', 
+          details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
+        });
+      }
     }
 
     if (!user) {

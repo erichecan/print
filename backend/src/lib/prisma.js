@@ -44,12 +44,103 @@ const prismaConfig = {
   }),
 };
 
+// [2025-01-30 20:00:00] 确保 DATABASE_URL 包含连接池参数（适用于 Cloud Run serverless 环境）
+function ensureConnectionPoolParams(databaseUrl) {
+  try {
+    const url = new URL(databaseUrl);
+    
+    // [2025-01-30 20:00:00] 为 Cloud Run serverless 环境添加连接池参数
+    // connection_limit: 每个实例的最大连接数（Cloud Run 建议较小值）
+    // pool_timeout: 连接池超时时间（秒）
+    // connect_timeout: 连接超时时间（秒）
+    if (!url.searchParams.has('connection_limit')) {
+      url.searchParams.set('connection_limit', process.env.NODE_ENV === 'production' ? '5' : '10');
+    }
+    if (!url.searchParams.has('pool_timeout')) {
+      url.searchParams.set('pool_timeout', '10');
+    }
+    if (!url.searchParams.has('connect_timeout')) {
+      url.searchParams.set('connect_timeout', '10');
+    }
+    
+    return url.toString();
+  } catch (error) {
+    // 如果 URL 解析失败，返回原始 URL
+    logger.warn('[2025-01-30 20:00:00] ⚠️  Failed to parse DATABASE_URL for connection pool params:', error.message);
+    return databaseUrl;
+  }
+}
+
+// [2025-01-30 20:00:00] 检查是否是连接错误
+function isConnectionError(error) {
+  if (!error) return false;
+  
+  // Prisma 错误代码
+  const connectionErrorCodes = [
+    'P1001', // Can't reach database server
+    'P1008', // Operations timed out
+    'P1017', // Server has closed the connection
+  ];
+  
+  if (error.code && connectionErrorCodes.includes(error.code)) {
+    return true;
+  }
+  
+  // 检查错误消息中是否包含连接相关关键词
+  const errorMessage = error.message?.toLowerCase() || '';
+  const connectionKeywords = ['closed', 'connection', 'timeout', 'connect'];
+  
+  return connectionKeywords.some(keyword => errorMessage.includes(keyword));
+}
+
+// [2025-01-30 20:00:00] 执行 Prisma 查询并处理连接错误重试
+async function executeWithRetry(operation, maxRetries = 2) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (isConnectionError(error) && attempt < maxRetries) {
+        logger.warn(`[2025-01-30 20:00:00] ⚠️  Database connection error (attempt ${attempt}/${maxRetries}), retrying...`, {
+          errorCode: error.code,
+          errorName: error.name,
+          errorMessage: error.message?.substring(0, 100)
+        });
+        
+        // [2025-01-30 20:00:00] 断开并重新连接
+        try {
+          const client = getPrisma();
+          await client.$disconnect();
+          // 等待一小段时间后重试（指数退避）
+          await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+        } catch (disconnectError) {
+          // 忽略断开连接的错误
+        }
+        
+        continue;
+      }
+      
+      // 如果重试次数用完或不是连接错误，抛出错误
+      throw error;
+    }
+  }
+}
+
+// [2025-01-30 20:00:00] 导出重试函数供其他模块使用（将在最后通过 prismaProxy 导出）
+
 // [2025-01-29 14:50:00] 初始化 Prisma Client - 简化逻辑，确保正确读取环境变量
 function getPrisma() {
   if (!prisma) {
     try {
       // [2025-01-29 14:50:00] 验证 DATABASE_URL 环境变量
       validateDatabaseUrl();
+      
+      // [2025-01-30 20:00:00] 确保 DATABASE_URL 包含连接池参数
+      let databaseUrl = process.env.DATABASE_URL;
+      if (process.env.NODE_ENV === 'production') {
+        databaseUrl = ensureConnectionPoolParams(databaseUrl);
+        // [2025-01-30 20:00:00] 临时设置环境变量以应用连接池参数
+        process.env.DATABASE_URL = databaseUrl;
+      }
       
       // [2025-01-29 23:05:00] 检查 Prisma Client 是否已生成
       const fs = require('fs');
@@ -152,8 +243,16 @@ process.on('SIGINT', gracefulShutdown);
 
 // [2025-01-29 14:50:00] 导出 Prisma Client - 使用简化的方式
 // 直接导出，但通过 getter 确保延迟初始化
-module.exports = new Proxy({}, {
+const prismaProxy = new Proxy({}, {
   get(target, prop) {
+    // [2025-01-30 20:10:00] 导出辅助函数
+    if (prop === 'executeWithRetry') {
+      return executeWithRetry;
+    }
+    if (prop === 'isConnectionError') {
+      return isConnectionError;
+    }
+    
     const client = getPrisma();
     if (!client) {
       // [2025-01-29 14:50:00] 如果 Prisma Client 还没创建，抛出有意义的错误
@@ -172,3 +271,5 @@ module.exports = new Proxy({}, {
     return true;
   }
 });
+
+module.exports = prismaProxy;
