@@ -57,64 +57,185 @@ function getCookieOptions() {
 /**
  * POST /api/auth/register - Register new user
  * [2025-11-05 01:00:00]
+ * [2025-01-30 19:40:00] Enhanced error handling and logging
  */
 exports.register = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  
   try {
     const { email, password, firstName, lastName } = req.body;
 
-    // Validation
+    // [2025-01-30 19:40:00] Validation with detailed logging
     if (!email || !password) {
+      console.log('[Auth] Register validation failed', {
+        timestamp,
+        hasEmail: !!email,
+        hasPassword: !!password
+      });
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
     if (password.length < 8) {
+      console.log('[Auth] Register password validation failed', {
+        timestamp,
+        passwordLength: password.length
+      });
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() },
+    const normalizedEmail = email.toLowerCase();
+    console.log('[Auth] Register attempt', {
+      timestamp,
+      email: normalizedEmail.substring(0, 3) + '***',
+      hasPassword: !!password,
+      hasFirstName: !!firstName,
+      hasLastName: !!lastName
     });
 
+    // [2025-01-30 19:40:00] Check if user already exists with detailed error handling
+    let existingUser;
+    try {
+      existingUser = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+    } catch (dbError) {
+      console.error('[Auth] Database error checking existing user', {
+        timestamp,
+        error: dbError.message,
+        errorCode: dbError.code,
+        errorName: dbError.name,
+        email: normalizedEmail.substring(0, 3) + '***',
+        stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined
+      });
+      return res.status(500).json({ 
+        error: 'Database error', 
+        details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
+      });
+    }
+
     if (existingUser) {
+      console.log('[Auth] User already exists', {
+        timestamp,
+        email: normalizedEmail.substring(0, 3) + '***'
+      });
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 10);
+    // [2025-01-30 19:40:00] Hash password with error handling
+    let passwordHash;
+    try {
+      passwordHash = await bcrypt.hash(password, 10);
+      console.log('[Auth] Password hashed', {
+        timestamp,
+        email: normalizedEmail.substring(0, 3) + '***'
+      });
+    } catch (hashError) {
+      console.error('[Auth] Password hashing error', {
+        timestamp,
+        error: hashError.message,
+        email: normalizedEmail.substring(0, 3) + '***'
+      });
+      return res.status(500).json({ error: 'Failed to process password' });
+    }
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        passwordHash,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        role: 'CUSTOMER',
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        emailVerified: true,
-        createdAt: true,
-      },
+    // [2025-01-30 19:40:00] Create user with detailed error handling
+    let user;
+    try {
+      user = await prisma.user.create({
+        data: {
+          email: normalizedEmail,
+          passwordHash,
+          firstName: firstName || null,
+          lastName: lastName || null,
+          role: 'CUSTOMER',
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          emailVerified: true,
+          createdAt: true,
+        },
+      });
+      console.log('[Auth] User created', {
+        timestamp,
+        userId: user.id,
+        email: user.email.substring(0, 3) + '***',
+        role: user.role
+      });
+    } catch (dbError) {
+      console.error('[Auth] Database error creating user', {
+        timestamp,
+        error: dbError.message,
+        errorCode: dbError.code,
+        errorName: dbError.name,
+        email: normalizedEmail.substring(0, 3) + '***',
+        stack: process.env.NODE_ENV === 'development' ? dbError.stack : undefined,
+        meta: dbError.meta || undefined
+      });
+      return res.status(500).json({ 
+        error: 'Database error', 
+        details: process.env.NODE_ENV === 'development' ? dbError.message : 'Internal server error' 
+      });
+    }
+
+    // [2025-01-30 19:40:00] Generate token with error handling
+    let token;
+    try {
+      token = generateToken(user.id);
+      console.log('[Auth] Token generated', {
+        timestamp,
+        userId: user.id,
+        tokenLength: token.length
+      });
+    } catch (tokenError) {
+      console.error('[Auth] Token generation error', {
+        timestamp,
+        error: tokenError.message,
+        userId: user.id
+      });
+      return res.status(500).json({ error: 'Failed to generate authentication token' });
+    }
+
+    // [2025-01-30 19:40:00] Set cookie with validation
+    try {
+      const cookieOptions = getCookieOptions();
+      res.cookie('token', token, cookieOptions);
+      console.log('[Auth] Cookie set', {
+        timestamp,
+        userId: user.id,
+        cookieOptions: {
+          httpOnly: cookieOptions.httpOnly,
+          secure: cookieOptions.secure,
+          sameSite: cookieOptions.sameSite,
+          path: cookieOptions.path
+        }
+      });
+    } catch (cookieError) {
+      console.error('[Auth] Cookie setting error', {
+        timestamp,
+        error: cookieError.message,
+        userId: user.id
+      });
+      // 即使设置 cookie 失败，也返回 token，让前端可以手动处理
+    }
+
+    console.log('[Auth] Register successful', {
+      timestamp,
+      userId: user.id,
+      email: user.email.substring(0, 3) + '***',
+      role: user.role
     });
-
-    // Generate token
-    const token = generateToken(user.id);
-
-    // Set cookie
-    res.cookie('token', token, getCookieOptions());
 
     res.status(201).json({
       token,
       user,
     });
   } catch (error) {
-    console.error('[Auth] Error registering user:', {
+    console.error('[Auth] Unexpected error registering user', {
+      timestamp,
       error: error.message,
       errorName: error.name,
       errorCode: error.code,
