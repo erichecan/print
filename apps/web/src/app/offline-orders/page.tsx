@@ -976,6 +976,24 @@ export default function OfflineOrdersIntakePage() {
     }
   }, [resetStatus]);
 
+  // [2025-12-18 16:45:00] 修复：阻止输入框中Enter键触发表单提交
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      // 对于textarea，允许Shift+Enter换行，但阻止单独的Enter键
+      if (event.target instanceof HTMLTextAreaElement) {
+        // textarea中，只有单独的Enter键才阻止（Shift+Enter允许换行）
+        if (!event.shiftKey) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      } else {
+        // input中，阻止所有Enter键
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    }
+  }, []);
+
   const handleInputChange = useCallback(
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value, type } = event.target;
@@ -1088,6 +1106,18 @@ export default function OfflineOrdersIntakePage() {
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
+      
+      // [2025-12-18 16:45:00] 修复：防止在输入框中按Enter键时自动提交
+      // 检查事件是否来自提交按钮点击，而不是输入框的Enter键
+      const nativeEvent = event.nativeEvent as any;
+      const submitter = nativeEvent.submitter as HTMLElement | null;
+      
+      // 如果事件不是来自提交按钮（type="submit"），则忽略（可能是输入框的Enter键）
+      if (!submitter || (submitter.tagName === 'BUTTON' && submitter.getAttribute('type') !== 'submit')) {
+        // 这是输入框中的Enter键触发的，应该忽略
+        return;
+      }
+      
       resetStatus();
       
       // [2025-12-06] PRD v2.0: 验证3个步骤
@@ -1235,6 +1265,9 @@ export default function OfflineOrdersIntakePage() {
       calculateDiscountAmount,
       calculateTaxAmount,
       calculateTotal,
+      files,
+      API_BASE_URL,
+      handleKeyDown, // [2025-12-18 16:45:00] 添加 handleKeyDown 依赖
     ],
   );
 
@@ -1589,6 +1622,7 @@ export default function OfflineOrdersIntakePage() {
             <textarea
               value={formState.orderNotes}
               onChange={(e) => setFormState(prev => ({ ...prev, orderNotes: e.target.value }))}
+              onKeyDown={handleKeyDown}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
               placeholder={t('orderNotesPlaceholder') || '请输入订单备注（可选）...'}
             />
@@ -1638,6 +1672,7 @@ export default function OfflineOrdersIntakePage() {
                     return { ...prev, globalUnitPrice: unitPrice, productItems: newItems };
                   });
                 }}
+                onKeyDown={handleKeyDown}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 placeholder="请输入单价"
               />
@@ -1702,6 +1737,7 @@ export default function OfflineOrdersIntakePage() {
               name="contactName"
               value={formState.contactName}
               onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                 fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
               }`}
@@ -1718,6 +1754,7 @@ export default function OfflineOrdersIntakePage() {
               name="email"
               value={formState.email}
               onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                 fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
               }`}
@@ -1734,6 +1771,7 @@ export default function OfflineOrdersIntakePage() {
               name="phone"
               value={formState.phone}
               onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </label>
@@ -1745,6 +1783,7 @@ export default function OfflineOrdersIntakePage() {
                 name="company"
                 value={formState.company || ''}
                 onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
             </label>
@@ -1787,6 +1826,7 @@ export default function OfflineOrdersIntakePage() {
                   type="text"
                   value={formState.invoiceInfo.companyName}
                   onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                     fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
                   }`}
@@ -1802,6 +1842,7 @@ export default function OfflineOrdersIntakePage() {
                   type="email"
                   value={formState.invoiceInfo.companyEmail}
                   onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                     fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
                   }`}
@@ -1817,6 +1858,7 @@ export default function OfflineOrdersIntakePage() {
                   type="text"
                   value={formState.invoiceInfo.taxNumber}
                   onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
+                  onKeyDown={handleKeyDown}
                       placeholder={t('taxNumberPlaceholder') || 'GST/HST Number'}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 />
@@ -1828,6 +1870,7 @@ export default function OfflineOrdersIntakePage() {
                   type="text"
                   value={formState.invoiceInfo.city}
                   onChange={(e) => updateInvoiceInfo('city', e.target.value)}
+                  onKeyDown={handleKeyDown}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                     fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
                   }`}
@@ -1843,6 +1886,7 @@ export default function OfflineOrdersIntakePage() {
                   type="text"
                   value={formState.invoiceInfo.province}
                   onChange={(e) => updateInvoiceInfo('province', e.target.value)}
+                  onKeyDown={handleKeyDown}
                       placeholder={t('provincePlaceholder') || 'Ontario'}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                     fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
@@ -1859,6 +1903,7 @@ export default function OfflineOrdersIntakePage() {
                   type="text"
                   value={formState.invoiceInfo.postalCode}
                   onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
+                  onKeyDown={handleKeyDown}
                       placeholder={t('postalCodePlaceholder') || 'A1B 2C3'}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                     fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
@@ -1876,6 +1921,7 @@ export default function OfflineOrdersIntakePage() {
                 type="text"
                 value={formState.invoiceInfo.address}
                 onChange={(e) => updateInvoiceInfo('address', e.target.value)}
+                onKeyDown={handleKeyDown}
                 className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
                 }`}
@@ -1936,6 +1982,7 @@ export default function OfflineOrdersIntakePage() {
                       },
                     }));
                   }}
+                  onKeyDown={handleKeyDown}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     fieldErrors.referenceNumber ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
                   }`}

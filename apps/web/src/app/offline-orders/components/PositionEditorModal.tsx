@@ -190,6 +190,13 @@ export function PositionEditorModal({
                     type="number"
                     value={widthInch}
                     onChange={(e) => setWidthInch(e.target.value)}
+                    onKeyDown={(e) => {
+                      // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="例如: 4"
                     min="0"
@@ -212,6 +219,13 @@ export function PositionEditorModal({
                     type="number"
                     value={heightInch}
                     onChange={(e) => setHeightInch(e.target.value)}
+                    onKeyDown={(e) => {
+                      // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="例如: 6"
                     min="0"
@@ -236,6 +250,13 @@ export function PositionEditorModal({
                 type="text"
                 value={inkOrFilm}
                 onChange={(e) => setInkOrFilm(e.target.value)}
+                onKeyDown={(e) => {
+                  // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="例如：白色油墨、透明胶膜"
               />
@@ -253,6 +274,13 @@ export function PositionEditorModal({
                   type="number"
                   value={dstFileFee}
                   onChange={(e) => setDstFileFee(e.target.value)}
+                  onKeyDown={(e) => {
+                    // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
+                  }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="0.00"
                   min="0"
@@ -269,6 +297,13 @@ export function PositionEditorModal({
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
+                onKeyDown={(e) => {
+                  // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交（但允许Shift+Enter换行）
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
                 placeholder="可选的备注信息..."
               />
