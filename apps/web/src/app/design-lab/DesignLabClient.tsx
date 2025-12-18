@@ -4027,11 +4027,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           </div>
           <div className="dl-header__right">
             {/* [2025-12-08] 修复：添加"Talk to a Real Person"文案 */}
-            <a href="tel:+1234567890" className="dl-header__link" aria-label="Talk to a Real Person">
-              📞 Talk to a Real Person: 1-800-000-0000
+            <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
+              📞 Talk to a Real Person: 416 916 6352
             </a>
-            {/* [2025-12-08] 修复：添加"Chat Now"文案 */}
-            <button className="dl-header__btn" aria-label="Chat Now">Chat Now</button>
+            {/* [2025-12-10 00:00:00] 修复：Chat Now 链接到留言本 */}
+            <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now">Chat Now</Link>
             <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
           </div>
         </div>

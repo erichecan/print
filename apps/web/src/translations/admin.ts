@@ -48,6 +48,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     promotionsMinValue: 'Min: ${amount}',
     promotionsMaxValue: 'Max: ${amount}',
     settings: 'Settings',
+    notifications: 'Notifications',
     costManagement: 'Cost Management',
     discountTypePercentage: 'Percentage',
     discountTypeFixed: 'Fixed Amount',
@@ -814,6 +815,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     retry: '重试',
     noArtAssetsFound: '未找到艺术素材',
     noImage: '无图片',
+    notifications: '通知',
   },
 };
 

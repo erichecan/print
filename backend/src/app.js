@@ -254,6 +254,7 @@ app.use('/api/templates', require('./routes/templates')); // [2025-01-27 21:40:0
 app.use('/api/comments', require('./routes/designComments')); // [2025-01-27 21:40:00] Comment actions (like)
 app.use('/api/reviews', require('./routes/productReviews')); // [2025-01-27 21:45:00] Product review actions (helpful)
 app.use('/api/contact', require('./routes/contact')); // [2025-01-27 19:10:00] Contact form routes
+app.use('/api', require('./routes/guestMessages')); // [2025-12-10 00:00:00] Guest messages routes (留言本)
 app.use('/api/coupons', require('./routes/coupons')); // [2025-01-27 19:40:00] Coupon routes
 app.use('/api/payment-methods', require('./routes/paymentMethods')); // [2025-12-06 17:20:00] Payment method management routes for Issue #112
 app.use('/api/chat', require('./routes/chat')); // [2025-12-07 01:30:00] Customer service chat routes for Issue #144

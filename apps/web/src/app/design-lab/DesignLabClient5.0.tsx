@@ -2260,9 +2260,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           <div className="dl-header__right">
             <div className="dl-header__contact">
               <span className="dl-header__contact-label">Talk to a Real Person:</span>
-              <a href="tel:1-800-000-0000" className="dl-header__contact-phone">1-800-000-0000</a>
+              <a href="tel:4169166352" className="dl-header__contact-phone">416 916 6352</a>
             </div>
-            <a href="#" className="dl-header__chat-link">Chat Now</a>
+            <a href="/help#guestbook" className="dl-header__chat-link">Chat Now</a>
             <Link href="/signin" className="dl-header__signin-link">Sign In</Link>
           </div>
         </div>

@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const DEFAULT_SITE_SETTINGS = {
   siteName: 'suvernire plus',
   contactEmail: 'support@souvenirplus.com',
-  contactPhone: '800-293-4232',
+  contactPhone: '416 916 6352',
   currency: 'USD',
   shippingProvider: 'UPS',
   paymentGateway: 'Stripe',

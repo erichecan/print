@@ -101,7 +101,7 @@ export function generateOrganizationSchema() {
     logo: 'https://suvernireplus.com/logo.png', // [2025-01-29 03:00:00] 使用 Souvenir Plus Inc 官方 logo
     contactPoint: {
       '@type': 'ContactPoint',
-      telephone: '+1-855-271-2660',
+      telephone: '+1-416-916-6352',
       contactType: 'Customer Service',
       areaServed: 'US',
       availableLanguage: ['en', 'zh'],

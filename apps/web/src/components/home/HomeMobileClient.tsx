@@ -237,10 +237,10 @@ export function HomeMobileClient() {
               Expert support for Product Selection, Design Assistance, Group Orders, and Order Support.
             </p>
             <div className="home-mobile__support-actions">
-              <a href="tel:8552712660" className="home-mobile__support-link">
-                📞 855-271-2660
+              <a href="tel:4169166352" className="home-mobile__support-link">
+                📞 416 916 6352
               </a>
-              <Link href="/chat" className="home-mobile__btn home-mobile__btn--outline">
+              <Link href="/help#guestbook" className="home-mobile__btn home-mobile__btn--outline">
                 Chat Now
               </Link>
               <Link href="/contact" className="home-mobile__btn home-mobile__btn--outline">

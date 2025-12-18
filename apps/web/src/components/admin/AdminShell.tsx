@@ -112,6 +112,12 @@ const ICONS: Record<string, JSX.Element> = {
       <path fill="currentColor" d="M3 3v18h18v-2H5V3H3zm16.59 1.41L18 6.83V13h-5.17l-2.58-2.59-4.24 4.24L3 10.83V8.41l5.66-5.66L11.83 5H19v5.17l2.59 2.58L24 10.83V5.83l-4.41-4.42z" />
     </svg>
   ),
+  notifications: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path fill="currentColor" d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  ),
 };
 
 const NAV_LINKS = [
@@ -119,6 +125,7 @@ const NAV_LINKS = [
   { href: '/admin/products', label: 'Products', icon: 'products', i18n: 'products' },
   { href: '/admin/categories', label: 'Categories', icon: 'categories', i18n: 'categories' },
   { href: '/admin/orders', label: 'Orders', icon: 'orders', i18n: 'orders' },
+  { href: '/admin/notifications', label: 'Notifications', icon: 'notifications', i18n: 'notifications' }, // [2025-12-10 00:00:00] Guest messages notifications
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
   { href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // [2025-11-16 13:35:00] 生产管理

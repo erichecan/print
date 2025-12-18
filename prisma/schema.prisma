@@ -27,6 +27,7 @@ model User {
   paymentMethods            PaymentMethod[]
   projects                  Project[]
   sessions                  Session[]
+  readGuestMessages         GuestMessage[] @relation("ReadByUser")
 
   @@index([email])
   @@index([role])
@@ -1090,4 +1091,32 @@ enum enum_fonts_source {
   system
   google
   custom
+}
+
+// [2025-12-10 00:00:00] Guest Message - 留言本模型（用于 help center 留言）
+model GuestMessage {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  phone       String?
+  subject     String?
+  message     String   @db.Text
+  orderNumber String?  @map("order_number")
+  status      GuestMessageStatus @default(UNREAD) @map("status")
+  readAt      DateTime? @map("read_at")
+  readBy      String?   @map("read_by") @db.Uuid
+  readByUser  User?     @relation("ReadByUser", fields: [readBy], references: [id])
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([readBy])
+  @@map("guest_messages")
+}
+
+enum GuestMessageStatus {
+  UNREAD
+  READ
+  ARCHIVED
 }

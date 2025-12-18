@@ -66,7 +66,7 @@ export default function ContactClient() {
         <h2>Support channels</h2>
         <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: '12px' }}>
           <li>
-            <strong>Phone:</strong> <a href="tel:8552712660">855-271-2660</a> (Mon–Fri, 8am–8pm ET)
+            <strong>Phone:</strong> <a href="tel:4169166352">416 916 6352</a> (Mon–Fri, 8am–8pm ET)
           </li>
           <li>
             <strong>Email:</strong> <a href="mailto:support@suvernireplus.com">support@suvernireplus.com</a> (responses within 24 hours)

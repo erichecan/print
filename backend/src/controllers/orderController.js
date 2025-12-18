@@ -373,7 +373,7 @@ const generateInvoicePdf = (order) => {
     .text(process.env.APP_NAME || 'Suvernire Plus', margin + 20, margin + 15)
     .fontSize(8)
     .text(process.env.COMPANY_ADDRESS || '123 Business St, Toronto, ON, Canada', margin + 20, margin + 30, { width: 200 })
-    .text(`Phone: ${process.env.COMPANY_PHONE || '1-800-123-4567'}`, margin + 20, margin + 45)
+    .text(`Phone: ${process.env.COMPANY_PHONE || '416 916 6352'}`, margin + 20, margin + 45)
     .text(`Email: ${process.env.COMPANY_EMAIL || 'info@suvernireplus.com'}`, margin + 20, margin + 60);
 
   // Invoice details (right side of header)

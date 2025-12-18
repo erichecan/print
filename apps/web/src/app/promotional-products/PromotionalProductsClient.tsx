@@ -110,7 +110,7 @@ export default function PromotionalProductsClient() {
           <div className={styles.helpContact}>
             <div className={styles.helpContactItem}>
               <strong>Phone:</strong>
-              <span>800-293-4232</span>
+              <span>416 916 6352</span>
             </div>
             <div className={styles.helpContactItem}>
               <strong>Email:</strong>

@@ -333,7 +333,7 @@ export default function CartPage() {
           <span>My Cart</span>
         </div>
         <div className="cart-new__actions">
-          <a href="tel:8552712660">Talk to a Real Person 855-271-2660</a>
+          <a href="tel:4169166352">Talk to a Real Person 416 916 6352</a>
           <Link href="/chat">Chat with a Real Person</Link>
         </div>
       </div>
@@ -643,7 +643,7 @@ export default function CartPage() {
           <p>8am–Midnight ET Mon-Fri | 10am–6pm ET Saturday | 10am–6pm ET Sunday</p>
         </div>
         <div className="cart-new__footer-contact">
-          <a href="tel:8552712660">855-271-2660</a>
+          <a href="tel:4169166352">416 916 6352</a>
           <a href="mailto:service@customink.com">Send us an Email</a>
         </div>
       </div>

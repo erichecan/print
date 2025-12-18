@@ -152,8 +152,8 @@ export function SiteHeader() {
               </svg>
               <div>
                 <span className="label">Talk to a Real Person</span>
-                <a className="value" href="tel:8552712660">
-                  855-271-2660
+                <a className="value" href="tel:4169166352">
+                  416 916 6352
                 </a>
               </div>
             </div>
@@ -166,7 +166,7 @@ export function SiteHeader() {
               </svg>
               <div>
                 <span className="label">Chat with a Real Person</span>
-                <Link className="value" href="/help">
+                <Link className="value" href="/help#guestbook">
                   Chat now
                 </Link>
               </div>

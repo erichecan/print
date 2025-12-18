@@ -69,7 +69,7 @@ async function createShipment(shipmentData) {
         postal_code: process.env.EASYSHIP_ORIGIN_POSTAL_CODE || 'M5H 2N2',
         country_alpha2: process.env.EASYSHIP_ORIGIN_COUNTRY || 'CA',
         contact_name: process.env.EASYSHIP_ORIGIN_CONTACT_NAME || 'Suvernire Plus',
-        contact_phone: process.env.EASYSHIP_ORIGIN_CONTACT_PHONE || '1-800-123-4567',
+        contact_phone: process.env.EASYSHIP_ORIGIN_CONTACT_PHONE || '416 916 6352',
         contact_email: process.env.EASYSHIP_ORIGIN_CONTACT_EMAIL || 'info@suvernireplus.com',
       },
       parcels: shipmentData.items.map((item, index) => ({

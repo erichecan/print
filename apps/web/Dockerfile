@@ -44,6 +44,8 @@ COPY apps/web/public ./public
 COPY apps/web/src ./src
 # [2025-01-27 20:50:00] 复制 Prisma schema（从项目根目录）
 COPY prisma ./prisma
+# [2025-12-18 17:30:00] 修复：安装 apps/web 的依赖（next 等）
+RUN npm install --production=false
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
 # [2025-12-12 14:15:00] 修复：安装与 @prisma/client 匹配的 prisma CLI 版本（5.19.1）
 # [2025-12-13 14:35:00] 修复：在 Alpine Linux 中安装 OpenSSL 以支持 Prisma

@@ -12,6 +12,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
 import type React from 'react';
+import GuestBookForm from '@/components/help/GuestBookForm';
 
 // [2025-01-28 06:45:00] 默认快速链接（向后兼容）
 const defaultQuickLinks = [
@@ -547,9 +548,12 @@ export default function HelpClient() {
           <p>
             Can&rsquo;t find what you&rsquo;re looking for? Reach out via <Link href="/contact">contact form</Link>, email{' '}
             <a href="mailto:support@suvernireplus.com">support@suvernireplus.com</a>, or call{' '}
-            <a href="tel:8552712660">855-271-2660</a>.
+            <a href="tel:4169166352">416 916 6352</a>.
           </p>
         </section>
+
+        {/* [2025-12-10 00:00:00] 留言本表单 */}
+        <GuestBookForm />
       </div>
     </section>
   );
