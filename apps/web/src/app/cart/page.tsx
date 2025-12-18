@@ -637,16 +637,7 @@ export default function CartPage() {
         </aside>
       </div>
 
-      <div className="cart-new__footer">
-        <div>
-          <h4>Talk to a Real Person 7 Days a Week</h4>
-          <p>8am–Midnight ET Mon-Fri | 10am–6pm ET Saturday | 10am–6pm ET Sunday</p>
-        </div>
-        <div className="cart-new__footer-contact">
-          <a href="tel:4169166352">416 916 6352</a>
-          <a href="mailto:service@customink.com">Send us an Email</a>
-        </div>
-      </div>
+      {/* [2025-01-30 12:00:00] 移除购物车底部联系信息 */}
     </section>
   );
 }

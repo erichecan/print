@@ -24,7 +24,7 @@ const defaultFooterColumns = [
     title: 'Your Account',
     links: [
       { href: '/account', label: 'My Account' },
-      { href: '/account/designs', label: 'My Designs' },
+      // [2025-01-30 12:00:00] 移除 My Designs 链接
       { href: '/order-tracking', label: 'Track Your Order' },
       { href: '/cart', label: 'View Cart' },
     ],

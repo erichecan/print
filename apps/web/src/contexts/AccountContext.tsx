@@ -20,8 +20,10 @@ const AccountContext = createContext<AccountContextValue | undefined>(undefined)
 /**
  * Account Provider
  * 提供账户状态给子组件
+ * [2025-12-18 23:30:00] 修复：确保只在客户端运行，避免服务端渲染错误
  */
 export function AccountProvider({ children }: { children: ReactNode }) {
+  // [2025-12-18 23:30:00] 使用 useUser hook（只在客户端运行）
   const { user, isLoading, error, mutate } = useUser();
 
   const refreshUser = async () => {

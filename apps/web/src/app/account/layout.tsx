@@ -4,15 +4,21 @@
  * [2025-01-27 18:20:00] 使用安全封装函数，避免抛错导致 500
  * [2025-01-30 19:15:00] 修复：添加 dynamic = 'force-dynamic' 标记，因为使用了 cookies() 和 headers()
  */
-import { ReactNode } from 'react';
+import { ReactNode, Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
+import dynamic from 'next/dynamic';
 import { getSessionSafe } from '@/server/account';
 import { AccountSidebar } from './components/AccountSidebar';
 import { AccountBreadcrumb } from './components/AccountBreadcrumb';
-import { AccountLayoutClient } from './components/AccountLayoutClient';
 import { generateTraceId } from '@/shared/errors';
 import { reportServerError } from '@/server/telemetry';
+
+// [2025-12-18 23:30:00] 使用 dynamic import 延迟加载 Client Component，避免服务端渲染错误
+const AccountLayoutClient = dynamic(
+  () => import('./components/AccountLayoutClient').then(mod => ({ default: mod.AccountLayoutClient })),
+  { ssr: false }
+);
 
 // [2025-01-30 19:15:00] 修复：强制动态渲染，因为使用了 cookies() 和 headers()
 export const dynamic = 'force-dynamic';
@@ -159,8 +165,10 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
           width: '100%',
         }}>
           <AccountBreadcrumb />
-          {/* [2025-12-18 22:55:00] 使用 AccountProvider 包装子组件 */}
-          <AccountLayoutClient>{children}</AccountLayoutClient>
+          {/* [2025-12-18 23:30:00] 使用 Suspense 和 dynamic import 包装，避免服务端渲染错误 */}
+          <Suspense fallback={<div style={{ padding: '48px', textAlign: 'center' }}>Loading...</div>}>
+            <AccountLayoutClient>{children}</AccountLayoutClient>
+          </Suspense>
         </main>
       </div>
     );

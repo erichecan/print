@@ -20,7 +20,7 @@ const commonFooterHTML = `
 				<li><a href="account.html">My Account</a></li>
 				<li><a href="order-tracking.html">Track Order</a></li>
 				<li><a href="cart.html">View Cart</a></li>
-				<li><a href="account.html">My Designs</a></li>
+				<!-- [2025-01-30 12:00:00] 移除 My Designs 链接 -->
 			</ul>
 		</div>
 		<div>
