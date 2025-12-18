@@ -49,9 +49,11 @@ RUN npm install --production=false
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
 # [2025-12-12 14:15:00] 修复：安装与 @prisma/client 匹配的 prisma CLI 版本（5.19.1）
 # [2025-12-13 14:35:00] 修复：在 Alpine Linux 中安装 OpenSSL 以支持 Prisma
+# [2025-12-18 22:55:00] 修复：确保 Prisma generate 成功，否则构建会失败
 RUN apk add --no-cache openssl1.1-compat || apk add --no-cache openssl
 RUN npm install -g prisma@5.19.1
-RUN prisma generate --schema=./prisma/schema.prisma || (echo "⚠️ Prisma generate failed, but continuing..." && exit 0)
+# [2025-12-18 22:55:00] 使用 DATABASE_URL 占位符生成 Prisma Client（构建时不需要真实数据库连接）
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-alpine AS runner
