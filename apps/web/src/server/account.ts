@@ -25,9 +25,26 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
   console.debug('[Account] getSessionSafe called', { traceId, timestamp, hasRequestId: !!requestId });
   
   try {
-    // 导入 cookies（Next.js 14 App Router）
+    // [2025-01-30 19:25:00] 导入 cookies（Next.js 14 App Router）
+    // 注意：cookies() 必须在 Server Component 中调用，且组件必须标记为 dynamic
     const { cookies } = await import('next/headers');
-    const cookieStore = await cookies();
+    let cookieStore;
+    try {
+      cookieStore = await cookies();
+    } catch (cookiesError) {
+      // [2025-01-30 19:25:00] 修复：捕获 cookies() 调用可能的错误
+      console.error('[Account] Failed to get cookies', {
+        traceId,
+        timestamp,
+        error: cookiesError instanceof Error ? cookiesError.message : String(cookiesError),
+        errorName: cookiesError instanceof Error ? cookiesError.name : 'Unknown',
+      });
+      return {
+        ok: false,
+        code: 'COOKIES_ERROR',
+        message: 'Failed to access cookies',
+      };
+    }
     const token = cookieStore.get('token')?.value || null;
     
     if (!token) {
@@ -47,12 +64,24 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
     let backendApiUrl: string;
     try {
       backendApiUrl = getBackendApiBaseUrl();
+      // [2025-01-30 19:20:00] 修复：安全地解析 URL，避免 new URL() 抛出错误
+      let urlHost: string | null = null;
+      try {
+        urlHost = new URL(backendApiUrl).hostname;
+      } catch (urlError) {
+        // URL 解析失败，但不影响主流程
+        console.warn('[Account] Failed to parse backend API URL', {
+          traceId,
+          timestamp,
+          error: urlError instanceof Error ? urlError.message : String(urlError),
+        });
+      }
       // [2025-12-12 14:15:00] 增强：记录成功获取 API URL（不记录完整 URL 以避免泄露）
       console.debug('[Account] Backend API URL retrieved', {
         traceId,
         timestamp,
         urlLength: backendApiUrl.length,
-        urlHost: new URL(backendApiUrl).hostname,
+        urlHost: urlHost || 'unknown',
       });
     } catch (configError) {
       // [2025-01-30 19:00:00] 增强：记录详细的配置错误信息，确保错误被完全捕获

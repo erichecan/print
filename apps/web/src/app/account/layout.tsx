@@ -2,6 +2,7 @@
  * Account Layout
  * [2025-01-27 14:50:00] 账户页面布局，包含左侧导航栏、面包屑和登录守卫
  * [2025-01-27 18:20:00] 使用安全封装函数，避免抛错导致 500
+ * [2025-01-30 19:15:00] 修复：添加 dynamic = 'force-dynamic' 标记，因为使用了 cookies() 和 headers()
  */
 import { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
@@ -11,6 +12,9 @@ import { AccountSidebar } from './components/AccountSidebar';
 import { AccountBreadcrumb } from './components/AccountBreadcrumb';
 import { generateTraceId } from '@/shared/errors';
 import { reportServerError } from '@/server/telemetry';
+
+// [2025-01-30 19:15:00] 修复：强制动态渲染，因为使用了 cookies() 和 headers()
+export const dynamic = 'force-dynamic';
 
 interface AccountLayoutProps {
   children: ReactNode;
