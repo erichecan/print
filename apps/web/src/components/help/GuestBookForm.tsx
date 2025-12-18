@@ -36,7 +36,8 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
     setIsSubmitting(true);
 
     try {
-      await apiPost('/guest-messages', {
+      // [2025-12-18 23:20:00] 修复：使用完整的 API 路径 /api/guest-messages
+      await apiPost('/api/guest-messages', {
         name: formData.name,
         email: formData.email,
         phone: formData.phone || undefined,
