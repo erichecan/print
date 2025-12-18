@@ -1,10 +1,15 @@
 ## Next.js production Dockerfile [2025-11-10 13:47:00]
-FROM node:18-alpine AS deps
+## [2025-12-18 22:59:00] 改用 Debian 基础镜像以解决 Prisma 在 Alpine 上的兼容性问题
+FROM node:18-bullseye-slim AS deps
 WORKDIR /app
+# [2025-12-18 22:59:00] 安装 OpenSSL 以支持 Prisma
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm install
 
-FROM node:18-alpine AS builder
+FROM node:18-bullseye-slim AS builder
+# [2025-12-18 22:59:00] 安装 OpenSSL 以支持 Prisma
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 # [2025-01-27 22:55:00] 支持构建时传入 NEXT_PUBLIC_API_URL
@@ -48,16 +53,16 @@ COPY prisma ./prisma
 RUN npm install --production=false
 # [2025-01-27 20:45:00] 生成 Prisma Client（API 路由需要）
 # [2025-12-12 14:15:00] 修复：安装与 @prisma/client 匹配的 prisma CLI 版本（5.19.1）
-# [2025-12-13 14:35:00] 修复：在 Alpine Linux 中安装 OpenSSL 以支持 Prisma
-# [2025-12-18 22:55:00] 修复：确保 Prisma generate 成功，否则构建会失败
-RUN apk add --no-cache openssl1.1-compat || apk add --no-cache openssl
+# [2025-12-18 22:59:00] 修复：改用 Debian 基础镜像后，Prisma generate 应该可以正常工作
 RUN npm install -g prisma@5.19.1
-# [2025-12-18 22:55:00] 使用 DATABASE_URL 占位符生成 Prisma Client（构建时不需要真实数据库连接）
+# [2025-12-18 22:59:00] 使用占位符 DATABASE_URL 生成 Prisma Client（构建时不需要真实数据库连接）
 RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
-FROM node:18-alpine AS runner
+FROM node:18-bullseye-slim AS runner
 WORKDIR /app
+# [2025-12-18 22:59:00] 安装 OpenSSL 以支持 Prisma（运行时可能需要）
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 # [2025-11-14 06:10:30] 复制构建阶段依赖以便 next start 可执行
