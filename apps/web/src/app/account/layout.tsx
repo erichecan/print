@@ -23,27 +23,16 @@ interface AccountLayoutProps {
 /**
  * 检查是否是 Next.js redirect 错误
  * [2025-12-13 14:40:00] 使用 Next.js 官方的 isRedirectError 函数
+ * [2025-01-30 19:30:00] 修复：移除 require 调用，仅使用 digest 检查，避免生产环境模块加载问题
  */
 function isNextRedirectError(error: unknown): boolean {
-  // [2025-12-13 14:40:00] 尝试使用 Next.js 官方的 isRedirectError
-  try {
-    // 动态导入 Next.js 的 isRedirectError（从内部路径）
-    // 注意：这是 Next.js 内部 API，但这是检测 redirect 错误的标准方法
-    const { isRedirectError: nextIsRedirectError } = require('next/dist/client/components/redirect');
-    if (nextIsRedirectError && typeof nextIsRedirectError === 'function') {
-      return nextIsRedirectError(error);
-    }
-  } catch {
-    // 如果无法导入，使用 fallback 检测逻辑
-  }
-  
-  // [2025-12-13 14:40:00] Fallback: 检查 digest 格式
+  // [2025-01-30 19:30:00] 修复：仅使用 digest 检查，避免在生产环境中使用 require 导致的问题
   // Next.js redirect 错误的 digest 格式：NEXT_REDIRECT;${type};${url};${statusCode};
   if (!error || typeof error !== 'object') return false;
   
   const errorObj = error as any;
   if (errorObj.digest && typeof errorObj.digest === 'string') {
-    // 检查是否以 NEXT_REDIRECT 开头（更精确的匹配）
+    // 检查是否以 NEXT_REDIRECT 开头（精确匹配）
     return errorObj.digest.startsWith('NEXT_REDIRECT;');
   }
   
