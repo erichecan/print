@@ -55,14 +55,14 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
         urlHost: new URL(backendApiUrl).hostname,
       });
     } catch (configError) {
-      // [2025-12-12 14:15:00] 增强：记录详细的配置错误信息
+      // [2025-01-30 19:00:00] 增强：记录详细的配置错误信息，确保错误被完全捕获
       console.error('[Account] Failed to get backend API URL', { 
         traceId, 
         timestamp,
         error: configError instanceof Error ? configError.message : String(configError),
         errorName: configError instanceof Error ? configError.name : 'Unknown',
-        errorStack: configError instanceof Error ? configError.stack : undefined,
-        // [2025-12-12 14:15:00] 记录当前环境变量状态（用于调试）
+        errorStack: process.env.NODE_ENV === 'development' && configError instanceof Error ? configError.stack : undefined,
+        // [2025-01-30 19:00:00] 记录当前环境变量状态（用于调试）
         envVars: {
           NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ? '已设置' : '未设置',
           API_BASE_URL: process.env.API_BASE_URL ? '已设置' : '未设置',
@@ -71,6 +71,7 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
           NEXT_PHASE: process.env.NEXT_PHASE,
         },
       });
+      // [2025-01-30 19:00:00] 返回错误结果，不抛出错误，避免导致 Server Component 渲染失败
       return { 
         ok: false, 
         code: 'CONFIG_ERROR', 

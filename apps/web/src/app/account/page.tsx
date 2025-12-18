@@ -44,21 +44,33 @@ export default function AccountPage() {
         }
         
         // 加载订单数量
+        // [2025-01-30 18:30:00] 修复：正确从 pagination.total 获取订单总数
         try {
           const ordersData = await ordersApi.list(1, 1);
           if (!cancelled) {
-            if ('orders' in ordersData) {
-              setOrdersCount(ordersData.total || 0);
-            } else if ('pagination' in ordersData) {
-              setOrdersCount(ordersData.pagination?.total || 0);
+            // 后端返回格式：{ orders: [], pagination: { total: ... } }
+            if ('pagination' in ordersData && ordersData.pagination) {
+              setOrdersCount(ordersData.pagination.total || 0);
+            } else if ('orders' in ordersData && Array.isArray(ordersData.orders)) {
+              // 如果没有 pagination，使用 orders 数组长度作为后备
+              setOrdersCount(ordersData.orders.length || 0);
             }
           }
         } catch {
           // 忽略错误
         }
-      } catch {
+      } catch (err: unknown) {
         if (cancelled) return;
-        // User not logged in
+        // [2025-01-30 19:10:00] 增强：明确处理 UNAUTHORIZED 错误
+        const error = err instanceof Error ? err : new Error(String(err));
+        if (error.message === 'UNAUTHORIZED' || error.message?.includes('401')) {
+          // 用户未登录，但 layout 应该已经处理了重定向
+          // 这里只是设置 user 为 null，让组件显示未登录状态
+          setUser(null);
+        } else {
+          // 其他错误，记录但不影响 UI
+          console.error('[AccountPage] Failed to load user:', error);
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);

@@ -48,9 +48,9 @@ function isNextRedirectError(error: unknown): boolean {
 
 export default async function AccountLayout({ children }: AccountLayoutProps) {
   // [2025-12-13 14:50:00] 修复：将 redirect 调用移出 try-catch，避免 NEXT_REDIRECT 错误被捕获
-  // [2025-01-27 19:05:00] 获取 request ID 和会话信息
-  let requestId: string;
-  let timestamp: string;
+  // [2025-01-30 19:05:00] 增强：初始化变量，确保即使出错也有默认值
+  let requestId: string = generateTraceId();
+  let timestamp: string = new Date().toISOString();
   let sessionResult: Awaited<ReturnType<typeof getSessionSafe>>;
   
   try {
@@ -75,29 +75,28 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
     console.info('[AccountLayout] SSR start', { requestId, timestamp, path: '/account' });
     
     // [2025-01-27 18:20:00] 使用安全封装函数获取会话，不抛错
+    // [2025-01-30 19:05:00] 增强：getSessionSafe 应该永远不会抛出错误，它总是返回 Result 类型
     sessionResult = await getSessionSafe(requestId);
   } catch (error) {
     // [2025-12-13 14:50:00] 捕获获取 session 过程中的错误（不包括 redirect）
+    // [2025-01-30 19:05:00] 增强：虽然 getSessionSafe 不应该抛出错误，但为了安全起见，仍然捕获
     // 如果这是 redirect 错误，立即重新抛出
     if (isNextRedirectError(error)) {
       throw error; // 重新抛出 redirect 错误，让 Next.js 处理
     }
     
     // [2025-12-13 14:50:00] 记录其他错误并上报
-    const errorRequestId = generateTraceId();
-    const errorTimestamp = new Date().toISOString();
-    
     console.error('[AccountLayout] Error during session check', {
-      requestId: errorRequestId,
-      timestamp: errorTimestamp,
+      requestId,
+      timestamp,
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
+      stack: process.env.NODE_ENV === 'development' && error instanceof Error ? error.stack : undefined,
       errorName: error instanceof Error ? error.name : 'Unknown',
       digest: (error as any)?.digest,
     });
     
     reportServerError({
-      traceId: errorRequestId,
+      traceId: requestId,
       route: '/account',
       message: error instanceof Error ? error.message : 'AccountLayout session check error',
       error: {
@@ -108,9 +107,7 @@ export default async function AccountLayout({ children }: AccountLayoutProps) {
       digest: (error as any)?.digest,
     });
     
-    // [2025-12-13 14:55:00] 修复：不在 catch 块中调用 redirect，而是抛出错误
-    // 这样会让错误边界处理，或者如果是严重错误，Next.js 会处理
-    // 但为了确保用户体验，我们设置一个默认的 sessionResult 以便后续重定向
+    // [2025-01-30 19:05:00] 增强：设置一个默认的 sessionResult 以便后续重定向到登录页
     sessionResult = { 
       ok: false, 
       code: 'UNKNOWN_ERROR', 

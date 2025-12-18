@@ -7,7 +7,9 @@ const prisma = require('../lib/prisma');
 // [2025-11-09 20:50:12] Switch to bcryptjs to avoid native build dependency on Windows
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const logger = require('../utils/logger');
+const { sendPasswordResetEmail } = require('../services/emailService');
 const {
   BadRequestError,
   UnauthorizedError,
@@ -383,8 +385,11 @@ exports.me = async (req, res) => {
 /**
  * POST /api/auth/forgot-password - Request password reset
  * [2025-11-05 01:00:00]
+ * [2025-01-30 18:50:00] 实现完整的密码重置功能：生成token、保存到数据库、发送邮件
  */
 exports.forgotPassword = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  
   try {
     const { email } = req.body;
 
@@ -395,16 +400,61 @@ exports.forgotPassword = async (req, res) => {
     // Find user
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+      },
     });
 
     // Always return success (security: don't reveal if email exists)
-    // In production, send password reset email here
-    // For now, just return success message
+    // Only proceed if user exists
+    if (user) {
+      // Generate reset token (random 32 bytes, hex encoded = 64 chars)
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+      
+      // Save reset token to database
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetToken: resetToken,
+          passwordResetTokenExpires: tokenExpires,
+        },
+      });
+      
+      // Send password reset email
+      const userName = [user.firstName, user.lastName].filter(Boolean).join(' ') || null;
+      try {
+        await sendPasswordResetEmail(user.email, resetToken, userName);
+        logger.info('Password reset email sent', {
+          timestamp,
+          userId: user.id,
+          email: user.email,
+        });
+      } catch (emailError) {
+        // Log email error but don't fail the request (security best practice)
+        logger.error('Failed to send password reset email', {
+          timestamp,
+          userId: user.id,
+          email: user.email,
+          error: emailError.message,
+        });
+        // Continue and return success anyway (don't reveal if email exists)
+      }
+    }
+    
+    // Always return success message (security: don't reveal if email exists)
     res.json({
       message: 'If an account with that email exists, a password reset link has been sent.',
     });
   } catch (error) {
-    console.error('Error requesting password reset:', error);
+    logger.error('Error requesting password reset', {
+      timestamp,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
     res.status(500).json({ error: 'Failed to request password reset' });
   }
 };
@@ -412,8 +462,11 @@ exports.forgotPassword = async (req, res) => {
 /**
  * POST /api/auth/reset-password - Reset password
  * [2025-11-05 01:00:00]
+ * [2025-01-30 18:55:00] 实现完整的密码重置功能：验证token、更新密码、清除token
  */
 exports.resetPassword = async (req, res) => {
+  const timestamp = new Date().toISOString();
+  
   try {
     const { token, password } = req.body;
 
@@ -425,11 +478,54 @@ exports.resetPassword = async (req, res) => {
       return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
 
-    // In production, verify token and find user
-    // For now, return error (not implemented in Phase 1)
-    res.status(501).json({ error: 'Password reset not implemented yet' });
+    // Find user with valid reset token
+    const user = await prisma.user.findFirst({
+      where: {
+        passwordResetToken: token,
+        passwordResetTokenExpires: {
+          gt: new Date(), // Token must not be expired
+        },
+      },
+    });
+
+    if (!user) {
+      logger.warn('Invalid or expired password reset token', {
+        timestamp,
+        tokenLength: token?.length || 0,
+      });
+      return res.status(400).json({ 
+        error: 'Invalid or expired reset token. Please request a new password reset.' 
+      });
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(password, 10);
+
+    // Update password and clear reset token
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: newPasswordHash,
+        passwordResetToken: null,
+        passwordResetTokenExpires: null,
+      },
+    });
+
+    logger.info('Password reset successfully', {
+      timestamp,
+      userId: user.id,
+      email: user.email,
+    });
+
+    res.json({
+      message: 'Password has been reset successfully. You can now log in with your new password.',
+    });
   } catch (error) {
-    console.error('Error resetting password:', error);
+    logger.error('Error resetting password', {
+      timestamp,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
     res.status(500).json({ error: 'Failed to reset password' });
   }
 };

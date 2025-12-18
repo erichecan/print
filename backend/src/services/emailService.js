@@ -565,12 +565,95 @@ async function sendLowStockAlert(product, variant, currentStock, threshold) {
   }
 }
 
+/**
+ * Generate password reset email HTML
+ * [2025-01-30 18:45:00] 生成密码重置邮件HTML
+ */
+function generatePasswordResetEmail(resetUrl, userName) {
+  const appName = process.env.APP_NAME || 'Suvernire Plus';
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Password Reset</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h1 style="color: #2563eb; margin: 0 0 10px 0;">Password Reset Request</h1>
+      </div>
+      
+      <p>Hello${userName ? ` ${userName}` : ''},</p>
+      
+      <p>You requested to reset your password. Click the button below to reset it:</p>
+      
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetUrl}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">Reset Password</a>
+      </div>
+      
+      <p>Or copy and paste this link into your browser:</p>
+      <p style="word-break: break-all; color: #666; background-color: #f8f9fa; padding: 10px; border-radius: 4px;">${resetUrl}</p>
+      
+      <p style="color: #666; font-size: 14px;">This link will expire in 1 hour.</p>
+      
+      <p style="color: #666; font-size: 14px;">If you didn't request a password reset, please ignore this email or contact support if you have concerns.</p>
+      
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+      
+      <p style="color: #999; font-size: 12px; margin: 0;">This is an automated email from ${appName}. Please do not reply to this email.</p>
+    </body>
+    </html>
+  `;
+}
+
+/**
+ * Send password reset email
+ * [2025-01-30 18:45:00] 发送密码重置邮件
+ */
+async function sendPasswordResetEmail(email, resetToken, userName) {
+  try {
+    const transporter = getTransporter();
+    const emailFrom = process.env.EMAIL_FROM || 'noreply@suvernireplus.com';
+    const appName = process.env.APP_NAME || 'Suvernire Plus';
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    
+    // 构建重置密码链接
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+    
+    const html = generatePasswordResetEmail(resetUrl, userName);
+    
+    const mailOptions = {
+      from: `"${appName}" <${emailFrom}>`,
+      to: email,
+      subject: `Password Reset Request - ${appName}`,
+      html,
+      text: `Password Reset Request\n\nHello${userName ? ` ${userName}` : ''},\n\nYou requested to reset your password. Click the link below to reset it:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request a password reset, please ignore this email.\n\nThis is an automated email from ${appName}.`,
+    };
+    
+    const result = await transporter.sendMail(mailOptions);
+    logger.info('Password reset email sent', {
+      email,
+      messageId: result.messageId,
+    });
+    
+    return result;
+  } catch (error) {
+    logger.error('Failed to send password reset email', {
+      email,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
 module.exports = {
   sendOrderConfirmation,
   sendRefundConfirmation,
   sendShippingNotification,
   sendContactFormNotification,
   sendLowStockAlert,
+  sendPasswordResetEmail,
   getTransporter,
 };
 
