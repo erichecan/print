@@ -44,7 +44,7 @@ const prismaConfig = {
   }),
 };
 
-// [2025-01-30 20:00:00] 确保 DATABASE_URL 包含连接池参数（适用于 Cloud Run serverless 环境）
+// [2025-01-30 20:00:00] 确保 DATABASE_URL 包含连接池参数和 SSL 配置（适用于 Cloud Run serverless 环境）
 function ensureConnectionPoolParams(databaseUrl) {
   try {
     const url = new URL(databaseUrl);
@@ -61,6 +61,19 @@ function ensureConnectionPoolParams(databaseUrl) {
     }
     if (!url.searchParams.has('connect_timeout')) {
       url.searchParams.set('connect_timeout', '10');
+    }
+    
+    // [2025-01-30 20:15:00] 添加 SSL 配置（如果数据库需要 SSL）
+    // 对于 Neon、Supabase 等云数据库，通常需要 SSL
+    if (!url.searchParams.has('sslmode')) {
+      // 如果 URL 包含云数据库域名（neon、supabase 等），启用 SSL
+      const hostname = url.hostname || '';
+      if (hostname.includes('neon') || hostname.includes('supabase') || 
+          hostname.includes('aws') || hostname.includes('gcp') ||
+          process.env.NODE_ENV === 'production') {
+        url.searchParams.set('sslmode', 'require');
+        logger.info('[2025-01-30 20:15:00] ✅ Added sslmode=require for production database');
+      }
     }
     
     return url.toString();
@@ -88,7 +101,17 @@ function isConnectionError(error) {
   
   // 检查错误消息中是否包含连接相关关键词
   const errorMessage = error.message?.toLowerCase() || '';
-  const connectionKeywords = ['closed', 'connection', 'timeout', 'connect'];
+  const connectionKeywords = [
+    'closed', 
+    'connection', 
+    'timeout', 
+    'connect',
+    'socket disconnected',
+    'tls connection',
+    'network socket',
+    'econnrefused',
+    'enotfound'
+  ];
   
   return connectionKeywords.some(keyword => errorMessage.includes(keyword));
 }

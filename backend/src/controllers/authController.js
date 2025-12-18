@@ -110,7 +110,8 @@ exports.register = async (req, res) => {
         });
         try {
           await prisma.$disconnect();
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // [2025-01-30 20:15:00] 增加重试等待时间，给 TLS 连接更多时间建立
+          await new Promise(resolve => setTimeout(resolve, 200));
           // 重试一次
           existingUser = await prisma.user.findUnique({
             where: { email: normalizedEmail },
@@ -209,7 +210,8 @@ exports.register = async (req, res) => {
         });
         try {
           await prisma.$disconnect();
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // [2025-01-30 20:15:00] 增加重试等待时间，给 TLS 连接更多时间建立
+          await new Promise(resolve => setTimeout(resolve, 200));
           // 重试一次
           user = await prisma.user.create({
             data: {
@@ -380,7 +382,8 @@ exports.login = async (req, res) => {
         });
         try {
           await prisma.$disconnect();
-          await new Promise(resolve => setTimeout(resolve, 100));
+          // [2025-01-30 20:15:00] 增加重试等待时间，给 TLS 连接更多时间建立
+          await new Promise(resolve => setTimeout(resolve, 200));
           // 重试一次
           user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
