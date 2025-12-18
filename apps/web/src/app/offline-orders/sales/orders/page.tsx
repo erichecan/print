@@ -207,6 +207,22 @@ export default function SalesOrdersPage() {
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
+
+  // [2025-12-18 17:50:00] 在页面加载时打印构建版本信息，便于验证部署
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sha = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
+    const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || 'unknown';
+    // eslint-disable-next-line no-console
+    console.log('[Frontend Build]', sha, buildTime);
+    // eslint-disable-next-line no-console
+    console.log('[Frontend Build Info]', {
+      buildSha: sha,
+      buildTime: buildTime,
+      currentTime: new Date().toISOString(),
+      page: 'offline-orders/sales/orders',
+    });
+  }, []);
   
   // [2025-01-27 13:00:00] Tab状态管理
   const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');

@@ -45,10 +45,11 @@ gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 # Build and push backend
 # [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
 # [2025-12-04 21:50:00] 注入构建版本信息（Git SHA 和构建时间）
+# [2025-12-18 17:50:00] 增强版本信息日志
 echo -e "${GREEN}🏗️  Building backend Docker image (linux/amd64)...${NC}"
-GIT_SHA=$(git rev-parse --short HEAD)
-BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-echo -e "${YELLOW}📌 Build version: ${GIT_SHA} at ${BUILD_TIME}${NC}"
+BACKEND_GIT_SHA=$(git rev-parse --short HEAD)
+BACKEND_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo -e "${YELLOW}📌 后端构建版本: ${BACKEND_GIT_SHA} at ${BACKEND_BUILD_TIME}${NC}"
 
 docker build --platform linux/amd64 \
   --build-arg APP_BUILD_SHA="${GIT_SHA}" \
@@ -82,10 +83,15 @@ echo -e "${GREEN}✅ 已从 Secret Manager 读取 Stripe publishable key${NC}"
 # [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
 # [2025-12-04 21:50:00] 注入构建版本信息（Git SHA 和构建时间）
 # [2025-12-11 22:50:00] 传递必需的环境变量
+# [2025-12-18 17:50:00] 增强版本信息日志，便于验证部署
 echo -e "${GREEN}🏗️  Building frontend Docker image (linux/amd64)...${NC}"
 GIT_SHA=$(git rev-parse --short HEAD)
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-echo -e "${YELLOW}📌 Build version: ${GIT_SHA} at ${BUILD_TIME}${NC}"
+echo -e "${YELLOW}═══════════════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}📌 前端构建版本信息:${NC}"
+echo -e "${GREEN}   Git SHA: ${GIT_SHA}${NC}"
+echo -e "${GREEN}   构建时间: ${BUILD_TIME}${NC}"
+echo -e "${YELLOW}═══════════════════════════════════════════════════════════${NC}"
 
 docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_URL="${API_URL}" \
@@ -130,7 +136,10 @@ gcloud run deploy ${BACKEND_SERVICE} \
 
 # Get backend URL (update if changed)
 BACKEND_URL_NEW=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)')
+BACKEND_REVISION=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.latestReadyRevisionName)')
 echo -e "${GREEN}✅ Backend deployed: ${BACKEND_URL_NEW}${NC}"
+echo -e "${YELLOW}   后端 Revision: ${BACKEND_REVISION}${NC}"
+echo -e "${YELLOW}   后端构建 SHA: ${BACKEND_GIT_SHA}${NC}"
 
 # Update API URL secret
 API_URL_NEW="${BACKEND_URL_NEW}/api"
@@ -157,7 +166,22 @@ gcloud run deploy ${FRONTEND_SERVICE} \
 
 # Get frontend URL
 FRONTEND_URL=$(gcloud run services describe ${FRONTEND_SERVICE} --region ${REGION} --format 'value(status.url)')
+FRONTEND_REVISION=$(gcloud run services describe ${FRONTEND_SERVICE} --region ${REGION} --format 'value(status.latestReadyRevisionName)')
 echo -e "${GREEN}✅ Frontend deployed: ${FRONTEND_URL}${NC}"
+echo -e "${YELLOW}═══════════════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}📋 部署验证信息:${NC}"
+echo -e "${GREEN}   前端 URL: ${FRONTEND_URL}${NC}"
+echo -e "${GREEN}   Revision: ${FRONTEND_REVISION}${NC}"
+echo -e "${GREEN}   构建 SHA: ${GIT_SHA}${NC}"
+echo -e "${GREEN}   构建时间: ${BUILD_TIME}${NC}"
+echo -e "${YELLOW}═══════════════════════════════════════════════════════════${NC}"
+echo -e "${YELLOW}🔍 验证步骤:${NC}"
+echo -e "  1. 打开浏览器访问: ${GREEN}${FRONTEND_URL}${NC}"
+echo -e "  2. 打开开发者工具 (F12)"
+echo -e "  3. 查看 Console 标签页"
+echo -e "  4. 搜索: ${GREEN}[Frontend Build]${NC}"
+echo -e "  5. 应该看到: ${GREEN}[Frontend Build] ${GIT_SHA} ${BUILD_TIME}${NC}"
+echo -e "${YELLOW}═══════════════════════════════════════════════════════════${NC}"
 
 # [2025-01-29 02:45:00] 更新后端服务，添加 FRONTEND_URL 环境变量，用于图片 URL 生成
 echo -e "${GREEN}🔧 更新后端服务，添加 FRONTEND_URL 环境变量...${NC}"
