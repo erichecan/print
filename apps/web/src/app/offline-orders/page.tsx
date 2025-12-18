@@ -2456,21 +2456,28 @@ export default function OfflineOrdersIntakePage() {
           {/* [2025-01-27 18:00:00] 步骤导航按钮 - 使用 Tailwind */}
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {/* [2025-12-18 17:15:00] 修复：将提交按钮移到中间，避免与下一步按钮位置重叠导致误触 */}
+          {/* [2025-12-18 17:20:00] 使用 grid 布局确保提交按钮真正居中 */}
           {isClient && (
-          <div className="flex justify-between items-center gap-3 pt-6 border-t border-gray-200">
+          <div className={`pt-6 border-t border-gray-200 ${
+            currentStep === STEPS.length 
+              ? 'grid grid-cols-3 items-center gap-3' 
+              : 'flex justify-between items-center gap-3'
+          }`}>
             {/* 左侧：保存草稿按钮 */}
-            <button
-              type="button"
-              className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={saveDraft}
-              disabled={isSubmitting || isSavingDraft}
-            >
-              {isSavingDraft ? t('saving') : t('saveDraft')}
-            </button>
+            <div className={currentStep === STEPS.length ? 'flex justify-start' : ''}>
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={saveDraft}
+                disabled={isSubmitting || isSavingDraft}
+              >
+                {isSavingDraft ? t('saving') : t('saveDraft')}
+              </button>
+            </div>
             
-            {/* 中间：提交订单按钮（仅在第3步显示） */}
+            {/* 中间：提交订单按钮（仅在第3步显示，使用 grid 居中） */}
             {currentStep === STEPS.length && (
-              <div className="flex-1 flex justify-center">
+              <div className="flex justify-center">
                 <button
                   ref={submitButtonRef}
                   type="submit"
@@ -2489,7 +2496,7 @@ export default function OfflineOrdersIntakePage() {
             
             {/* 右侧：上一步和下一步按钮（仅在前两步显示） */}
             {currentStep < STEPS.length && (
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-end">
                 {currentStep > 1 && (
                   <button
                     type="button"
@@ -2511,7 +2518,7 @@ export default function OfflineOrdersIntakePage() {
             
             {/* 右侧：上一步按钮（仅在第3步显示，与提交按钮配合） */}
             {currentStep === STEPS.length && currentStep > 1 && (
-              <div className="flex gap-3">
+              <div className="flex gap-3 justify-end">
                 <button
                   type="button"
                   className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
