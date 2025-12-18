@@ -2455,8 +2455,10 @@ export default function OfflineOrdersIntakePage() {
 
           {/* [2025-01-27 18:00:00] 步骤导航按钮 - 使用 Tailwind */}
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
+          {/* [2025-12-18 17:15:00] 修复：将提交按钮移到中间，避免与下一步按钮位置重叠导致误触 */}
           {isClient && (
           <div className="flex justify-between items-center gap-3 pt-6 border-t border-gray-200">
+            {/* 左侧：保存草稿按钮 */}
             <button
               type="button"
               className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -2465,25 +2467,10 @@ export default function OfflineOrdersIntakePage() {
             >
               {isSavingDraft ? t('saving') : t('saveDraft')}
             </button>
-            <div className="flex gap-3">
-              {currentStep > 1 && (
-                <button
-                  type="button"
-                  className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                  onClick={goToPreviousStep}
-                >
-                  {t('previousStep')}
-                </button>
-              )}
-              {currentStep < STEPS.length ? (
-                <button
-                  type="button"
-                  className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
-                  onClick={goToNextStep}
-                >
-                  {t('nextStep')}
-                </button>
-              ) : (
+            
+            {/* 中间：提交订单按钮（仅在第3步显示） */}
+            {currentStep === STEPS.length && (
+              <div className="flex-1 flex justify-center">
                 <button
                   ref={submitButtonRef}
                   type="submit"
@@ -2492,13 +2479,48 @@ export default function OfflineOrdersIntakePage() {
                     isSubmittingFromButtonRef.current = true;
                     console.log('[OfflineOrder] Submit button clicked, setting flag');
                   }}
-                  className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-8 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? t('submitting') : t('submitOrder')}
                 </button>
-              )}
-            </div>
+              </div>
+            )}
+            
+            {/* 右侧：上一步和下一步按钮（仅在前两步显示） */}
+            {currentStep < STEPS.length && (
+              <div className="flex gap-3">
+                {currentStep > 1 && (
+                  <button
+                    type="button"
+                    className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                    onClick={goToPreviousStep}
+                  >
+                    {t('previousStep')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
+                  onClick={goToNextStep}
+                >
+                  {t('nextStep')}
+                </button>
+              </div>
+            )}
+            
+            {/* 右侧：上一步按钮（仅在第3步显示，与提交按钮配合） */}
+            {currentStep === STEPS.length && currentStep > 1 && (
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  onClick={goToPreviousStep}
+                >
+                  {t('previousStep')}
+                </button>
+              </div>
+            )}
           </div>
           )}
         </form>
