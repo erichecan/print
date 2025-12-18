@@ -331,26 +331,6 @@ export default function SalesOrdersPage() {
     }
   };
 
-  // [2025-12-18 17:30:00] 删除订单
-  const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
-  const handleDeleteOrder = async (orderId: string, orderCode: string) => {
-    if (!confirm(`确定要删除订单 ${orderCode} 吗？此操作不可恢复。`)) {
-      return;
-    }
-
-    setDeletingOrder(orderId);
-    try {
-      await salesOrdersApi.delete(orderId);
-      // [2025-12-18 17:30:00] 删除成功后刷新列表
-      setOrders(orders.filter(o => o.id !== orderId));
-      alert('订单已删除');
-    } catch (err: any) {
-      alert(err.message || '删除失败，请稍后重试');
-    } finally {
-      setDeletingOrder(null);
-    }
-  };
-
   // [2025-12-07 04:55:00] 快速修改订单阶段
   const handleQuickUpdateStage = async (orderId: string, newStageKey: string) => {
     if (!newStageKey) return;
