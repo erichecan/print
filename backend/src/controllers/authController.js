@@ -114,8 +114,16 @@ exports.register = async (req, res) => {
       user,
     });
   } catch (error) {
-    console.error('Error registering user:', error);
-    res.status(500).json({ error: 'Failed to register user' });
+    console.error('[Auth] Error registering user:', {
+      error: error.message,
+      errorName: error.name,
+      errorCode: error.code,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    res.status(500).json({ 
+      error: 'Failed to register user',
+      details: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 };
 
