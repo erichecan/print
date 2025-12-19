@@ -40,11 +40,73 @@ const safeJsonParse = (value) => {
   }
 };
 
-const generateOrderCode = () => {
+/**
+ * 生成订单编号
+ * [2025-12-18 21:39:07] 修改规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
+ * @param {Object} tx - Prisma transaction 对象（可选）
+ * @returns {Promise<string>} 订单编号
+ */
+const generateOrderCode = async (tx = null) => {
   const timestamp = new Date();
   const datePart = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
-  const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `OFF-${datePart}-${randomPart}`;
+  
+  // [2025-12-18 21:39:07] 获取当天的最大流水号
+  const prismaClient = tx || prisma;
+  const todayStart = new Date(timestamp);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(timestamp);
+  todayEnd.setHours(23, 59, 59, 999);
+  
+  // 查询当天所有订单编号，提取流水号
+  const todayOrders = await prismaClient.offlineOrder.findMany({
+    where: {
+      orderCode: {
+        startsWith: `OFF-${datePart}-`
+      },
+      createdAt: {
+        gte: todayStart,
+        lte: todayEnd
+      }
+    },
+    select: {
+      orderCode: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+  
+  // 提取流水号并找到最大值
+  let maxSequence = 0;
+  todayOrders.forEach(order => {
+    // 订单编号格式：OFF-YYYYMMDD-XXXXXX
+    // 提取最后6位，前3位是流水号
+    const suffix = order.orderCode.split('-').pop() || '';
+    if (suffix.length >= 3) {
+      const sequenceStr = suffix.substring(0, 3);
+      const sequence = parseInt(sequenceStr, 10);
+      if (!isNaN(sequence) && sequence > maxSequence) {
+        maxSequence = sequence;
+      }
+    }
+  });
+  
+  // 递增流水号（从001开始）
+  const nextSequence = maxSequence + 1;
+  const sequencePart = String(nextSequence).padStart(3, '0');
+  
+  // [2025-12-18 22:03:15] 生成3位随机字母
+  const generateRandomLetters = () => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let result = '';
+    for (let i = 0; i < 3; i++) {
+      result += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    return result;
+  };
+  const randomPart = generateRandomLetters();
+  
+  return `OFF-${datePart}-${sequencePart}${randomPart}`;
 };
 
 const generateWorkOrderCode = () => {
@@ -218,14 +280,11 @@ exports.createOfflineOrder = async (req, res) => {
     }
 
     // [2025-12-19] PRD v2.0: 生成订单编号，如果projectName仍然为空，使用订单编号作为默认值
-    const generatedOrderCode = generateOrderCode();
-    if (!finalProjectName) {
-      finalProjectName = generatedOrderCode; // [2025-12-19] 使用订单编号作为默认projectName
-      logger.info('[offlineOrderController] projectName not provided, using orderCode as default:', finalProjectName);
-    }
+    // [2025-12-18 21:39:07] 注意：订单编号在事务中生成，这里先不生成
+    let generatedOrderCode = null;
 
     const orderPayload = {
-      orderCode: generatedOrderCode,
+      orderCode: '', // [2025-12-18 21:39:07] 订单编号在事务中生成，这里先留空
       projectName: finalProjectName, // [2025-12-19] 使用处理后的projectName（可能来自orderNotes或订单编号）
       primaryProduct: primaryProduct?.trim() || null,
       quantity: quantity ? parseInt(quantity, 10) || null : null,
@@ -260,17 +319,32 @@ exports.createOfflineOrder = async (req, res) => {
     const assetPayloads = files.map(buildAssetPayload);
 
     const order = await prisma.$transaction(async (tx) => {
-      let uniqueCode = orderPayload.orderCode;
+      // [2025-12-18 21:39:07] 在事务中生成订单编号（使用流水号）
+      let uniqueCode = await generateOrderCode(tx);
       let exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
-      while (exists) {
-        uniqueCode = generateOrderCode();
+      // 如果发生冲突（理论上不应该发生），重新生成
+      let retryCount = 0;
+      while (exists && retryCount < 10) {
+        uniqueCode = await generateOrderCode(tx);
         exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
+        retryCount++;
+      }
+      
+      if (exists) {
+        throw new Error('Failed to generate unique order code after multiple retries');
+      }
+      
+      // [2025-12-19] 如果projectName仍然为空，使用订单编号作为默认值
+      if (!finalProjectName) {
+        finalProjectName = uniqueCode;
+        logger.info('[offlineOrderController] projectName not provided, using orderCode as default:', finalProjectName);
       }
 
       const createdOrder = await tx.offlineOrder.create({
         data: {
           ...orderPayload,
           orderCode: uniqueCode,
+          projectName: finalProjectName, // [2025-12-18 21:39:07] 使用处理后的projectName
           assets: assetPayloads.length
             ? {
                 create: assetPayloads.map((asset) => ({

@@ -117,7 +117,7 @@ type FormState = {
   globalPrintPositions: PrintPosition[]; // 总体印刷位置（保留用于向后兼容）
   orderNotes: string; // 订单备注（非必填）
   dstFileFee: number; // DST File Fee（订单级别，仅当有Embroidery时）
-  globalUnitPrice: number; // [2025-12-08 05:25:00] 全局单价
+  // [2025-12-19 02:30:00] 移除全局单价，改为颜色级别单价
   globalQuantitySubtotal: number; // [2025-12-08 05:25:00] 全局件数小计
   // [2025-12-19] 按颜色分组的印刷位配置（新功能）
   colorGroupsByProduct: Record<string, import('@/types/order').OrderItemColorGroup[]>; // 产品ID -> 颜色组列表
@@ -147,11 +147,23 @@ type FormState = {
 };
 
 // [2025-01-27 19:00:00] 生成订单编号（与后端格式一致）
+// [2025-12-18 22:03:15] 更新规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
+// 注意：前端只是用于预览，实际编号由后端生成
 const generateOrderCode = (): string => {
   const timestamp = new Date();
   const datePart = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
-  const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `OFF-${datePart}-${randomPart}`;
+  // 前端预览使用临时流水号（001）和随机字母
+  const sequencePart = '001'; // 预览时使用固定值
+  const generateRandomLetters = () => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let result = '';
+    for (let i = 0; i < 3; i++) {
+      result += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    return result;
+  };
+  const randomPart = generateRandomLetters();
+  return `OFF-${datePart}-${sequencePart}${randomPart}`;
 };
 
 // [2025-12-07 02:30:00] PRD v2.0: 初始表单状态
@@ -161,7 +173,7 @@ const initialFormState: FormState = {
   globalPrintPositions: [],
   orderNotes: '',
   dstFileFee: 0,
-  globalUnitPrice: 0, // [2025-12-08 05:25:00] 全局单价
+  // [2025-12-19 02:30:00] 移除全局单价，改为颜色级别单价
   globalQuantitySubtotal: 0, // [2025-12-08 05:25:00] 全局件数小计
   colorGroupsByProduct: {}, // [2025-12-19] 按颜色分组的印刷位配置
   contactName: '',
@@ -646,6 +658,7 @@ export default function OfflineOrdersIntakePage() {
             colorName,
             quantities: {},
             positions: initialPositions,
+            unitPrice: 0, // [2025-12-19 02:30:00] 颜色级别的单价
             inheritsFromColorId
           };
           
@@ -680,6 +693,14 @@ export default function OfflineOrdersIntakePage() {
                 return [];
               })()
             : [],
+          unitPrice: inheritFromPrev && item.colors.length > 1
+            ? (() => {
+                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+                const prevColor = item.colors[item.colors.length - 2];
+                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+                return prevGroup?.unitPrice || 0; // [2025-12-19 02:30:00] 继承上一颜色的单价
+              })()
+            : 0, // [2025-12-19 02:30:00] 颜色级别的单价
           inheritsFromColorId: inheritFromPrev && item.colors.length > 1
             ? (() => {
                 const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
@@ -1698,66 +1719,7 @@ export default function OfflineOrdersIntakePage() {
           </label>
         </div>
 
-        {/* [2025-12-08 05:25:00] 单价和件数小计输入框 - 在总价计算模块上面 */}
-        <div className="mt-6 p-5 bg-white border border-gray-200 rounded-xl">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">单价:</span>
-              <input
-                type="text"
-                value={formState.globalUnitPrice > 0 ? formState.globalUnitPrice.toString() : ''}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/[^\d.]/g, '');
-                  const unitPrice = parseFloat(value) || 0;
-                  // [2025-12-08 05:25:00] 更新全局单价，并更新所有尺码的单价
-                  setFormState((prev) => {
-                    const newItems = prev.productItems.map((item) => {
-                      const newColors = item.colors.map((color) => {
-                        const newSizes = color.sizes.map((sizeData) => {
-                          return {
-                            ...sizeData,
-                            unitPrice: unitPrice,
-                            subtotal: sizeData.quantity * (unitPrice + sizeData.additionalFee),
-                          };
-                        });
-                        const totalQuantity = newSizes.reduce((sum, s) => sum + s.quantity, 0);
-                        const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
-                        return {
-                          ...color,
-                          sizes: newSizes,
-                          totalQuantity,
-                          totalPrice,
-                        };
-                      });
-                      const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
-                      const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
-                      return {
-                        ...item,
-                        colors: newColors,
-                        totalQuantity,
-                        totalPrice,
-                      };
-                    });
-                    return { ...prev, globalUnitPrice: unitPrice, productItems: newItems };
-                  });
-                }}
-                onKeyDown={handleKeyDown}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                placeholder="请输入单价"
-              />
-            </label>
-            <label className="block">
-              <span className="block text-sm font-medium text-gray-700 mb-2">件数小计:</span>
-              <input
-                type="text"
-                value={calculateTotalQuantity > 0 ? calculateTotalQuantity.toString() : ''}
-                readOnly
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50"
-                placeholder="自动计算"
-              />
-            </label>
-          </div>
-        </div>
+        {/* [2025-12-19 02:30:00] 移除全局单价输入框，改为颜色级别单价 */}
 
         {/* 总计 - PRD v2.0 */}
         {calculateTotalQuantity > 0 && (

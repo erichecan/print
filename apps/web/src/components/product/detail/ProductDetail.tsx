@@ -69,70 +69,145 @@ export function ProductDetail() {
 
   // [2025-11-19 09:30:00] 加入购物车处理函数
   // [2025-01-29 12:00:00] 移除 alert 弹窗，使用 CartContext 确保状态同步
+  // [2025-12-19 02:50:00] 添加详细调试日志，修复添加购物车功能
   const handleAddToCart = useCallback(async (payload: any) => {
-    console.log('[Add to Cart]', payload);
+    console.log('[Add to Cart] ===== START =====');
+    console.log('[Add to Cart] Payload:', JSON.stringify(payload, null, 2));
+    console.log('[Add to Cart] API Product exists:', !!apiProduct);
+    console.log('[Add to Cart] Variants count:', apiProduct?.variants?.length || 0);
+
+    if (!apiProduct || !apiProduct.variants) {
+      console.error('[Add to Cart] ❌ No API product or variants');
+      alert('Product data not loaded. Please refresh and try again.');
+      return;
+    }
+
+    console.log('[Add to Cart] Available variants:', apiProduct.variants.map((v: any) => ({
+      id: v.id,
+      color: v.color,
+      size: v.size,
+      sku: v.sku
+    })));
 
     // 找到对应的 variant
-    if (apiProduct && apiProduct.variants) {
-      const matchingVariant = apiProduct.variants.find((v: any) => {
-        const colorMatch = !payload.color || v.color === payload.color || !v.color;
-        const sizeMatch = !payload.size || v.size === payload.size || !v.size;
-        return colorMatch && sizeMatch;
+    let matchingVariant = null;
+    for (const v of apiProduct.variants) {
+      const colorMatch = !payload.color || v.color === payload.color || !v.color;
+      const sizeMatch = !payload.size || v.size === payload.size || !v.size;
+      console.log('[Add to Cart] Checking variant:', {
+        variantId: v.id,
+        variantColor: v.color,
+        variantSize: v.size,
+        payloadColor: payload.color,
+        payloadSize: payload.size,
+        colorMatch,
+        sizeMatch,
+        matches: colorMatch && sizeMatch
       });
-
-      if (matchingVariant && matchingVariant.id) {
-        try {
-          // [2025-01-29 12:00:00] 使用 CartContext 的 addItem 方法，确保状态同步
-          const { useCart } = await import('@/contexts/CartContext');
-          // 注意：这里不能直接使用 hook，需要通过事件或全局状态更新
-          // 直接调用 API，然后触发购物车刷新事件
-          const { cartApi } = await import('@/lib/api');
-          await cartApi.addItem(matchingVariant.id, payload.quantity || 1);
-          
-          // [2025-01-29 12:00:00] 触发购物车更新事件，让 CartContext 自动刷新
-          window.dispatchEvent(new CustomEvent('cart:updated'));
-          
-          // [2025-01-29 12:00:00] 移除 alert 弹窗，静默更新购物车图标
-        } catch (error) {
-          console.error('Failed to add to cart:', error);
-          // [2025-01-29 12:00:00] 只在错误时显示提示
-          alert('Failed to add to cart. Please try again.');
-        }
-      } else {
-        alert('Please select a valid color and size.');
+      if (colorMatch && sizeMatch) {
+        matchingVariant = v;
+        break;
       }
+    }
+
+    console.log('[Add to Cart] Matching variant found:', !!matchingVariant);
+    console.log('[Add to Cart] Matching variant:', matchingVariant);
+
+    if (!matchingVariant || !matchingVariant.id) {
+      console.error('[Add to Cart] ❌ No matching variant found');
+      console.error('[Add to Cart] Requested:', { color: payload.color, size: payload.size });
+      alert('Please select a valid color and size.');
+      return;
+    }
+
+    try {
+      console.log('[Add to Cart] Calling API with variantId:', matchingVariant.id, 'quantity:', payload.quantity || 1);
+      const { cartApi } = await import('@/lib/api');
+      const result = await cartApi.addItem(matchingVariant.id, payload.quantity || 1);
+      console.log('[Add to Cart] ✅ API Response:', result);
+      
+      // [2025-01-29 12:00:00] 触发购物车更新事件，让 CartContext 自动刷新
+      window.dispatchEvent(new CustomEvent('cart:updated'));
+      console.log('[Add to Cart] ✅ Cart update event dispatched');
+      console.log('[Add to Cart] ===== SUCCESS =====');
+    } catch (error: any) {
+      console.error('[Add to Cart] ❌ API Error:', error);
+      console.error('[Add to Cart] Error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        response: error?.response
+      });
+      alert(`Failed to add to cart: ${error?.message || 'Unknown error'}. Please try again.`);
+      console.log('[Add to Cart] ===== FAILED =====');
     }
   }, [apiProduct]);
 
   // [2025-11-19 09:30:00] 立即购买处理函数
+  // [2025-12-19 02:50:00] 添加详细调试日志，修复 Buy Now 功能
   const handleBuyNow = useCallback(async (payload: any) => {
-    console.log('[Buy Now]', payload);
+    console.log('[Buy Now] ===== START =====');
+    console.log('[Buy Now] Payload:', JSON.stringify(payload, null, 2));
+    console.log('[Buy Now] API Product exists:', !!apiProduct);
+    console.log('[Buy Now] Variants count:', apiProduct?.variants?.length || 0);
+
+    if (!apiProduct || !apiProduct.variants) {
+      console.error('[Buy Now] ❌ No API product or variants');
+      alert('Product data not loaded. Please refresh and try again.');
+      return;
+    }
 
     // 找到对应的 variant
-    if (apiProduct && apiProduct.variants) {
-      const matchingVariant = apiProduct.variants.find((v: any) => {
-        const colorMatch = !payload.color || v.color === payload.color || !v.color;
-        const sizeMatch = !payload.size || v.size === payload.size || !v.size;
-        return colorMatch && sizeMatch;
+    let matchingVariant = null;
+    for (const v of apiProduct.variants) {
+      const colorMatch = !payload.color || v.color === payload.color || !v.color;
+      const sizeMatch = !payload.size || v.size === payload.size || !v.size;
+      console.log('[Buy Now] Checking variant:', {
+        variantId: v.id,
+        variantColor: v.color,
+        variantSize: v.size,
+        payloadColor: payload.color,
+        payloadSize: payload.size,
+        colorMatch,
+        sizeMatch,
+        matches: colorMatch && sizeMatch
       });
-
-      if (matchingVariant && matchingVariant.id) {
-        try {
-          const { cartApi } = await import('@/lib/api');
-          await cartApi.addItem(matchingVariant.id, payload.quantity || 1);
-
-          // [2025-01-29 12:00:00] 触发购物车更新事件
-          window.dispatchEvent(new CustomEvent('cart:updated'));
-
-          // 跳转到结账页面
-          router.push('/checkout');
-        } catch (error) {
-          console.error('Failed to buy now:', error);
-          alert('Failed to process your request. Please try again.');
-        }
-      } else {
-        alert('Please select a valid color and size.');
+      if (colorMatch && sizeMatch) {
+        matchingVariant = v;
+        break;
       }
+    }
+
+    console.log('[Buy Now] Matching variant found:', !!matchingVariant);
+    console.log('[Buy Now] Matching variant:', matchingVariant);
+
+    if (!matchingVariant || !matchingVariant.id) {
+      console.error('[Buy Now] ❌ No matching variant found');
+      alert('Please select a valid color and size.');
+      return;
+    }
+
+    try {
+      console.log('[Buy Now] Calling API with variantId:', matchingVariant.id, 'quantity:', payload.quantity || 1);
+      const { cartApi } = await import('@/lib/api');
+      await cartApi.addItem(matchingVariant.id, payload.quantity || 1);
+      console.log('[Buy Now] ✅ Item added to cart');
+
+      // [2025-01-29 12:00:00] 触发购物车更新事件
+      window.dispatchEvent(new CustomEvent('cart:updated'));
+      console.log('[Buy Now] ✅ Cart update event dispatched');
+
+      // 跳转到结账页面
+      console.log('[Buy Now] Navigating to checkout...');
+      router.push('/checkout');
+      console.log('[Buy Now] ===== SUCCESS =====');
+    } catch (error: any) {
+      console.error('[Buy Now] ❌ Error:', error);
+      console.error('[Buy Now] Error details:', {
+        message: error?.message,
+        stack: error?.stack
+      });
+      alert(`Failed to process your request: ${error?.message || 'Unknown error'}. Please try again.`);
+      console.log('[Buy Now] ===== FAILED =====');
     }
   }, [router, apiProduct]);
 
@@ -292,6 +367,7 @@ export function ProductDetail() {
               onAddToCart={handleAddToCart}
               onBuyNow={handleBuyNow}
               onStartDesign={handleStartDesign}
+              productId={apiProduct?.id} // [2025-12-19 02:50:00] 传递实际的 productId
             />
 
             {/* [2025-11-19 09:30:00] 参考图一位置：配送和退货信息 */}

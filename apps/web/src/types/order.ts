@@ -35,6 +35,7 @@ export type OrderItemColorGroup = {
   colorName: string; // 颜色名称
   quantities: Record<string, number>; // 尺码 -> 数量映射
   positions: PositionConfig[]; // 该颜色组的默认印刷位置配置
+  unitPrice: number; // [2025-12-19 02:30:00] 颜色级别的单价（适用于该颜色的所有尺码）
   perSizeOverrides?: Array<{ // per-size overrides（可选）
     size: string; // 尺码：'XS'|'S'|'M'|'L'|'XL'|'2XL'|'3XL'|...
     overrides: PositionConfig[]; // 该尺码的覆盖配置

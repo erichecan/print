@@ -123,22 +123,47 @@ export default function CartPage() {
   };
 
   // [2025-01-27 16:50:00] 优化删除交互反馈
+  // [2025-12-19 02:50:00] 添加详细调试日志，修复删除功能
   const handleRemove = async (itemId: string) => {
+    console.log('[Cart] handleRemove() ===== START =====');
+    console.log('[Cart] Item ID:', itemId);
     const item = cart?.items.find(i => i.id === itemId);
+    console.log('[Cart] Item to remove:', item);
+    console.log('[Cart] Cart items count:', cart?.items.length || 0);
+    
+    if (!item) {
+      console.error('[Cart] ❌ Item not found in cart');
+      showError('Item not found in cart');
+      return;
+    }
+    
     const confirmMessage = `Remove "${item?.productName || 'this item'}" from cart?`;
 
-    if (!window.confirm(confirmMessage)) return;
+    if (!window.confirm(confirmMessage)) {
+      console.log('[Cart] Remove cancelled by user');
+      return;
+    }
 
     setUpdating(itemId);
     try {
+      console.log('[Cart] Calling removeItem API:', itemId);
       await removeItem(itemId);
+      console.log('[Cart] ✅ Item removed successfully');
       success('Item removed from cart');
       // [2025-01-27 16:50:00] 如果应用了优惠券，重新验证
       if (appliedCoupon) {
         handleApplyCoupon();
       }
+      console.log('[Cart] ===== SUCCESS =====');
     } catch (err: any) {
+      console.error('[Cart] ❌ Remove item error:', err);
+      console.error('[Cart] Error details:', {
+        message: err?.message,
+        stack: err?.stack,
+        status: err?.status
+      });
       showError(err.message || 'Failed to remove item');
+      console.log('[Cart] ===== FAILED =====');
     } finally {
       setUpdating(null);
     }

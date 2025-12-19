@@ -244,12 +244,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // [2025-12-19 02:50:00] 添加详细调试日志，修复删除功能
   const removeItem = async (itemId: string) => {
     try {
+      console.log('[CartContext] removeItem() called:', itemId);
       await cartApi.removeItem(itemId);
+      console.log('[CartContext] ✅ Item removed, refreshing cart');
       await mutate(); // Refresh cart
+      // [2025-12-19 02:50:00] 触发购物车更新事件，确保其他组件也能收到通知
+      window.dispatchEvent(new CustomEvent('cart:updated'));
+      console.log('[CartContext] ✅ Cart update event dispatched');
     } catch (err) {
-      console.error('Error removing cart item:', err);
+      console.error('[CartContext] ❌ Error removing cart item:', err);
       throw err;
     }
   };

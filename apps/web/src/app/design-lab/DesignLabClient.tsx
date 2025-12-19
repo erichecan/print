@@ -4031,7 +4031,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               📞 Talk to a Real Person: 416 916 6352
             </a>
             {/* [2025-12-10 00:00:00] 修复：Chat Now 链接到留言本 */}
-            <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now">Chat Now</Link>
+            {/* [2025-12-18 20:58:40] 修复：Chat Now 在新窗口打开 */}
+            <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
             <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
           </div>
         </div>

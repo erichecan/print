@@ -492,9 +492,14 @@ exports.getProducts = async (req, res) => {
     const categorySlug = req.query.category; // [2025-01-28 23:15:00] 支持 category 筛选
     const search = req.query.search;
     // [2025-01-27 16:45:00] 只使用数据库中实际存在的列名，避免 Prisma 映射问题
-    const allowedSortFields = ['createdAt', 'name', 'updatedAt'];
+    // [2025-12-18 22:03:56] 添加 basePrice 到允许的排序字段，支持价格排序
+    const allowedSortFields = ['createdAt', 'name', 'updatedAt', 'basePrice'];
     const requestedSort = req.query.sort || 'createdAt';
-    const sortBy = allowedSortFields.includes(requestedSort) ? requestedSort : 'createdAt';
+    // [2025-12-18 22:03:56] 如果请求的是 price，需要特殊处理（考虑 salePrice）
+    const isPriceSort = requestedSort === 'price';
+    // [2025-12-18 22:03:56] 如果请求的是 price，映射到 basePrice（用于数据库排序，后续会重新排序）
+    const mappedSort = isPriceSort ? 'basePrice' : requestedSort;
+    const sortBy = allowedSortFields.includes(mappedSort) ? mappedSort : 'createdAt';
     const sortOrder = req.query.order === 'asc' ? 'asc' : 'desc';
 
     // [2025-01-28 23:15:00] 读取筛选参数
@@ -631,6 +636,7 @@ exports.getProducts = async (req, res) => {
 
     // [2025-01-27 16:30:00] 构建缓存key，包含所有筛选条件
     // [2025-01-28 23:15:00] 添加新的筛选参数到缓存key
+    // [2025-12-18 22:09:15] 价格排序时，缓存键使用 'price' 而不是 'basePrice'，确保缓存正确
     const cacheKey = `products:list:${JSON.stringify({
       page,
       limit,
@@ -640,7 +646,7 @@ exports.getProducts = async (req, res) => {
       color: colorFilter.join(',') || '',
       brand: brandFilter.join(',') || '',
       size: sizeFilter.join(',') || '',
-      sort: sortBy,
+      sort: isPriceSort ? 'price' : sortBy, // [2025-12-18 22:09:15] 价格排序时使用 'price'
       order: sortOrder,
       includeOutOfStock,
     })}`;
@@ -651,12 +657,16 @@ exports.getProducts = async (req, res) => {
       return res.json(cachedResponse);
     }
 
+    // [2025-12-18 22:03:56] 如果按价格排序，需要先查询所有产品（在当前筛选条件下），然后按实际价格排序
+    // 实际价格 = salePrice（如果有且小于 basePrice）或 basePrice
+    const shouldFetchAllForPriceSort = isPriceSort;
+    
     // Execute query
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        skip,
-        take: limit,
+        skip: shouldFetchAllForPriceSort ? 0 : skip, // [2025-12-18 22:03:56] 价格排序时先查询所有
+        take: shouldFetchAllForPriceSort ? undefined : limit, // [2025-12-18 22:03:56] 价格排序时不限制数量
         orderBy: { [sortBy]: sortOrder },
         select: {
           id: true,
@@ -706,7 +716,37 @@ exports.getProducts = async (req, res) => {
       prisma.product.count({ where }),
     ]);
 
-    const normalizedProducts = products.map((product) => {
+    // [2025-12-18 22:09:15] 如果按价格排序，需要按实际价格重新排序
+    // 实际价格 = salePrice（如果有且小于 basePrice）或 basePrice
+    let sortedProducts = products;
+    if (isPriceSort) {
+      // [2025-12-18 22:09:15] 计算实际价格的辅助函数
+      const getActualPrice = (product) => {
+        const basePrice = toNumber(product.basePrice) / 100; // basePrice 从分转换为元
+        const salePrice = toNumber(product.salePrice, 0);
+        // salePrice 可能是"分"或"元"，需要判断
+        const salePriceInDollars = salePrice > 1000 ? salePrice / 100 : salePrice;
+        // 如果有有效的 salePrice 且小于 basePrice，使用 salePrice
+        return salePriceInDollars > 0 && salePriceInDollars < basePrice ? salePriceInDollars : basePrice;
+      };
+      
+      // [2025-12-18 22:09:15] 按实际价格排序
+      sortedProducts = products.sort((a, b) => {
+        const priceA = getActualPrice(a);
+        const priceB = getActualPrice(b);
+        
+        if (sortOrder === 'asc') {
+          return priceA - priceB;
+        } else {
+          return priceB - priceA;
+        }
+      });
+      
+      // [2025-12-18 22:09:15] 重新排序后，应用分页
+      sortedProducts = sortedProducts.slice(skip, skip + limit);
+    }
+
+    const normalizedProducts = sortedProducts.map((product) => {
       const primaryImage = product.images[0];
       const primaryVariant = product.variants[0];
 

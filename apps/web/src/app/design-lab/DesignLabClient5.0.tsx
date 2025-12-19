@@ -22,6 +22,16 @@ import EditTextPanel from './components/panels/EditTextPanel'; // [2025-12-16 07
 import ArtPanel from './components/panels/ArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 素材库面板
 import EditArtPanel from './components/panels/EditArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 编辑面板
 import type { fabric } from 'fabric'; // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 导入 Fabric.js 类型
+// [2025-12-18 21:18:56] 产品模块：导入产品选择器和颜色选择器
+import ProductSelectorModal from './modules/product/ProductSelectorModal';
+import ColorSelectorModal from './modules/product/ColorSelectorModal';
+import { getProductByVariant, type Product } from './api/product';
+// [2025-12-18 21:20:48] 保存模块：导入保存相关组件和 hooks
+import SaveShareModal from './components/modals/SaveShareModal';
+import { useDesign } from './modules/save/useDesign';
+// [2025-12-18 21:23:43] 报价模块：导入报价相关组件和 hooks
+import GetPriceFlowModal from './components/modals/GetPriceFlowModal';
+import { usePricing } from './modules/pricing/usePricing';
 import './design-lab.css';
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
@@ -38,6 +48,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   
   // [2025-12-20 03:05:00] 5.0 版本：功能2 - 改为 useState，支持动态更新
   // [2025-12-20 03:30:00] 修复：初始状态使用默认白色 T 恤图片，确保用户直接从导航进入时也能正常显示
+  // [2025-12-18 21:18:56] 产品模块：添加产品名称字段
   const [productInfo, setProductInfo] = useState<{
     color: string;
     baseImages: {
@@ -47,6 +58,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     };
     productId?: string;
     colorId?: string;
+    productName?: string; // [2025-12-18 21:18:56] 产品名称
   }>(() => {
     // [2025-12-20 03:30:00] 使用函数初始化，确保默认图片在组件创建时就设置好
     const defaultImages = getDefaultProductBaseImages('White');
@@ -269,6 +281,53 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     targetObject: string | null;
   } | null>(null);
 
+  // [2025-12-18 21:18:56] 产品模块：产品选择器和颜色选择器状态
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showColorModal, setShowColorModal] = useState(false);
+
+  // [2025-12-18 21:20:48] 保存模块：设计名称状态（独立管理，因为 SaveShareModal 需要可编辑）
+  const [designName, setDesignName] = useState<string>('Untitled Design');
+  const [designId, setDesignId] = useState<string | null>(null);
+
+  // [2025-12-18 21:20:48] 保存模块：使用 useDesign hook（canvas 可能为 null，需要在保存时检查）
+  const {
+    saveDesign: saveDesignInternal,
+    shareDesignLink,
+    isSaving,
+    error: designError,
+  } = useDesign({
+    canvas: fabricCanvasRef.current,
+    canvasWidth: CANVAS_WIDTH,
+    canvasHeight: CANVAS_HEIGHT,
+    productVariantId: productInfo.productId, // TODO: 使用实际的 variantId
+    initialDesignId: designId,
+    initialDesignName: designName,
+  });
+
+  // [2025-12-18 21:20:48] 保存模块：SaveShareModal 状态
+  const [showSaveShareModal, setShowSaveShareModal] = useState(false);
+
+  // [2025-12-18 21:23:43] 报价模块：使用 usePricing hook
+  const {
+    quote,
+    isRequestingQuote,
+    quoteError,
+    requestQuoteForDesign,
+    addToCart: addToCartInternal,
+    getQuoteData: getQuoteDataInternal,
+  } = usePricing({
+    canvas: fabricCanvasRef.current,
+    designId,
+    productId: productInfo.productId,
+    variantId: productInfo.colorId,
+    canvasWidth: CANVAS_WIDTH,
+    canvasHeight: CANVAS_HEIGHT,
+    currentView, // [2025-12-18 21:23:43] 传递当前视图
+  });
+
+  // [2025-12-18 21:23:43] 报价模块：GetPriceFlowModal 状态
+  const [showGetPriceModal, setShowGetPriceModal] = useState(false);
+
   // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换功能
   const handleViewChange = (view: 'front' | 'back' | 'sleeve') => {
     console.log('[DesignLab 5.0] 视图切换:', { from: currentView, to: view }); // [2025-12-20 03:00:00] 添加调试日志
@@ -315,6 +374,202 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const handleCanvasUpdate = () => {
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.renderAll();
+    }
+  };
+
+  // [2025-12-18 21:18:56] 产品模块：产品选择处理
+  const handleProductSelect = async (product: Product) => {
+    console.log('[DesignLab 5.0] 产品选择:', product);
+    
+    try {
+      // 尝试获取产品的第一个 variant 或使用 productId
+      // 这里简化处理，实际应该根据产品获取默认 variant
+      const productDetail = await getProductByVariant(product.id);
+      
+      if (productDetail) {
+        const color = productDetail.color || 'White';
+        const baseImages = productDetail.baseImages || getDefaultProductBaseImages(color);
+        
+        setProductInfo({
+          color,
+          baseImages,
+          productId: productDetail.productId,
+          colorId: productDetail.variantId,
+          productName: productDetail.productName || product.title,
+        });
+        
+        // 更新 URL（可选）
+        if (typeof window !== 'undefined') {
+          const url = new URL(window.location.href);
+          url.searchParams.set('productId', productDetail.productId);
+          if (productDetail.variantId) {
+            url.searchParams.set('variantId', productDetail.variantId);
+          }
+          window.history.replaceState({}, '', url.toString());
+        }
+      } else {
+        // 如果无法获取详情，使用默认图片
+        const defaultImages = getDefaultProductBaseImages('White');
+        setProductInfo(prev => ({
+          ...prev,
+          productId: product.id,
+          productName: product.title,
+          baseImages: defaultImages,
+        }));
+      }
+    } catch (error) {
+      console.error('[DesignLab 5.0] 产品选择失败:', error);
+      // 失败时使用默认图片
+      const defaultImages = getDefaultProductBaseImages('White');
+      setProductInfo(prev => ({
+        ...prev,
+        productId: product.id,
+        productName: product.title,
+        baseImages: defaultImages,
+      }));
+    }
+  };
+
+  // [2025-12-18 21:18:56] 产品模块：颜色选择处理
+  const handleColorSelect = async (colorName: string) => {
+    console.log('[DesignLab 5.0] 颜色选择:', colorName);
+    
+    try {
+      // 根据颜色名称更新图片
+      const baseImages = getDefaultProductBaseImages(colorName);
+      
+      setProductInfo(prev => ({
+        ...prev,
+        color: colorName,
+        baseImages,
+      }));
+      
+      // 更新 URL（可选）
+      if (typeof window !== 'undefined' && productInfo.productId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('colorId', colorName);
+        window.history.replaceState({}, '', url.toString());
+      }
+    } catch (error) {
+      console.error('[DesignLab 5.0] 颜色选择失败:', error);
+    }
+  };
+
+  // [2025-12-18 21:18:56] 产品模块：+ Add Products 跳转处理
+  const handleAddProducts = () => {
+    if (typeof window !== 'undefined') {
+      const currentUrl = new URL(window.location.href);
+      const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
+      window.location.href = `/products?returnToDesignLab=${returnUrl}`;
+    }
+  };
+
+  // [2025-12-18 21:20:48] 保存模块：保存设计处理
+  const handleSaveDesign = async () => {
+    if (!fabricCanvasRef.current) {
+      alert('Canvas is not initialized. Please wait a moment and try again.');
+      return;
+    }
+
+    try {
+      // 传递当前的 canvas 和设计名称
+      // 注意：SaveShareModal 中的设计名称是 readOnly，如果需要编辑，需要修改 SaveShareModal
+      const savedDesignId = await saveDesignInternal(fabricCanvasRef.current);
+      if (savedDesignId) {
+        setDesignId(savedDesignId);
+        console.log('[DesignLab 5.0] 设计保存成功:', savedDesignId);
+      }
+    } catch (error) {
+      console.error('[DesignLab 5.0] 设计保存失败:', error);
+      alert('Failed to save design. Please try again.');
+      throw error; // 重新抛出错误，让 SaveShareModal 知道保存失败
+    }
+  };
+
+  // [2025-12-18 21:20:48] 保存模块：分享设计处理
+  const handleShareDesign = async (shareUrl: string) => {
+    console.log('[DesignLab 5.0] 设计分享:', shareUrl);
+    // 可以添加埋点或其他处理
+  };
+
+  // [2025-12-18 21:23:43] 报价模块：获取报价数据（用于 GetPriceFlowModal）
+  const getQuoteData = async () => {
+    if (!fabricCanvasRef.current) {
+      return {
+        sidesUsed: [],
+        layerCount: 0,
+        hasUploadedImages: false,
+      };
+    }
+
+    // 获取设计使用的面和图层数
+    const objects = fabricCanvasRef.current.getObjects().filter((obj: fabric.Object) => {
+      const objName = (obj as any).name;
+      return (
+        objName &&
+        objName !== 'background' &&
+        objName !== 'product-image-base' &&
+        objName !== 'product-image'
+      );
+    });
+
+    // 确定使用的面
+    const sidesUsed: string[] = [];
+    if (currentView === 'front' || objects.some((obj: any) => obj.name?.includes('front'))) {
+      sidesUsed.push('front');
+    }
+    if (currentView === 'back' || objects.some((obj: any) => obj.name?.includes('back'))) {
+      sidesUsed.push('back');
+    }
+    if (currentView === 'sleeve' || objects.some((obj: any) => obj.name?.includes('sleeve'))) {
+      sidesUsed.push('sleeve');
+    }
+    // 如果没有对象，至少包含当前视图
+    if (sidesUsed.length === 0 && currentView !== 'zoom') {
+      sidesUsed.push(currentView);
+    }
+
+    // 检查是否有上传的图片
+    const hasUploadedImages = objects.some((obj: any) => {
+      const objName = obj.name || '';
+      return objName.includes('upload') || objName.includes('image');
+    });
+
+    return {
+      sidesUsed,
+      layerCount: objects.length,
+      hasUploadedImages,
+    };
+  };
+
+  // [2025-12-18 21:23:43] 报价模块：加入购物车处理
+  const handleAddToCart = async (orderData: any) => {
+    try {
+      // 确保设计已保存
+      if (!designId && fabricCanvasRef.current) {
+        // 先保存设计
+        await handleSaveDesign();
+        // 等待 designId 更新（这里可能需要优化）
+        if (!designId) {
+          throw new Error('Failed to save design before adding to cart');
+        }
+      }
+
+      // 调用加入购物车 API
+      await addToCartInternal({
+        designId: designId || '',
+        productId: productInfo.productId,
+        variantId: productInfo.colorId,
+        quantity: orderData.totalQuantity || 1,
+        sizeQuantities: orderData.sizeQuantities,
+        orderingOptions: orderData.orderingOptions,
+        quoteData: orderData.quoteData,
+      });
+
+      console.log('[DesignLab 5.0] 已加入购物车:', orderData);
+    } catch (error) {
+      console.error('[DesignLab 5.0] 加入购物车失败:', error);
+      throw error;
     }
   };
 
@@ -2406,7 +2661,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               <span className="dl-header__contact-label">Talk to a Real Person:</span>
               <a href="tel:4169166352" className="dl-header__contact-phone">416 916 6352</a>
             </div>
-            <a href="/help#guestbook" className="dl-header__chat-link">Chat Now</a>
+            {/* [2025-12-18 20:58:40] 修复：Chat Now 在新窗口打开 */}
+            <a href="/help#guestbook" className="dl-header__chat-link" target="_blank" rel="noopener noreferrer">Chat Now</a>
             <Link href="/signin" className="dl-header__signin-link">Sign In</Link>
           </div>
         </div>
@@ -2753,7 +3009,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       {/* [2025-12-20 02:30:00] 5.0 版本：与 4.0 版本 UI 一致 - BottomBar 完整内容 */}
       <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
         <div className="dl-bottom-bar__left">
-          <button className="dl-bottom-bar__add-products">
+          <button 
+            className="dl-bottom-bar__add-products"
+            onClick={handleAddProducts}
+            type="button"
+          >
             + Add Products
           </button>
           <div className="dl-bottom-bar__product-info">
@@ -2762,10 +3022,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             </div>
             <div className="dl-bottom-bar__product-details">
               <div className="dl-bottom-bar__product-name">
-                Gildan Softstyle Jersey T-shirt
+                {productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
               </div>
               <div className="dl-bottom-bar__product-links">
-                <button className="dl-bottom-bar__link" type="button">
+                <button 
+                  className="dl-bottom-bar__link" 
+                  type="button"
+                  onClick={() => setShowProductModal(true)}
+                >
                   Change Product
                 </button>
                 {productInfo.color && (
@@ -2774,7 +3038,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     <label htmlFor="color-selected">{productInfo.color}</label>
                   </span>
                 )}
-                <button className="dl-bottom-bar__link" type="button">
+                <button 
+                  className="dl-bottom-bar__link" 
+                  type="button"
+                  onClick={() => setShowColorModal(true)}
+                >
                   Change Color
                 </button>
               </div>
@@ -2782,7 +3050,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </div>
         </div>
         <div className="dl-bottom-bar__right">
-          <button className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary">
+          <button 
+            className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
+            onClick={() => setShowSaveShareModal(true)}
+            type="button"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
               <polyline points="17 21 17 13 7 13 7 21" />
@@ -2790,7 +3062,23 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             </svg>
             Save | Share
           </button>
-          <button className="dl-bottom-bar__btn dl-bottom-bar__btn--primary">
+          <button 
+            className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
+            onClick={() => {
+              // [2025-12-18 21:23:43] 报价模块：打开 Get Price 模态框
+              // 如果设计未保存，先提示保存
+              if (!designId) {
+                const shouldSave = confirm('Please save your design first before getting a price. Would you like to save now?');
+                if (shouldSave) {
+                  setShowSaveShareModal(true);
+                  return;
+                }
+              } else {
+                setShowGetPriceModal(true);
+              }
+            }}
+            type="button"
+          >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
               <line x1="1" y1="10" x2="23" y2="10" />
@@ -2799,6 +3087,46 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
         </div>
       </footer>
+
+      {/* [2025-12-18 21:18:56] 产品模块：产品选择器模态框 */}
+      <ProductSelectorModal
+        isOpen={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        onSelectProduct={handleProductSelect}
+        currentProductId={productInfo.productId}
+      />
+
+      {/* [2025-12-18 21:18:56] 产品模块：颜色选择器模态框 */}
+      <ColorSelectorModal
+        isOpen={showColorModal}
+        onClose={() => setShowColorModal(false)}
+        productId={productInfo.productId}
+        selectedColor={productInfo.color}
+        onSelectColor={handleColorSelect}
+        productName={productInfo.productName}
+      />
+
+      {/* [2025-12-18 21:20:48] 保存模块：SaveShareModal */}
+      <SaveShareModal
+        isOpen={showSaveShareModal}
+        onClose={() => setShowSaveShareModal(false)}
+        designId={designId}
+        designName={designName}
+        onSave={async () => {
+          await handleSaveDesign();
+          // 保存成功后，SaveShareModal 会自动关闭
+        }}
+        onShare={handleShareDesign}
+      />
+
+      {/* [2025-12-18 21:23:43] 报价模块：GetPriceFlowModal */}
+      <GetPriceFlowModal
+        isOpen={showGetPriceModal}
+        onClose={() => setShowGetPriceModal(false)}
+        designId={designId}
+        onAddToCart={handleAddToCart}
+        getQuoteData={getQuoteData}
+      />
     </div>
   );
 };

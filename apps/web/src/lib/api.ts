@@ -309,7 +309,8 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     },
     // [2025-01-27 18:00:00] 添加 signal 用于取消请求
     signal: controller.signal,
-    // [2025-12-07 07:55:00] 不再需要 credentials: 'include'（不使用 Cookie）
+    // [2025-12-19 02:50:00] 修复：购物车 API 需要 sessionId cookie，必须包含 credentials
+    credentials: 'include',
   };
 
   if (body && method !== 'GET') {
@@ -579,15 +580,66 @@ export const categoriesApi = {
 };
 
 // Cart API
+// [2025-12-19 02:50:00] 添加详细日志，修复购物车功能
 export const cartApi = {
-  get: () => api<CartResponse>('/cart'),
-  addItem: (variantId: string, quantity: number = 1, designId?: string) =>
-    api('/cart/items', { method: 'POST', body: { variantId, quantity, ...(designId && { designId }) } }),
-  updateItem: (itemId: string, quantity: number) =>
-    api(`/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } }),
-  removeItem: (itemId: string) =>
-    api(`/cart/items/${itemId}`, { method: 'DELETE' }),
-  clear: () => api('/cart', { method: 'DELETE' }),
+  get: async () => {
+    console.log('[Cart API] get() called');
+    try {
+      const result = await api<CartResponse>('/cart');
+      console.log('[Cart API] get() success:', { itemCount: result?.itemCount || 0 });
+      return result;
+    } catch (error) {
+      console.error('[Cart API] get() error:', error);
+      throw error;
+    }
+  },
+  addItem: async (variantId: string, quantity: number = 1, designId?: string) => {
+    console.log('[Cart API] addItem() called:', { variantId, quantity, designId });
+    try {
+      const result = await api('/cart/items', { 
+        method: 'POST', 
+        body: { variantId, quantity, ...(designId && { designId }) } 
+      });
+      console.log('[Cart API] addItem() success:', result);
+      return result;
+    } catch (error) {
+      console.error('[Cart API] addItem() error:', error);
+      throw error;
+    }
+  },
+  updateItem: async (itemId: string, quantity: number) => {
+    console.log('[Cart API] updateItem() called:', { itemId, quantity });
+    try {
+      const result = await api(`/cart/items/${itemId}`, { method: 'PATCH', body: { quantity } });
+      console.log('[Cart API] updateItem() success:', result);
+      return result;
+    } catch (error) {
+      console.error('[Cart API] updateItem() error:', error);
+      throw error;
+    }
+  },
+  removeItem: async (itemId: string) => {
+    console.log('[Cart API] removeItem() called:', { itemId });
+    try {
+      const result = await api(`/cart/items/${itemId}`, { method: 'DELETE' });
+      console.log('[Cart API] removeItem() success:', result);
+      return result;
+    } catch (error) {
+      console.error('[Cart API] removeItem() error:', error);
+      throw error;
+    }
+  },
+  clear: async () => {
+    console.log('[Cart API] clear() called');
+    try {
+      const result = await api('/cart', { method: 'DELETE' });
+      console.log('[Cart API] clear() success:', result);
+      return result;
+    } catch (error) {
+      console.error('[Cart API] clear() error:', error);
+      throw error;
+    }
+  },
 };
 
 // Checkout API

@@ -44,6 +44,7 @@ export function convertProductColorToColorGroup(
     colorName: productColor.colorName,
     quantities,
     positions: existingGroup?.positions || [], // [2025-12-19] 如果已有配置，保留；否则为空
+    unitPrice: existingGroup?.unitPrice || 0, // [2025-12-19 02:30:00] 颜色级别的单价
     perSizeOverrides: existingGroup?.perSizeOverrides,
     inheritFromPrevious: false
   };

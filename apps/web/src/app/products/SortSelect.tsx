@@ -24,7 +24,12 @@ export default function SortSelect({ defaultValue }: { defaultValue: string }) {
     <div className="plp-new__sort">
       <label>
         Sort By: 
-        <select name="sort" defaultValue={defaultValue} className="sort-select" onChange={handleChange}>
+        <select 
+          name="sort" 
+          value={defaultValue} // [2025-12-18 22:09:15] 使用 value 而不是 defaultValue，确保选中状态正确
+          className="sort-select" 
+          onChange={handleChange}
+        >
           <option value="">Recommended</option>
           <option value="price_asc">Price: Low to High</option>
           <option value="price_desc">Price: High to Low</option>

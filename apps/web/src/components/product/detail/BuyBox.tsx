@@ -99,7 +99,7 @@ export function BuyBox({
     if (!canAddToCart) return;
     
     const payload = {
-      productId: 'prod-001', // 从 props 传入
+      productId: productId || 'prod-001', // [2025-12-19 02:50:00] 使用实际的 productId
       title,
       selectedStyle,
       color: selectedColor,
@@ -112,15 +112,15 @@ export function BuyBox({
       currency: price.currency,
     };
     
-    console.log('[Add to Cart]', payload);
+    console.log('[BuyBox] Add to Cart payload:', payload);
     onAddToCart(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onAddToCart]);
+  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onAddToCart, productId]);
 
   const handleBuyNow = useCallback(() => {
     if (!canAddToCart) return;
     
     const payload = {
-      productId: 'prod-001',
+      productId: productId || 'prod-001', // [2025-12-19 02:50:00] 使用实际的 productId
       title,
       selectedStyle,
       color: selectedColor,
@@ -133,9 +133,9 @@ export function BuyBox({
       currency: price.currency,
     };
     
-    console.log('[Buy Now]', payload);
+    console.log('[BuyBox] Buy Now payload:', payload);
     onBuyNow(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onBuyNow]);
+  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onBuyNow, productId]);
 
   // [2025-12-08 14:40:00] 开始设计处理函数 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {

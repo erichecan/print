@@ -9,7 +9,8 @@ const guestMessageController = require('../controllers/guestMessageController');
 const { requireAdmin } = require('../middleware/auth');
 
 // Public route - anyone can submit a message
-router.post('/', guestMessageController.createGuestMessage);
+// [2025-12-19 01:55:00] 修复：使用完整路径 /guest-messages 以匹配 /api/guest-messages（之前使用 '/' 导致 404）
+router.post('/guest-messages', guestMessageController.createGuestMessage);
 
 // Admin routes - require authentication
 // [2025-12-18 23:15:00] 修复：使用 requireAdmin 中间件
