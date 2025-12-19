@@ -294,32 +294,41 @@ async function handleProxyRequest(
     const token = authHeader.replace(/^Bearer\s+/i, '') || null;
     const hasToken = !!token;
     
-    // [2025-12-07 07:55:00] 简化日志输出
+    // [2025-12-19 00:05:00] 修复：购物车 API 需要 Cookie（sessionId）来识别访客购物车
+    // [2025-12-07 07:55:00] 准备请求头：同时支持 Authorization header 和 Cookie
+    const cookieHeader = request.headers.get('cookie') || '';
+    const hasCookie = !!cookieHeader;
+    
+    // [2025-12-19 00:05:00] 增强日志：记录 Cookie 信息
     console.log('[API Proxy] 🔍 Request Details', {
       timestamp,
       method: request.method,
       path: backendPath,
       needsAuth,
       hasToken,
+      hasCookie,
       tokenPreview: token ? token.substring(0, 20) + '...' : 'none',
+      cookieKeys: cookieHeader ? cookieHeader.split(';').map(c => c.split('=')[0].trim()).filter(Boolean) : [],
       queryString: queryString || 'none',
     });
     
-    // [2025-12-07 07:55:00] 准备请求头：只使用 Authorization header
     // [2025-01-27 18:00:00] 添加 traceId 和 X-Request-Id 头
     const headers: HeadersInit = {
       // [2025-12-07 07:55:00] 如果存在 token，添加到 Authorization header
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      // [2025-12-19 00:05:00] 修复：转发 Cookie 到后端，购物车功能需要 sessionId
+      ...(cookieHeader ? { 'Cookie': cookieHeader } : {}),
       // [2025-01-27 18:00:00] 添加追踪ID，便于上游服务日志关联
       'X-Request-Id': traceId,
       'X-Trace-Id': traceId,
     };
     
     // [2025-12-02 04:15:00] 复制其他请求头（排除一些不需要的）
-    const excludeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding', 'authorization', 'x-request-id', 'x-trace-id'];
+    // [2025-12-19 00:05:00] 修复：不再排除 cookie，因为已经在上面单独处理了
+    const excludeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding', 'authorization', 'x-request-id', 'x-trace-id', 'cookie'];
     request.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
-      if (!excludeHeaders.includes(lowerKey) && lowerKey !== 'cookie') {
+      if (!excludeHeaders.includes(lowerKey)) {
         headers[key] = value;
       }
     });
@@ -356,12 +365,15 @@ async function handleProxyRequest(
       }
     }
     
+    // [2025-12-19 00:05:00] 增强日志：记录 Cookie 信息
     console.log('[API Proxy] Forwarding to upstream', {
       timestamp,
       traceId,
       url: upstreamUrl,
       method: request.method,
       hasToken,
+      hasCookie,
+      cookieKeys: cookieHeader ? cookieHeader.split(';').map(c => c.split('=')[0].trim()).filter(Boolean) : [],
       hasBody: !!body
     });
     
@@ -721,29 +733,47 @@ async function handleProxyRequest(
       headers: responseHeaders,
     });
   } catch (error: any) {
-    // [2025-01-27 18:00:00] 使用统一错误格式
-    const traceId = generateTraceId();
-    console.error('[API Proxy] ❌ Proxy error:', {
-      timestamp,
-      traceId,
+    // [2025-12-19 00:00:00] 增强错误日志，记录完整的错误信息用于调试
+    const errorTraceId = traceId || generateTraceId();
+    const errorTimestamp = new Date().toISOString();
+    
+    console.error('[API Proxy] ❌ Proxy error (catch block):', {
+      timestamp: errorTimestamp,
+      traceId: errorTraceId,
       error: error?.message,
+      errorName: error?.name,
+      errorType: error?.constructor?.name,
       stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
-      name: error?.name,
       path: params?.path,
       pathType: typeof params?.path,
       pathIsArray: Array.isArray(params?.path),
+      urlPath: request.nextUrl.pathname,
+      method: request.method,
+      // [2025-12-19 00:00:00] 记录更多上下文信息
+      hasParams: !!params,
+      paramsKeys: params ? Object.keys(params) : [],
+      originalError: error?.originalError?.message,
+      allErrors: error?.allErrors,
     });
     
+    // [2025-12-19 00:00:00] 在生产环境也提供基本错误信息，便于排查
     const errorResponse = createErrorResponse(
       ErrorCode.PROXY_ERROR,
       '代理请求失败',
-      traceId,
-      process.env.NODE_ENV === 'development' ? {
-        error: error?.message,
-        stack: error?.stack,
+      errorTraceId,
+      {
+        error: error?.message || 'Unknown error',
         path: params?.path,
-        pathType: typeof params?.path,
-      } : undefined
+        method: request.method,
+        // [2025-12-19 00:00:00] 生产环境也提供错误类型，便于排查
+        errorType: error?.name || error?.constructor?.name || 'Unknown',
+        ...(process.env.NODE_ENV === 'development' ? {
+          stack: error?.stack,
+          pathType: typeof params?.path,
+          originalError: error?.originalError?.message,
+          allErrors: error?.allErrors,
+        } : {}),
+      }
     );
     
     return NextResponse.json(
@@ -751,8 +781,8 @@ async function handleProxyRequest(
       { 
         status: 500,
         headers: {
-          'X-Trace-Id': traceId,
-          'X-Request-Id': traceId,
+          'X-Trace-Id': errorTraceId,
+          'X-Request-Id': errorTraceId,
         },
       }
     );

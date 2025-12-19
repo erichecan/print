@@ -217,23 +217,29 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       }
     };
   } catch (error) {
-    // [2025-12-12 14:15:00] 增强：记录详细的错误信息，包括错误类型和上下文
-    console.error('[Account] getSessionSafe error', {
-      traceId,
-      timestamp,
-      error: error instanceof Error ? error.message : String(error),
-      errorName: error instanceof Error ? error.name : 'Unknown',
-      stack: error instanceof Error ? error.stack : undefined,
-      // [2025-12-12 14:15:00] 记录错误类型用于分类
-      errorType: error instanceof TypeError ? 'TypeError' :
-                 error instanceof Error && error.name === 'AbortError' ? 'AbortError' :
-                 error instanceof Error ? error.constructor.name : 'Unknown',
-      // [2025-12-12 14:15:00] 记录环境信息用于调试
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        NEXT_PHASE: process.env.NEXT_PHASE,
-      },
-    });
+    // [2025-12-19] 超级安全模式：确保日志记录本身不会导致崩溃
+    try {
+      // [2025-12-12 14:15:00] 增强：记录详细的错误信息，包括错误类型和上下文
+      console.error('[Account] getSessionSafe error', {
+        traceId,
+        timestamp,
+        error: error instanceof Error ? error.message : String(error),
+        errorName: error instanceof Error ? error.name : 'Unknown',
+        stack: error instanceof Error ? error.stack : undefined,
+        // [2025-12-12 14:15:00] 记录错误类型用于分类
+        errorType: error instanceof TypeError ? 'TypeError' :
+                  error instanceof Error && error.name === 'AbortError' ? 'AbortError' :
+                  error instanceof Error ? error.constructor.name : 'Unknown',
+        // [2025-12-12 14:15:00] 记录环境信息用于调试
+        environment: {
+          NODE_ENV: process.env.NODE_ENV,
+          NEXT_PHASE: process.env.NEXT_PHASE,
+        },
+      });
+    } catch (loggingError) {
+      // 如果日志记录失败，静默处理，防止二次崩溃
+      // 可以在这里使用更原始的日志记录方式，但为了保证不崩溃，暂时留空
+    }
     return { 
       ok: false, 
       code: 'UNKNOWN_ERROR', 
