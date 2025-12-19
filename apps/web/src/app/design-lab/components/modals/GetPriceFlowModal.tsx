@@ -476,7 +476,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
                 });
               }}
             >
-              + Add Women's
+              {/* [2025-12-19 16:02:10] 修复 ESLint react/no-unescaped-entities：转义 apostrophe（显示效果不变） */}
+              + Add Women&apos;s
             </button>
           </div>
         )}
@@ -484,7 +485,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         {/* [2025-12-07 15:30:00] WOMEN'S 尺码（如果已添加） */}
         {showWomensSizes && (
           <div className="dl-get-price-flow__size-section">
-            <h4 className="dl-get-price-flow__size-section-title">WOMEN'S</h4>
+            {/* [2025-12-19 16:02:10] 修复 ESLint react/no-unescaped-entities：转义 apostrophe（显示效果不变） */}
+            <h4 className="dl-get-price-flow__size-section-title">WOMEN&apos;S</h4>
             <div className="dl-get-price-flow__size-grid">
               {womensSizes.map(size => {
                 const sizeFee = ['2XL', '3XL'].includes(size)
@@ -526,7 +528,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           <div className="dl-get-price-flow__recommendations-grid">
             <div className="dl-get-price-flow__recommendation-card">
               <div className="dl-get-price-flow__recommendation-icon">👕</div>
-              <h5>WOMEN'S</h5>
+              {/* [2025-12-19 16:02:10] 修复 ESLint react/no-unescaped-entities：转义 apostrophe（显示效果不变） */}
+              <h5>WOMEN&apos;S</h5>
               <button className="dl-get-price-flow__recommendation-btn">+ Add style</button>
             </div>
             <div className="dl-get-price-flow__recommendation-card">

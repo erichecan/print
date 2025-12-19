@@ -175,7 +175,8 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
           {activeTab === 'save' && (
             <div className="dl-save-share-modal__content">
               <p className="dl-save-share-modal__description">
-                Save your design to access it later from "My Designs".
+                {/* [2025-12-19 16:02:20] 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
+                Save your design to access it later from &quot;My Designs&quot;.
               </p>
               <div className="dl-save-share-modal__form">
                 <label className="dl-save-share-modal__label">
@@ -189,7 +190,8 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
                 </label>
                 {!designId && (
                   <p className="dl-save-share-modal__hint" style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>
-                    Your design will be saved when you click "Save Design".
+                    {/* [2025-12-19 16:02:20] 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
+                    Your design will be saved when you click &quot;Save Design&quot;.
                   </p>
                 )}
               </div>

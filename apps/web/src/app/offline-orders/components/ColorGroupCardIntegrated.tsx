@@ -262,7 +262,8 @@ export function ColorGroupCardIntegrated({
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">继承上一颜色的 print positions</h3>
             <p className="text-sm text-gray-600 mb-4">
-              确定要继承"{previousGroup?.colorName}"的印刷位置配置吗？这将复制所有位置设置（不包含文件）。
+              {/* [2025-12-19 16:02:40] 修复 ESLint react/no-unescaped-entities：避免直接使用双引号（显示效果不变） */}
+              确定要继承“{previousGroup?.colorName}”的印刷位置配置吗？这将复制所有位置设置（不包含文件）。
             </p>
             <div className="flex justify-end gap-3">
               <button

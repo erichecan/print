@@ -49,7 +49,8 @@ export function AddColorModal({
                   继承上一颜色的 print positions
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  复制"{previousColorName}"的所有印刷位置配置（不包含文件）
+                  {/* [2025-12-19 16:02:30] 修复 ESLint react/no-unescaped-entities：避免直接使用双引号（显示效果不变） */}
+                  复制“{previousColorName}”的所有印刷位置配置（不包含文件）
                 </div>
               </div>
             </label>
