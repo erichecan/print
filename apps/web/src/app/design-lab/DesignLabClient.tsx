@@ -22,6 +22,7 @@ import { useDesignLabStore } from '@/contexts/designLabStore';
 import { productsApi } from '@/lib/api';
 import type { DesignCanvasSnapshot } from '@/lib/api';
 import { saveDesignToLocalStorage, loadDesignFromLocalStorage, clearDesignFromLocalStorage } from './utils/localStorage'; // [2025-12-19 16:30:00] 导入本地存储工具
+import { loadDesignToDesignLab } from './utils/designLoader'; // [2025-01-31 00:10:00] 导入设计加载工具
 import { useToast } from '@/hooks/useToast'; // [2025-12-08] 引入Toast
 import { canvasEngine, CanvasEventType } from '@/design/canvas/engine'; // [2025-01-30 23:30:00] Design Lab 4.0: 使用画布引擎
 import ToolPanel, { type ToolPanelType } from './components/ToolPanel';
@@ -3825,10 +3826,106 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     }
   }, [canvasInitialized, currentView, loadBackgroundImage]); // [2025-01-31 16:55:00] 添加 loadBackgroundImage 到依赖，但内部有重复检查
 
-  // [2025-12-19 16:30:00] 页面加载时自动恢复本地草稿
+  // [2025-01-31 00:10:00] 从 URL 参数加载设计（优先级高于本地草稿恢复）
   useEffect(() => {
     if (!canvasInitialized || !fabricCanvasRef.current || !fabricRef.current) {
       return; // 等待canvas初始化完成
+    }
+
+    const loadDesignFromUrl = async () => {
+      const designId = searchParams?.get('designId');
+      const source = searchParams?.get('source') as 'cloud' | 'local' | null;
+      
+      if (!designId) {
+        return; // 没有 designId，跳过
+      }
+
+      try {
+        console.log('[DesignLab] Loading design from URL:', { designId, source });
+        
+        // [2025-01-31 00:10:00] 加载设计
+        const result = await loadDesignToDesignLab(designId, source || 'cloud');
+        
+        if (!result.success || !result.design) {
+          console.error('[DesignLab] Failed to load design from URL:', result.error);
+          showErrorToast(result.error || '加载设计失败');
+          return;
+        }
+
+        const design = result.design;
+        
+        // [2025-01-31 00:10:00] 恢复设计名称
+        if (design.name) {
+          setDesignName(design.name);
+        }
+
+        // [2025-01-31 00:10:00] 恢复产品信息
+        if (design.productInfo) {
+          setProductInfo((prev) => ({
+            ...prev,
+            productId: design.productInfo.productId,
+            productName: design.productInfo.productName,
+            variantId: design.productInfo.variantId,
+            color: design.productInfo.color,
+          }));
+        }
+
+        // [2025-01-31 00:10:00] 恢复视图画布
+        if (design.viewCanvases) {
+          setViewCanvases(design.viewCanvases);
+          
+          // 切换到保存时的视图
+          if (design.currentView) {
+            setView(design.currentView);
+            // 加载当前视图的画布到fabric canvas
+            setTimeout(() => {
+              if (fabricCanvasRef.current && design.viewCanvases[design.currentView]) {
+                snapshotToCanvas(design.viewCanvases[design.currentView], fabricCanvasRef.current);
+                // 加载背景图片
+                loadBackgroundImage(design.currentView);
+              }
+            }, 200);
+          }
+        } else if (design.canvasData) {
+          // [2025-01-31 00:10:00] 如果只有单面数据，只恢复当前视图
+          const currentView = design.currentView || 'front';
+          setView(currentView);
+          setTimeout(() => {
+            if (fabricCanvasRef.current) {
+              snapshotToCanvas(design.canvasData, fabricCanvasRef.current);
+              loadBackgroundImage(currentView);
+            }
+          }, 200);
+        }
+
+        // [2025-01-31 00:10:00] 设置设计ID
+        if (result.source === 'cloud') {
+          setCurrentDesignId(design.id);
+        }
+
+        showSuccessToast('设计加载成功');
+      } catch (error) {
+        console.error('[DesignLab] Failed to load design from URL:', error);
+        showErrorToast('加载设计失败，请重试');
+      }
+    };
+
+    // [2025-01-31 00:10:00] 延迟加载，确保所有初始化完成
+    const timeoutId = setTimeout(loadDesignFromUrl, 500);
+    return () => clearTimeout(timeoutId);
+  }, [canvasInitialized, searchParams, snapshotToCanvas, loadBackgroundImage, setView, setViewCanvases, showErrorToast, showSuccessToast]);
+
+  // [2025-12-19 16:30:00] 页面加载时自动恢复本地草稿（仅在URL中没有designId时）
+  useEffect(() => {
+    if (!canvasInitialized || !fabricCanvasRef.current || !fabricRef.current) {
+      return; // 等待canvas初始化完成
+    }
+
+    // [2025-01-31 00:10:00] 如果URL中有designId，跳过本地草稿恢复
+    const designId = searchParams?.get('designId');
+    if (designId) {
+      console.log('[DesignLab] designId in URL, skipping local draft restoration');
+      return;
     }
 
     const restoreDraft = async () => {

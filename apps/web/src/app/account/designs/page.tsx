@@ -1,24 +1,61 @@
 /**
  * Account Designs Page
  * [2025-12-18 23:25:00] 我的设计页面
+ * [2025-01-31 00:05:00] 更新：支持本地+云端设计合并显示、30天筛选、编辑功能
  */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { designsApi } from '@/lib/api';
-import type { UserDesign } from '@/lib/api';
+import { getAllLocalDesigns, getLocalDesignsByDays, deleteLocalDesign } from '@/app/design-lab/utils/localStorage';
+import { mergeDesigns, filterDesignsByDays, type MergedDesign } from '../utils/designMerger';
+import { DesignTimeFilter, type TimeFilterOption } from '../components/DesignTimeFilter';
+import { DesignCard } from '../components/DesignCard';
+import { LocalDesignSyncPrompt } from '../components/LocalDesignSyncPrompt';
+import { useAccount } from '@/contexts/AccountContext';
 
 export default function AccountDesignsPage() {
-  const [designs, setDesigns] = useState<UserDesign[]>([]);
+  const { user } = useAccount(); // [2025-01-31 00:20:00] 使用 useAccount hook
+  const [mergedDesigns, setMergedDesigns] = useState<MergedDesign[]>([]);
+  const [filteredDesigns, setFilteredDesigns] = useState<MergedDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [timeFilter, setTimeFilter] = useState<TimeFilterOption>(30); // [2025-01-31 00:05:00] 默认30天
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // [2025-01-31 00:20:00] 用于触发刷新
 
+  // [2025-01-31 00:05:00] 加载设计数据
   useEffect(() => {
     const fetchDesigns = async () => {
       try {
         setLoading(true);
-        const response = await designsApi.list();
-        setDesigns(response.designs || []);
+        setError(null);
+
+        // 1. 加载云端设计（如果用户已登录）
+        let cloudDesigns = [];
+        if (user) {
+          try {
+            const response = await designsApi.list(timeFilter > 0 ? timeFilter : undefined);
+            cloudDesigns = response.designs || [];
+            // [2025-01-31 00:05:00] 确保 updatedAt 字段存在（使用 createdAt 作为 fallback）
+            cloudDesigns = cloudDesigns.map(design => ({
+              ...design,
+              updatedAt: design.updatedAt || design.createdAt,
+            }));
+          } catch (err) {
+            console.warn('[AccountDesigns] Failed to load cloud designs:', err);
+            // 云端加载失败不影响本地设计显示
+          }
+        }
+
+        // 2. 加载本地设计
+        const localDesigns = timeFilter > 0 
+          ? getLocalDesignsByDays(timeFilter)
+          : getAllLocalDesigns();
+
+        // 3. 合并设计
+        const merged = mergeDesigns(cloudDesigns, localDesigns);
+        setMergedDesigns(merged);
+        setFilteredDesigns(merged);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load designs';
         setError(errorMessage);
@@ -29,7 +66,38 @@ export default function AccountDesignsPage() {
     };
 
     fetchDesigns();
-  }, []);
+  }, [user, timeFilter, refreshTrigger]); // [2025-01-31 00:20:00] 添加 refreshTrigger 依赖
+
+  // [2025-01-31 00:05:00] 处理删除设计
+  const handleDelete = async (id: string, source: 'cloud' | 'local') => {
+    try {
+      if (source === 'cloud') {
+        // 删除云端设计
+        await designsApi.delete(id);
+      } else {
+        // 删除本地设计
+        const result = deleteLocalDesign(id);
+        if (!result.success) {
+          alert(result.error || '删除失败');
+          return;
+        }
+      }
+
+      // 更新列表
+      const updatedMerged = mergedDesigns.filter(d => {
+        if (source === 'cloud') {
+          return d.cloudId !== id;
+        } else {
+          return d.localId !== id;
+        }
+      });
+      setMergedDesigns(updatedMerged);
+      setFilteredDesigns(updatedMerged);
+    } catch (err) {
+      console.error('[AccountDesigns] Error deleting design:', err);
+      alert('删除失败，请重试');
+    }
+  };
 
   if (loading) {
     return (
@@ -43,27 +111,75 @@ export default function AccountDesignsPage() {
     return (
       <div style={{ padding: '48px', textAlign: 'center' }}>
         <p style={{ color: '#ef4444' }}>错误: {error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            marginTop: '16px',
+            padding: '8px 16px',
+            backgroundColor: '#2563eb',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+        >
+          重试
+        </button>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '24px' }}>我的设计</h1>
-      
-      {designs.length === 0 ? (
-        <div style={{ 
-          padding: '48px', 
-          textAlign: 'center', 
-          backgroundColor: '#f8fafc', 
-          borderRadius: '8px',
-          border: '1px solid #e0e0e0'
-        }}>
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>我的设计</h1>
+        <a
+          href="/design-lab"
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#2563eb',
+            color: '#fff',
+            textDecoration: 'none',
+            borderRadius: '6px',
+            fontWeight: '500',
+            fontSize: '0.875rem',
+          }}
+        >
+          + 新建设计
+        </a>
+      </div>
+
+      {/* [2025-01-31 00:20:00] 本地设计同步提示（仅当用户已登录时显示） */}
+      {user && (
+        <LocalDesignSyncPrompt
+          cloudDesigns={mergedDesigns.filter(d => d.source === 'cloud' || d.source === 'both')}
+          onSyncComplete={() => {
+            setRefreshTrigger(prev => prev + 1); // 触发刷新
+          }}
+        />
+      )}
+
+      {/* [2025-01-31 00:05:00] 时间筛选器 */}
+      <DesignTimeFilter value={timeFilter} onChange={setTimeFilter} />
+
+      {/* 设计列表 */}
+      {filteredDesigns.length === 0 ? (
+        <div
+          style={{
+            padding: '48px',
+            textAlign: 'center',
+            backgroundColor: '#f8fafc',
+            borderRadius: '8px',
+            border: '1px solid #e0e0e0',
+          }}
+        >
           <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '16px' }}>
-            您还没有保存任何设计
+            {timeFilter > 0
+              ? `最近 ${timeFilter} 天内没有设计`
+              : '您还没有保存任何设计'}
           </p>
-          <a 
-            href="/design-lab" 
+          <a
+            href="/design-lab"
             style={{
               display: 'inline-block',
               padding: '12px 24px',
@@ -71,66 +187,33 @@ export default function AccountDesignsPage() {
               color: '#fff',
               textDecoration: 'none',
               borderRadius: '6px',
-              fontWeight: '500'
+              fontWeight: '500',
             }}
           >
             开始设计
           </a>
         </div>
       ) : (
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', 
-          gap: '24px' 
-        }}>
-          {designs.map((design) => (
-            <div 
-              key={design.id}
-              style={{
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                padding: '16px',
-                backgroundColor: '#fff',
-                cursor: 'pointer',
-                transition: 'box-shadow 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-              onClick={() => window.location.href = `/design-lab?design=${design.id}`}
-            >
-              {design.thumbnailUrl && (
-                <img 
-                  src={design.thumbnailUrl} 
-                  alt={design.name || 'Design'}
-                  style={{
-                    width: '100%',
-                    height: '200px',
-                    objectFit: 'cover',
-                    borderRadius: '4px',
-                    marginBottom: '12px'
-                  }}
-                />
-              )}
-              <h3 style={{ 
-                fontSize: '1.1rem', 
-                fontWeight: '600', 
-                marginBottom: '8px',
-                color: '#1f2937'
-              }}>
-                {design.name || '未命名设计'}
-              </h3>
-              {design.createdAt && (
-                <p style={{ fontSize: '0.875rem', color: '#666' }}>
-                  {new Date(design.createdAt).toLocaleDateString('zh-CN')}
-                </p>
-              )}
-            </div>
-          ))}
-        </div>
+        <>
+          <p style={{ fontSize: '0.875rem', color: '#666', marginBottom: '16px' }}>
+            共 {filteredDesigns.length} 个设计
+          </p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gap: '24px',
+            }}
+          >
+            {filteredDesigns.map((design) => (
+              <DesignCard
+                key={design.id}
+                design={design}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

@@ -26,7 +26,7 @@ export const metadata: Metadata = generateSEOMetadata({
 export default async function DesignLabPage({
   searchParams,
 }: {
-  searchParams: Promise<{ productId?: string; colorId?: string; designId?: string; variantId?: string }>;
+  searchParams: Promise<{ productId?: string; colorId?: string; designId?: string; variantId?: string; source?: string }>;
 }) {
   // [2025-01-30 23:00:00] Design Lab 4.0: 服务端预取产品数据（可选，不阻塞）
   const params = await searchParams;

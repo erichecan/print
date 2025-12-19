@@ -9,7 +9,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, ordersApi } from '@/lib/api';
 import { ACCOUNT_ROUTES } from '@/lib/routes/account';
-import { useAccount, useOrders } from '@/hooks/useAccount';
+import { useAccount } from '@/contexts/AccountContext';
+import { useOrders } from '@/hooks/useAccount';
 
 export default function AccountPage() {
   const router = useRouter();

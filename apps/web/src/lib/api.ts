@@ -708,11 +708,16 @@ export interface UserDesign {
   name: string;
   thumbnailUrl?: string | null;
   createdAt: string;
+  updatedAt?: string; // [2025-01-30 23:58:00] 新增：最后编辑时间
   productName?: string | null;
 }
 
 export const designsApi = {
-  list: () => api<{ designs: UserDesign[]; total: number }>('/user/designs'),
+  // [2025-01-30 23:58:00] 支持时间筛选参数 days
+  list: (days?: number) => {
+    const query = days && days > 0 ? `?days=${days}` : '';
+    return api<{ designs: UserDesign[]; total: number }>(`/user/designs${query}`);
+  },
   get: (id: string) => api<{ data: DesignDraft }>(`/designs/${id}`), // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
   delete: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),
 };
