@@ -10,8 +10,8 @@ steps:
     args:
       - '-c'
       - |
-        # [2025-12-19 15:40:30] 注意：Cloud Build 会对 `${VAR}` 进行 substitution 预处理
-        # 这里避免使用 bash 的 `${VAR:-}` 参数展开语法，改用 if 判断，防止触发 INVALID_ARGUMENT。
+        # [2025-12-19 15:40:30] 注意：Cloud Build 会对形如 "${SOME_NAME}" 的文本进行 substitution 预处理
+        # 这里避免使用 bash 的参数展开语法（带花括号），改用 if 判断，防止触发 INVALID_ARGUMENT。
         set -eo pipefail
         # 优先级：git(若存在) -> SHORT_SHA/COMMIT_SHA(触发器) -> BUILD_ID -> 时间戳
         RAW_SHA=""
@@ -19,7 +19,7 @@ steps:
           RAW_SHA="$(git rev-parse --short HEAD | tr -d '\n' | tr -d '\r')"
         fi
         if [ -z "$RAW_SHA" ]; then
-          # 避免 `${VAR}` 语法触发 Cloud Build substitution 预处理
+          # 避免带花括号的变量文本触发 Cloud Build substitution 预处理
           if [ -n "$SHORT_SHA" ]; then RAW_SHA="$SHORT_SHA"; fi
           if [ -z "$RAW_SHA" ] && [ -n "$COMMIT_SHA" ]; then RAW_SHA="$COMMIT_SHA"; fi
         fi
