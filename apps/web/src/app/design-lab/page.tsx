@@ -68,8 +68,32 @@ export default async function DesignLabPage({
 
   // [2025-01-30 23:30:00] Design Lab 4.0: 使用 layout 的分阶段初始化
   // layout.tsx 会自动处理 Boot/Config/Data Prefetch/Feature Hydration 阶段
+  // [2025-01-31 18:30:00] 修复：DesignLabClient5.0 使用 useSearchParams()，必须用 Suspense 包裹
   return (
-    <DesignLabClient initialProductData={initialProductData} />
+    <Suspense fallback={
+      <section style={{ 
+        minHeight: '100vh', 
+        display: 'grid', 
+        placeItems: 'center', 
+        background: '#f5f5f5' 
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#666' }}>
+            Preparing the Design Lab…
+          </div>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '4px solid #f3f3f3', 
+            borderTop: '4px solid #3498db', 
+            borderRadius: '50%', 
+            margin: '0 auto' 
+          }} />
+        </div>
+      </section>
+    }>
+      <DesignLabClient initialProductData={initialProductData} />
+    </Suspense>
   );
 }
 

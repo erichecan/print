@@ -37,11 +37,14 @@ const FILTERED_ERROR_PATTERNS = [
 ];
 
 // [2025-01-29 01:00:00] 需要被过滤的警告模式
+// [2025-01-31 18:35:00] 更新：添加更完整的 CSS 预加载警告过滤模式
 const FILTERED_WARNING_PATTERNS = [
   /PerformanceObserver/i,
   /preloaded.*not used/i,
   /preload.*was preloaded.*not used/i,
   /resource.*was preloaded.*not used/i,
+  /was preloaded using link preload but not used/i, // [2025-01-31 18:35:00] 匹配 Next.js CSS 预加载警告
+  /preloaded using link preload but not used/i, // [2025-01-31 18:35:00] 更通用的匹配
 ];
 
 /**
