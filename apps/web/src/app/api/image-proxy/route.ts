@@ -6,8 +6,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateTraceId } from '@/shared/errors';
 
 /**
+ * OPTIONS /api/image-proxy
+ * [2025-01-30 19:00:00] 处理 CORS 预检请求
+ */
+export async function OPTIONS(request: NextRequest) {
+  const headers = new Headers();
+  headers.set('Access-Control-Allow-Origin', '*');
+  headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Request-Id, X-Trace-Id');
+  return new NextResponse(null, { status: 204, headers });
+}
+
+/**
  * GET /api/image-proxy
  * [2025-01-27 19:15:00] 代理外部图片，添加缓存头和错误处理
+ * [2025-01-30 19:00:00] 增强：添加 CORS 支持、改进错误处理
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -16,6 +29,14 @@ export async function GET(request: NextRequest) {
                    request.headers.get('x-trace-id') || 
                    generateTraceId();
   const timestamp = new Date().toISOString();
+
+  // [2025-01-30 19:00:00] 添加 CORS 头，确保浏览器可以访问错误响应
+  const corsHeaders = new Headers();
+  corsHeaders.set('Access-Control-Allow-Origin', '*');
+  corsHeaders.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  corsHeaders.set('Access-Control-Allow-Headers', 'Content-Type, X-Request-Id, X-Trace-Id');
+  corsHeaders.set('X-Request-Id', requestId);
+  corsHeaders.set('X-Trace-Id', requestId);
 
   // [2025-01-27 19:15:00] 验证 src 参数
   if (!src || !/^https?:\/\//.test(src)) {
@@ -26,7 +47,7 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.json(
       { error: 'Bad src parameter. Must be a valid HTTP/HTTPS URL.' },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -51,7 +72,7 @@ export async function GET(request: NextRequest) {
       });
       return NextResponse.json(
         { error: 'Domain not allowed' },
-        { status: 403 }
+        { status: 403, headers: corsHeaders }
       );
     }
   } catch (urlError) {
@@ -62,7 +83,7 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.json(
       { error: 'Invalid URL format' },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
 
@@ -87,9 +108,18 @@ export async function GET(request: NextRequest) {
         statusText: response.statusText,
         src: src.substring(0, 100)
       });
+      // [2025-01-30 19:00:00] 添加详细的错误信息，包括原始 URL
       return NextResponse.json(
-        { error: 'Upstream error', status: response.status },
-        { status: response.status >= 500 ? 502 : response.status }
+        { 
+          error: 'Upstream error', 
+          status: response.status,
+          message: `Failed to fetch image from upstream: ${response.statusText}`,
+          src: src.substring(0, 100)
+        },
+        { 
+          status: response.status >= 500 ? 502 : response.status,
+          headers: corsHeaders
+        }
       );
     }
 
@@ -101,11 +131,10 @@ export async function GET(request: NextRequest) {
     const contentType = response.headers.get('content-type') || 'image/jpeg';
 
     // [2025-01-27 19:15:00] 设置响应头
-    const headers = new Headers();
+    // [2025-01-30 19:00:00] 添加 CORS 头，确保浏览器可以访问
+    const headers = new Headers(corsHeaders);
     headers.set('Content-Type', contentType);
     headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
-    headers.set('X-Request-Id', requestId);
-    headers.set('X-Trace-Id', requestId);
     
     // [2025-01-27 19:15:00] 复制上游的缓存相关头（如果有）
     const upstreamCacheControl = response.headers.get('cache-control');
@@ -135,12 +164,17 @@ export async function GET(request: NextRequest) {
     });
 
     // [2025-01-27 19:15:00] 返回错误响应
+    // [2025-01-30 19:00:00] 添加 CORS 头和详细错误信息
     return NextResponse.json(
       { 
         error: 'Proxy failed',
         message: error instanceof Error ? error.message : 'Unknown error',
+        src: src.substring(0, 100)
       },
-      { status: 502 }
+      { 
+        status: 502,
+        headers: corsHeaders
+      }
     );
   }
 }

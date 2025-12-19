@@ -1744,11 +1744,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               obj.controls.duplicateIcon = duplicateIconControl;
               obj.controls.resizeIcon = resizeIconControl;
               
-              // [2025-12-14 07:35:00] 隐藏默认的角点控件（tl, tr, bl, br, ml, mt, mr, mb, mtr）
-              // [2025-12-14 07:45:00] 注意：保留 br（右下角）控件，因为我们使用自定义的 resizeIcon，但也可以隐藏 br
-              // 方法：将默认控件的 sizeX 和 sizeY 设为 0，隐藏它们
-              const defaultControls = ['tl', 'tr', 'bl', 'br', 'ml', 'mt', 'mr', 'mb', 'mtr'];
-              defaultControls.forEach(controlKey => {
+              // [2025-01-30 21:30:00] 修复：恢复默认的旋转控件（mtr），但隐藏其他不需要的控件
+              // 方法：只隐藏不需要的控件，保留 mtr（旋转控件）以支持旋转功能
+              const defaultControlsToHide = ['tl', 'tr', 'bl', 'br', 'ml', 'mt', 'mr', 'mb'];
+              defaultControlsToHide.forEach(controlKey => {
                 if (obj.controls && obj.controls[controlKey]) {
                   const defaultControl = obj.controls[controlKey];
                   // 将默认控件的 sizeX 和 sizeY 设为 0，隐藏它们
@@ -1756,6 +1755,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   defaultControl.sizeY = 0;
                 }
               });
+              
+              // [2025-01-30 21:30:00] 修复：确保 mtr（旋转控件）可见且有正确的 cursor 样式
+              if (obj.controls && obj.controls.mtr) {
+                const mtrControl = obj.controls.mtr;
+                // 确保旋转控件有合理的尺寸
+                if (mtrControl.sizeX === 0 || mtrControl.sizeY === 0) {
+                  mtrControl.sizeX = 28;
+                  mtrControl.sizeY = 28;
+                }
+                // [2025-01-30 21:35:00] 修复：使用 Fabric.js 默认的旋转 cursor 样式（crosshair），确保手势变化触发位置正确
+                // 注意：不手动设置 cursorStyle，让 Fabric.js 使用默认的旋转 cursor 样式，这样可以确保 cursor 变化触发位置与控件位置一致
+              }
               
               // [2025-12-14 07:35:00] 步骤2：确保边框颜色和宽度正确
               obj.set({
@@ -2120,6 +2131,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   };
 
   // [2025-01-30 12:58:00] Add Art: 添加艺术素材到 Fabric canvas（与 4.0/PRD 一致：Add Art → 画布生成图片对象 → 自动进入 Edit Art）
+  // [2025-01-30 19:00:00] 增强：添加降级方案和详细错误处理
   const handleAddArt = (artUrl: string, artName: string) => {
     const canvas = fabricCanvasRef.current;
     const fabric = fabricRef.current;
@@ -2130,10 +2142,16 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     // [2025-01-30 13:20:00] CORS 修复：如果是 GCS URL，使用图片代理绕过 CORS
     let imageUrl = artUrl;
+    let useProxy = false;
     if (artUrl && (artUrl.includes('storage.googleapis.com') || artUrl.includes('.storage.googleapis.com'))) {
       // [2025-01-30 13:20:00] 使用前端图片代理 API 绕过 CORS
       imageUrl = `/api/image-proxy?src=${encodeURIComponent(artUrl)}`;
-      console.log('[DesignLab 5.0] Using image proxy for GCS URL:', { original: artUrl.substring(0, 60) + '...', proxy: imageUrl });
+      useProxy = true;
+      console.log('[DesignLab 5.0] Using image proxy for GCS URL:', { 
+        original: artUrl.substring(0, 60) + '...', 
+        proxy: imageUrl,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // [2025-01-30 12:58:00] 使用原生 Image 对象加载图片
@@ -2217,9 +2235,135 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       }
     };
     
-    imgElement.onerror = (error) => {
-      console.error('[DesignLab 5.0] ❌ Failed to load art image:', error);
-      console.error('[DesignLab 5.0] Failed URL:', imageUrl);
+    // [2025-01-30 19:00:00] 增强错误处理：添加降级方案和详细日志
+    imgElement.onerror = async (error) => {
+      const timestamp = new Date().toISOString();
+      console.error('[DesignLab 5.0] ❌ Failed to load art image:', {
+        error,
+        imageUrl,
+        originalUrl: artUrl,
+        useProxy,
+        timestamp
+      });
+
+      // [2025-01-30 19:00:00] 如果使用代理失败，尝试直接加载原始 URL（降级方案）
+      if (useProxy && artUrl) {
+        console.warn('[DesignLab 5.0] ⚠️ Proxy failed, trying direct load as fallback:', {
+          originalUrl: artUrl.substring(0, 60) + '...',
+          timestamp
+        });
+
+        // 检查代理 API 的响应，获取详细错误信息
+        try {
+          const proxyResponse = await fetch(imageUrl);
+          if (!proxyResponse.ok) {
+            const errorData = await proxyResponse.json().catch(() => ({}));
+            console.error('[DesignLab 5.0] Proxy API error details:', {
+              status: proxyResponse.status,
+              statusText: proxyResponse.statusText,
+              error: errorData,
+              timestamp
+            });
+          }
+        } catch (fetchError) {
+          console.error('[DesignLab 5.0] Failed to check proxy response:', {
+            error: fetchError instanceof Error ? fetchError.message : String(fetchError),
+            timestamp
+          });
+        }
+
+        // [2025-01-30 19:00:00] 降级方案：尝试直接加载原始 URL
+        const fallbackImg = new window.Image();
+        fallbackImg.crossOrigin = 'anonymous';
+        
+        fallbackImg.onload = () => {
+          console.log('[DesignLab 5.0] ✅ Fallback direct load succeeded');
+          // 重新调用 handleAddArt，但这次不使用代理
+          // 为了避免无限循环，我们直接处理这个图片
+          try {
+            const fabricImage = new fabric.Image(fallbackImg, {
+              selectable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+              borderColor: '#808080',
+              borderScaleFactor: 2,
+              lockRotation: false,
+              lockScalingX: false,
+              lockScalingY: false,
+              lockUniScaling: false,
+              lockMovementX: false,
+              lockMovementY: false,
+              centeredScaling: true,
+              centeredRotation: true,
+            });
+            
+            const SCALE_RATIO = 0.3;
+            const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
+            const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
+            
+            const originalWidth = fabricImage.width || 1;
+            const originalHeight = fabricImage.height || 1;
+            
+            const scaleX = targetMaxWidth / originalWidth;
+            const scaleY = targetMaxHeight / originalHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
+            
+            fabricImage.scale(scale);
+            fabricImage.set({
+              left: CANVAS_WIDTH / 2,
+              top: CANVAS_HEIGHT / 2,
+              originX: 'center',
+              originY: 'center',
+              name: `art_${Date.now()}`,
+              data: {
+                layerType: 'art',
+                zIndex: 15,
+              },
+            });
+            
+            fabricImage.setCoords();
+            canvas.add(fabricImage);
+            
+            if (typeof (canvas as any).addIconControlsToObject === 'function') {
+              (canvas as any).addIconControlsToObject(fabricImage);
+            }
+            
+            canvas.setActiveObject(fabricImage);
+            canvas.renderAll();
+            
+            setSelectedArt(fabricImage);
+            setSelectedImage(null);
+            setSelectedText(null);
+            setToolPanelType('edit-art');
+            setActiveTool('art');
+            
+            console.log('[DesignLab 5.0] ✅ Art added via fallback:', {
+              name: fabricImage.name,
+              url: artUrl.substring(0, 50) + '...',
+            });
+          } catch (fallbackError) {
+            console.error('[DesignLab 5.0] ❌ Fallback add art failed:', fallbackError);
+          }
+        };
+        
+        fallbackImg.onerror = (fallbackError) => {
+          console.error('[DesignLab 5.0] ❌ Fallback direct load also failed:', {
+            error: fallbackError,
+            originalUrl: artUrl,
+            timestamp
+          });
+          // [2025-01-30 19:00:00] 可以在这里显示用户友好的错误提示
+        };
+        
+        fallbackImg.src = artUrl;
+      } else {
+        // [2025-01-30 19:00:00] 非代理 URL 加载失败，可能是图片不存在或其他问题
+        console.error('[DesignLab 5.0] ❌ Direct image load failed, image may not exist:', {
+          url: artUrl,
+          timestamp
+        });
+      }
     };
     
     imgElement.src = imageUrl;

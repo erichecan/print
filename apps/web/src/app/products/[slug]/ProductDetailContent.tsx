@@ -644,13 +644,15 @@ export function ProductDetailContent() {
                 const relatedImage = related.images?.[0]?.url || related.primaryImage?.url || fallbackImage;
                 const relatedPrice = related.price?.sale || related.price?.base || related.basePrice;
                 return (
-                  <Link key={related.id} href={`/products/${related.slug}`} className="flex flex-col gap-3 no-underline text-inherit transition-transform hover:-translate-y-1">
-                    <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
-                      <SafeImage src={relatedImage} alt={related.name} width={280} height={350} className="w-full h-full object-cover" />
-                    </div>
-                    <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{related.name}</h3>
-                    <div className="text-lg font-bold text-gray-900">
-                      {currencyFormatter.format(Number(relatedPrice) / 100)}
+                  <Link key={related.id} href={`/products/${related.slug}`} className="block no-underline text-inherit transition-transform hover:-translate-y-1">
+                    <div className="flex flex-col gap-3">
+                      <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
+                        <SafeImage src={relatedImage} alt={related.name} width={280} height={350} className="w-full h-full object-cover" />
+                      </div>
+                      <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{related.name}</h3>
+                      <div className="text-lg font-bold text-gray-900">
+                        {currencyFormatter.format(Number(relatedPrice) / 100)}
+                      </div>
                     </div>
                   </Link>
                 );
@@ -670,13 +672,15 @@ export function ProductDetailContent() {
                 const brandImage = brandProduct.images?.[0]?.url || brandProduct.primaryImage?.url || fallbackImage;
                 const brandPrice = brandProduct.price?.sale || brandProduct.price?.base || brandProduct.basePrice;
                 return (
-                  <Link key={brandProduct.id} href={`/products/${brandProduct.slug}`} className="flex flex-col gap-3 no-underline text-inherit transition-transform hover:-translate-y-1">
-                    <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
-                      <SafeImage src={brandImage} alt={brandProduct.name} width={280} height={350} className="w-full h-full object-cover" />
-                    </div>
-                    <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{brandProduct.name}</h3>
-                    <div className="text-lg font-bold text-gray-900">
-                      {currencyFormatter.format(Number(brandPrice) / 100)}
+                  <Link key={brandProduct.id} href={`/products/${brandProduct.slug}`} className="block no-underline text-inherit transition-transform hover:-translate-y-1">
+                    <div className="flex flex-col gap-3">
+                      <div className="w-full aspect-[3/4] rounded overflow-hidden bg-gray-100">
+                        <SafeImage src={brandImage} alt={brandProduct.name} width={280} height={350} className="w-full h-full object-cover" />
+                      </div>
+                      <h3 className="text-base font-semibold m-0 text-gray-900 leading-snug">{brandProduct.name}</h3>
+                      <div className="text-lg font-bold text-gray-900">
+                        {currencyFormatter.format(Number(brandPrice) / 100)}
+                      </div>
                     </div>
                   </Link>
                 );
