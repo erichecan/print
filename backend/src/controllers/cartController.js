@@ -510,8 +510,26 @@ exports.removeItem = async (req, res) => {
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
+    // [2025-01-31 01:00:00] 添加详细日志，便于调试
+    logger.info('Removing cart item', {
+      itemId: id,
+      userId: userId || null,
+      sessionId: sessionId || null,
+      hasUser: !!req.user,
+      hasSessionCookie: !!req.cookies?.sessionId,
+    });
+
     // Get cart
     const cart = await getOrCreateCart(userId, sessionId);
+
+    if (!cart) {
+      logger.warn('Cart not found for removeItem', {
+        itemId: id,
+        userId: userId || null,
+        sessionId: sessionId || null,
+      });
+      return res.status(404).json({ error: 'Cart not found' });
+    }
 
     // Find and delete cart item
     const cartItem = await prisma.cartItem.findFirst({
@@ -522,6 +540,12 @@ exports.removeItem = async (req, res) => {
     });
 
     if (!cartItem) {
+      logger.warn('Cart item not found', {
+        itemId: id,
+        cartId: cart.id,
+        userId: userId || null,
+        sessionId: sessionId || null,
+      });
       return res.status(404).json({ error: 'Cart item not found' });
     }
 
@@ -529,9 +553,20 @@ exports.removeItem = async (req, res) => {
       where: { id: cartItem.id },
     });
 
+    logger.info('Cart item removed successfully', {
+      itemId: id,
+      cartId: cart.id,
+    });
+
     res.json({ message: 'Item removed from cart' });
   } catch (error) {
-    console.error('Error removing cart item:', error);
+    logger.error('Error removing cart item:', {
+      error: error.message,
+      stack: error.stack,
+      itemId: req.params?.id,
+      userId: req.user?.id || null,
+      sessionId: req.sessionId || null,
+    });
     res.status(500).json({ error: 'Failed to remove cart item' });
   }
 };
