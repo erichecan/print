@@ -18,8 +18,8 @@ interface ColorGroupCardIntegratedProps {
   onRemove: () => void;
   onCopyToOthers?: () => void;
   previousGroup?: OrderItemColorGroup | null;
-  globalUnitPrice: number;
   onSizeQuantityChange: (size: string, quantity: number) => void;
+  colorHex?: string; // [2025-12-19 02:30:00] 颜色hex值（用于显示色块）
 }
 
 // [2025-12-19] 尺码定义（与page.tsx保持一致）
@@ -37,8 +37,8 @@ export function ColorGroupCardIntegrated({
   onRemove,
   onCopyToOthers,
   previousGroup,
-  globalUnitPrice,
-  onSizeQuantityChange
+  onSizeQuantityChange,
+  colorHex
 }: ColorGroupCardIntegratedProps) {
   const [showInheritConfirm, setShowInheritConfirm] = useState(false);
 
@@ -72,10 +72,21 @@ export function ColorGroupCardIntegrated({
     }
   };
 
+  // [2025-12-19 02:30:00] 获取颜色hex值（从props传入或使用默认值）
+  const getColorHex = (): string => {
+    return colorHex || '#CCCCCC'; // 使用传入的hex值或默认灰色
+  };
+
   return (
-    <section className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm mb-4">
+    <section className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm mb-4 relative">
+      {/* [2025-12-19 02:30:00] 颜色色块（2号位置）- 左侧8px宽色块，使用颜色hex值 */}
+      <div 
+        className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg"
+        style={{ backgroundColor: getColorHex() }}
+      />
+      
       {/* [2025-12-19] 标题区：颜色名、删除按钮、继承按钮 */}
-      <header className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+      <header className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 ml-2">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-gray-900">{group.colorName}</h3>
           <span className="text-sm text-gray-500">({group.colorCode})</span>
@@ -118,96 +129,132 @@ export function ColorGroupCardIntegrated({
         </div>
       </header>
 
-      {/* [2025-12-19] 尺码表：YOUTH和ADULT两组 */}
-      <div className="space-y-3 mb-4">
-        {/* YOUTH尺码 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
-          <div className="flex flex-wrap gap-2">
-            {YOUTH_SIZES.map((size) => {
-              const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
-              const quantity = group.quantities[size] || 0;
-              const additionalFee = sizeFeeMap[size] || 0;
-              
-              return (
-                <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
-                  <label className="block text-xs text-gray-600 mb-1">{size}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={quantity > 0 ? quantity : ''}
-                    onChange={(e) => {
-                      const inputValue = e.target.value;
-                      const qty = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                      handleSizeQuantityChange(size, qty);
-                    }}
-                    onKeyDown={(e) => {
-                      // [2025-12-18 17:00:00] 修复：阻止Enter键触发表单提交
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                    }}
-                    disabled={!isAvailable}
-                    className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    placeholder="数量"
-                  />
-                </div>
-              );
-            })}
+      {/* [2025-12-19] 尺码表：YOUTH和ADULT两组 - 放在一行 */}
+      <div className="mb-4 ml-2">
+        <div className="flex flex-wrap gap-4">
+          {/* YOUTH尺码 */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
+            <div className="flex flex-wrap gap-2">
+              {YOUTH_SIZES.map((size) => {
+                const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
+                const quantity = group.quantities[size] || 0;
+                const additionalFee = sizeFeeMap[size] || 0;
+                
+                return (
+                  <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
+                    <label className="block text-xs text-gray-600 mb-1">{size}</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={quantity > 0 ? quantity : ''}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        const qty = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
+                        handleSizeQuantityChange(size, qty);
+                      }}
+                      onKeyDown={(e) => {
+                        // [2025-12-18 17:00:00] 修复：阻止Enter键触发表单提交
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      disabled={!isAvailable}
+                      className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
 
-        {/* ADULT尺码 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
-          <div className="flex flex-wrap gap-2">
-            {ADULT_SIZES.map((size) => {
-              const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
-              const quantity = group.quantities[size] || 0;
-              const additionalFee = sizeFeeMap[size] || 0;
-              
-              return (
-                <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
-                  <label className="block text-xs text-gray-600 mb-1">
-                    {size}
-                    {LARGE_SIZES.includes(size) && additionalFee > 0 && (
-                      <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
-                    )}
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={quantity > 0 ? quantity : ''}
-                    onChange={(e) => {
-                      const inputValue = e.target.value;
-                      const qty = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
-                      handleSizeQuantityChange(size, qty);
-                    }}
-                    onKeyDown={(e) => {
-                      // [2025-12-18 17:00:00] 修复：阻止Enter键触发表单提交
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                    }}
-                    disabled={!isAvailable}
-                    className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    placeholder="数量"
-                  />
-                </div>
-              );
-            })}
+          {/* ADULT尺码 */}
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
+            <div className="flex flex-wrap gap-2">
+              {ADULT_SIZES.map((size) => {
+                const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
+                const quantity = group.quantities[size] || 0;
+                const additionalFee = sizeFeeMap[size] || 0;
+                
+                return (
+                  <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
+                    <label className="block text-xs text-gray-600 mb-1">
+                      {size}
+                      {LARGE_SIZES.includes(size) && additionalFee > 0 && (
+                        <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
+                      )}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={quantity > 0 ? quantity : ''}
+                      onChange={(e) => {
+                        const inputValue = e.target.value;
+                        const qty = inputValue === '' ? 0 : (parseInt(inputValue, 10) || 0);
+                        handleSizeQuantityChange(size, qty);
+                      }}
+                      onKeyDown={(e) => {
+                        // [2025-12-18 17:00:00] 修复：阻止Enter键触发表单提交
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      disabled={!isAvailable}
+                      className="w-16 border border-gray-300 rounded px-2 py-1 text-sm disabled:bg-gray-100 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* [2025-12-19] printPositions面板：紧贴尺码表下方 */}
-      <PrintPositionsPanel
-        positions={group.positions}
-        onChange={(positions) => onUpdate({ ...group, positions })}
-        onCopyToOthers={onCopyToOthers}
-      />
+      {/* [2025-12-19] 单价和印刷位置：一行两列布局 */}
+      <div className="ml-2 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 单价输入框 - 颜色级别单价 */}
+          <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">
+                单价（适用于该颜色的所有尺码）:
+              </span>
+              <input
+                type="text"
+                value={group.unitPrice > 0 ? group.unitPrice.toString() : ''}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/[^\d.]/g, '');
+                  const unitPrice = parseFloat(value) || 0;
+                  onUpdate({
+                    ...group,
+                    unitPrice
+                  });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="请输入单价"
+              />
+            </label>
+          </div>
+
+          {/* printPositions面板 */}
+          <div>
+            <PrintPositionsPanel
+              positions={group.positions}
+              onChange={(positions) => onUpdate({ ...group, positions })}
+              onCopyToOthers={onCopyToOthers}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* [2025-12-19] 继承确认弹窗 */}
       {showInheritConfirm && (

@@ -1069,7 +1069,7 @@ export const salesOrdersApi = {
     return api<SalesOfflineOrderListResponse>(`/sales/orders${qs ? `?${qs}` : ''}`);
   },
   get: (id: string) =>
-    api<{ order: SalesOfflineOrderDetail } | SalesOfflineOrderDetail>(`/api/sales/orders/${id}`).then((res) => {
+    api<{ order: SalesOfflineOrderDetail } | SalesOfflineOrderDetail>(`/sales/orders/${id}`).then((res) => {
       // [2025-12-18 17:35:00] 修复：处理两种可能的返回格式
       // 格式1: { order: SalesOfflineOrderDetail }
       // 格式2: SalesOfflineOrderDetail (直接返回订单对象)

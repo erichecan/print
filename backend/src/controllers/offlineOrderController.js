@@ -1467,6 +1467,7 @@ exports.deleteOfflineOrder = async (req, res, next) => {
     }
 
     // [2025-12-18 17:30:00] 删除订单（级联删除相关数据）
+    // [2025-12-18 23:52:20] 修复：Prisma schema 已配置 onDelete: Cascade，会自动删除关联的 ProductionWorkOrder、assets 和 histories
     await prisma.offlineOrder.delete({
       where: { id },
     });

@@ -221,7 +221,7 @@ model ProductImage {
 
 model ProductColorImage {
   id                 String   @id @default(uuid())
-  productId          String   @map("product_id")
+  productId          String?  @map("product_id")
   customInkProductId String   @map("customink_product_id")
   customInkColorId   String   @map("customink_color_id")
   colorName          String   @map("color_name")
@@ -231,7 +231,7 @@ model ProductColorImage {
   isActive           Boolean  @default(true) @map("is_active")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
-  product            Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product            Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([customInkProductId, customInkColorId])
   @@index([customInkProductId])
@@ -521,7 +521,7 @@ model ProductionWorkOrder {
   createdAt      DateTime                   @default(now()) @map("created_at")
   updatedAt      DateTime                   @updatedAt @map("updated_at")
   events         ProductionWorkOrderEvent[]
-  offlineOrder   OfflineOrder?              @relation(fields: [offlineOrderId], references: [id])
+  offlineOrder   OfflineOrder?              @relation(fields: [offlineOrderId], references: [id], onDelete: Cascade)
 
   @@index([offlineOrderId])
   @@index([status])

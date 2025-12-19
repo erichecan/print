@@ -14,6 +14,7 @@ import { validateColorGroups } from '@/lib/services/orderItemPricing'; // [2025-
 import { ColorGroupCardIntegrated } from './components/ColorGroupCardIntegrated'; // [2025-12-19] 导入整合的颜色组卡片组件
 import { AddColorModal } from './components/AddColorModal'; // [2025-12-19] 导入添加颜色弹窗组件
 import { convertProductColorsToColorGroups, convertColorGroupToProductColor } from './components/utils/colorGroupConverter'; // [2025-12-19] 导入转换函数
+import { BillingDetails } from './components/BillingDetails'; // [2025-12-19 02:30:00] 导入计费明细组件
 
 const DEFAULT_MAX_FILES = 10;
 const DEFAULT_MAX_FILE_MB = 50;
@@ -164,6 +165,15 @@ const generateOrderCode = (): string => {
   };
   const randomPart = generateRandomLetters();
   return `OFF-${datePart}-${sequencePart}${randomPart}`;
+};
+
+// [2025-12-19 02:30:00] 根据产品ID生成固定颜色（用于视觉区隔）
+const getProductColor = (productId: string): string => {
+  const hash = productId.split('').reduce((acc, char) => {
+    return char.charCodeAt(0) + ((acc << 5) - acc);
+  }, 0);
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 70%, 50%)`;
 };
 
 // [2025-12-07 02:30:00] PRD v2.0: 初始表单状态
@@ -744,15 +754,19 @@ export default function OfflineOrdersIntakePage() {
     });
   }, []);
 
-  // [2025-12-07 02:30:00] PRD v2.0: 更新尺码数量的辅助函数（纯函数）
+  // [2025-12-19 02:30:00] 更新尺码数量的辅助函数（从颜色组获取单价）
   const updateSizeQuantityInState = (
     prevState: FormState,
     itemId: string,
     colorId: string,
     size: string,
-    quantity: number,
-    unitPrice: number
+    quantity: number
   ): FormState => {
+    // [2025-12-19 02:30:00] 从颜色组中获取单价
+    const colorGroups = prevState.colorGroupsByProduct[itemId] || [];
+    const colorGroup = colorGroups.find(g => g.colorCode === colorId);
+    const unitPrice = colorGroup?.unitPrice || 0;
+
     const newItems = prevState.productItems.map((item) => {
       if (item.id === itemId) {
         const newColors = item.colors.map((color) => {
@@ -805,10 +819,10 @@ export default function OfflineOrdersIntakePage() {
     return { ...prevState, productItems: newItems };
   };
 
-  // [2025-12-07 02:30:00] PRD v2.0: 更新尺码数量
+  // [2025-12-19 02:30:00] 更新尺码数量（单价从颜色组获取）
   const updateSizeQuantity = useCallback(
-    (itemId: string, colorId: string, size: string, quantity: number, unitPrice: number) => {
-      setFormState((prev) => updateSizeQuantityInState(prev, itemId, colorId, size, quantity, unitPrice));
+    (itemId: string, colorId: string, size: string, quantity: number) => {
+      setFormState((prev) => updateSizeQuantityInState(prev, itemId, colorId, size, quantity));
     },
     [sizeFeeMap]
   );
@@ -1435,9 +1449,15 @@ export default function OfflineOrdersIntakePage() {
                 : orderConfig.colors;
 
               return (
-                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm">
+                <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm relative">
+                  {/* [2025-12-19 02:30:00] 产品色块（1号位置）- 左侧8px宽色块 */}
+                  <div 
+                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-xl"
+                    style={{ backgroundColor: getProductColor(item.id) }}
+                  />
+                  
                   {/* 产品卡片头部 - PRD v2.0: 产品图片、产品名称、关闭按钮 */}
-                  <div className="mb-5 pb-3 border-b border-gray-200 flex items-center gap-4">
+                  <div className="mb-5 pb-3 border-b border-gray-200 flex items-center gap-4 ml-2">
                     {(() => {
                       const product = orderConfig.products.find(p => p.id === item.productId);
                       return product?.imageUrl ? (
@@ -1480,13 +1500,21 @@ export default function OfflineOrdersIntakePage() {
                             if (e.target.value) {
                               const color = availableColors.find(c => c.id === e.target.value);
                               if (color) {
-                                // [2025-12-19] 显示添加颜色弹窗
-                                setAddColorModal({
-                                  isOpen: true,
-                                  itemId: item.id,
-                                  colorId: color.id,
-                                  colorName: color.name
-                                });
+                                // [2025-12-19] 如果是第一个颜色，直接添加，不显示弹窗
+                                // [2025-12-18 22:31:42] 去掉第一个颜色的提示弹窗
+                                const isFirstColor = item.colors.length === 0;
+                                if (isFirstColor) {
+                                  // 直接添加颜色，不显示弹窗
+                                  addColorToProduct(item.id, color.id, color.name, false);
+                                } else {
+                                  // 有上一个颜色时，显示弹窗让用户选择是否继承
+                                  setAddColorModal({
+                                    isOpen: true,
+                                    itemId: item.id,
+                                    colorId: color.id,
+                                    colorName: color.name
+                                  });
+                                }
                                 e.target.value = '';
                               }
                             }
@@ -1526,6 +1554,7 @@ export default function OfflineOrdersIntakePage() {
                           colorName: color.colorName,
                           quantities,
                           positions: [],
+                          unitPrice: 0, // [2025-12-19 02:30:00] 颜色级别的单价
                           inheritsFromColorId: null
                         };
                         
@@ -1547,6 +1576,10 @@ export default function OfflineOrdersIntakePage() {
                         ? colorGroups.find(g => g.colorCode === item.colors[colorIndex - 1].colorId)
         : null;
 
+                      // [2025-12-19 02:30:00] 获取颜色的hex值
+                      const colorData = availableColors.find(c => c.id === color.colorId);
+                      const colorHex = (colorData as any)?.hexCode || '#CCCCCC';
+
                       return (
                         <ColorGroupCardIntegrated
                           key={color.colorId}
@@ -1555,6 +1588,7 @@ export default function OfflineOrdersIntakePage() {
                           availableSizes={color.availableSizes.length > 0 ? color.availableSizes : ALL_SIZES}
                           sizeFeeMap={sizeFeeMap}
                           isSizeAvailable={isSizeAvailable}
+                          colorHex={colorHex}
                           onUpdate={(updated) => {
                             // [2025-12-19] 更新颜色组配置
                             setFormState(prev => {
@@ -1569,28 +1603,42 @@ export default function OfflineOrdersIntakePage() {
                                   const newColors = productItem.colors.map(c => {
                                     if (c.colorId === color.colorId) {
                                       // [2025-12-19] 从quantities更新sizes
+                                      // [2025-12-19 02:30:00] 从颜色组获取单价
+                                      const colorGroup = updated;
+                                      const unitPrice = colorGroup.unitPrice || 0;
                                       const newSizes = Object.entries(updated.quantities)
                                         .filter(([_, qty]) => qty > 0)
                                         .map(([size, qty]) => ({
                                           size,
                                           quantity: qty,
-                                          unitPrice: formState.globalUnitPrice || 0,
+                                          unitPrice: unitPrice,
                                           additionalFee: sizeFeeMap[size] || 0,
-                                          subtotal: qty * ((formState.globalUnitPrice || 0) + (sizeFeeMap[size] || 0))
+                                          subtotal: qty * (unitPrice + (sizeFeeMap[size] || 0))
                                         }));
+                                      
+                                      // [2025-12-19 02:30:00] 计算该颜色的总数量和总价
+                                      const totalQuantity = Object.values(updated.quantities).reduce((sum, qty) => sum + qty, 0);
+                                      const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
                                       
                                       return {
                                         ...c,
                                         sizes: newSizes,
-                                        totalQuantity: Object.values(updated.quantities).reduce((sum, qty) => sum + qty, 0)
+                                        totalQuantity,
+                                        totalPrice
                                       };
                                     }
                                     return c;
                                   });
                                   
+                                  // [2025-12-19 02:30:00] 计算产品的总数量和总价
+                                  const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
+                                  const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
+                                  
                                   return {
                                     ...productItem,
-                                    colors: newColors
+                                    colors: newColors,
+                                    totalQuantity,
+                                    totalPrice
                                   };
                                 }
                                 return productItem;
@@ -1648,9 +1696,8 @@ export default function OfflineOrdersIntakePage() {
                             }
                           }}
                           previousGroup={previousGroup}
-                          globalUnitPrice={formState.globalUnitPrice || 0}
                           onSizeQuantityChange={(size, quantity) => {
-                            updateSizeQuantity(item.id, color.colorId, size, quantity, formState.globalUnitPrice || 0);
+                            updateSizeQuantity(item.id, color.colorId, size, quantity);
                           }}
                         />
                       );
@@ -1664,13 +1711,21 @@ export default function OfflineOrdersIntakePage() {
                           if (e.target.value) {
                             const color = availableColors.find(c => c.id === e.target.value);
                             if (color && !item.colors.some(c => c.colorId === color.id)) {
-                              // [2025-12-19] 显示添加颜色弹窗
-                              setAddColorModal({
-                                isOpen: true,
-                                itemId: item.id,
-                                colorId: color.id,
-                                colorName: color.name
-                              });
+                              // [2025-12-19] 如果是第一个颜色，直接添加，不显示弹窗
+                              // [2025-12-18 22:31:42] 去掉第一个颜色的提示弹窗
+                              const isFirstColor = item.colors.length === 0;
+                              if (isFirstColor) {
+                                // 直接添加颜色，不显示弹窗
+                                addColorToProduct(item.id, color.id, color.name, false);
+                              } else {
+                                // 有上一个颜色时，显示弹窗让用户选择是否继承
+                                setAddColorModal({
+                                  isOpen: true,
+                                  itemId: item.id,
+                                  colorId: color.id,
+                                  colorName: color.name
+                                });
+                              }
                               e.target.value = '';
                             }
                           }
@@ -1721,9 +1776,72 @@ export default function OfflineOrdersIntakePage() {
 
         {/* [2025-12-19 02:30:00] 移除全局单价输入框，改为颜色级别单价 */}
 
+        {/* [2025-12-18 23:45:31] 计费明细 - 在总计上面 */}
+        {calculateTotalQuantity > 0 && (
+          <div className="p-5 bg-white border border-gray-200 rounded-lg mb-4">
+            <h4 className="text-base font-semibold text-gray-900 mb-4">计费明细</h4>
+            <div className="overflow-x-auto mb-4">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-300">
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700">产品</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700">颜色</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700">尺码</th>
+                    <th className="text-right py-2 px-3 font-semibold text-gray-700">数量</th>
+                    <th className="text-left py-2 px-3 font-semibold text-gray-700">位置</th>
+                    <th className="text-right py-2 px-3 font-semibold text-gray-700">单价</th>
+                    <th className="text-right py-2 px-3 font-semibold text-gray-700">小计</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formState.productItems.flatMap((item) => {
+                    const colorGroups = formState.colorGroupsByProduct[item.id] || [];
+                    return item.colors.flatMap((color) => {
+                      const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
+                      return color.sizes
+                        .filter(sizeData => sizeData.quantity > 0)
+                        .map((sizeData) => {
+                          // [2025-12-19 02:30:00] 获取印刷位置名称
+                          const positions = colorGroup?.positions
+                            .filter(p => p.enabled)
+                            .map(p => {
+                              const positionNames: Record<string, string> = {
+                                'front': '正面',
+                                'back': '背面',
+                                'left_sleeve': '左袖',
+                                'right_sleeve': '右袖',
+                                'pocket': '口袋',
+                                'tag_inside': '内标',
+                                'tag_outside': '外标',
+                                'custom': '其他位置'
+                              };
+                              return positionNames[p.positionKey] || p.positionKey;
+                            })
+                            .join(', ') || '无位置';
+
+                          return (
+                            <tr key={`${item.id}-${color.colorId}-${sizeData.size}`} className="border-b border-gray-200 hover:bg-gray-50">
+                              <td className="py-2 px-3 text-gray-900">{item.productName}</td>
+                              <td className="py-2 px-3 text-gray-700">{color.colorName}</td>
+                              <td className="py-2 px-3 text-gray-700">{sizeData.size}</td>
+                              <td className="py-2 px-3 text-right text-gray-700">{sizeData.quantity}</td>
+                              <td className="py-2 px-3 text-gray-600 text-xs">{positions}</td>
+                              <td className="py-2 px-3 text-right text-gray-700">${sizeData.unitPrice.toFixed(2)}</td>
+                              <td className="py-2 px-3 text-right font-medium text-gray-900">${sizeData.subtotal.toFixed(2)}</td>
+                            </tr>
+                          );
+                        });
+                    });
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* 总计 - PRD v2.0 */}
         {calculateTotalQuantity > 0 && (
-          <div className="p-5 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
             <div className="flex justify-between items-center text-base">
               <span>{t('totalQuantity') || '总数量'}：</span>
               <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items') || '件'}</strong>
@@ -2059,6 +2177,12 @@ export default function OfflineOrdersIntakePage() {
             </div>
           </div>
         </div>
+
+        {/* [2025-12-19 02:30:00] 计费明细 */}
+        <BillingDetails 
+          productItems={formState.productItems}
+          colorGroupsByProduct={formState.colorGroupsByProduct}
+        />
       </section>
     </div>
   );

@@ -175,7 +175,6 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
                   {pos.widthMm && pos.heightMm && (
                     <div>尺寸: {pos.widthMm}×{pos.heightMm}mm</div>
                   )}
-                  <div>单价: ${pos.unitPrice.toFixed(2)}</div>
                   {pos.designAssetId && (
                     <div className="text-green-600">✓ 已上传文件</div>
                   )}
