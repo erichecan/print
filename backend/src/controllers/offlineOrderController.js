@@ -1447,6 +1447,7 @@ exports.getOrderConfig = async (req, res, next) => {
 /**
  * DELETE /api/admin/offline-orders/:id
  * [2025-12-18 17:30:00] 删除线下订单
+ * [2025-12-19 00:25:00] 修复：使用事务手动删除关联数据，确保删除顺序正确
  */
 exports.deleteOfflineOrder = async (req, res, next) => {
   try {
@@ -1455,7 +1456,13 @@ exports.deleteOfflineOrder = async (req, res, next) => {
     // [2025-12-18 17:30:00] 检查订单是否存在
     const existing = await prisma.offlineOrder.findUnique({
       where: { id },
-      select: { id: true, orderCode: true },
+      select: { 
+        id: true, 
+        orderCode: true,
+        productionWorkOrder: {
+          select: { id: true }
+        }
+      },
     });
 
     if (!existing) {
@@ -1466,10 +1473,35 @@ exports.deleteOfflineOrder = async (req, res, next) => {
       });
     }
 
-    // [2025-12-18 17:30:00] 删除订单（级联删除相关数据）
-    // [2025-12-18 23:52:20] 修复：Prisma schema 已配置 onDelete: Cascade，会自动删除关联的 ProductionWorkOrder、assets 和 histories
-    await prisma.offlineOrder.delete({
-      where: { id },
+    // [2025-12-19 00:25:00] 使用事务删除，确保删除顺序正确
+    // 即使 Prisma schema 配置了 onDelete: Cascade，手动删除可以确保兼容性
+    await prisma.$transaction(async (tx) => {
+      // 1. 先删除 ProductionWorkOrder 的 events（如果有）
+      if (existing.productionWorkOrder) {
+        await tx.productionWorkOrderEvent.deleteMany({
+          where: { workOrderId: existing.productionWorkOrder.id },
+        });
+        
+        // 2. 删除 ProductionWorkOrder
+        await tx.productionWorkOrder.delete({
+          where: { id: existing.productionWorkOrder.id },
+        });
+      }
+
+      // 3. 删除 OfflineOrderAsset
+      await tx.offlineOrderAsset.deleteMany({
+        where: { orderId: id },
+      });
+
+      // 4. 删除 OfflineOrderStageHistory
+      await tx.offlineOrderStageHistory.deleteMany({
+        where: { orderId: id },
+      });
+
+      // 5. 最后删除订单本身
+      await tx.offlineOrder.delete({
+        where: { id },
+      });
     });
 
     logger.info(`[deleteOfflineOrder] Order deleted: ${existing.orderCode} (${id})`);
@@ -1486,8 +1518,15 @@ exports.deleteOfflineOrder = async (req, res, next) => {
         message: '订单不存在',
       });
     }
-    logger.error('[deleteOfflineOrder] Error deleting order:', error);
-    next(new InternalServerError('删除订单失败'));
+    // [2025-12-19 00:25:00] 增强错误日志，输出详细错误信息
+    logger.error('[deleteOfflineOrder] Error deleting order:', {
+      orderId: id,
+      error: error.message,
+      code: error.code,
+      meta: error.meta,
+      stack: error.stack,
+    });
+    next(new InternalServerError(`删除订单失败: ${error.message}`));
   }
 };
 
