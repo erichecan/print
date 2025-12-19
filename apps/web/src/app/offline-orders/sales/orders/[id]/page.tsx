@@ -100,12 +100,15 @@ export default function SalesOrderDetailPage() {
   }, [config]);
   
   // [2025-12-03 23:30:00] 计算每个产品的总数量和总金额
+  // [2025-12-19 00:10:00] 修复：添加安全检查，防止 variants 为 undefined 时调用 reduce
   const productTotals = useMemo(() => {
     if (!config?.productItems) return {};
     const totals: Record<string, { quantity: number; total: number }> = {};
     config.productItems.forEach((item) => {
-      const quantity = item.variants.reduce((sum, v) => sum + v.quantity, 0);
-      const total = item.variants.reduce((sum, v) => sum + v.quantity * v.unitPrice, 0);
+      // [2025-12-19 00:10:00] 安全检查：确保 variants 存在且是数组
+      const variants = item.variants || [];
+      const quantity = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
+      const total = variants.reduce((sum, v) => sum + ((v.quantity || 0) * (v.unitPrice || 0)), 0);
       totals[item.id] = { quantity, total };
     });
     return totals;
@@ -349,14 +352,14 @@ export default function SalesOrderDetailPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {item.variants.map((variant, idx) => {
-                              const variantTotal = variant.quantity * variant.unitPrice;
+                            {(item.variants || []).map((variant, idx) => {
+                              const variantTotal = (variant.quantity || 0) * (variant.unitPrice || 0);
                               return (
                                 <tr key={idx}>
                                   <td>{variant.size || '—'}</td>
                                   <td>{variant.color || '—'}</td>
-                                  <td>{variant.quantity}</td>
-                                  <td>${variant.unitPrice.toFixed(2)}</td>
+                                  <td>{variant.quantity || 0}</td>
+                                  <td>${(variant.unitPrice || 0).toFixed(2)}</td>
                                   <td className="variant-total">${variantTotal.toFixed(2)}</td>
                                 </tr>
                               );
