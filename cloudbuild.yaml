@@ -19,11 +19,12 @@ steps:
           RAW_SHA="$(git rev-parse --short HEAD | tr -d '\n' | tr -d '\r')"
         fi
         if [ -z "$RAW_SHA" ]; then
-          if [ -n "${SHORT_SHA}" ]; then RAW_SHA="${SHORT_SHA}"; fi
-          if [ -z "$RAW_SHA" ] && [ -n "${COMMIT_SHA}" ]; then RAW_SHA="${COMMIT_SHA}"; fi
+          # 避免 `${VAR}` 语法触发 Cloud Build substitution 预处理
+          if [ -n "$SHORT_SHA" ]; then RAW_SHA="$SHORT_SHA"; fi
+          if [ -z "$RAW_SHA" ] && [ -n "$COMMIT_SHA" ]; then RAW_SHA="$COMMIT_SHA"; fi
         fi
         if [ -z "$RAW_SHA" ]; then
-          if [ -n "${BUILD_ID}" ]; then RAW_SHA="${BUILD_ID}"; fi
+          if [ -n "$BUILD_ID" ]; then RAW_SHA="$BUILD_ID"; fi
         fi
         if [ -z "$RAW_SHA" ]; then
           RAW_SHA="$(date -u +%Y%m%d%H%M%S)"
