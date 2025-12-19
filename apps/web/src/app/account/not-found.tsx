@@ -2,6 +2,11 @@
  * Account Not Found Page
  * [2025-01-27 15:05:00] 账户页面 404 处理组件
  */
+// [2025-12-19 18:05:20] 修复：该 not-found 组件包含 onMouseEnter/onMouseLeave 事件处理器（交互逻辑）
+// Next.js App Router 下，Server Component 不能向 Client Component（如 next/link）传递事件处理器函数，否则会触发
+// “Event handlers cannot be passed to Client Component props.” 并导致 Server Components render digest=3729559908
+'use client';
+
 import Link from 'next/link';
 import { ACCOUNT_ROUTES } from '@/lib/routes/account';
 
