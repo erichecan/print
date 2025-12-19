@@ -1477,7 +1477,7 @@ exports.deleteOfflineOrder = async (req, res, next) => {
     // 即使 Prisma schema 配置了 onDelete: Cascade，手动删除可以确保兼容性
     await prisma.$transaction(async (tx) => {
       // 1. 先删除 ProductionWorkOrder 的 events（如果有）
-      if (existing.productionWorkOrder) {
+      if (existing.productionWorkOrder && existing.productionWorkOrder.id) {
         await tx.productionWorkOrderEvent.deleteMany({
           where: { workOrderId: existing.productionWorkOrder.id },
         });

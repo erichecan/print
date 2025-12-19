@@ -374,6 +374,8 @@ async function handleProxyRequest(
       hasToken,
       hasCookie,
       cookieKeys: cookieHeader ? cookieHeader.split(';').map(c => c.split('=')[0].trim()).filter(Boolean) : [],
+      cookiePreview: cookieHeader ? cookieHeader.substring(0, 100) + (cookieHeader.length > 100 ? '...' : '') : 'none',
+      headersCookie: headers['Cookie'] || 'none',
       hasBody: !!body
     });
     
@@ -392,6 +394,9 @@ async function handleProxyRequest(
       timeout: PROXY_TIMEOUT_MS,
     });
     try {
+      // [2025-12-19 00:15:00] 修复：在服务器端，Cookie 需要手动添加到 headers 中
+      // credentials: 'include' 在服务器端不起作用，因为服务器端 fetch 没有浏览器上下文
+      // 我们已经手动将 Cookie 添加到 headers 中，所以不需要 credentials 选项
       upstream = await fetchWithRetry(
         upstreamUrl,
         {
