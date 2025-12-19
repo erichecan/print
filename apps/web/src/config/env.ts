@@ -111,8 +111,10 @@ export function getFrontendApiBaseUrl(): string {
   }
   
   // 开发环境：允许回退到 localhost
-  console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:3001/api');
-  return 'http://localhost:3001/api';
+  // [2025-12-19 15:21:05] 修复：本仓库默认本地后端端口为 4000（与 webapp-testing/Playwright 以及后端启动脚本一致）
+  // 避免开发环境默认回退到 3001 导致 /api/* 代理 500（上游不可达）。
+  console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:4000/api');
+  return 'http://localhost:4000/api';
 }
 
 /**
@@ -223,7 +225,8 @@ export function getBackendApiBaseUrl(): string {
   }
   
   // 开发环境或构建时：允许回退到 localhost
-  const DEFAULT_API_BASE_DEV = 'http://localhost:3001/api';
+  // [2025-12-19 15:21:05] 修复：默认本地后端端口改为 4000，避免开发环境代理到错误端口
+  const DEFAULT_API_BASE_DEV = 'http://localhost:4000/api';
   if (isBuildTime) {
     console.warn('[Env Config] ⚠️ 构建时未配置 API 地址，使用默认值（运行时需要配置环境变量）:', DEFAULT_API_BASE_DEV, {
       traceId,

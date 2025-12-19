@@ -8,17 +8,15 @@
 import { ReactNode, Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
-import dynamicImport from 'next/dynamic';
 import { getSessionSafe } from '@/server/account';
 import { AccountSidebar } from './components/AccountSidebar';
 import { AccountBreadcrumb } from './components/AccountBreadcrumb';
 import { generateTraceId } from '@/shared/errors';
 
-// [2025-12-18 23:30:00] 使用 dynamic import 延迟加载 Client Component，避免服务端渲染错误
-const AccountLayoutClient = dynamicImport(
-  () => import('./components/AccountLayoutClient').then(mod => ({ default: mod.AccountLayoutClient })),
-  { ssr: false }
-);
+// [2025-12-19 15:18:30] 修复：不要在 Server Component 中使用 next/dynamic({ ssr: false })
+// App Router 下，ssr:false 通常仅适用于 Client Component；在 Server Component 中使用可能触发 RSC digest 错误。
+// 这里直接引入 Client Component，让 Next.js 生成标准的 Client Boundary（Server -> Client）。
+import { AccountLayoutClient } from './components/AccountLayoutClient';
 
 // [2025-01-30 19:15:00] 修复：强制动态渲染，因为使用了 cookies() 和 headers()
 export const dynamic = 'force-dynamic';

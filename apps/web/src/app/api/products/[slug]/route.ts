@@ -22,7 +22,8 @@ function getApiBase(): string {
     if (process.env.NODE_ENV === 'production') {
       throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
     }
-    return 'http://localhost:3001/api';
+    // [2025-12-19 15:24:45] 修复：与本仓库默认本地后端端口 4000 对齐（webapp-testing/Playwright/后端启动脚本）
+    return 'http://localhost:4000/api';
   }
 }
 

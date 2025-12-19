@@ -7,6 +7,34 @@
  * [2025-01-30 17:30:00] 修复：构建时验证改为内联，避免导入 TypeScript 模块
  */
 
+// [2025-12-19 15:02:10] 统一前端构建版本信息注入：显式通过 next.config 的 env 注入到浏览器端（GCP Docker 构建更稳定）
+function pickFirstNonEmpty(...values) {
+  for (const v of values) {
+    if (typeof v === 'string' && v.trim() !== '') return v.trim();
+  }
+  return '';
+}
+
+// [2025-12-19 15:02:10] 兼容多种 CI/CD 提供的 commit SHA 环境变量（GCP Cloud Build / GitHub Actions / Vercel 等）
+function normalizeSha(value) {
+  const v = (value || '').trim();
+  if (!v) return '';
+  // 有些平台会给出全长 SHA，这里统一截断到 7 位用于展示
+  return v.length > 7 ? v.substring(0, 7) : v;
+}
+
+// [2025-12-19 15:02:10] 构建时间兜底：优先使用注入的 ISO 时间；其次使用 SOURCE_DATE_EPOCH；最后使用当前时间（构建期）
+function normalizeBuildTime(value) {
+  const v = (value || '').trim();
+  if (v) return v;
+  const epoch = (process.env.SOURCE_DATE_EPOCH || '').trim();
+  if (epoch && /^\d+$/.test(epoch)) {
+    const ms = Number(epoch) * 1000;
+    if (Number.isFinite(ms)) return new Date(ms).toISOString();
+  }
+  return new Date().toISOString();
+}
+
 // [2025-01-30 17:30:00] 构建时环境变量校验（内联实现，避免导入 TypeScript 模块）
 function validateEnvAtBuildTime() {
   const isBuildTime = !!process.env.NEXT_PHASE || process.env.NODE_ENV === 'production';
@@ -49,9 +77,44 @@ if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV 
   }
 }
 
+// [2025-12-19 15:02:10] 构建版本信息（显式注入到 nextConfig.env，避免浏览器端出现 unknown）
+const isProdBuild = process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'production';
+const computedBuildSha = normalizeSha(
+  pickFirstNonEmpty(
+    process.env.NEXT_PUBLIC_BUILD_SHA,
+    // 兼容旧变量：部分代码仍会读取 NEXT_PUBLIC_GIT_SHA
+    process.env.NEXT_PUBLIC_GIT_SHA,
+    process.env.GIT_SHA,
+    process.env.COMMIT_SHA,
+    process.env.GITHUB_SHA,
+    process.env.VERCEL_GIT_COMMIT_SHA,
+    process.env.CI_COMMIT_SHA,
+    process.env.SOURCE_VERSION
+  )
+) || (isProdBuild ? 'unknown' : 'dev');
+
+const computedBuildTime =
+  pickFirstNonEmpty(process.env.NEXT_PUBLIC_BUILD_TIME, process.env.BUILD_TIME) ||
+  (isProdBuild ? normalizeBuildTime('') : 'dev');
+
 const remotePatterns = [
   // [2025-12-09] 开发环境：允许 localhost
   ...(process.env.NODE_ENV === 'development' ? [
+    {
+      protocol: 'http',
+      hostname: 'localhost',
+      // [2025-12-19 15:22:40] 修复：默认本地后端端口调整为 4000（与 webapp-testing/Playwright 以及后端启动脚本一致）
+      port: '4000',
+      pathname: '/**',
+    },
+    {
+      protocol: 'http',
+      hostname: '127.0.0.1',
+      // [2025-12-19 15:22:40] 修复：默认本地后端端口调整为 4000（与 webapp-testing/Playwright 以及后端启动脚本一致）
+      port: '4000',
+      pathname: '/**',
+    },
+    // [2025-12-19 15:22:40] 兼容：如果本地仍使用旧端口 3001，也允许图片加载（不影响 rewrites/env 的默认值）
     {
       protocol: 'http',
       hostname: 'localhost',
@@ -150,7 +213,8 @@ const nextConfig = {
     if (!apiUrl) {
       // [2025-12-09] 构建时允许使用默认值（无论是开发还是生产构建）
       // 运行时检查在 api-route-config.ts 中进行
-      apiUrl = 'http://localhost:3001';
+      // [2025-12-19 15:22:40] 修复：默认本地后端端口调整为 4000（与 webapp-testing/Playwright 以及后端启动脚本一致）
+      apiUrl = 'http://localhost:4000';
       if (isDevelopment) {
         console.warn('[next.config] ⚠️ NEXT_PUBLIC_API_URL 未设置，使用开发环境默认值:', apiUrl);
       } else {
@@ -190,13 +254,17 @@ const nextConfig = {
   // [2025-01-29 12:30:00] API URL 配置：开发环境使用 localhost，生产环境必须通过环境变量设置
   env: {
     // 仅在开发环境使用 localhost 作为默认值，生产环境必须设置环境变量
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
-    API_BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''),
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001/api' : ''),
+    // [2025-12-19 15:22:40] 修复：默认本地后端端口调整为 4000（与 webapp-testing/Playwright 以及后端启动脚本一致）
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:4000' : ''),
+    API_BASE_URL: process.env.API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:4000' : ''),
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:4000/api' : ''),
     // [2025-01-31 14:00:00] GCS 图片基础 URL（用于 Design Lab 产品图片）
     NEXT_PUBLIC_GCS_IMAGE_BASE_URL: process.env.NEXT_PUBLIC_GCS_IMAGE_BASE_URL || process.env.GCP_IMAGE_BASE_URL || 'https://storage.googleapis.com/print-main-product-images',
-    // [2025-01-31 00:45:00] 添加 Git SHA 环境变量（在构建时设置）
-    NEXT_PUBLIC_GIT_SHA: process.env.NEXT_PUBLIC_GIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'dev',
+    // [2025-12-19 15:02:10] 前端构建版本信息：显式注入，保证浏览器端一定能读到（用于部署验证）
+    NEXT_PUBLIC_BUILD_SHA: computedBuildSha,
+    NEXT_PUBLIC_BUILD_TIME: computedBuildTime,
+    // [2025-12-19 15:02:10] 兼容：历史代码使用 NEXT_PUBLIC_GIT_SHA，统一指向同一份 SHA
+    NEXT_PUBLIC_GIT_SHA: normalizeSha(pickFirstNonEmpty(process.env.NEXT_PUBLIC_GIT_SHA, computedBuildSha, process.env.VERCEL_GIT_COMMIT_SHA)) || 'dev',
     // [2025-12-08 14:40:00] 新的 Design Lab 页面 URL 配置
     NEXT_PUBLIC_NEW_DESIGN_URL: process.env.NEXT_PUBLIC_NEW_DESIGN_URL || '',
     NEXT_PUBLIC_NEW_DESIGN_PATH: process.env.NEXT_PUBLIC_NEW_DESIGN_PATH || '/design-lab',

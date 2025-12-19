@@ -23,8 +23,9 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const sha = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
-    const buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || 'unknown';
+    // [2025-12-19 15:02:45] 版本信息读取策略：优先 NEXT_PUBLIC_BUILD_*；兼容旧变量 NEXT_PUBLIC_GIT_SHA；避免生产环境出现 unknown 导致无法验证部署
+    let sha = process.env.NEXT_PUBLIC_BUILD_SHA || process.env.NEXT_PUBLIC_GIT_SHA || 'unknown';
+    let buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || 'unknown';
     const currentTime = new Date().toISOString();
 
     // 统一前缀，方便在 DevTools Console 中搜索
@@ -40,10 +41,28 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
       url: window.location.href,
       userAgent: navigator.userAgent.substring(0, 50) + '...',
     });
-    // [2025-12-18 17:50:00] 如果版本信息为 unknown，提示可能的问题
-    if (sha === 'unknown' || buildTime === 'unknown') {
-      // eslint-disable-next-line no-console
-      console.warn('[Frontend Build] ⚠️ 构建版本信息未找到，可能是开发环境或构建配置问题');
+
+    // [2025-12-19 15:25:40] 修复：生产环境若构建版本信息缺失，先尝试从 /api/version 兜底获取（避免持续告警）
+    // 说明：某些部署方式可能未注入 NEXT_PUBLIC_BUILD_*，但 /api/version 仍可能可用。
+    if (process.env.NODE_ENV === 'production' && (sha === 'unknown' || buildTime === 'unknown')) {
+      (async () => {
+        try {
+          const resp = await fetch('/api/version', { method: 'GET', cache: 'no-store' });
+          if (!resp.ok) throw new Error(`Version API non-OK: ${resp.status}`);
+          const data = await resp.json().catch(() => ({} as any));
+          const resolvedSha = (data?.sha || data?.gitSha || '').toString().trim();
+          const resolvedTime = (data?.utcTime || data?.buildTime || '').toString().trim();
+
+          if (resolvedSha && sha === 'unknown') sha = resolvedSha;
+          if (resolvedTime && buildTime === 'unknown') buildTime = resolvedTime;
+
+          // eslint-disable-next-line no-console
+          console.log('[Frontend Build] (fallback /api/version)', sha, buildTime);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('[Frontend Build] ⚠️ 构建版本信息未找到（/api/version fallback 也失败），请检查构建/部署配置');
+        }
+      })();
     }
   }, []);
 

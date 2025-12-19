@@ -26,7 +26,8 @@ jest.mock('next/headers', () => ({
 
 // Mock config/env
 jest.mock('@/config/env', () => ({
-  getBackendApiBaseUrl: jest.fn(() => 'http://localhost:3001/api'),
+  // [2025-12-19 15:24:45] 修复：默认本地后端端口与仓库测试/脚本对齐为 4000
+  getBackendApiBaseUrl: jest.fn(() => 'http://localhost:4000/api'),
 }));
 
 // Mock fetch
