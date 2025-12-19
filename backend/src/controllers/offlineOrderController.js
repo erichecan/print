@@ -49,14 +49,14 @@ const safeJsonParse = (value) => {
 const generateOrderCode = async (tx = null) => {
   const timestamp = new Date();
   const datePart = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
-  
+
   // [2025-12-18 21:39:07] 获取当天的最大流水号
   const prismaClient = tx || prisma;
   const todayStart = new Date(timestamp);
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(timestamp);
   todayEnd.setHours(23, 59, 59, 999);
-  
+
   // 查询当天所有订单编号，提取流水号
   const todayOrders = await prismaClient.offlineOrder.findMany({
     where: {
@@ -75,7 +75,7 @@ const generateOrderCode = async (tx = null) => {
       createdAt: 'desc'
     }
   });
-  
+
   // 提取流水号并找到最大值
   let maxSequence = 0;
   todayOrders.forEach(order => {
@@ -90,11 +90,11 @@ const generateOrderCode = async (tx = null) => {
       }
     }
   });
-  
+
   // 递增流水号（从001开始）
   const nextSequence = maxSequence + 1;
   const sequencePart = String(nextSequence).padStart(3, '0');
-  
+
   // [2025-12-18 22:03:15] 生成3位随机字母
   const generateRandomLetters = () => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -105,7 +105,7 @@ const generateOrderCode = async (tx = null) => {
     return result;
   };
   const randomPart = generateRandomLetters();
-  
+
   return `OFF-${datePart}-${sequencePart}${randomPart}`;
 };
 
@@ -139,21 +139,21 @@ const mapProductionWorkOrder = (workOrder) => {
     completedDate: workOrder.completedDate,
     assignee: workOrder.assigneeName
       ? {
-          id: workOrder.assigneeId,
-          name: workOrder.assigneeName
-        }
+        id: workOrder.assigneeId,
+        name: workOrder.assigneeName
+      }
       : null,
     notes: workOrder.notes,
     metadata: workOrder.metadata,
     events: Array.isArray(workOrder.events)
       ? workOrder.events.map((event) => ({
-          id: event.id,
-          status: event.status,
-          actorId: event.actorId,
-          actorName: event.actorName,
-          note: event.note,
-          createdAt: event.createdAt
-        }))
+        id: event.id,
+        status: event.status,
+        actorId: event.actorId,
+        actorName: event.actorName,
+        note: event.note,
+        createdAt: event.createdAt
+      }))
       : []
   };
 };
@@ -219,7 +219,7 @@ exports.createOfflineOrder = async (req, res) => {
     logger.info('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
     logger.info('[offlineOrderController] Request files:', req.files ? `Files count: ${req.files.length}` : 'No files');
     logger.info('[offlineOrderController] Content-Type:', req.headers['content-type']);
-    
+
     const {
       projectName,
       primaryProduct,
@@ -239,16 +239,16 @@ exports.createOfflineOrder = async (req, res) => {
 
     // [2025-12-19] PRD v2.0: 解析configuration以获取orderNotes（如果projectName不存在）
     const configData = safeJsonParse(configuration);
-    
+
     // [2025-12-19] PRD v2.0: projectName现在是可选字段，如果不存在则从orderNotes或configuration中提取
     // 优先级：projectName > orderNotes > configuration.orderNotes > 订单编号（默认值）
     let finalProjectName = projectName?.trim() || null;
     if (!finalProjectName) {
-      finalProjectName = orderNotes?.trim() || 
-                        configData?.orderNotes?.trim() || 
-                        null;
+      finalProjectName = orderNotes?.trim() ||
+        configData?.orderNotes?.trim() ||
+        null;
     }
-    
+
     // [2025-12-19] PRD v2.0: 如果仍然没有projectName，使用订单编号作为默认值（在生成订单编号后设置）
     // 这里先设置为null，稍后在生成订单编号后设置默认值
 
@@ -269,7 +269,7 @@ exports.createOfflineOrder = async (req, res) => {
 
     // [2025-01-28 19:20:00] 获取初始阶段，确保不为 undefined
     const initialStage = await getInitialStage();
-    
+
     // [2025-01-28 19:20:00] 验证 initialStage 是否有效
     if (!initialStage || !initialStage.key || !initialStage.label) {
       logger.error('[offlineOrderController] Invalid initial stage:', initialStage);
@@ -329,11 +329,11 @@ exports.createOfflineOrder = async (req, res) => {
         exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
         retryCount++;
       }
-      
+
       if (exists) {
         throw new Error('Failed to generate unique order code after multiple retries');
       }
-      
+
       // [2025-12-19] 如果projectName仍然为空，使用订单编号作为默认值
       if (!finalProjectName) {
         finalProjectName = uniqueCode;
@@ -347,15 +347,15 @@ exports.createOfflineOrder = async (req, res) => {
           projectName: finalProjectName, // [2025-12-18 21:39:07] 使用处理后的projectName
           assets: assetPayloads.length
             ? {
-                create: assetPayloads.map((asset) => ({
-                  fileName: asset.fileName,
-                  fileSize: asset.fileSize,
-                  contentType: asset.contentType,
-                  storageKey: asset.storageKey,
-                  url: asset.url,
-                  uploadedBy: req.user?.id || null
-                }))
-              }
+              create: assetPayloads.map((asset) => ({
+                fileName: asset.fileName,
+                fileSize: asset.fileSize,
+                contentType: asset.contentType,
+                storageKey: asset.storageKey,
+                url: asset.url,
+                uploadedBy: req.user?.id || null
+              }))
+            }
             : undefined,
           histories: {
             create: {
@@ -403,13 +403,13 @@ exports.createOfflineOrder = async (req, res) => {
     });
     logger.error('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
     logger.error('[offlineOrderController] Request files:', req.files ? `Files count: ${req.files.length}` : 'No files');
-    
+
     // [2025-11-28 16:00:00] 返回更详细的错误信息，帮助前端调试
     const errorResponse = {
       error: 'Server Error',
       message: 'Failed to create offline order',
     };
-    
+
     // 在非生产环境或开发环境返回详细信息
     if (process.env.NODE_ENV !== 'production') {
       errorResponse.details = error.message;
@@ -419,7 +419,7 @@ exports.createOfflineOrder = async (req, res) => {
         errorResponse.stack = error.stack.split('\n').slice(0, 5).join('\n');
       }
     }
-    
+
     // 对于已知的错误类型，始终返回详细信息
     if (error.code === 'P2002') {
       errorResponse.message = 'Duplicate order code. Please try again.';
@@ -428,7 +428,7 @@ exports.createOfflineOrder = async (req, res) => {
       errorResponse.message = 'Invalid reference. Please check your data.';
       errorResponse.details = error.meta?.field_name || error.message;
     }
-    
+
     res.status(500).json(errorResponse);
   }
 };
@@ -827,14 +827,14 @@ exports.updateOfflineOrder = async (req, res) => {
           ...data,
           histories: note
             ? {
-                create: {
-                  fromStageKey: existing.stageKey,
-                  toStageKey: existing.stageKey,
-                  actorId: req.user?.id || null,
-                  actorName,
-                  note: note?.toString().trim() || null
-                }
+              create: {
+                fromStageKey: existing.stageKey,
+                toStageKey: existing.stageKey,
+                actorId: req.user?.id || null,
+                actorName,
+                note: note?.toString().trim() || null
               }
+            }
             : undefined
         },
         include: {
@@ -1171,13 +1171,13 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
               create: eventEntries.length
                 ? eventEntries
                 : [
-                    {
-                      status: baseWorkOrderData.status || 'PLANNING',
-                      actorId: req.user?.id || null,
-                      actorName,
-                      note: eventNote?.toString().trim() || 'Production work order created'
-                    }
-                  ]
+                  {
+                    status: baseWorkOrderData.status || 'PLANNING',
+                    actorId: req.user?.id || null,
+                    actorName,
+                    note: eventNote?.toString().trim() || 'Production work order created'
+                  }
+                ]
             }
           },
           include: {
@@ -1193,8 +1193,8 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
             ...baseWorkOrderData,
             events: eventEntries.length
               ? {
-                  create: eventEntries
-                }
+                create: eventEntries
+              }
               : undefined
           },
           include: {
@@ -1456,8 +1456,8 @@ exports.deleteOfflineOrder = async (req, res, next) => {
     // [2025-12-18 17:30:00] 检查订单是否存在
     const existing = await prisma.offlineOrder.findUnique({
       where: { id },
-      select: { 
-        id: true, 
+      select: {
+        id: true,
         orderCode: true,
         productionWorkOrder: {
           select: { id: true }
@@ -1481,7 +1481,7 @@ exports.deleteOfflineOrder = async (req, res, next) => {
         await tx.productionWorkOrderEvent.deleteMany({
           where: { workOrderId: existing.productionWorkOrder.id },
         });
-        
+
         // 2. 删除 ProductionWorkOrder
         await tx.productionWorkOrder.delete({
           where: { id: existing.productionWorkOrder.id },

@@ -62,7 +62,7 @@ export function ColorGroupCardIntegrated({
         ...pos,
         designAssetId: pos.designAssetId || null // 保留引用，不复制文件
       }));
-      
+
       onUpdate({
         ...group,
         positions: inheritedPositions,
@@ -80,11 +80,11 @@ export function ColorGroupCardIntegrated({
   return (
     <section className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm mb-4 relative">
       {/* [2025-12-19 02:30:00] 颜色色块（2号位置）- 左侧8px宽色块，使用颜色hex值 */}
-      <div 
+      <div
         className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg"
         style={{ backgroundColor: getColorHex() }}
       />
-      
+
       {/* [2025-12-19] 标题区：颜色名、删除按钮、继承按钮 */}
       <header className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 ml-2">
         <div className="flex items-center gap-3">
@@ -140,7 +140,7 @@ export function ColorGroupCardIntegrated({
                 const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
                 const quantity = group.quantities[size] || 0;
                 const additionalFee = sizeFeeMap[size] || 0;
-                
+
                 return (
                   <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                     <label className="block text-xs text-gray-600 mb-1">{size}</label>
@@ -177,7 +177,7 @@ export function ColorGroupCardIntegrated({
                 const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
                 const quantity = group.quantities[size] || 0;
                 const additionalFee = sizeFeeMap[size] || 0;
-                
+
                 return (
                   <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                     <label className="block text-xs text-gray-600 mb-1">
@@ -213,19 +213,10 @@ export function ColorGroupCardIntegrated({
         </div>
       </div>
 
-      {/* [2025-12-19] 单价和印刷位置：一行两列布局 - 左侧印刷位置，右侧单价 */}
+      {/* [2025-12-19] 单价和印刷位置：一行两列布局 */}
       <div className="ml-2 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* printPositions面板 - 左侧 */}
-          <div>
-            <PrintPositionsPanel
-              positions={group.positions}
-              onChange={(positions) => onUpdate({ ...group, positions })}
-              onCopyToOthers={onCopyToOthers}
-            />
-          </div>
-
-          {/* 单价输入框 - 颜色级别单价 - 右侧 */}
+          {/* 单价输入框 - 颜色级别单价 */}
           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
             <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">
@@ -252,6 +243,15 @@ export function ColorGroupCardIntegrated({
                 placeholder="请输入单价"
               />
             </label>
+          </div>
+
+          {/* printPositions面板 */}
+          <div>
+            <PrintPositionsPanel
+              positions={group.positions}
+              onChange={(positions) => onUpdate({ ...group, positions })}
+              onCopyToOthers={onCopyToOthers}
+            />
           </div>
         </div>
       </div>
