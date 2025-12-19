@@ -10,7 +10,7 @@ steps:
     args:
       - '-c'
       - |
-        # [2025-12-19 15:40:30] 注意：Cloud Build 会对形如 "${SOME_NAME}" 的文本进行 substitution 预处理
+        # [2025-12-19 15:40:30] 注意：Cloud Build 会对“美元符号+花括号”的文本模式做 substitution 预处理
         # 这里避免使用 bash 的参数展开语法（带花括号），改用 if 判断，防止触发 INVALID_ARGUMENT。
         set -eo pipefail
         # 优先级：git(若存在) -> SHORT_SHA/COMMIT_SHA(触发器) -> BUILD_ID -> 时间戳
@@ -18,26 +18,26 @@ steps:
         if git rev-parse --short HEAD >/dev/null 2>&1; then
           RAW_SHA="$(git rev-parse --short HEAD | tr -d '\n' | tr -d '\r')"
         fi
-        if [ -z "$RAW_SHA" ]; then
+        if [ -z "$$RAW_SHA" ]; then
           # 避免带花括号的变量文本触发 Cloud Build substitution 预处理
-          if [ -n "$SHORT_SHA" ]; then RAW_SHA="$SHORT_SHA"; fi
-          if [ -z "$RAW_SHA" ] && [ -n "$COMMIT_SHA" ]; then RAW_SHA="$COMMIT_SHA"; fi
+          if [ -n "$$SHORT_SHA" ]; then RAW_SHA="$$SHORT_SHA"; fi
+          if [ -z "$$RAW_SHA" ] && [ -n "$$COMMIT_SHA" ]; then RAW_SHA="$$COMMIT_SHA"; fi
         fi
-        if [ -z "$RAW_SHA" ]; then
-          if [ -n "$BUILD_ID" ]; then RAW_SHA="$BUILD_ID"; fi
+        if [ -z "$$RAW_SHA" ]; then
+          if [ -n "$$BUILD_ID" ]; then RAW_SHA="$$BUILD_ID"; fi
         fi
-        if [ -z "$RAW_SHA" ]; then
+        if [ -z "$$RAW_SHA" ]; then
           RAW_SHA="$(date -u +%Y%m%d%H%M%S)"
         fi
         # 规范化：仅保留字母数字，并截断为 12（next.config 会再截断到 7 展示）
-        BUILD_SHA="$(echo "$RAW_SHA" | tr -cd '[:alnum:]' | cut -c1-12)"
-        if [ -z "$BUILD_SHA" ]; then
+        BUILD_SHA="$$(echo "$$RAW_SHA" | tr -cd '[:alnum:]' | cut -c1-12)"
+        if [ -z "$$BUILD_SHA" ]; then
           BUILD_SHA="$(date -u +%Y%m%d%H%M%S)"
         fi
         BUILD_TIME="$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")"
-        echo "BUILD_SHA=$BUILD_SHA" > /workspace/build-meta.env
-        echo "BUILD_TIME=$BUILD_TIME" >> /workspace/build-meta.env
-        echo "[build-meta] BUILD_SHA=$BUILD_SHA BUILD_TIME=$BUILD_TIME"
+        echo "BUILD_SHA=$$BUILD_SHA" > /workspace/build-meta.env
+        echo "BUILD_TIME=$$BUILD_TIME" >> /workspace/build-meta.env
+        echo "[build-meta] BUILD_SHA=$$BUILD_SHA BUILD_TIME=$$BUILD_TIME"
     waitFor: ['-']
 
   # Build backend Docker image
