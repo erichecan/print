@@ -3,7 +3,7 @@
  * [2025-12-18 21:20:48] 管理设计保存、更新、分享等功能
  */
 import { useState, useCallback } from 'react';
-import type { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import {
   createDesign,
   updateDesign,
@@ -29,7 +29,7 @@ interface UseDesignReturn {
   designName: string;
   setDesignId: (id: string | null) => void;
   setDesignName: (name: string) => void;
-  saveDesign: () => Promise<string | null>;
+  saveDesign: (canvasOverride?: fabric.Canvas | null) => Promise<string | null>;
   updateDesignData: () => Promise<void>;
   loadDesign: (id: string) => Promise<DesignDraft | null>;
   shareDesignLink: () => Promise<string | null>;
@@ -75,7 +75,7 @@ export function useDesign({
         const payload: CreateDesignPayload = {
           name: designName,
           canvas: snapshot,
-          productVariantId: productVariantId,
+          productVariantId: productVariantId as string,
         };
 
         const newDesign = await createDesign(payload);

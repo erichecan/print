@@ -1,0 +1,242 @@
+.dl-catalog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 40px;
+}
+
+.dl-catalog-modal {
+    background: #fff;
+    width: 100%;
+    max-width: 1200px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.dl-catalog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid #E0E0E0;
+    background: #fff;
+}
+
+.dl-catalog-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.dl-catalog-header-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.dl-catalog-search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #F5F5F5;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #E0E0E0;
+    width: 300px;
+}
+
+.dl-catalog-search input {
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 14px;
+    color: #333;
+}
+
+.dl-catalog-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #666;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+.dl-catalog-close:hover {
+    color: #333;
+}
+
+.dl-catalog-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    background: #F9F9F9;
+}
+
+.dl-catalog-sidebar {
+    width: 240px;
+    background: #fff;
+    border-right: 1px solid #E0E0E0;
+    overflow-y: auto;
+    padding: 16px 0;
+}
+
+.dl-catalog-nav {
+    display: flex;
+    flex-direction: column;
+}
+
+.dl-catalog-nav-item {
+    background: none;
+    border: none;
+    text-align: left;
+    padding: 12px 24px;
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 4px solid transparent;
+}
+
+.dl-catalog-nav-item:hover {
+    background: #F5F7FF;
+    color: #1E39D2;
+}
+
+.dl-catalog-nav-item.is-active {
+    background: #F0F4FF;
+    color: #1E39D2;
+    font-weight: 600;
+    border-left-color: #1E39D2;
+}
+
+.dl-catalog-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px;
+}
+
+.dl-catalog-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.dl-catalog-card {
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+.dl-catalog-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: #1E39D2;
+}
+
+.dl-catalog-card-image {
+    position: relative;
+    background: #F5F5F5;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.dl-catalog-card-image img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.dl-catalog-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #1E39D2;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.dl-catalog-card-info {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.dl-catalog-product-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 4px 0;
+}
+
+.dl-catalog-product-desc {
+    font-size: 13px;
+    color: #666;
+    margin: 0 0 16px 0;
+    line-height: 1.4;
+}
+
+.dl-catalog-product-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dl-catalog-product-price {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E39D2;
+}
+
+.dl-catalog-select-btn {
+    background: #FFF;
+    border: 1px solid #1E39D2;
+    color: #1E39D2;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.dl-catalog-card:hover .dl-catalog-select-btn {
+    background: #1E39D2;
+    color: #fff;
+}
+
+.dl-catalog-empty {
+    text-align: center;
+    padding: 60px;
+    color: #999;
+}

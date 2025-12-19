@@ -24,7 +24,7 @@ function getApiBase(): string {
       throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
     }
     // [2025-12-19 15:21:30] 修复：与本仓库默认本地后端端口 4000 对齐
-    return 'http://localhost:4000/api';
+    return 'http://localhost:3001/api';
   }
 }
 

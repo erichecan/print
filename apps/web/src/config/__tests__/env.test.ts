@@ -66,7 +66,7 @@ describe('Environment Configuration', () => {
 
       const url = getFrontendApiBaseUrl();
       // [2025-12-19 15:24:45] 修复：默认本地后端端口与仓库测试/脚本对齐为 4000
-      expect(url).toBe('http://localhost:4000/api');
+      expect(url).toBe('http://localhost:3001/api');
     });
   });
 });

@@ -8,30 +8,42 @@
   /* 布局尺寸 */
   --dl-header-height: 64px;
   --dl-rail-width: 80px;
-  --dl-tool-panel-width: 430px; /* [2025-01-30 16:45:00] 左侧工具面板宽度 */
+  --dl-tool-panel-width: 430px;
+  /* [2025-01-30 16:45:00] 左侧工具面板宽度 */
   --dl-sidebar-width: 120px;
   --dl-bottom-bar-height: 80px;
-  
+
   /* 颜色方案 */
-  --dl-bg-primary: #F5F5F5; /* 浅灰色背景 */
-  --dl-bg-panel: #FFFFFF; /* 白色面板 */
-  --dl-bg-rail: #2C2C2C; /* 深灰色 Rail */
-  --dl-text-primary: #333333; /* 深灰色文本 */
-  --dl-text-secondary: #666666; /* 中等灰色文本 */
-  --dl-text-inverse: #FFFFFF; /* 白色文本（Rail 上） */
-  --dl-color-primary: #0066CC; /* 蓝色强调色 */
-  --dl-color-accent: #FF6B35; /* 橙色 Logo 色 */
-  --dl-border-color: #E5E5E5; /* 边框色 */
-  --dl-hover-bg: rgba(255, 255, 255, 0.15); /* Rail 悬停背景 */
-  --dl-hover-bg-light: rgba(255, 255, 255, 0.1); /* Rail 悬停背景（浅） */
-  
+  --dl-bg-primary: #F5F5F5;
+  /* 浅灰色背景 */
+  --dl-bg-panel: #FFFFFF;
+  /* 白色面板 */
+  --dl-bg-rail: #2C2C2C;
+  /* 深灰色 Rail */
+  --dl-text-primary: #333333;
+  /* 深灰色文本 */
+  --dl-text-secondary: #666666;
+  /* 中等灰色文本 */
+  --dl-text-inverse: #FFFFFF;
+  /* 白色文本（Rail 上） */
+  --dl-color-primary: #0066CC;
+  /* 蓝色强调色 */
+  --dl-color-accent: #FF6B35;
+  /* 橙色 Logo 色 */
+  --dl-border-color: #E5E5E5;
+  /* 边框色 */
+  --dl-hover-bg: rgba(255, 255, 255, 0.15);
+  /* Rail 悬停背景 */
+  --dl-hover-bg-light: rgba(255, 255, 255, 0.1);
+  /* Rail 悬停背景（浅） */
+
   /* 间距 */
   --dl-space-1: 4px;
   --dl-space-2: 8px;
   --dl-space-3: 12px;
   --dl-space-4: 16px;
   --dl-space-6: 24px;
-  
+
   /* 字体 */
   --dl-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
   --dl-font-sm: 11px;
@@ -41,12 +53,12 @@
   --dl-font-weight-normal: 400;
   --dl-font-weight-medium: 500;
   --dl-font-weight-bold: 700;
-  
+
   /* 圆角 */
   --dl-radius-sm: 4px;
   --dl-radius-md: 8px;
   --dl-radius-lg: 12px;
-  
+
   /* 过渡 */
   --dl-transition-base: 0.2s ease;
 }
@@ -55,15 +67,18 @@
 .design-lab-new {
   min-height: 100vh;
   height: 100vh;
-  display: grid !important; /* [2025-01-30 21:30:00] 强制应用 Grid 布局 */
+  display: grid !important;
+  /* [2025-01-30 21:30:00] 强制应用 Grid 布局 */
   grid-template-rows: var(--dl-header-height) 1fr var(--dl-bottom-bar-height);
   /* [2025-01-30 16:45:00] 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
   grid-template-columns: var(--dl-rail-width) var(--dl-tool-panel-width) 1fr var(--dl-sidebar-width);
-  background: var(--dl-bg-primary) !important; /* [2025-01-30 21:30:00] 强制应用背景色 */
+  background: var(--dl-bg-primary) !important;
+  /* [2025-01-30 21:30:00] 强制应用背景色 */
   overflow: hidden;
   position: relative;
   width: 100%;
-  isolation: isolate; /* [2025-01-30 21:35:00] 创建新的堆叠上下文，避免 z-index 冲突 */
+  isolation: isolate;
+  /* [2025-01-30 21:35:00] 创建新的堆叠上下文，避免 z-index 冲突 */
 }
 
 /* [2025-01-30 21:35:00] 确保所有交互元素可点击 */
@@ -84,7 +99,8 @@
   background: var(--dl-bg-panel);
   border-bottom: 1px solid var(--dl-border-color);
   height: var(--dl-header-height);
-  padding: 0 var(--dl-space-6); /* 保持左右 padding */
+  padding: 0 var(--dl-space-6);
+  /* 保持左右 padding */
   display: flex;
   align-items: center;
   z-index: 100;
@@ -105,7 +121,8 @@
   display: flex;
   align-items: center;
   gap: var(--dl-space-6);
-  margin-left: 17px; /* 41px (element-1 x) - 24px (Header padding-left) = 17px */
+  margin-left: 17px;
+  /* 41px (element-1 x) - 24px (Header padding-left) = 17px */
 }
 
 /* [2025-12-06 12:50:00] 修复：Logo 定位 - 需要确保 Logo + gap + breadcrumb = element-1 x:41 */
@@ -115,8 +132,10 @@
   color: var(--dl-color-accent);
   text-decoration: none;
   font-family: var(--dl-font-family);
-  margin-left: 0; /* Logo 从页面左边开始 */
-  width: auto; /* 让 Logo 自然宽度 */
+  margin-left: 0;
+  /* Logo 从页面左边开始 */
+  width: auto;
+  /* 让 Logo 自然宽度 */
 }
 
 /* [2025-12-06 12:35:00] 修复：Header breadcrumb 定位 - element-1 x:41, element-2 x:177 */
@@ -126,7 +145,8 @@
   align-items: center;
   gap: var(--dl-space-2);
   font-size: var(--dl-font-base);
-  margin-left: 0; /* 移除 margin-left，改为在 header__left 中控制 */
+  margin-left: 0;
+  /* 移除 margin-left，改为在 header__left 中控制 */
 }
 
 .dl-header__breadcrumb-link {
@@ -146,16 +166,21 @@
   background: transparent;
   border: none;
   padding: 0;
-  font-size: var(--dl-font-sm); /* MuiButton-sizeSmall */
+  font-size: var(--dl-font-sm);
+  /* MuiButton-sizeSmall */
   font-weight: var(--dl-font-weight-normal);
-  color: rgb(74, 74, 74) !important; /* Custom Ink element-1 颜色 - 使用 !important 防止覆盖 */
+  color: rgb(74, 74, 74) !important;
+  /* Custom Ink element-1 颜色 - 使用 !important 防止覆盖 */
   cursor: pointer;
   text-align: left;
-  width: 116px !important; /* element-1 width - 使用固定宽度 */
-  height: 32px !important; /* element-1 height */
+  width: 116px !important;
+  /* element-1 width - 使用固定宽度 */
+  height: 32px !important;
+  /* element-1 height */
   display: flex;
   align-items: center;
-  margin-left: 0; /* 位置由 header__left 控制 */
+  margin-left: 0;
+  /* 位置由 header__left 控制 */
 }
 
 .dl-header__breadcrumb-link--button:hover {
@@ -184,17 +209,22 @@
   background: transparent;
   border: none;
   padding: 0;
-  font-size: var(--dl-font-sm); /* MuiButton-sizeSmall */
+  font-size: var(--dl-font-sm);
+  /* MuiButton-sizeSmall */
   font-weight: var(--dl-font-weight-normal);
-  color: rgba(0, 0, 0, 0.57) !important; /* Custom Ink element-2 颜色 - 使用 !important 防止覆盖 */
+  color: rgba(0, 0, 0, 0.57) !important;
+  /* Custom Ink element-2 颜色 - 使用 !important 防止覆盖 */
   cursor: pointer;
   text-align: left;
-  width: 139px !important; /* element-2 width - 使用固定宽度 */
-  height: 32px !important; /* element-2 height */
+  width: 139px !important;
+  /* element-2 width - 使用固定宽度 */
+  height: 32px !important;
+  /* element-2 height */
   display: flex;
   align-items: center;
   outline: none;
-  margin-left: 20px; /* element-2 x 位置 (177 - 41 - 116 = 20px，考虑分隔符宽度) */
+  margin-left: 20px;
+  /* element-2 x 位置 (177 - 41 - 116 = 20px，考虑分隔符宽度) */
 }
 
 .dl-header__breadcrumb-current--button:hover {
@@ -261,16 +291,25 @@
 /* [2025-12-06 12:35:00] 修复：确保 Rail 按钮位置正确 - 所有按钮 x:16 */
 .dl-rail {
   grid-column: 1;
-  background: rgb(34, 32, 32); /* Custom Ink Rail 背景色，与 #2C2C2C 接近 */
-  width: 80px !important; /* 确保 Rail 宽度为 80px */
-  display: flex !important; /* 确保使用 flex 布局 */
-  flex-direction: column !important; /* 确保垂直排列 */
-  align-items: flex-start !important; /* 按钮靠左对齐，x:16 */
-  padding: 0; /* 移除 padding，使用 margin 控制位置 */
-  padding-top: 137px; /* element-18 (vertical-toolbar) y:137，所以第一个按钮从 y:169 开始 */
-  gap: 0; /* 移除 gap，使用 margin 控制间距 */
+  background: rgb(34, 32, 32);
+  /* Custom Ink Rail 背景色，与 #2C2C2C 接近 */
+  width: 80px !important;
+  /* 确保 Rail 宽度为 80px */
+  display: flex !important;
+  /* 确保使用 flex 布局 */
+  flex-direction: column !important;
+  /* 确保垂直排列 */
+  align-items: flex-start !important;
+  /* 按钮靠左对齐，x:16 */
+  padding: 0;
+  /* 移除 padding，使用 margin 控制位置 */
+  padding-top: 137px;
+  /* element-18 (vertical-toolbar) y:137，所以第一个按钮从 y:169 开始 */
+  gap: 0;
+  /* 移除 gap，使用 margin 控制间距 */
   overflow-y: auto;
-  position: relative; /* 确保定位上下文 */
+  position: relative;
+  /* 确保定位上下文 */
 }
 
 /* [2025-01-30 23:20:00] 修复：Rail 按钮样式对齐 Custom Ink - element-8 到 element-12 */
@@ -284,26 +323,34 @@
   align-items: center !important;
   justify-content: center !important;
   gap: var(--dl-space-1);
-  width: 68px !important; /* Custom Ink element-9 width */
-  height: 70px !important; /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
-  min-height: 70px !important; /* [2025-12-20 02:40:00] 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
+  width: 68px !important;
+  /* Custom Ink element-9 width */
+  height: 70px !important;
+  /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
+  min-height: 70px !important;
+  /* [2025-12-20 02:40:00] 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
   padding: var(--dl-space-2) var(--dl-space-1);
   background: transparent !important;
   border: none !important;
-  color: rgb(191, 191, 191) !important; /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 - 使用 !important 防止覆盖 */
-  cursor: pointer !important; /* [2025-01-30 21:35:00] 强制启用指针事件 */
+  color: rgb(191, 191, 191) !important;
+  /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 - 使用 !important 防止覆盖 */
+  cursor: pointer !important;
+  /* [2025-01-30 21:35:00] 强制启用指针事件 */
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-normal);
   font-family: var(--dl-font-family);
   border-radius: 0 !important;
-  pointer-events: auto !important; /* [2025-01-30 21:35:00] 确保按钮可点击 */
+  pointer-events: auto !important;
+  /* [2025-01-30 21:35:00] 确保按钮可点击 */
   position: relative;
   z-index: 10;
   -webkit-user-select: none;
   user-select: none;
-  margin: 0; /* 确保没有外边距影响位置 */
-  margin-left: 16px !important; /* element-8 到 element-12 的 x 位置都是 16 */
+  margin: 0;
+  /* 确保没有外边距影响位置 */
+  margin-left: 16px !important;
+  /* element-8 到 element-12 的 x 位置都是 16 */
 }
 
 /* [2025-12-06 12:35:00] 修复：Product Colors 和 Add Names 按钮高度为 86px */
@@ -311,42 +358,52 @@
 .dl-rail__btn[aria-label*="Product Colors"],
 .dl-rail__btn[aria-label*="Add names"],
 .dl-rail__btn[aria-label*="Add Names"] {
-  height: 86px !important; /* element-11 和 element-12 的高度 */
+  height: 86px !important;
+  /* element-11 和 element-12 的高度 */
 }
 
 /* [2025-12-06 12:35:00] 修复：Rail 按钮垂直间距 - element-8 y:169, element-9 y:239 (间距 70px) */
 .dl-rail__btn:first-of-type {
-  margin-top: 32px; /* element-8 y:169 - Rail padding-top:137 = 32px */
+  margin-top: 32px;
+  /* element-8 y:169 - Rail padding-top:137 = 32px */
 }
 
 /* [2025-12-06 12:35:00] 修复：Rail 按钮之间的间距 - 标准按钮高度 70px */
 .dl-rail__btn:not(:first-of-type) {
-  margin-top: 0; /* 按钮之间没有间距，因为高度已经包含了间距 */
+  margin-top: 0;
+  /* 按钮之间没有间距，因为高度已经包含了间距 */
 }
 
 /* [2025-12-06 12:35:00] 修复：Product Colors 和 Add Names 之间的间距 - element-11 y:379, element-12 y:466 (间距 87px) */
-.dl-rail__btn[aria-label*="Product colors"] + .dl-rail__btn,
-.dl-rail__btn[aria-label*="Product Colors"] + .dl-rail__btn {
-  margin-top: 1px; /* element-12 y:466 - (element-11 y:379 + element-11 height:86) = 1px */
+.dl-rail__btn[aria-label*="Product colors"]+.dl-rail__btn,
+.dl-rail__btn[aria-label*="Product Colors"]+.dl-rail__btn {
+  margin-top: 1px;
+  /* element-12 y:466 - (element-11 y:379 + element-11 height:86) = 1px */
 }
 
 /* [2025-01-30 23:20:00] 修复：Rail 按钮悬停效果对齐 Custom Ink */
 .dl-rail__btn:hover {
-  background: rgba(255, 255, 255, 0.1); /* 浅色悬停背景 */
-  color: rgb(255, 255, 255); /* 悬停时文本变白 */
+  background: rgba(255, 255, 255, 0.1);
+  /* 浅色悬停背景 */
+  color: rgb(255, 255, 255);
+  /* 悬停时文本变白 */
 }
 
 /* [2025-01-30 23:20:00] 修复：Rail 按钮激活状态对齐 Custom Ink */
 /* [2025-12-06 12:40:00] 修复：确保激活状态样式正确应用，使用 !important 防止覆盖 */
 .dl-rail__btn.is-active {
-  background: rgba(255, 255, 255, 0.15) !important; /* 激活时背景更亮 */
-  color: rgb(255, 255, 255) !important; /* 激活时文本变白 */
-  border-left: 3px solid var(--dl-color-primary) !important; /* 蓝色左边框 */
+  background: rgba(255, 255, 255, 0.15) !important;
+  /* 激活时背景更亮 */
+  color: rgb(255, 255, 255) !important;
+  /* 激活时文本变白 */
+  border-left: 3px solid var(--dl-color-primary) !important;
+  /* 蓝色左边框 */
 }
 
 /* [2025-12-06 12:40:00] 修复：确保激活状态的标签颜色也变白 */
 .dl-rail__btn.is-active .dl-rail__btn-label {
-  color: rgb(255, 255, 255) !important; /* 激活时标签文本也变白 */
+  color: rgb(255, 255, 255) !important;
+  /* 激活时标签文本也变白 */
 }
 
 .dl-rail__btn-icon {
@@ -388,10 +445,13 @@
   line-height: 1.2;
   text-align: center;
   margin-top: var(--dl-space-1);
-  width: 64px; /* Custom Ink element-24 width */
-  height: 16px; /* Custom Ink element-24 height */
+  width: 64px;
+  /* Custom Ink element-24 width */
+  height: 16px;
+  /* Custom Ink element-24 height */
   display: block;
-  color: rgb(191, 191, 191) !important; /* Custom Ink element-24 color - 使用 !important 防止覆盖 */
+  color: rgb(191, 191, 191) !important;
+  /* Custom Ink element-24 color - 使用 !important 防止覆盖 */
   font-weight: var(--dl-font-weight-normal);
 }
 
@@ -1228,7 +1288,8 @@
 /* [2025-01-31 00:00:00] Add To Design 按钮样式对齐 Custom Ink - 蓝色按钮 */
 .dl-text-panel__add-btn {
   padding: var(--dl-space-3) var(--dl-space-6);
-  background: var(--dl-color-primary); /* 蓝色按钮 */
+  background: var(--dl-color-primary);
+  /* 蓝色按钮 */
   color: var(--dl-text-inverse);
   border: none;
   border-radius: var(--dl-radius-sm);
@@ -1241,7 +1302,8 @@
 }
 
 .dl-text-panel__add-btn:hover {
-  background: #0052A3; /* 悬停时更深的蓝色 */
+  background: #0052A3;
+  /* 悬停时更深的蓝色 */
 }
 
 .dl-text-panel__add-btn:active {
@@ -2298,7 +2360,8 @@
   background: var(--dl-bg-panel);
   border-radius: var(--dl-radius-md);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  max-width: 800px; /* 根据截图，模态较宽以容纳 8 列颜色 */
+  max-width: 800px;
+  /* 根据截图，模态较宽以容纳 8 列颜色 */
   width: 90vw;
   max-width: 900px;
   max-height: 90vh;
@@ -2535,7 +2598,8 @@
 
 /* [2025-01-31 XX:XX:XX] 根据 designlab-colors01.jpeg，颜色名称可能不显示在每个卡片中 */
 .dl-color-item__info {
-  display: none; /* 根据截图，颜色名称不在卡片中显示，而是在下方显示 */
+  display: none;
+  /* 根据截图，颜色名称不在卡片中显示，而是在下方显示 */
   flex-direction: column;
   gap: var(--dl-space-1);
   width: 100%;
@@ -2628,19 +2692,24 @@
    ============================================ */
 /* [2025-12-20 02:55:00] 5.0 版本：Canvas 在 .dl-main 容器内，不需要 grid-row: 2 */
 .dl-canvas {
-  grid-column: 3; /* 在 .dl-main 的 grid 中，Canvas 是第 3 列 */
+  grid-column: 3;
+  /* 在 .dl-main 的 grid 中，Canvas 是第 3 列 */
   /* [2025-12-20 02:55:00] 5.0 版本：移除 grid-row: 2，因为 .dl-main 内部只有一个 grid row */
   background: var(--dl-bg-primary);
   display: flex;
-  align-items: center; /* 垂直居中 */
-  justify-content: center; /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: center;
+  /* 水平居中 */
   overflow: hidden;
   position: relative;
-  min-height: 0; /* 允许 flex 子元素缩小 */
+  min-height: 0;
+  /* 允许 flex 子元素缩小 */
   padding: 0;
   margin: 0;
   /* [2025-12-19 23:30:00] 临时添加边框，用于确认section区域 */
-  border: 3px solid #00ff00; /* 绿色边框，非常明显 */
+  border: 3px solid #00ff00;
+  /* 绿色边框，非常明显 */
 }
 
 .dl-canvas__preview {
@@ -2648,8 +2717,10 @@
   /* [2025-12-20 02:00:00] 阶段2修复：使用 height: 100% 限制在可视区域内，避免产生滚动条 */
   height: 100%;
   display: flex;
-  align-items: center; /* 垂直居中 */
-  justify-content: center; /* 水平居中 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: center;
+  /* 水平居中 */
   position: relative;
   /* [2025-12-20 02:00:00] 移除 padding，避免占用额外空间导致滚动 */
   padding: 0;
@@ -2664,9 +2735,12 @@
   height: 100%;
   /* [2025-12-20 01:55:00] 阶段2修复：使用简单的 flexbox 居中 */
   display: flex;
-  align-items: center; /* 垂直居中 */
-  justify-content: center; /* 水平居中 */
-  flex-shrink: 0; /* 防止 flex 子元素被压缩 */
+  align-items: center;
+  /* 垂直居中 */
+  justify-content: center;
+  /* 水平居中 */
+  flex-shrink: 0;
+  /* 防止 flex 子元素被压缩 */
   margin: 0 auto;
   padding: 0;
 }
@@ -2679,16 +2753,20 @@
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain; /* 完整显示图片，不裁剪，可能有留白 */
-  object-position: center; /* 居中显示 */
+  object-fit: contain;
+  /* 完整显示图片，不裁剪，可能有留白 */
+  object-position: center;
+  /* 居中显示 */
   z-index: 0;
 }
 
 /* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
 /* Fabric.js自动创建的canvas-container，需要确保居中 */
 .dl-canvas__product .canvas-container {
-  position: relative !important; /* 覆盖Fabric.js的绝对定位 */
-  margin: 0 auto !important; /* 水平居中 */
+  position: relative !important;
+  /* 覆盖Fabric.js的绝对定位 */
+  margin: 0 auto !important;
+  /* 水平居中 */
   /* [2025-12-20 01:25:00] 自适应 .dl-canvas section，填满可用空间 */
   width: 100%;
   height: 100%;
@@ -2701,7 +2779,8 @@
 /* [2025-12-20 01:25:00] 确保upper-canvas和lower-canvas都使用自适应CSS尺寸 */
 .dl-canvas__product .canvas-container .upper-canvas,
 .dl-canvas__product .canvas-container .lower-canvas {
-  position: absolute !important; /* Fabric.js要求绝对定位 */
+  position: absolute !important;
+  /* Fabric.js要求绝对定位 */
   left: 0 !important;
   top: 0 !important;
   /* [2025-12-20 01:25:00] 使用 100% 填充 container，由 container 的 aspect-ratio 控制尺寸 */
@@ -2722,7 +2801,8 @@
   position: relative;
   z-index: 1;
   background: transparent;
-  object-fit: contain; /* 保持比例，填满容器 */
+  object-fit: contain;
+  /* 保持比例，填满容器 */
 }
 
 /* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 自动创建的 canvas-container 样式 */
@@ -2731,8 +2811,10 @@
 .dl-canvas__preview .canvas-container,
 .dl-canvas__fabric-container {
   position: relative !important;
-  width: 100% !important; /* 覆盖 Fabric.js 的 inline style width: 4000px */
-  height: 100% !important; /* 覆盖 Fabric.js 的 inline style height: 4800px */
+  width: 100% !important;
+  /* 覆盖 Fabric.js 的 inline style width: 4000px */
+  height: 100% !important;
+  /* 覆盖 Fabric.js 的 inline style height: 4800px */
   max-width: 100% !important;
   max-height: 100% !important;
   display: flex !important;
@@ -2751,8 +2833,10 @@
   position: absolute !important;
   left: 0 !important;
   top: 0 !important;
-  width: 100% !important; /* 填充 container */
-  height: 100% !important; /* 填充 container */
+  width: 100% !important;
+  /* 填充 container */
+  height: 100% !important;
+  /* 填充 container */
   display: block !important;
   /* [2025-12-20 03:45:00] canvas 元素本身会保持逻辑尺寸（4000x4800），但通过 CSS 缩放显示 */
   object-fit: contain !important;
@@ -2774,7 +2858,8 @@
   font-size: var(--dl-font-md);
   padding: var(--dl-space-4);
   z-index: 0;
-  pointer-events: none; /* [2025-01-30 22:35:00] 不阻止画布交互 */
+  pointer-events: none;
+  /* [2025-01-30 22:35:00] 不阻止画布交互 */
   /* [2025-01-31 16:15:00] 确保 placeholder 在画布初始化后隐藏 */
   opacity: 1;
   transition: opacity 0.3s ease;
@@ -2966,11 +3051,15 @@
   align-items: center;
   justify-content: center;
   gap: var(--dl-space-2);
-  width: 64px; /* Custom Ink element-13 width */
-  min-height: 87px; /* Custom Ink element-13 height */
+  width: 64px;
+  /* Custom Ink element-13 width */
+  min-height: 87px;
+  /* Custom Ink element-13 height */
   padding: var(--dl-space-3);
-  background: transparent; /* Custom Ink 按钮背景透明 */
-  border: none; /* 无边框 */
+  background: transparent;
+  /* Custom Ink 按钮背景透明 */
+  border: none;
+  /* 无边框 */
   border-radius: 0;
   cursor: pointer !important;
   pointer-events: auto !important;
@@ -2979,20 +3068,25 @@
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-medium);
-  color: rgb(34, 32, 32); /* Custom Ink Sidebar 按钮文本颜色 */
-  box-shadow: none; /* 无阴影 */
+  color: rgb(34, 32, 32);
+  /* Custom Ink Sidebar 按钮文本颜色 */
+  box-shadow: none;
+  /* 无阴影 */
 }
 
 /* [2025-01-30 23:25:00] 修复：Sidebar 按钮悬停和激活状态对齐 Custom Ink */
 .dl-sidebar__btn:hover {
-  background: rgba(0, 0, 0, 0.05); /* 浅色悬停背景 */
+  background: rgba(0, 0, 0, 0.05);
+  /* 浅色悬停背景 */
   color: rgb(34, 32, 32);
 }
 
 .dl-sidebar__btn.is-active {
-  background: rgba(0, 0, 0, 0.08); /* 激活时背景稍深 */
+  background: rgba(0, 0, 0, 0.08);
+  /* 激活时背景稍深 */
   color: rgb(34, 32, 32);
-  font-weight: var(--dl-font-weight-bold); /* 激活时加粗 */
+  font-weight: var(--dl-font-weight-bold);
+  /* 激活时加粗 */
 }
 
 .dl-sidebar__thumbnail {
@@ -3065,23 +3159,29 @@
 /* [2025-01-30 23:30:00] 修复：Add Products 按钮样式对齐 Custom Ink - element-3 */
 .dl-bottom-bar__add-products {
   padding: var(--dl-space-3) var(--dl-space-6);
-  border: 1px solid rgb(30, 57, 210); /* Custom Ink 主按钮色 */
+  border: 1px solid rgb(30, 57, 210);
+  /* Custom Ink 主按钮色 */
   border-radius: var(--dl-radius-sm);
-  background: rgb(255, 255, 255); /* 白色背景 - MuiButton-outlined */
-  color: rgb(30, 57, 210); /* 蓝色文字 */
+  background: rgb(255, 255, 255);
+  /* 白色背景 - MuiButton-outlined */
+  color: rgb(30, 57, 210);
+  /* 蓝色文字 */
   font-size: var(--dl-font-base);
   font-weight: var(--dl-font-weight-medium);
   cursor: pointer;
   transition: all var(--dl-transition-base);
-  min-width: 167px; /* element-3 width */
-  height: 48px; /* element-3 height */
+  min-width: 167px;
+  /* element-3 width */
+  height: 48px;
+  /* element-3 height */
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
 .dl-bottom-bar__add-products:hover {
-  background: rgba(30, 57, 210, 0.05); /* 悬停时浅蓝色背景 */
+  background: rgba(30, 57, 210, 0.05);
+  /* 悬停时浅蓝色背景 */
   border-color: rgb(30, 57, 210);
   color: rgb(30, 57, 210);
 }
@@ -3132,10 +3232,13 @@
 
 /* [2025-01-30 23:30:00] 修复：Change Product/Color 链接样式对齐 Custom Ink - element-4, element-5 */
 .dl-bottom-bar__link {
-  color: rgb(30, 57, 210); /* Custom Ink 链接颜色 */
-  text-decoration: underline; /* MuiLink-underlineAlways */
+  color: rgb(30, 57, 210);
+  /* Custom Ink 链接颜色 */
+  text-decoration: underline;
+  /* MuiLink-underlineAlways */
   transition: color var(--dl-transition-base);
-  font-size: var(--dl-font-sm); /* MuiTypography-uiTextSmall */
+  font-size: var(--dl-font-sm);
+  /* MuiTypography-uiTextSmall */
   background: transparent;
   border: none;
   padding: 0;
@@ -3144,7 +3247,8 @@
 
 .dl-bottom-bar__link:hover {
   text-decoration: underline;
-  color: rgb(24, 46, 168); /* 悬停时深蓝色 */
+  color: rgb(24, 46, 168);
+  /* 悬停时深蓝色 */
 }
 
 /* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化颜色显示样式 */
@@ -3196,29 +3300,40 @@
 
 /* [2025-01-30 23:30:00] 修复：Save | Share 按钮样式对齐 Custom Ink - element-6 */
 .dl-bottom-bar__btn--secondary {
-  background: rgb(255, 255, 255); /* 白色背景 - MuiButton-outlined */
-  border: 1px solid rgb(30, 57, 210); /* 蓝色边框 */
-  color: rgb(30, 57, 210); /* 蓝色文字 */
-  min-width: 157px; /* element-6 width */
-  height: 48px; /* element-6 height */
+  background: rgb(255, 255, 255);
+  /* 白色背景 - MuiButton-outlined */
+  border: 1px solid rgb(30, 57, 210);
+  /* 蓝色边框 */
+  color: rgb(30, 57, 210);
+  /* 蓝色文字 */
+  min-width: 157px;
+  /* element-6 width */
+  height: 48px;
+  /* element-6 height */
 }
 
 .dl-bottom-bar__btn--secondary:hover {
-  background: rgba(30, 57, 210, 0.05); /* 悬停时浅蓝色背景 */
+  background: rgba(30, 57, 210, 0.05);
+  /* 悬停时浅蓝色背景 */
   border-color: rgb(30, 57, 210);
   color: rgb(30, 57, 210);
 }
 
 /* [2025-01-30 23:30:00] 修复：Get Price 按钮样式对齐 Custom Ink - element-7 */
 .dl-bottom-bar__btn--primary {
-  background: rgb(30, 57, 210); /* 蓝色背景 - MuiButton-contained */
-  color: rgb(255, 255, 255); /* 白色文字 */
-  min-width: 130px; /* element-7 width */
-  height: 48px; /* element-7 height */
+  background: rgb(30, 57, 210);
+  /* 蓝色背景 - MuiButton-contained */
+  color: rgb(255, 255, 255);
+  /* 白色文字 */
+  min-width: 130px;
+  /* element-7 width */
+  height: 48px;
+  /* element-7 height */
 }
 
 .dl-bottom-bar__btn--primary:hover {
-  background: rgb(24, 46, 168); /* 悬停时深蓝色 */
+  background: rgb(24, 46, 168);
+  /* 悬停时深蓝色 */
   color: rgb(255, 255, 255);
 }
 
@@ -3233,25 +3348,26 @@
     /* 保持 5 区域布局，但调整宽度 */
     grid-template-columns: var(--dl-rail-width) var(--dl-tool-panel-width) 1fr var(--dl-sidebar-width);
   }
-  
+
   .dl-tool-panel {
-    width: 380px; /* 平板端稍微缩小工具面板 */
+    width: 380px;
+    /* 平板端稍微缩小工具面板 */
   }
-  
+
   .dl-guide-panel {
     left: var(--dl-space-4);
     min-width: 240px;
     max-width: 320px;
   }
-  
+
   .dl-sidebar {
     width: 100px;
   }
-  
+
   .dl-bottom-bar {
     padding: var(--dl-space-3) var(--dl-space-4);
   }
-  
+
   .dl-bottom-bar__btn {
     min-width: 120px;
     font-size: var(--dl-font-sm);
@@ -3734,26 +3850,26 @@
     grid-template-columns: 1fr;
     grid-template-rows: var(--dl-header-height) 1fr var(--dl-bottom-bar-height);
   }
-  
+
   .dl-main {
     grid-template-columns: 1fr;
   }
-  
+
   /* 移动端隐藏 Rail，可以考虑改为底部导航 */
   .dl-rail {
     display: none;
   }
-  
+
   /* 移动端隐藏工具面板，可以考虑改为底部抽屉 */
   .dl-tool-panel {
     display: none;
   }
-  
+
   /* 移动端隐藏 Sidebar */
   .dl-sidebar {
     display: none;
   }
-  
+
   /* Guide Panel 在移动端调整为静态定位 */
   .dl-guide-panel {
     position: static;
@@ -3761,22 +3877,22 @@
     margin: var(--dl-space-4);
     max-width: 100%;
   }
-  
+
   /* Header 在移动端优化 */
   .dl-header {
     padding: 0 var(--dl-space-3);
   }
-  
+
   .dl-header__breadcrumb {
     font-size: var(--dl-font-sm);
   }
-  
+
   .dl-header__breadcrumb-link--button,
   .dl-header__breadcrumb-current--button {
     padding: var(--dl-space-1) var(--dl-space-2);
     font-size: var(--dl-font-sm);
   }
-  
+
   /* Bottom Bar 在移动端调整为垂直布局 */
   .dl-bottom-bar {
     flex-direction: column;
@@ -3785,29 +3901,31 @@
     padding: var(--dl-space-3);
     gap: var(--dl-space-3);
   }
-  
+
   .dl-bottom-bar__left,
   .dl-bottom-bar__right {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   /* 按钮在移动端优化大小，适合触摸 */
   .dl-bottom-bar__btn {
     min-width: 140px;
-    height: 44px; /* 移动端按钮高度稍微增加，适合触摸 */
+    height: 44px;
+    /* 移动端按钮高度稍微增加，适合触摸 */
     font-size: var(--dl-font-base);
     padding: var(--dl-space-2) var(--dl-space-4);
   }
-  
+
   /* Canvas 在移动端优化 */
   .dl-canvas {
     padding: var(--dl-space-2);
   }
-  
+
   .dl-canvas__product {
     max-width: 100%;
-    max-height: 60vh; /* 移动端限制产品图片高度 */
+    max-height: 60vh;
+    /* 移动端限制产品图片高度 */
   }
 }
 
@@ -4030,34 +4148,39 @@
 
 /* ============================================
    Product Colors Panel
-   [2025-01-30 22:30:00] 产品颜色选择面板样式
+   [2025-12-20] 产品颜色选择面板样式
    ============================================ */
 
 .dl-product-colors-panel {
-  padding: var(--dl-space-4);
-}
-
-.dl-product-colors-panel__header {
-  margin-bottom: var(--dl-space-4);
-}
-
-.dl-product-colors-panel__title {
-  font-size: var(--dl-font-lg);
-  font-weight: var(--dl-font-weight-bold);
-  color: var(--dl-text-primary);
-  margin: 0;
-}
-
-.dl-product-colors-panel__body {
   display: flex;
   flex-direction: column;
-  gap: var(--dl-space-6);
+  height: 100%;
+}
+
+.dl-product-colors-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--dl-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-4);
+}
+
+.dl-product-colors-panel__product-name {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  margin-bottom: var(--dl-space-1);
+  color: var(--dl-text-primary);
 }
 
 .dl-product-colors-panel__section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--dl-space-2);
+  padding-bottom: var(--dl-space-4);
+  margin-bottom: var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+}
+
+.dl-product-colors-panel__section:last-child {
+  border-bottom: none;
 }
 
 .dl-product-colors-panel__section-header {
@@ -4076,6 +4199,12 @@
 .dl-product-colors-panel__section-title {
   font-weight: var(--dl-font-weight-bold);
   font-size: var(--dl-font-base);
+  margin-bottom: var(--dl-space-3);
+}
+
+.dl-product-colors-panel__section-title {
+  font-size: var(--dl-font-md);
+  font-weight: var(--dl-font-weight-bold);
   color: var(--dl-text-primary);
   margin: 0;
 }
@@ -4181,9 +4310,66 @@
   height: 100%;
   border-radius: var(--dl-radius-sm);
   position: relative;
+}
+
+/* Compact Color Grid for Panel */
+.dl-product-colors-panel .dl-colors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 24px);
+  gap: 3px;
+  justify-content: start;
+  padding: 2px;
+}
+
+.dl-product-colors-panel .dl-color-item {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: transparent;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+}
+
+.dl-product-colors-panel .dl-color-item:hover {
+  transform: scale(1.1);
+  z-index: 2;
+}
+
+.dl-product-colors-panel .dl-color-item.is-selected {
+  border: 2px solid var(--dl-color-primary);
+  background: #fdf2f2;
+}
+
+.dl-product-colors-panel .dl-color-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dl-product-colors-panel .dl-color-item__check {
+  font-size: 10px;
+  color: var(--dl-color-primary);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.dl-product-colors-panel .dl-color-item__info {
+  display: none;
+  /* Hide name/sizes in the compact grid */
+}
+
+.dl-product-colors-panel .dl-color-item.is-unavailable {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .dl-product-colors-panel__checkmark {
@@ -4192,52 +4378,61 @@
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 1;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
-.dl-product-colors-panel__add-color {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--dl-space-3);
-  padding: var(--dl-space-3);
-  border-top: 1px solid var(--dl-border-color);
-  margin-top: var(--dl-space-4);
-}
-
-.dl-product-colors-panel__add-color svg {
-  width: 20px;
-  height: 20px;
-  color: var(--dl-text-secondary);
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-
-.dl-product-colors-panel__add-color-text {
-  font-size: var(--dl-font-base);
+.dl-product-colors-panel__product-name {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  margin-bottom: var(--dl-space-3);
   color: var(--dl-text-primary);
+}
+
+/* Consistent small rounded rect */
+.dl-product-colors-panel__swatch-border {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dl-product-colors-panel .dl-color-item__info {
+  display: none;
+  /* Hide detailed info in panel view */
+}
+
+.dl-product-colors-panel__sizes-available {
+  margin-top: var(--dl-space-4);
+  background: var(--dl-bg-primary);
+  padding: var(--dl-space-3);
+  border-radius: var(--dl-radius-sm);
+}
+
+.dl-product-colors-panel__sizes-title {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
   margin: 0 0 var(--dl-space-1) 0;
 }
 
-.dl-product-colors-panel__add-color-link {
+.dl-product-colors-panel__sizes-list {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+}
+
+.dl-product-colors-panel__pick-another {
+  text-align: center;
+  padding-top: var(--dl-space-2);
+}
+
+.dl-product-colors-panel__pick-hint {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: 0 0 var(--dl-space-1) 0;
+}
+
+.dl-product-colors-panel__pick-link {
   background: none;
   border: none;
-  color: var(--dl-color-primary);
-  font-size: var(--dl-font-base);
-  cursor: pointer;
-  text-decoration: underline;
   padding: 0;
+  color: var(--dl-color-primary);
+  font-size: var(--dl-font-sm);
+  text-decoration: underline;
+  cursor: pointer;
 }
-
-.dl-product-colors-panel__add-color-link:hover {
-  color: #0052A3;
-}
-
-.dl-product-colors-panel__loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--dl-space-6);
-  color: var(--dl-text-secondary);
-  font-size: var(--dl-font-base);
-}
-

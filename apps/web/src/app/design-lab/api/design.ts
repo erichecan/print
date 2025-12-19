@@ -18,7 +18,7 @@ export interface DesignDraft {
 export interface CreateDesignPayload {
   name: string;
   canvas: any;
-  productVariantId?: string;
+  productVariantId: string;
 }
 
 export interface UpdateDesignPayload {
@@ -36,8 +36,8 @@ export interface ShareDesignResponse {
  */
 export async function createDesign(payload: CreateDesignPayload): Promise<DesignDraft> {
   try {
-    const response = await designLabApi.createDraft(payload);
-    if (response.success && response.data) {
+    const response = await designLabApi.createDraft(payload as any) as any;
+    if (response.data) {
       return response.data;
     }
     throw new Error('Failed to create design');
@@ -55,8 +55,8 @@ export async function updateDesign(
   payload: UpdateDesignPayload
 ): Promise<DesignDraft> {
   try {
-    const response = await designLabApi.updateDraft(designId, payload);
-    if (response.success && response.data) {
+    const response = await designLabApi.updateDraft(designId, payload) as any;
+    if (response.data) {
       return response.data;
     }
     throw new Error('Failed to update design');
@@ -71,9 +71,9 @@ export async function updateDesign(
  */
 export async function getDesign(designId: string): Promise<DesignDraft> {
   try {
-    const response = await designLabApi.getDesign(designId);
-    if (response.success && response.data) {
-      return response.data;
+    const response = await designLabApi.getDesign(designId) as any;
+    if (response.data) {
+      return response.data as any;
     }
     throw new Error('Failed to get design');
   } catch (error) {
@@ -87,8 +87,8 @@ export async function getDesign(designId: string): Promise<DesignDraft> {
  */
 export async function shareDesign(designId: string): Promise<ShareDesignResponse> {
   try {
-    const response = await designLabApi.shareDesign(designId);
-    if (response.success && response.data) {
+    const response = await designLabApi.shareDesign(designId) as any;
+    if (response.data) {
       return response.data;
     }
     throw new Error('Failed to share design');
@@ -109,4 +109,3 @@ export async function deleteDesign(designId: string): Promise<void> {
     throw error;
   }
 }
-

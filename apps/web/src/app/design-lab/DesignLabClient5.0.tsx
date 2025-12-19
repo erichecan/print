@@ -20,12 +20,15 @@ import EditUploadPanel from './components/panels/EditUploadPanel'; // [2025-12-1
 import TextPanel from './components/panels/TextPanel'; // [2025-12-16 07:10:00] 5.0 版本：Add Text - 复用 4.0 TextPanel
 import EditTextPanel from './components/panels/EditTextPanel'; // [2025-12-16 07:10:00] 5.0 版本：Add Text - 复用 4.0 EditTextPanel
 import ArtPanel from './components/panels/ArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 素材库面板
+import ProductColorsPanel from './components/panels/ProductColorsPanel'; // [2025-12-20] 5.0 版本：Product Colors - 颜色选择面板
 import EditArtPanel from './components/panels/EditArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 编辑面板
-import type { fabric } from 'fabric'; // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 导入 Fabric.js 类型
+import * as fabric from 'fabric';
+import ProductCatalogModal from './components/modals/ProductCatalogModal';
+import { PRODUCT_COLORS } from '@/lib/product-data';
 // [2025-12-18 21:18:56] 产品模块：导入产品选择器和颜色选择器
 import ProductSelectorModal from './modules/product/ProductSelectorModal';
 import ColorSelectorModal from './modules/product/ColorSelectorModal';
-import { getProductByVariant, type Product } from './api/product';
+import { getProducts, getProductByVariant, getProduct, type Product, type ProductDetail } from './api/product';
 // [2025-12-18 21:20:48] 保存模块：导入保存相关组件和 hooks
 import SaveShareModal from './components/modals/SaveShareModal';
 import { useDesign } from './modules/save/useDesign';
@@ -33,6 +36,10 @@ import { useDesign } from './modules/save/useDesign';
 import GetPriceFlowModal from './components/modals/GetPriceFlowModal';
 import { usePricing } from './modules/pricing/usePricing';
 import './design-lab.css';
+
+// [2025-12-18 21:18:56] 画布常量 (Moved up to avoid TDZ)
+const CANVAS_WIDTH = 4000;
+const CANVAS_HEIGHT = 4800;
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
@@ -45,7 +52,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-12-20 02:20:00] 5.0 版本：只保留最基本的 state
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve'>('front');
-  
+
   // [2025-12-20 03:05:00] 5.0 版本：功能2 - 改为 useState，支持动态更新
   // [2025-12-20 03:30:00] 修复：初始状态使用默认白色 T 恤图片，确保用户直接从导航进入时也能正常显示
   // [2025-12-18 21:18:56] 产品模块：添加产品名称字段
@@ -66,6 +73,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     return {
       color: 'White',
       baseImages: defaultImages,
+      productId: '1b58cf4c-51c0-4bca-a2af-63799c99e195', // Gildan Softstyle Jersey T-shirt
+      colorId: '48ed390b-fcb2-4272-b6e0-280196bdf557', // White variant
+      productName: 'Gildan Softstyle Jersey T-shirt',
     };
   });
 
@@ -83,7 +93,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       console.log('[DesignLab 5.0] 功能2 - 使用服务端预取的数据:', initialProductData);
       const color = initialProductData.color || initialProductData.colorName || 'White';
       const baseImages = initialProductData.baseImages || getDefaultProductBaseImages(color);
-      
+
       setProductInfo({
         color,
         baseImages,
@@ -97,10 +107,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     if (colorId && !initialProductData) {
       // 简单实现：假设 colorId 对应的颜色名称（后续可以从 API 获取映射）
       const colorName = 'White'; // 默认值，TODO: 从 API 获取 colorId 到 colorName 的映射
-      
+
       console.log('[DesignLab 5.0] 功能2 - 根据 colorId 更新颜色:', { colorId, colorName });
       const baseImages = getDefaultProductBaseImages(colorName);
-      
+
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
@@ -110,40 +120,57 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
-    // [2025-12-20 03:30:00] 如果有 productId，尝试从 API 获取图片
-    if (productId && !initialProductData) {
-      const colorName = productInfo.color || 'White';
-      
-      console.log('[DesignLab 5.0] 功能2 - 尝试从 API 获取商品图片:', { productId, colorName });
-      
-      getProductBaseImagesFromAPI(colorName, productId)
-        .then(apiImages => {
-          if (apiImages) {
-            console.log('[DesignLab 5.0] 功能2 - API 返回图片:', apiImages);
-            setProductInfo(prev => ({
-              ...prev,
-              baseImages: apiImages,
-              productId,
-            }));
-          } else {
-            console.log('[DesignLab 5.0] 功能2 - API 未返回图片，使用默认白色 T 恤图片');
-            // [2025-12-20 03:30:00] API 失败时回退到默认图片
-            const defaultImages = getDefaultProductBaseImages('White');
-            setProductInfo(prev => ({
-              ...prev,
-              baseImages: defaultImages,
-              productId,
-            }));
+    // [2025-12-20] 修复：如果没有 URL 参数，则尝试从 API 加载第一个商品
+    if (!productId && !colorId && !variantId && !initialProductData) {
+      console.log('[DesignLab 5.0] No product selected, fetching default...');
+      getProducts({ limit: 1 })
+        .then((response: any) => {
+          if (response.data && response.data.length > 0) {
+            handleProductSelect(response.data[0].id);
           }
         })
-        .catch(error => {
-          console.warn('[DesignLab 5.0] 功能2 - API 获取失败，使用默认白色 T 恤图片:', error);
-          // [2025-12-20 03:30:00] API 错误时回退到默认图片
-          const defaultImages = getDefaultProductBaseImages('White');
+        .catch((err: any) => console.warn('[DesignLab 5.0] Failed to load default product:', err));
+    }
+
+    // [2025-12-20 03:30:00] 如果有 productId，尝试从 API 获取完整产品信息（包括 variantId）
+    if (productId && !initialProductData) {
+      console.log('[DesignLab 5.0] 功能2 - 从 API 获取指定产品信息:', { productId });
+
+      getProduct(productId)
+        .then((product: ProductDetail) => {
+          if (product) {
+            console.log('[DesignLab 5.0] 产品信息获取成功:', product.productName);
+            const defaultColor = product.color || 'White';
+            // 使用 API 返回的图片，如果为空则回退到 GCS 默认图片
+            const images = product.baseImages || getDefaultProductBaseImages(defaultColor);
+
+            setProductInfo(prev => ({
+              ...prev,
+              productId: product.productId,
+              colorId: product.variantId, // 保存 variantId 用于保存设计
+              productName: product.productName,
+              color: defaultColor,
+              baseImages: images,
+            }));
+
+            // 更新 URL 参数以包含 variantId (可选)
+            if (product.variantId && !variantId) {
+              const url = new URL(window.location.href);
+              url.searchParams.set('variantId', product.variantId);
+              window.history.replaceState({}, '', url.toString());
+            }
+          }
+        })
+        .catch((error: any) => {
+          console.error('[DesignLab 5.0] 获取产品信息失败:', error);
+          // 回退到仅设置 ID 和默认图片
+          const colorName = productInfo.color || 'White';
+          const defaultImages = getDefaultProductBaseImages(colorName);
           setProductInfo(prev => ({
             ...prev,
             baseImages: defaultImages,
             productId,
+            // 注意：这里没有 variantId，保存可能会失败，但这是降级处理
           }));
         });
       return;
@@ -153,7 +180,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     if (!productId && !colorId && !variantId && !initialProductData) {
       console.log('[DesignLab 5.0] 功能2 - 没有 URL 参数，使用默认白色 T 恤图片');
       const defaultImages = getDefaultProductBaseImages('White');
-      
+
       // [2025-12-20 03:30:00] 只在 productInfo 还没有设置过默认图片时才更新
       if (!productInfo.baseImages || Object.keys(productInfo.baseImages).length === 0) {
         setProductInfo(prev => ({
@@ -163,6 +190,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         }));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, initialProductData]); // [2025-12-20 03:05:00] 依赖 searchParams 和 initialProductData
 
   // [2025-12-20 02:50:00] 5.0 版本：添加调试日志，确保元素正确渲染
@@ -173,7 +201,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const fabricRef = useRef<typeof fabric | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric 对象 ref
   const [canvasInitialized, setCanvasInitialized] = useState(false); // [2025-12-20 03:50:00] 用于触发图片加载的 state
   const cleanupMouseListenerRef = useRef<(() => void) | null>(null); // [2025-12-14 06:35:00] 保存鼠标监听器清理函数
-  
+
   // [2025-12-20 03:55:00] 调试：监听 canvasInitialized 变化
   useEffect(() => {
     console.log('[DesignLab 5.0] canvasInitialized state changed:', canvasInitialized);
@@ -259,17 +287,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-12-20 03:10:00] 5.0 版本：功能3 - ToolPanel 面板类型 state
   // [2025-12-14 05:50:00] 添加 edit-upload 面板类型
-  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | 'edit-upload' | 'edit-text' | 'edit-art' | null; // [2025-01-30 12:58:00] Add Art: 增加 edit-art
+  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | 'edit-upload' | 'edit-text' | 'edit-art' | 'product-colors' | null; // [2025-01-30 12:58:00] Add Art: 增加 edit-art
   const [toolPanelType, setToolPanelType] = useState<ToolPanelType>('home');
   const [activeTool, setActiveTool] = useState<string | null>(null);
-  
+
   // [2025-12-14 05:50:00] 当前选中的上传图片对象
   const [selectedImage, setSelectedImage] = useState<fabric.Image | null>(null);
   // [2025-12-16 07:10:00] Add Text: 当前选中的文本对象
   const [selectedText, setSelectedText] = useState<fabric.IText | null>(null);
-  // [2025-01-30 12:58:00] Add Art: 当前选中的艺术素材对象
   const [selectedArt, setSelectedArt] = useState<fabric.Image | null>(null);
-  
+  const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false); // [2025-12-20] 5.0 Version: Catalog Modal state
+
   // [2025-12-14 06:35:00] 鼠标位置调试信息
   const [mouseDebug, setMouseDebug] = useState<{
     x: number;
@@ -299,7 +327,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     canvas: fabricCanvasRef.current,
     canvasWidth: CANVAS_WIDTH,
     canvasHeight: CANVAS_HEIGHT,
-    productVariantId: productInfo.productId, // TODO: 使用实际的 variantId
+    productVariantId: productInfo.colorId || productInfo.productId,
     initialDesignId: designId,
     initialDesignName: designName,
   });
@@ -335,9 +363,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   };
 
   // [2025-12-20 03:10:00] 5.0 版本：功能3 - Rail 按钮点击处理
-  const handleToolClick = (tool: 'upload' | 'text' | 'art') => {
+  const handleToolClick = (tool: 'upload' | 'text' | 'art' | 'product-colors') => {
     console.log('[DesignLab 5.0] 功能3 - Rail 按钮点击:', { tool, previousTool: activeTool }); // [2025-12-20 03:10:00] 添加调试日志
-    
+
     // 如果点击的是已激活的工具，切换回 home
     if (activeTool === tool) {
       setActiveTool(null);
@@ -369,7 +397,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       console.warn('[DesignLab 5.0] discardActiveObject failed:', e);
     }
   };
-  
+
   // [2025-12-14 05:50:00] Canvas 更新处理函数（EditUploadPanel 需要）
   const handleCanvasUpdate = () => {
     if (fabricCanvasRef.current) {
@@ -377,28 +405,33 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
   };
 
-  // [2025-12-18 21:18:56] 产品模块：产品选择处理
-  const handleProductSelect = async (product: Product) => {
-    console.log('[DesignLab 5.0] 产品选择:', product);
-    
+  // [2025-12-20] 5.0 Version: Handle product selection from catalog (Simplified V5)
+  const handleProductSelect = async (productId: string) => {
+    console.log('[DesignLab 5.0] Selected product ID from catalog:', productId);
+    setIsCatalogModalOpen(false);
+
     try {
-      // 尝试获取产品的第一个 variant 或使用 productId
-      // 这里简化处理，实际应该根据产品获取默认 variant
-      const productDetail = await getProductByVariant(product.id);
-      
+      // Fetch product detail 
+      const productDetail = await getProductByVariant(productId);
+
       if (productDetail) {
         const color = productDetail.color || 'White';
         const baseImages = productDetail.baseImages || getDefaultProductBaseImages(color);
-        
+
+        console.log('[DesignLab 5.0] Updating product with real data:', {
+          name: productDetail.productName,
+          color,
+        });
+
         setProductInfo({
           color,
           baseImages,
           productId: productDetail.productId,
           colorId: productDetail.variantId,
-          productName: productDetail.productName || product.title,
+          productName: productDetail.productName,
         });
-        
-        // 更新 URL（可选）
+
+        // Update URL
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.set('productId', productDetail.productId);
@@ -407,43 +440,31 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           }
           window.history.replaceState({}, '', url.toString());
         }
-      } else {
-        // 如果无法获取详情，使用默认图片
-        const defaultImages = getDefaultProductBaseImages('White');
-        setProductInfo(prev => ({
-          ...prev,
-          productId: product.id,
-          productName: product.title,
-          baseImages: defaultImages,
-        }));
       }
     } catch (error) {
-      console.error('[DesignLab 5.0] 产品选择失败:', error);
-      // 失败时使用默认图片
-      const defaultImages = getDefaultProductBaseImages('White');
-      setProductInfo(prev => ({
-        ...prev,
-        productId: product.id,
-        productName: product.title,
-        baseImages: defaultImages,
-      }));
+      console.error('[DesignLab 5.0] Failed to fetch product details for switching:', error);
     }
+  };
+
+  // [2025-12-18 21:18:56] 产品模块：产品选择处理 (Modified to handle Product object from other modals)
+  const handleProductSelectObject = async (product: Product) => {
+    await handleProductSelect(product.id);
   };
 
   // [2025-12-18 21:18:56] 产品模块：颜色选择处理
   const handleColorSelect = async (colorName: string) => {
     console.log('[DesignLab 5.0] 颜色选择:', colorName);
-    
+
     try {
       // 根据颜色名称更新图片
       const baseImages = getDefaultProductBaseImages(colorName);
-      
+
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
         baseImages,
       }));
-      
+
       // 更新 URL（可选）
       if (typeof window !== 'undefined' && productInfo.productId) {
         const url = new URL(window.location.href);
@@ -468,7 +489,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const handleSaveDesign = async () => {
     if (!fabricCanvasRef.current) {
       alert('Canvas is not initialized. Please wait a moment and try again.');
-      return;
+      return null;
     }
 
     try {
@@ -478,7 +499,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       if (savedDesignId) {
         setDesignId(savedDesignId);
         console.log('[DesignLab 5.0] 设计保存成功:', savedDesignId);
+        return savedDesignId;
       }
+      return null;
     } catch (error) {
       console.error('[DesignLab 5.0] 设计保存失败:', error);
       alert('Failed to save design. Please try again.');
@@ -525,7 +548,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       sidesUsed.push('sleeve');
     }
     // 如果没有对象，至少包含当前视图
-    if (sidesUsed.length === 0 && currentView !== 'zoom') {
+    if (sidesUsed.length === 0 && (currentView as string) !== 'zoom') {
       sidesUsed.push(currentView);
     }
 
@@ -545,19 +568,26 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-18 21:23:43] 报价模块：加入购物车处理
   const handleAddToCart = async (orderData: any) => {
     try {
-      // 确保设计已保存
-      if (!designId && fabricCanvasRef.current) {
+      let currentDesignId = designId;
+
+      // [2025-12-20] 用户要求：Get Price -> Add to Cart 流程不强制通过 Save Modal 保存
+      // 如果没有 designId，直接尝试加入购物车（后端可能需要支持或生成临时 ID）
+      // 或者 handleAddToCart 在 "Get Price" 流程中被调用时，我们跳过保存检查
+
+      /* 
+      // 移除强制保存逻辑
+      if (!currentDesignId && fabricCanvasRef.current) {
         // 先保存设计
-        await handleSaveDesign();
-        // 等待 designId 更新（这里可能需要优化）
-        if (!designId) {
+        currentDesignId = await handleSaveDesign();
+        if (!currentDesignId) {
           throw new Error('Failed to save design before adding to cart');
         }
       }
+      */
 
       // 调用加入购物车 API
       await addToCartInternal({
-        designId: designId || '',
+        designId: currentDesignId as string,
         productId: productInfo.productId,
         variantId: productInfo.colorId,
         quantity: orderData.totalQuantity || 1,
@@ -573,183 +603,141 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
   };
 
-  // [2025-12-20 03:20:00] 5.0 版本：步骤2 - Canvas 尺寸常量
-  const CANVAS_WIDTH = 4000;
-  const CANVAS_HEIGHT = 4800;
+  // [2025-12-20 03:20:00] 5.0 版本：步骤2 - Canvas 尺寸从全局常量获取
 
   // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 添加商品图片到 canvas 的辅助函数
   // [2025-12-20 03:25:00] 修复：添加更详细的日志和错误处理
+  // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 添加商品图片到 canvas 的辅助函数
+  // [2025-12-20 10:30:00] 修复：使用 /_next/image 代理加载以解决 CORS 问题，并确保新图片加载成功后再移除旧图片
   const addProductImageToCanvas = (imageUrl: string) => {
     if (!fabricCanvasRef.current || !fabricRef.current) {
       console.warn('[DesignLab 5.0] Cannot add product image: Canvas not initialized');
       return;
     }
-    
+
     if (!imageUrl) {
       console.warn('[DesignLab 5.0] Cannot add product image: Image URL is empty');
       return;
     }
-    
+
     console.log('[DesignLab 5.0] addProductImageToCanvas called:', { imageUrl });
-    
+
     const fabric = fabricRef.current;
     const canvas = fabricCanvasRef.current;
-    
-    // [2025-12-20 03:20:00] 移除旧的商品图片
-    const oldProductImage = canvas.getObjects().find((obj: any) => obj.name === 'product-image-base');
-    if (oldProductImage) {
-      canvas.remove(oldProductImage);
-    }
-    
-    if (fabric.Image) {
-      console.log('[DesignLab 5.0] Loading image from URL using native Image object...', { imageUrl });
-      
-      // [2025-12-14 05:35:00] 使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
-      // [2025-12-14 05:35:00] 注意：必须使用 window.Image 而不是 Image，因为文件顶部导入了 next/image
-      const imgElement = new window.Image();
-      imgElement.crossOrigin = 'anonymous';
-      
-      let imageLoaded = false;
-      const timeoutId = setTimeout(() => {
-        if (!imageLoaded) {
-          console.error('[DesignLab 5.0] ❌ Image load timeout after 10 seconds');
-        }
-      }, 10000);
-      
-      imgElement.onload = () => {
-        if (imageLoaded) {
-          console.warn('[DesignLab 5.0] Image onload called multiple times, skipping');
-          return;
-        }
-        imageLoaded = true;
-        clearTimeout(timeoutId);
-        
-        if (!fabricCanvasRef.current || !fabricRef.current) {
-          console.warn('[DesignLab 5.0] Fabric canvas or fabric ref not available after image loaded');
-          return;
-        }
-        
-        console.log('[DesignLab 5.0] ✅ Native image loaded:', {
-          naturalWidth: imgElement.naturalWidth,
-          naturalHeight: imgElement.naturalHeight,
-          canvasWidth: fabricCanvasRef.current.width,
-          canvasHeight: fabricCanvasRef.current.height,
-        });
-        
-        try {
-          // [2025-12-14 05:40:00] 检查 fabric.Image 是否可用
-          if (!fabric.Image || typeof fabric.Image !== 'function') {
-            console.error('[DesignLab 5.0] ❌ fabric.Image is not available!', {
-              hasFabricImage: !!fabric.Image,
-              fabricImageType: typeof fabric.Image,
-            });
-            return;
-          }
-          
-          console.log('[DesignLab 5.0] Creating Fabric Image from native Image element...', {
-            imgElementReady: !!imgElement,
-            imgElementComplete: imgElement.complete,
-            imgElementWidth: imgElement.width,
-            imgElementHeight: imgElement.height,
-          });
-          
-          // [2025-12-14 05:40:00] 直接使用 new fabric.Image() 创建 Fabric Image（参考 4.0 版本）
-          const fabricImg = new fabric.Image(imgElement);
-          
-          if (!fabricCanvasRef.current) {
-            console.warn('[DesignLab 5.0] Fabric canvas not available when creating Fabric Image');
-            return;
-          }
-          
-          console.log('[DesignLab 5.0] ✅ Fabric image created:', {
-            fabricWidth: fabricImg.width,
-            fabricHeight: fabricImg.height,
-          });
-          
-          // [2025-12-14 05:45:00] 缩放图片以适应 canvas（cover 模式 - 填充 container）
-          // [2025-12-14 05:45:00] 使用 Math.max 而不是 Math.min，确保图片填充整个 canvas 区域
-          const scale = Math.max(
-            CANVAS_WIDTH / (fabricImg.width || 1),
-            CANVAS_HEIGHT / (fabricImg.height || 1)
-          );
-          
-          console.log('[DesignLab 5.0] Calculating scale:', {
-            canvasSize: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT },
-            imageSize: { width: fabricImg.width, height: fabricImg.height },
-            calculatedScale: scale,
-          });
-          
-          fabricImg.set({
-            left: CANVAS_WIDTH / 2,
-            top: CANVAS_HEIGHT / 2,
-            originX: 'center',
-            originY: 'center',
-            scaleX: scale,
-            scaleY: scale,
-            selectable: false,
-            evented: false,
-            data: {
-              layerType: 'product-image',
-              zIndex: 0,
-            },
-            name: 'product-image-base',
-          });
 
-          console.log('[DesignLab 5.0] Adding image to canvas...');
-          fabricCanvasRef.current.add(fabricImg);
-          // [2025-12-14 05:45:00] 使用 sendObjectToBack 方法将图片置于底层（如果方法存在）
-          if (typeof (fabricCanvasRef.current as any).sendObjectToBack === 'function') {
-            (fabricCanvasRef.current as any).sendObjectToBack(fabricImg);
-          } else if (typeof (fabricCanvasRef.current as any).sendToBack === 'function') {
-            (fabricCanvasRef.current as any).sendToBack(fabricImg);
-          } else {
-            // [2025-12-14 05:45:00] 如果方法不存在，直接移动对象到索引 0
-            const objects = fabricCanvasRef.current.getObjects();
-            const index = objects.indexOf(fabricImg);
-            if (index > 0) {
-              fabricCanvasRef.current.moveObjectTo(fabricImg, 0);
-            }
-          }
-          
-          // [2025-12-20 03:40:00] 强制渲染，确保图片显示
-          fabricCanvasRef.current.renderAll();
-          
-          // [2025-12-20 03:40:00] 验证图片是否真的被添加到 canvas
-          const allObjects = fabricCanvasRef.current.getObjects();
-          const addedImage = allObjects.find((obj: any) => obj.name === 'product-image-base');
-          
-          console.log('[DesignLab 5.0] ✅ Product image added to canvas:', {
-            imageUrl: imageUrl.substring(0, 50) + '...',
-            position: { left: fabricImg.left, top: fabricImg.top },
-            scale: { scaleX: fabricImg.scaleX, scaleY: fabricImg.scaleY },
-            size: { width: fabricImg.width, height: fabricImg.height },
-            addedToCanvas: !!addedImage,
-            totalObjects: allObjects.length,
-          });
-          
-          if (!addedImage) {
-            console.error('[DesignLab 5.0] ❌ Image was not found on canvas after adding!');
-          }
-        } catch (error) {
-          console.error('[DesignLab 5.0] ❌ Error creating Fabric Image:', error);
+    // [2025-12-20 10:30:00] 构建代理 URL 以解决 CORS 问题
+    // 使用 Next.js 图片优化 API 作为代理
+    const proxiedUrl = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=3840&q=100`;
+    console.log('[DesignLab 5.0] Using proxied URL:', proxiedUrl);
+
+    // [2025-12-14 05:35:00] 使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
+    const imgElement = new window.Image();
+    // [2025-12-20 10:30:00] 即使是 same-origin (代理后)，设置 anonymous 也是安全的，且对于导出 canvas 是必需的
+    imgElement.crossOrigin = 'anonymous';
+    imgElement.src = proxiedUrl;
+
+    let imageLoaded = false;
+    const timeoutId = setTimeout(() => {
+      if (!imageLoaded) {
+        console.error('[DesignLab 5.0] ❌ Image load timeout after 15 seconds');
+      }
+    }, 15000);
+
+    imgElement.onload = () => {
+      if (imageLoaded) {
+        return;
+      }
+      imageLoaded = true;
+      clearTimeout(timeoutId);
+
+      if (!fabricCanvasRef.current || !fabricRef.current) {
+        return;
+      }
+
+      console.log('[DesignLab 5.0] ✅ Product image loaded:', {
+        src: imgElement.src,
+        naturalWidth: imgElement.naturalWidth,
+        naturalHeight: imgElement.naturalHeight,
+      });
+
+      try {
+        if (!fabric.Image || typeof fabric.Image !== 'function') {
+          console.error('[DesignLab 5.0] ❌ fabric.Image is not available!');
+          return;
         }
-      };
-      
-      imgElement.onerror = (error) => {
-        clearTimeout(timeoutId);
-        imageLoaded = false;
-        console.error('[DesignLab 5.0] ❌ Failed to load image from URL:', {
-          imageUrl: imageUrl.substring(0, 50) + '...',
-          error,
-          errorType: error?.type,
+
+        // [2025-12-20 10:30:00] 新图片加载成功后，再移除旧图片
+        const oldProductImage = canvas.getObjects().find((obj: any) => obj.name === 'product-image-base');
+        if (oldProductImage) {
+          canvas.remove(oldProductImage);
+        }
+
+        const fabricImg = new fabric.Image(imgElement);
+
+        if (!fabricCanvasRef.current) {
+          return;
+        }
+
+        console.log('[DesignLab 5.0] ✅ Fabric image created:', {
+          fabricWidth: fabricImg.width,
+          fabricHeight: fabricImg.height,
         });
-      };
-      
-      console.log('[DesignLab 5.0] Setting image src...');
-      imgElement.src = imageUrl;
-    } else {
-      console.error('[DesignLab 5.0] fabric.Image is not available!');
-    }
+
+        // [2025-12-14 05:45:00] 缩放图片以适应 canvas（cover 模式 - 填充 container）
+        const scale = Math.max(
+          CANVAS_WIDTH / (fabricImg.width || 1),
+          CANVAS_HEIGHT / (fabricImg.height || 1)
+        );
+
+        fabricImg.set({
+          left: CANVAS_WIDTH / 2,
+          top: CANVAS_HEIGHT / 2,
+          originX: 'center',
+          originY: 'center',
+          scaleX: scale,
+          scaleY: scale,
+          selectable: false,
+          evented: false,
+          data: {
+            layerType: 'product-image',
+            zIndex: 0,
+          },
+          name: 'product-image-base',
+        });
+
+        console.log('[DesignLab 5.0] Adding image to canvas...');
+        fabricCanvasRef.current.add(fabricImg);
+
+        // [2025-12-14 05:45:00] 使用 sendObjectToBack 方法将图片置于底层
+        if (typeof (fabricCanvasRef.current as any).sendObjectToBack === 'function') {
+          (fabricCanvasRef.current as any).sendObjectToBack(fabricImg);
+        } else if (typeof (fabricCanvasRef.current as any).sendToBack === 'function') {
+          (fabricCanvasRef.current as any).sendToBack(fabricImg);
+        } else {
+          const objects = fabricCanvasRef.current.getObjects();
+          const index = objects.indexOf(fabricImg);
+          if (index > 0) {
+            fabricCanvasRef.current.moveObjectTo(fabricImg, 0);
+          }
+        }
+
+        // [2025-12-20 03:40:00] 强制渲染
+        fabricCanvasRef.current.renderAll();
+
+      } catch (err: any) {
+        console.error('[DesignLab 5.0] Failed to create fabric image:', err);
+      }
+    };
+
+    imgElement.onerror = (err) => {
+      console.error('[DesignLab 5.0] ❌ Failed to load product image:', err);
+      // 如果代理失败，可以尝试直接加载（虽然可能会有 CORS 问题，但作为最后的尝试）
+      if (imgElement.src.startsWith('/_next/image')) {
+        console.warn('[DesignLab 5.0] Proxy failed, falling back to direct URL (CORS risk)...');
+        // 注意：这里可能会无限递归，所以要小心。真正的实现应该在递归调用时传递标志。
+        // 为简单起见，这里不再递归，只是记录错误。旧图片会被保留。
+      }
+    };
   };
 
   // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 初始化 Fabric.js Canvas
@@ -772,8 +760,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         }
 
         // [2025-12-20 03:20:00] 获取 fabric 对象
-        const fabric = fabricModule.fabric || fabricModule.default || fabricModule;
-        
+        const fabric = (fabricModule as any).fabric || (fabricModule as any).default || fabricModule;
+
         if (!fabric || typeof fabric.Canvas !== 'function') {
           throw new Error('Fabric.js module is not properly loaded.');
         }
@@ -800,7 +788,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         if (canvasContainer && canvasContainer.classList.contains('canvas-container')) {
           // 添加自定义类，确保 CSS 样式生效
           canvasContainer.classList.add('dl-canvas__fabric-container');
-          
+
           // [2025-12-20 03:45:00] 关键修复：覆盖 Fabric.js 设置的 inline style
           // Fabric.js 会设置 width: 4000px, height: 4800px（逻辑尺寸）
           // 但我们需要容器自适应父元素（100%），逻辑尺寸应该只用于 canvas 元素本身
@@ -808,7 +796,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           canvasContainer.style.height = '100%';
           canvasContainer.style.maxWidth = '100%';
           canvasContainer.style.maxHeight = '100%';
-          
+
           console.log('[DesignLab 5.0] Canvas container found and styled:', {
             container: canvasContainer,
             width: canvasContainer.style.width,
@@ -849,17 +837,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           isMounted,
         });
 
-        // [2025-12-20 03:50:00] 修复：标记 Canvas 已初始化，触发图片加载 useEffect
-        // [2025-12-20 03:56:00] 修复：直接在初始化完成后设置 state，不检查 isMounted（因为此时一定已挂载）
-        console.log('[DesignLab 5.0] ✅ About to set canvasInitialized to true (isMounted:', isMounted, ')');
+        console.log('[DesignLab 5.0] ✅ About to set canvasInitialized to true');
         setCanvasInitialized(true);
-        console.log('[DesignLab 5.0] ✅ setCanvasInitialized(true) called');
-        
+        (window as any).canvasInitialized = true;
+
         // [2025-12-14 06:20:00] 保存图层顺序的 Map（用于防止拖拽时自动 bringToFront）
         const layerOrderMap = new Map<fabric.Object, number>();
-        
+
         // [2025-12-14 05:50:00] 添加 canvas 对象选择事件监听
-        fabricCanvas.on('selection:created', (e) => {
+        fabricCanvas.on('selection:created', (e: any) => {
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
           if (!activeObject) return;
 
@@ -883,7 +869,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           if (activeObject.type === 'image') {
             const fabricImage = activeObject as fabric.Image;
             // [2025-12-14 05:50:00] 检查是否是上传的图片（不是商品底图）
-            if (fabricImage.name && fabricImage.name.startsWith('image_')) {
+            if ((fabricImage as any).name && (fabricImage as any).name.startsWith('image_')) {
               // [2025-12-14 07:35:00] 步骤2：确保选中时边框为灰色 2px
               fabricImage.set({
                 hasBorders: true,
@@ -956,8 +942,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             }
           }
         });
-        
-        fabricCanvas.on('selection:updated', (e) => {
+
+        fabricCanvas.on('selection:updated', (e: any) => {
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
           if (!activeObject) return;
 
@@ -980,7 +966,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           // Upload Image
           if (activeObject.type === 'image') {
             const fabricImage = activeObject as fabric.Image;
-            if (fabricImage.name && fabricImage.name.startsWith('image_')) {
+            if ((fabricImage as any).name && (fabricImage as any).name.startsWith('image_')) {
               // [2025-12-14 07:35:00] 步骤2：确保选中时边框为灰色 2px
               fabricImage.set({
                 hasBorders: true,
@@ -1051,18 +1037,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             }
           }
         });
-        
-        fabricCanvas.on('selection:cleared', () => {
+
+        fabricCanvas.on('selection:cleared', (e: any) => {
           console.log('[DesignLab 5.0] 选择已清除');
           // [2025-12-14 05:50:00] 如果当前在 edit panel，清除选中状态但保持面板（用户可以继续编辑其他对象）
           // 或者切换回 home 面板（根据需求决定）
           // setSelectedImage(null);
           // setToolPanelType('home');
         });
-        
+
         // [2025-12-14 06:15:00] 添加缩放和旋转事件监听，用于调试
         // [2025-12-14 06:25:00] 添加更详细的缩放调试信息
-        fabricCanvas.on('object:scaling', (e) => {
+        fabricCanvas.on('object:scaling', (e: any) => {
           const obj = e.target;
           console.log('[DesignLab 5.0] 🔍 对象缩放事件:', {
             objectName: (obj as any).name,
@@ -1081,7 +1067,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             cornerSize: obj.cornerSize,
           });
         });
-        
+
         // [2025-12-16 22:18:55] 生产环境修复：禁用“鼠标控件调试光标覆盖”
         // 根因：此调试逻辑会用近似距离计算并强制设置 canvas cursor，导致控件图标的真实 hover/click 命中行为被“错位覆盖”（表现为离图标约 100px 才触发手势变化）
         const ENABLE_MOUSE_DEBUG = process.env.NODE_ENV !== 'production';
@@ -1189,7 +1175,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
         // [2025-12-14 06:25:00] 添加鼠标悬停在对象上的事件监听（仅调试）
         if (ENABLE_MOUSE_DEBUG) {
-          fabricCanvas.on('mouse:over', (e) => {
+          fabricCanvas.on('mouse:over', (e: any) => {
             const obj = e.target;
             if (obj) {
               console.log('[DesignLab 5.0] 🖱️ 鼠标悬停在对象上:', {
@@ -1200,32 +1186,32 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             }
           });
         }
-        
+
         // [2025-12-14 06:35:00] 添加鼠标移动监听（仅调试）
         const handleGlobalMouseMove = (e: MouseEvent) => {
           if (!ENABLE_MOUSE_DEBUG) return;
           if (!fabricCanvasRef.current) return;
-          
+
           const canvas = fabricCanvasRef.current;
           const canvasElement = canvas.getElement();
           if (!canvasElement) return;
-          
+
           // [2025-12-14 06:35:00] 检查鼠标是否在 canvas 区域内
           const rect = canvasElement.getBoundingClientRect();
           const canvasX = e.clientX - rect.left;
           const canvasY = e.clientY - rect.top;
-          
+
           // [2025-12-14 06:35:00] 转换为画布逻辑坐标
           const pointer = canvas.getPointer({ clientX: e.clientX, clientY: e.clientY } as any);
-          
+
           // [2025-12-14 06:35:00] 检测鼠标是否在控件上
           let onControl = false;
           let controlType: string | null = null;
           let targetObject: string | null = null;
-          
+
           // [2025-12-14 06:35:00] 检查是否有对象被选中
           const activeObj = canvas.getActiveObject();
-          
+
           // [2025-12-14 06:35:00] 如果有对象被选中，检查鼠标是否在控件的交互区域内
           if (activeObj && activeObj.selectable && activeObj.hasControls) {
             // [2025-12-14 06:35:00] 获取对象的控制点位置
@@ -1233,13 +1219,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             // [2025-12-14 06:35:00] 使用 oCoords（对象坐标缓存）或重新计算
             let coords: any;
             try {
-              coords = (activeObj as any).oCoords || activeObj.getCoords(true);
+              coords = (activeObj as any).oCoords || activeObj.getCoords();
             } catch (e) {
               // [2025-12-14 06:35:00] 如果获取坐标失败，先设置坐标再获取
               activeObj.setCoords();
-              coords = (activeObj as any).oCoords || activeObj.getCoords(true);
+              coords = (activeObj as any).oCoords || activeObj.getCoords();
             }
-            
+
             // [2025-12-14 06:35:00] 检查鼠标是否在任何一个角点上
             const corners = [
               { name: 'tl', point: coords.tl }, // top-left
@@ -1251,7 +1237,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               { name: 'mr', point: coords.mr }, // middle-right
               { name: 'mb', point: coords.mb }, // middle-bottom
             ];
-            
+
             // [2025-12-14 06:35:00] 检查旋转控件
             const angle = activeObj.angle || 0;
             const rad = (angle * Math.PI) / 180;
@@ -1260,7 +1246,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             const centerY = (coords.tl.y + coords.br.y) / 2;
             const rotX = centerX + Math.sin(rad) * rotatingPointOffset;
             const rotY = centerY - Math.cos(rad) * rotatingPointOffset;
-            
+
             // [2025-12-14 06:35:00] 检查鼠标是否在旋转控件附近
             const distToRot = Math.sqrt(Math.pow(pointer.x - rotX, 2) + Math.pow(pointer.y - rotY, 2));
             if (distToRot < cornerSize * 2) {
@@ -1285,7 +1271,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               }
             }
           }
-          
+
           // [2025-12-14 06:35:00] 更新鼠标调试信息
           setMouseDebug({
             x: e.clientX,
@@ -1296,12 +1282,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             controlType,
             targetObject,
           });
-          
+
           // [2025-12-16 22:18:55] 不再强制覆盖 cursor（避免与 Fabric 控件真实命中逻辑冲突）
         };
-        
+
         // [2025-12-14 06:25:00] 添加鼠标按下事件监听（用于调试缩放控件的交互）
-        fabricCanvas.on('mouse:down', (e) => {
+        fabricCanvas.on('mouse:down', (e: any) => {
           const obj = e.target;
           const pointer = fabricCanvas.getPointer(e.e);
           console.log('[DesignLab 5.0] 🖱️ 鼠标按下:', {
@@ -1310,8 +1296,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             isControl: e.e && (e.e.target as HTMLElement)?.classList?.contains('canvas-container'),
           });
         });
-        
-        fabricCanvas.on('object:rotating', (e) => {
+
+        fabricCanvas.on('object:rotating', (e: any) => {
           const obj = e.target;
           console.log('[DesignLab 5.0] 🔄 对象旋转事件:', {
             objectName: (obj as any).name,
@@ -1324,9 +1310,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             lockRotation: obj.lockRotation,
           });
         });
-        
+
         // [2025-12-14 06:20:00] 保存移动前的图层顺序
-        fabricCanvas.on('object:moving', (e) => {
+        fabricCanvas.on('object:moving', (e: any) => {
           const obj = e.target;
           // [2025-12-14 06:20:00] 保存移动前的图层顺序（如果还没有保存）
           if (!layerOrderMap.has(obj)) {
@@ -1345,9 +1331,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             top: obj.top,
           });
         });
-        
+
         // [2025-12-14 06:20:00] 对象移动完成后恢复图层顺序
-        fabricCanvas.on('object:moved', (e) => {
+        fabricCanvas.on('object:moved', (e: any) => {
           const obj = e.target;
           const savedIndex = layerOrderMap.get(obj);
           if (savedIndex !== undefined) {
@@ -1366,8 +1352,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             layerOrderMap.delete(obj);
           }
         });
-        
-        fabricCanvas.on('object:modified', (e) => {
+
+        fabricCanvas.on('object:modified', (e: any) => {
           const obj = e.target;
           // [2025-12-16 21:36:31] 修复：任何缩放/旋转/移动完成后强制 setCoords，避免控件命中区域与渲染位置偏离
           try {
@@ -1381,12 +1367,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             objectType: obj.type,
             scaleX: obj.scaleX,
             scaleY: obj.scaleY,
+            name: (obj as any).name, // Added this line based on instruction, using 'obj'
             angle: obj.angle,
             left: obj.left,
             top: obj.top,
+            width: obj.width, // Added this line based on instruction, using 'obj'
+            height: obj.height, // Added this line based on instruction, using 'obj'
           });
         });
-        
+
         // [2025-12-14 06:40:00] 创建 Custom Ink 样式的自定义控件（参考 Custom Ink 实现）
         // [2025-12-14 06:40:00] 1. 左上角删除控件
         if (!fabric.Control) {
@@ -1394,7 +1383,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         } else {
           // [2025-12-14 07:30:00] 步骤3：创建自定义图标控件（只显示图标，暂不做功能）
           // [2025-12-14 07:30:00] 注释：之前的完整实现代码已注释，现在从简单开始
-          
+
           /* ========== 旧代码（已注释）开始 ==========
           // [2025-12-14 07:00:00] 修复：添加 sizeX/sizeY 定义可点击区域，增大控件尺寸以匹配 Custom Ink
           const deleteControl = new fabric.Control({
@@ -1436,7 +1425,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               // [2025-12-14 07:20:00] 关键：返回 true 阻止事件冒泡，防止对象被取消选中
               return true;
             },
-            mouseUpHandler: function(eventData, transformData) {
+            mouseUpHandler: function (eventData: any, transformData: any) {
               const target = transformData.target;
               if (target && fabricCanvas) {
                 console.log('[DesignLab 5.0] 🗑️ 删除控件被点击:', {
@@ -1463,7 +1452,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const addCustomControlsToObject = (obj: fabric.Object) => {
             const objName = (obj as any).name || '';
             // [2025-12-14 06:40:00] 只为上传的图片添加自定义控件（排除商品底图）
-            if (objName.startsWith('image_')) {
+            if ((obj as any).name && (obj as any).name.startsWith('image_')) {
               if (!obj.controls) {
                 obj.controls = {};
               }
@@ -1513,9 +1502,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               // [2025-12-14 07:20:00] 关键：返回 true 阻止事件冒泡，防止对象被取消选中
               return true;
             },
-            mouseUpHandler: async function(eventData, transformData) {
+            mouseUpHandler: async function (eventData: any, transformData: any) {
               const target = transformData.target;
-              if (target && fabricCanvas && target.type === 'image') {
+              if (target && fabricCanvas) {
                 try {
                   console.log('[DesignLab 5.0] 📋 复制控件被点击:', {
                     objectName: (target as any).name,
@@ -1563,9 +1552,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           
           console.log('[DesignLab 5.0] ✅ Custom Ink 样式的自定义控件已创建');
           ========== 旧代码（已注释）结束 ========== */
-          
+
           // [2025-12-14 07:30:00] 步骤3：创建三个图标控件（只显示，不做功能）
-          
+
           // 1. 左上角删除图标
           const deleteIconControl = new fabric.Control({
             x: -0.5, // 左上角
@@ -1579,7 +1568,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             cursorStyle: 'pointer',
             // [2025-12-16 23:30:22] 修复：显式提供 cursorStyleHandler，避免 Fabric 在 hover 时错误落到 resize 光标
             cursorStyleHandler: () => 'pointer',
-            render: function(ctx, left, top, styleOverride, fabricObject) {
+            render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
               // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top（用于对齐命中区域）
               try {
                 const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -1605,13 +1594,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               ctx.save();
               ctx.translate(left, top);
               ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
-              
+
               // 绘制红色圆形背景
               ctx.fillStyle = '#ef4444';
               ctx.beginPath();
               ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
               ctx.fill();
-              
+
               // 绘制白色 X 图标（线宽也相应放大）
               ctx.strokeStyle = '#ffffff';
               ctx.lineWidth = 15; // [2025-12-14 07:42:00] 放大 5 倍：从 3 调整为 15
@@ -1623,15 +1612,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               ctx.moveTo(iconSize / 2, -iconSize / 2);
               ctx.lineTo(-iconSize / 2, iconSize / 2);
               ctx.stroke();
-              
+
               ctx.restore();
             },
             // [2025-12-14 07:45:00] 功能1：删除图标 - 添加鼠标事件处理
-            mouseDownHandler: function(eventData, transformData) {
-              // [2025-12-14 07:45:00] 返回 true 阻止事件冒泡，防止对象被取消选中
+            mouseDownHandler: function (eventData, transformData) {
+              // [2022-12-14 07:45:00] 返回 true 阻止事件冒泡，防止对象被取消选中
               return true;
             },
-            mouseUpHandler: function(eventData, transformData) {
+            mouseUpHandler: function (eventData: any, transformData: any) {
               const target = transformData.target;
               if (target && fabricCanvas) {
                 console.log('[DesignLab 5.0] 🗑️ 删除图标被点击:', {
@@ -1639,17 +1628,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   objectType: target.type,
                   timestamp: new Date().toISOString(),
                 });
-                
+
                 // [2025-12-14 07:45:00] 功能1：删除对象
                 fabricCanvas.remove(target);
                 fabricCanvas.renderAll();
-                
+
                 // [2025-12-16 07:10:00] Add Text: 如果删除的是当前选中的对象，清除选中状态并切换回 home 面板
                 // [2025-01-30 12:58:00] Add Art: 添加 art 对象的删除处理
                 const targetName = (target as any).name || '';
                 const layerType = (target as any).data?.layerType;
                 if (
-                  (target.type === 'image' && targetName.startsWith('image_')) ||
+                  ((target as any).name && (target as any).name.startsWith('image_')) ||
                   ((target.type === 'i-text' || target.type === 'textbox' || target.type === 'text') && targetName.startsWith('text_')) ||
                   (target.type === 'image' && (targetName.startsWith('art_') || layerType === 'art'))
                 ) {
@@ -1658,14 +1647,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 删除时清理艺术素材选中状态
                   setToolPanelType('home');
                 }
-                
+
                 // [2025-12-14 07:45:00] 返回 true 表示事件已处理，阻止默认行为
                 return true;
               }
               return false;
             },
           });
-          
+
           // 2. 左下角 duplicate 图标
           const duplicateIconControl = new fabric.Control({
             x: -0.5, // 左下角
@@ -1678,7 +1667,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             cursorStyle: 'pointer',
             // [2025-12-16 23:30:22] 修复：显式提供 cursorStyleHandler，确保 hover 时为 pointer
             cursorStyleHandler: () => 'pointer',
-            render: function(ctx, left, top, styleOverride, fabricObject) {
+            render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
               // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
               try {
                 const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -1704,26 +1693,26 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               ctx.save();
               ctx.translate(left, top);
               ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
-              
+
               // 绘制蓝色圆形背景
               ctx.fillStyle = '#0066CC';
               ctx.beginPath();
               ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
               ctx.fill();
-              
+
               // 绘制白色复制图标（两个重叠的矩形）
               ctx.fillStyle = '#ffffff';
               ctx.fillRect(-size * 0.25, -size * 0.35, size * 0.35, size * 0.45);
               ctx.fillRect(-size * 0.15, -size * 0.25, size * 0.35, size * 0.45);
-              
+
               ctx.restore();
             },
             // [2025-12-14 07:45:00] 功能2：复制图标 - 添加鼠标事件处理
-            mouseDownHandler: function(eventData, transformData) {
+            mouseDownHandler: function (eventData, transformData) {
               // [2025-12-14 07:45:00] 返回 true 阻止事件冒泡，防止对象被取消选中
               return true;
             },
-            mouseUpHandler: async function(eventData, transformData) {
+            mouseUpHandler: async function (eventData: any, transformData: any) {
               const target = transformData.target;
               if (target && fabricCanvas) {
                 try {
@@ -1732,15 +1721,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     objectType: target.type,
                     timestamp: new Date().toISOString(),
                   });
-                  
+
                   // [2025-12-16 07:10:00] Add Text: 克隆对象（兼容 sync/promise/callback 三种 clone 形态）
                   const cloneResult = (target as any).clone();
                   const cloned = cloneResult instanceof Promise
                     ? await cloneResult
                     : typeof cloneResult === 'function'
                       ? await new Promise<fabric.Object>((resolve) => {
-                          (target as any).clone(resolve);
-                        })
+                        (target as any).clone(resolve);
+                      })
                       : cloneResult;
 
                   if (!cloned) {
@@ -1787,15 +1776,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     },
                   });
                   cloned.setCoords();
-                  
+
                   // [2025-12-14 07:45:00] 添加到画布
                   fabricCanvas.add(cloned);
-                  
+
                   // [2025-12-14 07:45:00] 为新复制的对象添加图标控件
                   if ((fabricCanvas as any).addIconControlsToObject) {
                     (fabricCanvas as any).addIconControlsToObject(cloned);
                   }
-                  
+
                   // [2025-12-14 07:45:00] 选中新复制的对象
                   fabricCanvas.setActiveObject(cloned);
                   // [2025-12-16 07:10:00] Add Text: 立即切换编辑面板（selection:created/updated 也会兜底）
@@ -1821,9 +1810,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到文本编辑时清理艺术素材
                     setToolPanelType('edit-text');
                   }
-                  
+
                   fabricCanvas.renderAll();
-                  
+
                   // [2025-12-14 07:45:00] 返回 true 表示事件已处理，阻止默认行为
                   return true;
                 } catch (error) {
@@ -1834,7 +1823,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               return false;
             },
           });
-          
+
           // 3. 右下角 resize 图标
           const resizeIconControl = new fabric.Control({
             x: 0.5, // 右下角
@@ -1845,7 +1834,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
             cursorStyle: 'se-resize',
-            render: function(ctx, left, top, styleOverride, fabricObject) {
+            render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
               // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
               try {
                 const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -1871,13 +1860,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               ctx.save();
               ctx.translate(left, top);
               ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
-              
+
               // 绘制蓝色圆形背景
               ctx.fillStyle = '#0066CC';
               ctx.beginPath();
               ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
               ctx.fill();
-              
+
               // 绘制白色 resize 图标（对角线箭头，线宽也相应放大）
               ctx.strokeStyle = '#ffffff';
               ctx.lineWidth = 12.5; // [2025-12-14 07:42:00] 放大 5 倍：从 2.5 调整为 12.5
@@ -1892,13 +1881,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               ctx.lineTo(arrowSize / 2, arrowSize / 2);
               ctx.lineTo(arrowSize / 2 - arrowSize * 0.2, arrowSize / 2 + arrowSize * 0.2);
               ctx.stroke();
-              
+
               ctx.restore();
             },
             // [2025-12-14 07:45:00] 功能3：resize 图标 - 使用 actionHandler 实现缩放功能
             // 使用 Fabric.js 的 controlsUtils 工具函数（如果可用），否则使用自定义实现
             // [2025-12-16 21:35:41] 修复：缩放后必须 setCoords，否则控件命中区域与图标渲染位置会逐渐偏离（放大后更明显）
-            actionHandler: function(eventData, transformData, x, y) {
+            actionHandler: function (eventData: any, transformData: any, x: any, y: any) {
               const target = transformData?.target as any;
               const controlsUtils = (fabric as any).controlsUtils;
 
@@ -1915,37 +1904,37 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               }
 
               // fallback：自定义缩放实现（当 controlsUtils 不可用时）
-              return (function(eventData2, transformData2, x2, y2) {
-                  // [2025-12-14 07:45:00] 功能3：自定义缩放实现（当 controlsUtils 不可用时）
-                  const target2 = transformData2.target;
-                  // 将全局坐标转换为对象的局部坐标
-                  const localPoint = target2.toLocalPoint(
-                    new fabric.Point(x2, y2),
-                    transformData2.originX || 'left',
-                    transformData2.originY || 'top'
-                  );
-                  
-                  // 获取对象的变换后尺寸
-                  const targetDim = target2._getTransformedDimensions();
-                  
-                  // 计算新的缩放比例
-                  const scaleX = localPoint.x / (targetDim.x / (target2.scaleX || 1));
-                  const scaleY = localPoint.y / (targetDim.y / (target2.scaleY || 1));
-                  
-                  // 返回新的坐标（Fabric.js 会使用这些值来更新对象的 scaleX 和 scaleY）
-                  const result2 = {
-                    x: Math.max(0.1, scaleX), // 最小缩放比例 0.1
-                    y: Math.max(0.1, scaleY),
-                  };
-                  // [2025-12-16 21:35:41] 关键：实时更新坐标，确保 hover/click 命中区与图标一致
-                  try {
-                    target2?.setCoords?.();
-                    (target2?.canvas as any)?.requestRenderAll?.();
-                  } catch (e) {
-                    // ignore
-                  }
-                  return result2;
-                })(eventData, transformData, x, y);
+              return (function (eventData2, transformData2, x2, y2) {
+                // [2025-12-14 07:45:00] 功能3：自定义缩放实现（当 controlsUtils 不可用时）
+                const target2 = transformData2.target;
+                // 将全局坐标转换为对象的局部坐标
+                const localPoint = target2.toLocalPoint(
+                  new fabric.Point(x2, y2),
+                  transformData2.originX || 'left',
+                  transformData2.originY || 'top'
+                );
+
+                // 获取对象的变换后尺寸
+                const targetDim = target2._getTransformedDimensions();
+
+                // 计算新的缩放比例
+                const scaleX = localPoint.x / (targetDim.x / (target2.scaleX || 1));
+                const scaleY = localPoint.y / (targetDim.y / (target2.scaleY || 1));
+
+                // 返回新的坐标（Fabric.js 会使用这些值来更新对象的 scaleX 和 scaleY）
+                const result2 = {
+                  x: Math.max(0.1, scaleX), // 最小缩放比例 0.1
+                  y: Math.max(0.1, scaleY),
+                };
+                // [2025-12-16 21:35:41] 关键：实时更新坐标，确保 hover/click 命中区与图标一致
+                try {
+                  target2?.setCoords?.();
+                  (target2?.canvas as any)?.requestRenderAll?.();
+                } catch (e) {
+                  // ignore
+                }
+                return result2;
+              })(eventData, transformData, x, y);
             },
             // [2025-12-14 07:45:00] 使用 Fabric.js 的缩放光标样式（如果可用）
             cursorStyleHandler: (fabric.controlsUtils && fabric.controlsUtils.scaleCursorStyleHandler)
@@ -1965,7 +1954,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           } catch (e) {
             // ignore
           }
-          
+
           // [2025-12-14 07:30:00] 添加图标控件到对象的辅助函数
           const addIconControlsToObject = (obj: fabric.Object) => {
             const objName = (obj as any).name || '';
@@ -1993,12 +1982,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               if (!obj.controls) {
                 obj.controls = {};
               }
-              
+
               // [2025-12-14 07:35:00] 步骤3：添加三个图标控件
               obj.controls.deleteIcon = deleteIconControl;
               obj.controls.duplicateIcon = duplicateIconControl;
               obj.controls.resizeIcon = resizeIconControl;
-              
+
               // [2025-01-30 21:30:00] 修复：恢复默认的旋转控件（mtr），但隐藏其他不需要的控件
               // 方法：只隐藏不需要的控件，保留 mtr（旋转控件）以支持旋转功能
               const defaultControlsToHide = ['tl', 'tr', 'bl', 'br', 'ml', 'mt', 'mr', 'mb'];
@@ -2010,7 +1999,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   defaultControl.sizeY = 0;
                 }
               });
-              
+
               // [2025-01-30 21:30:00] 修复：确保 mtr（旋转控件）可见且有正确的 cursor 样式
               if (obj.controls && obj.controls.mtr) {
                 const mtrControl = obj.controls.mtr;
@@ -2022,7 +2011,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 // [2025-01-30 21:35:00] 修复：使用 Fabric.js 默认的旋转 cursor 样式（crosshair），确保手势变化触发位置正确
                 // 注意：不手动设置 cursorStyle，让 Fabric.js 使用默认的旋转 cursor 样式，这样可以确保 cursor 变化触发位置与控件位置一致
               }
-              
+
               // [2025-12-14 07:35:00] 步骤2：确保边框颜色和宽度正确
               obj.set({
                 hasControls: true, // [2025-12-16 07:10:00] 确保自定义控件可见
@@ -2030,7 +2019,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 borderColor: '#808080', // 灰色边框
                 borderScaleFactor: 2, // 2px 宽度
               });
-              
+
               obj.setCoords();
               console.log('[DesignLab 5.0] 图标控件已添加到对象:', {
                 objectName: objName,
@@ -2041,13 +2030,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               });
             }
           };
-          
+
           // 保存到 canvas，以便后续使用
           (fabricCanvas as any).addIconControlsToObject = addIconControlsToObject;
-          
+
           console.log('[DesignLab 5.0] ✅ 图标控件已创建（功能已实现：删除、复制、缩放）');
         }
-        
+
         // [2025-12-16 22:18:55] 仅在调试模式绑定鼠标移动监听（生产环境禁用，避免影响控件 hover/click）
         const canvasElementForMouse = fabricCanvas.getElement();
         let cleanupMouseListener: (() => void) | undefined;
@@ -2057,7 +2046,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             canvasElementForMouse.removeEventListener('mousemove', handleGlobalMouseMove);
           };
         }
-        
+
         // [2025-12-14 06:35:00] 返回清理函数（确保在所有情况下都返回一个函数或 undefined）
         return cleanupMouseListener;
 
@@ -2097,46 +2086,33 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-20 03:20:00] 步骤2 - 当视图切换或产品信息改变时更新商品图片
   // [2025-12-20 03:50:00] 修复：添加 canvasInitialized state 作为依赖，确保 Canvas 初始化完成后触发加载
   useEffect(() => {
-    // [2025-12-20 03:50:00] 检查 Canvas 是否已初始化（包括 canvasInitialized state）
-    // [2025-12-20 03:55:00] 修复：如果 canvasInitialized 为 false，但 Canvas 实际上已经初始化，也尝试加载
-    const canvasReady = !!fabricCanvasRef.current && !!fabricRef.current;
-    if (!canvasReady || !canvasInitialized) {
-      console.log('[DesignLab 5.0] Canvas not ready, waiting...', {
-        fabricCanvas: !!fabricCanvasRef.current,
-        fabric: !!fabricRef.current,
-        canvasInitialized,
-        canvasReady,
-      });
+    // [2025-12-20] 修复：只要 Fabric Canvas 就绪就尝试加载图片，不强制要求 canvasInitialized state
+    // state 变化可能在某些情况下由于异步导致延迟
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || !fabricRef.current) {
+      console.log('[DesignLab 5.0] Canvas not ready for image loading yet');
       return;
     }
-    
-    // [2025-12-20 03:25:00] 检查 productInfo 是否有有效的图片 URL
+
     const imageUrl = productInfo.baseImages?.[currentView];
     if (!imageUrl) {
-      console.log('[DesignLab 5.0] Product image URL not available:', {
-        currentView,
-        baseImages: productInfo.baseImages,
-        hasBaseImages: !!productInfo.baseImages,
-      });
+      console.log('[DesignLab 5.0] No image URL for view:', currentView);
       return;
     }
-    
+
     console.log('[DesignLab 5.0] Loading product image:', {
       currentView,
-      imageUrl: imageUrl.substring(0, 100) + '...',
-      canvasReady: !!fabricCanvasRef.current,
-      fabricReady: !!fabricRef.current,
-      canvasInitialized,
+      url: imageUrl.substring(0, 60) + '...',
+      canvasId: (canvas as any).lowerCanvasEl?.id || 'unknown'
     });
-    
-    // [2025-12-20 03:40:00] 添加小延迟，确保 Canvas DOM 结构完全就绪（包括 container 样式修复）
+
+    // 小延迟确保 Canvas 容器样式已经稳定
     const timer = setTimeout(() => {
       addProductImageToCanvas(imageUrl);
-    }, 150);
-    
+    }, 100);
+
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentView, JSON.stringify(productInfo.baseImages), canvasInitialized]); // [2025-12-20 03:50:00] 添加 canvasInitialized 作为依赖，确保 Canvas 初始化完成后触发
+  }, [currentView, productInfo.baseImages, canvasInitialized]); // 保持 canvasInitialized 依赖作为触发源之一
 
   // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 文件上传处理函数
   // [2025-12-20 03:20:00] 步骤2 - 更新：添加图片到 Fabric canvas
@@ -2193,7 +2169,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       console.error('[DesignLab 5.0] FileReader error:', error);
       alert('Failed to read the file. Please try again.');
     };
-    
+
     reader.onload = (e) => {
       try {
         const imageUrl = e.target?.result as string;
@@ -2207,7 +2183,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         if (!imageUrl.startsWith('data:')) {
           imgElement.crossOrigin = 'anonymous';
         }
-        
+
         imgElement.onload = () => {
           try {
             // [2025-12-20 03:20:00] 创建 Fabric Image 对象
@@ -2233,14 +2209,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             const SCALE_RATIO = 0.3;
             const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
             const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
-            
+
             const originalWidth = fabricImage.width || 1;
             const originalHeight = fabricImage.height || 1;
-            
+
             const scaleX = targetMaxWidth / originalWidth;
             const scaleY = targetMaxHeight / originalHeight;
             const scale = Math.min(scaleX, scaleY, 1);
-            
+
             fabricImage.scale(scale);
 
             // [2025-12-20 03:20:00] 居中位置（canvas 中心）
@@ -2251,18 +2227,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               originY: 'center',
               name: `image_${Date.now()}`,
             });
-            
+
             // [2025-12-14 06:30:00] 确保坐标已更新（参考 4.0 版本）
             fabricImage.setCoords();
 
             // [2025-12-20 03:20:00] 步骤1：添加到 canvas，确保基本的拖拽功能可用
             canvas.add(fabricImage);
-            
+
             // [2025-12-14 07:30:00] 步骤3：为上传的图片添加图标控件
             if ((canvas as any).addIconControlsToObject) {
               (canvas as any).addIconControlsToObject(fabricImage);
             }
-            
+
             // [2025-12-14 07:30:00] 步骤2：自动选中图片，显示灰色边框
             canvas.setActiveObject(fabricImage);
             // [2025-12-14 07:35:00] 步骤2：确保选中时边框正确显示
@@ -2273,7 +2249,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             });
             fabricImage.setCoords();
             canvas.renderAll();
-            
+
             // [2025-12-14 07:30:00] 记录对象属性用于调试
             console.log('[DesignLab 5.0] ✅ Image added to canvas with properties:', {
               name: fabricImage.name,
@@ -2286,7 +2262,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               borderColor: fabricImage.borderColor, // 步骤2：应该是 '#808080'
               borderScaleFactor: (fabricImage as any).borderScaleFactor, // 步骤2：应该是 2
             });
-            
+
             // [2025-12-14 06:30:00] 渲染画布（参考 4.0 版本）
             canvas.renderAll();
 
@@ -2402,8 +2378,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       // [2025-01-30 13:20:00] 使用前端图片代理 API 绕过 CORS
       imageUrl = `/api/image-proxy?src=${encodeURIComponent(artUrl)}`;
       useProxy = true;
-      console.log('[DesignLab 5.0] Using image proxy for GCS URL:', { 
-        original: artUrl.substring(0, 60) + '...', 
+      console.log('[DesignLab 5.0] Using image proxy for GCS URL:', {
+        original: artUrl.substring(0, 60) + '...',
         proxy: imageUrl,
         timestamp: new Date().toISOString()
       });
@@ -2415,7 +2391,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     if (!imageUrl.includes('/api/image-proxy')) {
       imgElement.crossOrigin = 'anonymous';
     }
-    
+
     imgElement.onload = () => {
       try {
         // [2025-01-30 12:58:00] 创建 Fabric Image 对象
@@ -2435,21 +2411,21 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           centeredScaling: true,
           centeredRotation: true,
         });
-        
+
         // [2025-01-30 12:58:00] 智能缩放：缩放到画布的 30%
         const SCALE_RATIO = 0.3;
         const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
         const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
-        
+
         const originalWidth = fabricImage.width || 1;
         const originalHeight = fabricImage.height || 1;
-        
+
         const scaleX = targetMaxWidth / originalWidth;
         const scaleY = targetMaxHeight / originalHeight;
         const scale = Math.min(scaleX, scaleY, 1);
-        
+
         fabricImage.scale(scale);
-        
+
         // [2025-01-30 12:58:00] 居中位置
         fabricImage.set({
           left: CANVAS_WIDTH / 2,
@@ -2462,34 +2438,34 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             zIndex: 15, // [2025-01-30 12:58:00] 艺术素材图层 zIndex 为 15（介于上传图层的 10 和文字图层的 20 之间）
           },
         });
-        
+
         fabricImage.setCoords();
         canvas.add(fabricImage);
-        
+
         // [2025-01-30 12:58:00] 复用 5.0 大尺寸图标控件（delete/duplicate/resize）
         if (typeof (canvas as any).addIconControlsToObject === 'function') {
           (canvas as any).addIconControlsToObject(fabricImage);
         }
-        
+
         canvas.setActiveObject(fabricImage);
         canvas.renderAll();
-        
+
         // [2025-01-30 12:58:00] 自动切换到 Edit Art 面板
         setSelectedArt(fabricImage);
         setSelectedImage(null);
         setSelectedText(null);
         setToolPanelType('edit-art');
         setActiveTool('art');
-        
+
         console.log('[DesignLab 5.0] ✅ Art added to canvas:', {
-          name: fabricImage.name,
+          name: (fabricImage as any).name,
           url: artUrl.substring(0, 50) + '...',
         });
       } catch (error) {
         console.error('[DesignLab 5.0] Add Art failed:', error);
       }
     };
-    
+
     // [2025-01-30 19:00:00] 增强错误处理：添加降级方案和详细日志
     imgElement.onerror = async (error) => {
       const timestamp = new Date().toISOString();
@@ -2530,7 +2506,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         // [2025-01-30 19:00:00] 降级方案：尝试直接加载原始 URL
         const fallbackImg = new window.Image();
         fallbackImg.crossOrigin = 'anonymous';
-        
+
         fallbackImg.onload = () => {
           console.log('[DesignLab 5.0] ✅ Fallback direct load succeeded');
           // 重新调用 handleAddArt，但这次不使用代理
@@ -2552,18 +2528,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               centeredScaling: true,
               centeredRotation: true,
             });
-            
+
             const SCALE_RATIO = 0.3;
             const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
             const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
-            
+
             const originalWidth = fabricImage.width || 1;
             const originalHeight = fabricImage.height || 1;
-            
+
             const scaleX = targetMaxWidth / originalWidth;
             const scaleY = targetMaxHeight / originalHeight;
             const scale = Math.min(scaleX, scaleY, 1);
-            
+
             fabricImage.scale(scale);
             fabricImage.set({
               left: CANVAS_WIDTH / 2,
@@ -2576,32 +2552,32 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 zIndex: 15,
               },
             });
-            
+
             fabricImage.setCoords();
             canvas.add(fabricImage);
-            
+
             if (typeof (canvas as any).addIconControlsToObject === 'function') {
               (canvas as any).addIconControlsToObject(fabricImage);
             }
-            
+
             canvas.setActiveObject(fabricImage);
             canvas.renderAll();
-            
+
             setSelectedArt(fabricImage);
             setSelectedImage(null);
             setSelectedText(null);
             setToolPanelType('edit-art');
             setActiveTool('art');
-            
+
             console.log('[DesignLab 5.0] ✅ Art added via fallback:', {
-              name: fabricImage.name,
+              name: (fabricImage as any).name,
               url: artUrl.substring(0, 50) + '...',
             });
           } catch (fallbackError) {
             console.error('[DesignLab 5.0] ❌ Fallback add art failed:', fallbackError);
           }
         };
-        
+
         fallbackImg.onerror = (fallbackError) => {
           console.error('[DesignLab 5.0] ❌ Fallback direct load also failed:', {
             error: fallbackError,
@@ -2610,7 +2586,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           });
           // [2025-01-30 19:00:00] 可以在这里显示用户友好的错误提示
         };
-        
+
         fallbackImg.src = artUrl;
       } else {
         // [2025-01-30 19:00:00] 非代理 URL 加载失败，可能是图片不存在或其他问题
@@ -2620,26 +2596,27 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         });
       }
     };
-    
+
     imgElement.src = imageUrl;
   };
 
   // [2025-12-20 02:20:00] 5.0 版本：获取当前视图的图片 URL
-  const getCurrentImageUrl = () => {
+  // [2025-12-20 02:20:00] 5.0 版本：获取当前视图的图片 URL
+  const getCurrentImageUrl = React.useCallback(() => {
     const url = productInfo.baseImages[currentView];
     console.log('[DesignLab 5.0] 获取图片 URL:', { currentView, url }); // [2025-12-20 03:00:00] 添加调试日志
     return url;
-  };
+  }, [productInfo.baseImages, currentView]);
 
   // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 监听视图变化，验证图片切换
   useEffect(() => {
     const imageUrl = getCurrentImageUrl();
-    console.log('[DesignLab 5.0] 视图已切换:', { 
-      currentView, 
+    console.log('[DesignLab 5.0] 视图已切换:', {
+      currentView,
       imageUrl,
-      hasImage: !!imageUrl 
+      hasImage: !!imageUrl
     });
-  }, [currentView]);
+  }, [currentView, getCurrentImageUrl]);
 
   return (
     <div className="design-lab-new">
@@ -2676,7 +2653,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
         {/* [2025-12-20 03:10:00] 5.0 版本：功能3 - Rail 按钮点击交互 */}
         <nav ref={railRef} className="dl-rail" aria-label="Design tools" data-testid="rail">
-          <button 
+          <button
             className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
             onClick={() => handleToolClick('upload')}
             aria-label="Upload image"
@@ -2693,7 +2670,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             <span className="dl-rail__btn-label">Upload</span>
           </button>
 
-          <button 
+          <button
             className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''}`}
             onClick={() => handleToolClick('text')}
             aria-label="Add text"
@@ -2704,7 +2681,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             <span className="dl-rail__btn-label">Add Text</span>
           </button>
 
-          <button 
+          <button
             className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''}`}
             onClick={() => handleToolClick('art')}
             aria-label="Add art"
@@ -2735,8 +2712,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   </div>
                   <div className="dl-home-panel">
                     <div className="dl-home-panel__actions">
-                      <button 
-                        className="dl-home-panel__action" 
+                      <button
+                        className="dl-home-panel__action"
                         aria-label="Upload"
                         onClick={() => handleToolClick('upload')}
                       >
@@ -2747,18 +2724,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                         </svg>
                         <span>Upload</span>
                       </button>
-                      
-                      <button 
-                        className="dl-home-panel__action" 
+
+                      <button
+                        className="dl-home-panel__action"
                         aria-label="Add Text"
                         onClick={() => handleToolClick('text')}
                       >
                         <span className="dl-home-panel__text-icon">abc</span>
                         <span>Add Text</span>
                       </button>
-                      
-                      <button 
-                        className="dl-home-panel__action" 
+
+                      <button
+                        className="dl-home-panel__action"
                         aria-label="Add Art"
                         onClick={() => handleToolClick('art')}
                       >
@@ -2770,7 +2747,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                         <span>Add Art</span>
                       </button>
                     </div>
-                    
+
                     <p className="dl-home-panel__hint">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
@@ -2788,7 +2765,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               {toolPanelType === 'upload' && (
                 <UploadPanel
                   onFileSelect={handleFileUpload}
-                  onBrowseClick={() => {}}
+                  onBrowseClick={() => { }}
                   onClose={handleBackToHome}
                 />
               )}
@@ -2851,6 +2828,19 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 <ArtPanel onSelectArt={handleAddArt} />
               )}
 
+              {/* Product Colors 面板 */}
+              {toolPanelType === 'product-colors' && (
+                <ProductColorsPanel
+                  productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
+                  colors={PRODUCT_COLORS}
+                  selectedColor={productInfo.color}
+                  onSelectColor={(colorName) => {
+                    handleColorSelect(colorName);
+                  }}
+                  onClose={handleBackToHome}
+                />
+              )}
+
               {/* Edit Art 面板 */}
               {toolPanelType === 'edit-art' && (
                 <>
@@ -2900,68 +2890,70 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* [2025-12-20 02:30:00] 5.0 版本：与 4.0 版本 UI 一致 - Sidebar 完整内容 */}
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
         <aside ref={sidebarRef} className="dl-sidebar" aria-label="View options" data-testid="sidebar">
-        <button
-          className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
-          onClick={() => handleViewChange('front')}
-          aria-label="Front view"
-          aria-pressed={currentView === 'front'}
-        >
-          <div className="dl-sidebar__thumbnail">
-            {productInfo.baseImages.front ? (
-              <img 
-                src={getThumbnailImageUrl(productInfo.color, 'front')} 
-                alt="Front view thumbnail"
-                className="dl-sidebar__thumbnail-image"
-              />
-            ) : (
-              <div className="dl-sidebar__thumbnail-placeholder">Front</div>
-            )}
-          </div>
-          <span className="dl-sidebar__label">Front</span>
-        </button>
+          <button
+            className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
+            onClick={() => handleViewChange('front')}
+            aria-label="Front view"
+            aria-pressed={currentView === 'front'}
+          >
+            <div className="dl-sidebar__thumbnail">
+              {productInfo.baseImages.front ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={getThumbnailImageUrl(productInfo.color, 'front')}
+                  alt="Front view thumbnail"
+                  className="dl-sidebar__thumbnail-image"
+                />
+              ) : (
+                <div className="dl-sidebar__thumbnail-placeholder">Front</div>
+              )}
+            </div>
+            <span className="dl-sidebar__label">Front</span>
+          </button>
 
-        <button
-          className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''}`}
-          onClick={() => handleViewChange('back')}
-          aria-label="Back view"
-          aria-pressed={currentView === 'back'}
-        >
-          <div className="dl-sidebar__thumbnail">
-            {productInfo.baseImages.back ? (
-              <img 
-                src={getThumbnailImageUrl(productInfo.color, 'back')} 
-                alt="Back view thumbnail"
-                className="dl-sidebar__thumbnail-image"
-              />
-            ) : (
-              <div className="dl-sidebar__thumbnail-placeholder">Back</div>
-            )}
-          </div>
-          <span className="dl-sidebar__label">Back</span>
-        </button>
+          <button
+            className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''}`}
+            onClick={() => handleViewChange('back')}
+            aria-label="Back view"
+            aria-pressed={currentView === 'back'}
+          >
+            <div className="dl-sidebar__thumbnail">
+              {productInfo.baseImages.back ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={getThumbnailImageUrl(productInfo.color, 'back')}
+                  alt="Back view thumbnail"
+                  className="dl-sidebar__thumbnail-image"
+                />
+              ) : (
+                <div className="dl-sidebar__thumbnail-placeholder">Back</div>
+              )}
+            </div>
+            <span className="dl-sidebar__label">Back</span>
+          </button>
 
-        <button
-          className={`dl-sidebar__btn ${currentView === 'sleeve' ? 'is-active' : ''}`}
-          onClick={() => handleViewChange('sleeve')}
-          aria-label="Sleeve Design"
-          aria-pressed={currentView === 'sleeve'}
-        >
-          <span className="dl-sidebar__label">Sleeve Design</span>
-        </button>
+          <button
+            className={`dl-sidebar__btn ${currentView === 'sleeve' ? 'is-active' : ''}`}
+            onClick={() => handleViewChange('sleeve')}
+            aria-label="Sleeve Design"
+            aria-pressed={currentView === 'sleeve'}
+          >
+            <span className="dl-sidebar__label">Sleeve Design</span>
+          </button>
 
-        <button
-          className="dl-sidebar__btn"
-          aria-label="Zoom"
-          aria-pressed={false}
-        >
-          <span className="dl-sidebar__icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-          </span>
-          <span className="dl-sidebar__label">Zoom</span>
-        </button>
+          <button
+            className="dl-sidebar__btn"
+            aria-label="Zoom"
+            aria-pressed={false}
+          >
+            <span className="dl-sidebar__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+            </span>
+            <span className="dl-sidebar__label">Zoom</span>
+          </button>
         </aside>
       </div>
 
@@ -3006,12 +2998,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       )}
 
       {/* 6. BottomBar - 底部操作栏 */}
-      {/* [2025-12-20 02:30:00] 5.0 版本：与 4.0 版本 UI 一致 - BottomBar 完整内容 */}
       <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
         <div className="dl-bottom-bar__left">
-          <button 
+          <button
             className="dl-bottom-bar__add-products"
-            onClick={handleAddProducts}
+            onClick={() => setIsCatalogModalOpen(true)}
             type="button"
           >
             + Add Products
@@ -3022,13 +3013,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             </div>
             <div className="dl-bottom-bar__product-details">
               <div className="dl-bottom-bar__product-name">
-                {productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
+                {typeof productInfo.productName === 'object' ? (productInfo.productName as any).name : (productInfo.productName || 'Gildan Softstyle Jersey T-shirt')}
               </div>
               <div className="dl-bottom-bar__product-links">
-                <button 
-                  className="dl-bottom-bar__link" 
+                <button
+                  className="dl-bottom-bar__link"
                   type="button"
-                  onClick={() => setShowProductModal(true)}
+                  onClick={() => setIsCatalogModalOpen(true)}
                 >
                   Change Product
                 </button>
@@ -3038,10 +3029,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     <label htmlFor="color-selected">{productInfo.color}</label>
                   </span>
                 )}
-                <button 
-                  className="dl-bottom-bar__link" 
+                <button
+                  className="dl-bottom-bar__link"
                   type="button"
-                  onClick={() => setShowColorModal(true)}
+                  onClick={() => handleToolClick('product-colors')}
                 >
                   Change Color
                 </button>
@@ -3050,23 +3041,16 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </div>
         </div>
         <div className="dl-bottom-bar__right">
-          <button 
+          <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
             onClick={() => setShowSaveShareModal(true)}
             type="button"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
             Save | Share
           </button>
-          <button 
+          <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
             onClick={() => {
-              // [2025-12-18 21:23:43] 报价模块：打开 Get Price 模态框
-              // 如果设计未保存，先提示保存
               if (!designId) {
                 const shouldSave = confirm('Please save your design first before getting a price. Would you like to save now?');
                 if (shouldSave) {
@@ -3079,53 +3063,51 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             }}
             type="button"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-              <line x1="1" y1="10" x2="23" y2="10" />
-            </svg>
             Get Price
           </button>
         </div>
       </footer>
 
-      {/* [2025-12-18 21:18:56] 产品模块：产品选择器模态框 */}
       <ProductSelectorModal
         isOpen={showProductModal}
         onClose={() => setShowProductModal(false)}
+        onSelectProduct={handleProductSelectObject as any}
+        currentProductId={productInfo.productId || ''}
+      />
+
+      <ProductCatalogModal
+        isOpen={isCatalogModalOpen}
+        onClose={() => setIsCatalogModalOpen(false)}
         onSelectProduct={handleProductSelect}
-        currentProductId={productInfo.productId}
       />
 
-      {/* [2025-12-18 21:18:56] 产品模块：颜色选择器模态框 */}
-      <ColorSelectorModal
-        isOpen={showColorModal}
-        onClose={() => setShowColorModal(false)}
-        productId={productInfo.productId}
-        selectedColor={productInfo.color}
-        onSelectColor={handleColorSelect}
-        productName={productInfo.productName}
-      />
-
-      {/* [2025-12-18 21:20:48] 保存模块：SaveShareModal */}
       <SaveShareModal
         isOpen={showSaveShareModal}
         onClose={() => setShowSaveShareModal(false)}
-        designId={designId}
+        designId={designId || null}
         designName={designName}
         onSave={async () => {
           await handleSaveDesign();
-          // 保存成功后，SaveShareModal 会自动关闭
         }}
         onShare={handleShareDesign}
       />
 
-      {/* [2025-12-18 21:23:43] 报价模块：GetPriceFlowModal */}
       <GetPriceFlowModal
         isOpen={showGetPriceModal}
         onClose={() => setShowGetPriceModal(false)}
-        designId={designId}
+        designId={designId || null}
         onAddToCart={handleAddToCart}
-        getQuoteData={getQuoteData}
+        getQuoteData={getQuoteDataInternal}
+        productName={productInfo.productName}
+      />
+
+      <ColorSelectorModal
+        isOpen={showColorModal}
+        onClose={() => setShowColorModal(false)}
+        productId={productInfo.productId || ''}
+        selectedColor={productInfo.color}
+        onSelectColor={handleColorSelect}
+        productName={productInfo.productName || ''}
       />
     </div>
   );

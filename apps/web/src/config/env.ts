@@ -45,14 +45,14 @@ function validateEnvVar(name: string, value: string | undefined, allowEmpty = fa
     }
     return '';
   }
-  
+
   // 生产环境禁止 localhost
   if (isProduction && containsLocalhost(value)) {
     const errorMsg = `生产环境 ${name} 不能包含 localhost (${value})。请设置正确的生产环境地址。`;
     console.error(`[Env Config] ❌ ${errorMsg}`);
     throw new Error(errorMsg);
   }
-  
+
   return value.trim();
 }
 
@@ -63,13 +63,13 @@ function validateEnvVar(name: string, value: string | undefined, allowEmpty = fa
 export function validateEnvAtBuildTime(): void {
   if (isBuildTime || isProduction) {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
-    
+
     if (!apiUrl) {
       throw new Error(
         '❌ 构建时环境变量缺失: NEXT_PUBLIC_API_URL 或 NEXT_PUBLIC_API_BASE_URL 必须设置'
       );
     }
-    
+
     if (containsLocalhost(apiUrl)) {
       throw new Error(
         `❌ 构建时环境变量非法: NEXT_PUBLIC_API_URL 包含 localhost (${apiUrl})，生产环境不允许使用 localhost`
@@ -91,7 +91,7 @@ export function validateEnvAtBuildTime(): void {
 export function getFrontendApiBaseUrl(): string {
   // 优先使用环境变量
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
-  
+
   if (envUrl) {
     // [2025-01-30 23:00:00] Design Lab 4.0: 生产环境检测到 localhost，直接 fail
     if (isProduction && containsLocalhost(envUrl)) {
@@ -99,22 +99,21 @@ export function getFrontendApiBaseUrl(): string {
       console.error('[Env Config] ❌', errorMsg);
       throw new Error(errorMsg);
     }
-    
+
     return normalizeApiUrl(envUrl);
   }
-  
+
   // [2025-01-30 23:00:00] Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
   if (isProduction) {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL 或 NEXT_PUBLIC_API_BASE_URL。';
     console.error('[Env Config] ❌', errorMsg);
     throw new Error(errorMsg);
   }
-  
+
   // 开发环境：允许回退到 localhost
-  // [2025-12-19 15:21:05] 修复：本仓库默认本地后端端口为 4000（与 webapp-testing/Playwright 以及后端启动脚本一致）
-  // 避免开发环境默认回退到 3001 导致 /api/* 代理 500（上游不可达）。
-  console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:4000/api');
-  return 'http://localhost:4000/api';
+  // [2025-12-19 15:21:05] 修复：本仓库默认本地后端端口为 3001 (backend/.env PORT=3001)
+  console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:3001/api');
+  return 'http://localhost:3001/api';
 }
 
 /**
@@ -143,7 +142,7 @@ export function getFrontendApiBaseUrl(): string {
 export function getBackendApiBaseUrl(): string {
   const traceId = `env-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   const timestamp = new Date().toISOString();
-  
+
   // [2025-12-12 14:15:00] 增强：记录环境变量检查过程
   console.debug('[Env Config] getBackendApiBaseUrl called', {
     traceId,
@@ -153,7 +152,7 @@ export function getBackendApiBaseUrl(): string {
     isProduction,
     isBuildTime,
   });
-  
+
   // 优先使用 NEXT_PUBLIC_API_URL
   try {
     const publicApiUrl = validateEnvVar('NEXT_PUBLIC_API_URL', process.env.NEXT_PUBLIC_API_URL, true);
@@ -172,7 +171,7 @@ export function getBackendApiBaseUrl(): string {
     });
     // 继续尝试其他环境变量
   }
-  
+
   // 回退到 API_BASE_URL（服务器端环境变量）
   try {
     const apiBaseUrl = validateEnvVar('API_BASE_URL', process.env.API_BASE_URL, true);
@@ -189,7 +188,7 @@ export function getBackendApiBaseUrl(): string {
       error: error instanceof Error ? error.message : String(error),
     });
   }
-  
+
   // 回退到 NEXT_PUBLIC_API_BASE_URL
   try {
     const publicApiBaseUrl = validateEnvVar('NEXT_PUBLIC_API_BASE_URL', process.env.NEXT_PUBLIC_API_BASE_URL, true);
@@ -206,7 +205,7 @@ export function getBackendApiBaseUrl(): string {
       error: error instanceof Error ? error.message : String(error),
     });
   }
-  
+
   // 生产环境运行时：必须配置环境变量
   if (isProduction) {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL、API_BASE_URL 或 NEXT_PUBLIC_API_BASE_URL。';
@@ -223,10 +222,10 @@ export function getBackendApiBaseUrl(): string {
     });
     throw new Error(errorMsg);
   }
-  
+
   // 开发环境或构建时：允许回退到 localhost
-  // [2025-12-19 15:21:05] 修复：默认本地后端端口改为 4000，避免开发环境代理到错误端口
-  const DEFAULT_API_BASE_DEV = 'http://localhost:4000/api';
+  // [2025-12-19 15:21:05] 修复：默认本地后端端口改为 3001 (backend/.env PORT=3001)
+  const DEFAULT_API_BASE_DEV = 'http://localhost:3001/api';
   if (isBuildTime) {
     console.warn('[Env Config] ⚠️ 构建时未配置 API 地址，使用默认值（运行时需要配置环境变量）:', DEFAULT_API_BASE_DEV, {
       traceId,
@@ -250,7 +249,7 @@ export function getBackendApiBaseUrl(): string {
  */
 export function getStripePublishableKey(): string {
   const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  
+
   // [2025-01-30 18:00:00] 生产环境严格校验
   if (!key || key.trim() === '') {
     if (isProduction) {
@@ -269,7 +268,7 @@ export function getStripePublishableKey(): string {
     console.warn('[Env Config] ⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 未设置，Stripe 功能将不可用');
     return '';
   }
-  
+
   // [2025-01-30 18:00:00] 验证 key 格式（以 pk_ 开头）
   const trimmedKey = key.trim();
   if (!trimmedKey.startsWith('pk_test_') && !trimmedKey.startsWith('pk_live_')) {
@@ -280,7 +279,7 @@ export function getStripePublishableKey(): string {
     }
     console.warn('[Env Config] ⚠️ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 格式可能不正确');
   }
-  
+
   return trimmedKey;
 }
 
@@ -292,7 +291,7 @@ export function getStripePublishableKey(): string {
  */
 export function getStripeSecretKey(): string {
   const key = validateEnvVar('STRIPE_SECRET_KEY', process.env.STRIPE_SECRET_KEY, false);
-  
+
   if (!key || key.trim() === '') {
     if (isProduction) {
       const errorMsg = '生产环境必须配置 STRIPE_SECRET_KEY 环境变量。';
@@ -303,7 +302,7 @@ export function getStripeSecretKey(): string {
     console.warn('[Env Config] ⚠️ STRIPE_SECRET_KEY 未设置，服务端 Stripe 功能将不可用');
     return '';
   }
-  
+
   return key;
 }
 

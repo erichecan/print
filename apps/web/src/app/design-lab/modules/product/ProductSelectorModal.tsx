@@ -31,7 +31,7 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
   // [2025-12-18 21:18:56] 加载产品列表
   const loadProducts = useCallback(async (reset = false) => {
     if (loading) return;
-    
+
     setLoading(true);
     try {
       const currentPage = reset ? 1 : page;
@@ -40,14 +40,14 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
         limit: 24,
         search: searchQuery || undefined,
       });
-      
+
       if (reset) {
         setProducts(response.data || []);
         setPage(1);
       } else {
         setProducts((prev) => [...prev, ...(response.data || [])]);
       }
-      
+
       // 判断是否还有更多数据
       const pagination = response.pagination;
       if (pagination) {
@@ -55,7 +55,7 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
       } else {
         setHasMore((response.data || []).length === 24);
       }
-      
+
       if (reset) {
         setPage(1);
       } else {
@@ -79,7 +79,7 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
   // [2025-12-18 21:18:56] 搜索处理（带防抖）
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const timeoutId = setTimeout(() => {
       if (searchQuery !== undefined) {
         setProducts([]);
@@ -87,7 +87,7 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
         loadProducts(true);
       }
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [searchQuery, isOpen, loadProducts]);
 
@@ -168,9 +168,11 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
                       )}
                     </div>
                     <div className="dl-product-item__info">
-                      <div className="dl-product-item__name">{product.title}</div>
+                      <div className="dl-product-item__name">
+                        {typeof product.title === 'object' ? (product.title as any).name : product.title}
+                      </div>
                       <div className="dl-product-item__price">
-                        ${product.price.toFixed(2)}
+                        ${(typeof product.price === 'object' ? (product.price as any).sale : product.price).toFixed(2)}
                       </div>
                     </div>
                   </button>

@@ -3,10 +3,11 @@
  * [2025-12-18 21:23:43] 管理报价请求、加入购物车等功能
  */
 import { useState, useCallback } from 'react';
-import type { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { requestQuote, submitOrder, type QuoteRequest, type QuoteResponse, type AddToCartRequest } from '../../api/pricing';
 import { createDesign } from '../../api/design';
 import { canvasToSnapshot } from '../save/utils/canvasSerializer';
+import { cartApi } from '@/lib/api';
 
 interface UsePricingOptions {
   canvas: fabric.Canvas | null;
@@ -140,26 +141,42 @@ export function usePricing({
   const addToCart = useCallback(
     async (orderData: AddToCartRequest): Promise<void> => {
       try {
-        // 这里应该调用购物车 API
-        // 暂时使用 submitOrder 作为占位符
-        // TODO: 实现真正的加入购物车 API
         console.log('[usePricing] Adding to cart:', orderData);
-        
-        // 如果需要先保存设计
-        if (!designId && canvas) {
-          // 创建临时设计用于加入购物车
-          const snapshot = canvasToSnapshot(canvas, canvasWidth, canvasHeight);
-          const newDesign = await createDesign({
-            name: 'Cart Item',
-            canvas: snapshot,
-            productVariantId: variantId,
-          });
-          orderData.designId = newDesign.id;
+
+        let finalDesignId = orderData.designId || designId;
+        const finalVariantId = orderData.variantId || variantId;
+
+        if (!finalVariantId) {
+          throw new Error('Variant ID is required to add to cart');
         }
 
-        // 调用加入购物车 API（需要实现）
-        // await addToCartApi(orderData);
-        
+        // 如果没有设计 ID，先创建一个
+        if (!finalDesignId && canvas) {
+          console.log('[usePricing] No design ID found, creating temporary design...');
+          const snapshot = canvasToSnapshot(canvas, canvasWidth, canvasHeight);
+          const newDesign = await createDesign({
+            name: 'Custom Design',
+            canvas: snapshot,
+            productVariantId: finalVariantId,
+          });
+          finalDesignId = newDesign.id;
+        }
+
+        // 整理元数据
+        const metadata = {
+          orderingOptions: orderData.orderingOptions,
+          quoteData: orderData.quoteData,
+        };
+
+        // 调用购物车 API
+        await cartApi.addItem(
+          finalVariantId,
+          orderData.quantity,
+          finalDesignId || undefined,
+          orderData.sizeQuantities,
+          metadata
+        );
+
         console.log('[usePricing] Added to cart successfully');
       } catch (error) {
         console.error('[usePricing] Failed to add to cart:', error);

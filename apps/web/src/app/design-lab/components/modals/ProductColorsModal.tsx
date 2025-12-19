@@ -40,7 +40,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
     if (color.isAvailable) {
       onSelectColor(color.name);
       // 不关闭模态，让用户可以继续选择其他颜色
-      
+
       // [2025-12-08] 埋点：产品颜色切换
       if (typeof window !== 'undefined') {
         const { analytics } = require('@/lib/analytics');
@@ -70,7 +70,9 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
 
         <div className="dl-modal__body">
           {productName && (
-            <p className="dl-modal__product-name">{productName}</p>
+            <p className="dl-modal__product-name">
+              {typeof productName === 'object' ? (productName as any).name : productName}
+            </p>
           )}
 
           {/* Colors 色板矩阵 */}
@@ -127,7 +129,9 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
                       )}
                     </div>
                     <div className="dl-color-item__info">
-                      <div className="dl-color-item__name">{color.name}</div>
+                      <div className="dl-color-item__name">
+                        {typeof color.name === 'object' ? (color.name as any).name : color.name}
+                      </div>
                       {hasAvailableSizes && (
                         <div className="dl-color-item__sizes">
                           Sizes: {color.availableSizes.join(', ')}
@@ -141,7 +145,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
                 );
               })}
             </div>
-            
+
             {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 Sizes Available in 显示 */}
             {selectedColor && (() => {
               const selectedColorObj = colors.find(c => c.name === selectedColor);
@@ -149,7 +153,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
                 return (
                   <div className="dl-modal__sizes-available">
                     <p className="dl-modal__sizes-available-title">
-                      Sizes Available in: {selectedColor}
+                      Sizes Available in: {typeof selectedColor === 'object' ? (selectedColor as any).name : selectedColor}
                     </p>
                     <div className="dl-modal__sizes-list">
                       {selectedColorObj.availableSizes.join(' ')}
@@ -169,7 +173,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
               </div>
               <div className="dl-modal__pick-another-content">
                 <p className="dl-modal__pick-another-text">Add this product in another color</p>
-                <button 
+                <button
                   className="dl-modal__pick-another-link"
                   onClick={() => {
                     // 保持模态打开，用户可以继续选择颜色

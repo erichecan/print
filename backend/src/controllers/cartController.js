@@ -148,7 +148,7 @@ exports.getCart = async (req, res) => {
     }
 
     const cart = await getOrCreateCart(userId, sessionId);
-    
+
     // [2025-01-29 00:20:00] 添加日志记录购物车状态
     logger.info('Cart retrieved', {
       cartId: cart.id,
@@ -182,7 +182,7 @@ exports.getCart = async (req, res) => {
     const items = cart.items.map((item) => {
       // 获取图片 URL（优先使用 variant 的 imageUrl，否则使用 product 的第一张图片）
       let thumbnailUrl = item.variant.imageUrl || item.variant.product.images[0]?.url || null;
-      
+
       // [2025-01-29 12:00:00] 使用 optimizeImageUrl 优化图片 URL，确保是完整的绝对路径
       if (thumbnailUrl) {
         try {
@@ -195,7 +195,7 @@ exports.getCart = async (req, res) => {
           });
         }
       }
-      
+
       return {
         id: item.id,
         variantId: item.variantId,
@@ -208,6 +208,9 @@ exports.getCart = async (req, res) => {
         // [2025-01-28 23:50:00] 修复：ProductImage 模型使用 url 字段，不是 imageUrl
         // [2025-01-29 12:00:00] 优化后的图片 URL
         thumbnail: thumbnailUrl,
+        designId: item.designId,
+        sizeBreakdown: item.sizeBreakdown,
+        metadata: item.metadata,
       };
     });
 
@@ -233,7 +236,7 @@ exports.getCart = async (req, res) => {
 // [2025-01-29 00:25:00] POST /api/cart/items - Add item to cart
 exports.addItem = async (req, res) => {
   try {
-    const { variantId, designId, quantity = 1 } = req.body;
+    const { variantId, designId, quantity = 1, sizeBreakdown, metadata } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
@@ -323,7 +326,7 @@ exports.addItem = async (req, res) => {
 
     // [2025-01-29 00:20:00] Get or create cart
     const cart = await getOrCreateCart(userId, sessionId);
-    
+
     // [2025-01-29 00:20:00] 记录购物车ID用于调试
     logger.info('Cart retrieved for adding item', {
       cartId: cart.id,
@@ -337,8 +340,7 @@ exports.addItem = async (req, res) => {
       where: {
         cartId: cart.id,
         variantId: variantId,
-        // Note: Prisma schema doesn't have designId field yet, so we check by variantId only
-        // If designId is provided, we'll create a new item (or update if same design)
+        designId: designId || null,
       },
     });
 
@@ -377,8 +379,11 @@ exports.addItem = async (req, res) => {
         data: {
           cartId: cart.id,
           variantId: variantId,
+          designId: designId || null,
           quantity: quantity,
           priceSnapshot: price,
+          sizeBreakdown: sizeBreakdown || [],
+          metadata: metadata || {},
         },
       });
 

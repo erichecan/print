@@ -19,33 +19,13 @@ export interface QuoteRequest {
 }
 
 export interface QuoteResponse {
-  basePrice?: number;
-  sizeSurcharges?: Record<string, number>;
-  namesAndNumbersPrice?: {
-    names: number;
-    numbers: number;
-    total: number;
-  };
+  unitPrice?: number;
+  discountedUnitPrice?: number;
+  quantity?: number;
   subtotal: number;
-  volumeDiscount?: {
-    tier: string;
-    discountPercent: number;
-    discountAmount: number;
-  };
-  discountCode?: {
-    code: string;
-    discountAmount: number;
-  };
-  shipping?: {
-    option: string;
-    cost: number;
-    estimatedDelivery: string;
-  };
-  tax?: {
-    rate: number;
-    amount: number;
-  };
+  discount?: number;
   total: number;
+  currency?: string;
   breakdown?: any;
 }
 
@@ -67,8 +47,8 @@ export async function requestQuote(
   payload: QuoteRequest
 ): Promise<QuoteResponse> {
   try {
-    const response = await designLabApi.requestQuote(designId, payload);
-    if (response.success && response.data) {
+    const response = await designLabApi.requestQuote(designId, payload) as any;
+    if (response.data) {
       return response.data;
     }
     throw new Error('Failed to get quote');
@@ -93,4 +73,3 @@ export async function submitOrder(
     throw error;
   }
 }
-

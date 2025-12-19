@@ -301,12 +301,16 @@ model CartItem {
   id            String   @id @default(uuid())
   cartId        String   @map("cart_id")
   variantId     String   @map("variant_id")
+  designId      String?  @map("design_id")
   quantity      Int
   priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
+  sizeBreakdown Json?    @map("size_breakdown")
+  metadata      Json?
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
   cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   variant       Variant  @relation(fields: [variantId], references: [id])
+  design        Design?  @relation(fields: [designId], references: [id])
 
   @@index([cartId])
   @@index([variantId])
@@ -563,6 +567,7 @@ model Design {
   assets          DesignAsset[]
   comments        DesignComment[]
   versions        DesignVersion[]
+  cartItems       CartItem[]
   user            User?           @relation(fields: [userId], references: [id])
   variant         Variant         @relation(fields: [variantId], references: [id])
 
@@ -1104,7 +1109,7 @@ model GuestMessage {
   orderNumber String?  @map("order_number")
   status      GuestMessageStatus @default(UNREAD) @map("status")
   readAt      DateTime? @map("read_at")
-  readBy      String?   @map("read_by") @db.Uuid
+  readBy      String?   @map("read_by")
   readByUser  User?     @relation("ReadByUser", fields: [readBy], references: [id])
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")

@@ -366,7 +366,7 @@ exports.getFilterOptions = async (req, res) => {
     const colorStatsMap = new Map(
       colorStats.map((stat) => [stat.color.toLowerCase(), stat._count._all])
     );
-    
+
     // 返回固定颜色列表，填充数量
     const colorOptions = FIXED_COLOR_LIST.map((fixedColor) => {
       const count = colorStatsMap.get(fixedColor.name.toLowerCase()) || 0;
@@ -439,7 +439,7 @@ exports.getFilterOptions = async (req, res) => {
       code: error.code,
       meta: error.meta,
     });
-    
+
     // [2025-01-29 02:00:00] 返回默认的筛选选项数据，确保前端能正常渲染
     const defaultFilterData = {
       categories: [],
@@ -473,7 +473,7 @@ exports.getFilterOptions = async (req, res) => {
         count: 0,
       })),
     };
-    
+
     // [2025-01-29 02:00:00] 返回默认数据而不是500错误，确保前端能正常显示筛选器
     res.status(200).json(defaultFilterData);
   }
@@ -660,7 +660,7 @@ exports.getProducts = async (req, res) => {
     // [2025-12-18 22:03:56] 如果按价格排序，需要先查询所有产品（在当前筛选条件下），然后按实际价格排序
     // 实际价格 = salePrice（如果有且小于 basePrice）或 basePrice
     const shouldFetchAllForPriceSort = isPriceSort;
-    
+
     // Execute query
     const [products, total] = await Promise.all([
       prisma.product.findMany({
@@ -729,19 +729,19 @@ exports.getProducts = async (req, res) => {
         // 如果有有效的 salePrice 且小于 basePrice，使用 salePrice
         return salePriceInDollars > 0 && salePriceInDollars < basePrice ? salePriceInDollars : basePrice;
       };
-      
+
       // [2025-12-18 22:09:15] 按实际价格排序
       sortedProducts = products.sort((a, b) => {
         const priceA = getActualPrice(a);
         const priceB = getActualPrice(b);
-        
+
         if (sortOrder === 'asc') {
           return priceA - priceB;
         } else {
           return priceB - priceA;
         }
       });
-      
+
       // [2025-12-18 22:09:15] 重新排序后，应用分页
       sortedProducts = sortedProducts.slice(skip, skip + limit);
     }
@@ -774,9 +774,9 @@ exports.getProducts = async (req, res) => {
         },
         primaryImage: imageUrl
           ? {
-              url: imageUrl,
-              alt: primaryImage.alt || product.name,
-            }
+            url: imageUrl,
+            alt: primaryImage.alt || product.name,
+          }
           : null,
         // [2025-01-29 20:05:00] 返回完整的图片数组
         images: (product.images || []).map((image) => ({
@@ -787,15 +787,15 @@ exports.getProducts = async (req, res) => {
         })),
         category: product.category
           ? {
-              name: product.category.name,
-              slug: product.category.slug,
-            }
+            name: product.category.name,
+            slug: product.category.slug,
+          }
           : null,
         brand: product.brand
           ? {
-              name: product.brand.name,
-              slug: product.brand.slug,
-            }
+            name: product.brand.name,
+            slug: product.brand.slug,
+          }
           : null,
         // [2025-01-27 18:30:00] 添加variants信息用于颜色显示
         // [2025-01-29 23:00:00] 包含 imageUrl 字段用于颜色悬停切换图片
@@ -842,7 +842,7 @@ exports.getProducts = async (req, res) => {
       code: error.code,
       meta: error.meta,
     });
-    
+
     // [2025-01-29 22:30:00] 如果数据库连接失败或查询错误，返回空数组而不是错误
     // 这样可以避免前端因为数据库问题而完全无法工作
     // const isConnectionError = error.code === 'P1001' || 
@@ -851,7 +851,7 @@ exports.getProducts = async (req, res) => {
     //                          error.message.includes('connect') || 
     //                          error.message.includes('timeout') ||
     //                          error.message.includes('does not exist');
-    
+
     // if (isConnectionError) {
     //   logger.warn('[2025-01-29 22:30:00] Database connection/table issue, returning empty products list');
     //   // [2025-12-07 15:25:00] 修复：确保 limit 变量已定义
@@ -866,7 +866,7 @@ exports.getProducts = async (req, res) => {
     //     },
     //   });
     // }
-    
+
     // // [2025-01-29 22:30:00] 对于其他查询错误，也返回空数组（可能是数据不存在）
     // // 这样可以避免前端因为数据问题而完全无法工作
     // logger.warn('[2025-01-29 22:30:00] Query error, returning empty products list to prevent frontend failure');
@@ -881,9 +881,9 @@ exports.getProducts = async (req, res) => {
     //     totalPages: 0,
     //   },
     // });
-    
+
     // 保留原始错误响应代码（注释掉，改为返回空数组）
-    
+
     const errorResponse = {
       error: 'Server Error',
       message: 'Failed to fetch products',
@@ -895,7 +895,7 @@ exports.getProducts = async (req, res) => {
     }
 
     res.status(500).json(errorResponse);
-    
+
   }
 };
 
@@ -1093,28 +1093,28 @@ exports.getProductBySlug = async (req, res) => {
       meta: error.meta,
       name: error.name,
     };
-    
+
     logger.error('Failed to fetch product by slug', errorDetails);
-    
+
     // [2025-12-03 04:05:00] 区分不同类型的错误
     // Prisma P2025: Record not found (应该返回 404)
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     // Prisma P1001: Connection error
     if (error.code === 'P1001') {
       logger.error('Database connection error', errorDetails);
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'Database connection failed',
         ...(process.env.NODE_ENV === 'development' && { details: error.message }),
       });
     }
-    
+
     // 其他错误返回 500
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch product',
-      ...(process.env.NODE_ENV === 'development' && { 
+      ...(process.env.NODE_ENV === 'development' && {
         details: error.message,
         code: error.code,
         meta: error.meta,
@@ -1169,9 +1169,9 @@ exports.getRelatedProducts = async (req, res) => {
       select: { id: true },
       take: limit * 2,
     });
-    
+
     const productIds = candidateProducts.map((p) => p.id);
-    
+
     // [2025-12-03 04:10:00] 安全地获取评分统计，避免查询失败
     let ratingStats = [];
     if (productIds.length > 0) {
@@ -1193,7 +1193,7 @@ exports.getRelatedProducts = async (req, res) => {
         // 继续执行，使用空数组
       }
     }
-    
+
     const ratingMap = new Map();
     ratingStats.forEach((stat) => {
       ratingMap.set(stat.productId, {
@@ -1201,7 +1201,7 @@ exports.getRelatedProducts = async (req, res) => {
         reviewCount: Number(stat._count || 0),
       });
     });
-    
+
     const relatedProducts = await prisma.product.findMany({
       where: {
         isActive: true,
@@ -1241,18 +1241,18 @@ exports.getRelatedProducts = async (req, res) => {
         },
       },
     });
-    
+
     const productsWithScore = relatedProducts.map((product) => {
       const rating = ratingMap.get(product.id) || { avgRating: 0, reviewCount: 0 };
       const stockQuantity = product.variants?.[0]?.stockQuantity || 0;
-      
+
       const ratingScore = (rating.avgRating / 5) * 0.4;
       const reviewScore = Math.min(Math.log10(rating.reviewCount + 1) / 10, 1) * 0.2;
       const stockScore = (stockQuantity > 0 ? 1 : 0) * 0.2;
       const randomScore = Math.random() * 0.2;
-      
+
       const recommendationScore = ratingScore + reviewScore + stockScore + randomScore;
-      
+
       return {
         ...product,
         recommendationScore,
@@ -1262,7 +1262,7 @@ exports.getRelatedProducts = async (req, res) => {
         },
       };
     });
-    
+
     const topProducts = productsWithScore
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
       .slice(0, limit);
@@ -1316,30 +1316,30 @@ exports.getRelatedProducts = async (req, res) => {
       meta: error.meta,
       name: error.name,
     };
-    
+
     logger.error('Failed to fetch related products', errorDetails);
-    
+
     // [2025-12-03 04:10:00] 区分不同类型的错误
     // Prisma P2025: Record not found (应该返回 404)
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
+
     // Prisma P1001: Connection error
     if (error.code === 'P1001') {
       logger.error('Database connection error in getRelatedProducts', errorDetails);
-      return res.status(503).json({ 
+      return res.status(503).json({
         error: 'Database connection failed',
         ...(process.env.NODE_ENV === 'development' && { details: error.message }),
       });
     }
-    
+
     // 其他错误返回 500，但返回空数组以避免前端完全失败
     logger.error('Returning empty array due to error in getRelatedProducts', errorDetails);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to fetch related products',
       data: [], // [2025-12-03 04:10:00] 返回空数组，避免前端完全失败
-      ...(process.env.NODE_ENV === 'development' && { 
+      ...(process.env.NODE_ENV === 'development' && {
         details: error.message,
         code: error.code,
         meta: error.meta,
@@ -1371,7 +1371,7 @@ exports.getProductByVariantId = async (req, res) => {
 
   try {
     console.log('[Backend] Querying database for variant:', { variantId, timestamp });
-    const variant = await prisma.variant.findUnique({
+    let variant = await prisma.variant.findUnique({
       where: { id: variantId },
       include: {
         product: {
@@ -1385,8 +1385,35 @@ exports.getProductByVariantId = async (req, res) => {
       },
     });
 
+    // [2025-12-20] FALLBACK: If not found as variant, check if it's a productId
+    if (!variant) {
+      console.log('[Backend] Not found as variant, checking as product ID:', { variantId, timestamp });
+      const product = await prisma.product.findUnique({
+        where: { id: variantId },
+        include: {
+          images: {
+            orderBy: { sortOrder: 'asc' },
+          },
+          variants: true,
+        }
+      });
+
+      if (product && product.variants && product.variants.length > 0) {
+        // Use first variant as default
+        variant = {
+          ...product.variants[0],
+          product: product
+        };
+        console.log('[Backend] Found as product, using first variant:', {
+          productId: product.id,
+          variantId: variant.id,
+          timestamp
+        });
+      }
+    }
+
     if (!variant || !variant.product) {
-      console.warn('[Backend] Variant not found in database:', {
+      console.warn('[Backend] Variant/Product not found in database:', {
         variantId,
         variantExists: !!variant,
         productExists: variant ? !!variant.product : false,
@@ -1429,7 +1456,7 @@ exports.getProductByVariantId = async (req, res) => {
     // [2025-01-30 19:30:00] 构建颜色详细信息（包含 hex、可用尺寸等）
     const colorDetails = [];
     const colorMap = new Map();
-    
+
     (product.variants || []).forEach((v) => {
       if (v.color && v.color.trim() !== '') {
         const colorName = v.color;
@@ -1451,7 +1478,7 @@ exports.getProductByVariantId = async (req, res) => {
         }
       }
     });
-    
+
     // 转换为数组格式
     colorMap.forEach((colorInfo) => {
       colorDetails.push({

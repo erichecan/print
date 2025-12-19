@@ -276,7 +276,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   // [2025-12-07 08:10:00] 修复：如果 endpoint 已经包含 /api/proxy，直接使用，避免重复拼接
   const alreadyHasProxy = endpoint.startsWith('/api/proxy');
   const useProxy = !alreadyHasProxy && requiresAuthProxy(endpoint);
-  
+
   // [2025-12-02 04:20:00] 确定请求 URL
   // [2025-12-07 08:10:00] 修复：如果 endpoint 已经包含 /api/proxy，直接使用 window.location.origin（客户端）或相对路径（SSR）
   let requestUrl: string;
@@ -323,7 +323,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     clearTimeout(timeoutId);
   } catch (error: unknown) {
     clearTimeout(timeoutId);
-    
+
     // [2025-12-07 13:45:00] 处理网络错误（连接被拒绝、空响应等）
     // [2025-01-27 18:00:00] 统一错误处理，包含超时错误
     if (error instanceof TypeError || (error as any)?.name === 'AbortError') {
@@ -349,7 +349,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     let errorMessage = `API Error: ${response?.status || 'Unknown'}`;
     let errorDetails: { error?: { code?: string; message?: string; details?: string | Record<string, unknown> }; message?: string; details?: string | Record<string, unknown>; traceId?: string } | null = null;
     let traceId: string | undefined;
-    
+
     try {
       const errorText = await response.text();
       if (errorText) {
@@ -357,8 +357,8 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
           errorDetails = JSON.parse(errorText);
           // [2025-01-27 18:00:00] 提取标准错误格式
           if (errorDetails && errorDetails.error) {
-            errorMessage = typeof errorDetails.error === 'string' 
-              ? errorDetails.error 
+            errorMessage = typeof errorDetails.error === 'string'
+              ? errorDetails.error
               : (errorDetails.error.message || errorMessage);
             traceId = errorDetails.traceId;
           } else if (errorDetails) {
@@ -369,8 +369,8 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
           }
           // [2025-01-27] 如果有详细信息，添加到错误消息中
           if (errorDetails && errorDetails.details && process.env.NODE_ENV === 'development') {
-            const detailsStr = typeof errorDetails.details === 'string' 
-              ? errorDetails.details 
+            const detailsStr = typeof errorDetails.details === 'string'
+              ? errorDetails.details
               : JSON.stringify(errorDetails.details);
             errorMessage += `: ${detailsStr}`;
           }
@@ -385,12 +385,12 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
       // 如果无法读取响应，使用状态文本
       errorMessage = response?.statusText || 'Network error: Empty response from server';
     }
-    
+
     // [2025-01-27 18:00:00] 从响应头提取 traceId
     if (!traceId) {
       traceId = response.headers.get('X-Trace-Id') || response.headers.get('X-Request-Id') || undefined;
     }
-    
+
     // [2025-01-27] 添加更详细的错误信息用于调试
     const fullError = new Error(errorMessage);
     (fullError as any).status = response?.status;
@@ -593,12 +593,18 @@ export const cartApi = {
       throw error;
     }
   },
-  addItem: async (variantId: string, quantity: number = 1, designId?: string) => {
-    console.log('[Cart API] addItem() called:', { variantId, quantity, designId });
+  addItem: async (variantId: string, quantity: number = 1, designId?: string, sizeBreakdown?: any, metadata?: any) => {
+    console.log('[Cart API] addItem() called:', { variantId, quantity, designId, sizeBreakdown });
     try {
-      const result = await api('/cart/items', { 
-        method: 'POST', 
-        body: { variantId, quantity, ...(designId && { designId }) } 
+      const result = await api('/cart/items', {
+        method: 'POST',
+        body: {
+          variantId,
+          quantity,
+          ...(designId && { designId }),
+          ...(sizeBreakdown && { sizeBreakdown }),
+          ...(metadata && { metadata })
+        }
       });
       console.log('[Cart API] addItem() success:', result);
       return result;
@@ -666,10 +672,10 @@ export const checkoutApi = {
   ) =>
     api<CheckoutPaymentIntentResponse>('/checkout/create-payment-intent', {
       method: 'POST',
-      body: { 
-        shippingAddress, 
-        shippingMethod, 
-        ...(couponCode ? { couponCode } : {}), 
+      body: {
+        shippingAddress,
+        shippingMethod,
+        ...(couponCode ? { couponCode } : {}),
         ...(couponId ? { couponId } : {}),
         ...(draftOrderId ? { draftOrderId } : {}),
         ...(amount !== undefined ? { amount } : {}),
@@ -849,11 +855,11 @@ export async function authenticatedFetch(
 ): Promise<Response> {
   const token = getToken();
   const headers = new Headers(options.headers);
-  
+
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
-  
+
   return fetch(url, {
     ...options,
     headers,
@@ -862,13 +868,13 @@ export async function authenticatedFetch(
 
 async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   const { method = 'GET', body, headers = {} } = options;
-  
+
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
-  
+
   // [2025-12-09] 修复：同时支持 Cookie 和 Authorization header
   // 从 localStorage 读取 token 并添加到 Authorization header
   const token = getToken();
-  
+
   const config: RequestInit = {
     method,
     headers: {
@@ -881,15 +887,15 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
     // 后端 authenticate 中间件会优先从 Cookie 读取 token，如果没有则从 Authorization header 读取
     credentials: 'include',
   };
-  
+
   if (body && method !== 'GET') {
     config.body = isFormData ? body : JSON.stringify(body);
   }
-  
+
   // 使用同源 API 路由（Next.js API Routes）
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const response = await fetch(`${baseUrl}${endpoint}`, config);
-  
+
   if (!response.ok) {
     // [2025-12-03 03:55:00] 对于 401 错误，抛出特殊错误以便调用方识别
     if (response.status === 401) {
@@ -902,12 +908,12 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
     const error = await response.json().catch(() => ({ error: response.statusText }));
     throw new Error(error.error || `API Error: ${response.status}`);
   }
-  
+
   const contentType = response.headers.get('content-type');
   if (contentType?.includes('application/json')) {
     return response.json();
   }
-  
+
   const text = await response.text();
   return text as unknown as T;
 }
@@ -917,9 +923,9 @@ export const authApi = {
     api('/auth/register', { method: 'POST', body: data }),
   // [2025-12-07 07:55:00] 登录后保存 token 到 localStorage
   login: async (email: string, password: string) => {
-    const response = await sameOriginApi<{ token: string; user: any }>('/api/auth/login', { 
-      method: 'POST', 
-      body: { email, password } 
+    const response = await sameOriginApi<{ token: string; user: any }>('/api/auth/login', {
+      method: 'POST',
+      body: { email, password }
     });
     // [2025-12-07 07:55:00] 保存 token 到 localStorage
     if (response.token) {
@@ -1055,9 +1061,9 @@ export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
   requiresProof?: boolean;
   configuration?: OfflineOrderConfiguration | null; // 完整配置信息
   metadata?: Record<string, unknown>; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
-  assets: Array<{ id: string; fileName: string; url: string; [key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
-  histories: Array<{ id: string; action: string; timestamp: string; [key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
-  productionWorkOrder: { id: string; status: string; [key: string]: unknown } | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+  assets: Array<{ id: string; fileName: string; url: string;[key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+  histories: Array<{ id: string; action: string; timestamp: string;[key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+  productionWorkOrder: { id: string; status: string;[key: string]: unknown } | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
 }
 
 export const salesOrdersApi = {
@@ -1491,7 +1497,7 @@ export const adminProductsApi = {
     if (altTexts && altTexts.length > 0) {
       formData.append('alt', altTexts.join(','));
     }
-    
+
     // 使用统一的 api 函数，自动走代理并包含认证头
     return api<{ images: Array<{ id: string; url: string; alt?: string | null }> }>(
       `/admin/products/${productId}/images`,
@@ -2160,7 +2166,7 @@ export const productColorImageApi = {
   getImageUrlByColor: (productId: string, colorName: string, view: 'front' | 'back' | 'sleeve' = 'front') =>
     api<{ data: { colorId: string; colorName: string; colorHex: string | null; imageUrl: string; view: string; allViews: { front: string; back: string; sleeve: string } } }>(`/product-color-images/by-color/${productId}/${encodeURIComponent(colorName)}?view=${view}`),
   getAll: (productId?: string) =>
-    api<{ data: Array<{ id: string; productId: string; colorName: string; imageUrl: string; [key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+    api<{ data: Array<{ id: string; productId: string; colorName: string; imageUrl: string;[key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
 };
 
 // [2025-01-27 16:15:00] Design Lab API
@@ -2632,16 +2638,18 @@ export const couponApi = {
       method: 'POST',
       body: { code, subtotal, userId },
     }),
-  getActive: () => api<{ coupons: Array<{
-    id: string;
-    code: string;
-    type: 'percentage' | 'fixed';
-    value: number;
-    minOrderValue: number | null;
-    maxDiscount: number | null;
-    startDate: string;
-    endDate: string;
-  }>}>('/coupons'),
+  getActive: () => api<{
+    coupons: Array<{
+      id: string;
+      code: string;
+      type: 'percentage' | 'fixed';
+      value: number;
+      minOrderValue: number | null;
+      maxDiscount: number | null;
+      startDate: string;
+      endDate: string;
+    }>
+  }>('/coupons'),
 };
 
 // [2025-01-27 21:50:00] Design Template API
@@ -2888,7 +2896,7 @@ export const artworksApi = {
     if (params?.query) query.append('query', params.query);
     if (params?.page) query.append('page', params.page.toString());
     if (params?.pageSize) query.append('pageSize', params.pageSize.toString());
-    
+
     const queryString = query.toString();
     return api<ArtworksResponse>(`/artworks${queryString ? `?${queryString}` : ''}`);
   },
@@ -2918,7 +2926,7 @@ export const adminArtAssetsApi = {
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.category) query.append('category', params.category);
     if (params?.isActive !== undefined) query.append('isActive', params.isActive.toString());
-    
+
     const queryString = query.toString();
     return api<ArtAssetsListResponse>(`/admin/art-assets${queryString ? `?${queryString}` : ''}`);
   },
@@ -3150,7 +3158,7 @@ export const adminFontsApi = {
     if (params?.category) query.append('category', params.category);
     if (params?.isActive !== undefined) query.append('isActive', params.isActive.toString());
     if (params?.source) query.append('source', params.source);
-    
+
     const queryString = query.toString();
     return api<FontsListResponse>(`/admin/fonts${queryString ? `?${queryString}` : ''}`);
   },
