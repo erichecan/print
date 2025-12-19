@@ -28,6 +28,42 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
     let buildTime = process.env.NEXT_PUBLIC_BUILD_TIME || 'unknown';
     const currentTime = new Date().toISOString();
 
+    const isProd = process.env.NODE_ENV === 'production';
+    const isMissing = sha === 'unknown' || buildTime === 'unknown';
+
+    // [2025-12-19 15:39:10] 修复：生产环境不再先打印 unknown，避免误判“部署没生效”
+    // 若缺失则先请求 /api/version 拿到确定版本，再打印一次最终版本信息（目标：SHA 永远非 unknown/dev）。
+    if (isProd && isMissing) {
+      (async () => {
+        try {
+          const resp = await fetch('/api/version', { method: 'GET', cache: 'no-store' });
+          if (!resp.ok) throw new Error(`Version API non-OK: ${resp.status}`);
+          const data = await resp.json().catch(() => ({} as any));
+          const resolvedSha = (data?.sha || data?.gitSha || data?.buildSha || '').toString().trim();
+          const resolvedTime = (data?.buildTime || data?.utcTime || '').toString().trim();
+
+          if (resolvedSha) sha = resolvedSha;
+          if (resolvedTime) buildTime = resolvedTime;
+
+          // eslint-disable-next-line no-console
+          console.log('[Frontend Build]', sha, buildTime);
+          // eslint-disable-next-line no-console
+          console.log('[Frontend Build Info]', {
+            buildSha: sha,
+            buildTime: buildTime,
+            currentTime: currentTime,
+            url: window.location.href,
+            userAgent: navigator.userAgent.substring(0, 50) + '...',
+            source: 'api/version',
+          });
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('[Frontend Build] ⚠️ 构建版本信息未找到（/api/version fallback 也失败），请检查构建/部署配置');
+        }
+      })();
+      return;
+    }
+
     // 统一前缀，方便在 DevTools Console 中搜索
     // 示例: [Frontend Build] 336889c 2025-12-04T04:32:18Z
     // eslint-disable-next-line no-console
@@ -40,30 +76,8 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
       currentTime: currentTime,
       url: window.location.href,
       userAgent: navigator.userAgent.substring(0, 50) + '...',
+      source: 'env',
     });
-
-    // [2025-12-19 15:25:40] 修复：生产环境若构建版本信息缺失，先尝试从 /api/version 兜底获取（避免持续告警）
-    // 说明：某些部署方式可能未注入 NEXT_PUBLIC_BUILD_*，但 /api/version 仍可能可用。
-    if (process.env.NODE_ENV === 'production' && (sha === 'unknown' || buildTime === 'unknown')) {
-      (async () => {
-        try {
-          const resp = await fetch('/api/version', { method: 'GET', cache: 'no-store' });
-          if (!resp.ok) throw new Error(`Version API non-OK: ${resp.status}`);
-          const data = await resp.json().catch(() => ({} as any));
-          const resolvedSha = (data?.sha || data?.gitSha || '').toString().trim();
-          const resolvedTime = (data?.utcTime || data?.buildTime || '').toString().trim();
-
-          if (resolvedSha && sha === 'unknown') sha = resolvedSha;
-          if (resolvedTime && buildTime === 'unknown') buildTime = resolvedTime;
-
-          // eslint-disable-next-line no-console
-          console.log('[Frontend Build] (fallback /api/version)', sha, buildTime);
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.warn('[Frontend Build] ⚠️ 构建版本信息未找到（/api/version fallback 也失败），请检查构建/部署配置');
-        }
-      })();
-    }
   }, []);
 
   // [2025-11-15 12:35:00] Admin 路径不显示前端页面的 header 和 footer
