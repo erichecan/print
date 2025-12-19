@@ -213,10 +213,19 @@ export function ColorGroupCardIntegrated({
         </div>
       </div>
 
-      {/* [2025-12-19] 单价和印刷位置：一行两列布局 */}
+      {/* [2025-12-19] 单价和印刷位置：一行两列布局 - 左侧印刷位置，右侧单价 */}
       <div className="ml-2 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* 单价输入框 - 颜色级别单价 */}
+          {/* printPositions面板 - 左侧 */}
+          <div>
+            <PrintPositionsPanel
+              positions={group.positions}
+              onChange={(positions) => onUpdate({ ...group, positions })}
+              onCopyToOthers={onCopyToOthers}
+            />
+          </div>
+
+          {/* 单价输入框 - 颜色级别单价 - 右侧 */}
           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
             <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">
@@ -243,15 +252,6 @@ export function ColorGroupCardIntegrated({
                 placeholder="请输入单价"
               />
             </label>
-          </div>
-
-          {/* printPositions面板 */}
-          <div>
-            <PrintPositionsPanel
-              positions={group.positions}
-              onChange={(positions) => onUpdate({ ...group, positions })}
-              onCopyToOthers={onCopyToOthers}
-            />
           </div>
         </div>
       </div>

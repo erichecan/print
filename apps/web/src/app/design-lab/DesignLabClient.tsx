@@ -34,6 +34,7 @@ import TextPanel from './components/panels/TextPanel';
 import EditTextPanel from './components/panels/EditTextPanel';
 import ArtPanel from './components/panels/ArtPanel';
 import EditArtPanel from './components/panels/EditArtPanel';
+import ProductColorsPanel from './components/panels/ProductColorsPanel'; // [2025-01-30 22:30:00] 产品颜色选择面板
 // [2025-12-19 21:25:00] 移除：LayerManagementPanel 导入（已移除图层管理功能）
 import DesignCommentSection from './components/DesignCommentSection';
 import { CanvasLoadingError } from './components/CanvasLoadingError'; // [2025-12-10 18:40:00] Canvas加载错误组件
@@ -1571,8 +1572,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         analytics.track('art_added', {});
         break;
       case 'colors':
-        // [2025-01-30 19:30:00] 打开颜色选择模态
-        setShowColorModal(true);
+        // [2025-01-30 22:30:00] 显示颜色选择面板
+        setToolPanelType('colors');
         break;
       case 'names':
         // [2025-01-30 20:00:00] 打开 Names & Numbers 模态
@@ -4182,26 +4183,24 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             <span className="dl-rail__btn-label">Add Art</span>
           </button>
 
-          {/* [2025-12-11 23:00:00] 暂时屏蔽 Product Colors 功能 */}
-          {false && (
-            <button
-              className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
-              onClick={() => handleToolClick('colors')}
-              aria-label="Product colors"
-              aria-pressed={activeTool === 'colors'}
-            >
-              <span className="dl-rail__btn-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-                  <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-                  <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-                  <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
-                </svg>
-              </span>
-              <span className="dl-rail__btn-label">Product Colors</span>
-            </button>
-          )}
+          {/* [2025-01-30 22:30:00] 启用 Product Colors 功能 */}
+          <button
+            className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
+            onClick={() => handleToolClick('colors')}
+            aria-label="Product colors"
+            aria-pressed={activeTool === 'colors'}
+          >
+            <span className="dl-rail__btn-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
+              </svg>
+            </span>
+            <span className="dl-rail__btn-label">Product Colors</span>
+          </button>
 
           {/* [2025-12-11 23:00:00] 暂时屏蔽 Add Names 功能 */}
           {false && (
@@ -4239,6 +4238,13 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           )}
           {toolPanelType === 'art' && (
             <ArtPanel onSelectArt={handleAddArt} />
+          )}
+          {toolPanelType === 'colors' && (
+            <ProductColorsPanel
+              selectedColor={productInfo?.color || null}
+              onSelectColor={handleColorSelect}
+              productName={productInfo?.productName}
+            />
           )}
           {toolPanelType === 'edit-upload' && (
             <EditUploadPanel

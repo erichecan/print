@@ -1,0 +1,268 @@
+{
+  "timestamp": "2025-12-19T04:20:56.349Z",
+  "url": "https://www.customink.com/ndx/?SK=176100&PK=176126#/productColor",
+  "changeColorButton": {
+    "tagName": "BUTTON",
+    "className": "MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineAlways MuiLink-button css-1j3gn7",
+    "textContent": "Change Color",
+    "ariaLabel": null,
+    "href": null,
+    "onclick": null
+  },
+  "modalStructure": {
+    "modalElements": [
+      {
+        "selector": "[role=\"dialog\"]",
+        "tagName": "DIV",
+        "className": "",
+        "id": "",
+        "visible": false
+      }
+    ],
+    "colorSwatches": [
+      {
+        "selector": "button[aria-label*=\"color\" i]",
+        "count": 1
+      },
+      {
+        "selector": "[class*=\"swatch\"]",
+        "count": 4
+      }
+    ],
+    "colorButtons": [
+      {
+        "index": 0,
+        "tagName": "BUTTON",
+        "className": "MuiButtonBase-root MuiIconButton-root MuiIconButton-colorPrimary MuiIconButton-sizeMedium ndx-ColorPickerToggle-tooltip css-1omkxhu",
+        "ariaLabel": "Certain product colors are incompatible with small-batch printing techniques. To ensure that our standards for quality are met, these additional colors are only available for orders of 6 or more.",
+        "title": null,
+        "dataAttributes": {
+          "colorId": null,
+          "color": null,
+          "sk": null,
+          "pk": null,
+          "hex": null
+        },
+        "textContent": "",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "width": 32,
+          "height": 32
+        }
+      },
+      {
+        "index": 0,
+        "tagName": "DIV",
+        "className": "swatch-outline css-2mtfwb",
+        "ariaLabel": null,
+        "title": null,
+        "dataAttributes": {
+          "colorId": null,
+          "color": null,
+          "sk": null,
+          "pk": null,
+          "hex": null
+        },
+        "textContent": "",
+        "style": {
+          "backgroundColor": "rgb(242, 234, 213)",
+          "width": 23.7265625,
+          "height": 23.734375
+        }
+      },
+      {
+        "index": 1,
+        "tagName": "DIV",
+        "className": "swatch-outline css-15dei7e",
+        "ariaLabel": null,
+        "title": null,
+        "dataAttributes": {
+          "colorId": null,
+          "color": null,
+          "sk": null,
+          "pk": null,
+          "hex": null
+        },
+        "textContent": "",
+        "style": {
+          "backgroundColor": "rgb(255, 255, 255)",
+          "width": 23.734375,
+          "height": 23.734375
+        }
+      },
+      {
+        "index": 2,
+        "tagName": "DIV",
+        "className": "pigment-colorswatch-selected css-ed1hcc",
+        "ariaLabel": null,
+        "title": null,
+        "dataAttributes": {
+          "colorId": null,
+          "color": null,
+          "sk": null,
+          "pk": null,
+          "hex": null
+        },
+        "textContent": "",
+        "style": {
+          "backgroundColor": "rgb(77, 77, 77)",
+          "width": 23.7265625,
+          "height": 23.734375
+        }
+      },
+      {
+        "index": 3,
+        "tagName": "svg",
+        "className": {},
+        "ariaLabel": null,
+        "title": null,
+        "dataAttributes": {
+          "colorId": null,
+          "color": null,
+          "sk": null,
+          "pk": null,
+          "hex": null
+        },
+        "textContent": "",
+        "style": {
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "width": 16,
+          "height": 16
+        }
+      }
+    ]
+  },
+  "colorSwatches": [
+    {
+      "index": 0,
+      "tagName": "BUTTON",
+      "className": "MuiButtonBase-root MuiIconButton-root MuiIconButton-colorPrimary MuiIconButton-sizeMedium ndx-ColorPickerToggle-tooltip css-1omkxhu",
+      "ariaLabel": "Certain product colors are incompatible with small-batch printing techniques. To ensure that our standards for quality are met, these additional colors are only available for orders of 6 or more.",
+      "title": null,
+      "dataAttributes": {
+        "colorId": null,
+        "color": null,
+        "sk": null,
+        "pk": null,
+        "hex": null
+      },
+      "textContent": "",
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "width": 32,
+        "height": 32
+      }
+    },
+    {
+      "index": 0,
+      "tagName": "DIV",
+      "className": "swatch-outline css-2mtfwb",
+      "ariaLabel": null,
+      "title": null,
+      "dataAttributes": {
+        "colorId": null,
+        "color": null,
+        "sk": null,
+        "pk": null,
+        "hex": null
+      },
+      "textContent": "",
+      "style": {
+        "backgroundColor": "rgb(242, 234, 213)",
+        "width": 23.7265625,
+        "height": 23.734375
+      }
+    },
+    {
+      "index": 1,
+      "tagName": "DIV",
+      "className": "swatch-outline css-15dei7e",
+      "ariaLabel": null,
+      "title": null,
+      "dataAttributes": {
+        "colorId": null,
+        "color": null,
+        "sk": null,
+        "pk": null,
+        "hex": null
+      },
+      "textContent": "",
+      "style": {
+        "backgroundColor": "rgb(255, 255, 255)",
+        "width": 23.734375,
+        "height": 23.734375
+      }
+    },
+    {
+      "index": 2,
+      "tagName": "DIV",
+      "className": "pigment-colorswatch-selected css-ed1hcc",
+      "ariaLabel": null,
+      "title": null,
+      "dataAttributes": {
+        "colorId": null,
+        "color": null,
+        "sk": null,
+        "pk": null,
+        "hex": null
+      },
+      "textContent": "",
+      "style": {
+        "backgroundColor": "rgb(77, 77, 77)",
+        "width": 23.7265625,
+        "height": 23.734375
+      }
+    },
+    {
+      "index": 3,
+      "tagName": "svg",
+      "className": {},
+      "ariaLabel": null,
+      "title": null,
+      "dataAttributes": {
+        "colorId": null,
+        "color": null,
+        "sk": null,
+        "pk": null,
+        "hex": null
+      },
+      "textContent": "",
+      "style": {
+        "backgroundColor": "rgba(0, 0, 0, 0)",
+        "width": 16,
+        "height": 16
+      }
+    }
+  ],
+  "urlChanges": [
+    {
+      "action": "click_change_color",
+      "before": "https://www.customink.com/ndx/?SK=176100&PK=176126#/welcome",
+      "after": "https://www.customink.com/ndx/?SK=176100&PK=176126#/productColor"
+    }
+  ],
+  "clickTests": [
+    {
+      "colorIndex": 0,
+      "colorName": "Certain product colors are incompatible with small-batch printing techniques. To ensure that our standards for quality are met, these additional colors are only available for orders of 6 or more.",
+      "urlChanged": false
+    }
+  ],
+  "colorRequests": [
+    {
+      "colorId": "176126",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/e2869fba030e981dc4fa89b7b3d800fd/colors/176126/views/alt/front_large_extended.png?dpr=1.2&auto=format&nrs=0&w=1000",
+      "timestamp": "2025-12-19T04:20:56.947Z"
+    },
+    {
+      "colorId": "176126",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/e2869fba030e981dc4fa89b7b3d800fd/colors/176126/views/alt/front_medium_extended.png?dpr=1.2&auto=format&nrs=0&w=1000",
+      "timestamp": "2025-12-19T04:20:56.947Z"
+    },
+    {
+      "colorId": "176126",
+      "url": "https://mms-images-prod.imgix.net/mms/images/catalog/91fda2f50ed2bfbfcef2e5aeae5f9b51/colors/176126/views/alt/back_medium_extended.png?dpr=1.2&auto=format&nrs=0&w=1000",
+      "timestamp": "2025-12-19T04:20:56.948Z"
+    }
+  ]
+}

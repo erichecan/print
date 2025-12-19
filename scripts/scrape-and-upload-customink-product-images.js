@@ -22,18 +22,14 @@ const { URL } = require('url');
 const gcsUtils = require('../backend/src/utils/gcsStorage');
 
 // 配置
+// [2025-01-30 22:20:00] 更新：添加所有81个颜色
+const allColorsConfig = require('./colors-config-generated.js');
+
 const PRODUCTS = {
   'gildan-softstyle-tshirt': {
-    productId: '6a62c76ef0978853a20391b6c32da4fe',
+    productId: 'e2869fba030e981dc4fa89b7b3d800fd', // [2025-01-30 22:20:00] 使用实际抓取到的产品ID
     productName: 'Gildan Softstyle Jersey T-shirt',
-    colors: {
-      'White': '176100',
-      'Navy': '176101',
-      'Maroon': '176102',
-      'Black': '176103',
-      'Heather Grey': '176104',
-      'Heather Dark Grey': '176105',
-    }
+    colors: allColorsConfig // [2025-01-30 22:20:00] 使用所有81个颜色
   }
 };
 

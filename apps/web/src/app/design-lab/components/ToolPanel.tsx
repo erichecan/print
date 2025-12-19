@@ -15,6 +15,7 @@ export type ToolPanelType =
   | 'edit-text' 
   | 'edit-art' 
   | 'layers' // [2025-12-06 13:00:00] 图层管理面板
+  | 'colors' // [2025-01-30 22:30:00] 产品颜色选择面板
   | null;
 
 interface ToolPanelProps {
@@ -48,6 +49,8 @@ const ToolPanel: React.FC<ToolPanelProps> = ({ panelType, onBack, children }) =>
         return 'Edit Art';
       case 'layers':
         return 'Layers';
+      case 'colors':
+        return 'Product Colors';
       default:
         return '';
     }

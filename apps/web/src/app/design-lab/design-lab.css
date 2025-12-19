@@ -4028,3 +4028,216 @@
   color: var(--dl-color-accent);
 }
 
+/* ============================================
+   Product Colors Panel
+   [2025-01-30 22:30:00] 产品颜色选择面板样式
+   ============================================ */
+
+.dl-product-colors-panel {
+  padding: var(--dl-space-4);
+}
+
+.dl-product-colors-panel__header {
+  margin-bottom: var(--dl-space-4);
+}
+
+.dl-product-colors-panel__title {
+  font-size: var(--dl-font-lg);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
+
+.dl-product-colors-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-6);
+}
+
+.dl-product-colors-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-2);
+}
+
+.dl-product-colors-panel__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-product-colors-panel__section-label {
+  font-weight: var(--dl-font-weight-bold);
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+}
+
+.dl-product-colors-panel__section-title {
+  font-weight: var(--dl-font-weight-bold);
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
+
+.dl-product-colors-panel__decoration-method {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  color: var(--dl-text-primary);
+  font-size: var(--dl-font-base);
+}
+
+.dl-product-colors-panel__decoration-method svg:first-child {
+  color: var(--dl-color-accent);
+  width: 16px;
+  height: 16px;
+}
+
+.dl-product-colors-panel__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  cursor: pointer;
+}
+
+.dl-product-colors-panel__checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.dl-product-colors-panel__hint {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: var(--dl-space-2) 0;
+  padding: var(--dl-space-2);
+  background: rgba(0, 102, 204, 0.05);
+  border-radius: var(--dl-radius-sm);
+}
+
+.dl-product-colors-panel__colors-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: var(--dl-space-2);
+  margin-top: var(--dl-space-3);
+}
+
+@media (max-width: 1200px) {
+  .dl-product-colors-panel__colors-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dl-product-colors-panel__colors-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .dl-product-colors-panel__colors-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.dl-product-colors-panel__color-swatch {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  background: transparent;
+  transition: all var(--dl-transition-base);
+  overflow: hidden;
+}
+
+.dl-product-colors-panel__color-swatch:hover:not(:disabled) {
+  border-color: var(--dl-color-primary);
+  transform: scale(1.05);
+}
+
+.dl-product-colors-panel__color-swatch.is-selected {
+  border-color: var(--dl-color-primary);
+  border-width: 3px;
+}
+
+.dl-product-colors-panel__color-swatch.is-unavailable {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dl-product-colors-panel__color-swatch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dl-product-colors-panel__color-swatch-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--dl-radius-sm);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-product-colors-panel__checkmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.dl-product-colors-panel__add-color {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--dl-space-3);
+  padding: var(--dl-space-3);
+  border-top: 1px solid var(--dl-border-color);
+  margin-top: var(--dl-space-4);
+}
+
+.dl-product-colors-panel__add-color svg {
+  width: 20px;
+  height: 20px;
+  color: var(--dl-text-secondary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.dl-product-colors-panel__add-color-text {
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+  margin: 0 0 var(--dl-space-1) 0;
+}
+
+.dl-product-colors-panel__add-color-link {
+  background: none;
+  border: none;
+  color: var(--dl-color-primary);
+  font-size: var(--dl-font-base);
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.dl-product-colors-panel__add-color-link:hover {
+  color: #0052A3;
+}
+
+.dl-product-colors-panel__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--dl-space-6);
+  color: var(--dl-text-secondary);
+  font-size: var(--dl-font-base);
+}
+

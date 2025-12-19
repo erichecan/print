@@ -1,11 +1,12 @@
 /**
  * Contact Client Component
  * [2025-01-27 19:20:00] 联系页面客户端组件（处理表单提交）
+ * [2025-12-19 03:00:00] 修复：使用与留言本相同的 API，在 admin 后台显示通知
  */
 "use client";
 
 import { useState } from 'react';
-import { contactApi } from '@/lib/api';
+import { apiPost } from '@/lib/apiClient';
 
 export default function ContactClient() {
   const [formData, setFormData] = useState({
@@ -26,7 +27,8 @@ export default function ContactClient() {
     setError(null);
 
     try {
-      await contactApi.submit({
+      // [2025-12-19 03:00:00] 使用与留言本相同的 API，保存到数据库并在 admin 后台显示通知
+      await apiPost('/api/guest-messages', {
         name: formData.name,
         email: formData.email,
         phone: formData.phone || undefined,

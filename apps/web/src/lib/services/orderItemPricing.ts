@@ -50,10 +50,8 @@ export function calcOrderItemPricing(
         effectivePositions = defaultPositions;
       }
       
-      // 计算该颜色×尺码的小计
-      const subtotal = effectivePositions.reduce((sum, pos) => {
-        return sum + (pos.unitPrice * qty);
-      }, 0);
+      // [2025-12-19 02:30:00] 使用颜色级别的单价计算小计（不再累加印刷位置单价）
+      const subtotal = group.unitPrice * qty;
       
       total += subtotal;
       
