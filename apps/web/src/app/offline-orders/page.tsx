@@ -501,7 +501,7 @@ export default function OfflineOrdersIntakePage() {
   );
 
   const products: SimpleOfflineOrderProduct[] = productsData?.data || [];
-  const fullConfig: OfflineOrderConfig | undefined = configData;
+  const fullConfig: OfflineOrderConfig | undefined = configData?.data;
 
   // [2025-12-08 01:10:00] 合并产品数据和配置数据
   const orderConfig = {
