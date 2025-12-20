@@ -112,7 +112,7 @@ type InvoiceInfo = {
 // [2025-12-07 02:30:00] PRD v2.0: 表单状态（3步流程）
 type FormState = {
   orderCode: string; // 订单编号
-  
+
   // 第一步：产品配置
   productItems: ProductItem[]; // 产品列表
   globalPrintPositions: PrintPosition[]; // 总体印刷位置（保留用于向后兼容）
@@ -122,7 +122,7 @@ type FormState = {
   globalQuantitySubtotal: number; // [2025-12-08 05:25:00] 全局件数小计
   // [2025-12-19] 按颜色分组的印刷位配置（新功能）
   colorGroupsByProduct: Record<string, import('@/types/order').OrderItemColorGroup[]>; // 产品ID -> 颜色组列表
-  
+
   // 第二步：客户信息
   contactName: string;
   email: string;
@@ -131,10 +131,10 @@ type FormState = {
   dueDate: string;
   requiresInvoice: boolean;
   invoiceInfo: InvoiceInfo;
-  
+
   // 第三步：文件上传（非必填）
   files: File[];
-  
+
   // 价格汇总
   subtotal: number; // 小计
   discount: number; // 折扣百分比
@@ -142,7 +142,7 @@ type FormState = {
   taxRate: number; // 税率（0.13 for 13%）
   taxAmount: number; // 税额
   total: number; // 总计（含税）
-  
+
   // 流程控制
   currentStep: number; // 当前步骤（1-3）
 };
@@ -176,14 +176,7 @@ const getProductColor = (productId: string): string => {
   return `hsl(${hue}, 70%, 50%)`;
 };
 
-// [2025-12-19 02:30:00] 根据产品ID生成固定颜色（用于视觉区隔）
-const getProductColor = (productId: string): string => {
-  const hash = productId.split('').reduce((acc, char) => {
-    return char.charCodeAt(0) + ((acc << 5) - acc);
-  }, 0);
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 70%, 50%)`;
-};
+
 
 // [2025-12-07 02:30:00] PRD v2.0: 初始表单状态
 const initialFormState: FormState = {
@@ -256,12 +249,12 @@ function UserMenu() {
           });
         }
       };
-      
+
       updatePosition();
       // [2025-12-19] 监听滚动和窗口大小变化，实时更新位置
       window.addEventListener('scroll', updatePosition, true);
       window.addEventListener('resize', updatePosition);
-      
+
       return () => {
         window.removeEventListener('scroll', updatePosition, true);
         window.removeEventListener('resize', updatePosition);
@@ -314,22 +307,22 @@ function UserMenu() {
     );
   }
 
-  const userName = user.firstName && user.lastName 
+  const userName = user.firstName && user.lastName
     ? `${user.firstName} ${user.lastName}`.trim()
     : user.email?.split('@')[0] || '用户';
 
   // [2025-12-19] 下拉菜单内容（使用Portal渲染到body）
   const menuContent = showMenu && mounted ? (
     <>
-      <div 
+      <div
         className="fixed inset-0" // [2025-12-19] 遮罩层
         style={{ zIndex: 99998 }} // [2025-12-19] 使用内联样式确保z-index足够高
         onClick={() => setShowMenu(false)}
       />
-      <div 
+      <div
         className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden" // [2025-12-19] 使用fixed定位，避免被main区域遮挡
-        style={{ 
-          top: `${menuPosition.top}px`, 
+        style={{
+          top: `${menuPosition.top}px`,
           right: `${menuPosition.right}px`,
           zIndex: 99999, // [2025-12-19] 使用内联样式设置极高的z-index，确保菜单始终在最上层
           position: 'fixed', // [2025-12-19] 明确指定position，确保创建新的堆叠上下文
@@ -379,12 +372,12 @@ function UserMenu() {
         className="flex items-center gap-2 px-3 py-2 bg-white/90 rounded-lg shadow-md hover:bg-white transition-colors"
       >
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
-          <path d="M10 12C5.58172 12 2 14.6863 2 18V20H18V18C18 14.6863 14.4183 12 10 12Z" fill="currentColor"/>
+          <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor" />
+          <path d="M10 12C5.58172 12 2 14.6863 2 18V20H18V18C18 14.6863 14.4183 12 10 12Z" fill="currentColor" />
         </svg>
         <span className="text-sm font-medium text-gray-700 hidden sm:inline">{userName}</span>
       </button>
-      
+
       {/* [2025-12-19] 使用Portal将下拉菜单渲染到document.body，完全脱离DOM层级，彻底解决遮挡问题 */}
       {mounted && typeof document !== 'undefined' && createPortal(menuContent, document.body)}
     </div>
@@ -397,7 +390,7 @@ export default function OfflineOrdersIntakePage() {
   const [isClient, setIsClient] = useState(false); // [2025-01-27 20:35:00] 标记是否在客户端
   // [2025-12-04 00:15:00] 移动设备检测 - 用于支持拍照功能
   const [isMobile, setIsMobile] = useState(false);
-  
+
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [files, setFiles] = useState<File[]>([]);
   const [currentStep, setCurrentStep] = useState<number>(1); // [2025-01-27 18:00:00] 当前步骤
@@ -415,7 +408,7 @@ export default function OfflineOrdersIntakePage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
-  
+
   // [2025-12-18 17:05:00] 使用 ref 跟踪是否是按钮点击触发的提交
   const submitButtonRef = useRef<HTMLButtonElement | null>(null);
   const isSubmittingFromButtonRef = useRef(false);
@@ -452,14 +445,14 @@ export default function OfflineOrdersIntakePage() {
     const translations = OFFLINE_ORDERS_TRANSLATIONS[currentLocale] || OFFLINE_ORDERS_TRANSLATIONS.en;
     const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
     let text = translations[key] || fallback[key] || key;
-    
+
     // 替换参数
     if (params) {
       Object.entries(params).forEach(([paramKey, paramValue]) => {
         text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
       });
     }
-    
+
     return text;
   }, [locale, isClient]);
 
@@ -508,7 +501,7 @@ export default function OfflineOrdersIntakePage() {
   );
 
   const products: SimpleOfflineOrderProduct[] = productsData?.data || [];
-  const fullConfig: OfflineOrderConfig | undefined = configData?.data;
+  const fullConfig: OfflineOrderConfig | undefined = configData;
 
   // [2025-12-08 01:10:00] 合并产品数据和配置数据
   const orderConfig = {
@@ -643,11 +636,11 @@ export default function OfflineOrdersIntakePage() {
           if (item.colors.some((c) => c.colorId === colorId)) {
             return item;
           }
-          
+
           // [2025-12-19] 获取上一颜色的positions（如果选择继承）
           let initialPositions: OrderItemColorGroup['positions'] = [];
           let inheritsFromColorId: string | null = null;
-          
+
           if (inheritFromPrev && item.colors.length > 0) {
             const lastColor = item.colors[item.colors.length - 1];
             const lastColorGroups = prev.colorGroupsByProduct[itemId] || [];
@@ -660,7 +653,7 @@ export default function OfflineOrdersIntakePage() {
               inheritsFromColorId = lastGroup.id;
             }
           }
-          
+
           const newColor: ProductColor = {
             colorId,
             colorName,
@@ -669,7 +662,7 @@ export default function OfflineOrdersIntakePage() {
             totalQuantity: 0,
             totalPrice: 0,
           };
-          
+
           // [2025-12-19] 同时创建颜色组配置
           const newColorGroup: OrderItemColorGroup = {
             id: `${colorId}-${Date.now()}`,
@@ -680,7 +673,7 @@ export default function OfflineOrdersIntakePage() {
             unitPrice: 0, // [2025-12-19 02:30:00] 颜色级别的单价
             inheritsFromColorId
           };
-          
+
           return {
             ...item,
             colors: [...item.colors, newColor],
@@ -688,7 +681,7 @@ export default function OfflineOrdersIntakePage() {
         }
         return item;
       });
-      
+
       // [2025-12-19] 更新colorGroupsByProduct
       const item = newItems.find(i => i.id === itemId);
       if (item) {
@@ -700,36 +693,36 @@ export default function OfflineOrdersIntakePage() {
           quantities: {},
           positions: inheritFromPrev && item.colors.length > 1
             ? (() => {
-                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
-                const prevColor = item.colors[item.colors.length - 2];
-                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
-                if (prevGroup && prevGroup.positions.length > 0) {
-                  return prevGroup.positions.map(pos => ({
-                    ...pos,
-                    designAssetId: pos.designAssetId || null
-                  }));
-                }
-                return [];
-              })()
+              const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+              const prevColor = item.colors[item.colors.length - 2];
+              const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+              if (prevGroup && prevGroup.positions.length > 0) {
+                return prevGroup.positions.map(pos => ({
+                  ...pos,
+                  designAssetId: pos.designAssetId || null
+                }));
+              }
+              return [];
+            })()
             : [],
           unitPrice: inheritFromPrev && item.colors.length > 1
             ? (() => {
-                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
-                const prevColor = item.colors[item.colors.length - 2];
-                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
-                return prevGroup?.unitPrice || 0; // [2025-12-19 02:30:00] 继承上一颜色的单价
-              })()
+              const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+              const prevColor = item.colors[item.colors.length - 2];
+              const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+              return prevGroup?.unitPrice || 0; // [2025-12-19 02:30:00] 继承上一颜色的单价
+            })()
             : 0, // [2025-12-19 02:30:00] 颜色级别的单价
           inheritsFromColorId: inheritFromPrev && item.colors.length > 1
             ? (() => {
-                const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
-                const prevColor = item.colors[item.colors.length - 2];
-                const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
-                return prevGroup?.id || null;
-              })()
+              const prevColorGroups = prev.colorGroupsByProduct[itemId] || [];
+              const prevColor = item.colors[item.colors.length - 2];
+              const prevGroup = prevColorGroups.find(g => g.colorCode === prevColor.colorId);
+              return prevGroup?.id || null;
+            })()
             : null
         };
-        
+
         return {
           ...prev,
           productItems: newItems,
@@ -742,7 +735,7 @@ export default function OfflineOrdersIntakePage() {
           }
         };
       }
-      
+
       return { ...prev, productItems: newItems };
     });
   }, []);
@@ -905,21 +898,21 @@ export default function OfflineOrdersIntakePage() {
   // [2025-12-07 02:30:00] PRD v2.0: 步骤验证
   const validateStep = useCallback((step: number): boolean => {
     setFieldErrors({});
-    
+
     if (step === 1) {
       // 第一步验证：至少选择一个产品，每个产品至少选择一个颜色，每个颜色至少填写一个尺码的数量（>0），每个尺码必须填写单价（>0），订单备注
       if (formState.productItems.length === 0) {
         setStatus({ type: 'error', message: t('errorNoProducts') || '请至少添加一个产品' });
         return false;
       }
-      
+
       for (let i = 0; i < formState.productItems.length; i++) {
         const item = formState.productItems[i];
         if (item.colors.length === 0) {
           setStatus({ type: 'error', message: `产品 ${i + 1} (${item.productName})：请至少选择一个颜色` });
           return false;
         }
-        
+
         for (let j = 0; j < item.colors.length; j++) {
           const color = item.colors[j];
           const hasValidSize = color.sizes.some((s) => s.quantity > 0 && s.unitPrice > 0);
@@ -929,14 +922,14 @@ export default function OfflineOrdersIntakePage() {
           }
         }
       }
-      
+
       // [2025-12-08 05:15:00] 订单备注改为非必填，移除验证
-      
+
       // [2025-12-19] 印刷位置验证已移至步骤3（颜色组配置验证），此处不再验证globalPrintPositions
-      
+
       return true;
     }
-    
+
     // [2025-12-19] PRD v2.0: 第二步验证（客户信息和Invoice - 全部改为非必填）
     if (step === 2) {
       // [2025-12-19] 所有字段都改为非必填，只保留格式验证（如果填写了的话）
@@ -949,7 +942,7 @@ export default function OfflineOrdersIntakePage() {
           return false;
         }
       }
-      
+
       // [2025-12-19] 所有Invoice相关字段都改为非必填，不再进行验证
       return true;
     }
@@ -957,38 +950,38 @@ export default function OfflineOrdersIntakePage() {
     if (step === 3) {
       // [2025-12-19] 验证每个产品项的颜色组配置
       const itemsWithColors = formState.productItems.filter(item => item.colors.length > 0);
-      
+
       if (itemsWithColors.length === 0) {
         setStatus({ type: 'error', message: '请先在步骤1中添加产品并选择颜色' });
         return false;
       }
-      
+
       // [2025-12-19] 验证每个产品的颜色组配置
       for (const item of itemsWithColors) {
         const colorGroups = formState.colorGroupsByProduct[item.id] || [];
-        
+
         // [2025-12-19] 如果没有颜色组配置，尝试从colors转换
         if (colorGroups.length === 0 && item.colors.length > 0) {
           // [2025-12-19] 颜色组会在renderStep3中自动初始化，这里只验证已存在的
           continue;
         }
-        
+
         // [2025-12-19] 使用定价服务的验证函数
         const validation = validateColorGroups(colorGroups);
-        
+
         if (!validation.valid) {
           setFieldErrors(prev => ({
             ...prev,
             [`printPositions-${item.id}`]: validation.errors.join('; ')
           }));
-          setStatus({ 
-            type: 'error', 
-            message: `产品"${item.productName}"的印刷位配置有误：${validation.errors.join('; ')}` 
+          setStatus({
+            type: 'error',
+            message: `产品"${item.productName}"的印刷位配置有误：${validation.errors.join('; ')}`
           });
           return false;
         }
       }
-      
+
       // [2025-12-19] 文件上传是非必填的，无需验证
       return true;
     }
@@ -1005,7 +998,7 @@ export default function OfflineOrdersIntakePage() {
       stepsLength: STEPS.length,
       isLastStep: currentStep >= STEPS.length,
     });
-    
+
     if (!validateStep(currentStep)) {
       console.log('[OfflineOrder] ⚠️ Step validation failed, not moving to next step');
       return;
@@ -1047,7 +1040,7 @@ export default function OfflineOrdersIntakePage() {
         isTextarea: event.target instanceof HTMLTextAreaElement,
         shiftKey: event.shiftKey,
       });
-      
+
       // 对于textarea，允许Shift+Enter换行，但阻止单独的Enter键
       if (event.target instanceof HTMLTextAreaElement) {
         // textarea中，只有单独的Enter键才阻止（Shift+Enter允许换行）
@@ -1177,7 +1170,7 @@ export default function OfflineOrdersIntakePage() {
   const handleSubmit = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      
+
       // [2025-12-18 16:45:00] 修复：防止在输入框中按Enter键时自动提交
       // [2025-12-18 17:00:00] 添加详细调试日志
       // [2025-12-18 17:05:00] 改进：使用多种方法检查是否是提交按钮触发的
@@ -1185,7 +1178,7 @@ export default function OfflineOrdersIntakePage() {
       const submitter = nativeEvent.submitter as HTMLElement | null;
       const target = event.target as HTMLElement;
       const form = event.currentTarget;
-      
+
       console.log('[OfflineOrder] handleSubmit called', {
         timestamp: new Date().toISOString(),
         hasSubmitter: !!submitter,
@@ -1199,23 +1192,23 @@ export default function OfflineOrdersIntakePage() {
         activeElement: document.activeElement?.tagName,
         activeElementType: (document.activeElement as HTMLInputElement)?.type,
       });
-      
+
       // [2025-12-18 17:05:00] 方法1：检查 submitter（HTML5标准，但可能不支持）
       const isFromSubmitButtonBySubmitter = submitter && (
         (submitter.tagName === 'BUTTON' && submitter.getAttribute('type') === 'submit') ||
         (submitter.tagName === 'INPUT' && (submitter as HTMLInputElement).type === 'submit')
       );
-      
+
       // [2025-12-18 17:05:00] 方法2：检查 ref 标记（按钮点击时设置）
       const isFromSubmitButtonByRef = isSubmittingFromButtonRef.current;
-      
+
       // [2025-12-18 17:05:00] 方法3：检查当前焦点元素（如果焦点在输入框，可能是Enter键）
       const activeElement = document.activeElement;
       const isFocusOnInput = activeElement && (
         activeElement.tagName === 'INPUT' ||
         activeElement.tagName === 'TEXTAREA'
       ) && (activeElement as HTMLInputElement).type !== 'submit';
-      
+
       // [2025-12-18 17:05:00] 如果焦点在输入框且不是从提交按钮触发的，则忽略
       if (!isFromSubmitButtonBySubmitter && !isFromSubmitButtonByRef && isFocusOnInput) {
         console.log('[OfflineOrder] ⚠️ Form submit triggered by Enter key in input, ignoring...', {
@@ -1226,13 +1219,13 @@ export default function OfflineOrdersIntakePage() {
         isSubmittingFromButtonRef.current = false;
         return;
       }
-      
+
       // [2025-12-18 17:05:00] 重置 ref 标记
       isSubmittingFromButtonRef.current = false;
-      
+
       console.log('[OfflineOrder] ✅ Form submit triggered by submit button, proceeding...');
       resetStatus();
-      
+
       // [2025-12-06] PRD v2.0: 验证3个步骤
       if (!validateStep(1) || !validateStep(2) || !validateStep(3)) {
         return;
@@ -1249,11 +1242,11 @@ export default function OfflineOrdersIntakePage() {
         payload.append('email', formState.email.trim());
         payload.append('phone', formState.phone.trim());
         payload.append('company', formState.requiresInvoice && formState.invoiceInfo.companyName ? formState.invoiceInfo.companyName.trim() : formState.company || '');
-        
+
         // [2025-12-06] PRD v2.0: 聚合印刷位置（全局 + 产品级别）
         // [2025-12-19] 从colorGroupsByProduct中提取所有印刷位置
         const allPrintPositions: Array<PrintPosition & { productItemId?: string; colorGroupId?: string; index?: number }> = [];
-        
+
         // [2025-12-19] 遍历所有产品的颜色组，提取印刷位置
         formState.productItems.forEach((item) => {
           const colorGroups = formState.colorGroupsByProduct[item.id] || [];
@@ -1303,7 +1296,7 @@ export default function OfflineOrdersIntakePage() {
             },
           }),
         );
-        
+
         // [2025-12-06] PRD v2.0: 添加新字段
         payload.append('orderNotes', formState.orderNotes || '');
         if (formState.dstFileFee > 0) {
@@ -1333,12 +1326,12 @@ export default function OfflineOrdersIntakePage() {
         } catch (parseError) {
           throw new Error(`服务器响应格式错误 (${response.status}): ${response.statusText}`);
         }
-        
+
         if (!response.ok) {
           // 尝试从错误响应中提取详细信息
           const errorMessage = data?.message || data?.error || 'Failed to submit offline order';
           const errorDetails = data?.details || data?.missingFields?.join(', ') || '';
-          const fullErrorMessage = errorDetails 
+          const fullErrorMessage = errorDetails
             ? `${errorMessage}${errorDetails ? ` (${errorDetails})` : ''}`
             : errorMessage;
           throw new Error(fullErrorMessage);
@@ -1352,14 +1345,14 @@ export default function OfflineOrdersIntakePage() {
       } catch (error: any) {
         console.error('[OfflineOrder] Submission error:', error);
         const errorMessage = error.message || 'Submission failed.';
-        setStatus({ 
-          type: 'error', 
+        setStatus({
+          type: 'error',
           message: errorMessage,
         });
-        
+
         if (error.message?.includes('fetch') || error.message?.includes('network')) {
-          setStatus({ 
-            type: 'error', 
+          setStatus({
+            type: 'error',
             message: '网络连接失败，请检查网络连接后重试。',
           });
         }
@@ -1426,10 +1419,10 @@ export default function OfflineOrdersIntakePage() {
                   disabled={availableProducts.length === 0}
                 >
                   <option value="">
-                    {availableProducts.length === 0 
-                      ? (orderConfig.products.length === 0 
-                          ? '暂无产品，请先在管理员后台添加产品' 
-                          : '所有产品已添加')
+                    {availableProducts.length === 0
+                      ? (orderConfig.products.length === 0
+                        ? '暂无产品，请先在管理员后台添加产品'
+                        : '所有产品已添加')
                       : t('selectProductType') || '选择产品'}
                   </option>
                   {availableProducts.map((product) => (
@@ -1453,25 +1446,25 @@ export default function OfflineOrdersIntakePage() {
           <div className="space-y-6 mb-8">
             {formState.productItems.map((item, itemIndex) => {
               // 获取该产品的可用颜色（如果是客户自带服装，显示"自带颜色"）
-              const availableColors = item.isCustomerOwned 
+              const availableColors = item.isCustomerOwned
                 ? [{ id: 'customer-owned', name: '自带颜色' }]
                 : orderConfig.colors;
 
               return (
                 <div key={item.id} className="border border-gray-200 rounded-xl p-5 bg-white shadow-sm relative">
                   {/* [2025-12-19 02:30:00] 产品色块（1号位置）- 左侧8px宽色块 */}
-                  <div 
+                  <div
                     className="absolute left-0 top-0 bottom-0 w-2 rounded-l-xl"
                     style={{ backgroundColor: getProductColor(item.id) }}
                   />
-                  
+
                   {/* 产品卡片头部 - PRD v2.0: 产品图片、产品名称、关闭按钮 */}
                   <div className="mb-5 pb-3 border-b border-gray-200 flex items-center gap-4 ml-2">
                     {(() => {
                       const product = orderConfig.products.find(p => p.id === item.productId);
                       return product?.imageUrl ? (
-                        <img 
-                          src={product.imageUrl} 
+                        <img
+                          src={product.imageUrl}
                           alt={item.productName}
                           className="w-16 h-16 object-cover rounded-lg"
                         />
@@ -1539,13 +1532,13 @@ export default function OfflineOrdersIntakePage() {
                         </select>
                       </div>
                     ) : null}
-                    
+
                     {/* [2025-12-19] 使用整合的颜色组卡片组件 */}
                     {item.colors.map((color, colorIndex) => {
                       // [2025-12-19] 获取或创建颜色组配置
                       const colorGroups = formState.colorGroupsByProduct[item.id] || [];
                       const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
-                      
+
                       // [2025-12-19] 如果颜色组不存在，从ProductColor转换
                       let group: OrderItemColorGroup;
                       if (colorGroup) {
@@ -1556,7 +1549,7 @@ export default function OfflineOrdersIntakePage() {
                         color.sizes.forEach(sizeQty => {
                           quantities[sizeQty.size] = sizeQty.quantity;
                         });
-                        
+
                         group = {
                           id: `${color.colorId}-${Date.now()}`,
                           colorCode: color.colorId,
@@ -1566,7 +1559,7 @@ export default function OfflineOrdersIntakePage() {
                           unitPrice: 0, // [2025-12-19 02:30:00] 颜色级别的单价
                           inheritsFromColorId: null
                         };
-                        
+
                         // [2025-12-19] 初始化颜色组到state
                         setFormState(prev => ({
                           ...prev,
@@ -1579,11 +1572,11 @@ export default function OfflineOrdersIntakePage() {
                           }
                         }));
                       }
-                      
+
                       // [2025-12-19] 获取上一颜色组（用于继承）
                       const previousGroup = colorIndex > 0
                         ? colorGroups.find(g => g.colorCode === item.colors[colorIndex - 1].colorId)
-        : null;
+                        : null;
 
                       // [2025-12-19 02:30:00] 获取颜色的hex值
                       const colorData = availableColors.find(c => c.id === color.colorId);
@@ -1602,10 +1595,10 @@ export default function OfflineOrdersIntakePage() {
                             // [2025-12-19] 更新颜色组配置
                             setFormState(prev => {
                               const groups = prev.colorGroupsByProduct[item.id] || [];
-                              const newGroups = groups.map(g => 
+                              const newGroups = groups.map(g =>
                                 g.id === updated.id ? updated : g
                               );
-                              
+
                               // [2025-12-19] 同步更新ProductColor的sizes
                               const newItems = prev.productItems.map(productItem => {
                                 if (productItem.id === item.id) {
@@ -1624,11 +1617,11 @@ export default function OfflineOrdersIntakePage() {
                                           additionalFee: sizeFeeMap[size] || 0,
                                           subtotal: qty * (unitPrice + (sizeFeeMap[size] || 0))
                                         }));
-                                      
+
                                       // [2025-12-19 02:30:00] 计算该颜色的总数量和总价
                                       const totalQuantity = Object.values(updated.quantities).reduce((sum, qty) => sum + qty, 0);
                                       const totalPrice = newSizes.reduce((sum, s) => sum + s.subtotal, 0);
-                                      
+
                                       return {
                                         ...c,
                                         sizes: newSizes,
@@ -1638,11 +1631,11 @@ export default function OfflineOrdersIntakePage() {
                                     }
                                     return c;
                                   });
-                                  
+
                                   // [2025-12-19 02:30:00] 计算产品的总数量和总价
                                   const totalQuantity = newColors.reduce((sum, c) => sum + c.totalQuantity, 0);
                                   const totalPrice = newColors.reduce((sum, c) => sum + c.totalPrice, 0);
-                                  
+
                                   return {
                                     ...productItem,
                                     colors: newColors,
@@ -1652,7 +1645,7 @@ export default function OfflineOrdersIntakePage() {
                                 }
                                 return productItem;
                               });
-                              
+
                               return {
                                 ...prev,
                                 productItems: newItems,
@@ -1671,18 +1664,18 @@ export default function OfflineOrdersIntakePage() {
                               alert('没有其他颜色可以复制到');
                               return;
                             }
-                            
+
                             if (confirm(`确定要将"${color.colorName}"的配置复制到其他 ${otherColors.length} 个颜色吗？`)) {
                               setFormState(prev => {
                                 const groups = prev.colorGroupsByProduct[item.id] || [];
                                 const sourceGroup = groups.find(g => g.colorCode === color.colorId);
                                 if (!sourceGroup) return prev;
-                                
+
                                 const sourcePositions = sourceGroup.positions.map(pos => ({
                                   ...pos,
                                   designAssetId: pos.designAssetId || null
                                 }));
-                                
+
                                 const newGroups = groups.map(g => {
                                   if (otherColors.some(c => c.colorId === g.colorCode)) {
                                     return {
@@ -1693,7 +1686,7 @@ export default function OfflineOrdersIntakePage() {
                                   }
                                   return g;
                                 });
-                                
+
                                 return {
                                   ...prev,
                                   colorGroupsByProduct: {
@@ -1948,56 +1941,54 @@ export default function OfflineOrdersIntakePage() {
         <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息（所有字段均为可选）'}</p>
 
         {/* 客户基本信息 */}
-      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+        <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
           <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('customerInfo') || '客户基本信息'}</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('contactName') || '联系人姓名'}</span>
-            <input
-              type="text"
-              name="contactName"
-              value={formState.contactName}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-              }`}
-            />
-            {fieldErrors.contactName && (
-              <p className="mt-1 text-sm text-red-600">{fieldErrors.contactName}</p>
-            )}
-          </label>
-            
-          <label className="block">
+              <input
+                type="text"
+                name="contactName"
+                value={formState.contactName}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.contactName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+              />
+              {fieldErrors.contactName && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.contactName}</p>
+              )}
+            </label>
+
+            <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('email') || '邮箱'}</span>
-            <input
-              type="email"
-              name="email"
-              value={formState.email}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-              }`}
-            />
-            {fieldErrors.email && (
-              <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
-            )}
-          </label>
-            
-          <label className="block">
+              <input
+                type="email"
+                name="email"
+                value={formState.email}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                  }`}
+              />
+              {fieldErrors.email && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.email}</p>
+              )}
+            </label>
+
+            <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('phone') || '电话'}</span>
-            <input
-              type="tel"
-              name="phone"
-              value={formState.phone}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
+              <input
+                type="tel"
+                name="phone"
+                value={formState.phone}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            />
-          </label>
-            
-          <label className="block">
+              />
+            </label>
+
+            <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('company') || '公司'}</span>
               <input
                 type="text"
@@ -2008,256 +1999,248 @@ export default function OfflineOrdersIntakePage() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               />
             </label>
-            
+
             <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">{t('dueDate') || '交付日期'}</span>
-            <input
-              type="date"
-              name="dueDate"
-              value={formState.dueDate}
-              onChange={handleInputChange}
+              <input
+                type="date"
+                name="dueDate"
+                value={formState.dueDate}
+                onChange={handleInputChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-            />
-          </label>
-        </div>
-      </section>
+              />
+            </label>
+          </div>
+        </section>
 
         {/* Invoice功能 */}
-      <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
-        <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
-          <input
-            type="checkbox"
-            name="requiresInvoice"
-            checked={formState.requiresInvoice}
-            onChange={(e) => setField('requiresInvoice', e.target.checked)}
-            className="w-4.5 h-4.5 cursor-pointer"
-          />
+        <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+          <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
+            <input
+              type="checkbox"
+              name="requiresInvoice"
+              checked={formState.requiresInvoice}
+              onChange={(e) => setField('requiresInvoice', e.target.checked)}
+              className="w-4.5 h-4.5 cursor-pointer"
+            />
             <span className="text-sm font-medium text-gray-700">{t('requireInvoice') || '需要Invoice'}</span>
-        </label>
+          </label>
 
-        {formState.requiresInvoice && (
+          {formState.requiresInvoice && (
             <div className="mt-4 space-y-4">
               {/* Invoice信息表单 */}
               <div className="p-5 bg-gray-50 rounded-lg">
                 <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('invoiceInfo') || 'Invoice信息'}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="block">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyName') || '公司名称'}</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.companyName}
-                  onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_companyName && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyName}</p>
-                )}
-              </label>
-                  
-              <label className="block">
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.companyName}
+                      onChange={(e) => updateInvoiceInfo('companyName', e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.invoice_companyName ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                    />
+                    {fieldErrors.invoice_companyName && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyName}</p>
+                    )}
+                  </label>
+
+                  <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('companyEmail') || '公司邮箱'}</span>
-                <input
-                  type="email"
-                  value={formState.invoiceInfo.companyEmail}
-                  onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_companyEmail && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyEmail}</p>
-                )}
-              </label>
-                  
-              <label className="block">
+                    <input
+                      type="email"
+                      value={formState.invoiceInfo.companyEmail}
+                      onChange={(e) => updateInvoiceInfo('companyEmail', e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.invoice_companyEmail ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                    />
+                    {fieldErrors.invoice_companyEmail && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_companyEmail}</p>
+                    )}
+                  </label>
+
+                  <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('taxNumber') || 'GST/HST Number'}</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.taxNumber}
-                  onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
-                  onKeyDown={handleKeyDown}
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.taxNumber}
+                      onChange={(e) => updateInvoiceInfo('taxNumber', e.target.value)}
+                      onKeyDown={handleKeyDown}
                       placeholder={t('taxNumberPlaceholder') || 'GST/HST Number'}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                />
-              </label>
-                  
-              <label className="block">
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    />
+                  </label>
+
+                  <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('city') || '城市'}</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.city}
-                  onChange={(e) => updateInvoiceInfo('city', e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_city && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_city}</p>
-                )}
-              </label>
-                  
-              <label className="block">
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.city}
+                      onChange={(e) => updateInvoiceInfo('city', e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.invoice_city ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                    />
+                    {fieldErrors.invoice_city && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_city}</p>
+                    )}
+                  </label>
+
+                  <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('province') || '省份'}</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.province}
-                  onChange={(e) => updateInvoiceInfo('province', e.target.value)}
-                  onKeyDown={handleKeyDown}
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.province}
+                      onChange={(e) => updateInvoiceInfo('province', e.target.value)}
+                      onKeyDown={handleKeyDown}
                       placeholder={t('provincePlaceholder') || 'Ontario'}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_province && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_province}</p>
-                )}
-              </label>
-                  
-              <label className="block">
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.invoice_province ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                    />
+                    {fieldErrors.invoice_province && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_province}</p>
+                    )}
+                  </label>
+
+                  <label className="block">
                     <span className="block text-sm font-medium text-gray-700 mb-2">{t('postalCode') || '邮编'}</span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.postalCode}
-                  onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
-                  onKeyDown={handleKeyDown}
+                    <input
+                      type="text"
+                      value={formState.invoiceInfo.postalCode}
+                      onChange={(e) => updateInvoiceInfo('postalCode', e.target.value)}
+                      onKeyDown={handleKeyDown}
                       placeholder={t('postalCodePlaceholder') || 'A1B 2C3'}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                    fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {fieldErrors.invoice_postalCode && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_postalCode}</p>
-                )}
-              </label>
-            </div>
-                
-            <label className="block mt-4">
+                      className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.invoice_postalCode ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                    />
+                    {fieldErrors.invoice_postalCode && (
+                      <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_postalCode}</p>
+                    )}
+                  </label>
+                </div>
+
+                <label className="block mt-4">
                   <span className="block text-sm font-medium text-gray-700 mb-2">{t('address') || '地址'}</span>
-              <input
-                type="text"
-                value={formState.invoiceInfo.address}
-                onChange={(e) => updateInvoiceInfo('address', e.target.value)}
-                onKeyDown={handleKeyDown}
-                className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
-                  fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                }`}
-              />
-              {fieldErrors.invoice_address && (
-                <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_address}</p>
-              )}
-            </label>
-          </div>
-          </div>
-        )}
-
-        {/* [2025-12-19] PRD v2.0: 支付信息（Invoice时，全部改为非必填） */}
-        {formState.requiresInvoice && (
-          <div className="mt-4 p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('paymentInfo') || '支付信息'}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'}</span>
-                <select
-                  value={formState.invoiceInfo.paymentMethod || ''}
-                  onChange={(e) => {
-                    const paymentMethod = e.target.value as 'card' | 'etrans' | '';
-                    setFormState((prev) => ({
-                      ...prev,
-                      invoiceInfo: {
-                        ...prev.invoiceInfo,
-                        paymentMethod: paymentMethod || undefined,
-                      },
-                    }));
-                  }}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    fieldErrors.paymentMethod ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                >
-                  <option value="">{t('selectPaymentMethod') || '选择支付方式...'}</option>
-                  <option value="card">{t('paymentCard') || '刷卡'}</option>
-                  <option value="etrans">{t('paymentEtransfer') || 'e-trans'}</option>
-                </select>
-                {fieldErrors.paymentMethod && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.paymentMethod}</p>
-                )}
-              </label>
-              
-              <label className="block">
-                <span className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('referenceNumber') || 'Reference Number'}
-                </span>
-                <input
-                  type="text"
-                  value={formState.invoiceInfo.referenceNumber || ''}
-                  onChange={(e) => {
-                    setFormState((prev) => ({
-                      ...prev,
-                      invoiceInfo: {
-                        ...prev.invoiceInfo,
-                        referenceNumber: e.target.value,
-                      },
-                    }));
-                  }}
-                  onKeyDown={handleKeyDown}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    fieldErrors.referenceNumber ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                  placeholder={t('referenceNumberPlaceholder') || 'Reference Number'}
-                />
-                {fieldErrors.referenceNumber && (
-                  <p className="mt-1 text-sm text-red-600">{fieldErrors.referenceNumber}</p>
-                )}
-              </label>
-            </div>
-          </div>
-        )}
-
-        {/* [2025-12-07 02:00:00] PRD v2.0: 税计算显示（仅当选择Invoice时显示税额） */}
-        <div className="mt-4 p-5 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">{t('priceDetails') || '价格明细'}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}</h4>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <span>{t('subtotal') || '小计'}：</span>
-              <span>${calculateSubtotal.toFixed(2)} CAD</span>
-            </div>
-            {formState.discount > 0 && (
-              <div className="flex justify-between items-center text-sm text-red-600">
-                <span>{t('discount')} ({formState.discount}%)：</span>
-                <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
+                  <input
+                    type="text"
+                    value={formState.invoiceInfo.address}
+                    onChange={(e) => updateInvoiceInfo('address', e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${fieldErrors.invoice_address ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                  />
+                  {fieldErrors.invoice_address && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.invoice_address}</p>
+                  )}
+                </label>
               </div>
-            )}
-            {formState.requiresInvoice && (
-              <>
-                <div className="flex justify-between items-center text-sm">
-                  <span>{t('beforeTax') || '税前金额'}：</span>
-                  <span>${taxBase.toFixed(2)} CAD</span>
+            </div>
+          )}
+
+          {/* [2025-12-19] PRD v2.0: 支付信息（Invoice时，全部改为非必填） */}
+          {formState.requiresInvoice && (
+            <div className="mt-4 p-5 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h4 className="text-base font-semibold text-gray-700 m-0 mb-3">{t('paymentInfo') || '支付信息'}</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'}</span>
+                  <select
+                    value={formState.invoiceInfo.paymentMethod || ''}
+                    onChange={(e) => {
+                      const paymentMethod = e.target.value as 'card' | 'etrans' | '';
+                      setFormState((prev) => ({
+                        ...prev,
+                        invoiceInfo: {
+                          ...prev.invoiceInfo,
+                          paymentMethod: paymentMethod || undefined,
+                        },
+                      }));
+                    }}
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.paymentMethod ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                  >
+                    <option value="">{t('selectPaymentMethod') || '选择支付方式...'}</option>
+                    <option value="card">{t('paymentCard') || '刷卡'}</option>
+                    <option value="etrans">{t('paymentEtransfer') || 'e-trans'}</option>
+                  </select>
+                  {fieldErrors.paymentMethod && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.paymentMethod}</p>
+                  )}
+                </label>
+
+                <label className="block">
+                  <span className="block text-sm font-medium text-gray-700 mb-2">
+                    {t('referenceNumber') || 'Reference Number'}
+                  </span>
+                  <input
+                    type="text"
+                    value={formState.invoiceInfo.referenceNumber || ''}
+                    onChange={(e) => {
+                      setFormState((prev) => ({
+                        ...prev,
+                        invoiceInfo: {
+                          ...prev.invoiceInfo,
+                          referenceNumber: e.target.value,
+                        },
+                      }));
+                    }}
+                    onKeyDown={handleKeyDown}
+                    className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.referenceNumber ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'
+                      }`}
+                    placeholder={t('referenceNumberPlaceholder') || 'Reference Number'}
+                  />
+                  {fieldErrors.referenceNumber && (
+                    <p className="mt-1 text-sm text-red-600">{fieldErrors.referenceNumber}</p>
+                  )}
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* [2025-12-07 02:00:00] PRD v2.0: 税计算显示（仅当选择Invoice时显示税额） */}
+          <div className="mt-4 p-5 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">{t('priceDetails') || '价格明细'}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}</h4>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span>{t('subtotal') || '小计'}：</span>
+                <span>${calculateSubtotal.toFixed(2)} CAD</span>
+              </div>
+              {formState.discount > 0 && (
+                <div className="flex justify-between items-center text-sm text-red-600">
+                  <span>{t('discount')} ({formState.discount}%)：</span>
+                  <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span>{t('tax')} (13% HST)：</span>
-                  <span>${taxAmount.toFixed(2)} CAD</span>
-                </div>
-              </>
-            )}
-            <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
-              <span className="font-semibold">{t('total')}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}：</span>
-              <strong className="text-xl text-blue-700">${totalWithTax.toFixed(2)} CAD</strong>
+              )}
+              {formState.requiresInvoice && (
+                <>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>{t('beforeTax') || '税前金额'}：</span>
+                    <span>${taxBase.toFixed(2)} CAD</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>{t('tax')} (13% HST)：</span>
+                    <span>${taxAmount.toFixed(2)} CAD</span>
+                  </div>
+                </>
+              )}
+              <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
+                <span className="font-semibold">{t('total')}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}：</span>
+                <strong className="text-xl text-blue-700">${totalWithTax.toFixed(2)} CAD</strong>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* [2025-12-19 02:30:00] 计费明细 */}
-        <BillingDetails 
-          productItems={formState.productItems}
-          colorGroupsByProduct={formState.colorGroupsByProduct}
-        />
-      </section>
-    </div>
-  );
+          {/* [2025-12-19 02:30:00] 计费明细 */}
+          <BillingDetails
+            productItems={formState.productItems}
+            colorGroupsByProduct={formState.colorGroupsByProduct}
+          />
+        </section>
+      </div>
+    );
   };
 
   // [2025-01-27 18:00:00] 更新发票信息字段
@@ -2284,7 +2267,7 @@ export default function OfflineOrdersIntakePage() {
   const renderStep3 = () => {
     // [2025-12-19] 获取所有有颜色的产品项
     const itemsWithColors = formState.productItems.filter(item => item.colors.length > 0);
-    
+
     if (itemsWithColors.length === 0) {
       return (
         <div className="space-y-6">
@@ -2296,115 +2279,19 @@ export default function OfflineOrdersIntakePage() {
 
     return (
       <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">选择印刷位</h2>
-      <p className="text-gray-600 mb-6 text-sm">为每个颜色配置印刷位置。您可以继承上一颜色的配置，或为特定尺码设置不同的印刷位。</p>
-      
-      {/* [2025-12-04 00:15:00] 移动设备提示 */}
-      {isMobile && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <p className="text-sm font-semibold text-blue-900 mb-1">{t('mobileUploadTip') || '移动设备提示'}</p>
-          <p className="text-xs text-blue-700">{t('mobileUploadDescription') || '您可以使用相机拍照上传文件'}</p>
-        </div>
-      )}
-      
-      <div
-        className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50 text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        role="button"
-        tabIndex={0}
-      >
-        <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
-        <p className="text-xs text-gray-600">
-          {isMobile ? (t('mobileUploadOrBrowse') || '点击上传或拍照') : (t('dragDropOrBrowse') || '拖拽文件到此处或点击浏览')} 
-          ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB }) || `最多 ${MAX_FILES} 个文件，每个文件最大 ${MAX_FILE_SIZE_MB}MB`})
-        </p>
-        <input
-          type="file"
-          accept={isMobile ? `${ACCEPTED_EXTENSIONS.join(',')},image/*` : ACCEPTED_EXTENSIONS.join(',')}
-          capture={isMobile ? 'environment' : undefined}
-          multiple
-          onChange={handleFileInputChange}
-          aria-label="Upload artwork files"
-          className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
-        />
-      </div>
-      
-      {files.length > 0 && (
-        <ul className="list-none m-0 p-0 grid gap-3 mt-4">
-          {files.map((file, index) => (
-            <li
-              key={`${file.name}-${index}`}
-              className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex justify-between items-center"
-            >
-              <div className="flex flex-col gap-1">
-                <strong className="text-sm text-gray-900">{file.name}</strong>
-                <span className="text-xs text-gray-600">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => removeFile(index)}
-                className="border-none bg-transparent text-red-600 cursor-pointer text-sm font-medium hover:text-red-700 transition-colors"
-              >
-                {t('remove') || '删除'}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      
-      {/* [2025-12-19] 为每个产品项显示颜色组配置器 */}
-      {itemsWithColors.map((item) => {
-        const existingGroups = formState.colorGroupsByProduct[item.id] || [];
+        <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">选择印刷位</h2>
+        <p className="text-gray-600 mb-6 text-sm">为每个颜色配置印刷位置。您可以继承上一颜色的配置，或为特定尺码设置不同的印刷位。</p>
 
-        return (
-          <ProductItemColorConfig
-            key={item.id}
-            productItemId={item.id}
-            productName={item.productName}
-            colors={item.colors}
-            existingGroups={existingGroups}
-            onUpdate={(updatedGroups) => {
-              setFormState(prev => ({
-                ...prev,
-                colorGroupsByProduct: {
-                  ...prev.colorGroupsByProduct,
-                  [item.id]: updatedGroups
-                }
-              }));
-            }}
-            onValidationChange={(isValid, errors) => {
-              if (!isValid) {
-                setFieldErrors(prev => ({
-                  ...prev,
-                  [`printPositions-${item.id}`]: errors.join('; ')
-                }));
-              } else {
-                setFieldErrors(prev => {
-                  const newErrors = { ...prev };
-                  delete newErrors[`printPositions-${item.id}`];
-                  return newErrors;
-                });
-              }
-            }}
-          />
-        );
-      })}
-
-      {/* [2025-12-19] 文件上传（可选，移到步骤3下方） */}
-      <div className="mt-8 p-5 bg-gray-50 border border-gray-200 rounded-xl">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">文件上传（可选）</h3>
-        <p className="text-sm text-gray-600 mb-4">您可以上传设计文件，也可以不传文件直接提交订单。</p>
-        
+        {/* [2025-12-04 00:15:00] 移动设备提示 */}
         {isMobile && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <p className="text-sm font-semibold text-blue-900 mb-1">{t('mobileUploadTip') || '移动设备提示'}</p>
             <p className="text-xs text-blue-700">{t('mobileUploadDescription') || '您可以使用相机拍照上传文件'}</p>
           </div>
         )}
-        
+
         <div
-          className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
+          className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-gray-50 text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           role="button"
@@ -2412,8 +2299,8 @@ export default function OfflineOrdersIntakePage() {
         >
           <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
           <p className="text-xs text-gray-600">
-            {isMobile ? (t('mobileUploadOrBrowse') || '点击上传或拍照') : (t('dragDropOrBrowse') || '拖拽文件到此处或点击浏览')} 
-            ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB }) || `最多 ${ MAX_FILES} 个文件，每个文件最大 ${MAX_FILE_SIZE_MB}MB`})
+            {isMobile ? (t('mobileUploadOrBrowse') || '点击上传或拍照') : (t('dragDropOrBrowse') || '拖拽文件到此处或点击浏览')}
+            ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB }) || `最多 ${MAX_FILES} 个文件，每个文件最大 ${MAX_FILE_SIZE_MB}MB`})
           </p>
           <input
             type="file"
@@ -2425,13 +2312,13 @@ export default function OfflineOrdersIntakePage() {
             className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
           />
         </div>
-        
+
         {files.length > 0 && (
           <ul className="list-none m-0 p-0 grid gap-3 mt-4">
             {files.map((file, index) => (
               <li
                 key={`${file.name}-${index}`}
-                className="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center"
+                className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex justify-between items-center"
               >
                 <div className="flex flex-col gap-1">
                   <strong className="text-sm text-gray-900">{file.name}</strong>
@@ -2448,8 +2335,104 @@ export default function OfflineOrdersIntakePage() {
             ))}
           </ul>
         )}
+
+        {/* [2025-12-19] 为每个产品项显示颜色组配置器 */}
+        {itemsWithColors.map((item) => {
+          const existingGroups = formState.colorGroupsByProduct[item.id] || [];
+
+          return (
+            <ProductItemColorConfig
+              key={item.id}
+              productItemId={item.id}
+              productName={item.productName}
+              colors={item.colors}
+              existingGroups={existingGroups}
+              onUpdate={(updatedGroups) => {
+                setFormState(prev => ({
+                  ...prev,
+                  colorGroupsByProduct: {
+                    ...prev.colorGroupsByProduct,
+                    [item.id]: updatedGroups
+                  }
+                }));
+              }}
+              onValidationChange={(isValid, errors) => {
+                if (!isValid) {
+                  setFieldErrors(prev => ({
+                    ...prev,
+                    [`printPositions-${item.id}`]: errors.join('; ')
+                  }));
+                } else {
+                  setFieldErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors[`printPositions-${item.id}`];
+                    return newErrors;
+                  });
+                }
+              }}
+            />
+          );
+        })}
+
+        {/* [2025-12-19] 文件上传（可选，移到步骤3下方） */}
+        <div className="mt-8 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">文件上传（可选）</h3>
+          <p className="text-sm text-gray-600 mb-4">您可以上传设计文件，也可以不传文件直接提交订单。</p>
+
+          {isMobile && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm font-semibold text-blue-900 mb-1">{t('mobileUploadTip') || '移动设备提示'}</p>
+              <p className="text-xs text-blue-700">{t('mobileUploadDescription') || '您可以使用相机拍照上传文件'}</p>
+            </div>
+          )}
+
+          <div
+            className="border-2 border-dashed border-gray-300 rounded-xl p-6 bg-white text-center cursor-pointer relative transition-all hover:border-blue-500 hover:bg-blue-50"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            role="button"
+            tabIndex={0}
+          >
+            <p className="text-sm text-gray-700 mb-2">{fileListSummary}</p>
+            <p className="text-xs text-gray-600">
+              {isMobile ? (t('mobileUploadOrBrowse') || '点击上传或拍照') : (t('dragDropOrBrowse') || '拖拽文件到此处或点击浏览')}
+              ({t('maxFiles', { maxFiles: MAX_FILES, maxSize: MAX_FILE_SIZE_MB }) || `最多 ${MAX_FILES} 个文件，每个文件最大 ${MAX_FILE_SIZE_MB}MB`})
+            </p>
+            <input
+              type="file"
+              accept={isMobile ? `${ACCEPTED_EXTENSIONS.join(',')},image/*` : ACCEPTED_EXTENSIONS.join(',')}
+              capture={isMobile ? 'environment' : undefined}
+              multiple
+              onChange={handleFileInputChange}
+              aria-label="Upload artwork files"
+              className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </div>
+
+          {files.length > 0 && (
+            <ul className="list-none m-0 p-0 grid gap-3 mt-4">
+              {files.map((file, index) => (
+                <li
+                  key={`${file.name}-${index}`}
+                  className="bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center"
+                >
+                  <div className="flex flex-col gap-1">
+                    <strong className="text-sm text-gray-900">{file.name}</strong>
+                    <span className="text-xs text-gray-600">{(file.size / (1024 * 1024)).toFixed(1)} MB</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="border-none bg-transparent text-red-600 cursor-pointer text-sm font-medium hover:text-red-700 transition-colors"
+                  >
+                    {t('remove') || '删除'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
-    </div>
     );
   };
 
@@ -2474,22 +2457,20 @@ export default function OfflineOrdersIntakePage() {
             <div className="flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
               <button
                 type="button"
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  locale === 'en'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
-                }`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${locale === 'en'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
+                  }`}
                 onClick={() => handleLocaleChange('en')}
               >
                 EN
               </button>
               <button
                 type="button"
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  locale === 'zh'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-transparent text-gray-700 hover:bg-blue-50'
-                }`}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${locale === 'zh'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-transparent text-gray-700 hover:bg-blue-50'
+                  }`}
                 onClick={() => handleLocaleChange('zh')}
               >
                 中文
@@ -2511,11 +2492,10 @@ export default function OfflineOrdersIntakePage() {
         <form className="bg-white rounded-2xl p-8 shadow-xl grid gap-8" onSubmit={handleSubmit}>
           {status.type !== 'idle' && (
             <div
-              className={`rounded-lg px-4 py-3 ${
-                status.type === 'success'
-                  ? 'bg-green-50 text-green-800 border border-green-200'
-                  : 'bg-red-50 text-red-800 border border-red-200'
-              }`}
+              className={`rounded-lg px-4 py-3 ${status.type === 'success'
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+                }`}
               role="status"
             >
               {status.message}
@@ -2525,60 +2505,58 @@ export default function OfflineOrdersIntakePage() {
           {/* [2025-01-27 19:00:00] 订单编号显示（所有步骤可见）- 使用 Tailwind */}
           {/* [2025-01-28 09:30:00] 只在客户端显示订单编号，避免 hydration 错误 */}
           {isClient && formState.orderCode && (
-          <div className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-600 rounded-lg">
-            <span className="text-sm text-gray-700 font-medium">{t('orderCode')}：</span>
-            <strong className="text-lg text-blue-800 font-mono tracking-wide font-bold">
-              {formState.orderCode}
-            </strong>
-          </div>
+            <div className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-600 rounded-lg">
+              <span className="text-sm text-gray-700 font-medium">{t('orderCode')}：</span>
+              <strong className="text-lg text-blue-800 font-mono tracking-wide font-bold">
+                {formState.orderCode}
+              </strong>
+            </div>
           )}
 
           {/* [2025-12-07 02:30:00] PRD v2.0: 步骤导航栏（支持点击跳转） */}
           {isClient && (
-          <div className="flex gap-3 pb-6 border-b-2 border-gray-200 overflow-x-visible">
-            {STEPS.map((step, index) => (
-              <div
-                key={step.id}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all flex-1 min-w-0 ${
-                  currentStep === step.id
+            <div className="flex gap-3 pb-6 border-b-2 border-gray-200 overflow-x-visible">
+              {STEPS.map((step, index) => (
+                <div
+                  key={step.id}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all flex-1 min-w-0 ${currentStep === step.id
                     ? 'bg-blue-50 border-2 border-blue-600'
                     : currentStep > step.id
-                    ? 'bg-gray-50 hover:bg-gray-100'
-                    : 'bg-gray-50 hover:bg-gray-100'
-                }`}
-                onClick={() => goToStep(step.id)}
-                title={t('clickToJump') || '点击跳转到此步骤'}
-              >
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold flex-shrink-0 ${
-                    currentStep === step.id
+                      ? 'bg-gray-50 hover:bg-gray-100'
+                      : 'bg-gray-50 hover:bg-gray-100'
+                    }`}
+                  onClick={() => goToStep(step.id)}
+                  title={t('clickToJump') || '点击跳转到此步骤'}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold flex-shrink-0 ${currentStep === step.id
                       ? 'bg-blue-600 text-white'
                       : currentStep > step.id
-                      ? 'bg-green-500 text-white'
-                      : 'bg-gray-300 text-gray-600'
-                  }`}
-                >
-                  {step.id}
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-300 text-gray-600'
+                      }`}
+                  >
+                    {step.id}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 mb-1 truncate">{step.title}</div>
+                    <div className="text-xs text-gray-600 leading-tight line-clamp-2">{step.description}</div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-gray-900 mb-1 truncate">{step.title}</div>
-                  <div className="text-xs text-gray-600 leading-tight line-clamp-2">{step.description}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           )}
 
           {/* [2025-01-27 18:00:00] 步骤内容区域 - 使用 Tailwind */}
           {/* [2025-01-28 09:10:00] 使用 isClient 条件渲染避免 hydration 错误 */}
           {isClient && (
-          <div className="min-h-[400px]">
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-          </div>
+            <div className="min-h-[400px]">
+              {currentStep === 1 && renderStep1()}
+              {currentStep === 2 && renderStep2()}
+              {currentStep === 3 && renderStep3()}
+            </div>
           )}
-          
+
           {/* [2025-12-19] 添加颜色弹窗 */}
           {addColorModal && (
             <AddColorModal
@@ -2617,46 +2595,66 @@ export default function OfflineOrdersIntakePage() {
           {/* [2025-12-18 17:20:00] 使用 grid 布局确保提交按钮真正居中 */}
           {/* [2025-12-18 17:25:00] 修复：使用绝对定位确保提交按钮真正居中 */}
           {isClient && (
-          <div className={`pt-6 border-t border-gray-200 relative ${
-            currentStep === STEPS.length 
-              ? 'grid grid-cols-3 items-center gap-3' 
+            <div className={`pt-6 border-t border-gray-200 relative ${currentStep === STEPS.length
+              ? 'grid grid-cols-3 items-center gap-3'
               : 'flex justify-between items-center gap-3'
-          }`}>
-            {/* 左侧：保存草稿按钮 */}
-            <div className={currentStep === STEPS.length ? 'flex justify-start' : ''}>
-              <button
-                type="button"
-                className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={saveDraft}
-                disabled={isSubmitting || isSavingDraft}
-              >
-                {isSavingDraft ? t('saving') : t('saveDraft')}
-              </button>
-            </div>
-            
-            {/* 中间：提交订单按钮（仅在第3步显示，使用绝对定位居中） */}
-            {currentStep === STEPS.length && (
-              <div className="absolute left-1/2 transform -translate-x-1/2">
+              }`}>
+              {/* 左侧：保存草稿按钮 */}
+              <div className={currentStep === STEPS.length ? 'flex justify-start' : ''}>
                 <button
-                  ref={submitButtonRef}
-                  type="submit"
-                  onClick={() => {
-                    // [2025-12-18 17:05:00] 标记这是按钮点击触发的提交
-                    isSubmittingFromButtonRef.current = true;
-                    console.log('[OfflineOrder] Submit button clicked, setting flag');
-                  }}
-                  className="px-8 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                  disabled={isSubmitting}
+                  type="button"
+                  className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={saveDraft}
+                  disabled={isSubmitting || isSavingDraft}
                 >
-                  {isSubmitting ? t('submitting') : t('submitOrder')}
+                  {isSavingDraft ? t('saving') : t('saveDraft')}
                 </button>
               </div>
-            )}
-            
-            {/* 右侧：上一步和下一步按钮（仅在前两步显示） */}
-            {currentStep < STEPS.length && (
-              <div className="flex gap-3 justify-end">
-                {currentStep > 1 && (
+
+              {/* 中间：提交订单按钮（仅在第3步显示，使用绝对定位居中） */}
+              {currentStep === STEPS.length && (
+                <div className="absolute left-1/2 transform -translate-x-1/2">
+                  <button
+                    ref={submitButtonRef}
+                    type="submit"
+                    onClick={() => {
+                      // [2025-12-18 17:05:00] 标记这是按钮点击触发的提交
+                      isSubmittingFromButtonRef.current = true;
+                      console.log('[OfflineOrder] Submit button clicked, setting flag');
+                    }}
+                    className="px-8 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? t('submitting') : t('submitOrder')}
+                  </button>
+                </div>
+              )}
+
+              {/* 右侧：上一步和下一步按钮（仅在前两步显示） */}
+              {currentStep < STEPS.length && (
+                <div className="flex gap-3 justify-end">
+                  {currentStep > 1 && (
+                    <button
+                      type="button"
+                      className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      onClick={goToPreviousStep}
+                    >
+                      {t('previousStep')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
+                    onClick={goToNextStep}
+                  >
+                    {t('nextStep')}
+                  </button>
+                </div>
+              )}
+
+              {/* 右侧：上一步按钮（仅在第3步显示，与提交按钮配合） */}
+              {currentStep === STEPS.length && currentStep > 1 && (
+                <div className="flex gap-3 justify-end">
                   <button
                     type="button"
                     className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
@@ -2664,30 +2662,9 @@ export default function OfflineOrdersIntakePage() {
                   >
                     {t('previousStep')}
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
-                  onClick={goToNextStep}
-                >
-                  {t('nextStep')}
-                </button>
-              </div>
-            )}
-            
-            {/* 右侧：上一步按钮（仅在第3步显示，与提交按钮配合） */}
-            {currentStep === STEPS.length && currentStep > 1 && (
-              <div className="flex gap-3 justify-end">
-                <button
-                  type="button"
-                  className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                  onClick={goToPreviousStep}
-                >
-                  {t('previousStep')}
-                </button>
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
           )}
         </form>
       </main>
