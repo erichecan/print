@@ -1,6 +1,6 @@
 /**
  * Address Management Page
- * [2025-01-27 12:30:00] 实现用户地址管理功能：列表、添加、编辑、删除、设置默认地址
+ * [2025-01-27 12:30:00] User address management: list, add, edit, delete, set default
  */
 'use client';
 
@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, addressesApi, type Address, type AddressPayload } from '@/lib/api';
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:55:00] 使用路由映射
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:55:00] Use route mapping
 
 export default function AddressesPage() {
   const router = useRouter();
@@ -36,7 +36,14 @@ export default function AddressesPage() {
       setLoading(true);
       setError(null);
       const data = await addressesApi.list();
-      setAddresses(data);
+      // [2025-12-20] Fix: handle response format { addresses: [], count: ... } or [...]
+      if (Array.isArray(data)) {
+        setAddresses(data);
+      } else if (data && typeof data === 'object' && 'addresses' in data && Array.isArray((data as any).addresses)) {
+        setAddresses((data as any).addresses);
+      } else {
+        setAddresses([]);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load addresses.');
     } finally {
@@ -70,10 +77,10 @@ export default function AddressesPage() {
 
     try {
       if (editingId) {
-        // 更新地址
+        // Update address
         await addressesApi.update(editingId, formData);
       } else {
-        // 创建新地址
+        // Create new address
         await addressesApi.create(formData);
       }
       await fetchAddresses();
@@ -157,8 +164,8 @@ export default function AddressesPage() {
   return (
     <div className="container" style={{ padding: '72px 0', maxWidth: '960px' }}>
       <div style={{ marginBottom: '32px' }}>
-        <Link href={ACCOUNT_ROUTES.dashboard} style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
-          ← Back to Account
+        <Link href={ACCOUNT_ROUTES.orders} style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
+          ← Back to Orders
         </Link>
         <h1>Addresses</h1>
         <p>Manage your shipping addresses for faster checkout.</p>
@@ -189,7 +196,7 @@ export default function AddressesPage() {
       {showAddForm && (
         <form onSubmit={handleSubmit} style={{ background: '#f9f9f9', padding: '24px', borderRadius: '8px', marginBottom: '32px' }}>
           <h2 style={{ marginTop: 0 }}>{editingId ? 'Edit Address' : 'Add New Address'}</h2>
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
             <div>
               <label htmlFor="firstName" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>

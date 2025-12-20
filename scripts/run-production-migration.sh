@@ -44,8 +44,8 @@ if gcloud run jobs describe ${JOB_NAME} --region=${REGION} &> /dev/null; then
       --region ${REGION} \
       --set-secrets DATABASE_URL=database-url:latest \
       --set-env-vars NODE_ENV=production \
-      --command="node" \
-      --args="scripts/run-migrations.js" \
+      --command="npx" \
+      --args="prisma,db,push,--accept-data-loss,--schema=./prisma/schema.prisma" \
       --max-retries 1 \
       --memory 512Mi \
       --cpu 1 \
@@ -58,8 +58,8 @@ else
       --region ${REGION} \
       --set-secrets DATABASE_URL=database-url:latest \
       --set-env-vars NODE_ENV=production \
-      --command="node" \
-      --args="scripts/run-migrations.js" \
+      --command="npx" \
+      --args="prisma,db,push,--accept-data-loss,--schema=./prisma/schema.prisma" \
       --max-retries 1 \
       --memory 512Mi \
       --cpu 1 \

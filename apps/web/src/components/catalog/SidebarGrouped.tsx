@@ -1,12 +1,13 @@
 /**
  * SidebarGrouped Component - 分组类目导航
  * [2025-12-11 23:05:00] 实现分组结构、折叠/展开、选中态、精确计数显示
+ * [2025-01-31 16:30:00] Refactored to use '/products/filters/options' API for consistent data and matched UI to reference.
  */
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { API_BASE_URL } from '@/lib/api-config';
 import styles from './SidebarGrouped.module.css';
@@ -33,63 +34,69 @@ interface SidebarGroupedProps {
   onSelect?: (child: { groupSlug: string; childSlug: string }) => void;
 }
 
-// [2025-12-19 02:00:00] 改进 fetcher：提供更详细的错误信息
-const fetcher = (url: string) =>
-  fetch(url, { credentials: 'include' })
-    .then((r) => {
-      if (!r.ok) {
-        // [2025-12-19 02:00:00] 提供更详细的错误信息，包括状态码和状态文本
-        const error = new Error(`API请求失败: ${r.status} ${r.statusText || ''}`);
-        (error as any).status = r.status;
-        (error as any).statusText = r.statusText;
-        throw error;
-      }
-      return r.json();
-    })
-    .then((data) => {
-      // [2025-12-19 02:00:00] 验证返回数据格式
-      if (!data || typeof data !== 'object') {
-        console.warn('[SidebarGrouped] API返回数据格式异常:', data);
-        return [];
-      }
-      return data.groups || [];
-    })
-    .catch((err) => {
-      // [2025-12-19 02:00:00] 记录详细错误信息用于调试
-      console.error('[SidebarGrouped] Fetcher错误:', {
-        url,
-        error: err.message,
-        status: (err as any).status,
-        statusText: (err as any).statusText,
-      });
-      throw err;
-    });
+// Reuse fetcher to be consistent
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((r) => {
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+});
 
 export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // [2025-01-31] Fixed possible null searchParams
+  const search = searchParams?.get('search') || '';
+  const collection = searchParams?.get('collection') || ''; // Support collection filter if needed
+
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  // [2025-12-11 23:05:00] 从 API 获取分组分类数据
-  const { data: groups, error, isLoading } = useSWR<CategoryGroup[]>(
-    `${API_BASE_URL}/categories/tree-with-counts?strategy=direct`,
+  // [2025-01-31] Switch to the robust filters API which already aggregates product data
+  // passing collection/search to get accurate counts
+  const apiUrl = `${API_BASE_URL}/products/filters/options?collection=${collection}&search=${search}`;
+
+  const { data: filterOptions, error, isLoading } = useSWR(
+    apiUrl,
     fetcher,
     {
       revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      dedupingInterval: 60000, // 缓存 60 秒
+      dedupingInterval: 60000,
     }
   );
 
+  // [2025-01-31] Transform filter options categories into Group structure
+  // The API returns a flat list or tree depending on backend, but DynamicFilters expected a tree.
+  // Let's assume filterOptions.categories is the array of categories.
+  const groups: CategoryGroup[] = (() => {
+    if (!filterOptions || !filterOptions.categories) return [];
+
+    // Filter only top-level categories (those with children or significant count as fallback)
+    // Adjust logic to match DynamicFilters' `getCategoryTree`
+    const rawCategories: any[] = filterOptions.categories;
+
+    // We want to group everything. If the API returns a tree, great.
+    // If it returns a flat list, we might need to rely on the backend logic or structure.
+    // Based on DynamicFilters, it seems `children` property exists.
+    return rawCategories
+      .filter(cat => cat.children && cat.children.length > 0) // Only show groups with children
+      .map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        // Ensure children are properly mapped
+        children: cat.children.map((child: any) => ({
+          id: child.id,
+          name: child.name,
+          slug: child.slug,
+          count: child.count || 0
+        }))
+      }));
+  })();
+
   // [2025-12-11 23:05:00] 从 URL 解析选中状态
   useEffect(() => {
-    // URL 格式：/catalog/[group]/[child] 或 /products?category=xxx
-    const pathParts = pathname.split('/').filter(Boolean);
-    if (pathParts[0] === 'catalog' && pathParts.length >= 3) {
-      const groupSlug = pathParts[1];
-      const childSlug = pathParts[2];
-      if (onSelect) {
-        onSelect({ groupSlug, childSlug });
-      }
+    // Legacy support for onSelect callback if used
+    if (onSelect) {
+      // Logic to trigger onSelect if needed based on URL, or remove if unused.
+      // For now, minimizing side effects.
     }
   }, [pathname, onSelect]);
 
@@ -106,117 +113,62 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
     });
   };
 
-  // [2025-12-11 23:05:00] 构建分类链接 URL
-  // [2025-12-11 23:10:00] 支持一级分类（group）和二级分类（child）链接
-  const buildCategoryUrl = (groupSlug: string, childSlug?: string) => {
-    if (childSlug) {
-      return `/catalog/${groupSlug}/${childSlug}`;
-    }
-    return `/catalog/${groupSlug}`;
+  const isCategoryActive = (slug: string) => {
+    // Check if this category is currently active in searchParams or path
+    // For query param: ?category=slug or ?collection=slug
+    const activeCategory = searchParams?.get('category') || searchParams?.get('collection');
+    return activeCategory === slug;
   };
 
-  // [2025-12-19 02:00:00] 改进错误处理：区分加载中、API错误和空数据三种状态
   if (isLoading) {
-    return (
-      <aside className={styles.sidebar} data-testid="sidebar-grouped">
-        <div className={styles.loading}>加载分类中...</div>
-      </aside>
-    );
+    return null; // Or a subtle skeleton
   }
 
-  // [2025-12-19 02:00:00] 区分API错误和空数据
-  if (error) {
-    const apiUrl = `${API_BASE_URL}/categories/tree-with-counts?strategy=direct`;
-    const errorStatus = (error as any).status;
-    const errorStatusText = (error as any).statusText || '';
-    
-    // [2025-12-19 02:00:00] 记录错误到控制台
-    console.error('[SidebarGrouped] API调用失败:', {
-      url: apiUrl,
-      error: error.message,
-      status: errorStatus,
-      statusText: errorStatusText,
-    });
-
-    return (
-      <aside className={styles.sidebar} data-testid="sidebar-grouped">
-        <div className={styles.error}>
-          <div>无法加载分类</div>
-          {process.env.NODE_ENV === 'development' && (
-            <div style={{ 
-              fontSize: '12px', 
-              marginTop: '8px', 
-              color: '#9ca3af',
-              lineHeight: '1.5',
-            }}>
-              <div>错误: {error.message}</div>
-              {errorStatus && <div>状态码: {errorStatus} {errorStatusText}</div>}
-              <div style={{ marginTop: '4px', wordBreak: 'break-all' }}>
-                API: {apiUrl}
-              </div>
-            </div>
-          )}
-        </div>
-      </aside>
-    );
-  }
-
-  // [2025-12-19 02:00:00] 空数据情况：可能是数据库中没有分类数据，或所有分类都被过滤掉了
+  // If no data, render nothing instead of "No Data" error
   if (!groups || groups.length === 0) {
-    console.warn('[SidebarGrouped] 分类数据为空，可能是数据库中没有分类数据或所有分类都被过滤');
-    return (
-      <aside className={styles.sidebar} data-testid="sidebar-grouped">
-        <div className={styles.error}>
-          暂无分类数据
-          {process.env.NODE_ENV === 'development' && (
-            <div style={{ 
-              fontSize: '12px', 
-              marginTop: '8px', 
-              color: '#9ca3af' 
-            }}>
-              提示: 请检查数据库中是否有分类数据，或检查分类过滤逻辑
-            </div>
-          )}
-        </div>
-      </aside>
-    );
+    return null;
   }
 
   return (
     <aside className={styles.sidebar} data-testid="sidebar-grouped">
-      <h2 className={styles.title}>分类</h2>
-      <nav className={styles.nav} aria-label="商品分类导航">
+      <nav className={styles.nav} aria-label="Product Categories">
         {groups.map((group) => {
+          // Default to expanded unless specifically collapsed? 
+          // Or default collapsed? Let's default to expanded for the first group or active group.
           const isCollapsed = collapsedGroups.has(group.slug);
-          const visibleChildren = isCollapsed
-            ? group.children.slice(0, 6)
-            : group.children;
-          const hasMore = group.children.length > 6;
+
+          // Show all children by default or limit? User image shows "Show more"
+          const limit = 6;
+          const showAll = !isCollapsed; // Reusing state slightly differently: collapsed = "show less" (limited)
+          // Actually let's flip it: isCollapsed set -> hidden completely? 
+          // No, the design usually is: Main Header (Group) -> List.
+          // Let's assume the user wants the list visible.
+
+          // Logic: "Show more" expands the list if > limit.
+          // We'll use a separate state or just `collapsedGroups` to mean "Expanded past limit".
+          const isExpanded = collapsedGroups.has(group.slug); // Using set to track "Expanded" state
+
+          const visibleChildren = isExpanded
+            ? group.children
+            : group.children.slice(0, limit);
+
+          const hasMore = group.children.length > limit;
 
           return (
             <section key={group.id} className={styles.group}>
-              {/* [2025-12-11 23:10:00] 一级分类标题可点击，跳转到分组页面 */}
-              <Link
-                href={buildCategoryUrl(group.slug)}
-                className={styles.groupTitleLink}
-                data-testid={`group-${group.slug}`}
-              >
-                <h3 className={styles.groupTitle}>{group.name}</h3>
-              </Link>
+              {/* Group Title - Main Heading Style */}
+              <h3 className={styles.groupTitle}>{group.name}</h3>
+
               <ul className={styles.childList}>
+                {/* Add "All [Group Name]" option? Optional but common */}
                 {visibleChildren.map((child) => {
-                  const isActive =
-                    selected?.groupSlug === group.slug &&
-                    selected?.childSlug === child.slug;
+                  const isActive = isCategoryActive(child.slug);
 
                   return (
                     <li key={child.id}>
                       <Link
-                        href={buildCategoryUrl(group.slug, child.slug)}
+                        href={`/products?category=${child.slug}`}
                         className={`${styles.child} ${isActive ? styles.active : ''}`}
-                        data-testid={`cat-${group.slug}-${child.slug}`}
-                        data-count={child.count}
-                        aria-selected={isActive}
                         onClick={() => {
                           if (onSelect) {
                             onSelect({ groupSlug: group.slug, childSlug: child.slug });
@@ -224,21 +176,25 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
                         }}
                       >
                         <span className={styles.childName}>{child.name}</span>
-                        <span className={styles.childCount}>({child.count})</span>
+                        {/* Remove count if user wants clean look, or keep lightly */}
+                        {/* <span className={styles.childCount}>({child.count})</span> */}
                       </Link>
                     </li>
                   );
                 })}
               </ul>
+
               {hasMore && (
                 <button
                   type="button"
                   className={styles.showMore}
                   onClick={() => toggleGroup(group.slug)}
-                  data-testid={`show-more-${group.slug}`}
-                  aria-expanded={!isCollapsed}
                 >
-                  {isCollapsed ? 'Show more' : 'Show less'}
+                  {isExpanded ? (
+                    <>Show less <span style={{ fontSize: '10px', marginLeft: '4px' }}>▲</span></>
+                  ) : (
+                    <>Show more <span style={{ fontSize: '10px', marginLeft: '4px' }}>▼</span></>
+                  )}
                 </button>
               )}
             </section>

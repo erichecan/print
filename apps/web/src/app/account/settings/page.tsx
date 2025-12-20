@@ -46,32 +46,33 @@ export default function SettingsPage() {
     setSuccess(false);
 
     // [2025-12-06 12:30:00] Validate current password
+    // [2025-12-06 12:30:00] Validate current password
     if (!passwordForm.currentPassword) {
-      setError('请输入当前密码');
+      setError('Please enter your current password');
       return;
     }
 
     // [2025-12-06 12:30:00] Validate new password strength
     if (!passwordForm.newPassword) {
-      setError('请输入新密码');
+      setError('Please enter a new password');
       return;
     }
 
     const validation = validatePasswordStrength(passwordForm.newPassword);
     if (!validation.valid) {
-      setError(validation.errors[0] || '新密码不符合强度要求');
+      setError(validation.errors[0] || 'New password does not meet strength requirements');
       return;
     }
 
     // [2025-12-06 12:30:00] Validate password confirmation
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setError('新密码和确认密码不匹配');
+      setError('New password and confirmation password do not match');
       return;
     }
 
     // [2025-12-06 12:30:00] Check if new password is different from current password
     if (passwordForm.currentPassword === passwordForm.newPassword) {
-      setError('新密码必须与当前密码不同');
+      setError('New password must be different from current password');
       return;
     }
 
@@ -91,7 +92,7 @@ export default function SettingsPage() {
       setPasswordValidation(null);
       setTimeout(() => setSuccess(false), 5000);
     } catch (err: unknown) {
-      let errorMessage = '修改密码失败，请稍后重试';
+      let errorMessage = 'Failed to change password, please try again later';
       if (err instanceof Error) {
         errorMessage = err.message;
       } else if (typeof err === 'object' && err !== null && 'message' in err) {
@@ -106,8 +107,8 @@ export default function SettingsPage() {
   return (
     <div className="container" style={{ padding: '72px 0', maxWidth: '640px' }}>
       <div style={{ marginBottom: '32px' }}>
-        <Link href={ACCOUNT_ROUTES.dashboard} style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
-          ← Back to Account
+        <Link href={ACCOUNT_ROUTES.orders} style={{ color: '#666', textDecoration: 'none', marginBottom: '16px', display: 'inline-block' }}>
+          ← Back to Orders
         </Link>
         <h1>Account Settings</h1>
         <p>Manage your account security and preferences.</p>
@@ -125,14 +126,14 @@ export default function SettingsPage() {
 
         {success && (
           <div style={{ padding: '12px', background: '#e5f5e5', color: '#1f7d3d', borderRadius: '4px', marginBottom: '16px' }}>
-            ✅ 密码修改成功！
+            ✅ Password changed successfully!
           </div>
         )}
 
         <form onSubmit={handlePasswordChange}>
           <div style={{ marginBottom: '16px' }}>
             <label htmlFor="currentPassword" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>
-              当前密码 *
+              Current Password *
             </label>
             <input
               id="currentPassword"
@@ -146,7 +147,7 @@ export default function SettingsPage() {
 
           <div style={{ marginBottom: '16px' }}>
             <label htmlFor="newPassword" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>
-              新密码 *
+              New Password *
             </label>
             <input
               id="newPassword"
@@ -166,7 +167,7 @@ export default function SettingsPage() {
             {passwordValidation && (
               <div style={{ marginTop: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '14px', color: '#666' }}>密码强度：</span>
+                  <span style={{ fontSize: '14px', color: '#666' }}>Password Strength:</span>
                   <span
                     style={{
                       fontSize: '14px',
@@ -196,22 +197,22 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <div style={{ fontSize: '13px', color: '#666' }}>
-                  <div style={{ marginBottom: '4px' }}>密码要求：</div>
+                  <div style={{ marginBottom: '4px' }}>Password Requirements:</div>
                   <ul style={{ margin: '4px 0', paddingLeft: '20px' }}>
                     <li style={{ color: passwordValidation.requirements.length ? '#1f7d3d' : '#666' }}>
-                      {passwordValidation.requirements.length ? '✓' : '○'} 长度至少 8 个字符，最多 128 个字符
+                      {passwordValidation.requirements.length ? '✓' : '○'} At least 8 characters, max 128
                     </li>
                     <li style={{ color: passwordValidation.requirements.uppercase ? '#1f7d3d' : '#666' }}>
-                      {passwordValidation.requirements.uppercase ? '✓' : '○'} 包含至少一个大写字母
+                      {passwordValidation.requirements.uppercase ? '✓' : '○'} At least one uppercase letter
                     </li>
                     <li style={{ color: passwordValidation.requirements.lowercase ? '#1f7d3d' : '#666' }}>
-                      {passwordValidation.requirements.lowercase ? '✓' : '○'} 包含至少一个小写字母
+                      {passwordValidation.requirements.lowercase ? '✓' : '○'} At least one lowercase letter
                     </li>
                     <li style={{ color: passwordValidation.requirements.number ? '#1f7d3d' : '#666' }}>
-                      {passwordValidation.requirements.number ? '✓' : '○'} 包含至少一个数字
+                      {passwordValidation.requirements.number ? '✓' : '○'} At least one number
                     </li>
                     <li style={{ color: passwordValidation.requirements.special ? '#1f7d3d' : '#666' }}>
-                      {passwordValidation.requirements.special ? '✓' : '○'} 包含至少一个特殊字符
+                      {passwordValidation.requirements.special ? '✓' : '○'} At least one special character
                     </li>
                   </ul>
                 </div>
@@ -221,7 +222,7 @@ export default function SettingsPage() {
 
           <div style={{ marginBottom: '24px' }}>
             <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>
-              确认新密码 *
+              Confirm New Password *
             </label>
             <input
               id="confirmPassword"
@@ -236,8 +237,8 @@ export default function SettingsPage() {
                 padding: '8px',
                 border:
                   passwordForm.confirmPassword &&
-                  passwordForm.newPassword &&
-                  passwordForm.confirmPassword !== passwordForm.newPassword
+                    passwordForm.newPassword &&
+                    passwordForm.confirmPassword !== passwordForm.newPassword
                     ? '1px solid #ff1f3d'
                     : '1px solid #ddd',
                 borderRadius: '4px',
@@ -247,7 +248,7 @@ export default function SettingsPage() {
               passwordForm.newPassword &&
               passwordForm.confirmPassword !== passwordForm.newPassword && (
                 <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#ff1f3d' }}>
-                  新密码和确认密码不匹配
+                  Passwords do not match
                 </p>
               )}
           </div>
@@ -266,7 +267,7 @@ export default function SettingsPage() {
               opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? '正在修改密码...' : '修改密码'}
+            {saving ? 'Updating Password...' : 'Update Password'}
           </button>
         </form>
 

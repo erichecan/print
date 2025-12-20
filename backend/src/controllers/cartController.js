@@ -179,40 +179,52 @@ exports.getCart = async (req, res) => {
 
     // Format items for response
     // [2025-01-29 12:00:00] 优化图片 URL，确保返回完整的绝对路径
-    const items = cart.items.map((item) => {
-      // 获取图片 URL（优先使用 variant 的 imageUrl，否则使用 product 的第一张图片）
-      let thumbnailUrl = item.variant.imageUrl || item.variant.product.images[0]?.url || null;
-
-      // [2025-01-29 12:00:00] 使用 optimizeImageUrl 优化图片 URL，确保是完整的绝对路径
-      if (thumbnailUrl) {
-        try {
-          thumbnailUrl = optimizeImageUrl(thumbnailUrl, { req }) || thumbnailUrl;
-        } catch (error) {
-          logger.warn('Failed to optimize image URL for cart item', {
-            itemId: item.id,
-            originalUrl: thumbnailUrl,
-            error: error.message,
-          });
+    const items = cart.items
+      .filter(item => {
+        if (!item.variant) {
+          logger.warn(`Cart item ${item.id} has no variant`, { cartId: cart.id });
+          return false;
         }
-      }
+        if (!item.variant.product) {
+          logger.warn(`Cart item ${item.id} variant ${item.variant.id} has no product`, { cartId: cart.id });
+          return false;
+        }
+        return true;
+      })
+      .map((item) => {
+        // 获取图片 URL（优先使用 variant 的 imageUrl，否则使用 product 的第一张图片）
+        let thumbnailUrl = item.variant.imageUrl || item.variant.product.images?.[0]?.url || null;
 
-      return {
-        id: item.id,
-        variantId: item.variantId,
-        productId: item.variant.productId,
-        productName: item.variant.product.name,
-        variantDescription: `${item.variant.color || ''}${item.variant.color && item.variant.size ? ' • ' : ''}${item.variant.size || ''}`.trim(),
-        quantity: item.quantity,
-        unitPrice: Number(item.priceSnapshot),
-        subtotal: Number(item.priceSnapshot) * item.quantity,
-        // [2025-01-28 23:50:00] 修复：ProductImage 模型使用 url 字段，不是 imageUrl
-        // [2025-01-29 12:00:00] 优化后的图片 URL
-        thumbnail: thumbnailUrl,
-        designId: item.designId,
-        sizeBreakdown: item.sizeBreakdown,
-        metadata: item.metadata,
-      };
-    });
+        // [2025-01-29 12:00:00] 使用 optimizeImageUrl 优化图片 URL，确保是完整的绝对路径
+        if (thumbnailUrl) {
+          try {
+            thumbnailUrl = optimizeImageUrl(thumbnailUrl, { req }) || thumbnailUrl;
+          } catch (error) {
+            logger.warn('Failed to optimize image URL for cart item', {
+              itemId: item.id,
+              originalUrl: thumbnailUrl,
+              error: error.message,
+            });
+          }
+        }
+
+        return {
+          id: item.id,
+          variantId: item.variantId,
+          productId: item.variant.productId,
+          productName: item.variant.product.name,
+          variantDescription: `${item.variant.color || ''}${item.variant.color && item.variant.size ? ' • ' : ''}${item.variant.size || ''}`.trim(),
+          quantity: item.quantity,
+          unitPrice: Number(item.priceSnapshot),
+          subtotal: Number(item.priceSnapshot) * item.quantity,
+          // [2025-01-28 23:50:00] 修复：ProductImage 模型使用 url 字段，不是 imageUrl
+          // [2025-01-29 12:00:00] 优化后的图片 URL
+          thumbnail: thumbnailUrl,
+          designId: item.designId,
+          sizeBreakdown: item.sizeBreakdown,
+          metadata: item.metadata,
+        };
+      });
 
     res.json({
       items,

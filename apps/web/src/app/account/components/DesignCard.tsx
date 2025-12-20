@@ -33,17 +33,17 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
     }
   };
 
-  // [2025-01-31 00:02:00] 格式化时间
+  // [2025-01-31 00:02:00] Format Date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('zh-CN', {
+    return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
   };
 
-  // [2025-01-31 00:02:00] 来源标识样式
+  // [2025-01-31 00:02:00] Source Badge
   const getSourceBadge = () => {
     const badges = [];
     if (design.source === 'cloud' || design.source === 'both') {
@@ -60,7 +60,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             marginRight: '4px',
           }}
         >
-          云端
+          Cloud
         </span>
       );
     }
@@ -77,7 +77,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             borderRadius: '4px',
           }}
         >
-          本地
+          Local
         </span>
       );
     }
@@ -103,7 +103,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
         e.currentTarget.style.boxShadow = 'none';
       }}
     >
-      {/* 缩略图 */}
+      {/* Thumbnail */}
       {design.thumbnailUrl ? (
         <img
           src={design.thumbnailUrl}
@@ -131,11 +131,11 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             fontSize: '0.875rem',
           }}
         >
-          无预览图
+          No Preview
         </div>
       )}
 
-      {/* 设计名称 */}
+      {/* Design Name */}
       <h3
         style={{
           fontSize: '1.1rem',
@@ -145,10 +145,10 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
           flex: 1,
         }}
       >
-        {design.name || '未命名设计'}
+        {design.name || 'Untitled Design'}
       </h3>
 
-      {/* 产品名称 */}
+      {/* Product Name */}
       {design.productName && (
         <p
           style={{
@@ -161,10 +161,10 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
         </p>
       )}
 
-      {/* 来源标识 */}
+      {/* Source Badge */}
       <div style={{ marginBottom: '8px' }}>{getSourceBadge()}</div>
 
-      {/* 最后编辑时间 */}
+      {/* Last Edited */}
       <p
         style={{
           fontSize: '0.875rem',
@@ -172,10 +172,10 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
           marginBottom: '12px',
         }}
       >
-        最后编辑: {formatDate(design.updatedAt)}
+        Edited: {formatDate(design.updatedAt)}
       </p>
 
-      {/* 操作按钮 */}
+      {/* Action Buttons */}
       <div
         style={{
           display: 'flex',
@@ -204,7 +204,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
             e.currentTarget.style.backgroundColor = '#2563eb';
           }}
         >
-          编辑
+          Edit
         </button>
         {onDelete && (
           <button
@@ -227,7 +227,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            删除
+            Delete
           </button>
         )}
       </div>

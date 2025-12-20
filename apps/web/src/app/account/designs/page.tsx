@@ -48,7 +48,7 @@ export default function AccountDesignsPage() {
         }
 
         // 2. 加载本地设计
-        const localDesigns = timeFilter > 0 
+        const localDesigns = timeFilter > 0
           ? getLocalDesignsByDays(timeFilter)
           : getAllLocalDesigns();
 
@@ -68,22 +68,22 @@ export default function AccountDesignsPage() {
     fetchDesigns();
   }, [user, timeFilter, refreshTrigger]); // [2025-01-31 00:20:00] 添加 refreshTrigger 依赖
 
-  // [2025-01-31 00:05:00] 处理删除设计
+  // [2025-01-31 00:05:00] Handle design deletion
   const handleDelete = async (id: string, source: 'cloud' | 'local') => {
     try {
       if (source === 'cloud') {
-        // 删除云端设计
+        // Delete cloud design
         await designsApi.delete(id);
       } else {
-        // 删除本地设计
+        // Delete local design
         const result = deleteLocalDesign(id);
         if (!result.success) {
-          alert(result.error || '删除失败');
+          alert(result.error || 'Failed to delete');
           return;
         }
       }
 
-      // 更新列表
+      // Update list
       const updatedMerged = mergedDesigns.filter(d => {
         if (source === 'cloud') {
           return d.cloudId !== id;
@@ -95,14 +95,14 @@ export default function AccountDesignsPage() {
       setFilteredDesigns(updatedMerged);
     } catch (err) {
       console.error('[AccountDesigns] Error deleting design:', err);
-      alert('删除失败，请重试');
+      alert('Delete failed, please try again');
     }
   };
 
   if (loading) {
     return (
       <div style={{ padding: '48px', textAlign: 'center' }}>
-        <p>加载中...</p>
+        <p>Loading...</p>
       </div>
     );
   }
@@ -110,7 +110,7 @@ export default function AccountDesignsPage() {
   if (error) {
     return (
       <div style={{ padding: '48px', textAlign: 'center' }}>
-        <p style={{ color: '#ef4444' }}>错误: {error}</p>
+        <p style={{ color: '#ef4444' }}>Error: {error}</p>
         <button
           onClick={() => window.location.reload()}
           style={{
@@ -123,7 +123,7 @@ export default function AccountDesignsPage() {
             cursor: 'pointer',
           }}
         >
-          重试
+          Retry
         </button>
       </div>
     );
@@ -132,7 +132,7 @@ export default function AccountDesignsPage() {
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>我的设计</h1>
+        <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>My Designs</h1>
         <a
           href="/design-lab"
           style={{
@@ -145,24 +145,24 @@ export default function AccountDesignsPage() {
             fontSize: '0.875rem',
           }}
         >
-          + 新建设计
+          + New Design
         </a>
       </div>
 
-      {/* [2025-01-31 00:20:00] 本地设计同步提示（仅当用户已登录时显示） */}
+      {/* [2025-01-31 00:20:00] Local design sync prompt (only shown if logged in) */}
       {user && (
         <LocalDesignSyncPrompt
           cloudDesigns={mergedDesigns.filter(d => d.source === 'cloud' || d.source === 'both')}
           onSyncComplete={() => {
-            setRefreshTrigger(prev => prev + 1); // 触发刷新
+            setRefreshTrigger(prev => prev + 1); // Trigger refresh
           }}
         />
       )}
 
-      {/* [2025-01-31 00:05:00] 时间筛选器 */}
+      {/* [2025-01-31 00:05:00] Time filter */}
       <DesignTimeFilter value={timeFilter} onChange={setTimeFilter} />
 
-      {/* 设计列表 */}
+      {/* Design List */}
       {filteredDesigns.length === 0 ? (
         <div
           style={{
@@ -175,8 +175,8 @@ export default function AccountDesignsPage() {
         >
           <p style={{ fontSize: '1.1rem', color: '#666', marginBottom: '16px' }}>
             {timeFilter > 0
-              ? `最近 ${timeFilter} 天内没有设计`
-              : '您还没有保存任何设计'}
+              ? `No designs found in the last ${timeFilter} days`
+              : 'You haven\'t saved any designs yet'}
           </p>
           <a
             href="/design-lab"
@@ -190,13 +190,13 @@ export default function AccountDesignsPage() {
               fontWeight: '500',
             }}
           >
-            开始设计
+            Start Designing
           </a>
         </div>
       ) : (
         <>
           <p style={{ fontSize: '0.875rem', color: '#666', marginBottom: '16px' }}>
-            共 {filteredDesigns.length} 个设计
+            Total {filteredDesigns.length} designs
           </p>
           <div
             style={{

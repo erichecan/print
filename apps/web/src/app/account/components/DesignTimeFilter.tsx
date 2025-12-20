@@ -15,10 +15,10 @@ interface DesignTimeFilterProps {
 
 export function DesignTimeFilter({ value, onChange }: DesignTimeFilterProps) {
   const options: { value: TimeFilterOption; label: string }[] = [
-    { value: 0, label: '全部' },
-    { value: 7, label: '最近 7 天' },
-    { value: 30, label: '最近 30 天' },
-    { value: 90, label: '最近 90 天' },
+    { value: 0, label: 'All' },
+    { value: 7, label: 'Last 7 days' },
+    { value: 30, label: 'Last 30 days' },
+    { value: 90, label: 'Last 90 days' },
   ];
 
   return (
@@ -33,7 +33,7 @@ export function DesignTimeFilter({ value, onChange }: DesignTimeFilterProps) {
           color: '#374151',
         }}
       >
-        时间筛选
+        Time Filter
       </label>
       <select
         id="time-filter"

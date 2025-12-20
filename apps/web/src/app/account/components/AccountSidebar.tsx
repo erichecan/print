@@ -8,13 +8,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ACCOUNT_ROUTES } from '@/lib/routes/account';
 
-// [2025-12-18 22:40:00] 精简菜单：移除未实现的功能
-const MENU = [
-  { href: ACCOUNT_ROUTES.dashboard, label: '概览', icon: '🏠', exact: true },
-  { href: ACCOUNT_ROUTES.orders, label: '订单', icon: '📋' },
-  { href: ACCOUNT_ROUTES.addresses, label: '地址簿', icon: '📍' },
-  { href: ACCOUNT_ROUTES.profile, label: '个人资料', icon: '👤' },
-  { href: ACCOUNT_ROUTES.settings, label: '账户设置', icon: '⚙️' },
+interface MenuItem {
+  href: string;
+  label: string;
+  icon: string;
+  exact?: boolean;
+}
+
+const MENU: MenuItem[] = [
+  // Overview removed as per request
+  // { href: ACCOUNT_ROUTES.dashboard, label: 'Overview', icon: '🏠', exact: true },
+  { href: ACCOUNT_ROUTES.orders, label: 'Orders', icon: '📋' },
+  { href: ACCOUNT_ROUTES.designs, label: 'My Designs', icon: '🎨' },
+  { href: ACCOUNT_ROUTES.addresses, label: 'Address Book', icon: '📍' },
+  { href: ACCOUNT_ROUTES.profile, label: 'Profile', icon: '👤' },
+  { href: ACCOUNT_ROUTES.settings, label: 'Account Settings', icon: '⚙️' },
 ];
 
 export function AccountSidebar() {

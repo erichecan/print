@@ -1,25 +1,20 @@
-/* [2025-12-11 23:05:00] SidebarGrouped Component Styles - 分组类目导航样式 */
+/* [2025-01-31] Updated SidebarGrouped Component Styles to match Reference UI */
 
 .sidebar {
-  width: 240px;
-  padding: 24px 0;
-  background: #ffffff;
-  border-right: 1px solid #e5e7eb;
+  width: 100%;
+  /* Let parent control width */
+  margin-bottom: 32px;
 }
 
 .title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 16px 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e5e7eb;
+  display: none;
+  /* We use group titles now */
 }
 
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
 }
 
 .group {
@@ -27,24 +22,13 @@
   flex-direction: column;
 }
 
-.groupTitleLink {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  margin: 0 0 8px 16px;
-  transition: color 0.2s;
-}
-
-.groupTitleLink:hover {
-  color: #2563eb;
-}
-
 .groupTitle {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
   padding: 0;
+  line-height: 1.2;
 }
 
 .childList {
@@ -53,82 +37,58 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-}
-
-.childList li {
-  margin: 0;
-  padding: 0;
+  gap: 12px;
 }
 
 .child {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 16px;
+  display: block;
   text-decoration: none;
   color: #374151;
-  font-size: 14px;
-  transition: background-color 0.2s, color 0.2s;
-  border-radius: 6px;
-  margin: 0 8px;
+  font-size: 16px;
+  line-height: 1.5;
+  transition: color 0.15s;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  margin: 0;
 }
 
 .child:hover {
-  background-color: #f9fafb;
-  color: #1f2937;
+  color: #111827;
+  background: none;
+  text-decoration: underline;
 }
 
 .child.active {
   font-weight: 700;
-  background-color: #f3f4f6;
-  color: #1f2937;
+  color: #111827;
 }
 
 .childName {
-  flex: 1;
-}
-
-.childCount {
-  color: #9ca3af;
-  font-size: 12px;
-  margin-left: 8px;
-  white-space: nowrap;
+  display: inline-block;
 }
 
 .showMore {
-  margin-top: 8px;
-  margin-left: 16px;
+  margin-top: 12px;
   padding: 4px 0;
   background: none;
   border: none;
   color: #2563eb;
-  font-size: 13px;
+  font-size: 15px;
   cursor: pointer;
   text-align: left;
-  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
 }
 
 .showMore:hover {
-  color: #1d4ed8;
   text-decoration: underline;
 }
 
 .loading,
 .error {
-  padding: 16px;
-  text-align: center;
+  padding: 16px 0;
   color: #6b7280;
   font-size: 14px;
-}
-
-.error {
-  color: #ef4444;
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid #e5e7eb;
-  }
 }

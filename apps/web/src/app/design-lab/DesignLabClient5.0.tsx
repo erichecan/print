@@ -69,13 +69,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   }>(() => {
     // [2025-12-20 03:30:00] 使用函数初始化，确保默认图片在组件创建时就设置好
     const defaultImages = getDefaultProductBaseImages('White');
-    console.log('[DesignLab 5.0] 初始化默认商品信息（白色 T 恤）:', defaultImages);
     return {
       color: 'White',
       baseImages: defaultImages,
-      productId: '1b58cf4c-51c0-4bca-a2af-63799c99e195', // Gildan Softstyle Jersey T-shirt
-      colorId: '48ed390b-fcb2-4272-b6e0-280196bdf557', // White variant
-      productName: 'Gildan Softstyle Jersey T-shirt',
+      // [2025-12-20] Use dynamic fetching instead of hardcoded IDs to prevent 404s
+      // We will fetch a valid product in useEffect if no URL params are present
+      productId: undefined,
+      colorId: undefined,
+      productName: 'Loading...',
     };
   });
 
@@ -123,13 +124,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     // [2025-12-20] 修复：如果没有 URL 参数，则尝试从 API 加载第一个商品
     if (!productId && !colorId && !variantId && !initialProductData) {
       console.log('[DesignLab 5.0] No product selected, fetching default...');
-      getProducts({ limit: 1 })
-        .then((response: any) => {
-          if (response.data && response.data.length > 0) {
-            handleProductSelect(response.data[0].id);
-          }
-        })
-        .catch((err: any) => console.warn('[DesignLab 5.0] Failed to load default product:', err));
+      if (!productInfo.productId) { // Only fetch if we don't have a valid ID yet
+        getProducts({ limit: 1 })
+          .then((response: any) => {
+            if (response.data && response.data.length > 0) {
+              handleProductSelect(response.data[0].id);
+            }
+          })
+          .catch((err: any) => console.warn('[DesignLab 5.0] Failed to load default product:', err));
+      }
     }
 
     // [2025-12-20 03:30:00] 如果有 productId，尝试从 API 获取完整产品信息（包括 variantId）
@@ -163,15 +166,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         })
         .catch((error: any) => {
           console.error('[DesignLab 5.0] 获取产品信息失败:', error);
-          // 回退到仅设置 ID 和默认图片
-          const colorName = productInfo.color || 'White';
-          const defaultImages = getDefaultProductBaseImages(colorName);
-          setProductInfo(prev => ({
-            ...prev,
-            baseImages: defaultImages,
-            productId,
-            // 注意：这里没有 variantId，保存可能会失败，但这是降级处理
-          }));
+          // If variant ID is missing or invalid, try to find a valid one or fetch default
+          console.warn('[DesignLab 5.0] Failed to get product, falling back to default list');
+          getProducts({ limit: 1 })
+            .then((res: any) => {
+              if (res.data && res.data.length > 0) {
+                handleProductSelect(res.data[0].id);
+              }
+            })
+            .catch((e: any) => console.error('Double fallback failed:', e));
         });
       return;
     }
@@ -2628,7 +2631,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
             </Link>
             <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
-              <Link href="/designs" className="dl-header__breadcrumb-link">My Designs</Link>
+              <Link href="/account/designs" className="dl-header__breadcrumb-link">My Designs</Link>
               <span className="dl-header__breadcrumb-separator">/</span>
               <span className="dl-header__breadcrumb-current">Untitled Design</span>
             </nav>
@@ -2640,7 +2643,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             </div>
             {/* [2025-12-18 20:58:40] 修复：Chat Now 在新窗口打开 */}
             <a href="/help#guestbook" className="dl-header__chat-link" target="_blank" rel="noopener noreferrer">Chat Now</a>
-            <Link href="/signin" className="dl-header__signin-link">Sign In</Link>
+            <Link href="/login" className="dl-header__signin-link">Sign In</Link>
           </div>
         </div>
       </header>
@@ -3045,8 +3048,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
             onClick={() => setShowSaveShareModal(true)}
             type="button"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
-            Save | Share
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+              <polyline points="17 21 17 13 7 13 7 21" />
+              <polyline points="7 3 7 8 15 8" />
+            </svg>
+            Save
           </button>
           <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
@@ -3062,7 +3071,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               }
             }}
             type="button"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+              <line x1="7" y1="7" x2="7.01" y2="7" />
+            </svg>
             Get Price
           </button>
         </div>

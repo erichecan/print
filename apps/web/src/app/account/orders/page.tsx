@@ -99,7 +99,7 @@ export default function AccountOrdersPage() {
             thumbnail: order.items?.[0]?.thumbnail || null,
           }));
         }
-        
+
         setOrders(filteredOrders);
         const paginationData = 'pagination' in data ? data.pagination : undefined;
         setPagination(paginationData || { page, limit: pagination.limit, total: filteredOrders.length, totalPages: 1 });
@@ -201,18 +201,18 @@ export default function AccountOrdersPage() {
       <div className="filters-section">
         <div className="filters-row">
           <div className="filter-group">
-            <label htmlFor="search">搜索订单</label>
+            <label htmlFor="search">Search Orders</label>
             <input
               id="search"
               type="text"
-              placeholder="按订单号或邮箱搜索..."
+              placeholder="Search by order # or email..."
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               className="filter-input"
             />
           </div>
           <div className="filter-group">
-            <label htmlFor="status">订单状态</label>
+            <label htmlFor="status">Order Status</label>
             <select
               id="status"
               value={statusFilter}
@@ -221,17 +221,17 @@ export default function AccountOrdersPage() {
               }}
               className="filter-select"
             >
-              <option value="">全部状态</option>
-              <option value="PENDING">待处理</option>
-              <option value="PROCESSING">处理中</option>
-              <option value="SHIPPED">已发货</option>
-              <option value="DELIVERED">已送达</option>
-              <option value="CANCELLED">已取消</option>
-              <option value="REFUNDED">已退款</option>
+              <option value="">All Statuses</option>
+              <option value="PENDING">Pending</option>
+              <option value="PROCESSING">Processing</option>
+              <option value="SHIPPED">Shipped</option>
+              <option value="DELIVERED">Delivered</option>
+              <option value="CANCELLED">Cancelled</option>
+              <option value="REFUNDED">Refunded</option>
             </select>
           </div>
           <div className="filter-group">
-            <label htmlFor="paymentStatus">支付状态</label>
+            <label htmlFor="paymentStatus">Payment Status</label>
             <select
               id="paymentStatus"
               value={paymentStatusFilter}
@@ -240,15 +240,15 @@ export default function AccountOrdersPage() {
               }}
               className="filter-select"
             >
-              <option value="">全部支付状态</option>
-              <option value="PENDING">待支付</option>
-              <option value="COMPLETED">已支付</option>
-              <option value="FAILED">支付失败</option>
-              <option value="REFUNDED">已退款</option>
+              <option value="">All Payments</option>
+              <option value="PENDING">Pending</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="FAILED">Failed</option>
+              <option value="REFUNDED">Refunded</option>
             </select>
           </div>
           <div className="filter-group">
-            <label htmlFor="sort">排序方式</label>
+            <label htmlFor="sort">Sort By</label>
             <select
               id="sort"
               value={sortBy}
@@ -257,21 +257,21 @@ export default function AccountOrdersPage() {
               }}
               className="filter-select"
             >
-              <option value="createdAt_desc">最新优先</option>
-              <option value="createdAt_asc">最早优先</option>
-              <option value="total_desc">金额从高到低</option>
-              <option value="total_asc">金额从低到高</option>
-              <option value="orderNumber_asc">订单号升序</option>
-              <option value="orderNumber_desc">订单号降序</option>
+              <option value="createdAt_desc">Newest First</option>
+              <option value="createdAt_asc">Oldest First</option>
+              <option value="total_desc">Amount High to Low</option>
+              <option value="total_asc">Amount Low to High</option>
+              <option value="orderNumber_asc">Order # Ascending</option>
+              <option value="orderNumber_desc">Order # Descending</option>
             </select>
           </div>
         </div>
         {(debouncedSearchQuery || statusFilter || paymentStatusFilter) && (
           <div className="search-results-info">
             <span>
-              {debouncedSearchQuery && `搜索: "${debouncedSearchQuery}"`}
-              {statusFilter && ` | 状态: ${statusFilter}`}
-              {paymentStatusFilter && ` | 支付状态: ${paymentStatusFilter}`}
+              {debouncedSearchQuery && `Search: "${debouncedSearchQuery}"`}
+              {statusFilter && ` | Status: ${statusFilter}`}
+              {paymentStatusFilter && ` | Payment: ${paymentStatusFilter}`}
             </span>
             <button
               type="button"
@@ -282,7 +282,7 @@ export default function AccountOrdersPage() {
                 setPaymentStatusFilter('');
               }}
             >
-              清除筛选
+              Clear Filters
             </button>
           </div>
         )}

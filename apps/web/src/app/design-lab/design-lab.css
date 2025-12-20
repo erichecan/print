@@ -4313,43 +4313,63 @@
 }
 
 /* Compact Color Grid for Panel */
+/* Compact Color Grid for Panel - Matching Product List Page Filters */
 .dl-product-colors-panel .dl-colors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 24px);
-  gap: 3px;
+  grid-template-columns: repeat(auto-fill, 28px);
+  gap: 8px;
   justify-content: start;
   padding: 2px;
 }
 
 .dl-product-colors-panel .dl-color-item {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
   padding: 0;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: none;
   background: transparent;
-  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  margin: 0;
 }
 
 .dl-product-colors-panel .dl-color-item:hover {
-  transform: scale(1.1);
+  /* Remove border on hover for container, handled by inner swatch */
+  border-color: transparent;
+  transform: none;
+  /* Handled by inner swatch */
   z-index: 2;
 }
 
-.dl-product-colors-panel .dl-color-item.is-selected {
-  border: 2px solid var(--dl-color-primary);
-  background: #fdf2f2;
+.dl-product-colors-panel .dl-color-item__swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #e5e7eb;
+  transition: border-color 0.2s, transform 0.2s;
+  box-sizing: border-box;
+  background-clip: padding-box;
+  position: relative;
+  box-shadow: none;
 }
 
-.dl-product-colors-panel .dl-color-swatch {
-  width: 14px;
-  height: 14px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+.dl-product-colors-panel .dl-color-item:hover .dl-color-item__swatch {
+  transform: scale(1.1);
+  border-color: #d1d5db;
+}
+
+.dl-product-colors-panel .dl-color-item.is-selected {
+  /* Remove container styles */
+  border: none;
+  background: transparent;
+}
+
+.dl-product-colors-panel .dl-color-item.is-selected .dl-color-item__swatch {
+  border-color: var(--dl-color-primary);
+  transform: scale(1.1);
 }
 
 .dl-product-colors-panel .dl-color-item__check {

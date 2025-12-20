@@ -54,10 +54,10 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
   // [2025-01-28] 实时筛选：当用户点击复选框时立即更新 URL
   const handleFilterChange = useCallback((filterName: string, value: string, checked: boolean) => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     // 获取当前筛选值数组
     const currentValues = params.get(filterName)?.split(',') || [];
-    
+
     if (checked) {
       // 添加筛选值
       if (!currentValues.includes(value)) {
@@ -70,17 +70,17 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         currentValues.splice(index, 1);
       }
     }
-    
+
     // 更新 URL 参数
     if (currentValues.length > 0) {
       params.set(filterName, currentValues.join(','));
     } else {
       params.delete(filterName);
     }
-    
+
     // 重置到第一页
     params.delete('page');
-    
+
     // 更新 URL（实时筛选）
     router.push(`${pathname}?${params.toString()}`);
   }, [router, pathname, searchParams]);
@@ -107,31 +107,31 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
   // [2025-01-28 19:55:00] 始终返回所有颜色，即使数量为0
   const getColorOptions = () => {
     if (!filterOptions) return COLOR_FAMILIES.map(c => ({ ...c, count: 0 }));
-    
+
     const colorMap = new Map(
       (filterOptions.colors || []).map(c => [c.name.toLowerCase(), c.count || 0])
     );
-    
+
     // [2025-01-28 19:55:00] 使用后端返回的颜色列表（如果存在），否则使用预设颜色列表
-    const colorList = filterOptions.colors && filterOptions.colors.length > 0 
+    const colorList = filterOptions.colors && filterOptions.colors.length > 0
       ? filterOptions.colors.map(c => ({
-          name: c.name,
-          hex: c.hex || COLOR_FAMILIES.find(cf => cf.name.toLowerCase() === c.name.toLowerCase())?.hex || '#CCCCCC',
-          pattern: COLOR_FAMILIES.find(cf => cf.name.toLowerCase() === c.name.toLowerCase())?.pattern || false,
-          count: c.count || 0,
-        }))
+        name: c.name,
+        hex: c.hex || COLOR_FAMILIES.find(cf => cf.name.toLowerCase() === c.name.toLowerCase())?.hex || '#CCCCCC',
+        pattern: COLOR_FAMILIES.find(cf => cf.name.toLowerCase() === c.name.toLowerCase())?.pattern || false,
+        count: c.count || 0,
+      }))
       : COLOR_FAMILIES.map(color => ({
-          ...color,
-          count: colorMap.get(color.name.toLowerCase()) || 0,
-        }));
-    
+        ...color,
+        count: colorMap.get(color.name.toLowerCase()) || 0,
+      }));
+
     return colorList;
   };
 
   // [2025-01-27 17:00:00] 获取分类树（一级和二级）
   const getCategoryTree = () => {
     if (!filterOptions) return [];
-    
+
     // 只显示一级分类（parentId为null的）
     const parentCategories = filterOptions.categories.filter(cat => {
       // 如果children为空，说明可能是父分类
@@ -176,51 +176,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
 
   return (
     <>
-      {/* [2025-01-27 17:00:00] 动态分类列表 */}
-      {categoryTree.length > 0 && (
-        <div className="filter-section">
-          <h3 className="filter-section__title">
-            {categoryTree[0]?.name || 'Categories'}
-          </h3>
-          <ul className="filter-category-list">
-            {categoryTree.map((category) => (
-              <li key={category.id}>
-                <Link 
-                  href={`/products?category=${category.slug}`}
-                  className={`filter-category-link ${searchParams.get('category') === category.slug ? 'is-active' : ''}`}
-                >
-                  {category.name} ({category.count})
-                </Link>
-                {/* [2025-01-27 17:00:00] 显示二级分类（最多5个） */}
-                {category.children.length > 0 && (
-                  <ul className="filter-subcategory-list">
-                    {category.children.slice(0, 5).map((child) => (
-                      <li key={child.id}>
-                        <Link 
-                          href={`/products?category=${child.slug}`}
-                          className={`filter-category-link filter-subcategory-link ${searchParams.get('category') === child.slug ? 'is-active' : ''}`}
-                        >
-                          {child.name} ({child.count})
-                        </Link>
-                      </li>
-                    ))}
-                    {category.children.length > 5 && (
-                      <li>
-                        <button type="button" className="filter-show-more">
-                          +{category.children.length - 5} more
-                        </button>
-                      </li>
-                    )}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-          {categoryTree.length > 5 && (
-            <button type="button" className="filter-show-more">Show more ↓</button>
-          )}
-        </div>
-      )}
+      {/* [2025-01-31] Categories are now handled by SidebarGrouped component at the top of sidebar */}
+      {/* {categoryTree.length > 0 && ( ... )} */}
 
       {/* [2025-01-27 17:00:00] 动态Fit筛选（目前返回空数组，暂不显示） */}
       {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
@@ -235,9 +192,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
-                  <input 
-                    type="checkbox" 
-                    name="fit" 
+                  <input
+                    type="checkbox"
+                    name="fit"
                     value={value}
                     checked={isFilterChecked('fit', value)}
                     onChange={(e) => handleFilterChange('fit', value, e.target.checked)}
@@ -265,9 +222,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = option.name.toLowerCase();
               return (
                 <label key={option.name} className="filter-checkbox">
-                  <input 
-                    type="checkbox" 
-                    name="decoration" 
+                  <input
+                    type="checkbox"
+                    name="decoration"
                     value={value}
                     checked={isFilterChecked('decoration', value)}
                     onChange={(e) => handleFilterChange('decoration', value, e.target.checked)}
@@ -291,8 +248,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <div className="filter-section__body">
           <p className="filter-question">Available to ship to multiple addresses?</p>
           <label className="filter-toggle">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               name="multiAddress"
               checked={searchParams.get('multiAddress') === 'true'}
               onChange={(e) => {
@@ -319,8 +276,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         <div className="filter-section__header">
           <span className="filter-section__title">No Minimum</span>
           <label className="filter-toggle">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               name="noMinimum"
               checked={searchParams.get('noMinimum') === 'true'}
               onChange={(e) => {
@@ -355,16 +312,16 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = color.name.toLowerCase();
               return (
                 <label key={color.name} className="color-swatch">
-                  <input 
-                    type="checkbox" 
-                    name="color" 
+                  <input
+                    type="checkbox"
+                    name="color"
                     value={value}
                     checked={isFilterChecked('color', value)}
                     onChange={(e) => handleFilterChange('color', value, e.target.checked)}
                   />
-                  <span 
+                  <span
                     className="color-swatch__circle"
-                    style={{ 
+                    style={{
                       backgroundColor: color.hex,
                       backgroundImage: color.pattern ? 'url("data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M0 0h10v10H0zM10 10h10v10H10z\' fill=\'%23fff\' opacity=\'.1\'/%3E%3C/svg%3E")' : undefined
                     }}
@@ -391,9 +348,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
             : RUSH_DELIVERY_OPTIONS.map(opt => ({ name: opt.days, label: opt.label, count: 0 }))
           ).map((option) => (
             <label key={option.name} className="filter-checkbox">
-              <input 
-                type="checkbox" 
-                name="rushDelivery" 
+              <input
+                type="checkbox"
+                name="rushDelivery"
                 value={option.name}
                 checked={isFilterChecked('rushDelivery', option.name)}
                 onChange={(e) => handleFilterChange('rushDelivery', option.name, e.target.checked)}
@@ -423,9 +380,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           <div className="filter-section__body">
             {safeFilterOptions.brands.slice(0, 7).map((brand) => (
               <label key={brand.slug || brand.name} className="filter-checkbox">
-                <input 
-                  type="checkbox" 
-                  name="brand" 
+                <input
+                  type="checkbox"
+                  name="brand"
                   value={brand.name}
                   checked={isFilterChecked('brand', brand.name)}
                   onChange={(e) => handleFilterChange('brand', brand.name, e.target.checked)}
@@ -455,9 +412,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
-                  <input 
-                    type="checkbox" 
-                    name="material" 
+                  <input
+                    type="checkbox"
+                    name="material"
                     value={value}
                     checked={isFilterChecked('material', value)}
                     onChange={(e) => handleFilterChange('material', value, e.target.checked)}
@@ -486,9 +443,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = option.name.toLowerCase();
               return (
                 <label key={option.name} className="filter-checkbox">
-                  <input 
-                    type="checkbox" 
-                    name="type" 
+                  <input
+                    type="checkbox"
+                    name="type"
                     value={value}
                     checked={isFilterChecked('type', value)}
                     onChange={(e) => handleFilterChange('type', value, e.target.checked)}
@@ -514,9 +471,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           <div className="filter-section__body">
             {safeFilterOptions.sizes.map((option) => (
               <label key={option.name} className="filter-checkbox">
-                <input 
-                  type="checkbox" 
-                  name="size" 
+                <input
+                  type="checkbox"
+                  name="size"
                   value={option.name}
                   checked={isFilterChecked('size', option.name)}
                   onChange={(e) => handleFilterChange('size', option.name, e.target.checked)}
@@ -543,9 +500,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = option.name.toLowerCase();
               return (
                 <label key={option.name} className="filter-checkbox">
-                  <input 
-                    type="checkbox" 
-                    name="style" 
+                  <input
+                    type="checkbox"
+                    name="style"
                     value={value}
                     checked={isFilterChecked('style', value)}
                     onChange={(e) => handleFilterChange('style', value, e.target.checked)}
@@ -573,9 +530,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
-                  <input 
-                    type="checkbox" 
-                    name="neckline" 
+                  <input
+                    type="checkbox"
+                    name="neckline"
                     value={value}
                     checked={isFilterChecked('neckline', value)}
                     onChange={(e) => handleFilterChange('neckline', value, e.target.checked)}
@@ -603,9 +560,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
               const value = option.name.toLowerCase().replace(/\s+/g, '-');
               return (
                 <label key={option.name} className="filter-checkbox">
-                  <input 
-                    type="checkbox" 
-                    name="feature" 
+                  <input
+                    type="checkbox"
+                    name="feature"
                     value={value}
                     checked={isFilterChecked('feature', value)}
                     onChange={(e) => handleFilterChange('feature', value, e.target.checked)}
@@ -632,9 +589,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
           <div className="filter-section__body">
             {safeFilterOptions.priceRanges.map((option) => (
               <label key={option.name} className="filter-checkbox">
-                <input 
-                  type="checkbox" 
-                  name="price" 
+                <input
+                  type="checkbox"
+                  name="price"
                   value={option.name}
                   checked={isFilterChecked('price', option.name)}
                   onChange={(e) => handleFilterChange('price', option.name, e.target.checked)}

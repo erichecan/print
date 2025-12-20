@@ -79,9 +79,9 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
           }
 
           // [2025-01-31 00:20:00] 使用第一个视图的画布数据（通常是 front）
-          const canvasData = localDesign.viewCanvases[localDesign.currentView] || 
-                            localDesign.viewCanvases.front ||
-                            { size: { width: 4000, height: 4800 }, objects: [] };
+          const canvasData = localDesign.viewCanvases[localDesign.currentView] ||
+            localDesign.viewCanvases.front ||
+            { size: { width: 4000, height: 4800 }, objects: [] };
 
           // [2025-01-31 00:20:00] 上传到云端
           const payload = {
@@ -109,20 +109,20 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
       }
 
       if (failCount > 0) {
-        alert(`成功上传 ${successCount} 个设计，${failCount} 个失败`);
+        alert(`Uploaded ${successCount} designs successfully, ${failCount} failed`);
       } else {
-        alert(`成功上传 ${successCount} 个设计到云端！`);
+        alert(`Successfully uploaded ${successCount} designs to the cloud!`);
       }
     } catch (error) {
       console.error('[LocalDesignSync] Upload error:', error);
-      alert('上传失败，请重试');
+      alert('Upload failed, please try again');
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
     }
   };
 
-  // [2025-01-31 00:20:00] 关闭提示
+  // [2025-01-31 00:20:00] Dismiss prompt
   const handleDismiss = () => {
     setShowPrompt(false);
     setDismissed(true);
@@ -146,10 +146,10 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
         <div style={{ flex: 1 }}>
           <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#1e40af', marginBottom: '8px' }}>
-            检测到 {unsyncedDesigns.length} 个本地设计未同步到云端
+            Found {unsyncedDesigns.length} local designs not synced to cloud
           </h3>
           <p style={{ fontSize: '0.875rem', color: '#1e3a8a', marginBottom: '12px' }}>
-            上传到云端后，您可以在任何设备上访问这些设计。
+            Upload to cloud to access these designs on any device.
           </p>
         </div>
         <button
@@ -164,7 +164,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
             marginLeft: '12px',
             lineHeight: '1',
           }}
-          aria-label="关闭"
+          aria-label="Close"
         >
           ×
         </button>
@@ -174,7 +174,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
         <div style={{ marginBottom: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
             <span style={{ fontSize: '0.875rem', color: '#1e3a8a' }}>
-              上传中... {uploadProgress.current} / {uploadProgress.total}
+              Uploading... {uploadProgress.current} / {uploadProgress.total}
             </span>
             <span style={{ fontSize: '0.875rem', color: '#1e3a8a' }}>
               {Math.round((uploadProgress.current / uploadProgress.total) * 100)}%
@@ -217,7 +217,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
             opacity: isUploading ? 0.6 : 1,
           }}
         >
-          {isUploading ? '上传中...' : `上传全部 (${unsyncedDesigns.length})`}
+          {isUploading ? 'Uploading...' : `Upload All (${unsyncedDesigns.length})`}
         </button>
         <button
           onClick={handleDismiss}
@@ -234,7 +234,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
             opacity: isUploading ? 0.6 : 1,
           }}
         >
-          稍后
+          Later
         </button>
       </div>
     </div>
