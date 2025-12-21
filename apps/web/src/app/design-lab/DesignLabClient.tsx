@@ -2264,7 +2264,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               top: CANVAS_HEIGHT / 2,
               originX: 'center',
               originY: 'center',
-              name: `image_${Date.now()}`
+              name: `image_${Date.now()}`,
+              perPixelTargetFind: true, // [2025-12-21 00:30:00] Verify pixels for selection to allow clicking through transparent areas
             });
 
             // [2025-01-30 22:30:00] 确保坐标已更新
