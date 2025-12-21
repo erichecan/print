@@ -643,7 +643,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     // [2025-12-20 10:30:00] 构建代理 URL 以解决 CORS 问题
     // 使用 Next.js 图片优化 API 作为代理
-    const proxiedUrl = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=3840&q=100`;
+    const proxiedUrl = `/_next/image?url=${encodeURIComponent(imageUrl)}&w=1200&q=90`;
     console.log('[DesignLab 5.0] Using proxied URL:', proxiedUrl);
 
     // [2025-12-14 05:35:00] 使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
