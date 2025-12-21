@@ -147,6 +147,7 @@ model Product {
   isActive           Boolean             @default(true) @map("is_active")
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
+  giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
   categoryId         String              @map("category_id") // [2025-12-11 09:21:35] 保留主分类（向后兼容）
   brandId            String?             @map("brand_id")
   collectionProducts CollectionProduct[]
@@ -200,6 +201,7 @@ model Variant {
   orderItems      OrderItem[]
   projects        Project[]
   product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  giftPromotions  Promotion[] @relation("PromotionGiftVariant")
 
   @@index([productId])
   @@index([sku])
@@ -750,6 +752,14 @@ model Promotion {
   coupon          PromotionCoupon?
   products        PromotionProduct[]
 
+  // [2025-12-06 18:00:00] Buy X Get Y Free fields
+  buyQuantity     Int?                  @map("buy_quantity")
+  getQuantity     Int?                  @map("get_quantity")
+  giftProductId   String?               @map("gift_product_id")
+  giftVariantId   String?               @map("gift_variant_id")
+  giftProduct     Product?              @relation("PromotionGiftProduct", fields: [giftProductId], references: [id])
+  giftVariant     Variant?              @relation("PromotionGiftVariant", fields: [giftVariantId], references: [id])
+
   @@index([isActive])
   @@index([startDate, endDate])
   @@index([sortOrder])
@@ -1080,6 +1090,7 @@ enum CouponType {
 enum PromotionDiscountType {
   PERCENTAGE
   FIXED
+  BUY_GET_FREE
 }
 
 enum enum_fonts_category {
