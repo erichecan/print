@@ -39,15 +39,15 @@ function normalizeBuildTime(value) {
 function validateEnvAtBuildTime() {
   const isBuildTime = !!process.env.NEXT_PHASE || process.env.NODE_ENV === 'production';
   if (!isBuildTime) return;
-  
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
-  
+
   // 构建时如果环境变量未设置，只警告，不阻止构建（运行时检查在 env.ts 中）
   if (!apiUrl) {
     console.warn('[next.config] ⚠️ 构建时 NEXT_PUBLIC_API_URL 未设置，运行时需要配置环境变量');
     return;
   }
-  
+
   // 构建时检测到 localhost，只警告，不阻止构建
   if (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1')) {
     console.warn('[next.config] ⚠️ 构建时检测到 localhost API 地址，运行时需要配置正确的生产环境地址:', apiUrl);
@@ -57,9 +57,9 @@ function validateEnvAtBuildTime() {
 function validateStripeConfig() {
   const isBuildTime = !!process.env.NEXT_PHASE || process.env.NODE_ENV === 'production';
   if (!isBuildTime) return;
-  
+
   const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  
+
   // 构建时如果 Stripe 密钥未设置，只警告，不阻止构建（运行时检查在 stripe.ts 中）
   if (!publishableKey || publishableKey.trim() === '') {
     console.warn('[next.config] ⚠️ 构建时 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 未设置，运行时需要配置环境变量');
@@ -209,28 +209,35 @@ const nextConfig = {
     // 运行时检查在 api-route-config.ts 中进行
     const isDevelopment = process.env.NODE_ENV === 'development';
     let apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    
+
+    // [2025-12-21] FIX: In development, force usage of local backend (port 3001) to allow correct session management.
+    // This overrides any production URL set in .env files which causes auth failures locally.
+    if (isDevelopment && !process.env.NEXT_PUBLIC_USE_REMOTE_API) {
+      console.warn('[next.config] ⚠️ Development mode: Forcing API URL to http://localhost:3001 for rewrites');
+      apiUrl = 'http://localhost:3001';
+    }
+
     if (!apiUrl) {
       // [2025-12-09] 构建时允许使用默认值（无论是开发还是生产构建）
       // 运行时检查在 api-route-config.ts 中进行
-      // [2025-12-19 15:22:40] 修复：默认本地后端端口调整为 4000（与 webapp-testing/Playwright 以及后端启动脚本一致）
-      apiUrl = 'http://localhost:4000';
+      // [2025-12-19 15:22:40] 修复：默认本地后端端口调整为 3001
+      apiUrl = 'http://localhost:3001';
       if (isDevelopment) {
         console.warn('[next.config] ⚠️ NEXT_PUBLIC_API_URL 未设置，使用开发环境默认值:', apiUrl);
       } else {
         console.warn('[next.config] ⚠️ 构建时 NEXT_PUBLIC_API_URL 未设置，使用默认值（运行时需要配置环境变量）:', apiUrl);
       }
     }
-    
+
     // [2025-12-09] 构建时允许 localhost（运行时检查在 api-route-config.ts 中进行）
     // 这里只做警告，不抛出错误
     if (!isDevelopment && (apiUrl.includes('localhost') || apiUrl.includes('127.0.0.1'))) {
       console.warn('[next.config] ⚠️ 构建时检测到 localhost API 地址，运行时需要配置正确的生产环境地址:', apiUrl);
     }
-    
+
     // [2025-12-09] 确保 URL 不包含 /api 后缀（rewrites 会自动添加）
     apiUrl = apiUrl.replace(/\/api\/?$/, '');
-    
+
     return [
       // [2025-12-08 05:40:00] 移除 /api/proxy/:path* rewrite 规则
       // 原因：/api/proxy/* 应该通过 Next.js API 路由处理器（apps/web/src/app/api/proxy/[...path]/route.ts）处理

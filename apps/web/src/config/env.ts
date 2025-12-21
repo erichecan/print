@@ -89,6 +89,18 @@ export function validateEnvAtBuildTime(): void {
  * 4. 开发环境：允许回退到 localhost:3001/api
  */
 export function getFrontendApiBaseUrl(): string {
+  // [2025-12-21] Fix: In development mode, prioritize local backend to avoid session/auth mismatches
+  // caused by accidental usage of production API URL in local environment.
+  if (isDevelopment) {
+    // Check if we should explicitly use remote API (via a new bespoke flag, or just check if the env var is set AND we want to respect it)
+    // For now, to fix the reported critical issues, we default to localhost.
+    const forceRemote = process.env.NEXT_PUBLIC_USE_REMOTE_API === 'true';
+    if (!forceRemote) {
+      console.warn('[Env Config] Development mode: Forcing API URL to http://localhost:3001/api');
+      return 'http://localhost:3001/api';
+    }
+  }
+
   // 优先使用环境变量
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -152,6 +164,15 @@ export function getBackendApiBaseUrl(): string {
     isProduction,
     isBuildTime,
   });
+
+  // [2025-12-21] Fix: In development mode, prioritize local backend for SSR/Proxy as well
+  if (isDevelopment && !isBuildTime) {
+    const forceRemote = process.env.NEXT_PUBLIC_USE_REMOTE_API === 'true';
+    if (!forceRemote) {
+      console.debug('[Env Config] Development mode: Forcing Backend API URL to http://localhost:3001/api');
+      return 'http://localhost:3001/api';
+    }
+  }
 
   // 优先使用 NEXT_PUBLIC_API_URL
   try {
