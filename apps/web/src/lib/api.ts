@@ -1103,7 +1103,7 @@ export const salesOrdersApi = {
     }),
   // [2025-12-07 03:00:00] 更新订单阶段
   updateStage: (id: string, data: { stageKey: string; note?: string }) =>
-    api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/api/proxy/sales/orders/${id}/stage`, {
+    api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/sales/orders/${id}/stage`, {
       method: 'PATCH',
       body: data,
     }),
@@ -1114,14 +1114,14 @@ export const salesOrdersApi = {
     if (rushOrder !== undefined) {
       body.rushOrder = rushOrder;
     }
-    return sameOriginApi(`/api/proxy/sales/orders/${id}/status`, {
+    return api(`/sales/orders/${id}/status`, {
       method: 'PATCH',
       body,
     });
   },
   // [2025-12-18 17:30:00] 删除订单
   delete: (id: string) =>
-    sameOriginApi(`/api/proxy/admin/offline-orders/${id}`, {
+    api(`/admin/offline-orders/${id}`, {
       method: 'DELETE',
     }),
 };

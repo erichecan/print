@@ -1841,68 +1841,7 @@ export default function OfflineOrdersIntakePage() {
           </div>
         )}
 
-        {/* [2025-12-18 23:45:31] 计费明细 - 在总计上面 */}
-        {calculateTotalQuantity > 0 && (
-          <div className="p-5 bg-white border border-gray-200 rounded-lg mb-4">
-            <h4 className="text-base font-semibold text-gray-900 mb-4">计费明细</h4>
-            <div className="overflow-x-auto mb-4">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-300">
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">产品</th>
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">颜色</th>
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">尺码</th>
-                    <th className="text-right py-2 px-3 font-semibold text-gray-700">数量</th>
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">位置</th>
-                    <th className="text-right py-2 px-3 font-semibold text-gray-700">单价</th>
-                    <th className="text-right py-2 px-3 font-semibold text-gray-700">小计</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formState.productItems.flatMap((item) => {
-                    const colorGroups = formState.colorGroupsByProduct[item.id] || [];
-                    return item.colors.flatMap((color) => {
-                      const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
-                      return color.sizes
-                        .filter(sizeData => sizeData.quantity > 0)
-                        .map((sizeData) => {
-                          // [2025-12-19 02:30:00] 获取印刷位置名称
-                          const positions = colorGroup?.positions
-                            .filter(p => p.enabled)
-                            .map(p => {
-                              const positionNames: Record<string, string> = {
-                                'front': '正面',
-                                'back': '背面',
-                                'left_sleeve': '左袖',
-                                'right_sleeve': '右袖',
-                                'pocket': '口袋',
-                                'tag_inside': '内标',
-                                'tag_outside': '外标',
-                                'custom': '其他位置'
-                              };
-                              return positionNames[p.positionKey] || p.positionKey;
-                            })
-                            .join(', ') || '无位置';
 
-                          return (
-                            <tr key={`${item.id}-${color.colorId}-${sizeData.size}`} className="border-b border-gray-200 hover:bg-gray-50">
-                              <td className="py-2 px-3 text-gray-900">{item.productName}</td>
-                              <td className="py-2 px-3 text-gray-700">{color.colorName}</td>
-                              <td className="py-2 px-3 text-gray-700">{sizeData.size}</td>
-                              <td className="py-2 px-3 text-right text-gray-700">{sizeData.quantity}</td>
-                              <td className="py-2 px-3 text-gray-600 text-xs">{positions}</td>
-                              <td className="py-2 px-3 text-right text-gray-700">${sizeData.unitPrice.toFixed(2)}</td>
-                              <td className="py-2 px-3 text-right font-medium text-gray-900">${sizeData.subtotal.toFixed(2)}</td>
-                            </tr>
-                          );
-                        });
-                    });
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
 
         {/* 总计 - PRD v2.0 */}
         {calculateTotalQuantity > 0 && (
