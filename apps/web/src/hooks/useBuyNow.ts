@@ -98,6 +98,19 @@ export function useBuyNow(options: UseBuyNowOptions = {}): UseBuyNowReturn {
         // 确保购物车数据已更新
         await refreshCart();
 
+        // [2025-12-21] Verify cart content to ensure session persistence before redirect
+        // This handles cases where cross-port cookie propagation might be delayed
+        let currentCart = await cartApi.get();
+        if (!currentCart || currentCart.items.length === 0) {
+          console.warn('[BuyNow] Cart empty after add, retrying check...');
+          await new Promise(resolve => setTimeout(resolve, 500)); // Wait for cookie propagation
+          currentCart = await cartApi.get();
+        }
+
+        if (!currentCart || currentCart.items.length === 0) {
+          throw new Error('Failed to verify cart content. Please try again.');
+        }
+
         // 分析埋点：Buy Now
         if (typeof window !== 'undefined' && (window as any).gtag) {
           try {
@@ -135,7 +148,7 @@ export function useBuyNow(options: UseBuyNowOptions = {}): UseBuyNowReturn {
         });
 
         // 显示错误提示
-        showError('购买失败，请稍后重试', 3000);
+        showError(error.message || '购买失败，请稍后重试', 3000);
 
         // 触发错误回调
         options.onError?.(error);

@@ -581,7 +581,7 @@ function CheckoutForm({
     // [2025-11-29 21:30:00] 改进 Place Order 按钮禁用条件，包括地址和运费验证
     const placeOrderDisabled = !stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete || !addressReady || !selectedShipping || shippingRates.length === 0;
     const applyCouponDisabled = applyingCoupon || !couponCode.trim() || !addressReady;
-    
+
     const debugInfo = {
       placeOrder: {
         disabled: placeOrderDisabled,
@@ -596,12 +596,12 @@ function CheckoutForm({
         shippingRatesCount: shippingRates.length,
         disabledReason: !stripe ? 'no-stripe' :
           isSubmitting ? 'submitting' :
-          isFetchingRates ? 'fetching-rates' :
-          isCalculatingTotals ? 'calculating-totals' :
-          !addressReady ? 'address-not-ready' :
-          shippingRates.length === 0 ? 'no-shipping-rates' :
-          !selectedShipping ? 'no-shipping-selected' :
-          !cardComplete ? 'card-incomplete' : 'enabled'
+            isFetchingRates ? 'fetching-rates' :
+              isCalculatingTotals ? 'calculating-totals' :
+                !addressReady ? 'address-not-ready' :
+                  shippingRates.length === 0 ? 'no-shipping-rates' :
+                    !selectedShipping ? 'no-shipping-selected' :
+                      !cardComplete ? 'card-incomplete' : 'enabled'
       },
       applyCoupon: {
         disabled: applyCouponDisabled,
@@ -611,10 +611,10 @@ function CheckoutForm({
         addressReady,
         disabledReason: applyingCoupon ? 'applying' :
           !couponCode.trim() ? 'no-code' :
-          !addressReady ? 'address-not-ready' : 'enabled'
+            !addressReady ? 'address-not-ready' : 'enabled'
       },
     };
-    
+
     // [2025-11-29 21:20:00] 使用 JSON.stringify 确保对象内容可见
     console.log('[Checkout Debug] Button states:', JSON.stringify(debugInfo, null, 2));
   }, [stripe, isSubmitting, isFetchingRates, isCalculatingTotals, cardComplete, addressReady, selectedShipping, shippingRates.length, applyingCoupon, couponCode]);
@@ -735,7 +735,7 @@ function CheckoutForm({
       let stripeError = null;
 
       // [2025-01-29 14:30:00] Build return URL for 3D Secure and other redirects
-      const returnUrl = typeof window !== 'undefined' 
+      const returnUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/checkout/success?payment_intent=${paymentIntentResponse.paymentIntentId}`
         : '/checkout/success';
 
@@ -798,7 +798,7 @@ function CheckoutForm({
             const paymentMethodId = typeof paymentIntent.payment_method === 'string'
               ? paymentIntent.payment_method
               : (paymentIntent.payment_method as any).id;
-            
+
             if (paymentMethodId) {
               await paymentMethodsApi.save(paymentMethodId, {
                 isDefault: savedPaymentMethods.length === 0, // Set as default if first payment method
@@ -836,7 +836,7 @@ function CheckoutForm({
         setCardError(errorMapping.userMessage);
         setPaymentStep('form');
         showError(errorMapping.userMessage); // [2025-01-27 16:55:00] 显示 Toast 通知
-        
+
         // [2025-01-29 14:30:00] Log error details for debugging
         console.error('[Payment Error]', {
           message: errorMapping.message,
@@ -845,7 +845,7 @@ function CheckoutForm({
           canRetry: errorMapping.canRetry,
           originalError: stripeError,
         });
-        
+
         return; // 不跳转，让用户有机会重试
       }
 
@@ -1173,55 +1173,55 @@ function CheckoutForm({
             className={`card-element${cardError ? ' is-error' : ''}${cardComplete ? ' is-complete' : ''}`}
           >
             <CardElement
-            options={{
-              hidePostalCode: true,
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#1f2937',
-                  fontFamily: 'system-ui, -apple-system, sans-serif',
-                  '::placeholder': {
-                    color: '#94a3b8',
+              options={{
+                hidePostalCode: true,
+                style: {
+                  base: {
+                    fontSize: '16px',
+                    color: '#1f2937',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    '::placeholder': {
+                      color: '#94a3b8',
+                    },
+                  },
+                  invalid: {
+                    color: '#ef4444',
+                    iconColor: '#ef4444',
                   },
                 },
-                invalid: {
-                  color: '#ef4444',
-                  iconColor: '#ef4444',
-                },
-              },
-            }}
-            onChange={(event) => {
-              // [2025-01-27 11:10:00] 实时监听卡片输入状态
-              // [2025-01-29 12:00:00] 改进卡片状态检测，确保 cardComplete 正确更新
-              if (event.error) {
-                setCardError(event.error.message);
-                setCardComplete(false);
-              } else {
-                setCardError(null);
-                // [2025-01-29 12:00:00] 确保 cardComplete 状态正确更新
-                // event.complete 为 true 表示所有必填字段都已填写且有效
-                const isComplete = event.complete === true && !event.empty;
-                setCardComplete(isComplete);
-              }
-              // [2025-11-29 21:05:00] 调试日志：记录卡片状态变化
-              const cardState = {
-                complete: event.complete,
-                error: event.error?.message || null,
-                empty: event.empty,
-                brand: event.brand || 'unknown',
-                cardComplete: event.complete === true && !event.empty
-              };
-              console.log('[Checkout Debug] Card state changed:', JSON.stringify(cardState, null, 2));
-            }}
-          />
+              }}
+              onChange={(event) => {
+                // [2025-01-27 11:10:00] 实时监听卡片输入状态
+                // [2025-01-29 12:00:00] 改进卡片状态检测，确保 cardComplete 正确更新
+                if (event.error) {
+                  setCardError(event.error.message);
+                  setCardComplete(false);
+                } else {
+                  setCardError(null);
+                  // [2025-01-29 12:00:00] 确保 cardComplete 状态正确更新
+                  // event.complete 为 true 表示所有必填字段都已填写且有效
+                  const isComplete = event.complete === true && !event.empty;
+                  setCardComplete(isComplete);
+                }
+                // [2025-11-29 21:05:00] 调试日志：记录卡片状态变化
+                const cardState = {
+                  complete: event.complete,
+                  error: event.error?.message || null,
+                  empty: event.empty,
+                  brand: event.brand || 'unknown',
+                  cardComplete: event.complete === true && !event.empty
+                };
+                console.log('[Checkout Debug] Card state changed:', JSON.stringify(cardState, null, 2));
+              }}
+            />
+          </div>
+          {cardError && (
+            <p className="card-error-message">{cardError}</p>
+          )}
+          {cardComplete && !cardError && (
+            <p className="card-success-message">✓ Card details are valid</p>
+          )}
         </div>
-        {cardError && (
-          <p className="card-error-message">{cardError}</p>
-        )}
-        {cardComplete && !cardError && (
-          <p className="card-success-message">✓ Card details are valid</p>
-        )}
-      </div>
       )}
 
       <label className="checkbox-label">
@@ -1414,13 +1414,13 @@ function CheckoutForm({
         className="btn-primary"
         title={
           !stripe ? 'Stripe is loading...' :
-          isSubmitting ? 'Submitting order...' :
-          isFetchingRates ? 'Loading shipping rates...' :
-          isCalculatingTotals ? 'Calculating totals...' :
-          !addressReady ? 'Please complete shipping address' :
-          !selectedShipping || shippingRates.length === 0 ? 'Please select a shipping method' :
-          !cardComplete ? 'Please complete card details' :
-          undefined
+            isSubmitting ? 'Submitting order...' :
+              isFetchingRates ? 'Loading shipping rates...' :
+                isCalculatingTotals ? 'Calculating totals...' :
+                  !addressReady ? 'Please complete shipping address' :
+                    !selectedShipping || shippingRates.length === 0 ? 'Please select a shipping method' :
+                      !cardComplete ? 'Please complete card details' :
+                        undefined
         }
       >
         {isSubmitting ? (
@@ -1783,11 +1783,12 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); // [2025-01-27 20:20:00] [2025-01-28 11:35:00] 添加 id 字段
   const [appliedPromotions, setAppliedPromotions] = useState<Array<{ promotionId: string; promotionTitle: string; productId: string; discountAmount: number }>>([]); // [2025-01-28 12:45:00] 应用的促销活动
 
-  useEffect(() => {
-    if (!isLoading && (!cart || cart.items.length === 0)) {
-      router.push('/cart');
-    }
-  }, [cart, isLoading, router]);
+  // [2025-12-21] Debug: Disable auto-redirect to diagnose "Checkout shows empty" issue
+  // useEffect(() => {
+  //   if (!isLoading && (!cart || cart.items.length === 0)) {
+  //     router.push('/cart');
+  //   }
+  // }, [cart, isLoading, router]);
 
   // [2025-01-28 12:45:00] 初始化时获取促销活动信息
   useEffect(() => {
@@ -1796,8 +1797,48 @@ export default function CheckoutPage() {
     }
   }, [cart]);
 
-  if (isLoading || !cart || cart.items.length === 0) {
+  if (isLoading) {
     return <CheckoutSkeleton />;
+  }
+
+  if (!cart || cart.items.length === 0) {
+    return (
+      <div className="container" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+        <h1>Checkout</h1>
+        <div style={{ margin: '2rem 0', padding: '2rem', background: '#f9fafb', borderRadius: '8px' }}>
+          <p style={{ fontSize: '1.2rem', marginBottom: '1rem' }}>Your cart appears to be empty.</p>
+          <p style={{ color: '#666', marginBottom: '2rem' }}>This might be due to a session timeout or synchronization issue.</p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+            >
+              Refresh Page
+            </button>
+            <Link
+              href="/cart"
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'white',
+                color: '#2563eb',
+                border: '1px solid #2563eb',
+                borderRadius: '6px',
+                textDecoration: 'none'
+              }}
+            >
+              Return to Cart
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
