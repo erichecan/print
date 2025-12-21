@@ -80,7 +80,7 @@ interface DesignLabClientProps {
 const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData }) => {
   const searchParams = useSearchParams();
   const { error: showErrorToast, warning: showWarningToast, success: showSuccessToast } = useToast(); // [2025-12-08] Toast hooks
-  
+
   // [2025-01-31 00:30:00] 版本号显示 - 在 console 打印 SHA + UTC
   useEffect(() => {
     const getVersion = async () => {
@@ -88,17 +88,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // 获取当前 Git SHA（从 API 或环境变量）
         let gitSha = process.env.NEXT_PUBLIC_GIT_SHA || 'dev';
         let utcTime = new Date().toISOString();
-        
+
         try {
           // 从 API 获取版本信息（使用相对路径，避免 CORS 问题）
-          const response = await fetch('/api/version', { 
+          const response = await fetch('/api/version', {
             cache: 'no-store',
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             gitSha = data.sha || gitSha;
@@ -110,9 +110,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           // API 调用失败时使用默认值，不阻止页面加载
           console.warn('Failed to fetch version from API, using defaults:', error);
         }
-        
+
         const version = `${gitSha}+${utcTime}`;
-        
+
         // 延迟打印，确保 console 已准备好
         setTimeout(() => {
           console.log('%c═══════════════════════════════════════', 'color: #0066CC; font-size: 12px;');
@@ -127,16 +127,16 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         console.warn('Failed to get version info:', error);
       }
     };
-    
+
     getVersion();
-    
+
     // [2025-12-08] 埋点：Design Lab 打开
     analytics.track('design_lab_opened', {
       productId: searchParams.get('productId'),
       colorId: searchParams.get('colorId'),
     });
   }, []);
-  
+
   // [2025-01-30 14:00:00] 状态管理
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'zoom'>('front');
@@ -153,12 +153,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   // [2025-01-30 17:00:00] 工具面板状态管理
   // [2025-01-30 22:20:00] 同时更新 ref，确保事件处理器能访问最新值
   const [toolPanelType, setToolPanelType] = useState<ToolPanelType>('home');
-  
+
   // [2025-01-30 22:20:00] 同步更新 ref
   useEffect(() => {
     toolPanelTypeRef.current = toolPanelType;
   }, [toolPanelType]);
-  
+
   // [2025-01-30 17:30:00] 选中的图片对象
   const [selectedImage, setSelectedImage] = useState<fabric.Image | null>(null);
   // [2025-01-30 17:50:00] 选中的文本对象
@@ -203,7 +203,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   const [canvasInitialized, setCanvasInitialized] = useState(false);
   // [2025-12-10 18:40:00] Canvas初始化错误状态
   const [canvasInitError, setCanvasInitError] = useState<Error | null>(null);
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -227,17 +227,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     baseImages: getDefaultProductBaseImages('White'),
     gallery: [],
   });
-  
+
   // [2025-01-31 16:30:00] 同步更新 productInfo ref，避免在 loadBackgroundImage 中依赖 productInfo
   useEffect(() => {
     productInfoRef.current = productInfo;
   }, [productInfo]);
-  
+
   // [2025-01-30 14:00:00] 从 store 获取状态
-  const { 
-    setView, 
-    currentView: storeView, 
-    setCanvas, 
+  const {
+    setView,
+    currentView: storeView,
+    setCanvas,
     canvas: storeCanvas,
     viewCanvases,
     getCurrentViewCanvas,
@@ -245,11 +245,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     history,
     future
   } = useDesignLabStore();
-  
+
   // [2025-12-08] 计算 Undo/Redo 可用状态
   const canUndo = history.length > 0;
   const canRedo = future.length > 0;
-  
+
   // [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - 固定高分辨率逻辑尺寸
   // 逻辑尺寸：4000 × 4800（高分辨率，用于 Fabric.js 坐标系）
   // DOM 显示尺寸：基于 .dl-canvas section 自适应（通过 CSS 或 viewportTransform 缩放）
@@ -265,15 +265,15 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   // [2025-12-10] 修复：使用 fabricRef 确保 fabric 对象已加载
   const loadFallbackImage = useCallback((viewKey: 'front' | 'back' | 'sleeve', canvas: fabric.Canvas) => {
     if (!canvas) return;
-    
+
     // [2025-12-10] 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       console.warn('[DesignLab] Fabric not loaded yet, skipping fallback image');
       return;
     }
-    
+
     const fabric = fabricRef.current;
-    
+
     // [2025-01-31 16:00:00] 创建一个简单的纯色矩形作为备用背景，避免依赖外部图片服务
     const createSolidColorBackground = () => {
       // 移除旧背景
@@ -289,7 +289,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         canvas.remove(backgroundImageRef.current);
         backgroundImageRef.current = null;
       }
-      
+
       // [2025-01-31 18:00:00] 统一使用 calculateImageFit 函数计算占位背景的位置和尺寸
       // 使用一个假设的图片尺寸来计算安全区
       const fit = calculateImageFit({
@@ -301,7 +301,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         safeAreaHeight: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
         fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
       });
-      
+
       // 使用浅灰色矩形作为占位背景
       const rect = new fabric.Rect({
         left: fit.left, // [2025-01-31 18:00:00] 使用画布中心坐标
@@ -318,7 +318,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
         originY: 'center',
       });
-      
+
       canvas.add(rect);
       // [2025-01-30 22:25:00] 修复：Fabric.js v6 使用 sendObjectToBack
       try {
@@ -342,12 +342,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       // [2025-01-30 21:55:00] 释放加载锁
       isLoadingBackgroundRef.current = false;
     };
-    
+
     // [2025-01-31 16:00:00] 尝试使用更可靠的占位图服务，如果失败则使用纯色背景
     // 使用 via.placeholder.com 作为备用，它更可靠
     const fallbackUrl = `https://via.placeholder.com/900x700/f0f0f0/d0d0d0?text=T-Shirt+${viewKey}`;
     console.log('[DesignLab] Loading fallback placeholder image:', fallbackUrl);
-    
+
     // [2025-01-31 16:00:00] 添加超时处理
     let imageLoaded = false;
     const timeoutId = setTimeout(() => {
@@ -356,24 +356,24 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         createSolidColorBackground();
       }
     }, 5000);
-    
+
     fabric.Image.fromURL(
       fallbackUrl,
       (fabricImg) => {
         imageLoaded = true;
         clearTimeout(timeoutId);
-        
+
         if (!fabricImg) {
           console.error('[DesignLab] Failed to load fallback image, using solid color background');
           createSolidColorBackground();
           return;
         }
-        
+
         // 移除旧背景（只移除非产品图片的背景）
         if (backgroundImageRef.current) {
           const objName = (backgroundImageRef.current as any).name || '';
           const isProductImage = objName?.startsWith('product-image-');
-          
+
           // [2025-01-30 21:55:00] 修复：如果是产品图片，不应该移除
           if (!isProductImage) {
             const objName = (backgroundImageRef.current as any).name || 'unnamed';
@@ -389,7 +389,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             backgroundImageRef.current = null;
           }
         }
-        
+
         // [2025-01-31 18:00:00] 设置图片属性，统一使用 center 原点
         fabricImg.set({
           selectable: false,
@@ -399,7 +399,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
           originY: 'center',
         });
-        
+
         // [2025-01-31 18:00:00] 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
         const fit = calculateImageFit({
           canvasWidth: CANVAS_WIDTH,
@@ -410,7 +410,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           safeAreaHeight: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
           fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
-        
+
         // [2025-01-31 18:00:00] 应用 fit 结果（居中 + 缩放）
         fabricImg.scale(fit.scale);
         fabricImg.set({
@@ -420,7 +420,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           originY: 'center',
         });
         fabricImg.setCoords();
-        
+
         canvas.add(fabricImg);
         // [2025-01-30 22:25:00] 修复：Fabric.js v6 使用 sendObjectToBack
         try {
@@ -478,7 +478,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.warn('[DesignLab] Cannot load background image: canvas not initialized');
       return;
     }
-    
+
     // [2025-12-10] 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       console.warn('[DesignLab] Fabric not loaded yet, skipping background image load');
@@ -493,17 +493,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
     const canvas = fabricCanvasRef.current;
     const fabric = fabricRef.current;
-    
+
     // 设置加载锁
     isLoadingBackgroundRef.current = true;
-    
+
     // 生成稳定键用于检查是否已加载
     // [2025-01-30 21:30:00] 修复：使用与 productImageLayer 相同的稳定键生成逻辑
     const viewKey = view as 'front' | 'back' | 'sleeve';
     const currentProductInfo = productInfoRef.current;
     const stableKey = `product-image-${currentProductInfo?.productId || 'default'}-${currentProductInfo?.color || 'White'}-${viewKey}`;
     const imageKey = `${viewKey}-${currentProductInfo?.color || 'White'}-${currentProductInfo?.baseImages?.[viewKey] || ''}`;
-    
+
     // #region agent log
     debugLog({
       location: 'DesignLabClient.tsx:407',
@@ -512,13 +512,13 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       hypothesisId: 'B,E',
     });
     // #endregion
-    
+
     // [2025-01-31 18:45:00] 修复：在加载新图片前，先移除所有旧的产品图片（不同稳定键的）
     const existingObjects = canvas.getObjects();
-    const existingProductImage = existingObjects.find((obj: any) => 
+    const existingProductImage = existingObjects.find((obj: any) =>
       obj.name === stableKey || obj.data?.stableKey === stableKey
     );
-    
+
     // [2025-12-20 01:20:00] 阶段2修复：如果已存在相同稳定键的图片，更新 ref 并跳过加载
     // [2025-01-31 19:30:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
     if (existingProductImage) {
@@ -528,7 +528,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         backgroundImageRef.current = existingProductImage as fabric.Image;
         backgroundImageLoadedRef.current = imageKey;
       }
-      
+
       // 即使已存在，也要检查是否有其他旧的产品图片需要移除
       const allObjects = canvas.getObjects();
       console.log('[DesignLab] 🔍 Before cleanup (loadBackgroundImage) - all canvas objects:', allObjects.map((obj, idx) => ({
@@ -539,7 +539,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         stableKey: (obj as any).data?.stableKey || (obj as any).name,
         isProductImage: ((obj as any).name || '').startsWith('product-image-'),
       })));
-      
+
       let hasOtherProductImages = false;
       for (const obj of allObjects) {
         const objName = obj.name || '';
@@ -547,7 +547,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         const isProductImage = objName.startsWith('product-image-');
         const isCurrentKey = objName === stableKey || (obj as any).data?.stableKey === stableKey;
         const isUploadImage = objLayerType === 'upload';
-        
+
         // [2025-01-31 19:30:00] 安全检查：绝对不移除上传图片
         if (isUploadImage) {
           console.log('[DesignLab] ⚠️ Skipping upload image (protected from removal):', {
@@ -556,7 +556,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           });
           continue;
         }
-        
+
         if (isProductImage && !isCurrentKey) {
           hasOtherProductImages = true;
           console.log('[DesignLab] 🗑️ Found old product image to remove:', {
@@ -569,7 +569,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvas.remove(obj);
         }
       }
-      
+
       if (hasOtherProductImages) {
         canvas.renderAll();
         const remainingObjects = canvas.getObjects();
@@ -582,7 +582,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           })),
         });
       }
-      
+
       console.log('[DesignLab] Product image already loaded and matches ref, skipping:', stableKey);
       // #region agent log
       debugLog({
@@ -595,7 +595,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       isLoadingBackgroundRef.current = false;
       return;
     }
-    
+
     // 检查是否已经加载了相同的图片（兼容旧检查）
     if (backgroundImageLoadedRef.current === imageKey && backgroundImageRef.current) {
       console.log('[DesignLab] Product image already loaded for this view/color, skipping:', imageKey);
@@ -610,19 +610,19 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       isLoadingBackgroundRef.current = false;
       return;
     }
-    
+
     try {
       console.log('[DesignLab] Attempting to load product image using productImageLayer...');
       const { loadProductImageLayer } = await import('@/design/canvas/layers/productImageLayer');
       const gitSha = process.env.NEXT_PUBLIC_GIT_SHA || 'dev';
-      
+
       console.log('[DesignLab] Calling loadProductImageLayer with options:', {
         colorName: currentProductInfo?.color || 'White',
         view: viewKey,
         productId: currentProductInfo?.productId,
         canvasSize: { width: CANVAS_WIDTH, height: CANVAS_HEIGHT },
       });
-      
+
       const result = await loadProductImageLayer({
         canvas,
         fabric,
@@ -636,7 +636,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         gitSha,
         productId: currentProductInfo?.productId,
       });
-      
+
       console.log('[DesignLab] loadProductImageLayer returned:', {
         success: result.success,
         hasImage: !!result.image,
@@ -644,25 +644,25 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         state: result.state,
         stableKey: result.stableKey,
       });
-      
+
       // [2025-12-19 22:15:00] 验证底图位置和尺寸（用于确认修复）
       if (result.success && result.image) {
         const productImage = result.image;
         const vpt = canvas.viewportTransform;
         let logicalCanvasWidth = CANVAS_WIDTH;
         let logicalCanvasHeight = CANVAS_HEIGHT;
-        
+
         if (vpt && (vpt[0] !== 1 || vpt[3] !== 1)) {
           logicalCanvasWidth = (canvas.width || CANVAS_WIDTH) / vpt[0];
           logicalCanvasHeight = (canvas.height || CANVAS_HEIGHT) / vpt[3];
         }
-        
+
         const centerX = logicalCanvasWidth / 2;
         const centerY = logicalCanvasHeight / 2;
         const leftDiff = Math.abs((productImage.left || 0) - centerX);
         const topDiff = Math.abs((productImage.top || 0) - centerY);
         const isCentered = leftDiff <= 2 && topDiff <= 2;
-        
+
         const scaledWidth = (productImage.width || 0) * (productImage.scaleX || 1);
         const scaledHeight = (productImage.height || 0) * (productImage.scaleY || 1);
         const targetWidth = logicalCanvasWidth * 0.9;
@@ -670,7 +670,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         const widthRatio = scaledWidth / targetWidth;
         const heightRatio = scaledHeight / targetHeight;
         const isFull = widthRatio >= 1.0 || heightRatio >= 1.0;
-        
+
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('✅ [DesignLab] 底图加载成功 - 验证结果');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -679,22 +679,22 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         console.log(`🎯 最终状态: ${isCentered && isFull ? '✅ 全部通过' : '❌ 存在问题'}`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       }
-      
+
       if (result.success && result.image) {
         // #region agent log
         const objectsAfterLoad = canvas.getObjects();
         debugLog({
           location: 'DesignLabClient.tsx:452',
           message: 'loadProductImageLayer success',
-          data: { stableKey: result.stableKey, imageKey, imageName: result.image.name, canvasObjectsCount: objectsAfterLoad.length, objectIndex: objectsAfterLoad.indexOf(result.image), isFirst: objectsAfterLoad[0]===result.image, firstObjectName: objectsAfterLoad[0]?.name },
+          data: { stableKey: result.stableKey, imageKey, imageName: result.image.name, canvasObjectsCount: objectsAfterLoad.length, objectIndex: objectsAfterLoad.indexOf(result.image), isFirst: objectsAfterLoad[0] === result.image, firstObjectName: objectsAfterLoad[0]?.name },
           hypothesisId: 'A,D',
         });
         // #endregion
-        
+
         // 更新引用（不手动移除，由 productImageLayer 管理）
         backgroundImageRef.current = result.image;
         backgroundImageLoadedRef.current = imageKey;
-        
+
         // [2025-01-30 21:30:00] 验证图片是否在最底层
         const finalObjects = canvas.getObjects();
         const productImageIndex = finalObjects.indexOf(result.image);
@@ -729,7 +729,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               }
             }
             canvas.renderAll();
-            
+
             const finalObjs = canvas.getObjects();
             const finalIdx = finalObjs.indexOf(result.image);
             if (finalIdx === 0) {
@@ -747,7 +747,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             console.error('[DesignLab] Failed to fix product image position:', e);
           }
         }
-        
+
         // 监听一次性 ready 事件
         const handleReady = (e: any) => {
           if (e.image === result.image) {
@@ -764,9 +764,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           }
         };
         canvas.on('product-image:ready', handleReady);
-        
+
         console.log('[DesignLab] ✅ Product image loaded using new productImageLayer, stableKey:', result.stableKey);
-        
+
         // [2025-01-30 22:35:00] 详细调试：验证图片是否真的在画布上并且可见
         if (result.image && canvas) {
           const img = result.image;
@@ -787,7 +787,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             canvasHeight: canvas.height,
             bounds: imgBounds,
           };
-          
+
           // [2025-01-30 22:35:00] 详细输出所有属性（展开对象）
           console.log('[DesignLab] 🔍 Product image verification:');
           console.log('  visible:', imgProps.visible);
@@ -804,7 +804,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           console.log('  canvasHeight:', imgProps.canvasHeight);
           console.log('  bounds:', imgProps.bounds);
           console.log('  full imgProps:', JSON.stringify(imgProps, null, 2));
-          
+
           // [2025-01-30 22:35:00] 检查所有画布对象
           const allObjs = canvas.getObjects();
           console.log('[DesignLab] 🔍 All canvas objects:', allObjs.length, 'objects');
@@ -823,7 +823,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               isProductImage: obj === img,
             });
           });
-          
+
           // [2025-01-30 22:35:00] 检查画布元素的样式
           const canvasElement = canvas.getElement();
           if (canvasElement) {
@@ -846,7 +846,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             console.log('  zIndex:', canvasStyle.zIndex);
             console.log('  position:', canvasStyle.position);
           }
-          
+
           // [2025-01-30 22:35:00] 检查画布容器的样式
           const canvasContainer = canvasElement?.parentElement;
           if (canvasContainer) {
@@ -874,7 +874,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             console.log('  paddingTop:', containerStyle.paddingTop);
             console.log('  paddingBottom:', containerStyle.paddingBottom);
           }
-          
+
           // [2025-01-30 22:45:00] 检查所有父元素的位置
           let parent = canvasElement?.parentElement;
           let level = 0;
@@ -915,14 +915,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             parent = parent.parentElement;
             level++;
           }
-          
+
           // [2025-01-30 22:50:00] 检查是否有滚动容器需要滚动
           console.log('[DesignLab] 🔍 Scroll check:');
           let scrollParent = canvasElement?.parentElement;
           while (scrollParent) {
             const style = window.getComputedStyle(scrollParent);
             const hasScroll = (style.overflow === 'auto' || style.overflow === 'scroll' || style.overflowY === 'auto' || style.overflowY === 'scroll') &&
-                            (scrollParent.scrollHeight > scrollParent.clientHeight);
+              (scrollParent.scrollHeight > scrollParent.clientHeight);
             if (hasScroll) {
               console.log(`  Scrollable parent found (${scrollParent.className || scrollParent.tagName}):`, {
                 scrollHeight: scrollParent.scrollHeight,
@@ -934,7 +934,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             }
             scrollParent = scrollParent.parentElement;
           }
-          
+
           // [2025-01-30 22:45:00] 检查视口位置
           console.log('[DesignLab] 🔍 Viewport check:');
           console.log('  window.innerHeight:', window.innerHeight);
@@ -943,7 +943,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           console.log('  window.scrollX:', window.scrollX);
           console.log('  document.documentElement.scrollTop:', document.documentElement.scrollTop);
           console.log('  document.documentElement.scrollHeight:', document.documentElement.scrollHeight);
-          
+
           if (!isOnCanvas) {
             console.error('[DesignLab] ❌ ERROR: Product image is not on canvas!');
           } else if (!img.visible || img.opacity === 0) {
@@ -955,7 +955,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             console.log('[DesignLab] ✅ Product image is on canvas and visible');
           }
         }
-        
+
         // [2025-01-30 21:55:00] 释放加载锁（在成功返回前）
         isLoadingBackgroundRef.current = false;
         return; // 成功加载，退出
@@ -971,7 +971,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       }
       // 继续使用旧方法（锁会在旧方法结束时释放）
     }
-    
+
     // [2025-01-31 16:55:00] 旧方法：检查是否正在加载，避免重复加载（已经在上面检查过，这里作为双重保险）
     const imageKeyOld = `${view}-${productInfoRef.current?.color || 'White'}-${productInfoRef.current?.baseImages?.[view] || ''}`;
     if (backgroundImageLoadedRef.current === imageKeyOld && backgroundImageRef.current) {
@@ -980,13 +980,13 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       isLoadingBackgroundRef.current = false;
       return;
     }
-    
+
     // [2025-01-30 16:30:00] 移除旧背景
     // [2025-01-30 21:55:00] 修复：只移除不是产品图片的背景（避免移除 productImageLayer 创建的图片）
     if (backgroundImageRef.current) {
       const objName = (backgroundImageRef.current as any).name || '';
       const isProductImage = objName?.startsWith('product-image-');
-      
+
       // 如果是产品图片，不应该在这里移除（由 productImageLayer 管理）
       if (isProductImage) {
         console.log('[DesignLab] Skipping removal of product image (managed by productImageLayer):', objName);
@@ -994,7 +994,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         isLoadingBackgroundRef.current = false;
         return; // 如果是产品图片，直接返回，不继续使用旧方法
       }
-      
+
       const objLayerType = (backgroundImageRef.current as any).data?.layerType;
       console.log('[DesignLab] 🗑️ Removing old background image (non-product):', {
         objName,
@@ -1013,7 +1013,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     // [2025-01-31 16:30:00] 修复：使用 ref 访问最新的 productInfo，避免依赖导致无限循环
     // [2025-01-30 21:55:00] viewKey 和 currentProductInfo 已在上面定义，这里直接使用
     let imageUrl: string;
-    
+
     if (currentProductInfo?.baseImages?.[viewKey]) {
       // 如果产品信息中有图片 URL，直接使用
       imageUrl = currentProductInfo.baseImages[viewKey];
@@ -1023,7 +1023,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       // 注意：这里是同步调用，所以先使用静态生成，后续可以优化为异步
       imageUrl = getDefaultProductImageUrl(currentProductInfo.color, viewKey);
       console.log('[DesignLab] Using default product image URL for color:', currentProductInfo.color, 'view:', viewKey, imageUrl);
-      
+
       // [2025-01-30 23:55:00] 异步尝试从 API 获取并更新（不阻塞当前加载）
       // [2025-01-31 16:30:00] 修复：使用函数式更新，避免依赖 productInfo 导致无限循环
       if (typeof window !== 'undefined' && currentProductInfo.color) {
@@ -1053,14 +1053,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       imageUrl = getDefaultProductImageUrl(defaultColor, viewKey);
       console.log('[DesignLab] No productInfo or color, using default White product image:', imageUrl);
     }
-    
+
     // [2025-01-31 14:00:00] 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
     // [2025-01-31 16:00:00] 修复：添加完善的错误处理，确保图片加载失败时不会报错
     console.log('[DesignLab] Loading background image:', imageUrl);
-    
+
     let imageLoaded = false;
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     // [2025-01-31 16:00:00] 图片加载成功回调
     const onImageLoaded = (fabricImg: fabric.Image | null) => {
       if (timeoutId) {
@@ -1068,15 +1068,15 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         timeoutId = null;
       }
       imageLoaded = true;
-      
+
       if (!fabricImg || !canvas) {
         console.error('[DesignLab] Failed to create fabric image or canvas not available');
         loadFallbackImage(viewKey, canvas);
         return;
       }
-      
+
       console.log('[DesignLab] Background image loaded successfully:', imageUrl, 'Dimensions:', fabricImg.width, 'x', fabricImg.height);
-      
+
       try {
         // [2025-01-31 15:30:00] 设置图片属性，确保底图不可选择和不可交互，但始终显示在最底层
         // [2025-01-31 18:00:00] 统一使用 center 原点
@@ -1088,7 +1088,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           originX: 'center', // [2025-01-31 18:00:00] 统一使用 center 原点以实现真正的居中
           originY: 'center',
         });
-        
+
         // [2025-01-31 18:00:00] 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
         const fit = calculateImageFit({
           canvasWidth: CANVAS_WIDTH,
@@ -1099,7 +1099,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           safeAreaHeight: 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
           fit: 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
-        
+
         // [2025-01-31 18:00:00] 应用 fit 结果（居中 + 缩放）
         fabricImg.scale(fit.scale);
         fabricImg.set({
@@ -1109,7 +1109,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           originY: 'center',
         });
         fabricImg.setCoords();
-        
+
         // [2025-01-30 16:30:00] 移除旧背景
         if (backgroundImageRef.current) {
           const objName = (backgroundImageRef.current as any).name || 'unnamed';
@@ -1123,9 +1123,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvas.remove(backgroundImageRef.current);
           backgroundImageRef.current = null;
         }
-        
+
         canvas.add(fabricImg);
-        
+
         // [2025-01-30 16:30:00] 移动到最底层，确保所有功能（上传图片、文字、art）都能在底图上操作
         // [2025-01-30 22:25:00] 修复：Fabric.js v6 使用 sendObjectToBack
         try {
@@ -1154,7 +1154,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             canvas.renderAll();
           }
         }
-        
+
         backgroundImageRef.current = fabricImg;
         // [2025-01-31 16:55:00] 标记图片已加载，避免重复加载
         const currentImageKey = `${viewKey}-${productInfoRef.current?.color || 'White'}-${imageUrl}`;
@@ -1169,7 +1169,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         loadFallbackImage(viewKey, canvas);
       }
     };
-    
+
     // [2025-01-31 16:00:00] 图片加载失败回调
     const onImageError = (error: any) => {
       if (timeoutId) {
@@ -1180,7 +1180,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.error('[DesignLab] Failed to load background image from URL:', imageUrl, error);
       loadFallbackImage(viewKey, canvas);
     };
-    
+
     // [2025-01-31 14:00:00] 设置超时，如果 10 秒内没加载成功，使用占位图
     timeoutId = setTimeout(() => {
       if (!imageLoaded && !backgroundImageRef.current) {
@@ -1188,14 +1188,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         loadFallbackImage(viewKey, canvas);
       }
     }, 10000);
-    
+
     // [2025-01-31 16:00:00] 使用 try-catch 包装 fromURL 调用，确保错误被捕获
     // [2025-01-31 16:50:00] 修复：使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
     console.log('[DesignLab] Loading image using native Image object:', imageUrl);
-    
+
     const imgElement = new Image();
     imgElement.crossOrigin = 'anonymous';
-    
+
     imgElement.onload = () => {
       console.log('[DesignLab] ✅ Native Image loaded successfully, dimensions:', imgElement.width, 'x', imgElement.height);
       try {
@@ -1213,12 +1213,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         onImageError(error);
       }
     };
-    
+
     imgElement.onerror = (error) => {
       console.error('[DesignLab] Native Image load error:', error);
       onImageError(error);
     };
-    
+
     // 开始加载图片
     try {
       imgElement.src = imageUrl;
@@ -1263,12 +1263,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     setLoadingProduct(true);
     try {
       const data = await productsApi.getByVariant(variantId);
-      
+
       // [2025-12-08 23:30:00] 检查是否有默认图片
       const hasDefaultImage = data.baseImages?.front || data.baseImages?.back || data.baseImages?.sleeve;
-      
+
       setProductInfo(data);
-      
+
       // [2025-01-30 19:30:00] 使用 API 返回的颜色详细信息
       if (data.colorDetails && data.colorDetails.length > 0) {
         // [2025-01-30 19:30:00] API 已返回颜色详细信息，直接使用
@@ -1276,7 +1276,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       } else if (data.variants && Array.isArray(data.variants)) {
         // [2025-01-30 19:30:00] 如果 API 没有返回 colorDetails，从变体数据构建
         const colorMap = new Map<string, { hex: string; sizes: Set<string>; isAvailable: boolean }>();
-        
+
         data.variants.forEach((variant: any) => {
           if (variant.color) {
             const colorName = variant.color;
@@ -1296,7 +1296,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             }
           }
         });
-        
+
         const colors: ProductColor[] = data.colors.map((colorName) => {
           const colorInfo = colorMap.get(colorName) || {
             hex: '#cccccc',
@@ -1321,13 +1321,13 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         }));
         setProductColors(colors);
       }
-      
+
       // [2025-12-08 23:30:00] 检查画布是否有用户内容
       const hasUserContent = fabricCanvasRef.current && fabricCanvasRef.current.getObjects().some((obj: fabric.Object) => {
         const objName = (obj as any).name || '';
         return objName && objName !== 'background';
       });
-      
+
       // [2025-12-08 23:30:00] 如果没有用户内容且有默认图片，显示默认图片
       if (!hasUserContent && hasDefaultImage && fabricCanvasRef.current) {
         // [2025-12-08 23:30:00] 埋点：显示默认图片
@@ -1341,7 +1341,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-01-30 19:30:00] 更新背景图片（即使有用户内容，也要更新背景）
         loadBackgroundImage(currentView);
       }
-      
+
       // [2025-12-08 23:30:00] 埋点：设计器打开成功
       analytics.track('designer_open_success', {
         variantId: variantId,
@@ -1351,11 +1351,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       });
     } catch (error: any) {
       console.error('[DesignLab] Error loading product info:', error);
-      
+
       // [2025-12-08 23:30:00] 错误处理：如果获取默认图失败，使用占位图
       const errorMessage = error?.message || 'Unknown error';
       const isNotFound = errorMessage.includes('404') || errorMessage.includes('not found');
-      
+
       if (isNotFound) {
         // [2025-12-08 23:30:00] 埋点：variantId不存在
         analytics.track('designer_open_failed_missing_variant', {
@@ -1369,7 +1369,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           variantId: variantId,
           error: errorMessage,
         });
-        
+
         // 使用占位图
         const placeholderImage = '/assets/placeholder.png';
         const fallbackProductInfo: ProductInfo = {
@@ -1386,11 +1386,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           gallery: [],
         };
         setProductInfo(fallbackProductInfo);
-        
+
         if (fabricCanvasRef.current) {
           loadBackgroundImage(currentView);
         }
-        
+
         showWarningToast('Unable to load product image. Using placeholder image.');
       }
     } finally {
@@ -1404,7 +1404,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     const objects = canvas.getObjects()
       .filter((obj: fabric.Object) => obj.name !== 'background') // 排除背景图
       .map((obj: fabric.Object) => obj.toJSON(['name', 'data']));
-    
+
     return {
       size: { width: canvas.width || CANVAS_WIDTH, height: canvas.height || CANVAS_HEIGHT },
       objects
@@ -1422,21 +1422,21 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.warn('[DesignLab] Fabric not loaded yet, cannot restore canvas snapshot');
       return;
     }
-    
+
     const fabric = fabricRef.current;
-    
+
     // [2025-12-11 23:59:30] 编辑会话保护：如果正在编辑对象，跳过快照清理
     if (isEditingObjectRef.current) {
       console.log('[DesignLab] Skipping snapshotToCanvas while editing object (protect editing object from stale snapshot overwrite)');
       return;
     }
-    
+
     // [2025-12-11 23:59:30] 获取当前活动对象，在编辑会话期间保护它
     const activeObject = canvas.getActiveObject();
     const isActiveText = activeObject && (activeObject.type === 'i-text' || activeObject.type === 'textbox');
     const currentPanel = toolPanelTypeRef.current;
     const isEditTextPanel = currentPanel === 'edit-text';
-    
+
     // [2025-01-30 21:55:00] 修复：清除现有对象（保留背景、产品图片和上传图片）
     // [2025-01-31 19:35:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
     // [2025-12-11 23:59:30] 重要：在编辑文本面板期间，保护当前活动的文本对象
@@ -1444,26 +1444,26 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       const objName = (obj as any).name || '';
       const objLayerType = (obj as any).data?.layerType;
       const isUploadImage = objLayerType === 'upload';
-      
+
       // [2025-12-11 23:59:30] 编辑会话保护：如果对象是当前活动的文本对象，且正在编辑面板，则保护它
       if (isEditTextPanel && isActiveText && obj === activeObject) {
         console.log('[DesignLab] Protecting active text object during edit session:', objName);
         return false;
       }
-      
+
       // [2025-01-31 19:35:00] 保留背景、产品图片和上传图片
       // [2025-12-19 22:45:00] 修复：保留debug标记对象（__debug_开头的对象），用于视觉验证
       // [2025-12-19 23:00:00] 修复：保留debug基准线（__debug_horizontal_line和__debug_vertical_line）
       const isDebugMarker = objName.startsWith('__debug_');
-      return objName !== 'background' && 
-             !objName.startsWith('product-image-') && 
-             !isUploadImage && 
-             !isDebugMarker; // 重要：不移除上传图片、debug标记和debug基准线
+      return objName !== 'background' &&
+        !objName.startsWith('product-image-') &&
+        !isUploadImage &&
+        !isDebugMarker; // 重要：不移除上传图片、debug标记和debug基准线
     });
-    
+
     // [2025-12-11 23:59:30] 标记删除来源为快照清理
     removalContextRef.current = 'snapshot-cleanup';
-    
+
     objectsToRemove.forEach((obj: fabric.Object) => {
       const objName = (obj as any).name || 'unnamed';
       const objLayerType = (obj as any).data?.layerType;
@@ -1475,7 +1475,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       });
       canvas.remove(obj);
     });
-    
+
     // [2025-12-11 23:59:30] 重置删除来源标记
     removalContextRef.current = 'unknown';
 
@@ -1518,7 +1518,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
   // [2025-01-31 13:00:00] 根据 designlab-index.jpeg，移除依赖 fabricCanvasRef.current 的 useEffect
   // 因为 ref 不能作为依赖项，会导致问题。改为使用 canvasInitialized 状态标志
-  
+
   // [2025-01-30 23:55:00] 当 productInfo 更新后，重新加载背景图片
   // [2025-01-31 16:30:00] 修复：使用 ref 跟踪，避免无限循环
   // [2025-01-31 16:55:00] 修复：loadBackgroundImage 内部已经检查重复加载，这里只需要检查 productInfo 是否真的变化了
@@ -1530,14 +1530,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         console.log('[DesignLab] Background image is loading, skipping trigger from useEffect');
         return;
       }
-      
+
       // [2025-01-31 16:55:00] 检查是否已经加载过当前视图的图片，避免重复加载
       const imageKey = `${currentView}-${productInfo.color}-${productInfo.baseImages?.[currentView] || ''}`;
       if (backgroundImageLoadedRef.current === imageKey) {
         console.log('[DesignLab] ProductInfo updated but image already loaded, skipping:', imageKey);
         return;
       }
-      
+
       console.log('[DesignLab] ProductInfo updated, reloading background image');
       // [2025-01-31 16:55:00] loadBackgroundImage 内部会检查并标记已加载
       loadBackgroundImage(currentView);
@@ -1554,7 +1554,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     }
     // 如果已经是激活状态，保持激活（不设置为 null）
     setShowGuidePanel(false);
-    
+
     // [2025-01-30 17:00:00] 根据工具类型切换工具面板
     switch (tool) {
       case 'upload':
@@ -1638,14 +1638,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         if (texts.length === 0 || view === 'zoom') continue;
 
         const targetView = view as 'front' | 'back' | 'sleeve';
-        
+
         // [2025-01-30 20:00:00] 切换到目标视图（如果需要）
         if (targetView !== currentView) {
           setView(targetView);
           setCurrentView(targetView);
           // [2025-01-30 20:00:00] 等待视图切换和画布加载完成
           await new Promise(resolve => setTimeout(resolve, 100));
-          
+
           // [2025-01-30 20:00:00] 加载目标视图的画布数据
           const targetViewCanvas = viewCanvases[targetView];
           if (targetViewCanvas && fabricCanvasRef.current) {
@@ -1658,7 +1658,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-01-30 20:00:00] 添加文本对象到当前画布
         if (fabricCanvasRef.current) {
           const canvas = fabricCanvasRef.current;
-          
+
           texts.forEach((textData, textIndex) => {
             // [2025-01-27 20:30:00] 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
             const textObj = new fabric.IText(textData.text, {
@@ -1721,7 +1721,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     } catch (error) {
       console.error('[DesignLab] Error adding names and numbers:', error);
       alert('Failed to add names and numbers: ' + (error as Error).message);
-      
+
       // [2025-01-30 20:00:00] 出错时恢复原始视图
       if (originalView !== currentView) {
         setView(originalView);
@@ -1743,16 +1743,16 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
     try {
       console.log('[DesignLab] Changing color to:', colorName);
-      
+
       // [2025-01-30 19:30:00] 从当前产品信息中查找对应颜色的变体
       // 如果 productInfo 包含 variants 数据，直接使用
       let targetVariantId: string | null = null;
-      
+
       // [2025-01-30 19:30:00] 尝试从 API 返回的变体数据中查找
       const productData = productInfo as any;
       if (productData.variants && Array.isArray(productData.variants)) {
         // 优先查找 M 尺寸的变体
-        const mVariant = productData.variants.find((v: any) => 
+        const mVariant = productData.variants.find((v: any) =>
           v.color === colorName && v.size === 'M'
         );
         if (mVariant) {
@@ -1765,15 +1765,15 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           }
         }
       }
-      
+
       // [2025-01-30 19:30:00] 如果找不到变体，尝试通过产品 slug 获取完整产品信息
       if (!targetVariantId) {
         try {
           const productSlug = productInfo.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
           const fullProduct = await productsApi.getBySlug(productSlug);
-          
+
           if (fullProduct.variants && Array.isArray(fullProduct.variants)) {
-            const mVariant = fullProduct.variants.find((v: any) => 
+            const mVariant = fullProduct.variants.find((v: any) =>
               v.color === colorName && v.size === 'M'
             );
             if (mVariant) {
@@ -1789,7 +1789,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           console.warn('[DesignLab] Failed to get product by slug:', error);
         }
       }
-      
+
       if (targetVariantId) {
         // [2025-01-30 19:30:00] 重新加载产品信息（使用新颜色的变体）
         await loadProductInfo(targetVariantId);
@@ -1803,14 +1803,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           color: colorName,
           baseImages: newBaseImages, // [2025-01-30 23:55:00] 立即更新图片 URL，确保颜色切换时图片立即更新
         });
-        
+
         // [2025-01-31 15:30:00] 立即更新所有视图的背景图片（front/back/sleeve），确保颜色变化时所有视图的底图都更新
         if (fabricCanvasRef.current) {
           // 更新当前视图的背景图片
           if (currentView !== 'zoom') {
             loadBackgroundImage(currentView);
           }
-          
+
           // [2025-01-31 15:30:00] 更新其他视图的背景图片（如果它们已经加载过）
           // 注意：这里只更新当前画布，其他视图会在切换时自动加载新图片
           // 但为了确保一致性，我们也可以在这里预加载
@@ -1852,7 +1852,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       alert('Canvas not initialized');
       return;
     }
-    
+
     // [2025-12-10] 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       alert('Design Lab is still loading. Please wait...');
@@ -1865,7 +1865,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     try {
       // [2025-01-31 01:00:00] 设置标志，防止选择清除事件在添加对象后立即触发
       isAddingObjectRef.current = true;
-      
+
       // [2025-12-11 23:15:00] 获取画布逻辑尺寸
       // Fabric.js 的坐标系统基于逻辑尺寸（1000x1200），而不是实际像素尺寸
       // 即使画布的实际像素尺寸是 1000 * devicePixelRatio，坐标系统仍然是 1000x1200
@@ -1874,18 +1874,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       const vpt = canvas.viewportTransform;
       const scaleX = vpt ? vpt[0] : 1;
       const scaleY = vpt ? vpt[3] : 1;
-      
+
       // [2025-12-11 23:15:00] 获取画布的逻辑尺寸
       // canvas.width 返回的是实际像素尺寸，需要除以缩放因子得到逻辑尺寸
       // 如果 viewport transform 是单位矩阵，scaleX 和 scaleY 都是 1
       const canvasLogicalWidth = (canvas.width || CANVAS_WIDTH) / scaleX;
       const canvasLogicalHeight = (canvas.height || CANVAS_HEIGHT) / scaleY;
-      
+
       // [2025-12-11 23:15:00] 计算画布逻辑中心点
       // 由于 originX 和 originY 设置为 'center'，文本对象的 left/top 应该指向中心点
       const centerX = canvasLogicalWidth / 2;
       const centerY = canvasLogicalHeight / 2;
-      
+
       // [2025-01-30 17:50:00] 创建 Fabric IText 对象
       // [2025-01-30 20:55:00] 修复：设置 zIndex 确保在文字图层（最上层）
       // [2025-01-27 20:30:00] 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
@@ -1918,19 +1918,19 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         originX: 'center',
         originY: 'center'
       });
-      
+
       // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
-      
+
       // [2025-01-30 22:15:00] 先添加对象到画布
       canvas.add(textObj);
-      
+
       // [2025-12-11 23:15:00] 确保坐标正确更新
       textObj.setCoords();
-      
+
       // [2025-01-30 22:25:00] 设置对象并选中，这会触发 selection:created 事件
       canvas.setActiveObject(textObj);
       canvas.renderAll();
-      
+
       // [2025-12-11 23:15:00] 添加调试日志，记录画布尺寸、文本位置和 viewport transform
       console.log('[DesignLab] Text added at center:', {
         canvasActualWidth: canvas.width,
@@ -1949,18 +1949,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         CANVAS_WIDTH,
         CANVAS_HEIGHT,
       });
-      
+
       // [2025-01-30 22:25:00] 设置状态，handleSelection 会识别文本对象并切换到 Edit Text 面板
       // 但我们也在这里设置，确保即使 handleSelection 没有正确触发，面板也会切换
       setSelectedText(textObj);
       setToolPanelType('edit-text');
-      
+
       console.log('[DesignLab] Text added and selected, panel should be edit-text');
 
       // [2025-01-30 17:50:00] 同步到 store
       const snapshot = canvasToSnapshot(canvas);
       setCanvas(snapshot, { pushHistory: true });
-      
+
       // [2025-01-31 01:00:00] 延迟重置标志，确保 selection:created 事件先触发
       setTimeout(() => {
         isAddingObjectRef.current = false;
@@ -1979,7 +1979,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
       return;
     }
-    
+
     // [2025-12-10] 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       showErrorToast('Design Lab is still loading. Please wait...');
@@ -1991,7 +1991,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     // [2025-01-30 18:10:00] 使用原生 Image 对象加载图片
     const imgElement = new Image();
     imgElement.crossOrigin = 'anonymous';
-    
+
     imgElement.onload = () => {
       try {
         // [2025-01-30 18:10:00] 创建 Fabric Image 对象
@@ -2013,21 +2013,21 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           centeredScaling: true,
           centeredRotation: true,
         });
-        
+
         // [2025-01-30 18:10:00] 智能缩放：缩放到画布的 30%
         const SCALE_RATIO = 0.3;
         const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
         const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
-        
+
         const originalWidth = fabricImage.width || 1;
         const originalHeight = fabricImage.height || 1;
-        
+
         const scaleX = targetMaxWidth / originalWidth;
         const scaleY = targetMaxHeight / originalHeight;
         const scale = Math.min(scaleX, scaleY, 1);
-        
+
         fabricImage.scale(scale);
-        
+
         // [2025-01-30 18:10:00] 居中位置
         fabricImage.set({
           left: CANVAS_WIDTH / 2,
@@ -2040,19 +2040,19 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             zIndex: 15, // [2025-01-27 20:30:00] 艺术素材图层 zIndex 为 15（介于上传图层的 10 和文字图层的 20 之间）
           },
         });
-        
+
         const canvas = fabricCanvasRef.current;
         if (canvas) {
           // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
-          
+
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
           canvas.renderAll();
-          
+
           // [2025-01-30 18:10:00] 自动切换到 Edit Art 面板
           setSelectedArt(fabricImage);
           setToolPanelType('edit-art');
-          
+
           // [2025-01-30 18:10:00] 同步到 store
           const snapshot = canvasToSnapshot(canvas);
           setCanvas(snapshot, { pushHistory: true });
@@ -2062,12 +2062,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         showErrorToast(`Failed to add art: ${(error as Error).message}`);
       }
     };
-    
-      imgElement.onerror = (error) => {
-        console.error('[DesignLab] ❌ Failed to load art image:', error);
+
+    imgElement.onerror = (error) => {
+      console.error('[DesignLab] ❌ Failed to load art image:', error);
       showErrorToast('Failed to load art image. Please try again.');
     };
-    
+
     imgElement.src = artUrl;
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
@@ -2104,11 +2104,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
     // [2025-01-30 20:35:00] 文件类型验证（支持 AVIF 和 WebP 格式）
     const allowedTypes = [
-      'image/jpeg', 
-      'image/jpg', 
-      'image/png', 
-      'image/gif', 
-      'image/webp', 
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
       'image/avif',  // [2025-01-30 20:35:00] 新增 AVIF 格式支持
       'image/svg+xml'
     ];
@@ -2125,7 +2125,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         const MIN_DPI = 300;
         const MIN_WIDTH = 1000; // 假设打印尺寸，可以根据实际需求调整
         const MIN_HEIGHT = 1000;
-        
+
         if (img.width < MIN_WIDTH || img.height < MIN_HEIGHT) {
           showWarningToast(
             `Low resolution detected (${img.width}×${img.height}px). Recommended: 300 DPI or higher for best print quality. You can continue, but we'll remind you again during checkout.`
@@ -2151,252 +2151,252 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.error('[DesignLab] ❌ FileReader error:', error);
       showErrorToast('Failed to read the file. Please try again or choose a different file.');
     };
-    
+
     reader.onload = (e) => {
       try {
         const imageUrl = e.target?.result as string;
-      console.log('[DesignLab] File read successfully, imageUrl length:', imageUrl?.length || 0);
-      
-      if (!imageUrl) {
-        console.error('[DesignLab] Image URL is empty');
-        showErrorToast('Failed to read the file. Please try again or choose a different file.');
-        return;
-      }
-        
+        console.log('[DesignLab] File read successfully, imageUrl length:', imageUrl?.length || 0);
+
+        if (!imageUrl) {
+          console.error('[DesignLab] Image URL is empty');
+          showErrorToast('Failed to read the file. Please try again or choose a different file.');
+          return;
+        }
+
         // [2025-12-07 15:30:00] 检查分辨率（异步，不阻塞上传）
         if (file.type !== 'image/svg+xml') {
           checkImageResolution(imageUrl);
         }
-      
-      // [2025-01-30 17:30:00] 使用原生 Image 对象加载图片
-      const imgElement = new Image();
-      // [2025-01-30 22:30:00] 对于 data URL，不需要设置 crossOrigin
-      if (!imageUrl.startsWith('data:')) {
-        imgElement.crossOrigin = 'anonymous';
-      }
-      
-      imgElement.onload = () => {
-        console.log('[DesignLab] Image loaded successfully:', {
-          naturalWidth: imgElement.naturalWidth,
-          naturalHeight: imgElement.naturalHeight,
-          width: imgElement.width,
-          height: imgElement.height
-        });
 
-        try {
-          // [2025-12-10] 检查 fabric 对象是否已加载
-          if (!fabricRef.current) {
-            console.error('[DesignLab] ❌ Fabric not loaded yet, cannot create Fabric Image');
-            showErrorToast('Canvas library not loaded. Please refresh the page.');
-            return;
-          }
-          const fabric = fabricRef.current;
-          
-          // [2025-01-30 22:10:00] 检查画布是否已初始化
-          if (!fabricCanvasRef.current) {
-            console.error('[DesignLab] ❌ Canvas not initialized, cannot add image');
-            showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
-            return;
-          }
-          
-          // [2025-01-30 22:20:00] 设置标志，防止 selection:cleared 事件在添加对象后立即触发导致图片被移除
-          isAddingObjectRef.current = true;
-          
-          // [2025-01-30 17:30:00] 创建 Fabric Image 对象
-          // [2025-01-30 20:55:00] 修复：设置 zIndex 确保在上传图层（高于产品图片）
-          const fabricImage = new fabric.Image(imgElement, {
-            // [2025-01-30 22:30:00] 确保图片对象是可选择和可编辑的
-            // [2025-01-27 20:30:00] 修复：添加完整的交互属性，确保图片对象可以拖动、缩放、旋转
-            selectable: true,
-            evented: true,
-            hasControls: true,
-            hasBorders: true,
-            // [2025-01-27 20:30:00] 锁定属性：允许所有变换操作
-            lockRotation: false,
-            lockScalingX: false,
-            lockScalingY: false,
-            lockUniScaling: false,
-            lockMovementX: false,
-            lockMovementY: false,
-            // [2025-01-27 20:30:00] 变换中心：使用中心点进行缩放和旋转
-            centeredScaling: true,
-            centeredRotation: true,
-            data: {
-              layerType: 'upload',
-              zIndex: 10, // [2025-01-30 20:55:00] 上传图层 zIndex 为 10（高于产品图片的 0）
-            },
-          });
-          
-          console.log('[DesignLab] Fabric Image created:', {
-            width: fabricImage.width,
-            height: fabricImage.height,
-            scaleX: fabricImage.scaleX,
-            scaleY: fabricImage.scaleY
-          });
-          
-          // [2025-01-30 17:30:00] 智能缩放：缩放到画布的 30%
-          const SCALE_RATIO = 0.3;
-          const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
-          const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
-          
-          const originalWidth = fabricImage.width || 1;
-          const originalHeight = fabricImage.height || 1;
-          
-          const scaleX = targetMaxWidth / originalWidth;
-          const scaleY = targetMaxHeight / originalHeight;
-          const scale = Math.min(scaleX, scaleY, 1);
-          
-          console.log('[DesignLab] Calculating scale:', {
-            originalWidth,
-            originalHeight,
-            targetMaxWidth,
-            targetMaxHeight,
-            scaleX,
-            scaleY,
-            finalScale: scale
-          });
-          
-          fabricImage.scale(scale);
-          
-          // [2025-01-30 17:30:00] 居中位置
-          fabricImage.set({
-            left: CANVAS_WIDTH / 2,
-            top: CANVAS_HEIGHT / 2,
-            originX: 'center',
-            originY: 'center',
-            name: `image_${Date.now()}`
-          });
-          
-          // [2025-01-30 22:30:00] 确保坐标已更新
-          fabricImage.setCoords();
-          
-          const canvas = fabricCanvasRef.current;
-          if (canvas) {
-            // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
-            
-            console.log('[DesignLab] Adding image to canvas:', {
-              canvasWidth: canvas.width,
-              canvasHeight: canvas.height,
-              imageLeft: fabricImage.left,
-              imageTop: fabricImage.top,
-              imageScale: scale
-            });
+        // [2025-01-30 17:30:00] 使用原生 Image 对象加载图片
+        const imgElement = new Image();
+        // [2025-01-30 22:30:00] 对于 data URL，不需要设置 crossOrigin
+        if (!imageUrl.startsWith('data:')) {
+          imgElement.crossOrigin = 'anonymous';
+        }
 
-            // [2025-01-31 19:15:00] 1. 先添加对象到画布
-            canvas.add(fabricImage);
-            canvas.renderAll();
-            
-            // [2025-01-31 19:15:00] 验证图片是否真的在画布上
-            const allObjects = canvas.getObjects();
-            const addedImage = allObjects.find((obj: any) => obj === fabricImage);
-            
-            if (!addedImage) {
-              console.error('[DesignLab] ❌ Image was not found on canvas after adding!');
-              showErrorToast('Failed to add image to canvas. Please try again.');
-              isAddingObjectRef.current = false;
+        imgElement.onload = () => {
+          console.log('[DesignLab] Image loaded successfully:', {
+            naturalWidth: imgElement.naturalWidth,
+            naturalHeight: imgElement.naturalHeight,
+            width: imgElement.width,
+            height: imgElement.height
+          });
+
+          try {
+            // [2025-12-10] 检查 fabric 对象是否已加载
+            if (!fabricRef.current) {
+              console.error('[DesignLab] ❌ Fabric not loaded yet, cannot create Fabric Image');
+              showErrorToast('Canvas library not loaded. Please refresh the page.');
               return;
             }
-            
-            console.log('[DesignLab] ✅ Image added to canvas successfully:', {
-              objectCount: allObjects.length,
-              imageName: fabricImage.name,
-              imagePosition: { left: fabricImage.left, top: fabricImage.top },
-              imageScale: scale,
-              canvasSize: { width: canvas.width, height: canvas.height },
-              imageIndex: allObjects.indexOf(fabricImage),
+            const fabric = fabricRef.current;
+
+            // [2025-01-30 22:10:00] 检查画布是否已初始化
+            if (!fabricCanvasRef.current) {
+              console.error('[DesignLab] ❌ Canvas not initialized, cannot add image');
+              showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
+              return;
+            }
+
+            // [2025-01-30 22:20:00] 设置标志，防止 selection:cleared 事件在添加对象后立即触发导致图片被移除
+            isAddingObjectRef.current = true;
+
+            // [2025-01-30 17:30:00] 创建 Fabric Image 对象
+            // [2025-01-30 20:55:00] 修复：设置 zIndex 确保在上传图层（高于产品图片）
+            const fabricImage = new fabric.Image(imgElement, {
+              // [2025-01-30 22:30:00] 确保图片对象是可选择和可编辑的
+              // [2025-01-27 20:30:00] 修复：添加完整的交互属性，确保图片对象可以拖动、缩放、旋转
+              selectable: true,
+              evented: true,
+              hasControls: true,
+              hasBorders: true,
+              // [2025-01-27 20:30:00] 锁定属性：允许所有变换操作
+              lockRotation: false,
+              lockScalingX: false,
+              lockScalingY: false,
+              lockUniScaling: false,
+              lockMovementX: false,
+              lockMovementY: false,
+              // [2025-01-27 20:30:00] 变换中心：使用中心点进行缩放和旋转
+              centeredScaling: true,
+              centeredRotation: true,
+              data: {
+                layerType: 'upload',
+                zIndex: 10, // [2025-01-30 20:55:00] 上传图层 zIndex 为 10（高于产品图片的 0）
+              },
             });
-            
-            // [2025-01-31 19:15:00] 2. 使用 requestAnimationFrame 确保渲染完成后再选中对象
-            // 这样可以确保 selection:created 事件正确触发
-            console.log('[DesignLab] Scheduling setActiveObject in requestAnimationFrame');
-            requestAnimationFrame(() => {
-              console.log('[DesignLab] Executing setActiveObject for uploaded image');
-              // [2025-01-31 19:15:00] 选中对象，这会触发 selection:created 事件
-              canvas.setActiveObject(fabricImage);
-              canvas.renderAll();
-              
-              // [2025-01-31 19:15:00] 3. 在下一个帧设置状态和切换面板，确保 selection:created 事件先处理
-              requestAnimationFrame(() => {
-                console.log('[DesignLab] Setting selectedImage and switching to edit-upload panel');
-                // [2025-01-30 17:30:00] 自动切换到 Edit Upload 面板
-                setSelectedImage(fabricImage);
-                setToolPanelType('edit-upload');
-                
-                // [2025-01-31 19:15:00] 强制触发图层列表更新
-                console.log('[DesignLab] Triggering handleCanvasUpdate to refresh layer list');
-                handleCanvasUpdate();
-                
-                console.log('[DesignLab] ✅ Image selected and panel switched to edit-upload, layer list should update');
+
+            console.log('[DesignLab] Fabric Image created:', {
+              width: fabricImage.width,
+              height: fabricImage.height,
+              scaleX: fabricImage.scaleX,
+              scaleY: fabricImage.scaleY
+            });
+
+            // [2025-01-30 17:30:00] 智能缩放：缩放到画布的 30%
+            const SCALE_RATIO = 0.3;
+            const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
+            const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
+
+            const originalWidth = fabricImage.width || 1;
+            const originalHeight = fabricImage.height || 1;
+
+            const scaleX = targetMaxWidth / originalWidth;
+            const scaleY = targetMaxHeight / originalHeight;
+            const scale = Math.min(scaleX, scaleY, 1);
+
+            console.log('[DesignLab] Calculating scale:', {
+              originalWidth,
+              originalHeight,
+              targetMaxWidth,
+              targetMaxHeight,
+              scaleX,
+              scaleY,
+              finalScale: scale
+            });
+
+            fabricImage.scale(scale);
+
+            // [2025-01-30 17:30:00] 居中位置
+            fabricImage.set({
+              left: CANVAS_WIDTH / 2,
+              top: CANVAS_HEIGHT / 2,
+              originX: 'center',
+              originY: 'center',
+              name: `image_${Date.now()}`
+            });
+
+            // [2025-01-30 22:30:00] 确保坐标已更新
+            fabricImage.setCoords();
+
+            const canvas = fabricCanvasRef.current;
+            if (canvas) {
+              // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
+
+              console.log('[DesignLab] Adding image to canvas:', {
+                canvasWidth: canvas.width,
+                canvasHeight: canvas.height,
+                imageLeft: fabricImage.left,
+                imageTop: fabricImage.top,
+                imageScale: scale
               });
-            });
-            
-            // [2025-01-30 23:30:00] 保存到 Recent Uploads
-            const uploadId = `upload_${Date.now()}`;
-            const thumbnail = imageUrl; // 使用原始图片 URL 作为缩略图
-            setRecentUploads(prev => {
-              // 限制最多保存 10 个最近上传
-              const newUploads = [{ id: uploadId, url: imageUrl, thumbnail }, ...prev];
-              return newUploads.slice(0, 10);
-            });
-            
-            // [2025-12-08] 保存 uploadId 以便评分时使用
-            setCurrentUploadId(uploadId);
-            
-            // [2025-01-30 17:30:00] 同步到 store（在上传成功后立即同步，不等待选中）
-            const snapshot = canvasToSnapshot(canvas);
-            setCanvas(snapshot, { pushHistory: true });
-            
-            console.log('[DesignLab] Image upload completed successfully');
-            
-            // [2025-12-08] 埋点：上传成功
-            analytics.track('upload_success', {
-              uploadId: uploadId,
-              fileSize: file.size,
-              fileType: file.type,
-            });
-            
-            // [2025-12-08] 上传成功提示
-            showSuccessToast(`Image "${file.name}" uploaded successfully!`);
-            
-            // [2025-01-31 19:15:00] 延长延迟重置标志，确保 selection:created 事件先触发，并且给用户足够的时间与对象交互
-            // 从300ms延长到500ms，给更多时间让 selection:created 事件处理完成
-            setTimeout(() => {
+
+              // [2025-01-31 19:15:00] 1. 先添加对象到画布
+              canvas.add(fabricImage);
+              canvas.renderAll();
+
+              // [2025-01-31 19:15:00] 验证图片是否真的在画布上
+              const allObjects = canvas.getObjects();
+              const addedImage = allObjects.find((obj: any) => obj === fabricImage);
+
+              if (!addedImage) {
+                console.error('[DesignLab] ❌ Image was not found on canvas after adding!');
+                showErrorToast('Failed to add image to canvas. Please try again.');
+                isAddingObjectRef.current = false;
+                return;
+              }
+
+              console.log('[DesignLab] ✅ Image added to canvas successfully:', {
+                objectCount: allObjects.length,
+                imageName: fabricImage.name,
+                imagePosition: { left: fabricImage.left, top: fabricImage.top },
+                imageScale: scale,
+                canvasSize: { width: canvas.width, height: canvas.height },
+                imageIndex: allObjects.indexOf(fabricImage),
+              });
+
+              // [2025-01-31 19:15:00] 2. 使用 requestAnimationFrame 确保渲染完成后再选中对象
+              // 这样可以确保 selection:created 事件正确触发
+              console.log('[DesignLab] Scheduling setActiveObject in requestAnimationFrame');
+              requestAnimationFrame(() => {
+                console.log('[DesignLab] Executing setActiveObject for uploaded image');
+                // [2025-01-31 19:15:00] 选中对象，这会触发 selection:created 事件
+                canvas.setActiveObject(fabricImage);
+                canvas.renderAll();
+
+                // [2025-01-31 19:15:00] 3. 在下一个帧设置状态和切换面板，确保 selection:created 事件先处理
+                requestAnimationFrame(() => {
+                  console.log('[DesignLab] Setting selectedImage and switching to edit-upload panel');
+                  // [2025-01-30 17:30:00] 自动切换到 Edit Upload 面板
+                  setSelectedImage(fabricImage);
+                  setToolPanelType('edit-upload');
+
+                  // [2025-01-31 19:15:00] 强制触发图层列表更新
+                  console.log('[DesignLab] Triggering handleCanvasUpdate to refresh layer list');
+                  handleCanvasUpdate();
+
+                  console.log('[DesignLab] ✅ Image selected and panel switched to edit-upload, layer list should update');
+                });
+              });
+
+              // [2025-01-30 23:30:00] 保存到 Recent Uploads
+              const uploadId = `upload_${Date.now()}`;
+              const thumbnail = imageUrl; // 使用原始图片 URL 作为缩略图
+              setRecentUploads(prev => {
+                // 限制最多保存 10 个最近上传
+                const newUploads = [{ id: uploadId, url: imageUrl, thumbnail }, ...prev];
+                return newUploads.slice(0, 10);
+              });
+
+              // [2025-12-08] 保存 uploadId 以便评分时使用
+              setCurrentUploadId(uploadId);
+
+              // [2025-01-30 17:30:00] 同步到 store（在上传成功后立即同步，不等待选中）
+              const snapshot = canvasToSnapshot(canvas);
+              setCanvas(snapshot, { pushHistory: true });
+
+              console.log('[DesignLab] Image upload completed successfully');
+
+              // [2025-12-08] 埋点：上传成功
+              analytics.track('upload_success', {
+                uploadId: uploadId,
+                fileSize: file.size,
+                fileType: file.type,
+              });
+
+              // [2025-12-08] 上传成功提示
+              showSuccessToast(`Image "${file.name}" uploaded successfully!`);
+
+              // [2025-01-31 19:15:00] 延长延迟重置标志，确保 selection:created 事件先触发，并且给用户足够的时间与对象交互
+              // 从300ms延长到500ms，给更多时间让 selection:created 事件处理完成
+              setTimeout(() => {
+                isAddingObjectRef.current = false;
+                console.log('[DesignLab] isAddingObjectRef reset after image upload');
+              }, 500);
+            } else {
+              console.error('[DesignLab] Canvas is null after image creation');
+              showErrorToast('Failed to add image to canvas. Please try again.');
               isAddingObjectRef.current = false;
-              console.log('[DesignLab] isAddingObjectRef reset after image upload');
-            }, 500);
-          } else {
-            console.error('[DesignLab] Canvas is null after image creation');
+            }
+          } catch (error) {
+            console.error('[DesignLab] ❌ Error in image upload handler:', error);
             showErrorToast('Failed to add image to canvas. Please try again.');
             isAddingObjectRef.current = false;
           }
-        } catch (error) {
-          console.error('[DesignLab] ❌ Error in image upload handler:', error);
-          showErrorToast('Failed to add image to canvas. Please try again.');
-          isAddingObjectRef.current = false;
-        }
-      };
-      
-      imgElement.onerror = (error) => {
+        };
+
+        imgElement.onerror = (error) => {
           console.error('[DesignLab] ❌ Image load error:', error);
           console.error('[DesignLab] Image URL (first 100 chars):', imageUrl?.substring(0, 100));
-        showErrorToast('Failed to load the image. The file may be corrupted. Please try a different file.');
-        
-        // [2025-12-08] 埋点：上传失败
-        analytics.track('upload_failed', {
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-          error: 'Image load error',
-        });
-      };
-      
-      imgElement.src = imageUrl;
+          showErrorToast('Failed to load the image. The file may be corrupted. Please try a different file.');
+
+          // [2025-12-08] 埋点：上传失败
+          analytics.track('upload_failed', {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            error: 'Image load error',
+          });
+        };
+
+        imgElement.src = imageUrl;
       } catch (error) {
         console.error('[DesignLab] ❌ Error in reader.onload:', error);
         showErrorToast('Failed to process the file. Please try again.');
       }
     };
-    
+
     reader.onerror = (error) => {
       console.error('[DesignLab] FileReader error:', error);
       showErrorToast('Failed to read the file. Please try again or choose a different file.');
@@ -2406,7 +2406,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.warn('[DesignLab] FileReader aborted');
       showWarningToast('File upload was cancelled.');
     };
-    
+
     reader.readAsDataURL(file);
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
@@ -2420,17 +2420,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
         const file = files[0];
         // [2025-01-30 20:35:00] 支持 AVIF 和 WebP 格式的拖拽上传
         const allowedTypes = [
-          'image/jpeg', 
-          'image/jpg', 
-          'image/png', 
-          'image/gif', 
-          'image/webp', 
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/gif',
+          'image/webp',
           'image/avif',  // [2025-01-30 20:35:00] 新增 AVIF 格式支持
           'image/svg+xml'
         ];
@@ -2475,10 +2475,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   // [2025-01-30 23:30:00] Recent Upload Click 处理
   const handleRecentUploadClick = useCallback((upload: { id: string; url: string; thumbnail: string }) => {
     if (!fabricCanvasRef.current) return;
-    
+
     const imgElement = new Image();
     imgElement.crossOrigin = 'anonymous';
-    
+
     imgElement.onload = () => {
       try {
         // [2025-12-10] 检查 fabric 对象是否已加载
@@ -2487,7 +2487,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           return;
         }
         const fabric = fabricRef.current;
-        
+
         const fabricImage = new fabric.Image(imgElement, {
           selectable: true,
           evented: true,
@@ -2505,18 +2505,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           top: CANVAS_HEIGHT / 2,
           name: `image_${Date.now()}`
         });
-        
+
         const canvas = fabricCanvasRef.current;
         if (canvas) {
           // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
-          
+
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
           canvas.renderAll();
-          
+
           setSelectedImage(fabricImage);
           setToolPanelType('edit-upload');
-          
+
           const snapshot = canvasToSnapshot(canvas);
           setCanvas(snapshot, { pushHistory: true });
         }
@@ -2525,11 +2525,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         alert('Failed to load recent upload');
       }
     };
-    
+
     imgElement.onerror = () => {
       alert('Failed to load recent upload image');
     };
-    
+
     imgElement.src = upload.url;
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
@@ -2554,25 +2554,54 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       setCanvas(snapshot, { pushHistory: true });
 
       let designId = currentDesignId;
-      
+
       // 如果还没有设计ID，先创建设计
       if (!designId) {
         let productVariantId = productInfo?.variantId;
-        if (productVariantId === 'default' && productInfo?.productId && productInfo.productId !== 'default') {
+
+        // [2025-01-31 03:00:00] Fix: Improve fallback logic for default/missing variant
+        if (!productVariantId || productVariantId === 'default') {
           try {
-            const productSlug = productInfo.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-            const productData = await productsApi.getBySlug(productSlug);
-            if (productData.variants && productData.variants.length > 0) {
-              productVariantId = productData.variants[0].id;
+            console.log('[DesignLab] Finding valid variant for save...');
+            // 1. Try by name/slug first if we have a name
+            let foundVariant = false;
+
+            if (productInfo?.productName && productInfo.productName !== 'Product') {
+              try {
+                const productSlug = productInfo.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                const productData = await productsApi.getBySlug(productSlug);
+                if (productData && productData.variants && productData.variants.length > 0) {
+                  productVariantId = productData.variants[0].id;
+                  foundVariant = true;
+                  console.log('[DesignLab] Found variant by slug:', productVariantId);
+                }
+              } catch (err) {
+                console.warn('[DesignLab] Failed to find product by slug:', err);
+              }
+            }
+
+            // 2. If not found, get ANY customizable product as fallback
+            if (!foundVariant) {
+              const products = await productsApi.list({ limit: 1 });
+              if (products.data && products.data.length > 0) {
+                // We need to get details to find variant
+                const fallbackProduct = await productsApi.getBySlug(products.data[0].slug);
+                if (fallbackProduct.variants && fallbackProduct.variants.length > 0) {
+                  productVariantId = fallbackProduct.variants[0].id;
+                  foundVariant = true;
+                  console.log('[DesignLab] Found fallback variant from list:', productVariantId);
+                }
+              }
+            }
+
+            if (!foundVariant) {
+              throw new Error('No valid product variant found');
             }
           } catch (error) {
-            console.warn('[DesignLab] Failed to get product variant:', error);
+            console.error('[DesignLab] Critical: Failed to resolve product variant for save:', error);
+            alert('Cannot save design: No valid product found. Please select a product first.');
+            return;
           }
-        }
-
-        if (!productVariantId || productVariantId === 'default') {
-          // 尝试使用默认variant
-          productVariantId = 'default';
         }
 
         const payload = {
@@ -2620,7 +2649,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       designId: currentDesignId,
       productId: productInfo?.productId,
     });
-    
+
     if (!fabricCanvasRef.current || !productInfo) {
       console.warn('[DesignLab] Cannot get price: canvas or productInfo not available');
       alert('Please ensure the canvas is loaded and a product is selected.');
@@ -2718,7 +2747,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       if (response.success && response.data) {
         setPriceQuote(response.data);
         console.log('[DesignLab] Price quote received:', response.data);
-        
+
         // [2025-12-08] 埋点：Get Price 完成
         analytics.track('get_price_completed', {
           designId: designId,
@@ -2739,7 +2768,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   // [2025-12-06 12:30:00] 处理数量变化并重新获取报价
   const handleQuantityChange = useCallback(async (newQuantity: number) => {
     setQuoteQuantity(newQuantity);
-    
+
     if (currentDesignId && showPriceModal && !priceLoading) {
       // 重新获取报价
       setPriceLoading(true);
@@ -2856,7 +2885,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       // [2025-12-19 22:00:00] 重置viewport（zoom退出后）
       const canvas = fabricCanvasRef.current;
       canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
-      
+
       // [2025-12-19 22:00:00] 重新应用product-image布局（确保zoom退出后底图居中）
       // 使用立即执行的async函数，因为useEffect回调不能是async
       (async () => {
@@ -2865,14 +2894,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const name = obj.name || '';
           return name.startsWith('product-image-');
         });
-        
+
         if (productImage) {
           try {
             const { loadProductImageLayer } = await import('@/design/canvas/layers/productImageLayer');
             // 获取view信息（从productImage的data中）
             const view = (productImage as any).data?.view || 'front';
             const colorName = (productImage as any).data?.imageOptions?.colorName || currentProductInfo?.color || 'White';
-            
+
             // 重新应用布局（通过loadProductImageLayer的内部逻辑，会复用existingImage并重新应用布局）
             const result = await loadProductImageLayer({
               canvas,
@@ -2889,12 +2918,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               safeAreaWidth: 0.9,
               safeAreaHeight: 0.9,
             });
-            
+
             console.log('[DesignLab] Reapplied product-image layout after zoom exit:', {
               success: result.success,
               view,
             });
-            
+
             // [2025-12-19 22:15:00] 验证zoom退出后的布局（用于确认修复）
             if (result.success && result.image) {
               const productImage = result.image;
@@ -2903,7 +2932,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               const leftDiff = Math.abs((productImage.left || 0) - centerX);
               const topDiff = Math.abs((productImage.top || 0) - centerY);
               const isCentered = leftDiff <= 2 && topDiff <= 2;
-              
+
               console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
               console.log('✅ [DesignLab] Zoom退出后布局恢复验证');
               console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -2945,7 +2974,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             // 保存到历史记录以便Undo
             const snapshot = canvasToSnapshot(canvas);
             setCanvas(snapshot, { pushHistory: true });
-            
+
             const objName = (activeObject as any).name || 'unnamed';
             const objLayerType = (activeObject as any).data?.layerType;
             console.log('[DesignLab] 🗑️ Removing active object (Delete key handler):', {
@@ -2956,11 +2985,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             });
             canvas.remove(activeObject);
             canvas.renderAll();
-            
+
             // 更新画布状态
             const newSnapshot = canvasToSnapshot(canvas);
             setCanvas(newSnapshot, { pushHistory: true });
-            
+
             e.preventDefault();
           }
         }
@@ -2975,12 +3004,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           return;
         }
         const fabric = fabricRef.current;
-        
+
         const objects = canvas.getObjects().filter((obj: fabric.Object) => {
           const objName = (obj as any).name || '';
           return objName !== 'background';
         });
-        
+
         if (objects.length > 0) {
           const selection = new fabric.ActiveSelection(objects, {
             canvas: canvas,
@@ -2988,7 +3017,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvas.setActiveObject(selection);
           canvas.renderAll();
         }
-        
+
         e.preventDefault();
         return;
       }
@@ -3013,7 +3042,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           return;
         }
         const fabric = fabricRef.current;
-        
+
         const clipboardData = (window as any).__fabricClipboard;
         if (clipboardData) {
           try {
@@ -3026,14 +3055,14 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
                   left: (obj.left || 0) + 20,
                   top: (obj.top || 0) + 20,
                 });
-                
+
                 // [2025-12-16 02:52:00] 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
                 const canvas = fabricCanvasRef.current;
-                
+
                 canvas.add(obj);
                 canvas.setActiveObject(obj);
                 canvas.renderAll();
-                
+
                 // 保存到历史记录
                 const snapshot = canvasToSnapshot(canvas);
                 setCanvas(snapshot, { pushHistory: true });
@@ -3090,7 +3119,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-12-10 18:40:00] 修复：获取实际的fabric对象
         // fabric包可能导出为 { fabric: ... } 或 { default: ... } 或直接导出
         const fabric = fabricModule.fabric || fabricModule.default || fabricModule;
-        
+
         // 验证fabric对象是否有效
         if (!fabric || typeof fabric.Canvas !== 'function') {
           throw new Error('Fabric.js module is not properly loaded. Canvas constructor is missing.');
@@ -3101,13 +3130,13 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
         // 使用 canvasEngine 初始化画布
         await canvasEngine.initialize(canvasElement, fabric);
-        
+
         // 获取画布实例
         const fabricCanvas = canvasEngine.getCanvas();
         if (!fabricCanvas) {
           throw new Error('Canvas engine failed to initialize');
         }
-        
+
         console.log('[DesignLab] Fabric canvas initialized successfully via canvasEngine');
 
         // [2025-01-30 23:30:00] Design Lab 4.0: canvasEngine 已处理高 DPI 适配和对象默认属性
@@ -3115,16 +3144,16 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         let addCount = 0;
         let removeCount = 0;
         const maxLogCount = 10; // 最多记录 10 次，避免日志过多
-        
+
         canvasEngine.on(CanvasEventType.OBJECT_ADDED, (event) => {
           addCount++;
           const obj = event.payload?.object;
           const objName = obj?.name || 'unnamed';
           const layerType = obj?.data?.layerType || 'unknown';
-          
+
           // [2025-01-30 22:15:00] 修复：使用 fabricCanvas 而不是未定义的 canvas
           const canvas = fabricCanvas;
-          
+
           // #region agent log
           debugLog({
             location: 'DesignLabClient.tsx:2290',
@@ -3133,18 +3162,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             hypothesisId: 'A,D',
           });
           // #endregion
-          
+
           if (addCount <= maxLogCount) {
-            console.log('[DesignLab] Object added:', { 
-              name: objName, 
+            console.log('[DesignLab] Object added:', {
+              name: objName,
               layerType,
               zIndex: obj?.data?.zIndex,
-              totalAdds: addCount 
+              totalAdds: addCount
             });
           } else if (addCount === maxLogCount + 1) {
             console.warn('[DesignLab] ⚠️ Object added count exceeded limit, suppressing further logs');
           }
-          
+
           // 检测循环：如果同一对象在短时间内被重复添加
           if (obj && objName.startsWith('product-image-')) {
             const removalCheck = objName + '-removal-check';
@@ -3173,22 +3202,22 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const objName = obj?.name || 'unnamed';
           const layerType = obj?.data?.layerType || 'unknown';
           const removalContext = removalContextRef.current;
-          
+
           // #region agent log
           debugLog({
             location: 'DesignLabClient.tsx:2315',
             message: 'OBJECT_REMOVED event',
-            data: { objName, layerType, zIndex: obj?.data?.zIndex, isProductImage: objName.startsWith('product-image-'), backgroundImageMatches: obj===backgroundImageRef.current, removalContext },
+            data: { objName, layerType, zIndex: obj?.data?.zIndex, isProductImage: objName.startsWith('product-image-'), backgroundImageMatches: obj === backgroundImageRef.current, removalContext },
             hypothesisId: 'A',
           });
           // #endregion
-          
+
           // [2025-12-11 23:59:30] 编辑会话保护：如果删除的是活动文本对象，且来源不是用户删除，则恢复对象
           const currentPanel = toolPanelTypeRef.current;
           const isText = obj && (obj.type === 'i-text' || obj.type === 'textbox');
           const isEditTextPanel = currentPanel === 'edit-text';
           const isActiveText = obj && fabricCanvas.getActiveObject() === null && selectedText === obj;
-          
+
           if (isText && isEditTextPanel && removalContext !== 'user-delete') {
             console.warn('[DesignLab] Prevent unintended removal during edit; restoring object:', {
               objName,
@@ -3203,10 +3232,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             removalContextRef.current = 'unknown';
             return;
           }
-          
+
           if (removeCount <= maxLogCount) {
-            console.log('[DesignLab] Object removed:', { 
-              name: objName, 
+            console.log('[DesignLab] Object removed:', {
+              name: objName,
               layerType,
               zIndex: obj?.data?.zIndex,
               totalRemoves: removeCount,
@@ -3215,19 +3244,19 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           } else if (removeCount === maxLogCount + 1) {
             console.warn('[DesignLab] ⚠️ Object removed count exceeded limit, suppressing further logs');
           }
-          
+
           // [2025-12-11 23:59:30] 仅在用户显式删除时才允许面板回退到 Home
           if (removalContext === 'user-delete' && isText && isEditTextPanel) {
             console.log('[DesignLab] User deleted text object, switching to home panel');
             setToolPanelType('home');
             setSelectedText(null);
           }
-          
+
           // 记录移除时间（用于检测循环）
           if (obj && objName.startsWith('product-image-')) {
             const removalCheck = objName + '-removal-check';
             (window as any)[removalCheck] = Date.now();
-            
+
             // 如果移除的是当前背景图片引用，清除引用
             if (obj === backgroundImageRef.current) {
               backgroundImageRef.current = null;
@@ -3242,7 +3271,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               // #endregion
             }
           }
-          
+
           // [2025-12-11 23:59:30] 重置删除来源标记
           removalContextRef.current = 'unknown';
         });
@@ -3250,8 +3279,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         canvasEngine.on(CanvasEventType.OBJECT_MODIFIED, (event) => {
           console.log('[DesignLab] Object modified:', event.payload);
           // 保存到历史记录
-              const snapshot = canvasToSnapshot(fabricCanvas);
-              setCanvas(snapshot, { pushHistory: true });
+          const snapshot = canvasToSnapshot(fabricCanvas);
+          setCanvas(snapshot, { pushHistory: true });
         });
 
         // [2025-01-30 23:30:00] Design Lab 4.0: 设置 fabricCanvasRef
@@ -3263,22 +3292,22 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           const layerType = (obj as any).data?.layerType;
           const name = (obj as any).name || '';
           const objType = obj.type;
-          
+
           // upload 对象：layerType === 'upload' 或 name 以 image_ 开头（排除 art_）
           if (layerType === 'upload' || (name.startsWith('image_') && !name.startsWith('art_'))) {
             return true;
           }
-          
+
           // text 对象：layerType === 'text' 或 type 是 i-text/text/textbox
           if (layerType === 'text' || objType === 'i-text' || objType === 'text' || objType === 'textbox' || name.startsWith('text_')) {
             return true;
           }
-          
+
           // art 对象：layerType === 'art' 或 name 以 art_ 开头
           if (layerType === 'art' || name.startsWith('art_')) {
             return true;
           }
-          
+
           return false;
         };
 
@@ -3309,9 +3338,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               },
             },
           });
-          
+
           console.log('[DesignLab] ✅ 通用角控件已注册（upload/text/art 三类对象）');
-          
+
           // [2025-12-16 02:50:00] 为现有对象应用角控件（如果 canvas 上已有对象）
           fabricCanvas.getObjects().forEach((obj) => {
             if (matcher(obj)) {
@@ -3339,11 +3368,11 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             // 让上传/添加流程的 setTimeout 来控制重置时机，避免时序问题
             // 只有在确认对象选择完成且不是正在添加的对象时，才重置标志
             // isAddingObjectRef 的重置由各自的添加流程控制（上传、文本、art）
-            
+
             const objType = activeObject.type;
             const objName = (activeObject as any).name || '';
             let newPanelType: ToolPanelType = 'home';
-            
+
             if (objType === 'image' && objName !== 'background') {
               if (objName.startsWith('art_')) {
                 newPanelType = 'edit-art';
@@ -3379,46 +3408,46 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             console.log('[DesignLab] Selection cleared but object is being added, ignoring');
             return;
           }
-          
+
           const activeObject = fabricCanvas.getActiveObject();
           // [2025-01-31 19:15:00] 如果有活动对象，不应该切换面板
           if (activeObject) {
             console.log('[DesignLab] Selection cleared but active object exists, ignoring');
             return;
           }
-          
+
           const currentPanel = toolPanelTypeRef.current;
-          
+
           // [2025-01-31 19:15:00] 如果当前在编辑面板，且有选中的对象，保持面板不切换
           // [2025-12-11 23:59:30] 增强：检查画布上是否还有文本对象，如果有则保持编辑面板
           if (currentPanel === 'edit-text' || currentPanel === 'edit-upload' || currentPanel === 'edit-art') {
             const hasSelectedText = selectedText !== null;
             const hasSelectedImage = selectedImage !== null;
             const hasSelectedArt = selectedArt !== null;
-            
+
             // [2025-12-11 23:59:30] 检查画布上是否还有文本对象（即使未选中）
-            const hasTextObjects = fabricCanvas.getObjects().some((obj: any) => 
+            const hasTextObjects = fabricCanvas.getObjects().some((obj: any) =>
               obj.type === 'i-text' || obj.type === 'textbox'
             );
-            
+
             if (hasSelectedText || hasSelectedImage || hasSelectedArt || (currentPanel === 'edit-text' && hasTextObjects)) {
               console.log('[DesignLab] Selection cleared but edit panel has selected object or text objects on canvas, keeping panel');
               return;
             }
           }
-          
+
           // [2025-01-31 19:15:00] 检查画布上是否有上传的图片（layerType: 'upload'），如果有则不应切换面板
           const allObjs = fabricCanvas.getObjects();
-          const hasUploadImages = allObjs.some((obj: any) => 
+          const hasUploadImages = allObjs.some((obj: any) =>
             (obj as any).data?.layerType === 'upload' || (obj as any).name?.startsWith('image_')
           );
-          
+
           // [2025-01-31 19:15:00] 如果画布上有上传的图片，且当前在 edit-upload 面板，保持面板
           if (hasUploadImages && currentPanel === 'edit-upload') {
             console.log('[DesignLab] Selection cleared but canvas has upload images and in edit-upload panel, keeping panel');
             return;
           }
-          
+
           // [2025-01-30 22:40:00] 调试：记录选择清除时的画布状态
           console.log('[DesignLab] 🔍 Selection cleared - canvas state:', {
             objectCount: allObjs.length,
@@ -3432,7 +3461,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             })),
             currentPanel,
           });
-          
+
           console.log('[DesignLab] Selection cleared, current panel:', currentPanel, '→ Home panel');
           setToolPanelType('home');
           setSelectedImage(null);
@@ -3446,7 +3475,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
         const drawSnapLines = () => {
           if (!snapLines.x && !snapLines.y) return;
-          
+
           const ctx = fabricCanvas.getContext();
           const vpt = fabricCanvas.viewportTransform;
           if (!vpt) return;
@@ -3500,7 +3529,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           // 检查与其他对象的对齐
           allObjects.forEach((obj) => {
             if (obj === movingObject || (obj as any).name === 'background') return;
-            
+
             const bounds = obj.getBoundingRect();
             const otherCenterX = bounds.left + bounds.width / 2;
             const otherCenterY = bounds.top + bounds.height / 2;
@@ -3587,7 +3616,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
         // [2025-12-08 23:30:00] 重写renderAll以包含安全区边界和吸附线
         const originalRenderAll = fabricCanvas.renderAll.bind(fabricCanvas);
-        fabricCanvas.renderAll = function() {
+        fabricCanvas.renderAll = function () {
           originalRenderAll();
           if (currentView !== 'zoom') {
             drawSafeArea();
@@ -3614,7 +3643,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             const objType = (removedObject as any).data?.layerType || 'unknown';
             const objStableKey = (removedObject as any).data?.stableKey;
             const timestamp = new Date().toISOString();
-            
+
             // [2025-01-31 19:30:00] 增强日志：记录移除的对象完整信息
             const objectInfo = {
               name: objName,
@@ -3634,17 +3663,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               scaleY: removedObject.scaleY,
               timestamp,
             };
-            
+
             console.log('[DesignLab] 🗑️ Object removed via fabric event:', objectInfo);
-            
+
             // [2025-01-31 19:30:00] 记录完整的调用栈
             const stackTrace = new Error().stack;
             console.log('[DesignLab] 📍 Removal call stack:', stackTrace?.split('\n').slice(1, 10).join('\n'));
-            
+
             // [2025-01-31 19:30:00] 检查移除前的画布状态（如果可能）
             const remainingObjs = fabricCanvas.getObjects();
             const beforeRemovalObjects = [...remainingObjs, removedObject]; // 重建移除前的列表
-            
+
             console.log('[DesignLab] 🔍 Removal context:', {
               beforeRemovalCount: beforeRemovalObjects.length,
               afterRemovalCount: remainingObjs.length,
@@ -3655,7 +3684,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               hasSelectedText: selectedText !== null,
               hasSelectedArt: selectedArt !== null,
             });
-            
+
             // [2025-01-30 22:40:00] 检查移除后的画布状态
             console.log('[DesignLab] 🔍 After removal - canvas state:', {
               objectCount: remainingObjs.length,
@@ -3670,7 +3699,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
                 stableKey: (obj as any).data?.stableKey || (obj as any).name,
               })),
             });
-            
+
             // [2025-01-30 22:40:00] 如果是上传图片被移除，记录详细警告
             if (objType === 'upload') {
               console.error('[DesignLab] ⚠️⚠️⚠️ UPLOAD IMAGE REMOVED! ⚠️⚠️⚠️', {
@@ -3746,7 +3775,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-12-10 18:40:00] 增强错误处理和日志记录
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
-        
+
         console.error('[DesignLab] Error initializing Fabric.js canvas:', {
           error: errorMessage,
           stack: errorStack,
@@ -3754,18 +3783,18 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           canvasElementAvailable: !!canvasRef.current,
           timestamp: new Date().toISOString(),
         });
-        
+
         // [2025-12-10 18:40:00] 提供更详细的错误信息
         if (errorMessage.includes('Canvas') || errorMessage.includes('fabric')) {
           showErrorToast('Failed to load design canvas library. Please refresh the page or check your internet connection.');
         } else {
           showErrorToast('Failed to initialize design canvas. Please refresh the page.');
         }
-        
+
         setCanvasInitialized(false);
         // [2025-12-10 18:40:00] 保存错误状态用于UI显示
         setCanvasInitError(error instanceof Error ? error : new Error(String(error)));
-        
+
         // [2025-12-10 18:40:00] 上报错误到监控系统（如果有）
         if (typeof window !== 'undefined' && (window as any).Sentry) {
           try {
@@ -3797,12 +3826,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       try {
         console.log('[DesignLab] Cleaning up canvas engine');
         canvasEngine.dispose();
-        } catch (error) {
+      } catch (error) {
         console.error('[DesignLab] Error cleaning up canvas engine:', error);
-        }
-        fabricCanvasRef.current = null;
-        fabricRef.current = null;
-        setCanvasInitialized(false);
+      }
+      fabricCanvasRef.current = null;
+      fabricRef.current = null;
+      setCanvasInitialized(false);
     };
   }, [canvasToSnapshot, setCanvas, getCurrentViewCanvas]); // [2025-01-30 23:30:00] Design Lab 4.0: 添加必要的依赖
 
@@ -3819,7 +3848,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         console.log('[DesignLab] Background image is loading, skipping trigger from canvasInitialized useEffect');
         return;
       }
-      
+
       console.log('[DesignLab] Canvas and productInfo ready, loading background image for view:', currentView);
       // [2025-01-31 15:30:00] 确保立即加载默认底图，不等待异步操作
       // [2025-01-31 16:55:00] loadBackgroundImage 内部会检查是否已加载，避免重复
@@ -3836,17 +3865,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     const loadDesignFromUrl = async () => {
       const designId = searchParams?.get('designId');
       const source = searchParams?.get('source') as 'cloud' | 'local' | null;
-      
+
       if (!designId) {
         return; // 没有 designId，跳过
       }
 
       try {
         console.log('[DesignLab] Loading design from URL:', { designId, source });
-        
+
         // [2025-01-31 00:10:00] 加载设计
         const result = await loadDesignToDesignLab(designId, source || 'cloud');
-        
+
         if (!result.success || !result.design) {
           console.error('[DesignLab] Failed to load design from URL:', result.error);
           showErrorToast(result.error || '加载设计失败');
@@ -3854,7 +3883,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         }
 
         const design = result.design;
-        
+
         // [2025-01-31 00:10:00] 恢复设计名称
         if (design.name) {
           setDesignName(design.name);
@@ -3874,7 +3903,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         // [2025-01-31 00:10:00] 恢复视图画布
         if (design.viewCanvases) {
           setViewCanvases(design.viewCanvases);
-          
+
           // 切换到保存时的视图
           if (design.currentView) {
             setView(design.currentView);
@@ -3963,7 +3992,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         if (draft.viewCanvases) {
           // [2025-12-19 16:30:00] 批量恢复所有视图的画布到store
           setViewCanvases(draft.viewCanvases);
-          
+
           // [2025-12-19 16:30:00] 切换到保存时的视图
           if (draft.currentView) {
             setView(draft.currentView);
@@ -4003,7 +4032,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       try {
         // [2025-12-19 16:30:00] 获取当前画布快照（当前视图）
         const currentSnapshot = canvasToSnapshot(fabricCanvasRef.current);
-        
+
         // [2025-12-19 16:30:00] 使用store中的viewCanvases并更新当前视图
         // 直接从store获取最新状态，避免闭包问题
         const storeState = useDesignLabStore.getState();
@@ -4076,7 +4105,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       console.log('[DesignLab] Skipping snapshotToCanvas while adding object (protect new object from stale snapshot overwrite)');
       return;
     }
-    
+
     const view = currentView;
     if (view === 'zoom') {
       // Zoom视图：显示当前视图的画布内容，但不加载背景
@@ -4086,10 +4115,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       }
       return;
     }
-    
+
     // [2025-01-30 16:30:00] 加载背景图片
     loadBackgroundImage(view);
-    
+
     // [2025-01-30 16:30:00] 加载画布数据
     const viewCanvas = viewCanvases[view];
     if (viewCanvas) {
@@ -4111,7 +4140,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
               {/* [2025-12-19 16:30:00] 移除My Designs按钮，改用本地存储，无需跳转 */}
               {/* [2025-01-30 23:15:00] 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
-              <button 
+              <button
                 className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
                 onClick={() => {
                   const newName = prompt('Enter design name:', designName);
@@ -4227,7 +4256,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           {toolPanelType === 'upload' && (
             <UploadPanel
               onFileSelect={handleFileUpload}
-              onBrowseClick={() => {}}
+              onBrowseClick={() => { }}
               recentUploads={recentUploads}
               onRecentUploadClick={handleRecentUploadClick}
               onClose={handleBackToHome}
@@ -4339,7 +4368,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               showDetails={process.env.NODE_ENV === 'development'}
             />
           )}
-          
+
           {/* [2025-12-08] Zoom视图控制按钮 */}
           {currentView === 'zoom' && !canvasInitError && (
             <div className="dl-canvas__zoom-controls">
@@ -4387,7 +4416,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
             </div>
           )}
           {/* 产品预览区域 */}
-          <div 
+          <div
             className="dl-canvas__preview"
             onMouseDown={currentView === 'zoom' ? handleZoomMouseDown : undefined}
             onMouseMove={currentView === 'zoom' ? handleZoomMouseMove : undefined}
@@ -4492,8 +4521,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           >
             <div className="dl-sidebar__thumbnail">
               {productInfo?.baseImages?.front ? (
-                <img 
-                  src={getThumbnailImageUrl(productInfo.color || 'White', 'front')} 
+                <img
+                  src={getThumbnailImageUrl(productInfo.color || 'White', 'front')}
                   alt="Front view thumbnail"
                   className="dl-sidebar__thumbnail-image"
                 />
@@ -4512,8 +4541,8 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           >
             <div className="dl-sidebar__thumbnail">
               {productInfo?.baseImages?.back ? (
-                <img 
-                  src={getThumbnailImageUrl(productInfo.color || 'White', 'back')} 
+                <img
+                  src={getThumbnailImageUrl(productInfo.color || 'White', 'back')}
                   alt="Back view thumbnail"
                   className="dl-sidebar__thumbnail-image"
                 />
@@ -4554,7 +4583,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
       <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
         <div className="dl-bottom-bar__left">
-          <button 
+          <button
             className="dl-bottom-bar__add-products"
             onClick={() => {
               // [2025-12-07 15:30:00] 打开产品选择器（跳转到产品列表页面，带返回参数）
@@ -4592,10 +4621,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
                   Change Product
                 </button>
                 {productInfo?.color && (
-                <span className="dl-bottom-bar__color">
+                  <span className="dl-bottom-bar__color">
                     <input type="checkbox" id="color-selected" checked readOnly />
                     <label htmlFor="color-selected">{productInfo.color}</label>
-                </span>
+                  </span>
                 )}
                 <button
                   className="dl-bottom-bar__link"
@@ -4609,7 +4638,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           </div>
         </div>
         <div className="dl-bottom-bar__right">
-          <button 
+          <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
             onClick={handleSaveDesign}
           >
@@ -4648,7 +4677,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               });
             }}
           />
-          <button 
+          <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
             onClick={handleGetPrice}
           >
@@ -4711,7 +4740,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         quantity={quoteQuantity}
         onQuantityChange={handleQuantityChange}
       />
-      
+
       {/* [2025-12-08] Get Price流程模态框（新版完整流程） */}
       <GetPriceFlowModal
         isOpen={showGetPriceFlowModal}
@@ -4767,9 +4796,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
             if (response.success) {
               // [2025-12-07 15:30:00] 埋点：加车成功
-            analytics.track('add_to_cart_success', {
-              designId: orderData.designId,
-              totalQuantity: orderData.totalQuantity,
+              analytics.track('add_to_cart_success', {
+                designId: orderData.designId,
+                totalQuantity: orderData.totalQuantity,
                 sizeQuantities: orderData.sizeQuantities,
               });
 
@@ -4789,7 +4818,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           }
         }}
       />
-      
+
       {/* [2025-12-10] 设计评论区域 */}
       {currentDesignId && (
         <div className="dl-comments-container">
@@ -4801,7 +4830,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           />
         </div>
       )}
-      
+
     </div>
   );
 };
