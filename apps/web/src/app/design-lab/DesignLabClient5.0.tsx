@@ -177,39 +177,19 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
-    // [2025-12-20 03:30:00] 如果只有 colorId，根据 colorId 更新颜色
-    if (colorId && !initialProductData) {
-      // [2025-12-20] 修复：从 API/常量 获取 colorId 到 colorName 的映射
-      let colorName = 'White';
-      const matchedColor = PRODUCT_COLORS.find(c => c.name.toLowerCase() === colorId.toLowerCase());
-      if (matchedColor) {
-        colorName = matchedColor.name;
-      }
-
-      console.log('[DesignLab 5.0] 功能2 - 根据 colorId 更新颜色:', { colorId, colorName });
-      const baseImages = getDefaultProductBaseImages(colorName);
-
-      setProductInfo(prev => ({
-        ...prev,
-        color: colorName,
-        baseImages,
-        colorId,
-      }));
-      return;
-    }
-
-    // [2025-12-20 03:30:00] 如果没有 URL 参数（用户直接从导航进入），使用默认白色 T 恤
-    if (!productId && !colorId && !variantId && !initialProductData) {
-      console.log('[DesignLab 5.0] 功能2 - 没有 URL 参数，使用默认白色 T 恤图片');
-      const defaultImages = getDefaultProductBaseImages('White');
-
-      // [2025-12-20 03:30:00] 只在 productInfo 还没有设置过默认图片时才更新
-      if (!productInfo.baseImages || Object.keys(productInfo.baseImages).length === 0) {
-        setProductInfo(prev => ({
-          ...prev,
-          color: 'White',
-          baseImages: defaultImages,
-        }));
+    // [2025-12-20] 修复：如果 URL 中没有 productId（无论是否有 colorId），都加载默认产品
+    if (!productId && !initialProductData) {
+      console.log('[DesignLab 5.0] No product selected (or only color selected), fetching default...');
+      // 只有在还没有产品ID时才获取
+      if (!productInfo.productId) {
+        getProducts({ limit: 1 })
+          .then((response: any) => {
+            if (response.data && response.data.length > 0) {
+              // 选中默认产品，这会触发 handleProductSelect -> 更新 URL -> 触发 useEffect 重新运行
+              handleProductSelect(response.data[0].id);
+            }
+          })
+          .catch((err: any) => console.warn('[DesignLab 5.0] Failed to load default product:', err));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
