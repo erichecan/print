@@ -30,10 +30,10 @@ function extractColorIdFromUrl(originalUrl) {
  */
 async function importColorImagesFromGcsJson() {
   console.log('🚀 开始导入颜色图片映射数据...\n');
-  
+
   try {
     let colorsData = null;
-    
+
     // 优先使用新的完整颜色数据
     if (fs.existsSync(ALL_COLORS_FILE)) {
       console.log('📄 使用完整颜色数据文件...\n');
@@ -42,26 +42,7 @@ async function importColorImagesFromGcsJson() {
         products: [{
           productId: allColorsData.productId,
           productName: allColorsData.productName,
-          images: allColorsData.colors.flatMap(color => [
-            {
-              colorName: color.colorName || `Color-${color.colorId}`,
-              view: 'front',
-              originalUrl: color.imageUrls.front,
-              gcsUrl: color.imageUrls.front?.replace('mms-images-prod.imgix.net', 'storage.googleapis.com/print-main-product-images') || null
-            },
-            {
-              colorName: color.colorName || `Color-${color.colorId}`,
-              view: 'back',
-              originalUrl: color.imageUrls.back,
-              gcsUrl: color.imageUrls.back?.replace('mms-images-prod.imgix.net', 'storage.googleapis.com/print-main-product-images') || null
-            },
-            {
-              colorName: color.colorName || `Color-${color.colorId}`,
-              view: 'sleeve',
-              originalUrl: color.imageUrls.sleeve,
-              gcsUrl: color.imageUrls.sleeve?.replace('mms-images-prod.imgix.net', 'storage.googleapis.com/print-main-product-images') || null
-            }
-          ])
+          images: allColorsData.colors
         }]
       };
     } else if (fs.existsSync(GCS_JSON_FILE)) {
@@ -73,27 +54,27 @@ async function importColorImagesFromGcsJson() {
       console.log(`   ${GCS_JSON_FILE}\n`);
       return;
     }
-    
+
     const products = colorsData.products || [];
-    
+
     console.log(`📋 找到 ${products.length} 个产品\n`);
-    
+
     if (products.length === 0) {
       console.log('⚠️  没有找到产品数据\n');
       return;
     }
-    
+
     // 准备批量导入数据
     const importData = [];
-    
+
     for (const product of products) {
       const productId = product.productId || GILDAN_SOFTSTYLE_PRODUCT_ID;
       const images = product.images || [];
-      
+
       // 按颜色分组
       const colorGroups = {};
-      
-      // 如果是 all-colors-with-names.json 格式
+
+      // 如果是 all-colors-with-names.json 格式 (New Logic: images is array of colors)
       if (products[0].images && products[0].images[0] && products[0].images[0].colorId) {
         // 新格式：直接从 colors 数组处理
         for (const color of products[0].images) {
@@ -107,7 +88,7 @@ async function importColorImagesFromGcsJson() {
               colorId: color.colorId
             };
           }
-          
+
           // 从 imageUrls 中提取
           if (color.imageUrls) {
             colorGroups[colorName].front = color.imageUrls.front || null;
@@ -116,11 +97,11 @@ async function importColorImagesFromGcsJson() {
           }
         }
       } else {
-        // 旧格式：从 images 数组处理
+        // 旧格式：从 images 数组处理 (Flattened images)
         for (const image of images) {
           const colorName = image.colorName;
           if (!colorName) continue;
-          
+
           if (!colorGroups[colorName]) {
             colorGroups[colorName] = {
               colorName: colorName,
@@ -130,12 +111,12 @@ async function importColorImagesFromGcsJson() {
               colorId: null
             };
           }
-          
+
           // 提取颜色 ID（从第一个图片的 URL）
           if (!colorGroups[colorName].colorId && image.originalUrl) {
             colorGroups[colorName].colorId = extractColorIdFromUrl(image.originalUrl);
           }
-          
+
           // 设置图片 URL（优先使用 GCS URL）
           const imageUrl = image.gcsUrl || image.originalUrl;
           if (image.view === 'front') {
@@ -147,14 +128,14 @@ async function importColorImagesFromGcsJson() {
           }
         }
       }
-      
+
       // 转换为导入数据格式
       for (const [colorName, colorData] of Object.entries(colorGroups)) {
         if (!colorData.colorId) {
           console.log(`⚠️  跳过 ${colorName}：无法提取颜色 ID`);
           continue;
         }
-        
+
         importData.push({
           productId: null, // productId 可以为 null，我们使用 customInkProductId 来标识
           customInkProductId: productId,
@@ -171,36 +152,42 @@ async function importColorImagesFromGcsJson() {
         });
       }
     }
-    
+
     console.log(`📦 准备导入 ${importData.length} 个颜色映射\n`);
-    
+
     // 批量创建或更新
     let created = 0;
     let updated = 0;
     let failed = 0;
-    
+
     for (const data of importData) {
       try {
-        const existing = await prisma.productColorImage.findUnique({
-          where: {
-            customInkProductId_customInkColorId: {
-              customInkProductId: data.customInkProductId,
-              customInkColorId: data.customInkColorId
-            }
-          }
-        });
-        
+        // Use raw query to bypass Prisma schema validation
+        const existingList = await prisma.$queryRaw`
+          SELECT id FROM product_color_images 
+          WHERE customink_product_id = ${data.customInkProductId} 
+          AND customink_color_id = ${data.customInkColorId}
+        `;
+        const existing = existingList[0];
+
         if (existing) {
-          await prisma.productColorImage.update({
-            where: { id: existing.id },
-            data: {
-              colorName: data.colorName,
-              colorHex: data.colorHex,
-              imageUrls: data.imageUrls,
-              isVerified: data.isVerified,
-              isActive: true
-            }
-          });
+          await prisma.$executeRawUnsafe(`
+            UPDATE product_color_images SET 
+              color_name = $1,
+              color_hex = $2,
+              image_urls = $3::jsonb,
+              is_verified = $4,
+              is_active = $5,
+              updated_at = NOW()
+            WHERE id = $6
+          `,
+            data.colorName,
+            data.colorHex,
+            JSON.stringify(data.imageUrls),
+            data.isVerified,
+            true, // isActive
+            existing.id
+          );
           updated++;
           console.log(`   ✅ 更新: ${data.colorName} (${data.customInkColorId})`);
         } else {
@@ -210,14 +197,10 @@ async function importColorImagesFromGcsJson() {
               ALTER TABLE product_color_images 
               ALTER COLUMN product_id DROP NOT NULL;
             `);
-            console.log('   ℹ️  已修改表结构，允许 product_id 为 null');
           } catch (alterError) {
-            // 如果已经修改过或出错，忽略
-            if (!alterError.message.includes('does not exist') && !alterError.message.includes('already')) {
-              // console.log('   ⚠️  修改表结构时出错（可能已经修改）:', alterError.message);
-            }
+            // ignore
           }
-          
+
           // 使用原始 SQL 插入
           await prisma.$executeRawUnsafe(`
             INSERT INTO product_color_images (
@@ -237,7 +220,7 @@ async function importColorImagesFromGcsJson() {
               NOW(), 
               NOW()
             )
-          `, 
+          `,
             data.customInkProductId,
             data.customInkColorId,
             data.colorName,
@@ -254,7 +237,7 @@ async function importColorImagesFromGcsJson() {
         console.error(`   ❌ 失败: ${data.colorName} (${data.customInkColorId}) - ${error.message}`);
       }
     }
-    
+
     console.log('\n✅ 导入完成！');
     console.log(`   - 创建: ${created} 个`);
     console.log(`   - 更新: ${updated} 个`);
@@ -263,7 +246,7 @@ async function importColorImagesFromGcsJson() {
     } else {
       console.log('');
     }
-    
+
   } catch (error) {
     console.error('❌ 导入失败:', error);
     throw error;
@@ -278,4 +261,3 @@ if (require.main === module) {
 }
 
 module.exports = { importColorImagesFromGcsJson };
-
