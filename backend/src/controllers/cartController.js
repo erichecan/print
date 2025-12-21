@@ -536,34 +536,39 @@ exports.removeItem = async (req, res) => {
       hasSessionCookie: !!req.cookies?.sessionId,
     });
 
-    // Get cart
-    const cart = await getOrCreateCart(userId, sessionId);
-
-    if (!cart) {
-      logger.warn('Cart not found for removeItem', {
-        itemId: id,
-        userId: userId || null,
-        sessionId: sessionId || null,
-      });
-      return res.status(404).json({ error: 'Cart not found' });
-    }
-
-    // Find and delete cart item
-    const cartItem = await prisma.cartItem.findFirst({
-      where: {
-        id: id,
-        cartId: cart.id,
-      },
+    // [2025-01-31 02:30:00] Fix: Find item first, then verify ownership
+    // This handles cases where user might have multiple carts (guest + user) 
+    // and the item belongs to one of them, ensuring successful deletion.
+    const cartItem = await prisma.cartItem.findUnique({
+      where: { id: id },
+      include: {
+        cart: true
+      }
     });
 
     if (!cartItem) {
       logger.warn('Cart item not found', {
         itemId: id,
-        cartId: cart.id,
         userId: userId || null,
         sessionId: sessionId || null,
       });
       return res.status(404).json({ error: 'Cart item not found' });
+    }
+
+    // Check ownership
+    const isOwnedByUser = userId && cartItem.cart.userId === userId;
+    const isOwnedBySession = sessionId && cartItem.cart.sessionId === sessionId;
+
+    if (!isOwnedByUser && !isOwnedBySession) {
+      logger.warn('Unauthorized attempt to remove cart item', {
+        itemId: id,
+        itemCartId: cartItem.cartId,
+        itemUserId: cartItem.cart.userId,
+        itemSessionId: cartItem.cart.sessionId,
+        requestUserId: userId,
+        requestSessionId: sessionId
+      });
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     await prisma.cartItem.delete({
@@ -572,7 +577,8 @@ exports.removeItem = async (req, res) => {
 
     logger.info('Cart item removed successfully', {
       itemId: id,
-      cartId: cart.id,
+      cartId: cartItem.cartId,
+      ownership: isOwnedByUser ? 'user' : 'session'
     });
 
     res.json({ message: 'Item removed from cart' });

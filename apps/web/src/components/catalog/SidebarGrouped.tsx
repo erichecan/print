@@ -68,27 +68,44 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
   const groups: CategoryGroup[] = (() => {
     if (!filterOptions || !filterOptions.categories) return [];
 
-    // Filter only top-level categories (those with children or significant count as fallback)
-    // Adjust logic to match DynamicFilters' `getCategoryTree`
     const rawCategories: any[] = filterOptions.categories;
 
-    // We want to group everything. If the API returns a tree, great.
-    // If it returns a flat list, we might need to rely on the backend logic or structure.
-    // Based on DynamicFilters, it seems `children` property exists.
+    // [2025-12-21] Fix: Identify all child categories to avoid rendering them as top-level duplicates
+    const childIds = new Set<string>();
+    rawCategories.forEach(cat => {
+      if (cat.children && Array.isArray(cat.children)) {
+        cat.children.forEach((child: any) => childIds.add(child.id));
+      }
+    });
+
     return rawCategories
-      .filter(cat => cat.children && cat.children.length > 0) // Only show groups with children
-      .map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        slug: cat.slug,
-        // Ensure children are properly mapped
-        children: cat.children.map((child: any) => ({
-          id: child.id,
-          name: child.name,
-          slug: child.slug,
-          count: child.count || 0
-        }))
-      }));
+      // Filter out categories that are children of others (they will appear nested)
+      .filter(cat => !childIds.has(cat.id))
+      .map(cat => {
+        const hasChildren = cat.children && Array.isArray(cat.children) && cat.children.length > 0;
+
+        // If category has children, render them. If not (flat category like Mugs), render itself as the only option.
+        const children = hasChildren
+          ? cat.children.map((child: any) => ({
+            id: child.id,
+            name: child.name,
+            slug: child.slug,
+            count: child.count || 0
+          }))
+          : [{
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+            count: cat.count || 0
+          }];
+
+        return {
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          children
+        };
+      });
   })();
 
   // [2025-12-11 23:05:00] 从 URL 解析选中状态

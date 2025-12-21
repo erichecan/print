@@ -41,19 +41,19 @@ exports.authenticateOptional = async (req, res, next) => {
     if (token) {
       try {
         const jwtSecret = getJwtSecret();
-        logger.debug('[Auth] Verifying token in optional auth', { 
-          hasToken: !!token, 
+        logger.debug('[Auth] Verifying token in optional auth', {
+          hasToken: !!token,
           tokenLength: token.length,
           usingDefaultSecret: !process.env.JWT_SECRET || process.env.JWT_SECRET === DEFAULT_JWT_SECRET
         });
-        
+
         const decoded = jwt.verify(token, jwtSecret);
-        
-        logger.debug('[Auth] Token decoded successfully', { 
+
+        logger.debug('[Auth] Token decoded successfully', {
           userId: decoded.userId || decoded.id,
           hasUserId: !!(decoded.userId || decoded.id)
         });
-        
+
         // Get user from database
         const user = await prisma.user.findUnique({
           where: { id: decoded.userId || decoded.id },
@@ -82,26 +82,29 @@ exports.authenticateOptional = async (req, res, next) => {
       }
     }
 
+    // [2025-01-31 03:00:00] Fixed: Always extract sessionId from cookie regardless of auth state
+    // This allows controllers to handle items belonging to the guest session even after login
+    // (e.g., merging carts or deleting items before merge)
+    let sessionId = req.cookies?.sessionId;
+
     // Generate or get session ID for guest carts
-    if (!req.user) {
-      // Check for session token in cookie
-      let sessionId = req.cookies?.sessionId;
-      
-      if (!sessionId) {
-        // Generate new session ID
-        sessionId = uuidv4();
-        // [2025-01-29 00:25:00] Set cookie with cross-domain support
-        // 在生产环境中，前端和后端可能在不同域名，需要 sameSite: 'none' 和 secure: true
-        const isProduction = process.env.NODE_ENV === 'production';
-        res.cookie('sessionId', sessionId, {
-          httpOnly: true,
-          secure: isProduction, // 生产环境必须使用 HTTPS
-          sameSite: isProduction ? 'none' : 'lax', // 跨域请求需要 'none'
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-          path: '/', // 确保 cookie 在所有路径下可用
-        });
-      }
-      
+    if (!req.user && !sessionId) {
+      // Generate new session ID
+      sessionId = uuidv4();
+      // [2025-01-29 00:25:00] Set cookie with cross-domain support
+      // 在生产环境中，前端和后端可能在不同域名，需要 sameSite: 'none' 和 secure: true
+      const isProduction = process.env.NODE_ENV === 'production';
+      res.cookie('sessionId', sessionId, {
+        httpOnly: true,
+        secure: isProduction, // 生产环境必须使用 HTTPS
+        sameSite: isProduction ? 'none' : 'lax', // 跨域请求需要 'none'
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        path: '/', // 确保 cookie 在所有路径下可用
+      });
+    }
+
+    // Always set sessionId on request if it exists
+    if (sessionId) {
       req.sessionId = sessionId;
     }
 
@@ -140,7 +143,7 @@ exports.authenticate = async (req, res, next) => {
     });
 
     if (!token) {
-      logger.warn('[Auth] ❌ No token provided', { 
+      logger.warn('[Auth] ❌ No token provided', {
         path: req.path,
         cookies: req.cookies,
         cookieKeys: Object.keys(req.cookies || {}),
@@ -168,7 +171,7 @@ exports.authenticate = async (req, res, next) => {
         errorName: jwtError.name,
         tokenLength: token.length
       });
-      
+
       // Handle specific JWT errors
       if (jwtError.name === 'JsonWebTokenError') {
         return next(new UnauthorizedError('Invalid token'));
@@ -178,7 +181,7 @@ exports.authenticate = async (req, res, next) => {
       }
       throw jwtError; // Re-throw to be handled by outer catch
     }
-    
+
     const userId = decoded.userId || decoded.id;
     if (!userId) {
       logger.warn('[Auth] Token decoded but no userId found', { decoded });
@@ -217,7 +220,7 @@ exports.authenticate = async (req, res, next) => {
       // [2025-11-18 11:58:00] Pass operational auth errors to Express error handler
       return next(error);
     }
-    
+
     // Handle JWT errors (should already be handled above, but catch any edge cases)
     if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
       logger.warn('[Auth] JWT error in catch block', {
@@ -226,7 +229,7 @@ exports.authenticate = async (req, res, next) => {
       });
       return next(new UnauthorizedError('Invalid or expired token'));
     }
-    
+
     logger.error('[Auth] ❌ Authentication failed', {
       error: error.message,
       errorName: error.name,
@@ -255,15 +258,15 @@ exports.authorizeRoles = (...allowedRoles) => {
       allowedRoles: allowedRoles,
       allowedRolesType: typeof allowedRoles[0],
     });
-    
+
     if (!req.user) {
-      logger.warn('[Auth] ❌ No user in request', { 
+      logger.warn('[Auth] ❌ No user in request', {
         path: req.path,
         originalUrl: req.originalUrl,
       });
       return next(new UnauthorizedError('Please login to access this resource'));
     }
-    
+
     const userRoleRaw = req.user.role || '';
     const userRole = String(userRoleRaw).toUpperCase();
     const allowed = allowedRoles.map((r) => String(r).toUpperCase());
@@ -274,11 +277,11 @@ exports.authorizeRoles = (...allowedRoles) => {
       allowedRolesRaw: allowedRoles,
       allowedRoles: allowed,
       isAllowed: allowed.includes(userRole),
-            comparison: {
-              salesManagerEquals: 'SALES_MANAGER' === 'SALES_MANAGER',
-              salesManagerInAllowed: allowed.includes('SALES_MANAGER'),
-              userRoleInAllowed: allowed.includes(userRole),
-            },
+      comparison: {
+        salesManagerEquals: 'SALES_MANAGER' === 'SALES_MANAGER',
+        salesManagerInAllowed: allowed.includes('SALES_MANAGER'),
+        userRoleInAllowed: allowed.includes(userRole),
+      },
     });
 
     if (!allowed.includes(userRole)) {

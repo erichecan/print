@@ -1,9 +1,9 @@
- /**
- * Checkout Controller
- * [2025-11-04 23:53:00]
- * [2025-01-27 10:45:00] Enhanced with logging and email notification
- * [2025-01-27 13:35:00] Enhanced with inventory management
- */
+/**
+* Checkout Controller
+* [2025-11-04 23:53:00]
+* [2025-01-27 10:45:00] Enhanced with logging and email notification
+* [2025-01-27 13:35:00] Enhanced with inventory management
+*/
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
 // [2025-11-21 10:55:00] 延迟初始化 Stripe，确保环境变量已加载
@@ -174,6 +174,8 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
 
       // [2025-01-28 12:25:00] Find active promotions for this product
       // [2025-12-06 18:00:00] Include buy-get-free promotion fields for Issue #139
+      // [2025-01-28 12:25:00] Find active promotions for this product
+      // [2025-12-06 18:00:00] Include buy-get-free promotion fields for Issue #139
       const productPromotions = await prisma.promotion.findMany({
         where: {
           isActive: true,
@@ -195,20 +197,6 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
               },
             },
           ],
-        },
-        include: {
-          giftProduct: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          giftVariant: {
-            select: {
-              id: true,
-              sku: true,
-            },
-          },
         },
       });
 
@@ -240,14 +228,14 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
           // [2025-12-06 18:00:00] Buy X Get Y Free: Calculate free items discount
           const buyQty = promotion.buyQuantity || 1;
           const getQty = promotion.getQuantity || 1;
-          
+
           // Calculate how many "buy-get-free" sets can be applied
           const sets = Math.floor(quantity / (buyQty + getQty));
           const freeItems = sets * getQty;
-          
+
           // Discount is the value of free items
           itemDiscount = freeItems * unitPrice;
-          
+
           // Don't exceed item subtotal
           if (itemDiscount > itemSubtotal) {
             itemDiscount = itemSubtotal;
@@ -497,9 +485,9 @@ exports.getShippingRates = async (req, res) => {
  */
 exports.createPaymentIntent = async (req, res) => {
   try {
-    const { 
-      shippingAddress, 
-      shippingMethod = 'standard', 
+    const {
+      shippingAddress,
+      shippingMethod = 'standard',
       couponCode,
       draftOrderId, // [2025-01-29 14:30:00] Optional draft order ID
       amount, // [2025-01-29 14:30:00] Optional amount from frontend (for validation)
@@ -554,8 +542,8 @@ exports.createPaymentIntent = async (req, res) => {
           userId,
           sessionId,
         });
-        return res.status(400).json({ 
-          error: 'Order amount validation failed. Please refresh and try again.', 
+        return res.status(400).json({
+          error: 'Order amount validation failed. Please refresh and try again.',
           errorCode: 'AMOUNT_MISMATCH',
           details: 'The order total has changed. Please refresh the page.',
         });
@@ -633,39 +621,39 @@ exports.createPaymentIntent = async (req, res) => {
       userId,
       sessionId,
     });
-    
+
     // 如果是 Stripe 配置错误，返回更明确的错误信息
     if (error.message.includes('STRIPE_SECRET_KEY is not configured')) {
-      return res.status(500).json({ 
-        error: 'Stripe is not configured', 
+      return res.status(500).json({
+        error: 'Stripe is not configured',
         errorCode: 'STRIPE_NOT_CONFIGURED',
-        details: 'Please configure STRIPE_SECRET_KEY in environment variables' 
+        details: 'Please configure STRIPE_SECRET_KEY in environment variables'
       });
     }
-    
+
     // 如果是 Stripe API 错误，返回更详细的错误信息
     if (error.type && error.raw) {
-      return res.status(500).json({ 
-        error: 'Failed to create payment intent', 
+      return res.status(500).json({
+        error: 'Failed to create payment intent',
         errorCode: 'STRIPE_API_ERROR',
         details: error.message,
         stripeError: error.type,
       });
     }
-    
+
     // 网络错误
     if (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('ECONNREFUSED')) {
-      return res.status(503).json({ 
-        error: 'Network error. Please try again later.', 
+      return res.status(503).json({
+        error: 'Network error. Please try again later.',
         errorCode: 'NETWORK_ERROR',
         details: error.message,
       });
     }
-    
-    res.status(500).json({ 
-      error: 'Failed to create payment intent', 
+
+    res.status(500).json({
+      error: 'Failed to create payment intent',
       errorCode: 'INTERNAL_ERROR',
-      details: error.message 
+      details: error.message
     });
   }
 };
@@ -869,25 +857,25 @@ exports.confirmOrder = async (req, res) => {
           // [2025-01-28 12:25:00] Create OrderPromotion records if promotions were applied
           ...(promotionResult.promotions && promotionResult.promotions.length > 0
             ? {
-                orderPromotions: {
-                  create: promotionResult.promotions.map((promo) => ({
-                    promotionId: promo.promotionId,
-                    discountAmount: promo.discountAmount,
-                  })),
-                },
-              }
+              orderPromotions: {
+                create: promotionResult.promotions.map((promo) => ({
+                  promotionId: promo.promotionId,
+                  discountAmount: promo.discountAmount,
+                })),
+              },
+            }
             : {}),
           // [2025-01-28 11:30:00] Create OrderCoupon record if coupon was applied
           ...(couponResult.coupon
             ? {
-                orderCoupons: {
-                  create: {
-                    couponId: couponResult.coupon.id,
-                    userId: userId || null,
-                    discountAmount: couponDiscount, // [2025-01-28 12:25:00] 只记录优惠券折扣
-                  },
+              orderCoupons: {
+                create: {
+                  couponId: couponResult.coupon.id,
+                  userId: userId || null,
+                  discountAmount: couponDiscount, // [2025-01-28 12:25:00] 只记录优惠券折扣
                 },
-              }
+              },
+            }
             : {}),
         },
         include: {
