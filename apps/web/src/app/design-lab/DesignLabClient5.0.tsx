@@ -66,6 +66,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     productId?: string;
     colorId?: string;
     productName?: string; // [2025-12-18 21:18:56] 产品名称
+    variants?: Array<{ id: string; color: string | null }>; // [2025-12-20] 添加 variants 用于颜色切换时查找 ID
   }>(() => {
     // [2025-12-20 03:30:00] 使用函数初始化，确保默认图片在组件创建时就设置好
     const defaultImages = getDefaultProductBaseImages('White');
@@ -77,6 +78,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       productId: undefined,
       colorId: undefined,
       productName: 'Loading...',
+      variants: [],
     };
   });
 
@@ -116,10 +118,21 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
             // [2025-12-20] 修复：如果 URL 中有 valid colorId，优先使用
             let resolvedColor = product.color || 'White';
+            let resolvedVariantId = product.variantId;
+
+            // [2025-12-20] 改进：根据颜色名称查找对应的 variantId
             if (colorId) {
               const matchedColor = PRODUCT_COLORS.find(c => c.name.toLowerCase() === colorId.toLowerCase());
               if (matchedColor) {
                 resolvedColor = matchedColor.name;
+                // 尝试从 variants 中找到匹配该颜色的 ID
+                if (product.variants && product.variants.length > 0) {
+                  // 优先找 exact match
+                  const variant = product.variants.find(v => v.color?.toLowerCase() === resolvedColor.toLowerCase());
+                  if (variant) {
+                    resolvedVariantId = variant.id;
+                  }
+                }
               }
             }
 
@@ -134,16 +147,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             setProductInfo(prev => ({
               ...prev,
               productId: product.productId,
-              colorId: product.variantId, // 保存 variantId 用于保存设计
+              colorId: resolvedVariantId, // 使用解析后的 variantId
               productName: product.productName,
               color: resolvedColor,
               baseImages: images,
+              variants: product.variants || [], // 保存 variants 列表
             }));
 
             // 更新 URL 参数以包含 variantId (可选)
-            if (product.variantId && !variantId) {
+            if (resolvedVariantId && (!variantId || variantId !== resolvedVariantId)) {
               const url = new URL(window.location.href);
-              url.searchParams.set('variantId', product.variantId);
+              url.searchParams.set('variantId', resolvedVariantId);
               window.history.replaceState({}, '', url.toString());
             }
           }
@@ -467,16 +481,30 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       // 根据颜色名称更新图片
       const baseImages = getDefaultProductBaseImages(colorName);
 
+      // [2025-12-20] 查找对应颜色的 variantId
+      let newVariantId = productInfo.colorId;
+      if (productInfo.variants && productInfo.variants.length > 0) {
+        const variant = productInfo.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
+        if (variant) {
+          newVariantId = variant.id;
+          console.log('[DesignLab 5.0] Found variant ID for color:', { color: colorName, variantId: newVariantId });
+        }
+      }
+
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
         baseImages,
+        colorId: newVariantId, // 更新 variantId
       }));
 
       // 更新 URL（可选）
       if (typeof window !== 'undefined' && productInfo.productId) {
         const url = new URL(window.location.href);
         url.searchParams.set('colorId', colorName);
+        if (newVariantId) {
+          url.searchParams.set('variantId', newVariantId); // 同时更新 variantId
+        }
         window.history.replaceState({}, '', url.toString());
       }
     } catch (error) {
