@@ -2265,7 +2265,12 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               originX: 'center',
               originY: 'center',
               name: `image_${Date.now()}`,
-              perPixelTargetFind: true, // [2025-12-21 00:30:00] Verify pixels for selection to allow clicking through transparent areas
+              // [2025-12-21 00:30:00] Fix selection overlap: verify pixels for transparency
+              perPixelTargetFind: true,
+              targetFindTolerance: 4,
+              // [2025-12-21 00:30:00] Fix control misalignment: ensure no padding shifts controls
+              padding: 0,
+              transparentCorners: false,
             });
 
             // [2025-01-30 22:30:00] 确保坐标已更新

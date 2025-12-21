@@ -36,9 +36,33 @@ const fetchOwnedDesign = async (designId, { user, sessionId }) => {
 // [2025-11-11 15:26:30] 创建 Design Lab 草稿
 exports.createDesignDraft = async (req, res) => {
   try {
-    const { productVariantId, name, canvas, pricing } = req.body || {};
+    let { productVariantId, name, canvas, pricing } = req.body || {};
     const userId = req.user?.id || null;
     const sessionId = userId ? null : req.sessionId || uuidv4();
+
+    // [2025-01-31 04:00:00] Fix: Backend fallback for 'default' variant ID
+    // If frontend sends 'default' (e.g. failure to resolve), we find a valid one here.
+    if (productVariantId === 'default') {
+      try {
+        const defaultVariant = await prisma.variant.findFirst({
+          where: {
+            product: {
+              isActive: true,
+              isCustomizable: true
+            }
+          },
+          include: { product: true }
+        });
+        if (defaultVariant) {
+          console.log(`[DesignController] Auto-resolved 'default' variant to: ${defaultVariant.id} (${defaultVariant.product.name})`);
+          productVariantId = defaultVariant.id;
+        } else {
+          console.warn("[DesignController] Could not find any default customizable variant!");
+        }
+      } catch (err) {
+        console.error("[DesignController] Error resolving default variant:", err);
+      }
+    }
 
     if (!productVariantId) {
       return res.status(400).json({ error: 'productVariantId is required' });
@@ -81,10 +105,10 @@ exports.createDesignDraft = async (req, res) => {
 
       const designData = userId
         ? {
-            ...baseDesignData,
-            sessionId: null,
-            user: { connect: { id: userId } },
-          }
+          ...baseDesignData,
+          sessionId: null,
+          user: { connect: { id: userId } },
+        }
         : baseDesignData;
 
       const createdDesign = await tx.design.create({
@@ -252,23 +276,23 @@ exports.requestQuote = async (req, res) => {
     const variant = result.design.variant;
     const basePrice = Number(variant.product.basePrice || 0);
     const adjustment = Number(variant.priceAdjustment || 0);
-    
+
     // [2025-01-28 07:00:00] 基础单价 = 产品底价 + 变体调整
     let unitPrice = Math.max(basePrice + adjustment, 0);
-    
+
     // [2025-01-28 07:00:00] 计算使用的面数（front, back, sleeve）
     const sidesCount = Array.isArray(sidesUsed) ? sidesUsed.length : 0;
-    
+
     // [2025-01-28 07:00:00] 多面印刷费用：每增加一个面，增加 $2 CAD（示例定价）
     // 第一个面（front）包含在基础价格中，back 和 sleeve 需要额外收费
     const additionalSides = Math.max(0, sidesCount - 1);
     const sidesFee = additionalSides * 2 * 100; // 转换为分，每个额外面 $2
-    
+
     // [2025-01-28 07:00:00] 图层复杂度费用：超过 5 个图层后，每增加一个图层增加 $0.50 CAD
     const baseLayers = 5;
     const additionalLayers = Math.max(0, layerCount - baseLayers);
     const layersFee = additionalLayers * 0.5 * 100; // 转换为分，每个额外图层 $0.50
-    
+
     // [2025-01-28 07:00:00] 数量折扣（示例定价规则）
     let quantityDiscount = 0;
     if (quantity >= 50) {
@@ -278,17 +302,17 @@ exports.requestQuote = async (req, res) => {
     } else if (quantity >= 10) {
       quantityDiscount = 0.05; // 10-24 件：5% 折扣
     }
-    
+
     // [2025-01-28 07:00:00] 计算单价（包含面和图层费用）
     unitPrice = unitPrice + sidesFee + layersFee;
-    
+
     // [2025-01-28 07:00:00] 应用数量折扣
     const discountedUnitPrice = unitPrice * (1 - quantityDiscount);
-    
+
     // [2025-01-28 07:00:00] 计算总价
     const subtotal = discountedUnitPrice * quantity;
     const discountAmount = (unitPrice - discountedUnitPrice) * quantity;
-    
+
     return res.json({
       data: {
         unitPrice: Math.round(unitPrice) / 100, // 转换为元
@@ -370,7 +394,7 @@ exports.uploadSignature = async (req, res) => {
     // /uploads/: 在 app.js 中定义的静态路径
     // req.file.filename: multer 生成的文件名
     const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
-    
+
     // 实际应用中，你可能会将这个 URL 保存到数据库
     // await prisma.design.update(...);
 

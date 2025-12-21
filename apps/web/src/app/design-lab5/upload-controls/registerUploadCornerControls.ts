@@ -73,6 +73,8 @@ function createCircleControl(params: {
     cursorStyle: 'pointer',
     sizeX: size,
     sizeY: size,
+    touchCornerSize: size, // [2025-12-21] Fix: Ensure touch hit area matches visual size (160px)
+    transparentCorners: false, // [2025-12-21] Fix: Ensure corners are treated as opaque for hit detection
     // [2025-12-16 02:07:45] 防止点击控件时取消选中
     mouseDownHandler: () => true,
     render: function (
@@ -300,7 +302,7 @@ export function registerCornerControls(params: {
     if (target && matcher(target)) {
       const name = (target as any).name || 'unnamed';
       console.log('[CornerControls] 🔄 对象已修改，重新应用角控件:', { name });
-      
+
       // 重新应用角控件（确保控件引用仍然有效）
       registered.applyCornerControlsToObject(target);
       // 更新对象坐标（确保控件位置正确）
