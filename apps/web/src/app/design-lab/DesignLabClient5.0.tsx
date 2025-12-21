@@ -104,38 +104,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       return;
     }
 
-    // [2025-12-20 03:30:00] 如果只有 colorId，根据 colorId 更新颜色
-    if (colorId && !initialProductData) {
-      // 简单实现：假设 colorId 对应的颜色名称（后续可以从 API 获取映射）
-      const colorName = 'White'; // 默认值，TODO: 从 API 获取 colorId 到 colorName 的映射
-
-      console.log('[DesignLab 5.0] 功能2 - 根据 colorId 更新颜色:', { colorId, colorName });
-      const baseImages = getDefaultProductBaseImages(colorName);
-
-      setProductInfo(prev => ({
-        ...prev,
-        color: colorName,
-        baseImages,
-        colorId,
-      }));
-      return;
-    }
-
-    // [2025-12-20] 修复：如果没有 URL 参数，则尝试从 API 加载第一个商品
-    if (!productId && !colorId && !variantId && !initialProductData) {
-      console.log('[DesignLab 5.0] No product selected, fetching default...');
-      if (!productInfo.productId) { // Only fetch if we don't have a valid ID yet
-        getProducts({ limit: 1 })
-          .then((response: any) => {
-            if (response.data && response.data.length > 0) {
-              handleProductSelect(response.data[0].id);
-            }
-          })
-          .catch((err: any) => console.warn('[DesignLab 5.0] Failed to load default product:', err));
-      }
-    }
-
     // [2025-12-20 03:30:00] 如果有 productId，尝试从 API 获取完整产品信息（包括 variantId）
+    // [2025-12-20] 修复：优先处理 productId，并允许 colorId覆盖默认颜色
     if (productId && !initialProductData) {
       console.log('[DesignLab 5.0] 功能2 - 从 API 获取指定产品信息:', { productId });
 
@@ -143,16 +113,30 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         .then((product: ProductDetail) => {
           if (product) {
             console.log('[DesignLab 5.0] 产品信息获取成功:', product.productName);
-            const defaultColor = product.color || 'White';
-            // 使用 API 返回的图片，如果为空则回退到 GCS 默认图片
-            const images = product.baseImages || getDefaultProductBaseImages(defaultColor);
+
+            // [2025-12-20] 修复：如果 URL 中有 valid colorId，优先使用
+            let resolvedColor = product.color || 'White';
+            if (colorId) {
+              const matchedColor = PRODUCT_COLORS.find(c => c.name.toLowerCase() === colorId.toLowerCase());
+              if (matchedColor) {
+                resolvedColor = matchedColor.name;
+              }
+            }
+
+            // 使用 API 返回的图片，如果颜色被覆盖或图片为空，则回退到 GCS 默认图片
+            // 注意：如果 API 返回的 baseImages 是针对特定颜色的，这里可能需要根据 resolvedColor 重新获取
+            // 简单起见，如果颜色改变了，我们强制使用 getDefaultProductBaseImages
+            const shouldUseDefaultImages = resolvedColor !== product.color;
+            const images = shouldUseDefaultImages
+              ? getDefaultProductBaseImages(resolvedColor)
+              : (product.baseImages || getDefaultProductBaseImages(resolvedColor));
 
             setProductInfo(prev => ({
               ...prev,
               productId: product.productId,
               colorId: product.variantId, // 保存 variantId 用于保存设计
               productName: product.productName,
-              color: defaultColor,
+              color: resolvedColor,
               baseImages: images,
             }));
 
@@ -176,6 +160,27 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             })
             .catch((e: any) => console.error('Double fallback failed:', e));
         });
+      return;
+    }
+
+    // [2025-12-20 03:30:00] 如果只有 colorId，根据 colorId 更新颜色
+    if (colorId && !initialProductData) {
+      // [2025-12-20] 修复：从 API/常量 获取 colorId 到 colorName 的映射
+      let colorName = 'White';
+      const matchedColor = PRODUCT_COLORS.find(c => c.name.toLowerCase() === colorId.toLowerCase());
+      if (matchedColor) {
+        colorName = matchedColor.name;
+      }
+
+      console.log('[DesignLab 5.0] 功能2 - 根据 colorId 更新颜色:', { colorId, colorName });
+      const baseImages = getDefaultProductBaseImages(colorName);
+
+      setProductInfo(prev => ({
+        ...prev,
+        color: colorName,
+        baseImages,
+        colorId,
+      }));
       return;
     }
 

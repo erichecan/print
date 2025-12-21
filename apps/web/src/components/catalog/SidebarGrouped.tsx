@@ -177,7 +177,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
                       >
                         <span className={styles.childName}>{child.name}</span>
                         {/* Remove count if user wants clean look, or keep lightly */}
-                        {/* <span className={styles.childCount}>({child.count})</span> */}
+                        <span className={styles.childCount}>({child.count})</span>
                       </Link>
                     </li>
                   );
