@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import useSWR from 'swr';
-import AdminLayoutClient from '../AdminLayoutClient';
+
 import AdminFontsClient from './AdminFontsClient';
 import { adminFontsApi } from '@/lib/api';
 
@@ -17,7 +17,7 @@ export default function AdminFontsPage() {
   const [sourceFilter, setSourceFilter] = useState('');
 
   const swrKey = ['admin-fonts', page, categoryFilter, isActiveFilter, sourceFilter];
-  
+
   const fetcher = async () => {
     try {
       const result = await adminFontsApi.list({
@@ -33,11 +33,11 @@ export default function AdminFontsPage() {
       throw err;
     }
   };
-  
+
   const { data, isLoading, error, mutate } = useSWR(swrKey, fetcher);
 
   return (
-    <AdminLayoutClient>
+    <>
       <AdminFontsClient
         data={data}
         isLoading={isLoading}
@@ -52,7 +52,7 @@ export default function AdminFontsPage() {
         setSourceFilter={setSourceFilter}
         mutate={mutate}
       />
-    </AdminLayoutClient>
+    </>
   );
 }
 
