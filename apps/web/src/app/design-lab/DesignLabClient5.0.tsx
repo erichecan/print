@@ -144,6 +144,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               ? getDefaultProductBaseImages(resolvedColor)
               : (product.baseImages || getDefaultProductBaseImages(resolvedColor));
 
+            // [2025-12-21] 修复：检查 variants 是否为空
+            if (!product.variants || product.variants.length === 0) {
+              console.error('[DesignLab 5.0] 严重警告: 该产品没有任何变体 (Variants)数据!', product.productId);
+              // 可以考虑在这里显示一个 UI 提示，告知用户该产品无法购买或保存
+            } else {
+              console.log('[DesignLab 5.0] 产品变体数量:', product.variants.length);
+            }
+
             setProductInfo(prev => ({
               ...prev,
               productId: product.productId,
@@ -178,15 +186,25 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
 
     // [2025-12-20] 修复：如果 URL 中没有 productId（无论是否有 colorId），都加载默认产品
+    // [2025-12-21] 改进：加载特定的 Design Lab 默认产品 (design-lab-default-tee)
     if (!productId && !initialProductData) {
-      console.log('[DesignLab 5.0] No product selected (or only color selected), fetching default...');
+      console.log('[DesignLab 5.0] No product selected, fetching DEFAULT Design Lab product...');
       // 只有在还没有产品ID时才获取
       if (!productInfo.productId) {
-        getProducts({ limit: 1 })
+        // 使用 slug 查询特定的默认产品
+        getProducts({ search: 'design-lab-default-tee', limit: 1 })
           .then((response: any) => {
             if (response.data && response.data.length > 0) {
-              // 选中默认产品，这会触发 handleProductSelect -> 更新 URL -> 触发 useEffect 重新运行
-              handleProductSelect(response.data[0].id);
+              const defaultProduct = response.data.find((p: any) => p.slug === 'design-lab-default-tee') || response.data[0];
+              console.log('[DesignLab 5.0] Loaded default product:', defaultProduct.name);
+              handleProductSelect(defaultProduct.id);
+            } else {
+              // Fallback to ANY product if the specific default one isn't found
+              getProducts({ limit: 1 }).then((res: any) => {
+                if (res.data && res.data.length > 0) {
+                  handleProductSelect(res.data[0].id);
+                }
+              });
             }
           })
           .catch((err: any) => console.warn('[DesignLab 5.0] Failed to load default product:', err));
@@ -458,32 +476,80 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     console.log('[DesignLab 5.0] 颜色选择:', colorName);
 
     try {
-      // 根据颜色名称更新图片
-      const baseImages = getDefaultProductBaseImages(colorName);
-
-      // [2025-12-20] 查找对应颜色的 variantId
+      // 1. 在现有变体列表中查找目标颜色的 variantId
       let newVariantId = productInfo.colorId;
+      let targetVariant = null;
+
       if (productInfo.variants && productInfo.variants.length > 0) {
-        const variant = productInfo.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
-        if (variant) {
-          newVariantId = variant.id;
+        // [2025-12-21] 改进：不区分大小写查找
+        targetVariant = productInfo.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
+        if (targetVariant) {
+          newVariantId = targetVariant.id;
           console.log('[DesignLab 5.0] Found variant ID for color:', { color: colorName, variantId: newVariantId });
         }
+      }
+
+      // 如果没有找到变体ID，我们可以尝试仅更新前端展示（尽管这可能不准确）
+      if (!newVariantId) {
+        console.warn('[DesignLab 5.0] No variant ID found for color, falling back to legacy image logic');
+        const baseImages = getDefaultProductBaseImages(colorName);
+        setProductInfo(prev => ({
+          ...prev,
+          color: colorName,
+          baseImages,
+          // 保持原有 ID 或设为 null? 设为 null 可能更安全以免误导
+        }));
+        return;
+      }
+
+      // 2. [2025-12-21] 关键修复：使用 API 获取新变体的完整数据
+      // 这确保如果是"红色"，我们会得到后端返回的正确红色图片，而不是前端瞎猜的 GCS URL
+      try {
+        const newProductData = await getProductByVariant(newVariantId);
+
+        if (newProductData) {
+          setProductInfo(prev => ({
+            ...prev,
+            productId: newProductData.productId,
+            productName: newProductData.productName,
+            colorId: newVariantId,
+            color: newProductData.color || colorName,
+            baseImages: newProductData.baseImages, // 使用 API 返回的正确图片
+            variants: newProductData.variants || prev.variants,
+          }));
+
+          // 更新 URL：只使用 variantId，移除容易混淆的 colorId
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('colorId'); // 移除此参数避免混淆
+            url.searchParams.set('variantId', newVariantId);
+            window.history.replaceState({}, '', url.toString());
+          }
+          return;
+        }
+      } catch (fetchErr) {
+        console.error('[DesignLab 5.0] Failed to fetch variant details:', fetchErr);
+      }
+
+      // 3. 降级方案：如果 API 失败，使用本地逻辑
+      const baseImages = getDefaultProductBaseImages(colorName);
+      // 如果本地变体数据里有图片（后端新加的），优先使用
+      if (targetVariant && (targetVariant as any).imageUrl) {
+        baseImages.front = (targetVariant as any).imageUrl;
       }
 
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
         baseImages,
-        colorId: newVariantId, // 更新 variantId
+        colorId: newVariantId,
       }));
 
-      // 更新 URL（可选）
       if (typeof window !== 'undefined' && productInfo.productId) {
         const url = new URL(window.location.href);
-        url.searchParams.set('colorId', colorName);
+        // url.searchParams.set('colorId', colorName); // 不再设置 colorId
         if (newVariantId) {
-          url.searchParams.set('variantId', newVariantId); // 同时更新 variantId
+          url.searchParams.set('variantId', newVariantId);
         }
         window.history.replaceState({}, '', url.toString());
       }
@@ -2848,7 +2914,26 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               {toolPanelType === 'product-colors' && (
                 <ProductColorsPanel
                   productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
-                  colors={PRODUCT_COLORS}
+                  colors={(() => {
+                    // [2025-12-21] Fix: Use dynamic colors from DB if available, fallback to static list
+                    if (productInfo.variants && productInfo.variants.length > 0) {
+                      const uniqueColors = new Map<string, any>();
+                      productInfo.variants.forEach((v: any) => {
+                        if (!v.color) return;
+                        if (!uniqueColors.has(v.color)) {
+                          uniqueColors.set(v.color, {
+                            name: v.color,
+                            hex: v.colorHex || PRODUCT_COLORS.find(c => c.name === v.color)?.hex || '#cccccc',
+                            availableSizes: [],
+                            isAvailable: true
+                          });
+                        }
+                        if (v.size) uniqueColors.get(v.color).availableSizes.push(v.size);
+                      });
+                      return Array.from(uniqueColors.values());
+                    }
+                    return PRODUCT_COLORS;
+                  })()}
                   selectedColor={productInfo.color}
                   onSelectColor={(colorName) => {
                     handleColorSelect(colorName);

@@ -1399,14 +1399,22 @@ exports.getProductByVariantId = async (req, res) => {
       });
 
       if (product && product.variants && product.variants.length > 0) {
-        // Use first variant as default
+        // [2025-12-21] Prioritize 'White' variant as default, otherwise usage alphabetical/stock sort
+        let defaultVariant = product.variants.find(v => v.color === 'White');
+
+        if (!defaultVariant) {
+          // If no White, try to find one with high stock
+          defaultVariant = product.variants.sort((a, b) => b.stockQuantity - a.stockQuantity)[0];
+        }
+
         variant = {
-          ...product.variants[0],
+          ...defaultVariant,
           product: product
         };
-        console.log('[Backend] Found as product, using first variant:', {
+        console.log('[Backend] Found as product, using best variant:', {
           productId: product.id,
           variantId: variant.id,
+          color: variant.color,
           timestamp
         });
       }
@@ -1502,6 +1510,7 @@ exports.getProductByVariantId = async (req, res) => {
         id: v.id,
         color: v.color,
         colorHex: v.colorHex,
+        imageUrl: v.imageUrl,
         size: v.size,
         stockQuantity: v.stockQuantity,
       })), // [2025-01-30 19:30:00] 添加变体列表，用于颜色切换

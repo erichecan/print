@@ -411,6 +411,8 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     retry: 'Retry',
     noArtAssetsFound: 'No art assets found',
     noImage: 'No Image',
+    deleteOrder: 'Delete Order',
+    confirmDeleteOrder: 'Are you sure you want to delete this order? This action cannot be undone.',
   },
   zh: {
     dashboard: '仪表盘',
@@ -816,6 +818,8 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     noArtAssetsFound: '未找到艺术素材',
     noImage: '无图片',
     notifications: '通知',
+    deleteOrder: '删除订单',
+    confirmDeleteOrder: '确定要删除此订单吗？此操作无法撤销。',
   },
 };
 

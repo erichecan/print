@@ -325,14 +325,14 @@ export default function AdminOfflineOrdersPage() {
     <div style={{ marginTop: 24 }}>
       {/* [2025-01-31 20:15:00] 顶部导航链接 */}
       <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginTop: 0, marginBottom: '1rem' }}>
-        <Link 
-          href="/admin/orders" 
+        <Link
+          href="/admin/orders"
           className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
         >
           进入主站管理后台
         </Link>
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           target="_blank"
           rel="noopener noreferrer"
           className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:underline"
@@ -608,6 +608,29 @@ export default function AdminOfflineOrdersPage() {
                         </li>
                       ))}
                     </ul>
+                  </div>
+
+                  <div className="admin-form">
+                    <h3>{t('actions')}</h3>
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      style={{ width: '100%', backgroundColor: '#ef4444', color: 'white', border: 'none' }}
+                      onClick={async () => {
+                        if (confirm(t('confirmDeleteOrder'))) {
+                          try {
+                            await adminOfflineOrdersApi.delete(selectedDetail.id);
+                            setSelectedOrderId(null);
+                            await Promise.all([mutateBoard(), mutateMetrics()]);
+                          } catch (error) {
+                            console.error(error);
+                            alert((error as Error).message);
+                          }
+                        }
+                      }}
+                    >
+                      {t('deleteOrder')}
+                    </button>
                   </div>
                 </div>
 

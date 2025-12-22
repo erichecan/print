@@ -2564,6 +2564,11 @@ export const adminOfflineOrdersApi = {
       method: 'POST',
       body: payload,
     }),
+  // [2025-12-21] Fix: Add missing delete method for offline orders
+  delete: (id: string) =>
+    api(`/admin/offline-orders/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // [2025-12-06 17:10:00] Supplier API for Issue #89

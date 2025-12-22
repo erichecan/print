@@ -83,9 +83,5 @@ export const PRODUCT_COLORS: ProductColor[] = [
     { name: 'Safety Black', hex: '#cccccc', availableSizes: ["S", "M", "L", "XL", "2XL"], isAvailable: true },
     { name: 'Safety White', hex: '#cccccc', availableSizes: ["S", "M", "L", "XL", "2XL"], isAvailable: true },
     { name: 'Safety Grey', hex: '#cccccc', availableSizes: ["S", "M", "L", "XL", "2XL"], isAvailable: true },
-    { name: 'Safety Orange', hex: '#ff6600', availableSizes: ["S", "M", "L", "XL", "2XL"], isAvailable: true },
-    { name: 'Safety Green', hex: '#ccff33', availableSizes: ["S", "M", "L", "XL", "2XL"], isAvailable: true },
-    { name: 'Safety Yellow', hex: '#cccccc', availableSizes: ["S", "M", "L", "XL", "2XL"], isAvailable: true },
-    { name: 'Safety Pink', hex: '#ff33cc', availableSizes: ["S", "M", "L", "XL", "2XL"], isAvailable: true },
 ];
 
