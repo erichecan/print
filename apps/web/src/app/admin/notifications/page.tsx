@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiGet, apiPatch, apiDelete, ApiError } from '@/lib/apiClient';
-import AdminShell from '@/components/admin/AdminShell';
+
 
 interface GuestMessage {
   id: string;
@@ -119,7 +119,7 @@ export default function AdminNotificationsPage() {
   const unreadCount = messages.filter((m) => m.status === 'UNREAD').length;
 
   return (
-    <AdminShell>
+    <>
       <div style={{ padding: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>
@@ -357,7 +357,7 @@ export default function AdminNotificationsPage() {
           </div>
         )}
       </div>
-    </AdminShell>
+    </>
   );
 }
 
