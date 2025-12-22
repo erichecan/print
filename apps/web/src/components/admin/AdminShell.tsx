@@ -170,13 +170,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       })
       .catch((error: unknown) => {
         if (!mounted) return;
-        
+
         // [2025-01-27 16:10:00] 区分网络错误和认证错误
         const errorMessage = error instanceof Error ? error.message : String(error);
-        const isNetworkError = errorMessage.includes('Network error') || 
-                              errorMessage.includes('connect to server') ||
-                              errorMessage.includes('Empty response');
-        
+        const isNetworkError = errorMessage.includes('Network error') ||
+          errorMessage.includes('connect to server') ||
+          errorMessage.includes('Empty response');
+
         if (isNetworkError) {
           // 网络错误：可能是后端服务器崩溃或重启，不要立即跳转，给用户提示
           console.error('[AdminShell] Network error checking auth:', errorMessage);
@@ -189,7 +189,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           }, 3000);
           return;
         }
-        
+
         // 认证错误：用户未登录或token无效，立即跳转
         setAuthState('unauthenticated');
         const message =
@@ -392,7 +392,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
                 <Link
                   href={link.href}
                   className={isActive(link.href, link.exact) ? 'is-active' : ''}
-                  data-i18n={link.i18n}
+
                   onClick={() => setSidebarOpen(false)}
                 >
                   <span className="admin-nav-icon" aria-hidden="true">{ICONS[link.icon]}</span>
@@ -403,7 +403,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </ul>
           {!sidebarCollapsed && (
             <div className="admin-nav__footer">
-              <Link href="/" className="admin-nav__back-link" data-i18n="backToSite">
+              <Link href="/" className="admin-nav__back-link">
                 {t('backToSite')}
               </Link>
             </div>
@@ -422,14 +422,14 @@ export default function AdminShell({ children }: { children: ReactNode }) {
             >
               ☰
             </button>
-            <h1 data-i18n={currentNav?.i18n || 'dashboard'}>
+            <h1>
               {t(currentNav?.i18n || 'dashboard')}
             </h1>
           </div>
           <div className="admin-user">
             <div className="admin-user-avatar" aria-hidden="true"></div>
             <span className="admin-user-name">{user.firstName || user.email}</span>
-            <button type="button" onClick={handleLogout} className="admin-logout-link" data-i18n="logout">
+            <button type="button" onClick={handleLogout} className="admin-logout-link">
               {t('logout')}
             </button>
             <div className="admin-lang-toggle" role="group" aria-label={t('languageLabel')}>

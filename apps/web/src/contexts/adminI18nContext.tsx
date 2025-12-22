@@ -91,7 +91,13 @@ export function AdminI18nProvider({ children }: { children: ReactNode }) {
         if (element.hasAttribute('data-i18n')) {
           const key = element.getAttribute('data-i18n');
           if (key) {
-            element.textContent = t(key);
+            const translation = t(key);
+            // [2025-12-21] Fix: Prevent infinite loops and child destruction
+            // Only update if text is different AND element has no element children (to protect icons/react nodes)
+            // Or if it's a simple text-only element that React expects to be text
+            if (element.textContent !== translation && element.children.length === 0) {
+              element.textContent = translation;
+            }
           }
         }
         if (element.hasAttribute('data-i18n-placeholder')) {
