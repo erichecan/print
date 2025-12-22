@@ -24,23 +24,36 @@ exports.validateCoupon = async (req, res) => {
       });
     }
 
-    // [2025-01-28 11:15:00] Find active coupon using Prisma
-    const now = new Date();
-    const coupon = await prisma.coupon.findFirst({
-      where: {
-        code: code.toUpperCase().trim(),
-        isActive: true,
-        startDate: { lte: now },
-        endDate: { gte: now },
-      },
+    // [2025-01-28 11:15:00] Find coupon first to provide specific error messages
+    const normalizedCode = code.toUpperCase().trim();
+    const coupon = await prisma.coupon.findUnique({
+      where: { code: normalizedCode },
     }).catch((err) => {
       logger.error('[couponController] Error finding coupon:', err);
       return null;
     });
 
     if (!coupon) {
-      return res.status(404).json({
-        error: 'Invalid or expired coupon code',
+      return res.status(400).json({
+        error: 'Invalid coupon code',
+      });
+    }
+
+    if (!coupon.isActive) {
+      return res.status(400).json({
+        error: 'This coupon is no longer active',
+      });
+    }
+
+    const now = new Date();
+    if (coupon.startDate > now) {
+      return res.status(400).json({
+        error: 'Coupon is not yet active',
+      });
+    }
+    if (coupon.endDate < now) {
+      return res.status(400).json({
+        error: 'Coupon has expired',
       });
     }
 
@@ -74,19 +87,6 @@ exports.validateCoupon = async (req, res) => {
       return res.status(400).json({
         error: `Minimum order value of $${minOrderValue.toFixed(2)} required`,
         minOrderValue: minOrderValue,
-      });
-    }
-
-    // [2025-12-06 17:30:00] Check if coupon is still within valid date range
-    // Note: 'now' is already declared at line 28, no need to redeclare
-    if (coupon.startDate > now) {
-      return res.status(400).json({
-        error: 'Coupon is not yet active',
-      });
-    }
-    if (coupon.endDate < now) {
-      return res.status(400).json({
-        error: 'Coupon has expired',
       });
     }
 
