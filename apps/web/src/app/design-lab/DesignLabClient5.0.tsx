@@ -139,7 +139,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             // 使用 API 返回的图片，如果颜色被覆盖或图片为空，则回退到 GCS 默认图片
             // 注意：如果 API 返回的 baseImages 是针对特定颜色的，这里可能需要根据 resolvedColor 重新获取
             // 简单起见，如果颜色改变了，我们强制使用 getDefaultProductBaseImages
-            const shouldUseDefaultImages = resolvedColor !== product.color;
+            // [2025-12-21] Fix: If backend returned generic fallback (hero-card-tee.jpg), treat it as "no image" 
+            // and use GCS generator instead, even if color matched.
+            let shouldUseDefaultImages = resolvedColor !== product.color;
+            if (!shouldUseDefaultImages && product.baseImages && product.baseImages.front && product.baseImages.front.includes('hero-card-tee.jpg')) {
+              console.warn('[DesignLab 5.0] Generic fallback image detected on initial load, switching to GCS generator');
+              shouldUseDefaultImages = true;
+            }
+
             const images = shouldUseDefaultImages
               ? getDefaultProductBaseImages(resolvedColor)
               : (product.baseImages || getDefaultProductBaseImages(resolvedColor));
@@ -508,13 +515,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         const newProductData = await getProductByVariant(newVariantId);
 
         if (newProductData) {
+          let finalBaseImages = newProductData.baseImages;
+
+          // [2025-12-21] Fallback check: If backend returns generic fallback image (because DB lacks images),
+          // force use of GCS generated images.
+          if (!finalBaseImages.front || finalBaseImages.front.includes('hero-card-tee.jpg')) {
+            console.warn('[DesignLab 5.0] Backend returned generic fallback image, using GCS generator instead.');
+            finalBaseImages = getDefaultProductBaseImages(newProductData.color || colorName);
+          }
+
           setProductInfo(prev => ({
             ...prev,
             productId: newProductData.productId,
             productName: newProductData.productName,
             colorId: newVariantId,
             color: newProductData.color || colorName,
-            baseImages: newProductData.baseImages, // 使用 API 返回的正确图片
+            baseImages: finalBaseImages, // 使用 API 返回的正确图片(或 GCS fallback)
             variants: newProductData.variants || prev.variants,
           }));
 
@@ -691,7 +707,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-20 03:25:00] 修复：添加更详细的日志和错误处理
   // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 添加商品图片到 canvas 的辅助函数
   // [2025-12-20 10:30:00] 修复：使用 /_next/image 代理加载以解决 CORS 问题，并确保新图片加载成功后再移除旧图片
-  const addProductImageToCanvas = (imageUrl: string) => {
+  const addProductImageToCanvas = (imageUrl: string, tintColor?: string) => {
     if (!fabricCanvasRef.current || !fabricRef.current) {
       console.warn('[DesignLab 5.0] Cannot add product image: Canvas not initialized');
       return;
@@ -786,6 +802,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           },
           name: 'product-image-base',
         });
+
+        // [2025-12-21] Apply tinting filter if requested
+        if (tintColor && tintColor.toLowerCase() !== '#ffffff') {
+          console.log('[DesignLab 5.0] Applying tint filter:', tintColor);
+          fabricImg.filters.push(new (fabric as any).filters.BlendColor({
+            color: tintColor,
+            mode: 'multiply',
+            alpha: 1.0
+          }));
+          fabricImg.applyFilters();
+        }
 
         console.log('[DesignLab 5.0] Adding image to canvas...');
         fabricCanvasRef.current.add(fabricImg);
@@ -2188,9 +2215,26 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       canvasId: (canvas as any).lowerCanvasEl?.id || 'unknown'
     });
 
+    // [2025-12-21] FIX: Use Tinting logic to solve wrong GCS images
+    // We always use the WHITE image as base and apply the HEX from PRODUCT_COLORS
+    const isDefaultProduct = productInfo.productName?.includes('Design Lab Default Tee') || productInfo.productName?.includes('Loading');
+
+    let finalImageUrl = imageUrl;
+    let tintHex = '#ffffff';
+
+    if (isDefaultProduct) {
+      const colorData = PRODUCT_COLORS.find(c => c.name === productInfo.color);
+      tintHex = colorData ? colorData.hex : '#ffffff';
+
+      if (productInfo.color !== 'White') {
+        // Use white base image for tinting if color is not white
+        finalImageUrl = getDefaultProductBaseImages('White')[currentView];
+      }
+    }
+
     // 小延迟确保 Canvas 容器样式已经稳定
     const timer = setTimeout(() => {
-      addProductImageToCanvas(imageUrl);
+      addProductImageToCanvas(finalImageUrl, tintHex);
     }, 100);
 
     return () => clearTimeout(timer);

@@ -31,6 +31,7 @@ export interface ProductDetail {
     id: string;
     color: string | null;
     colorHex: string | null;
+    imageUrl?: string;
     size: string | null;
     stockQuantity: number;
   }>;
