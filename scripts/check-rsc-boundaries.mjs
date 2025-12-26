@@ -17,14 +17,14 @@ const CLIENT_APIS = [
 
 function checkFile(filePath) {
   const content = readFileSync(filePath, 'utf-8');
-  
+
   // 检查是否是服务端组件（无 'use client'）
   if (content.includes("'use client'") || content.includes('"use client"')) {
     return { hasError: false, errors: [] };
   }
 
   const errors = [];
-  
+
   for (const api of CLIENT_APIS) {
     if (content.includes(api)) {
       const lines = content.split('\n');
@@ -56,9 +56,11 @@ function checkDirectory(dirPath) {
     const stat = statSync(filePath);
 
     if (stat.isDirectory()) {
+      if (file === '__tests__') continue;
       const errors = checkDirectory(filePath);
       allErrors.push(...errors);
     } else if (file.endsWith('.tsx') || file.endsWith('.ts')) {
+      if (file.includes('.test.') || file.includes('.spec.')) continue;
       const result = checkFile(filePath);
       if (result.hasError) {
         allErrors.push(...result.errors);
