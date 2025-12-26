@@ -3,6 +3,8 @@
  * [2025-12-19 16:30:00] 使用localStorage保存设计草稿，替代后端保存
  * [2025-01-30 23:45:00] 扩展：支持多个设计存储、时间筛选、删除功能
  */
+'use client';
+
 import type { DesignCanvasSnapshot } from '@/lib/api';
 
 export interface LocalDesignDraft {
@@ -62,7 +64,7 @@ export function saveDesignToLocalStorage(
   try {
     const now = new Date().toISOString();
     const id = designId || generateDesignId();
-    
+
     const draft: LocalDesignDraft = {
       id,
       designName,
@@ -78,7 +80,7 @@ export function saveDesignToLocalStorage(
     // [2025-01-30 23:45:00] 保存到设计列表
     const allDesigns = getAllLocalDesigns();
     const existingIndex = allDesigns.findIndex(d => d.id === id);
-    
+
     if (existingIndex >= 0) {
       // 更新现有设计
       allDesigns[existingIndex] = draft;
@@ -86,16 +88,16 @@ export function saveDesignToLocalStorage(
       // 添加新设计
       allDesigns.push(draft);
     }
-    
+
     localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(allDesigns));
-    
+
     // [2025-12-19 16:30:00] 同时保存为最后一个草稿（向后兼容）
     localStorage.setItem(STORAGE_KEY_LAST_DRAFT, JSON.stringify(draft));
-    
+
     return { success: true, designId: id };
   } catch (error: any) {
     console.error('[DesignLab] Failed to save draft to localStorage:', error);
-    
+
     // [2025-12-19 16:30:00] 处理常见错误
     if (error.name === 'QuotaExceededError' || error.code === 22) {
       return { success: false, error: '存储空间不足，无法保存设计' };
@@ -117,12 +119,12 @@ export function loadDesignFromLocalStorage(): LocalDesignDraft | null {
     const allDesigns = getAllLocalDesigns();
     if (allDesigns.length > 0) {
       // 返回最近编辑的设计
-      const sorted = allDesigns.sort((a, b) => 
+      const sorted = allDesigns.sort((a, b) =>
         new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
       );
       return sorted[0];
     }
-    
+
     // 向后兼容：从旧存储位置读取
     const stored = localStorage.getItem(STORAGE_KEY_LAST_DRAFT);
     if (!stored) {
@@ -130,25 +132,25 @@ export function loadDesignFromLocalStorage(): LocalDesignDraft | null {
     }
 
     const draft: LocalDesignDraft = JSON.parse(stored);
-    
+
     // [2025-01-30 23:45:00] 迁移旧数据：如果没有ID，生成一个
     if (!draft.id) {
       draft.id = generateDesignId();
       draft.updatedAt = draft.updatedAt || draft.savedAt;
       draft.source = 'local';
     }
-    
+
     // [2025-12-19 16:30:00] 验证版本兼容性（简单版本检查）
     if (draft.version && draft.version !== CURRENT_VERSION) {
       console.warn(`[DesignLab] Draft version mismatch: ${draft.version} vs ${CURRENT_VERSION}. Attempting to load anyway.`);
     }
-    
+
     // [2025-12-19 16:30:00] 验证必要字段
     if (!draft.designName || !draft.viewCanvases || !draft.currentView || !draft.productInfo) {
       console.error('[DesignLab] Invalid draft data structure');
       return null;
     }
-    
+
     return draft;
   } catch (error) {
     console.error('[DesignLab] Failed to load draft from localStorage:', error);
@@ -166,9 +168,9 @@ export function getAllLocalDesigns(): LocalDesignDraft[] {
     if (!stored) {
       return [];
     }
-    
+
     const designs: LocalDesignDraft[] = JSON.parse(stored);
-    
+
     // 验证和迁移旧数据
     return designs.map(design => {
       if (!design.id) {
@@ -207,14 +209,14 @@ export function getLocalDesignById(id: string): LocalDesignDraft | null {
  */
 export function getLocalDesignsByDays(days: number): LocalDesignDraft[] {
   const allDesigns = getAllLocalDesigns();
-  
+
   if (days === 0) {
     return allDesigns;
   }
-  
+
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
-  
+
   return allDesigns.filter(design => {
     const updatedAt = new Date(design.updatedAt || design.savedAt);
     return updatedAt >= cutoffDate;
@@ -229,19 +231,19 @@ export function deleteLocalDesign(id: string): { success: boolean; error?: strin
   try {
     const allDesigns = getAllLocalDesigns();
     const filtered = allDesigns.filter(d => d.id !== id);
-    
+
     if (filtered.length === allDesigns.length) {
       return { success: false, error: '设计不存在' };
     }
-    
+
     localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(filtered));
-    
+
     // 如果删除的是最后一个草稿，也清除旧存储
     const lastDraft = loadDesignFromLocalStorage();
     if (lastDraft?.id === id) {
       localStorage.removeItem(STORAGE_KEY_LAST_DRAFT);
     }
-    
+
     return { success: true };
   } catch (error: any) {
     console.error('[DesignLab] Failed to delete local design:', error);

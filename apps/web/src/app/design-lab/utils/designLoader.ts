@@ -2,6 +2,8 @@
  * 设计加载工具
  * [2025-01-30 23:55:00] 从云端或本地加载设计到 Design Lab
  */
+'use client';
+
 import { designLabApi } from '@/lib/api';
 import type { DesignDraft, DesignCanvasSnapshot } from '@/lib/api';
 import { getLocalDesignById, type LocalDesignDraft } from './localStorage';
@@ -40,20 +42,20 @@ export interface DesignLoadResult {
 async function loadDesignFromCloud(designId: string): Promise<DesignLoadResult> {
   try {
     const response = await designLabApi.getDraft(designId);
-    
+
     if (!response.data) {
       return { success: false, error: '设计数据为空' };
     }
-    
+
     const design = response.data;
-    
+
     // [2025-01-31 00:15:00] 转换云端设计格式为 Design Lab 需要的格式
     // 云端设计可能只有单面数据（canvasSnapshot），需要转换为三面格式
     const canvasSnapshot: DesignCanvasSnapshot = design.canvasSnapshot || {
       size: { width: 4000, height: 4800 },
       objects: [],
     };
-    
+
     return {
       success: true,
       design: {
@@ -92,11 +94,11 @@ async function loadDesignFromCloud(designId: string): Promise<DesignLoadResult> 
 function loadDesignFromLocal(designId: string): DesignLoadResult {
   try {
     const localDesign = getLocalDesignById(designId);
-    
+
     if (!localDesign) {
       return { success: false, error: '本地设计不存在', source: 'local' };
     }
-    
+
     // 转换本地设计格式为 Design Lab 需要的格式
     return {
       success: true,
@@ -152,12 +154,12 @@ export async function loadMergedDesign(
       return result;
     }
   }
-  
+
   // 如果云端加载失败或不存在，加载本地版本
   if (mergedDesign.localId) {
     return loadDesignFromLocal(mergedDesign.localId);
   }
-  
+
   return {
     success: false,
     error: '设计ID不存在',
