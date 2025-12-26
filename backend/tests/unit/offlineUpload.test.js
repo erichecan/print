@@ -17,6 +17,7 @@ describe('offlineUpload utils', () => {
   });
 
   it('validates file extensions using defaults', () => {
+    delete process.env.OFFLINE_ORDER_ALLOWED_EXTENSIONS;
     expect(offlineUpload.isExtensionAllowed('design.ai')).toBe(true);
     expect(offlineUpload.isExtensionAllowed('design.exe')).toBe(false);
   });

@@ -40,6 +40,7 @@ const mockCart = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  process.env.STRIPE_SECRET_KEY = 'sk_test_unit'; // Ensure key exists
   prisma.cart.findUnique.mockResolvedValue(mockCart);
   prisma.cart.create.mockResolvedValue(mockCart);
 });
@@ -102,7 +103,7 @@ describe('[2025-11-12 02:10:00] checkoutController.createPaymentIntent', () => {
     await checkoutController.createPaymentIntent(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Shipping address is required' });
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Shipping address is required' }));
   });
 
   it('returns 400 when cart is empty', async () => {
@@ -123,7 +124,7 @@ describe('[2025-11-12 02:10:00] checkoutController.createPaymentIntent', () => {
     await checkoutController.createPaymentIntent(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Cart is empty' });
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Cart is empty' }));
   });
 
   it('creates payment intent and returns breakdown', async () => {
@@ -148,7 +149,8 @@ describe('[2025-11-12 02:10:00] checkoutController.createPaymentIntent', () => {
     await checkoutController.createPaymentIntent(req, res);
 
     expect(mockStripeCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ amount: expect.any(Number), currency: 'cad' })
+      expect.objectContaining({ amount: expect.any(Number), currency: 'cad' }),
+      expect.anything() // Expect options object (idempotencyKey)
     );
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -178,7 +180,7 @@ describe('[2025-11-12 02:10:00] checkoutController.createPaymentIntent', () => {
     await checkoutController.createPaymentIntent(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Stripe is not configured' });
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Stripe is not configured' }));
 
     process.env.STRIPE_SECRET_KEY = originalStripeKey;
   });

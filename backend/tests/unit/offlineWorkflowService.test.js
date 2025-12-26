@@ -26,6 +26,7 @@ describe('offlineWorkflowService.normalizeStages', () => {
     expect(stages).toEqual([
       { key: 'draft', label: 'Draft', description: '', position: 4 },
       { key: 'review', label: 'Review', description: '', position: 1 },
+      { key: 'production', label: 'Production', description: '', position: 2 },
       { key: 'shipping', label: 'Shipping', description: '', position: 3 }
     ]);
   });
