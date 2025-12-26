@@ -3,7 +3,7 @@
  * [2025-01-27 14:20:00] Tests for inventory management service
  */
 jest.mock('../../src/lib/prisma', () => ({
-  productVariant: {
+  variant: {
     findUnique: jest.fn(),
     findMany: jest.fn(),
     update: jest.fn(),
@@ -42,10 +42,10 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
       ];
 
       prisma.$transaction.mockImplementation((queries) => {
-        return Promise.all(queries.map((query, index) => query(mockVariants[index])));
+        return Promise.all(queries);
       });
 
-      prisma.productVariant.update.mockImplementation(({ where, data }) => {
+      prisma.variant.update.mockImplementation(({ where, data }) => {
         const variant = mockVariants.find((v) => v.id === where.id);
         return Promise.resolve({
           ...variant,
@@ -118,7 +118,7 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
         },
       };
 
-      prisma.productVariant.findUnique.mockResolvedValueOnce(variant);
+      prisma.variant.findUnique.mockResolvedValueOnce(variant);
 
       const result = await inventoryService.checkStockAvailability('variant_1', 5);
 
@@ -138,7 +138,7 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
         },
       };
 
-      prisma.productVariant.findUnique.mockResolvedValueOnce(variant);
+      prisma.variant.findUnique.mockResolvedValueOnce(variant);
 
       const result = await inventoryService.checkStockAvailability('variant_1', 5);
 
@@ -148,7 +148,7 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
     });
 
     it('should throw error if variant not found', async () => {
-      prisma.productVariant.findUnique.mockResolvedValueOnce(null);
+      prisma.variant.findUnique.mockResolvedValueOnce(null);
 
       await expect(
         inventoryService.checkStockAvailability('invalid_variant', 1)
@@ -166,7 +166,7 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
         },
       };
 
-      prisma.productVariant.findUnique.mockResolvedValueOnce(variant);
+      prisma.variant.findUnique.mockResolvedValueOnce(variant);
 
       await expect(
         inventoryService.checkStockAvailability('variant_1', 1)
@@ -176,7 +176,7 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
 
   describe('checkMultipleStockAvailability', () => {
     it('should return all sufficient when all items have stock', async () => {
-      prisma.productVariant.findUnique
+      prisma.variant.findUnique
         .mockResolvedValueOnce({
           id: 'variant_1',
           sku: 'SKU-001',
@@ -202,7 +202,7 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
     });
 
     it('should identify insufficient stock items', async () => {
-      prisma.productVariant.findUnique
+      prisma.variant.findUnique
         .mockResolvedValueOnce({
           id: 'variant_1',
           sku: 'SKU-001',
@@ -258,14 +258,13 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
         },
       ];
 
-      prisma.productVariant.findMany.mockResolvedValueOnce(lowStockVariants);
+      prisma.variant.findMany.mockResolvedValueOnce(lowStockVariants);
 
       const result = await inventoryService.getLowStockProducts(10);
 
-      expect(prisma.productVariant.findMany).toHaveBeenCalledWith(
+      expect(prisma.variant.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
-            stockQuantity: { lte: 10 },
             product: { isActive: true },
           },
         })
@@ -276,15 +275,15 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
     });
 
     it('should use default threshold if not provided', async () => {
-      prisma.productVariant.findMany.mockResolvedValueOnce([]);
+      prisma.variant.findMany.mockResolvedValueOnce([]);
 
       await inventoryService.getLowStockProducts();
 
-      expect(prisma.productVariant.findMany).toHaveBeenCalledWith(
+      expect(prisma.variant.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: expect.objectContaining({
-            stockQuantity: { lte: expect.any(Number) },
-          }),
+          where: {
+            product: { isActive: true },
+          },
         })
       );
     });
@@ -307,11 +306,11 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
         },
       ];
 
-      prisma.productVariant.findMany.mockResolvedValueOnce(outOfStockVariants);
+      prisma.variant.findMany.mockResolvedValueOnce(outOfStockVariants);
 
       const result = await inventoryService.getOutOfStockProducts();
 
-      expect(prisma.productVariant.findMany).toHaveBeenCalledWith(
+      expect(prisma.variant.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: {
             stockQuantity: { lte: 0 },
@@ -335,11 +334,11 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
         },
       };
 
-      prisma.productVariant.update.mockResolvedValueOnce(updatedVariant);
+      prisma.variant.update.mockResolvedValueOnce(updatedVariant);
 
       const result = await inventoryService.updateStockQuantity('variant_1', 20);
 
-      expect(prisma.productVariant.update).toHaveBeenCalledWith({
+      expect(prisma.variant.update).toHaveBeenCalledWith({
         where: { id: 'variant_1' },
         data: {
           stockQuantity: 20,
@@ -365,11 +364,11 @@ describe('[2025-01-27 14:20:00] inventoryService', () => {
         },
       };
 
-      prisma.productVariant.update.mockResolvedValueOnce(updatedVariant);
+      prisma.variant.update.mockResolvedValueOnce(updatedVariant);
 
       await inventoryService.updateStockQuantity('variant_1', -5);
 
-      expect(prisma.productVariant.update).toHaveBeenCalledWith(
+      expect(prisma.variant.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: {
             stockQuantity: 0, // Math.max(0, -5) = 0

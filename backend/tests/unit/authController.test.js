@@ -8,7 +8,9 @@ const jwt = require('jsonwebtoken');
 jest.mock('../../src/lib/prisma', () => ({
   user: {
     findUnique: jest.fn(),
+    findFirst: jest.fn(),
     create: jest.fn(),
+    update: jest.fn(),
   },
 }));
 
@@ -382,7 +384,7 @@ describe('[2025-01-27 12:00:00] authController.forgotPassword', () => {
 });
 
 describe('[2025-01-27 12:00:00] authController.resetPassword', () => {
-  it('should return 501 (not implemented)', async () => {
+  it('should reset password successfully', async () => {
     const req = {
       body: {
         token: 'reset_token',
@@ -391,12 +393,29 @@ describe('[2025-01-27 12:00:00] authController.resetPassword', () => {
     };
     const res = createMockResponse();
 
+    prisma.user.findFirst.mockResolvedValueOnce({
+      id: 'user_123',
+      email: 'test@example.com',
+      passwordResetToken: 'reset_token',
+    });
+    bcrypt.hash.mockResolvedValueOnce('new_hashed_password');
+    prisma.user.update.mockResolvedValueOnce({});
+
     await authController.resetPassword(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(501);
-    expect(res.json).toHaveBeenCalledWith({
-      error: 'Password reset not implemented yet',
-    });
+    expect(prisma.user.findFirst).toHaveBeenCalledWith(expect.objectContaining({
+      where: expect.objectContaining({ passwordResetToken: 'reset_token' })
+    }));
+    expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'user_123' },
+      data: expect.objectContaining({
+        passwordHash: 'new_hashed_password',
+        passwordResetToken: null
+      })
+    }));
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('successfully')
+    }));
   });
 
   it('should return 400 if token is missing', async () => {

@@ -8,7 +8,7 @@ jest.mock('../../src/lib/prisma', () => ({
     update: jest.fn(),
     updateMany: jest.fn(),
   },
-  productVariant: {
+  variant: {
     update: jest.fn(),
   },
   $transaction: jest.fn(),
@@ -209,7 +209,7 @@ describe('[2025-01-27 14:25:00] orderService', () => {
               status: 'CANCELLED',
             }),
           },
-          productVariant: {
+          variant: {
             update: jest.fn().mockResolvedValueOnce({
               id: 'variant_1',
               stockQuantity: 12,
@@ -274,7 +274,7 @@ describe('[2025-01-27 14:25:00] orderService', () => {
         restoreInventory: false,
       });
 
-      // Verify productVariant.update was not called
+      // Verify variant.update was not called
       expect(prisma.$transaction).toHaveBeenCalled();
     });
   });

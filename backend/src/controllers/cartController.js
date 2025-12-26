@@ -439,7 +439,7 @@ exports.addItem = async (req, res) => {
     logger.error('Error adding item to cart:', {
       error: error.message,
       stack: error.stack,
-      variantId,
+      variantId: req.body?.variantId,
       userId: userId || null,
       sessionId: sessionId || null,
     });

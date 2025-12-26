@@ -8,18 +8,30 @@ jest.mock('../../src/lib/prisma', () => ({
     create: jest.fn(),
   },
   cartItem: {
+    findUnique: jest.fn(),
     findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
     deleteMany: jest.fn(),
   },
-  productVariant: {
+  variant: {
     findUnique: jest.fn(),
   },
 }));
 
 const prisma = require('../../src/lib/prisma');
+const { checkStockAvailability } = require('../../src/services/inventoryService');
+
+jest.mock('../../src/services/inventoryService', () => ({
+  checkStockAvailability: jest.fn().mockResolvedValue({
+    sufficient: true,
+    available: 10,
+    requested: 1,
+    variant: { sku: 'SKU-1', productName: 'Product 1' },
+  }),
+}));
+
 const cartController = require('../../src/controllers/cartController');
 
 function createMockResponse() {
@@ -142,7 +154,7 @@ describe('[2025-01-27 12:15:00] cartController.addItem', () => {
   });
 
   it('should add new item to cart', async () => {
-    prisma.productVariant.findUnique.mockResolvedValueOnce(mockVariant);
+    prisma.variant.findUnique.mockResolvedValueOnce(mockVariant);
     prisma.cart.findUnique.mockResolvedValueOnce(mockCart);
     prisma.cartItem.findFirst.mockResolvedValueOnce(null);
     prisma.cartItem.create.mockResolvedValueOnce({
@@ -165,7 +177,7 @@ describe('[2025-01-27 12:15:00] cartController.addItem', () => {
 
     await cartController.addItem(req, res);
 
-    expect(prisma.productVariant.findUnique).toHaveBeenCalledWith({
+    expect(prisma.variant.findUnique).toHaveBeenCalledWith({
       where: { id: 'variant_123' },
       include: { product: true },
     });
@@ -188,7 +200,7 @@ describe('[2025-01-27 12:15:00] cartController.addItem', () => {
       quantity: 2,
     };
 
-    prisma.productVariant.findUnique.mockResolvedValueOnce(mockVariant);
+    prisma.variant.findUnique.mockResolvedValueOnce(mockVariant);
     prisma.cart.findUnique.mockResolvedValueOnce(mockCart);
     prisma.cartItem.findFirst.mockResolvedValueOnce(existingItem);
     prisma.cartItem.update.mockResolvedValueOnce({
@@ -258,7 +270,7 @@ describe('[2025-01-27 12:15:00] cartController.addItem', () => {
   });
 
   it('should return 404 if variant not found', async () => {
-    prisma.productVariant.findUnique.mockResolvedValueOnce(null);
+    prisma.variant.findUnique.mockResolvedValueOnce(null);
 
     const req = {
       body: {
@@ -290,6 +302,7 @@ describe('[2025-01-27 12:15:00] cartController.updateItem', () => {
       id: 'item_1',
       cartId: 'cart_123',
       quantity: 2,
+      variantId: 'variant_123',
     };
 
     prisma.cart.findUnique.mockResolvedValueOnce(mockCart);
@@ -385,10 +398,13 @@ describe('[2025-01-27 12:15:00] cartController.removeItem', () => {
     const cartItem = {
       id: 'item_1',
       cartId: 'cart_123',
+      cart: {
+        userId: 'user_123',
+        sessionId: null,
+      },
     };
 
-    prisma.cart.findUnique.mockResolvedValueOnce(mockCart);
-    prisma.cartItem.findFirst.mockResolvedValueOnce(cartItem);
+    prisma.cartItem.findUnique.mockResolvedValueOnce(cartItem);
     prisma.cartItem.delete.mockResolvedValueOnce(cartItem);
 
     const req = {
