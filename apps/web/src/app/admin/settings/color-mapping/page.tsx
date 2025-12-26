@@ -121,7 +121,7 @@ export default function ColorMappingPage() {
                         <li><strong>Hex Updates:</strong> Adjust color swatches instantly in the Design Lab.</li>
                         <li><strong>GCS Uploads:</strong> Select transparent PNGs for Front, Back, or Sleeve.</li>
                         <li><strong>Automatic Pathing:</strong> Files are auto-renamed and synced to GCS folders.</li>
-                        <li><strong>Preview:</strong> The "Tint Preview" shows how the Hex applies to the white base image.</li>
+                        <li><strong>Preview:</strong> The &quot;Tint Preview&quot; shows how the Hex applies to the white base image.</li>
                     </ul>
                 </div>
                 <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl text-slate-300">
@@ -177,6 +177,7 @@ export default function ColorMappingPage() {
                                         className="relative w-24 h-24 border border-gray-200 rounded-2xl overflow-hidden bg-white shadow-sm ring-1 ring-gray-100 group-hover:ring-indigo-200 transition-all"
                                         style={{ backgroundColor: color.hex }}
                                     >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={getDefaultProductBaseImages('White').front}
                                             alt="Base"

@@ -57,6 +57,7 @@ export default function ColorCheckPage() {
                                 <td className="py-2 px-4 align-middle">
                                     {/* Raw Image */}
                                     <div className="relative w-20 h-20 bg-gray-100 border rounded overflow-hidden">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={gcsImage}
                                             alt={v.color || 'Product'}
@@ -72,6 +73,7 @@ export default function ColorCheckPage() {
                                         className="relative w-20 h-20 border rounded overflow-hidden"
                                         style={{ backgroundColor: v.colorHex || '#fff' }}
                                     >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                             src={getDefaultProductBaseImages('White').front}
                                             alt="Base"

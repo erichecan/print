@@ -61,11 +61,11 @@ export default function AdminArtAssetsClient({
     console.log('[AdminArtAssets] Raw data:', data);
     console.log('[AdminArtAssets] isLoading:', isLoading);
     console.log('[AdminArtAssets] error:', error);
-    
+
     const result = data?.data ?? [];
     console.log('[AdminArtAssets] Processed assets array:', result);
     console.log('[AdminArtAssets] Assets count:', result.length);
-    
+
     // [2025-01-28 02:30:00] 添加日志以便调试图片显示问题
     if (result.length > 0) {
       console.log('[AdminArtAssets] ✅ Loaded assets:', result.length);
@@ -315,6 +315,7 @@ export default function AdminArtAssetsClient({
                           console.log('[AdminArtAssets] Rendering image:', { assetId: asset.id, imageSrc });
                           // [2025-01-28 02:35:00] 使用普通 img 标签以避免 Next.js Image 组件的限制
                           return (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={imageSrc}
                               alt={asset.name}

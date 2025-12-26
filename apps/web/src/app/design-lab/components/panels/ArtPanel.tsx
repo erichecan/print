@@ -251,9 +251,10 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                         // [2025-01-30 13:25:00] CORS 修复：使用代理 URL
                         const thumbnailUrl = getProxyUrl(artwork.thumbnailUrl);
                         const imageUrl = getProxyUrl(artwork.imageUrl);
-                        
+
                         if (thumbnailUrl) {
                           return (
+                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={thumbnailUrl}
                               alt={artwork.title}
@@ -267,6 +268,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                             />
                           );
                         } else if (imageUrl) {
+                          // eslint-disable-next-line @next/next/no-img-element
                           return <img src={imageUrl} alt={artwork.title} loading="lazy" />;
                         } else {
                           return <div className="dl-art-panel__asset-placeholder">🎨</div>;

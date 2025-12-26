@@ -15,8 +15,8 @@ interface UploadPanelProps {
   onClose?: () => void;
 }
 
-const UploadPanel: React.FC<UploadPanelProps> = ({ 
-  onFileSelect, 
+const UploadPanel: React.FC<UploadPanelProps> = ({
+  onFileSelect,
   onBrowseClick,
   recentUploads = [],
   onRecentUploadClick,
@@ -62,9 +62,9 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     <div className="dl-upload-panel">
       <div className="dl-upload-panel__header">
         <h2 className="dl-upload-panel__title" data-testid="upload-panel-title">Choose File To Upload</h2>
-        <button 
-          className="dl-upload-panel__close" 
-          aria-label="Close" 
+        <button
+          className="dl-upload-panel__close"
+          aria-label="Close"
           type="button"
           onClick={onClose}
         >
@@ -98,7 +98,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           <span>or</span>
         </div>
 
-        <div 
+        <div
           className={`dl-upload-panel__drag-drop ${dragActive ? 'is-active' : ''}`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -137,6 +137,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
                   onClick={() => onRecentUploadClick?.(upload)}
                   type="button"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={upload.thumbnail} alt="Recent upload" />
                 </button>
               ))}

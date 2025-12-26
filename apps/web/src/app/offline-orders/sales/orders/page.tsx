@@ -124,19 +124,19 @@ function StatusSelector({
         `}>
           {currentLabel}
         </span>
-        <svg 
-          width="16" 
-          height="16" 
-          viewBox="0 0 24 24" 
-          aria-hidden="true" 
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
           className={`text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`}
         >
-          <path 
-            d="M6 9l6 6 6-6" 
-            stroke="currentColor" 
-            strokeWidth="2" 
-            fill="none" 
-            strokeLinecap="round" 
+          <path
+            d="M6 9l6 6 6-6"
+            stroke="currentColor"
+            strokeWidth="2"
+            fill="none"
+            strokeLinecap="round"
             strokeLinejoin="round"
           />
         </svg>
@@ -223,10 +223,10 @@ export default function SalesOrdersPage() {
       page: 'offline-orders/sales/orders',
     });
   }, []);
-  
+
   // [2025-01-27 13:00:00] Tab状态管理
   const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
-  
+
   // [2025-01-27 13:00:00] 配置管理状态
   const [configTab, setConfigTab] = useState<'colors' | 'products'>('colors');
   const [colors, setColors] = useState<Color[]>([]);
@@ -350,7 +350,7 @@ export default function SalesOrdersPage() {
   // [2025-12-07 04:55:00] 快速修改订单阶段
   const handleQuickUpdateStage = async (orderId: string, newStageKey: string) => {
     if (!newStageKey) return;
-    
+
     setUpdatingStage(orderId);
     try {
       await salesOrdersApi.updateStage(orderId, { stageKey: newStageKey });
@@ -368,13 +368,13 @@ export default function SalesOrdersPage() {
   // [2025-12-07 06:50:00] 支持 ACTIVE_RUSH 状态
   const handleQuickUpdateStatus = async (orderId: string, newStatus: string) => {
     if (!newStatus) return;
-    
+
     setUpdatingStatus(orderId);
     try {
       // [2025-12-07 06:50:00] 处理 ACTIVE_RUSH 状态
       let actualStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
       let rushOrder: boolean | undefined;
-      
+
       if (newStatus === 'ACTIVE_RUSH') {
         actualStatus = 'ACTIVE';
         rushOrder = true;
@@ -383,9 +383,9 @@ export default function SalesOrdersPage() {
         // 如果从 ACTIVE_RUSH 切换到其他状态，取消加急标记
         rushOrder = false;
       }
-      
+
       await salesOrdersApi.updateStatus(orderId, actualStatus, rushOrder);
-      
+
       // 刷新订单列表
       const response = await salesOrdersApi.list({ page: 1, limit: 50 });
       setOrders(response.data);
@@ -592,112 +592,112 @@ export default function SalesOrdersPage() {
         {activeTab === 'orders' && (
           <div className="sales-orders-tab-content">
 
-        {loading ? (
-          <p>正在加载订单...</p>
-        ) : orders.length === 0 ? (
-          <p>当前还没有线下订单。</p>
-        ) : (
-          <table className="sales-orders-table">
-            <thead>
-              <tr>
-                <th>订单编号</th>
-                <th>项目名称</th>
-                <th>客户</th>
-                {isManager && <th>创建者</th>}
-                <th>数量</th>
-                <th>交付日期</th>
-                <th>状态</th>
-                <th>阶段</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td>{order.orderCode}</td>
-                  <td>{order.projectName}</td>
-                  <td>
-                    <div className="sales-orders-contact">
-                      <span>{order.contact.name}</span>
-                      <span className="sales-orders-contact-sub">
-                        {order.contact.company || order.contact.email}
-                      </span>
-                    </div>
-                  </td>
-                  {isManager && (
-                    <td>
-                      {order.creator ? (
-                        <div className="sales-orders-creator">
-                          <span>{order.creator.name}</span>
-                          <span className="sales-orders-creator-sub">{order.creator.email}</span>
+            {loading ? (
+              <p>正在加载订单...</p>
+            ) : orders.length === 0 ? (
+              <p>当前还没有线下订单。</p>
+            ) : (
+              <table className="sales-orders-table">
+                <thead>
+                  <tr>
+                    <th>订单编号</th>
+                    <th>项目名称</th>
+                    <th>客户</th>
+                    {isManager && <th>创建者</th>}
+                    <th>数量</th>
+                    <th>交付日期</th>
+                    <th>状态</th>
+                    <th>阶段</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.id}>
+                      <td>{order.orderCode}</td>
+                      <td>{order.projectName}</td>
+                      <td>
+                        <div className="sales-orders-contact">
+                          <span>{order.contact.name}</span>
+                          <span className="sales-orders-contact-sub">
+                            {order.contact.company || order.contact.email}
+                          </span>
                         </div>
-                      ) : (
-                        '—'
+                      </td>
+                      {isManager && (
+                        <td>
+                          {order.creator ? (
+                            <div className="sales-orders-creator">
+                              <span>{order.creator.name}</span>
+                              <span className="sales-orders-creator-sub">{order.creator.email}</span>
+                            </div>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                       )}
-                    </td>
-                  )}
-                  <td>{order.quantity ?? '—'}</td>
-                  <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                      <StatusSelector
-                        orderId={order.id}
-                        currentValue={order.status}
-                        statusOptions={statusOptions}
-                        onUpdate={handleQuickUpdateStatus}
-                        disabled={updatingStatus === order.id}
-                      />
-                      {order.rushOrder && (
-                        <span className="tag tag-rush">加急</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="sales-orders-stage">
-                      {stages.length > 0 ? (
-                        <select
-                          value={order.stage?.key || ''}
-                          onChange={(e) => handleQuickUpdateStage(order.id, e.target.value)}
-                          disabled={updatingStage === order.id}
-                          className="sales-orders-stage-select"
-                        >
-                          <option value="">—</option>
-                          {stages.map((stage) => (
-                            <option key={stage.key} value={stage.key}>
-                              {stage.label}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span>{order.stage?.label || '—'}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <button
-                        type="button"
-                        className="sales-orders-detail-btn-small"
-                        onClick={() => handleViewDetail(order.id)}
-                      >
-                        详情
-                      </button>
-                      <button
-                        type="button"
-                        className="sales-orders-delete-btn"
-                        onClick={() => handleDeleteOrder(order.id, order.orderCode)}
-                        disabled={deletingOrder === order.id}
-                        title="删除订单"
-                      >
-                        {deletingOrder === order.id ? '删除中...' : '🗑️'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                      <td>{order.quantity ?? '—'}</td>
+                      <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <StatusSelector
+                            orderId={order.id}
+                            currentValue={order.status}
+                            statusOptions={statusOptions}
+                            onUpdate={handleQuickUpdateStatus}
+                            disabled={updatingStatus === order.id}
+                          />
+                          {order.rushOrder && (
+                            <span className="tag tag-rush">加急</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="sales-orders-stage">
+                          {stages.length > 0 ? (
+                            <select
+                              value={order.stage?.key || ''}
+                              onChange={(e) => handleQuickUpdateStage(order.id, e.target.value)}
+                              disabled={updatingStage === order.id}
+                              className="sales-orders-stage-select"
+                            >
+                              <option value="">—</option>
+                              {stages.map((stage) => (
+                                <option key={stage.key} value={stage.key}>
+                                  {stage.label}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span>{order.stage?.label || '—'}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <button
+                            type="button"
+                            className="sales-orders-detail-btn-small"
+                            onClick={() => handleViewDetail(order.id)}
+                          >
+                            详情
+                          </button>
+                          <button
+                            type="button"
+                            className="sales-orders-delete-btn"
+                            onClick={() => handleDeleteOrder(order.id, order.orderCode)}
+                            disabled={deletingOrder === order.id}
+                            title="删除订单"
+                          >
+                            {deletingOrder === order.id ? '删除中...' : '🗑️'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
 
@@ -725,7 +725,7 @@ export default function SalesOrdersPage() {
               <div className="config-tab-panel">
                 <h2>颜色管理</h2>
                 <p className="config-desc">管理产品可选的颜色列表</p>
-                
+
                 <div className="config-form">
                   <h3>添加新颜色</h3>
                   <div className="config-form-row">
@@ -851,7 +851,7 @@ export default function SalesOrdersPage() {
               <div className="config-tab-panel">
                 <h2>产品管理</h2>
                 <p className="config-desc">管理线下订单可用的产品列表（显示哪些产品可以定制）</p>
-                
+
                 <div className="config-form">
                   <h3>添加新产品</h3>
                   <div className="config-form-row">
@@ -918,6 +918,7 @@ export default function SalesOrdersPage() {
                                 placeholder="图片 URL"
                               />
                             ) : product.imageUrl ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
                               <img src={product.imageUrl} alt={product.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
                             ) : (
                               '—'

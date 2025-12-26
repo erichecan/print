@@ -79,7 +79,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
       { name: '', number: '', size: '' },
       { name: '', number: '', size: '' },
     ]);
-    
+
     // [2025-12-08] 埋点：Names & Numbers 添加
     if (typeof window !== 'undefined') {
       const { analytics } = require('@/lib/analytics');
@@ -185,8 +185,9 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
             <div className="dl-names-numbers-intro">
               {/* [2025-01-31 00:00:00] 添加介绍图片 */}
               <div className="dl-names-numbers-intro__image">
-                <img 
-                  src="/images/names-numbers-intro.jpg" 
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/names-numbers-intro.jpg"
                   alt="Team jerseys with names and numbers"
                   onError={(e) => {
                     // 如果图片不存在，使用占位符

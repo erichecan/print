@@ -73,29 +73,29 @@ export function HomeMobileClient() {
   // [2025-01-29 04:00:00] 使用 CMS 数据或默认值
   const heroTitle = homePage?.heroTitle || 'Custom T-shirts & Promo Gear for Your Group';
   const heroSubtitle = homePage?.heroSubtitle || 'From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.';
-  
+
   // [2025-01-29 23:15:00] 使用数据库分类数据，如果没有则使用默认值
   const categories = categoriesData?.data?.length > 0
     ? categoriesData.data.map((category: Category) => ({
-        id: category.id,
-        name: category.name,
-        slug: category.slug,
-        image: category.imageUrl || getCategoryImagePath(category),
-      }))
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      image: category.imageUrl || getCategoryImagePath(category),
+    }))
     : homePage?.categories || [
-        { id: 'cat-1', name: 'T-shirts', slug: 't-shirts', image: '/assets/categories/cat-tshirt.png' },
-        { id: 'cat-2', name: 'Hoodies & Sweatshirts', slug: 'sweatshirts', image: '/assets/categories/cat-sweatshirt.png' },
-        { id: 'cat-3', name: 'Hats', slug: 'hats', image: '/assets/categories/cat-hat.png' },
-        { id: 'cat-4', name: 'Jackets & Vests', slug: 'jackets', image: '/assets/categories/cat-jacket-vest.png' },
-        { id: 'cat-5', name: 'Bags', slug: 'bags', image: '/assets/categories/cat-bag.png' },
-        { id: 'cat-6', name: 'Drinkware', slug: 'drinkware', image: '/assets/categories/cat-drinkware.png' },
-        { id: 'cat-7', name: 'Polos & Business Wear', slug: 'polo', image: '/assets/categories/cat-polo-business.png' },
-        { id: 'cat-8', name: 'Workwear and Uniforms', slug: 'workwear', image: '/assets/categories/cat-workwear.png' },
-        { id: 'cat-9', name: 'Office Supplies', slug: 'office', image: '/assets/categories/cat-office.png' },
-        { id: 'cat-10', name: 'Technology', slug: 'tech', image: '/assets/categories/cat-tech.png' },
-        { id: 'cat-11', name: 'Trade Show & Signage', slug: 'trade-show', image: '/assets/categories/cat-trade-show.png' },
-        { id: 'cat-12', name: 'Athleticwear', slug: 'activewear', image: '/assets/categories/cat-activewear.png' },
-      ];
+      { id: 'cat-1', name: 'T-shirts', slug: 't-shirts', image: '/assets/categories/cat-tshirt.png' },
+      { id: 'cat-2', name: 'Hoodies & Sweatshirts', slug: 'sweatshirts', image: '/assets/categories/cat-sweatshirt.png' },
+      { id: 'cat-3', name: 'Hats', slug: 'hats', image: '/assets/categories/cat-hat.png' },
+      { id: 'cat-4', name: 'Jackets & Vests', slug: 'jackets', image: '/assets/categories/cat-jacket-vest.png' },
+      { id: 'cat-5', name: 'Bags', slug: 'bags', image: '/assets/categories/cat-bag.png' },
+      { id: 'cat-6', name: 'Drinkware', slug: 'drinkware', image: '/assets/categories/cat-drinkware.png' },
+      { id: 'cat-7', name: 'Polos & Business Wear', slug: 'polo', image: '/assets/categories/cat-polo-business.png' },
+      { id: 'cat-8', name: 'Workwear and Uniforms', slug: 'workwear', image: '/assets/categories/cat-workwear.png' },
+      { id: 'cat-9', name: 'Office Supplies', slug: 'office', image: '/assets/categories/cat-office.png' },
+      { id: 'cat-10', name: 'Technology', slug: 'tech', image: '/assets/categories/cat-tech.png' },
+      { id: 'cat-11', name: 'Trade Show & Signage', slug: 'trade-show', image: '/assets/categories/cat-trade-show.png' },
+      { id: 'cat-12', name: 'Athleticwear', slug: 'activewear', image: '/assets/categories/cat-activewear.png' },
+    ];
 
   // [2025-01-29 04:00:00] 品牌 logo（9个，3行3列）
   const brandLogos = homePage?.brandLogos || [
@@ -121,8 +121,9 @@ export function HomeMobileClient() {
       {/* [2025-01-29 12:00:00] Hero 区域 - 使用 canvas-design 创建的渐变背景 */}
       <section className="home-mobile__hero">
         <div className="home-mobile__hero-background">
-          <img 
-            src="/assets/hero/hero-mobile-gradient.png" 
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/assets/hero/hero-mobile-gradient.png"
             alt="Hero background"
             className="home-mobile__hero-bg-image"
           />
@@ -154,6 +155,7 @@ export function HomeMobileClient() {
               >
                 <div className="home-mobile__category-image">
                   {/* [2025-01-29 23:30:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={category.image}
                     alt={category.name}
@@ -178,6 +180,7 @@ export function HomeMobileClient() {
           <div className="home-mobile__new-arrivals-grid">
             <div className="home-mobile__new-arrivals-image">
               {/* [2025-01-29 23:30:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/assets/hero/hero-card-tee.jpg"
                 alt="New Arrivals"
@@ -209,6 +212,7 @@ export function HomeMobileClient() {
             {brandLogos.map((brand) => (
               <div key={brand.id} className="home-mobile__brand-logo">
                 {/* [2025-01-29 23:20:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={brand.src}
                   alt={brand.name}

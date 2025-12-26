@@ -102,7 +102,7 @@ export function DatabaseCategoriesSection() {
           <p className={styles.sectionSubtitle}>
             Find the perfect custom products for your team, event, or business
           </p>
-          
+
           <div className={styles.staticCategoriesGrid}>
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className={styles.categoryCard} style={{ opacity: 0.5 }}>
@@ -147,13 +147,13 @@ export function DatabaseCategoriesSection() {
         <p className={styles.sectionSubtitle}>
           Find the perfect custom products for your team, event, or business
         </p>
-        
+
         <div className={styles.staticCategoriesGrid}>
           {categories.map((category: Category) => {
             // 优先使用数据库中的imageUrl，如果没有则使用映射函数
             const imagePath = category.imageUrl || getCategoryImagePath(category);
             const description = getCategoryDescription(category);
-            
+
             return (
               <Link
                 key={category.id}
@@ -163,14 +163,15 @@ export function DatabaseCategoriesSection() {
               >
                 <div className={styles.categoryCardImage}>
                   {/* [2025-01-29 23:50:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imagePath}
                     alt={category.name}
                     className={styles.categoryImage}
-                    style={{ 
-                      width: '100%', 
-                      height: '100%', 
-                      objectFit: 'cover' 
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
                     }}
                     onError={(e) => {
                       // 如果图片加载失败，使用备用图片
@@ -189,7 +190,7 @@ export function DatabaseCategoriesSection() {
             );
           })}
         </div>
-        
+
         <div className={styles.staticCategoriesCta}>
           <Link href="/products" className={`${styles.btn} ${styles.btnPrimary}`}>
             View All Products

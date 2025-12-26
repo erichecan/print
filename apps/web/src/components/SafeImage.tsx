@@ -46,19 +46,19 @@ export default function SafeImage({
 
   const handleError = () => {
     // [2025-01-27 19:10:00] 记录错误日志，包含 requestId（如果可用）
-    const requestId = typeof window !== 'undefined' 
+    const requestId = typeof window !== 'undefined'
       ? (document.querySelector('meta[name="x-request-id"]')?.getAttribute('content') || 'unknown')
       : 'unknown';
-    
-    console.warn('[SafeImage] next/image error, fallback to <img>', { 
-      src, 
+
+    console.warn('[SafeImage] next/image error, fallback to <img>', {
+      src,
       requestId,
       timestamp: new Date().toISOString()
     });
-    
+
     setFallback(true);
     setImageError(true);
-    
+
     // [2025-01-27 19:10:00] 调用外部错误处理函数（如果有）
     if (externalOnError) {
       externalOnError();
@@ -69,6 +69,7 @@ export default function SafeImage({
   if (fallback || imageError) {
     if (fill) {
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
           alt={alt}
@@ -88,8 +89,9 @@ export default function SafeImage({
         />
       );
     }
-    
+
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}
@@ -130,7 +132,7 @@ export default function SafeImage({
         />
       );
     }
-    
+
     return (
       <Image
         src={src}
@@ -150,6 +152,7 @@ export default function SafeImage({
     // [2025-01-27 19:10:00] 如果 Image 组件本身抛错，立即回退
     console.error('[SafeImage] Image component error', { src, error });
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}

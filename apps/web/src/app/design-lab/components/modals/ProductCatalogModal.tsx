@@ -111,6 +111,7 @@ const ProductCatalogModal: React.FC<ProductCatalogModalProps> = ({
                                     onClick={() => onSelectProduct(product.id)}
                                 >
                                     <div className="dl-catalog-card-image">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={product.coverImageUrl || ''} alt={product.title} />
                                     </div>
                                     <div className="dl-catalog-card-info">

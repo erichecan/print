@@ -4438,6 +4438,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
                 const viewForImage = currentView === 'zoom' ? 'front' : currentView;
                 const imageUrl = productInfo?.baseImages?.[viewForImage];
                 return imageUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={imageUrl}
                     alt={`Product ${viewForImage} view`}
@@ -4527,6 +4528,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           >
             <div className="dl-sidebar__thumbnail">
               {productInfo?.baseImages?.front ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={getThumbnailImageUrl(productInfo.color || 'White', 'front')}
                   alt="Front view thumbnail"
@@ -4547,6 +4549,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
           >
             <div className="dl-sidebar__thumbnail">
               {productInfo?.baseImages?.back ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={getThumbnailImageUrl(productInfo.color || 'White', 'back')}
                   alt="Back view thumbnail"

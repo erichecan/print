@@ -18,7 +18,7 @@ function getCategoryImagePath(category: PromotionalCategory): string {
   if (category.imagePath) {
     return category.imagePath;
   }
-  
+
   // 备用：使用现有的分类图片
   const fallbackMap: Record<string, string> = {
     'drinkware': '/assets/categories/cat-drinkware.png',
@@ -26,7 +26,7 @@ function getCategoryImagePath(category: PromotionalCategory): string {
     'pens-office': '/assets/categories/cat-office.png',
     'technology': '/assets/categories/cat-tech.png',
   };
-  
+
   return fallbackMap[category.slug] || '/assets/categories/cat-tshirt.png';
 }
 
@@ -59,11 +59,11 @@ export default function PromotionalProductsClient() {
           <p className={styles.sectionSubtitle}>
             Browse our wide selection of custom promotional products and marketing swag
           </p>
-          
+
           <div className={styles.categoriesGrid}>
             {categories.map((category) => {
               const imagePath = getCategoryImagePath(category);
-              
+
               return (
                 <Link
                   key={category.id}
@@ -72,6 +72,7 @@ export default function PromotionalProductsClient() {
                   aria-label={`Browse ${category.name} promotional products`}
                 >
                   <div className={styles.categoryCardImage}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={imagePath}
                       alt={category.name}

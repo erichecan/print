@@ -105,6 +105,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
     >
       {/* Thumbnail */}
       {design.thumbnailUrl ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={design.thumbnailUrl}
           alt={design.name || 'Design'}

@@ -18,7 +18,10 @@ jest.mock('next/navigation', () => ({
 }));
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: any) => <img {...props} />,
+  default: (props: any) => (
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    <img {...props} />
+  ),
 }));
 
 const mockUseAddToCart = useAddToCart as jest.MockedFunction<typeof useAddToCart>;

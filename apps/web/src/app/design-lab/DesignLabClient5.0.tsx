@@ -2226,10 +2226,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       const colorData = PRODUCT_COLORS.find(c => c.name === productInfo.color);
       tintHex = colorData ? colorData.hex : '#ffffff';
 
-      if (productInfo.color !== 'White') {
-        // Use white base image for tinting if color is not white
-        finalImageUrl = getDefaultProductBaseImages('White')[currentView];
-      }
+      // [2025-12-22] ALWAYS use white base image for default products to ensure consistency
+      // was: if (productInfo.color !== 'White') { ... } 
+      // reason: for default tee, the white color from backend might still use the red fallback image
+      finalImageUrl = getDefaultProductBaseImages('White')[currentView];
     }
 
     // 小延迟确保 Canvas 容器样式已经稳定

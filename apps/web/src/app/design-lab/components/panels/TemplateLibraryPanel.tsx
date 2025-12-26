@@ -47,7 +47,7 @@ const TemplateLibraryPanel: React.FC<TemplateLibraryPanelProps> = ({
         featured: showFeaturedOnly || undefined,
         limit: 50,
       });
-      
+
       if (response.success && response.data) {
         setTemplates(response.data.data || []);
       } else {
@@ -101,7 +101,7 @@ const TemplateLibraryPanel: React.FC<TemplateLibraryPanelProps> = ({
             className="dl-template-library-panel__search-input"
           />
         </div>
-        
+
         <div className="dl-template-library-panel__category-filter">
           <select
             value={selectedCategory || ''}
@@ -156,6 +156,7 @@ const TemplateLibraryPanel: React.FC<TemplateLibraryPanelProps> = ({
                 onClick={() => handleApplyTemplate(template)}
               >
                 {template.thumbnailUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
                   <img
                     src={template.thumbnailUrl}
                     alt={template.name}
@@ -170,7 +171,7 @@ const TemplateLibraryPanel: React.FC<TemplateLibraryPanelProps> = ({
                     </svg>
                   </div>
                 )}
-                
+
                 <div className="dl-template-library-panel__item-info">
                   <h3 className="dl-template-library-panel__item-name">{template.name}</h3>
                   {template.description && (

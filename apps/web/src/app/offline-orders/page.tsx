@@ -1463,6 +1463,7 @@ export default function OfflineOrdersIntakePage() {
                     {(() => {
                       const product = orderConfig.products.find(p => p.id === item.productId);
                       return product?.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={product.imageUrl}
                           alt={item.productName}

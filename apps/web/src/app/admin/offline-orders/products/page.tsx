@@ -13,7 +13,7 @@ export default function SimpleOfflineOrderProductsPage() {
   const router = useRouter();
   const [authChecking, setAuthChecking] = useState(true);
   const [currentUser, setCurrentUser] = useState<{ role?: string } | null>(null);
-  
+
   const [newProductName, setNewProductName] = useState('');
   const [newProductImageUrl, setNewProductImageUrl] = useState('');
   const [newProductIsCustomerOwned, setNewProductIsCustomerOwned] = useState(false);
@@ -68,7 +68,7 @@ export default function SimpleOfflineOrderProductsPage() {
         imageUrl: newProductImageUrl.trim() || undefined,
         isCustomerOwned: newProductIsCustomerOwned,
       });
-      
+
       setNewProductName('');
       setNewProductImageUrl('');
       setNewProductIsCustomerOwned(false);
@@ -197,6 +197,7 @@ export default function SimpleOfflineOrderProductsPage() {
                   >
                     <div className="flex items-center gap-4 flex-1">
                       {product.imageUrl && (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={product.imageUrl}
                           alt={product.name}
@@ -232,11 +233,10 @@ export default function SimpleOfflineOrderProductsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleToggleActive(product)}
-                        className={`px-3 py-1 text-sm rounded ${
-                          product.isActive
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        } transition-colors`}
+                        className={`px-3 py-1 text-sm rounded ${product.isActive
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          } transition-colors`}
                       >
                         {product.isActive ? '启用' : '禁用'}
                       </button>
