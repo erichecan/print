@@ -3,16 +3,28 @@
  * [2025-01-27 14:15:00] Tests for Stripe webhook handling
  */
 jest.mock('stripe', () => {
-  return jest.fn(() => ({
+  const mStripe = {
     webhooks: {
       constructEvent: jest.fn(),
     },
-  }));
+    charges: {
+      retrieve: jest.fn(),
+    },
+    balanceTransactions: {
+      retrieve: jest.fn(),
+    },
+  };
+  return jest.fn(() => mStripe);
 });
 
 jest.mock('../../src/lib/prisma', () => ({
   order: {
     findUnique: jest.fn(),
+    update: jest.fn(),
+  },
+  webhookEvent: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
     update: jest.fn(),
   },
 }));
@@ -61,6 +73,9 @@ describe('[2025-01-27 14:15:00] webhookController.handleStripeWebhook', () => {
       total: 100,
       items: [],
     };
+    prisma.webhookEvent.findUnique.mockResolvedValue(null);
+    prisma.webhookEvent.create.mockResolvedValue({ id: 'we_123' });
+    prisma.webhookEvent.update.mockResolvedValue({ id: 'we_123' });
   });
 
   describe('Webhook signature verification', () => {

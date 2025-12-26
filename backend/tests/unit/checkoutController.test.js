@@ -15,6 +15,18 @@ jest.mock('../../src/lib/prisma', () => ({
     findUnique: jest.fn(),
     create: jest.fn(),
   },
+  variant: {
+    findUnique: jest.fn(),
+  },
+  promotion: {
+    findMany: jest.fn(),
+  },
+  coupon: {
+    findFirst: jest.fn(),
+  },
+  orderCoupon: {
+    count: jest.fn(),
+  },
   $transaction: jest.fn(),
 }));
 
