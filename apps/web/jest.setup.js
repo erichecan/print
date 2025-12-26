@@ -48,3 +48,10 @@ jest.mock('@stripe/react-stripe-js', () => ({
   }),
 }));
 
+// Mock styled-jsx to avoid useInsertionEffect error in tests
+jest.mock('styled-jsx/style', () => {
+  const Style = ({ children }) => children;
+  Style.default = Style;
+  return Style;
+});
+

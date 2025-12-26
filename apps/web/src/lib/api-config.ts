@@ -44,7 +44,7 @@ export const API_BASE_URL = getApiBaseUrlValue();
 // [2025-12-09] 配置检查和日志输出（仅在浏览器环境）
 // [2025-12-09] 修复：使用统一的环境变量配置，移除强制回退逻辑
 if (typeof window !== 'undefined') {
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
     // 开发环境：输出配置信息用于调试
     console.log('[API Config] API_BASE_URL:', API_BASE_URL);
     console.log('[API Config] NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);

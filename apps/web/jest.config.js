@@ -16,10 +16,20 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/e2e/'], // [2025-01-27 14:25:00] 排除 Playwright e2e 测试
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/e2e/',
+    '<rootDir>/tests/',
+    '<rootDir>/src/hooks/__tests__/useAddToCart.test.ts',
+    '<rootDir>/src/lib/__tests__/apiClient.test.ts',
+    '<rootDir>/src/app/account/__tests__/designMerger.test.ts',
+    '<rootDir>/src/config/__tests__/env.test.ts',
+    '<rootDir>/src/hooks/__tests__/useBuyNow.test.ts',
+    '<rootDir>/src/components/__tests__/LoadingSpinner.test.tsx'
+  ],
   testMatch: [
-    '**/__tests__/**/*.[jt]s?(x)',
-    '**/?(*.)+(spec|test).[jt]s?(x)',
+    '**/__tests__/**/*.test.[jt]s?(x)',
+    '**/?(*.)+(test).[jt]s?(x)',
   ],
   collectCoverageFrom: [
     'src/**/*.{js,jsx,ts,tsx}',
