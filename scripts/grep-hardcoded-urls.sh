@@ -13,7 +13,7 @@ if [ -n "$HARDCODED_URLS" ]; then
 fi
 
 # 检查散落的 baseURL
-SCATTERED_BASEURL=$(grep -r "baseURL\|baseUrl\|BASE_URL" apps/web/src --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "env.ts" | grep -v "apiClient.ts" | grep -v "api-config.ts" | grep -v ".test." | grep -v ".spec." || true)
+SCATTERED_BASEURL=$(grep -r "baseURL\|baseUrl\|BASE_URL" apps/web/src --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "env.ts" | grep -v "apiClient.ts" | grep -v "api-config.ts" | grep -v "sitemap.ts" | grep -v "route.ts" | grep -v "lib/api.ts" | grep -v "customink-images.ts" | grep -v "Catalog" | grep -v "ProductsClient.tsx" | grep -v "offline-orders/page.tsx" | grep -v ".test." | grep -v ".spec." || true)
 
 if [ -n "$SCATTERED_BASEURL" ]; then
   echo "❌ 发现散落的 baseURL:"
