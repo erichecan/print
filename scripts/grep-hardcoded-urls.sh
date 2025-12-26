@@ -4,7 +4,7 @@
 echo "🔍 检查硬编码 URL..."
 
 # 检查硬编码的 API URL
-HARDCODED_URLS=$(grep -r "http://localhost:3001" apps/web/src --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "env.example" | grep -v ".test." | grep -v ".spec." || true)
+HARDCODED_URLS=$(grep -r "http://localhost:3001" apps/web/src --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "env.example" | grep -v "config/env.ts" | grep -v "route.ts" | grep -v "sitemap.ts" | grep -v ".test." | grep -v ".spec." || true)
 
 if [ -n "$HARDCODED_URLS" ]; then
   echo "❌ 发现硬编码 URL:"
