@@ -521,6 +521,7 @@ export const productsApi = {
       colorHex: string | null;
       size: string | null;
       stockQuantity: number;
+      priceAdjustment?: number; // [2025-12-28] Add price adjustment
     }>;
     baseImages: {
       front: string;
