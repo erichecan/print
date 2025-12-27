@@ -867,6 +867,27 @@ export default function OfflineOrdersIntakePage() {
     return calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
   }, [calculateSubtotal, calculateDiscountAmount, calculateDstFileFee]);
 
+  // [2025-12-07 02:30:00] PRD v2.0: 计算总数量
+  const calculateTotalQuantity = useMemo(() => {
+    return formState.productItems.reduce((sum, item) => sum + item.totalQuantity, 0);
+  }, [formState.productItems]);
+
+  // [2025-12-08 05:20:00] 计算每个尺码在所有产品、所有颜色中的总数量
+  const calculateSizeTotalQuantity = useMemo(() => {
+    const sizeTotals: Record<string, number> = {};
+    formState.productItems.forEach((item) => {
+      item.colors.forEach((color) => {
+        color.sizes.forEach((sizeData) => {
+          if (!sizeTotals[sizeData.size]) {
+            sizeTotals[sizeData.size] = 0;
+          }
+          sizeTotals[sizeData.size] += sizeData.quantity;
+        });
+      });
+    });
+    return sizeTotals;
+  }, [formState.productItems]);
+
   // [2025-12-07 02:30:00] PRD v2.0: 生成主要产品描述（用于提交）
   const primaryProductDescription = useMemo(() => {
     if (formState.productItems.length === 0) return '';
