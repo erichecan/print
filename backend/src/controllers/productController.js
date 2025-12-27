@@ -1513,6 +1513,7 @@ exports.getProductByVariantId = async (req, res) => {
         imageUrl: v.imageUrl,
         size: v.size,
         stockQuantity: v.stockQuantity,
+        priceAdjustment: Number(v.priceAdjustment || 0), // [2025-12-28] Add price adjustment
       })), // [2025-01-30 19:30:00] 添加变体列表，用于颜色切换
     };
 

@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
 import api from '@/lib/api';
 import useSWR from 'swr';
+import { useAuth } from '@/contexts/AuthContext';
 
 // [2025-12-07 08:15:00] 状态选择组件 - 参考 PillSelect 的单选版样式
 function StatusSelector({
@@ -196,13 +197,21 @@ interface Product {
   isCustomerOwned: boolean;
 }
 
+// [2025-01-27 14:00:00] 尺码费用接口
+interface SizeFee {
+  id: string;
+  size: string;
+  additionalFee: number;
+}
+
 export default function SalesOrdersPage() {
   const router = useRouter();
+  const { user: currentUser, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [authChecking, setAuthChecking] = useState(true);
+  // const [authChecking, setAuthChecking] = useState(true); // Using global auth loading
   const [orders, setOrders] = useState<SalesOfflineOrderSummary[]>([]);
   const [error, setError] = useState('');
-  const [currentUser, setCurrentUser] = useState<{ role?: string } | null>(null);
+  // const [currentUser, setCurrentUser] = useState<{ role?: string } | null>(null); // Using global auth user
   const [stages, setStages] = useState<Array<{ key: string; label: string }>>([]);
   const [updatingStage, setUpdatingStage] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
@@ -228,7 +237,7 @@ export default function SalesOrdersPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
 
   // [2025-01-27 13:00:00] 配置管理状态
-  const [configTab, setConfigTab] = useState<'colors' | 'products'>('colors');
+  const [configTab, setConfigTab] = useState<'colors' | 'products' | 'size-fees'>('colors');
   const [colors, setColors] = useState<Color[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [newColorName, setNewColorName] = useState('');
@@ -244,6 +253,11 @@ export default function SalesOrdersPage() {
   const [editProductImageUrl, setEditProductImageUrl] = useState('');
   const [editProductIsCustomerOwned, setEditProductIsCustomerOwned] = useState(false);
 
+  // [2025-01-27 14:00:00] 尺码费用状态
+  const [sizeFees, setSizeFees] = useState<SizeFee[]>([]);
+  const [editingSizeFeeId, setEditingSizeFeeId] = useState<string | null>(null);
+  const [editSizeFeeValue, setEditSizeFeeValue] = useState<string>('');
+
   // [2025-12-07 05:15:00] 订单状态选项
   // [2025-12-07 06:50:00] 添加 ACTIVE_RUSH 状态
   const statusOptions = [
@@ -254,25 +268,34 @@ export default function SalesOrdersPage() {
   ];
 
 
+  // [2025-01-27 14:05:00] Auth Effect: Redirect if not logged in
+  useEffect(() => {
+    if (authLoading) return;
+
+    // Check if user is logged in
+    if (!currentUser) {
+      router.replace('/offline-orders/sales/login');
+      return;
+    }
+
+    // Check role permissions - simple check for sales related roles
+    const role = currentUser.role ? String(currentUser.role).toUpperCase() : '';
+    const isSales = ['SALES', 'SALES_MANAGER', 'ADMIN'].includes(role);
+
+    if (!isSales) {
+      router.replace('/offline-orders/sales/login');
+      return;
+    }
+  }, [currentUser, authLoading, router]);
+
   useEffect(() => {
     let cancelled = false;
 
     const bootstrap = async () => {
+      // Auth check moved to dedicated useEffect above
+      if (authLoading || !currentUser) return;
+
       try {
-        // [2025-12-02 04:52:00] 先检查当前登录用户及角色
-        const me = await authApi.me().catch(() => null);
-        const role = me?.role ? String(me.role).toUpperCase() : '';
-        const isSales = ['SALES', 'SALES_MANAGER', 'ADMIN'].includes(role);
-
-        if (!me || !isSales) {
-          router.replace('/offline-orders/sales/login');
-          return;
-        }
-
-        if (!cancelled) {
-          setCurrentUser(me);
-        }
-
         // [2025-12-07 04:55:00] 获取阶段配置（用于快速修改状态）
         // [2025-12-07 05:30:00] 使用代理 API 访问，确保认证正确传递
         // [2025-12-07 08:00:00] 修复：使用 authenticatedFetch 确保 token 正确传递
@@ -294,12 +317,7 @@ export default function SalesOrdersPage() {
           console.warn('Failed to load stages:', e);
         }
       } catch (e) {
-        router.replace('/offline-orders/sales/login');
-        return;
-      } finally {
-        if (!cancelled) {
-          setAuthChecking(false);
-        }
+        // Ignore
       }
 
       try {
@@ -322,7 +340,7 @@ export default function SalesOrdersPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [currentUser, authLoading]); // Removed router dependence to avoid loop, depend on auth state
 
   const handleViewDetail = (orderId: string) => {
     router.push(`/offline-orders/sales/orders/${orderId}`);
@@ -433,6 +451,23 @@ export default function SalesOrdersPage() {
     }
   }, [productsData]);
 
+  // [2025-01-27 14:10:00] 尺码费用SWR
+  const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(
+    activeTab === 'config' && configTab === 'size-fees' ? '/api/proxy/admin/offline-order-size-fees' : null,
+    async (url) => {
+      const { authenticatedFetch } = await import('@/lib/api');
+      const response = await authenticatedFetch(url);
+      if (!response.ok) throw new Error('Failed to fetch size fees');
+      return response.json();
+    }
+  );
+
+  useEffect(() => {
+    if (sizeFeesData?.data) {
+      setSizeFees(sizeFeesData.data);
+    }
+  }, [sizeFeesData]);
+
   // [2025-01-27 13:15:00] 颜色管理函数
   const handleCreateColor = async () => {
     if (!newColorName.trim()) return;
@@ -522,7 +557,31 @@ export default function SalesOrdersPage() {
     }
   };
 
-  if (authChecking) {
+  // [2025-01-27 14:15:00] 尺码费用管理函数
+  const handleUpdateSizeFee = async (id: string, size: string) => {
+    const fee = parseFloat(editSizeFeeValue);
+    if (isNaN(fee) || fee < 0) {
+      alert('请输入有效的金额');
+      return;
+    }
+
+    try {
+      // Using bulk update for single item for simplicity as per API design, or creating specific endpoint if needed.
+      // Based on controller, it accepts array of sizeFees.
+      await api('/api/proxy/admin/offline-order-size-fees', {
+        method: 'PATCH',
+        body: {
+          sizeFees: [{ size, additionalFee: fee }]
+        }
+      });
+      setEditingSizeFeeId(null);
+      mutateSizeFees();
+    } catch (err: any) {
+      alert(err.message || '更新失败');
+    }
+  };
+
+  if (authLoading) {
     return (
       <div className="sales-orders-shell">
         <div className="sales-orders-card">
@@ -718,6 +777,13 @@ export default function SalesOrdersPage() {
                 onClick={() => setConfigTab('products')}
               >
                 产品管理
+              </button>
+              <button
+                type="button"
+                className={`config-sub-tab ${configTab === 'size-fees' ? 'active' : ''}`}
+                onClick={() => setConfigTab('size-fees')}
+              >
+                尺码价格
               </button>
             </div>
 
@@ -985,6 +1051,81 @@ export default function SalesOrdersPage() {
                   {products.length === 0 && (
                     <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>暂无产品配置</p>
                   )}
+                </div>
+              </div>
+            )}
+
+            {configTab === 'size-fees' && (
+              <div className="config-tab-panel">
+                <h2>尺码价格管理</h2>
+                <p className="config-desc">配置不同尺码的额外费用（基础尺码无额外费用）</p>
+
+                <div className="config-table-wrapper">
+                  <table className="config-table">
+                    <thead>
+                      <tr>
+                        <th>尺码</th>
+                        <th>额外费用 (CAD)</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sizeFees.map((fee) => (
+                        <tr key={fee.id}>
+                          <td style={{ fontWeight: 'bold' }}>{fee.size}</td>
+                          <td>
+                            {editingSizeFeeId === fee.id ? (
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                <span style={{ marginRight: '4px' }}>$</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={editSizeFeeValue}
+                                  onChange={(e) => setEditSizeFeeValue(e.target.value)}
+                                  className="config-input-inline"
+                                  style={{ width: '100px' }}
+                                />
+                              </div>
+                            ) : (
+                              `$${fee.additionalFee.toFixed(2)}`
+                            )}
+                          </td>
+                          <td>
+                            {editingSizeFeeId === fee.id ? (
+                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                  onClick={() => handleUpdateSizeFee(fee.id, fee.size)}
+                                  className="config-btn config-btn-success"
+                                >
+                                  保存
+                                </button>
+                                <button
+                                  onClick={() => setEditingSizeFeeId(null)}
+                                  className="config-btn config-btn-secondary"
+                                >
+                                  取消
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setEditingSizeFeeId(fee.id);
+                                  setEditSizeFeeValue(fee.additionalFee.toString());
+                                }}
+                                className="config-btn config-btn-secondary"
+                              >
+                                编辑
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                      {sizeFees.length === 0 && (
+                        <tr><td colSpan={3} style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>未配置尺码费用</td></tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}

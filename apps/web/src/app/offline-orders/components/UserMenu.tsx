@@ -37,8 +37,14 @@ export function UserMenu() {
   }
 
   const handleLogout = async () => {
-    await logout();
-    window.location.href = '/offline-orders/sales/login';
+    try {
+      await logout();
+      router.push('/offline-orders/sales/login');
+    } catch (error) {
+      console.error('Logout error', error);
+      // Force redirect if logout fails
+      window.location.href = '/offline-orders/sales/login';
+    }
   };
 
   const handleViewOrders = () => {

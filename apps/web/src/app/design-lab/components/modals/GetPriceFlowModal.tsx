@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { designLabApi } from '@/lib/api';
+import { designLabApi, productsApi } from '@/lib/api';
 import './GetPriceFlowModal.css';
 
 export type GetPriceFlowStep = 'ordering-options' | 'quantity' | 'order-options' | 'content-check' | 'added-to-cart';
@@ -65,7 +65,46 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   // [2025-12-07 15:30:00] 加车成功相关状态
   const [addedToCartData, setAddedToCartData] = useState<any>(null);
 
-  // [2025-12-08] 初始化尺码列表
+  // [2025-12-28] Fetch size pricing from DB
+  const [sizeAdjustments, setSizeAdjustments] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const fetchSizeData = async () => {
+      if (!designId) return;
+      try {
+        // 1. Get design to find variant params
+        const designRes = await designLabApi.getDesign(designId);
+        // Cast to any to access variant which might be missing in strict type
+        const designData = designRes.data as any;
+
+        if (designData && designData.variant) {
+          const variantId = designData.variant.id;
+          // 2. Get product details by variant (includes all sibling variants)
+          const productRes = await productsApi.getByVariant(variantId);
+
+          if (productRes && productRes.variants) {
+            const adjustments: Record<string, number> = {};
+            // Extract priceAdjustment from variants
+            // Note: frontend type might not have priceAdjustment yet, cast if needed
+            productRes.variants.forEach((v: any) => {
+              if (v.size && v.priceAdjustment) {
+                adjustments[v.size] = Number(v.priceAdjustment);
+              }
+            });
+            setSizeAdjustments(adjustments);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to fetch size data", e);
+      }
+    };
+    fetchSizeData();
+  }, [designId]);
+
+  // Actually, let's just make a new simple effect using productApi if possible or assume designLabApi can be extended.
+  // The file imports `designLabApi` from `@/lib/api`. 
+  // I should check `apps/web/src/lib/api.ts` to see if `productsApi` is exported. Yes it is.
+
   const youthSizes = React.useMemo(() => ['YS', 'YM', 'YL'], []);
   const adultSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'], []);
   const allSizes = React.useMemo(() => [...youthSizes, ...adultSizes], [youthSizes, adultSizes]);
@@ -331,9 +370,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
             <h4 className="dl-get-price-flow__size-section-title">ADULT SIZES</h4>
             <div className="dl-get-price-flow__size-grid">
               {adultSizes.map(size => {
-                const sizeFee = ['2XL', '3XL', '4XL', '5XL'].includes(size)
-                  ? `(+$${size === '2XL' ? '2.50' : size === '3XL' ? '3.50' : size === '4XL' ? '4.50' : '5.50'})`
-                  : '';
+                const adjustment = sizeAdjustments[size] || 0;
+                const sizeFee = adjustment > 0 ? `(+$${adjustment.toFixed(2)})` : '';
                 return (
                   <div key={size} className="dl-get-price-flow__size-item">
                     <label className="dl-get-price-flow__size-label">
@@ -443,6 +481,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           quantity: totalQuantity,
           sidesUsed: quoteParams.sidesUsed,
           layerCount: quoteParams.layerCount,
+          // [2025-12-28] Pass size quantities for accurate pricing
+          sizeQuantities: sizeQuantities.filter(sq => sq.quantity > 0),
         }) as any;
 
         if (response && response.data) {

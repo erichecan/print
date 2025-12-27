@@ -261,7 +261,7 @@ exports.generateAssetUploadUrl = async (req, res) => {
 exports.requestQuote = async (req, res) => {
   try {
     const { id } = req.params;
-    const { quantity = 1, sidesUsed = [], layerCount = 0 } = req.body || {};
+    const { quantity = 1, sidesUsed = [], layerCount = 0, sizeQuantities = [] } = req.body || {};
 
     if (!quantity || quantity <= 0) {
       return res.status(400).json({ error: 'quantity must be greater than zero' });
@@ -274,37 +274,77 @@ exports.requestQuote = async (req, res) => {
     }
 
     const variant = result.design.variant;
+    // 基础价格（Base Price）来自产品定义
     const basePrice = Number(variant.product.basePrice || 0);
-    const adjustment = Number(variant.priceAdjustment || 0);
-
-    // [2025-01-28 07:00:00] 基础单价 = 产品底价 + 变体调整
-    let unitPrice = Math.max(basePrice + adjustment, 0);
 
     // [2025-01-28 07:00:00] 计算使用的面数（front, back, sleeve）
     const sidesCount = Array.isArray(sidesUsed) ? sidesUsed.length : 0;
-
-    // [2025-01-28 07:00:00] 多面印刷费用：每增加一个面，增加 $2 CAD（示例定价）
-    // 第一个面（front）包含在基础价格中，back 和 sleeve 需要额外收费
     const additionalSides = Math.max(0, sidesCount - 1);
     const sidesFee = additionalSides * 2 * 100; // 转换为分，每个额外面 $2
 
-    // [2025-01-28 07:00:00] 图层复杂度费用：超过 5 个图层后，每增加一个图层增加 $0.50 CAD
+    // [2025-01-28 07:00:00] 图层复杂度费用
     const baseLayers = 5;
     const additionalLayers = Math.max(0, layerCount - baseLayers);
     const layersFee = additionalLayers * 0.5 * 100; // 转换为分，每个额外图层 $0.50
 
-    // [2025-01-28 07:00:00] 数量折扣（示例定价规则）
+    // [2025-01-28 07:00:00] 数量折扣
     let quantityDiscount = 0;
     if (quantity >= 50) {
-      quantityDiscount = 0.15; // 50+ 件：15% 折扣
+      quantityDiscount = 0.15;
     } else if (quantity >= 25) {
-      quantityDiscount = 0.10; // 25-49 件：10% 折扣
+      quantityDiscount = 0.10;
     } else if (quantity >= 10) {
-      quantityDiscount = 0.05; // 10-24 件：5% 折扣
+      quantityDiscount = 0.05;
     }
 
-    // [2025-01-28 07:00:00] 计算单价（包含面和图层费用）
-    unitPrice = unitPrice + sidesFee + layersFee;
+    // 默认变体调整（如果未使用 sizeQuantities）
+    const defaultAdjustment = Number(variant.priceAdjustment || 0);
+
+    // 计算总价和详细 Breakdown
+    let totalBasePrice = 0;
+    let totalAdjustment = 0;
+    let weightedUnitPrice = 0;
+
+    if (sizeQuantities && sizeQuantities.length > 0) {
+      // 1. 获取该产品的所有变体，建立 尺寸 -> 价格调整 映射
+      const allVariants = await prisma.variant.findMany({
+        where: { productId: variant.product.id },
+        select: { size: true, priceAdjustment: true }
+      });
+
+      const sizeAdjustmentMap = {};
+      allVariants.forEach(v => {
+        sizeAdjustmentMap[v.size] = Number(v.priceAdjustment || 0);
+      });
+
+      // 2. 根据每种尺寸的数量计算总价
+      let calculatedQuantity = 0;
+      sizeQuantities.forEach(sq => {
+        if (sq.quantity > 0) {
+          const adj = sizeAdjustmentMap[sq.size] || 0;
+          totalBasePrice += basePrice * sq.quantity;
+          totalAdjustment += adj * sq.quantity;
+          calculatedQuantity += sq.quantity;
+        }
+      });
+
+      // 如果 sizeQuantities 总和不为 0，则使用计算出的总和
+      // 但前端傳來的 quantity 是 override? 不，應該是 totalQuantity.
+      // 這裡為了保險，我们 calculate unit price based on breakdown
+      if (calculatedQuantity > 0) {
+        weightedUnitPrice = (totalBasePrice + totalAdjustment) / calculatedQuantity;
+      } else {
+        weightedUnitPrice = basePrice + defaultAdjustment;
+      }
+
+    } else {
+      // 老逻辑：使用当前 design 关联的变体价格
+      weightedUnitPrice = basePrice + defaultAdjustment;
+      totalAdjustment = defaultAdjustment * quantity;
+    }
+
+    // [2025-01-28 07:00:00] 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers）
+    let unitPrice = weightedUnitPrice + sidesFee + layersFee;
 
     // [2025-01-28 07:00:00] 应用数量折扣
     const discountedUnitPrice = unitPrice * (1 - quantityDiscount);
@@ -324,7 +364,9 @@ exports.requestQuote = async (req, res) => {
         currency: 'CAD',
         breakdown: {
           basePrice: basePrice / 100,
-          variantAdjustment: adjustment / 100,
+          // 如果有尺寸区分，这里的 variantAdjustment 是平均值或者总值？
+          // 为了兼容前端显示，这里返回 平均调整值
+          variantAdjustment: (totalAdjustment / quantity) / 100,
           sidesCount,
           sidesFee: sidesFee / 100,
           layerCount,
