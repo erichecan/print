@@ -50,6 +50,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     settings: 'Settings',
     notifications: 'Notifications',
     costManagement: 'Cost Management',
+    sizeFees: 'Size Fees',
     discountTypePercentage: 'Percentage',
     discountTypeFixed: 'Fixed Amount',
     discountTypeBuyGetFree: 'Buy X Get Y Free', // [2025-12-06 18:00:00] Buy-get-free promotion type for Issue #139
@@ -456,6 +457,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     promotionsMaxValue: '最高优惠：${amount}',
     settings: '设置',
     costManagement: '成本管理',
+    sizeFees: '尺码费用',
     discountTypePercentage: '百分比',
     discountTypeFixed: '固定金额',
     discountTypeBuyGetFree: '买X送Y', // [2025-12-06 18:00:00] Buy-get-free promotion type for Issue #139

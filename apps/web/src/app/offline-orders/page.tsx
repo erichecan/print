@@ -830,6 +830,21 @@ export default function OfflineOrdersIntakePage() {
   );
 
   // [2025-12-07 02:30:00] PRD v2.0: 价格计算逻辑
+  // [2025-01-28] Calculate total DST file fee from all positions
+  const calculateDstFileFee = useMemo(() => {
+    let totalfee = 0;
+    Object.values(formState.colorGroupsByProduct).forEach((groups) => {
+      groups.forEach((group) => {
+        group.positions.forEach((pos) => {
+          if (pos.enabled && pos.dstFileFee) {
+            totalfee += pos.dstFileFee;
+          }
+        });
+      });
+    });
+    return totalfee;
+  }, [formState.colorGroupsByProduct]);
+
   const calculateSubtotal = useMemo(() => {
     return formState.productItems.reduce((sum, item) => sum + item.totalPrice, 0);
   }, [formState.productItems]);
@@ -838,38 +853,19 @@ export default function OfflineOrdersIntakePage() {
     return (calculateSubtotal * formState.discount) / 100;
   }, [calculateSubtotal, formState.discount]);
 
-  const calculateTotal = useMemo(() => {
-    return calculateSubtotal - calculateDiscountAmount;
-  }, [calculateSubtotal, calculateDiscountAmount]);
-
-  // [2025-12-07 02:30:00] PRD v2.0: 计算总数量
-  const calculateTotalQuantity = useMemo(() => {
-    return formState.productItems.reduce((sum, item) => sum + item.totalQuantity, 0);
-  }, [formState.productItems]);
-
-  // [2025-12-08 05:20:00] 计算每个尺码在所有产品、所有颜色中的总数量
-  const calculateSizeTotalQuantity = useMemo(() => {
-    const sizeTotals: Record<string, number> = {};
-    formState.productItems.forEach((item) => {
-      item.colors.forEach((color) => {
-        color.sizes.forEach((sizeData) => {
-          if (!sizeTotals[sizeData.size]) {
-            sizeTotals[sizeData.size] = 0;
-          }
-          sizeTotals[sizeData.size] += sizeData.quantity;
-        });
-      });
-    });
-    return sizeTotals;
-  }, [formState.productItems]);
-
   // [2025-12-06 18:30:00] 计算税额（仅当需要Invoice时）
   const calculateTaxAmount = useMemo(() => {
     if (!formState.requiresInvoice) return 0;
-    const taxBase = calculateSubtotal - calculateDiscountAmount;
+    // [2025-01-28] Tax base includes DST fee
+    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
     const taxRate = formState.taxRate || 0.13; // 默认13%安省HST
     return taxBase * taxRate;
-  }, [calculateSubtotal, calculateDiscountAmount, formState.requiresInvoice, formState.taxRate]);
+  }, [calculateSubtotal, calculateDiscountAmount, formState.requiresInvoice, formState.taxRate, calculateDstFileFee]);
+
+  const calculateTotal = useMemo(() => {
+    // [2025-01-28] Total includes DST fee
+    return calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
+  }, [calculateSubtotal, calculateDiscountAmount, calculateDstFileFee]);
 
   // [2025-12-07 02:30:00] PRD v2.0: 生成主要产品描述（用于提交）
   const primaryProductDescription = useMemo(() => {
@@ -1299,8 +1295,8 @@ export default function OfflineOrdersIntakePage() {
 
         // [2025-12-06] PRD v2.0: 添加新字段
         payload.append('orderNotes', formState.orderNotes || '');
-        if (formState.dstFileFee > 0) {
-          payload.append('dstFileFee', formState.dstFileFee.toString());
+        if (calculateDstFileFee > 0) {
+          payload.append('dstFileFee', calculateDstFileFee.toString());
         }
         if (formState.requiresInvoice) {
           if (formState.invoiceInfo.paymentMethod) {
@@ -1371,9 +1367,11 @@ export default function OfflineOrdersIntakePage() {
       calculateDiscountAmount,
       calculateTaxAmount,
       calculateTotal,
+      calculateTotal,
       files,
       API_BASE_URL,
       handleKeyDown, // [2025-12-18 16:45:00] 添加 handleKeyDown 依赖
+      calculateDstFileFee, // [2025-01-28] Add dependency
     ],
   );
 
@@ -1855,10 +1853,10 @@ export default function OfflineOrdersIntakePage() {
               <span>{t('totalAmount') || '总金额'}：</span>
               <strong className="text-xl text-blue-700">${calculateSubtotal.toFixed(2)} CAD</strong>
             </div>
-            {formState.dstFileFee > 0 && (
+            {calculateDstFileFee > 0 && (
               <div className="flex justify-between items-center text-base">
                 <span>DST File Fee：</span>
-                <strong className="text-lg text-blue-700">${formState.dstFileFee.toFixed(2)} CAD</strong>
+                <strong className="text-lg text-blue-700">${calculateDstFileFee.toFixed(2)} CAD</strong>
               </div>
             )}
           </div>

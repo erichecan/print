@@ -38,7 +38,7 @@ export function UserMenu() {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/offline-orders/sales/login');
+    window.location.href = '/offline-orders/sales/login';
   };
 
   const handleViewOrders = () => {

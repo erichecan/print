@@ -86,6 +86,10 @@ export function HomeClient() {
       <section className="hero" aria-labelledby="hero-heading">
         <div className="container hero__grid">
           <div>
+            <div style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600, color: '#333' }}>
+              <span style={{ marginRight: '24px' }}>📞 416-916-6352</span>
+              <span>✉️ dtfsouvenir@gmail.com</span>
+            </div>
             <h1 className="hero__title" id="hero-heading">
               {heroTitle}
             </h1>

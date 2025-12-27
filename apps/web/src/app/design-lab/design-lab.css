@@ -46,10 +46,10 @@
 
   /* 字体 */
   --dl-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-  --dl-font-sm: 11px;
-  --dl-font-base: 14px;
-  --dl-font-md: 16px;
-  --dl-font-lg: 18px;
+  --dl-font-sm: 13px;
+  --dl-font-base: 16px;
+  --dl-font-md: 18px;
+  --dl-font-lg: 20px;
   --dl-font-weight-normal: 400;
   --dl-font-weight-medium: 500;
   --dl-font-weight-bold: 700;
@@ -415,7 +415,7 @@
 }
 
 .dl-rail__icon--text {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   font-family: 'Arial', sans-serif;
   line-height: 1;
@@ -431,7 +431,7 @@
 }
 
 .dl-rail__icon--names .dl-rail__icon-text {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   font-family: 'Arial', sans-serif;
   line-height: 1;
@@ -574,7 +574,7 @@
 }
 
 .dl-home-panel__text-icon {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--dl-color-primary);
 }
@@ -1067,7 +1067,7 @@
 }
 
 .dl-edit-upload-panel__tool-label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--dl-text-secondary);
   text-align: center;
   margin-top: 2px;
@@ -1523,7 +1523,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: var(--dl-font-weight-bold);
   background: var(--dl-bg-primary);
   border-radius: var(--dl-radius-sm);
@@ -1602,7 +1602,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: var(--dl-font-weight-bold);
   background: var(--dl-bg-primary);
   border-radius: var(--dl-radius-sm);
@@ -1899,7 +1899,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 34px;
 }
 
 .dl-art-panel__category-icon img {
@@ -2010,7 +2010,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32px;
+  font-size: 34px;
   background: var(--dl-bg-panel);
   border-radius: var(--dl-radius-sm);
 }
@@ -2102,7 +2102,7 @@
 }
 
 .dl-edit-art-panel__tool-label {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--dl-text-secondary);
   text-align: center;
   margin-top: 2px;
@@ -2394,7 +2394,7 @@
   border: none;
   background: transparent;
   color: var(--dl-text-secondary);
-  font-size: 24px;
+  font-size: 26px;
   cursor: pointer;
   border-radius: var(--dl-radius-sm);
   transition: all var(--dl-transition-base);
@@ -3009,7 +3009,7 @@
 }
 
 .dl-guide-panel__text-icon {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   color: var(--dl-color-primary);
 }
@@ -4373,7 +4373,7 @@
 }
 
 .dl-product-colors-panel .dl-color-item__check {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--dl-color-primary);
   position: absolute;
   top: 50%;
