@@ -300,6 +300,9 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   } else {
     // 不需要代理，直接使用 API_BASE_URL
     requestUrl = `${API_BASE_URL}${endpoint}`;
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[API Debug] requestUrl:', requestUrl, 'API_BASE_URL:', API_BASE_URL, 'endpoint:', endpoint);
+    }
   }
 
   // [2025-12-07 07:55:00] 从 localStorage 读取 token 并添加到 Authorization header

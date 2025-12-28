@@ -12,6 +12,7 @@ import * as fabric from 'fabric';
 import { fontsApi, type Font } from '@/lib/api';
 import { FONT_CATEGORY_LABELS, type FontCategory } from '@/data/fonts';
 import { TextEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:40:00 复用 Text 工具栏组件
+import ColorPicker from '../ColorPicker';
 
 interface EditTextPanelProps {
   selectedText: fabric.IText | null;
@@ -143,14 +144,14 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       setFontSize(selectedText.fontSize || 48);
       setColor(selectedText.fill as string || '#000000');
       setRotation(selectedText.angle || 0);
-      setTextAlign(selectedText.textAlign || 'center');
-      
+      setTextAlign((selectedText.textAlign as "left" | "center" | "right") || 'center');
+
       // [2025-01-30 17:45:00] 描边设置
       if (selectedText.stroke) {
         setOutlineColor(selectedText.stroke as string || '#000000');
         setOutlineWidth(selectedText.strokeWidth || 0);
       }
-      
+
       // [2025-12-08] 文本形状（如果有path属性，判断形状类型）
       if ((selectedText as any).path) {
         const path = (selectedText as any).path;
@@ -168,19 +169,19 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       } else {
         setTextShape('straight');
       }
-      
+
       // [2025-12-08] 检查是否超出安全区
       checkSafeArea(selectedText, canvas);
     }
   }, [selectedText, fonts, canvas]);
-  
+
   // [2025-12-08] 检查对象是否超出安全区
   const checkSafeArea = (textObj: fabric.IText, canvasObj: fabric.Canvas | null) => {
     if (!textObj || !canvasObj) {
       setIsOutOfSafeArea(false);
       return;
     }
-    
+
     // 安全区边距（假设为画布的10%）
     const safeAreaMargin = 0.1;
     const canvasWidth = canvasObj.width || 1000;
@@ -189,35 +190,35 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
     const safeTop = canvasHeight * safeAreaMargin;
     const safeRight = canvasWidth * (1 - safeAreaMargin);
     const safeBottom = canvasHeight * (1 - safeAreaMargin);
-    
+
     // 获取文本对象的边界框
     const boundingRect = textObj.getBoundingRect();
     const objLeft = boundingRect.left;
     const objTop = boundingRect.top;
     const objRight = objLeft + boundingRect.width;
     const objBottom = objTop + boundingRect.height;
-    
+
     // 检查是否超出安全区
-    const outOfBounds = 
+    const outOfBounds =
       objLeft < safeLeft ||
       objTop < safeTop ||
       objRight > safeRight ||
       objBottom > safeBottom;
-    
+
     setIsOutOfSafeArea(outOfBounds);
   };
-  
+
   // [2025-12-08] 监听对象移动和缩放，实时检查安全区
   useEffect(() => {
     if (!selectedText || !canvas) return;
-    
+
     const handleObjectModified = () => {
       checkSafeArea(selectedText, canvas);
     };
-    
+
     canvas.on('object:modified', handleObjectModified);
     canvas.on('object:moving', handleObjectModified);
-    
+
     return () => {
       canvas.off('object:modified', handleObjectModified);
       canvas.off('object:moving', handleObjectModified);
@@ -252,16 +253,16 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         const fontInfo = allFonts.find(f => f.name === font);
         // [2025-12-16 07:20:05] 选择时触发加载，确保 Fabric/预览都能用到真实字体
         ensureGoogleFontLoaded(fontInfo);
-        
+
         // [2025-01-30 22:00:00] 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
         // [2025-12-16 07:20:05] 优先使用 googleFontFamily（有些字体 name/displayName 不等于 Google 的 family）
         selectedText.set('fontFamily', fontInfo?.googleFontFamily || font);
         (selectedText as any).dirty = true; // [2025-12-16 07:20:05] 强制标记为 dirty，避免缓存导致“看起来没变”
         selectedText.setCoords();
         canvas.renderAll();
-        
+
         console.log('[EditTextPanel] Font changed successfully:', { font, textObjectName: (selectedText as any).name });
-        
+
         // [2025-12-12 00:00:00] 延迟调用 onUpdate，确保字体更改已应用
         setTimeout(() => {
           onUpdate();
@@ -292,9 +293,9 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         selectedText.set('fill', newColor);
         selectedText.setCoords();
         canvas.renderAll();
-        
+
         console.log('[EditTextPanel] Color changed successfully:', { newColor, textObjectName: (selectedText as any).name });
-        
+
         // [2025-12-12 00:00:00] 延迟调用 onUpdate，确保颜色更改已应用
         setTimeout(() => {
           onUpdate();
@@ -368,14 +369,14 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   const handleTextShapeChange = (shape: 'straight' | 'arc' | 'circle' | 'wave') => {
     setTextShape(shape);
     if (!selectedText || !canvas) return;
-    
+
     try {
       // [2025-12-11 23:59:30] 验证 selectedText 是有效的文本对象
       if (selectedText.type !== 'i-text' && selectedText.type !== 'textbox') {
         console.warn('[EditTextPanel] Selected object is not a text object, skipping shape change');
         return;
       }
-      
+
       // 获取文本对象的位置和属性
       const left = selectedText.left || 0;
       const top = selectedText.top || 0;
@@ -385,12 +386,12 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       const fill = selectedText.fill as string || '#000000';
       const stroke = selectedText.stroke as string || '';
       const strokeWidth = selectedText.strokeWidth || 0;
-      
+
       // 创建路径
       let path: string | undefined;
       const width = (selectedText.width || 200);
       const height = (selectedText.height || 50);
-      
+
       switch (shape) {
         case 'straight':
           // 直线：使用普通文本对象，清除路径
@@ -423,13 +424,13 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
           console.warn('[EditTextPanel] Unknown shape type:', shape);
           path = undefined;
       }
-      
+
       // [2025-12-11 23:59:30] 验证路径格式：必须是字符串或 undefined
       if (path !== undefined && typeof path !== 'string') {
         console.error('[EditTextPanel] Invalid path format, expected string or undefined, got:', typeof path, path);
         path = undefined;
       }
-      
+
       // [2025-12-11 23:59:30] 安全地设置路径属性
       if (path === undefined) {
         selectedText.set('path', undefined);
@@ -437,7 +438,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         // 确保路径是有效的字符串
         selectedText.set('path', path);
       }
-      
+
       selectedText.setCoords();
       canvas.renderAll();
       onUpdate();
@@ -464,18 +465,18 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
       console.warn('[EditTextPanel] handleCenter: selectedText or canvas is null');
       return;
     }
-    
+
     console.log('[EditTextPanel] Centering text');
     const canvasWidth = canvas.width || 1000;
     const canvasHeight = canvas.height || 1200;
-    
+
     selectedText.set({
       left: canvasWidth / 2,
       top: canvasHeight / 2,
       originX: 'center',
       originY: 'center'
     });
-    
+
     selectedText.setCoords();
     canvas.renderAll();
     onUpdate();
@@ -573,12 +574,12 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
     if (!selectedText || !canvas) return;
     try {
       const cloneResult = (selectedText as any).clone();
-      const cloned = cloneResult instanceof Promise 
-        ? await cloneResult 
+      const cloned = cloneResult instanceof Promise
+        ? await cloneResult
         : typeof cloneResult === 'function'
           ? await new Promise<fabric.IText>((resolve) => {
-              (selectedText as any).clone(resolve);
-            })
+            (selectedText as any).clone(resolve);
+          })
           : cloneResult;
 
       if (!cloned) {
@@ -660,7 +661,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
               <path d="M6 9l6 6 6-6" />
             </svg>
           </button>
-          
+
           {showFontDropdown && (
             <>
               <div
@@ -675,7 +676,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
                   Object.keys(fonts).sort().map(category => {
                     const categoryFonts = fonts[category] || [];
                     if (categoryFonts.length === 0) return null;
-                    
+
                     return (
                       <div key={category} className="dl-edit-text-panel__font-category">
                         <div className="dl-edit-text-panel__font-category-label">
@@ -728,21 +729,11 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
 
       {/* 3. Edit Color（颜色选择器） */}
       <div className="dl-edit-text-panel__section">
-        <label className="dl-edit-text-panel__label">Edit Color</label>
-        <div className="dl-edit-text-panel__color-group">
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => handleColorChange(e.target.value)}
-            className="dl-edit-text-panel__color-input"
-          />
-          <input
-            type="text"
-            value={color}
-            onChange={(e) => handleColorChange(e.target.value)}
-            className="dl-edit-text-panel__color-text"
-          />
-        </div>
+        <ColorPicker
+          selectedColor={color}
+          onChange={handleColorChange}
+          title="Font Colors"
+        />
       </div>
 
       {/* 4. Rotation（旋转滑块） */}
@@ -793,7 +784,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         <input
           type="range"
           min="12"
-          max="200"
+          max="300"
           value={fontSize}
           onChange={(e) => handleFontSizeChange(parseFloat(e.target.value))}
           className="dl-edit-text-panel__slider"

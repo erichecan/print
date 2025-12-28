@@ -61,6 +61,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-12-20 02:20:00] 5.0 版本：只保留最基本的 state
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve'>('front');
+  const [isZoomed, setIsZoomed] = useState(false); // [2025-12-28] Zoom state (100% or 120%)
 
   // [2025-12-20 03:05:00] 5.0 版本：功能2 - 改为 useState，支持动态更新
   // [2025-12-20 03:30:00] 修复：初始状态使用默认白色 T 恤图片，确保用户直接从导航进入时也能正常显示
@@ -2892,6 +2893,24 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     });
   }, [currentView, getCurrentImageUrl]);
 
+  // [2025-12-28] Zoom Toggle Function - 100% <-> 120%
+  const handleZoomToggle = () => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const newZoom = isZoomed ? 1 : 1.2;
+    console.log('[DesignLab 5.0] Zooming to:', newZoom);
+
+    // Zoom to center of the canvas
+    const center = canvas.getCenter();
+    const point = new fabric.Point(center.left, center.top);
+
+    // Smooth zoom (optional, but standard setZoom is immediate)
+    canvas.zoomToPoint(point, newZoom);
+
+    setIsZoomed(!isZoomed);
+  };
+
   return (
     <div className="design-lab-new">
       {/* 1. Header - 顶部导航栏 */}
@@ -3235,17 +3254,26 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className="dl-sidebar__btn"
+            className={`dl-sidebar__btn ${isZoomed ? 'is-active' : ''}`}
+            onClick={handleZoomToggle}
             aria-label="Zoom"
-            aria-pressed={false}
+            aria-pressed={isZoomed}
           >
             <span className="dl-sidebar__icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
                 <path d="M21 21l-4.35-4.35" />
+                {isZoomed ? (
+                  <line x1="8" y1="11" x2="14" y2="11" />
+                ) : (
+                  <>
+                    <line x1="11" y1="8" x2="11" y2="14" />
+                    <line x1="8" y1="11" x2="14" y2="11" />
+                  </>
+                )}
               </svg>
             </span>
-            <span className="dl-sidebar__label">Zoom</span>
+            <span className="dl-sidebar__label">Zoom {isZoomed ? '120%' : '100%'}</span>
           </button>
         </aside>
       </div>
