@@ -41,8 +41,9 @@ import './design-lab.css';
 const CANVAS_WIDTH = 4000;
 const CANVAS_HEIGHT = 4800;
 // [2025-01-31] 打印区域常量 (Custom Ink 风格)
-const PRINTABLE_WIDTH = 1400;
-const PRINTABLE_HEIGHT = 1800;
+// [2025-02-01] Resized based on user feedback: Width +100px, Height +200px
+const PRINTABLE_WIDTH = 1500; // 1400 + 50*2
+const PRINTABLE_HEIGHT = 2000; // 1800 + 100*2
 // Left Chest 区域 (Front view only)
 const LEFT_CHEST_WIDTH = 400;
 const LEFT_CHEST_HEIGHT = 400;
