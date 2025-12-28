@@ -24,7 +24,7 @@ export default function Home() {
   // [2025-12-09 14:30:00] 安全地序列化结构化数据，添加错误处理
   let websiteSchemaHtml = '';
   let organizationSchemaHtml = '';
-  
+
   try {
     const websiteSchema = generateWebsiteSchema();
     websiteSchemaHtml = JSON.stringify(websiteSchema);
@@ -38,7 +38,7 @@ export default function Home() {
       url: 'https://suvernireplus.com',
     });
   }
-  
+
   try {
     const organizationSchema = generateOrganizationSchema();
     organizationSchemaHtml = JSON.stringify(organizationSchema);
@@ -66,12 +66,6 @@ export default function Home() {
       <div>
         {/* [2025-01-29 04:00:00] 使用 HomePageWrapper 根据设备类型显示桌面端或移动端页面 */}
         <HomePageWrapper />
-
-        {/* [2025-11-19 08:35:00] 数据库驱动的分类板块，使用数据库中的分类数据，桌面端一行显示4个 */}
-        {/* [2025-01-29 04:00:00] 移动端不显示此部分，已在移动端组件中包含分类 */}
-        <div className="desktop-only">
-          <DatabaseCategoriesSection />
-        </div>
       </div>
     </>
   );

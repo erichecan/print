@@ -99,9 +99,6 @@ export function DatabaseCategoriesSection() {
           <h2 id="database-categories-heading" className={styles.sectionTitle}>
             Shop by Category
           </h2>
-          <p className={styles.sectionSubtitle}>
-            Find the perfect custom products for your team, event, or business
-          </p>
 
           <div className={styles.staticCategoriesGrid}>
             {Array.from({ length: 12 }).map((_, i) => (
@@ -125,9 +122,6 @@ export function DatabaseCategoriesSection() {
           <h2 id="database-categories-heading" className={styles.sectionTitle}>
             Shop by Category
           </h2>
-          <p className={styles.sectionSubtitle}>
-            Find the perfect custom products for your team, event, or business
-          </p>
           <div className="text-center text-gray-600 py-8">
             Failed to load categories. Please try again later.
           </div>
@@ -144,15 +138,11 @@ export function DatabaseCategoriesSection() {
         <h2 id="database-categories-heading" className={styles.sectionTitle}>
           Shop by Category
         </h2>
-        <p className={styles.sectionSubtitle}>
-          Find the perfect custom products for your team, event, or business
-        </p>
 
         <div className={styles.staticCategoriesGrid}>
           {categories.map((category: Category) => {
             // 优先使用数据库中的imageUrl，如果没有则使用映射函数
             const imagePath = category.imageUrl || getCategoryImagePath(category);
-            const description = getCategoryDescription(category);
 
             return (
               <Link
@@ -182,9 +172,6 @@ export function DatabaseCategoriesSection() {
                 </div>
                 <div className={styles.categoryCardContent}>
                   <h3 className={styles.categoryCardLabel}>{category.name}</h3>
-                  {description && (
-                    <p className={styles.categoryCardDescription}>{description}</p>
-                  )}
                 </div>
               </Link>
             );

@@ -9,6 +9,8 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
 
+import { DatabaseCategoriesSection } from './DatabaseCategoriesSection';
+
 export function HomeClient() {
   // [2025-01-28 06:35:00] 从 CMS 获取首页内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
@@ -29,35 +31,7 @@ export function HomeClient() {
     { id: 'default-3', title: 'Design Help', detail: '7 days a week' },
     { id: 'default-4', title: 'Rush Options', detail: 'As fast as 3 days' },
   ];
-  // [2025-01-29 13:50:00] 品牌logo列表 - 从Custom Ink爬取，存储在GCP前端服务的public目录
-  // Logo路径使用相对路径，在生产环境会自动解析为前端服务URL
-  // 例如：/assets/brands/nike.svg -> https://print-main-frontend-234065158862.us-central1.run.app/assets/brands/nike.svg
-  const brandLogos = homePage?.brandLogos || [
-    // Row 1 - 与Custom Ink品牌展示区域一致
-    { id: 'brand-1', name: 'Nike', src: '/assets/brands/nike.svg' },
-    { id: 'brand-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
-    { id: 'brand-3', name: 'New Era', src: '/assets/brands/new-era.png' },
-    { id: 'brand-4', name: 'The North Face', src: '/assets/brands/northface.svg' },
-    { id: 'brand-5', name: 'Stanley', src: '/assets/brands/stanley.svg' },
-    { id: 'brand-6', name: 'Patagonia', src: '/assets/brands/patagonia.svg' },
-    { id: 'brand-7', name: 'Champion', src: '/assets/brands/champion.png' },
-    // Row 2
-    { id: 'brand-8', name: 'Comfort Colors', src: '/assets/brands/comfort-colors.svg' },
-    { id: 'brand-9', name: 'Ogio', src: '/assets/brands/ogio.svg' },
-    { id: 'brand-10', name: 'Peter Millar', src: '/assets/brands/peter-millar.svg' },
-    { id: 'brand-11', name: 'TravisMathew', src: '/assets/brands/travismathew.svg' },
-    { id: 'brand-12', name: 'Moleskine', src: '/assets/brands/moleskine.svg' },
-    { id: 'brand-13', name: 'Richardson', src: '/assets/brands/richardson.png' },
-    { id: 'brand-14', name: 'Koozie', src: '/assets/brands/koozie.svg' },
-    // Row 3
-    { id: 'brand-15', name: 'Gildan', src: '/assets/brands/gildan.png' },
-    { id: 'brand-16', name: 'Adidas', src: '/assets/brands/adidas.png' },
-    { id: 'brand-17', name: 'JBL', src: '/assets/brands/jbl.svg' },
-    { id: 'brand-18', name: 'Herschel Supply Co.', src: '/assets/brands/herschel.svg' },
-    { id: 'brand-19', name: 'BIC', src: '/assets/brands/bic.svg' },
-    { id: 'brand-20', name: 'Hydro Flask', src: '/assets/brands/hydro-flask.png' },
-    { id: 'brand-21', name: 'Columbia', src: '/assets/brands/columbia.png' },
-  ];
+
   const testimonials = homePage?.testimonials || [
     { id: 'default-1', quote: 'Ordered with ease and delivered on time.', author: 'Mary B., NY', stars: 5 },
     { id: 'default-2', quote: 'Top quality, fast delivery, stellar support. Highly recommend!', author: 'Ingrid D., MD', stars: 5 },
@@ -176,44 +150,8 @@ export function HomeClient() {
         </div>
       </section>
 
-      {/* [2025-01-30 10:00:00] 品牌合作区域 - 使用 frontend-design 美化 */}
-      <section className="brands" aria-labelledby="brands-heading">
-        <div className="container">
-          <h2 id="brands-heading">
-            Shop Featured Brands
-          </h2>
-          <div className="brands__grid">
-            {brandLogos.map((brand, index) => (
-              <div
-                key={brand.id}
-                className="brand-logo"
-                role="listitem"
-                aria-label={brand.name}
-                style={{
-                  animationDelay: `${index * 0.05}s`,
-                  animation: 'fadeInUp 0.6s ease-out forwards',
-                  opacity: 0
-                }}
-              >
-                {/* [2025-01-29 13:50:00] 品牌logo从Custom Ink爬取，存储在GCP前端服务
-                    路径使用相对路径，生产环境会自动解析为：https://print-main-frontend-234065158862.us-central1.run.app/assets/brands/xxx */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={brand.src}
-                  alt={brand.name}
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                  loading="lazy"
-                  onError={(e) => {
-                    // 如果图片加载失败，使用占位符
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/assets/brands/nike.svg';
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* [2025-01-29 04:00:00] Shop by Category moved up */}
+      <DatabaseCategoriesSection />
 
       <section className="testimonials" aria-labelledby="testimonials-heading">
         <div className="container">
@@ -241,17 +179,6 @@ export function HomeClient() {
           <h2 id="enterprise-heading" style={{ textAlign: 'center', marginBottom: '32px' }}>
             Enterprise services to scale your swag
           </h2>
-          <div className="enterprise__grid">
-            {enterprisePanels.map((panel) => (
-              <div className="enterprise-card" key={panel.id}>
-                <h3>{panel.title}</h3>
-                <p>{panel.description}</p>
-                <Link className={`btn${panel.ctaVariant === 'outline' ? ' btn--outline' : ''}`} href={panel.ctaHref}>
-                  {panel.ctaLabel}
-                </Link>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
     </>
