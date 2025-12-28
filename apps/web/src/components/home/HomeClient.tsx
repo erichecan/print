@@ -37,23 +37,7 @@ export function HomeClient() {
     { id: 'default-2', quote: 'Top quality, fast delivery, stellar support. Highly recommend!', author: 'Ingrid D., MD', stars: 5 },
     { id: 'default-3', quote: 'Great experience and responsive service. The site is easy to use.', author: 'Jenna F., WI', stars: 4 },
   ];
-  const enterprisePanels = homePage?.enterprisePanels || [
-    {
-      id: 'default-1',
-      title: 'Enterprise-Level Swag Management',
-      description: 'Get custom kits, white-glove service, address collection, and global shipping with our enterprise solution.',
-      ctaLabel: 'Get a Demo',
-      ctaHref: '/contact',
-    },
-    {
-      id: 'default-2',
-      title: "We'll Do the Work",
-      description: 'Ship to one place or every place. Choose your design and we handle the rest—from packing to delivery tracking.',
-      ctaLabel: 'Start Designing',
-      ctaHref: '/design-lab', // [2025-12-08 14:40:00] 使用新的 Design Lab 页面
-      ctaVariant: 'outline',
-    },
-  ];
+
 
   return (
     <>
@@ -174,13 +158,7 @@ export function HomeClient() {
         </div>
       </section>
 
-      <section className="enterprise" aria-labelledby="enterprise-heading">
-        <div className="container">
-          <h2 id="enterprise-heading" style={{ textAlign: 'center', marginBottom: '32px' }}>
-            Enterprise services to scale your swag
-          </h2>
-        </div>
-      </section>
+
     </>
   );
 }
