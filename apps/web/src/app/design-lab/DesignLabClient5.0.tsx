@@ -37,9 +37,12 @@ import GetPriceFlowModal from './components/modals/GetPriceFlowModal';
 import { usePricing } from './modules/pricing/usePricing';
 import './design-lab.css';
 
-// [2025-12-18 21:18:56] 画布常量 (Moved up to avoid TDZ)
+// [2025-12-18 21:18:56] 画布常量
 const CANVAS_WIDTH = 4000;
 const CANVAS_HEIGHT = 4800;
+// [2025-01-31] 打印区域常量 (Custom Ink 风格)
+const PRINTABLE_WIDTH = 1400;
+const PRINTABLE_HEIGHT = 1800;
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
@@ -849,6 +852,41 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     };
   };
 
+  // [2025-01-31] 添加打印区域参考线
+  const addPrintableArea = () => {
+    if (!fabricCanvasRef.current || !fabricRef.current) return;
+    const fabric = fabricRef.current;
+    const canvas = fabricCanvasRef.current;
+
+    // 避免重复添加
+    const existing = canvas.getObjects().find((obj: any) => obj.name === 'printable-area');
+    if (existing) return;
+
+    console.log('[DesignLab 5.0] Adding printable area guide...');
+    const rect = new fabric.Rect({
+      left: CANVAS_WIDTH / 2,
+      top: CANVAS_HEIGHT / 2,
+      width: PRINTABLE_WIDTH,
+      height: PRINTABLE_HEIGHT,
+      originX: 'center',
+      originY: 'center',
+      fill: 'transparent',
+      stroke: 'rgba(0, 102, 204, 0.6)', // Custom Ink 风格蓝色 #0066CC
+      strokeWidth: 3,
+      strokeDashArray: [15, 15], // 虚线效果
+      selectable: false,
+      evented: false, // 不响应鼠标事件
+      name: 'printable-area',
+      hoverCursor: 'default',
+    });
+
+    canvas.add(rect);
+
+    // 确保在产品图片之上，设计元素之下 (Product image is usually sent to back)
+    // 这里简单添加到 canvas，因为 product image 是 sendToBack 的，所以这个会在它上面
+    canvas.requestRenderAll();
+  };
+
   // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 初始化 Fabric.js Canvas
   useEffect(() => {
     if (!canvasRef.current) {
@@ -916,6 +954,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         }
 
         fabricCanvasRef.current = fabricCanvas;
+
+        // [2025-01-31] 初始化打印区域参考线
+        addPrintableArea();
 
         // [2025-12-16 06:22:10] 暴露 canvas 到 window，便于 Playwright/DevTools 自动化测试读取对象与控件状态
         // 注意：不包含任何敏感信息，仅保障测试可观测性
