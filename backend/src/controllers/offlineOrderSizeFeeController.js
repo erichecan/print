@@ -12,7 +12,7 @@ const ALLOWED_SIZES = ['2XL', '3XL', '4XL', '5XL'];
  */
 exports.getSizeFees = async (req, res, next) => {
   try {
-    const sizeFees = await prisma.offlineOrderSizeFee.findMany({
+    const sizeFees = await prisma.offline_order_size_fees.findMany({
       orderBy: { size: 'asc' },
     });
 
@@ -21,7 +21,7 @@ exports.getSizeFees = async (req, res, next) => {
       data: sizeFees.map((sf) => ({
         id: sf.id,
         size: sf.size,
-        additionalFee: Number(sf.additionalFee),
+        additionalFee: Number(sf.additional_fee),
       })),
       count: sizeFees.length,
     });
@@ -56,14 +56,14 @@ exports.updateSizeFees = async (req, res, next) => {
     // 使用事务批量更新或创建
     const results = await prisma.$transaction(
       sizeFees.map((sf) =>
-        prisma.offlineOrderSizeFee.upsert({
+        prisma.offline_order_size_fees.upsert({
           where: { size: sf.size },
           update: {
-            additionalFee: sf.additionalFee,
+            additional_fee: sf.additionalFee,
           },
           create: {
             size: sf.size,
-            additionalFee: sf.additionalFee,
+            additional_fee: sf.additionalFee,
           },
         })
       )
@@ -74,7 +74,7 @@ exports.updateSizeFees = async (req, res, next) => {
       data: results.map((sf) => ({
         id: sf.id,
         size: sf.size,
-        additionalFee: Number(sf.additionalFee),
+        additionalFee: Number(sf.additional_fee),
       })),
     });
   } catch (error) {
