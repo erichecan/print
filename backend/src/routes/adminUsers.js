@@ -11,6 +11,9 @@ router.use(requireAdmin);
 router.get('/', controller.listUsers);
 router.post('/', controller.createUser); // [2025-01-28 18:30:00] 创建新用户
 router.get('/:id', controller.getUserDetail);
+router.patch('/:id/role', controller.updateUserRole);
+router.delete('/:id', controller.deleteUser);
+router.post('/:id/reset-password', controller.resetUserPassword);
 
 module.exports = router;
 

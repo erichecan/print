@@ -1614,6 +1614,17 @@ export const adminUsersApi = {
   get: (id: string) => api<AdminUserDetailResponse>(`/admin/users/${id}`),
   create: (data: AdminCreateUserPayload) => // [2025-01-28 18:35:00] 创建新用户
     api<AdminCreateUserResponse>('/admin/users', { method: 'POST', body: data }),
+  updateRole: (id: string, role: string) =>
+    api<{ message: string; user: AdminUserSummary }>(`/admin/users/${id}/role`, {
+      method: 'PATCH',
+      body: { role },
+    }),
+  delete: (id: string) => api(`/admin/users/${id}`, { method: 'DELETE' }),
+  resetPassword: (id: string, password: string) =>
+    api<{ message: string }>(`/admin/users/${id}/reset-password`, {
+      method: 'POST',
+      body: { password },
+    }),
 };
 
 export interface AdminDesignSummary {

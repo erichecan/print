@@ -80,10 +80,10 @@ exports.listUsers = async (req, res) => {
     const userIds = users.map((user) => user.id);
     const orderTotals = userIds.length
       ? await prisma.order.groupBy({
-          by: ['userId'],
-          where: { userId: { in: userIds } },
-          _sum: { total: true },
-        })
+        by: ['userId'],
+        where: { userId: { in: userIds } },
+        _sum: { total: true },
+      })
       : [];
 
     const orderTotalsMap = new Map(
@@ -215,8 +215,8 @@ exports.createUser = async (req, res) => {
 
     // [2025-01-28 18:30:00] 验证角色
     const validRoles = ['CUSTOMER', 'ADMIN'];
-    const userRole = role && validRoles.includes(role.toUpperCase()) 
-      ? role.toUpperCase() 
+    const userRole = role && validRoles.includes(role.toUpperCase())
+      ? role.toUpperCase()
       : 'CUSTOMER';
 
     // [2025-01-28 18:30:00] 处理密码（如果提供）
@@ -275,13 +275,78 @@ exports.createUser = async (req, res) => {
     });
   } catch (error) {
     console.error('[adminUserController] createUser error:', error);
-    
+
     // [2025-01-28 18:30:00] 处理 Prisma 唯一约束错误
     if (error.code === 'P2002') {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
-    
+
     res.status(500).json({ error: 'Failed to create user' });
   }
 };
 
+
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!['CUSTOMER', 'ADMIN'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' });
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: { role },
+    });
+
+    res.json({ message: 'User role updated', user });
+  } catch (error) {
+    console.error('[adminUserController] updateUserRole error:', error);
+    res.status(500).json({ error: 'Failed to update user role' });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Prevent deleting self
+    if (req.user.id === id) {
+      return res.status(400).json({ error: 'Cannot delete your own account' });
+    }
+
+    await prisma.user.delete({
+      where: { id },
+    });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('[adminUserController] deleteUser error:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+};
+
+exports.resetUserPassword = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!password || password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.user.update({
+      where: { id },
+      data: { passwordHash },
+    });
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('[adminUserController] resetUserPassword error:', error);
+    res.status(500).json({ error: 'Failed to reset password' });
+  }
+};
