@@ -944,7 +944,14 @@ export const authApi = {
     }
     return response;
   },
-  logout: () => api('/auth/logout', { method: 'POST' }),
+  logout: async () => {
+    try {
+      await api('/auth/logout', { method: 'POST' });
+    } finally {
+      // [2025-12-28 09:30:00] Verify fix: explicitly clear local token to prevent auto-relogin
+      clearAuthToken();
+    }
+  },
   // [2025-01-29 02:20:00] 使用同域 API 路由，避免跨域 Cookie 问题
   // [2025-12-03 03:55:00] 静默处理 401 错误（未登录是正常状态）
   me: async () => {
