@@ -43,6 +43,11 @@ const CANVAS_HEIGHT = 4800;
 // [2025-01-31] 打印区域常量 (Custom Ink 风格)
 const PRINTABLE_WIDTH = 1400;
 const PRINTABLE_HEIGHT = 1800;
+// Left Chest 区域 (Front view only)
+const LEFT_CHEST_WIDTH = 400;
+const LEFT_CHEST_HEIGHT = 400;
+const LEFT_CHEST_OFFSET_X = 350; // Distance from center
+const LEFT_CHEST_OFFSET_Y = -500; // Distance from center
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
@@ -852,46 +857,120 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     };
   };
 
-  // [2025-01-31] 添加打印区域参考线
-  const addPrintableArea = () => {
+  // [2025-01-31] 添加动态打印区域参考线
+  // [2025-02-01] Updated to match Custom Ink: thin gray lines, view-specific, visible only on interaction
+  const addPrintableArea = (view: 'front' | 'back' | 'sleeve') => {
     if (!fabricCanvasRef.current || !fabricRef.current) return;
     const fabric = fabricRef.current;
     const canvas = fabricCanvasRef.current;
 
-    // 避免重复添加
-    const existing = canvas.getObjects().find((obj: any) => obj.name === 'printable-area');
-    if (existing) return;
+    // 清除旧的参考线
+    const existing = canvas.getObjects().find((obj: any) => obj.name === 'printable-area-group');
+    if (existing) {
+      canvas.remove(existing);
+    }
 
-    console.log('[DesignLab 5.0] Adding printable area guide...');
-    const rect = new fabric.Rect({
-      left: CANVAS_WIDTH / 2,
-      top: CANVAS_HEIGHT / 2,
+    // Sleeve 视图暂时没有参考线 (或者可以根据需求添加)
+    if (view === 'sleeve') return;
+
+    console.log('[DesignLab 5.0] Updating printable area guide for view:', view);
+
+    const groupObjects: any[] = [];
+
+    // 1. Main Printable Area Box
+    const mainRect = new fabric.Rect({
+      left: 0,
+      top: 0,
       width: PRINTABLE_WIDTH,
       height: PRINTABLE_HEIGHT,
       originX: 'center',
       originY: 'center',
       fill: 'transparent',
-      stroke: 'rgba(0, 102, 204, 0.6)', // Custom Ink 风格蓝色 #0066CC
-      strokeWidth: 3,
-      strokeDashArray: [15, 15], // 虚线效果
+      stroke: '#999999', // Thin gray line
+      strokeWidth: 1,
+      strokeDashArray: [5, 5], // Finer dash
       selectable: false,
-      evented: false, // 不响应鼠标事件
-      name: 'printable-area',
-      hoverCursor: 'default',
+      evented: false,
+    });
+    groupObjects.push(mainRect);
+
+    // 2. View Label (Top-Left of Main Box)
+    const labelText = view === 'front' ? 'Front' : 'Back';
+    const mainLabel = new fabric.Text(labelText, {
+      left: -PRINTABLE_WIDTH / 2 + 10,
+      top: -PRINTABLE_HEIGHT / 2 + 10,
+      fontSize: 40, // Scaled for 4000x4800 canvas
+      fontFamily: 'Arial',
+      fill: '#999999',
+      originX: 'left',
+      originY: 'top',
+      selectable: false,
+      evented: false,
+    });
+    groupObjects.push(mainLabel);
+
+    // 3. Left Chest Area (Front View Only)
+    if (view === 'front') {
+      const leftChestRect = new fabric.Rect({
+        left: LEFT_CHEST_OFFSET_X, // Offset from center
+        top: LEFT_CHEST_OFFSET_Y,
+        width: LEFT_CHEST_WIDTH,
+        height: LEFT_CHEST_HEIGHT,
+        originX: 'center',
+        originY: 'center',
+        fill: 'transparent',
+        stroke: '#999999',
+        strokeWidth: 1,
+        // strokeDashArray: [5, 5], // Solid or dashed? Custom Ink uses solid for sub-areas usually, but let's match style
+        selectable: false,
+        evented: false,
+      });
+
+      const leftChestLabel = new fabric.Text('Left Chest', {
+        left: LEFT_CHEST_OFFSET_X - LEFT_CHEST_WIDTH / 2 + 10,
+        top: LEFT_CHEST_OFFSET_Y - LEFT_CHEST_HEIGHT / 2 + 10,
+        fontSize: 30,
+        fontFamily: 'Arial',
+        fill: '#999999',
+        originX: 'left',
+        originY: 'top',
+        selectable: false,
+        evented: false,
+      });
+
+      groupObjects.push(leftChestRect, leftChestLabel);
+    }
+
+    // Create Group
+    const group = new fabric.Group(groupObjects, {
+      left: CANVAS_WIDTH / 2,
+      top: CANVAS_HEIGHT / 2,
+      originX: 'center',
+      originY: 'center',
+      selectable: false,
+      evented: false,
+      visible: false, // Initially hidden, shown only on interaction
+      name: 'printable-area-group',
+      data: { layerType: 'guide' } // Identify as guide
     });
 
-    canvas.add(rect);
+    canvas.add(group);
 
-    // 确保在产品图片之上，设计元素之下 (Product image is usually sent to back)
-    // 这里简单添加到 canvas，因为 product image 是 sendToBack 的，所以这个会在它上面
+    // Ensure it's above product image but below designs
+    // We'll rely on sendToBack for product image, so this should naturally be above it. 
+    // If needed, we can use moveObjectTo.
     canvas.requestRenderAll();
   };
+
+  // [2025-02-01] 监听视图变化更新参考线
+  useEffect(() => {
+    addPrintableArea(currentView);
+  }, [currentView]);
 
   // [2025-12-20 03:20:00] 5.0 版本：步骤2 - 初始化 Fabric.js Canvas
   useEffect(() => {
     if (!canvasRef.current) {
       console.warn('[DesignLab 5.0] Canvas ref not available');
-      return;
     }
 
     const canvasElement = canvasRef.current;
@@ -955,8 +1034,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
         fabricCanvasRef.current = fabricCanvas;
 
-        // [2025-01-31] 初始化打印区域参考线
-        addPrintableArea();
+        // [2025-01-31] 初始化打印区域参考线 (Initial call)
+        addPrintableArea(currentView);
 
         // [2025-12-16 06:22:10] 暴露 canvas 到 window，便于 Playwright/DevTools 自动化测试读取对象与控件状态
         // 注意：不包含任何敏感信息，仅保障测试可观测性
@@ -994,7 +1073,34 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         // [2025-12-14 06:20:00] 保存图层顺序的 Map（用于防止拖拽时自动 bringToFront）
         const layerOrderMap = new Map<fabric.Object, number>();
 
-        // [2025-12-14 05:50:00] 添加 canvas 对象选择事件监听
+        // [2025-02-01] Interaction Event Listeners for Guide Visibility
+        const showGuides = () => {
+          const canvas = fabricCanvasRef.current;
+          if (!canvas) return;
+          const group = canvas.getObjects().find((obj: any) => obj.name === 'printable-area-group');
+          if (group && !group.visible) {
+            group.visible = true;
+            canvas.requestRenderAll();
+          }
+        };
+
+        const hideGuides = () => {
+          const canvas = fabricCanvasRef.current;
+          if (!canvas) return;
+          const group = canvas.getObjects().find((obj: any) => obj.name === 'printable-area-group');
+          if (group && group.visible) {
+            group.visible = false;
+            canvas.requestRenderAll();
+          }
+        };
+
+        fabricCanvas.on('object:moving', showGuides);
+        fabricCanvas.on('object:scaling', showGuides);
+        fabricCanvas.on('object:rotating', showGuides);
+        fabricCanvas.on('object:modified', hideGuides); // Hide when interaction stops
+        fabricCanvas.on('mouse:up', hideGuides); // Ensure it hides on mouse up even if not modified (e.g. just click)
+        fabricCanvas.on('selection:cleared', hideGuides);
+
         fabricCanvas.on('selection:created', (e: any) => {
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
           if (!activeObject) return;
