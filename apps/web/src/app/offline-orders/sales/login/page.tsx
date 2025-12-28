@@ -7,6 +7,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SalesLoginPage() {
   const router = useRouter();
@@ -14,6 +15,9 @@ export default function SalesLoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // [2025-12-07 08:30:00] Use global auth context to update state after login
+  const { refresh } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,12 +35,15 @@ export default function SalesLoginPage() {
         return;
       }
 
+      // [2025-12-07 08:30:00] Valid login, refresh global auth state so AuthProvider knows we are logged in
+      await refresh();
+
       router.push('/offline-orders/sales/orders');
       router.refresh();
     } catch (err: any) {
       setError(err.message || '登录失败，请检查邮箱和密码。');
     } finally {
-      setLoading(false);
+      if (loading) setLoading(false);
     }
   };
 

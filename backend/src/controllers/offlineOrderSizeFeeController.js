@@ -2,6 +2,7 @@
 // [2025-12-07 04:20:00] 从备份文件恢复
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
+const { v4: uuidv4 } = require('uuid');
 const { BadRequestError, NotFoundError, InternalServerError } = require('../utils/errors');
 
 const ALLOWED_SIZES = ['2XL', '3XL', '4XL', '5XL'];
@@ -60,10 +61,13 @@ exports.updateSizeFees = async (req, res, next) => {
           where: { size: sf.size },
           update: {
             additional_fee: sf.additionalFee,
+            updated_at: new Date(),
           },
           create: {
+            id: uuidv4(),
             size: sf.size,
             additional_fee: sf.additionalFee,
+            updated_at: new Date(),
           },
         })
       )
