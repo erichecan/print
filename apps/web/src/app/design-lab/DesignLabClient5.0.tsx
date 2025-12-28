@@ -41,14 +41,14 @@ import './design-lab.css';
 const CANVAS_WIDTH = 4000;
 const CANVAS_HEIGHT = 4800;
 // [2025-01-31] 打印区域常量 (Custom Ink 风格)
-// [2025-02-01] Resized based on user feedback: Width +100px, Height +200px
-const PRINTABLE_WIDTH = 1500; // 1400 + 50*2
-const PRINTABLE_HEIGHT = 2000; // 1800 + 100*2
+// [2025-02-01] Resized based on user feedback: Width +900px, Height +1200px
+const PRINTABLE_WIDTH = 2400; // 1500 + 900
+const PRINTABLE_HEIGHT = 3200; // 2000 + 1200
 // Left Chest 区域 (Front view only)
-const LEFT_CHEST_WIDTH = 400;
-const LEFT_CHEST_HEIGHT = 400;
-const LEFT_CHEST_OFFSET_X = 350; // Distance from center
-const LEFT_CHEST_OFFSET_Y = -500; // Distance from center
+const LEFT_CHEST_WIDTH = 600;
+const LEFT_CHEST_HEIGHT = 600;
+const LEFT_CHEST_OFFSET_X = 900; // 1200 - 300 (Tight Top Right)
+const LEFT_CHEST_OFFSET_Y = -1300; // -1600 + 300 (Tight Top Right)
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
