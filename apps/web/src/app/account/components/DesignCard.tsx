@@ -9,7 +9,7 @@ import type { MergedDesign } from '../utils/designMerger';
 
 interface DesignCardProps {
   design: MergedDesign;
-  onDelete?: (id: string, source: 'cloud' | 'local') => void;
+  onDelete?: (design: MergedDesign) => void;
 }
 
 export function DesignCard({ design, onDelete }: DesignCardProps) {
@@ -22,15 +22,22 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
     router.push(`/design-lab?designId=${designId}&source=${source}`);
   };
 
-  const handleDelete = () => {
-    if (onDelete && confirm(`确定要删除设计 "${design.name}" 吗？`)) {
-      if (design.cloudId) {
-        onDelete(design.cloudId, 'cloud');
-      }
-      if (design.localId) {
-        onDelete(design.localId, 'local');
-      }
+  const handleDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    console.log('[DesignCard] Delete button clicked for design:', design.name);
+    console.log('[DesignCard] onDelete exists:', !!onDelete);
+
+    if (!onDelete) {
+      console.error('[DesignCard] onDelete callback not provided!');
+      return;
     }
+
+    // [2025-12-28] TEMPORARY: Remove confirm dialog to test core functionality
+    // TODO: Implement proper confirmation modal that doesn't auto-dismiss
+    console.log('[DesignCard] Calling onDelete directly (no confirmation)');
+    onDelete(design);
   };
 
   // [2025-01-31 00:02:00] Format Date

@@ -20,6 +20,7 @@ import EditUploadPanel from './components/panels/EditUploadPanel'; // [2025-12-1
 import TextPanel from './components/panels/TextPanel'; // [2025-12-16 07:10:00] 5.0 版本：Add Text - 复用 4.0 TextPanel
 import EditTextPanel from './components/panels/EditTextPanel'; // [2025-12-16 07:10:00] 5.0 版本：Add Text - 复用 4.0 EditTextPanel
 import ArtPanel from './components/panels/ArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 素材库面板
+import EditArtPanel from './components/panels/EditArtPanel'; // [2025-02-01] Import EditArtPanel
 import ProductColorsPanel from './components/panels/ProductColorsPanel'; // [2025-12-20] 5.0 版本：Product Colors - 颜色选择面板
 import { registerUniversalCornerControls, applyCornerControls } from '../design-lab5/upload-controls/registerUploadCornerControls';
 import * as fabric from 'fabric';
@@ -49,6 +50,9 @@ const LEFT_CHEST_WIDTH = 600;
 const LEFT_CHEST_HEIGHT = 600;
 const LEFT_CHEST_OFFSET_X = 900; // 1200 - 300 (Tight Top Right)
 const LEFT_CHEST_OFFSET_Y = -1300; // -1600 + 300 (Tight Top Right)
+// Sleeve 区域
+const SLEEVE_PRINTABLE_WIDTH = 1000;
+const SLEEVE_PRINTABLE_HEIGHT = 1000;
 
 // [2025-12-20 03:00:00] 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
@@ -60,34 +64,47 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const searchParams = useSearchParams();
 
   // [2025-12-20 02:20:00] 5.0 版本：只保留最基本的 state
-  const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve'>('front');
+  const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'>('front');
   const [isZoomed, setIsZoomed] = useState(false); // [2025-12-28] Zoom state (100% or 120%)
 
   // [2025-12-20 03:05:00] 5.0 版本：功能2 - 改为 useState，支持动态更新
   // [2025-12-20 03:30:00] 修复：初始状态使用默认白色 T 恤图片，确保用户直接从导航进入时也能正常显示
-  // [2025-12-18 21:18:56] 产品模块：添加产品名称字段
+  // [2025-12-20 03:00:00] 5.0 版本：产品模块 - 产品信息状态
   const [productInfo, setProductInfo] = useState<{
     color: string;
     baseImages: {
       front: string;
       back: string;
       sleeve: string;
+      'left-sleeve'?: string;
+      'right-sleeve'?: string;
     };
-    productId?: string;
-    colorId?: string;
-    productName?: string; // [2025-12-18 21:18:56] 产品名称
-    variants?: Array<{ id: string; color: string | null }>; // [2025-12-20] 添加 variants 用于颜色切换时查找 ID
+    productId: string;
+    colorId?: string; // [2025-12-28] CRITICAL: This is the productVariantId
+    productName?: string;
+    variants?: Array<{ id: string; color: string; }>;
   }>(() => {
-    // [2025-12-20 03:30:00] 使用函数初始化，确保默认图片在组件创建时就设置好
-    const defaultImages = getDefaultProductBaseImages('White');
+    // [2025-12-28] CRITICAL FIX: Initialize from initialProductData if available
+    if (initialProductData) {
+      console.log('[DesignLab 5.0] Initializing productInfo from initialProductData:', initialProductData);
+      return {
+        color: initialProductData.color || 'White',
+        baseImages: initialProductData.baseImages || getDefaultProductBaseImages(initialProductData.color || 'White'),
+        productId: initialProductData.productId,
+        colorId: initialProductData.variantId, // [2025-12-28] CRITICAL: Set colorId from variantId
+        productName: initialProductData.productName,
+        variants: initialProductData.variants,
+      };
+    }
+
+    // Default fallback
+    const defaultColor = 'White';
     return {
-      color: 'White',
-      baseImages: defaultImages,
-      // [2025-12-20] Use dynamic fetching instead of hardcoded IDs to prevent 404s
-      // We will fetch a valid product in useEffect if no URL params are present
-      productId: undefined,
+      color: defaultColor,
+      baseImages: getDefaultProductBaseImages(defaultColor),
+      productId: '',
       colorId: undefined,
-      productName: 'Loading...',
+      productName: undefined,
       variants: [],
     };
   });
@@ -175,7 +192,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               colorId: resolvedVariantId, // 使用解析后的 variantId
               productName: product.productName,
               color: resolvedColor,
-              baseImages: images,
+              baseImages: {
+                front: images.front,
+                back: images.back,
+                sleeve: images.sleeve,
+                'left-sleeve': images['left-sleeve'] || getDefaultProductBaseImages(resolvedColor)['left-sleeve'],
+                'right-sleeve': images['right-sleeve'] || getDefaultProductBaseImages(resolvedColor)['right-sleeve'],
+              },
               variants: product.variants || [], // 保存 variants 列表
             }));
 
@@ -238,6 +261,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const fabricRef = useRef<typeof fabric | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric 对象 ref
   const [canvasInitialized, setCanvasInitialized] = useState(false); // [2025-12-20 03:50:00] 用于触发图片加载的 state
   const cleanupMouseListenerRef = useRef<(() => void) | null>(null); // [2025-12-14 06:35:00] 保存鼠标监听器清理函数
+  const viewStates = useRef<Record<string, any[]>>({}); // [2025-12-28] Store objects for each view (state preservation)
 
   // [2025-12-20 03:55:00] 调试：监听 canvasInitialized 变化
   useEffect(() => {
@@ -355,6 +379,19 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [designId, setDesignId] = useState<string | null>(null);
 
   // [2025-12-18 21:20:48] 保存模块：使用 useDesign hook（canvas 可能为 null，需要在保存时检查）
+  // [2025-12-28] CRITICAL FIX: Log productVariantId to debug save issues
+  const effectiveProductVariantId = productInfo.colorId || productInfo.variants?.[0]?.id;
+
+  useEffect(() => {
+    console.log('[DesignLab 5.0] productInfo state:', {
+      colorId: productInfo.colorId,
+      firstVariantId: productInfo.variants?.[0]?.id,
+      effectiveVariantId: effectiveProductVariantId,
+      productId: productInfo.productId,
+      productName: productInfo.productName,
+    });
+  }, [productInfo, effectiveProductVariantId]);
+
   const {
     saveDesign: saveDesignInternal,
     shareDesignLink,
@@ -364,9 +401,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     canvas: fabricCanvasRef.current,
     canvasWidth: CANVAS_WIDTH,
     canvasHeight: CANVAS_HEIGHT,
-    productVariantId: productInfo.colorId || productInfo.productId,
+    productVariantId: effectiveProductVariantId,
     initialDesignId: designId,
-    initialDesignName: designName,
+    designName: designName, // [2025-12-28] Changed from initialDesignName to designName (reactive)
   });
 
   // [2025-12-18 21:20:48] 保存模块：SaveShareModal 状态
@@ -394,8 +431,31 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [showGetPriceModal, setShowGetPriceModal] = useState(false);
 
   // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换功能
-  const handleViewChange = (view: 'front' | 'back' | 'sleeve') => {
-    console.log('[DesignLab 5.0] 视图切换:', { from: currentView, to: view }); // [2025-12-20 03:00:00] 添加调试日志
+  // [2025-12-28] Updated: Save current view objects before switching
+  const handleViewChange = (view: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve') => {
+    console.log('[DesignLab 5.0] 视图切换:', { from: currentView, to: view });
+
+    // Save current view objects
+    if (fabricCanvasRef.current) {
+      const canvas = fabricCanvasRef.current;
+      // Filter out system objects (background, guides) to only save user design
+      const userObjects = canvas.getObjects().filter((obj: any) => {
+        const name = obj.name || '';
+        const layerType = obj.data?.layerType;
+        return (
+          name !== 'product-image-base' &&
+          name !== 'printable-area-group' &&
+          layerType !== 'guide' &&
+          layerType !== 'product-image'
+        );
+      });
+
+      // Serialize with necessary properties
+      const serialized = userObjects.map(obj => obj.toObject(['name', 'data', 'layerType', 'id', 'userProperty']));
+      viewStates.current[currentView] = serialized;
+      console.log(`[DesignLab 5.0] Saved ${serialized.length} objects for view: ${currentView}`);
+    }
+
     setCurrentView(view);
   };
 
@@ -458,14 +518,16 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         console.log('[DesignLab 5.0] Updating product with real data:', {
           name: productDetail.productName,
           color,
+          variantId: productDetail.variantId,
         });
 
         setProductInfo({
           color,
           baseImages,
           productId: productDetail.productId,
-          colorId: productDetail.variantId,
+          colorId: productDetail.variantId, // [2025-12-28] CRITICAL: Set colorId from variantId
           productName: productDetail.productName,
+          variants: productDetail.variants, // [2025-12-28] Ensure variants are preserved
         });
 
         // Update URL
@@ -513,7 +575,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         setProductInfo(prev => ({
           ...prev,
           color: colorName,
-          baseImages,
+          baseImages: {
+            ...baseImages,
+            'left-sleeve': baseImages['left-sleeve'] || '', // Fallback for legacy path
+            'right-sleeve': baseImages['right-sleeve'] || '',
+          },
           // 保持原有 ID 或设为 null? 设为 null 可能更安全以免误导
         }));
         return;
@@ -540,7 +606,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             productName: newProductData.productName,
             colorId: newVariantId,
             color: newProductData.color || colorName,
-            baseImages: finalBaseImages, // 使用 API 返回的正确图片(或 GCS fallback)
+            baseImages: {
+              front: finalBaseImages.front,
+              back: finalBaseImages.back,
+              sleeve: finalBaseImages.sleeve,
+              'left-sleeve': finalBaseImages['left-sleeve'] || getDefaultProductBaseImages(newProductData.color || colorName)['left-sleeve'],
+              'right-sleeve': finalBaseImages['right-sleeve'] || getDefaultProductBaseImages(newProductData.color || colorName)['right-sleeve'],
+            },
             variants: newProductData.variants || prev.variants,
           }));
 
@@ -567,7 +639,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
-        baseImages,
+        baseImages: {
+          ...baseImages,
+          'left-sleeve': baseImages['left-sleeve'] || '',
+          'right-sleeve': baseImages['right-sleeve'] || '',
+        },
         colorId: newVariantId,
       }));
 
@@ -594,26 +670,49 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   };
 
   // [2025-12-18 21:20:48] 保存模块：保存设计处理
-  const handleSaveDesign = async () => {
+  const handleSaveDesign = async (nameOverride?: string): Promise<string | null> => {
+    console.log('[DesignLab 5.0] ===== SAVE START =====');
+    console.log('[DesignLab 5.0] Current state:', {
+      designName,
+      designId,
+      productInfo: {
+        productId: productInfo.productId,
+        colorId: productInfo.colorId,
+        productName: productInfo.productName,
+        firstVariantId: productInfo.variants?.[0]?.id,
+      },
+      effectiveProductVariantId,
+    });
+
     if (!fabricCanvasRef.current) {
+      console.error('[DesignLab 5.0] ❌ Canvas is not initialized');
       alert('Canvas is not initialized. Please wait a moment and try again.');
       return null;
     }
 
     try {
-      // 传递当前的 canvas 和设计名称
-      // 注意：SaveShareModal 中的设计名称是 readOnly，如果需要编辑，需要修改 SaveShareModal
-      const savedDesignId = await saveDesignInternal(fabricCanvasRef.current);
+      console.log('[DesignLab 5.0] Calling saveDesignInternal with name:', nameOverride || designName);
+      const savedDesignId = await saveDesignInternal(fabricCanvasRef.current, nameOverride);
+
       if (savedDesignId) {
         setDesignId(savedDesignId);
-        console.log('[DesignLab 5.0] 设计保存成功:', savedDesignId);
+        console.log('[DesignLab 5.0] ✅ Design saved successfully:', savedDesignId);
+        console.log('[DesignLab 5.0] ===== SAVE COMPLETE =====');
         return savedDesignId;
+      } else {
+        console.error('[DesignLab 5.0] ❌ Save returned null');
+        console.log('[DesignLab 5.0] ===== SAVE FAILED =====');
+        return null;
       }
-      return null;
-    } catch (error) {
-      console.error('[DesignLab 5.0] 设计保存失败:', error);
-      alert('Failed to save design. Please try again.');
-      throw error; // 重新抛出错误，让 SaveShareModal 知道保存失败
+    } catch (error: any) {
+      console.error('[DesignLab 5.0] ❌ Design save failed:', error);
+      console.error('[DesignLab 5.0] Error details:', {
+        message: error.message,
+        stack: error.stack,
+      });
+      alert(`Failed to save design: ${error.message || error} `);
+      console.log('[DesignLab 5.0] ===== SAVE ERROR =====');
+      throw error;
     }
   };
 
@@ -654,6 +753,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
     if (currentView === 'sleeve' || objects.some((obj: any) => obj.name?.includes('sleeve'))) {
       sidesUsed.push('sleeve');
+    }
+    if (currentView === 'left-sleeve' || objects.some((obj: any) => obj.name?.includes('left-sleeve'))) {
+      sidesUsed.push('left-sleeve');
+    }
+    if (currentView === 'right-sleeve' || objects.some((obj: any) => obj.name?.includes('right-sleeve'))) {
+      sidesUsed.push('right-sleeve');
     }
     // 如果没有对象，至少包含当前视图
     if (sidesUsed.length === 0 && (currentView as string) !== 'zoom') {
@@ -861,7 +966,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-01-31] 添加动态打印区域参考线
   // [2025-02-01] Updated to match Custom Ink: thin gray lines, view-specific, visible only on interaction
-  const addPrintableArea = (view: 'front' | 'back' | 'sleeve') => {
+  const addPrintableArea = (view: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve') => {
     if (!fabricCanvasRef.current || !fabricRef.current) return;
     const fabric = fabricRef.current;
     const canvas = fabricCanvasRef.current;
@@ -872,8 +977,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       canvas.remove(existing);
     }
 
-    // Sleeve 视图暂时没有参考线 (或者可以根据需求添加)
-    if (view === 'sleeve') return;
+    // Determine dimensions based on view
+    let areaWidth = PRINTABLE_WIDTH;
+    let areaHeight = PRINTABLE_HEIGHT;
+
+    if (view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve') {
+      areaWidth = SLEEVE_PRINTABLE_WIDTH;
+      areaHeight = SLEEVE_PRINTABLE_HEIGHT;
+    }
 
     console.log('[DesignLab 5.0] Updating printable area guide for view:', view);
 
@@ -883,8 +994,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     const mainRect = new fabric.Rect({
       left: 0,
       top: 0,
-      width: PRINTABLE_WIDTH,
-      height: PRINTABLE_HEIGHT,
+      width: areaWidth,
+      height: areaHeight,
       originX: 'center',
       originY: 'center',
       fill: 'transparent',
@@ -1361,7 +1472,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     hasBorders: true,
                     borderColor: '#808080',
                     borderScaleFactor: 2,
-                    name: `debug_${Date.now()}`,
+                    name: `debug_${Date.now()} `,
                     data: { layerType: 'upload' },
                   });
                   fabricCanvas.add(rect);
@@ -1522,7 +1633,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 );
                 if (dist < cornerSize * 1.5) {
                   onControl = true;
-                  controlType = `corner-${corner.name}`;
+                  controlType = `corner - ${corner.name} `;
                   targetObject = (activeObj as any).name || 'unknown';
                   break;
                 }
@@ -1773,7 +1884,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   cloned.set({
                     left: (target.left || 0) + 20,
                     top: (target.top || 0) + 20,
-                    name: `image_${Date.now()}`,
+                    name: `image_${ Date.now() } `,
                     selectable: true,
                     evented: true,
                     hasControls: true,
@@ -2021,7 +2132,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   cloned.set({
                     left: (target.left || 0) + 20,
                     top: (target.top || 0) + 20,
-                    name: `${namePrefix}${Date.now()}`,
+                    name: `${namePrefix}${Date.now()} `,
                     selectable: true,
                     evented: true,
                     hasControls: true,
@@ -2381,6 +2492,52 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       finalImageUrl = getDefaultProductBaseImages('White')[currentView];
     }
 
+    // Restore objects for the new view (Clear old user objects first)
+    // We do this BEFORE async image load because image stays at back anyway, 
+    // and we want UI to feel responsive.
+    const restoreViewObjects = () => {
+      const canvas = fabricCanvasRef.current;
+      if (!canvas) return;
+      const fabric = fabricRef.current;
+      if (!fabric) return;
+
+      // 1. Remove current USER objects (keep base image until replaced)
+      const objectsToRemove = canvas.getObjects().filter((obj: any) => {
+        const name = obj.name || '';
+        const layerType = obj.data?.layerType;
+        return (
+          name !== 'product-image-base' &&
+          name !== 'printable-area-group' &&
+          layerType !== 'guide' &&
+          layerType !== 'product-image'
+        );
+      });
+      objectsToRemove.forEach(obj => canvas.remove(obj));
+
+      // 2. Restore saved objects
+      const savedObjects = viewStates.current[currentView];
+      if (savedObjects && savedObjects.length > 0) {
+        console.log(`[DesignLab 5.0] Restoring ${savedObjects.length} objects for view: ${currentView} `);
+        fabric.util.enlivenObjects(savedObjects, (enlivenedObjects: fabric.Object[]) => {
+          enlivenedObjects.forEach((obj) => {
+            canvas.add(obj);
+            // Re-attach controls if needed (icon controls)
+            if (typeof (canvas as any).addIconControlsToObject === 'function') {
+              (canvas as any).addIconControlsToObject(obj);
+            }
+          });
+          canvas.renderAll();
+        }, ""); // namespace string
+      } else {
+        canvas.renderAll();
+      }
+
+      // Re-add printable area guide on top (hidden but present)
+      addPrintableArea(currentView);
+    };
+
+    restoreViewObjects();
+
     // 小延迟确保 Canvas 容器样式已经稳定
     const timer = setTimeout(() => {
       addProductImageToCanvas(finalImageUrl, tintHex);
@@ -2409,7 +2566,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
     if (file.size > MAX_FILE_SIZE) {
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-      alert(`File size (${fileSizeMB} MB) exceeds the maximum limit of 20 MB. Please choose a smaller file.`);
+      alert(`File size(${fileSizeMB} MB) exceeds the maximum limit of 20 MB.Please choose a smaller file.`);
       return;
     }
 
@@ -2425,7 +2582,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     ];
     const normalizedFileType = file.type.toLowerCase();
     if (!allowedTypes.includes(normalizedFileType)) {
-      alert(`File type "${file.type}" is not supported. Please upload JPG, PNG, GIF, WebP, AVIF, or SVG files.`);
+      alert(`File type "${file.type}" is not supported.Please upload JPG, PNG, GIF, WebP, AVIF, or SVG files.`);
       return;
     }
 
@@ -2500,7 +2657,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               top: CANVAS_HEIGHT / 2,
               originX: 'center',
               originY: 'center',
-              name: `image_${Date.now()}`,
+              name: `image_${Date.now()} `,
             });
 
             // [2025-12-14 06:30:00] 确保坐标已更新（参考 4.0 版本）
@@ -2607,7 +2764,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         hasBorders: true,
         borderColor: '#808080',
         borderScaleFactor: 2,
-        name: `text_${Date.now()}`,
+        name: `text_${Date.now()} `,
         data: {
           layerType: 'text',
           zIndex: 20,
@@ -2651,7 +2808,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     let useProxy = false;
     if (artUrl && (artUrl.includes('storage.googleapis.com') || artUrl.includes('.storage.googleapis.com'))) {
       // [2025-01-30 13:20:00] 使用前端图片代理 API 绕过 CORS
-      imageUrl = `/api/image-proxy?src=${encodeURIComponent(artUrl)}`;
+      imageUrl = `/ api / image - proxy ? src = ${encodeURIComponent(artUrl)} `;
       useProxy = true;
       console.log('[DesignLab 5.0] Using image proxy for GCS URL:', {
         original: artUrl.substring(0, 60) + '...',
@@ -2707,7 +2864,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           top: CANVAS_HEIGHT / 2,
           originX: 'center',
           originY: 'center',
-          name: `art_${Date.now()}`, // [2025-01-30 12:58:00] 使用 art_ 前缀标识艺术素材
+          name: `art_${Date.now()} `, // [2025-01-30 12:58:00] 使用 art_ 前缀标识艺术素材
           data: {
             layerType: 'art',
             zIndex: 15, // [2025-01-30 12:58:00] 艺术素材图层 zIndex 为 15（介于上传图层的 10 和文字图层的 20 之间）
@@ -2821,7 +2978,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               top: CANVAS_HEIGHT / 2,
               originX: 'center',
               originY: 'center',
-              name: `art_${Date.now()}`,
+              name: `art_${Date.now()} `,
               data: {
                 layerType: 'art',
                 zIndex: 15,
@@ -2947,7 +3104,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* [2025-12-20 03:10:00] 5.0 版本：功能3 - Rail 按钮点击交互 */}
         <nav ref={railRef} className="dl-rail" aria-label="Design tools" data-testid="rail">
           <button
-            className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
+            className={`dl - rail__btn ${activeTool === 'upload' ? 'is-active' : ''} `}
             onClick={() => handleToolClick('upload')}
             aria-label="Upload image"
             aria-pressed={activeTool === 'upload'}
@@ -2964,7 +3121,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''}`}
+            className={`dl - rail__btn ${activeTool === 'text' ? 'is-active' : ''} `}
             onClick={() => handleToolClick('text')}
             aria-label="Add text"
             aria-pressed={activeTool === 'text'}
@@ -2975,7 +3132,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''}`}
+            className={`dl - rail__btn ${activeTool === 'art' ? 'is-active' : ''} `}
             onClick={() => handleToolClick('art')}
             aria-label="Add art"
             aria-pressed={activeTool === 'art'}
@@ -3203,7 +3360,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
         <aside ref={sidebarRef} className="dl-sidebar" aria-label="View options" data-testid="sidebar">
           <button
-            className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
+            className={`dl - sidebar__btn ${currentView === 'front' ? 'is-active' : ''} `}
             onClick={() => handleViewChange('front')}
             aria-label="Front view"
             aria-pressed={currentView === 'front'}
@@ -3224,7 +3381,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''}`}
+            className={`dl - sidebar__btn ${currentView === 'back' ? 'is-active' : ''} `}
             onClick={() => handleViewChange('back')}
             aria-label="Back view"
             aria-pressed={currentView === 'back'}
@@ -3245,16 +3402,49 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl-sidebar__btn ${currentView === 'sleeve' ? 'is-active' : ''}`}
-            onClick={() => handleViewChange('sleeve')}
-            aria-label="Sleeve Design"
-            aria-pressed={currentView === 'sleeve'}
+            className={`dl - sidebar__btn ${currentView === 'left-sleeve' ? 'is-active' : ''} `}
+            onClick={() => handleViewChange('left-sleeve')}
+            aria-label="Left Sleeve"
+            aria-pressed={currentView === 'left-sleeve'}
           >
-            <span className="dl-sidebar__label">Sleeve Design</span>
+            <div className="dl-sidebar__thumbnail">
+              {productInfo.baseImages['left-sleeve'] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={getThumbnailImageUrl(productInfo.color, 'left-sleeve')}
+                  alt="Left Sleeve"
+                  className="dl-sidebar__thumbnail-image"
+                />
+              ) : (
+                <div className="dl-sidebar__thumbnail-placeholder">L.Slv</div>
+              )}
+            </div>
+            <span className="dl-sidebar__label">L.Sleeve</span>
           </button>
 
           <button
-            className={`dl-sidebar__btn ${isZoomed ? 'is-active' : ''}`}
+            className={`dl - sidebar__btn ${currentView === 'right-sleeve' ? 'is-active' : ''} `}
+            onClick={() => handleViewChange('right-sleeve')}
+            aria-label="Right Sleeve"
+            aria-pressed={currentView === 'right-sleeve'}
+          >
+            <div className="dl-sidebar__thumbnail">
+              {productInfo.baseImages['right-sleeve'] ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={getThumbnailImageUrl(productInfo.color, 'right-sleeve')}
+                  alt="Right Sleeve"
+                  className="dl-sidebar__thumbnail-image"
+                />
+              ) : (
+                <div className="dl-sidebar__thumbnail-placeholder">R.Slv</div>
+              )}
+            </div>
+            <span className="dl-sidebar__label">R.Sleeve</span>
+          </button>
+
+          <button
+            className={`dl - sidebar__btn ${isZoomed ? 'is-active' : ''} `}
             onClick={handleZoomToggle}
             aria-label="Zoom"
             aria-pressed={isZoomed}
@@ -3418,8 +3608,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         onClose={() => setShowSaveShareModal(false)}
         designId={designId || null}
         designName={designName}
-        onSave={async () => {
-          await handleSaveDesign();
+        onSave={async (name) => {
+          console.log('[DesignLab 5.0] onSave called with name:', name);
+          // [2025-12-28] FINAL FIX: Pass name directly to save function
+          // Don't rely on state updates - pass the name as a parameter
+          setDesignName(name); // Still update state for UI
+          await handleSaveDesign(name); // Pass name directly
         }}
         onShare={handleShareDesign}
       />

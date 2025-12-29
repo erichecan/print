@@ -36,7 +36,7 @@ const fetchOwnedDesign = async (designId, { user, sessionId }) => {
 // [2025-11-11 15:26:30] 创建 Design Lab 草稿
 exports.createDesignDraft = async (req, res) => {
   try {
-    let { productVariantId, name, canvas, pricing } = req.body || {};
+    let { productVariantId, name, canvas, pricing, thumbnailUrl } = req.body || {};
     const userId = req.user?.id || null;
     const sessionId = userId ? null : req.sessionId || uuidv4();
 
@@ -100,7 +100,8 @@ exports.createDesignDraft = async (req, res) => {
         status: 'DRAFT',
         currentVersion: 1,
         canvasSnapshot: initialCanvas,
-        pricingSnapshot: pricing || null
+        pricingSnapshot: pricing || null,
+        thumbnailUrl: thumbnailUrl || null
       };
 
       const designData = userId
@@ -202,6 +203,34 @@ exports.updateDesignDraft = async (req, res) => {
   } catch (error) {
     console.error('[2025-11-11 15:26:30] updateDesignDraft error:', error);
     return res.status(500).json({ error: 'Failed to update design draft' });
+  }
+};
+
+// [2025-01-31 04:30:00] 删除 Design 草稿
+exports.deleteDesign = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
+
+  console.log('[DesignController] Delete request received:', { id, userId });
+
+  try {
+    const result = await fetchOwnedDesign(id, req); // Use req to pass user and sessionId
+
+    if (result.error) {
+      console.warn('[DesignController] Design not found or not owned by user:', { id, userId, error: result.error.message });
+      return res.status(result.error.status).json({ error: result.error.message });
+    }
+
+    console.log('[DesignController] Deleting design from database:', id);
+    await prisma.design.delete({
+      where: { id },
+    });
+
+    console.log('[DesignController] Deletion successful:', id);
+    res.status(200).json({ success: true, message: 'Design deleted successfully' });
+  } catch (error) {
+    console.error('[DesignController] Delete error:', error);
+    res.status(500).json({ error: 'Failed to delete design' });
   }
 };
 

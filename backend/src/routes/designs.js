@@ -27,13 +27,14 @@ const upload = multer({ storage: storage });
 router.post('/', authenticateOptional, designController.createDesignDraft);
 router.get('/:id', authenticateOptional, designController.getDesignDraft);
 router.patch('/:id', authenticateOptional, designController.updateDesignDraft);
+router.delete('/:id', authenticateOptional, designController.deleteDesign);
 
 // [新增] 处理文件上传的路由
 // 'signature' 必须与前端 FormData 中的字段名匹配
 router.post(
   '/:designId/upload-signature',
   authenticateOptional, // 使用可选认证，方便测试
-  upload.single('signature'), 
+  upload.single('signature'),
   designController.uploadSignature
 );
 

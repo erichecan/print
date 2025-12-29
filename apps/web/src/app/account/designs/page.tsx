@@ -31,31 +31,49 @@ export default function AccountDesignsPage() {
         setError(null);
 
         // 1. 加载云端设计（如果用户已登录）
-        let cloudDesigns = [];
+        let cloudDesigns: any[] = [];
         if (user) {
           try {
+            console.log('[AccountDesigns] ===== LOADING CLOUD DESIGNS =====');
+            console.log('[AccountDesigns] User logged in:', user.email || user.id);
+            console.log('[AccountDesigns] Fetching with timeFilter:', timeFilter);
             const response = await designsApi.list(timeFilter > 0 ? timeFilter : undefined);
+            console.log('[AccountDesigns] API response:', response);
             cloudDesigns = response.designs || [];
+            console.log('[AccountDesigns] Cloud designs count:', cloudDesigns.length);
+            if (cloudDesigns.length > 0) {
+              console.log('[AccountDesigns] First cloud design:', cloudDesigns[0]);
+            }
             // [2025-01-31 00:05:00] 确保 updatedAt 字段存在（使用 createdAt 作为 fallback）
             cloudDesigns = cloudDesigns.map(design => ({
               ...design,
               updatedAt: design.updatedAt || design.createdAt,
             }));
           } catch (err) {
-            console.warn('[AccountDesigns] Failed to load cloud designs:', err);
+            console.error('[AccountDesigns] ❌ Failed to load cloud designs:', err);
             // 云端加载失败不影响本地设计显示
           }
+        } else {
+          console.log('[AccountDesigns] User not logged in, skipping cloud designs');
         }
 
         // 2. 加载本地设计
         const localDesigns = timeFilter > 0
           ? getLocalDesignsByDays(timeFilter)
           : getAllLocalDesigns();
+        console.log('[AccountDesigns] Local designs count:', localDesigns.length);
 
         // 3. 合并设计
+        console.log('[AccountDesigns] Merging designs...');
         const merged = mergeDesigns(cloudDesigns, localDesigns);
+        console.log('[AccountDesigns] ===== MERGE COMPLETE =====');
+        console.log('[AccountDesigns] Merged designs count:', merged.length);
+        if (merged.length > 0) {
+          console.log('[AccountDesigns] First merged design:', merged[0]);
+        }
         setMergedDesigns(merged);
         setFilteredDesigns(merged);
+        console.log('[AccountDesigns] ===== DESIGNS LOADED =====');
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load designs';
         setError(errorMessage);
@@ -69,32 +87,69 @@ export default function AccountDesignsPage() {
   }, [user, timeFilter, refreshTrigger]); // [2025-01-31 00:20:00] 添加 refreshTrigger 依赖
 
   // [2025-01-31 00:05:00] Handle design deletion
-  const handleDelete = async (id: string, source: 'cloud' | 'local') => {
+  const handleDelete = async (design: MergedDesign) => {
+    console.log('[AccountDesigns] ===== DELETION START =====');
+    console.log('[AccountDesigns] Deleting design:', {
+      id: design.id,
+      name: design.name,
+      cloudId: design.cloudId,
+      localId: design.localId,
+      source: design.source
+    });
+
+    // [2025-12-28] CRITICAL: Check if design has ANY valid ID
+    if (!design.cloudId && !design.localId) {
+      console.error('[AccountDesigns] ERROR: Design has no cloudId or localId!', design);
+      alert('Cannot delete: Design has no valid ID');
+      return;
+    }
+
     try {
-      if (source === 'cloud') {
-        // Delete cloud design
-        await designsApi.delete(id);
+      const deletions = [];
+
+      // If it has a cloud ID, delete from cloud
+      if (design.cloudId) {
+        console.log('[AccountDesigns] Attempting cloud deletion for:', design.cloudId);
+        deletions.push(
+          designsApi.delete(design.cloudId).then(res => {
+            console.log('[AccountDesigns] ✅ Cloud deletion successful:', design.cloudId, res);
+            return res;
+          }).catch(err => {
+            console.error('[AccountDesigns] ❌ Failed to delete cloud design:', design.cloudId, err);
+            return { error: 'Failed to delete from cloud' };
+          })
+        );
       } else {
-        // Delete local design
-        const result = deleteLocalDesign(id);
-        if (!result.success) {
-          alert(result.error || 'Failed to delete');
-          return;
-        }
+        console.log('[AccountDesigns] Skipping cloud deletion (no cloudId)');
       }
 
-      // Update list
-      const updatedMerged = mergedDesigns.filter(d => {
-        if (source === 'cloud') {
-          return d.cloudId !== id;
+      // If it has a local ID, delete from local
+      if (design.localId) {
+        console.log('[AccountDesigns] Attempting local deletion for:', design.localId);
+        const result = deleteLocalDesign(design.localId);
+        if (!result.success) {
+          console.error('[AccountDesigns] ❌ Failed to delete local design:', design.localId, result.error);
         } else {
-          return d.localId !== id;
+          console.log('[AccountDesigns] ✅ Local deletion successful:', design.localId);
         }
-      });
+      } else {
+        console.log('[AccountDesigns] Skipping local deletion (no localId)');
+      }
+
+      // Wait for cloud deletion if applicable
+      await Promise.all(deletions);
+
+      // Update list - remove the deleted design
+      console.log('[AccountDesigns] Updating UI - removing design from state:', design.id);
+      console.log('[AccountDesigns] Current mergedDesigns count:', mergedDesigns.length);
+      const updatedMerged = mergedDesigns.filter(d => d.id !== design.id);
+      console.log('[AccountDesigns] Updated mergedDesigns count:', updatedMerged.length);
       setMergedDesigns(updatedMerged);
       setFilteredDesigns(updatedMerged);
+      console.log('[AccountDesigns] ===== DELETION COMPLETE =====');
+
     } catch (err) {
-      console.error('[AccountDesigns] Error deleting design:', err);
+      console.error('[AccountDesigns] ❌ Error deleting design:', err);
       alert('Delete failed, please try again');
     }
   };
@@ -163,6 +218,12 @@ export default function AccountDesignsPage() {
       <DesignTimeFilter value={timeFilter} onChange={setTimeFilter} />
 
       {/* Design List */}
+      {(() => {
+        console.log('[AccountDesigns] ===== RENDERING =====');
+        console.log('[AccountDesigns] filteredDesigns.length:', filteredDesigns.length);
+        console.log('[AccountDesigns] mergedDesigns.length:', mergedDesigns.length);
+        return null;
+      })()}
       {filteredDesigns.length === 0 ? (
         <div
           style={{
@@ -190,7 +251,7 @@ export default function AccountDesignsPage() {
               fontWeight: '500',
             }}
           >
-            Start Designing
+            Create Your First Design
           </a>
         </div>
       ) : (
@@ -201,17 +262,14 @@ export default function AccountDesignsPage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
               gap: '24px',
             }}
           >
-            {filteredDesigns.map((design) => (
-              <DesignCard
-                key={design.id}
-                design={design}
-                onDelete={handleDelete}
-              />
-            ))}
+            {filteredDesigns.map((design, index) => {
+              console.log(`[AccountDesigns] Rendering design ${index}:`, design.name);
+              return <DesignCard key={design.id} design={design} onDelete={handleDelete} />;
+            })}
           </div>
         </>
       )}

@@ -19,11 +19,13 @@ export interface CreateDesignPayload {
   name: string;
   canvas: any;
   productVariantId: string;
+  thumbnailUrl?: string; // [2025-12-28] Add thumbnail support
 }
 
 export interface UpdateDesignPayload {
   name?: string;
   canvas?: any;
+  thumbnailUrl?: string; // [2025-12-28] Add thumbnail support
 }
 
 export interface ShareDesignResponse {

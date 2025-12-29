@@ -10,6 +10,7 @@ import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
 
 import { DatabaseCategoriesSection } from './DatabaseCategoriesSection';
+import { InkerSupportSection } from './InkerSupportSection';
 
 export function HomeClient() {
   // [2025-01-28 06:35:00] 从 CMS 获取首页内容
@@ -157,6 +158,9 @@ export function HomeClient() {
           </div>
         </div>
       </section>
+
+      {/* [2025-12-28 20:05:00] Inker Support Section (Replicated from Custom Ink) */}
+      <InkerSupportSection />
 
 
     </>

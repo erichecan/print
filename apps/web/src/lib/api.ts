@@ -2181,6 +2181,7 @@ export interface CreateDesignDraftPayload {
   name?: string;
   canvas?: DesignCanvasSnapshot;
   pricing?: PricingSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+  thumbnailUrl?: string;
 }
 
 export interface UpdateDesignDraftPayload {

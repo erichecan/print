@@ -30,7 +30,7 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 });
   const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // [2025-12-08] 比例锁状态
   const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // [2025-12-08] 原始宽高比
-  const [color, setColor] = useState('#000000'); // [2025-01-30 13:40:00] Edit Colors 状态
+
 
   // [2025-01-30 18:05:00] 更新艺术素材属性
   // [2025-12-04 21:55:00] 添加英寸单位转换
@@ -328,81 +328,9 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   // [2025-01-30 18:05:00] Edit Colors
   // [2025-01-30 13:40:00] 修复：交互形式保持和 add text 一样（使用颜色选择器）
 
-  // [2025-01-30 13:40:00] 初始化颜色（从对象获取，如果有的话）
-  useEffect(() => {
-    if (selectedArt) {
-      // Art 对象可能没有 fill 属性，使用默认黑色
-      const artColor = (selectedArt as any).fill || '#000000';
-      setColor(typeof artColor === 'string' ? artColor : '#000000');
-    }
-  }, [selectedArt]);
 
-  const handleColorChange = (newColor: string) => {
-    setColor(newColor);
-    if (!selectedArt || !canvas) return;
 
-    try {
-      // [2025-01-30 13:40:00] 对于图片对象，应用颜色叠加效果
-      const imgElement = selectedArt.getElement() as HTMLImageElement;
-      if (!imgElement) return;
 
-      const tempCanvas = document.createElement('canvas');
-      const tempCtx = tempCanvas.getContext('2d');
-      if (!tempCtx) return;
-
-      tempCanvas.width = imgElement.width || selectedArt.width || 1;
-      tempCanvas.height = imgElement.height || selectedArt.height || 1;
-
-      // 绘制原始图像
-      tempCtx.drawImage(imgElement, 0, 0);
-
-      // 应用颜色叠加
-      tempCtx.globalCompositeOperation = 'multiply';
-      tempCtx.fillStyle = newColor;
-      tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-
-      // 从处理后的 Canvas 创建新的 Fabric Image
-      tempCanvas.toBlob((blob) => {
-        if (!blob) return;
-
-        const url = URL.createObjectURL(blob);
-        fabric.Image.fromURL(url, (fabricImage) => {
-          if (fabricImage && canvas && selectedArt) {
-            // 保持原有的位置、缩放和属性
-            fabricImage.set({
-              left: selectedArt.left,
-              top: selectedArt.top,
-              scaleX: selectedArt.scaleX,
-              scaleY: selectedArt.scaleY,
-              angle: selectedArt.angle,
-              originX: selectedArt.originX,
-              originY: selectedArt.originY,
-              name: selectedArt.name || `art_${Date.now()}`,
-              data: (selectedArt as any).data,
-            });
-
-            // 替换原始图像
-            const oldIndex = canvas.getObjects().indexOf(selectedArt);
-            canvas.remove(selectedArt);
-            canvas.insertAt(fabricImage, oldIndex, false);
-            canvas.setActiveObject(fabricImage);
-
-            // 应用角控件
-            applyCornerControls({ canvas, obj: fabricImage });
-
-            canvas.renderAll();
-
-            // 清理 URL
-            URL.revokeObjectURL(url);
-
-            onUpdate();
-          }
-        });
-      }, 'image/png');
-    } catch (error) {
-      console.error('[EditArtPanel] Error editing colors:', error);
-    }
-  };
 
   if (!selectedArt) {
     return (
@@ -500,24 +428,7 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
         onRotationChange={handleRotationChange}
       />
 
-      {/* 7. Edit Colors - [2025-01-30 13:40:00] 交互形式保持和 add text 一样 */}
-      <div className="dl-edit-art-panel__section">
-        <label className="dl-edit-art-panel__label">Edit Color</label>
-        <div className="dl-edit-art-panel__color-group">
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => handleColorChange(e.target.value)}
-            className="dl-edit-art-panel__color-input"
-          />
-          <input
-            type="text"
-            value={color}
-            onChange={(e) => handleColorChange(e.target.value)}
-            className="dl-edit-art-panel__color-text"
-          />
-        </div>
-      </div>
+
 
       {/* 8. Add New Art - [2025-01-30 13:45:00] 修改为 Add New Art（不是替换） */}
       <div className="dl-edit-art-panel__section">

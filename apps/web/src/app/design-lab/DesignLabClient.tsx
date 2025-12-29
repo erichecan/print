@@ -17,7 +17,7 @@ import Link from 'next/link';
 import Image from 'next/image'; // [2025-12-19 16:30:00] 导入Image组件用于Logo
 import { useSearchParams } from 'next/navigation';
 // [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用动态导入
-import type { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { useDesignLabStore } from '@/contexts/designLabStore';
 import { productsApi } from '@/lib/api';
 import type { DesignCanvasSnapshot } from '@/lib/api';
@@ -49,7 +49,7 @@ import { getDefaultProductBaseImages, getThumbnailImageUrl, getDefaultProductIma
 import { analytics } from '@/lib/analytics';
 import { debugLog } from '@/utils/debugLogger'; // [2025-01-30 21:50:00] 调试日志工具
 import { calculateImageFit } from '@/design/utils/fit'; // [2025-01-31 18:00:00] 统一使用 calculateImageFit 确保商品主图尺寸和位置一致性
-import { registerCornerControls, applyUploadCornerControlsToObject } from './design-lab5/upload-controls/registerUploadCornerControls'; // 2025-12-16 02:50:00 导入通用角控件模块
+import { registerCornerControls, applyUploadCornerControlsToObject } from '../design-lab5/upload-controls/registerUploadCornerControls'; // 2025-12-16 02:50:00 导入通用角控件模块
 import './design-lab.css';
 
 interface ProductInfo {
@@ -2552,12 +2552,47 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   }, []);
 
   // [2025-12-08] 实际保存设计的处理函数
-  const handleSaveDesignConfirm = useCallback(async () => {
+  const handleSaveDesignConfirm = useCallback(async (newName?: string) => {
     if (!fabricCanvasRef.current) return;
 
     try {
       const snapshot = canvasToSnapshot(fabricCanvasRef.current);
       setCanvas(snapshot, { pushHistory: true });
+
+      // [2025-01-31 03:30:00] 更新设计名称如果提供了新名称
+      if (newName && newName !== designName) {
+        setDesignName(newName);
+      }
+
+      const currentName = newName || designName;
+
+      // [2025-01-31 03:30:00] Generate thumbnail for both local and cloud storage
+      const thumbnailDataUrl = fabricCanvasRef.current.toDataURL({
+        format: 'png',
+        quality: 0.8,
+        multiplier: 0.5,
+      });
+
+      // [2025-01-31 03:30:00] Force sync to local storage immediately
+      if (productInfo) {
+        saveDesignToLocalStorage(
+          currentName,
+          {
+            front: currentView === 'front' ? snapshot : ({} as any),
+            back: currentView === 'back' ? snapshot : ({} as any),
+            sleeve: currentView === 'sleeve' ? snapshot : ({} as any),
+          },
+          currentView as 'front' | 'back' | 'sleeve',
+          {
+            productId: productInfo.productId,
+            productName: productInfo.productName,
+            variantId: productInfo.variantId || 'default',
+            color: productInfo.color,
+          },
+          undefined,
+          thumbnailDataUrl
+        );
+      }
 
       let designId = currentDesignId;
 
@@ -2591,9 +2626,9 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
               const products = await productsApi.list({ limit: 1 });
               if (products.data && products.data.length > 0) {
                 // We need to get details to find variant
-                const fallbackProduct = await productsApi.getBySlug(products.data[0].slug);
-                if (fallbackProduct.variants && fallbackProduct.variants.length > 0) {
-                  productVariantId = fallbackProduct.variants[0].id;
+                const fallbackProduct = await productsApi.getBySlug((products.data[0] as any).slug);
+                if (fallbackProduct && (fallbackProduct as any).variants && (fallbackProduct as any).variants.length > 0) {
+                  productVariantId = (fallbackProduct as any).variants[0].id;
                   foundVariant = true;
                   console.log('[DesignLab] Found fallback variant from list:', productVariantId);
                 }
@@ -2611,23 +2646,25 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         }
 
         const payload = {
-          name: designName,
+          name: currentName,
           canvas: snapshot,
-          productVariantId: productVariantId,
+          productVariantId: productVariantId || '',
+          thumbnailUrl: thumbnailDataUrl, // [2025-01-31 04:30:00] Sync thumbnail to cloud
         };
 
         const response = await designLabApi.createDraft(payload);
-        if (response.success && response.data) {
+        if (response.data && response.data.id) {
           designId = response.data.id;
           setCurrentDesignId(designId);
         } else {
-          throw new Error('Failed to save design');
+          throw new Error('Failed to create design draft');
         }
       } else {
         // 更新现有设计
         const payload = {
-          name: designName,
+          name: currentName,
           canvas: snapshot,
+          thumbnailUrl: thumbnailDataUrl, // [2025-01-31 04:30:00] Sync thumbnail to cloud
         };
         await designLabApi.updateDraft(designId, payload);
       }
@@ -2635,7 +2672,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       // [2025-12-08] 埋点：设计保存
       analytics.track('design_saved', {
         designId: designId,
-        designName: designName,
+        designName: currentName,
       });
 
       console.log('[DesignLab] Design saved:', designId);
@@ -2645,7 +2682,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
       alert('Failed to save design. Please try again.');
       throw error;
     }
-  }, [fabricCanvasRef, canvasToSnapshot, setCanvas, currentDesignId, designName, productInfo, setCurrentDesignId]);
+  }, [fabricCanvasRef, canvasToSnapshot, setCanvas, currentDesignId, designName, productInfo, setCurrentDesignId, currentView]);
 
   // [2025-12-06 12:30:00] Get Price 处理
   // [2025-12-08] 更新：打开完整的Get Price流程模态框
@@ -2663,55 +2700,35 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     }
 
     // [2025-12-08] 打开Get Price流程模态框
-    setShowGetPriceFlowModal(true);
-    return;
-
     // 确保设计已保存
     let designId = currentDesignId;
     if (!designId) {
       // 先保存设计
       try {
-        const snapshot = canvasToSnapshot(fabricCanvasRef.current);
-        setCanvas(snapshot, { pushHistory: true });
+        console.log('[DesignLab] Auto-saving design before Get Price...');
 
-        let productVariantId = productInfo.variantId;
-        if (productVariantId === 'default' && productInfo.productId && productInfo.productId !== 'default') {
-          try {
-            const productSlug = productInfo.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-            const productData = await productsApi.getBySlug(productSlug);
-            if (productData.variants && productData.variants.length > 0) {
-              productVariantId = productData.variants[0].id;
-            }
-          } catch (error) {
-            console.warn('[DesignLab] Failed to get product variant:', error);
-          }
-        }
-
-        if (!productVariantId || productVariantId === 'default') {
-          alert('Please select a product before getting price. Use "Change Product" to select a product.');
-          return;
-        }
-
-        const payload = {
-          name: designName,
-          canvas: snapshot,
-          productVariantId: productVariantId!
-        };
-
-        const response = await designLabApi.createDraft(payload);
-        if (response.success && response.data) {
-          designId = response.data.id;
-          setCurrentDesignId(designId);
+        // 使用现有的保存逻辑
+        const savedId = await handleSaveDesignConfirm();
+        if (savedId) {
+          designId = savedId;
         } else {
           throw new Error('Failed to save design');
         }
       } catch (error) {
         console.error('[DesignLab] Error saving design before getting price:', error);
-        alert('Failed to save design. Please try again.');
+        // 如果保存失败，询问用户是否继续（可能导致 Get Price 失败）或者停止
+        // 这里选择停止并提示
         return;
       }
     }
 
+    if (designId) {
+      setShowGetPriceFlowModal(true);
+    }
+    return;
+
+    // 旧代码已废弃，直接使用 GetPriceFlowModal
+    /* 
     // 打开价格模态框
     setShowPriceModal(true);
     setPriceLoading(true);
@@ -2720,6 +2737,7 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
     try {
       // 计算使用的面和图层数
       const canvas = fabricCanvasRef.current;
+
       const objects = canvas.getObjects().filter(obj => {
         const fabricObj = obj as fabric.Object;
         return fabricObj.name && fabricObj.name !== 'background';
@@ -4135,711 +4153,713 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
   return (
     <div className="design-lab-new">
       {/* 1. Header - 顶部导航栏 */}
-      {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
-      <header className="dl-header" data-testid="header">
-        <div className="dl-header__content">
-          <div className="dl-header__left">
-            {/* [2025-12-19 16:30:00] 使用主站Logo图片，点击跳转到主站首页 */}
-            <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
-              <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
-            </Link>
-            <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
-              {/* [2025-12-19 16:30:00] 移除My Designs按钮，改用本地存储，无需跳转 */}
-              {/* [2025-01-30 23:15:00] 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
-              <button
-                className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
-                onClick={() => {
-                  const newName = prompt('Enter design name:', designName);
-                  if (newName) setDesignName(newName);
-                }}
-                type="button"
-              >
-                {designName}
-              </button>
-            </nav>
-          </div>
-          <div className="dl-header__right">
-            {/* [2025-12-08] 修复：添加"Talk to a Real Person"文案 */}
-            <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
-              📞 Talk to a Real Person: 416 916 6352
-            </a>
-            {/* [2025-12-10 00:00:00] 修复：Chat Now 链接到留言本 */}
-            {/* [2025-12-18 20:58:40] 修复：Chat Now 在新窗口打开 */}
-            <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
-            <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
-          </div>
+      {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+    < header className = "dl-header" data - testid="header" >
+  <div className="dl-header__content">
+    <div className="dl-header__left">
+      {/* [2025-12-19 16:30:00] 使用主站Logo图片，点击跳转到主站首页 */}
+      <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
+        <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
+      </Link>
+      <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
+        {/* [2025-12-19 16:30:00] 移除My Designs按钮，改用本地存储，无需跳转 */}
+        {/* [2025-01-30 23:15:00] 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
+        <button
+          className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
+          onClick={() => {
+            const newName = prompt('Enter design name:', designName);
+            if (newName) setDesignName(newName);
+          }}
+          type="button"
+        >
+          {designName}
+        </button>
+      </nav>
+    </div>
+    <div className="dl-header__right">
+      {/* [2025-12-08] 修复：添加"Talk to a Real Person"文案 */}
+      <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
+        📞 Talk to a Real Person: 416 916 6352
+      </a>
+      {/* [2025-12-10 00:00:00] 修复：Chat Now 链接到留言本 */}
+      {/* [2025-12-18 20:58:40] 修复：Chat Now 在新窗口打开 */}
+      <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
+      <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
+    </div>
+  </div>
+      </header >
+
+  {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */ }
+  < div className = "dl-main" >
+    {/* 2. Dark Rail - 左侧深灰色工具栏 */ }
+{/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+<nav className="dl-rail" aria-label="Design tools" data-testid="rail">
+  <button
+    className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('upload')}
+    aria-label="Upload image"
+    aria-pressed={activeTool === 'upload'}
+  >
+    <span className="dl-rail__btn-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+    </span>
+    <span className="dl-rail__btn-label">Upload</span>
+  </button>
+
+  <button
+    className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('text')}
+    aria-label="Add text"
+    aria-pressed={activeTool === 'text'}
+  >
+    <span className="dl-rail__btn-icon dl-rail__icon--text">T</span>
+    <span className="dl-rail__btn-label">Add Text</span>
+  </button>
+
+  <button
+    className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('art')}
+    aria-label="Add art"
+    aria-pressed={activeTool === 'art'}
+  >
+    <span className="dl-rail__btn-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
+      </svg>
+    </span>
+    <span className="dl-rail__btn-label">Add Art</span>
+  </button>
+
+  {/* [2025-01-30 22:30:00] 启用 Product Colors 功能 */}
+  <button
+    className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('colors')}
+    aria-label="Product colors"
+    aria-pressed={activeTool === 'colors'}
+  >
+    <span className="dl-rail__btn-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+        <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+        <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+        <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
+      </svg>
+    </span>
+    <span className="dl-rail__btn-label">Product Colors</span>
+  </button>
+
+  {/* [2025-12-11 23:00:00] 暂时屏蔽 Add Names 功能 */}
+  {false && (
+    <button
+      className={`dl-rail__btn ${activeTool === 'names' ? 'is-active' : ''}`}
+      onClick={() => handleToolClick('names')}
+      aria-label="Add names"
+      aria-pressed={activeTool === 'names'}
+    >
+      {/* [2025-01-31 00:00:00] 根据截图，Add Names 按钮应该显示 "00" 图标 */}
+      <span className="dl-rail__btn-icon dl-rail__icon--names">
+        <span className="dl-rail__icon-text">00</span>
+      </span>
+      <span className="dl-rail__btn-label">Add Names</span>
+    </button>
+  )}
+</nav>
+
+{/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */ }
+<ToolPanel panelType={toolPanelType} onBack={handleBackToHome}>
+  {toolPanelType === 'home' && (
+    <HomePanel onAction={handleHomeAction} />
+  )}
+  {toolPanelType === 'upload' && (
+    <UploadPanel
+      onFileSelect={handleFileUpload}
+      onBrowseClick={() => { }}
+      recentUploads={recentUploads}
+      onRecentUploadClick={handleRecentUploadClick}
+      onClose={handleBackToHome}
+    />
+  )}
+  {toolPanelType === 'text' && (
+    <TextPanel onAddText={handleAddText} />
+  )}
+  {toolPanelType === 'art' && (
+    <ArtPanel onSelectArt={handleAddArt} />
+  )}
+  {toolPanelType === 'colors' && (
+    <ProductColorsPanel
+      colors={productColors}
+      selectedColor={productInfo?.color || null}
+      onSelectColor={handleColorSelect}
+      onClose={handleBackToHome}
+      productName={productInfo?.productName}
+    />
+  )}
+  {toolPanelType === 'edit-upload' && (
+    <EditUploadPanel
+      selectedImage={selectedImage}
+      canvas={fabricCanvasRef.current}
+      onUpdate={handleCanvasUpdate}
+      onReset={handleResetUpload}
+      onSave={handleSaveDesign}
+      onClose={handleBackToHome}
+      onOpenRatingModal={() => {
+        // [2025-12-08] 打开上传体验评分模态框
+        const uploadId = `upload_${Date.now()}`;
+        setCurrentUploadId(uploadId);
+        setShowUploadRatingModal(true);
+      }}
+    />
+  )}
+  {toolPanelType === 'edit-text' && (
+    <EditTextPanel
+      selectedText={selectedText}
+      canvas={fabricCanvasRef.current}
+      onUpdate={handleCanvasUpdate}
+    />
+  )}
+  {toolPanelType === 'edit-art' && (
+    <EditArtPanel
+      selectedArt={selectedArt}
+      canvas={fabricCanvasRef.current}
+      onUpdate={handleCanvasUpdate}
+      onChangeArt={handleChangeArt}
+    />
+  )}
+  {/* [2025-12-19 21:25:00] 移除：layers 功能 */}
+</ToolPanel>
+
+{/* [2025-12-19 21:25:00] 移除：模板库面板功能 */ }
+
+{/* 4. Canvas - 中央画布区域 */ }
+{/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+<section className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
+  {/* [2025-12-08] 左上浮层：Undo/Redo按钮 */}
+  <div className="dl-canvas__floating-controls">
+    <button
+      className="dl-canvas__floating-btn"
+      onClick={() => {
+        undo();
+        // [2025-12-08] 从store获取更新后的canvas并应用到fabric canvas
+        const updatedSnapshot = getCurrentViewCanvas();
+        if (fabricCanvasRef.current) {
+          snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
+        }
+      }}
+      aria-label="Undo"
+      title="Undo"
+      disabled={!canUndo}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3 7v6h6" />
+        <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+      </svg>
+    </button>
+    <button
+      className="dl-canvas__floating-btn"
+      onClick={() => {
+        redo();
+        // [2025-12-08] 从store获取更新后的canvas并应用到fabric canvas
+        const updatedSnapshot = getCurrentViewCanvas();
+        if (fabricCanvasRef.current) {
+          snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
+        }
+      }}
+      aria-label="Redo"
+      title="Redo"
+      disabled={!canRedo}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 7v6h-6" />
+        <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
+      </svg>
+    </button>
+  </div>
+  {/* [2025-12-10 18:40:00] Canvas初始化错误显示 */}
+  {canvasInitError && !canvasInitialized && (
+    <CanvasLoadingError
+      error={canvasInitError}
+      onRetry={() => {
+        setCanvasInitError(null);
+        setCanvasInitialized(false);
+        // 触发重新初始化（通过重新挂载或重新执行useEffect）
+        window.location.reload();
+      }}
+      showDetails={process.env.NODE_ENV === 'development'}
+    />
+  )}
+
+  {/* [2025-12-08] Zoom视图控制按钮 */}
+  {currentView === 'zoom' && !canvasInitError && (
+    <div className="dl-canvas__zoom-controls">
+      <button
+        className="dl-canvas__zoom-btn"
+        onClick={handleZoomIn}
+        aria-label="Zoom In"
+        title="Zoom In"
+        disabled={zoomLevel >= 3}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+          <line x1="11" y1="8" x2="11" y2="14" />
+          <line x1="8" y1="11" x2="14" y2="11" />
+        </svg>
+      </button>
+      <button
+        className="dl-canvas__zoom-btn"
+        onClick={handleZoomOut}
+        aria-label="Zoom Out"
+        title="Zoom Out"
+        disabled={zoomLevel <= 0.5}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+          <line x1="8" y1="11" x2="14" y2="11" />
+        </svg>
+      </button>
+      <button
+        className="dl-canvas__zoom-btn"
+        onClick={handleZoomReset}
+        aria-label="Reset Zoom"
+        title="Reset Zoom"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+          <path d="M21 3v5h-5" />
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+          <path d="M3 21v-5h5" />
+        </svg>
+      </button>
+      <span className="dl-canvas__zoom-level">{Math.round(zoomLevel * 100)}%</span>
+    </div>
+  )}
+  {/* 产品预览区域 */}
+  <div
+    className="dl-canvas__preview"
+    onMouseDown={currentView === 'zoom' ? handleZoomMouseDown : undefined}
+    onMouseMove={currentView === 'zoom' ? handleZoomMouseMove : undefined}
+    onMouseUp={currentView === 'zoom' ? handleZoomMouseUp : undefined}
+    onMouseLeave={currentView === 'zoom' ? handleZoomMouseUp : undefined}
+    style={{ cursor: currentView === 'zoom' && isZoomDragging ? 'grabbing' : currentView === 'zoom' ? 'grab' : 'default' }}
+  >
+    <div className="dl-canvas__product">
+      {/* [2025-12-20 01:55:00] 阶段2修复：使用简单的 HTML <img> 标签显示商品图片 */}
+      {/* 不使用 Fabric.js 逻辑定位，使用简单的 HTML/CSS 居中铺满 */}
+      {(() => {
+        // [2025-12-20 01:56:00] 处理 zoom 视图：使用 front 视图的图片
+        const viewForImage = currentView === 'zoom' ? 'front' : currentView;
+        const imageUrl = productInfo?.baseImages?.[viewForImage];
+        return imageUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={imageUrl}
+            alt={`Product ${viewForImage} view`}
+            className="dl-canvas__product-image"
+          />
+        ) : null;
+      })()}
+      {/* [2025-01-30 22:35:00] Fabric.js 画布 */}
+      {/* [2025-01-31 16:20:00] 移除 placeholder，直接显示画布，图片会在加载完成后自动显示 */}
+      {/* [2025-12-10 18:40:00] 只在Canvas未初始化错误时显示Canvas元素 */}
+      {!canvasInitError && (
+        <canvas ref={canvasRef} className="dl-canvas__fabric" />
+      )}
+    </div>
+
+    {/* 引导面板 - "What's next for you?" */}
+    {showGuidePanel && (
+      <div className="dl-guide-panel">
+        <h3 className="dl-guide-panel__title">What&apos;s next for you?</h3>
+        <div className="dl-guide-panel__actions">
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('upload')}
+            aria-label="Upload"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span>Upload</span>
+          </button>
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('text')}
+            aria-label="Add Text"
+          >
+            <span className="dl-guide-panel__text-icon">abc</span>
+            <span>Add Text</span>
+          </button>
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('art')}
+            aria-label="Add Art"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <span>Add Art</span>
+          </button>
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('products')}
+            aria-label="Change Products"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            <span>Change Products</span>
+          </button>
         </div>
-      </header>
-
-      {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */}
-      <div className="dl-main">
-        {/* 2. Dark Rail - 左侧深灰色工具栏 */}
-        {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
-        <nav className="dl-rail" aria-label="Design tools" data-testid="rail">
-          <button
-            className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
-            onClick={() => handleToolClick('upload')}
-            aria-label="Upload image"
-            aria-pressed={activeTool === 'upload'}
-          >
-            <span className="dl-rail__btn-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-            </span>
-            <span className="dl-rail__btn-label">Upload</span>
-          </button>
-
-          <button
-            className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''}`}
-            onClick={() => handleToolClick('text')}
-            aria-label="Add text"
-            aria-pressed={activeTool === 'text'}
-          >
-            <span className="dl-rail__btn-icon dl-rail__icon--text">T</span>
-            <span className="dl-rail__btn-label">Add Text</span>
-          </button>
-
-          <button
-            className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''}`}
-            onClick={() => handleToolClick('art')}
-            aria-label="Add art"
-            aria-pressed={activeTool === 'art'}
-          >
-            <span className="dl-rail__btn-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-            </span>
-            <span className="dl-rail__btn-label">Add Art</span>
-          </button>
-
-          {/* [2025-01-30 22:30:00] 启用 Product Colors 功能 */}
-          <button
-            className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
-            onClick={() => handleToolClick('colors')}
-            aria-label="Product colors"
-            aria-pressed={activeTool === 'colors'}
-          >
-            <span className="dl-rail__btn-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
-              </svg>
-            </span>
-            <span className="dl-rail__btn-label">Product Colors</span>
-          </button>
-
-          {/* [2025-12-11 23:00:00] 暂时屏蔽 Add Names 功能 */}
-          {false && (
-            <button
-              className={`dl-rail__btn ${activeTool === 'names' ? 'is-active' : ''}`}
-              onClick={() => handleToolClick('names')}
-              aria-label="Add names"
-              aria-pressed={activeTool === 'names'}
-            >
-              {/* [2025-01-31 00:00:00] 根据截图，Add Names 按钮应该显示 "00" 图标 */}
-              <span className="dl-rail__btn-icon dl-rail__icon--names">
-                <span className="dl-rail__icon-text">00</span>
-              </span>
-              <span className="dl-rail__btn-label">Add Names</span>
-            </button>
-          )}
-        </nav>
-
-        {/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */}
-        <ToolPanel panelType={toolPanelType} onBack={handleBackToHome}>
-          {toolPanelType === 'home' && (
-            <HomePanel onAction={handleHomeAction} />
-          )}
-          {toolPanelType === 'upload' && (
-            <UploadPanel
-              onFileSelect={handleFileUpload}
-              onBrowseClick={() => { }}
-              recentUploads={recentUploads}
-              onRecentUploadClick={handleRecentUploadClick}
-              onClose={handleBackToHome}
-            />
-          )}
-          {toolPanelType === 'text' && (
-            <TextPanel onAddText={handleAddText} />
-          )}
-          {toolPanelType === 'art' && (
-            <ArtPanel onSelectArt={handleAddArt} />
-          )}
-          {toolPanelType === 'colors' && (
-            <ProductColorsPanel
-              selectedColor={productInfo?.color || null}
-              onSelectColor={handleColorSelect}
-              productName={productInfo?.productName}
-            />
-          )}
-          {toolPanelType === 'edit-upload' && (
-            <EditUploadPanel
-              selectedImage={selectedImage}
-              canvas={fabricCanvasRef.current}
-              onUpdate={handleCanvasUpdate}
-              onReset={handleResetUpload}
-              onSave={handleSaveDesign}
-              onClose={handleBackToHome}
-              onOpenRatingModal={() => {
-                // [2025-12-08] 打开上传体验评分模态框
-                const uploadId = `upload_${Date.now()}`;
-                setCurrentUploadId(uploadId);
-                setShowUploadRatingModal(true);
-              }}
-            />
-          )}
-          {toolPanelType === 'edit-text' && (
-            <EditTextPanel
-              selectedText={selectedText}
-              canvas={fabricCanvasRef.current}
-              onUpdate={handleCanvasUpdate}
-            />
-          )}
-          {toolPanelType === 'edit-art' && (
-            <EditArtPanel
-              selectedArt={selectedArt}
-              canvas={fabricCanvasRef.current}
-              onUpdate={handleCanvasUpdate}
-              onChangeArt={handleChangeArt}
-            />
-          )}
-          {/* [2025-12-19 21:25:00] 移除：layers 功能 */}
-        </ToolPanel>
-
-        {/* [2025-12-19 21:25:00] 移除：模板库面板功能 */}
-
-        {/* 4. Canvas - 中央画布区域 */}
-        {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
-        <section className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
-          {/* [2025-12-08] 左上浮层：Undo/Redo按钮 */}
-          <div className="dl-canvas__floating-controls">
-            <button
-              className="dl-canvas__floating-btn"
-              onClick={() => {
-                undo();
-                // [2025-12-08] 从store获取更新后的canvas并应用到fabric canvas
-                const updatedSnapshot = getCurrentViewCanvas();
-                if (fabricCanvasRef.current) {
-                  snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
-                }
-              }}
-              aria-label="Undo"
-              title="Undo"
-              disabled={!canUndo}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 7v6h6" />
-                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-              </svg>
-            </button>
-            <button
-              className="dl-canvas__floating-btn"
-              onClick={() => {
-                redo();
-                // [2025-12-08] 从store获取更新后的canvas并应用到fabric canvas
-                const updatedSnapshot = getCurrentViewCanvas();
-                if (fabricCanvasRef.current) {
-                  snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
-                }
-              }}
-              aria-label="Redo"
-              title="Redo"
-              disabled={!canRedo}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 7v6h-6" />
-                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
-              </svg>
-            </button>
-          </div>
-          {/* [2025-12-10 18:40:00] Canvas初始化错误显示 */}
-          {canvasInitError && !canvasInitialized && (
-            <CanvasLoadingError
-              error={canvasInitError}
-              onRetry={() => {
-                setCanvasInitError(null);
-                setCanvasInitialized(false);
-                // 触发重新初始化（通过重新挂载或重新执行useEffect）
-                window.location.reload();
-              }}
-              showDetails={process.env.NODE_ENV === 'development'}
-            />
-          )}
-
-          {/* [2025-12-08] Zoom视图控制按钮 */}
-          {currentView === 'zoom' && !canvasInitError && (
-            <div className="dl-canvas__zoom-controls">
-              <button
-                className="dl-canvas__zoom-btn"
-                onClick={handleZoomIn}
-                aria-label="Zoom In"
-                title="Zoom In"
-                disabled={zoomLevel >= 3}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                  <line x1="11" y1="8" x2="11" y2="14" />
-                  <line x1="8" y1="11" x2="14" y2="11" />
-                </svg>
-              </button>
-              <button
-                className="dl-canvas__zoom-btn"
-                onClick={handleZoomOut}
-                aria-label="Zoom Out"
-                title="Zoom Out"
-                disabled={zoomLevel <= 0.5}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                  <line x1="8" y1="11" x2="14" y2="11" />
-                </svg>
-              </button>
-              <button
-                className="dl-canvas__zoom-btn"
-                onClick={handleZoomReset}
-                aria-label="Reset Zoom"
-                title="Reset Zoom"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                  <path d="M21 3v5h-5" />
-                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                  <path d="M3 21v-5h5" />
-                </svg>
-              </button>
-              <span className="dl-canvas__zoom-level">{Math.round(zoomLevel * 100)}%</span>
-            </div>
-          )}
-          {/* 产品预览区域 */}
-          <div
-            className="dl-canvas__preview"
-            onMouseDown={currentView === 'zoom' ? handleZoomMouseDown : undefined}
-            onMouseMove={currentView === 'zoom' ? handleZoomMouseMove : undefined}
-            onMouseUp={currentView === 'zoom' ? handleZoomMouseUp : undefined}
-            onMouseLeave={currentView === 'zoom' ? handleZoomMouseUp : undefined}
-            style={{ cursor: currentView === 'zoom' && isZoomDragging ? 'grabbing' : currentView === 'zoom' ? 'grab' : 'default' }}
-          >
-            <div className="dl-canvas__product">
-              {/* [2025-12-20 01:55:00] 阶段2修复：使用简单的 HTML <img> 标签显示商品图片 */}
-              {/* 不使用 Fabric.js 逻辑定位，使用简单的 HTML/CSS 居中铺满 */}
-              {(() => {
-                // [2025-12-20 01:56:00] 处理 zoom 视图：使用 front 视图的图片
-                const viewForImage = currentView === 'zoom' ? 'front' : currentView;
-                const imageUrl = productInfo?.baseImages?.[viewForImage];
-                return imageUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={imageUrl}
-                    alt={`Product ${viewForImage} view`}
-                    className="dl-canvas__product-image"
-                  />
-                ) : null;
-              })()}
-              {/* [2025-01-30 22:35:00] Fabric.js 画布 */}
-              {/* [2025-01-31 16:20:00] 移除 placeholder，直接显示画布，图片会在加载完成后自动显示 */}
-              {/* [2025-12-10 18:40:00] 只在Canvas未初始化错误时显示Canvas元素 */}
-              {!canvasInitError && (
-                <canvas ref={canvasRef} className="dl-canvas__fabric" />
-              )}
-            </div>
-
-            {/* 引导面板 - "What's next for you?" */}
-            {showGuidePanel && (
-              <div className="dl-guide-panel">
-                <h3 className="dl-guide-panel__title">What&apos;s next for you?</h3>
-                <div className="dl-guide-panel__actions">
-                  <button
-                    className="dl-guide-panel__action"
-                    onClick={() => handleGuideAction('upload')}
-                    aria-label="Upload"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    <span>Upload</span>
-                  </button>
-                  <button
-                    className="dl-guide-panel__action"
-                    onClick={() => handleGuideAction('text')}
-                    aria-label="Add Text"
-                  >
-                    <span className="dl-guide-panel__text-icon">abc</span>
-                    <span>Add Text</span>
-                  </button>
-                  <button
-                    className="dl-guide-panel__action"
-                    onClick={() => handleGuideAction('art')}
-                    aria-label="Add Art"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
-                      <circle cx="8.5" cy="8.5" r="1.5" />
-                      <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    <span>Add Art</span>
-                  </button>
-                  <button
-                    className="dl-guide-panel__action"
-                    onClick={() => handleGuideAction('products')}
-                    aria-label="Change Products"
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                      <line x1="3" y1="6" x2="21" y2="6" />
-                      <path d="M16 10a4 4 0 0 1-8 0" />
-                    </svg>
-                    <span>Change Products</span>
-                  </button>
-                </div>
-                <p className="dl-guide-panel__hint">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                  </svg>
-                  Drag & drop a file anywhere to upload
-                </p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* 5. Sidebar - 右侧视图切换面板 */}
-        {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
-        <aside className="dl-sidebar" aria-label="View options" data-testid="sidebar">
-          <button
-            className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
-            onClick={() => handleViewChange('front')}
-            aria-label="Front view"
-            aria-pressed={currentView === 'front'}
-          >
-            <div className="dl-sidebar__thumbnail">
-              {productInfo?.baseImages?.front ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={getThumbnailImageUrl(productInfo.color || 'White', 'front')}
-                  alt="Front view thumbnail"
-                  className="dl-sidebar__thumbnail-image"
-                />
-              ) : (
-                <div className="dl-sidebar__thumbnail-placeholder">Front</div>
-              )}
-            </div>
-            <span className="dl-sidebar__label">Front</span>
-          </button>
-
-          <button
-            className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''}`}
-            onClick={() => handleViewChange('back')}
-            aria-label="Back view"
-            aria-pressed={currentView === 'back'}
-          >
-            <div className="dl-sidebar__thumbnail">
-              {productInfo?.baseImages?.back ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={getThumbnailImageUrl(productInfo.color || 'White', 'back')}
-                  alt="Back view thumbnail"
-                  className="dl-sidebar__thumbnail-image"
-                />
-              ) : (
-                <div className="dl-sidebar__thumbnail-placeholder">Back</div>
-              )}
-            </div>
-            <span className="dl-sidebar__label">Back</span>
-          </button>
-
-          <button
-            className={`dl-sidebar__btn ${currentView === 'sleeve' ? 'is-active' : ''}`}
-            onClick={() => handleViewChange('sleeve')}
-            aria-label="Sleeve Design"
-            aria-pressed={currentView === 'sleeve'}
-          >
-            <span className="dl-sidebar__label">Sleeve Design</span>
-          </button>
-
-          <button
-            className={`dl-sidebar__btn ${currentView === 'zoom' ? 'is-active' : ''}`}
-            onClick={() => handleViewChange('zoom')}
-            aria-label="Zoom"
-            aria-pressed={currentView === 'zoom'}
-          >
-            <span className="dl-sidebar__icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" />
-                <path d="M21 21l-4.35-4.35" />
-              </svg>
-            </span>
-            <span className="dl-sidebar__label">Zoom</span>
-          </button>
-        </aside>
+        <p className="dl-guide-panel__hint">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          Drag & drop a file anywhere to upload
+        </p>
       </div>
+    )}
+  </div>
+</section>
 
-      {/* 5. Bottom Bar - 底部操作栏 */}
-      {/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */}
-      <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
-        <div className="dl-bottom-bar__left">
+{/* 5. Sidebar - 右侧视图切换面板 */ }
+{/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+<aside className="dl-sidebar" aria-label="View options" data-testid="sidebar">
+  <button
+    className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('front')}
+    aria-label="Front view"
+    aria-pressed={currentView === 'front'}
+  >
+    <div className="dl-sidebar__thumbnail">
+      {productInfo?.baseImages?.front ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={getThumbnailImageUrl(productInfo.color || 'White', 'front')}
+          alt="Front view thumbnail"
+          className="dl-sidebar__thumbnail-image"
+        />
+      ) : (
+        <div className="dl-sidebar__thumbnail-placeholder">Front</div>
+      )}
+    </div>
+    <span className="dl-sidebar__label">Front</span>
+  </button>
+
+  <button
+    className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('back')}
+    aria-label="Back view"
+    aria-pressed={currentView === 'back'}
+  >
+    <div className="dl-sidebar__thumbnail">
+      {productInfo?.baseImages?.back ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={getThumbnailImageUrl(productInfo.color || 'White', 'back')}
+          alt="Back view thumbnail"
+          className="dl-sidebar__thumbnail-image"
+        />
+      ) : (
+        <div className="dl-sidebar__thumbnail-placeholder">Back</div>
+      )}
+    </div>
+    <span className="dl-sidebar__label">Back</span>
+  </button>
+
+  <button
+    className={`dl-sidebar__btn ${currentView === 'sleeve' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('sleeve')}
+    aria-label="Sleeve Design"
+    aria-pressed={currentView === 'sleeve'}
+  >
+    <span className="dl-sidebar__label">Sleeve Design</span>
+  </button>
+
+  <button
+    className={`dl-sidebar__btn ${currentView === 'zoom' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('zoom')}
+    aria-label="Zoom"
+    aria-pressed={currentView === 'zoom'}
+  >
+    <span className="dl-sidebar__icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8" />
+        <path d="M21 21l-4.35-4.35" />
+      </svg>
+    </span>
+    <span className="dl-sidebar__label">Zoom</span>
+  </button>
+</aside>
+      </div >
+
+  {/* 5. Bottom Bar - 底部操作栏 */ }
+{/* [2025-12-19 23:55:00] 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+<footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
+  <div className="dl-bottom-bar__left">
+    <button
+      className="dl-bottom-bar__add-products"
+      onClick={() => {
+        // [2025-12-07 15:30:00] 打开产品选择器（跳转到产品列表页面，带返回参数）
+        if (typeof window !== 'undefined') {
+          const currentUrl = new URL(window.location.href);
+          const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
+          window.location.href = `/products?returnToDesignLab=${returnUrl}`;
+        }
+      }}
+    >
+      + Add Products
+    </button>
+    <div className="dl-bottom-bar__product-info">
+      <div className="dl-bottom-bar__product-thumb">
+        <div className="dl-bottom-bar__product-thumb-placeholder">T</div>
+      </div>
+      {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化底部 Product pill 的颜色显示 */}
+      <div className="dl-bottom-bar__product-details">
+        <div className="dl-bottom-bar__product-name">
+          {productInfo?.productName || 'Gildan Softstyle Jersey T-shirt'}
+        </div>
+        <div className="dl-bottom-bar__product-links">
           <button
-            className="dl-bottom-bar__add-products"
+            className="dl-bottom-bar__link"
             onClick={() => {
               // [2025-12-07 15:30:00] 打开产品选择器（跳转到产品列表页面，带返回参数）
               if (typeof window !== 'undefined') {
                 const currentUrl = new URL(window.location.href);
                 const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
-                window.location.href = `/products?returnToDesignLab=${returnUrl}`;
+                window.location.href = `/products?returnToDesignLab=${returnUrl}&replaceProduct=true`;
               }
             }}
+            type="button"
           >
-            + Add Products
+            Change Product
           </button>
-          <div className="dl-bottom-bar__product-info">
-            <div className="dl-bottom-bar__product-thumb">
-              <div className="dl-bottom-bar__product-thumb-placeholder">T</div>
-            </div>
-            {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化底部 Product pill 的颜色显示 */}
-            <div className="dl-bottom-bar__product-details">
-              <div className="dl-bottom-bar__product-name">
-                {productInfo?.productName || 'Gildan Softstyle Jersey T-shirt'}
-              </div>
-              <div className="dl-bottom-bar__product-links">
-                <button
-                  className="dl-bottom-bar__link"
-                  onClick={() => {
-                    // [2025-12-07 15:30:00] 打开产品选择器（跳转到产品列表页面，带返回参数）
-                    if (typeof window !== 'undefined') {
-                      const currentUrl = new URL(window.location.href);
-                      const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
-                      window.location.href = `/products?returnToDesignLab=${returnUrl}&replaceProduct=true`;
-                    }
-                  }}
-                  type="button"
-                >
-                  Change Product
-                </button>
-                {productInfo?.color && (
-                  <span className="dl-bottom-bar__color">
-                    <input type="checkbox" id="color-selected" checked readOnly />
-                    <label htmlFor="color-selected">{productInfo.color}</label>
-                  </span>
-                )}
-                <button
-                  className="dl-bottom-bar__link"
-                  onClick={() => setShowColorModal(true)}
-                  type="button"
-                >
-                  Change Color
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="dl-bottom-bar__right">
+          {productInfo?.color && (
+            <span className="dl-bottom-bar__color">
+              <input type="checkbox" id="color-selected" checked readOnly />
+              <label htmlFor="color-selected">{productInfo.color}</label>
+            </span>
+          )}
           <button
-            className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
-            onClick={handleSaveDesign}
+            className="dl-bottom-bar__link"
+            onClick={() => setShowColorModal(true)}
+            type="button"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-              <polyline points="17 21 17 13 7 13 7 21" />
-              <polyline points="7 3 7 8 15 8" />
-            </svg>
-            Save | Share
-          </button>
-          {/* [2025-12-08] Save & Share 模态框 */}
-          <SaveShareModal
-            isOpen={showSaveShareModal}
-            onClose={() => setShowSaveShareModal(false)}
-            designId={currentDesignId}
-            designName={designName}
-            onSave={async () => {
-              try {
-                const savedDesignId = await handleSaveDesignConfirm();
-                // 保存成功后，如果切换到share tab，自动加载分享链接
-                if (savedDesignId) {
-                  // 可以在这里自动切换到share tab，或者保持当前tab
-                }
-                setShowSaveShareModal(false);
-              } catch (error) {
-                // 错误已在handleSaveDesignConfirm中处理
-                // 不关闭模态框，让用户重试
-              }
-            }}
-            onShare={(shareUrl) => {
-              console.log('[DesignLab] Design shared:', shareUrl);
-              // [2025-12-08] 埋点：设计分享
-              analytics.track('design_shared', {
-                designId: currentDesignId,
-                shareUrl: shareUrl,
-              });
-            }}
-          />
-          <button
-            className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
-            onClick={handleGetPrice}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
-              <line x1="1" y1="10" x2="23" y2="10" />
-            </svg>
-            Get Price
+            Change Color
           </button>
         </div>
-      </footer>
-
-      {/* 隐藏的文件输入（用于 Rail 按钮触发） */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml"  // [2025-01-30 20:35:00] 明确支持 AVIF 和 WebP 格式
-        style={{ display: 'none' }}
-        onChange={(e) => {
-          // [2025-01-30 17:30:00] 文件上传处理逻辑
-          const file = e.target.files?.[0];
-          if (file) {
-            handleFileUpload(file);
+      </div>
+    </div>
+  </div>
+  <div className="dl-bottom-bar__right">
+    <button
+      className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
+      onClick={handleSaveDesign}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+        <polyline points="17 21 17 13 7 13 7 21" />
+        <polyline points="7 3 7 8 15 8" />
+      </svg>
+      Save | Share
+    </button>
+    {/* [2025-12-08] Save & Share 模态框 */}
+    <SaveShareModal
+      isOpen={showSaveShareModal}
+      onClose={() => setShowSaveShareModal(false)}
+      designId={currentDesignId}
+      designName={designName}
+      onSave={async () => {
+        try {
+          const savedDesignId = await handleSaveDesignConfirm();
+          // 保存成功后，如果切换到share tab，自动加载分享链接
+          if (savedDesignId) {
+            // 可以在这里自动切换到share tab，或者保持当前tab
           }
-          // [2025-01-30 17:30:00] 重置 input，允许重复选择同一文件
-          e.target.value = '';
-        }}
-      />
+          setShowSaveShareModal(false);
+        } catch (error) {
+          // 错误已在handleSaveDesignConfirm中处理
+          // 不关闭模态框，让用户重试
+        }
+      }}
+      onShare={(shareUrl) => {
+        console.log('[DesignLab] Design shared:', shareUrl);
+        // [2025-12-08] 埋点：设计分享
+        analytics.track('design_shared', {
+          designId: currentDesignId,
+          shareUrl: shareUrl,
+        });
+      }}
+    />
+    <button
+      className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
+      onClick={handleGetPrice}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+      Get Price
+    </button>
+  </div>
+</footer>
 
-      {/* [2025-01-30 19:30:00] Product Colors Modal */}
-      <ProductColorsModal
-        isOpen={showColorModal}
-        onClose={() => setShowColorModal(false)}
-        colors={productColors}
-        selectedColor={productInfo?.color || null}
-        onSelectColor={handleColorSelect}
-        productName={productInfo?.productName}
-      />
+{/* 隐藏的文件输入（用于 Rail 按钮触发） */ }
+<input
+  ref={fileInputRef}
+  type="file"
+  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml"  // [2025-01-30 20:35:00] 明确支持 AVIF 和 WebP 格式
+  style={{ display: 'none' }}
+  onChange={(e) => {
+    // [2025-01-30 17:30:00] 文件上传处理逻辑
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileUpload(file);
+    }
+    // [2025-01-30 17:30:00] 重置 input，允许重复选择同一文件
+    e.target.value = '';
+  }}
+/>
 
-      {/* [2025-01-30 20:00:00] Names & Numbers Modal */}
-      {/* [2025-01-31 13:50:00] 修复 React Hooks 错误：在父组件中使用条件渲染，确保组件始终挂载且 hooks 数量一致 */}
-      {showNamesNumbersModal && (
-        <NamesNumbersModal
-          isOpen={showNamesNumbersModal}
-          onClose={() => setShowNamesNumbersModal(false)}
-          onAddToCanvas={handleAddNamesNumbers}
-        />
-      )}
+{/* [2025-01-30 19:30:00] Product Colors Modal */ }
+<ProductColorsModal
+  isOpen={showColorModal}
+  onClose={() => setShowColorModal(false)}
+  colors={productColors}
+  selectedColor={productInfo?.color || null}
+  onSelectColor={handleColorSelect}
+  productName={productInfo?.productName}
+/>
 
-      {/* [2025-12-06 12:30:00] Price Modal（旧版，保留兼容） */}
-      <PriceModal
-        isOpen={showPriceModal}
-        onClose={() => {
-          setShowPriceModal(false);
-          setPriceError(null);
-        }}
-        quoteData={priceQuote}
-        loading={priceLoading}
-        error={priceError}
-        quantity={quoteQuantity}
-        onQuantityChange={handleQuantityChange}
-      />
+{/* [2025-01-30 20:00:00] Names & Numbers Modal */ }
+{/* [2025-01-31 13:50:00] 修复 React Hooks 错误：在父组件中使用条件渲染，确保组件始终挂载且 hooks 数量一致 */ }
+{
+  showNamesNumbersModal && (
+    <NamesNumbersModal
+      isOpen={showNamesNumbersModal}
+      onClose={() => setShowNamesNumbersModal(false)}
+      onAddToCanvas={handleAddNamesNumbers}
+    />
+  )
+}
 
-      {/* [2025-12-08] Get Price流程模态框（新版完整流程） */}
-      <GetPriceFlowModal
-        isOpen={showGetPriceFlowModal}
-        onClose={() => setShowGetPriceFlowModal(false)}
+{/* [2025-12-06 12:30:00] Price Modal（旧版，保留兼容） */ }
+<PriceModal
+  isOpen={showPriceModal}
+  onClose={() => {
+    setShowPriceModal(false);
+    setPriceError(null);
+  }}
+  quoteData={priceQuote}
+  loading={priceLoading}
+  error={priceError}
+  quantity={quoteQuantity}
+  onQuantityChange={handleQuantityChange}
+/>
+
+{/* [2025-12-08] Get Price流程模态框（新版完整流程） */ }
+<GetPriceFlowModal
+  isOpen={showGetPriceFlowModal}
+  onClose={() => setShowGetPriceFlowModal(false)}
+  designId={currentDesignId}
+  getQuoteData={async () => {
+    // [2025-12-08] 计算报价所需的数据（使用的面和图层数）
+    if (!fabricCanvasRef.current) {
+      return { sidesUsed: ['front'], layerCount: 0 };
+    }
+
+    const canvas = fabricCanvasRef.current;
+    const objects = canvas.getObjects().filter(obj => {
+      const fabricObj = obj as fabric.Object;
+      return fabricObj.name && fabricObj.name !== 'background';
+    });
+
+    // 确定使用的面（基于当前视图和画布对象）
+    const sidesUsed: string[] = [];
+    if (currentView === 'front' || objects.some(obj => (obj as any).name?.includes('front'))) {
+      sidesUsed.push('front');
+    }
+    if (currentView === 'back' || objects.some(obj => (obj as any).name?.includes('back'))) {
+      sidesUsed.push('back');
+    }
+    if (currentView === 'sleeve' || objects.some(obj => (obj as any).name?.includes('sleeve'))) {
+      sidesUsed.push('sleeve');
+    }
+    // 如果没有对象，至少包含当前视图
+    if (sidesUsed.length === 0 && currentView !== 'zoom') {
+      sidesUsed.push(currentView);
+    }
+
+    const layerCount = objects.length;
+
+    return { sidesUsed, layerCount };
+  }}
+  onAddToCart={async (orderData) => {
+    // [2025-12-07 15:30:00] 处理加车逻辑
+    try {
+      if (!productInfo?.variantId) {
+        throw new Error('Product variant not selected');
+      }
+
+      // [2025-12-07 15:30:00] 调用加车API
+      // 注意：当前API只支持简单的 variantId + quantity + designId
+      // 对于复杂的 sizeQuantities，我们需要在后端扩展API或在前端处理
+      const response = await cartApi.addItem(
+        productInfo.variantId,
+        orderData.totalQuantity,
+        orderData.designId || null
+      );
+
+      if (response.success) {
+        // [2025-12-07 15:30:00] 埋点：加车成功
+        analytics.track('add_to_cart_success', {
+          designId: orderData.designId,
+          totalQuantity: orderData.totalQuantity,
+          sizeQuantities: orderData.sizeQuantities,
+        });
+
+        // [2025-12-07 15:30:00] 触发购物车更新事件
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('cart:updated'));
+        }
+
+        console.log('[DesignLab] Added to cart successfully:', response);
+      } else {
+        throw new Error('Failed to add to cart');
+      }
+    } catch (error: any) {
+      console.error('[DesignLab] Failed to add to cart:', error);
+      // [2025-12-07 15:30:00] 显示错误提示（不弹窗，使用toast）
+      throw error;
+    }
+  }}
+/>
+
+{/* [2025-12-10] 设计评论区域 */ }
+{
+  currentDesignId && (
+    <div className="dl-comments-container">
+      <DesignCommentSection
         designId={currentDesignId}
-        getQuoteData={async () => {
-          // [2025-12-08] 计算报价所需的数据（使用的面和图层数）
-          if (!fabricCanvasRef.current) {
-            return { sidesUsed: ['front'], layerCount: 0 };
-          }
-
-          const canvas = fabricCanvasRef.current;
-          const objects = canvas.getObjects().filter(obj => {
-            const fabricObj = obj as fabric.Object;
-            return fabricObj.name && fabricObj.name !== 'background';
-          });
-
-          // 确定使用的面（基于当前视图和画布对象）
-          const sidesUsed: string[] = [];
-          if (currentView === 'front' || objects.some(obj => (obj as any).name?.includes('front'))) {
-            sidesUsed.push('front');
-          }
-          if (currentView === 'back' || objects.some(obj => (obj as any).name?.includes('back'))) {
-            sidesUsed.push('back');
-          }
-          if (currentView === 'sleeve' || objects.some(obj => (obj as any).name?.includes('sleeve'))) {
-            sidesUsed.push('sleeve');
-          }
-          // 如果没有对象，至少包含当前视图
-          if (sidesUsed.length === 0 && currentView !== 'zoom') {
-            sidesUsed.push(currentView);
-          }
-
-          const layerCount = objects.length;
-
-          return { sidesUsed, layerCount };
-        }}
-        onAddToCart={async (orderData) => {
-          // [2025-12-07 15:30:00] 处理加车逻辑
-          try {
-            if (!productInfo?.variantId) {
-              throw new Error('Product variant not selected');
-            }
-
-            // [2025-12-07 15:30:00] 调用加车API
-            // 注意：当前API只支持简单的 variantId + quantity + designId
-            // 对于复杂的 sizeQuantities，我们需要在后端扩展API或在前端处理
-            const response = await cartApi.addItem(
-              productInfo.variantId,
-              orderData.totalQuantity,
-              orderData.designId || null
-            );
-
-            if (response.success) {
-              // [2025-12-07 15:30:00] 埋点：加车成功
-              analytics.track('add_to_cart_success', {
-                designId: orderData.designId,
-                totalQuantity: orderData.totalQuantity,
-                sizeQuantities: orderData.sizeQuantities,
-              });
-
-              // [2025-12-07 15:30:00] 触发购物车更新事件
-              if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('cart:updated'));
-              }
-
-              console.log('[DesignLab] Added to cart successfully:', response);
-            } else {
-              throw new Error('Failed to add to cart');
-            }
-          } catch (error: any) {
-            console.error('[DesignLab] Failed to add to cart:', error);
-            // [2025-12-07 15:30:00] 显示错误提示（不弹窗，使用toast）
-            throw error;
-          }
+        onCommentAdded={() => {
+          console.log('[DesignLab] Comment added');
         }}
       />
-
-      {/* [2025-12-10] 设计评论区域 */}
-      {currentDesignId && (
-        <div className="dl-comments-container">
-          <DesignCommentSection
-            designId={currentDesignId}
-            onCommentAdded={() => {
-              console.log('[DesignLab] Comment added');
-            }}
-          />
-        </div>
-      )}
-
     </div>
   );
 };

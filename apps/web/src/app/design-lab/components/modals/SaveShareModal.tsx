@@ -22,7 +22,7 @@ interface SaveShareModalProps {
   onClose: () => void;
   designId: string | null;
   designName: string;
-  onSave?: () => Promise<void>;
+  onSave?: (name: string) => Promise<void>;
   onShare?: (shareUrl: string) => void;
 }
 
@@ -35,21 +35,32 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
   onShare,
 }) => {
   const [saving, setSaving] = useState(false);
+  const [name, setName] = useState(designName);
+
+  useEffect(() => {
+    setName(designName);
+  }, [designName]);
 
   const handleSave = async () => {
+    console.log('[SaveShareModal] Save button clicked, name:', name);
     setSaving(true);
     try {
       if (onSave) {
-        await onSave();
+        console.log('[SaveShareModal] Calling onSave with name:', name);
+        await onSave(name);
+        console.log('[SaveShareModal] ✅ onSave completed successfully');
       }
       setTimeout(() => {
         setSaving(false);
         onClose();
-        alert('Design saved successfully to My Designs!');
+        console.log('[SaveShareModal] ✅ Design saved successfully to My Designs!');
+        // [2025-12-28] REMOVED: alert() auto-dismisses due to React re-render
+        // TODO: Implement toast notification instead
       }, 500);
     } catch (error) {
-      console.error('[SaveShareModal] Failed to save design:', error);
-      alert('Failed to save design. Please try again.');
+      console.error('[SaveShareModal] ❌ Failed to save design:', error);
+      // [2025-12-28] REMOVED: alert() auto-dismisses due to React re-render
+      // TODO: Implement toast notification instead
       setSaving(false);
     }
   };
@@ -78,8 +89,8 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
                 <input
                   type="text"
                   className="dl-save-share-modal__input"
-                  value={designName}
-                  readOnly
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </label>
               {!designId && (

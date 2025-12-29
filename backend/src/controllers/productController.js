@@ -1386,9 +1386,10 @@ exports.getProductByVariantId = async (req, res) => {
     });
 
     // [2025-12-20] FALLBACK: If not found as variant, check if it's a productId
+    let productFallback = null;
     if (!variant) {
       console.log('[Backend] Not found as variant, checking as product ID:', { variantId, timestamp });
-      const product = await prisma.product.findUnique({
+      productFallback = await prisma.product.findUnique({
         where: { id: variantId },
         include: {
           images: {
@@ -1398,21 +1399,21 @@ exports.getProductByVariantId = async (req, res) => {
         }
       });
 
-      if (product && product.variants && product.variants.length > 0) {
+      if (productFallback && productFallback.variants && productFallback.variants.length > 0) {
         // [2025-12-21] Prioritize 'White' variant as default, otherwise usage alphabetical/stock sort
-        let defaultVariant = product.variants.find(v => v.color === 'White');
+        let defaultVariant = productFallback.variants.find(v => v.color === 'White');
 
         if (!defaultVariant) {
           // If no White, try to find one with high stock
-          defaultVariant = product.variants.sort((a, b) => b.stockQuantity - a.stockQuantity)[0];
+          defaultVariant = productFallback.variants.sort((a, b) => b.stockQuantity - a.stockQuantity)[0];
         }
 
         variant = {
           ...defaultVariant,
-          product: product
+          product: productFallback
         };
         console.log('[Backend] Found as product, using best variant:', {
-          productId: product.id,
+          productId: productFallback.id,
           variantId: variant.id,
           color: variant.color,
           timestamp
@@ -1425,9 +1426,19 @@ exports.getProductByVariantId = async (req, res) => {
         variantId,
         variantExists: !!variant,
         productExists: variant ? !!variant.product : false,
+        foundProductFallback: !!productFallback,
+        variantsCount: productFallback?.variants?.length,
         timestamp
       });
-      return res.status(404).json({ error: 'Variant not found' });
+      return res.status(404).json({
+        error: 'Variant not found',
+        debug: {
+          variantId,
+          foundAsVariant: false,
+          foundAsProduct: !!productFallback,
+          variantsCount: productFallback?.variants?.length || 0
+        }
+      });
     }
 
     console.log('[Backend] Variant found:', {

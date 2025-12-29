@@ -35,7 +35,7 @@ export function mergeDesigns(
   localDesigns: LocalDesignDraft[]
 ): MergedDesign[] {
   const mergedMap = new Map<string, MergedDesign>();
-  
+
   // 1. 处理云端设计
   cloudDesigns.forEach(cloud => {
     const merged: MergedDesign = {
@@ -50,15 +50,15 @@ export function mergeDesigns(
     };
     mergedMap.set(cloud.id, merged);
   });
-  
+
   // 2. 处理本地设计
   localDesigns.forEach(local => {
     // 尝试通过设计名称和产品ID匹配云端设计
-    const matchedCloud = cloudDesigns.find(cloud => 
-      cloud.name === local.designName && 
+    const matchedCloud = cloudDesigns.find(cloud =>
+      cloud.name === local.designName &&
       cloud.productName === local.productInfo.productName
     );
-    
+
     if (matchedCloud) {
       // 找到匹配的云端设计，合并为 'both'
       const existing = mergedMap.get(matchedCloud.id);
@@ -72,13 +72,18 @@ export function mergeDesigns(
         if (localUpdated > cloudUpdated) {
           existing.updatedAt = local.updatedAt || local.savedAt;
         }
+
+        // [2025-01-31 03:30:00] Prefer local thumbnail if available, especially for recent edits
+        if (local.thumbnailUrl) {
+          existing.thumbnailUrl = local.thumbnailUrl;
+        }
       }
     } else {
       // 没有匹配的云端设计，作为纯本地设计
       const merged: MergedDesign = {
         id: local.id, // 使用本地ID
         name: local.designName,
-        thumbnailUrl: null, // 本地设计没有缩略图URL
+        thumbnailUrl: local.thumbnailUrl || null, // [2025-01-31 03:30:00] Use local thumbnail if available
         updatedAt: local.updatedAt || local.savedAt,
         productName: local.productInfo.productName,
         source: 'local',
@@ -88,7 +93,7 @@ export function mergeDesigns(
       mergedMap.set(local.id, merged);
     }
   });
-  
+
   // 3. 转换为数组并按时间排序
   return Array.from(mergedMap.values()).sort((a, b) => {
     const timeA = new Date(a.updatedAt).getTime();
@@ -111,10 +116,10 @@ export function filterDesignsByDays(
   if (days === 0) {
     return designs;
   }
-  
+
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - days);
-  
+
   return designs.filter(design => {
     const updatedAt = new Date(design.updatedAt);
     return updatedAt >= cutoffDate;

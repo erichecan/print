@@ -16,7 +16,7 @@ interface UsePricingOptions {
   variantId?: string;
   canvasWidth?: number;
   canvasHeight?: number;
-  currentView?: 'front' | 'back' | 'sleeve'; // [2025-12-18 21:23:43] 当前视图
+  currentView?: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'; // [2025-12-18 21:23:43] 当前视图
 }
 
 interface UsePricingReturn {
@@ -33,7 +33,7 @@ interface UsePricingReturn {
  */
 function getDesignSidesAndLayers(
   canvas: fabric.Canvas,
-  currentView: 'front' | 'back' | 'sleeve'
+  currentView: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'
 ): { sidesUsed: string[]; layerCount: number; hasUploadedImages: boolean } {
   const objects = canvas.getObjects().filter((obj: fabric.Object) => {
     const objName = (obj as any).name;
@@ -56,8 +56,14 @@ function getDesignSidesAndLayers(
   if (currentView === 'sleeve' || objects.some((obj: any) => obj.name?.includes('sleeve'))) {
     sidesUsed.push('sleeve');
   }
+  if (currentView === 'left-sleeve' || objects.some((obj: any) => obj.name?.includes('left-sleeve'))) {
+    sidesUsed.push('left-sleeve');
+  }
+  if (currentView === 'right-sleeve' || objects.some((obj: any) => obj.name?.includes('right-sleeve'))) {
+    sidesUsed.push('right-sleeve');
+  }
   // 如果没有对象，至少包含当前视图
-  if (sidesUsed.length === 0 && currentView !== 'zoom') {
+  if (sidesUsed.length === 0 && (currentView as string) !== 'zoom') {
     sidesUsed.push(currentView);
   }
 

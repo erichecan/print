@@ -10,6 +10,7 @@ import type { DesignCanvasSnapshot } from '@/lib/api';
 export interface LocalDesignDraft {
   id: string; // [2025-01-30 23:45:00] 新增：唯一标识符
   designName: string;
+  thumbnailUrl?: string; // [2025-01-31 02:00:00] Add thumbnail URL
   viewCanvases: {
     front: DesignCanvasSnapshot;
     back: DesignCanvasSnapshot;
@@ -44,6 +45,7 @@ function generateDesignId(): string {
  * 保存设计草稿到localStorage
  * [2025-12-19 16:30:00]
  * [2025-01-30 23:45:00] 更新：支持多个设计存储，自动生成ID
+ * [2025-01-31 02:00:00] Support thumbnail URL
  */
 export function saveDesignToLocalStorage(
   designName: string,
@@ -59,7 +61,8 @@ export function saveDesignToLocalStorage(
     variantId: string;
     color: string;
   },
-  designId?: string // [2025-01-30 23:45:00] 可选：如果提供则更新现有设计
+  designId?: string, // [2025-01-30 23:45:00] 可选：如果提供则更新现有设计
+  thumbnailUrl?: string // [2025-01-31 02:00:00] Optional thumbnail
 ): { success: boolean; error?: string; designId?: string } {
   try {
     const now = new Date().toISOString();
@@ -68,6 +71,7 @@ export function saveDesignToLocalStorage(
     const draft: LocalDesignDraft = {
       id,
       designName,
+      thumbnailUrl,
       viewCanvases,
       currentView,
       productInfo,
@@ -170,23 +174,37 @@ export function getAllLocalDesigns(): LocalDesignDraft[] {
     }
 
     const designs: LocalDesignDraft[] = JSON.parse(stored);
+    let needsSave = false;
 
     // 验证和迁移旧数据
-    return designs.map(design => {
+    const migratedDesigns = designs.map(design => {
       if (!design.id) {
         design.id = generateDesignId();
+        needsSave = true;
+        console.log('[DesignLab] Migrated design without ID:', design.designName, '-> ID:', design.id);
       }
       if (!design.updatedAt) {
         design.updatedAt = design.savedAt;
+        needsSave = true;
       }
       if (!design.source) {
         design.source = 'local';
+        needsSave = true;
       }
       return design;
     }).filter(design => {
       // 验证必要字段
       return design.designName && design.viewCanvases && design.currentView && design.productInfo;
     });
+
+    // [2025-12-28] CRITICAL FIX: Save migrated data back to localStorage
+    // This ensures IDs remain stable across page loads
+    if (needsSave) {
+      console.log('[DesignLab] Saving migrated designs back to localStorage');
+      localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(migratedDesigns));
+    }
+
+    return migratedDesigns;
   } catch (error) {
     console.error('[DesignLab] Failed to get all local designs:', error);
     return [];

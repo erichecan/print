@@ -39,6 +39,8 @@ export interface ProductDetail {
     front: string;
     back: string;
     sleeve: string;
+    'left-sleeve'?: string;
+    'right-sleeve'?: string;
   };
   gallery: string[];
 }

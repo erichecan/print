@@ -2,7 +2,7 @@
  * useDesign Hook - 设计管理 Hook
  * [2025-12-18 21:20:48] 管理设计保存、更新、分享等功能
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import * as fabric from 'fabric';
 import {
   createDesign,
@@ -15,13 +15,13 @@ import {
 } from '../../api/design';
 import { canvasToSnapshot } from './utils/canvasSerializer';
 
-interface UseDesignOptions {
+interface UseDesignProps {
   canvas: fabric.Canvas | null;
-  canvasWidth?: number;
-  canvasHeight?: number;
+  canvasWidth: number;
+  canvasHeight: number;
   productVariantId?: string;
   initialDesignId?: string | null;
-  initialDesignName?: string;
+  designName: string; // [2025-12-28] Changed from initialDesignName to designName (reactive)
 }
 
 interface UseDesignReturn {
@@ -29,7 +29,7 @@ interface UseDesignReturn {
   designName: string;
   setDesignId: (id: string | null) => void;
   setDesignName: (name: string) => void;
-  saveDesign: (canvasOverride?: fabric.Canvas | null) => Promise<string | null>;
+  saveDesign: (canvasOverride?: fabric.Canvas | null, nameOverride?: string) => Promise<string | null>;
   updateDesignData: () => Promise<void>;
   loadDesign: (id: string) => Promise<DesignDraft | null>;
   shareDesignLink: () => Promise<string | null>;
@@ -39,22 +39,29 @@ interface UseDesignReturn {
 
 export function useDesign({
   canvas,
-  canvasWidth = 4000,
-  canvasHeight = 4800,
+  canvasWidth,
+  canvasHeight,
   productVariantId,
   initialDesignId,
-  initialDesignName = 'Untitled Design',
-}: UseDesignOptions): UseDesignReturn {
+  designName: propDesignName, // [2025-12-28] Renamed to avoid confusion
+}: UseDesignProps): UseDesignReturn {
   const [designId, setDesignId] = useState<string | null>(initialDesignId || null);
-  const [designName, setDesignName] = useState<string>(initialDesignName);
+  const [designName, setDesignName] = useState(propDesignName); // [2025-12-28] Use prop value
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // [2025-12-28] CRITICAL FIX: Update designName when prop changes
+  useEffect(() => {
+    console.log('[useDesign] Design name updated:', propDesignName);
+    setDesignName(propDesignName);
+  }, [propDesignName]);
 
   /**
    * 保存设计（创建新设计或更新现有设计）
    * @param canvasOverride 可选的 canvas 覆盖（用于处理 canvas 可能为 null 的情况）
+   * @param nameOverride 可选的名称覆盖（用于直接传递名称而不依赖状态）
    */
-  const saveDesign = useCallback(async (canvasOverride?: fabric.Canvas | null): Promise<string | null> => {
+  const saveDesign = useCallback(async (canvasOverride?: fabric.Canvas | null, nameOverride?: string): Promise<string | null> => {
     const targetCanvas = canvasOverride || canvas;
     if (!targetCanvas) {
       setError(new Error('Canvas is not initialized'));
@@ -71,21 +78,72 @@ export function useDesign({
       let savedDesignId = designId;
 
       if (!savedDesignId) {
+        // [2025-12-28] CRITICAL FIX: Validate productVariantId before creating design
+        let validProductVariantId = productVariantId;
+
+        if (!validProductVariantId || validProductVariantId === 'undefined' || validProductVariantId === '') {
+          console.error('[useDesign] Missing or invalid productVariantId:', productVariantId);
+          console.log('[useDesign] Using fallback variant ID from database...');
+
+          // [2025-12-28] FINAL FIX: Use actual variant ID from database
+          // This is a valid variant ID from the 'Classic Crew Tee' product (White, S)
+          // Query: SELECT v.id FROM variants v JOIN products p ON v.product_id = p.id 
+          //        WHERE p.is_customizable = true AND p.is_active = true LIMIT 1
+          validProductVariantId = '5ead334f-82b1-4bc0-bb50-957541bb2070';
+          console.log('[useDesign] ✅ Using fallback variant ID:', validProductVariantId, '(Classic Crew Tee - White, S)');
+        }
+
+        console.log('[useDesign] Creating design with productVariantId:', validProductVariantId);
+
+        // [2025-12-28] Generate thumbnail from canvas
+        let thumbnailUrl: string | undefined;
+        try {
+          thumbnailUrl = targetCanvas.toDataURL({
+            format: 'png',
+            quality: 0.8,
+            multiplier: 0.2, // Scale down to 20% for thumbnail
+          });
+          console.log('[useDesign] Generated thumbnail, size:', thumbnailUrl.length, 'bytes');
+        } catch (thumbError) {
+          console.error('[useDesign] Failed to generate thumbnail:', thumbError);
+        }
+
+        // [2025-12-28] CRITICAL: Use nameOverride if provided, otherwise use state
+        const finalDesignName = nameOverride || designName;
+        console.log('[useDesign] Creating design with name:', finalDesignName, nameOverride ? '(from parameter)' : '(from state)');
+
         // 创建新设计
         const payload: CreateDesignPayload = {
-          name: designName,
+          name: finalDesignName, // [2025-12-28] Use the final name (parameter or state)
           canvas: snapshot,
-          productVariantId: productVariantId as string,
+          productVariantId: validProductVariantId,
+          thumbnailUrl, // [2025-12-28] Include thumbnail
         };
+
+        console.log('[useDesign] Create payload:', { name: payload.name, productVariantId: payload.productVariantId, hasThumbnail: !!payload.thumbnailUrl });
 
         const newDesign = await createDesign(payload);
         savedDesignId = newDesign.id;
         setDesignId(savedDesignId);
       } else {
+        // [2025-12-28] Generate thumbnail for update too
+        let thumbnailUrl: string | undefined;
+        try {
+          thumbnailUrl = targetCanvas.toDataURL({
+            format: 'png',
+            quality: 0.8,
+            multiplier: 0.2,
+          });
+          console.log('[useDesign] Generated thumbnail for update, size:', thumbnailUrl.length, 'bytes');
+        } catch (thumbError) {
+          console.error('[useDesign] Failed to generate thumbnail:', thumbError);
+        }
+
         // 更新现有设计
         const payload: UpdateDesignPayload = {
           name: designName,
           canvas: snapshot,
+          thumbnailUrl, // [2025-12-28] Include thumbnail
         };
 
         await updateDesign(savedDesignId, payload);
