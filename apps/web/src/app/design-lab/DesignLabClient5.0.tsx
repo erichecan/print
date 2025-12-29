@@ -262,6 +262,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric canvas ref
   const fabricRef = useRef<typeof fabric | null>(null); // [2025-12-20 03:20:00] 步骤2 - Fabric 对象 ref
   const [canvasInitialized, setCanvasInitialized] = useState(false); // [2025-12-20 03:50:00] 用于触发图片加载的 state
+  const [isLoadingDesign, setIsLoadingDesign] = useState(false); // [2025-12-28] 防止加载设计时重新添加产品图片
   const cleanupMouseListenerRef = useRef<(() => void) | null>(null); // [2025-12-14 06:35:00] 保存鼠标监听器清理函数
   const viewStates = useRef<Record<string, any[]>>({}); // [2025-12-28] Store objects for each view (state preservation)
 
@@ -728,6 +729,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-28] 加载模块：加载已保存的设计
   const handleLoadDesign = async (designIdParam: string, sourceParam: string | null) => {
     try {
+      setIsLoadingDesign(true); // 设置加载标志
       console.log('[DesignLab 5.0] ===== LOAD START =====');
       console.log('[DesignLab 5.0] Design ID:', designIdParam, 'Source:', sourceParam);
 
@@ -774,10 +776,43 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         }
 
         console.log('[DesignLab 5.0] Restoring canvas from snapshot...');
-        await restoreCanvasFromSnapshot(fabricCanvasRef.current, canvasData);
-        console.log('[DesignLab 5.0] ✅ Canvas restored successfully');
+        const loadedObjects = await restoreCanvasFromSnapshot(fabricCanvasRef.current, canvasData);
+        console.log('[DesignLab 5.0] ✅ Canvas restored with', loadedObjects.length, 'objects');
+
+        // Apply custom controls to all loaded objects
+        const canvas = fabricCanvasRef.current;
+        console.log('[DesignLab 5.0] Applying custom controls to', loadedObjects.length, 'loaded objects');
+
+        // Use the addIconControlsToObject function saved on canvas
+        const addIconControls = (canvas as any).addIconControlsToObject;
+
+        if (addIconControls) {
+          loadedObjects.forEach((obj: any) => {
+            // Skip product image layer
+            if (obj.data?.layerType === 'product-image') {
+              return;
+            }
+
+            // Apply custom controls to user-added objects
+            if (obj.type === 'image' || obj.type === 'i-text' || obj.type === 'textbox') {
+              addIconControls(obj);
+              console.log('[DesignLab 5.0] Applied controls to:', obj.type);
+            }
+          });
+
+          canvas.renderAll();
+          console.log('[DesignLab 5.0] ✅ Custom controls applied to', loadedObjects.length, 'objects');
+        } else {
+          console.warn('[DesignLab 5.0] ⚠️ addIconControlsToObject not found on canvas');
+        }
       } else {
         console.log('[DesignLab 5.0] ⚠️ No canvas data to restore - design may be empty');
+      }
+
+      // Update design name in UI
+      if (loadedDesign.name) {
+        setDesignName(loadedDesign.name);
+        console.log('[DesignLab 5.0] ✅ Design name updated to:', loadedDesign.name);
       }
 
       // Load product info if available
@@ -791,10 +826,48 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         }));
       }
 
+      // [2025-12-28] Re-add product image since loadFromJSON cleared it
+      // Get the current product image URL
+      const imageUrl = productInfo.baseImages?.[currentView];
+      if (imageUrl && fabricCanvasRef.current) {
+        console.log('[DesignLab 5.0] Re-adding product image after design load');
+        const isDefaultProduct = productInfo.productName?.includes('Design Lab Default Tee') || productInfo.productName?.includes('Loading');
+        let finalImageUrl = imageUrl;
+        let tintHex = '#ffffff';
+
+        if (isDefaultProduct) {
+          const colorData = PRODUCT_COLORS.find(c => c.name === productInfo.color);
+          tintHex = colorData ? colorData.hex : '#ffffff';
+          finalImageUrl = getDefaultProductBaseImages('White')[currentView];
+        }
+
+        addProductImageToCanvas(finalImageUrl, tintHex);
+
+        // Re-add printable area guide after product image
+        addPrintableArea(currentView);
+
+        // Re-apply custom controls to all loaded objects (excluding product image)
+        const allObjects = fabricCanvasRef.current.getObjects();
+        const userObjects = allObjects.filter((obj: any) => obj.data?.layerType !== 'product-image' && obj.data?.layerType !== 'printable-area');
+        console.log('[DesignLab 5.0] Re-applying custom controls to', userObjects.length, 'user objects');
+
+        const addIconControls = (fabricCanvasRef.current as any).addIconControlsToObject;
+        if (addIconControls) {
+          userObjects.forEach((obj: any) => {
+            addIconControls(obj);
+          });
+        }
+
+        // Force canvas to render
+        fabricCanvasRef.current.renderAll();
+      }
+
       console.log('[DesignLab 5.0] ===== LOAD COMPLETE =====');
     } catch (error: any) {
       console.error('[DesignLab 5.0] ❌ Load error:', error);
       alert(`Failed to load design: ${error.message || error}`);
+    } finally {
+      setIsLoadingDesign(false); // 清除加载标志
     }
   };
 
@@ -2531,11 +2604,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-20 03:20:00] 步骤2 - 当视图切换或产品信息改变时更新商品图片
   // [2025-12-20 03:50:00] 修复：添加 canvasInitialized state 作为依赖，确保 Canvas 初始化完成后触发加载
   useEffect(() => {
+    // [2025-12-28] Skip product image loading if we're currently loading a design
+    if (isLoadingDesign) {
+      console.log('[DesignLab 5.0] Skipping product image load - design is being loaded');
+      return;
+    }
+
     // [2025-12-20] 修复：只要 Fabric Canvas 就绪就尝试加载图片，不强制要求 canvasInitialized state
     // state 变化可能在某些情况下由于异步导致延迟
     const canvas = fabricCanvasRef.current;
-    if (!canvas || !fabricRef.current) {
-      console.log('[DesignLab 5.0] Canvas not ready for image loading yet');
+    if (!canvas) {
+      console.log('[DesignLab 5.0] Canvas not initialized yet');
       return;
     }
 
