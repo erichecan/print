@@ -902,6 +902,8 @@
   display: flex;
   align-items: center;
   gap: var(--dl-space-2);
+  flex-wrap: wrap;
+  /* Allow wrapping if space is tight */
 }
 
 .dl-edit-upload-panel__size-input {
@@ -949,6 +951,8 @@
 
 .dl-edit-upload-panel__size-input {
   flex: 1;
+  min-width: 80px;
+  /* Prevent being too small */
   padding: var(--dl-space-2) var(--dl-space-3);
   border: 1px solid var(--dl-border-color);
   border-radius: var(--dl-radius-sm);
@@ -1106,6 +1110,8 @@
   display: flex;
   align-items: center;
   gap: var(--dl-space-3);
+  width: 100%;
+  /* Ensure it takes full width */
 }
 
 .dl-edit-upload-panel__slider {
@@ -1115,6 +1121,7 @@
   background: var(--dl-bg-primary);
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .dl-edit-upload-panel__slider::-webkit-slider-thumb {
@@ -1421,6 +1428,7 @@
   background: var(--dl-bg-primary);
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .dl-edit-text-panel__toolbar-slider::-webkit-slider-thumb {
@@ -1672,6 +1680,7 @@
   background: var(--dl-bg-primary);
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .dl-edit-text-panel__slider::-webkit-slider-thumb {
@@ -2218,6 +2227,7 @@
   background: var(--dl-bg-primary);
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
   cursor: pointer;
 }
 
@@ -2248,10 +2258,12 @@
   display: flex;
   align-items: center;
   gap: var(--dl-space-2);
+  flex-wrap: wrap;
 }
 
 .dl-edit-art-panel__size-input {
   flex: 1;
+  min-width: 80px;
   padding: var(--dl-space-2) var(--dl-space-3);
   border: 1px solid var(--dl-border-color);
   border-radius: var(--dl-radius-sm);
@@ -4455,4 +4467,141 @@
   font-size: var(--dl-font-sm);
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* ============================================
+   Color Picker Styles - Custom Ink Style
+   [2025-12-28 01:40:00] Matching screenshot grid and styles
+   ============================================ */
+
+.dl-color-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-4);
+  padding: var(--dl-space-2) 0;
+}
+
+.dl-color-picker__header {
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-color-picker__title {
+  font-size: var(--dl-font-md);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+}
+
+.dl-color-picker__selected-info {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-3);
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-color-picker__selected-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dl-radius-sm);
+  border: 1px solid var(--dl-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dl-color-picker__selected-name {
+  font-size: var(--dl-font-md);
+  color: var(--dl-text-primary);
+  font-weight: var(--dl-font-weight-medium);
+}
+
+.dl-color-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.dl-color-picker__swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  position: relative;
+}
+
+.dl-color-picker__swatch:hover {
+  transform: scale(1.1);
+  z-index: 1;
+}
+
+.dl-color-picker__swatch.is-selected {
+  outline: 2px solid #ccc;
+  outline-offset: 2px;
+  z-index: 2;
+}
+
+.dl-color-picker__legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-2);
+  margin-top: var(--dl-space-4);
+  padding-top: var(--dl-space-4);
+  border-top: 1px solid var(--dl-border-color);
+}
+
+.dl-color-picker__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-3);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+}
+
+.dl-color-picker__legend-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.dl-color-picker__legend-swatch--design {
+  background-color: #999;
+  position: relative;
+}
+
+.dl-color-picker__legend-swatch--design::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 8px 0 0;
+  border-color: #fff transparent transparent transparent;
+}
+
+.dl-color-picker__legend-swatch--contrast {
+  border: 1px dashed #333;
+}
+
+.dl-color-picker__done-btn {
+  margin-top: var(--dl-space-6);
+  padding: 14px;
+  background-color: #2441D0;
+  /* Custom Ink blue button color */
+  color: white;
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-md);
+  font-weight: var(--dl-font-weight-bold);
+  cursor: pointer;
+  width: 100%;
+}
+
+.dl-color-picker__done-btn:hover {
+  background-color: #1e36b0;
 }

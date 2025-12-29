@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react';
 // [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用命名空间导入
 import * as fabric from 'fabric';
 import { ArtEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:42:00 复用 Art 工具栏组件
+import { applyCornerControls } from '../../../design-lab5/upload-controls/registerUploadCornerControls';
 
 interface EditArtPanelProps {
   selectedArt: fabric.Image | null;
@@ -36,18 +37,18 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   useEffect(() => {
     if (selectedArt) {
       setRotation(selectedArt.angle || 0);
-      
+
       // 计算实际尺寸（考虑缩放）
       const actualWidth = (selectedArt.width || 0) * (selectedArt.scaleX || 1);
       const actualHeight = (selectedArt.height || 0) * (selectedArt.scaleY || 1);
       setSize({ width: actualWidth, height: actualHeight });
-      
+
       // 转换为英寸（150 DPI）
       setSizeInches({
         width: pixelsToInches(actualWidth),
         height: pixelsToInches(actualHeight)
       });
-      
+
       // [2025-12-08] 保存原始宽高比
       if (actualHeight > 0) {
         setOriginalAspectRatio(actualWidth / actualHeight);
@@ -62,18 +63,18 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
       console.warn('[EditArtPanel] handleCenter: selectedArt or canvas is null');
       return;
     }
-    
+
     console.log('[EditArtPanel] Centering art');
     const canvasWidth = canvas.width || 1000;
     const canvasHeight = canvas.height || 1200;
-    
+
     selectedArt.set({
       left: canvasWidth / 2,
       top: canvasHeight / 2,
       originX: 'center',
       originY: 'center'
     });
-    
+
     selectedArt.setCoords();
     canvas.renderAll();
     onUpdate();
@@ -163,7 +164,7 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
       // [2025-12-16 05:10:00] 检查并调整：确保对象在商品底图之后
       // 等待一个 tick 确保原生方法执行完成
       await new Promise(resolve => setTimeout(resolve, 0));
-      
+
       const objectsAfter = canvas.getObjects();
       const indexAfter = objectsAfter.indexOf(selectedArt);
       const backgroundIndexAfter = objectsAfter.findIndex((obj: any) => {
@@ -243,12 +244,12 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
     if (!selectedArt || !canvas) return;
     try {
       const cloneResult = (selectedArt as any).clone();
-      const cloned = cloneResult instanceof Promise 
-        ? await cloneResult 
+      const cloned = cloneResult instanceof Promise
+        ? await cloneResult
         : typeof cloneResult === 'function'
           ? await new Promise<fabric.Image>((resolve) => {
-              (selectedArt as any).clone(resolve);
-            })
+            (selectedArt as any).clone(resolve);
+          })
           : cloneResult;
 
       if (!cloned) {
@@ -294,30 +295,30 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
   // [2025-01-30 13:35:00] 修复：参考 upload 和 text 的实现，使用英寸输入框
   const handleSizeChange = (widthInches: number, heightInches: number) => {
     if (!selectedArt) return;
-    
+
     // 转换为像素（150 DPI，与 pixelsToInches 保持一致）
     const dpi = 150;
     const widthPixels = widthInches * dpi;
     const heightPixels = heightInches * dpi;
-    
+
     // 计算缩放比例
     const originalWidth = selectedArt.width || 1;
     const originalHeight = selectedArt.height || 1;
     const scaleX = widthPixels / originalWidth;
     const scaleY = heightPixels / originalHeight;
-    
+
     selectedArt.set({
       scaleX,
       scaleY
     });
     selectedArt.setCoords();
-    
+
     // 更新状态
     const actualWidth = originalWidth * scaleX;
     const actualHeight = originalHeight * scaleY;
     setSize({ width: actualWidth, height: actualHeight });
     setSizeInches({ width: widthInches, height: heightInches });
-    
+
     if (canvas) {
       canvas.renderAll();
       onUpdate();
@@ -326,7 +327,7 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
 
   // [2025-01-30 18:05:00] Edit Colors
   // [2025-01-30 13:40:00] 修复：交互形式保持和 add text 一样（使用颜色选择器）
-  
+
   // [2025-01-30 13:40:00] 初始化颜色（从对象获取，如果有的话）
   useEffect(() => {
     if (selectedArt) {
@@ -335,35 +336,35 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
       setColor(typeof artColor === 'string' ? artColor : '#000000');
     }
   }, [selectedArt]);
-  
+
   const handleColorChange = (newColor: string) => {
     setColor(newColor);
     if (!selectedArt || !canvas) return;
-    
+
     try {
       // [2025-01-30 13:40:00] 对于图片对象，应用颜色叠加效果
       const imgElement = selectedArt.getElement() as HTMLImageElement;
       if (!imgElement) return;
-      
+
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
       if (!tempCtx) return;
-      
+
       tempCanvas.width = imgElement.width || selectedArt.width || 1;
       tempCanvas.height = imgElement.height || selectedArt.height || 1;
-      
+
       // 绘制原始图像
       tempCtx.drawImage(imgElement, 0, 0);
-      
+
       // 应用颜色叠加
       tempCtx.globalCompositeOperation = 'multiply';
       tempCtx.fillStyle = newColor;
       tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-      
+
       // 从处理后的 Canvas 创建新的 Fabric Image
       tempCanvas.toBlob((blob) => {
         if (!blob) return;
-        
+
         const url = URL.createObjectURL(blob);
         fabric.Image.fromURL(url, (fabricImage) => {
           if (fabricImage && canvas && selectedArt) {
@@ -379,23 +380,21 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
               name: selectedArt.name || `art_${Date.now()}`,
               data: (selectedArt as any).data,
             });
-            
+
             // 替换原始图像
             const oldIndex = canvas.getObjects().indexOf(selectedArt);
             canvas.remove(selectedArt);
             canvas.insertAt(fabricImage, oldIndex, false);
             canvas.setActiveObject(fabricImage);
-            
+
             // 应用角控件
-            if (typeof (canvas as any).addIconControlsToObject === 'function') {
-              (canvas as any).addIconControlsToObject(fabricImage);
-            }
-            
+            applyCornerControls({ canvas, obj: fabricImage });
+
             canvas.renderAll();
-            
+
             // 清理 URL
             URL.revokeObjectURL(url);
-            
+
             onUpdate();
           }
         });

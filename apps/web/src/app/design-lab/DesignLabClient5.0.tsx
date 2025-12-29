@@ -21,7 +21,7 @@ import TextPanel from './components/panels/TextPanel'; // [2025-12-16 07:10:00] 
 import EditTextPanel from './components/panels/EditTextPanel'; // [2025-12-16 07:10:00] 5.0 版本：Add Text - 复用 4.0 EditTextPanel
 import ArtPanel from './components/panels/ArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 素材库面板
 import ProductColorsPanel from './components/panels/ProductColorsPanel'; // [2025-12-20] 5.0 版本：Product Colors - 颜色选择面板
-import EditArtPanel from './components/panels/EditArtPanel'; // [2025-01-30 12:58:00] 5.0 版本：Add Art - 编辑面板
+import { registerUniversalCornerControls, applyCornerControls } from '../design-lab5/upload-controls/registerUploadCornerControls';
 import * as fabric from 'fabric';
 import ProductCatalogModal from './components/modals/ProductCatalogModal';
 import { PRODUCT_COLORS } from '@/lib/product-data';

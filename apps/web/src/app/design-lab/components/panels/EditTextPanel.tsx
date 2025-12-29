@@ -13,6 +13,7 @@ import { fontsApi, type Font } from '@/lib/api';
 import { FONT_CATEGORY_LABELS, type FontCategory } from '@/data/fonts';
 import { TextEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:40:00 复用 Text 工具栏组件
 import ColorPicker from '../ColorPicker';
+import { applyCornerControls } from '../../../design-lab5/upload-controls/registerUploadCornerControls';
 
 interface EditTextPanelProps {
   selectedText: fabric.IText | null;
@@ -599,9 +600,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
 
       canvas.add(cloned);
       // [2025-12-16 07:10:00] Add Text: 复用 5.0 图标角控件（delete/duplicate/resize）
-      if (typeof (canvas as any).addIconControlsToObject === 'function') {
-        (canvas as any).addIconControlsToObject(cloned);
-      }
+      applyCornerControls({ canvas, obj: cloned });
       canvas.setActiveObject(cloned);
       canvas.renderAll();
       onUpdate();

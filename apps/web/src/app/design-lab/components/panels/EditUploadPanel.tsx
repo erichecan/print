@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 // [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用命名空间导入
 import * as fabric from 'fabric';
 import { UploadEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:35:10 复用 Upload 工具栏组件
-import { applyUploadCornerControlsToObject } from '../../../design-lab5/upload-controls/registerUploadCornerControls'; // [2025-12-16 05:10:00] 导入角控件应用函数
+import { applyCornerControls } from '../../../design-lab5/upload-controls/registerUploadCornerControls'; // [2025-12-16 05:10:00] 导入角控件应用函数
 
 interface EditUploadPanelProps {
   selectedImage: fabric.Image | null;
@@ -22,9 +22,9 @@ interface EditUploadPanelProps {
   onOpenRatingModal?: () => void;
 }
 
-const EditUploadPanel: React.FC<EditUploadPanelProps> = ({ 
-  selectedImage, 
-  canvas, 
+const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
+  selectedImage,
+  canvas,
   onUpdate,
   onReset,
   onSave,
@@ -55,16 +55,16 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       // 计算实际尺寸（考虑缩放）
       const actualWidth = (selectedImage.width || 0) * (selectedImage.scaleX || 1);
       const actualHeight = (selectedImage.height || 0) * (selectedImage.scaleY || 1);
-      
+
       // 转换为英寸（假设 300 DPI）
       const dpi = 300;
       const widthInches = actualWidth / dpi;
       const heightInches = actualHeight / dpi;
-      
+
       setSize({ width: actualWidth, height: actualHeight }); // 像素单位
       setSizeInches({ width: widthInches, height: heightInches }); // 英寸单位
       setRotation(selectedImage.angle || 0);
-      
+
       // [2025-12-08] 保存原始宽高比
       if (actualHeight > 0) {
         setOriginalAspectRatio(actualWidth / actualHeight);
@@ -79,18 +79,18 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       console.warn('[EditUploadPanel] handleCenter: selectedImage or canvas is null');
       return;
     }
-    
+
     console.log('[EditUploadPanel] Centering image');
     const canvasWidth = canvas.width || 1000;
     const canvasHeight = canvas.height || 1200;
-    
+
     selectedImage.set({
       left: canvasWidth / 2,
       top: canvasHeight / 2,
       originX: 'center',
       originY: 'center'
     });
-    
+
     selectedImage.setCoords();
     canvas.renderAll();
     onUpdate();
@@ -143,7 +143,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       // [2025-12-16 04:50:00] 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
       // 如果没有找到商品底图，则移动到索引 0（最底层）
       const targetIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
-      
+
       // [2025-12-16 04:50:00] 添加调试日志
       console.log('[EditUploadPanel] sendToBack called:', {
         currentIndex,
@@ -229,15 +229,15 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     try {
       // Fabric.js v6 clone 可能是同步或异步的，需要兼容处理
       const cloneResult = (selectedImage as any).clone();
-      
+
       // 如果返回 Promise，等待它
-      const cloned = cloneResult instanceof Promise 
-        ? await cloneResult 
+      const cloned = cloneResult instanceof Promise
+        ? await cloneResult
         : typeof cloneResult === 'function'
           ? await new Promise<fabric.Image>((resolve) => {
-              // 如果是回调形式的 clone
-              (selectedImage as any).clone(resolve);
-            })
+            // 如果是回调形式的 clone
+            (selectedImage as any).clone(resolve);
+          })
           : cloneResult;
 
       if (!cloned) {
@@ -257,23 +257,17 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       }
 
       canvas.add(cloned);
-      
-      // [2025-12-16 06:21:10] 修复根因：5.0 使用 canvas.addIconControlsToObject（旧体系）；4.0/5.1 使用 applyUploadCornerControlsToObject（新体系）
-      // 这里做自适应：优先走 5.0 的 addIconControlsToObject，保证“工具栏复制”和“三角控件复制”一致
-      try {
-        if (typeof (canvas as any).addIconControlsToObject === 'function') {
-          (canvas as any).addIconControlsToObject(cloned);
-        } else {
-          applyUploadCornerControlsToObject({ canvas, obj: cloned });
-        }
 
+      // [2025-12-16 06:21:10] 修复根因：统一使用 applyCornerControls
+      try {
+        applyCornerControls({ canvas, obj: cloned });
         console.log('[EditUploadPanel] ✅ 角控件已应用到复制的对象');
       } catch (error) {
-        console.warn('[EditUploadPanel] ⚠️ 应用角控件失败（object:added 事件会自动应用）:', error);
+        console.warn('[EditUploadPanel] ⚠️ 应用角控件失败:', error);
       }
-      
+
       canvas.setActiveObject(cloned);
-      
+
       canvas.renderAll();
       onUpdate();
     } catch (error) {
@@ -284,28 +278,28 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   // [2025-12-08] 处理尺寸变化
   const handleSizeChange = (widthInches: number, heightInches: number) => {
     if (!selectedImage) return;
-    
+
     // 转换为像素（300 DPI）
     const dpi = 300;
     const widthPixels = widthInches * dpi;
     const heightPixels = heightInches * dpi;
-    
+
     // 计算缩放比例
     const originalWidth = selectedImage.width || 1;
     const originalHeight = selectedImage.height || 1;
     const scaleX = widthPixels / originalWidth;
     const scaleY = heightPixels / originalHeight;
-    
+
     selectedImage.set({
       scaleX,
       scaleY
     });
     selectedImage.setCoords();
-    
+
     // 更新状态
     setSize({ width: widthPixels, height: heightPixels });
     setSizeInches({ width: widthInches, height: heightInches });
-    
+
     if (canvas) {
       canvas.renderAll();
       onUpdate();
@@ -316,7 +310,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   const handleRotationSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const angle = parseFloat(e.target.value);
     setRotation(angle);
-    
+
     if (selectedImage) {
       selectedImage.set('angle', angle);
       selectedImage.setCoords();
@@ -344,14 +338,14 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   // [2025-01-30 23:30:00] Reset To Original
   const handleReset = () => {
     if (!selectedImage || !originalImageData) return;
-    
+
     fabric.Image.fromURL(originalImageData, (img) => {
       if (canvas && selectedImage) {
         const left = selectedImage.left;
         const top = selectedImage.top;
         const scaleX = selectedImage.scaleX;
         const scaleY = selectedImage.scaleY;
-        
+
         canvas.remove(selectedImage);
         img.set({
           left,
@@ -390,9 +384,9 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     <div className="dl-edit-upload-panel">
       <div className="dl-edit-upload-panel__header">
         <h2 className="dl-edit-upload-panel__title">Edit Upload</h2>
-        <button 
-          className="dl-edit-upload-panel__close" 
-          aria-label="Close" 
+        <button
+          className="dl-edit-upload-panel__close"
+          aria-label="Close"
           type="button"
           onClick={onClose}
         >
