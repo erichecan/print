@@ -1,5 +1,7 @@
 'use client';
 
+import { restoreCanvasFromSnapshot } from './utils/canvasRestore';
+
 /**
  * Design Lab 5.0 - 极简版本
  * [2025-12-20 02:20:00] 完全参考 Custom Ink，使用最简单的 HTML/CSS 实现
@@ -394,6 +396,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   const {
     saveDesign: saveDesignInternal,
+    loadDesign: loadDesignInternal,
     shareDesignLink,
     isSaving,
     error: designError,
@@ -720,6 +723,79 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const handleShareDesign = async (shareUrl: string) => {
     console.log('[DesignLab 5.0] 设计分享:', shareUrl);
     // 可以添加埋点或其他处理
+  };
+
+  // [2025-12-28] 加载模块：加载已保存的设计
+  const handleLoadDesign = async (designIdParam: string, sourceParam: string | null) => {
+    try {
+      console.log('[DesignLab 5.0] ===== LOAD START =====');
+      console.log('[DesignLab 5.0] Design ID:', designIdParam, 'Source:', sourceParam);
+
+      // Load design data using useDesign hook
+      const loadedDesign = await loadDesignInternal(designIdParam);
+
+      if (!loadedDesign) {
+        console.error('[DesignLab 5.0] ❌ Failed to load design');
+        alert('Failed to load design. Please try again.');
+        return;
+      }
+
+      console.log('[DesignLab 5.0] ✅ Design loaded:', loadedDesign.name);
+      console.log('[DesignLab 5.0] Full design object:', loadedDesign);
+
+      // Backend returns canvas data in 'canvas' field, not 'canvasSnapshot'
+      const canvasData = loadedDesign.canvas || loadedDesign.canvasSnapshot;
+
+      console.log('[DesignLab 5.0] Canvas data check:', {
+        hasCanvasData: !!canvasData,
+        canvasObjectCount: canvasData?.objects?.length || 0,
+        fabricCanvasExists: !!fabricCanvasRef.current,
+        canvasInitialized: canvasInitialized,
+        canvasDataKeys: canvasData ? Object.keys(canvasData) : []
+      });
+
+      // Restore canvas objects - wait for canvas if needed
+      if (canvasData) {
+        if (!fabricCanvasRef.current) {
+          console.log('[DesignLab 5.0] ⏳ Canvas not ready, waiting for initialization...');
+          // Wait up to 3 seconds for canvas to initialize
+          let retries = 30;
+          while (!fabricCanvasRef.current && retries > 0) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries--;
+          }
+
+          if (!fabricCanvasRef.current) {
+            console.error('[DesignLab 5.0] ❌ Canvas failed to initialize after waiting');
+            alert('Canvas initialization failed. Please refresh and try again.');
+            return;
+          }
+          console.log('[DesignLab 5.0] ✅ Canvas is now ready');
+        }
+
+        console.log('[DesignLab 5.0] Restoring canvas from snapshot...');
+        await restoreCanvasFromSnapshot(fabricCanvasRef.current, canvasData);
+        console.log('[DesignLab 5.0] ✅ Canvas restored successfully');
+      } else {
+        console.log('[DesignLab 5.0] ⚠️ No canvas data to restore - design may be empty');
+      }
+
+      // Load product info if available
+      if (loadedDesign.variant) {
+        console.log('[DesignLab 5.0] Updating product info from loaded design');
+        setProductInfo(prev => ({
+          ...prev,
+          productId: loadedDesign.variant!.product.id,
+          productName: loadedDesign.variant!.product.name,
+          colorId: loadedDesign.variant!.id,
+        }));
+      }
+
+      console.log('[DesignLab 5.0] ===== LOAD COMPLETE =====');
+    } catch (error: any) {
+      console.error('[DesignLab 5.0] ❌ Load error:', error);
+      alert(`Failed to load design: ${error.message || error}`);
+    }
   };
 
   // [2025-12-18 21:23:43] 报价模块：获取报价数据（用于 GetPriceFlowModal）
@@ -2545,6 +2621,19 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     return () => clearTimeout(timer);
   }, [currentView, productInfo.baseImages, canvasInitialized]); // 保持 canvasInitialized 依赖作为触发源之一
+
+  // [2025-12-28] 加载模块：从 URL 参数加载设计
+  useEffect(() => {
+    if (!searchParams) return;
+
+    const designIdParam = searchParams.get('designId');
+    const sourceParam = searchParams.get('source');
+
+    if (designIdParam && canvasInitialized && !designId) {
+      console.log('[DesignLab 5.0] Detected designId in URL, loading design...');
+      handleLoadDesign(designIdParam, sourceParam);
+    }
+  }, [searchParams, canvasInitialized, designId]); // Only run when canvas is initialized and we don't already have a design loaded
 
   // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 文件上传处理函数
   // [2025-12-20 03:20:00] 步骤2 - 更新：添加图片到 Fabric canvas

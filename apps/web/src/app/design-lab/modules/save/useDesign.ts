@@ -200,14 +200,26 @@ export function useDesign({
    */
   const loadDesign = useCallback(async (id: string): Promise<DesignDraft | null> => {
     try {
+      console.log('[useDesign] Loading design:', id);
       const design = await getDesign(id);
+
       setDesignId(design.id);
       setDesignName(design.name);
+
+      console.log('[useDesign] ✅ Design loaded successfully:', {
+        id: design.id,
+        name: design.name,
+        hasCanvas: !!design.canvasSnapshot,
+        objectCount: design.canvasSnapshot?.objects?.length || 0,
+        hasVariant: !!design.variant,
+        productName: design.variant?.product?.name
+      });
+
       return design;
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load design');
       setError(error);
-      console.error('[useDesign] Failed to load design:', error);
+      console.error('[useDesign] ❌ Failed to load design:', error);
       return null;
     }
   }, []);

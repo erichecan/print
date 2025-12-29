@@ -8,7 +8,15 @@ export interface DesignDraft {
   id: string;
   name: string;
   canvas: any;
+  canvasSnapshot?: any; // [2025-12-28] Add canvas snapshot for loading
   productVariantId?: string;
+  variant?: {
+    id: string;
+    product: {
+      id: string;
+      name: string;
+    };
+  };
   createdAt?: string;
   updatedAt?: string;
   shareToken?: string;
