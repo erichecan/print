@@ -3396,6 +3396,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   canvas={fabricCanvasRef.current}
                   onUpdate={handleCanvasUpdate}
                   onClose={handleBackToHome}
+                  onSave={() => setShowSaveShareModal(true)}
                 />
               )}
 
