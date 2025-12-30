@@ -4474,7 +4474,7 @@ return (
         {!canvasInitError && (
           <>
             <canvas ref={canvasRef} className="dl-canvas__fabric" />
-            <FloatingObjectControls canvas={fabricCanvasRef.current} />
+            <FloatingObjectControls canvas={fabricCanvasRef.current} fabricModule={fabricRef.current} />
           </>
         )}
       </div>

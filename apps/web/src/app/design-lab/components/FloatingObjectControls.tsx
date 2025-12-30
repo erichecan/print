@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import * as fabric from 'fabric';
+import type * as fabric from 'fabric';
 
 interface FloatingObjectControlsProps {
     canvas: fabric.Canvas | null;
+    fabricModule: any;
 }
 
 interface ControlButtonProps {
@@ -47,28 +48,30 @@ const ControlButton: React.FC<ControlButtonProps> = ({ icon, onClick, onMouseDow
     </div>
 );
 
-export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ canvas }) => {
+export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ canvas, fabricModule }) => {
     const [activeObject, setActiveObject] = useState<fabric.Object | null>(null);
     const [coords, setCoords] = useState<{ tl: { x: number, y: number }; tr: { x: number, y: number }; bl: { x: number, y: number }; br: { x: number, y: number } } | null>(null);
 
-    // Ref to track active object without triggering re-renders for logic that doesn't need UI updates
     const activeObjectRef = useRef<fabric.Object | null>(null);
 
     // Update coordinates
     const updateCoords = useCallback(() => {
-        if (!canvas || !activeObjectRef.current) {
+        if (!canvas || !activeObjectRef.current || !fabricModule) {
             setCoords(null);
             return;
         }
         const obj = activeObjectRef.current;
 
-        // We need to calculate the screen coordinates of the object's corners
-        const objCoords = obj.getCoords(); // [{x,y}, {x,y}, ...] (tl, tr, br, bl)
+        // transformPoint is likely in fabricModule.util or fabricModule directly depending on v5/v6 packaging
+        // In v6, it is often fabric.util.transformPoint
+        const util = fabricModule.util || fabricModule;
+        if (!util || !util.transformPoint) return;
+
+        const objCoords = obj.getCoords();
 
         const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
         const canvasEl = canvas.getElement();
 
-        // Calculate CSS scaling (Ratio of displayed size vs logical size)
         const logicalWidth = canvas.getWidth();
         const logicalHeight = canvas.getHeight();
         const cssWidth = canvasEl.clientWidth;
@@ -78,7 +81,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const scaleY = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
 
         const transformToCss = (point: fabric.Point) => {
-            const p = fabric.util.transformPoint(point, vpt);
+            const p = util.transformPoint(point, vpt);
             return {
                 x: p.x * scaleX,
                 y: p.y * scaleY
@@ -91,7 +94,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const bl = transformToCss(objCoords[3]);
 
         setCoords({ tl, tr, br, bl });
-    }, [canvas]);
+    }, [canvas, fabricModule]);
 
     useEffect(() => {
         if (!canvas) return;
@@ -99,7 +102,6 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const handleSelection = (e: any) => {
             const selected = e.selected?.[0] || canvas.getActiveObject();
 
-            // Filter out unwanted objects
             if (selected && (
                 selected.name === 'background' ||
                 selected.name?.startsWith('product-image-') ||
@@ -112,7 +114,6 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
             }
 
             if (selected) {
-                // Disable default controls
                 selected.hasControls = false;
                 selected.hasBorders = true;
 
@@ -146,7 +147,6 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         canvas.on('mouse:wheel', handleTransform);
         canvas.on('after:render', updateCoords);
 
-        // Initial check
         if (canvas.getActiveObject()) {
             handleSelection({ selected: [canvas.getActiveObject()] });
         }
@@ -175,7 +175,6 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
 
     const handleCopy = () => {
         if (activeObject && canvas) {
-            // Fabric v6 clone returns a Promise
             activeObject.clone().then((cloned: fabric.Object) => {
                 if (!cloned) return;
                 cloned.set({
@@ -188,7 +187,6 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
 
                 if (cloned.type === 'activeSelection' || cloned.type === 'group') {
                     cloned.canvas = canvas;
-                    // Use 'any' cast to avoid TS error if forEachObject is missing in generic Object type
                     if ((cloned as any).forEachObject) {
                         (cloned as any).forEachObject((obj: fabric.Object) => {
                             canvas.add(obj);
@@ -205,12 +203,14 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         }
     };
 
-    // Resize Handler
     const handleResizeMouseDown = (e: React.MouseEvent) => {
-        if (!activeObject || !canvas) return;
+        if (!activeObject || !canvas || !fabricModule) return;
 
         e.preventDefault();
         e.stopPropagation();
+
+        const util = fabricModule.util || fabricModule;
+        if (!util || !util.transformPoint) return;
 
         const startX = e.clientX;
         const startY = e.clientY;
@@ -226,7 +226,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const cssScaleX = logicalWidth > 0 ? canvasRect.width / logicalWidth : 1;
         const cssScaleY = logicalHeight > 0 ? canvasRect.height / logicalHeight : 1;
 
-        const centerP = fabric.util.transformPoint(center, vpt);
+        const centerP = util.transformPoint(center, vpt);
         const centerX = canvasRect.left + (centerP.x * cssScaleX);
         const centerY = canvasRect.top + (centerP.y * cssScaleY);
 
@@ -249,7 +249,6 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
             });
 
             canvas.requestRenderAll();
-            // Pass 'any' to avoid type mismatch for custom event
             canvas.fire('object:scaling', { target: activeObject } as any);
         };
 
@@ -265,7 +264,6 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
 
     if (!activeObject || !coords) return null;
 
-    // Icons
     const trashIcon = (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="3 6 5 6 21 6"></polyline>
