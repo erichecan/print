@@ -16,7 +16,8 @@ export function VersionChecker() {
         setCurrentVersion(buildSha);
 
         // 开发环境不检查版本
-        if (buildSha === 'dev') {
+        if (buildSha === 'dev' || process.env.NODE_ENV === 'development') {
+            console.log('[Version Checker] Skipping version check in development');
             return;
         }
 
@@ -57,16 +58,29 @@ export function VersionChecker() {
         return () => clearInterval(interval);
     }, []);
 
-    const handleRefresh = () => {
-        // 清除所有缓存并刷新页面
-        if ('caches' in window) {
-            caches.keys().then((names) => {
-                names.forEach((name) => {
-                    caches.delete(name);
-                });
-            });
+    const handleRefresh = async () => {
+        try {
+            // 1. Unregister Service Workers
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for (const registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+
+            // 2. Clear Cache Storage
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(
+                    keys.map((key) => caches.delete(key))
+                );
+            }
+        } catch (error) {
+            console.error('[Version Checker] Error clearing cache:', error);
+        } finally {
+            // 3. Force Reload (true forces reload from server in some browsers, though deprecated in standard)
+            window.location.reload();
         }
-        window.location.reload();
     };
 
     const handleDismiss = () => {
