@@ -19,9 +19,10 @@ interface EditTextPanelProps {
   selectedText: fabric.IText | null;
   canvas: fabric.Canvas | null;
   onUpdate: () => void;
+  onSave?: () => void;
 }
 
-const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onUpdate }) => {
+const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onUpdate, onSave }) => {
   const [text, setText] = useState('');
   const [fontFamily, setFontFamily] = useState('Arial');
   const [fontSize, setFontSize] = useState(48);
@@ -799,6 +800,18 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
         onTextAlignChange={handleTextAlignChange}
         onDuplicate={handleDuplicate}
       />
+
+      {/* Action Buttons */}
+      <div className="dl-edit-text-panel__section">
+        <button
+          className="dl-edit-text-panel__btn dl-edit-text-panel__btn--primary"
+          onClick={onSave}
+          type="button"
+          style={{ width: '100%', marginTop: '10px' }}
+        >
+          Save Design
+        </button>
+      </div>
 
       {/* [2025-12-08] 超出安全区警示 */}
       {isOutOfSafeArea && (

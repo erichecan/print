@@ -16,6 +16,7 @@ interface EditArtPanelProps {
   canvas: fabric.Canvas | null;
   onUpdate: () => void;
   onChangeArt: () => void; // [2025-01-30 18:05:00] 重新选择 Art，返回到 Art Categories
+  onSave?: () => void;
 }
 
 // [2025-12-04 21:55:00] 像素转英寸转换函数（假设 150 DPI）
@@ -24,7 +25,7 @@ const pixelsToInches = (pixels: number): number => {
   return pixels / dpi;
 };
 
-const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpdate, onChangeArt }) => {
+const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpdate, onChangeArt, onSave }) => {
   const [rotation, setRotation] = useState(0);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 });
@@ -431,14 +432,26 @@ const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpda
 
 
       {/* 8. Add New Art - [2025-01-30 13:45:00] 修改为 Add New Art（不是替换） */}
+      {/* 8. Add New Art & Save Design */}
       <div className="dl-edit-art-panel__section">
-        <button
-          className="dl-edit-art-panel__btn dl-edit-art-panel__btn--primary"
-          onClick={onChangeArt}
-          type="button"
-        >
-          Add New Art
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            className="dl-edit-art-panel__btn dl-edit-art-panel__btn--outline"
+            onClick={onChangeArt}
+            type="button"
+            style={{ flex: 1, border: '1px solid #ccc', background: 'transparent', color: '#333' }}
+          >
+            Add New Art
+          </button>
+          <button
+            className="dl-edit-art-panel__btn dl-edit-art-panel__btn--primary"
+            onClick={onSave}
+            type="button"
+            style={{ flex: 1 }}
+          >
+            Save Design
+          </button>
+        </div>
       </div>
     </div>
   );

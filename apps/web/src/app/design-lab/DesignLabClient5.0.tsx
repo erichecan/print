@@ -3451,7 +3451,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       Back
                     </button>
                   </div>
-                  <EditTextPanel selectedText={selectedText} canvas={fabricCanvasRef.current} onUpdate={handleCanvasUpdate} />
+                  <EditTextPanel selectedText={selectedText} canvas={fabricCanvasRef.current} onUpdate={handleCanvasUpdate} onSave={handleSaveRequest} />
                 </>
               )}
 
@@ -3492,10 +3492,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     canvas={fabricCanvasRef.current}
                     onUpdate={handleCanvasUpdate}
                     onChangeArt={() => {
-                      // [2025-01-30 12:58:00] 返回 Art 选择面板
                       setSelectedArt(null);
                       setToolPanelType('art');
                     }}
+                    onSave={handleSaveRequest}
                   />
                 </>
               )}
