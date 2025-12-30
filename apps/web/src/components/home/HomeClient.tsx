@@ -46,7 +46,7 @@ export function HomeClient() {
       <section className="hero" aria-labelledby="hero-heading">
         <div className="container hero__grid">
           <div>
-            <div style={{ marginBottom: '20px', fontSize: '28px', fontWeight: 700, color: '#1f2937', whiteSpace: 'nowrap', display: 'flex', gap: '30px', alignItems: 'center' }}>
+            <div style={{ marginBottom: '20px', fontSize: '26px', fontWeight: 700, color: '#1f2937', whiteSpace: 'nowrap', display: 'flex', gap: '30px', alignItems: 'center' }}>
               <span>📞 416-916-6352</span>
               <span>✉️ dtfsouvenir@gmail.com</span>
             </div>
