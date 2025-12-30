@@ -3367,12 +3367,10 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
 
     console.log('[DesignLab] ✅ 通用角控件已注册（upload/text/art 三类对象）');
 
+
     // [2025-12-16 02:50:00] 为现有对象应用角控件（如果 canvas 上已有对象）
-    fabricCanvas.getObjects().forEach((obj) => {
-      if (matcher(obj)) {
-        applyUploadCornerControlsToObject({ canvas: fabricCanvas, obj });
-      }
-    });
+    // [2025-01-31] REMOVED: Using FloatingObjectControls instead.
+
   } catch (error) {
     console.error('[DesignLab] ❌ 注册通用角控件失败:', error);
     // 不阻断初始化，但记录错误
