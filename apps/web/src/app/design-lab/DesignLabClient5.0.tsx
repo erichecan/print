@@ -16,6 +16,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation'; // [2025-12-20 03:05:00] 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
+import { useAuth } from '@/contexts/AuthContext'; // [2025-01-30] Import useAuth
+import { QuickLoginModal } from '@/components/auth/QuickLoginModal'; // [2025-01-30] Import QuickLoginModal
 import { getDefaultProductBaseImages, getThumbnailImageUrl, getProductBaseImagesFromAPI } from '@/lib/customink-images';
 import UploadPanel from './components/panels/UploadPanel'; // [2025-12-20 03:15:00] 5.0 版本：步骤1 - 集成 UploadPanel 组件
 import EditUploadPanel from './components/panels/EditUploadPanel'; // [2025-12-14 05:50:00] 5.0 版本：上传图片编辑面板
@@ -412,6 +414,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-12-18 21:20:48] 保存模块：SaveShareModal 状态
   const [showSaveShareModal, setShowSaveShareModal] = useState(false);
+  const [showQuickLoginModal, setShowQuickLoginModal] = useState(false); // [2025-01-30] Quick Login Modal state
+  const { user } = useAuth(); // [2025-01-30] Get user from AuthContext
+
+  // [2025-01-30] Handle save request with auth check
+  const handleSaveRequest = () => {
+    if (user) {
+      setShowSaveShareModal(true);
+    } else {
+      setShowQuickLoginModal(true);
+    }
+  };
 
   // [2025-12-18 21:23:43] 报价模块：使用 usePricing hook
   const {
@@ -3396,7 +3409,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   canvas={fabricCanvasRef.current}
                   onUpdate={handleCanvasUpdate}
                   onClose={handleBackToHome}
-                  onSave={() => setShowSaveShareModal(true)}
+                  onSave={handleSaveRequest} // [2025-01-30] Use handleSaveRequest
                 />
               )}
 
@@ -3702,7 +3715,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         <div className="dl-bottom-bar__right">
           <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
-            onClick={() => setShowSaveShareModal(true)}
+            onClick={handleSaveRequest} // [2025-01-30] Use handleSaveRequest
             type="button"
             style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
           >
@@ -3749,6 +3762,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         isOpen={isCatalogModalOpen}
         onClose={() => setIsCatalogModalOpen(false)}
         onSelectProduct={handleProductSelect}
+      />
+
+      <QuickLoginModal
+        isOpen={showQuickLoginModal}
+        onClose={() => setShowQuickLoginModal(false)}
+        onLoginSuccess={() => {
+          setShowQuickLoginModal(false);
+          setShowSaveShareModal(true); // Continue to save after login
+        }}
       />
 
       <SaveShareModal
