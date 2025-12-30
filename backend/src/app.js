@@ -38,7 +38,7 @@ const corsOptions = {
   origin: (origin, callback) => {
     // [2025-01-29 02:00:00] 允许没有 origin 的请求（如移动应用或 Postman）
     if (!origin) return callback(null, true);
-    
+
     // [2025-01-29 02:00:00] 检查 origin 是否在允许列表或本地域名列表中
     if (allowedOrigins.includes(origin) || localhostOriginPattern.test(origin)) {
       callback(null, true);
@@ -62,9 +62,9 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'X-Requested-With', 
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
     'Cookie',
     'x-playwright-e2e', // [2025-12-01] 允许 Playwright 测试头
     'Accept',
@@ -256,6 +256,7 @@ app.use('/api/comments', require('./routes/designComments')); // [2025-01-27 21:
 app.use('/api/reviews', require('./routes/productReviews')); // [2025-01-27 21:45:00] Product review actions (helpful)
 app.use('/api/contact', require('./routes/contact')); // [2025-01-27 19:10:00] Contact form routes
 app.use('/api', require('./routes/guestMessages')); // [2025-12-10 00:00:00] Guest messages routes (留言本)
+app.use('/api/testimonials', require('./routes/testimonialRoutes')); // [2025-12-30] Testimonial routes
 app.use('/api/coupons', require('./routes/coupons')); // [2025-01-27 19:40:00] Coupon routes
 app.use('/api/payment-methods', require('./routes/paymentMethods')); // [2025-12-06 17:20:00] Payment method management routes for Issue #112
 app.use('/api/chat', require('./routes/chat')); // [2025-12-07 01:30:00] Customer service chat routes for Issue #144

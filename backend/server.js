@@ -152,9 +152,6 @@ const io = initializeChatServer(httpServer);
 logger.info('✅ Socket.IO chat server initialized');
 
 // [2025-12-07 03:50:00] 立即启动服务器监听，不等待数据库连接测试
-// [2025-12-30] Testimonial Routes
-const testimonialRoutes = require('./src/routes/testimonialRoutes');
-app.use('/api/testimonials', testimonialRoutes);
 
 // Start Server
 const server = httpServer.listen(PORT, () => {
