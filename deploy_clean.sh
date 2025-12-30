@@ -83,4 +83,13 @@ gcloud run deploy $SERVICE_NAME \
 # echo "🧹 Invalidating CDN Cache..."
 # gcloud compute url-maps invalidate-cdn-cache $URLMAP --path "/*" --project $PROJECT_ID
 
+# ==========================================
+# 4. Post-Deployment Configuration
+# ==========================================
+echo "🌱 Seeding remote database configuration..."
+# Ensure the script is executable
+chmod +x backend/scripts/seed-remote-size-pricing.sh
+# Run the remote seeding script
+./backend/scripts/seed-remote-size-pricing.sh
+
 echo "✅ Clean Deployment Complete!"
