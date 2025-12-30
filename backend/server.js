@@ -9,13 +9,13 @@ const PORT = process.env.PORT || 3001; // [2025-01-27 17:05:00] 默认端口改�
 // [2025-01-29 14:50:00] 验证 DATABASE_URL 环境变量
 const validateDatabaseUrl = () => {
   const databaseUrl = process.env.DATABASE_URL;
-  
+
   if (!databaseUrl) {
     console.error('[2025-01-29 14:50:00] ❌ DATABASE_URL environment variable is not set');
     console.error('[2025-01-29 14:50:00]    请检查 Secret Manager 中的 database-url secret 是否正确配置');
     throw new Error('DATABASE_URL environment variable is required');
   }
-  
+
   // [2025-01-29 14:50:00] 验证 URL 格式
   if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
     console.error('[2025-01-29 14:50:00] ❌ Invalid DATABASE_URL format');
@@ -23,7 +23,7 @@ const validateDatabaseUrl = () => {
     console.error('[2025-01-29 14:50:00]    当前格式:', databaseUrl.substring(0, 30) + '...');
     throw new Error(`Invalid DATABASE_URL format. Expected postgresql:// or postgres://, got: ${databaseUrl.substring(0, 30)}...`);
   }
-  
+
   // [2025-01-29 14:50:00] 记录 URL 前缀（不暴露密码）
   try {
     const urlParts = databaseUrl.split('@');
@@ -42,7 +42,7 @@ const validateJwtSecret = () => {
   const DEFAULT_JWT_SECRET = 'your_jwt_secret_key_change_in_production';
   const jwtSecret = process.env.JWT_SECRET;
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   if (!jwtSecret || jwtSecret === DEFAULT_JWT_SECRET) {
     if (isProduction) {
       console.error('[2025-12-02 03:55:00] ❌ CRITICAL: JWT_SECRET is not set or using default value in PRODUCTION!');
@@ -93,26 +93,26 @@ const runMigrationsIfEnabled = () => {
     if (process.env.AUTO_MIGRATE === 'true') {
       logger.info('🔧 AUTO_MIGRATE=true detected. Running database migrations...');
       try {
-        execSync('node scripts/run-migrations.js', { 
+        execSync('node scripts/run-migrations.js', {
           stdio: 'inherit',
           timeout: 60000, // 60秒超时
         });
         logger.info('✅ Database migrations completed.');
-        
+
         // [2025-01-11 14:52:00] 迁移后自动修复 base_price 列问题
         // [2025-01-11 14:58:00] 使用直接 SQL 脚本，不依赖 Prisma Client
         try {
           logger.info('🔧 Running database column fix (direct SQL)...');
-          execSync('node scripts/fix-base-price-direct-sql.js', { 
+          execSync('node scripts/fix-base-price-direct-sql.js', {
             stdio: 'inherit',
             timeout: 30000, // 30秒超时
             cwd: __dirname,
           });
           logger.info('✅ Database column fix completed.');
-          
+
           // [2025-01-11 14:55:00] 修复后重新生成 Prisma Client 以确保使用正确的 schema
           logger.info('🔧 Regenerating Prisma Client after column fix...');
-          execSync('npx prisma generate --schema=./prisma/schema.prisma', { 
+          execSync('npx prisma generate --schema=./prisma/schema.prisma', {
             stdio: 'inherit',
             timeout: 30000,
             cwd: __dirname,
@@ -152,12 +152,17 @@ const io = initializeChatServer(httpServer);
 logger.info('✅ Socket.IO chat server initialized');
 
 // [2025-12-07 03:50:00] 立即启动服务器监听，不等待数据库连接测试
-httpServer.listen(PORT, () => {
+// [2025-12-30] Testimonial Routes
+const testimonialRoutes = require('./src/routes/testimonialRoutes');
+app.use('/api/testimonials', testimonialRoutes);
+
+// Start Server
+const server = httpServer.listen(PORT, () => {
   logger.info(`🚀 Server running on port ${PORT}`);
   logger.info(`📡 API available at http://localhost:${PORT}/api`);
   logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  
+
   // [2025-12-07 03:50:00] 服务器启动后，异步测试数据库连接和运行迁移
   testConnection().then(() => {
     logger.info('✅ Database connection verified');

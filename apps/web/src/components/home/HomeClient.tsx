@@ -11,6 +11,7 @@ import { contentApi } from '@/lib/api';
 
 import { DatabaseCategoriesSection } from './DatabaseCategoriesSection';
 import { InkerSupportSection } from './InkerSupportSection';
+import TestimonialCarousel from '../TestimonialCarousel';
 
 export function HomeClient() {
   // [2025-01-28 06:35:00] 从 CMS 获取首页内容
@@ -138,26 +139,8 @@ export function HomeClient() {
       {/* [2025-01-29 04:00:00] Shop by Category moved up */}
       <DatabaseCategoriesSection />
 
-      <section className="testimonials" aria-labelledby="testimonials-heading">
-        <div className="container">
-          <h2 id="testimonials-heading" style={{ textAlign: 'center', marginBottom: '32px' }}>
-            Loved by teams big and small
-          </h2>
-          <div className="testimonials__grid">
-            {testimonials.map((testimonial) => (
-              <article className="testimonial-card" key={testimonial.id} aria-label="Customer testimonial">
-                <div className="testimonial-card__stars" aria-hidden="true">
-                  {Array.from({ length: testimonial.stars }).map((_, index) => (
-                    <span key={index}>★</span>
-                  ))}
-                </div>
-                <p>{testimonial.quote}</p>
-                <footer>— {testimonial.author}</footer>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* [2025-01-30 04:30:00] Replaced static testimonials with dynamic carousel from Amazon reviews */}
+      <TestimonialCarousel />
 
       {/* [2025-12-28 20:05:00] Inker Support Section (Replicated from Custom Ink) */}
       <InkerSupportSection />

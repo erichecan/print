@@ -3450,30 +3450,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               {toolPanelType === 'product-colors' && (
                 <ProductColorsPanel
                   productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
-                  colors={(() => {
-                    // [2025-12-21] Fix: Use dynamic colors from DB if available, fallback to static list
-                    if (productInfo.variants && productInfo.variants.length > 0) {
-                      const uniqueColors = new Map<string, any>();
-                      productInfo.variants.forEach((v: any) => {
-                        if (!v.color) return;
-                        if (!uniqueColors.has(v.color)) {
-                          uniqueColors.set(v.color, {
-                            name: v.color,
-                            hex: v.colorHex || PRODUCT_COLORS.find(c => c.name === v.color)?.hex || '#cccccc',
-                            availableSizes: [],
-                            isAvailable: true
-                          });
-                        }
-                        if (v.size) uniqueColors.get(v.color).availableSizes.push(v.size);
-                      });
-                      return Array.from(uniqueColors.values());
-                    }
-                    return PRODUCT_COLORS;
-                  })()}
+                  colors={PRODUCT_COLORS}
                   selectedColor={productInfo.color}
-                  onSelectColor={(colorName) => {
-                    handleColorSelect(colorName);
-                  }}
+                  onSelectColor={handleColorSelect}
                   onClose={handleBackToHome}
                 />
               )}

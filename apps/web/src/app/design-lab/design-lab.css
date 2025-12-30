@@ -4328,16 +4328,18 @@
 /* Compact Color Grid for Panel - Matching Product List Page Filters */
 .dl-product-colors-panel .dl-colors-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 28px);
-  gap: 8px;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 6px;
   justify-content: start;
   padding: 2px;
+  width: 100%;
 }
 
 .dl-product-colors-panel .dl-color-item {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
+  width: 20px;
+  height: 20px;
+  min-width: 0 !important;
+  min-height: 0 !important;
   padding: 0;
   border: none;
   background: transparent;
@@ -4352,16 +4354,15 @@
   /* Remove border on hover for container, handled by inner swatch */
   border-color: transparent;
   transform: none;
-  /* Handled by inner swatch */
-  z-index: 2;
+  z-index: 1;
 }
 
 .dl-product-colors-panel .dl-color-item__swatch {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 2px solid #e5e7eb;
-  transition: border-color 0.2s, transform 0.2s;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
   box-sizing: border-box;
   background-clip: padding-box;
   position: relative;
@@ -4370,28 +4371,27 @@
 
 .dl-product-colors-panel .dl-color-item:hover .dl-color-item__swatch {
   transform: scale(1.1);
-  border-color: #d1d5db;
+  z-index: 1;
 }
 
 .dl-product-colors-panel .dl-color-item.is-selected {
   /* Remove container styles */
   border: none;
   background: transparent;
+  outline: none;
 }
 
 .dl-product-colors-panel .dl-color-item.is-selected .dl-color-item__swatch {
-  border-color: var(--dl-color-primary);
-  transform: scale(1.1);
+  outline: 2px solid #ccc;
+  outline-offset: 2px;
+  z-index: 2;
+  transform: none;
+  /* No scale on selection, just outline */
 }
 
 .dl-product-colors-panel .dl-color-item__check {
-  font-size: 14px;
-  color: var(--dl-color-primary);
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1;
+  display: none !important;
+  /* Hide checkmark as outline indicates selection */
 }
 
 .dl-product-colors-panel .dl-color-item__info {
