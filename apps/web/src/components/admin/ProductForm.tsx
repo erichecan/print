@@ -51,6 +51,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   const [traceId, setTraceId] = useState<string | null>(null); // [2025-01-27 18:00:00] 添加 traceId 状态
   const fileRefs = useRef<{ [key: number]: File }>({});
   const abortControllerRef = useRef<AbortController | null>(null); // [2025-01-27 18:00:00] 用于取消请求
+  const isUploadingAny = useMemo(() => Object.values(uploadingImages).some(Boolean), [uploadingImages]);
 
   // [2025-12-30] 自动关闭成功提示
   useEffect(() => {
@@ -68,8 +69,19 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   );
 
   const categories = useMemo<AdminCategorySummary[]>(() => {
-    return categoryResponse?.data ?? [];
-  }, [categoryResponse]);
+    const list = categoryResponse?.data ?? [];
+
+    // [2025-12-31] FIX: If product has a category that's not in the (active/limited) list, 
+    // we must add it as an option so the select element doesn't reset to empty.
+    if (product?.category && !list.find(c => c.id === product.category?.id)) {
+      return [...list, {
+        id: product.category.id,
+        name: `${product.category.name} (当前)`,
+      } as AdminCategorySummary];
+    }
+
+    return list;
+  }, [categoryResponse, product]);
 
   const {
     register,
@@ -115,6 +127,23 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
       setValue('slug' as any, slugify(nameValue));
     }
   }, [nameValue, slugValue, setValue]);
+
+  // [2025-12-31] 自动计算毛利：(促销价 || 基础价) - 单位成本
+  const basePriceValue = watch('basePrice');
+  const salePriceValue = watch('salePrice');
+  const unitCostValue = watch('unitCost');
+
+  useEffect(() => {
+    const price = Number(salePriceValue) > 0 ? Number(salePriceValue) : Number(basePriceValue);
+    const cost = Number(unitCostValue);
+
+    if (!Number.isNaN(price) && !Number.isNaN(cost)) {
+      const profit = price - cost;
+      // 只有当毛利字段为空或需要更新时才自动设置，避免干扰用户手动微调
+      // 在这里我们选择自动更新以保持逻辑一致
+      setValue('grossProfit', Number(profit.toFixed(2)) as any);
+    }
+  }, [basePriceValue, salePriceValue, unitCostValue, setValue]);
 
   const {
     fields: variantFields,
@@ -194,7 +223,9 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
       );
 
       if (response.images && response.images.length > 0) {
-        const uploadedImage = response.images[0];
+        // [2025-12-31] FIX: uploadImages returns ALL images for the product, 
+        // the newly uploaded one will be at the end of the sorted list.
+        const uploadedImage = response.images[response.images.length - 1];
         setValue(`images.${index}.url` as any, uploadedImage.url);
         if (uploadedImage.alt) {
           setValue(`images.${index}.alt` as any, uploadedImage.alt);
@@ -202,6 +233,8 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         if (uploadedImage.sortOrder !== undefined) {
           setValue(`images.${index}.sortOrder` as any, uploadedImage.sortOrder);
         }
+        // [2025-12-31] Clear file ref after successful upload
+        delete fileRefs.current[index];
       }
     } catch (error: any) {
       setSubmitError(error?.message || '图片上传失败，请稍后再试');
@@ -341,7 +374,9 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           : await adminProductsApi.update(product!.id, payload);
 
       // [2025-01-27 15:15:00] Upload any pending files after product creation/update
-      if (mode === 'create' && response.id) {
+      // [2025-12-31] FIX: Also enable for 'edit' mode to handle race conditions or missed uploads
+      const hasPendingFiles = Object.keys(fileRefs.current).length > 0;
+      if (response.id && hasPendingFiles) {
         const uploadPromises: Promise<void>[] = [];
         Object.keys(fileRefs.current).forEach((key) => {
           const index = parseInt(key, 10);
@@ -741,8 +776,8 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
       )}
 
       <div className="form-actions">
-        <button type="submit" className="primary-btn" disabled={submitting}>
-          {submitting ? '提交中…' : mode === 'create' ? '创建商品' : '保存修改'}
+        <button type="submit" className="primary-btn" disabled={submitting || isUploadingAny}>
+          {submitting ? '提交中…' : isUploadingAny ? '正在上传图片…' : mode === 'create' ? '创建商品' : '保存修改'}
         </button>
       </div>
 

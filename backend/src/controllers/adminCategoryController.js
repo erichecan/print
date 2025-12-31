@@ -8,7 +8,7 @@ const prisma = require('../lib/prisma');
 exports.listCategories = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 500);
     const skip = (page - 1) * limit;
     const search = req.query.search?.trim();
     const parentId = req.query.parentId;

@@ -53,7 +53,7 @@ function normalizeImageUrl(url, req = null) {
     // [2025-12-01 22:15:00] 如果配置了 GCS，且 URL 可能是旧的静态资源路径，可以考虑映射
     // 但迁移后数据库中应该已经是 GCS URL，所以这里保持向后兼容
     const isProduction = process.env.NODE_ENV === 'production';
-    
+
     // 生产环境：使用前端服务 URL（向后兼容，迁移后应该不需要）
     if (isProduction) {
       const frontendUrl = process.env.FRONTEND_URL;
@@ -63,7 +63,7 @@ function normalizeImageUrl(url, req = null) {
         return `${baseUrl}${url}`;
       }
     }
-    
+
     // 本地开发或没有配置 FRONTEND_URL：保持相对路径，让前端自己处理
     // Next.js 会自动处理 public 目录下的文件
     return url;
@@ -74,7 +74,7 @@ function normalizeImageUrl(url, req = null) {
     if (req) {
       // [2025-01-27 17:10:00] 优先使用请求的实际 host（自动适配环境）
       const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-      const host = req.get('host') || (process.env.NODE_ENV === 'production' 
+      const host = req.get('host') || (process.env.NODE_ENV === 'production'
         ? (process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com')
         : `localhost:${process.env.PORT || '3001'}`);
       return `${protocol}://${host}${url}`;
@@ -127,14 +127,14 @@ function optimizeImageUrl(url, options = {}) {
   try {
     const lowerUrl = normalizedUrl.toLowerCase();
     const isGcsUrl = lowerUrl.includes('storage.googleapis.com');
-    
+
     // [2025-12-03 04:00:00] 对于 GCS URL，不添加查询参数
     // GCS 不支持 width/quality 查询参数进行图片优化
     // Next.js Image 优化器会处理这些参数，所以直接返回规范化后的 URL
     if (isGcsUrl) {
       return normalizedUrl;
     }
-    
+
     const isCdnUrl =
       lowerUrl.includes('cloudfront') ||
       lowerUrl.includes('cloudflare') ||
@@ -165,7 +165,61 @@ function optimizeImageUrl(url, options = {}) {
   }
 }
 
+/**
+ * [2025-01-31 10:20:00] 将完整的 URL 转换为相对路径（仅限后端本地路径）
+ * 用于在保存到数据库之前移除基础 URL，防止硬编码 host/port
+ * @param {string} url - 完整或相对 URL
+ * @param {Object} req - Express 请求对象（可选）
+ * @returns {string} 相对路径或原始 URL
+ */
+function denormalizeImageUrl(url, req = null) {
+  if (!url || typeof url !== 'string') {
+    return url;
+  }
+
+  // 如果不是 http 开头，已经是相对路径或者是其他协议
+  if (!url.startsWith('http')) {
+    return url;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    // 检查是否是 GCS URL，如果是则保持原样（因为它是跨域的且是最终存储位置）
+    if (parsed.hostname.includes('storage.googleapis.com')) {
+      return url;
+    }
+
+    // [2025-01-31 10:25:00] 检查是否是本地后端服务器的 URL
+    const isLocalhost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+    const backendUrl = process.env.BACKEND_URL || process.env.API_BASE_URL;
+
+    let isBackendUrl = isLocalhost;
+    if (backendUrl) {
+      try {
+        const backendParsed = new URL(backendUrl);
+        if (parsed.hostname === backendParsed.hostname) {
+          isBackendUrl = true;
+        }
+      } catch (e) {
+        // 忽略解析错误
+      }
+    }
+
+    // 如果是后端服务器的 URL，提取路径部分
+    if (isBackendUrl) {
+      // 保持前面的 /
+      return parsed.pathname;
+    }
+
+    return url;
+  } catch (error) {
+    return url;
+  }
+}
+
 module.exports = {
   optimizeImageUrl,
   normalizeImageUrl,
+  denormalizeImageUrl,
 };

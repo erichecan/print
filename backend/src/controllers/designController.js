@@ -327,7 +327,12 @@ exports.requestQuote = async (req, res) => {
     }
 
     // [2025-12-31] Fetch global size fees for synchronization
-    const globalSizeFees = await prisma.offline_order_size_fees.findMany();
+    let globalSizeFees = [];
+    try {
+      globalSizeFees = await prisma.offline_order_size_fees.findMany();
+    } catch (e) {
+      console.warn("Failed to fetch offline_order_size_fees, using defaults:", e.message);
+    }
     const globalFeeMap = {};
     globalSizeFees.forEach(fee => {
       globalFeeMap[fee.size] = Math.round(Number(fee.additional_fee) * 100);

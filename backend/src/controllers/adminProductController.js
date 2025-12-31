@@ -138,6 +138,9 @@ exports.listProducts = async (req, res) => {
       where.categoryId = categoryId;
     }
 
+    // [2025-12-31] Exclude system products from the regular admin list
+    where.isSystem = false;
+
     const [products, total] = await prisma.$transaction([
       prisma.product.findMany({
         where,
@@ -305,6 +308,8 @@ exports.createProduct = async (req, res) => {
       collections = [],
     } = req.body || {};
 
+    const { denormalizeImageUrl } = require('../utils/imageHelper');
+
     if (!name || !categoryId || !sku || typeof basePrice === 'undefined' || basePrice === null) {
       return res.status(400).json({ error: 'Missing required fields: name, categoryId, sku, or basePrice' });
     }
@@ -401,7 +406,7 @@ exports.createProduct = async (req, res) => {
                   return url.startsWith('http') || url.startsWith('/');
                 })
                 .map((image, index) => ({
-                  url: image.url.trim(),
+                  url: denormalizeImageUrl(image.url.trim(), req),
                   alt: image.alt ? image.alt.trim() : null,
                   sortOrder:
                     typeof image.sortOrder === 'number'
@@ -419,6 +424,12 @@ exports.createProduct = async (req, res) => {
               })),
             }
             : undefined,
+          // [2025-12-31] Keep categoryId column and productCategories relation in sync
+          productCategories: {
+            create: {
+              categoryId: categoryId,
+            }
+          },
         },
         include: {
           category: true,
@@ -432,6 +443,7 @@ exports.createProduct = async (req, res) => {
               collection: true,
             },
           },
+          productCategories: true,
         },
       });
 
@@ -529,13 +541,19 @@ exports.updateProduct = async (req, res) => {
       collections,
     } = req.body || {};
 
+    const { denormalizeImageUrl } = require('../utils/imageHelper');
+
     const existing = await prisma.product.findUnique({
       where: { id },
-      select: { id: true, slug: true },
+      select: { id: true, slug: true, isSystem: true },
     });
 
     if (!existing) {
       return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (existing.isSystem) {
+      return res.status(403).json({ error: 'Cannot update a system protected product' });
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -569,10 +587,15 @@ exports.updateProduct = async (req, res) => {
         return value;
       };
 
+      // [2025-12-31] 确保 categoryId 不是空字符串
+      const finalCategoryId = (categoryId && typeof categoryId === 'string' && categoryId.trim() !== '')
+        ? categoryId
+        : (categoryId === undefined ? undefined : existing.categoryId);
+
       const updateData = {
         ...(name !== undefined ? { name } : {}),
         slug: finalSlug,
-        ...(categoryId !== undefined ? { categoryId } : {}),
+        ...(finalCategoryId !== undefined ? { categoryId: finalCategoryId } : {}),
         ...(brandId !== undefined ? { brandId } : {}),
         ...(basePriceCents !== undefined ? { basePrice: basePriceCents } : {}),
         ...(unitCost !== undefined ? { unitCost: convertToDecimal(unitCost) } : {}),
@@ -594,20 +617,61 @@ exports.updateProduct = async (req, res) => {
       });
 
       if (Array.isArray(variants)) {
-        await tx.productVariant.deleteMany({ where: { productId: id } });
-        if (variants.length) {
-          await tx.productVariant.createMany({
-            data: variants.map((variant) => ({
-              productId: id,
-              color: variant.color || null,
-              colorHex: variant.colorHex || null,
-              size: variant.size || null,
-              sku: variant.sku,
-              priceAdjustment: variant.priceAdjustment || 0,
-              stockQuantity: variant.stockQuantity || 0,
-              imageUrl: variant.imageUrl || null,
-            })),
-          });
+        // [2025-01-31 10:30:00] 改进变体更新逻辑：upsert 避免 P2003 错误
+        // 获取所有现有变体
+        const existingVariants = await tx.variant.findMany({
+          where: { productId: id }
+        });
+        const existingVariantIds = new Set(existingVariants.map(v => v.id));
+        const incomingVariantIds = new Set(variants.filter(v => v.id).map(v => v.id));
+
+        // 1. 更新或创建传入的变体
+        for (const variant of variants) {
+          const variantData = {
+            productId: id,
+            color: variant.color || 'UNSET',
+            colorHex: variant.colorHex || null,
+            size: variant.size || 'ONE',
+            sku: variant.sku,
+            priceAdjustment: convertToDecimal(variant.priceAdjustment) || new Prisma.Decimal(0),
+            stockQuantity: typeof variant.stockQuantity === 'number' ? Math.max(0, variant.stockQuantity) : 0,
+            imageUrl: denormalizeImageUrl(variant.imageUrl, req) || null,
+          };
+
+          if (variant.id && existingVariantIds.has(variant.id)) {
+            await tx.variant.update({
+              where: { id: variant.id },
+              data: variantData
+            });
+          } else {
+            // 如果没有 ID，尝试按 SKU 匹配
+            const matchBySku = existingVariants.find(v => v.sku === variant.sku);
+            if (matchBySku) {
+              await tx.variant.update({
+                where: { id: matchBySku.id },
+                data: variantData
+              });
+              incomingVariantIds.add(matchBySku.id);
+            } else {
+              await tx.variant.create({
+                data: variantData
+              });
+            }
+          }
+        }
+
+        // 2. 删除不再需要的变体（仅当没有被引用时）
+        const toDeleteIds = existingVariants
+          .map(v => v.id)
+          .filter(vId => !incomingVariantIds.has(vId));
+
+        for (const vId of toDeleteIds) {
+          try {
+            await tx.variant.delete({ where: { id: vId } });
+          } catch (delErr) {
+            // 如果报错（通常是 P2003 外键约束），则保留该变体，但可以记录日志
+            console.warn(`[2025-01-31 10:30:00] Cannot delete variant ${vId} due to references:`, delErr.message);
+          }
         }
       }
 
@@ -617,7 +681,7 @@ exports.updateProduct = async (req, res) => {
           await tx.productImage.createMany({
             data: images.filter(img => img.url).map((image, index) => ({
               productId: id,
-              url: image.url,
+              url: denormalizeImageUrl(image.url, req),
               alt: image.alt || null,
               sortOrder:
                 typeof image.sortOrder === 'number' ? image.sortOrder : index,
@@ -638,6 +702,27 @@ exports.updateProduct = async (req, res) => {
         }
       }
 
+      // [2025-12-31] Keep categoryId column and productCategories relation in sync
+      if (categoryId && typeof categoryId === 'string') {
+        // Find existing main category mappings to avoid duplicates or orphans
+        // Note: For now we just ensure the CURRENT categoryId is in productCategories.
+        // If we wanted only ONE category, we'd delete all others first.
+        // But some products might intentionally have multiple categories from other sources.
+        await tx.productCategory.upsert({
+          where: {
+            productId_categoryId: {
+              productId: id,
+              categoryId: categoryId,
+            },
+          },
+          create: {
+            productId: id,
+            categoryId: categoryId,
+          },
+          update: {},
+        });
+      }
+
       const refreshed = await tx.product.findUnique({
         where: { id },
         include: {
@@ -652,6 +737,7 @@ exports.updateProduct = async (req, res) => {
               collection: true,
             },
           },
+          productCategories: true,
         },
       });
 
@@ -661,8 +747,12 @@ exports.updateProduct = async (req, res) => {
     // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
     // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
+    const basePriceCents = toNumber(result.basePrice, 0);
+    const salePriceValue = toNumber(result.salePrice, 0);
     const normalizedResult = {
       ...result,
+      basePrice: basePriceCents / 100,
+      salePrice: salePriceValue,
       images: (result.images || []).map((image) => ({
         ...image,
         url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
@@ -706,11 +796,15 @@ exports.archiveProduct = async (req, res) => {
 
     const existing = await prisma.product.findUnique({
       where: { id },
-      select: { id: true, slug: true },
+      select: { id: true, slug: true, isSystem: true },
     });
 
     if (!existing) {
       return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (existing.isSystem) {
+      return res.status(403).json({ error: 'Cannot archive a system protected product' });
     }
 
     await prisma.product.update({
@@ -736,6 +830,15 @@ exports.updateProductStatus = async (req, res) => {
 
     if (typeof isActive !== 'boolean') {
       return res.status(400).json({ error: 'isActive must be boolean' });
+    }
+
+    const existing = await prisma.product.findUnique({
+      where: { id },
+      select: { isSystem: true },
+    });
+
+    if (existing?.isSystem) {
+      return res.status(403).json({ error: 'Cannot change status of a system protected product' });
     }
 
     const updated = await prisma.product.update({
@@ -777,11 +880,15 @@ exports.uploadProductImages = async (req, res) => {
 
     const product = await prisma.product.findUnique({
       where: { id },
-      select: { id: true, slug: true },
+      select: { id: true, slug: true, isSystem: true },
     });
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (product.isSystem) {
+      return res.status(403).json({ error: 'Cannot upload images to a system protected product' });
     }
 
     const altInput =
@@ -789,6 +896,8 @@ exports.uploadProductImages = async (req, res) => {
     const altValues = parseAltInputs(altInput);
 
     const existingCount = await prisma.productImage.count({ where: { productId: id } });
+
+    const { denormalizeImageUrl } = require('../utils/imageHelper');
 
     const createPayload = files.map((file, index) => {
       const storageKey = buildStorageKey(file.filename);
@@ -799,7 +908,7 @@ exports.uploadProductImages = async (req, res) => {
 
       return {
         productId: id,
-        url: publicUrl,
+        url: denormalizeImageUrl(publicUrl, req),
         alt: sanitizeAltText(providedAlt, fallbackAlt),
         sortOrder: existingCount + index,
       };
@@ -849,6 +958,7 @@ exports.deleteProductImage = async (req, res) => {
         product: {
           select: {
             slug: true,
+            isSystem: true,
           },
         },
       },
@@ -856,6 +966,10 @@ exports.deleteProductImage = async (req, res) => {
 
     if (!image || image.productId !== productId) {
       return res.status(404).json({ error: 'Image not found' });
+    }
+
+    if (image.product?.isSystem) {
+      return res.status(403).json({ error: 'Cannot delete images from a system protected product' });
     }
 
     const remainingImages = await prisma.$transaction(async (tx) => {

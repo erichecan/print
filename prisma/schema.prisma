@@ -145,6 +145,7 @@ model Product {
   dimensions         String?
   printableAreas     Json?               @map("printable_areas")
   isActive           Boolean             @default(true) @map("is_active")
+  isSystem           Boolean             @default(false) @map("is_system")
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
   giftPromotions     Promotion[]         @relation("PromotionGiftProduct")

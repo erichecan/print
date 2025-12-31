@@ -156,6 +156,7 @@ exports.getFilterOptions = async (req, res) => {
     // Build base where clause
     const baseWhere = {
       isActive: true,
+      isSystem: false,
     };
     const andConditions = [];
 
@@ -510,6 +511,7 @@ exports.getProducts = async (req, res) => {
     // Build where clause
     const where = {
       isActive: true,
+      isSystem: false,
     };
     const andConditions = [];
 
@@ -1508,6 +1510,14 @@ exports.getProductByVariantId = async (req, res) => {
       });
     });
 
+    // [2025-12-31] Fetch global size fees for synchronization with Design Lab
+    const globalSizeFees = await prisma.offline_order_size_fees.findMany();
+    const globalFeeMap = {};
+    globalSizeFees.forEach(fee => {
+      // Global fees are stored as Dollars (Decimal), convert to Cents for internal consistency
+      globalFeeMap[fee.size] = Math.round(Number(fee.additional_fee) * 100);
+    });
+
     const response = {
       productId: product.id,
       productName: product.name,
@@ -1517,15 +1527,21 @@ exports.getProductByVariantId = async (req, res) => {
       colorDetails, // [2025-01-30 19:30:00] 添加颜色详细信息
       baseImages,
       gallery: optimizedImages,
-      variants: product.variants.map((v) => ({
-        id: v.id,
-        color: v.color,
-        colorHex: v.colorHex,
-        imageUrl: v.imageUrl,
-        size: v.size,
-        stockQuantity: v.stockQuantity,
-        priceAdjustment: Number(v.priceAdjustment || 0), // [2025-12-28] Add price adjustment
-      })), // [2025-01-30 19:30:00] 添加变体列表，用于颜色切换
+      variants: product.variants.map((v) => {
+        // [2025-12-31] Synchronize with global size fee config
+        const globalFee = v.size ? globalFeeMap[v.size] : undefined;
+
+        return {
+          id: v.id,
+          color: v.color,
+          colorHex: v.colorHex,
+          imageUrl: v.imageUrl,
+          size: v.size,
+          stockQuantity: v.stockQuantity,
+          // Use global fee if configured, otherwise fallback to specific variant's adjustment
+          priceAdjustment: globalFee !== undefined ? globalFee : Number(v.priceAdjustment || 0),
+        };
+      }), // [2025-01-30 19:30:00] 添加变体列表，用于颜色切换
     };
 
     console.log('[Backend] Sending response:', {

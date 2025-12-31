@@ -74,17 +74,31 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
 
         const logicalWidth = canvas.getWidth();
         const logicalHeight = canvas.getHeight();
-        const cssWidth = canvasEl.clientWidth;
-        const cssHeight = canvasEl.clientHeight;
+        const rect = canvasEl.getBoundingClientRect();
+        const cssWidth = rect.width;
+        const cssHeight = rect.height;
 
-        const scaleX = logicalWidth > 0 ? cssWidth / logicalWidth : 1;
-        const scaleY = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
+        // [2025-12-31] Fix: Handle object-fit: contain
+        // Determine effective render scale
+        const scaleXRaw = logicalWidth > 0 ? cssWidth / logicalWidth : 1;
+        const scaleYRaw = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
+
+        // Use the smaller scale to maintain aspect ratio (contain)
+        const renderScale = Math.min(scaleXRaw, scaleYRaw);
+
+        // Calculate visual dimensions
+        const renderedWidth = logicalWidth * renderScale;
+        const renderedHeight = logicalHeight * renderScale;
+
+        // Calculate offsets (centering)
+        const offsetX = (cssWidth - renderedWidth) / 2;
+        const offsetY = (cssHeight - renderedHeight) / 2;
 
         const transformToCss = (point: fabric.Point) => {
             const p = util.transformPoint(point, vpt);
             return {
-                x: p.x * scaleX,
-                y: p.y * scaleY
+                x: offsetX + (p.x * renderScale),
+                y: offsetY + (p.y * renderScale)
             };
         };
 
@@ -232,12 +246,23 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
 
         const logicalWidth = canvas.getWidth();
         const logicalHeight = canvas.getHeight();
-        const cssScaleX = logicalWidth > 0 ? canvasRect.width / logicalWidth : 1;
-        const cssScaleY = logicalHeight > 0 ? canvasRect.height / logicalHeight : 1;
+
+        const cssWidth = canvasRect.width;
+        const cssHeight = canvasRect.height;
+
+        // [2025-12-31] Fix: Handle object-fit: contain for resize logic
+        const scaleXRaw = logicalWidth > 0 ? cssWidth / logicalWidth : 1;
+        const scaleYRaw = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
+        const renderScale = Math.min(scaleXRaw, scaleYRaw);
+
+        const renderedWidth = logicalWidth * renderScale;
+        const renderedHeight = logicalHeight * renderScale;
+        const offsetX = (cssWidth - renderedWidth) / 2;
+        const offsetY = (cssHeight - renderedHeight) / 2;
 
         const centerP = util.transformPoint(center, vpt);
-        const centerX = canvasRect.left + (centerP.x * cssScaleX);
-        const centerY = canvasRect.top + (centerP.y * cssScaleY);
+        const centerX = canvasRect.left + offsetX + (centerP.x * renderScale);
+        const centerY = canvasRect.top + offsetY + (centerP.y * renderScale);
 
         const startDist = Math.hypot(startX - centerX, startY - centerY);
 

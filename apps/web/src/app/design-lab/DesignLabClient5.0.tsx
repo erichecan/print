@@ -236,8 +236,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     // [2025-12-20] 修复：如果 URL 中没有 productId（无论是否有 colorId），都加载默认产品
     // [2025-12-31] 改进：加载特定的系统内置 Design Lab 默认产品 (design-lab-default-tee)
-    if (!productId && !initialProductData) {
-      console.log('[DesignLab 5.0] No product selected, fetching SYSTEM DEFAULT Design Lab product...');
+    // [2025-12-31] Fix: Do NOT load default product if we are loading a design (designId present)
+    const hasDesignId = searchParams.get('designId');
+    if (!productId && !initialProductData && !hasDesignId) {
+      console.log('[DesignLab 5.0] No product selected and no design loaded, fetching SYSTEM DEFAULT Design Lab product...');
 
       if (!productInfo.productId) {
         // [2025-12-31] 直接通过 Slug 获取系统商品，不再通过搜索（搜索已过滤系统商品）
@@ -542,8 +544,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     setIsCatalogModalOpen(false);
 
     try {
-      // Fetch product detail 
-      const productDetail = await getProductByVariant(productId);
+      // Fetch product detail (supports both slug and variantId via getProduct)
+      // [2025-12-31] Fix: Use getProduct which handles slug -> id mapping correctly
+      const productDetail = await getProduct(productId);
 
       if (productDetail) {
         const color = productDetail.color || 'White';
@@ -977,11 +980,24 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       }
       */
 
+      // [2025-12-31] Ensure we have a valid variant ID
+      let finalVariantId = productInfo.colorId;
+      if (!finalVariantId && productInfo.variants && productInfo.variants.length > 0) {
+        finalVariantId = productInfo.variants[0].id;
+        console.log('[handleAddToCart] Using first variant as fallback:', finalVariantId);
+      }
+
+      if (!finalVariantId) {
+        // Ultimate fallback (e.g. for default tee if not fully loaded)
+        finalVariantId = '5ead334f-82b1-4bc0-bb50-957541bb2070';
+        console.warn('[handleAddToCart] Using hardcoded fallback variant ID:', finalVariantId);
+      }
+
       // 调用加入购物车 API
       await addToCartInternal({
         designId: currentDesignId as string,
         productId: productInfo.productId,
-        variantId: productInfo.colorId,
+        variantId: finalVariantId,
         quantity: orderData.totalQuantity || 1,
         sizeQuantities: orderData.sizeQuantities,
         orderingOptions: orderData.orderingOptions,
@@ -2199,6 +2215,51 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           console.log('[DesignLab 5.0] ✅ Custom Ink 样式的自定义控件已创建');
           ========== 旧代码（已注释）结束 ========== */
 
+          // [2025-02-01] Helper to calculate dynamic control position based on canvas CSS scale
+          // This ensures controls stay at a fixed visual distance (Gap) from corners even when canvas scales via CSS
+          // Formula: LogicalOffset = (VisualGap / Scale) + LogicalRadius
+          // This preserves the VisualGap between the corner and the edge of the icon (which scales with CSS)
+          const getDynamicControlPosition = (x: number, y: number, visualGapX: number, visualGapY: number) => {
+            return (dim: any, finalMatrix: any, fabricObject: any) => {
+              const canvas = fabricCanvasRef.current;
+              if (!canvas) return { x: 0, y: 0 };
+
+              // Calculate current CSS scale (clientWidth / logicalWidth)
+              // Safe fallback to 1 if clientWidth is 0 or missing
+              const cssWidth = (canvas.lowerCanvasEl || canvas.getElement()).clientWidth || 0;
+              const scale = cssWidth > 0 ? cssWidth / 4000 : 1;
+              // Avoid division by very small numbers
+              const safeScale = scale < 0.05 ? 0.05 : scale;
+
+              const logicalRadius = 80; // Derived from sizeX/2 (160/2)
+
+              // Calculate logical offset needed to achieve target visual gap
+              // logicalOffsetX = (visualGapX / safeScale) + (sign * logicalRadius)
+              const dirX = visualGapX >= 0 ? 1 : -1;
+              const dirY = visualGapY >= 0 ? 1 : -1;
+
+              const logicalOffsetX = (visualGapX / safeScale) + (dirX * logicalRadius);
+              const logicalOffsetY = (visualGapY / safeScale) + (dirY * logicalRadius);
+
+              // Get the point on the object (corner) using transformPoint
+              // x, y are -0.5 or 0.5. We map to local coordinates and transform.
+              const matrix = fabricObject.calcTransformMatrix();
+              const cornerPoint = fabric.util.transformPoint(
+                {
+                  x: x * fabricObject.width + (fabricObject.pathOffset?.x || 0),
+                  y: y * fabricObject.height + (fabricObject.pathOffset?.y || 0)
+                },
+                matrix
+              );
+
+              // Apply the dynamic offset
+              return {
+                x: cornerPoint.x + logicalOffsetX,
+                y: cornerPoint.y + logicalOffsetY
+              };
+            };
+          };
+
           /*
                     // [2025-12-14 07:30:00] 步骤3：创建三个图标控件（只显示，不做功能）
           
@@ -2208,13 +2269,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       y: -0.5,
                       // [2025-12-16 23:39:48] 修复：让三个大图标控件彼此拉开距离（避免在小对象上出现控件命中区域重叠，导致 hover 总是落到 resize）
                       // 说明：这里用 offset 将控件中心移到对象外侧（与大尺寸 icon 的视觉一致）
-                      offsetX: -80,
-                      offsetY: -80,
-                      sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
-                      sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
-                      cursorStyle: 'pointer',
-                      // [2025-12-16 23:30:22] 修复：显式提供 cursorStyleHandler，避免 Fabric 在 hover 时错误落到 resize 光标
-                      cursorStyleHandler: () => 'pointer',
+                      // [2025-02-01] Fix: Use positionHandler for dynamic alignment (Gap -12px)
+                      positionHandler: getDynamicControlPosition(-0.5, -0.5, -12, -12),
+
                       render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
                         // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top（用于对齐命中区域）
                         try {
@@ -2307,13 +2364,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       x: -0.5, // 左下角
                       y: 0.5,
                       // [2025-12-16 23:39:48] 同 deleteIcon：下移到对象外侧，避免与 delete/resize 命中区域重叠
-                      offsetX: -80,
-                      offsetY: 80,
-                      sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
-                      sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
-                      cursorStyle: 'pointer',
-                      // [2025-12-16 23:30:22] 修复：显式提供 cursorStyleHandler，确保 hover 时为 pointer
-                      cursorStyleHandler: () => 'pointer',
+                      // [2025-02-01] Fix: Use positionHandler for dynamic alignment (Gap 12px)
+                      positionHandler: getDynamicControlPosition(-0.5, 0.5, -12, 12),
+
                       render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
                         // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
                         try {
@@ -2476,11 +2529,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       x: 0.5, // 右下角
                       y: 0.5,
                       // [2025-12-16 23:39:48] 右下角外侧，避免与左侧控件重叠
-                      offsetX: 80,
-                      offsetY: 80,
-                      sizeX: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
-                      sizeY: 160, // [2025-12-14 07:42:00] 放大 5 倍：从 32 调整为 160
-                      cursorStyle: 'se-resize',
+                      // [2025-02-01] Fix: Use positionHandler for dynamic alignment (Gap 12px)
+                      positionHandler: getDynamicControlPosition(0.5, 0.5, 12, 12),
+
                       render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
                         // [2025-12-16 23:30:22] 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
                         try {
@@ -3803,12 +3854,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
           <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--primary"
-            onClick={() => {
+            onClick={async () => {
+              // [2025-12-31] User requested to remove save validation.
+              // Auto-save silently if design is not yet saved to ensure we have a designId for the quote API.
               if (!designId) {
-                const shouldSave = confirm('Please save your design first before getting a price. Would you like to save now?');
-                if (shouldSave) {
-                  setShowSaveShareModal(true);
-                  return;
+                try {
+                  const savedId = await handleSaveDesign();
+                  if (savedId) {
+                    setShowGetPriceModal(true);
+                  }
+                } catch (e) {
+                  console.error("Auto-save failed before Get Price:", e);
                 }
               } else {
                 setShowGetPriceModal(true);

@@ -72,6 +72,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   const [hasUploadedImages, setHasUploadedImages] = useState(false);
   // [2025-12-07 15:30:00] 加车成功相关状态
   const [addedToCartData, setAddedToCartData] = useState<any>(null);
+  // [2025-12-31] Adding to cart loading state
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   // [2025-12-28] Fetch size pricing from DB
   const [sizeAdjustments, setSizeAdjustments] = useState<Record<string, number>>({});
@@ -530,6 +532,9 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       return;
     }
 
+    setIsAddingToCart(true);
+    setQuoteError(null);
+
     try {
       const orderData = {
         designId,
@@ -553,6 +558,8 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     } catch (error) {
       console.error('[GetPriceFlowModal] Error adding to cart:', error);
       setQuoteError('Failed to add to cart. Please try again.');
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -573,6 +580,12 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         </ul>
       </div>
 
+      {quoteError && (
+        <div className="dl-get-price-flow__error" style={{ margin: '16px 0' }}>
+          <p>{quoteError}</p>
+        </div>
+      )}
+
       <div className="dl-get-price-flow__actions">
         <button
           className="dl-modal__btn dl-modal__btn--secondary"
@@ -590,8 +603,9 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
             setNeedsContentCheck(false);
             handleAddToCart();
           }}
+          disabled={isAddingToCart}
         >
-          Agree & Continue
+          {isAddingToCart ? 'Adding...' : 'Agree & Continue'}
         </button>
       </div>
     </div>
@@ -886,15 +900,34 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         <div className="dl-modal__body">
           {/* 步骤指示器 */}
           <div className="dl-get-price-flow__steps-indicator">
-            <div className={`dl-get-price-flow__step-indicator ${(currentStep as string) === 'quantity' ? 'is-active' : (currentStep as string) !== 'quantity' ? 'is-completed' : ''}`}>
+            <div
+              className={`dl-get-price-flow__step-indicator ${(currentStep as string) === 'quantity' ? 'is-active' : (currentStep as string) !== 'quantity' ? 'is-completed' : ''}`}
+              onClick={() => setCurrentStep('quantity')}
+              style={{ cursor: 'pointer' }}
+            >
               <span>1</span>
               <span>Quantity</span>
             </div>
-            <div className={`dl-get-price-flow__step-indicator ${currentStep === 'ordering-options' ? 'is-active' : ['order-options'].includes(currentStep) ? 'is-completed' : ''}`}>
+            <div
+              className={`dl-get-price-flow__step-indicator ${currentStep === 'ordering-options' ? 'is-active' : ['order-options', 'content-check', 'added-to-cart'].includes(currentStep) ? 'is-completed' : ''}`}
+              onClick={() => {
+                // Only allow clicking if we have quantity set
+                if (totalQuantity > 0) setCurrentStep('ordering-options');
+              }}
+              style={{ cursor: totalQuantity > 0 ? 'pointer' : 'not-allowed' }}
+            >
               <span>2</span>
               <span>Options</span>
             </div>
-            <div className={`dl-get-price-flow__step-indicator ${currentStep === 'order-options' ? 'is-active' : ['content-check', 'added-to-cart'].includes(currentStep) ? 'is-completed' : ''}`}>
+            <div
+              className={`dl-get-price-flow__step-indicator ${currentStep === 'order-options' ? 'is-active' : ['content-check', 'added-to-cart'].includes(currentStep) ? 'is-completed' : ''}`}
+              // Quote step usually requires options to be set, so maybe only allow if already visited or ready
+              // For simplicity, let's allow it if we have quantity, as defaults exist for options.
+              onClick={() => {
+                if (totalQuantity > 0) setCurrentStep('order-options');
+              }}
+              style={{ cursor: totalQuantity > 0 ? 'pointer' : 'not-allowed' }}
+            >
               <span>3</span>
               <span>Quote</span>
             </div>
