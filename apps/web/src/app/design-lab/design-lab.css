@@ -407,15 +407,21 @@
 }
 
 .dl-rail__btn-icon {
-  width: 24px;
-  height: 24px;
+  width: 48px;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 4px;
+}
+
+.dl-rail__btn-icon svg {
+  width: 48px;
+  height: 48px;
 }
 
 .dl-rail__icon--text {
-  font-size: 28px;
+  font-size: 40px;
   font-weight: 700;
   font-family: 'Arial', sans-serif;
   line-height: 1;
