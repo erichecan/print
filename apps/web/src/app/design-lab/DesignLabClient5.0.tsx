@@ -538,6 +538,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
   };
 
+  // [2025-12-31] Product List State for "Add Product" feature
+  const [productList, setProductList] = useState<any[]>([productInfo]);
+
+  // [2025-12-31] Helper to sync productInfo with productList updates
+  const updateProductList = (newProduct: any) => {
+    setProductList(prev => {
+      // Check if we are updating an existing product or adding a new one
+      // For this feature, "Add Product" implies adding a NEW item to the bottom bar
+      // But if we are just switching colors of current product, we update it in place.
+      // However, handleProductSelect is called from Catalog, which implies "Add Product" intent contextually?
+      // Let's assume handleProductSelect is ALWAYS "Add/Switch" based on if it's new.
+      // Actually, the requirement is "Add Product" button triggers catalog -> Select -> NEW Product added.
+      return [...prev, newProduct];
+    });
+  };
+
   // [2025-12-20] 5.0 Version: Handle product selection from catalog (Simplified V5)
   const handleProductSelect = async (productId: string) => {
     console.log('[DesignLab 5.0] Selected product ID from catalog:', productId);
@@ -552,22 +568,33 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         const color = productDetail.color || 'White';
         const baseImages = productDetail.baseImages || getDefaultProductBaseImages(color);
 
-        console.log('[DesignLab 5.0] Updating product with real data:', {
+        console.log('[DesignLab 5.0] Adding NEW product:', {
           name: productDetail.productName,
           color,
           variantId: productDetail.variantId,
         });
 
-        setProductInfo({
+        const newProductInfo = {
           color,
           baseImages,
           productId: productDetail.productId,
           colorId: productDetail.variantId, // [2025-12-28] CRITICAL: Set colorId from variantId
           productName: productDetail.productName,
           variants: productDetail.variants, // [2025-12-28] Ensure variants are preserved
-        });
+        };
 
-        // Update URL
+        // [2025-12-31] Feature: Add Product with Design Inheritance
+        // 1. Add to list
+        setProductList(prev => [...prev, newProductInfo]);
+        // 2. Set as active
+        setProductInfo(newProductInfo);
+
+        // 3. Design Inheritance:
+        // By DEFAULT, we do NOT clear the canvas. The current objects (Text/Art) remain.
+        // The background image (product) will be updated by the useEffect watching productInfo.
+        // So inheritance is automatic for Art/Text.
+
+        // Update URL to reflect the NEW active product
         if (typeof window !== 'undefined') {
           const url = new URL(window.location.href);
           url.searchParams.set('productId', productDetail.productId);
@@ -3805,39 +3832,72 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           >
             + Add Products
           </button>
-          <div className="dl-bottom-bar__product-info">
-            <div className="dl-bottom-bar__product-thumb">
-              <div className="dl-bottom-bar__product-thumb-placeholder">T</div>
-            </div>
-            <div className="dl-bottom-bar__product-details">
-              <div className="dl-bottom-bar__product-name">
-                {typeof productInfo.productName === 'object' ? (productInfo.productName as any).name : (productInfo.productName || 'Gildan Softstyle Jersey T-shirt')}
-              </div>
-              <div className="dl-bottom-bar__product-links">
-                <button
-                  className="dl-bottom-bar__link"
-                  type="button"
-                  onClick={() => setIsCatalogModalOpen(true)}
-                >
-                  Change Product
-                </button>
-                {productInfo.color && (
-                  <span className="dl-bottom-bar__color">
-                    <input type="checkbox" id="color-selected" checked readOnly />
-                    <label htmlFor="color-selected">{productInfo.color}</label>
-                  </span>
+
+          {/* [2025-12-31] Feature: Render list of active products */}
+          {productList.map((prod, index) => (
+            <div
+              key={`${prod.productId}-${index}`}
+              className={`dl-bottom-bar__product-info ${prod.productId === productInfo.productId ? 'is-active' : ''}`}
+              style={{
+                cursor: 'pointer',
+                opacity: prod.productId === productInfo.productId ? 1 : 0.6,
+                border: prod.productId === productInfo.productId ? '2px solid #0066cc' : '1px solid transparent',
+                borderRadius: '8px',
+                padding: '4px',
+                marginRight: '8px'
+              }}
+              onClick={() => {
+                // Switch active product
+                setProductInfo(prod);
+                // Update URL
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('productId', prod.productId);
+                  if (prod.variantId) {
+                    url.searchParams.set('variantId', prod.variantId);
+                  }
+                  window.history.replaceState({}, '', url.toString());
+                }
+              }}
+            >
+              <div className="dl-bottom-bar__product-thumb">
+                {/* Simplified thumb logic */}
+                {prod.baseImages.front ? (
+                  <img src={prod.baseImages.front} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                ) : (
+                  <div className="dl-bottom-bar__product-thumb-placeholder">P</div>
                 )}
-                <button
-                  className="dl-bottom-bar__link"
-                  type="button"
-                  onClick={() => handleToolClick('product-colors')}
-                >
-                  Change Color
-                </button>
+              </div>
+              <div className="dl-bottom-bar__product-details">
+                <div className="dl-bottom-bar__product-name">
+                  {typeof prod.productName === 'object' ? (prod.productName as any).name : (prod.productName || 'Product')}
+                </div>
+                <div className="dl-bottom-bar__product-links">
+                  <button
+                    className="dl-bottom-bar__link"
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCatalogModalOpen(true);
+                    }}
+                  >
+                    Change Product
+                  </button>
+                  <span className="dl-bottom-bar__separator">|</span>
+                  <button className="dl-bottom-bar__link" type="button">Product Details</button>
+                </div>
               </div>
             </div>
-          </div>
+          ))}
+          <button
+            className="dl-bottom-bar__link"
+            type="button"
+            onClick={() => handleToolClick('product-colors')}
+          >
+            Change Color
+          </button>
         </div>
+
         <div className="dl-bottom-bar__right">
           <button
             className="dl-bottom-bar__btn dl-bottom-bar__btn--secondary"
@@ -3880,7 +3940,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             Get Price
           </button>
         </div>
-      </footer>
+      </footer >
 
       <ProductSelectorModal
         isOpen={showProductModal}
@@ -3947,7 +4007,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         onSelectColor={handleColorSelect}
         productName={productInfo.productName || ''}
       />
-    </div>
+    </div >
   );
 };
 
