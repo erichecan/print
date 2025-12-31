@@ -1,4 +1,4 @@
-// [2025-01-27 21:40:00] Design Comment routes
+// Design Comment routes
 const express = require('express');
 const router = express.Router();
 const commentController = require('../controllers/designCommentController');

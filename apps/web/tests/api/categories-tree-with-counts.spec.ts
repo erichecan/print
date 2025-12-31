@@ -1,6 +1,6 @@
 /**
  * Categories Tree With Counts API Tests
- * [2025-12-11 23:05:00] 测试 /api/categories/tree-with-counts 接口
+* 测试 /api/categories/tree-with-counts 接口
  */
 import { test, expect } from '@playwright/test';
 

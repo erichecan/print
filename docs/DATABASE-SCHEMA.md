@@ -332,7 +332,7 @@ User-created custom designs.
     "view": "front"
   }],
   "view": "front|back|sleeve",
-  "createdAt": "2025-11-01T12:00:00Z"
+"createdAt": "T12:00:00Z"
 }
 ```
 

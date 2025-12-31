@@ -1,6 +1,6 @@
 /**
  * Design Lab 报价与下单流程测试 (M3)
- * [2025-01-27 12:00:00] 测试 Get Price、Ordering Options、Quantity、Order Options、Content Check、Cart
+* 测试 Get Price、Ordering Options、Quantity、Order Options、Content Check、Cart
  */
 import { test, expect } from './fixtures/test-base';
 import {

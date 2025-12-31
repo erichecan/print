@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * [2025-12-16 04:25:00] Send to Back 功能调试测试
+* Send to Back 功能调试测试
  * 使用 Chrome DevTools Protocol 来深入调试 send to back 功能
  */
 test.describe('Design Lab 5.0 - Send to Back 功能调试', () => {

@@ -1,6 +1,6 @@
 /**
  * Unified API Client
- * [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类，浏览器端 credentials: 'include'
+* Design Lab 4.0: 统一错误分类，浏览器端 credentials: 'include'
  * 所有 API 请求必须通过此客户端，确保环境变量正确使用
  */
 
@@ -8,7 +8,7 @@ import { getFrontendApiBaseUrl } from '@/config/env';
 
 /**
  * API 错误分类
- * [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类，便于错误处理
+* Design Lab 4.0: 统一错误分类，便于错误处理
  */
 export enum ApiErrorType {
   NETWORK_ERROR = 'NETWORK_ERROR',
@@ -36,10 +36,10 @@ export class ApiError extends Error {
 
 /**
  * 构建完整的 API URL
- * [2025-12-09] 支持相对路径和绝对路径
+* 支持相对路径和绝对路径
  */
 function buildApiUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
-  // [2025-12-09] 修复：使用统一的环境变量配置，在运行时获取
+// 修复：使用统一的环境变量配置，在运行时获取
   const apiBase = getFrontendApiBaseUrl();
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
   
@@ -71,7 +71,7 @@ function buildApiUrl(path: string, params?: Record<string, string | number | boo
 
 /**
  * 统一的 fetch 封装
- * [2025-12-09] 提供统一的错误处理和超时控制
+* 提供统一的错误处理和超时控制
  */
 export async function apiClient<T = any>(
   path: string,
@@ -90,7 +90,7 @@ export async function apiClient<T = any>(
     params,
     headers = {},
     timeout = 10000,
-    credentials = 'include', // [2025-01-30 23:00:00] Design Lab 4.0: 浏览器端默认 'include'
+credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
   } = options;
 
   const url = buildApiUrl(path, params);
@@ -117,7 +117,7 @@ export async function apiClient<T = any>(
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      // [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类
+// Design Lab 4.0: 统一错误分类
       const contentType = response.headers.get('content-type');
       let errorData: any = null;
       
@@ -137,7 +137,7 @@ export async function apiClient<T = any>(
         errorData = { message: `HTTP ${response.status} ${response.statusText}` };
       }
       
-      // [2025-01-30 23:00:00] Design Lab 4.0: 统一错误分类
+// Design Lab 4.0: 统一错误分类
       let errorType: ApiErrorType;
       if (response.status === 401) {
         errorType = ApiErrorType.UNAUTHORIZED;
@@ -186,7 +186,7 @@ export async function apiClient<T = any>(
       throw error;
     }
     
-    // [2025-01-30 23:00:00] Design Lab 4.0: 网络错误分类
+// Design Lab 4.0: 网络错误分类
     if (error.name === 'AbortError') {
       throw new ApiError(
         ApiErrorType.TIMEOUT,
@@ -196,7 +196,7 @@ export async function apiClient<T = any>(
       );
     }
     
-    // [2025-01-30 23:00:00] Design Lab 4.0: 网络错误分类
+// Design Lab 4.0: 网络错误分类
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new ApiError(
         ApiErrorType.NETWORK_ERROR,

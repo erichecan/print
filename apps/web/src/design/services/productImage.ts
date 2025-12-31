@@ -1,6 +1,6 @@
 /**
  * Product Image Service
- * [2025-01-30 20:00:00] 产品图片加载服务，保证 URL 原样与 headers
+* 产品图片加载服务，保证 URL 原样与 headers
  * 
  * 职责：
  * - 获取产品主图 URL（保证 URL 原样，不被 encode 重写）
@@ -36,7 +36,7 @@ export interface ProductImageLoadResult {
 
 /**
  * 获取产品图片 URL
- * [2025-01-30 20:00:00] 保证 URL 原样，不被 encode 重写
+* 保证 URL 原样，不被 encode 重写
  */
 export async function getProductImageUrl(options: ProductImageLoadOptions): Promise<ProductImageLoadResult> {
   const {

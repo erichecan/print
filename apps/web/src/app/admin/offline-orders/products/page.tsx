@@ -1,6 +1,6 @@
 /**
  * Simple Offline Order Products Management Page
- * [2025-12-07 08:00:00] 简化的产品管理页面
+* 简化的产品管理页面
  */
 'use client';
 

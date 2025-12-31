@@ -1,6 +1,6 @@
 /**
  * 从 GCS 图片文件创建数据库图片记录
- * [2025-01-29 23:55:00] 扫描 GCS 中的图片，为每个商品创建对应的图片记录
+* 扫描 GCS 中的图片，为每个商品创建对应的图片记录
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
@@ -17,7 +17,7 @@ const GCS_BASE_URL = `https://storage.googleapis.com/${BUCKET_NAME}`;
 const storage = new Storage({ projectId: PROJECT_ID });
 const bucket = storage.bucket(BUCKET_NAME);
 
-// [2025-01-29 23:55:00] 从 GCS 获取所有商品图片文件
+// 从 GCS 获取所有商品图片文件
 async function getGcsProductImages() {
   const [files] = await bucket.getFiles({ prefix: 'products/' });
   
@@ -44,7 +44,7 @@ async function getGcsProductImages() {
   return productImages;
 }
 
-// [2025-01-29 23:55:00] 为商品创建图片记录
+// 为商品创建图片记录
 async function createProductImages() {
   console.log('🔍 扫描 GCS 中的商品图片...\n');
   

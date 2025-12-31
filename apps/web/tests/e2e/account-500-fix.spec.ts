@@ -1,6 +1,6 @@
 /**
  * Account 500 Error Fix E2E Tests
- * [2025-01-27 18:55:00] 测试账户页面不再返回 500 错误
+* 测试账户页面不再返回 500 错误
  */
 import { test, expect } from '@playwright/test';
 
@@ -115,7 +115,7 @@ test.describe('Account 500 Error Fix', () => {
     expect(requestId).toBeDefined();
   });
 
-  // [2025-12-12 14:15:00] 新增测试：验证 redirect 错误不被捕获
+// 新增测试：验证 redirect 错误不被捕获
   test('should properly handle redirect without Server Components error', async ({ page }) => {
     // 清除所有 cookies，确保未登录
     await page.context().clearCookies();
@@ -146,7 +146,7 @@ test.describe('Account 500 Error Fix', () => {
     expect(consoleErrors.length).toBe(0);
   });
 
-  // [2025-12-12 14:15:00] 新增测试：验证超时错误处理
+// 新增测试：验证超时错误处理
   test('should handle API timeout gracefully (not 500)', async ({ page, context }) => {
     // 设置认证 cookie
     await context.addCookies([{
@@ -179,7 +179,7 @@ test.describe('Account 500 Error Fix', () => {
     }
   });
 
-  // [2025-12-12 14:15:00] 新增测试：验证 JSON 解析错误处理
+// 新增测试：验证 JSON 解析错误处理
   test('should handle invalid JSON response gracefully (not 500)', async ({ page, context }) => {
     // 设置认证 cookie
     await context.addCookies([{

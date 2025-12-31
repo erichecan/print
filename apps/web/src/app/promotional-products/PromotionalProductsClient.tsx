@@ -1,7 +1,7 @@
 /**
  * 促销产品页面客户端组件
- * [2025-01-29 12:00:00] 显示 Hero 区域、类别网格和联系信息
- * [2025-12-04 23:40:00] 移除 FAQ 部分，已移动到帮助中心页面
+* 显示 Hero 区域、类别网格和联系信息
+* 移除 FAQ 部分，已移动到帮助中心页面
  */
 'use client';
 
@@ -11,7 +11,7 @@ import styles from './promotional-products.module.css';
 
 /**
  * 获取图片路径，如果本地图片不存在则使用备用图片
- * [2025-01-29 12:00:00] 辅助函数，处理图片路径和备用方案
+* 辅助函数，处理图片路径和备用方案
  */
 function getCategoryImagePath(category: PromotionalCategory): string {
   // 首先尝试使用爬取的图片路径

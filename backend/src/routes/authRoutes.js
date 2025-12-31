@@ -1,6 +1,5 @@
 /**
  * Authentication Routes
- * [2025-11-05 01:00:00]
  */
 const express = require('express');
 const router = express.Router();
@@ -30,7 +29,7 @@ router.post('/logout', logout);
 router.get('/me', authenticate, me);
 
 // GET /api/auth/check - Diagnostic endpoint for authentication status (public)
-// [2025-12-02 03:45:00] Returns authentication status and configuration info
+// Returns authentication status and configuration info
 router.get('/check', check);
 
 // POST /api/auth/forgot-password - Request password reset (public)

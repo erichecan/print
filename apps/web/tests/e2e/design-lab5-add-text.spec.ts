@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.0 - Add Text 功能闭环测试
- * [2025-12-16 07:10:00] 验证 Add Text：创建文本对象、进入 Edit Text、角控件可用、send to back 不会到商品底图下面
+* 验证 Add Text：创建文本对象、进入 Edit Text、角控件可用、send to back 不会到商品底图下面
  */
 import { test, expect } from './fixtures/test-base';
 import {

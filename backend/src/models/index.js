@@ -1,4 +1,4 @@
-// [2025-11-02 20:55:00] Sequelize models initialization
+// Sequelize models initialization
 const { sequelize } = require('../config/database');
 const { DataTypes } = require('sequelize');
 
@@ -67,7 +67,7 @@ User.hasMany(Font, { foreignKey: 'created_by', as: 'fonts', onDelete: 'SET NULL'
 
 Address.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 CartItem.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
-// [2025-11-10 15:45:30] Deduplicated Order -> User association to avoid alias conflicts
+// Deduplicated Order -> User association to avoid alias conflicts
 Order.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Design.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 ProductReview.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -125,7 +125,7 @@ Order.belongsTo(Address, { foreignKey: 'shipping_address_id', as: 'shippingAddre
 Order.belongsTo(Address, { foreignKey: 'billing_address_id', as: 'billingAddress' });
 
 OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'order' });
-// [2025-11-14 06:15:00] OrderItem -> Product 保持单一 alias，避免 Sequelize 冲突
+// OrderItem -> Product 保持单一 alias，避免 Sequelize 冲突
 OrderItem.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
 OrderItem.belongsTo(ProductVariant, { foreignKey: 'variant_id', as: 'variant' });
 OrderItem.belongsTo(Design, { foreignKey: 'design_id', as: 'design' });

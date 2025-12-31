@@ -1,6 +1,6 @@
 /**
  * Cookie 403 错误调试测试
- * [2025-12-07 07:00:00] 验证 Cookie 传递和认证流程
+* 验证 Cookie 传递和认证流程
  */
 import { test, expect } from '@playwright/test';
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # GCP FREE TIER Deployment Script
-# [2025-01-27] Optimized for zero cost deployment
+# Optimized for zero cost deployment
 set -e
 
 # Colors for output
@@ -43,9 +43,9 @@ echo -e "${GREEN}🔐 Configuring Docker authentication...${NC}"
 gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
 
 # Build and push backend
-# [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
-# [2025-12-04 21:50:00] 注入构建版本信息（Git SHA 和构建时间）
-# [2025-12-18 17:50:00] 增强版本信息日志
+# 指定 linux/amd64 平台以兼容 Cloud Run
+# 注入构建版本信息（Git SHA 和构建时间）
+# 增强版本信息日志
 echo -e "${GREEN}🏗️  Building backend Docker image (linux/amd64)...${NC}"
 BACKEND_GIT_SHA=$(git rev-parse --short HEAD)
 BACKEND_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -61,7 +61,7 @@ echo -e "${GREEN}📤 Pushing backend image...${NC}"
 docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest
 
 # Get backend URL for frontend build (use existing or get from deployed service)
-# [2025-12-11 22:50:00] 获取后端 URL 用于前端构建
+# 获取后端 URL 用于前端构建
 BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)' 2>/dev/null || echo "")
 if [ -z "$BACKEND_URL" ]; then
     echo -e "${YELLOW}⚠️  Backend service not found, will use placeholder URL${NC}"
@@ -71,7 +71,7 @@ API_URL="${BACKEND_URL}/api"
 echo -e "${GREEN}📌 Using API URL for frontend build: ${API_URL}${NC}"
 
 # Get Stripe publishable key from Secret Manager
-# [2025-12-11 22:50:00] 从 Secret Manager 读取 Stripe publishable key
+# 从 Secret Manager 读取 Stripe publishable key
 STRIPE_PUBLISHABLE_KEY=$(gcloud secrets versions access latest --secret=stripe-publishable-key --project=${PROJECT_ID} 2>/dev/null || echo "")
 if [ -z "$STRIPE_PUBLISHABLE_KEY" ]; then
     echo -e "${RED}❌ 错误: 无法从 Secret Manager 读取 stripe-publishable-key${NC}"
@@ -80,10 +80,10 @@ fi
 echo -e "${GREEN}✅ 已从 Secret Manager 读取 Stripe publishable key${NC}"
 
 # Build and push frontend
-# [2025-01-29 22:35:00] 指定 linux/amd64 平台以兼容 Cloud Run
-# [2025-12-04 21:50:00] 注入构建版本信息（Git SHA 和构建时间）
-# [2025-12-11 22:50:00] 传递必需的环境变量
-# [2025-12-18 17:50:00] 增强版本信息日志，便于验证部署
+# 指定 linux/amd64 平台以兼容 Cloud Run
+# 注入构建版本信息（Git SHA 和构建时间）
+# 传递必需的环境变量
+# 增强版本信息日志，便于验证部署
 echo -e "${GREEN}🏗️  Building frontend Docker image (linux/amd64)...${NC}"
 GIT_SHA=$(git rev-parse --short HEAD)
 BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -183,7 +183,7 @@ echo -e "  4. 搜索: ${GREEN}[Frontend Build]${NC}"
 echo -e "  5. 应该看到: ${GREEN}[Frontend Build] ${GIT_SHA} ${BUILD_TIME}${NC}"
 echo -e "${YELLOW}═══════════════════════════════════════════════════════════${NC}"
 
-# [2025-01-29 02:45:00] 更新后端服务，添加 FRONTEND_URL 环境变量，用于图片 URL 生成
+# 更新后端服务，添加 FRONTEND_URL 环境变量，用于图片 URL 生成
 echo -e "${GREEN}🔧 更新后端服务，添加 FRONTEND_URL 环境变量...${NC}"
 gcloud run services update ${BACKEND_SERVICE} \
   --region ${REGION} \

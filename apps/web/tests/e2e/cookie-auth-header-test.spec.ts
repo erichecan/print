@@ -1,6 +1,6 @@
 /**
  * Cookie 和 Authorization Header 测试
- * [2025-12-07 07:35:00] 验证 Authorization header 是否被正确发送
+* 验证 Authorization header 是否被正确发送
  */
 import { test, expect } from '@playwright/test';
 

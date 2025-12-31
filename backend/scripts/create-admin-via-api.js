@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Create Admin User via API
- * [2025-12-07 08:50:00] 通过 API 创建管理员账户
+* 通过 API 创建管理员账户
  */
 const path = require('path');
 const fs = require('fs');
@@ -20,7 +20,7 @@ if (fs.existsSync(rootEnvPath)) {
 
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-// [2025-12-07 08:50:00] 默认管理员账户信息
+// 默认管理员账户信息
 const DEFAULT_ADMIN = {
   email: process.env.ADMIN_EMAIL || 'admin@suvernireplus.com',
   password: process.env.ADMIN_PASSWORD || 'admin123',

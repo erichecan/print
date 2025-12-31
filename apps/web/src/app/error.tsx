@@ -1,6 +1,6 @@
 'use client';
-// [2025-11-10 23:55:03] 自定义错误页面以避免构建阶段默认 _error 组件的 SSR 上下文问题
-// [2025-12-09 14:45:00] 增强错误追踪和日志关联功能
+// 自定义错误页面以避免构建阶段默认 _error 组件的 SSR 上下文问题
+// 增强错误追踪和日志关联功能
 
 import { useEffect, useState } from 'react';
 import { logServerError, getErrorLogInfo } from '@/lib/error-tracking';

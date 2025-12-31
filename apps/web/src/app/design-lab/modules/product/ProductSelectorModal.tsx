@@ -1,6 +1,6 @@
 /**
  * Product Selector Modal - 产品选择器模态框
- * [2025-12-18 21:18:56] 创建产品选择器组件
+* 创建产品选择器组件
  */
 'use client';
 
@@ -28,7 +28,7 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
-  // [2025-12-18 21:18:56] 加载产品列表
+// 加载产品列表
   const loadProducts = useCallback(async (reset = false) => {
     if (loading) return;
 
@@ -69,14 +69,14 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
     }
   }, [loading, page, searchQuery]);
 
-  // [2025-12-18 21:18:56] 加载产品列表（初始加载）
+// 加载产品列表（初始加载）
   useEffect(() => {
     if (isOpen && products.length === 0 && !loading) {
       loadProducts(true);
     }
   }, [isOpen, products.length, loading, loadProducts]);
 
-  // [2025-12-18 21:18:56] 搜索处理（带防抖）
+// 搜索处理（带防抖）
   useEffect(() => {
     if (!isOpen) return;
 
@@ -95,7 +95,7 @@ const ProductSelectorModal: React.FC<ProductSelectorModalProps> = ({
     setSearchQuery(query);
   };
 
-  // [2025-12-18 21:18:56] 选择产品
+// 选择产品
   const handleSelectProduct = (product: Product) => {
     onSelectProduct(product);
     onClose();

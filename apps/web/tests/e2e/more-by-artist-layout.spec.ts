@@ -1,6 +1,6 @@
 /**
  * More by this artist 排版测试
- * [2025-12-11 22:40:00] 验证 More by this artist 组件的栅格布局和卡片统一性
+* 验证 More by this artist 组件的栅格布局和卡片统一性
  */
 import { test, expect } from '@playwright/test';
 

@@ -2,7 +2,7 @@
 set -e
 
 # Configuration
-PROJECT_ID="moonlit-gamma-479502-r6"
+PROJECT_ID="print-482914"
 REGION="us-central1"
 ARTIFACT_REGISTRY="print-main"
 GIT_SHA=$(git rev-parse --short HEAD)
@@ -55,7 +55,7 @@ fi
 
 echo "📦 Building Frontend (No Cache)..."
 docker build --no-cache --platform linux/amd64 \
-  --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-234065158862.us-central1.run.app/api \
+  --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-651538279084.us-central1.run.app/api \
   --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$STRIPE_KEY" \
   --build-arg NEXT_PUBLIC_BUILD_SHA="$TAG" \
   -f apps/web/Dockerfile \

@@ -1,6 +1,6 @@
 /**
  * Canvas Image Fit Algorithms
- * [2025-01-30 19:55:00] 实现画布图片适配算法（contain/cover + 安全区居中）
+* 实现画布图片适配算法（contain/cover + 安全区居中）
  * 
  * 参考 Custom Ink 的实现：
  * - 主图等比缩放到"最长边贴合安全区"的 fit（contain）
@@ -50,7 +50,7 @@ export interface FitResult {
 
 /**
  * 计算图片在画布中的适配位置和尺寸
- * [2025-01-30 19:55:00] 实现 Custom Ink 风格的图片适配算法
+* 实现 Custom Ink 风格的图片适配算法
  */
 export function calculateImageFit(options: FitOptions): FitResult {
   const {
@@ -58,9 +58,9 @@ export function calculateImageFit(options: FitOptions): FitResult {
     canvasHeight,
     imageWidth,
     imageHeight,
-    safeAreaWidth = 0.9, // [2025-12-19 22:00:00] 修复：增大默认安全区至90%（CustomInk风格：铺满画布主要区域）
-    safeAreaHeight = 0.9, // [2025-12-19 22:00:00] 修复：增大默认安全区至90%（CustomInk风格：铺满画布主要区域）
-    fit = 'cover', // [2025-12-19 21:15:00] 修复：改为cover模式（填充安全区，可能裁剪边缘，但视觉更大更突出）
+safeAreaWidth = 0.9, // 修复：增大默认安全区至90%（CustomInk风格：铺满画布主要区域）
+safeAreaHeight = 0.9, // 修复：增大默认安全区至90%（CustomInk风格：铺满画布主要区域）
+fit = 'cover', // 修复：改为cover模式（填充安全区，可能裁剪边缘，但视觉更大更突出）
     physicalWidth,
     physicalHeight,
     dpi = 300,
@@ -98,7 +98,7 @@ export function calculateImageFit(options: FitOptions): FitResult {
   const scaledWidth = actualImageWidth * scale;
   const scaledHeight = actualImageHeight * scale;
   
-  // [2025-01-30 20:55:00] 修复：计算居中位置（基于 center 原点，而非 left/top）
+// 修复：计算居中位置（基于 center 原点，而非 left/top）
   // 当 originX/originY 为 'center' 时，left/top 应该直接是画布中心坐标
   const centerLeft = canvasWidth / 2;
   const centerTop = canvasHeight / 2;

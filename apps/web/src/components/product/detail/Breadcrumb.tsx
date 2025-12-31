@@ -1,6 +1,6 @@
 /**
  * Breadcrumb Component - Redbubble Style
- * [2025-11-19 09:25:00] 参考图一：面包屑导航
+* 参考图一：面包屑导航
  */
 'use client';
 

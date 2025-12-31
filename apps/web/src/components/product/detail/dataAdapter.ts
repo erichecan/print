@@ -1,6 +1,6 @@
 /**
  * Data Adapter - Convert API data to Redbubble format
- * [2025-11-19 09:40:00] 将后端 API 返回的产品数据转换为 Redbubble 组件所需格式
+* 将后端 API 返回的产品数据转换为 Redbubble 组件所需格式
  */
 import { ProductData } from './types';
 
@@ -46,7 +46,7 @@ interface ApiProduct {
 }
 
 /**
- * [2025-11-19 09:40:00] 将 API 产品数据转换为 Redbubble 格式
+* 将 API 产品数据转换为 Redbubble 格式
  */
 export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiProduct[]): ProductData {
   const basePriceInDollars = apiProduct.price?.base ?? (apiProduct.basePrice / 100);
@@ -55,7 +55,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     ? Math.round(((apiProduct.price.base - apiProduct.price.sale) / apiProduct.price.base) * 100)
     : 0;
 
-  // [2025-11-19 09:40:00] 提取唯一颜色
+// 提取唯一颜色
   const colorMap = new Map<string, { hex: string; available: boolean }>();
   apiProduct.variants.forEach(v => {
     if (v.color) {
@@ -81,7 +81,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     available: data.available,
   }));
 
-  // [2025-11-19 09:40:00] 提取唯一尺码
+// 提取唯一尺码
   const sizeMap = new Map<string, { stock: number; available: boolean }>();
   apiProduct.variants.forEach(v => {
     if (v.size) {
@@ -112,7 +112,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
       return a.value.localeCompare(b.value);
     });
 
-  // [2025-11-19 09:40:00] 转换图片数据
+// 转换图片数据
   const images = apiProduct.images
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(img => ({
@@ -122,7 +122,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
       thumbnail: img.url, // 可以后续优化为生成缩略图
     }));
 
-  // [2025-11-19 09:40:00] 生成产品特性（从描述中提取或使用默认）
+// 生成产品特性（从描述中提取或使用默认）
   const features = apiProduct.description
     ? apiProduct.description.split('.').filter(f => f.trim().length > 0).slice(0, 6)
     : [
@@ -132,7 +132,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
         'Easy care',
       ];
 
-  // [2025-11-19 09:40:00] 转换相关产品
+// 转换相关产品
   const moreByArtist = (relatedProducts || []).slice(0, 6).map((p, index) => ({
     id: p.id,
     title: p.name,
@@ -141,7 +141,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     link: `/products/${p.slug}`,
   }));
 
-  // [2025-11-19 09:40:00] 生成标签（基于分类和品牌）
+// 生成标签（基于分类和品牌）
   const tags: string[] = [];
   if (apiProduct.category) {
     tags.push(`${apiProduct.category.name.toLowerCase()} t-shirts`);

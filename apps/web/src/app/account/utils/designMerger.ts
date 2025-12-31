@@ -1,13 +1,12 @@
 /**
  * 设计合并工具
- * [2025-01-30 23:50:00] 合并云端和本地设计，去重，支持时间筛选
+* 合并云端和本地设计，去重，支持时间筛选
  */
 import type { UserDesign } from '@/lib/api';
 import type { LocalDesignDraft } from '@/app/design-lab/utils/localStorage';
 
 /**
  * 合并后的设计数据结构
- * [2025-01-30 23:50:00]
  */
 export interface MergedDesign {
   id: string; // 合并后的唯一ID（优先使用云端ID）
@@ -25,7 +24,6 @@ export interface MergedDesign {
 
 /**
  * 合并云端和本地设计
- * [2025-01-30 23:50:00]
  * @param cloudDesigns 云端设计列表
  * @param localDesigns 本地设计列表
  * @returns 合并后的设计列表
@@ -73,7 +71,7 @@ export function mergeDesigns(
           existing.updatedAt = local.updatedAt || local.savedAt;
         }
 
-        // [2025-01-31 03:30:00] Prefer local thumbnail if available, especially for recent edits
+// Prefer local thumbnail if available, especially for recent edits
         if (local.thumbnailUrl) {
           existing.thumbnailUrl = local.thumbnailUrl;
         }
@@ -83,7 +81,7 @@ export function mergeDesigns(
       const merged: MergedDesign = {
         id: local.id, // 使用本地ID
         name: local.designName,
-        thumbnailUrl: local.thumbnailUrl || null, // [2025-01-31 03:30:00] Use local thumbnail if available
+thumbnailUrl: local.thumbnailUrl || null, // Use local thumbnail if available
         updatedAt: local.updatedAt || local.savedAt,
         productName: local.productInfo.productName,
         source: 'local',
@@ -104,7 +102,6 @@ export function mergeDesigns(
 
 /**
  * 按时间筛选设计
- * [2025-01-30 23:50:00]
  * @param designs 设计列表
  * @param days 天数，0表示全部
  * @returns 筛选后的设计列表
@@ -128,7 +125,6 @@ export function filterDesignsByDays(
 
 /**
  * 去重设计（基于设计名称和产品名称）
- * [2025-01-30 23:50:00]
  * @param designs 设计列表
  * @returns 去重后的设计列表
  */

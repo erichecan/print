@@ -1,38 +1,38 @@
 /**
  * Site Header component
- * [2025-11-11 23:56:10] Migrated marketing header layout from prototype into Next.js
- * [2025-01-28 06:25:00] Updated to read navigation and static texts from CMS
+* Migrated marketing header layout from prototype into Next.js
+* Updated to read navigation and static texts from CMS
  */
 'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, usePathname } from 'next/navigation'; // [2025-01-28 18:15:00] 添加 usePathname 用于路由监听
+import { useRouter, usePathname } from 'next/navigation'; // 添加 usePathname 用于路由监听
 import { FormEvent, useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { contentApi, NavigationMenuItem } from '@/lib/api';
 import { CartIcon } from '@/components/CartIcon';
-import { useAuth } from '@/contexts/AuthContext'; // [2025-01-28 07:30:00] 使用认证状态
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:50:00] 使用路由映射
+import { useAuth } from '@/contexts/AuthContext'; // 使用认证状态
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // 使用路由映射
 
 export function SiteHeader() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth(); // [2025-01-28 07:30:00] 获取用户认证状态
-  // [2025-01-28 15:00:00] 移动端菜单状态管理
+const { user, loading: authLoading } = useAuth(); // 获取用户认证状态
+// 移动端菜单状态管理
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // [2025-01-28 06:25:00] 从 CMS 获取内容
+// 从 CMS 获取内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const navigation = contentData?.data?.navigation || [];
   const topMessageBar = contentData?.data?.staticTexts?.topMessageBar || 'Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing';
   
-  const pathname = usePathname(); // [2025-01-28 18:15:00] 获取当前路径
+const pathname = usePathname(); // 获取当前路径
   
-  // [2025-01-28 15:00:00] 关闭移动端菜单当路由改变时（通过监听路径变化）
+// 关闭移动端菜单当路由改变时（通过监听路径变化）
   useEffect(() => {
-    setIsMobileMenuOpen(false); // [2025-01-28 18:15:00] 当 pathname 变化时关闭菜单
+setIsMobileMenuOpen(false); // 当 pathname 变化时关闭菜单
   }, [pathname]); // 使用 pathname 而不是 router 对象
   
-  // [2025-01-28 15:00:00] 防止滚动当移动端菜单打开时
+// 防止滚动当移动端菜单打开时
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -55,8 +55,8 @@ export function SiteHeader() {
     router.push(`/products?search=${encodeURIComponent(query)}`);
   };
 
-  // [2025-01-28 06:25:00] 渲染导航菜单项
-  // [2025-01-28 12:00:00] 修改：隐藏下拉菜单，只保留一级导航
+// 渲染导航菜单项
+// 修改：隐藏下拉菜单，只保留一级导航
   const renderNavigationItem = (item: NavigationMenuItem) => {
     // 所有类型的菜单项都只渲染为简单链接，不显示下拉面板
     return (
@@ -68,7 +68,7 @@ export function SiteHeader() {
     );
   };
 
-  // [2025-01-28 15:00:00] 渲染移动端导航菜单项（简化版，无mega menu）
+// 渲染移动端导航菜单项（简化版，无mega menu）
   const renderMobileNavigationItem = (item: NavigationMenuItem) => {
     if (item.type === 'link') {
       return (
@@ -108,7 +108,7 @@ export function SiteHeader() {
       </div>
       <header className="site-header" role="banner">
         <div className="container site-header__row">
-          {/* [2025-01-28 15:00:00] 移动端汉堡菜单按钮 */}
+{/* 移动端汉堡菜单按钮 */}
           <button
             type="button"
             className="mobile-menu-toggle"
@@ -125,7 +125,7 @@ export function SiteHeader() {
           
           <div className="site-header__brand">
             <Link href="/" aria-label="Suvernire Plus home">
-              {/* [2025-01-29 03:00:00] 使用 Souvenir Plus Inc 官方 logo */}
+{/* 使用 Souvenir Plus Inc 官方 logo */}
               <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority />
             </Link>
           </div>
@@ -172,7 +172,7 @@ export function SiteHeader() {
               </div>
             </div>
           </div>
-          {/* [2025-01-28 15:00:00] 移动端操作按钮（账户、购物车） */}
+{/* 移动端操作按钮（账户、购物车） */}
           <div className="site-header__mobile-actions">
             {authLoading ? (
               <span style={{ opacity: 0.6 }}>Loading...</span>
@@ -188,24 +188,24 @@ export function SiteHeader() {
             <CartIcon />
           </div>
         </div>
-        {/* [2025-01-28 15:00:00] 桌面端导航 */}
+{/* 桌面端导航 */}
         <nav className="primary-nav primary-nav--desktop" aria-label="Primary">
           <div className="container primary-nav__inner">
             <ul className="mega">
-              {/* [2025-01-28 06:25:00] 从 CMS 渲染导航菜单 */}
-              {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
+{/* 从 CMS 渲染导航菜单 */}
+{/* 隐藏 Custom Apparel 导航项 */}
               {navigation.length > 0 ? (
                 navigation
-                  .filter((item) => item.href !== '/collections/apparel') // [2025-12-13 15:10:00] 过滤掉 Custom Apparel
+.filter((item) => item.href !== '/collections/apparel') // 过滤掉 Custom Apparel
                   .sort((a, b) => (a.order || 0) - (b.order || 0))
                   .map((item) => renderNavigationItem(item))
               ) : (
-                // [2025-01-28 06:25:00] 如果 CMS 数据为空，显示默认导航（向后兼容）
+// 如果 CMS 数据为空，显示默认导航（向后兼容）
                 <>
                   <li className="mega__item">
                     <Link href="/products" className="mega__trigger">Custom T-shirts</Link>
                   </li>
-                  {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
+{/* 隐藏 Custom Apparel 导航项 */}
                   {/* <li className="mega__item">
                     <Link href="/collections/apparel" className="mega__trigger">Custom Apparel</Link>
                   </li> */}
@@ -222,7 +222,7 @@ export function SiteHeader() {
               )}
             </ul>
             <div className="primary-nav__actions">
-              {/* [2025-01-28 07:30:00] 根据登录状态显示不同内容 */}
+{/* 根据登录状态显示不同内容 */}
               {authLoading ? (
                 <span style={{ opacity: 0.6 }}>Loading...</span>
               ) : user ? (
@@ -242,7 +242,7 @@ export function SiteHeader() {
         </nav>
       </header>
       
-      {/* [2025-01-28 15:00:00] 移动端侧边抽屉菜单 */}
+{/* 移动端侧边抽屉菜单 */}
       <div 
         className={`mobile-menu-overlay ${isMobileMenuOpen ? 'mobile-menu-overlay--open' : ''}`}
         onClick={() => setIsMobileMenuOpen(false)}
@@ -259,7 +259,7 @@ export function SiteHeader() {
             className="mobile-nav__logo"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            {/* [2025-01-29 03:00:00] 使用 Souvenir Plus Inc 官方 logo */}
+{/* 使用 Souvenir Plus Inc 官方 logo */}
             <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} />
           </Link>
           <button
@@ -272,22 +272,22 @@ export function SiteHeader() {
           </button>
         </div>
         <ul className="mobile-nav__list">
-          {/* [2025-01-28 15:00:00] 从 CMS 渲染移动端导航菜单 */}
-          {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
+{/* 从 CMS 渲染移动端导航菜单 */}
+{/* 隐藏 Custom Apparel 导航项 */}
           {navigation.length > 0 ? (
             navigation
-              .filter((item) => item.href !== '/collections/apparel') // [2025-12-13 15:10:00] 过滤掉 Custom Apparel
+.filter((item) => item.href !== '/collections/apparel') // 过滤掉 Custom Apparel
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((item) => renderMobileNavigationItem(item))
           ) : (
-            // [2025-01-28 15:00:00] 默认导航（向后兼容）
+// 默认导航（向后兼容）
             <>
               <li>
                 <Link href="/products" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
                   Custom T-shirts
                 </Link>
               </li>
-              {/* [2025-12-13 15:10:00] 隐藏 Custom Apparel 导航项 */}
+{/* 隐藏 Custom Apparel 导航项 */}
               {/* <li>
                 <Link href="/collections/apparel" className="mobile-nav__link" onClick={() => setIsMobileMenuOpen(false)}>
                   Custom Apparel

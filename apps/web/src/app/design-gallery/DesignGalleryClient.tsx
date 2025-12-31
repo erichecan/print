@@ -1,6 +1,6 @@
 /**
  * Design Gallery Client Component
- * [2025-12-06 20:00:00] 设计画廊客户端组件 for Issue #142
+* 设计画廊客户端组件 for Issue #142
  */
 'use client';
 
@@ -45,7 +45,7 @@ export default function DesignGalleryClient() {
             or with help from the Suvernire Plus creative team.
           </p>
         </div>
-        {/* [2025-12-06 20:00:00] 社交媒体分享按钮 for Issue #142 */}
+{/* 社交媒体分享按钮 for Issue #142 */}
         {currentUrl && (
           <div style={{ marginTop: '8px' }}>
             <SocialShareMenu
@@ -57,7 +57,7 @@ export default function DesignGalleryClient() {
                 hashtags: ['DesignGallery', 'CustomDesign', 'DesignInspiration'],
               }}
               onShare={(platform) => {
-                console.log(`[2025-12-06 20:00:00] Shared Design Gallery to ${platform}`);
+console.log(` Shared Design Gallery to ${platform}`);
               }}
             />
           </div>
@@ -77,7 +77,7 @@ export default function DesignGalleryClient() {
           >
             <h2 style={{ fontSize: '18px', marginBottom: '8px' }}>{design.title}</h2>
             <p style={{ color: '#6b7280', marginBottom: '12px' }}>{design.description}</p>
-            {/* [2025-12-06 20:00:00] 每个设计项目的分享按钮 for Issue #142 */}
+{/* 每个设计项目的分享按钮 for Issue #142 */}
             {currentUrl && (
               <div style={{ marginTop: '12px' }}>
                 <SocialShareMenu
@@ -88,7 +88,7 @@ export default function DesignGalleryClient() {
                     hashtags: ['DesignGallery', 'CustomDesign'],
                   }}
                   onShare={(platform) => {
-                    console.log(`[2025-12-06 20:00:00] Shared design "${design.title}" to ${platform}`);
+console.log(` Shared design "${design.title}" to ${platform}`);
                   }}
                 />
               </div>

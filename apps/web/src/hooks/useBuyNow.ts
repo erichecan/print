@@ -1,6 +1,6 @@
 /**
  * useBuyNow Hook
- * [2025-12-08] 重构 Buy Now 功能，直接跳转到结算页
+* 重构 Buy Now 功能，直接跳转到结算页
  */
 'use client';
 
@@ -98,7 +98,7 @@ export function useBuyNow(options: UseBuyNowOptions = {}): UseBuyNowReturn {
         // 确保购物车数据已更新
         await refreshCart();
 
-        // [2025-12-21] Verify cart content to ensure session persistence before redirect
+// Verify cart content to ensure session persistence before redirect
         // This handles cases where cross-port cookie propagation might be delayed
         let currentCart = await cartApi.get();
         if (!currentCart || currentCart.items.length === 0) {

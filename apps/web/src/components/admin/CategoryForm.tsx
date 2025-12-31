@@ -2,7 +2,7 @@
 
 /**
  * Admin Category Form
- * [2025-11-11 23:23:11] 后台分类创建/编辑表单
+* 后台分类创建/编辑表单
  */
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -23,8 +23,8 @@ interface CategoryFormProps {
 export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [traceId, setTraceId] = useState<string | null>(null); // [2025-01-27 18:00:00] 添加 traceId 状态
-  const abortControllerRef = useRef<AbortController | null>(null); // [2025-01-27 18:00:00] 用于取消请求
+const [traceId, setTraceId] = useState<string | null>(null); // 添加 traceId 状态
+const abortControllerRef = useRef<AbortController | null>(null); // 用于取消请求
 
   const { data: categoryResponse } = useSWR(
     ['admin-categories', 'parent-options'],
@@ -67,7 +67,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
   }, [category, reset]);
 
   const onSubmit = async (values: AdminCategoryPayload) => {
-    // [2025-01-27 18:00:00] 防止重复提交
+// 防止重复提交
     if (submitting) {
       return;
     }
@@ -76,7 +76,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
     setTraceId(null);
     setSubmitting(true);
     
-    // [2025-01-27 18:00:00] 创建新的 AbortController
+// 创建新的 AbortController
     abortControllerRef.current = new AbortController();
     
     try {
@@ -98,7 +98,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
         onSuccess(response);
       }
     } catch (error: any) {
-      // [2025-01-27 18:00:00] 统一错误处理，提取 traceId 和错误码
+// 统一错误处理，提取 traceId 和错误码
       const errorMessage = error?.message || '提交失败，请稍后重试';
       const errorTraceId = error?.traceId || null;
       const errorCode = error?.errorCode || null;
@@ -136,7 +136,7 @@ export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
     }
   };
   
-  // [2025-01-27 18:00:00] 重试函数
+// 重试函数
   const handleRetry = () => {
     if (submitting) return;
     // 重新触发表单提交

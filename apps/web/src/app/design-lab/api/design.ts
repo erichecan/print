@@ -1,6 +1,6 @@
 /**
  * Design API - 设计相关 API 封装
- * [2025-12-18 21:20:48] 创建设计模块 API 封装
+* 创建设计模块 API 封装
  */
 import { designLabApi } from '@/lib/api';
 
@@ -8,7 +8,7 @@ export interface DesignDraft {
   id: string;
   name: string;
   canvas: any;
-  canvasSnapshot?: any; // [2025-12-28] Add canvas snapshot for loading
+canvasSnapshot?: any; // Add canvas snapshot for loading
   productVariantId?: string;
   variant?: {
     id: string;
@@ -27,13 +27,13 @@ export interface CreateDesignPayload {
   name: string;
   canvas: any;
   productVariantId: string;
-  thumbnailUrl?: string; // [2025-12-28] Add thumbnail support
+thumbnailUrl?: string; // Add thumbnail support
 }
 
 export interface UpdateDesignPayload {
   name?: string;
   canvas?: any;
-  thumbnailUrl?: string; // [2025-12-28] Add thumbnail support
+thumbnailUrl?: string; // Add thumbnail support
 }
 
 export interface ShareDesignResponse {

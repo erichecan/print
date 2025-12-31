@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 产品项颜色配置组件
+* 产品项颜色配置组件
  * 处理单个产品项的颜色组配置初始化和显示
  */
 'use client';
@@ -39,7 +39,7 @@ export function ProductItemColorConfig({
   onUpdate,
   onValidationChange
 }: ProductItemColorConfigProps) {
-  // [2025-12-19] 初始化颜色组（如果不存在）
+// 初始化颜色组（如果不存在）
   useEffect(() => {
     if (existingGroups.length === 0 && colors.length > 0) {
       const newGroups = convertProductColorsToColorGroups(colors as any, []);
@@ -49,7 +49,7 @@ export function ProductItemColorConfig({
     }
   }, [productItemId, colors.length, existingGroups.length, onUpdate]);
 
-  // [2025-12-19] 使用现有的颜色组，如果不存在则从colors转换
+// 使用现有的颜色组，如果不存在则从colors转换
   const colorGroups = useMemo(() => {
     if (existingGroups.length > 0) {
       return existingGroups;

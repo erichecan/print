@@ -1,4 +1,4 @@
-// [2025-11-02 21:00:00] Seed product categories
+// Seed product categories
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = {

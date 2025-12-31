@@ -1,4 +1,4 @@
-// [2025-11-02 20:57:00] OrderAddressSnapshot model
+// OrderAddressSnapshot model
 module.exports = (sequelize, DataTypes) => {
   const OrderAddressSnapshot = sequelize.define('OrderAddressSnapshot', {
     id: {

@@ -1,6 +1,6 @@
 /**
  * Products RSC Error Verification Test
- * [2025-12-09 22:50:00] 验证商品列表和详情页是否正常访问，无 RSC 渲染错误
+* 验证商品列表和详情页是否正常访问，无 RSC 渲染错误
  */
 import { test, expect } from '@playwright/test';
 

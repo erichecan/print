@@ -1,4 +1,4 @@
-// [2025-11-28 12:50:00] 临时路由：快速创建 admin 用户
+// 临时路由：快速创建 admin 用户
 // 注意：这是一个临时修复路由，生产环境应该禁用
 const express = require('express');
 const router = express.Router();
@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 const ADMIN_EMAIL = 'admin@suvernireplus.com';
 const ADMIN_PASSWORD = 'admin123';
 
-// [2025-11-28 12:50:00] POST /api/admin-setup/create-user - 创建 admin 用户
+// POST /api/admin-setup/create-user - 创建 admin 用户
 router.post('/create-user', async (req, res) => {
   try {
     console.log('🔧 开始创建 admin 用户...');
@@ -72,7 +72,7 @@ router.post('/create-user', async (req, res) => {
   }
 });
 
-// [2025-01-29 22:30:00] POST /api/admin-setup/seed - 运行 seed 脚本
+// POST /api/admin-setup/seed - 运行 seed 脚本
 router.post('/seed', async (req, res) => {
   try {
     console.log('🌱 开始运行 seed 脚本...');
@@ -202,7 +202,7 @@ router.post('/seed', async (req, res) => {
   }
 });
 
-// [2025-01-29 22:30:00] GET /api/admin-setup/status - 检查数据库状态
+// GET /api/admin-setup/status - 检查数据库状态
 router.get('/status', async (req, res) => {
   try {
     const { PrismaClient } = require('@prisma/client');

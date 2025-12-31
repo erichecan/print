@@ -1,6 +1,6 @@
 /**
  * Custom Ink Design Lab PRD 3.0 验证辅助函数
- * [2025-12-07 19:40:00] 提供各功能模块的验证逻辑
+* 提供各功能模块的验证逻辑
  */
 import { Page } from '@playwright/test';
 import * as fs from 'fs';

@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 印刷位置列表组件
+* 印刷位置列表组件
  * 显示和编辑颜色组的默认印刷位置配置
  */
 'use client';
@@ -26,7 +26,7 @@ const POSITION_LABELS: Record<PositionKey, string> = {
 export function PositionList({ positions, onChange, onEdit }: PositionListProps) {
   const allPositionKeys: PositionKey[] = ['front', 'back', 'left_sleeve', 'right_sleeve', 'pocket', 'tag_inside', 'tag_outside', 'custom'];
 
-  // [2025-12-19] 切换位置启用状态
+// 切换位置启用状态
   const handleTogglePosition = (positionKey: PositionKey) => {
     const existing = positions.find(p => p.positionKey === positionKey);
     if (existing) {
@@ -54,7 +54,7 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
     }
   };
 
-  // [2025-12-19] 获取位置的显示信息
+// 获取位置的显示信息
   const getPositionInfo = (positionKey: PositionKey) => {
     const config = positions.find(p => p.positionKey === positionKey);
     if (!config || !config.enabled) {

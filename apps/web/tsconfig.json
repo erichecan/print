@@ -38,5 +38,5 @@
   "exclude": [
     "node_modules"
   ],
-  "_note": "tsconfig 由 Next.js 调整增量编译设置 [2025-11-10 13:05:00]"
+"_note": "tsconfig 由 Next.js 调整增量编译设置 "
 }

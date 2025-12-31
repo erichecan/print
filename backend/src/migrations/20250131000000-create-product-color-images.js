@@ -1,4 +1,4 @@
-// [2025-01-30 23:55:00] Create product_color_images table for Design Lab color-image mapping
+// Create product_color_images table for Design Lab color-image mapping
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
@@ -6,7 +6,7 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      // [2025-01-30 23:55:00] 确保 UUID 扩展存在
+// 确保 UUID 扩展存在
       await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";', { transaction });
       await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', { transaction });
 

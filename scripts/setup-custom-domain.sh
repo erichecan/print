@@ -1,6 +1,6 @@
 #!/bin/bash
 # Cloud Run 自定义域名配置脚本
-# [2025-01-27] 自动配置 Cloud Run 自定义域名
+# 自动配置 Cloud Run 自定义域名
 set -e
 
 # 颜色输出

@@ -1,6 +1,6 @@
 /**
  * 本地设计同步提示组件
- * [2025-01-31 00:20:00] 检测并提示用户上传本地设计到云端
+* 检测并提示用户上传本地设计到云端
  */
 'use client';
 
@@ -22,7 +22,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
   const [showPrompt, setShowPrompt] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  // [2025-01-31 00:20:00] 检测未同步的本地设计
+// 检测未同步的本地设计
   useEffect(() => {
     const allLocal = getAllLocalDesigns();
     setLocalDesigns(allLocal);
@@ -32,7 +32,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
       return;
     }
 
-    // [2025-01-31 00:20:00] 检查哪些本地设计还没有对应的云端版本
+// 检查哪些本地设计还没有对应的云端版本
     const merged = mergeDesigns(cloudDesigns, allLocal);
     const unsynced = allLocal.filter(local => {
       // 检查是否有匹配的云端设计（通过名称和产品名称匹配）
@@ -46,14 +46,14 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
     setShowPrompt(unsynced.length > 0 && !dismissed);
   }, [cloudDesigns, dismissed]);
 
-  // [2025-01-31 00:20:00] 检查是否已关闭过提示（使用 localStorage）
+// 检查是否已关闭过提示（使用 localStorage）
   useEffect(() => {
     const dismissedKey = 'designSyncPromptDismissed';
     const isDismissed = localStorage.getItem(dismissedKey) === 'true';
     setDismissed(isDismissed);
   }, []);
 
-  // [2025-01-31 00:20:00] 上传本地设计到云端
+// 上传本地设计到云端
   const handleUploadAll = async () => {
     if (unsyncedDesigns.length === 0) {
       return;
@@ -71,19 +71,19 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
         setUploadProgress({ current: i + 1, total: unsyncedDesigns.length });
 
         try {
-          // [2025-01-31 00:20:00] 获取产品 variantId（如果不存在，使用默认值）
+// 获取产品 variantId（如果不存在，使用默认值）
           let productVariantId = localDesign.productInfo.variantId;
           if (!productVariantId || productVariantId === 'default') {
             // 尝试从产品名称获取 variantId（这里简化处理，实际应该从 API 获取）
             productVariantId = 'default';
           }
 
-          // [2025-01-31 00:20:00] 使用第一个视图的画布数据（通常是 front）
+// 使用第一个视图的画布数据（通常是 front）
           const canvasData = localDesign.viewCanvases[localDesign.currentView] ||
             localDesign.viewCanvases.front ||
             { size: { width: 4000, height: 4800 }, objects: [] };
 
-          // [2025-01-31 00:20:00] 上传到云端
+// 上传到云端
           const payload = {
             name: localDesign.designName,
             canvas: canvasData,
@@ -98,7 +98,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
         }
       }
 
-      // [2025-01-31 00:20:00] 上传完成，刷新列表
+// 上传完成，刷新列表
       if (successCount > 0) {
         setShowPrompt(false);
         if (onSyncComplete) {
@@ -122,7 +122,7 @@ export function LocalDesignSyncPrompt({ cloudDesigns, onSyncComplete }: LocalDes
     }
   };
 
-  // [2025-01-31 00:20:00] Dismiss prompt
+// Dismiss prompt
   const handleDismiss = () => {
     setShowPrompt(false);
     setDismissed(true);

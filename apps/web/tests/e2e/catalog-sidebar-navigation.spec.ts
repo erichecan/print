@@ -1,6 +1,6 @@
 /**
  * Catalog Sidebar Navigation E2E Tests
- * [2025-12-11 23:05:00] 测试分类导航的 URL 路由、交互与列表数据一致性
+* 测试分类导航的 URL 路由、交互与列表数据一致性
  */
 import { test, expect } from '@playwright/test';
 

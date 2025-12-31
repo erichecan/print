@@ -1,6 +1,6 @@
 /**
  * Product Detail Error Boundary
- * [2025-01-27 19:25:00] 商品详情页错误处理，避免图片失败导致 500
+* 商品详情页错误处理，避免图片失败导致 500
  */
 'use client';
 
@@ -17,13 +17,13 @@ export default function ProductDetailError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // [2025-01-27 19:25:00] 记录错误并获取追踪信息
+// 记录错误并获取追踪信息
     const traceId = logServerError(error, {
       path: typeof window !== 'undefined' ? window.location.pathname : '/products/[slug]',
       method: 'GET',
     });
     
-    // [2025-01-27 19:25:00] 上报错误到遥测服务
+// 上报错误到遥测服务
     reportServerError({
       digest: error.digest,
       traceId,

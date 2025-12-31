@@ -1,5 +1,5 @@
 /**
- * [2025-11-28 16:10:00] 线下订单创建 E2E 测试
+* 线下订单创建 E2E 测试
  */
 import { test, expect } from './fixtures/test-base';
 
@@ -121,7 +121,7 @@ test.describe('线下订单创建', () => {
     const submitButton = page.locator('button:has-text("提交"), button:has-text("Submit"), button[type="submit"]').first();
     await submitButton.waitFor({ state: 'visible', timeout: 5000 });
     
-    // [2025-11-28 17:50:00] 监听网络请求 - 先设置监听再点击，增加超时时间
+// 监听网络请求 - 先设置监听再点击，增加超时时间
     let requestPromise = page.waitForResponse(
       (response) => {
         const url = response.url();
@@ -133,11 +133,11 @@ test.describe('线下订单创建', () => {
 
     await submitButton.click();
 
-    // [2025-11-28 16:55:00] 等待响应，如果没有响应则检查错误消息
+// 等待响应，如果没有响应则检查错误消息
     const response = await requestPromise;
     
     if (!response) {
-      // [2025-11-28 17:50:00] 如果请求超时，检查是否有错误消息或成功消息
+// 如果请求超时，检查是否有错误消息或成功消息
       try {
         await page.waitForTimeout(3000);
         

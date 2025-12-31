@@ -1,6 +1,6 @@
 /**
  * Design Lab 无障碍与性能测试 (M7)
- * [2025-01-27 12:00:00] 测试键盘导航、ARIA、性能指标
+* 测试键盘导航、ARIA、性能指标
  */
 import { test, expect } from './fixtures/test-base';
 import {

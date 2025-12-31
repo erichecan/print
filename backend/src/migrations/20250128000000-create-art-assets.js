@@ -1,4 +1,4 @@
-// [2025-01-28 00:40:00] Create art_assets table for Design Lab CMS
+// Create art_assets table for Design Lab CMS
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
@@ -6,7 +6,7 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const transaction = await queryInterface.sequelize.transaction();
     try {
-      // [2025-01-28 01:30:00] 确保 UUID 扩展存在
+// 确保 UUID 扩展存在
       await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "pgcrypto";', { transaction });
       await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";', { transaction });
 
@@ -69,7 +69,7 @@ module.exports = {
       created_by: {
         type: Sequelize.UUID,
         allowNull: true,
-        // [2025-01-28 01:45:00] 暂时不添加外键约束，避免类型不匹配问题
+// 暂时不添加外键约束，避免类型不匹配问题
         // references: { model: 'users', key: 'id' },
         // onDelete: 'SET NULL',
         comment: '创建者用户 ID'

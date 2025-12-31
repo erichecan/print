@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.1 - 角控件功能测试与调试
- * [2025-12-16 03:20:00] 使用 Chrome DevTools Protocol 进行完整的角控件功能测试
+* 使用 Chrome DevTools Protocol 进行完整的角控件功能测试
  * 包括：日志收集、对象检查、功能测试、截图验证
  */
 import { test, expect, chromium } from '@playwright/test';

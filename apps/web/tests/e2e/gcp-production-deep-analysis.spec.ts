@@ -1,5 +1,5 @@
 /**
- * [2025-12-01] GCP 生产环境深度分析测试
+* GCP 生产环境深度分析测试
  * 
  * 使用 Playwright 和 Chrome DevTools Protocol (CDP) 深度分析：
  * - 购物车功能

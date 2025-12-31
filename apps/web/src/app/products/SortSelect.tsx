@@ -2,7 +2,7 @@
 
 /**
  * SortSelect
- * [2025-01-27 18:30:00] 客户端组件处理排序下拉菜单的变化
+* 客户端组件处理排序下拉菜单的变化
  */
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -26,7 +26,7 @@ export default function SortSelect({ defaultValue }: { defaultValue: string }) {
         Sort By: 
         <select 
           name="sort" 
-          value={defaultValue} // [2025-12-18 22:09:15] 使用 value 而不是 defaultValue，确保选中状态正确
+value={defaultValue} // 使用 value 而不是 defaultValue，确保选中状态正确
           className="sort-select" 
           onChange={handleChange}
         >

@@ -1,6 +1,6 @@
 /**
  * Stripe Config Validator Component
- * [2025-01-30 12:00:00] 客户端 Stripe 配置验证组件
+* 客户端 Stripe 配置验证组件
  * 
  * 在客户端运行时验证 Stripe 配置，避免在生产环境出现配置错误
  */
@@ -15,7 +15,7 @@ export function StripeConfigValidator() {
     if (typeof window === 'undefined') return;
     
     try {
-      // [2025-01-30 12:00:00] 验证 Stripe 配置
+// 验证 Stripe 配置
       const key = getStripePublishableKey();
       if (!key || key.trim() === '') {
         if (process.env.NODE_ENV === 'production') {

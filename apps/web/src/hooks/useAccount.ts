@@ -1,6 +1,6 @@
 /**
  * Account Hooks
- * [2025-12-18 22:45:00] 统一的账户相关 hooks，使用 SWR 进行数据缓存和错误处理
+* 统一的账户相关 hooks，使用 SWR 进行数据缓存和错误处理
  */
 import useSWR from 'swr';
 import { authApi, ordersApi, addressesApi, type UserProfile, type AccountOrderDetail } from '@/lib/api';

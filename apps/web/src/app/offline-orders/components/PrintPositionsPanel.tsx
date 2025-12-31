@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 印刷位置面板组件
+* 印刷位置面板组件
  * 显示在颜色卡片内，紧贴尺码表下方
  */
 'use client';
@@ -39,7 +39,7 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
   const [editingPosition, setEditingPosition] = useState<PositionKey | null>(null);
   const [selectedPositionKey, setSelectedPositionKey] = useState<PositionKey | ''>('');
 
-  // [2025-12-19] 添加位置
+// 添加位置
   const handleAddPosition = (key: PositionKey) => {
     const exists = positions.find(p => p.positionKey === key);
     if (exists) {
@@ -61,7 +61,7 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
     setSelectedPositionKey('');
   };
 
-  // [2025-12-19] 更新位置
+// 更新位置
   const handleUpdatePosition = (updated: PositionConfig) => {
     const index = positions.findIndex(p => p.positionKey === updated.positionKey);
     if (index >= 0) {
@@ -74,12 +74,12 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
     setEditingPosition(null);
   };
 
-  // [2025-12-19] 删除位置
+// 删除位置
   const handleRemovePosition = (key: PositionKey) => {
     onChange(positions.filter(p => p.positionKey !== key));
   };
 
-  // [2025-12-19] 切换位置启用状态
+// 切换位置启用状态
   const handleToggleEnabled = (key: PositionKey) => {
     const index = positions.findIndex(p => p.positionKey === key);
     if (index >= 0) {
@@ -104,7 +104,7 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
         )}
       </div>
 
-      {/* [2025-12-19] 位置选择下拉 */}
+{/* 位置选择下拉 */}
       <div className="mb-3">
         <select
           value={selectedPositionKey}
@@ -128,7 +128,7 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
         </select>
       </div>
 
-      {/* [2025-12-19] 已选位置列表 */}
+{/* 已选位置列表 */}
       {positions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {positions.map((pos) => (
@@ -189,7 +189,7 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
         </div>
       )}
 
-      {/* [2025-12-19] 位置编辑弹窗 */}
+{/* 位置编辑弹窗 */}
       {editingPosition && (
         <PositionEditorModal
           positionKey={editingPosition}

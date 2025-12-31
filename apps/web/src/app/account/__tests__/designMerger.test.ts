@@ -1,6 +1,5 @@
 /**
  * 设计合并工具测试
- * [2025-01-31 00:25:00]
  */
 import { mergeDesigns, filterDesignsByDays } from '../utils/designMerger';
 import type { UserDesign } from '@/lib/api';

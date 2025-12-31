@@ -1,4 +1,4 @@
-// [2025-11-02 20:56:00] Product model
+// Product model
 module.exports = (sequelize, DataTypes) => {
   const Product = sequelize.define('Product', {
     id: {
@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
-    // [2025-11-10 10:30:00] Added cost management numeric fields
+// Added cost management numeric fields
     unit_cost: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

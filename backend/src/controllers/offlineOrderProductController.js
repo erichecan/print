@@ -1,5 +1,5 @@
-// [2025-12-06] PRD v2.0: 线下订单产品管理控制器
-// [2025-01-27 10:00:00] 重构：使用snake_case模型和字段名，添加display_order和is_active支持
+// PRD v2.0: 线下订单产品管理控制器
+// 重构：使用snake_case模型和字段名，添加display_order和is_active支持
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { BadRequestError, NotFoundError, ConflictError, InternalServerError } = require('../utils/errors');
@@ -103,7 +103,7 @@ exports.createProduct = async (req, res, next) => {
       select: { display_order: true },
     });
 
-    // [2025-12-07 08:55:00] 创建产品
+// 创建产品
     const product = await prisma.offline_order_products.create({
       data: {
         id: uuidv4(),

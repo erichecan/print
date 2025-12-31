@@ -1,7 +1,7 @@
 /**
  * Account Designs Page
- * [2025-12-18 23:25:00] 我的设计页面
- * [2025-01-31 00:05:00] 更新：支持本地+云端设计合并显示、30天筛选、编辑功能
+* 我的设计页面
+* 更新：支持本地+云端设计合并显示、30天筛选、编辑功能
  */
 'use client';
 
@@ -15,15 +15,15 @@ import { LocalDesignSyncPrompt } from '../components/LocalDesignSyncPrompt';
 import { useAccount } from '@/contexts/AccountContext';
 
 export default function AccountDesignsPage() {
-  const { user } = useAccount(); // [2025-01-31 00:20:00] 使用 useAccount hook
+const { user } = useAccount(); // 使用 useAccount hook
   const [mergedDesigns, setMergedDesigns] = useState<MergedDesign[]>([]);
   const [filteredDesigns, setFilteredDesigns] = useState<MergedDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [timeFilter, setTimeFilter] = useState<TimeFilterOption>(30); // [2025-01-31 00:05:00] 默认30天
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // [2025-01-31 00:20:00] 用于触发刷新
+const [timeFilter, setTimeFilter] = useState<TimeFilterOption>(30); // 默认30天
+const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
 
-  // [2025-01-31 00:05:00] 加载设计数据
+// 加载设计数据
   useEffect(() => {
     const fetchDesigns = async () => {
       try {
@@ -44,7 +44,7 @@ export default function AccountDesignsPage() {
             if (cloudDesigns.length > 0) {
               console.log('[AccountDesigns] First cloud design:', cloudDesigns[0]);
             }
-            // [2025-01-31 00:05:00] 确保 updatedAt 字段存在（使用 createdAt 作为 fallback）
+// 确保 updatedAt 字段存在（使用 createdAt 作为 fallback）
             cloudDesigns = cloudDesigns.map(design => ({
               ...design,
               updatedAt: design.updatedAt || design.createdAt,
@@ -84,9 +84,9 @@ export default function AccountDesignsPage() {
     };
 
     fetchDesigns();
-  }, [user, timeFilter, refreshTrigger]); // [2025-01-31 00:20:00] 添加 refreshTrigger 依赖
+}, [user, timeFilter, refreshTrigger]); // 添加 refreshTrigger 依赖
 
-  // [2025-01-31 00:05:00] Handle design deletion
+// Handle design deletion
   const handleDelete = async (design: MergedDesign) => {
     console.log('[AccountDesigns] ===== DELETION START =====');
     console.log('[AccountDesigns] Deleting design:', {
@@ -97,7 +97,7 @@ export default function AccountDesignsPage() {
       source: design.source
     });
 
-    // [2025-12-28] CRITICAL: Check if design has ANY valid ID
+// CRITICAL: Check if design has ANY valid ID
     if (!design.cloudId && !design.localId) {
       console.error('[AccountDesigns] ERROR: Design has no cloudId or localId!', design);
       alert('Cannot delete: Design has no valid ID');
@@ -204,7 +204,7 @@ export default function AccountDesignsPage() {
         </a>
       </div>
 
-      {/* [2025-01-31 00:20:00] Local design sync prompt (only shown if logged in) */}
+{/* Local design sync prompt (only shown if logged in) */}
       {user && (
         <LocalDesignSyncPrompt
           cloudDesigns={mergedDesigns.filter(d => d.source === 'cloud' || d.source === 'both')}
@@ -214,7 +214,7 @@ export default function AccountDesignsPage() {
         />
       )}
 
-      {/* [2025-01-31 00:05:00] Time filter */}
+{/* Time filter */}
       <DesignTimeFilter value={timeFilter} onChange={setTimeFilter} />
 
       {/* Design List */}

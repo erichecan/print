@@ -1,13 +1,13 @@
 /**
  * Privacy Policy Page
- * [2025-11-11 22:31:55] Scaffold
- * [2025-11-12 00:07:20] Added data collection, usage, and rights overview
- * [2025-01-27 17:25:00] 补充 SEO 元数据
+* Scaffold
+* Added data collection, usage, and rights overview
+* 补充 SEO 元数据
  */
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-// [2025-01-27 17:25:00] 生成隐私政策页面 SEO 元数据
+// 生成隐私政策页面 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Privacy Policy - Data Protection & Privacy',
   description: 'Learn how Suvernire Plus collects, uses, and protects your personal information. Our commitment to data privacy and your rights.',

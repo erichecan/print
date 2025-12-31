@@ -1,4 +1,4 @@
-// [2025-12-06 17:20:00] Payment method management routes for Issue #112
+// Payment method management routes for Issue #112
 const express = require('express');
 const router = express.Router();
 const paymentMethodController = require('../controllers/paymentMethodController');

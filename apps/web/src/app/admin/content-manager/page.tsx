@@ -1,7 +1,7 @@
 /**
  * Content Manager Page
- * [2025-01-28 06:10:00] Complete CMS content management interface
- * [2025-01-28 08:15:00] Added internationalization support
+* Complete CMS content management interface
+* Added internationalization support
  */
 'use client';
 
@@ -12,11 +12,11 @@ import { ImageUploader } from '@/components/admin/ImageUploader';
 import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 export default function ContentManagerPage() {
-  const { t, locale } = useAdminI18n(); // [2025-01-28 08:15:00] 使用国际化
+const { t, locale } = useAdminI18n(); // 使用国际化
   const { data, isLoading, error, mutate } = useSWR('admin-content-config', adminContentApi.get);
   const [content, setContent] = useState<ContentConfig | null>(null);
   const [saving, setSaving] = useState(false);
-  // [2025-01-28 10:00:00] 移除 legacy tab，不再需要遗留内容
+// 移除 legacy tab，不再需要遗留内容
   const [activeTab, setActiveTab] = useState<'navigation' | 'homepage' | 'about' | 'help' | 'static'>('navigation');
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function ContentManagerPage() {
     }
   }, [data]);
 
-  // [2025-01-28 06:10:00] 确保内容对象有所有必需的字段
+// 确保内容对象有所有必需的字段
   const ensureContentStructure = (content: ContentConfig): ContentConfig => {
     return {
       ...content,
@@ -74,7 +74,7 @@ export default function ContentManagerPage() {
     }
   };
 
-  // [2025-01-28 06:10:00] 导航管理函数
+// 导航管理函数
   const addNavigationItem = () => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -114,7 +114,7 @@ export default function ContentManagerPage() {
     });
   };
 
-  // [2025-01-28 06:10:00] 首页内容管理函数
+// 首页内容管理函数
   const updateHomePage = (field: keyof HomePageContent, value: any) => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -193,7 +193,7 @@ export default function ContentManagerPage() {
     });
   };
 
-  // [2025-01-28 06:10:00] 关于页内容管理函数
+// 关于页内容管理函数
   const updateAboutPage = (field: keyof AboutPageContent, value: any) => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -256,7 +256,7 @@ export default function ContentManagerPage() {
     });
   };
 
-  // [2025-01-28 06:10:00] 帮助页内容管理函数
+// 帮助页内容管理函数
   const addHelpPageQuickLink = () => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -396,7 +396,7 @@ export default function ContentManagerPage() {
     });
   };
 
-  // [2025-01-28 06:10:00] 静态文字管理函数
+// 静态文字管理函数
   const updateStaticTexts = (field: keyof StaticTexts, value: any) => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -540,9 +540,9 @@ export default function ContentManagerPage() {
         </nav>
       </header>
 
-      {/* [2025-01-28 08:00:00] Tab Navigation - 按分类组织 */}
+{/* Tab Navigation - 按分类组织 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid #e5e7eb', flexWrap: 'wrap' }}>
-        {/* [2025-01-28 10:00:00] 移除 legacy tab */}
+{/* 移除 legacy tab */}
         {([
           { key: 'navigation', i18nKey: 'navigation' },
           { key: 'homepage', i18nKey: 'homepage' },
@@ -570,7 +570,7 @@ export default function ContentManagerPage() {
         ))}
       </div>
 
-      {/* [2025-01-28 06:10:00] Navigation Management */}
+{/* Navigation Management */}
       {activeTab === 'navigation' && (
         <section className="content-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -590,7 +590,7 @@ export default function ContentManagerPage() {
                 <div key={item.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
                   <div style={{ display: 'grid', gap: 12 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr 1fr auto', gap: 12, alignItems: 'center' }}>
-                      {/* [2025-01-28 08:30:00] 排序输入框 */}
+{/* 排序输入框 */}
                       <input
                         type="number"
                         placeholder="Order"
@@ -793,7 +793,7 @@ export default function ContentManagerPage() {
         </section>
       )}
 
-      {/* [2025-01-28 06:10:00] Homepage Management */}
+{/* Homepage Management */}
       {activeTab === 'homepage' && (
         <section className="content-section">
           <h2>{t('homepageContent')}</h2>
@@ -882,7 +882,7 @@ export default function ContentManagerPage() {
         </section>
       )}
 
-      {/* [2025-01-28 06:10:00] About Page Management */}
+{/* About Page Management */}
       {activeTab === 'about' && (
         <section className="content-section">
           <h2>{t('aboutPageContent')}</h2>
@@ -990,7 +990,7 @@ export default function ContentManagerPage() {
         </section>
       )}
 
-      {/* [2025-01-28 06:10:00] Help Page Management */}
+{/* Help Page Management */}
       {activeTab === 'help' && (
         <section className="content-section">
           <h2>{t('helpPageContent')}</h2>
@@ -1104,7 +1104,7 @@ export default function ContentManagerPage() {
         </section>
       )}
 
-      {/* [2025-01-28 06:10:00] Static Texts Management */}
+{/* Static Texts Management */}
       {activeTab === 'static' && (
         <section className="content-section">
           <h2>{t('staticTextsTitle')}</h2>

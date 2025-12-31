@@ -1,6 +1,6 @@
 /**
  * Account Routes E2E Tests
- * [2025-01-27 16:35:00] 测试账户页面路由和导航
+* 测试账户页面路由和导航
  */
 import { test, expect } from '@playwright/test';
 

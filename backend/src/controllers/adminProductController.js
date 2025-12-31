@@ -1,7 +1,7 @@
 /**
  * Admin Product Controller
- * [2025-11-11 23:18:42] 提供后台商品管理 CRUD 能力
- * [2025-12-02 14:05:30] 统一后台价格字段的单位转换（数据库存分，接口返回元/美元）
+* 提供后台商品管理 CRUD 能力
+* 统一后台价格字段的单位转换（数据库存分，接口返回元/美元）
  */
 const path = require('path');
 const fs = require('fs');
@@ -15,7 +15,7 @@ const {
   extractStorageKeyFromUrl,
 } = require('../utils/productUpload');
 
-// [2025-12-02 14:05:30] 将 Prisma Decimal / string / number 安全转换为原始 number，便于做单位换算
+// 将 Prisma Decimal / string / number 安全转换为原始 number，便于做单位换算
 const toNumber = (value, fallback = 0) => {
   if (value === null || value === undefined) return fallback;
   if (typeof value === 'number') return Number.isNaN(value) ? fallback : value;
@@ -40,7 +40,148 @@ const toNumber = (value, fallback = 0) => {
   return fallback;
 };
 
-// [2025-11-11 23:18:42] 简易 slug 生成工具，确保与 Prisma 事务兼容
+const DL_PRODUCT_COLORS = [
+  { name: 'White', hex: '#ffffff' },
+  { name: 'Navy', hex: '#1c203b' },
+  { name: 'Maroon', hex: '#731f39' },
+  { name: 'Black', hex: '#000000' },
+  { name: 'Sport Grey', hex: '#afafaf' },
+  { name: 'Heather Dark Grey', hex: '#545454' },
+  { name: 'Red', hex: '#f40928' },
+  { name: 'Royal Blue', hex: '#395389' },
+  { name: 'Forest Green', hex: '#cccccc' },
+  { name: 'Purple', hex: '#4f237a' },
+];
+
+/**
+ * 避免因部署新环境或数据清理导致 Design Lab 默认显示错误的商品（如第一件商品为红色）
+ */
+exports.seedDesignLabProduct = async (req, res) => {
+  try {
+    const productSlug = 'design-lab-default-tee';
+    const productName = 'Design Lab Default Tee (Gildan Softstyle)';
+
+    // 1. Ensure Category
+    let category = await prisma.category.findUnique({
+      where: { slug: 't-shirts' }
+    });
+
+    if (!category) {
+      category = await prisma.category.create({
+        data: {
+          name: 'T-Shirts',
+          slug: 't-shirts',
+          description: 'Quality T-Shirts',
+        }
+      });
+    }
+
+    // 2. Ensure Product
+    let product = await prisma.product.findUnique({
+      where: { slug: productSlug }
+    });
+
+    if (!product) {
+      product = await prisma.product.create({
+        data: {
+          name: productName,
+          slug: productSlug,
+          description: 'The perfect canvas for your design.',
+          basePrice: 1500, // $15.00
+          categoryId: category.id,
+          sku: 'DL-DEFAULT-TEE-001',
+          isCustomizable: true,
+          isActive: true,
+        }
+      });
+    } else {
+      // Ensure basic fields are correct if it exists
+      if (product.name !== productName || product.categoryId !== category.id) {
+        product = await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            name: productName,
+            categoryId: category.id,
+            isActive: true
+          }
+        });
+      }
+    }
+
+    // 3. Ensure Variants
+    const sizes = ['S', 'M', 'L', 'XL'];
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    for (const colorData of DL_PRODUCT_COLORS) {
+      for (const size of sizes) {
+        const sku = `DL-TEE-${colorData.name.replace(/\s+/g, '-').toUpperCase()}-${size}`;
+
+        const existingVariant = await prisma.variant.findUnique({
+          where: { sku }
+        });
+
+        if (!existingVariant) {
+          await prisma.variant.create({
+            data: {
+              productId: product.id,
+              color: colorData.name,
+              colorHex: colorData.hex,
+              size: size,
+              sku: sku,
+              priceAdjustment: size === 'XL' ? 200 : 0,
+              stockQuantity: 999,
+            }
+          });
+          createdCount++;
+        } else {
+          // Determine if update is needed (e.g. missing hex)
+          if (existingVariant.colorHex !== colorData.hex || existingVariant.productId !== product.id) {
+            await prisma.variant.update({
+              where: { id: existingVariant.id },
+              data: {
+                colorHex: colorData.hex,
+                productId: product.id // fix relation if weirdness occurred
+              }
+            });
+            updatedCount++;
+          }
+        }
+      }
+    }
+
+    // 4. Invalidate cache
+    try {
+      const { deleteCache } = require('../config/redis');
+      await deleteCache(`products:detail:${productSlug}`);
+      // Also clear list cache
+      const { getRedisKeys, redis } = require('../config/redis');
+      const listKeys = await getRedisKeys('products:list:*');
+      if (listKeys.length) {
+        await redis.del(...listKeys);
+      }
+    } catch (e) {
+      console.warn('Cache invalidation failed in seed:', e);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Design Lab default product seeded successfully',
+      details: {
+        product: productName,
+        slug: productSlug,
+        variantsCreated: createdCount,
+        variantsUpdated: updatedCount
+      }
+    });
+
+  } catch (error) {
+    console.error('Seed Design Lab Product Error:', error);
+    return res.status(500).json({ error: 'Failed to seed product', details: error.message });
+  }
+};
+
+// 简易 slug 生成工具，确保与 Prisma 事务兼容
 const slugify = (value = '') =>
   value
     .toString()
@@ -50,7 +191,7 @@ const slugify = (value = '') =>
     .replace(/^-+|-+$/g, '')
     .substring(0, 60);
 
-// [2025-11-11 23:18:42] 确保 slug 唯一
+// 确保 slug 唯一
 const ensureUniqueSlug = async (tx, baseSlug, existingId) => {
   let candidate = baseSlug;
   let counter = 1;
@@ -74,21 +215,21 @@ const ensureUniqueSlug = async (tx, baseSlug, existingId) => {
   }
 };
 
-// [2025-01-27 15:02:30] Normalize alt text inputs from multipart form submissions
+// Normalize alt text inputs from multipart form submissions
 const parseAltInputs = (rawInput) => {
   if (!rawInput) return [];
   if (Array.isArray(rawInput)) return rawInput;
   return [rawInput];
 };
 
-// [2025-01-27 15:02:30] Trim alt text while preserving fallback values
+// Trim alt text while preserving fallback values
 const sanitizeAltText = (value, fallback) => {
   if (!value) return fallback || null;
   return value.toString().trim().substring(0, 255) || (fallback || null);
 };
 
-// [2025-01-27 15:02:30] Clear cached product responses after asset mutations
-// [2025-11-15 10:50:00] 使用安全的 getRedisKeys 方法，支持 Redis 不可用的情况
+// Clear cached product responses after asset mutations
+// 使用安全的 getRedisKeys 方法，支持 Redis 不可用的情况
 const invalidateProductCache = async (slug) => {
   try {
     const listKeys = await getRedisKeys('products:list:*');
@@ -108,7 +249,7 @@ const invalidateProductCache = async (slug) => {
   }
 };
 
-// [2025-11-11 23:18:42] 后台商品列表（分页 / 搜索 / 状态过滤）
+// 后台商品列表（分页 / 搜索 / 状态过滤）
 exports.listProducts = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -138,7 +279,7 @@ exports.listProducts = async (req, res) => {
       where.categoryId = categoryId;
     }
 
-    // [2025-12-31] Exclude system products from the regular admin list
+// Exclude system products from the regular admin list
     where.isSystem = false;
 
     const [products, total] = await prisma.$transaction([
@@ -178,9 +319,9 @@ exports.listProducts = async (req, res) => {
       prisma.product.count({ where }),
     ]);
 
-    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
-    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
-    // [2025-12-02 14:05:30] 这里同时将数据库中的价格（分 / Decimal）转换为接口返回的金额（元/美元）
+// 将图片URL转换为完整的后端服务器URL
+// 添加空值检查，避免处理 null/undefined 时出错
+// 这里同时将数据库中的价格（分 / Decimal）转换为接口返回的金额（元/美元）
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedProducts = products.map((product) => {
       const basePriceCents = toNumber(product.basePrice, 0);
@@ -215,8 +356,8 @@ exports.listProducts = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[2025-11-11 23:18:42] listProducts error:', error);
-    console.error('[2025-11-11 23:18:42] Error details:', {
+console.error(' listProducts error:', error);
+console.error(' Error details:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
@@ -228,7 +369,7 @@ exports.listProducts = async (req, res) => {
   }
 };
 
-// [2025-11-11 23:18:42] 后台获取单个商品详情
+// 后台获取单个商品详情
 exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -256,9 +397,9 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
-    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
-    // [2025-12-02 14:05:30] 同时将数据库中的 basePrice（分）与 salePrice（Decimal）转换为金额
+// 将图片URL转换为完整的后端服务器URL
+// 添加空值检查，避免处理 null/undefined 时出错
+// 同时将数据库中的 basePrice（分）与 salePrice（Decimal）转换为金额
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const basePriceCents = toNumber(product.basePrice, 0);
     const salePriceValue = toNumber(product.salePrice, 0);
@@ -278,12 +419,12 @@ exports.getProductById = async (req, res) => {
 
     return res.json(normalizedProduct);
   } catch (error) {
-    console.error('[2025-11-11 23:18:42] getProductById error:', error);
+console.error(' getProductById error:', error);
     return res.status(500).json({ error: 'Failed to load product' });
   }
 };
 
-// [2025-11-11 23:18:42] 创建商品
+// 创建商品
 exports.createProduct = async (req, res) => {
   try {
     const {
@@ -314,7 +455,7 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: name, categoryId, sku, or basePrice' });
     }
 
-    // [2025-01-27 16:05:00] 类型转换：basePrice 需要转换为分（整数）
+// 类型转换：basePrice 需要转换为分（整数）
     // basePrice 在 schema 中是 Int 类型（base_price_cents），前端可能发送美元金额
     let basePriceCents;
     if (typeof basePrice === 'number') {
@@ -335,12 +476,12 @@ exports.createProduct = async (req, res) => {
       basePriceCents = parsed;
     }
 
-    // [2025-01-27 16:05:00] 确保 basePriceCents 是有效的整数
+// 确保 basePriceCents 是有效的整数
     if (!Number.isInteger(basePriceCents) || basePriceCents < 0) {
       return res.status(400).json({ error: 'basePrice must be a positive number' });
     }
 
-    // [2025-01-27 15:50:00] 确保其他价格字段为 Decimal 类型（使用 Prisma.Decimal）
+// 确保其他价格字段为 Decimal 类型（使用 Prisma.Decimal）
     const convertToDecimal = (value) => {
       if (value === undefined || value === null) return undefined;
       if (typeof value === 'string') return new Prisma.Decimal(value);
@@ -376,7 +517,7 @@ exports.createProduct = async (req, res) => {
           variants: variants && variants.length > 0
             ? {
               create: variants
-                // [2025-01-27 16:05:00] 过滤掉无效的变体（缺少必需字段）
+// 过滤掉无效的变体（缺少必需字段）
                 .filter((variant) => {
                   return variant && variant.sku && variant.color && variant.size;
                 })
@@ -398,7 +539,7 @@ exports.createProduct = async (req, res) => {
           images: images && images.length > 0
             ? {
               create: images
-                // [2025-01-27 16:00:00] 过滤掉无效的URL（如file://协议）
+// 过滤掉无效的URL（如file://协议）
                 .filter((image) => {
                   if (!image || !image.url) return false;
                   const url = image.url.trim();
@@ -424,7 +565,7 @@ exports.createProduct = async (req, res) => {
               })),
             }
             : undefined,
-          // [2025-12-31] Keep categoryId column and productCategories relation in sync
+// Keep categoryId column and productCategories relation in sync
           productCategories: {
             create: {
               categoryId: categoryId,
@@ -450,8 +591,8 @@ exports.createProduct = async (req, res) => {
       return created;
     });
 
-    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
-    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
+// 将图片URL转换为完整的后端服务器URL
+// 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedResult = {
       ...result,
@@ -465,19 +606,19 @@ exports.createProduct = async (req, res) => {
       })),
     };
 
-    // [2025-11-16 14:15:00] 创建商品后立即清理缓存，确保前台可以看到最新商品
-    // [2025-01-27 16:10:00] 缓存清理失败不应该影响商品创建成功
+// 创建商品后立即清理缓存，确保前台可以看到最新商品
+// 缓存清理失败不应该影响商品创建成功
     try {
       await invalidateProductCache(result.slug);
     } catch (cacheError) {
-      console.warn('[2025-11-11 23:18:42] Failed to invalidate cache:', cacheError);
+console.warn(' Failed to invalidate cache:', cacheError);
       // 缓存清理失败不影响商品创建成功
     }
 
     return res.status(201).json(normalizedResult);
   } catch (error) {
-    // [2025-01-27 16:05:00] 增强错误日志，输出详细错误信息
-    console.error('[2025-11-11 23:18:42] createProduct error:', error);
+// 增强错误日志，输出详细错误信息
+console.error(' createProduct error:', error);
     console.error('Error details:', {
       message: error.message,
       code: error.code,
@@ -501,7 +642,7 @@ exports.createProduct = async (req, res) => {
       });
     }
 
-    // [2025-01-27 16:05:00] 返回更详细的错误信息（开发环境）
+// 返回更详细的错误信息（开发环境）
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
       return res.status(500).json({
         error: 'Failed to create product',
@@ -515,7 +656,7 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// [2025-11-11 23:18:42] 更新商品
+// 更新商品
 exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -565,7 +706,7 @@ exports.updateProduct = async (req, res) => {
         finalSlug = await ensureUniqueSlug(tx, slugify(name), id);
       }
 
-      // [2025-12-02 14:05:30] 更新逻辑中补齐价格字段的单位转换，保持与 createProduct 一致：
+// 更新逻辑中补齐价格字段的单位转换，保持与 createProduct 一致：
       // - basePrice：前端提交金额（元/美元），这里统一转换为“分”存数据库
       // - 其他价格字段：统一转换为 Prisma.Decimal，避免类型不一致
       let basePriceCents;
@@ -587,7 +728,7 @@ exports.updateProduct = async (req, res) => {
         return value;
       };
 
-      // [2025-12-31] 确保 categoryId 不是空字符串
+// 确保 categoryId 不是空字符串
       const finalCategoryId = (categoryId && typeof categoryId === 'string' && categoryId.trim() !== '')
         ? categoryId
         : (categoryId === undefined ? undefined : existing.categoryId);
@@ -617,7 +758,7 @@ exports.updateProduct = async (req, res) => {
       });
 
       if (Array.isArray(variants)) {
-        // [2025-01-31 10:30:00] 改进变体更新逻辑：upsert 避免 P2003 错误
+// 改进变体更新逻辑：upsert 避免 P2003 错误
         // 获取所有现有变体
         const existingVariants = await tx.variant.findMany({
           where: { productId: id }
@@ -670,7 +811,7 @@ exports.updateProduct = async (req, res) => {
             await tx.variant.delete({ where: { id: vId } });
           } catch (delErr) {
             // 如果报错（通常是 P2003 外键约束），则保留该变体，但可以记录日志
-            console.warn(`[2025-01-31 10:30:00] Cannot delete variant ${vId} due to references:`, delErr.message);
+console.warn(` Cannot delete variant ${vId} due to references:`, delErr.message);
           }
         }
       }
@@ -702,7 +843,7 @@ exports.updateProduct = async (req, res) => {
         }
       }
 
-      // [2025-12-31] Keep categoryId column and productCategories relation in sync
+// Keep categoryId column and productCategories relation in sync
       if (categoryId && typeof categoryId === 'string') {
         // Find existing main category mappings to avoid duplicates or orphans
         // Note: For now we just ensure the CURRENT categoryId is in productCategories.
@@ -744,8 +885,8 @@ exports.updateProduct = async (req, res) => {
       return refreshed;
     });
 
-    // [2025-01-27 16:20:00] 将图片URL转换为完整的后端服务器URL
-    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
+// 将图片URL转换为完整的后端服务器URL
+// 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const basePriceCents = toNumber(result.basePrice, 0);
     const salePriceValue = toNumber(result.salePrice, 0);
@@ -763,13 +904,13 @@ exports.updateProduct = async (req, res) => {
       })),
     };
 
-    // [2025-11-16 14:15:00] 更新商品后同步刷新缓存，避免旧数据残留
+// 更新商品后同步刷新缓存，避免旧数据残留
     await invalidateProductCache(result.slug);
 
     return res.json(normalizedResult);
   } catch (error) {
-    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
-    console.error('[2025-11-11 23:18:42] updateProduct error:', {
+// 增强错误日志，包含详细错误信息
+console.error(' updateProduct error:', {
       error: error.message,
       code: error.code,
       stack: error.stack,
@@ -789,7 +930,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// [2025-11-11 23:18:42] 软删除商品
+// 软删除商品
 exports.archiveProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -812,17 +953,17 @@ exports.archiveProduct = async (req, res) => {
       data: { isActive: false },
     });
 
-    // [2025-11-16 14:15:00] 归档商品后清理缓存，防止前台继续展示
+// 归档商品后清理缓存，防止前台继续展示
     await invalidateProductCache(existing.slug);
 
     return res.json({ success: true });
   } catch (error) {
-    console.error('[2025-11-11 23:18:42] archiveProduct error:', error);
+console.error(' archiveProduct error:', error);
     return res.status(500).json({ error: 'Failed to archive product' });
   }
 };
 
-// [2025-11-11 23:18:42] 更新商品状态
+// 更新商品状态
 exports.updateProductStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -852,7 +993,7 @@ exports.updateProductStatus = async (req, res) => {
       },
     });
 
-    // [2025-11-16 14:15:00] 状态变更也要刷新缓存，保证上架/下架即时生效
+// 状态变更也要刷新缓存，保证上架/下架即时生效
     await invalidateProductCache(updated.slug);
 
     // eslint-disable-next-line no-unused-vars
@@ -860,7 +1001,7 @@ exports.updateProductStatus = async (req, res) => {
 
     return res.json(payload);
   } catch (error) {
-    console.error('[2025-11-11 23:18:42] updateProductStatus error:', error);
+console.error(' updateProductStatus error:', error);
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -868,7 +1009,7 @@ exports.updateProductStatus = async (req, res) => {
   }
 };
 
-// [2025-01-27 15:02:30] Handle direct product image uploads via admin panel
+// Handle direct product image uploads via admin panel
 exports.uploadProductImages = async (req, res) => {
   try {
     const { id } = req.params;
@@ -901,7 +1042,7 @@ exports.uploadProductImages = async (req, res) => {
 
     const createPayload = files.map((file, index) => {
       const storageKey = buildStorageKey(file.filename);
-      // [2025-01-27 16:15:00] 传递req对象以生成完整的后端服务器URL
+// 传递req对象以生成完整的后端服务器URL
       const publicUrl = buildPublicUrl(storageKey, req);
       const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
       const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
@@ -923,8 +1064,8 @@ exports.uploadProductImages = async (req, res) => {
       });
     });
 
-    // [2025-01-27 16:25:00] 将图片URL转换为完整的后端服务器URL
-    // [2025-01-27 16:30:00] 添加空值检查，避免处理 null/undefined 时出错
+// 将图片URL转换为完整的后端服务器URL
+// 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedImages = (images || []).map((image) => ({
       ...image,
@@ -943,7 +1084,7 @@ exports.uploadProductImages = async (req, res) => {
   }
 };
 
-// [2025-01-27 15:02:30] Remove product images and clean up cached payloads
+// Remove product images and clean up cached payloads
 exports.deleteProductImage = async (req, res) => {
   try {
     const { productId, imageId } = req.params;

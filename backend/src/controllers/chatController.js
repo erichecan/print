@@ -1,6 +1,6 @@
 /**
  * Chat Controller
- * [2025-12-07 01:30:00] Issue #144 - Customer service chat API
+* Issue #144 - Customer service chat API
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');

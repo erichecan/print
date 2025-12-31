@@ -1,6 +1,6 @@
 /**
  * Order Timeline Component
- * [2025-01-27 12:05:00] 订单状态时间线组件，显示订单状态变更历史
+* 订单状态时间线组件，显示订单状态变更历史
  */
 import React from 'react';
 
@@ -18,7 +18,7 @@ interface OrderTimelineProps {
 }
 
 export function OrderTimeline({ events, currentStatus, className = '' }: OrderTimelineProps) {
-  // [2025-01-27 12:05:00] 根据订单状态生成默认时间线事件
+// 根据订单状态生成默认时间线事件
   const getStatusLabel = (status: string): string => {
     const statusMap: Record<string, string> = {
       PENDING: 'Order Placed',

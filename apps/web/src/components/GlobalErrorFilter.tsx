@@ -1,15 +1,15 @@
 /**
  * Global Error Filter Component
- * [2025-01-29 01:00:00] 过滤和抑制不相关的浏览器错误，如 GCP Console 内部错误
+* 过滤和抑制不相关的浏览器错误，如 GCP Console 内部错误
  */
 'use client';
 
 import { useEffect } from 'react';
 
-// [2025-01-29 01:00:00] 需要被过滤的错误模式
-// [2025-12-08] 添加 ReferenceError 过滤，修复 "Cannot access 'W' before initialization" 错误
-// [2025-01-27 19:30:00] 修复：添加浏览器扩展异步监听错误过滤
-// [2025-12-20 03:35:00] 添加后端服务错误过滤（当后端服务不可用时，这些错误已被优雅处理）
+// 需要被过滤的错误模式
+// 添加 ReferenceError 过滤，修复 "Cannot access 'W' before initialization" 错误
+// 修复：添加浏览器扩展异步监听错误过滤
+// 添加后端服务错误过滤（当后端服务不可用时，这些错误已被优雅处理）
 const FILTERED_ERROR_PATTERNS = [
   // GCP Console 内部 API 错误
   /cloudusersettings-pa\.clients6\.google\.com/i,
@@ -17,17 +17,17 @@ const FILTERED_ERROR_PATTERNS = [
   // PerformanceObserver 相关警告（某些浏览器不支持 buffered 标志）
   /PerformanceObserver.*buffered.*entryTypes/i,
   /PerformanceObserver.*does not support buffered/i,
-  // [2025-12-08] ReferenceError: Cannot access 'W' before initialization
-  // [2025-12-09 22:40:00] 更广泛的过滤：覆盖所有可能的变量名（打包后变量名会被压缩）
+// ReferenceError: Cannot access 'W' before initialization
+// 更广泛的过滤：覆盖所有可能的变量名（打包后变量名会被压缩）
   // 这通常来自 React DevTools 或其他开发工具的格式化代码，或打包后的代码
   /Cannot access ['"]?[Ww]?['"]? before initialization/i,
   /ReferenceError.*Cannot access.*before initialization/i,
   /Cannot access ['"]?[A-Za-z0-9_]+['"]? before initialization/i,
-  // [2025-01-27 19:30:00] 浏览器扩展异步监听错误（React DevTools、Redux DevTools 等）
+// 浏览器扩展异步监听错误（React DevTools、Redux DevTools 等）
   /A listener indicated an asynchronous response by returning true, but the message channel closed/i,
   /listener.*asynchronous.*response.*message channel closed/i,
   /message channel closed before.*response.*received/i,
-  // [2025-12-20 03:35:00] 后端服务错误（当后端服务不可用时，这些错误已被优雅处理，不需要在控制台显示）
+// 后端服务错误（当后端服务不可用时，这些错误已被优雅处理，不需要在控制台显示）
   // 注意：这些错误已经在对应的 Context 中被捕获和处理（返回空数据或默认值）
   // 过滤这些错误可以减少控制台噪音，但保留网络错误的原始信息
   /GET.*\/api\/auth\/me.*50[0-9]/i, // 认证 API 500/503 错误
@@ -36,15 +36,15 @@ const FILTERED_ERROR_PATTERNS = [
   // 其他第三方服务错误（根据需要添加）
 ];
 
-// [2025-01-29 01:00:00] 需要被过滤的警告模式
-// [2025-01-31 18:35:00] 更新：添加更完整的 CSS 预加载警告过滤模式
+// 需要被过滤的警告模式
+// 更新：添加更完整的 CSS 预加载警告过滤模式
 const FILTERED_WARNING_PATTERNS = [
   /PerformanceObserver/i,
   /preloaded.*not used/i,
   /preload.*was preloaded.*not used/i,
   /resource.*was preloaded.*not used/i,
-  /was preloaded using link preload but not used/i, // [2025-01-31 18:35:00] 匹配 Next.js CSS 预加载警告
-  /preloaded using link preload but not used/i, // [2025-01-31 18:35:00] 更通用的匹配
+/was preloaded using link preload but not used/i, // 匹配 Next.js CSS 预加载警告
+/preloaded using link preload but not used/i, // 更通用的匹配
 ];
 
 /**
@@ -73,12 +73,12 @@ function shouldFilterWarning(message: string): boolean {
  */
 export function GlobalErrorFilter() {
   useEffect(() => {
-    // [2025-01-29 01:00:00] 保存原始的 console 方法
+// 保存原始的 console 方法
     const originalError = console.error;
     const originalWarn = console.warn;
 
-    // [2025-01-29 01:00:00] 拦截 console.error
-    // [2025-12-08] 修复：使用 try-catch 包装，防止格式化代码中的 ReferenceError
+// 拦截 console.error
+// 修复：使用 try-catch 包装，防止格式化代码中的 ReferenceError
     console.error = (...args: unknown[]) => {
       try {
         const errorMessage = args.map(arg => 
@@ -89,7 +89,7 @@ export function GlobalErrorFilter() {
 
         // 如果错误匹配过滤模式，则抑制它
         if (!shouldFilterError(errorMessage)) {
-          // [2025-12-08] 修复：使用 try-catch 包装原始调用，防止格式化错误
+// 修复：使用 try-catch 包装原始调用，防止格式化错误
           try {
             originalError.apply(console, args);
           } catch (formatError) {
@@ -112,15 +112,15 @@ export function GlobalErrorFilter() {
       }
     };
 
-    // [2025-01-29 01:00:00] 拦截 console.warn
-    // [2025-12-08] 修复：使用 try-catch 包装，防止格式化代码中的 ReferenceError
+// 拦截 console.warn
+// 修复：使用 try-catch 包装，防止格式化代码中的 ReferenceError
     console.warn = (...args: unknown[]) => {
       try {
         const message = args.map(arg => String(arg)).join(' ');
 
         // 如果警告匹配过滤模式，则抑制它
         if (!shouldFilterWarning(message)) {
-          // [2025-12-08] 修复：使用 try-catch 包装原始调用，防止格式化错误
+// 修复：使用 try-catch 包装原始调用，防止格式化错误
           try {
             originalWarn.apply(console, args);
           } catch (formatError) {
@@ -143,8 +143,8 @@ export function GlobalErrorFilter() {
       }
     };
 
-    // [2025-01-29 01:00:00] 全局错误处理器 - 过滤不相关的错误
-    // [2025-12-08] 修复：添加对 ReferenceError 的特殊处理
+// 全局错误处理器 - 过滤不相关的错误
+// 修复：添加对 ReferenceError 的特殊处理
     const handleError = (event: ErrorEvent) => {
       try {
         const errorMessage = event.message || event.filename || String(event.error);
@@ -156,7 +156,7 @@ export function GlobalErrorFilter() {
           return false;
         }
         
-        // [2025-12-08] 特殊处理：过滤 ReferenceError: Cannot access 'W' before initialization
+// 特殊处理：过滤 ReferenceError: Cannot access 'W' before initialization
         // 这通常来自 React DevTools 或其他开发工具的格式化代码
         if (errorMessage.includes('Cannot access') && errorMessage.includes('before initialization')) {
           // 检查是否来自开发工具（installHook.js, page-*.js 等）
@@ -171,7 +171,7 @@ export function GlobalErrorFilter() {
           }
         }
         
-        // [2025-01-27 19:30:00] 特殊处理：过滤浏览器扩展异步监听错误
+// 特殊处理：过滤浏览器扩展异步监听错误
         if (errorMessage.includes('listener') && 
             errorMessage.includes('asynchronous response') && 
             errorMessage.includes('message channel closed')) {
@@ -202,14 +202,14 @@ export function GlobalErrorFilter() {
       }
     };
 
-    // [2025-01-29 01:00:00] 全局未捕获 Promise 错误处理器
-    // [2025-01-27 19:30:00] 修复：增强异步监听错误的过滤
+// 全局未捕获 Promise 错误处理器
+// 修复：增强异步监听错误的过滤
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
       const errorMessage = event.reason 
         ? (event.reason instanceof Error ? event.reason.message : String(event.reason))
         : 'Unhandled promise rejection';
       
-      // [2025-01-27 19:30:00] 特殊处理：过滤浏览器扩展异步监听错误
+// 特殊处理：过滤浏览器扩展异步监听错误
       if (errorMessage.includes('listener') && 
           errorMessage.includes('asynchronous response') && 
           errorMessage.includes('message channel closed')) {
@@ -224,15 +224,15 @@ export function GlobalErrorFilter() {
       }
     };
 
-    // [2025-01-29 01:05:00] 拦截 XMLHttpRequest 错误（过滤 GCP Console 的 404）
+// 拦截 XMLHttpRequest 错误（过滤 GCP Console 的 404）
     // 注意：我们不拦截 fetch，因为可能会影响正常的 API 请求
     // 而是在错误事件处理器中过滤这些错误
 
-    // [2025-01-29 01:00:00] 添加全局错误监听器
+// 添加全局错误监听器
     window.addEventListener('error', handleError);
     window.addEventListener('unhandledrejection', handleUnhandledRejection);
 
-    // [2025-01-29 01:00:00] 清理函数：恢复原始方法
+// 清理函数：恢复原始方法
     return () => {
       console.error = originalError;
       console.warn = originalWarn;

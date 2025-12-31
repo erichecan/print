@@ -1,19 +1,19 @@
-// [2025-12-07 03:00:00] 生产环境 Sales 账号 Seed 脚本
-// [2025-12-07 03:30:00] 更新：删除旧的3个账号，创建新的4个账号（3个Sales + 1个Sales Manager）
+// 生产环境 Sales 账号 Seed 脚本
+// 更新：删除旧的3个账号，创建新的4个账号（3个Sales + 1个Sales Manager）
 require('dotenv').config();
 const { PrismaClient, UserRole } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
-// [2025-12-07 03:30:00] 旧的账号（需要删除）
+// 旧的账号（需要删除）
 const OLD_SALES_USERS = [
   'sales1@example.com',
   'sales2@example.com',
   'sales3@example.com',
 ];
 
-// [2025-12-07 03:30:00] 新的生产环境 Sales 账号配置
+// 新的生产环境 Sales 账号配置
 const SALES_USERS = [
   {
     email: 'sales1@suvernireplus.com',
@@ -45,7 +45,7 @@ const SALES_USERS = [
   },
 ];
 
-// [2025-12-07 03:00:00] 幂等创建/更新 Sales 用户
+// 幂等创建/更新 Sales 用户
 async function ensureSalesUser(userConfig) {
   const existing = await prisma.user.findUnique({
     where: { email: userConfig.email.toLowerCase() },
@@ -78,7 +78,7 @@ async function ensureSalesUser(userConfig) {
   });
 }
 
-// [2025-12-07 03:30:00] 删除旧的账号
+// 删除旧的账号
 async function deleteOldSalesUsers() {
   console.log('🗑️  删除旧的 Sales 账号...\n');
   
@@ -107,7 +107,7 @@ async function main() {
   console.log('🌱 Seeding production Sales users...\n');
 
   try {
-    // [2025-12-07 03:30:00] 先删除旧的账号
+// 先删除旧的账号
     await deleteOldSalesUsers();
 
     // 创建新的账号

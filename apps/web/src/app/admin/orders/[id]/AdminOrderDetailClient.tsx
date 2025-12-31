@@ -2,8 +2,8 @@
 
 /**
  * Admin Order Detail Page
- * [2025-11-12 01:27:20] 支持状态更新、退款标记与详情查看
- * [2025-11-15 16:40:00] 还原 prototype/admin/admin/order-detail.html 布局
+* 支持状态更新、退款标记与详情查看
+* 还原 prototype/admin/admin/order-detail.html 布局
  */
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -35,7 +35,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [refundNote, setRefundNote] = useState('');
   const [refundAmount, setRefundAmount] = useState<string>('');
   const [showRefundModal, setShowRefundModal] = useState(false);
-  // [2025-12-06 15:30:00] Shipping label generation
+// Shipping label generation
   const [generatingLabel, setGeneratingLabel] = useState(false);
   const [loadingRates, setLoadingRates] = useState(false);
   const [shippingRates, setShippingRates] = useState<any[]>([]);
@@ -43,7 +43,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [selectedRateId, setSelectedRateId] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
 
-  // [2025-01-28 08:30:00] Audit Logs 功能已移除
+// Audit Logs 功能已移除
 
   useEffect(() => {
     if (data) {
@@ -75,14 +75,14 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       await mutate();
       setMessage('Order updated successfully.');
     } catch (err) {
-      console.error('[2025-11-12 01:27:20] 更新订单失败', err);
+console.error(' 更新订单失败', err);
       setMessage('Failed to update order. Please try again.');
     } finally {
       setUpdating(false);
     }
   };
 
-  // [2025-12-06 15:30:00] Load shipping rates
+// Load shipping rates
   const loadShippingRates = async () => {
     if (!data) return;
     setLoadingRates(true);
@@ -91,7 +91,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       setShippingRates(ratesData.rates || []);
       setShowRatesModal(true);
     } catch (err: any) {
-      console.error('[2025-12-06 15:30:00] 加载运费报价失败', err);
+console.error(' 加载运费报价失败', err);
       setMessage('获取运费报价失败，将使用默认设置生成标签');
       // Continue with label generation without rate selection
       handleGenerateLabel();
@@ -100,7 +100,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
     }
   };
 
-  // [2025-12-06 15:30:00] Generate shipping label
+// Generate shipping label
   const handleGenerateLabel = async (rateId?: string) => {
     if (!data) return;
 
@@ -121,7 +121,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       setSelectedRateId('');
       setMessage(`发货标签已生成！跟踪号：${result.trackingNumber || 'N/A'}`);
     } catch (err: any) {
-      console.error('[2025-12-06 15:30:00] 生成发货标签失败', err);
+console.error(' 生成发货标签失败', err);
       const errorMsg = err?.message || err?.error || '生成发货标签失败，请稍后重试';
       setMessage(errorMsg);
     } finally {
@@ -129,7 +129,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
     }
   };
 
-  // [2025-12-06 14:00:00] Enhanced refund handler with partial refund support
+// Enhanced refund handler with partial refund support
   const handleRefund = async () => {
     if (!data) return;
 
@@ -186,7 +186,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
         setMessage(`${successMsg}。警告：${result.warning}`);
       }
     } catch (err: any) {
-      console.error('[2025-12-06 14:00:00] 退款处理失败', err);
+console.error(' 退款处理失败', err);
       const errorMsg = err?.message || err?.error || '退款处理失败，请稍后重试';
       setMessage(errorMsg);
     } finally {
@@ -283,7 +283,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
               <button type="button" className="btn btn--primary" onClick={handleUpdate} disabled={updating}>
                 {updating ? '保存中…' : '保存更改'}
               </button>
-              {/* [2025-12-06 15:30:00] Generate shipping label button */}
+{/* Generate shipping label button */}
               {order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
                 <button
                   type="button"
@@ -294,7 +294,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
                   {generatingLabel ? '生成中…' : loadingRates ? '加载报价…' : '生成发货标签'}
                 </button>
               )}
-              {/* [2025-12-06 14:00:00] Enhanced refund button with modal */}
+{/* Enhanced refund button with modal */}
               {data.paymentStatus === 'COMPLETED' && data.status !== 'REFUNDED' && (
                 <button
                   type="button"
@@ -313,7 +313,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             )}
           </div>
 
-          {/* [2025-12-06 14:00:00] Refund modal */}
+{/* Refund modal */}
           {showRefundModal && (
             <div
               style={{
@@ -474,7 +474,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
           </div>
 
-          {/* [2025-12-06 15:30:00] Enhanced shipments section with label printing */}
+{/* Enhanced shipments section with label printing */}
           {(order.shipments || []).length > 0 && (
             <div className="admin-form">
               <h3>发货信息</h3>
@@ -510,7 +510,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
           )}
 
-          {/* [2025-12-06 15:30:00] Shipping rates modal */}
+{/* Shipping rates modal */}
           {showRatesModal && (
             <div
               style={{
@@ -603,7 +603,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
             </div>
           )}
 
-          {/* [2025-01-28 08:30:00] Activity Log 功能已移除 */}
+{/* Activity Log 功能已移除 */}
         </aside>
       </div>
     </div>

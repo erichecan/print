@@ -1,13 +1,13 @@
 /**
  * Brands Routes (Public API)
- * [2025-01-30 10:00:00] 品牌相关 API 路由
+* 品牌相关 API 路由
  */
 const express = require('express');
 const brandController = require('../controllers/brandController');
 
 const router = express.Router();
 
-// [2025-01-30 10:00:00] 获取指定品牌的产品列表（排除当前商品）
+// 获取指定品牌的产品列表（排除当前商品）
 router.get('/:id/products', brandController.getBrandProducts);
 
 module.exports = router;

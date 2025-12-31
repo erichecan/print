@@ -1,7 +1,7 @@
 /**
  * Inventory Controller
- * [2025-01-27 13:45:00] Inventory management API endpoints
- * [2025-12-06 16:00:00] Enhanced with low stock alerts and threshold management
+* Inventory management API endpoints
+* Enhanced with low stock alerts and threshold management
  */
 const {
   getLowStockProducts,
@@ -15,8 +15,7 @@ const prisma = require('../lib/prisma');
 
 /**
  * GET /api/admin/products/low-stock - Get low stock products
- * [2025-01-27 13:45:00]
- * [2025-12-06 16:00:00] Enhanced with unified error handling
+* Enhanced with unified error handling
  */
 exports.getLowStockProducts = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -42,8 +41,7 @@ exports.getLowStockProducts = async (req, res, next) => {
 
 /**
  * GET /api/admin/products/out-of-stock - Get out of stock products
- * [2025-01-27 13:45:00]
- * [2025-12-06 16:00:00] Enhanced with unified error handling
+* Enhanced with unified error handling
  */
 exports.getOutOfStockProducts = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -66,7 +64,7 @@ exports.getOutOfStockProducts = async (req, res, next) => {
 
 /**
  * PATCH /api/admin/products/variants/:id/low-stock-threshold - Update low stock threshold for a variant
- * [2025-12-06 16:00:00] Set custom threshold for a variant
+* Set custom threshold for a variant
  */
 exports.updateLowStockThreshold = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -120,7 +118,7 @@ exports.updateLowStockThreshold = async (req, res, next) => {
 
 /**
  * GET /api/admin/products/variants/:id/low-stock-threshold - Get low stock threshold for a variant
- * [2025-12-06 16:00:00] Get threshold for a variant
+* Get threshold for a variant
  */
 exports.getLowStockThreshold = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -163,7 +161,7 @@ exports.getLowStockThreshold = async (req, res, next) => {
 
 /**
  * GET /api/admin/inventory/alerts - Get inventory alerts summary
- * [2025-12-06 16:00:00] Get summary of inventory alerts
+* Get summary of inventory alerts
  */
 exports.getInventoryAlerts = async (req, res, next) => {
   const timestamp = new Date().toISOString();

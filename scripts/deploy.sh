@@ -1,4 +1,4 @@
-# Docker Compose deployment script [2025-11-12 03:20:00]
+# Docker Compose deployment script 
 # Usage: ./scripts/deploy.sh [environment] [--build] [--restart]
 
 set -e

@@ -2,15 +2,15 @@
 
 /**
  * Account Order Detail Page
- * [2025-11-12 01:12:05] 供已登录用户查看订单详情、下载发票
+* 供已登录用户查看订单详情、下载发票
  */
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { authApi, ordersApi, AccountOrderDetail } from '@/lib/api'; // [2025-11-12 06:42:30] Import AccountOrderDetail type from api.ts
-import { OrderTimeline } from '@/components/OrderTimeline'; // [2025-01-27 12:15:00] 导入订单时间线组件
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:45:00] 使用路由映射
+import { authApi, ordersApi, AccountOrderDetail } from '@/lib/api'; // Import AccountOrderDetail type from api.ts
+import { OrderTimeline } from '@/components/OrderTimeline'; // 导入订单时间线组件
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // 使用路由映射
 
 export default function AccountOrderDetailClient({ id }: { id: string }) {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
   const [cancelling, setCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelDialog, setShowCancelDialog] = useState(false);
-  // [2025-12-06 15:00:00] Real-time tracking information
+// Real-time tracking information
   const [trackingInfo, setTrackingInfo] = useState<any>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
@@ -35,8 +35,8 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
       const data = await ordersApi.getById(id);
       setOrder(data);
     } catch (err: any) {
-      console.error('[2025-11-12 01:12:05] 加载订单失败', err);
-      // [2025-01-27 16:20:00] 区分 404 和其他错误
+console.error(' 加载订单失败', err);
+// 区分 404 和其他错误
       if (err?.message?.includes('404') || err?.message?.includes('Not Found') || err?.message?.includes('not found')) {
         setError('NOT_FOUND');
       } else {
@@ -51,7 +51,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
     loadOrder();
   }, [loadOrder]);
 
-  // [2025-12-06 15:00:00] Load and poll tracking information
+// Load and poll tracking information
   const loadTrackingInfo = useCallback(async () => {
     if (!order) return;
     setTrackingLoading(true);
@@ -59,7 +59,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
       const data = await ordersApi.getTracking(order.id);
       setTrackingInfo(data);
     } catch (err) {
-      console.error('[2025-12-06 15:00:00] 加载跟踪信息失败', err);
+console.error(' 加载跟踪信息失败', err);
     } finally {
       setTrackingLoading(false);
     }
@@ -68,7 +68,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
   useEffect(() => {
     if (order) {
       loadTrackingInfo();
-      // [2025-12-06 15:00:00] Poll tracking info every 30 seconds if order is shipped
+// Poll tracking info every 30 seconds if order is shipped
       if (order.status === 'SHIPPED' || order.status === 'PROCESSING') {
         const interval = setInterval(() => {
           loadTrackingInfo();
@@ -93,7 +93,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('[2025-11-12 01:12:05] 发票下载失败', err);
+console.error(' 发票下载失败', err);
       alert('Invoice download failed, please retry later.');
     } finally {
       setDownloading(false);
@@ -101,10 +101,10 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
   };
 
   const handleResendEmail = () => {
-    alert('Receipt email will be sent shortly.'); // [2025-11-12 01:12:05] 后续接入真实邮件 API
+alert('Receipt email will be sent shortly.'); // 后续接入真实邮件 API
   };
 
-  // [2025-01-27 12:15:00] 订单取消功能
+// 订单取消功能
   const handleCancelOrder = async () => {
     if (!order) return;
     if (!cancelReason.trim()) {
@@ -131,7 +131,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
     }
   };
 
-  // [2025-01-27 12:15:00] 检查订单是否可以取消
+// 检查订单是否可以取消
   const canCancel = order && (order.status === 'PENDING' || order.status === 'PROCESSING');
 
   if (loading) {
@@ -142,7 +142,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
     );
   }
 
-  // [2025-01-27 16:25:00] 404 错误处理：显示友好的空状态
+// 404 错误处理：显示友好的空状态
   if (error === 'NOT_FOUND' || (!loading && !order && error)) {
     return (
       <section className="container" style={{ padding: '48px', textAlign: 'center' }}>
@@ -245,7 +245,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
         </Link>
       </div>
 
-      {/* [2025-01-27 12:15:00] 订单取消对话框 */}
+{/* 订单取消对话框 */}
       {showCancelDialog && (
         <div className="modal-overlay" onClick={() => setShowCancelDialog(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -368,7 +368,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
             </address>
           </div>
 
-          {/* [2025-01-27 12:15:00] 订单状态时间线 */}
+{/* 订单状态时间线 */}
           <OrderTimeline
             events={[
               {
@@ -389,7 +389,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
             currentStatus={order.status}
           />
 
-          {/* [2025-12-06 15:00:00] Enhanced tracking information with real-time updates */}
+{/* Enhanced tracking information with real-time updates */}
           {(trackingInfo || primaryShipment) && (
             <div className="tracking-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
@@ -417,7 +417,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
                         await navigator.clipboard.writeText(trackingInfo.trackingNumber || '');
                         alert('跟踪号已复制到剪贴板');
                       } catch (err) {
-                        console.error('[2025-12-06 15:00:00] 复制跟踪号失败', err);
+console.error(' 复制跟踪号失败', err);
                       }
                     }}
                   >
@@ -438,7 +438,7 @@ export default function AccountOrderDetailClient({ id }: { id: string }) {
                 </p>
               )}
 
-              {/* [2025-12-06 15:00:00] Tracking events timeline */}
+{/* Tracking events timeline */}
               {trackingInfo?.events && trackingInfo.events.length > 0 && (
                 <div style={{ marginTop: '16px' }}>
                   <h4 style={{ marginBottom: '12px', fontSize: '0.95em', fontWeight: 600 }}>跟踪事件</h4>

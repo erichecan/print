@@ -1,6 +1,6 @@
 /**
  * 下载缺失的品牌 logo
- * [2025-01-29 03:40:00] 从多个来源下载品牌 logo
+* 从多个来源下载品牌 logo
  */
 
 const fs = require('fs');
@@ -11,12 +11,12 @@ const { URL } = require('url');
 
 const OUTPUT_DIR = path.join(__dirname, '../../apps/web/public/assets/brands');
 
-// [2025-01-29 03:40:00] 确保输出目录存在
+// 确保输出目录存在
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-// [2025-01-29 03:40:00] 下载图片
+// 下载图片
 function downloadImage(imageUrl, outputPath) {
   return new Promise((resolve, reject) => {
     if (!imageUrl || !imageUrl.startsWith('http')) {
@@ -73,7 +73,7 @@ function downloadImage(imageUrl, outputPath) {
   });
 }
 
-// [2025-01-29 03:40:00] 品牌 logo URL 列表（使用公开可用的资源）
+// 品牌 logo URL 列表（使用公开可用的资源）
 const brandUrls = [
   {
     name: 'Gildan',

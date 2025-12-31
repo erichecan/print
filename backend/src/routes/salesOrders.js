@@ -1,10 +1,10 @@
-// [2025-12-02 04:48:00] Sales 线下订单路由
+// Sales 线下订单路由
 const express = require('express');
 const router = express.Router();
 const salesOrderController = require('../controllers/salesOrderController');
 const { authenticate, authorizeRoles } = require('../middleware/auth');
 
-// [2025-12-02 04:48:00] 仅允许 SALES / SALES_MANAGER / ADMIN 访问
+// 仅允许 SALES / SALES_MANAGER / ADMIN 访问
 router.use(authenticate);
 router.use(authorizeRoles('SALES', 'SALES_MANAGER', 'ADMIN'));
 
@@ -17,7 +17,7 @@ router.get('/:id', salesOrderController.getSalesOrderById);
 // PATCH /api/sales/orders/:id/stage - 更新订单阶段
 router.patch('/:id/stage', salesOrderController.updateSalesOrderStage);
 
-// [2025-12-07 05:15:00] PATCH /api/sales/orders/:id/status - 更新订单状态
+// PATCH /api/sales/orders/:id/status - 更新订单状态
 router.patch('/:id/status', salesOrderController.updateSalesOrderStatus);
 
 module.exports = router;

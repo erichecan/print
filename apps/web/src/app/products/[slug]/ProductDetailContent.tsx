@@ -1,6 +1,6 @@
 /**
  * Product Detail Page - Redbubble Style with Tailwind CSS
- * [2025-01-27 17:25:00] 完全使用 Tailwind CSS 重新实现
+* 完全使用 Tailwind CSS 重新实现
  */
 'use client';
 
@@ -16,7 +16,7 @@ import { useBuyNow } from '@/hooks/useBuyNow';
 import { SocialShareMenu, ShareConfig } from '@/components/social-share';
 import { StructuredData } from '@/components/seo/StructuredData';
 import { generateProductSchema } from '@/lib/seo';
-import { CategorySidebar } from '@/components/catalog/CategorySidebar'; // [2025-12-11 22:35:00] 商品详情页左侧分类导航
+import { CategorySidebar } from '@/components/catalog/CategorySidebar'; // 商品详情页左侧分类导航
 
 interface ProductVariant {
   id: string;
@@ -99,11 +99,11 @@ export function ProductDetailContent() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  // [2025-12-11 09:21:35] 移除 Print Location 状态（模块已移除）
+// 移除 Print Location 状态（模块已移除）
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
-  // [2025-12-03 04:35:00] 悬停预览颜色状态
+// 悬停预览颜色状态
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
 
   // Get unique colors and sizes from variants
@@ -163,7 +163,7 @@ export function ProductDetailContent() {
     fetchRelated();
   }, [slug, product]);
 
-  // [2025-01-28 04:00:00] 开始设计 - 跳转到原生 HTML 版本的 Design Lab（功能完整）
+// 开始设计 - 跳转到原生 HTML 版本的 Design Lab（功能完整）
   const handleStartDesign = () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
@@ -172,7 +172,7 @@ export function ProductDetailContent() {
     window.location.href = `/design-lab-native.html?variantId=${selectedVariant.id}`;
   };
 
-  // [2025-12-08 09:33:54] 使用 useAddToCart hook - 包含防抖、错误处理和埋点
+// 使用 useAddToCart hook - 包含防抖、错误处理和埋点
   const handleAddToCart = async () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
@@ -185,7 +185,7 @@ export function ProductDetailContent() {
     await addToCart(selectedVariant.id, quantity);
   };
 
-  // [2025-12-08 09:33:54] 使用 useBuyNow hook - 包含防抖、错误处理和埋点
+// 使用 useBuyNow hook - 包含防抖、错误处理和埋点
   const handleBuyNow = async () => {
     if (!selectedVariant) {
       showError('Please select a color and size first');
@@ -216,7 +216,7 @@ export function ProductDetailContent() {
   }
 
   const fallbackImage = '/assets/hero/hero-card-tee.jpg';
-  // [2025-12-03 04:35:00] 颜色切换图片逻辑：
+// 颜色切换图片逻辑：
   // 1. 如果悬停在某个颜色上，显示该颜色的 variant 图片（预览）
   // 2. 如果选中了颜色，显示选中 variant 的图片
   // 3. 否则显示产品主图片
@@ -248,7 +248,7 @@ export function ProductDetailContent() {
     ).values()
   );
 
-  // [2025-12-06 21:00:00] 生成产品结构化数据 for Issue #154
+// 生成产品结构化数据 for Issue #154
   const productSchema = product ? generateProductSchema({
     name: product.name,
     description: product.description || `${product.name} - Custom apparel from suvernire plus`,
@@ -260,7 +260,7 @@ export function ProductDetailContent() {
     availability: selectedVariant && selectedVariant.stockQuantity > 0 ? 'InStock' : 'OutOfStock',
   }) : null;
 
-  // [2025-12-06 21:00:00] 添加评分结构化数据 for Issue #154
+// 添加评分结构化数据 for Issue #154
   const aggregateRatingSchema = product && product.rating.count > 0 ? {
     '@context': 'https://schema.org',
     '@type': 'AggregateRating',
@@ -272,12 +272,12 @@ export function ProductDetailContent() {
 
   return (
     <div className="max-w-container mx-auto px-4 py-6">
-      {/* [2025-12-06 21:00:00] 结构化数据 (JSON-LD) for Issue #154 */}
+{/* 结构化数据 (JSON-LD) for Issue #154 */}
       {productSchema && <StructuredData data={[productSchema, ...(aggregateRatingSchema ? [aggregateRatingSchema] : [])]} />}
       
-      {/* [2025-12-11 22:35:00] 商品详情页布局：左侧分类导航 + 右侧产品内容 */}
+{/* 商品详情页布局：左侧分类导航 + 右侧产品内容 */}
       <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 items-start">
-        {/* [2025-12-11 22:35:00] 左侧分类导航（只显示有产品的分类） */}
+{/* 左侧分类导航（只显示有产品的分类） */}
         <aside className="hidden lg:block">
           <CategorySidebar currentCategorySlug={product.category?.slug ? String(product.category.slug) : undefined} />
         </aside>
@@ -346,7 +346,7 @@ export function ProductDetailContent() {
             )}
           </div>
           
-          {/* [2025-01-28 16:30:00] 移动端缩略图：底部横向滑动 */}
+{/* 移动端缩略图：底部横向滑动 */}
           {product.images.length > 1 && (
             <div className="md:hidden w-full overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'thin' }}>
               <div className="flex gap-3" style={{ width: 'max-content' }}>
@@ -372,7 +372,7 @@ export function ProductDetailContent() {
           {/* Title */}
           <div className="flex items-start justify-between gap-4">
             <h1 className="text-3xl font-bold leading-tight text-gray-900 flex-1">{product.name}</h1>
-            {/* [2025-12-06 20:00:00] 社交媒体分享按钮 for Issue #142 */}
+{/* 社交媒体分享按钮 for Issue #142 */}
             {typeof window !== 'undefined' && (
               <SocialShareMenu
                 config={{
@@ -383,8 +383,8 @@ export function ProductDetailContent() {
                   hashtags: ['CustomPrint', 'CustomMerch', 'SuvernirePlus'],
                 }}
                 onShare={(platform) => {
-                  // [2025-12-06 20:00:00] 分享统计（可选）for Issue #142
-                  console.log(`[2025-12-06 20:00:00] Shared to ${platform}:`, product.name);
+// 分享统计（可选）for Issue #142
+console.log(` Shared to ${platform}:`, product.name);
                   // TODO: 发送分享统计到后端 API
                 }}
               />
@@ -482,13 +482,13 @@ export function ProductDetailContent() {
                         }
                       }}
                       onMouseEnter={() => {
-                        // [2025-12-03 04:35:00] 鼠标悬停时预览该颜色的图片
+// 鼠标悬停时预览该颜色的图片
                         if (isAvailable) {
                           setHoveredColor(color.name);
                         }
                       }}
                       onMouseLeave={() => {
-                        // [2025-12-03 04:35:00] 鼠标离开时恢复显示选中颜色的图片
+// 鼠标离开时恢复显示选中颜色的图片
                         setHoveredColor(null);
                       }}
                       disabled={!isAvailable}
@@ -547,7 +547,7 @@ export function ProductDetailContent() {
             </div>
           )}
 
-          {/* [2025-12-11 09:21:35] 移除 Print Location 模块（按需求） */}
+{/* 移除 Print Location 模块（按需求） */}
 
           {/* Action Buttons - 3 buttons in a row */}
           <div className="flex gap-3 flex-col sm:flex-row product-actions-mobile">
@@ -634,7 +634,7 @@ export function ProductDetailContent() {
       </div>
       </div>
 
-      {/* [2025-01-27 17:25:00] 相关产品推荐 */}
+{/* 相关产品推荐 */}
       {relatedProducts.length > 0 && (
         <section className="bg-white border-t border-gray-200 pt-12 pb-12 mt-12">
           <div className="max-w-container mx-auto px-4">
@@ -662,7 +662,7 @@ export function ProductDetailContent() {
         </section>
       )}
 
-      {/* [2025-01-27 17:25:00] 设计师/品牌推荐 */}
+{/* 设计师/品牌推荐 */}
       {product.brand && relatedProducts.filter(p => p.brand?.slug === product.brand?.slug).length > 0 && (
         <section className="bg-gray-50 border-t border-gray-200 pt-12 pb-12">
           <div className="max-w-container mx-auto px-4">

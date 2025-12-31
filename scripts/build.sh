@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build script for production [2025-11-12 03:20:00]
+# Build script for production 
 # Usage: ./scripts/build.sh [--skip-tests]
 
 set -e

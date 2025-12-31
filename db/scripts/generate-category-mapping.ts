@@ -1,6 +1,6 @@
 /**
  * 分类映射脚本
- * [2025-12-11 09:21:35] 基于现有产品属性生成分类映射（参考 Custom Ink 分类体系）
+* 基于现有产品属性生成分类映射（参考 Custom Ink 分类体系）
  * 
  * 用法:
  *   --dry-run: 预览将要创建的分类和映射（不实际写入数据库）
@@ -14,7 +14,7 @@ import * as path from 'path';
 
 const prisma = new PrismaClient();
 
-// [2025-12-11 09:21:35] 参考 Custom Ink 的分类体系
+// 参考 Custom Ink 的分类体系
 const CATEGORY_MAPPING = {
   // 一级分类
   'Apparel': {
@@ -94,7 +94,7 @@ const CATEGORY_MAPPING = {
   },
 };
 
-// [2025-12-11 09:21:35] 从名称生成 slug
+// 从名称生成 slug
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
@@ -102,7 +102,7 @@ function generateSlug(name: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-// [2025-12-11 09:21:35] 确保分类存在
+// 确保分类存在
 async function ensureCategory(
   name: string,
   slug: string,
@@ -148,7 +148,7 @@ async function ensureCategory(
   }
 }
 
-// [2025-12-11 09:21:35] 递归创建分类树
+// 递归创建分类树
 async function createCategoryTree(
   mapping: any,
   parentId: string | null = null,
@@ -173,7 +173,7 @@ async function createCategoryTree(
   return categoryIds;
 }
 
-// [2025-12-11 09:21:35] 根据产品名称/描述匹配分类
+// 根据产品名称/描述匹配分类
 function matchProductToCategories(product: any): string[] {
   const categorySlugs: string[] = [];
   const name = (product.name || '').toLowerCase();
@@ -266,7 +266,7 @@ function matchProductToCategories(product: any): string[] {
   return categorySlugs;
 }
 
-// [2025-12-11 09:21:35] 映射产品到分类
+// 映射产品到分类
 async function mapProductsToCategories(isDryRun: boolean): Promise<void> {
   console.log('\n📦 开始映射产品到分类...\n');
 
@@ -354,11 +354,11 @@ async function mapProductsToCategories(isDryRun: boolean): Promise<void> {
   console.log(`\n✅ 映射完成: ${mappedCount} 个产品已映射, ${uncategorizedCount} 个产品未分类`);
 }
 
-// [2025-12-11 09:21:35] 生成树状分类清单
+// 生成树状分类清单
 async function generateTreeDocument(outputPath: string): Promise<void> {
   console.log('\n📄 生成树状分类清单...\n');
 
-  // [2025-12-11 09:21:35] 获取分类树（兼容 productCategories 和 products 关系）
+// 获取分类树（兼容 productCategories 和 products 关系）
   let categories;
   try {
     // 尝试使用 productCategories 关系（如果表存在）
@@ -454,7 +454,7 @@ async function generateTreeDocument(outputPath: string): Promise<void> {
 
 ## 变更记录
 
-- [2025-12-11 09:21:35] 初始分类体系建立，参考 Custom Ink
+- 初始分类体系建立，参考 Custom Ink
 
 ---
 
@@ -565,7 +565,7 @@ async function generateTreeDocument(outputPath: string): Promise<void> {
   console.log(`✅ 树状分类清单已生成: ${outputPath}`);
 }
 
-// [2025-12-11 09:21:35] 主函数
+// 主函数
 async function main() {
   const args = process.argv.slice(2);
   const isDryRun = args.includes('--dry-run');

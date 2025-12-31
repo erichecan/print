@@ -2,8 +2,8 @@
 
 /**
  * Admin Products Page
- * [2025-11-15 13:10:00] 完整还原 prototype/admin/admin/products.html 布局与交互
- * [2025-11-15 14:32:05] 增强：后端筛选 + 批量操作 + 分类下拉真实数据
+* 完整还原 prototype/admin/admin/products.html 布局与交互
+* 增强：后端筛选 + 批量操作 + 分类下拉真实数据
  */
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -154,7 +154,7 @@ export default function AdminProductsPage() {
   };
 
   const handleArchive = async (product: AdminProductSummary) => {
-    // [2025-11-16 14:35:00] 使用 i18n 文案提示归档确认
+// 使用 i18n 文案提示归档确认
     const confirmed = window.confirm(t('confirmArchiveProduct', { name: product.name }));
     if (!confirmed) {
       return;

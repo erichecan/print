@@ -1,6 +1,6 @@
 /**
  * Admin 登录功能测试
- * [2025-11-28 11:30:00] 测试 Admin 登录页面和重定向循环修复
+* 测试 Admin 登录页面和重定向循环修复
  */
 import { test, expect } from '@playwright/test';
 
@@ -13,7 +13,7 @@ test.describe('Admin 登录功能', () => {
     // 访问登录页面
     await page.goto(`${FRONTEND_URL}/admin/login`);
     
-    // [2025-11-28 12:00:00] 使用 domcontentloaded 避免超时
+// 使用 domcontentloaded 避免超时
     await page.waitForLoadState('domcontentloaded');
     
     // 验证没有重定向循环
@@ -62,7 +62,7 @@ test.describe('Admin 登录功能', () => {
     await emailInput.fill(ADMIN_EMAIL);
     await passwordInput.fill(ADMIN_PASSWORD);
     
-    // [2025-11-28 17:50:00] 监听任何登录相关的 API 请求（包括错误响应）
+// 监听任何登录相关的 API 请求（包括错误响应）
     const loginApiPromise = page.waitForResponse(
       (response) => {
         const url = response.url();
@@ -90,13 +90,13 @@ test.describe('Admin 登录功能', () => {
         throw new Error(`登录失败: ${loginData.error}`);
       }
     } else {
-      // [2025-11-28 17:50:00] 如果没有 API 响应，等待页面导航或错误消息
+// 如果没有 API 响应，等待页面导航或错误消息
       await page.waitForTimeout(2000);
     }
     
     // 等待跳转到 /admin 或检查错误消息
     try {
-      // [2025-11-28 17:50:00] 使用更宽松的等待策略，先等待页面变化
+// 使用更宽松的等待策略，先等待页面变化
       await Promise.race([
         page.waitForURL(/\/admin$/, { timeout: 15000 }).catch(() => null),
         page.waitForTimeout(3000),
@@ -147,7 +147,7 @@ test.describe('Admin 登录功能', () => {
     await emailInput.fill(ADMIN_EMAIL);
     await passwordInput.fill(ADMIN_PASSWORD);
     
-    // [2025-11-28 16:55:00] 监听登录 API 请求
+// 监听登录 API 请求
     const loginApiPromise = page.waitForResponse(
       (response) => response.url().includes('/api/auth/login'),
       { timeout: 30000 }
@@ -165,7 +165,7 @@ test.describe('Admin 登录功能', () => {
     // 等待跳转到后台 - 增加超时时间
     await page.waitForURL(/\/admin$/, { timeout: 30000 });
     
-    // [2025-11-28 12:00:00] 使用 domcontentloaded 避免超时
+// 使用 domcontentloaded 避免超时
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000); // 额外等待页面渲染
     
@@ -199,7 +199,7 @@ test.describe('Admin 登录功能', () => {
       }
     });
     
-    // [2025-11-28 12:00:00] 使用 domcontentloaded 避免超时
+// 使用 domcontentloaded 避免超时
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000); // 额外等待，检查是否有后续重定向
     

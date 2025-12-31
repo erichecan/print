@@ -1,4 +1,4 @@
-// [2025-01-30 23:55:00] ProductColorImage model for Design Lab color-image mapping
+// ProductColorImage model for Design Lab color-image mapping
 module.exports = (sequelize, DataTypes) => {
   const ProductColorImage = sequelize.define('ProductColorImage', {
     id: {

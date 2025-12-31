@@ -1,4 +1,4 @@
-// [2025-11-10 10:30:00] Cost management controller
+// Cost management controller
 const { Prisma } = require('@prisma/client');
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -173,7 +173,7 @@ exports.updateProductCost = async (req, res) => {
         unitCost: new Prisma.Decimal(unitCost.toFixed(2)),
         salePrice: new Prisma.Decimal(salePrice.toFixed(2)),
         grossProfit: new Prisma.Decimal(grossProfit.toFixed(2)),
-        basePrice: new Prisma.Decimal(salePrice.toFixed(2)) // [2025-11-10 10:30:00] Keep storefront price aligned with sale price
+basePrice: new Prisma.Decimal(salePrice.toFixed(2)) // Keep storefront price aligned with sale price
       },
       include: {
         category: {

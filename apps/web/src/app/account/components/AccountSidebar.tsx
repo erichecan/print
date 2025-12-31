@@ -1,6 +1,6 @@
 /**
  * Account Sidebar Navigation Component
- * [2025-01-27 14:40:00] 账户页面左侧导航栏组件
+* 账户页面左侧导航栏组件
  */
 'use client';
 

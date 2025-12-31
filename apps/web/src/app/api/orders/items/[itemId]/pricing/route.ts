@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 订单项定价计算API路由
+* 订单项定价计算API路由
  * POST: 计算报价，返回分项明细
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,7 +21,7 @@ export async function POST(
       );
     }
     
-    // [2025-12-19] 使用定价服务计算
+// 使用定价服务计算
     const result = calcOrderItemPricing(groups, currency);
     
     return NextResponse.json(result);

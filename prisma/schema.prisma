@@ -35,7 +35,7 @@ model User {
   @@map("users")
 }
 
-// [2025-12-08] Design Lab Analytics Events
+// Design Lab Analytics Events
 model DesignLabAnalyticsEvent {
   id        String   @id @default(uuid())
   userId    String?  @map("user_id")
@@ -53,7 +53,7 @@ model DesignLabAnalyticsEvent {
   @@map("design_lab_analytics_events")
 }
 
-// [2025-12-08] Design Lab Upload Ratings
+// Design Lab Upload Ratings
 model DesignLabUploadRating {
   id        String   @id @default(uuid())
   userId    String?  @map("user_id")
@@ -105,7 +105,7 @@ model Category {
   children            Category[]          @relation("CategoryTree")
   designTemplates     DesignTemplate[]
   products            Product[]
-  productCategories   ProductCategory[] // [2025-12-11 09:21:35] 多对多关系
+productCategories  ProductCategory[] // 多对多关系
   promotionCategories PromotionCategory[]
 
   @@index([slug])
@@ -149,7 +149,7 @@ model Product {
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
   giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
-  categoryId         String              @map("category_id") // [2025-12-11 09:21:35] 保留主分类（向后兼容）
+categoryId     String       @map("category_id") // 保留主分类（向后兼容）
   brandId            String?             @map("brand_id")
   collectionProducts CollectionProduct[]
   colorImages        ProductColorImage[]
@@ -157,7 +157,7 @@ model Product {
   reviews            ProductReview[]
   brand              Brand?              @relation(fields: [brandId], references: [id])
   category           Category            @relation(fields: [categoryId], references: [id])
-  productCategories  ProductCategory[] // [2025-12-11 09:21:35] 多对多关系
+productCategories ProductCategory[] // 多对多关系
   projects           Project[]
   promotionProducts  PromotionProduct[]
   variants           Variant[]
@@ -171,7 +171,7 @@ model Product {
   @@map("products")
 }
 
-// [2025-12-11 09:21:35] ProductCategory - 产品与分类的多对多关系表
+// ProductCategory - 产品与分类的多对多关系表
 model ProductCategory {
   productId  String   @map("product_id")
   categoryId String   @map("category_id")
@@ -334,8 +334,8 @@ model Order {
   total                Decimal          @db.Decimal(10, 2)
   paymentStatus        PaymentStatus    @default(PENDING) @map("payment_status")
   paymentIntentId      String?          @unique @map("payment_intent_id")
-  balanceTransactionId String?          @map("balance_transaction_id") // [2025-01-29 14:30:00] Stripe balance transaction ID
-  paymentFee           Decimal?         @map("payment_fee") @db.Decimal(10, 2) // [2025-01-29 14:30:00] Stripe payment fee in CAD
+balanceTransactionId String?     @map("balance_transaction_id") // Stripe balance transaction ID
+paymentFee      Decimal?     @map("payment_fee") @db.Decimal(10, 2) // Stripe payment fee in CAD
   shippingAddress      Json             @map("shipping_address")
   billingAddress       Json             @map("billing_address")
   trackingNumber       String?          @map("tracking_number")
@@ -369,14 +369,14 @@ model OrderItem {
   createdAt     DateTime         @default(now()) @map("created_at")
   order         Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant       Variant          @relation(fields: [variantId], references: [id])
-  colors        OrderItemColor[] // [2025-01-31 19:50:00] 颜色级别印刷配置
+colors    OrderItemColor[] // 颜色级别印刷配置
 
   @@index([orderId])
   @@index([variantId])
   @@map("order_items")
 }
 
-// [2025-01-31 19:50:00] 订单项颜色级别印刷配置模型
+// 订单项颜色级别印刷配置模型
 model OrderItemColor {
   id                 Int                          @id @default(autoincrement())
   orderItemId        String                       @map("order_item_id")
@@ -396,7 +396,7 @@ model OrderItemColor {
   @@map("order_item_colors")
 }
 
-// [2025-01-31 19:50:00] 订单项颜色尺码覆盖模型（高级模式）
+// 订单项颜色尺码覆盖模型（高级模式）
 model OrderItemColorSizeOverride {
   id                   Int            @id @default(autoincrement())
   orderItemColorId     Int            @map("order_item_color_id")
@@ -457,7 +457,7 @@ model OfflineOrder {
   stageLabel          String                     @map("stage_label")
   stagePosition       Int?                       @map("stage_position")
   status              OfflineOrderStatus         @default(ACTIVE)
-  // [2025-12-18 16:30:00] PRD v2.0: contactName 和 email 改为可选字段
+// PRD v2.0: contactName 和 email 改为可选字段
   contactName         String?                    @map("contact_name")
   company             String?
   email               String?
@@ -561,8 +561,8 @@ model Design {
   canvasSnapshot  Json            @map("canvas_snapshot")
   pricingSnapshot Json?           @map("pricing_snapshot")
   thumbnailUrl    String?         @map("thumbnail_url")
-  shareToken      String?         @unique @map("share_token") // [2025-12-08] 分享token
-  isPublic        Boolean         @default(false) @map("is_public") // [2025-12-08] 是否公开分享
+shareToken   String?     @unique @map("share_token") // 分享token
+isPublic    Boolean     @default(false) @map("is_public") // 是否公开分享
   lockedAt        DateTime?       @map("locked_at")
   lockedBy        String?         @map("locked_by")
   createdAt       DateTime        @default(now()) @map("created_at")
@@ -578,7 +578,7 @@ model Design {
   @@index([sessionId])
   @@index([variantId])
   @@index([status])
-  @@index([shareToken]) // [2025-12-08] 分享token索引
+@@index([shareToken]) // 分享token索引
   @@map("designs")
 }
 
@@ -753,7 +753,7 @@ model Promotion {
   coupon          PromotionCoupon?
   products        PromotionProduct[]
 
-  // [2025-12-06 18:00:00] Buy X Get Y Free fields
+// Buy X Get Y Free fields
   buyQuantity     Int?                  @map("buy_quantity")
   getQuantity     Int?                  @map("get_quantity")
   giftProductId   String?               @map("gift_product_id")
@@ -859,7 +859,7 @@ model PaymentMethod {
   @@map("payment_methods")
 }
 
-// [2025-01-29 14:30:00] WebhookEvent model for idempotency
+// WebhookEvent model for idempotency
 model WebhookEvent {
   id              String   @id @default(uuid())
   stripeEventId   String   @unique @map("stripe_event_id")
@@ -883,7 +883,7 @@ model SequelizeMeta {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-// [2025-12-11 23:00:00] Artwork Categories - 树状分类表
+// Artwork Categories - 树状分类表
 model artwork_categories {
   id         String   @id @default(uuid()) @db.Uuid
   name       String   @db.VarChar(255)
@@ -906,13 +906,13 @@ model artwork_categories {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-// [2025-12-11 23:00:00] 扩展 art_assets 表，支持 GCS 存储、子分类、标签、授权信息
+// 扩展 art_assets 表，支持 GCS 存储、子分类、标签、授权信息
 model art_assets {
   id            String   @id @db.Uuid
-  category      String   @db.VarChar(100) // [2025-12-11 23:00:00] 保留向后兼容
+category   String  @db.VarChar(100) // 保留向后兼容
   name          String   @db.VarChar(255)
-  slug          String?  @unique @db.VarChar(255) // [2025-12-11 23:00:00] 新增：URL 友好的标识符
-  description   String?  @db.Text // [2025-12-11 23:00:00] 新增：描述
+slug     String? @unique @db.VarChar(255) // 新增：URL 友好的标识符
+description  String? @db.Text // 新增：描述
   image_url     String   @db.VarChar(500)
   thumbnail_url String?  @db.VarChar(500)
   file_size     Int?
@@ -925,17 +925,17 @@ model art_assets {
   created_at    DateTime @default(now()) @db.Timestamptz(6)
   updated_at    DateTime @default(now()) @db.Timestamptz(6)
 
-  // [2025-12-11 23:00:00] 新增字段：GCS 存储、分类关系、标签、授权
-  top_category_id String?  @map("top_category_id") @db.Uuid // [2025-12-11 23:00:00] 一级分类 ID
-  sub_category_id String?  @map("sub_category_id") @db.Uuid // [2025-12-11 23:00:00] 二级分类 ID
-  gcs_key         String?  @map("gcs_key") @db.VarChar(500) // [2025-12-11 23:00:00] GCS 对象路径
-  gcs_bucket      String?  @map("gcs_bucket") @db.VarChar(255) // [2025-12-11 23:00:00] GCS Bucket 名称
-  source_url      String?  @map("source_url") @db.VarChar(500) // [2025-12-11 23:00:00] 原始来源 URL
-  tags            String[] @default([]) // [2025-12-11 23:00:00] 标签数组
-  license         String?  @db.VarChar(100) // [2025-12-11 23:00:00] 授权类型（Public Domain, CC0, 等）
-  attribution     String?  @db.Text // [2025-12-11 23:00:00] 署名信息
-  dominant_color  String?  @map("dominant_color") @db.VarChar(7) // [2025-12-11 23:00:00] 主色调（hex）
-  status          String?  @default("active") @db.VarChar(50) // [2025-12-11 23:00:00] 状态（active/archived）
+// 新增字段：GCS 存储、分类关系、标签、授权
+top_category_id String? @map("top_category_id") @db.Uuid // 一级分类 ID
+sub_category_id String? @map("sub_category_id") @db.Uuid // 二级分类 ID
+gcs_key     String? @map("gcs_key") @db.VarChar(500) // GCS 对象路径
+gcs_bucket   String? @map("gcs_bucket") @db.VarChar(255) // GCS Bucket 名称
+source_url   String? @map("source_url") @db.VarChar(500) // 原始来源 URL
+tags      String[] @default([]) // 标签数组
+license     String? @db.VarChar(100) // 授权类型（Public Domain, CC0, 等）
+attribution   String? @db.Text // 署名信息
+dominant_color String? @map("dominant_color") @db.VarChar(7) // 主色调（hex）
+status     String? @default("active") @db.VarChar(50) // 状态（active/archived）
 
   top_category artwork_categories? @relation("TopCategory", fields: [top_category_id], references: [id], onDelete: SetNull)
   sub_category artwork_categories? @relation("SubCategory", fields: [sub_category_id], references: [id], onDelete: SetNull)
@@ -948,7 +948,7 @@ model art_assets {
   @@index([sub_category_id], map: "idx_art_assets_sub_category_id")
   @@index([gcs_key], map: "idx_art_assets_gcs_key")
   @@index([status], map: "idx_art_assets_status")
-  // [2025-12-16 21:23:59] 修复：tags 是 text[]，gin_trgm_ops 仅适用于 text；改为默认 GIN array 索引，避免 db push/migrate 报错
+// 修复：tags 是 text[]，gin_trgm_ops 仅适用于 text；改为默认 GIN array 索引，避免 db push/migrate 报错
   @@index([tags], map: "idx_art_assets_tags", type: Gin)
 }
 
@@ -1125,7 +1125,7 @@ enum enum_fonts_source {
   custom
 }
 
-// [2025-12-10 00:00:00] Guest Message - 留言本模型（用于 help center 留言）
+// Guest Message - 留言本模型（用于 help center 留言）
 model GuestMessage {
   id          String   @id @default(uuid())
   name        String

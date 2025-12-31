@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-11-28 17:25:00] 修复 GCP 生产环境的 Admin 用户
+# 修复 GCP 生产环境的 Admin 用户
 
 BACKEND_URL="https://print-main-backend-hsbqzlnkxa-uc.a.run.app"
 

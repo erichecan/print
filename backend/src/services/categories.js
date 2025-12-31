@@ -1,12 +1,12 @@
 /**
  * Categories Service
- * [2025-12-11 09:21:35] 分类服务：提供树状分类与计数逻辑
+* 分类服务：提供树状分类与计数逻辑
  */
 
 const prisma = require('../lib/prisma');
 
 /**
- * [2025-12-11 09:21:35] 获取树状分类（含产品计数）
+* 获取树状分类（含产品计数）
  * 计数策略：统计该分类下（含子类）的所有产品数量
  */
 async function getCategoryTree() {
@@ -84,7 +84,7 @@ async function getCategoryTree() {
 }
 
 /**
- * [2025-12-11 09:21:35] 根据 slug 获取分类及其子分类的产品列表
+* 根据 slug 获取分类及其子分类的产品列表
  */
 async function getProductsByCategorySlug(slug, options = {}) {
   const { page = 1, limit = 20, sortBy = 'createdAt', sortOrder = 'desc' } = options;
@@ -177,7 +177,7 @@ async function getProductsByCategorySlug(slug, options = {}) {
 }
 
 /**
- * [2025-12-11 23:05:00] 获取分组分类树（含精确计数）
+* 获取分组分类树（含精确计数）
  * @param {Object} options - 配置选项
  * @param {string} options.strategy - 计数策略：'direct'（仅本类）或 'aggregate'（包含子类）
  * @returns {Promise<Array>} 分组分类数组
@@ -278,7 +278,7 @@ async function getTreeWithCounts({ strategy = 'direct' } = {}) {
 }
 
 /**
- * [2025-12-11 23:05:00] 递归获取分类及其所有子孙分类的 ID
+* 递归获取分类及其所有子孙分类的 ID
  */
 async function getCategoryAndDescendantsIds(categoryId) {
   const categoryIds = [categoryId];

@@ -1,7 +1,7 @@
 /**
  * MoreByArtist Component - Redbubble Style
- * [2025-11-19 09:18:00] 参考图一："More by this artist" 卡片栅格
- * [2025-01-30 10:00:00] 添加条件渲染：无商品时隐藏整个板块
+* 参考图一："More by this artist" 卡片栅格
+* 添加条件渲染：无商品时隐藏整个板块
  */
 'use client';
 
@@ -23,7 +23,7 @@ interface MoreByArtistProps {
 }
 
 export function MoreByArtist({ artistName, artistShopUrl, products }: MoreByArtistProps) {
-  // [2025-01-30 10:00:00] 条件渲染：无商品或商品数量为0时，完全不渲染该板块
+// 条件渲染：无商品或商品数量为0时，完全不渲染该板块
   if (!products || products.length === 0) {
     return null;
   }

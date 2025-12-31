@@ -1,6 +1,6 @@
 /**
  * GCS Storage Helper
- * [2025-12-01 21:30:00] 提供统一的 GCP Cloud Storage 客户端与 URL 构建工具
+* 提供统一的 GCP Cloud Storage 客户端与 URL 构建工具
  */
 
 const { Storage } = require('@google-cloud/storage');
@@ -8,7 +8,7 @@ const { Storage } = require('@google-cloud/storage');
 let storageClient = null;
 
 /**
- * [2025-12-01 21:30:00] 获取或初始化全局 Storage 客户端
+* 获取或初始化全局 Storage 客户端
  * 使用应用默认凭证（Application Default Credentials）
  */
 function getStorageClient() {
@@ -19,20 +19,20 @@ function getStorageClient() {
 }
 
 /**
- * [2025-12-01 21:30:00] 获取图片 Bucket 名称（必须配置）
+* 获取图片 Bucket 名称（必须配置）
  */
 function getImageBucketName() {
   const bucket = process.env.GCP_IMAGE_BUCKET;
   if (!bucket) {
     throw new Error(
-      '[2025-12-01 21:30:00] GCS 配置缺失: 请在环境变量中设置 GCP_IMAGE_BUCKET'
+' GCS 配置缺失: 请在环境变量中设置 GCP_IMAGE_BUCKET'
     );
   }
   return bucket;
 }
 
 /**
- * [2025-12-01 21:30:00] 获取图片访问基础 URL
+* 获取图片访问基础 URL
  * 优先使用 GCP_IMAGE_BASE_URL，其次使用 storage.googleapis.com 默认域名
  */
 function getImageBaseUrl() {
@@ -44,7 +44,7 @@ function getImageBaseUrl() {
 }
 
 /**
- * [2025-12-01 21:30:00] 构建统一的对象路径
+* 构建统一的对象路径
  * type: 'product' | 'art-asset' | 'design' | 'upload' | 'brand' | 'hero' | 'category' 等
  */
 function buildObjectPath(type, segments = []) {
@@ -56,7 +56,7 @@ function buildObjectPath(type, segments = []) {
 }
 
 /**
- * [2025-12-01 21:30:00] 上传本地文件到 GCS，并返回公开访问 URL
+* 上传本地文件到 GCS，并返回公开访问 URL
  */
 async function uploadFileToGcs(localPath, objectPath, options = {}) {
   const client = getStorageClient();

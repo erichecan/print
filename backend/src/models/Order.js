@@ -1,4 +1,4 @@
-// [2025-11-02 20:57:00] Order model
+// Order model
 module.exports = (sequelize, DataTypes) => {
   const Order = sequelize.define('Order', {
     id: {

@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.1 - 角控件图标绘制
- * [2025-12-16 02:05:10] 初始实现：圆形按钮 + 删除/复制/缩放图标（参考 Custom Ink）
+* 初始实现：圆形按钮 + 删除/复制/缩放图标（参考 Custom Ink）
  */
 
 export type IconName = 'trash' | 'copy' | 'resize';
@@ -15,7 +15,7 @@ export interface DrawControlButtonOptions {
 
 /**
  * 在指定位置绘制圆形角控件按钮
- * [2025-12-16 02:05:10] 统一封装按钮绘制逻辑，便于在 Fabric 控件中复用
+* 统一封装按钮绘制逻辑，便于在 Fabric 控件中复用
  */
 export function drawControlButton(
   ctx: CanvasRenderingContext2D,
@@ -69,7 +69,7 @@ export function drawControlButton(
 
 /**
  * 删除图标（红色 X）
- * [2025-12-16 02:05:10] 参考 Custom Ink：白底 + 红色 X
+* 参考 Custom Ink：白底 + 红色 X
  */
 function drawTrash(ctx: CanvasRenderingContext2D, radius: number): void {
   const iconRadius = radius * 0.45;
@@ -91,7 +91,7 @@ function drawTrash(ctx: CanvasRenderingContext2D, radius: number): void {
 
 /**
  * 复制图标（两层矩形）
- * [2025-12-16 02:05:10] 参考 Custom Ink：浅色底图 + 深色前景
+* 参考 Custom Ink：浅色底图 + 深色前景
  */
 function drawCopy(ctx: CanvasRenderingContext2D, radius: number): void {
   const w = radius * 0.9;
@@ -119,7 +119,7 @@ function drawCopy(ctx: CanvasRenderingContext2D, radius: number): void {
 
 /**
  * 缩放图标（对角线箭头）
- * [2025-12-16 02:05:10] 参考 Custom Ink：从左下到右上对角线箭头
+* 参考 Custom Ink：从左下到右上对角线箭头
  */
 function drawResize(ctx: CanvasRenderingContext2D, radius: number): void {
   const length = radius * 0.9;

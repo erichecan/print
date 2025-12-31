@@ -1,6 +1,6 @@
 /**
  * Design Lab Analytics Controller
- * [2025-12-08] 处理Design Lab埋点事件和指标收集
+* 处理Design Lab埋点事件和指标收集
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -36,7 +36,7 @@ exports.trackEvents = async (req, res, next) => {
 
     // 使用批量插入（如果表存在）
     try {
-      // [2025-12-31] 修复：为 UUID 字段添加类型转换
+// 修复：为 UUID 字段添加类型转换
       await prisma.$executeRaw`
         INSERT INTO design_lab_analytics_events (
           id, user_id, session_id, event_type, design_id, metadata, timestamp, created_at

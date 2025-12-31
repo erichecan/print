@@ -1,6 +1,6 @@
 /**
  * Catalog Group Client Component
- * [2025-12-11 23:10:00] 客户端组件：处理分组商品列表数据加载与展示
+* 客户端组件：处理分组商品列表数据加载与展示
  */
 'use client';
 
@@ -37,7 +37,7 @@ const fetcher = (url: string) =>
 export function CatalogGroupClient({ groupSlug }: CatalogGroupClientProps) {
   const [groupInfo, setGroupInfo] = useState<{ name: string; description?: string } | null>(null);
 
-  // [2025-12-11 23:10:00] 获取分组信息（从 tree-with-counts API）
+// 获取分组信息（从 tree-with-counts API）
   useEffect(() => {
     fetch(`${API_BASE_URL}/categories/tree-with-counts`)
       .then((r) => r.json())
@@ -55,7 +55,7 @@ export function CatalogGroupClient({ groupSlug }: CatalogGroupClientProps) {
       });
   }, [groupSlug]);
 
-  // [2025-12-11 23:10:00] 获取该分组下所有子分类的产品列表
+// 获取该分组下所有子分类的产品列表
   // 通过获取所有子分类的 ID，然后查询这些分类下的产品
   const { data: productsData, error, isLoading } = useSWR<{
     data: Product[];

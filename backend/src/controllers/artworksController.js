@@ -1,6 +1,6 @@
 /**
  * Artworks Controller
- * [2025-12-11 23:30:00] 艺术作品 CRUD 操作，支持分类树、分页、搜索
+* 艺术作品 CRUD 操作，支持分类树、分页、搜索
  */
 const { PrismaClient } = require('@prisma/client');
 const logger = require('../utils/logger');
@@ -8,7 +8,7 @@ const gcsUtils = require('../utils/gcsStorage');
 
 const prisma = new PrismaClient();
 
-// [2025-12-16 21:12:24] Dev 稳定性：当艺术素材表未迁移时，降级为返回空数据（避免前端 ArtPanel 报 500）
+// Dev 稳定性：当艺术素材表未迁移时，降级为返回空数据（避免前端 ArtPanel 报 500）
 const isMissingArtworkTablesError = (error) => {
   const message = String(error?.message || '');
   const code = String(error?.code || '');
@@ -31,7 +31,7 @@ const isMissingArtworkTablesError = (error) => {
 };
 
 /**
- * [2025-12-11 23:30:00] Get artworks with pagination, filtering, and search
+* Get artworks with pagination, filtering, and search
  * GET /api/artworks?top=emojis&sub=animals&query=lion&page=1&pageSize=48
  */
 exports.getArtworks = async (req, res) => {
@@ -49,7 +49,7 @@ exports.getArtworks = async (req, res) => {
       status: 'active',
     };
 
-    // [2025-12-11 23:30:00] 分类过滤
+// 分类过滤
     if (top || sub) {
       const categoryWhere = {};
       
@@ -74,7 +74,7 @@ exports.getArtworks = async (req, res) => {
       Object.assign(where, categoryWhere);
     }
 
-    // [2025-12-11 23:30:00] 搜索过滤（名称、标签）
+// 搜索过滤（名称、标签）
     if (query) {
       where.OR = [
         { name: { contains: query, mode: 'insensitive' } },
@@ -107,20 +107,20 @@ exports.getArtworks = async (req, res) => {
       prisma.art_assets.count({ where }),
     ]);
 
-    // [2025-12-11 23:30:00] 格式化响应
-    // [2025-01-30 13:15:00] 修复：只有当 gcs_key 存在时才使用 GCS URL，否则直接使用 image_url（支持外部 URL）
+// 格式化响应
+// 修复：只有当 gcs_key 存在时才使用 GCS URL，否则直接使用 image_url（支持外部 URL）
     const formattedArtworks = artworks.map(artwork => {
       let imageUrl = artwork.image_url; // 默认使用 image_url（可能是外部 URL）
       let thumbnailUrl = artwork.thumbnail_url;
       
-      // [2025-01-30 13:15:00] 如果存在 gcs_key，尝试构建 GCS URL（需要 GCS 配置）
+// 如果存在 gcs_key，尝试构建 GCS URL（需要 GCS 配置）
       if (artwork.gcs_key) {
         try {
           const baseUrl = gcsUtils.getImageBaseUrl();
           imageUrl = `${baseUrl}/${artwork.gcs_key}`;
           thumbnailUrl = artwork.thumbnail_url || `${baseUrl}/${artwork.gcs_key.replace(/\.(png|jpg|jpeg|svg)$/i, '@200x200.jpg')}`;
         } catch (error) {
-          // [2025-01-30 13:15:00] GCS 配置缺失时，回退到 image_url（外部 URL）
+// GCS 配置缺失时，回退到 image_url（外部 URL）
           console.warn(`[getArtworks] GCS not configured, using image_url for artwork ${artwork.id}:`, error.message);
           // imageUrl 和 thumbnailUrl 保持默认值（使用 image_url）
         }
@@ -162,7 +162,7 @@ exports.getArtworks = async (req, res) => {
       },
     });
   } catch (error) {
-    // [2025-12-16 21:12:24] Dev 降级：表未创建时返回空列表，避免页面报 500（生产环境仍返回 500）
+// Dev 降级：表未创建时返回空列表，避免页面报 500（生产环境仍返回 500）
     if (process.env.NODE_ENV === 'development' && isMissingArtworkTablesError(error)) {
       console.warn('[getArtworks] Missing artwork tables in dev DB, returning empty data:', error?.message);
       return res.json({
@@ -187,12 +187,12 @@ exports.getArtworks = async (req, res) => {
 };
 
 /**
- * [2025-12-11 23:30:00] Get categories tree with counts
+* Get categories tree with counts
  * GET /api/artworks/categories/tree
  */
 exports.getCategoriesTree = async (req, res) => {
   try {
-    // [2025-12-11 23:30:00] 获取所有一级分类
+// 获取所有一级分类
     const topCategories = await prisma.artwork_categories.findMany({
       where: {
         parent_id: null,
@@ -201,7 +201,7 @@ exports.getCategoriesTree = async (req, res) => {
       orderBy: { sort_order: 'asc' },
     });
 
-    // [2025-12-11 23:30:00] 获取所有二级分类
+// 获取所有二级分类
     const subCategories = await prisma.artwork_categories.findMany({
       where: {
         parent_id: { not: null },
@@ -210,14 +210,14 @@ exports.getCategoriesTree = async (req, res) => {
       orderBy: { sort_order: 'asc' },
     });
 
-    // [2025-12-11 23:30:00] 构建树状结构并计算计数
+// 构建树状结构并计算计数
     const tree = await Promise.all(
       topCategories.map(async (topCategory) => {
         const children = subCategories
           .filter(sub => sub.parent_id === topCategory.id)
           .map(sub => ({ id: sub.id, name: sub.name, slug: sub.slug }));
 
-        // [2025-12-11 23:30:00] 计算一级分类下的素材总数
+// 计算一级分类下的素材总数
         const topCount = await prisma.art_assets.count({
           where: {
             top_category_id: topCategory.id,
@@ -226,7 +226,7 @@ exports.getCategoriesTree = async (req, res) => {
           },
         });
 
-        // [2025-12-11 23:30:00] 计算每个二级分类的计数
+// 计算每个二级分类的计数
         const childrenWithCounts = await Promise.all(
           children.map(async (child) => {
             const subCategory = subCategories.find(s => s.id === child.id);
@@ -256,7 +256,7 @@ exports.getCategoriesTree = async (req, res) => {
       data: tree,
     });
   } catch (error) {
-    // [2025-12-16 21:12:24] Dev 降级：表未创建时返回空分类树，避免前端 ArtPanel 报错阻断
+// Dev 降级：表未创建时返回空分类树，避免前端 ArtPanel 报错阻断
     if (process.env.NODE_ENV === 'development' && isMissingArtworkTablesError(error)) {
       console.warn('[getCategoriesTree] Missing artwork tables in dev DB, returning empty tree:', error?.message);
       return res.json({
@@ -275,7 +275,7 @@ exports.getCategoriesTree = async (req, res) => {
 };
 
 /**
- * [2025-12-11 23:30:00] Get single artwork
+* Get single artwork
  * GET /api/artworks/:id
  */
 exports.getArtwork = async (req, res) => {

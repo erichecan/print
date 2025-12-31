@@ -1,6 +1,6 @@
 /**
  * Authentication Controller Tests
- * [2025-01-27 12:00:00] Unit tests for authentication API
+* Unit tests for authentication API
  */
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -34,7 +34,7 @@ function createMockResponse() {
   return res;
 }
 
-describe('[2025-01-27 12:00:00] authController.register', () => {
+describe(' authController.register', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -157,7 +157,7 @@ describe('[2025-01-27 12:00:00] authController.register', () => {
   });
 });
 
-describe('[2025-01-27 12:00:00] authController.login', () => {
+describe(' authController.login', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -263,7 +263,7 @@ describe('[2025-01-27 12:00:00] authController.login', () => {
   });
 });
 
-describe('[2025-01-27 12:00:00] authController.logout', () => {
+describe(' authController.logout', () => {
   it('should logout user successfully', async () => {
     const req = {};
     const res = createMockResponse();
@@ -277,7 +277,7 @@ describe('[2025-01-27 12:00:00] authController.logout', () => {
   });
 });
 
-describe('[2025-01-27 12:00:00] authController.me', () => {
+describe(' authController.me', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -346,7 +346,7 @@ describe('[2025-01-27 12:00:00] authController.me', () => {
   });
 });
 
-describe('[2025-01-27 12:00:00] authController.forgotPassword', () => {
+describe(' authController.forgotPassword', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -383,7 +383,7 @@ describe('[2025-01-27 12:00:00] authController.forgotPassword', () => {
   });
 });
 
-describe('[2025-01-27 12:00:00] authController.resetPassword', () => {
+describe(' authController.resetPassword', () => {
   it('should reset password successfully', async () => {
     const req = {
       body: {

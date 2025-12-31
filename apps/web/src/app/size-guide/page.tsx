@@ -1,9 +1,9 @@
 /**
  * Size Guide Page
- * [2025-11-11 22:33:10] Scaffold
- * [2025-11-12 00:07:00] Added measurement instructions and core size charts
- * [2025-01-27 17:45:00] 补充 SEO 元数据
- * [2025-11-16 12:55:00] 使用统一 policy 布局展示尺码信息
+* Scaffold
+* Added measurement instructions and core size charts
+* 补充 SEO 元数据
+* 使用统一 policy 布局展示尺码信息
  */
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';

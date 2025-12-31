@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 订单项定价计算服务
+* 订单项定价计算服务
  * 支持按颜色分组的印刷位和per-size overrides的定价计算
  */
 import { OrderItemColorGroup, PositionConfig, PricingCalculationResult } from '@/types/order';
@@ -50,7 +50,7 @@ export function calcOrderItemPricing(
         effectivePositions = defaultPositions;
       }
       
-      // [2025-12-19 02:30:00] 使用颜色级别的单价计算小计（不再累加印刷位置单价）
+// 使用颜色级别的单价计算小计（不再累加印刷位置单价）
       const subtotal = group.unitPrice * qty;
       
       total += subtotal;

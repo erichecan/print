@@ -1,12 +1,12 @@
 #!/bin/bash
-# [2025-01-29 13:30:00] 快速配置 Stripe 密钥到 GCP
+# 快速配置 Stripe 密钥到 GCP
 # 此脚本使用已提供的 Stripe 测试密钥
 
 PROJECT_ID="moonlit-gamma-479502-r6"
 REGION="us-central1"
 
 # Stripe 密钥（测试环境）
-# [2025-01-29 13:50:00] 请替换为实际的 Stripe 测试密钥
+# 请替换为实际的 Stripe 测试密钥
 STRIPE_SECRET_KEY="sk_test_xxxxxxxxxxxxx"
 STRIPE_PUBLISHABLE_KEY="pk_test_xxxxxxxxxxxxx"
 

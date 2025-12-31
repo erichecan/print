@@ -1,4 +1,4 @@
-// [2025-11-28 12:40:00] 直接在 GCP 上创建 admin 用户的脚本
+// 直接在 GCP 上创建 admin 用户的脚本
 require('dotenv').config();
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');

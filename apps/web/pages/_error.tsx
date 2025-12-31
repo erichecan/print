@@ -1,4 +1,4 @@
-// [2025-11-11 06:04:29] 自定义 Pages Router 错误页面以避免 Next 默认实现触发 useContext 异常
+// 自定义 Pages Router 错误页面以避免 Next 默认实现触发 useContext 异常
 
 interface ErrorProps {
   statusCode?: number;

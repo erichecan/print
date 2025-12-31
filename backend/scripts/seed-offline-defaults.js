@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Seed Default Offline Order Products and Colors
- * [2025-12-07 08:20:00] 创建默认的线下订单产品和颜色数据
+* 创建默认的线下订单产品和颜色数据
  */
 const path = require('path');
 const fs = require('fs');
 
-// [2025-12-07 08:20:00] 加载环境变量（从项目根目录或 backend 目录）
+// 加载环境变量（从项目根目录或 backend 目录）
 const rootEnvPath = path.join(__dirname, '../../.env');
 const backendEnvPath = path.join(__dirname, '../.env');
 
@@ -18,7 +18,7 @@ if (fs.existsSync(rootEnvPath)) {
   require('dotenv').config();
 }
 
-// [2025-12-07 08:20:00] 确保从正确的路径加载 Prisma Client
+// 确保从正确的路径加载 Prisma Client
 const { PrismaClient } = require('@prisma/client');
 const { v4: uuidv4 } = require('uuid');
 
@@ -26,7 +26,7 @@ const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
-// [2025-12-07 08:20:00] 默认产品列表（根据截图）
+// 默认产品列表（根据截图）
 const DEFAULT_PRODUCTS = [
   // T-shirts 类别
   { name: 'Short Sleeve T-shirts', imageUrl: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/front-large_extended.png', displayOrder: 1 },
@@ -61,7 +61,7 @@ const DEFAULT_PRODUCTS = [
   { name: '其他', imageUrl: null, displayOrder: 26 },
 ];
 
-// [2025-12-07 08:20:00] 默认颜色列表（根据截图）
+// 默认颜色列表（根据截图）
 const DEFAULT_COLORS = [
   { name: 'Black', hexCode: '#000000' },
   { name: 'Bright Blue', hexCode: '#0066FF' },
@@ -98,7 +98,7 @@ async function seedProducts() {
         continue;
       }
       
-      // [2025-12-07 09:10:00] 创建产品 - created_at 和 updated_at 由 Prisma 自动处理
+// 创建产品 - created_at 和 updated_at 由 Prisma 自动处理
       const created = await prisma.offline_order_products.create({
         data: {
           id: uuidv4(),
@@ -142,7 +142,7 @@ async function seedColors() {
         continue;
       }
       
-      // [2025-12-07 09:10:00] 创建颜色 - created_at 由 @default(now()) 自动处理
+// 创建颜色 - created_at 由 @default(now()) 自动处理
       await prisma.offline_order_colors.create({
         data: {
           id: uuidv4(),

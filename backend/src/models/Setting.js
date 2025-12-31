@@ -1,4 +1,4 @@
-// [2025-11-02 20:58:00] Setting model
+// Setting model
 module.exports = (sequelize, DataTypes) => {
   const Setting = sequelize.define('Setting', {
     id: {

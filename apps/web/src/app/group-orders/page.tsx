@@ -1,6 +1,6 @@
 /**
  * Group Order Form Page
- * [2025-01-30 12:00:00] 使用 frontend-design 设计 Group Order Form 页面，参考 Custom Ink
+* 使用 frontend-design 设计 Group Order Form 页面，参考 Custom Ink
  */
 import { generateSEOMetadata } from '@/lib/seo';
 import { GroupOrderFormClient } from './GroupOrderFormClient';

@@ -1,6 +1,6 @@
 /**
  * YouMightLike Component - Redbubble Style
- * [2025-11-19 09:20:00] 参考图一："T-shirts you might like" 推荐卡片
+* 参考图一："T-shirts you might like" 推荐卡片
  */
 'use client';
 

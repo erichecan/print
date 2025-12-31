@@ -1,7 +1,7 @@
 /**
  * User Preference Controller
- * [2025-01-27 14:45:00] User notification preferences and account settings
- * [2025-12-31] 修复：gen_random_uuid() 类型不匹配问题
+* User notification preferences and account settings
+* 修复：gen_random_uuid() 类型不匹配问题
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -9,7 +9,6 @@ const { v4: uuidv4 } = require('uuid');
 
 /**
  * GET /api/user/preferences - Get user preferences
- * [2025-01-27 14:45:00]
  */
 exports.getPreferences = async (req, res) => {
   try {
@@ -73,7 +72,6 @@ exports.getPreferences = async (req, res) => {
 
 /**
  * PUT /api/user/preferences - Update user preferences
- * [2025-01-27 14:45:00]
  */
 exports.updatePreferences = async (req, res) => {
   try {
@@ -137,7 +135,7 @@ exports.updatePreferences = async (req, res) => {
     };
 
     // Update or create setting using raw query
-    // [2025-12-31] 修复：分步操作避免 gen_random_uuid() 兼容性问题
+// 修复：分步操作避免 gen_random_uuid() 兼容性问题
     const valueJson = JSON.stringify(updatedPreferences);
     const now = new Date();
 

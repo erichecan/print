@@ -1,6 +1,6 @@
 /**
  * Import Artworks to Database
- * [2025-12-11 23:25:00] 将 GCS 上传的素材 metadata 导入数据库
+* 将 GCS 上传的素材 metadata 导入数据库
  * 
  * 用法: node scripts/ingest/import-artworks.ts [--input-dir=/tmp/art-crawler]
  */
@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// [2025-12-11 23:25:00] 配置
+// 配置
 const INPUT_DIR = process.argv.find(arg => arg.startsWith('--input-dir='))?.split('=')[1] || '/tmp/art-crawler';
 const prisma = new PrismaClient();
 
@@ -29,7 +29,7 @@ interface ArtworkMetadata {
 }
 
 /**
- * [2025-12-11 23:25:00] 获取或创建分类
+* 获取或创建分类
  */
 async function getOrCreateCategory(
   name: string,
@@ -56,7 +56,7 @@ async function getOrCreateCategory(
 }
 
 /**
- * [2025-12-11 23:25:00] 导入单个分类的素材
+* 导入单个分类的素材
  */
 async function importCategory(topCategory: string, subCategory: string) {
   const categoryDir = path.join(INPUT_DIR, topCategory, subCategory);
@@ -70,7 +70,7 @@ async function importCategory(topCategory: string, subCategory: string) {
   const metadata: ArtworkMetadata[] = JSON.parse(fs.readFileSync(metadataFile, 'utf-8'));
   console.log(`\n📥 导入分类: ${topCategory} -> ${subCategory} (${metadata.length} 个素材)\n`);
   
-  // [2025-12-11 23:25:00] 获取或创建分类
+// 获取或创建分类
   const topCategorySlug = topCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const subCategorySlug = subCategory.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   
@@ -82,20 +82,20 @@ async function importCategory(topCategory: string, subCategory: string) {
   
   for (const artwork of metadata) {
     try {
-      // [2025-01-30 12:30:00] 支持两种模式：GCS 存储或外部 URL
+// 支持两种模式：GCS 存储或外部 URL
       let imageUrl: string;
       let thumbnailUrl: string | null = null;
       let gcsKey: string | null = null;
       let gcsBucket: string | null = null;
       
       if (artwork.gcsKey) {
-        // [2025-01-30 12:30:00] 使用 GCS URL
+// 使用 GCS URL
         imageUrl = `${BASE_URL}/${artwork.gcsKey}`;
         thumbnailUrl = artwork.thumbnailKey ? `${BASE_URL}/${artwork.thumbnailKey}` : null;
         gcsKey = artwork.gcsKey;
         gcsBucket = BUCKET_NAME;
       } else if (artwork.sourceUrl) {
-        // [2025-01-30 12:30:00] 使用外部 URL（临时方案，用于测试）
+// 使用外部 URL（临时方案，用于测试）
         imageUrl = artwork.sourceUrl;
         thumbnailUrl = null;
         gcsKey = null;
@@ -106,7 +106,7 @@ async function importCategory(topCategory: string, subCategory: string) {
         continue;
       }
       
-      // [2025-12-11 23:25:00] 检查是否已存在
+// 检查是否已存在
       const existing = await prisma.art_assets.findUnique({
         where: { slug: artwork.slug },
       });
@@ -116,7 +116,7 @@ async function importCategory(topCategory: string, subCategory: string) {
         continue;
       }
       
-      // [2025-01-30 12:35:00] 创建素材记录（使用 uuid_generate_v4() 生成 UUID）
+// 创建素材记录（使用 uuid_generate_v4() 生成 UUID）
       await prisma.$executeRawUnsafe(`
         INSERT INTO art_assets (
           id, category, name, slug, description, image_url, thumbnail_url,
@@ -163,13 +163,13 @@ async function importCategory(topCategory: string, subCategory: string) {
 }
 
 /**
- * [2025-12-11 23:25:00] 主函数
+* 主函数
  */
 async function main() {
-  console.log('[2025-12-11 23:25:00] 开始导入素材到数据库...\n');
+console.log(' 开始导入素材到数据库...\n');
   console.log(`📁 输入目录: ${INPUT_DIR}\n`);
   
-  // [2025-12-11 23:25:00] 扫描所有分类目录
+// 扫描所有分类目录
   const topCategories = fs.readdirSync(INPUT_DIR, { withFileTypes: true })
     .filter(dirent => dirent.isDirectory())
     .map(dirent => dirent.name);
@@ -188,7 +188,7 @@ async function main() {
   console.log('\n✅ 导入完成！\n');
 }
 
-// [2025-12-12 00:20:00] 运行
+// 运行
 (main as () => Promise<void>)()
   .catch(console.error)
   .finally(() => prisma.$disconnect());

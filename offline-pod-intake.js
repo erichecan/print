@@ -1,4 +1,4 @@
-// [2025-11-08 07:03:18] Offline POD intake interactions
+// Offline POD intake interactions
 (function () {
 	const form = document.querySelector('.pod-form');
 	const uploadZone = document.querySelector('[data-upload-zone]');

@@ -6,15 +6,12 @@
     "apps/*",
     "backend"
   ],
-  "_comment": "调整 workspace 以匹配现有目录 [2025-11-10 12:00:00]",
-  "_comment_db_scripts": "Add Prisma database helpers [2025-11-18 10:45:12]",
   "scripts": {
     "dev": "echo use per-app dev",
     "build": "echo use per-app build",
     "lint": "echo use per-app lint",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
-    "// [2025-12-11 23:55:00] Artwork crawler and import scripts": "",
     "crawl:emojis:animals": "ts-node scripts/crawler/apify/emojis-animals.ts",
     "crawl:freepik": "ts-node scripts/crawler/freepik/freepik-stock.ts",
     "ingest:upload": "ts-node scripts/ingest/upload-to-gcs.ts",
@@ -29,7 +26,6 @@
     "typescript": "^5.6.3"
   },
   "prisma": {
-    "_comment_seed": "ts-node seed entry uses custom compiler project [2025-11-18 11:18:45]",
     "seed": "cross-env TS_NODE_PROJECT=tsconfig.seed.json ts-node --transpile-only prisma/seed.ts"
   }
 }

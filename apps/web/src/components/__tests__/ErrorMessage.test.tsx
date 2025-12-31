@@ -1,6 +1,6 @@
 /**
  * ErrorMessage Component Tests
- * [2025-01-27 14:15:00] ErrorMessage 组件单元测试
+* ErrorMessage 组件单元测试
  */
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorMessage } from '../ErrorMessage';

@@ -1,10 +1,10 @@
-// [2025-11-19 08:15:00] 完整测试数据导入脚本 - 使用 Prisma 导入分类、品牌、产品和变体
+// 完整测试数据导入脚本 - 使用 Prisma 导入分类、品牌、产品和变体
 const { PrismaClient } = require('@prisma/client');
 const { randomUUID } = require('crypto');
 
 const prisma = new PrismaClient();
 
-// [2025-11-19 08:15:00] 完整分类列表（12个分类，与 seed-categories.js 保持一致）
+// 完整分类列表（12个分类，与 seed-categories.js 保持一致）
 const categories = [
   { name: 'T-Shirts', slug: 't-shirts', description: 'Custom t-shirts and tees', imageUrl: '/assets/categories/cat-tshirt.png', sortOrder: 1 },
   { name: 'Sweatshirts', slug: 'sweatshirts', description: 'Hoodies and sweatshirts', imageUrl: '/assets/categories/cat-sweatshirt.png', sortOrder: 2 },
@@ -20,7 +20,7 @@ const categories = [
   { name: 'Activewear', slug: 'activewear', description: 'Athletic and active wear', imageUrl: '/assets/categories/cat-activewear.png', sortOrder: 12 },
 ];
 
-// [2025-11-19 08:15:00] 完整品牌列表
+// 完整品牌列表
 const brands = [
   { name: 'Gildan', slug: 'gildan', description: 'Quality blank apparel' },
   { name: 'Hanes', slug: 'hanes', description: 'Classic comfort' },
@@ -32,7 +32,7 @@ const brands = [
   { name: 'Stanley', slug: 'stanley', description: 'Premium drinkware' },
 ];
 
-// [2025-11-19 08:15:00] 扩展产品列表（每个分类至少2-3个产品）
+// 扩展产品列表（每个分类至少2-3个产品）
 const products = [
   // T-Shirts
   { name: 'Gildan Softstyle Jersey T‑shirt', slug: 'gildan-softstyle-jersey-tee', description: 'A customer favorite tee for screen print or DTG.', longDescription: 'Soft ringspun cotton with modern fit. Perfect for events, teams and giveaways.', basePriceCents: 1500, unitCost: 6.5, salePrice: 0, grossProfit: 8.5, sku: 'tee-0001', stockQuantity: 120, categorySlug: 't-shirts', brandSlug: 'gildan', imageUrl: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=1200&q=80' },
@@ -57,7 +57,7 @@ const products = [
   { name: 'Carhartt Work Jacket', slug: 'carhartt-work-jacket', description: 'Durable work jacket for tough conditions.', longDescription: 'Heavy-duty cotton duck fabric with triple-stitched seams.', basePriceCents: 5500, unitCost: 35.0, salePrice: 0, grossProfit: 20.0, sku: 'work-0001', stockQuantity: 50, categorySlug: 'workwear', brandSlug: 'carhartt', imageUrl: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=1200&q=80' },
 ];
 
-// [2025-11-19 08:15:00] 变体配置（颜色和尺寸）
+// 变体配置（颜色和尺寸）
 const variantConfigs = [
   { color: 'Black', colorHex: '#000000', size: 'S', priceAdjustment: 0 },
   { color: 'Black', colorHex: '#000000', size: 'M', priceAdjustment: 0 },
@@ -107,7 +107,7 @@ async function ensureProduct(data, categoryId, brandId) {
     },
   });
   
-  // [2025-11-19 08:15:00] 创建产品图片
+// 创建产品图片
   if (data.imageUrl) {
     await prisma.productImage.create({
       data: {
@@ -119,7 +119,7 @@ async function ensureProduct(data, categoryId, brandId) {
     });
   }
   
-  // [2025-11-19 08:15:00] 为每个产品创建多个变体
+// 为每个产品创建多个变体
   const variantsToCreate = variantConfigs.slice(0, Math.min(6, variantConfigs.length));
   for (const variantConfig of variantsToCreate) {
     const variantSku = `${data.sku}-${variantConfig.color.substring(0, 3).toUpperCase()}-${variantConfig.size}`;
@@ -143,7 +143,7 @@ async function main() {
   console.log('🌱 开始完整测试数据导入...\n');
   
   try {
-    // [2025-11-19 08:15:00] 1. 导入分类
+// 1. 导入分类
     console.log('📁 导入分类...');
     const categoryMap = new Map();
     for (const catData of categories) {
@@ -152,7 +152,7 @@ async function main() {
       console.log(`  ✅ ${category.name} (${category.slug})`);
     }
     
-    // [2025-11-19 08:15:00] 2. 导入品牌
+// 2. 导入品牌
     console.log('\n🏷️  导入品牌...');
     const brandMap = new Map();
     for (const brandData of brands) {
@@ -161,7 +161,7 @@ async function main() {
       console.log(`  ✅ ${brand.name} (${brand.slug})`);
     }
     
-    // [2025-11-19 08:15:00] 3. 导入产品
+// 3. 导入产品
     console.log('\n📦 导入产品...');
     let createdCount = 0;
     let updatedCount = 0;
@@ -191,7 +191,7 @@ async function main() {
     console.log(`   - 品牌: ${brands.length} 个`);
     console.log(`   - 产品: 新建 ${createdCount} 个，已存在 ${updatedCount} 个`);
     
-    // [2025-11-19 08:15:00] 统计最终数据
+// 统计最终数据
     const stats = {
       categories: await prisma.category.count(),
       brands: await prisma.brand.count(),

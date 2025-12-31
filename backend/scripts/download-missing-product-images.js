@@ -1,6 +1,6 @@
 /**
  * 下载缺失的商品图片
- * [2025-01-28 22:50:00] 专门为缺失图片的 4 个商品下载图片
+* 专门为缺失图片的 4 个商品下载图片
  */
 
 const fs = require('fs');
@@ -15,7 +15,7 @@ const IMAGES_DIR = path.join(__dirname, '../../apps/web/public/assets/products')
 // 需要下载图片的商品 slug 列表
 const MISSING_IMAGES_PRODUCTS = ['135300', '2435100', '107200', '135500'];
 
-// [2025-01-28 22:50:00] 下载图片到本地
+// 下载图片到本地
 function downloadImage(imageUrl, outputPath) {
   return new Promise((resolve, reject) => {
     if (!imageUrl || !imageUrl.startsWith('http')) {
@@ -94,7 +94,7 @@ function downloadImage(imageUrl, outputPath) {
   });
 }
 
-// [2025-01-28 22:50:00] 下载单个商品的图片
+// 下载单个商品的图片
 async function downloadProductImages(productSlug) {
   const jsonPath = path.join(DATA_DIR, `${productSlug}.json`);
   
@@ -192,7 +192,7 @@ async function downloadProductImages(productSlug) {
   return downloadedImages;
 }
 
-// [2025-01-28 22:50:00] 主函数
+// 主函数
 async function main() {
   console.log('🖼️  开始下载缺失的商品图片...\n');
   console.log(`📋 需要处理的商品: ${MISSING_IMAGES_PRODUCTS.join(', ')}\n`);

@@ -1,5 +1,5 @@
 # Cloud Run service configuration for frontend - FREE TIER OPTIMIZED
-# [2025-01-27] Optimized for zero cost when idle
+# Optimized for zero cost when idle
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:

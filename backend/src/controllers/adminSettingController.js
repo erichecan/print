@@ -1,6 +1,6 @@
 /**
  * Admin Setting Controller
- * [2025-11-15 15:30:00] Site configuration and content manager APIs
+* Site configuration and content manager APIs
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -18,9 +18,9 @@ const DEFAULT_SITE_SETTINGS = {
   reviewEmail: 'review@souvenirplus.com',
 };
 
-// [2025-01-28 05:55:00] 扩展内容配置，包含导航、首页、关于页、帮助页和静态文字
+// 扩展内容配置，包含导航、首页、关于页、帮助页和静态文字
 const DEFAULT_CONTENT_CONFIG = {
-  // [2025-01-28 05:55:00] 保留原有字段以向后兼容
+// 保留原有字段以向后兼容
   heroCards: [
     {
       id: 'hero-1',
@@ -47,7 +47,7 @@ const DEFAULT_CONTENT_CONFIG = {
     { id: 'collection-1', title: 'Work From Anywhere', linkUrl: '/collections/work-from-anywhere' },
     { id: 'collection-2', title: 'Sustainable Essentials', linkUrl: '/collections/sustainable' },
   ],
-  // [2025-01-28 05:55:00] 导航菜单配置
+// 导航菜单配置
   navigation: [
     {
       id: 'nav-1',
@@ -243,7 +243,7 @@ const DEFAULT_CONTENT_CONFIG = {
       },
     },
   ],
-  // [2025-01-28 05:55:00] 首页内容配置
+// 首页内容配置
   homePage: {
     heroTitle: 'Custom T-shirts & Promo Gear for Your Group',
     heroSubtitle: 'From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.',
@@ -260,7 +260,7 @@ const DEFAULT_CONTENT_CONFIG = {
       { id: 'promise-4', title: 'Rush Options', detail: 'As fast as 3 days' },
     ],
   },
-  // [2025-01-28 05:55:00] 关于页内容配置
+// 关于页内容配置
   aboutPage: {
     headerTitle: 'Built by merch makers who care',
     headerDescription: 'Suvernire Plus is a team of designers, production experts, and logistics pros helping brands create meaningful merch. From the first sketch to the final unboxing moment, we obsess over every detail so you do not have to.',
@@ -290,7 +290,7 @@ const DEFAULT_CONTENT_CONFIG = {
     teamTitle: 'Meet the team',
     teamDescription: 'Designers, project managers, and production leads collaborate under one roof to keep quality high and timelines short. Want to work with us? Reach out at hello@suvernireplus.com.',
   },
-  // [2025-01-28 05:55:00] 帮助页内容配置
+// 帮助页内容配置
   helpPage: {
     quickLinks: [
       { id: 'quick-1', label: 'Check order status', href: '/order-tracking', icon: '📦' },
@@ -406,7 +406,7 @@ const DEFAULT_CONTENT_CONFIG = {
       },
     ],
   },
-  // [2025-01-28 05:55:00] 通用静态文字配置
+// 通用静态文字配置
   staticTexts: {
     topMessageBar: 'Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing',
     footerColumns: [
@@ -465,7 +465,7 @@ const DEFAULT_CONTENT_CONFIG = {
   },
 };
 
-// [2025-11-16 16:05:00] Production workflow stage templates per product line
+// Production workflow stage templates per product line
 const DEFAULT_PRODUCTION_TEMPLATES = [
   {
     id: 'tshirt',
@@ -493,7 +493,7 @@ const DEFAULT_PRODUCTION_TEMPLATES = [
   },
 ];
 
-// [2025-01-28 07:15:00] 使用 Prisma 原始查询访问 settings 表（因为 settings 不在 Prisma schema 中）
+// 使用 Prisma 原始查询访问 settings 表（因为 settings 不在 Prisma schema 中）
 const getSettingValue = async (key, defaultValue) => {
   try {
     const setting = await prisma.$queryRaw`
@@ -532,7 +532,7 @@ const upsertSetting = async (key, value, userId) => {
   try {
     const now = new Date();
 
-    // [2025-12-31] 修复：分步处理，避免 PostgreSQL gen_random_uuid() 兼容性问题
+// 修复：分步处理，避免 PostgreSQL gen_random_uuid() 兼容性问题
     // 1. 先检查记录是否存在
     const existing = await prisma.$queryRaw`
       SELECT * FROM settings WHERE key = ${key} LIMIT 1
@@ -555,7 +555,7 @@ const upsertSetting = async (key, value, userId) => {
       const { v4: uuidv4 } = require('uuid');
       const id = uuidv4();
 
-      // [2025-12-31] 修复：将字符串 UUID 转换为 PostgreSQL uuid 类型
+// 修复：将字符串 UUID 转换为 PostgreSQL uuid 类型
       await prisma.$executeRaw`
        INSERT INTO settings (id, key, value, updated_by, updated_at)
         VALUES (${id}::uuid, ${key}, ${valueJson}::jsonb, ${userId || null}::uuid, ${now})
@@ -622,7 +622,7 @@ exports.getContentConfig = async (req, res) => {
   }
 };
 
-// [2025-01-28 06:15:00] 公共内容 API（不需要管理员权限，供前端展示使用）
+// 公共内容 API（不需要管理员权限，供前端展示使用）
 exports.getPublicContentConfig = async (req, res) => {
   try {
     const data = await getSettingValue('site.content', DEFAULT_CONTENT_CONFIG);
@@ -661,7 +661,7 @@ exports.updateContentConfig = async (req, res) => {
   }
 };
 
-// [2025-11-16 16:05:00] Production templates (stage definitions) APIs
+// Production templates (stage definitions) APIs
 exports.getProductionTemplates = async (req, res) => {
   try {
     const data = await getSettingValue('production.templates', DEFAULT_PRODUCTION_TEMPLATES);

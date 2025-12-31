@@ -1,6 +1,6 @@
 /**
  * Serialization Utilities
- * [2025-12-09 14:45:00] 序列化守卫工具，确保传递给客户端的数据是可序列化的
+* 序列化守卫工具，确保传递给客户端的数据是可序列化的
  * 
  * 用途：
  * - 在 Server Components 传递数据到 Client Components 前验证

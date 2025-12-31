@@ -3,8 +3,8 @@
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { adminCouponsApi, AdminCoupon } from '@/lib/api';
-import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-11-24 11:07:42] 引入 i18n 以实现右侧内容双语
-// [2025-12-06 17:30:00] Coupon statistics for Issue #138
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // 引入 i18n 以实现右侧内容双语
+// Coupon statistics for Issue #138
 
 const couponTypes = [
   { value: 'percentage', labelKey: 'discountTypePercentage' },
@@ -12,7 +12,7 @@ const couponTypes = [
 ];
 
 export default function AdminCouponsPage() {
-  const { t } = useAdminI18n(); // [2025-11-24 11:07:42] 使用 t 输出中英文
+const { t } = useAdminI18n(); // 使用 t 输出中英文
   const [searchDraft, setSearchDraft] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [form, setForm] = useState({
@@ -35,7 +35,7 @@ export default function AdminCouponsPage() {
     })
   );
 
-  // [2025-12-06 17:30:00] Load coupon statistics for Issue #138
+// Load coupon statistics for Issue #138
   const { data: statisticsData, isLoading: statisticsLoading } = useSWR('admin-coupons-statistics', () =>
     adminCouponsApi.getStatistics()
   );
@@ -98,7 +98,7 @@ export default function AdminCouponsPage() {
         </div>
       </div>
 
-      {/* [2025-12-06 17:30:00] Coupon Statistics Section for Issue #138 */}
+{/* Coupon Statistics Section for Issue #138 */}
       {statistics && (
         <section className="admin-stats-grid" style={{ marginBottom: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <div className="admin-stat-card" style={{ padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
@@ -119,7 +119,7 @@ export default function AdminCouponsPage() {
         </section>
       )}
 
-      {/* [2025-12-06 17:30:00] Top Coupons Section */}
+{/* Top Coupons Section */}
       {statistics && statistics.topCoupons.length > 0 && (
         <section style={{ marginBottom: 24, padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600 }}>最受欢迎的优惠券</h3>

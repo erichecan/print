@@ -1,6 +1,6 @@
 /**
  * Promotions Client Component
- * [2025-01-27 20:25:00] 促销页面客户端组件（处理动态数据获取）
+* 促销页面客户端组件（处理动态数据获取）
  */
 'use client';
 
@@ -24,7 +24,7 @@ export default function PromotionsClient() {
   const [loadingCoupons, setLoadingCoupons] = useState(true);
 
   useEffect(() => {
-    // [2025-01-27 20:25:00] 获取活跃优惠券
+// 获取活跃优惠券
     const loadCoupons = async () => {
       try {
         const result = await couponApi.getActive();
@@ -57,7 +57,7 @@ export default function PromotionsClient() {
         </p>
       </header>
 
-      {/* [2025-01-27 20:25:00] 活跃优惠券展示 */}
+{/* 活跃优惠券展示 */}
       {loadingCoupons ? (
         <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
           Loading promotions...
@@ -149,7 +149,7 @@ export default function PromotionsClient() {
         </section>
       ) : null}
 
-      {/* [2025-01-27 20:25:00] 促销活动 */}
+{/* 促销活动 */}
       <section style={{ display: 'grid', gap: '20px' }}>
         <h2>Special Offers</h2>
         <div style={{ display: 'grid', gap: '16px' }}>
@@ -199,7 +199,7 @@ export default function PromotionsClient() {
         </div>
       </section>
 
-      {/* [2025-01-27 20:25:00] 提示信息 */}
+{/* 提示信息 */}
       <section
         style={{
           background: '#e3f2fd',

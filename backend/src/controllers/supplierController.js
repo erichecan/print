@@ -1,6 +1,6 @@
 /**
  * Supplier Controller
- * [2025-12-06 17:10:00] Supplier management controller for Issue #89
+* Supplier management controller for Issue #89
  */
 const supplierService = require('../services/supplierService');
 const inventorySyncService = require('../services/inventorySyncService');
@@ -9,7 +9,6 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 
 /**
  * GET /api/admin/suppliers - List all suppliers
- * [2025-12-06 17:10:00]
  */
 exports.listSuppliers = async (req, res) => {
   try {
@@ -29,7 +28,6 @@ exports.listSuppliers = async (req, res) => {
 
 /**
  * GET /api/admin/suppliers/:id - Get supplier by ID
- * [2025-12-06 17:10:00]
  */
 exports.getSupplier = async (req, res) => {
   try {
@@ -53,7 +51,6 @@ exports.getSupplier = async (req, res) => {
 
 /**
  * POST /api/admin/suppliers - Create supplier
- * [2025-12-06 17:10:00]
  */
 exports.createSupplier = async (req, res) => {
   try {
@@ -91,7 +88,6 @@ exports.createSupplier = async (req, res) => {
 
 /**
  * PATCH /api/admin/suppliers/:id - Update supplier
- * [2025-12-06 17:10:00]
  */
 exports.updateSupplier = async (req, res) => {
   try {
@@ -130,7 +126,6 @@ exports.updateSupplier = async (req, res) => {
 
 /**
  * DELETE /api/admin/suppliers/:id - Delete supplier
- * [2025-12-06 17:10:00]
  */
 exports.deleteSupplier = async (req, res) => {
   try {
@@ -168,7 +163,6 @@ exports.deleteSupplier = async (req, res) => {
 
 /**
  * POST /api/admin/suppliers/:id/sync - Trigger inventory sync
- * [2025-12-06 17:10:00]
  */
 exports.syncInventory = async (req, res) => {
   try {
@@ -196,7 +190,6 @@ exports.syncInventory = async (req, res) => {
 
 /**
  * GET /api/admin/suppliers/:id/sync-history - Get sync history
- * [2025-12-06 17:10:00]
  */
 exports.getSyncHistory = async (req, res) => {
   try {
@@ -224,14 +217,13 @@ exports.getSyncHistory = async (req, res) => {
 
 /**
  * GET /api/admin/suppliers/sync-status - Get sync status for all suppliers
- * [2025-12-06 17:10:00]
  */
 exports.getSyncStatus = async (req, res) => {
   try {
     const status = await inventorySyncService.getAllSuppliersSyncStatus();
     res.json({ suppliers: status });
   } catch (error) {
-    // [2025-01-27 18:00:00] 增强错误日志
+// 增强错误日志
     logger.error('[Admin] Error getting sync status:', {
       error: error.message,
       stack: error.stack,

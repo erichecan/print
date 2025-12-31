@@ -1,18 +1,18 @@
-/* [2025-11-19 09:30:00] Redbubble Product Detail Page Styles */
+/* Redbubble Product Detail Page Styles */
 
 .productDetail {
   background: #fff;
   min-height: 100vh;
 }
 
-/* [2025-11-19 09:30:00] 参考图一：1200px 容器，左右内边距 16–24px */
+/* 参考图一：1200px 容器，左右内边距 16–24px */
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
 }
 
-/* [2025-11-19 09:30:00] 参考图一位置：主体双栏布局 */
+/* 参考图一位置：主体双栏布局 */
 .mainLayout {
   display: grid;
   grid-template-columns: 1fr;
@@ -21,7 +21,7 @@
   align-items: start;
 }
 
-/* [2025-11-19 09:30:00] ≥992px 为双栏，<992px 堆叠 */
+/* ≥992px 为双栏，<992px 堆叠 */
 @media (min-width: 992px) {
   .mainLayout {
     grid-template-columns: 1fr 1fr;
@@ -55,7 +55,7 @@
   }
 }
 
-/* [2025-11-19 09:50:00] 加载和错误状态 */
+/* 加载和错误状态 */
 .loading,
 .error {
   padding: 60px 20px;

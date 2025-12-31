@@ -1,5 +1,5 @@
 # .gcloudignore - Files to exclude when deploying to GCP
-# [2025-01-27] Created for GCP deployment
+# Created for GCP deployment
 
 # Dependencies
 node_modules/

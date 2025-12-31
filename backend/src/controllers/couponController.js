@@ -1,14 +1,14 @@
 /**
  * Coupon Controller
- * [2025-01-27 19:30:00] 优惠券验证和应用控制器
- * [2025-01-28 11:15:00] 迁移到 Prisma
+* 优惠券验证和应用控制器
+* 迁移到 Prisma
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 
 /**
  * Validate and apply coupon
- * [2025-01-27 19:30:00] 验证和应用优惠券
+* 验证和应用优惠券
  */
 exports.validateCoupon = async (req, res) => {
   try {
@@ -24,7 +24,7 @@ exports.validateCoupon = async (req, res) => {
       });
     }
 
-    // [2025-01-28 11:15:00] Find coupon first to provide specific error messages
+// Find coupon first to provide specific error messages
     const normalizedCode = code.toUpperCase().trim();
     const coupon = await prisma.coupon.findUnique({
       where: { code: normalizedCode },
@@ -57,14 +57,14 @@ exports.validateCoupon = async (req, res) => {
       });
     }
 
-    // [2025-01-28 11:15:00] Check usage limit
+// Check usage limit
     if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
       return res.status(400).json({
         error: 'Coupon has reached its usage limit',
       });
     }
 
-    // [2025-01-28 11:15:00] Check user usage limit (query OrderCoupon table)
+// Check user usage limit (query OrderCoupon table)
     if (userId && coupon.userUsageLimit) {
       const userUsageCount = await prisma.orderCoupon.count({
         where: {
@@ -80,8 +80,8 @@ exports.validateCoupon = async (req, res) => {
       }
     }
 
-    // [2025-01-28 11:15:00] Check minimum order value
-    // [2025-12-06 17:30:00] Enhanced validation for Issue #138
+// Check minimum order value
+// Enhanced validation for Issue #138
     const minOrderValue = coupon.minOrderValue ? Number(coupon.minOrderValue) : null;
     if (minOrderValue && Number(subtotal) < minOrderValue) {
       return res.status(400).json({
@@ -90,7 +90,7 @@ exports.validateCoupon = async (req, res) => {
       });
     }
 
-    // [2025-01-28 11:15:00] Calculate discount
+// Calculate discount
     let discountAmount = 0;
     if (coupon.type === 'PERCENTAGE') {
       discountAmount = (Number(subtotal) * Number(coupon.value)) / 100;
@@ -122,7 +122,7 @@ exports.validateCoupon = async (req, res) => {
       coupon: {
         id: coupon.id,
         code: coupon.code,
-        type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed', // [2025-01-28 11:15:00] Map enum to string for API compatibility
+type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed', // Map enum to string for API compatibility
         value: Number(coupon.value),
         discountAmount: Number(discountAmount.toFixed(2)),
         minOrderValue: minOrderValue,
@@ -146,11 +146,11 @@ exports.validateCoupon = async (req, res) => {
 
 /**
  * Get all active coupons (public)
- * [2025-01-27 19:30:00] 获取所有激活的优惠券
+* 获取所有激活的优惠券
  */
 exports.getActiveCoupons = async (req, res) => {
   try {
-    // [2025-01-28 11:15:00] Get active coupons using Prisma
+// Get active coupons using Prisma
     const now = new Date();
     const coupons = await prisma.coupon.findMany({
       where: {
@@ -175,11 +175,11 @@ exports.getActiveCoupons = async (req, res) => {
       coupons: coupons.map((coupon) => ({
         id: coupon.id,
         code: coupon.code,
-        type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed', // [2025-01-28 11:15:00] Map enum to string for API compatibility
+type: coupon.type === 'PERCENTAGE' ? 'percentage' : 'fixed', // Map enum to string for API compatibility
         value: Number(coupon.value),
         minOrderValue: coupon.minOrderValue ? Number(coupon.minOrderValue) : null,
         maxDiscount: coupon.maxDiscount ? Number(coupon.maxDiscount) : null,
-        startDate: coupon.startDate.toISOString().split('T')[0], // [2025-01-28 11:15:00] Format date as YYYY-MM-DD
+startDate: coupon.startDate.toISOString().split('T')[0], // Format date as YYYY-MM-DD
         endDate: coupon.endDate.toISOString().split('T')[0],
       })),
     });

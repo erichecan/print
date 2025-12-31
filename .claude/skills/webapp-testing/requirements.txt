@@ -1,4 +1,0 @@
-# Webapp Testing Skill Dependencies
-# [2025-01-27 14:30:00] 安装 webapp-testing 技能所需的 Python 依赖
-playwright>=1.40.0
-

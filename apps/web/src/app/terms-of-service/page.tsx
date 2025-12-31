@@ -1,13 +1,13 @@
 /**
  * Terms of Service Page
- * [2025-11-11 22:32:20] Scaffold
- * [2025-11-12 00:07:40] Added core service terms and responsibilities
- * [2025-01-27 17:30:00] 补充 SEO 元数据
+* Scaffold
+* Added core service terms and responsibilities
+* 补充 SEO 元数据
  */
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-// [2025-01-27 17:30:00] 生成服务条款页面 SEO 元数据
+// 生成服务条款页面 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Terms of Service - Usage Terms & Conditions',
   description: 'Read Suvernire Plus terms of service including payment, proof approval, shipping, returns, and customer responsibilities.',

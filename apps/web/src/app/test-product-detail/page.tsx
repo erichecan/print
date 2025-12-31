@@ -1,6 +1,6 @@
 /**
  * Test Product Detail Page
- * [2025-11-19] 测试像素级精确的商品详情页面
+* 测试像素级精确的商品详情页面
  */
 import { PixelPerfectProductDetail } from '@/components/product/PixelPerfectProductDetail';
 

@@ -1,4 +1,4 @@
-// [2025-11-02 20:56:00] ProductVariant model
+// ProductVariant model
 module.exports = (sequelize, DataTypes) => {
   const ProductVariant = sequelize.define('ProductVariant', {
     id: {

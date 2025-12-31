@@ -1,6 +1,6 @@
 # Design Lab 访问修复报告
 
-**修复时间**: 2025-01-31 18:40:00  
+**修复时间**:  
 **状态**: ✅ **修复完成，等待部署**
 
 ---
@@ -35,7 +35,7 @@ return (
 
 **修复后**:
 ```typescript
-// [2025-01-31 18:30:00] 修复：DesignLabClient5.0 使用 useSearchParams()，必须用 Suspense 包裹
+// 修复：DesignLabClient5.0 使用 useSearchParams()，必须用 Suspense 包裹
 return (
   <Suspense fallback={
     <section style={{ 
@@ -75,15 +75,15 @@ return (
 
 **修复内容**:
 ```typescript
-// [2025-01-29 01:00:00] 需要被过滤的警告模式
-// [2025-01-31 18:35:00] 更新：添加更完整的 CSS 预加载警告过滤模式
+// 需要被过滤的警告模式
+// 更新：添加更完整的 CSS 预加载警告过滤模式
 const FILTERED_WARNING_PATTERNS = [
   /PerformanceObserver/i,
   /preloaded.*not used/i,
   /preload.*was preloaded.*not used/i,
   /resource.*was preloaded.*not used/i,
-  /was preloaded using link preload but not used/i, // [2025-01-31 18:35:00] 匹配 Next.js CSS 预加载警告
-  /preloaded using link preload but not used/i, // [2025-01-31 18:35:00] 更通用的匹配
+/was preloaded using link preload but not used/i, // 匹配 Next.js CSS 预加载警告
+/preloaded using link preload but not used/i, // 更通用的匹配
 ];
 ```
 

@@ -1,10 +1,10 @@
 /**
  * Admin Category Controller
- * [2025-11-11 23:19:08] 提供后台分类管理接口
+* 提供后台分类管理接口
  */
 const prisma = require('../lib/prisma');
 
-// [2025-11-11 23:19:08] 分类列表（分页 / 搜索）
+// 分类列表（分页 / 搜索）
 exports.listCategories = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
@@ -63,12 +63,12 @@ exports.listCategories = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[2025-11-11 23:19:08] listCategories error:', error);
+console.error(' listCategories error:', error);
     res.status(500).json({ error: 'Failed to load categories' });
   }
 };
 
-// [2025-11-11 23:19:08] 获取单个分类
+// 获取单个分类
 exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -92,12 +92,12 @@ exports.getCategoryById = async (req, res) => {
 
     return res.json(category);
   } catch (error) {
-    console.error('[2025-11-11 23:19:08] getCategoryById error:', error);
+console.error(' getCategoryById error:', error);
     return res.status(500).json({ error: 'Failed to load category' });
   }
 };
 
-// [2025-11-11 23:19:08] 创建分类
+// 创建分类
 exports.createCategory = async (req, res) => {
   try {
     const {
@@ -135,12 +135,12 @@ exports.createCategory = async (req, res) => {
       throw error;
     }
   } catch (error) {
-    console.error('[2025-11-11 23:19:08] createCategory error:', error);
+console.error(' createCategory error:', error);
     return res.status(500).json({ error: 'Failed to create category' });
   }
 };
 
-// [2025-11-11 23:19:08] 更新分类
+// 更新分类
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -185,12 +185,12 @@ exports.updateCategory = async (req, res) => {
       throw error;
     }
   } catch (error) {
-    console.error('[2025-11-11 23:19:08] updateCategory error:', error);
+console.error(' updateCategory error:', error);
     return res.status(500).json({ error: 'Failed to update category' });
   }
 };
 
-// [2025-11-11 23:19:08] 软删除分类
+// 软删除分类
 exports.archiveCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -213,7 +213,7 @@ exports.archiveCategory = async (req, res) => {
 
     return res.json({ success: true });
   } catch (error) {
-    console.error('[2025-11-11 23:19:08] archiveCategory error:', error);
+console.error(' archiveCategory error:', error);
     return res.status(500).json({ error: 'Failed to archive category' });
   }
 };

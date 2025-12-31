@@ -1,6 +1,6 @@
 /**
  * Group Order Form Client Component
- * [2025-01-30 12:00:00] 使用 frontend-design 设计 Group Order Form 页面
+* 使用 frontend-design 设计 Group Order Form 页面
  */
 'use client';
 
@@ -11,7 +11,7 @@ import './group-orders.css';
 export function GroupOrderFormClient() {
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
 
-  // [2025-01-30 12:00:00] 特性列表
+// 特性列表
   const features = [
     {
       id: 1,
@@ -39,7 +39,7 @@ export function GroupOrderFormClient() {
     },
   ];
 
-  // [2025-01-30 12:00:00] 步骤说明
+// 步骤说明
   const steps = [
     {
       number: 1,
@@ -58,7 +58,7 @@ export function GroupOrderFormClient() {
     },
   ];
 
-  // [2025-01-30 12:00:00] 客户评价
+// 客户评价
   const testimonials = [
     {
       id: 1,
@@ -77,7 +77,7 @@ export function GroupOrderFormClient() {
 
   return (
     <div className="group-order-page">
-      {/* [2025-01-30 12:00:00] Hero 区域 */}
+{/* Hero 区域 */}
       <section className="group-order-hero">
         <div className="group-order-hero__container">
           <h1 className="group-order-hero__title">
@@ -97,7 +97,7 @@ export function GroupOrderFormClient() {
         </div>
       </section>
 
-      {/* [2025-01-30 12:00:00] 特性展示区域 */}
+{/* 特性展示区域 */}
       <section className="group-order-features">
         <div className="group-order-features__container">
           <div className="group-order-features__grid">
@@ -122,7 +122,7 @@ export function GroupOrderFormClient() {
         </div>
       </section>
 
-      {/* [2025-01-30 12:00:00] How it works 部分 */}
+{/* How it works 部分 */}
       <section className="group-order-steps">
         <div className="group-order-steps__container">
           <h2 className="group-order-steps__title">How it works</h2>
@@ -144,7 +144,7 @@ export function GroupOrderFormClient() {
         </div>
       </section>
 
-      {/* [2025-01-30 12:00:00] 客户评价部分 */}
+{/* 客户评价部分 */}
       <section className="group-order-testimonials">
         <div className="group-order-testimonials__container">
           <h2 className="group-order-testimonials__title">Group ordering is getting buzz</h2>
@@ -165,7 +165,7 @@ export function GroupOrderFormClient() {
         </div>
       </section>
 
-      {/* [2025-01-30 12:00:00] CTA 区域 */}
+{/* CTA 区域 */}
       <section className="group-order-cta">
         <div className="group-order-cta__container">
           <h2 className="group-order-cta__title">Ready to get started?</h2>

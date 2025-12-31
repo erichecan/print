@@ -1,7 +1,7 @@
 /**
  * Order Tracking Page
- * [2025-11-11 22:33:40] Scaffold
- * [2025-11-12 00:03:00] Hooked into orders API to surface status by order number
+* Scaffold
+* Hooked into orders API to surface status by order number
  */
 'use client';
 

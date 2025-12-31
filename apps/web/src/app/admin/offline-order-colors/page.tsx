@@ -1,6 +1,6 @@
 /**
  * Offline Order Colors Management Page
- * [2025-12-07 05:45:00] 线下订单颜色管理页面
+* 线下订单颜色管理页面
  */
 'use client';
 

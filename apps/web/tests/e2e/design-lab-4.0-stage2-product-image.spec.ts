@@ -1,13 +1,13 @@
 /**
  * Design Lab 4.0 阶段2：商品底图居中 cover 验证测试
- * [2025-12-20 00:25:00] 阶段2：验证底图在 Canvas 区域居中且填满（cover）
+* 阶段2：验证底图在 Canvas 区域居中且填满（cover）
  */
 
 import { test, expect } from '@playwright/test';
 
 test.describe('Design Lab 4.0 - 阶段2：商品底图居中 cover 验证', () => {
   test.beforeEach(async ({ page }) => {
-    // [2025-12-20 00:25:00] 阶段2：导航到 Design Lab 页面
+// 阶段2：导航到 Design Lab 页面
     await page.goto('/design-lab');
     // 等待页面加载完成
     await page.waitForLoadState('networkidle');
@@ -16,7 +16,7 @@ test.describe('Design Lab 4.0 - 阶段2：商品底图居中 cover 验证', () =
   });
 
   test('阶段2-1：验证底图对象存在', async ({ page }) => {
-    // [2025-12-20 00:45:00] 阶段2：验证底图对象已加载
+// 阶段2：验证底图对象已加载
     // 等待足够时间让 Fabric.js 初始化完成
     await page.waitForTimeout(5000);
     
@@ -70,7 +70,7 @@ test.describe('Design Lab 4.0 - 阶段2：商品底图居中 cover 验证', () =
   });
 
   test('阶段2-2：验证底图中心接近画布中心（误差 ≤ 2px）', async ({ page }) => {
-    // [2025-12-20 00:45:00] 阶段2：验证底图中心位置
+// 阶段2：验证底图中心位置
     await page.waitForTimeout(5000); // 等待底图加载完成
     
     const CANVAS_WIDTH = 1000;
@@ -146,7 +146,7 @@ test.describe('Design Lab 4.0 - 阶段2：商品底图居中 cover 验证', () =
   });
 
   test('阶段2-3：验证底图使用 cover 策略（填满 Canvas）', async ({ page }) => {
-    // [2025-12-20 00:45:00] 阶段2：验证 cover 策略
+// 阶段2：验证 cover 策略
     await page.waitForTimeout(5000); // 等待底图加载完成
     
     const CANVAS_WIDTH = 1000;
@@ -215,7 +215,7 @@ test.describe('Design Lab 4.0 - 阶段2：商品底图居中 cover 验证', () =
   });
 
   test('阶段2-4：验证底图 origin 为 center', async ({ page }) => {
-    // [2025-12-20 00:45:00] 阶段2：验证 origin 设置
+// 阶段2：验证 origin 设置
     await page.waitForTimeout(5000);
     
     const result = await page.evaluate(() => {

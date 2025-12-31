@@ -1,6 +1,6 @@
 /**
  * Login Client Component
- * [2025-11-15 12:05:00] 客户端组件，处理登录逻辑和 redirect 参数
+* 客户端组件，处理登录逻辑和 redirect 参数
  */
 'use client';
 
@@ -17,7 +17,7 @@ export default function LoginClient() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // [2025-11-15 12:05:00] 获取 redirect 参数
+// 获取 redirect 参数
   const redirect = searchParams?.get('redirect') || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,21 +28,21 @@ export default function LoginClient() {
     try {
       const response = await authApi.login(email, password);
       
-      // [2025-01-28 07:30:00] 根据用户角色和 redirect 参数决定跳转位置
+// 根据用户角色和 redirect 参数决定跳转位置
       let targetPath = redirect;
       
-      // [2025-01-28 07:30:00] 如果是管理员，且 redirect 是 /admin，则跳转到 /admin
+// 如果是管理员，且 redirect 是 /admin，则跳转到 /admin
       // 否则提示管理员应该使用 /admin/login
       if (response.user?.role === 'ADMIN' || response.user?.role === 'admin') {
         if (redirect === '/admin' || redirect.startsWith('/admin/')) {
           targetPath = '/admin';
         } else {
-          // [2025-01-28 07:30:00] 管理员从普通登录页面登录，提示使用专用登录页面
+// 管理员从普通登录页面登录，提示使用专用登录页面
           // 但仍然允许登录，跳转到账户页面（不暴露后台入口）
           targetPath = '/account';
         }
       } else {
-        // [2025-01-28 07:30:00] 普通用户登录，跳转到账户页面
+// 普通用户登录，跳转到账户页面
         // 如果 redirect 是 /admin，则跳转到账户页面（不允许普通用户访问后台）
         if (redirect === '/admin' || redirect.startsWith('/admin/')) {
           targetPath = '/account';

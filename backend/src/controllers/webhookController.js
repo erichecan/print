@@ -1,8 +1,7 @@
 /**
  * Webhook Controller
- * [2025-11-04 23:55:00]
- * [2025-01-27 10:30:00] Enhanced with email notifications and better error handling
- * [2025-01-29 14:30:00] Enhanced with idempotency, payment summary recording
+* Enhanced with email notifications and better error handling
+* Enhanced with idempotency, payment summary recording
  */
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
@@ -13,8 +12,7 @@ const { increaseInventory } = require('../services/inventoryService');
 
 /**
  * POST /api/webhooks/stripe - Handle Stripe webhooks
- * [2025-11-04 23:55:00]
- * [2025-01-27 10:30:00] Enhanced with better error handling and logging
+* Enhanced with better error handling and logging
  */
 exports.handleStripeWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
@@ -43,7 +41,7 @@ exports.handleStripeWebhook = async (req, res) => {
   }
 
   try {
-    // [2025-01-29 14:30:00] Check idempotency - prevent duplicate processing
+// Check idempotency - prevent duplicate processing
     const existingEvent = await prisma.webhookEvent.findUnique({
       where: { stripeEventId: event.id },
     });
@@ -57,7 +55,7 @@ exports.handleStripeWebhook = async (req, res) => {
       return res.json({ received: true, message: 'Event already processed' });
     }
 
-    // [2025-01-29 14:30:00] Create webhook event record for idempotency
+// Create webhook event record for idempotency
     let webhookEventRecord;
     try {
       webhookEventRecord = await prisma.webhookEvent.create({
@@ -111,7 +109,7 @@ exports.handleStripeWebhook = async (req, res) => {
           break;
 
         case 'payment_intent.canceled':
-          // [2025-01-29 14:30:00] Handle canceled payment intent
+// Handle canceled payment intent
           const result4 = await handlePaymentIntentCanceled(event.data.object);
           orderId = result4?.orderId || null;
           paymentIntentId = event.data.object.id;
@@ -126,7 +124,7 @@ exports.handleStripeWebhook = async (req, res) => {
           handlerSuccess = true; // Not an error, just unhandled
       }
 
-      // [2025-01-29 14:30:00] Update webhook event record with result
+// Update webhook event record with result
       await prisma.webhookEvent.update({
         where: { id: webhookEventRecord.id },
         data: {
@@ -139,7 +137,7 @@ exports.handleStripeWebhook = async (req, res) => {
 
       res.json({ received: true });
     } catch (handlerError) {
-      // [2025-01-29 14:30:00] Update webhook event record with error
+// Update webhook event record with error
       await prisma.webhookEvent.update({
         where: { id: webhookEventRecord.id },
         data: {
@@ -170,9 +168,8 @@ exports.handleStripeWebhook = async (req, res) => {
 
 /**
  * Handle payment_intent.succeeded event
- * [2025-11-04 23:55:00]
- * [2025-01-27 10:30:00] Enhanced with email notification
- * [2025-01-29 14:30:00] Enhanced with payment summary recording (balance_transaction, fee)
+* Enhanced with email notification
+* Enhanced with payment summary recording (balance_transaction, fee)
  */
 async function handlePaymentIntentSucceeded(paymentIntent) {
   try {
@@ -199,7 +196,7 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
       return { orderId: null };
     }
 
-    // [2025-01-29 14:30:00] Fetch charge details to get balance_transaction and fee
+// Fetch charge details to get balance_transaction and fee
     let balanceTransactionId = null;
     let paymentFee = null;
 
@@ -208,7 +205,7 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
         const charge = await stripe.charges.retrieve(paymentIntent.latest_charge);
         balanceTransactionId = charge.balance_transaction;
         
-        // [2025-01-29 14:30:00] Get fee from balance transaction
+// Get fee from balance transaction
         if (balanceTransactionId) {
           const balanceTransaction = await stripe.balanceTransactions.retrieve(balanceTransactionId);
           // Fee is in the smallest currency unit (cents), convert to CAD
@@ -230,7 +227,7 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
         status: 'PROCESSING',
       };
 
-      // [2025-01-29 14:30:00] Add payment summary if available
+// Add payment summary if available
       if (balanceTransactionId) {
         updateData.balanceTransactionId = balanceTransactionId;
       }
@@ -294,14 +291,12 @@ async function handlePaymentIntentSucceeded(paymentIntent) {
 
 /**
  * Handle payment_intent.payment_failed event
- * [2025-11-04 23:55:00]
- * [2025-01-27 10:30:00] Enhanced with better logging
+* Enhanced with better logging
  */
 /**
  * Handle payment_intent.payment_failed event
- * [2025-11-04 23:55:00]
- * [2025-01-27 10:30:00] Enhanced with better logging
- * [2025-12-06 11:30:00] Enhanced with inventory restoration
+* Enhanced with better logging
+* Enhanced with inventory restoration
  */
 async function handlePaymentIntentFailed(paymentIntent) {
   try {
@@ -324,7 +319,7 @@ async function handlePaymentIntentFailed(paymentIntent) {
       return { orderId: null };
     }
 
-    // [2025-12-06 11:30:00] Restore inventory if order was created and payment failed
+// Restore inventory if order was created and payment failed
     // Only restore if order status is PENDING (order was created but payment failed)
     if (order.status === 'PENDING' && order.items && order.items.length > 0) {
       try {
@@ -383,8 +378,7 @@ async function handlePaymentIntentFailed(paymentIntent) {
 
 /**
  * Handle charge.refunded event
- * [2025-11-04 23:55:00]
- * [2025-01-27 10:30:00] Enhanced with better logging and partial refund handling
+* Enhanced with better logging and partial refund handling
  */
 async function handleChargeRefunded(charge) {
   try {
@@ -456,7 +450,7 @@ async function handleChargeRefunded(charge) {
 
 /**
  * Handle payment_intent.canceled event
- * [2025-01-29 14:30:00] Handle canceled payment intents
+* Handle canceled payment intents
  */
 async function handlePaymentIntentCanceled(paymentIntent) {
   try {

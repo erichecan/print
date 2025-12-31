@@ -1,4 +1,4 @@
-// [2025-01-31 19:50:00] 订单项颜色配置 API 路由
+// 订单项颜色配置 API 路由
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateColorConfigs } from '@/lib/services/orderRules';

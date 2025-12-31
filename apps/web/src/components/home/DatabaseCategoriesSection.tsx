@@ -1,6 +1,6 @@
 /**
  * Database Categories Section Component
- * [2025-11-19] 使用数据库分类数据，动态映射到本地图片资源
+* 使用数据库分类数据，动态映射到本地图片资源
  */
 'use client';
 
@@ -152,7 +152,7 @@ export function DatabaseCategoriesSection() {
                 aria-label={`Browse ${category.name}`}
               >
                 <div className={styles.categoryCardImage}>
-                  {/* [2025-01-29 23:50:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imagePath}

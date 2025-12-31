@@ -2,22 +2,22 @@ import { NextResponse } from 'next/server';
 
 import { getBackendApiBase } from '@/lib/api-route-config';
 
-// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+// 修复：强制动态路由，防止构建时静态生成
 export const dynamic = 'force-dynamic';
 
 const API_BASE = getBackendApiBase();
 
-// [2025-01-27 22:10:00] Next.js 14.2 App Router: params 是对象（不是 Promise）
+// Next.js 14.2 App Router: params 是对象（不是 Promise）
 type RouteParams = {
   params: {
     variantId: string;
   };
 };
 
-// [2025-01-27 21:55:00] 添加详细日志用于调试
+// 添加详细日志用于调试
 export async function GET(_request: Request, { params }: RouteParams) {
   const timestamp = new Date().toISOString();
-  // [2025-01-28 00:20:00] Next.js 15: params 可能是 Promise，需要 await
+// Next.js 15: params 可能是 Promise，需要 await
   const { variantId } = params instanceof Promise ? await params : params;
 
   console.log('[Next.js API Route] ========================================');

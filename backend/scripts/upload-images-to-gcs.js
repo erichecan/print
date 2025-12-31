@@ -1,6 +1,6 @@
 /**
  * 上传本地图片到 GCP Cloud Storage
- * [2025-01-29 23:55:00] 将所有本地图片文件上传到 GCS bucket
+* 将所有本地图片文件上传到 GCS bucket
  */
 
 const { Storage } = require('@google-cloud/storage');
@@ -16,7 +16,7 @@ const ASSETS_DIR = path.join(__dirname, '../../apps/web/public/assets');
 const storage = new Storage({ projectId: PROJECT_ID });
 const bucket = storage.bucket(BUCKET_NAME);
 
-// [2025-01-29 23:55:00] 上传单个文件到 GCS
+// 上传单个文件到 GCS
 async function uploadFile(localPath, gcsPath) {
   try {
     await bucket.upload(localPath, {
@@ -37,7 +37,7 @@ async function uploadFile(localPath, gcsPath) {
   }
 }
 
-// [2025-01-29 23:55:00] 递归扫描目录并上传所有图片文件
+// 递归扫描目录并上传所有图片文件
 async function uploadDirectory(localDir, gcsPrefix = '') {
   const files = fs.readdirSync(localDir, { withFileTypes: true });
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.gif'];
@@ -85,7 +85,7 @@ async function uploadDirectory(localDir, gcsPrefix = '') {
   return { uploaded: uploadedCount, skipped: skippedCount, errors: errorCount };
 }
 
-// [2025-01-29 23:55:00] 主函数
+// 主函数
 async function main() {
   console.log('🚀 开始上传图片到 GCP Cloud Storage...\n');
   console.log(`📦 Bucket: ${BUCKET_NAME}`);

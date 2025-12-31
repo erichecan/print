@@ -1,4 +1,4 @@
-// [2025-11-16 15:55:00] Seed demo products with images so PLP/PDP/Cart can be verified end-to-end
+// Seed demo products with images so PLP/PDP/Cart can be verified end-to-end
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = {

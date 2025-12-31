@@ -1,6 +1,6 @@
 /**
  * Admin Products E2E Tests
- * [2025-01-27 18:00:00] 测试商品管理的创建、更新、删除流程
+* 测试商品管理的创建、更新、删除流程
  * 包括成功场景和错误场景（400/500）
  */
 import { test, expect } from '@playwright/test';

@@ -1,6 +1,6 @@
 /**
  * Product API - 产品相关 API 封装
- * [2025-12-18 21:18:56] 创建产品模块 API 封装
+* 创建产品模块 API 封装
  */
 import { productsApi } from '@/lib/api';
 
@@ -58,7 +58,7 @@ export async function getProducts(params?: {
   try {
     const response: any = await productsApi.list(params);
 
-    // [2025-12-31] Map backend response to Design Lab Product interface
+// Map backend response to Design Lab Product interface
     if (response && response.data) {
       const mappedData = response.data.map((item: any) => ({
         id: item.id,
@@ -106,7 +106,7 @@ export async function getProductByVariant(variantId: string): Promise<ProductDet
  */
 export async function getProduct(productId: string): Promise<ProductDetail> {
   try {
-    // [2025-12-31] First try slug lookup (standard for Design Lab default)
+// First try slug lookup (standard for Design Lab default)
     const response: any = await productsApi.getBySlug(productId);
 
     // The slug API returns { id, name, ... } but we need { productId, productName, ... }

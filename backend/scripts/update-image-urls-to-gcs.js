@@ -1,6 +1,6 @@
 /**
  * 更新数据库中的图片 URL 为 GCP Cloud Storage URL
- * [2025-01-29 23:55:00] 将本地路径和 Custom Ink CDN URL 替换为 GCS URL
+* 将本地路径和 Custom Ink CDN URL 替换为 GCS URL
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 const GCS_BUCKET = 'print-main-assets';
 const GCS_BASE_URL = `https://storage.googleapis.com/${GCS_BUCKET}`;
 
-// [2025-01-29 23:55:00] 将本地路径转换为 GCS URL
+// 将本地路径转换为 GCS URL
 function localPathToGcsUrl(localPath) {
   if (!localPath) return null;
   
@@ -34,7 +34,7 @@ function localPathToGcsUrl(localPath) {
   return null;
 }
 
-// [2025-01-29 23:55:00] 检查 URL 是否指向 Custom Ink CDN
+// 检查 URL 是否指向 Custom Ink CDN
 function isCustomInkUrl(url) {
   if (!url) return false;
   return url.includes('customink.com') || 
@@ -42,7 +42,7 @@ function isCustomInkUrl(url) {
          url.includes('customink.net');
 }
 
-// [2025-01-29 23:55:00] 更新商品图片 URL
+// 更新商品图片 URL
 async function updateProductImages() {
   console.log('📦 更新商品图片 URL...\n');
   
@@ -117,7 +117,7 @@ async function updateProductImages() {
   }
 }
 
-// [2025-01-29 23:55:00] 更新品牌图片 URL
+// 更新品牌图片 URL
 async function updateBrandImages() {
   console.log('🏷️  更新品牌图片 URL...\n');
   
@@ -181,7 +181,7 @@ async function updateBrandImages() {
   }
 }
 
-// [2025-01-29 23:55:00] 更新分类图片 URL
+// 更新分类图片 URL
 async function updateCategoryImages() {
   console.log('📁 更新分类图片 URL...\n');
   
@@ -245,7 +245,7 @@ async function updateCategoryImages() {
   }
 }
 
-// [2025-01-29 23:55:00] 主函数
+// 主函数
 async function main() {
   console.log('🔧 开始更新数据库中的图片 URL 为 GCS URL...\n');
   console.log(`📦 GCS Bucket: ${GCS_BUCKET}`);

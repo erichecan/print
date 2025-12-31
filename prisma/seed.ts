@@ -1,11 +1,11 @@
-// [2025-11-18 10:45:12] Seed script bootstraps catalog/products/variants/projects
-// [2025-11-24 10:42:10] Extend seeding with coupons/promotions/orders for E2E coverage
+// Seed script bootstraps catalog/products/variants/projects
+// Extend seeding with coupons/promotions/orders for E2E coverage
 import { Prisma, PrismaClient, ProjectStatus, UserRole, CouponType, PromotionDiscountType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 const TEST_PASSWORDS = {
-  // [2025-11-24 10:42:10] Precomputed bcrypt hashes for deterministic seed accounts
+// Precomputed bcrypt hashes for deterministic seed accounts
   customer: '$2a$10$JYz3K0OkELuvlNXdVJO7l.77vfMyT2Rwg9LzHJxgW7ZNpQL5ma0he',
   admin: '$2a$10$V4bv7NqQWXa5JDHXFPF2WOIeRuHyp6Q4LEDR1Gz/QPyO8eCWaekJ6',
 };
@@ -203,7 +203,7 @@ async function main() {
     }
   });
 
-  // [2025-11-24 10:42:10] Additional seed accounts for automated E2E flows
+// Additional seed accounts for automated E2E flows
   await prisma.user.upsert({
     where: { email: 'admin@test.com' },
     update: {
@@ -558,7 +558,7 @@ async function main() {
     data: { status: ProjectStatus.ORDERED, orderId: order.id }
   });
 
-  // [2025-11-24 10:42:10] Helper to create repeatable sample orders
+// Helper to create repeatable sample orders
   async function ensureOrderSeed({
     orderNumber,
     user: seedUser,

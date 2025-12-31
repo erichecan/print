@@ -1,5 +1,5 @@
 /**
- * [2025-11-24 10:32:41] Playwright 测试辅助 API：封装常用的后端调用
+* Playwright 测试辅助 API：封装常用的后端调用
  */
 import type { APIRequestContext } from '@playwright/test';
 

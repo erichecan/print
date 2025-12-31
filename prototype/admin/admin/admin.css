@@ -1,4 +1,4 @@
-/* 2025-11-01 00:00:00 Admin-specific styles */
+/* Admin-specific styles */
 
 /* Admin Layout */
 .admin-body { background: var(--color-bg-subtle); min-height: 100vh; }
@@ -148,7 +148,7 @@
   .admin-main { padding: 16px; }
 }
 
-/* [2025-11-02 22:14:00] Content Manager Styles */
+/* Content Manager Styles */
 .content-manager {
   background: white;
   border-radius: 8px;
@@ -324,7 +324,7 @@
   }
 }
 
-/* [2025-11-08 05:46:54] Offline orders Trello-style board */
+/* Offline orders Trello-style board */
 .kanban-page {
   display: flex;
   flex-direction: column;

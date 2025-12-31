@@ -1,6 +1,6 @@
 /**
  * EasyShip Service
- * [2025-12-06 15:30:00] EasyShip API integration for shipping label generation
+* EasyShip API integration for shipping label generation
  */
 const axios = require('axios');
 const logger = require('../utils/logger');
@@ -10,7 +10,6 @@ const EASYSHIP_API_TOKEN = process.env.EASYSHIP_API_TOKEN;
 
 /**
  * Get EasyShip API client
- * [2025-12-06 15:30:00]
  */
 function getEasyShipClient() {
   if (!EASYSHIP_API_TOKEN) {
@@ -29,7 +28,6 @@ function getEasyShipClient() {
 
 /**
  * Create a shipment and generate shipping label
- * [2025-12-06 15:30:00]
  * @param {Object} shipmentData - Shipment data including order, addresses, items, etc.
  * @returns {Promise<Object>} Shipment with label URL and tracking number
  */
@@ -46,7 +44,7 @@ async function createShipment(shipmentData) {
 
     const client = getEasyShipClient();
 
-    // [2025-12-06 15:30:00] Prepare shipment payload for EasyShip API
+// Prepare shipment payload for EasyShip API
     const payload = {
       platform_name: 'Suvernire Plus',
       platform_order_number: shipmentData.orderNumber,
@@ -92,7 +90,7 @@ async function createShipment(shipmentData) {
       orderNumber: shipmentData.orderNumber,
     });
 
-    // [2025-12-06 15:30:00] Create shipment via EasyShip API
+// Create shipment via EasyShip API
     const response = await client.post('/shipments', payload);
 
     if (!response.data || !response.data.shipment) {
@@ -142,7 +140,6 @@ async function createShipment(shipmentData) {
 
 /**
  * Get shipment rates from EasyShip
- * [2025-12-06 15:30:00]
  * @param {Object} rateData - Rate calculation data
  * @returns {Promise<Array>} Available shipping rates
  */
@@ -225,7 +222,6 @@ async function getShippingRates(rateData) {
 
 /**
  * Get shipment tracking information
- * [2025-12-06 15:30:00]
  * @param {string} easyshipShipmentId - EasyShip shipment ID
  * @returns {Promise<Object>} Tracking information
  */

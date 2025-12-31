@@ -1,11 +1,10 @@
 /**
  * Order Controller
- * [2025-11-04 23:54:00]
- * [2025-01-27 13:20:00] Enhanced with order cancellation and query optimization
- * [2025-12-06 13:30:00] Enhanced with unified error handling
+* Enhanced with order cancellation and query optimization
+* Enhanced with unified error handling
  */
 const prisma = require('../lib/prisma');
-const PDFDocument = require('pdfkit'); // [2025-11-12 01:05:02] 用于生成发票 PDF
+const PDFDocument = require('pdfkit'); // 用于生成发票 PDF
 const { Readable } = require('stream');
 const logger = require('../utils/logger');
 const { cancelOrder, canCancelOrder } = require('../services/orderService');
@@ -14,9 +13,8 @@ const { sendOrderConfirmation } = require('../services/emailService');
 
 /**
  * GET /api/orders - List user's orders with filtering, sorting, and search
- * [2025-11-04 23:54:00]
- * [2025-01-27 13:20:00] Enhanced with filtering, sorting, and search
- * [2025-12-06 13:30:00] Enhanced with unified error handling
+* Enhanced with filtering, sorting, and search
+* Enhanced with unified error handling
  */
 exports.getOrders = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -153,7 +151,6 @@ exports.getOrders = async (req, res, next) => {
 
 /**
  * GET /api/orders/:id - Get order details
- * [2025-11-04 23:54:00]
  */
 exports.getOrderById = async (req, res) => {
   try {
@@ -243,7 +240,6 @@ exports.getOrderById = async (req, res) => {
 
 /**
  * GET /api/orders/number/:orderNumber - Get order by order number (for guest access)
- * [2025-11-04 23:54:00]
  */
 exports.getOrderByOrderNumber = async (req, res) => {
   try {
@@ -285,7 +281,7 @@ exports.getOrderByOrderNumber = async (req, res) => {
     }
 
     // Verify email matches
-    // [2025-12-18 16:30:00] 修复：email 可能为 null，需要先检查
+// 修复：email 可能为 null，需要先检查
     if (!order.email || !email || order.email.toLowerCase() !== email.toLowerCase()) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -340,12 +336,12 @@ const formatAddress = (address = {}) => {
     (address.country || '').toUpperCase(),
   ];
   return lines.filter(Boolean).join('\n');
-}; // [2025-11-12 01:05:02] 格式化地址文本
+}; // 格式化地址文本
 
 /**
  * Generate invoice PDF with enhanced template design
- * [2025-11-12 01:05:02] 生成订单发票 PDF
- * [2025-12-06 14:30:00] Enhanced with professional invoice template design
+* 生成订单发票 PDF
+* Enhanced with professional invoice template design
  */
 const generateInvoicePdf = (order) => {
   const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -359,7 +355,7 @@ const generateInvoicePdf = (order) => {
   const margin = 50;
   const contentWidth = pageWidth - 2 * margin;
 
-  // [2025-12-06 14:30:00] Header with company info and invoice title
+// Header with company info and invoice title
   doc.rect(margin, margin, contentWidth, 80).fill('#1e293b');
   doc.fillColor('#ffffff')
     .fontSize(28)
@@ -390,7 +386,7 @@ const generateInvoicePdf = (order) => {
 
   let yPos = margin + 100;
 
-  // [2025-12-06 14:30:00] Bill To and Ship To sections
+// Bill To and Ship To sections
   doc.fillColor('#000000');
   const sectionWidth = (contentWidth - 20) / 2;
 
@@ -415,7 +411,7 @@ const generateInvoicePdf = (order) => {
 
   yPos = margin + 200;
 
-  // [2025-12-06 14:30:00] Items table header
+// Items table header
   doc.rect(margin, yPos, contentWidth, 30).fill('#f1f5f9');
   doc.fillColor('#1e293b')
     .font('Helvetica-Bold')
@@ -427,7 +423,7 @@ const generateInvoicePdf = (order) => {
 
   yPos += 35;
 
-  // [2025-12-06 14:30:00] Items table rows
+// Items table rows
   doc.font('Helvetica').fontSize(10);
   order.items.forEach((item) => {
     const itemHeight = 40;
@@ -456,7 +452,7 @@ const generateInvoicePdf = (order) => {
     yPos += itemHeight;
   });
 
-  // [2025-12-06 14:30:00] Summary section
+// Summary section
   const summaryY = yPos + 20;
   const summaryWidth = 200;
   const summaryX = pageWidth - margin - summaryWidth;
@@ -501,7 +497,7 @@ const generateInvoicePdf = (order) => {
     .text('Total:', summaryX + 10, summaryYPos + 5, { width: summaryWidth - 20, align: 'right' })
     .text(`${order.currency || 'CAD'} $${Number(order.total).toFixed(2)}`, summaryX + 10, summaryYPos + 5, { width: summaryWidth - 20, align: 'right' });
 
-  // [2025-12-06 14:30:00] Payment status and footer
+// Payment status and footer
   const footerY = pageHeight - margin - 60;
   doc.fillColor('#64748b')
     .font('Helvetica')
@@ -539,8 +535,8 @@ const fetchOrderWithItems = async (where) =>
 
 /**
  * GET /api/orders/:id/invoice - Download invoice PDF
- * [2025-11-12 01:05:02] Download invoice PDF
- * [2025-12-06 14:30:00] Enhanced with unified error handling
+* Download invoice PDF
+* Enhanced with unified error handling
  */
 exports.downloadInvoice = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -562,7 +558,7 @@ exports.downloadInvoice = async (req, res, next) => {
       return next(new UnauthorizedError('需要身份验证'));
     }
 
-    // [2025-12-06 14:30:00] Generate invoice PDF
+// Generate invoice PDF
     const pdfStream = generateInvoicePdf(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -592,8 +588,8 @@ exports.downloadInvoice = async (req, res, next) => {
 
 /**
  * GET /api/orders/number/:orderNumber/invoice - Download invoice PDF by order number (guest access)
- * [2025-11-12 01:05:02] Download invoice PDF by order number
- * [2025-12-06 14:30:00] Enhanced with unified error handling
+* Download invoice PDF by order number
+* Enhanced with unified error handling
  */
 exports.downloadInvoiceByOrderNumber = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -611,12 +607,12 @@ exports.downloadInvoiceByOrderNumber = async (req, res, next) => {
       return next(new NotFoundError('订单不存在'));
     }
 
-    // [2025-12-18 16:30:00] 修复：email 可能为 null，需要先检查
+// 修复：email 可能为 null，需要先检查
     if (!order.email || !email || order.email.toLowerCase() !== String(email).toLowerCase()) {
       return next(new ForbiddenError('无权访问此订单的发票'));
     }
 
-    // [2025-12-06 14:30:00] Generate invoice PDF
+// Generate invoice PDF
     const pdfStream = generateInvoicePdf(order);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
@@ -646,7 +642,7 @@ exports.downloadInvoiceByOrderNumber = async (req, res, next) => {
 
 /**
  * POST /api/orders/:id/cancel - Cancel an order
- * [2025-01-27 13:20:00] Cancel order with inventory restoration and refund handling
+* Cancel order with inventory restoration and refund handling
  */
 exports.cancelOrder = async (req, res) => {
   try {
@@ -706,7 +702,7 @@ exports.cancelOrder = async (req, res) => {
 
 /**
  * GET /api/orders/:id/can-cancel - Check if order can be cancelled
- * [2025-01-27 13:20:00] Check cancellation eligibility
+* Check cancellation eligibility
  */
 exports.canCancelOrder = async (req, res) => {
   try {
@@ -758,8 +754,8 @@ exports.canCancelOrder = async (req, res) => {
 
 /**
  * GET /api/orders/:id/tracking - Get order tracking information
- * [2025-01-27 14:35:00] Get order tracking details
- * [2025-12-06 15:00:00] Enhanced with unified error handling and tracking events
+* Get order tracking details
+* Enhanced with unified error handling and tracking events
  */
 exports.getOrderTracking = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -811,7 +807,7 @@ exports.getOrderTracking = async (req, res, next) => {
       return next(new UnauthorizedError('需要身份验证'));
     }
 
-    // [2025-12-06 15:00:00] Build tracking response with events
+// Build tracking response with events
     const primaryShipment = order.shipments[0];
     const trackingEvents = [];
 

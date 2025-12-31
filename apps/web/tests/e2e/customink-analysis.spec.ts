@@ -1,6 +1,6 @@
 /**
  * CustomInk 页面功能分析测试
- * [2025-01-28 12:00:00] 使用 Playwright 和 Chrome DevTools 收集页面功能和交互设计
+* 使用 Playwright 和 Chrome DevTools 收集页面功能和交互设计
  */
 import { test, expect } from '@playwright/test';
 import type { Page, BrowserContext } from '@playwright/test';
@@ -9,7 +9,7 @@ import * as path from 'path';
 
 const CUSTOMINK_URL = 'https://www.customink.com';
 const TARGET_PAGE = '/ndx/#/savedDesigns';
-// [2025-01-28 12:05:00] 修复路径：从 apps/web/tests/e2e 到项目根目录的 docs
+// 修复路径：从 apps/web/tests/e2e 到项目根目录的 docs
 const OUTPUT_DIR = path.resolve(__dirname, '../../../../docs/customink-analysis');
 const SCREENSHOTS_DIR = path.join(OUTPUT_DIR, 'screenshots');
 const ELEMENTS_DIR = path.join(SCREENSHOTS_DIR, 'elements');
@@ -237,7 +237,7 @@ test.describe('CustomInk 页面功能分析', () => {
     ensureDirectories();
   });
   
-  // [2025-01-28 12:05:00] 增加测试超时时间到 5 分钟（外部网站可能需要更长时间）
+// 增加测试超时时间到 5 分钟（外部网站可能需要更长时间）
   test.setTimeout(300000); // 5 分钟
   
   test('收集 CustomInk savedDesigns 页面功能和交互设计', async ({ page, context }) => {
@@ -386,7 +386,7 @@ test.describe('CustomInk 页面功能分析', () => {
     
     // 为每个元素截图（限制数量并添加错误处理）
     console.log('[CustomInk Analysis] 为交互元素截图...');
-    const maxScreenshots = Math.min(allElements.length, 30); // [2025-01-28 12:05:00] 减少到30个以避免超时
+const maxScreenshots = Math.min(allElements.length, 30); // 减少到30个以避免超时
     for (let i = 0; i < maxScreenshots; i++) {
       try {
         const element = allElements[i];

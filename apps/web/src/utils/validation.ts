@@ -1,6 +1,6 @@
 /**
  * Form Validation Utilities
- * [2025-01-27 11:25:00] 统一的表单验证工具函数
+* 统一的表单验证工具函数
  */
 
 export interface ValidationResult {

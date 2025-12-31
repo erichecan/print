@@ -1,4 +1,4 @@
-// [2025-01-30 22:15:00] 自动生成的颜色配置
+// 自动生成的颜色配置
 // 从 docs/customink-analysis/all-colors-with-names.json 生成
 // 共 77 个颜色
 

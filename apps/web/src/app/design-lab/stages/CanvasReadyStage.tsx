@@ -1,6 +1,6 @@
 /**
  * Design Lab Canvas Ready Stage
- * [2025-01-30 23:30:00] Design Lab 4.0: Canvas Ready 阶段
+* Design Lab 4.0: Canvas Ready 阶段
  * 
  * 职责：
  * - 动态导入 Fabric.js
@@ -20,13 +20,13 @@ interface CanvasReadyStageProps {
   children: ReactNode | ((canvas: any) => ReactNode);
   canvasRef: React.RefObject<HTMLCanvasElement>;
   onCanvasReady?: (canvas: any) => void;
-  /** 产品图片加载选项 [2025-01-30 20:30:00] */
+/** 产品图片加载选项 */
   productImageOptions?: {
     colorName?: string | null;
     view: 'front' | 'back' | 'sleeve';
     useAPI?: boolean;
   };
-  /** Git SHA [2025-01-30 20:30:00] */
+/** Git SHA */
   gitSha?: string;
 }
 

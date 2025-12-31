@@ -1,5 +1,5 @@
 # Cloud Run service configuration for backend
-# [2025-01-27] Backend service definition for GCP Cloud Run
+# Backend service definition for GCP Cloud Run
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:

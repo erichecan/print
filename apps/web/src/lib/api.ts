@@ -1,18 +1,17 @@
 /**
  * API Client
- * [2025-11-05 00:10:00]
- * [2025-01-27 13:35:00] Restored complete API file and added product reviews API
- * [2025-11-15 11:20:00] 使用集中管理的 API 配置
+* Restored complete API file and added product reviews API
+* 使用集中管理的 API 配置
  */
 import { API_BASE_URL } from './api-config';
 
 interface ApiOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'PUT';
-  body?: unknown; // [2025-12-07 02:30:00] Issue #105 - Replace any with unknown for type safety
+body?: unknown; // Issue #105 - Replace any with unknown for type safety
   headers?: Record<string, string>;
 }
 
-// [2025-11-10 22:49:14] Typed checkout payment intent response
+// Typed checkout payment intent response
 interface CheckoutPaymentIntentResponse {
   clientSecret: string;
   paymentIntentId: string;
@@ -20,26 +19,26 @@ interface CheckoutPaymentIntentResponse {
   currency: string;
   breakdown?: {
     subtotal: number;
-    promotionDiscount?: number; // [2025-01-28 12:30:00] 促销折扣
-    discount?: number; // [2025-01-28 11:35:00] 总折扣（促销+优惠券）
+promotionDiscount?: number; // 促销折扣
+discount?: number; // 总折扣（促销+优惠券）
     shipping: number;
     tax: number;
     total: number;
   };
-  promotions?: Array<{ // [2025-01-28 12:30:00] 促销活动信息
+promotions?: Array<{ // 促销活动信息
     promotionId: string;
     promotionTitle: string;
     productId: string;
     discountAmount: number;
   }>;
-  coupon?: { // [2025-01-28 11:35:00] 添加优惠券信息
+coupon?: { // 添加优惠券信息
     id: string;
     code: string;
     type: string;
   };
 }
 
-// [2025-11-10 22:50:18] Typed checkout confirm response
+// Typed checkout confirm response
 interface CheckoutConfirmResponse {
   orderId: string;
   orderNumber: string;
@@ -48,7 +47,7 @@ interface CheckoutConfirmResponse {
   email: string;
 }
 
-// [2025-11-10 22:51:42] Cart response types
+// Cart response types
 export interface CartItemResponse {
   id: string;
   variantId: string;
@@ -70,7 +69,7 @@ export interface CartResponse {
   itemCount: number;
 }
 
-// [2025-11-12 03:05:00] Product type for related products API
+// Product type for related products API
 export interface Product {
   id: string;
   name: string;
@@ -89,7 +88,7 @@ export interface Product {
     sku: string;
     stockQuantity: number;
   }>;
-  // [2025-01-28 12:30:00] 促销活动信息
+// 促销活动信息
   promotions?: Promotion[];
   category?: {
     id: string;
@@ -98,7 +97,7 @@ export interface Product {
   } | null;
 }
 
-// [2025-01-27 13:35:00] Product Review types
+// Product Review types
 export interface ProductReview {
   id: string;
   productId?: string;
@@ -130,7 +129,7 @@ export interface ProductReviewSummary {
   };
 }
 
-// [2025-12-07 02:30:00] Issue #105 - Common pagination response type
+// Issue #105 - Common pagination response type
 export interface PaginationResponse {
   page: number;
   limit: number;
@@ -152,7 +151,7 @@ export interface ProductReviewPayload {
   orderId?: string;
 }
 
-// [2025-11-12 00:45:10] Checkout address payload
+// Checkout address payload
 export interface CheckoutAddressPayload {
   fullName: string;
   email: string;
@@ -165,20 +164,20 @@ export interface CheckoutAddressPayload {
   country: string;
 }
 
-// [2025-11-12 06:32:00] User profile type
+// User profile type
 export interface UserProfile {
   id: string;
   email: string;
   firstName?: string | null;
   lastName?: string | null;
   phone?: string | null;
-  role?: string; // [2025-11-15 12:05:00] 添加角色字段
-  emailVerified?: boolean; // [2025-11-15 12:05:00] 添加邮箱验证字段
+role?: string; // 添加角色字段
+emailVerified?: boolean; // 添加邮箱验证字段
   createdAt?: string;
   updatedAt?: string;
 }
 
-// [2025-11-12 06:42:30] Order detail type
+// Order detail type
 export interface AccountOrderDetail {
   id: string;
   orderNumber: string;
@@ -192,8 +191,8 @@ export interface AccountOrderDetail {
   currency: string;
   createdAt: string;
   updatedAt: string;
-  shippingAddress?: CheckoutAddressPayload | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
-  billingAddress?: CheckoutAddressPayload | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+shippingAddress?: CheckoutAddressPayload | null; // Issue #105 - Replace any with proper type
+billingAddress?: CheckoutAddressPayload | null; // Issue #105 - Replace any with proper type
   items: Array<{
     id: string;
     sku: string;
@@ -246,8 +245,8 @@ export interface AddressPayload {
   isDefault?: boolean;
 }
 
-// [2025-12-02 04:20:00] 需要认证的 API 路径前缀
-// [2025-12-02 04:49:00] 增加 /sales 以支持 Sales 订单管理
+// 需要认证的 API 路径前缀
+// 增加 /sales 以支持 Sales 订单管理
 const AUTH_REQUIRED_PATHS = [
   '/orders',
   '/admin',
@@ -262,7 +261,7 @@ const AUTH_REQUIRED_PATHS = [
  * 检查路径是否需要认证（使用代理路由）
  */
 function requiresAuthProxy(path: string): boolean {
-  // [2025-12-21] Fix: In development mode, bypass the proxy for cart operations to avoid
+// Fix: In development mode, bypass the proxy for cart operations to avoid
   // "Proxy request failed" 500 errors. Allow direct communication with localhost:3001
   // which handles cookies/sessions natively on the same domain/IP in dev.
   if (process.env.NODE_ENV === 'development') {
@@ -276,19 +275,19 @@ function requiresAuthProxy(path: string): boolean {
 }
 
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
-  // [2025-01-27 18:00:00] 添加超时控制和取消支持
+// 添加超时控制和取消支持
   const { method = 'GET', body, headers = {} } = options;
   const timeout = 10000; // 10秒超时
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
-  // [2025-12-02 04:20:00] 检查是否需要使用代理路由
-  // [2025-12-07 08:10:00] 修复：如果 endpoint 已经包含 /api/proxy，直接使用，避免重复拼接
+// 检查是否需要使用代理路由
+// 修复：如果 endpoint 已经包含 /api/proxy，直接使用，避免重复拼接
   const alreadyHasProxy = endpoint.startsWith('/api/proxy');
   const useProxy = !alreadyHasProxy && requiresAuthProxy(endpoint);
 
-  // [2025-12-02 04:20:00] 确定请求 URL
-  // [2025-12-07 08:10:00] 修复：如果 endpoint 已经包含 /api/proxy，直接使用 window.location.origin（客户端）或相对路径（SSR）
+// 确定请求 URL
+// 修复：如果 endpoint 已经包含 /api/proxy，直接使用 window.location.origin（客户端）或相对路径（SSR）
   let requestUrl: string;
   if (alreadyHasProxy) {
     // endpoint 已经包含 /api/proxy，直接使用相对路径（Next.js 会处理）
@@ -305,10 +304,10 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     }
   }
 
-  // [2025-12-07 07:55:00] 从 localStorage 读取 token 并添加到 Authorization header
+// 从 localStorage 读取 token 并添加到 Authorization header
   const token = getToken();
 
-  // [2025-01-27 18:00:00] 创建 AbortController 用于超时和取消
+// 创建 AbortController 用于超时和取消
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -316,13 +315,13 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     method,
     headers: {
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
-      // [2025-12-07 07:55:00] 如果存在 token，添加到 Authorization header
+// 如果存在 token，添加到 Authorization header
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...headers,
     },
-    // [2025-01-27 18:00:00] 添加 signal 用于取消请求
+// 添加 signal 用于取消请求
     signal: controller.signal,
-    // [2025-12-19 02:50:00] 修复：购物车 API 需要 sessionId cookie，必须包含 credentials
+// 修复：购物车 API 需要 sessionId cookie，必须包含 credentials
     credentials: 'include',
   };
 
@@ -337,15 +336,15 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   } catch (error: unknown) {
     clearTimeout(timeoutId);
 
-    // [2025-12-07 13:45:00] 处理网络错误（连接被拒绝、空响应等）
-    // [2025-01-27 18:00:00] 统一错误处理，包含超时错误
+// 处理网络错误（连接被拒绝、空响应等）
+// 统一错误处理，包含超时错误
     if (error instanceof TypeError || (error as any)?.name === 'AbortError') {
       const errorMessage = (error as any)?.message || '';
       if (errorMessage.includes('aborted') || (error as any)?.name === 'AbortError') {
         throw new Error(`请求超时（${timeout}ms）。请稍后重试。`);
       }
       if (errorMessage.includes('fetch') || errorMessage.includes('Failed to fetch') || errorMessage.includes('ERR_CONNECTION_REFUSED')) {
-        // [2025-12-07 13:45:00] 本地开发环境：提供更友好的错误提示
+// 本地开发环境：提供更友好的错误提示
         const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
         if (isLocalhost) {
           throw new Error('无法连接到后端服务器。请确保后端服务器正在运行（端口 3001）。运行命令：cd backend && npm run dev');
@@ -356,8 +355,8 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     throw error;
   }
 
-  // [2025-01-27 16:10:00] 处理空响应
-  // [2025-01-27 18:00:00] 统一错误处理，提取 traceId 和错误码
+// 处理空响应
+// 统一错误处理，提取 traceId 和错误码
   if (!response || !response.ok) {
     let errorMessage = `API Error: ${response?.status || 'Unknown'}`;
     let errorDetails: { error?: { code?: string; message?: string; details?: string | Record<string, unknown> }; message?: string; details?: string | Record<string, unknown>; traceId?: string } | null = null;
@@ -368,7 +367,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
       if (errorText) {
         try {
           errorDetails = JSON.parse(errorText);
-          // [2025-01-27 18:00:00] 提取标准错误格式
+// 提取标准错误格式
           if (errorDetails && errorDetails.error) {
             errorMessage = typeof errorDetails.error === 'string'
               ? errorDetails.error
@@ -380,7 +379,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
               : (errorDetails.message || errorMessage);
             traceId = errorDetails.traceId;
           }
-          // [2025-01-27] 如果有详细信息，添加到错误消息中
+// 如果有详细信息，添加到错误消息中
           if (errorDetails && errorDetails.details && process.env.NODE_ENV === 'development') {
             const detailsStr = typeof errorDetails.details === 'string'
               ? errorDetails.details
@@ -399,12 +398,12 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
       errorMessage = response?.statusText || 'Network error: Empty response from server';
     }
 
-    // [2025-01-27 18:00:00] 从响应头提取 traceId
+// 从响应头提取 traceId
     if (!traceId) {
       traceId = response.headers.get('X-Trace-Id') || response.headers.get('X-Request-Id') || undefined;
     }
 
-    // [2025-01-27] 添加更详细的错误信息用于调试
+// 添加更详细的错误信息用于调试
     const fullError = new Error(errorMessage);
     (fullError as any).status = response?.status;
     (fullError as any).details = errorDetails;
@@ -413,7 +412,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     throw fullError;
   }
 
-  // [2025-01-27 16:10:00] 处理空响应体
+// 处理空响应体
   const text = await response.text();
   if (!text || text.trim() === '') {
     throw new Error('Empty response from server');
@@ -426,7 +425,7 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   }
 }
 
-// [2025-01-27 17:00:00] Filter options types
+// Filter options types
 export interface FilterOptions {
   categories: Array<{
     id: string;
@@ -496,7 +495,7 @@ export const productsApi = {
     const queryString = query.toString();
     return api(`/products${queryString ? `?${queryString}` : ''}`);
   },
-  // [2025-01-27 17:00:00] 获取筛选选项统计数据
+// 获取筛选选项统计数据
   getFilterOptions: (params?: { collection?: string; search?: string }) => {
     const query = new URLSearchParams();
     if (params?.collection) query.append('collection', params.collection);
@@ -505,7 +504,7 @@ export const productsApi = {
     return api<FilterOptions>(`/products/filters/options${queryString ? `?${queryString}` : ''}`);
   },
   getBySlug: (slug: string) => api(`/products/${slug}`),
-  // [2025-11-21 11:00:00] 根据 variantId 获取产品信息（用于 Design Lab）
+// 根据 variantId 获取产品信息（用于 Design Lab）
   getByVariant: (variantId: string) => api<{
     productId: string;
     productName: string;
@@ -524,7 +523,7 @@ export const productsApi = {
       colorHex: string | null;
       size: string | null;
       stockQuantity: number;
-      priceAdjustment?: number; // [2025-12-28] Add price adjustment
+priceAdjustment?: number; // Add price adjustment
     }>;
     baseImages: {
       front: string;
@@ -548,8 +547,8 @@ export const productsApi = {
     api<ProductReview>(`/products/${data.productId}/reviews`, {
       method: 'POST',
       body: data,
-    }), // [2025-01-27 13:35:00] 提交产品评价API（需要后端实现）
-  // [2025-01-30 10:00:00] 获取指定品牌的其它商品列表
+}), // 提交产品评价API（需要后端实现）
+// 获取指定品牌的其它商品列表
   getBrandProducts: (brandId: string, excludeProductId?: string, limit?: number) => {
     const query = new URLSearchParams();
     if (excludeProductId) query.append('excludeProductId', excludeProductId);
@@ -578,7 +577,7 @@ export const collectionsApi = {
   getBySlug: (slug: string) => api(`/collections/${slug}`),
 };
 
-// [2025-01-27 18:50:00] Categories API (Public)
+// Categories API (Public)
 export interface Category {
   id: string;
   name: string;
@@ -594,7 +593,7 @@ export const categoriesApi = {
 };
 
 // Cart API
-// [2025-12-19 02:50:00] 添加详细日志，修复购物车功能
+// 添加详细日志，修复购物车功能
 export const cartApi = {
   get: async () => {
     console.log('[Cart API] get() called');
@@ -669,10 +668,10 @@ export const checkoutApi = {
       method: 'POST',
       ...(payload ? { body: payload } : {}),
     }),
-  getShippingRates: (address: CheckoutAddressPayload) => // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+getShippingRates: (address: CheckoutAddressPayload) => // Issue #105 - Replace any with proper type
     api('/checkout/shipping-rates', { method: 'POST', body: { address } }),
-  // [2025-01-28 11:35:00] 添加优惠券支持
-  // [2025-01-29 14:30:00] Enhanced: Added draftOrderId, amount, currency, customerEmail, metadata
+// 添加优惠券支持
+// Enhanced: Added draftOrderId, amount, currency, customerEmail, metadata
   createPaymentIntent: (
     shippingAddress: CheckoutAddressPayload,
     shippingMethod: string = 'standard',
@@ -698,7 +697,7 @@ export const checkoutApi = {
         ...(metadata ? { metadata } : {}),
       },
     }),
-  // [2025-01-28 11:35:00] 添加优惠券支持
+// 添加优惠券支持
   confirm: (
     paymentIntentId: string,
     shippingAddress: CheckoutAddressPayload,
@@ -728,22 +727,22 @@ export interface UserDesign {
   name: string;
   thumbnailUrl?: string | null;
   createdAt: string;
-  updatedAt?: string; // [2025-01-30 23:58:00] 新增：最后编辑时间
+updatedAt?: string; // 新增：最后编辑时间
   productName?: string | null;
 }
 
 export const designsApi = {
-  // [2025-01-30 23:58:00] 支持时间筛选参数 days
+// 支持时间筛选参数 days
   list: (days?: number) => {
     const query = days && days > 0 ? `?days=${days}` : '';
     return api<{ designs: UserDesign[]; total: number }>(`/user/designs${query}`);
   },
-  get: (id: string) => api<{ data: DesignDraft }>(`/designs/${id}`), // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+get: (id: string) => api<{ data: DesignDraft }>(`/designs/${id}`), // Issue #105 - Replace any with proper type
   delete: (id: string) => api(`/designs/${id}`, { method: 'DELETE' }),
 };
 
 // Orders API
-// [2025-12-06 13:30:00] Enhanced with search, paymentStatus filter, and proper sorting
+// Enhanced with search, paymentStatus filter, and proper sorting
 export const ordersApi = {
   list: (
     page: number = 1,
@@ -759,13 +758,13 @@ export const ordersApi = {
     if (status) query.append('status', status);
     if (paymentStatus) query.append('paymentStatus', paymentStatus);
     if (search) query.append('search', search);
-    // [2025-12-06 13:30:00] Parse sort parameter (format: "field_order" e.g., "createdAt_desc")
+// Parse sort parameter (format: "field_order" e.g., "createdAt_desc")
     if (sort) {
       const [sortBy, sortOrder] = sort.split('_');
       if (sortBy) query.append('sortBy', sortBy);
       if (sortOrder) query.append('sortOrder', sortOrder);
     }
-    return api<{ orders: AccountOrderDetail[]; pagination?: PaginationResponse } | { data: AccountOrderDetail[]; pagination?: PaginationResponse }>(`/orders?${query.toString()}`); // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+return api<{ orders: AccountOrderDetail[]; pagination?: PaginationResponse } | { data: AccountOrderDetail[]; pagination?: PaginationResponse }>(`/orders?${query.toString()}`); // Issue #105 - Replace any with proper type
   },
   getById: (id: string) => api<AccountOrderDetail>(`/orders/${id}`),
   getByOrderNumber: (orderNumber: string, email: string) =>
@@ -825,8 +824,8 @@ export const ordersApi = {
 };
 
 // Auth API
-// [2025-01-29 02:20:00] 创建同域 API 调用函数（用于登录相关请求，避免跨域 Cookie 问题）
-// [2025-12-07 07:55:00] 从 localStorage 获取 token
+// 创建同域 API 调用函数（用于登录相关请求，避免跨域 Cookie 问题）
+// 从 localStorage 获取 token
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   try {
@@ -837,7 +836,7 @@ function getToken(): string | null {
   }
 }
 
-// [2025-12-07 07:55:00] 保存 token 到 localStorage
+// 保存 token 到 localStorage
 export function setAuthToken(token: string): void {
   if (typeof window === 'undefined') return;
   try {
@@ -847,7 +846,7 @@ export function setAuthToken(token: string): void {
   }
 }
 
-// [2025-12-07 07:55:00] 清除 token
+// 清除 token
 export function clearAuthToken(): void {
   if (typeof window === 'undefined') return;
   try {
@@ -857,12 +856,12 @@ export function clearAuthToken(): void {
   }
 }
 
-// [2025-12-07 08:00:00] 导出 getToken 函数供外部使用
+// 导出 getToken 函数供外部使用
 export function getAuthToken(): string | null {
   return getToken();
 }
 
-// [2025-12-07 08:00:00] 创建带认证的 fetch 辅助函数
+// 创建带认证的 fetch 辅助函数
 export async function authenticatedFetch(
   url: string,
   options: RequestInit = {}
@@ -885,7 +884,7 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 
-  // [2025-12-09] 修复：同时支持 Cookie 和 Authorization header
+// 修复：同时支持 Cookie 和 Authorization header
   // 从 localStorage 读取 token 并添加到 Authorization header
   const token = getToken();
 
@@ -893,11 +892,11 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
     method,
     headers: {
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
-      // [2025-12-09] 修复：如果存在 token，添加到 Authorization header
+// 修复：如果存在 token，添加到 Authorization header
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...headers,
     },
-    // [2025-12-09] 修复：添加 credentials: 'include' 以传递 Cookie
+// 修复：添加 credentials: 'include' 以传递 Cookie
     // 后端 authenticate 中间件会优先从 Cookie 读取 token，如果没有则从 Authorization header 读取
     credentials: 'include',
   };
@@ -911,9 +910,9 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
   const response = await fetch(`${baseUrl}${endpoint}`, config);
 
   if (!response.ok) {
-    // [2025-12-03 03:55:00] 对于 401 错误，抛出特殊错误以便调用方识别
+// 对于 401 错误，抛出特殊错误以便调用方识别
     if (response.status === 401) {
-      // [2025-12-07 07:55:00] 401 错误时清除 token
+// 401 错误时清除 token
       clearAuthToken();
       const error = new Error('UNAUTHORIZED');
       (error as Error & { status?: number }).status = 401;
@@ -935,13 +934,13 @@ async function sameOriginApi<T>(endpoint: string, options: ApiOptions = {}): Pro
 export const authApi = {
   register: (data: { email: string; password: string; firstName?: string; lastName?: string }) =>
     api('/auth/register', { method: 'POST', body: data }),
-  // [2025-12-07 07:55:00] 登录后保存 token 到 localStorage
+// 登录后保存 token 到 localStorage
   login: async (email: string, password: string) => {
     const response = await sameOriginApi<{ token: string; user: any }>('/api/auth/login', {
       method: 'POST',
       body: { email, password }
     });
-    // [2025-12-07 07:55:00] 保存 token 到 localStorage
+// 保存 token 到 localStorage
     if (response.token) {
       setAuthToken(response.token);
     }
@@ -951,16 +950,16 @@ export const authApi = {
     try {
       await api('/auth/logout', { method: 'POST' });
     } finally {
-      // [2025-12-28 09:30:00] Verify fix: explicitly clear local token to prevent auto-relogin
+// Verify fix: explicitly clear local token to prevent auto-relogin
       clearAuthToken();
     }
   },
-  // [2025-01-29 02:20:00] 使用同域 API 路由，避免跨域 Cookie 问题
-  // [2025-12-03 03:55:00] 静默处理 401 错误（未登录是正常状态）
+// 使用同域 API 路由，避免跨域 Cookie 问题
+// 静默处理 401 错误（未登录是正常状态）
   me: async () => {
     try {
       return await sameOriginApi<UserProfile>('/api/auth/me');
-    } catch (err: unknown) { // [2025-12-07 02:30:00] Issue #105 - Replace any with unknown for type safety
+} catch (err: unknown) { // Issue #105 - Replace any with unknown for type safety
       // 401 错误表示用户未登录，这是正常状态，不抛出错误
       const error = err instanceof Error ? err : new Error(String(err));
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
@@ -972,14 +971,14 @@ export const authApi = {
   updateProfile: (data: { firstName?: string; lastName?: string; phone?: string }) =>
     api('/auth/me', { method: 'PATCH', body: data }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
-    api('/auth/me/password', { method: 'PUT', body: data }), // [2025-01-27 修复] 密码修改API路径修复为PUT /auth/me/password
+api('/auth/me/password', { method: 'PUT', body: data }), // 密码修改API路径修复为PUT /auth/me/password
   forgotPassword: (email: string) =>
     api('/auth/forgot-password', { method: 'POST', body: { email } }),
   resetPassword: (token: string, password: string) =>
     api('/auth/reset-password', { method: 'POST', body: { token, password } }),
 };
 
-// [2025-12-02 04:49:00] Sales Offline Orders API
+// Sales Offline Orders API
 export interface SalesOfflineOrderSummary {
   id: string;
   orderCode: string;
@@ -1000,7 +999,7 @@ export interface SalesOfflineOrderSummary {
     email: string;
     phone: string | null;
   };
-  // [2025-12-07 04:50:00] 创建者信息（用于销售主管查看）
+// 创建者信息（用于销售主管查看）
   creator?: {
     id: string;
     email: string;
@@ -1020,7 +1019,7 @@ export interface SalesOfflineOrderListResponse {
   };
 }
 
-// [2025-01-28 21:30:00] 订单配置数据结构类型定义
+// 订单配置数据结构类型定义
 export interface OfflineOrderProductItem {
   id: string;
   categoryId: string;
@@ -1076,15 +1075,15 @@ export interface OfflineOrderConfiguration {
 }
 
 export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
-  // [2025-01-28 21:30:00] 详情接口包含的额外字段
+// 详情接口包含的额外字段
   description?: string | null; // 设计说明
   requiresMockups?: boolean;
   requiresProof?: boolean;
   configuration?: OfflineOrderConfiguration | null; // 完整配置信息
-  metadata?: Record<string, unknown>; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
-  assets: Array<{ id: string; fileName: string; url: string;[key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
-  histories: Array<{ id: string; action: string; timestamp: string;[key: string]: unknown }>; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
-  productionWorkOrder: { id: string; status: string;[key: string]: unknown } | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+metadata?: Record<string, unknown>; // Issue #105 - Replace any with proper type
+assets: Array<{ id: string; fileName: string; url: string;[key: string]: unknown }>; // Issue #105 - Replace any[] with proper type
+histories: Array<{ id: string; action: string; timestamp: string;[key: string]: unknown }>; // Issue #105 - Replace any[] with proper type
+productionWorkOrder: { id: string; status: string;[key: string]: unknown } | null; // Issue #105 - Replace any with proper type
 }
 
 export const salesOrdersApi = {
@@ -1097,7 +1096,7 @@ export const salesOrdersApi = {
   },
   get: (id: string) =>
     api<{ order: SalesOfflineOrderDetail } | SalesOfflineOrderDetail>(`/sales/orders/${id}`).then((res) => {
-      // [2025-12-18 17:35:00] 修复：处理两种可能的返回格式
+// 修复：处理两种可能的返回格式
       // 格式1: { order: SalesOfflineOrderDetail }
       // 格式2: SalesOfflineOrderDetail (直接返回订单对象)
       if (res && typeof res === 'object' && 'order' in res) {
@@ -1112,14 +1111,14 @@ export const salesOrdersApi = {
       }
       throw new Error('订单不存在或已被删除');
     }),
-  // [2025-12-07 03:00:00] 更新订单阶段
+// 更新订单阶段
   updateStage: (id: string, data: { stageKey: string; note?: string }) =>
     api<{ success: boolean; order: SalesOfflineOrderDetail }>(`/sales/orders/${id}/stage`, {
       method: 'PATCH',
       body: data,
     }),
-  // [2025-12-07 05:15:00] 更新订单状态
-  // [2025-12-07 06:50:00] 支持 rushOrder 参数
+// 更新订单状态
+// 支持 rushOrder 参数
   updateStatus: (id: string, status: 'ACTIVE' | 'COMPLETED' | 'CANCELLED', rushOrder?: boolean) => {
     const body: { status: string; rushOrder?: boolean } = { status };
     if (rushOrder !== undefined) {
@@ -1130,15 +1129,15 @@ export const salesOrdersApi = {
       body,
     });
   },
-  // [2025-12-18 17:30:00] 删除订单
+// 删除订单
   delete: (id: string) =>
     api(`/admin/offline-orders/${id}`, {
       method: 'DELETE',
     }),
 };
 
-// [2025-12-06 17:00:00] Offline Order Product Configuration API
-// [2025-01-27 14:00:00] 重构：更新接口定义以匹配后端返回格式
+// Offline Order Product Configuration API
+// 重构：更新接口定义以匹配后端返回格式
 // 获取线下订单配置数据（产品、颜色、尺寸费用、可用性等）
 export interface OfflineOrderProduct {
   id: string;
@@ -1178,7 +1177,7 @@ export interface OfflineOrderConfig {
   availability: OfflineOrderAvailability[];
 }
 
-// [2025-12-07 08:00:00] 简化的产品 API
+// 简化的产品 API
 export interface SimpleOfflineOrderProduct {
   id: string;
   name: string;
@@ -1212,7 +1211,7 @@ export const simpleOfflineOrderProductApi = {
 };
 
 export const offlineOrderProductApi = {
-  // [2025-12-07 02:30:00] PRD v2.0: 获取订单配置数据
+// PRD v2.0: 获取订单配置数据
   getOrderConfig: () => sameOriginApi<OfflineOrderConfig>('/api/offline-orders/config'),
 };
 
@@ -1224,10 +1223,10 @@ export const addressesApi = {
   update: (id: string, data: Partial<AddressPayload>) =>
     api<Address>(`/addresses/${id}`, { method: 'PATCH', body: data }),
   delete: (id: string) => api(`/addresses/${id}`, { method: 'DELETE' }),
-  setDefault: (id: string) => api<Address>(`/addresses/${id}/set-default`, { method: 'PATCH' }), // [2025-01-27 修复] 修复API方法为PATCH
+setDefault: (id: string) => api<Address>(`/addresses/${id}/set-default`, { method: 'PATCH' }), // 修复API方法为PATCH
 };
 
-// [2025-01-27] User Preferences API Types
+// User Preferences API Types
 export interface UserPreferences {
   emailNotifications: {
     orderUpdates: boolean;
@@ -1251,14 +1250,14 @@ export interface UserPreferencesResponse {
   updatedAt: string | null;
 }
 
-// [2025-01-27] User Preferences API
+// User Preferences API
 export const userPreferencesApi = {
   get: () => api<UserPreferencesResponse>('/user/preferences'),
   update: (data: Partial<UserPreferences>) =>
     api<UserPreferencesResponse>('/user/preferences', { method: 'PUT', body: data }),
 };
 
-// [2025-01-27 15:00:00] Admin API Types
+// Admin API Types
 export interface AdminCategorySummary {
   id: string;
   name: string;
@@ -1403,7 +1402,7 @@ export interface AdminProductPayload {
   collections?: string[];
 }
 
-// [2025-01-27 15:00:00] Admin Categories API
+// Admin Categories API
 export const adminCategoriesApi = {
   list: (params?: { page?: number; limit?: number; search?: string; status?: 'active' | 'inactive' }) => {
     const query = new URLSearchParams();
@@ -1412,7 +1411,7 @@ export const adminCategoriesApi = {
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
     const queryString = query.toString();
-    return api<{ data: AdminCategorySummary[]; pagination: PaginationResponse }>( // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+return api<{ data: AdminCategorySummary[]; pagination: PaginationResponse }>( // Issue #105 - Replace any with proper type
       `/admin/categories${queryString ? `?${queryString}` : ''}`
     );
   },
@@ -1424,8 +1423,8 @@ export const adminCategoriesApi = {
   archive: (id: string) => api(`/admin/categories/${id}`, { method: 'DELETE' }),
 };
 
-// [2025-01-27 15:00:00] Admin Products API
-// [2025-12-06 16:00:00] Inventory Alert API Types
+// Admin Products API
+// Inventory Alert API Types
 export interface LowStockProduct {
   variantId: string;
   sku: string;
@@ -1450,7 +1449,7 @@ export interface InventoryAlerts {
 }
 
 export const inventoryApi = {
-  // [2025-12-06 16:00:00] Get low stock products
+// Get low stock products
   getLowStock: (threshold?: number) => {
     const query = new URLSearchParams();
     if (threshold !== undefined) query.append('threshold', threshold.toString());
@@ -1458,15 +1457,15 @@ export const inventoryApi = {
       `/admin/products/low-stock${query.toString() ? `?${query.toString()}` : ''}`
     );
   },
-  // [2025-12-06 16:00:00] Get out of stock products
+// Get out of stock products
   getOutOfStock: () => api<{ products: LowStockProduct[]; count: number }>('/admin/products/out-of-stock'),
-  // [2025-12-06 16:00:00] Get inventory alerts summary
+// Get inventory alerts summary
   getAlerts: (threshold?: number) => {
     const query = new URLSearchParams();
     if (threshold !== undefined) query.append('threshold', threshold.toString());
     return api<InventoryAlerts>(`/admin/inventory/alerts${query.toString() ? `?${query.toString()}` : ''}`);
   },
-  // [2025-12-06 16:00:00] Get low stock threshold for a variant
+// Get low stock threshold for a variant
   getThreshold: (variantId: string) =>
     api<{
       variantId: string;
@@ -1476,7 +1475,7 @@ export const inventoryApi = {
       currentStock: number;
       effectiveThreshold: number;
     }>(`/admin/products/variants/${variantId}/low-stock-threshold`),
-  // [2025-12-06 16:00:00] Update low stock threshold for a variant
+// Update low stock threshold for a variant
   updateThreshold: (variantId: string, threshold: number | null) =>
     api<{
       id: string;
@@ -1518,7 +1517,7 @@ export const adminProductsApi = {
   updateStatus: (id: string, isActive: boolean) =>
     api<AdminProductDetail>(`/admin/products/${id}/status`, { method: 'PATCH', body: { isActive } }),
   uploadImages: async (productId: string, files: File[], altTexts?: string[]) => {
-    // [2025-01-27 19:30:00] 修复：使用代理路由，确保认证头正确传递
+// 修复：使用代理路由，确保认证头正确传递
     const formData = new FormData();
     files.forEach((file) => formData.append('images', file));
     if (altTexts && altTexts.length > 0) {
@@ -1628,7 +1627,7 @@ export const adminUsersApi = {
     );
   },
   get: (id: string) => api<AdminUserDetailResponse>(`/admin/users/${id}`),
-  create: (data: AdminCreateUserPayload) => // [2025-01-28 18:35:00] 创建新用户
+create: (data: AdminCreateUserPayload) => // 创建新用户
     api<AdminCreateUserResponse>('/admin/users', { method: 'POST', body: data }),
   updateRole: (id: string, role: string) =>
     api<{ message: string; user: AdminUserSummary }>(`/admin/users/${id}/role`, {
@@ -1670,8 +1669,8 @@ export interface AdminDesignSummary {
 }
 
 export interface AdminDesignDetail extends AdminDesignSummary {
-  canvasSnapshot: DesignCanvasSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
-  pricingSnapshot?: PricingSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+canvasSnapshot: DesignCanvasSnapshot; // Issue #105 - Replace any with proper type
+pricingSnapshot?: PricingSnapshot; // Issue #105 - Replace any with proper type
   assets: Array<{
     id: string;
     fileName: string;
@@ -1729,7 +1728,7 @@ export const adminCouponsApi = {
     const queryString = query.toString();
     return api<{ data: AdminCoupon[] }>(`/admin/coupons${queryString ? `?${queryString}` : ''}`);
   },
-  // [2025-12-06 17:30:00] Get coupon statistics for Issue #138
+// Get coupon statistics for Issue #138
   getStatistics: (params?: { couponId?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
     if (params?.couponId) query.append('couponId', params.couponId);
@@ -1764,7 +1763,7 @@ export const adminCouponsApi = {
       };
     }>(`/admin/coupons/statistics${queryString ? `?${queryString}` : ''}`);
   },
-  // [2025-12-06 17:30:00] Get coupon detail statistics
+// Get coupon detail statistics
   getCouponStatistics: (id: string, params?: { startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
     if (params?.startDate) query.append('startDate', params.startDate);
@@ -1818,13 +1817,13 @@ export interface AdminPromotion {
   description?: string | null;
   bannerImageUrl?: string | null;
   linkUrl?: string | null;
-  // [2025-01-28 12:30:00] 折扣相关字段
-  // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+// 折扣相关字段
+// Support buy-get-free type for Issue #139
   discountType: 'percentage' | 'fixed' | 'buy_get_free';
   discountValue: number;
   minOrderValue?: number | null;
   maxDiscount?: number | null;
-  // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+// Buy-get-free promotion fields for Issue #139
   buyQuantity?: number | null;
   getQuantity?: number | null;
   giftProduct?: { id: string; name: string } | null;
@@ -1835,25 +1834,25 @@ export interface AdminPromotion {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
-  // [2025-01-28 12:30:00] 关联数据
+// 关联数据
   products?: Array<{ id: string; name: string; slug: string }>;
   categories?: Array<{ id: string; name: string; slug: string }>;
   coupon?: { id: string; code: string; type: string } | null;
 }
 
-// [2025-01-28 12:30:00] 公共促销活动接口
+// 公共促销活动接口
 export interface Promotion {
   id: string;
   title: string;
   description?: string;
   bannerImageUrl?: string;
   linkUrl?: string;
-  // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+// Support buy-get-free type for Issue #139
   discountType: 'percentage' | 'fixed' | 'buy_get_free';
   discountValue: number;
   minOrderValue?: number | null;
   maxDiscount?: number | null;
-  // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+// Buy-get-free promotion fields for Issue #139
   buyQuantity?: number | null;
   getQuantity?: number | null;
   giftProduct?: { id: string; name: string } | null;
@@ -1877,22 +1876,22 @@ export const adminPromotionsApi = {
   update: (id: string, data: Partial<Omit<AdminPromotion, 'id' | 'createdAt' | 'updatedAt' | 'products' | 'categories' | 'coupon'>>) =>
     api<{ data: AdminPromotion }>(`/admin/promotions/${id}`, { method: 'PUT', body: data }),
   remove: (id: string) => api(`/admin/promotions/${id}`, { method: 'DELETE' }),
-  // [2025-01-28 12:30:00] 商品关联管理
+// 商品关联管理
   addProducts: (id: string, productIds: string[]) =>
     api<{ data: AdminPromotion }>(`/admin/promotions/${id}/products`, { method: 'POST', body: { productIds } }),
   removeProduct: (id: string, productId: string) =>
     api<{ data: AdminPromotion }>(`/admin/promotions/${id}/products/${productId}`, { method: 'DELETE' }),
-  // [2025-01-28 12:30:00] 类目关联管理
+// 类目关联管理
   addCategories: (id: string, categoryIds: string[]) =>
     api<{ data: AdminPromotion }>(`/admin/promotions/${id}/categories`, { method: 'POST', body: { categoryIds } }),
   removeCategory: (id: string, categoryId: string) =>
     api<{ data: AdminPromotion }>(`/admin/promotions/${id}/categories/${categoryId}`, { method: 'DELETE' }),
-  // [2025-01-28 12:30:00] 优惠券关联管理
+// 优惠券关联管理
   setCoupon: (id: string, couponId: string | null) =>
     api<{ data: AdminPromotion }>(`/admin/promotions/${id}/coupon`, { method: 'PUT', body: { couponId } }),
 };
 
-// [2025-01-28 12:30:00] 公共促销活动 API
+// 公共促销活动 API
 export const promotionApi = {
   getActive: () => api<{ promotions: Promotion[] }>('/promotions'),
   getForProduct: (productId: string) => api<{ promotions: Promotion[] }>(`/promotions/product/${productId}`),
@@ -1917,7 +1916,7 @@ export interface SiteSettingsPayload {
   reviewEmail: string;
 }
 
-// [2025-01-28 05:50:00] 导航菜单项类型
+// 导航菜单项类型
 export interface NavigationMenuItem {
   id: string;
   label: string;
@@ -1947,7 +1946,7 @@ export interface NavigationMenuItem {
   };
 }
 
-// [2025-01-28 05:50:00] 首页内容类型
+// 首页内容类型
 export interface HomePageContent {
   heroTitle: string;
   heroSubtitle: string;
@@ -1982,7 +1981,7 @@ export interface HomePageContent {
   }>;
 }
 
-// [2025-01-28 05:50:00] 关于页内容类型
+// 关于页内容类型
 export interface AboutPageContent {
   headerTitle: string;
   headerDescription: string;
@@ -2000,7 +1999,7 @@ export interface AboutPageContent {
   teamDescription: string;
 }
 
-// [2025-01-28 05:50:00] 帮助页内容类型
+// 帮助页内容类型
 export interface HelpPageContent {
   quickLinks: Array<{
     id: string;
@@ -2020,7 +2019,7 @@ export interface HelpPageContent {
   }>;
 }
 
-// [2025-01-28 05:50:00] 通用静态文字类型
+// 通用静态文字类型
 export interface StaticTexts {
   topMessageBar: string;
   footerColumns: Array<{
@@ -2036,7 +2035,7 @@ export interface StaticTexts {
 }
 
 export interface ContentConfig {
-  // [2025-01-28 05:50:00] 保留原有字段以向后兼容
+// 保留原有字段以向后兼容
   heroCards: Array<{
     id: string;
     title: string;
@@ -2054,7 +2053,7 @@ export interface ContentConfig {
     title: string;
     linkUrl: string;
   }>;
-  // [2025-01-28 05:50:00] 新增 CMS 字段
+// 新增 CMS 字段
   navigation?: NavigationMenuItem[];
   homePage?: HomePageContent;
   aboutPage?: AboutPageContent;
@@ -2072,7 +2071,7 @@ export const adminContentApi = {
   get: () => api<{ data: ContentConfig }>('/admin/settings/content'),
   update: (data: ContentConfig) =>
     api<{ data: ContentConfig }>('/admin/settings/content', { method: 'PUT', body: data }),
-  // [2025-01-28 05:50:00] 图片上传 API
+// 图片上传 API
   uploadImage: (file: File) => {
     const formData = new FormData();
     formData.append('image', file);
@@ -2084,12 +2083,12 @@ export const adminContentApi = {
   },
 };
 
-// [2025-01-28 06:20:00] 公共内容 API（不需要认证，供前端展示使用）
+// 公共内容 API（不需要认证，供前端展示使用）
 export const contentApi = {
   get: () => api<{ data: ContentConfig }>('/content'),
 };
 
-// [2025-11-16 16:05:00] Production templates types & APIs
+// Production templates types & APIs
 export interface ProductionStage {
   key: string;
   label: string;
@@ -2146,8 +2145,8 @@ export const adminCostManagementApi = {
   ),
 };
 
-// [2025-01-27 16:15:00] Design Lab API Types
-// [2025-12-07 02:30:00] Issue #105 - Define proper types for canvas objects
+// Design Lab API Types
+// Issue #105 - Define proper types for canvas objects
 export interface CanvasObject {
   type: string;
   [key: string]: unknown; // Fabric.js objects have dynamic properties
@@ -2155,10 +2154,10 @@ export interface CanvasObject {
 
 export interface DesignCanvasSnapshot {
   size: { width: number; height: number };
-  objects: CanvasObject[]; // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+objects: CanvasObject[]; // Issue #105 - Replace any[] with proper type
 }
 
-// [2025-12-07 02:30:00] Issue #105 - Define pricing snapshot type
+// Issue #105 - Define pricing snapshot type
 export interface PricingSnapshot {
   basePrice?: number;
   quantity?: number;
@@ -2176,7 +2175,7 @@ export interface DesignDraft {
   status: string;
   currentVersion: number;
   canvasSnapshot: DesignCanvasSnapshot;
-  pricingSnapshot?: PricingSnapshot | null; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+pricingSnapshot?: PricingSnapshot | null; // Issue #105 - Replace any with proper type
   thumbnailUrl?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -2186,29 +2185,29 @@ export interface CreateDesignDraftPayload {
   productVariantId: string;
   name?: string;
   canvas?: DesignCanvasSnapshot;
-  pricing?: PricingSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+pricing?: PricingSnapshot; // Issue #105 - Replace any with proper type
   thumbnailUrl?: string;
 }
 
 export interface UpdateDesignDraftPayload {
   name?: string;
   canvas?: DesignCanvasSnapshot;
-  pricing?: PricingSnapshot; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+pricing?: PricingSnapshot; // Issue #105 - Replace any with proper type
   thumbnailUrl?: string;
   summary?: string;
 }
 
-// [2025-01-30 23:55:00] Product Color Image API
+// Product Color Image API
 export const productColorImageApi = {
   getColorMapping: (productId: string) =>
     api<{ data: { productId: string; mapping: Record<string, string>; colors: Array<{ colorId: string; colorName: string; colorHex: string | null; imageUrls: { front: string; back: string; sleeve: string } }> } }>(`/product-color-images/mapping/${productId}`),
   getImageUrlByColor: (productId: string, colorName: string, view: 'front' | 'back' | 'sleeve' = 'front') =>
     api<{ data: { colorId: string; colorName: string; colorHex: string | null; imageUrl: string; view: string; allViews: { front: string; back: string; sleeve: string } } }>(`/product-color-images/by-color/${productId}/${encodeURIComponent(colorName)}?view=${view}`),
   getAll: (productId?: string) =>
-    api<{ data: Array<{ id: string; productId: string; colorName: string; imageUrl: string;[key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // [2025-12-07 02:30:00] Issue #105 - Replace any[] with proper type
+api<{ data: Array<{ id: string; productId: string; colorName: string; imageUrl: string;[key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // Issue #105 - Replace any[] with proper type
 };
 
-// [2025-01-27 16:15:00] Design Lab API
+// Design Lab API
 export const designLabApi = {
   createDraft: (payload: CreateDesignDraftPayload) =>
     api<{ data: DesignDraft; meta?: { sessionId?: string } }>('/designs', {
@@ -2239,13 +2238,13 @@ export const designLabApi = {
     api(`/designs/${designId}/quote`, { method: 'POST', body: payload || {} }),
   submitOrder: (designId: string, payload?: any) =>
     api(`/designs/${designId}/order`, { method: 'POST', body: payload || {} }),
-  // [2025-12-08] 获取设计详情（包含分享信息）
+// 获取设计详情（包含分享信息）
   getDesign: (id: string) => api<{ success: boolean; data: DesignDraft & { shareToken?: string; shareUrl?: string } }>(`/designs/${id}`),
-  // [2025-12-08] 分享设计（生成分享链接）
+// 分享设计（生成分享链接）
   shareDesign: (id: string) => api<{ success: boolean; data: { shareToken: string; shareUrl: string } }>(`/designs/${id}/share`, { method: 'POST' }),
 };
 
-// [2025-01-27 16:15:00] Admin Orders API Types
+// Admin Orders API Types
 export interface AdminOrderSummary {
   id: string;
   orderNumber: string;
@@ -2255,15 +2254,15 @@ export interface AdminOrderSummary {
   currency: string;
   customerEmail?: string | null;
   customerName?: string | null;
-  itemCount?: number; // [2025-11-14 01:00:00] 添加 itemCount 字段
-  items?: any[]; // [2025-11-14 01:01:00] 添加 items 字段
-  subtotal?: number; // [2025-11-14 01:02:00] 添加 subtotal 字段
-  shippingCost?: number; // [2025-11-14 01:02:00] 添加 shippingCost 字段
-  tax?: number; // [2025-11-14 01:02:00] 添加 tax 字段
-  discount?: number; // [2025-11-14 01:02:00] 添加 discount 字段
-  shippingAddress?: any; // [2025-11-14 01:02:00] 添加 shippingAddress 字段
-  billingAddress?: any; // [2025-11-14 01:03:00] 添加 billingAddress 字段
-  shipments?: any[]; // [2025-11-14 01:04:00] 添加 shipments 字段
+itemCount?: number; // 添加 itemCount 字段
+items?: any[]; // 添加 items 字段
+subtotal?: number; // 添加 subtotal 字段
+shippingCost?: number; // 添加 shippingCost 字段
+tax?: number; // 添加 tax 字段
+discount?: number; // 添加 discount 字段
+shippingAddress?: any; // 添加 shippingAddress 字段
+billingAddress?: any; // 添加 billingAddress 字段
+shipments?: any[]; // 添加 shipments 字段
   createdAt: string;
   updatedAt: string;
 }
@@ -2279,8 +2278,8 @@ export interface AdminOrderListParams {
 
 export interface AdminOrderRefundPayload {
   reason?: string;
-  amount?: number; // [2025-12-06 14:00:00] Support partial refund
-  refundToStripe?: boolean; // [2025-12-06 14:00:00] Whether to process refund via Stripe
+amount?: number; // Support partial refund
+refundToStripe?: boolean; // Whether to process refund via Stripe
 }
 
 export interface AdminOrderUpdatePayload {
@@ -2291,7 +2290,7 @@ export interface AdminOrderUpdatePayload {
   estimatedDelivery?: string | null;
 }
 
-// [2025-12-08] Unified Order Types (Online + Offline)
+// Unified Order Types (Online + Offline)
 export interface UnifiedOrderDTO {
   id: string;
   compositeId: string; // 'online-<id>' or 'offline-<id>'
@@ -2333,9 +2332,9 @@ export interface UnifiedOrderListParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-// [2025-01-28 08:30:00] Audit Logs 功能已移除
+// Audit Logs 功能已移除
 
-// [2025-01-27 16:15:00] Admin Orders API
+// Admin Orders API
 export const adminOrdersApi = {
   list: (params?: AdminOrderListParams) => {
     const query = new URLSearchParams();
@@ -2353,7 +2352,7 @@ export const adminOrdersApi = {
   get: (id: string) => api<any>(`/admin/orders/${id}`),
   updateStatus: (id: string, payload: any) =>
     api(`/admin/orders/${id}/status`, { method: 'PATCH', body: payload }),
-  // [2025-12-06 16:40:00] Batch operations for Issue #87
+// Batch operations for Issue #87
   batchUpdateStatus: (orderIds: string[], payload: { status?: string; paymentStatus?: string }) =>
     api<{ success: boolean; updatedCount: number; orderIds: string[] }>(`/admin/orders/batch/status`, {
       method: 'PATCH',
@@ -2400,7 +2399,7 @@ export const adminOrdersApi = {
   },
   recordRefund: (id: string, payload: AdminOrderRefundPayload) =>
     api(`/admin/orders/${id}/refund`, { method: 'POST', body: payload }),
-  // [2025-12-06 15:30:00] EasyShip shipping label APIs
+// EasyShip shipping label APIs
   getShippingRates: (id: string) => api<{ orderId: string; orderNumber: string; rates: Array<{ id: string; courier: string; service: string; price: number; currency: string; estimatedDeliveryDays?: number | null }>; currency: string }>(`/admin/orders/${id}/shipment/rates`),
   generateShippingLabel: (id: string, rateId?: string) =>
     api<{
@@ -2414,11 +2413,11 @@ export const adminOrdersApi = {
       createdAt: string;
       updatedAt: string;
     }>(`/admin/orders/${id}/shipment/label`, { method: 'POST', body: rateId ? { rateId } : {} }),
-  // [2025-01-28 08:30:00] auditTrail 功能已移除
+// auditTrail 功能已移除
 };
 
-// [2025-01-27 16:15:00] Admin Offline Orders API Types
-// [2025-11-15 15:02:30] Offline order stage metadata aligned with backend payload
+// Admin Offline Orders API Types
+// Offline order stage metadata aligned with backend payload
 export interface OfflineOrderStageMeta {
   key: string;
   label: string;
@@ -2428,7 +2427,7 @@ export interface OfflineOrderStageMeta {
   position?: number;
 }
 
-// [2025-11-15 15:02:30] Offline order contact shape used across admin views
+// Offline order contact shape used across admin views
 export interface OfflineOrderContact {
   name: string;
   company?: string | null;
@@ -2436,7 +2435,7 @@ export interface OfflineOrderContact {
   phone?: string | null;
 }
 
-// [2025-11-15 15:02:30] Offline order asset metadata for intake uploads
+// Offline order asset metadata for intake uploads
 export interface OfflineOrderAsset {
   id: string;
   fileName: string;
@@ -2447,7 +2446,7 @@ export interface OfflineOrderAsset {
   uploadedBy?: string | null;
 }
 
-// [2025-11-15 15:02:30] Offline order history entry for stage tracking
+// Offline order history entry for stage tracking
 export interface OfflineOrderHistoryEntry {
   id: string;
   fromStageKey?: string | null;
@@ -2458,7 +2457,7 @@ export interface OfflineOrderHistoryEntry {
   createdAt: string;
 }
 
-// [2025-11-15 15:02:30] Production work order event timeline definition
+// Production work order event timeline definition
 export interface ProductionWorkOrderEvent {
   id: string;
   status: string;
@@ -2468,7 +2467,7 @@ export interface ProductionWorkOrderEvent {
   createdAt: string;
 }
 
-// [2025-11-15 15:02:30] Production work order detail returned by backend
+// Production work order detail returned by backend
 export interface ProductionWorkOrderDetail {
   id: string;
   workOrderCode: string;
@@ -2486,7 +2485,7 @@ export interface ProductionWorkOrderDetail {
   events: ProductionWorkOrderEvent[];
 }
 
-// [2025-11-15 15:02:30] Admin offline order summary aligned with mapOrder response
+// Admin offline order summary aligned with mapOrder response
 export interface AdminOfflineOrderSummary {
   id: string;
   orderCode: string;
@@ -2509,12 +2508,12 @@ export interface AdminOfflineOrderSummary {
   updatedAt: string;
 }
 
-// [2025-11-15 15:02:30] Admin offline order detail extends summary with histories
+// Admin offline order detail extends summary with histories
 export interface AdminOfflineOrderDetail extends AdminOfflineOrderSummary {
   histories: OfflineOrderHistoryEntry[];
 }
 
-// [2025-11-15 15:02:30] Offline order list response with pagination and stage config
+// Offline order list response with pagination and stage config
 export interface AdminOfflineOrderListResponse {
   orders: AdminOfflineOrderSummary[];
   pagination: {
@@ -2526,7 +2525,7 @@ export interface AdminOfflineOrderListResponse {
   stages: OfflineOrderStageMeta[];
 }
 
-// [2025-11-15 15:02:30] Metrics payload for offline operations dashboard
+// Metrics payload for offline operations dashboard
 export interface OfflineOrderMetricsResponse {
   summary: {
     total: number;
@@ -2557,7 +2556,7 @@ export interface ProductionWorkOrderPayload {
   eventNote?: string;
 }
 
-// [2025-11-15 15:02:30] Admin Offline Orders API aligned with backend routes
+// Admin Offline Orders API aligned with backend routes
 export const adminOfflineOrdersApi = {
   list: (params?: { stageKey?: string; search?: string; rush?: boolean; status?: string }) => {
     const query = new URLSearchParams();
@@ -2595,12 +2594,12 @@ export const adminOfflineOrdersApi = {
       method: 'POST',
       body: payload,
     }),
-  // [2025-12-21] Fix: Add missing delete method for offline orders
+// Fix: Add missing delete method for offline orders
   delete: (id: string) =>
     api(`/admin/offline-orders/${id}`, {
       method: 'DELETE',
     }),
-  // [2025-01-28] Global offline workflow stage configuration
+// Global offline workflow stage configuration
   getWorkflowStages: () =>
     api<{ success: boolean; stages: OfflineOrderStage[] }>('/admin/offline-orders/config/stages'),
   updateWorkflowStages: (stages: OfflineOrderStage[]) =>
@@ -2610,7 +2609,7 @@ export const adminOfflineOrdersApi = {
     }),
 };
 
-// [2025-12-06 17:10:00] Supplier API for Issue #89
+// Supplier API for Issue #89
 export interface Supplier {
   id: string;
   name: string;
@@ -2669,7 +2668,7 @@ export const suppliersApi = {
   getSyncStatus: () => api<{ suppliers: Array<Supplier & { latestSync?: InventorySync | null }> }>('/admin/suppliers/sync-status'),
 };
 
-// [2025-01-27 19:15:00] Contact form API
+// Contact form API
 export const contactApi = {
   submit: (data: {
     name: string;
@@ -2685,7 +2684,7 @@ export const contactApi = {
     }),
 };
 
-// [2025-01-27 19:45:00] Coupon API
+// Coupon API
 export const couponApi = {
   validate: (code: string, subtotal: number, userId?: string) =>
     api('/coupons/validate', {
@@ -2706,7 +2705,7 @@ export const couponApi = {
   }>('/coupons'),
 };
 
-// [2025-01-27 21:50:00] Design Template API
+// Design Template API
 export interface DesignTemplate {
   id: string;
   name: string;
@@ -2715,7 +2714,7 @@ export interface DesignTemplate {
   tags: string[];
   thumbnailUrl?: string | null;
   previewUrl?: string | null;
-  designData: DesignCanvasSnapshot | Record<string, unknown>; // [2025-12-07 02:30:00] Issue #105 - Replace any with proper type
+designData: DesignCanvasSnapshot | Record<string, unknown>; // Issue #105 - Replace any with proper type
   productCategoryId?: string | null;
   usageCount: number;
   likesCount: number;
@@ -2744,7 +2743,7 @@ export const templateApi = {
   like: (id: string) => api(`/templates/${id}/like`, { method: 'POST' }),
 };
 
-// [2025-01-27 21:50:00] Design Comment API
+// Design Comment API
 export interface DesignComment {
   id: string;
   designId: string;
@@ -2777,7 +2776,7 @@ export const designCommentApi = {
   like: (id: string) => api(`/comments/${id}/like`, { method: 'POST' }),
 };
 
-// [2025-01-27 21:50:00] Product Review API
+// Product Review API
 // Note: ProductReview interface is already defined above, reusing it
 // Extending the existing interface if needed
 
@@ -2824,7 +2823,7 @@ export const productReviewApi = {
   markHelpful: (id: string) => api(`/reviews/${id}/helpful`, { method: 'POST' }),
 };
 
-// [2025-01-28 01:00:00] Art Assets API
+// Art Assets API
 export interface ArtAsset {
   id: string;
   category: string;
@@ -2870,18 +2869,18 @@ export interface ArtAssetsListResponse {
 }
 
 export const artAssetsApi = {
-  // [2025-01-28 01:00:00] Get all art assets grouped by category (public)
+// Get all art assets grouped by category (public)
   getAll: async (): Promise<ArtAssetsResponse> => {
     return api<ArtAssetsResponse>('/art-assets');
   },
 
-  // [2025-01-28 01:00:00] Get art assets by category (public)
+// Get art assets by category (public)
   getByCategory: async (category: string): Promise<ArtAssetsByCategoryResponse> => {
     return api<ArtAssetsByCategoryResponse>(`/art-assets/category/${encodeURIComponent(category)}`);
   },
 };
 
-// [2025-12-11 23:35:00] Artworks API - 新的艺术作品 API，支持分类树、分页、搜索
+// Artworks API - 新的艺术作品 API，支持分类树、分页、搜索
 export interface Artwork {
   id: string;
   title: string;
@@ -2936,7 +2935,7 @@ export interface CategoriesTreeResponse {
 }
 
 export const artworksApi = {
-  // [2025-12-11 23:35:00] Get artworks with pagination, filtering, and search
+// Get artworks with pagination, filtering, and search
   getArtworks: async (params?: {
     top?: string;
     sub?: string;
@@ -2955,20 +2954,20 @@ export const artworksApi = {
     return api<ArtworksResponse>(`/artworks${queryString ? `?${queryString}` : ''}`);
   },
 
-  // [2025-12-11 23:35:00] Get categories tree with counts
+// Get categories tree with counts
   getCategoriesTree: async (): Promise<CategoriesTreeResponse> => {
     return api<CategoriesTreeResponse>('/artworks/categories/tree');
   },
 
-  // [2025-12-11 23:35:00] Get single artwork
+// Get single artwork
   getArtwork: async (id: string): Promise<{ success: boolean; data: Artwork }> => {
     return api<{ success: boolean; data: Artwork }>(`/artworks/${id}`);
   },
 };
 
-// [2025-01-28 01:00:00] Admin Art Assets API
+// Admin Art Assets API
 export const adminArtAssetsApi = {
-  // [2025-01-28 01:00:00] List all art assets (admin)
+// List all art assets (admin)
   list: async (params?: {
     page?: number;
     limit?: number;
@@ -2985,12 +2984,12 @@ export const adminArtAssetsApi = {
     return api<ArtAssetsListResponse>(`/admin/art-assets${queryString ? `?${queryString}` : ''}`);
   },
 
-  // [2025-01-28 01:00:00] Get single art asset (admin)
+// Get single art asset (admin)
   get: async (id: string): Promise<{ success: boolean; data: ArtAsset }> => {
     return api<{ success: boolean; data: ArtAsset }>(`/admin/art-assets/${id}`);
   },
 
-  // [2025-01-28 01:00:00] Create art asset (admin)
+// Create art asset (admin)
   create: async (data: {
     category: string;
     name: string;
@@ -3012,7 +3011,7 @@ export const adminArtAssetsApi = {
     });
   },
 
-  // [2025-01-28 01:00:00] Update art asset (admin)
+// Update art asset (admin)
   update: async (
     id: string,
     data: {
@@ -3037,7 +3036,7 @@ export const adminArtAssetsApi = {
     });
   },
 
-  // [2025-01-28 01:00:00] Delete art asset (admin)
+// Delete art asset (admin)
   delete: async (id: string): Promise<{ success: boolean; message: string }> => {
     return api<{ success: boolean; message: string }>(`/admin/art-assets/${id}`, {
       method: 'DELETE',
@@ -3045,7 +3044,7 @@ export const adminArtAssetsApi = {
   },
 };
 
-// [2025-01-30 19:00:00] Font interfaces
+// Font interfaces
 export interface Font {
   id: string;
   name: string;
@@ -3084,7 +3083,7 @@ export interface FontsListResponse {
   };
 }
 
-// [2025-01-30 19:00:00] Fonts API (Public)
+// Fonts API (Public)
 export const fontsApi = {
   // Get all fonts grouped by category (public)
   getAll: async (): Promise<FontsResponse> => {
@@ -3097,8 +3096,8 @@ export const fontsApi = {
   },
 };
 
-// [2025-01-30 19:00:00] Admin Fonts API
-// [2025-12-06 21:30:00] Admin Analytics API for Issue #160
+// Admin Fonts API
+// Admin Analytics API for Issue #160
 export const adminAnalyticsApi = {
   getSales: (params?: { startDate?: string; endDate?: string; period?: 'day' | 'week' | 'month' }) => {
     const query = new URLSearchParams();
@@ -3275,7 +3274,7 @@ export const adminFontsApi = {
   },
 };
 
-// [2025-12-06 17:20:00] Payment Method API for Issue #112
+// Payment Method API for Issue #112
 export interface PaymentMethod {
   id: string;
   userId: string;
@@ -3310,13 +3309,13 @@ export interface SavePaymentMethodPayload {
 }
 
 export const paymentMethodsApi = {
-  // [2025-12-06 17:20:00] Get user's payment methods
+// Get user's payment methods
   list: () => api<{ paymentMethods: PaymentMethod[] }>('/payment-methods'),
 
-  // [2025-12-06 17:20:00] Get payment method by ID
+// Get payment method by ID
   get: (id: string) => api<{ paymentMethod: PaymentMethod }>(`/payment-methods/${id}`),
 
-  // [2025-12-06 17:20:00] Save payment method
+// Save payment method
   save: (paymentMethodId: string, options?: { isDefault?: boolean; billingDetails?: any }) =>
     api<{ paymentMethod: PaymentMethod }>('/payment-methods', {
       method: 'POST',
@@ -3330,20 +3329,20 @@ export const paymentMethodsApi = {
       },
     }),
 
-  // [2025-12-06 17:20:00] Set payment method as default
+// Set payment method as default
   setDefault: (id: string) =>
     api<{ paymentMethod: PaymentMethod }>(`/payment-methods/${id}/default`, {
       method: 'PATCH',
     }),
 
-  // [2025-12-06 17:20:00] Delete payment method
+// Delete payment method
   delete: (id: string) =>
     api<{ success: boolean }>(`/payment-methods/${id}`, {
       method: 'DELETE',
     }),
 };
 
-// [2025-12-07 01:30:00] Customer Service Chat API for Issue #144
+// Customer Service Chat API for Issue #144
 export interface ChatRoom {
   id: string;
   status: 'OPEN' | 'ASSIGNED' | 'ACTIVE' | 'RESOLVED' | 'CLOSED';
@@ -3399,7 +3398,7 @@ export const chatApi = {
     api<{ room: ChatRoom }>(`/chat/rooms/${roomId}/status`, { method: 'PATCH', body: { status } }),
 };
 
-// [2025-12-08] Unified Orders API (Online + Offline)
+// Unified Orders API (Online + Offline)
 export const unifiedOrdersApi = {
   list: (params?: UnifiedOrderListParams) => {
     const query = new URLSearchParams();

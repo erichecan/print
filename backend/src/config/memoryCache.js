@@ -1,4 +1,4 @@
-// [2025-01-29 00:05:00] In-memory cache implementation (fallback when Redis is not available)
+// In-memory cache implementation (fallback when Redis is not available)
 // Simple LRU-like cache with TTL support
 
 class MemoryCache {

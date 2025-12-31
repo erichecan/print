@@ -1,6 +1,6 @@
 /**
  * Design Lab 基础功能测试 (M1)
- * [2025-01-27 12:00:00] 测试 Upload、Add Text、Add Art、Product Colors、视图切换、Undo/Redo、Layering、Center、安全区
+* 测试 Upload、Add Text、Add Art、Product Colors、视图切换、Undo/Redo、Layering、Center、安全区
  */
 import { test, expect } from './fixtures/test-base';
 import {
@@ -145,7 +145,7 @@ test.describe('Design Lab M1: 基础功能测试', () => {
     test('添加文字后不应被快照回灌误删（回归测试）', async ({ page }) => {
       await addTextToCanvas(page, TEST_TEXTS.simple);
 
-      // [2025-12-11 23:59:30] 等待可能发生的“旧快照回灌”窗口（此前会把刚添加的 text_* 清掉）
+// 等待可能发生的“旧快照回灌”窗口（此前会把刚添加的 text_* 清掉）
       await page.waitForTimeout(800);
 
       // 通过浏览器上下文直接检查 fabricCanvas 中是否仍存在 text 对象
@@ -160,7 +160,7 @@ test.describe('Design Lab M1: 基础功能测试', () => {
     });
 
     test('Edit Text 面板操作不应导致文本被删除（修复测试）', async ({ page }) => {
-      // [2025-12-11 23:59:30] 添加文本并进入编辑面板
+// 添加文本并进入编辑面板
       await addTextToCanvas(page, TEST_TEXTS.simple);
       await page.waitForTimeout(1000);
 

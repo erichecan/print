@@ -1,12 +1,11 @@
 /**
  * User Design Controller
- * [2025-01-30 23:58:00] 用户设计列表控制器
+* 用户设计列表控制器
  */
 const prisma = require('../lib/prisma');
 
 /**
  * 获取用户的设计列表
- * [2025-01-30 23:58:00]
  * GET /api/user/designs?days=30
  * 
  * Query Parameters:
@@ -22,7 +21,7 @@ exports.listUserDesigns = async (req, res) => {
       userId: userId,
     };
     
-    // [2025-01-30 23:58:00] 如果指定了天数，筛选 updatedAt 在指定天数内的设计
+// 如果指定了天数，筛选 updatedAt 在指定天数内的设计
     if (days > 0) {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - days);
@@ -55,7 +54,7 @@ exports.listUserDesigns = async (req, res) => {
       name: design.name,
       thumbnailUrl: design.thumbnailUrl,
       createdAt: design.createdAt.toISOString(),
-      updatedAt: design.updatedAt.toISOString(), // [2025-01-30 23:58:00] 添加 updatedAt
+updatedAt: design.updatedAt.toISOString(), // 添加 updatedAt
       productName: design.variant?.product?.name || null,
     }));
     

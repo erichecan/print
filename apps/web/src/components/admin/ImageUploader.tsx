@@ -1,6 +1,6 @@
 /**
  * Image Uploader Component
- * [2025-01-28 06:05:00] Reusable image upload component for CMS content management
+* Reusable image upload component for CMS content management
  */
 'use client';
 
@@ -30,13 +30,13 @@ export function ImageUploader({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
-    // [2025-01-28 06:05:00] 验证文件大小
+// 验证文件大小
     if (file.size > maxSize * 1024 * 1024) {
       setError(`File size must be less than ${maxSize}MB`);
       return;
     }
 
-    // [2025-01-28 06:05:00] 验证文件类型
+// 验证文件类型
     if (!file.type.startsWith('image/')) {
       setError('Please select an image file');
       return;

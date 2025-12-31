@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 生成颜色配置
- * [2025-01-30 22:15:00] 从 all-colors-with-names.json 生成上传脚本的配置
+* 从 all-colors-with-names.json 生成上传脚本的配置
  */
 
 const fs = require('fs');
@@ -24,7 +24,7 @@ for (const color of colorsData.colors) {
 }
 
 // 生成配置代码
-const configCode = `// [2025-01-30 22:15:00] 自动生成的颜色配置
+const configCode = `// 自动生成的颜色配置
 // 从 docs/customink-analysis/all-colors-with-names.json 生成
 // 共 ${Object.keys(colorsConfig).length} 个颜色
 

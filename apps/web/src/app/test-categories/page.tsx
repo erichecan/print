@@ -1,6 +1,6 @@
 /**
  * Test Categories Page
- * [2025-11-19] 测试分类数据加载和显示
+* 测试分类数据加载和显示
  */
 import { DatabaseCategoriesSection } from '@/components/home/DatabaseCategoriesSection';
 

@@ -1,6 +1,6 @@
 /**
  * Profile Edit Page
- * [2025-01-27 12:45:00] 实现用户个人资料编辑功能：显示和更新用户基本信息
+* 实现用户个人资料编辑功能：显示和更新用户基本信息
  */
 'use client';
 
@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, type UserProfile } from '@/lib/api';
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 16:05:00] 使用路由映射
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // 使用路由映射
 
 export default function ProfilePage() {
   const router = useRouter();

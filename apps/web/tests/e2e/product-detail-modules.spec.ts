@@ -1,6 +1,6 @@
 /**
  * 商品详情页模块移除验证测试
- * [2025-12-11 22:40:00] 验证 Print Location、Also Available On、Trending Topics 模块已移除
+* 验证 Print Location、Also Available On、Trending Topics 模块已移除
  */
 import { test, expect } from '@playwright/test';
 

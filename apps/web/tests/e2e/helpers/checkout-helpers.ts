@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 00:00:00] 结账页面测试辅助函数
+* 结账页面测试辅助函数
  * 提供填写表单、捕获日志、检查状态等工具函数
  */
 import type { Page, ConsoleMessage } from '@playwright/test';
@@ -39,7 +39,7 @@ export interface NetworkRequest {
 }
 
 /**
- * [2025-01-29 00:00:00] 填写结账地址表单
+* 填写结账地址表单
  */
 export async function fillCheckoutAddress(
   page: Page,
@@ -59,7 +59,7 @@ export async function fillCheckoutAddress(
 }
 
 /**
- * [2025-01-29 00:00:00] 填写 Stripe 卡片信息
+* 填写 Stripe 卡片信息
  */
 export async function fillStripeCard(page: Page): Promise<void> {
   // 滚动到支付信息区域
@@ -101,7 +101,7 @@ export async function fillStripeCard(page: Page): Promise<void> {
 }
 
 /**
- * [2025-01-29 00:00:00] 等待 Stripe 加载
+* 等待 Stripe 加载
  */
 export async function waitForStripeLoad(page: Page, timeout: number = 10000): Promise<boolean> {
   try {
@@ -121,7 +121,7 @@ export async function waitForStripeLoad(page: Page, timeout: number = 10000): Pr
 }
 
 /**
- * [2025-01-29 00:00:00] 获取按钮状态和禁用原因
+* 获取按钮状态和禁用原因
  */
 export async function getButtonState(
   page: Page,
@@ -148,7 +148,7 @@ export async function getButtonState(
 }
 
 /**
- * [2025-01-29 00:00:00] 捕获控制台日志
+* 捕获控制台日志
  */
 export function captureConsoleLogs(page: Page): ConsoleLog[] {
   const logs: ConsoleLog[] = [];
@@ -165,7 +165,7 @@ export function captureConsoleLogs(page: Page): ConsoleLog[] {
 }
 
 /**
- * [2025-01-29 00:00:00] 捕获网络请求
+* 捕获网络请求
  */
 export function captureNetworkRequests(page: Page): NetworkRequest[] {
   const requests: NetworkRequest[] = [];
@@ -202,14 +202,14 @@ export function captureNetworkRequests(page: Page): NetworkRequest[] {
 }
 
 /**
- * [2025-01-29 00:00:00] 过滤调试日志
+* 过滤调试日志
  */
 export function filterDebugLogs(logs: ConsoleLog[], prefix: string = '[Checkout Debug]'): ConsoleLog[] {
   return logs.filter((log) => log.text.includes(prefix));
 }
 
 /**
- * [2025-01-29 00:00:00] 等待运费选项加载并选择第一个
+* 等待运费选项加载并选择第一个
  */
 export async function selectFirstShippingOption(page: Page, timeout: number = 20000): Promise<boolean> {
   try {
@@ -229,7 +229,7 @@ export async function selectFirstShippingOption(page: Page, timeout: number = 20
 }
 
 /**
- * [2025-01-29 00:00:00] 获取默认测试地址（加拿大）
+* 获取默认测试地址（加拿大）
  */
 export function getDefaultTestAddress(): ShippingAddress {
   return {
@@ -245,7 +245,7 @@ export function getDefaultTestAddress(): ShippingAddress {
 }
 
 /**
- * [2025-01-29 00:00:00] 等待地址状态更新
+* 等待地址状态更新
  */
 export async function waitForAddressReady(
   page: Page,
@@ -271,7 +271,7 @@ export async function waitForAddressReady(
 }
 
 /**
- * [2025-01-29 00:00:00] 应用优惠券
+* 应用优惠券
  */
 export async function applyCoupon(
   page: Page,

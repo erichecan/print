@@ -1,7 +1,7 @@
 /**
  * Jest Setup
- * [2025-01-27 11:30:00] Jest 测试环境设置
- * [2025-01-27 14:25:00] 调整为 CommonJS 语法以兼容 Jest 设置文件
+* Jest 测试环境设置
+* 调整为 CommonJS 语法以兼容 Jest 设置文件
  */
 const React = require('react');
 

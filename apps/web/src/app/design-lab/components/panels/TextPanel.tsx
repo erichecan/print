@@ -1,7 +1,7 @@
 /**
  * Text Panel - 添加文本面板
- * [2025-01-30 17:40:00] 实现 Add Text 界面
- * [2025-01-31 00:00:00] 像素级对齐 Custom Ink designlab-addtext01.jpeg
+* 实现 Add Text 界面
+* 像素级对齐 Custom Ink designlab-addtext01.jpeg
  */
 'use client';
 
@@ -12,24 +12,24 @@ interface TextPanelProps {
 }
 
 const TextPanel: React.FC<TextPanelProps> = ({ onAddText }) => {
-  // [2025-01-31 00:00:00] 初始文本为空，匹配 Custom Ink 行为
-  // [2025-12-08] 修复：为空时禁用"Add To Design"按钮
+// 初始文本为空，匹配 Custom Ink 行为
+// 修复：为空时禁用"Add To Design"按钮
   const [text, setText] = useState('');
 
   const handleAddToDesign = () => {
-    // [2025-01-31 00:00:00] 如果文本为空，使用默认值
+// 如果文本为空，使用默认值
     const trimmedText = text.trim() || 'Your Text';
     onAddText(trimmedText);
   };
 
-  // [2025-12-08] 检查文本是否为空（去除空白字符后）
+// 检查文本是否为空（去除空白字符后）
   const isTextEmpty = !text.trim();
 
   return (
     <div className="dl-text-panel">
       <div className="dl-text-panel__content">
         <div className="dl-text-panel__input-section">
-          {/* [2025-01-31 00:00:00] 根据 Custom Ink 截图，可能不需要 label，或 label 文本不同 */}
+{/* 根据 Custom Ink 截图，可能不需要 label，或 label 文本不同 */}
           <textarea
             className="dl-text-panel__input"
             value={text}
@@ -44,7 +44,7 @@ const TextPanel: React.FC<TextPanelProps> = ({ onAddText }) => {
           className="dl-text-panel__add-btn"
           onClick={handleAddToDesign}
           type="button"
-          disabled={isTextEmpty} // [2025-12-08] 为空时禁用按钮
+disabled={isTextEmpty} // 为空时禁用按钮
         >
           Add To Design
         </button>

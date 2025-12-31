@@ -1,7 +1,6 @@
 /**
  * Order Routes
- * [2025-11-04 23:57:00]
- * [2025-01-27 13:25:00] Added order cancellation routes
+* Added order cancellation routes
  */
 const express = require('express');
 const router = express.Router();

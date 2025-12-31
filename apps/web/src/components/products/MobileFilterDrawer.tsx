@@ -1,13 +1,13 @@
 /**
  * Mobile Filter Drawer Component
- * [2025-01-28 15:30:00] 移动端筛选抽屉组件
+* 移动端筛选抽屉组件
  */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { DynamicFilters } from './DynamicFilters';
-// [2025-01-28 18:20:00] ProductFilters 不需要在这里导入，它只返回 null
+// ProductFilters 不需要在这里导入，它只返回 null
 import type { Brand } from '@/app/products/page';
 
 interface MobileFilterDrawerProps {
@@ -22,7 +22,7 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
   const router = useRouter();
   const pathname = usePathname();
   
-  // [2025-01-28 15:30:00] 获取已选的筛选条件数量
+// 获取已选的筛选条件数量
   const getActiveFilterCount = () => {
     let count = 0;
     const filterKeys = ['fit', 'decoration', 'color', 'size', 'material', 'type', 'style', 'neckline', 'feature', 'price', 'brand', 'rushDelivery', 'multiAddress', 'noMinimum'];
@@ -37,7 +37,7 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
   
   const activeFilterCount = getActiveFilterCount();
   
-  // [2025-01-28 15:30:00] 防止滚动当筛选抽屉打开时
+// 防止滚动当筛选抽屉打开时
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -49,7 +49,7 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
     };
   }, [isOpen]);
   
-  // [2025-01-28 15:30:00] 清除所有筛选条件
+// 清除所有筛选条件
   const handleClearFilters = () => {
     const params = new URLSearchParams(searchParams.toString());
     const filterKeys = ['fit', 'decoration', 'color', 'size', 'material', 'type', 'style', 'neckline', 'feature', 'price', 'brand', 'rushDelivery', 'multiAddress', 'noMinimum'];
@@ -61,14 +61,14 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
     setIsOpen(false);
   };
   
-  // [2025-01-28 15:30:00] 关闭筛选抽屉
+// 关闭筛选抽屉
   const handleClose = () => {
     setIsOpen(false);
   };
   
   return (
     <>
-      {/* [2025-01-28 15:30:00] 移动端筛选按钮 */}
+{/* 移动端筛选按钮 */}
       <button
         type="button"
         className="mobile-filter-toggle"
@@ -84,14 +84,14 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
         )}
       </button>
       
-      {/* [2025-01-28 15:30:00] 遮罩层 */}
+{/* 遮罩层 */}
       <div 
         className={`mobile-filter-overlay ${isOpen ? 'mobile-filter-overlay--open' : ''}`}
         onClick={handleClose}
         aria-hidden={!isOpen}
       ></div>
       
-      {/* [2025-01-28 15:30:00] 筛选抽屉 */}
+{/* 筛选抽屉 */}
       <div 
         className={`mobile-filter-drawer ${isOpen ? 'mobile-filter-drawer--open' : ''}`}
         aria-hidden={!isOpen}
@@ -108,7 +108,7 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
           </button>
         </div>
         
-        {/* [2025-01-28 15:30:00] 已选筛选条件显示 */}
+{/* 已选筛选条件显示 */}
         {activeFilterCount > 0 && (
           <div className="mobile-filter-drawer__active-filters">
             <div className="mobile-filter-drawer__active-filters-header">
@@ -126,13 +126,13 @@ export function MobileFilterDrawer({ currentCollection, currentBrand, brands = [
           </div>
         )}
         
-        {/* [2025-01-28 15:30:00] 筛选内容 */}
+{/* 筛选内容 */}
         <div className="mobile-filter-drawer__content">
-          {/* [2025-01-28 18:20:00] ProductFilters 返回 null，只用于注入逻辑，不需要渲染 */}
+{/* ProductFilters 返回 null，只用于注入逻辑，不需要渲染 */}
           <DynamicFilters currentCollection={currentCollection} />
         </div>
         
-        {/* [2025-01-28 15:30:00] 底部操作按钮 */}
+{/* 底部操作按钮 */}
         <div className="mobile-filter-drawer__footer">
           <button
             type="button"

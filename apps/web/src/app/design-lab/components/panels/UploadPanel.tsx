@@ -1,7 +1,7 @@
 /**
  * Upload Panel - 文件上传面板
- * [2025-01-30 17:15:00] 实现 Choose File To Upload 界面
- * [2025-01-30 23:30:00] 根据 designlab-upload01.jpeg 和 designlab-upload03.jpeg 更新为完全匹配 Custom Ink
+* 实现 Choose File To Upload 界面
+* 根据 designlab-upload01.jpeg 和 designlab-upload03.jpeg 更新为完全匹配 Custom Ink
  */
 'use client';
 
@@ -37,7 +37,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     }
   };
 
-  // [2025-01-30 23:30:00] 拖拽上传处理
+// 拖拽上传处理
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -87,7 +87,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml"  // [2025-01-30 20:35:00] 明确支持 AVIF 和 WebP 格式
+accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml" // 明确支持 AVIF 和 WebP 格式
             onChange={handleFileChange}
             style={{ display: 'none' }}
             aria-label="Choose file to upload"
@@ -117,11 +117,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
             </svg>
           </div>
           <p className="dl-upload-panel__info-text">
-            Vector or high resolution artwork of 300 DPI or more will look the best. Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>20 MB</strong>.  {/* [2025-01-30 20:35:00] 添加支持的格式说明，包括 AVIF 和 WebP */}
+Vector or high resolution artwork of 300 DPI or more will look the best. Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>20 MB</strong>. {/* 添加支持的格式说明，包括 AVIF 和 WebP */}
           </p>
         </div>
 
-        {/* [2025-12-16 07:16:40] 按产品要求移除：Sign in to access your saved uploads 模块（截图区域） */}
+{/* 按产品要求移除：Sign in to access your saved uploads 模块（截图区域） */}
 
         {recentUploads.length > 0 && (
           <div className="dl-upload-panel__recent">
@@ -145,7 +145,7 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           </div>
         )}
 
-        {/* [2025-12-16 07:16:40] 按产品要求移除：Need help with your upload / Chat / email 模块（截图区域） */}
+{/* 按产品要求移除：Need help with your upload / Chat / email 模块（截图区域） */}
       </div>
     </div>
   );

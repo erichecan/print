@@ -1,4 +1,4 @@
-// [2025-11-02 22:30:00] Common navigation component for all pages
+// Common navigation component for all pages
 /**
  * Common Navigation
  * Provides consistent navigation across all pages
@@ -22,7 +22,7 @@ function insertCommonFooter() {
           <h4>Your Account</h4>
           <ul>
             <li><a href="account.html">My Account</a></li>
-            <!-- [2025-01-30 12:00:00] 移除 My Designs 链接 -->
+<!-- 移除 My Designs 链接 -->
             <li><a href="order-tracking.html">Track Your Order</a></li>
             <li><a href="cart.html">View Cart</a></li>
           </ul>

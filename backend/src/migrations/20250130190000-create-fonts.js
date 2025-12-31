@@ -1,6 +1,6 @@
 /**
  * Create fonts table
- * [2025-01-30 19:00:00] 创建字体表
+* 创建字体表
  */
 'use strict';
 
@@ -55,7 +55,7 @@ module.exports = {
       created_by: {
         type: Sequelize.UUID,
         allowNull: true,
-        // [2025-01-30 19:45:00] 暂时不添加外键约束，避免类型不匹配问题
+// 暂时不添加外键约束，避免类型不匹配问题
         // references: { model: 'users', key: 'id' },
         // onDelete: 'SET NULL',
         comment: '创建者用户 ID'

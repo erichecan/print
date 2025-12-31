@@ -1,6 +1,6 @@
 /**
  * Font Controller
- * [2025-01-30 19:00:00] 字体管理控制器
+* 字体管理控制器
  */
 const { Font } = require('../models');
 const logger = require('../utils/logger');
@@ -45,7 +45,7 @@ exports.getFonts = async (req, res) => {
       ]
     });
 
-    // [2025-01-30 19:00:00] 按分类分组
+// 按分类分组
     const groupedFonts = fonts.reduce((acc, font) => {
       const category = font.category || 'latin';
       if (!acc[category]) {

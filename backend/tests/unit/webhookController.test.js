@@ -1,6 +1,6 @@
 /**
  * Webhook Controller Tests
- * [2025-01-27 14:15:00] Tests for Stripe webhook handling
+* Tests for Stripe webhook handling
  */
 jest.mock('stripe', () => {
   const mStripe = {
@@ -56,7 +56,7 @@ function createMockResponse() {
   return res;
 }
 
-describe('[2025-01-27 14:15:00] webhookController.handleStripeWebhook', () => {
+describe(' webhookController.handleStripeWebhook', () => {
   let stripeInstance;
   let mockOrder;
 

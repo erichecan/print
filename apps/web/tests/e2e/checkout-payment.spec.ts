@@ -1,5 +1,5 @@
 /**
- * [2025-11-24 10:39:04] 结账与支付端到端测试
+* 结账与支付端到端测试
  */
 import { test, expect } from './fixtures/test-base';
 import { addProductToCart } from './utils/storefront';
@@ -15,7 +15,7 @@ test.describe('结账与支付', () => {
     adminAccount,
     guestEmail,
   }) => {
-    // [2025-11-28 16:55:00] 检查 Stripe 密钥是否配置，如果没有则跳过测试
+// 检查 Stripe 密钥是否配置，如果没有则跳过测试
     if (!process.env.STRIPE_SECRET_KEY) {
       test.skip(true, 'Stripe 密钥未配置，跳过支付测试');
       return;
@@ -50,12 +50,12 @@ test.describe('结账与支付', () => {
     await page.locator('h2:has-text("Payment Information")').scrollIntoViewIfNeeded();
     await expect(page.locator('#card-element')).toBeVisible();
 
-    // [2025-11-24 11:58:00] 复用浏览器 sessionId，确保后端识别同一个购物车
+// 复用浏览器 sessionId，确保后端识别同一个购物车
     const contextCookies = await page.context().cookies();
     const sessionCookie = contextCookies.find((cookie) => cookie.name === 'sessionId');
     const cookieHeader = sessionCookie ? `sessionId=${sessionCookie.value}` : '';
     if (!cookieHeader) {
-      throw new Error('[2025-11-24 11:58:00] Missing sessionId cookie before checkout API call');
+throw new Error(' Missing sessionId cookie before checkout API call');
     }
 
     const sharedHeaders = {
@@ -72,7 +72,7 @@ test.describe('结账与支付', () => {
     if (!createIntentResponse.ok()) {
       const body = await createIntentResponse.text();
       throw new Error(
-        `[2025-11-24 11:50:00] create-payment-intent failed (${createIntentResponse.status()}): ${body || '<<empty>>'}`
+` create-payment-intent failed (${createIntentResponse.status()}): ${body || '<<empty>>'}`
       );
     }
     const { paymentIntentId } = await createIntentResponse.json();
@@ -92,7 +92,7 @@ test.describe('结账与支付', () => {
     if (!confirmResponse.ok()) {
       const body = await confirmResponse.text();
       throw new Error(
-        `[2025-11-24 11:50:00] checkout/confirm failed (${confirmResponse.status()}): ${body || '<<empty>>'}`
+` checkout/confirm failed (${confirmResponse.status()}): ${body || '<<empty>>'}`
       );
     }
     const orderPayload = await confirmResponse.json();

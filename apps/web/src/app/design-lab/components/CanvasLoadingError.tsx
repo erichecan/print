@@ -1,6 +1,6 @@
 /**
  * Canvas Loading Error Component
- * [2025-12-10 18:40:00] Design Lab Canvas加载错误显示组件
+* Design Lab Canvas加载错误显示组件
  * 
  * 用途：
  * 1. 显示Canvas初始化失败的错误信息

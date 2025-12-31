@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-12-03 23:55:00] 配置 GCS Bucket CORS 策略，允许前端访问图片
+# 配置 GCS Bucket CORS 策略，允许前端访问图片
 # 解决 Design Lab 中从 GCS 加载图片时的 CORS 错误
 
 set -e

@@ -1,4 +1,4 @@
-// [2025-01-31 19:50:00] 印刷位置模板配置
+// 印刷位置模板配置
 
 import type { PrintConfig } from '@/types/order';
 

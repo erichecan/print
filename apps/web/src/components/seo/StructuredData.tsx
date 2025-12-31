@@ -1,6 +1,6 @@
 /**
  * Structured Data Component (JSON-LD)
- * [2025-12-06 21:00:00] 结构化数据组件 for Issue #154
+* 结构化数据组件 for Issue #154
  */
 'use client';
 

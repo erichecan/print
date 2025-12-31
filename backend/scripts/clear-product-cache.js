@@ -1,6 +1,6 @@
 /**
  * 清除商品缓存
- * [2025-01-29 23:55:00] 清除 Redis 中的商品缓存，强制刷新图片 URL
+* 清除 Redis 中的商品缓存，强制刷新图片 URL
  */
 
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });

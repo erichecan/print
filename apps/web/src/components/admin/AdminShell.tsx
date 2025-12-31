@@ -1,8 +1,8 @@
 /**
  * Admin Shell Layout
- * [2025-11-12 01:10:00] Shared navigation and chrome for admin routes
- * [2025-11-12 02:25:00] 强化认证失败与权限不足的提示逻辑
- * [2025-11-15 12:35:00] 改为侧边栏布局，匹配原始 admin 设计
+* Shared navigation and chrome for admin routes
+* 强化认证失败与权限不足的提示逻辑
+* 改为侧边栏布局，匹配原始 admin 设计
  */
 'use client';
 
@@ -22,7 +22,7 @@ interface AdminUser {
 
 type AuthState = 'loading' | 'authorized' | 'unauthenticated' | 'forbidden';
 
-// [2025-11-16 14:05:30] 统一侧栏图标（SVG），避免 Emoji 在不同平台不一致
+// 统一侧栏图标（SVG），避免 Emoji 在不同平台不一致
 const ICONS: Record<string, JSX.Element> = {
   dashboard: (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
@@ -130,21 +130,21 @@ const NAV_LINKS = [
   { href: '/admin/products', label: 'Products', icon: 'products', i18n: 'products' },
   { href: '/admin/categories', label: 'Categories', icon: 'categories', i18n: 'categories' },
   { href: '/admin/orders', label: 'Orders', icon: 'orders', i18n: 'orders' },
-  { href: '/admin/notifications', label: 'Notifications', icon: 'notifications', i18n: 'notifications' }, // [2025-12-10 00:00:00] Guest messages notifications
+{ href: '/admin/notifications', label: 'Notifications', icon: 'notifications', i18n: 'notifications' }, // Guest messages notifications
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
-  { href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // [2025-11-16 13:35:00] 生产管理
-  { href: '/admin/inventory-alerts', label: 'Inventory Alerts', icon: 'inventory', i18n: 'inventoryAlerts' }, // [2025-12-06 16:00:00] 库存预警
-  { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // [2025-01-28 08:50:00] 成本管理 - 使用 costManagement 翻译键
-  { href: '/admin/offline-order-size-fees', label: 'Size Fees', icon: 'costs', i18n: 'sizeFees' }, // [2025-01-28] Added Size Fees configuration
+{ href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // 生产管理
+{ href: '/admin/inventory-alerts', label: 'Inventory Alerts', icon: 'inventory', i18n: 'inventoryAlerts' }, // 库存预警
+{ href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // 成本管理 - 使用 costManagement 翻译键
+{ href: '/admin/offline-order-size-fees', label: 'Size Fees', icon: 'costs', i18n: 'sizeFees' }, // Added Size Fees configuration
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
-  { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', i18n: 'analytics' }, // [2025-12-06 21:30:00] Analytics and Reports for Issue #160
-  { href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // [2025-12-06 17:10:00] Supplier management for Issue #89
-  { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // [2025-01-28 01:10:00] Design Lab art assets CMS
-  { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // [2025-01-30 19:00:00] Font management
+{ href: '/admin/analytics', label: 'Analytics', icon: 'analytics', i18n: 'analytics' }, // Analytics and Reports for Issue #160
+{ href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // Supplier management for Issue #89
+{ href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // Design Lab art assets CMS
+{ href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // Font management
   { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials' }, // Dedicated testimonials management
-  { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // [2025-01-28 08:00:00] Content Management System
+{ href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // Content Management System
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];
 
@@ -166,7 +166,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         if (!mounted) {
           return;
         }
-        // [2025-01-28 07:30:00] 检查用户角色，必须是 ADMIN（支持大小写）
+// 检查用户角色，必须是 ADMIN（支持大小写）
         if (data.role !== 'ADMIN' && data.role !== 'admin') {
           setAuthState('forbidden');
           setAuthMessage('Access denied. Admin privileges required. Please use customer login at /login for account access.');
@@ -178,7 +178,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       .catch((error: unknown) => {
         if (!mounted) return;
 
-        // [2025-01-27 16:10:00] 区分网络错误和认证错误
+// 区分网络错误和认证错误
         const errorMessage = error instanceof Error ? error.message : String(error);
         const isNetworkError = errorMessage.includes('Network error') ||
           errorMessage.includes('connect to server') ||
@@ -209,13 +209,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     };
   }, [router, pathname, t]);
 
-  // [2025-01-28 07:30:00] 未登录时直接跳转到管理员专用登录页
-  // [2025-11-28 10:35:00] 如果当前路径是登录页面，则不执行重定向，避免循环
+// 未登录时直接跳转到管理员专用登录页
+// 如果当前路径是登录页面，则不执行重定向，避免循环
   useEffect(() => {
     if (authState !== 'unauthenticated') {
       return;
     }
-    // [2025-11-28 10:35:00] 如果已经在登录页面，不执行重定向
+// 如果已经在登录页面，不执行重定向
     if (pathname === '/admin/login' || pathname?.startsWith('/admin/login?')) {
       return;
     }
@@ -227,9 +227,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     await authApi.logout();
     setUser(null);
     setAuthState('unauthenticated');
-    // [2025-11-16 14:30:00] 使用 i18n 消息提示退出状态
+// 使用 i18n 消息提示退出状态
     setAuthMessage(t('logoutMessage'));
-    // [2025-01-28 07:30:00] 退出后跳转到管理员登录页面
+// 退出后跳转到管理员登录页面
     router.push('/admin/login');
   };
 
@@ -244,7 +244,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       return pathname === href || pathname.startsWith(`${href}/`);
     },
     [pathname],
-  ); // [2025-11-16 12:55:00] useCallback 保持导航判定引用稳定
+); // useCallback 保持导航判定引用稳定
 
   const currentNav = useMemo(() => {
     return NAV_LINKS.find((link) => isActive(link.href, link.exact));
@@ -252,13 +252,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
-  }, []); // [2025-11-16 13:35:00] useCallback 防止事件绑定抖动
+}, []); // useCallback 防止事件绑定抖动
 
   const toggleSidebarMobile = () => {
     setSidebarOpen((prev) => !prev);
   };
 
-  // [2025-11-16 14:29:00] 语言切换按钮，写入本地偏好
+// 语言切换按钮，写入本地偏好
   const handleLocaleChange = (nextLocale: 'en' | 'zh') => {
     if (nextLocale === locale) {
       return;
@@ -285,7 +285,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     );
   }
 
-  // [2025-11-16 14:05:00] 保留占位提示，但展示为自动跳转状态
+// 保留占位提示，但展示为自动跳转状态
   if (authState === 'unauthenticated') {
     return (
       <div className="admin-shell__container">

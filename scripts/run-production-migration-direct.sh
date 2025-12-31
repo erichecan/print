@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-01-31 20:10:00] 直接使用 prisma db push 同步 schema
+# 直接使用 prisma db push 同步 schema
 
 set -e
 

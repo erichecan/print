@@ -1,6 +1,6 @@
 /**
  * AlsoAvailable Component - Redbubble Style
- * [2025-11-19 09:15:00] 参考图一："Also available on" 横滑卡片
+* 参考图一："Also available on" 横滑卡片
  */
 'use client';
 

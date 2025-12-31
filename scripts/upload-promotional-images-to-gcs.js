@@ -1,6 +1,6 @@
 /**
  * 上传已下载的促销产品图片到 GCS
- * [2025-01-29 14:00:00] 将本地已下载的图片上传到 Google Cloud Storage
+* 将本地已下载的图片上传到 Google Cloud Storage
  */
 
 const fs = require('fs');

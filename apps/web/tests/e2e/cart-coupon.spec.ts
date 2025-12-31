@@ -1,12 +1,12 @@
 /**
- * [2025-11-24 10:37:18] 购物车与优惠券端到端测试
+* 购物车与优惠券端到端测试
  */
 import { test, expect } from './fixtures/test-base';
 import { addProductToCart } from './utils/storefront';
 
 test.describe('购物车与优惠券', () => {
   test('更新数量并应用优惠券', async ({ page }) => {
-    // [2025-11-28 16:55:00] 添加商品到购物车，增加错误处理
+// 添加商品到购物车，增加错误处理
     try {
       await addProductToCart(page);
     } catch (error) {
@@ -23,11 +23,11 @@ test.describe('购物车与优惠券', () => {
     await qtyInput.blur();
     await expect(page.locator('.cart-card__qty input').first()).toHaveValue('2');
 
-    // [2025-12-13 14:30:00] 修复：使用右侧 Summary 区域的邮编输入（顶部红框已删除）
+// 修复：使用右侧 Summary 区域的邮编输入（顶部红框已删除）
     const postalInput = page.locator('#summary-zip');
     await postalInput.fill('M5V2T6');
     await page.locator('.summary-panel__zip button:has-text("Update")').click();
-    // [2025-12-13 14:30:00] 验证错误提示不显示（有效邮编）
+// 验证错误提示不显示（有效邮编）
     await expect(page.locator('.summary-panel__zip-error')).not.toBeVisible();
 
     const couponCode = process.env.E2E_COUPON_FIXED || 'SAVE10CAD';

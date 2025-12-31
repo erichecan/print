@@ -1,7 +1,7 @@
 /**
  * Contact Client Component
- * [2025-01-27 19:20:00] 联系页面客户端组件（处理表单提交）
- * [2025-12-19 03:00:00] 修复：使用与留言本相同的 API，在 admin 后台显示通知
+* 联系页面客户端组件（处理表单提交）
+* 修复：使用与留言本相同的 API，在 admin 后台显示通知
  */
 "use client";
 
@@ -27,7 +27,7 @@ export default function ContactClient() {
     setError(null);
 
     try {
-      // [2025-12-19 03:00:00] 使用与留言本相同的 API，保存到数据库并在 admin 后台显示通知
+// 使用与留言本相同的 API，保存到数据库并在 admin 后台显示通知
       await apiPost('/api/guest-messages', {
         name: formData.name,
         email: formData.email,
@@ -46,7 +46,7 @@ export default function ContactClient() {
         message: '',
         orderNumber: '',
       });
-    } catch (err: unknown) { // [2025-12-07 02:30:00] Issue #105 - Replace any with unknown for type safety
+} catch (err: unknown) { // Issue #105 - Replace any with unknown for type safety
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit contact form. Please try again.';
       setError(errorMessage);
     } finally {
@@ -79,7 +79,7 @@ export default function ContactClient() {
         </ul>
       </section>
 
-      {/* [2025-01-27 19:20:00] 联系表单 */}
+{/* 联系表单 */}
       <section style={{ display: 'grid', gap: '16px', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '24px' }}>
         <h2>Send us a message</h2>
         {submitted ? (

@@ -1,11 +1,11 @@
-// [2025-11-02 21:00:00] Seed system settings
+// Seed system settings
 const { v4: uuidv4 } = require('uuid');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const now = new Date();
 
-    // [2025-01-28 05:40:00] 清空默认阶段配置，由管理员通过设置页面配置
+// 清空默认阶段配置，由管理员通过设置页面配置
     const stageConfig = {
       stages: [
         { key: 'pending-design', labelEn: 'Pending Design', labelZh: '待确认设计', description: 'Pending design confirmation', position: 0 },

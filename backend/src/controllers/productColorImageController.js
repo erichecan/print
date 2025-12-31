@@ -1,6 +1,6 @@
 /**
  * Product Color Image Controller
- * [2025-01-30 23:55:00] 提供产品颜色图片映射的 API 端点
+* 提供产品颜色图片映射的 API 端点
  */
 const { ProductColorImage } = require('../models');
 const logger = require('../utils/logger');

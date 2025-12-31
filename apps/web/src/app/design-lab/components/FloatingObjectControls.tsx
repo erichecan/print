@@ -78,7 +78,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const cssWidth = rect.width;
         const cssHeight = rect.height;
 
-        // [2025-12-31] Fix: Handle object-fit: contain
+// Fix: Handle object-fit: contain
         // Determine effective render scale
         const scaleXRaw = logicalWidth > 0 ? cssWidth / logicalWidth : 1;
         const scaleYRaw = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
@@ -178,7 +178,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         };
     }, [canvas, updateCoords]);
 
-    // [2025-12-31] Handle window resize to keep controls pinned
+// Handle window resize to keep controls pinned
     useEffect(() => {
         const handleResize = () => {
             requestAnimationFrame(updateCoords);
@@ -250,7 +250,7 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         const cssWidth = canvasRect.width;
         const cssHeight = canvasRect.height;
 
-        // [2025-12-31] Fix: Handle object-fit: contain for resize logic
+// Fix: Handle object-fit: contain for resize logic
         const scaleXRaw = logicalWidth > 0 ? cssWidth / logicalWidth : 1;
         const scaleYRaw = logicalHeight > 0 ? cssHeight / logicalHeight : 1;
         const renderScale = Math.min(scaleXRaw, scaleYRaw);

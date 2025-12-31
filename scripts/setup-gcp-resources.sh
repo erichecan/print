@@ -1,6 +1,6 @@
 #!/bin/bash
 # GCP Resources Setup Script
-# [2025-01-27] Script to set up all necessary GCP resources
+# Script to set up all necessary GCP resources
 set -e
 
 # Colors for output

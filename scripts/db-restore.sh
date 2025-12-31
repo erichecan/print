@@ -1,5 +1,5 @@
 #!/bin/bash
-# Database restore script [2025-11-12 03:15:00]
+# Database restore script 
 # Usage: ./scripts/db-restore.sh <backup-file.dump>
 
 set -e

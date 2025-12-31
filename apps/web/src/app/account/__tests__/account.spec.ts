@@ -1,6 +1,6 @@
 /**
  * Account Page Server Component Tests
- * [2025-01-27 18:50:00] 测试账户页面的服务端组件行为
+* 测试账户页面的服务端组件行为
  */
 import { getSessionSafe, getAccountDataSafe } from '@/server/account';
 
@@ -26,7 +26,7 @@ jest.mock('next/headers', () => ({
 
 // Mock config/env
 jest.mock('@/config/env', () => ({
-  // [2025-12-19 15:24:45] 修复：默认本地后端端口与仓库测试/脚本对齐为 4000
+// 修复：默认本地后端端口与仓库测试/脚本对齐为 4000
   getBackendApiBaseUrl: jest.fn(() => 'http://localhost:3001/api'),
 }));
 

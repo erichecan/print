@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 22:30:00] Admin Seed Route - 运行数据库 seed 脚本
+* Admin Seed Route - 运行数据库 seed 脚本
  * 注意：这是一个管理端点，应该在生产环境中限制访问
  */
 const express = require('express');
@@ -8,11 +8,11 @@ const { PrismaClient } = require('@prisma/client');
 const { execSync } = require('child_process');
 const path = require('path');
 
-// [2025-01-29 22:55:00] 延迟初始化 Prisma Client，避免在 migrations 之前初始化
+// 延迟初始化 Prisma Client，避免在 migrations 之前初始化
 // const prisma = new PrismaClient();
 
-// [2025-01-29 22:30:00] POST /api/admin-seed/run - 运行 seed 脚本
-// [2025-01-29 22:40:00] 先运行 migrations，然后运行 seed
+// POST /api/admin-seed/run - 运行 seed 脚本
+// 先运行 migrations，然后运行 seed
 router.post('/run', async (req, res) => {
   try {
     console.log('🌱 开始运行 migrations 和 seed 脚本...');
@@ -25,7 +25,7 @@ router.post('/run', async (req, res) => {
       seedResults: [],
     };
     
-    // [2025-01-29 22:40:00] 步骤 1: 运行 Prisma migrations
+// 步骤 1: 运行 Prisma migrations
     let migrationsSucceeded = false;
     try {
       console.log('📦 运行 Prisma migrations...');
@@ -54,7 +54,7 @@ router.post('/run', async (req, res) => {
       console.error('❌ Prisma migrations 失败:', errorMessage);
       console.error('Error output:', errorOutput.substring(0, 500));
       
-      // [2025-01-29 23:00:00] 如果 migrations 失败（可能是空数据库），尝试使用 db push
+// 如果 migrations 失败（可能是空数据库），尝试使用 db push
       if (errorMessage.includes('does not exist') || errorMessage.includes('relation') || errorOutput.includes('does not exist')) {
         console.log('🔄 Migrations 失败，尝试使用 prisma db push 创建表结构...');
         try {
@@ -98,12 +98,12 @@ router.post('/run', async (req, res) => {
       }
     }
     
-    // [2025-01-29 22:50:00] 检查当前商品数量（在 migrations 之后）
+// 检查当前商品数量（在 migrations 之后）
     // 如果 migrations 失败，跳过商品数量检查
     let productCount = 0;
     if (migrationsSucceeded) {
       try {
-        // [2025-01-29 22:55:00] 延迟初始化 Prisma Client，确保 migrations 已完成
+// 延迟初始化 Prisma Client，确保 migrations 已完成
         const prisma = new PrismaClient();
         // 等待一小段时间确保 migrations 完成
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -124,7 +124,7 @@ router.post('/run', async (req, res) => {
     } else {
       console.warn('⚠️  Migrations 未成功，跳过商品数量检查');
       results.productCountBefore = 0;
-      // [2025-01-29 22:56:00] 如果 migrations 失败，直接返回错误，不继续执行 seed
+// 如果 migrations 失败，直接返回错误，不继续执行 seed
       return res.status(500).json({
         success: false,
         error: 'Database migrations failed. Cannot proceed with seed.',
@@ -135,7 +135,7 @@ router.post('/run', async (req, res) => {
       });
     }
     
-    // [2025-01-29 22:40:00] 步骤 2: 运行 Prisma seed
+// 步骤 2: 运行 Prisma seed
     try {
       console.log('📦 运行 Prisma seed...');
       execSync('npm run db:seed', {
@@ -255,7 +255,7 @@ router.post('/run', async (req, res) => {
   }
 });
 
-// [2025-01-29 22:45:00] POST /api/admin-seed/migrate - 运行数据库 migrations
+// POST /api/admin-seed/migrate - 运行数据库 migrations
 router.post('/migrate', async (req, res) => {
   try {
     console.log('🔧 开始运行数据库 migrations...');
@@ -310,10 +310,10 @@ router.post('/migrate', async (req, res) => {
   }
 });
 
-// [2025-01-29 22:30:00] GET /api/admin-seed/status - 检查数据库状态
+// GET /api/admin-seed/status - 检查数据库状态
 router.get('/status', async (req, res) => {
   try {
-    // [2025-01-29 22:55:00] 延迟初始化 Prisma Client
+// 延迟初始化 Prisma Client
     const prisma = new PrismaClient();
     
     const productCount = await prisma.product.count({

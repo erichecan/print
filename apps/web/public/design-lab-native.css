@@ -1,9 +1,9 @@
 /**
  * Design Lab Native - CSS Styles
- * [2025-11-19 11:15:00] 重构为与图一一致的布局和样式
+* 重构为与图一一致的布局和样式
  */
 
-/* [2025-11-19 12:00:00] CSS 变量（BEM 规范） */
+/* CSS 变量（BEM 规范） */
 :root {
   --surface: #ffffff;
   --surface-muted: #f4f5f7;
@@ -25,7 +25,7 @@
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* [2025-11-19 11:15:00] 重置与基础样式 */
+/* 重置与基础样式 */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -44,7 +44,7 @@ body {
   flex-direction: column;
 }
 
-/* [2025-11-19 11:15:00] 顶部导航栏 */
+/* 顶部导航栏 */
 .dl-header {
   height: 64px;
   background: var(--surface);
@@ -141,7 +141,7 @@ body {
   border-color: var(--border-dark);
 }
 
-/* [2025-11-19 11:15:00] 主布局 - 三段式：左工具/面板 + 中画布 + 可选右栏 */
+/* 主布局 - 三段式：左工具/面板 + 中画布 + 可选右栏 */
 .dl-main {
   flex: 1;
   display: grid;
@@ -152,7 +152,7 @@ body {
   position: relative;
 }
 
-/* [2025-11-19 11:15:00] 左侧区域：工具条 + 面板卡 */
+/* 左侧区域：工具条 + 面板卡 */
 .dl-left-panel {
   display: grid;
   grid-template-columns: 72px 430px;
@@ -161,7 +161,7 @@ body {
   overflow: hidden;
 }
 
-/* [2025-11-19 11:15:00] 左侧深灰色垂直工具栏 (Rail) - 72px */
+/* 左侧深灰色垂直工具栏 (Rail) - 72px */
 .dl-rail {
   background: #2c2c2c;
   border-radius: 0;
@@ -227,7 +227,7 @@ body {
   margin: 8px 0;
 }
 
-/* [2025-11-19 12:00:00] 左侧固定操作区容器（单一容器 + 面板切换） */
+/* 左侧固定操作区容器（单一容器 + 面板切换） */
 .side-panel {
   width: 430px;
   background: var(--surface);
@@ -241,7 +241,7 @@ body {
   border-radius: 0 var(--radius-8) var(--radius-8) 0;
 }
 
-/* [2025-11-19 12:00:00] 面板容器（通过 data-panel 切换） */
+/* 面板容器（通过 data-panel 切换） */
 .panel {
   display: none;
   flex-direction: column;
@@ -261,7 +261,7 @@ body {
   display: flex;
 }
 
-/* [2025-11-19 12:00:00] 面板 Header（标题、返回、关闭） */
+/* 面板 Header（标题、返回、关闭） */
 .side-panel__header {
   display: flex;
   align-items: center;
@@ -308,7 +308,7 @@ body {
   text-align: center;
 }
 
-/* [2025-11-19 12:00:00] 面板 Body（可滚动内容区） */
+/* 面板 Body（可滚动内容区） */
 .side-panel__body {
   flex: 1;
   overflow-y: auto;
@@ -316,7 +316,7 @@ body {
   min-height: 0;
 }
 
-/* [2025-11-19 12:00:00] 面板 Footer（次操作条） */
+/* 面板 Footer（次操作条） */
 .side-panel__footer {
   display: flex;
   gap: 8px;
@@ -349,7 +349,7 @@ body {
   outline-offset: 2px;
 }
 
-/* [2025-11-19 12:00:00] home 面板（启动卡） */
+/* home 面板（启动卡） */
 .panel__title {
   font-size: 16px;
   font-weight: 600;
@@ -420,7 +420,7 @@ body {
   flex-shrink: 0;
 }
 
-/* [2025-11-19 12:00:00] upload 面板 */
+/* upload 面板 */
 .panel__upload-area {
   display: flex;
   flex-direction: column;
@@ -444,7 +444,7 @@ body {
   margin-top: 2px;
 }
 
-/* [2025-11-19 12:00:00] text 面板 */
+/* text 面板 */
 .panel__input-group {
   display: flex;
   flex-direction: column;
@@ -497,7 +497,7 @@ body {
   border-color: var(--primary);
 }
 
-/* [2025-01-27] Names and Numbers 面板样式 */
+/* Names and Numbers 面板样式 */
 .panel__checkbox-group {
   margin-bottom: 12px;
 }
@@ -608,7 +608,7 @@ body {
   margin-bottom: 12px;
 }
 
-/* [2025-11-19 12:00:00] art 面板 */
+/* art 面板 */
 .panel__art-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -638,9 +638,9 @@ body {
   outline-offset: 2px;
 }
 
-/* [2025-11-19 12:00:00] product-colors 面板 */
-/* [2025-01-28 04:40:00] 修复为 8x8 网格，匹配截图设计 */
-/* [2025-01-28 04:45:00] 缩小颜色块并改为圆形 */
+/* product-colors 面板 */
+/* 修复为 8x8 网格，匹配截图设计 */
+/* 缩小颜色块并改为圆形 */
 .panel__colors-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -694,7 +694,7 @@ body {
   border-radius: 50%;
 }
 
-/* [2025-01-28 04:40:00] 切换开关样式 */
+/* 切换开关样式 */
 .panel__ordering-toggle {
   display: flex;
   align-items: center;
@@ -773,7 +773,7 @@ body {
   height: 16px;
 }
 
-/* [2025-01-28 04:40:00] 当前颜色指示器 */
+/* 当前颜色指示器 */
 .panel__current-color-indicator {
   display: inline-flex;
   align-items: center;
@@ -790,7 +790,7 @@ body {
   flex-shrink: 0;
 }
 
-/* [2025-01-28 04:40:00] 链接样式 */
+/* 链接样式 */
 .panel__link {
   display: block;
   margin-top: 8px;
@@ -826,7 +826,7 @@ body {
   flex-shrink: 0;
 }
 
-/* [2025-01-28 04:50:00] 尺码按钮样式（方形，蓝色边框，与商品详情页一致） */
+/* 尺码按钮样式（方形，蓝色边框，与商品详情页一致） */
 .panel__sizes-grid {
   display: flex;
   flex-wrap: wrap;
@@ -861,7 +861,7 @@ body {
   font-weight: 600;
 }
 
-/* [2025-11-19 12:00:00] Layers 图层面板（始终显示在底部） */
+/* Layers 图层面板（始终显示在底部） */
 .side-panel__layers {
   border-top: 1px solid var(--border);
   background: var(--surface);
@@ -892,7 +892,7 @@ body {
   min-height: 0;
 }
 
-/* [2025-11-19 12:00:00] 按钮样式（BEM 规范） */
+/* 按钮样式（BEM 规范） */
 .btn {
   padding: 10px 16px;
   border: 1px solid var(--border);
@@ -945,7 +945,7 @@ body {
   display: flex;
 }
 
-/* [2025-11-19 11:15:00] 启动面板（四宫格） */
+/* 启动面板（四宫格） */
 .dl-guide-panel {
   padding: 24px;
   border-bottom: 1px solid var(--border);
@@ -1018,7 +1018,7 @@ body {
   color: var(--text-tertiary);
 }
 
-/* [2025-11-19 11:15:00] 工具面板（Tabs） */
+/* 工具面板（Tabs） */
 .dl-tools {
   flex: 1;
   display: flex;
@@ -1086,7 +1086,7 @@ body {
   margin-bottom: 12px;
 }
 
-/* [2025-11-19 11:15:00] 上传区域 */
+/* 上传区域 */
 .dl-upload-area {
   border: 2px dashed var(--border-dark);
   border-radius: var(--radius-8);
@@ -1113,7 +1113,7 @@ body {
   font-size: 13px;
 }
 
-/* [2025-11-19 11:15:00] 表单控件 */
+/* 表单控件 */
 .dl-label {
   display: block;
   font-size: 12px;
@@ -1157,7 +1157,7 @@ body {
   margin-bottom: 8px;
 }
 
-/* [2025-11-19 11:15:00] Art 网格 */
+/* Art 网格 */
 .dl-art-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1184,7 +1184,7 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-/* [2025-11-19 11:30:00] Layers 图层面板（默认展开，在启动卡下方） */
+/* Layers 图层面板（默认展开，在启动卡下方） */
 .dl-layers-panel {
   border-top: 1px solid var(--border);
   background: var(--surface);
@@ -1222,7 +1222,7 @@ body {
   font-size: 12px;
 }
 
-/* [2025-11-19 11:30:00] 图层项（完整控制：缩略图、名称、显隐、锁定、上移/下移、删除、拖拽排序） */
+/* 图层项（完整控制：缩略图、名称、显隐、锁定、上移/下移、删除、拖拽排序） */
 .dl-layer-item {
   display: flex;
   align-items: center;
@@ -1330,7 +1330,7 @@ body {
   color: #fff;
 }
 
-/* [2025-11-19 11:30:00] 红框3：左下产品卡（固定吸底，与红框3视觉一致） */
+/* 红框3：左下产品卡（固定吸底，与红框3视觉一致） */
 .dl-product-card {
   padding: 16px;
   border-top: 1px solid var(--border);
@@ -1438,7 +1438,7 @@ body {
   border-radius: 2px;
 }
 
-/* [2025-11-19 11:15:00] 中央画布区域 */
+/* 中央画布区域 */
 .dl-canvas-area {
   background: var(--surface-secondary);
   display: flex;
@@ -1463,7 +1463,7 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-/* [2025-11-19 11:15:00] 打印区域指示 */
+/* 打印区域指示 */
 .dl-print-area {
   position: absolute;
   top: 50%;
@@ -1477,7 +1477,7 @@ body {
   opacity: 0.5;
 }
 
-/* [2025-11-19 11:15:00] 网格覆盖层 */
+/* 网格覆盖层 */
 .dl-grid-overlay {
   position: absolute;
   top: 0;
@@ -1496,7 +1496,7 @@ body {
   display: block;
 }
 
-/* [2025-11-19 11:15:00] 画布右侧竖向按钮 */
+/* 画布右侧竖向按钮 */
 .dl-canvas-side-buttons {
   position: absolute;
   right: 20px;
@@ -1544,7 +1544,7 @@ body {
   text-orientation: mixed;
 }
 
-/* [2025-11-19 11:15:00] 缩放控制 */
+/* 缩放控制 */
 .dl-zoom-controls {
   position: absolute;
   bottom: 20px;
@@ -1589,7 +1589,7 @@ body {
   text-align: center;
 }
 
-/* [2025-11-19 11:15:00] 右侧可选信息面板（默认隐藏） */
+/* 右侧可选信息面板（默认隐藏） */
 .dl-info-sidebar {
   background: var(--surface);
   border-left: 1px solid var(--border);
@@ -1632,7 +1632,7 @@ body {
   overflow-y: auto;
 }
 
-/* [2025-11-19 11:30:00] Text 样式控制条（选中文本时显示） */
+/* Text 样式控制条（选中文本时显示） */
 .dl-text-controls {
   padding: 12px 16px;
   border-top: 1px solid var(--border);
@@ -1700,7 +1700,7 @@ body {
   border-color: var(--primary);
 }
 
-/* [2025-11-19 11:30:00] 红框4：底部操作条（固定在右下角） */
+/* 红框4：底部操作条（固定在右下角） */
 .dl-bottom-bar {
   height: 60px;
   background: var(--surface);
@@ -1728,7 +1728,7 @@ body {
   gap: 16px;
 }
 
-/* [2025-01-28 07:00:00] 数量输入框样式 */
+/* 数量输入框样式 */
 .dl-quantity-input {
   display: flex;
   align-items: center;
@@ -1771,7 +1771,7 @@ body {
   align-items: center;
 }
 
-/* [2025-11-19 11:15:00] 按钮样式 */
+/* 按钮样式 */
 .dl-btn {
   padding: 10px 20px;
   border: 1px solid var(--border);
@@ -1813,7 +1813,7 @@ body {
   width: 100%;
 }
 
-/* [2025-11-19 11:15:00] 颜色模态框 */
+/* 颜色模态框 */
 .dl-modal {
   position: fixed;
   top: 0;
@@ -1896,7 +1896,7 @@ body {
   max-height: 90vh;
 }
 
-/* [2025-01-27] Names and Numbers 表单样式 */
+/* Names and Numbers 表单样式 */
 .names-numbers-form {
   display: flex;
   gap: 24px;
@@ -1913,7 +1913,7 @@ body {
   flex-shrink: 0;
 }
 
-/* [2025-01-27] 表格样式 */
+/* 表格样式 */
 .names-numbers-table {
   border: 1px solid var(--border);
   border-radius: var(--radius-8);
@@ -1965,7 +1965,7 @@ body {
   border-right: none;
 }
 
-/* [2025-01-27] 输入框样式 */
+/* 输入框样式 */
 .names-numbers-input {
   width: 100%;
   padding: 12px 16px;
@@ -1993,7 +1993,7 @@ body {
   padding-right: 36px;
 }
 
-/* [2025-01-27] 操作链接 */
+/* 操作链接 */
 .names-numbers-actions {
   display: flex;
   justify-content: space-between;
@@ -2017,7 +2017,7 @@ body {
   text-decoration: underline;
 }
 
-/* [2025-01-27] 摘要区域 */
+/* 摘要区域 */
 .names-numbers-summary {
   background: var(--surface-muted);
   padding: 16px;
@@ -2042,7 +2042,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* [2025-01-27] 提示信息 */
+/* 提示信息 */
 .names-numbers-hints {
   background: var(--surface-muted);
   padding: 16px;
@@ -2088,7 +2088,7 @@ body {
   text-decoration: underline;
 }
 
-/* [2025-01-28 07:00:00] 价格内容样式 */
+/* 价格内容样式 */
 .dl-price-content {
   min-height: 200px;
 }
@@ -2201,7 +2201,7 @@ body {
   color: #fff;
 }
 
-/* [2025-11-19 11:15:00] 参考线样式 */
+/* 参考线样式 */
 .dl-guide-line {
   position: absolute;
   background: var(--primary);
@@ -2210,7 +2210,7 @@ body {
   pointer-events: none;
 }
 
-/* [2025-11-19 11:15:00] 响应式布局 */
+/* 响应式布局 */
 /* ≥1280px：三段式（左工具/面板 + 中画布 + 可选右栏） */
 @media (min-width: 992px) and (max-width: 1279px) {
   .dl-main {
@@ -2222,7 +2222,7 @@ body {
   }
 }
 
-/* [2025-11-19 12:00:00] <992px：左工具栏置顶横向滚动，固定操作区折叠为抽屉 */
+/* <992px：左工具栏置顶横向滚动，固定操作区折叠为抽屉 */
 @media (max-width: 991px) {
   .dl-main {
     grid-template-columns: 1fr;
@@ -2235,7 +2235,7 @@ body {
     grid-template-rows: auto 1fr;
   }
   
-  /* [2025-11-19 12:00:00] 左工具栏置顶横向滚动 */
+/* 左工具栏置顶横向滚动 */
   .dl-rail {
     flex-direction: row;
     overflow-x: auto;
@@ -2286,7 +2286,7 @@ body {
   }
 }
 
-/* [2025-11-19 11:15:00] 可访问性 */
+/* 可访问性 */
 .dl-btn:focus,
 .dl-rail__btn:focus,
 .dl-tabs__btn:focus,
@@ -2295,7 +2295,7 @@ body {
   outline-offset: 2px;
 }
 
-/* [2025-11-19 11:15:00] 滚动条样式 */
+/* 滚动条样式 */
 .dl-tools__content::-webkit-scrollbar,
 .dl-layers__list::-webkit-scrollbar,
 .dl-rail::-webkit-scrollbar {

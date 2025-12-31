@@ -1,4 +1,4 @@
-// [2025-11-08 07:02:12] Offline orders board interactions
+// Offline orders board interactions
 (function () {
 	const API_BASE = '/api/admin/offline-orders';
 	const METRICS_ENDPOINT = `${API_BASE}/metrics/summary`;

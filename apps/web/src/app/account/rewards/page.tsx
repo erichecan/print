@@ -1,6 +1,6 @@
 /**
  * Rewards Page
- * [2025-01-27 15:40:00] 折扣与积分页面
+* 折扣与积分页面
  */
 export default async function RewardsPage() {
   return (

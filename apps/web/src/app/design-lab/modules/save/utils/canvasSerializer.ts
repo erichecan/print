@@ -1,6 +1,6 @@
 /**
  * Canvas Serializer - 画布序列化工具
- * [2025-12-18 21:20:48] 从 Fabric.js canvas 序列化设计数据
+* 从 Fabric.js canvas 序列化设计数据
  */
 import type { fabric } from 'fabric';
 
@@ -14,7 +14,7 @@ export interface DesignCanvasSnapshot {
 
 /**
  * 将 Fabric.js canvas 转换为快照
- * [2025-12-18 21:20:48] 序列化画布数据，排除背景图
+* 序列化画布数据，排除背景图
  */
 export function canvasToSnapshot(
   canvas: fabric.Canvas,
@@ -49,7 +49,7 @@ export function canvasToSnapshot(
 
 /**
  * 从快照恢复 Fabric.js canvas
- * [2025-12-18 21:20:48] 反序列化画布数据
+* 反序列化画布数据
  */
 export async function snapshotToCanvas(
   snapshot: DesignCanvasSnapshot,

@@ -1,5 +1,5 @@
 /** @type {import('tailwindcss').Config} */
-// [2025-01-27 17:25:00] Tailwind CSS 配置
+// Tailwind CSS 配置
 module.exports = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',

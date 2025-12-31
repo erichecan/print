@@ -1,4 +1,4 @@
-// [2025-12-06 17:10:00] Supplier management routes for Issue #89
+// Supplier management routes for Issue #89
 const express = require('express');
 const router = express.Router();
 const supplierController = require('../controllers/supplierController');

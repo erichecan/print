@@ -1,4 +1,4 @@
-// [2025-11-02 20:52:00] AWS S3 configuration for file storage
+// AWS S3 configuration for file storage
 const AWS = require('aws-sdk');
 require('dotenv').config();
 
@@ -61,7 +61,7 @@ const getSignedUrl = async (key, expiresIn = 3600) => {
   }
 };
 
-// [2025-11-11 15:18:42] Generate pre-signed PUT URL for direct browser uploads
+// Generate pre-signed PUT URL for direct browser uploads
 const getUploadSignedUrl = async ({ key, contentType, expiresIn = 600 }) => {
   try {
     const params = {
@@ -78,7 +78,7 @@ const getUploadSignedUrl = async ({ key, contentType, expiresIn = 600 }) => {
       fileUrl: `https://${BUCKET_NAME}.s3.amazonaws.com/${key}`
     };
   } catch (error) {
-    console.error('[2025-11-11 15:18:42] getUploadSignedUrl error:', error);
+console.error(' getUploadSignedUrl error:', error);
     throw error;
   }
 };

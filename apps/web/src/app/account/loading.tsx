@@ -1,7 +1,7 @@
 /**
  * Account Loading Skeleton
- * [2025-01-27 14:55:00] 账户页面加载骨架
- * [2025-01-27 17:00:00] 修复：移除 styled-jsx，使用纯内联样式（Server Component 兼容）
+* 账户页面加载骨架
+* 修复：移除 styled-jsx，使用纯内联样式（Server Component 兼容）
  */
 export default function AccountLoading() {
   return (

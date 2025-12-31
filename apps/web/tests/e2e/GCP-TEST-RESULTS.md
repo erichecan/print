@@ -1,6 +1,6 @@
 # GCP 环境测试结果报告
 
-## [2025-01-29 22:30:00] 测试执行总结
+## 测试执行总结
 
 ### 测试环境
 - **前端 URL**: `https://print-main-frontend-hsbqzlnkxa-uc.a.run.app`

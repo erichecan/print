@@ -1,6 +1,6 @@
 /**
  * 筛选功能测试
- * [2025-11-28 11:25:00] 测试商品列表筛选功能的修复
+* 测试商品列表筛选功能的修复
  */
 import { test, expect } from '@playwright/test';
 
@@ -8,7 +8,7 @@ const FRONTEND_URL = process.env.BASE_URL || 'https://print-main-frontend-hsbqzl
 
 test.describe('商品列表筛选功能', () => {
   test.beforeEach(async ({ page }) => {
-    // [2025-11-28 12:00:00] 使用 domcontentloaded 避免超时，然后等待关键元素
+// 使用 domcontentloaded 避免超时，然后等待关键元素
     await page.goto(`${FRONTEND_URL}/products`);
     await page.waitForLoadState('domcontentloaded');
     // 等待筛选区域加载，最多等待 20 秒
@@ -16,7 +16,7 @@ test.describe('商品列表筛选功能', () => {
   });
 
   test('筛选区域不应出现横向滚动条', async ({ page }) => {
-    // [2025-11-28 12:00:00] 等待筛选区域可见
+// 等待筛选区域可见
     const sidebar = page.locator('.plp-new__sidebar');
     await sidebar.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
     await expect(sidebar).toBeVisible({ timeout: 5000 });
@@ -52,7 +52,7 @@ test.describe('商品列表筛选功能', () => {
   });
 
   test('展开状态应显示减号图标', async ({ page }) => {
-    // [2025-11-28 12:00:00] 等待筛选区域加载
+// 等待筛选区域加载
     await page.waitForSelector('.filter-section', { state: 'attached', timeout: 15000 }).catch(() => {});
     
     // 查找展开的 details 元素

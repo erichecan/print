@@ -1,6 +1,6 @@
 /**
  * 分类侧边栏 UI 测试
- * [2025-12-11 22:40:00] 测试 CategorySidebar 组件，验证只显示有产品的分类
+* 测试 CategorySidebar 组件，验证只显示有产品的分类
  */
 import { test, expect } from '@playwright/test';
 

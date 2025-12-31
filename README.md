@@ -11,7 +11,7 @@ A full-featured custom merchandise e-commerce platform with design lab, order ma
 
 ## Quick Start
 
-<!-- 更新 Quick Start 2025-11-10 12:50:00 -->
+<!-- 更新 Quick Start  -->
 ```bash
 # 安装 Node.js 18+ 与 npm 9+
 # 克隆仓库后，在根目录安装依赖（启用 npm workspaces）
@@ -69,7 +69,7 @@ chmod +x scripts/deploy-auto.sh
 
 ## Deployment
 
-<!-- 更新 Deployment 2025-11-12 03:30:00 -->
+<!-- 更新 Deployment  -->
 ### Production Build
 
 ```bash
@@ -300,7 +300,7 @@ cd apps/web && npx playwright test
 
 ## Tech Stack
 
-<!-- 更新 Tech Stack 2025-11-10 12:52:00 -->
+<!-- 更新 Tech Stack  -->
 - **Next.js 14** - React 应用框架（App Router）
 - **React 18.2** - 前端组件与交互
 - **TypeScript 5.4** - 前端类型系统

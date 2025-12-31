@@ -1,15 +1,15 @@
 /**
  * Next.js API Route: GET /api/offline-orders/products
- * [2025-01-27 15:30:00] 代理公开的产品列表请求到后端
- * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
+* 代理公开的产品列表请求到后端
+* 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/config/env';
 
-// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+// 修复：强制动态路由，防止构建时静态生成
 export const dynamic = 'force-dynamic';
 
-// [2025-12-09] 修复：使用统一的环境变量配置模块，延迟获取
+// 修复：使用统一的环境变量配置模块，延迟获取
 function getApiBase(): string {
   try {
     return getBackendApiBaseUrl();
@@ -19,7 +19,7 @@ function getApiBase(): string {
     if (process.env.NODE_ENV === 'production') {
       throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
     }
-    // [2025-12-19 15:24:45] 修复：与本仓库默认本地后端端口 4000 对齐（webapp-testing/Playwright/后端启动脚本）
+// 修复：与本仓库默认本地后端端口 4000 对齐（webapp-testing/Playwright/后端启动脚本）
     return 'http://localhost:3001/api';
   }
 }
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
   
   try {
-    // [2025-12-09] 修复：在运行时获取 API_BASE，确保使用最新的环境变量
+// 修复：在运行时获取 API_BASE，确保使用最新的环境变量
     const API_BASE = getApiBase();
     
     // 构建后端 URL

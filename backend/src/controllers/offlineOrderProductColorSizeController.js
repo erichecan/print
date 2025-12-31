@@ -1,5 +1,5 @@
-// [2025-12-06] PRD v2.0: 线下订单产品-颜色-尺码可用性配置控制器
-// [2025-12-07 04:20:00] 创建控制器
+// PRD v2.0: 线下订单产品-颜色-尺码可用性配置控制器
+// 创建控制器
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { BadRequestError, NotFoundError, InternalServerError } = require('../utils/errors');

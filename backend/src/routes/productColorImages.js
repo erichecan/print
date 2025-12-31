@@ -1,6 +1,6 @@
 /**
  * Product Color Image Routes
- * [2025-01-30 23:55:00] 产品颜色图片映射 API 路由
+* 产品颜色图片映射 API 路由
  */
 const express = require('express');
 const router = express.Router();

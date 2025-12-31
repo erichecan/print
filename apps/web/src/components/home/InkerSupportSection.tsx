@@ -105,7 +105,7 @@ export function InkerSupportSection() {
                         ))}
                     </ul>
 
-                    {/* [2025-12-30] Fix 404 error - Link to products page */}
+{/* Fix 404 error - Link to products page */}
                     <Link href="/products" className="inker-support__cta">
                         Learn More
                     </Link>

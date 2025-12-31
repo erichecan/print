@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 颜色配置复制API路由
+* 颜色配置复制API路由
  * POST: 将源颜色的印刷位置配置复制到目标颜色
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,7 +20,7 @@ export async function POST(
       );
     }
     
-    // [2025-12-19] 调用后端API复制颜色配置
+// 调用后端API复制颜色配置
     const response = await fetch(
       `${API_BASE_URL}/orders/items/${itemId}/copy-color/${fromColorId}/${toColorId}`,
       {

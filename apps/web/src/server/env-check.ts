@@ -1,6 +1,6 @@
 /**
  * Environment Variable Validation
- * [2025-01-27 18:30:00] 启动时环境变量校验，缺失即 fail-fast
+* 启动时环境变量校验，缺失即 fail-fast
  */
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isBuildTime = !!process.env.NEXT_PHASE;
@@ -8,7 +8,6 @@ const isProduction = !isDevelopment && !isBuildTime;
 
 /**
  * 必需的环境变量列表
- * [2025-01-27 18:30:00]
  */
 const REQUIRED_ENV_VARS = [
   'NEXT_PUBLIC_API_URL', // 后端 API URL（前端构建时内联）
@@ -16,7 +15,6 @@ const REQUIRED_ENV_VARS = [
 
 /**
  * 可选但推荐的环境变量
- * [2025-01-27 18:30:00]
  */
 const RECOMMENDED_ENV_VARS = [
   'API_BASE_URL', // 服务器端 API URL（运行时使用）
@@ -25,14 +23,14 @@ const RECOMMENDED_ENV_VARS = [
 
 /**
  * 验证环境变量
- * [2025-01-27 18:30:00] 在生产环境启动时校验必需变量
- * [2025-12-12 14:15:00] 增强：添加更详细的错误信息和日志
+* 在生产环境启动时校验必需变量
+* 增强：添加更详细的错误信息和日志
  */
 export function validateRequiredEnvVars(): void {
   const traceId = `env-check-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   const timestamp = new Date().toISOString();
   
-  // [2025-12-12 14:15:00] 增强：记录校验开始
+// 增强：记录校验开始
   console.debug('[Env Check] Starting environment variable validation', {
     traceId,
     timestamp,
@@ -52,7 +50,7 @@ export function validateRequiredEnvVars(): void {
       missing.push(varName);
       console.debug('[Env Check] Missing required env var', { traceId, varName });
     } else {
-      // [2025-12-12 14:15:00] 增强：记录已设置的变量（不记录值，只记录状态）
+// 增强：记录已设置的变量（不记录值，只记录状态）
       console.debug('[Env Check] Required env var found', { 
         traceId, 
         varName,
@@ -118,7 +116,6 @@ export function validateRequiredEnvVars(): void {
 
 /**
  * 在应用启动时调用
- * [2025-01-27 18:30:00]
  */
 if (typeof window === 'undefined') {
   // 仅在服务端执行

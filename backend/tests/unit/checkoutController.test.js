@@ -57,7 +57,7 @@ beforeEach(() => {
   prisma.cart.create.mockResolvedValue(mockCart);
 });
 
-describe('[2025-11-12 02:10:00] checkoutController.prepareCheckout', () => {
+describe(' checkoutController.prepareCheckout', () => {
   it('returns totals when cart has items and address provided', async () => {
     const req = {
       user: null,
@@ -103,7 +103,7 @@ describe('[2025-11-12 02:10:00] checkoutController.prepareCheckout', () => {
   });
 });
 
-describe('[2025-11-12 02:10:00] checkoutController.createPaymentIntent', () => {
+describe(' checkoutController.createPaymentIntent', () => {
   it('returns 400 when shipping address missing', async () => {
     const req = {
       user: null,
@@ -198,7 +198,7 @@ describe('[2025-11-12 02:10:00] checkoutController.createPaymentIntent', () => {
   });
 });
 
-describe('[2025-01-27 12:35:00] checkoutController.getShippingRates', () => {
+describe(' checkoutController.getShippingRates', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -249,7 +249,7 @@ describe('[2025-01-27 12:35:00] checkoutController.getShippingRates', () => {
   });
 });
 
-describe('[2025-01-27 12:35:00] checkoutController.confirmOrder', () => {
+describe(' checkoutController.confirmOrder', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset Stripe mocks

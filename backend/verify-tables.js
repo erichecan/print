@@ -1,4 +1,4 @@
-// [2025-11-04 23:40:00] 验证数据库表是否已创建
+// 验证数据库表是否已创建
 require('dotenv').config();
 const { Client } = require('pg');
 

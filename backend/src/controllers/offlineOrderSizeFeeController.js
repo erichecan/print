@@ -1,5 +1,5 @@
-// [2025-12-06] PRD v2.0: 线下订单尺码费用管理控制器
-// [2025-12-07 04:20:00] 从备份文件恢复
+// PRD v2.0: 线下订单尺码费用管理控制器
+// 从备份文件恢复
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { v4: uuidv4 } = require('uuid');

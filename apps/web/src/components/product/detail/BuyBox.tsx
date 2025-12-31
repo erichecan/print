@@ -1,6 +1,6 @@
 /**
  * BuyBox Component - Redbubble Style
- * [2025-11-19 09:05:00] 参考图一：价格/样式/颜色/尺码/数量/加入购物车/立即购买
+* 参考图一：价格/样式/颜色/尺码/数量/加入购物车/立即购买
  */
 'use client';
 
@@ -64,8 +64,8 @@ interface BuyBoxProps {
   onAddToCart: (payload: any) => void;
   onBuyNow: (payload: any) => void;
   onStartDesign?: (payload: any) => void;
-  variantId?: string; // [2025-12-08 14:40:00] 添加 variantId 支持
-  productId?: string; // [2025-12-08 14:40:00] 添加 productId 支持
+variantId?: string; // 添加 variantId 支持
+productId?: string; // 添加 productId 支持
 }
 
 export function BuyBox({
@@ -88,7 +88,7 @@ export function BuyBox({
   const [selectedStyle, setSelectedStyle] = useState(style.options[0]?.value || '');
   const [selectedColor, setSelectedColor] = useState(colors.find(c => c.available)?.name || '');
   const [selectedSize, setSelectedSize] = useState(sizes.find(s => s.available)?.value || '');
-  // [2025-12-11 22:55:00] 移除 Print Location 状态（模块已移除）
+// 移除 Print Location 状态（模块已移除）
   const [quantity, setQuantity] = useState(1);
 
   const selectedSizeData = sizes.find(s => s.value === selectedSize);
@@ -99,12 +99,12 @@ export function BuyBox({
     if (!canAddToCart) return;
     
     const payload = {
-      productId: productId || 'prod-001', // [2025-12-19 02:50:00] 使用实际的 productId
+productId: productId || 'prod-001', // 使用实际的 productId
       title,
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      // [2025-12-11 22:55:00] 移除 printLocation（模块已移除）
+// 移除 printLocation（模块已移除）
       quantity,
       unitPrice: price.sale,
       salePrice: price.sale,
@@ -120,12 +120,12 @@ export function BuyBox({
     if (!canAddToCart) return;
     
     const payload = {
-      productId: productId || 'prod-001', // [2025-12-19 02:50:00] 使用实际的 productId
+productId: productId || 'prod-001', // 使用实际的 productId
       title,
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      // [2025-12-11 22:55:00] 移除 printLocation（模块已移除）
+// 移除 printLocation（模块已移除）
       quantity,
       unitPrice: price.sale,
       salePrice: price.sale,
@@ -137,7 +137,7 @@ export function BuyBox({
     onBuyNow(payload);
   }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onBuyNow, productId]);
 
-  // [2025-12-08 14:40:00] 开始设计处理函数 - 跳转到新的 Design Lab 页面
+// 开始设计处理函数 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {
     const payload = {
       productId: productId || 'prod-001',
@@ -145,18 +145,18 @@ export function BuyBox({
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      // [2025-12-11 22:55:00] 移除 printLocation（模块已移除）
+// 移除 printLocation（模块已移除）
     };
     
     console.log('[Start Design]', payload);
     
-    // [2025-12-08 14:40:00] 如果父组件提供了 onStartDesign 回调，优先使用
+// 如果父组件提供了 onStartDesign 回调，优先使用
     if (onStartDesign) {
       onStartDesign(payload);
       return;
     }
     
-    // [2025-12-08 14:40:00] 如果没有 variantId，显示错误提示
+// 如果没有 variantId，显示错误提示
     if (!variantId) {
       console.error('[BuyBox] variantId is required for Start Design');
       alert('Unable to start design: Product variant not selected. Please select a color and size.');
@@ -164,7 +164,7 @@ export function BuyBox({
     }
     
     try {
-      // [2025-12-08 14:40:00] 使用新的 URL 构建函数
+// 使用新的 URL 构建函数
       const designUrl = buildNewDesignUrlSafe({
         variantId,
         productId: productId || undefined,
@@ -173,7 +173,7 @@ export function BuyBox({
         referrer: 'product_detail',
       });
       
-      // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航
+// 使用 router.push 进行客户端导航
       router.push(designUrl);
     } catch (error) {
       console.error('[BuyBox] Failed to build design URL:', error);
@@ -191,10 +191,10 @@ export function BuyBox({
 
   return (
     <aside className={styles.buybox} aria-label="Purchase options">
-      {/* [2025-11-19 09:05:00] 参考图一位置：商品标题 */}
+{/* 参考图一位置：商品标题 */}
       <h1 className={styles.buyboxTitle}>{title}</h1>
       
-      {/* [2025-11-19 09:05:00] 参考图一位置：设计/艺术家行 */}
+{/* 参考图一位置：设计/艺术家行 */}
       <div className={styles.buyboxArtist}>
         Designed and sold by{' '}
         <Link href={artistShopUrl} className={styles.buyboxArtistLink}>
@@ -202,7 +202,7 @@ export function BuyBox({
         </Link>
       </div>
 
-      {/* [2025-11-19 09:05:00] 参考图一位置：价格（原价+现价+折扣+ends soon） */}
+{/* 参考图一位置：价格（原价+现价+折扣+ends soon） */}
       <div className={styles.buyboxPrice}>
         <div className={styles.buyboxPriceMain}>
           <span className={styles.buyboxPriceSale}>{formatPrice(price.sale)}</span>
@@ -215,7 +215,7 @@ export function BuyBox({
         )}
       </div>
 
-      {/* [2025-11-19 09:05:00] 参考图一位置：评分 */}
+{/* 参考图一位置：评分 */}
       <div className={styles.buyboxRating} aria-label={`${rating.average} out of 5 stars, ${rating.count} reviews`}>
         <div className={styles.buyboxRatingStars} aria-hidden="true">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -231,7 +231,7 @@ export function BuyBox({
         <span className={styles.buyboxRatingCount}>({rating.count} reviews)</span>
       </div>
 
-      {/* [2025-11-19 09:05:00] 参考图一位置：Style下拉 */}
+{/* 参考图一位置：Style下拉 */}
       <div className={styles.buyboxField}>
         <label htmlFor="style-select" className={styles.buyboxLabel}>
           Style
@@ -252,7 +252,7 @@ export function BuyBox({
         <p className={styles.buyboxDescription}>{style.description}</p>
       </div>
 
-      {/* [2025-11-19 09:05:00] 参考图一位置：Color 圆形色块 */}
+{/* 参考图一位置：Color 圆形色块 */}
       <div className={styles.buyboxField}>
         <label className={styles.buyboxLabel}>Color</label>
         <div className={styles.buyboxColors} role="radiogroup" aria-label="Select color">
@@ -271,7 +271,7 @@ export function BuyBox({
         </div>
       </div>
 
-      {/* [2025-11-19 09:05:00] 参考图一位置：Size（S–3XL）+ Size Guide */}
+{/* 参考图一位置：Size（S–3XL）+ Size Guide */}
       <div className={styles.buyboxField}>
         <div className={styles.buyboxSizeHeader}>
           <label className={styles.buyboxLabel}>Size</label>
@@ -294,9 +294,9 @@ export function BuyBox({
         </div>
       </div>
 
-      {/* [2025-12-11 22:55:00] 移除 Print Location 模块（按需求） */}
+{/* 移除 Print Location 模块（按需求） */}
 
-      {/* [2025-11-19 09:05:00] 参考图一位置：数量步进器 */}
+{/* 参考图一位置：数量步进器 */}
       <div className={styles.buyboxField}>
         <label htmlFor="quantity-input" className={styles.buyboxLabel}>
           Quantity
@@ -341,9 +341,9 @@ export function BuyBox({
         )}
       </div>
 
-      {/* [2025-11-19 10:00:00] 三个按钮同一行：Start design, Add to cart, Buy now */}
+{/* 三个按钮同一行：Start design, Add to cart, Buy now */}
       <div className={styles.buyboxButtons}>
-        {/* [2025-11-19 10:00:00] 开始设计按钮 */}
+{/* 开始设计按钮 */}
         <button
           type="button"
           className={styles.buyboxStartDesign}
@@ -353,7 +353,7 @@ export function BuyBox({
           Start design
         </button>
 
-        {/* [2025-11-19 09:05:00] 参考图一位置：加入购物车按钮 */}
+{/* 参考图一位置：加入购物车按钮 */}
         <button
           type="button"
           className={styles.buyboxAddToCart}
@@ -364,7 +364,7 @@ export function BuyBox({
           Add to cart
         </button>
 
-        {/* [2025-11-19 09:05:00] 立即购买按钮（可选） */}
+{/* 立即购买按钮（可选） */}
         <button
           type="button"
           className={styles.buyboxBuyNow}

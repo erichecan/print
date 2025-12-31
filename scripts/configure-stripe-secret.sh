@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-11-28 17:25:00] 配置 Stripe 密钥到 GCP Secret Manager
+# 配置 Stripe 密钥到 GCP Secret Manager
 
 PROJECT_ID="moonlit-gamma-479502-r6"
 REGION="us-central1"

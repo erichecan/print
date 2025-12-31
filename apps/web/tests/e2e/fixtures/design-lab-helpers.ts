@@ -1,6 +1,6 @@
 /**
  * Design Lab 测试辅助工具
- * [2025-01-27 12:00:00] 提供 Design Lab 页面操作和验证的辅助函数
+* 提供 Design Lab 页面操作和验证的辅助函数
  */
 import type { Page, Locator } from '@playwright/test';
 import { expect } from './test-base';
@@ -9,7 +9,6 @@ const DESIGN_LAB_URL = '/design-lab';
 
 /**
  * 导航到 Design Lab 页面并等待加载完成
- * [2025-01-27 12:00:00]
  */
 export async function navigateToDesignLab(page: Page, timeout = 60000): Promise<void> {
   await page.goto(DESIGN_LAB_URL, { waitUntil: 'domcontentloaded', timeout });
@@ -25,7 +24,6 @@ export async function navigateToDesignLab(page: Page, timeout = 60000): Promise<
 
 /**
  * 等待 Design Lab 完全加载
- * [2025-01-27 12:00:00]
  */
 export async function waitForDesignLabReady(page: Page): Promise<void> {
   // 等待主要区域加载
@@ -43,7 +41,6 @@ export async function waitForDesignLabReady(page: Page): Promise<void> {
 
 /**
  * 点击左侧 Rail 按钮
- * [2025-01-27 12:00:00]
  */
 export async function clickRailButton(page: Page, buttonText: string): Promise<void> {
   const button = page.locator(`.dl-rail__btn:has-text("${buttonText}"), button[aria-label*="${buttonText}" i]`).first();
@@ -54,10 +51,9 @@ export async function clickRailButton(page: Page, buttonText: string): Promise<v
 
 /**
  * 打开 Upload 面板
- * [2025-01-27 12:00:00]
  */
 export async function openUploadPanel(page: Page): Promise<void> {
-  // [2025-12-16 06:24:10] 兼容 5.0：Rail 的 Upload 按钮是 toggle，首次点击可能从 edit-upload 回到 home
+// 兼容 5.0：Rail 的 Upload 按钮是 toggle，首次点击可能从 edit-upload 回到 home
   // 因此这里最多点击两次，直到 UploadPanel 出现
   const panel = page.locator('.dl-upload-panel, .dl-panel--upload').first();
   for (let i = 0; i < 2; i++) {
@@ -70,7 +66,6 @@ export async function openUploadPanel(page: Page): Promise<void> {
 
 /**
  * 上传文件（Browse）
- * [2025-01-27 12:00:00]
  */
 export async function uploadFile(page: Page, filePath: string): Promise<void> {
   await openUploadPanel(page);
@@ -85,7 +80,6 @@ export async function uploadFile(page: Page, filePath: string): Promise<void> {
 
 /**
  * 添加文字到画布
- * [2025-01-27 12:00:00]
  */
 export async function addTextToCanvas(page: Page, text: string): Promise<void> {
   await clickRailButton(page, 'Add Text');
@@ -104,7 +98,6 @@ export async function addTextToCanvas(page: Page, text: string): Promise<void> {
 
 /**
  * 打开 Add Art 面板
- * [2025-01-27 12:00:00]
  */
 export async function openArtPanel(page: Page): Promise<void> {
   await clickRailButton(page, 'Add Art');
@@ -114,7 +107,6 @@ export async function openArtPanel(page: Page): Promise<void> {
 
 /**
  * 选择素材分类
- * [2025-01-27 12:00:00]
  */
 export async function selectArtCategory(page: Page, categoryName: string): Promise<void> {
   await openArtPanel(page);
@@ -128,7 +120,6 @@ export async function selectArtCategory(page: Page, categoryName: string): Promi
 
 /**
  * 选择并添加素材
- * [2025-01-27 12:00:00]
  */
 export async function selectAndAddArtwork(page: Page, categoryName: string, artworkIndex = 0): Promise<void> {
   await selectArtCategory(page, categoryName);
@@ -143,7 +134,6 @@ export async function selectAndAddArtwork(page: Page, categoryName: string, artw
 
 /**
  * 打开 Product Colors 模态
- * [2025-01-27 12:00:00]
  */
 export async function openProductColorsModal(page: Page): Promise<void> {
   // 尝试从 Rail 打开
@@ -168,7 +158,6 @@ export async function openProductColorsModal(page: Page): Promise<void> {
 
 /**
  * 选择产品颜色
- * [2025-01-27 12:00:00]
  */
 export async function selectProductColor(page: Page, colorIndex = 0): Promise<void> {
   await openProductColorsModal(page);
@@ -182,7 +171,6 @@ export async function selectProductColor(page: Page, colorIndex = 0): Promise<vo
 
 /**
  * 切换视图（Front/Back/Sleeve Design/Zoom）
- * [2025-01-27 12:00:00]
  */
 export async function switchView(page: Page, viewName: 'Front' | 'Back' | 'Sleeve Design' | 'Zoom'): Promise<void> {
   const viewButton = page.locator(`.dl-sidebar__btn:has-text("${viewName}"), button:has-text("${viewName}")`).first();
@@ -194,7 +182,6 @@ export async function switchView(page: Page, viewName: 'Front' | 'Back' | 'Sleev
 
 /**
  * 点击 Undo 按钮
- * [2025-01-27 12:00:00]
  */
 export async function clickUndo(page: Page): Promise<void> {
   const undoButton = page.locator('button[aria-label*="undo" i], button:has-text("Undo")').first();
@@ -205,7 +192,6 @@ export async function clickUndo(page: Page): Promise<void> {
 
 /**
  * 点击 Redo 按钮
- * [2025-01-27 12:00:00]
  */
 export async function clickRedo(page: Page): Promise<void> {
   const redoButton = page.locator('button[aria-label*="redo" i], button:has-text("Redo")').first();
@@ -216,7 +202,6 @@ export async function clickRedo(page: Page): Promise<void> {
 
 /**
  * 打开 Names & Numbers 模态
- * [2025-01-27 12:00:00]
  */
 export async function openNamesNumbersModal(page: Page): Promise<void> {
   await clickRailButton(page, 'Add Names');
@@ -230,7 +215,6 @@ export async function openNamesNumbersModal(page: Page): Promise<void> {
 
 /**
  * 点击 Get Price 按钮
- * [2025-01-27 12:00:00]
  */
 export async function clickGetPrice(page: Page): Promise<void> {
   const getPriceButton = page.locator('button:has-text("Get Price"), .dl-btn:has-text("Get Price")').first();
@@ -242,7 +226,6 @@ export async function clickGetPrice(page: Page): Promise<void> {
 
 /**
  * 验证画布上有对象
- * [2025-01-27 12:00:00]
  */
 export async function verifyCanvasHasObjects(page: Page, minCount = 1): Promise<void> {
   // 通过检查画布上的对象或通过 API 验证
@@ -255,10 +238,9 @@ export async function verifyCanvasHasObjects(page: Page, minCount = 1): Promise<
 
 /**
  * 等待对象被选中
- * [2025-01-27 12:00:00]
  */
 export async function waitForObjectSelected(page: Page, timeout = 5000): Promise<void> {
-  // [2025-12-16 06:24:10] 兼容 4.0/5.0：5.0 的编辑面板是 ToolPanel 内的 “Edit Upload” 标题
+// 兼容 4.0/5.0：5.0 的编辑面板是 ToolPanel 内的 “Edit Upload” 标题
   const editPanel = page.locator(
     '.dl-edit-panel, .dl-panel--edit, .dl-upload-panel__title:has-text("Edit Upload"), h2:has-text("Edit Upload")'
   ).first();
@@ -269,7 +251,6 @@ export async function waitForObjectSelected(page: Page, timeout = 5000): Promise
 
 /**
  * 删除选中的对象
- * [2025-01-27 12:00:00]
  */
 export async function deleteSelectedObject(page: Page): Promise<void> {
   // 查找删除按钮（通常在对象右上角或编辑面板中）
@@ -288,7 +269,6 @@ export async function deleteSelectedObject(page: Page): Promise<void> {
 
 /**
  * 验证模态是否打开
- * [2025-01-27 12:00:00]
  */
 export async function verifyModalOpen(page: Page, modalClass?: string): Promise<Locator> {
   const selector = modalClass || '.dl-modal';
@@ -299,7 +279,6 @@ export async function verifyModalOpen(page: Page, modalClass?: string): Promise<
 
 /**
  * 关闭模态
- * [2025-01-27 12:00:00]
  */
 export async function closeModal(page: Page): Promise<void> {
   const closeButton = page.locator('.dl-modal__close, button[aria-label*="close" i], button:has-text("×")').first();
@@ -317,7 +296,6 @@ export async function closeModal(page: Page): Promise<void> {
 
 /**
  * 验证布局元素存在
- * [2025-01-27 12:00:00]
  */
 export async function verifyLayoutElements(page: Page): Promise<void> {
   // 验证 Header

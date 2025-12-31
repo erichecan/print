@@ -1,6 +1,6 @@
 /**
  * GCP 部署验证测试
- * [2025-01-27 23:55:00] 验证 GCP Cloud Run 部署的前后端连接和功能
+* 验证 GCP Cloud Run 部署的前后端连接和功能
  */
 import { test, expect } from '@playwright/test';
 
@@ -11,7 +11,7 @@ test.describe('GCP 部署验证', () => {
   test('前端页面应该正常加载', async ({ page }) => {
     await page.goto(FRONTEND_URL);
     
-    // [2025-11-28 16:55:00] 使用 domcontentloaded 代替 networkidle，避免超时
+// 使用 domcontentloaded 代替 networkidle，避免超时
     await page.waitForLoadState('domcontentloaded');
     
     // 检查页面标题
@@ -56,9 +56,9 @@ test.describe('GCP 部署验证', () => {
 
   test('前端应该能成功加载分类数据', async ({ page }) => {
     await page.goto(FRONTEND_URL);
-    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
+await page.waitForLoadState('domcontentloaded'); // 改用 domcontentloaded 避免超时
     
-    // [2025-11-28 17:50:00] 监听网络请求，检查分类 API 是否成功（使用更宽松的等待策略）
+// 监听网络请求，检查分类 API 是否成功（使用更宽松的等待策略）
     const categoriesResponse = page.waitForResponse(
       (response) => {
         const url = response.url();
@@ -88,7 +88,7 @@ test.describe('GCP 部署验证', () => {
 
   test('设计实验室页面应该可访问', async ({ page }) => {
     await page.goto(`${FRONTEND_URL}/design-lab`);
-    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
+await page.waitForLoadState('domcontentloaded'); // 改用 domcontentloaded 避免超时
     
     // 等待页面内容加载
     await page.waitForTimeout(2000);
@@ -104,7 +104,7 @@ test.describe('GCP 部署验证', () => {
 
   test('产品列表页面应该可访问', async ({ page }) => {
     await page.goto(`${FRONTEND_URL}/products`);
-    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
+await page.waitForLoadState('domcontentloaded'); // 改用 domcontentloaded 避免超时
     
     // 等待页面内容加载
     await page.waitForTimeout(2000);

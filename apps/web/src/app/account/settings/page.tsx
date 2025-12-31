@@ -1,8 +1,8 @@
 /**
  * Account Settings Page
- * [2025-01-27 13:00:00] 实现账户设置功能：密码修改、通知偏好
- * [2025-01-27] 修复：密码修改API路径已修复为 PUT /auth/me/password
- * [2025-12-06 12:30:00] Enhanced with password strength validation
+* 实现账户设置功能：密码修改、通知偏好
+* 修复：密码修改API路径已修复为 PUT /auth/me/password
+* Enhanced with password strength validation
  */
 'use client';
 
@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, userPreferencesApi, UserPreferences } from '@/lib/api';
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 16:10:00] 使用路由映射
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // 使用路由映射
 import {
   validatePasswordStrength,
   getPasswordStrengthDescription,
@@ -30,7 +30,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // [2025-12-06 12:30:00] Real-time password validation
+// Real-time password validation
   useEffect(() => {
     if (passwordForm.newPassword) {
       const validation = validatePasswordStrength(passwordForm.newPassword);
@@ -45,14 +45,14 @@ export default function SettingsPage() {
     setError(null);
     setSuccess(false);
 
-    // [2025-12-06 12:30:00] Validate current password
-    // [2025-12-06 12:30:00] Validate current password
+// Validate current password
+// Validate current password
     if (!passwordForm.currentPassword) {
       setError('Please enter your current password');
       return;
     }
 
-    // [2025-12-06 12:30:00] Validate new password strength
+// Validate new password strength
     if (!passwordForm.newPassword) {
       setError('Please enter a new password');
       return;
@@ -64,13 +64,13 @@ export default function SettingsPage() {
       return;
     }
 
-    // [2025-12-06 12:30:00] Validate password confirmation
+// Validate password confirmation
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setError('New password and confirmation password do not match');
       return;
     }
 
-    // [2025-12-06 12:30:00] Check if new password is different from current password
+// Check if new password is different from current password
     if (passwordForm.currentPassword === passwordForm.newPassword) {
       setError('New password must be different from current password');
       return;
@@ -289,7 +289,7 @@ export default function SettingsPage() {
 
 /**
  * Notification Preferences Section Component
- * [2025-01-27] 实现用户通知偏好设置功能
+* 实现用户通知偏好设置功能
  */
 function NotificationPreferencesSection() {
   const [preferences, setPreferences] = useState<UserPreferences | null>(null);
@@ -298,7 +298,7 @@ function NotificationPreferencesSection() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // [2025-01-27] 加载用户偏好设置
+// 加载用户偏好设置
   useEffect(() => {
     const loadPreferences = async () => {
       try {
@@ -333,7 +333,7 @@ function NotificationPreferencesSection() {
     loadPreferences();
   }, []);
 
-  // [2025-01-27] 更新偏好设置
+// 更新偏好设置
   const handleUpdate = async (section: keyof UserPreferences, field: string, value: boolean) => {
     if (!preferences) return;
 

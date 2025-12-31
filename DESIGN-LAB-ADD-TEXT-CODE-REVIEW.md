@@ -245,7 +245,7 @@ if (canPushHistory) {
 
 **问题描述**:
 ```typescript
-// [2025-12-08 23:00:00] 为文本对象添加删除控件
+// 为文本对象添加删除控件
 if (canvas && (canvas as any).deleteControl) {
   textObj.controls = textObj.controls || {};
   textObj.controls.deleteControl = (canvas as any).deleteControl;

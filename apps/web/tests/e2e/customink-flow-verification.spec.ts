@@ -1,6 +1,6 @@
 /**
  * Custom Ink 流程验证测试
- * [2025-01-27 12:00:00] 对比 PRD 验证需求正确性，测试 Custom Ink 的实际流程
+* 对比 PRD 验证需求正确性，测试 Custom Ink 的实际流程
  */
 import { test, expect } from './fixtures/test-base';
 import * as fs from 'fs';

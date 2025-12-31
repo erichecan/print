@@ -1,6 +1,6 @@
 /**
  * 为缺失的品牌创建文本占位符 SVG
- * [2025-01-29 03:45:00] 为无法下载的品牌 logo 创建简单的文本占位符
+* 为无法下载的品牌 logo 创建简单的文本占位符
  */
 
 const fs = require('fs');
@@ -8,12 +8,12 @@ const path = require('path');
 
 const OUTPUT_DIR = path.join(__dirname, '../../apps/web/public/assets/brands');
 
-// [2025-01-29 03:45:00] 确保输出目录存在
+// 确保输出目录存在
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-// [2025-01-29 03:45:00] 创建文本占位符 SVG
+// 创建文本占位符 SVG
 function createPlaceholderSVG(brandName, filename) {
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="200" height="60" xmlns="http://www.w3.org/2000/svg">
@@ -27,7 +27,7 @@ function createPlaceholderSVG(brandName, filename) {
   return outputPath;
 }
 
-// [2025-01-29 03:45:00] 需要创建占位符的品牌列表
+// 需要创建占位符的品牌列表
 const missingBrands = [
   { name: 'Comfort Colors', slug: 'comfort-colors' },
   { name: 'JBL', slug: 'jbl' },

@@ -1,13 +1,13 @@
 /**
  * Payment Method Service
- * [2025-12-06 17:20:00] Payment method management service for Issue #112
+* Payment method management service for Issue #112
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
 const Stripe = require('stripe');
 
-// [2025-12-06 17:20:00] Stripe client initialization
+// Stripe client initialization
 const getStripe = () => {
   const secretKey = process.env.STRIPE_SECRET_KEY;
   if (!secretKey || secretKey.trim() === '') {
@@ -18,7 +18,6 @@ const getStripe = () => {
 
 /**
  * Save payment method for user
- * [2025-12-06 17:20:00]
  * @param {string} userId - User ID
  * @param {string} paymentMethodId - Stripe PaymentMethod ID
  * @param {Object} options - Options including isDefault, billingDetails
@@ -106,7 +105,6 @@ async function savePaymentMethod(userId, paymentMethodId, options = {}) {
 
 /**
  * Get user's payment methods
- * [2025-12-06 17:20:00]
  * @param {string} userId - User ID
  * @returns {Promise<Array>} List of payment methods
  */
@@ -132,7 +130,6 @@ async function getUserPaymentMethods(userId) {
 
 /**
  * Get payment method by ID
- * [2025-12-06 17:20:00]
  * @param {string} paymentMethodId - Payment method ID
  * @param {string} userId - User ID (for authorization)
  * @returns {Promise<Object>} Payment method
@@ -167,7 +164,6 @@ async function getPaymentMethodById(paymentMethodId, userId) {
 
 /**
  * Set payment method as default
- * [2025-12-06 17:20:00]
  * @param {string} paymentMethodId - Payment method ID
  * @param {string} userId - User ID
  * @returns {Promise<Object>} Updated payment method
@@ -207,7 +203,6 @@ async function setDefaultPaymentMethod(paymentMethodId, userId) {
 
 /**
  * Delete payment method
- * [2025-12-06 17:20:00]
  * @param {string} paymentMethodId - Payment method ID
  * @param {string} userId - User ID
  * @returns {Promise<void>}
@@ -238,7 +233,6 @@ async function deletePaymentMethod(paymentMethodId, userId) {
 
 /**
  * Attach payment method to customer in Stripe
- * [2025-12-06 17:20:00]
  * @param {string} paymentMethodId - Stripe PaymentMethod ID
  * @param {string} customerId - Stripe Customer ID
  * @returns {Promise<Object>} Attached payment method

@@ -2,7 +2,7 @@
 
 /**
  * Admin Product Create Page
- * [2025-11-11 23:24:28] 新建商品页
+* 新建商品页
  */
 import { useRouter } from 'next/navigation';
 import { ProductForm } from '@/components/admin/ProductForm';

@@ -77,7 +77,7 @@
 ```typescript
 /**
  * Next.js API Route: GET /api/sales/orders/[id]
- * [2025-12-09] 代理销售订单详情请求到后端
+* 代理销售订单详情请求到后端
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBase } from '@/lib/api-route-config';
@@ -138,11 +138,11 @@ export async function GET(
 ### 2. 修复 API 配置：`apps/web/src/lib/api-route-config.ts`
 
 ```diff
--  // [2025-12-08 01:25:00] 统一的后端地址（使用正确的前端域名对应的后端地址）
+- // 统一的后端地址（使用正确的前端域名对应的后端地址）
 -  const productionBackendUrl = 'https://print-main-backend-234065158862.us-central1.run.app/api';
 -  
   if (publicApiUrl) {
--    // [2025-12-08 01:25:00] 生产环境如果包含 localhost，使用硬编码后端地址替代
+-  // 生产环境如果包含 localhost，使用硬编码后端地址替代
 -    if (!isDevelopment && (publicApiUrl.includes('localhost') || publicApiUrl.includes('127.0.0.1'))) {
 -      console.warn('[API Route Config] ⚠️ 警告：生产环境检测到 localhost API 地址！', publicApiUrl);
 -      console.warn('[API Route Config] 使用硬编码后端地址替代 localhost:', productionBackendUrl);
@@ -155,7 +155,7 @@ export async function GET(
     // ... 返回处理后的 URL
   }
   
-  // [2025-12-09] 生产环境必须配置环境变量
+// 生产环境必须配置环境变量
   if (!isDevelopment) {
 -    console.warn('[API Route Config] ⚠️ 检测到生产环境，但 NEXT_PUBLIC_API_URL 未配置，使用后端地址:', productionBackendUrl);
 -    return productionBackendUrl;
@@ -177,7 +177,7 @@ export async function GET(
 -        </div>
 -        <div className="admin-btn-group">
 +    <div>
-+      {/* [2025-12-09] 移除重复的 admin-page-header，因为 AdminShell 已经提供了标题 */}
++   {/* 移除重复的 admin-page-header，因为 AdminShell 已经提供了标题 */}
 +      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
 +        <p className="text-muted" style={{ margin: 0 }}>Manage fonts for Design Lab</p>
 +        <div className="admin-btn-group">

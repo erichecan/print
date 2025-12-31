@@ -1,6 +1,6 @@
 /**
  * TagsTrending Component - Redbubble Style
- * [2025-11-19 09:22:00] 参考图一：搜索条 + 主题词 Chips + Tag 云 + Trending topics
+* 参考图一：搜索条 + 主题词 Chips + Tag 云 + Trending topics
  */
 'use client';
 
@@ -26,7 +26,7 @@ export function TagsTrending({ tags, trending, onSearch }: TagsTrendingProps) {
 
   return (
     <section className={styles.tagsTrending} aria-label="Search and trending topics">
-      {/* [2025-11-19 09:22:00] 参考图一位置：搜索条 */}
+{/* 参考图一位置：搜索条 */}
       <div className={styles.tagsTrendingSearch}>
         <form onSubmit={handleSearch} className={styles.tagsTrendingSearchForm}>
           <input
@@ -46,7 +46,7 @@ export function TagsTrending({ tags, trending, onSearch }: TagsTrendingProps) {
         </form>
       </div>
 
-      {/* [2025-11-19 09:22:00] 参考图一位置：主题词 Chips */}
+{/* 参考图一位置：主题词 Chips */}
       <div className={styles.tagsTrendingTags}>
         {tags.map((tag, index) => (
           <Link
@@ -59,7 +59,7 @@ export function TagsTrending({ tags, trending, onSearch }: TagsTrendingProps) {
         ))}
       </div>
 
-      {/* [2025-11-19 09:22:00] 参考图一位置：Trending topics */}
+{/* 参考图一位置：Trending topics */}
       {trending.length > 0 && (
         <div className={styles.tagsTrendingTrending}>
           <h3 className={styles.tagsTrendingTrendingTitle}>Trending topics</h3>

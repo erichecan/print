@@ -1,4 +1,4 @@
-// [2025-11-02 20:55:00] Address model
+// Address model
 module.exports = (sequelize, DataTypes) => {
   const Address = sequelize.define('Address', {
     id: {

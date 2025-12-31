@@ -1,6 +1,6 @@
 /**
  * Admin i18n dictionary
- * [2025-11-16 14:25:00] Provide bilingual (en/zh) strings for the admin workspace
+* Provide bilingual (en/zh) strings for the admin workspace
  */
 export type AdminLocale = 'en' | 'zh';
 
@@ -16,7 +16,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     designReview: 'Design Review',
     coupons: 'Coupons',
     promotions: 'Promotions',
-    // [2025-11-24 11:05:12] Promotions bilingual strings
+// Promotions bilingual strings
     promotionsSubtitle: 'Plan and monitor marketing promotions',
     promotionsNewPromotion: 'New Promotion',
     promotionsLinkLabel: 'Link URL',
@@ -53,10 +53,10 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     sizeFees: 'Size Fees',
     discountTypePercentage: 'Percentage',
     discountTypeFixed: 'Fixed Amount',
-    discountTypeBuyGetFree: 'Buy X Get Y Free', // [2025-12-06 18:00:00] Buy-get-free promotion type for Issue #139
+discountTypeBuyGetFree: 'Buy X Get Y Free', // Buy-get-free promotion type for Issue #139
     percentageOff: '{value}% OFF',
     fixedOff: '${value} OFF',
-    // [2025-12-06 18:00:00] Buy-get-free promotion labels for Issue #139
+// Buy-get-free promotion labels for Issue #139
     promotionsBuyQuantityLabel: 'Buy Quantity (X)',
     promotionsBuyQuantityHint: 'Number of items customer must buy',
     promotionsGetQuantityLabel: 'Get Quantity (Y)',
@@ -177,7 +177,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     selectAllProducts: 'Select all products',
     paginationPrevious: 'Previous',
     paginationNext: 'Next',
-    // [2025-01-28 08:15:00] Admin Login Page
+// Admin Login Page
     adminSignIn: 'Admin Sign In',
     adminSignInDescription: 'Administrator access only. Customer login is available at',
     signIn: 'Sign In',
@@ -188,7 +188,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     forgotPassword: 'Forgot password?',
     accessDenied: 'Access denied. Admin privileges required.',
     loginFailed: 'Login failed. Please check your credentials.',
-    // [2025-01-28 08:15:00] CMS Content Manager
+// CMS Content Manager
     cms: 'CMS',
     contentManager: 'Content Manager',
     contentManagerSubtitle: 'Manage navigation, homepage, static pages, and all site content',
@@ -292,7 +292,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     imageUrl: 'Image URL',
     subtitle: 'Subtitle',
     linkUrl: 'Link URL',
-    // [2025-01-28 08:45:00] Production Management (Offline Orders)
+// Production Management (Offline Orders)
     production: 'Production',
     productionSubtitle: 'Manage offline orders and production workflow',
     searchOrdersOrCompanies: 'Search orders or companies...',
@@ -348,7 +348,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     timeline: 'Timeline',
     update: 'Update',
     movedTo: 'Moved to',
-    // [2025-01-28 08:45:00] Cost Management
+// Cost Management
     costManagementSubtitle: 'Track production cost, revenue, and gross margins',
     costOverview: 'Cost Overview',
     totalCost: 'Total Cost',
@@ -372,7 +372,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     unitCostPrompt: 'Unit cost',
     salePricePrompt: 'Sale price',
     invalidNumericValues: 'Invalid numeric values',
-    // [2025-01-28 08:45:00] Art Assets Management
+// Art Assets Management
     artAssets: 'Art Assets',
     artAssetsSubtitle: 'Manage Design Lab art assets and categories',
     uploadArtAsset: '+ Upload Art Asset',
@@ -424,7 +424,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     designReview: '设计审核',
     coupons: '优惠券',
     promotions: '促销活动',
-    // [2025-11-24 11:05:12] 促销与优惠券右侧内容双语
+// 促销与优惠券右侧内容双语
     promotionsSubtitle: '规划并跟进市场促销活动',
     promotionsNewPromotion: '新建促销活动',
     promotionsLinkLabel: '链接 URL',
@@ -460,10 +460,10 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     sizeFees: '尺码费用',
     discountTypePercentage: '百分比',
     discountTypeFixed: '固定金额',
-    discountTypeBuyGetFree: '买X送Y', // [2025-12-06 18:00:00] Buy-get-free promotion type for Issue #139
+discountTypeBuyGetFree: '买X送Y', // Buy-get-free promotion type for Issue #139
     percentageOff: '{value}% 折扣',
     fixedOff: '立减 ${value}',
-    // [2025-12-06 18:00:00] Buy-get-free promotion labels for Issue #139
+// Buy-get-free promotion labels for Issue #139
     promotionsBuyQuantityLabel: '购买数量 (X)',
     promotionsBuyQuantityHint: '客户需要购买的商品数量',
     promotionsGetQuantityLabel: '赠送数量 (Y)',
@@ -584,7 +584,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     selectAllProducts: '选择所有商品',
     paginationPrevious: '上一页',
     paginationNext: '下一页',
-    // [2025-01-28 08:15:00] Admin Login Page
+// Admin Login Page
     adminSignIn: '管理员登录',
     adminSignInDescription: '仅限管理员访问。客户登录请前往',
     signIn: '登录',
@@ -595,7 +595,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     forgotPassword: '忘记密码？',
     accessDenied: '访问被拒绝。需要管理员权限。',
     loginFailed: '登录失败。请检查您的凭据。',
-    // [2025-01-28 08:15:00] CMS Content Manager
+// CMS Content Manager
     cms: '内容管理',
     contentManager: '内容管理器',
     contentManagerSubtitle: '管理导航、首页、静态页面和所有网站内容',
@@ -699,7 +699,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     imageUrl: '图片 URL',
     subtitle: '副标题',
     linkUrl: '链接 URL',
-    // [2025-01-28 08:45:00] 生产管理（线下订单）
+// 生产管理（线下订单）
     production: '生产管理',
     productionSubtitle: '管理线下订单和生产工作流',
     searchOrdersOrCompanies: '搜索订单或公司...',
@@ -755,7 +755,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     timeline: '时间线',
     update: '更新',
     movedTo: '移动到',
-    // [2025-01-28 08:45:00] 成本管理
+// 成本管理
     costManagementSubtitle: '跟踪生产成本、收入和毛利率',
     costOverview: '成本概览',
     totalCost: '总成本',
@@ -779,7 +779,7 @@ export const ADMIN_TRANSLATIONS: Record<AdminLocale, TranslationRecord> = {
     unitCostPrompt: '单位成本',
     salePricePrompt: '售价',
     invalidNumericValues: '无效的数值',
-    // [2025-01-28 08:45:00] 素材管理
+// 素材管理
     artAssets: '素材管理',
     artAssetsSubtitle: '管理 Design Lab 艺术素材和分类',
     uploadArtAsset: '+ 上传艺术素材',

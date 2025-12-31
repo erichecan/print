@@ -1,6 +1,6 @@
 /**
  * DeliveryReturns Component - Redbubble Style
- * [2025-11-19 09:10:00] 参考图一：配送时效和退货政策
+* 参考图一：配送时效和退货政策
  */
 'use client';
 
@@ -32,7 +32,7 @@ interface DeliveryReturnsProps {
 export function DeliveryReturns({ delivery, returns }: DeliveryReturnsProps) {
   return (
     <div className={styles.deliveryReturns}>
-      {/* [2025-11-19 09:10:00] 参考图一位置：配送信息 */}
+{/* 参考图一位置：配送信息 */}
       <div className={styles.deliveryReturnsDelivery}>
         <div className={styles.deliveryReturnsLabel}>Delivery</div>
         <div className={styles.deliveryReturnsContent}>
@@ -41,7 +41,7 @@ export function DeliveryReturns({ delivery, returns }: DeliveryReturnsProps) {
         </div>
       </div>
 
-      {/* [2025-11-19 09:10:00] 参考图一位置：退货政策 */}
+{/* 参考图一位置：退货政策 */}
       <div className={styles.deliveryReturnsReturns}>
         <Link href={returns.url} className={styles.deliveryReturnsLink}>
           {returns.policy}

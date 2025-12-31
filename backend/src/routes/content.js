@@ -1,13 +1,13 @@
 /**
  * Public Content Routes
- * [2025-01-28 06:20:00] Public routes for CMS content (no authentication required)
+* Public routes for CMS content (no authentication required)
  */
 const express = require('express');
 const controller = require('../controllers/adminSettingController');
 
 const router = express.Router();
 
-// [2025-01-28 06:20:00] 公共内容 API，不需要管理员权限
+// 公共内容 API，不需要管理员权限
 router.get('/', controller.getPublicContentConfig);
 
 module.exports = router;

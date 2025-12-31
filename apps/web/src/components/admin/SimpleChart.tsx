@@ -1,6 +1,6 @@
 /**
  * Simple Chart Component
- * [2025-12-06 21:30:00] 简单图表组件 for Issue #160
+* 简单图表组件 for Issue #160
  */
 interface SimpleChartProps {
   data: Array<Record<string, any>>;

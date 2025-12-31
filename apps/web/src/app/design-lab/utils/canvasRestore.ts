@@ -1,6 +1,6 @@
 /**
  * Canvas Restoration Utility
- * [2025-12-28] Restores Fabric canvas from saved snapshot
+* Restores Fabric canvas from saved snapshot
  */
 import { Canvas } from 'fabric';
 

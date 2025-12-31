@@ -1,12 +1,12 @@
 /**
  * Design Lab Analytics Events API
- * [2025-12-08] 接收前端埋点事件
- * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
+* 接收前端埋点事件
+* 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBase } from '@/lib/api-route-config';
 
-// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+// 修复：强制动态路由，防止构建时静态生成
 export const dynamic = 'force-dynamic';
 
 const API_BASE = getBackendApiBase();

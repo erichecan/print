@@ -1,4 +1,4 @@
-// [2025-11-08 06:56:45] Offline order intake routes
+// Offline order intake routes
 const express = require('express');
 const multer = require('multer');
 const { authenticateOptional } = require('../middleware/auth');
@@ -40,7 +40,7 @@ const upload = multer({
   fileFilter
 });
 
-// [2025-12-07 02:30:00] PRD v2.0: 获取订单创建配置数据（产品、颜色、尺码费用、可用性等）
+// PRD v2.0: 获取订单创建配置数据（产品、颜色、尺码费用、可用性等）
 router.get('/config', offlineOrderController.getOrderConfig);
 
 router.post(

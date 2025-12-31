@@ -1,5 +1,5 @@
 /**
- * [2025-11-28 16:20:00] 综合 E2E 测试 - 覆盖所有核心功能
+* 综合 E2E 测试 - 覆盖所有核心功能
  */
 import { test, expect } from './fixtures/test-base';
 
@@ -66,7 +66,7 @@ test.describe('综合 E2E 测试套件', () => {
         expect(url).toMatch(/\/products/);
         expect(url).toMatch(/search=/);
         
-        // [2025-11-28 16:55:00] 验证搜索结果页面有商品显示 - 等待 API 响应
+// 验证搜索结果页面有商品显示 - 等待 API 响应
         await page.waitForResponse(
           (response) => response.url().includes('/api/products') && response.status() === 200,
           { timeout: 15000 }
@@ -78,7 +78,7 @@ test.describe('综合 E2E 测试套件', () => {
         await productCards.first().waitFor({ state: 'attached', timeout: 10000 }).catch(() => {});
         
         const count = await productCards.count();
-        // [2025-11-28 16:55:00] 如果没有商品，记录但不失败（可能是数据库没有数据）
+// 如果没有商品，记录但不失败（可能是数据库没有数据）
         if (count === 0) {
           console.warn('⚠️  搜索结果中没有商品，可能是数据库没有数据');
         }

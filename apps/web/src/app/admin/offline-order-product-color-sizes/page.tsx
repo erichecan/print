@@ -1,6 +1,6 @@
 /**
  * Offline Order Product-Color-Size Availability Management Page
- * [2025-12-07 05:45:00] 线下订单可用性配置页面
+* 线下订单可用性配置页面
  */
 'use client';
 

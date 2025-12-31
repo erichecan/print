@@ -1,6 +1,6 @@
 /**
  * History - 撤销重做系统
- * [2025-11-19 10:25:00] 管理画布历史状态，支持撤销/重做，每个面独立历史栈
+* 管理画布历史状态，支持撤销/重做，每个面独立历史栈
  */
 (function() {
   'use strict';
@@ -19,8 +19,8 @@
   let currentSide = 'front';
   let isSaving = false;
 
-  // [2025-11-19 10:25:00] 保存当前状态
-  // [2025-01-28 04:55:00] 添加详细日志用于调试
+// 保存当前状态
+// 添加详细日志用于调试
   function saveState() {
     const timestamp = new Date().toISOString();
     console.log('[History] ===== saveState CALLED =====', {
@@ -47,7 +47,7 @@
 
     isSaving = true;
     
-    // [2025-11-19 10:25:00] 获取当前画布状态（排除背景）
+// 获取当前画布状态（排除背景）
     const allObjects = canvas.getObjects();
     const objects = allObjects.filter(obj => obj.name !== 'background');
     
@@ -71,7 +71,7 @@
       timestamp
     });
     
-    // [2025-11-19 10:25:00] 添加到历史栈
+// 添加到历史栈
     const beforeLength = historyStacks[currentSide].length;
     historyStacks[currentSide].push(state);
     const afterLength = historyStacks[currentSide].length;
@@ -83,7 +83,7 @@
       timestamp
     });
     
-    // [2025-11-19 10:25:00] 限制历史栈大小
+// 限制历史栈大小
     if (historyStacks[currentSide].length > MAX_HISTORY) {
       const removed = historyStacks[currentSide].shift();
       console.log('[History] 📋 History stack trimmed (max:', MAX_HISTORY, ')', {
@@ -93,7 +93,7 @@
       });
     }
     
-    // [2025-11-19 10:25:00] 清空未来栈
+// 清空未来栈
     const futureLengthBefore = futureStacks[currentSide].length;
     futureStacks[currentSide] = [];
     
@@ -114,9 +114,9 @@
     });
   }
 
-  // [2025-11-19 10:25:00] 撤销
-  // [2025-01-27] 只撤销图层操作（上传图片、add text、add art），不影响主图（背景）
-  // [2025-01-28 04:55:00] 添加详细日志用于调试
+// 撤销
+// 只撤销图层操作（上传图片、add text、add art），不影响主图（背景）
+// 添加详细日志用于调试
   function undo() {
     const timestamp = new Date().toISOString();
     console.log('[History] ===== undo CALLED =====', {
@@ -155,7 +155,7 @@
       return false;
     }
 
-    // [2025-11-19 10:25:00] 保存当前状态到未来栈
+// 保存当前状态到未来栈
     const allObjects = canvas.getObjects();
     const objects = allObjects.filter(obj => obj.name !== 'background');
     const currentState = canvas.toDatalessJSON(objects);
@@ -176,7 +176,7 @@
       timestamp
     });
 
-    // [2025-11-19 10:25:00] 恢复上一个状态
+// 恢复上一个状态
     const previousState = historyStacks[currentSide].pop();
     const newHistoryLength = historyStacks[currentSide].length;
     
@@ -201,7 +201,7 @@
         timestamp
       });
 
-      // [2025-01-27] 不保存背景对象 - 如果 loadFromJSON 后背景缺失，直接重新加载
+// 不保存背景对象 - 如果 loadFromJSON 后背景缺失，直接重新加载
       // 这样可以确保主图（背景）永远不会被 undo 影响
       console.log('[History] 📋 Loading previous state (background will be preserved/restored if missing)', {
         timestamp
@@ -227,10 +227,10 @@
           actualObjects: objectsAfterLoad.length
         });
 
-        // [2025-01-28 05:35:00] 检查画布中是否已经有背景（loadFromJSON 后）
+// 检查画布中是否已经有背景（loadFromJSON 后）
         const existingBg = backgroundAfterLoad;
         
-        // [2025-01-27] 获取 canvasManager 中的背景引用（用于日志）
+// 获取 canvasManager 中的背景引用（用于日志）
         const bgFromManager = window.DesignLabCanvas && typeof window.DesignLabCanvas.getBackgroundImage === 'function' 
           ? window.DesignLabCanvas.getBackgroundImage() 
           : null;
@@ -243,7 +243,7 @@
           note: 'If background missing, will reload immediately'
         });
         
-        // [2025-01-27] 背景不存在，立即重新加载（最可靠的方法）
+// 背景不存在，立即重新加载（最可靠的方法）
         // 主图（背景）必须永远存在，即使恢复到空状态也要保留
         if (!existingBg) {
           console.log('[History] 📋 Background missing after loadFromJSON, immediately reloading...', {
@@ -254,9 +254,9 @@
             note: '⚠️ Background must always be preserved - reloading now'
           });
           
-          // [2025-01-27] 直接重新加载背景（loadFromJSON 会清空画布，包括背景，所以需要重新加载）
+// 直接重新加载背景（loadFromJSON 会清空画布，包括背景，所以需要重新加载）
           if (window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function') {
-            // [2025-01-27] 立即调用，不等待
+// 立即调用，不等待
             window.DesignLabCanvas.loadBackgroundForCurrentSide();
             console.log('[History] ✅ Background reload requested from canvasManager (immediate)', {
               timestamp: loadTimestamp
@@ -269,14 +269,14 @@
             });
           }
           
-          // [2025-01-27] 继续执行最终检查（背景正在异步加载，最终检查会验证）
+// 继续执行最终检查（背景正在异步加载，最终检查会验证）
         } else {
-          // [2025-01-28 05:35:00] 背景已存在，确保它在最底层
+// 背景已存在，确保它在最底层
           console.log('[History] ✅ Background exists, ensuring it is at back', {
             timestamp: loadTimestamp
           });
           
-          // [2025-01-28 05:35:00] 更新 canvasManager 的全局变量（确保同步）
+// 更新 canvasManager 的全局变量（确保同步）
           if (window.DesignLabCanvas && typeof window.DesignLabCanvas.setBackgroundImage === 'function') {
             window.DesignLabCanvas.setBackgroundImage(existingBg);
           }
@@ -284,7 +284,7 @@
 
         canvas.renderAll();
         
-        // [2025-01-27] 最终检查：确保背景存在且在最底层（兼容不同版本的 Fabric.js）
+// 最终检查：确保背景存在且在最底层（兼容不同版本的 Fabric.js）
         const finalBg = canvas.getObjects().find(obj => obj.name === 'background');
         const finalCheckTimestamp = new Date().toISOString();
         const allObjectsFinal = canvas.getObjects();
@@ -320,7 +320,7 @@
             } else if (typeof canvas.moveTo === 'function') {
               canvas.moveTo(finalBg, 0);
             } else {
-              // [2025-11-22 12:55:00] 如果都没有，手动移动到最底层
+// 如果都没有，手动移动到最底层
               const objects = canvas.getObjects();
               const index = objects.indexOf(finalBg);
               if (index > 0) {
@@ -334,7 +334,7 @@
             console.warn('[History] ⚠️ Failed to send background to back:', e, { timestamp: finalCheckTimestamp });
           }
           
-          // [2025-01-27] 确保 canvasManager 的 backgroundImage 变量同步
+// 确保 canvasManager 的 backgroundImage 变量同步
           if (window.DesignLabCanvas && typeof window.DesignLabCanvas.setBackgroundImage === 'function') {
             window.DesignLabCanvas.setBackgroundImage(finalBg);
             console.log('[History] ✅ CanvasManager backgroundImage variable synchronized', { timestamp: finalCheckTimestamp });
@@ -347,16 +347,16 @@
             willAttemptReload: !!(window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function')
           });
           
-          // [2025-01-27] 最后尝试：重新加载背景（使用更长的延迟确保图片加载完成）
+// 最后尝试：重新加载背景（使用更长的延迟确保图片加载完成）
           if (window.DesignLabCanvas && typeof window.DesignLabCanvas.loadBackgroundForCurrentSide === 'function') {
             console.log('[History] 🔄 Attempting to reload background from canvasManager as last resort...', {
               timestamp: finalCheckTimestamp
             });
             
-            // [2025-01-27] 立即调用一次
+// 立即调用一次
             window.DesignLabCanvas.loadBackgroundForCurrentSide();
             
-            // [2025-01-27] 延迟检查是否成功加载
+// 延迟检查是否成功加载
             setTimeout(() => {
               const reloadCheck = canvas.getObjects().find(obj => obj.name === 'background');
               if (reloadCheck) {
@@ -368,7 +368,7 @@
                 console.error('[History] ❌ Background reload from canvasManager failed! Retrying...', {
                   timestamp: new Date().toISOString()
                 });
-                // [2025-01-27] 如果第一次失败，再试一次
+// 如果第一次失败，再试一次
                 setTimeout(() => {
                   window.DesignLabCanvas.loadBackgroundForCurrentSide();
                   setTimeout(() => {
@@ -391,7 +391,7 @@
         
         isSaving = false;
         
-        // [2025-11-19 10:25:00] 更新图层面板
+// 更新图层面板
         if (window.DesignLabLayers) {
           window.DesignLabLayers.updateLayers();
           console.log('[History] ✅ Layers panel updated', { timestamp: loadTimestamp });
@@ -415,7 +415,7 @@
     return false;
   }
 
-  // [2025-11-19 10:25:00] 重做
+// 重做
   function redo() {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return false;
@@ -424,24 +424,24 @@
       return false;
     }
 
-    // [2025-11-19 10:25:00] 保存当前状态到历史栈
+// 保存当前状态到历史栈
     const objects = canvas.getObjects().filter(obj => obj.name !== 'background');
     const currentState = canvas.toDatalessJSON(objects);
     historyStacks[currentSide].push(currentState);
 
-    // [2025-11-19 10:25:00] 恢复未来状态
+// 恢复未来状态
     const nextState = futureStacks[currentSide].pop();
     if (nextState) {
       isSaving = true;
       
-      // [2025-01-28 05:35:00] 在加载新状态之前，先保存背景对象
+// 在加载新状态之前，先保存背景对象
       const backgroundFromManager = window.DesignLabCanvas && typeof window.DesignLabCanvas.getBackgroundImage === 'function' 
         ? window.DesignLabCanvas.getBackgroundImage() 
         : null;
       const backgroundFromCanvas = canvas.getObjects().find(obj => obj.name === 'background');
       const backgroundObject = backgroundFromManager || backgroundFromCanvas;
       
-      // [2025-01-28 05:35:00] 如果从 manager 获取失败，但画布中有背景，尝试更新 manager
+// 如果从 manager 获取失败，但画布中有背景，尝试更新 manager
       if (!backgroundFromManager && backgroundFromCanvas && window.DesignLabCanvas && typeof window.DesignLabCanvas.setBackgroundImage === 'function') {
         window.DesignLabCanvas.setBackgroundImage(backgroundFromCanvas);
       }
@@ -460,7 +460,7 @@
           objectsCount: canvas.getObjects().length
         });
 
-        // [2025-01-28 05:10:00] 恢复背景对象（如果之前存在）
+// 恢复背景对象（如果之前存在）
         if (backgroundObject) {
           const existingBg = canvas.getObjects().find(obj => obj.name === 'background');
           if (!existingBg) {
@@ -526,7 +526,7 @@
         }
 
         canvas.renderAll();
-        // [2025-11-22 12:55:00] 确保背景在最底层（兼容不同版本的 Fabric.js）
+// 确保背景在最底层（兼容不同版本的 Fabric.js）
         const bg = canvas.getObjects().find(obj => obj.name === 'background');
         if (bg) {
           try {
@@ -537,7 +537,7 @@
             } else if (typeof canvas.moveTo === 'function') {
               canvas.moveTo(bg, 0);
             } else {
-              // [2025-11-22 12:55:00] 如果都没有，手动移动到最底层
+// 如果都没有，手动移动到最底层
               const objects = canvas.getObjects();
               const index = objects.indexOf(bg);
               if (index > 0) {
@@ -553,7 +553,7 @@
         }
         isSaving = false;
         
-        // [2025-11-19 10:25:00] 更新图层面板
+// 更新图层面板
         if (window.DesignLabLayers) {
           window.DesignLabLayers.updateLayers();
           console.log('[History] ✅ Layers panel updated in redo', { timestamp: loadTimestamp });
@@ -565,8 +565,8 @@
     return false;
   }
 
-  // [2025-11-19 10:25:00] 切换画布面
-  // [2025-01-28 04:55:00] 添加日志
+// 切换画布面
+// 添加日志
   function switchSide(side) {
     const timestamp = new Date().toISOString();
     const oldSide = currentSide;
@@ -580,26 +580,26 @@
       timestamp
     });
     
-    // [2025-11-19 10:25:00] 每个面维护独立的历史栈
+// 每个面维护独立的历史栈
   }
 
-  // [2025-11-19 10:25:00] 检查是否可以撤销
+// 检查是否可以撤销
   function canUndo() {
     return historyStacks[currentSide].length > 0;
   }
 
-  // [2025-11-19 10:25:00] 检查是否可以重做
+// 检查是否可以重做
   function canRedo() {
     return futureStacks[currentSide].length > 0;
   }
 
-  // [2025-11-19 10:25:00] 清空历史
+// 清空历史
   function clearHistory() {
     historyStacks[currentSide] = [];
     futureStacks[currentSide] = [];
   }
 
-  // [2025-11-19 10:25:00] 导出全局 API
+// 导出全局 API
   window.DesignLabHistory = {
     saveState,
     undo,

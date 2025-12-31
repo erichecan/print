@@ -2,8 +2,8 @@
 
 /**
  * Admin Users Page
- * [2025-11-15 14:35:10] 接入后端 /api/admin/users，支持筛选与分页
- * [2025-01-28 18:45:00] 添加创建用户功能
+* 接入后端 /api/admin/users，支持筛选与分页
+* 添加创建用户功能
  */
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -29,7 +29,7 @@ export default function AdminUsersPage() {
   const [filters, setFilters] = useState<RemoteFilters>(remoteDefaults);
   const [searchDraft, setSearchDraft] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // [2025-01-28 18:45:00] 模态框状态
+const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框状态
 
   const swrKey = useMemo(() => ['admin-users', filters], [filters]);
 
@@ -90,7 +90,7 @@ export default function AdminUsersPage() {
   const canPrev = filters.page > 1;
   const canNext = filters.page < totalPages;
 
-  // [2025-01-28 18:45:00] 用户创建成功后的回调
+// 用户创建成功后的回调
   const handleUserCreated = () => {
     // 刷新用户列表
     mutate(swrKey);
@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* [2025-01-28 18:45:00] 创建用户模态框 */}
+{/* 创建用户模态框 */}
       <CreateUserModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}

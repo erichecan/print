@@ -1,9 +1,9 @@
 /**
  * Help Center Client Component
- * [2025-01-27 19:25:00] 帮助中心客户端组件（处理搜索和交互）
- * [2025-11-16 12:05:00] 原型化帮助中心布局与搜索
- * [2025-01-28 06:45:00] Updated to read content from CMS
- * [2025-12-06 19:00:00] Enhanced search with fuzzy matching and highlighting for Issue #147
+* 帮助中心客户端组件（处理搜索和交互）
+* 原型化帮助中心布局与搜索
+* Updated to read content from CMS
+* Enhanced search with fuzzy matching and highlighting for Issue #147
  */
 'use client';
 
@@ -14,7 +14,7 @@ import { contentApi } from '@/lib/api';
 import type React from 'react';
 import GuestBookForm from '@/components/help/GuestBookForm';
 
-// [2025-01-28 06:45:00] 默认快速链接（向后兼容）
+// 默认快速链接（向后兼容）
 const defaultQuickLinks = [
   { id: 'default-1', label: 'Check order status', href: '/order-tracking', icon: '📦' },
   { id: 'default-2', label: 'Update shipping address', href: '/contact', icon: '📍' },
@@ -24,7 +24,7 @@ const defaultQuickLinks = [
   { id: 'default-6', label: 'Size guide', href: '/size-guide', icon: '📏' },
 ];
 
-// [2025-01-28 06:45:00] 默认 FAQ 分类（向后兼容）
+// 默认 FAQ 分类（向后兼容）
 const defaultFaqCategories = [
   {
     id: 'default-orders',
@@ -222,7 +222,7 @@ const defaultFaqCategories = [
       },
     ],
   },
-  // [2025-12-06 19:00:00] Additional FAQ categories for Issue #147
+// Additional FAQ categories for Issue #147
   {
     id: 'default-account',
     category: 'Account & Settings',
@@ -374,18 +374,18 @@ const defaultFaqCategories = [
 ];
 
 export default function HelpClient() {
-  // [2025-01-28 06:45:00] 从 CMS 获取帮助页内容
+// 从 CMS 获取帮助页内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const helpPage = contentData?.data?.helpPage;
 
-  // [2025-01-28 06:45:00] 使用 CMS 数据或默认值（向后兼容）
+// 使用 CMS 数据或默认值（向后兼容）
   const quickLinks = helpPage?.quickLinks || defaultQuickLinks;
   const faqCategories = helpPage?.faqCategories || defaultFaqCategories;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
-  // [2025-12-06 19:00:00] Enhanced search with fuzzy matching and highlighting for Issue #147
+// Enhanced search with fuzzy matching and highlighting for Issue #147
   const filteredFAQs = useMemo(() => {
     if (!searchQuery.trim()) {
       return faqCategories;
@@ -419,7 +419,7 @@ export default function HelpClient() {
       .filter((category) => category.items.length > 0);
   }, [searchQuery, faqCategories]);
 
-  // [2025-12-06 19:00:00] Highlight search terms in text for Issue #147
+// Highlight search terms in text for Issue #147
   const highlightText = (text: string, query: string): React.ReactNode => {
     if (!query.trim()) return text;
     
@@ -492,7 +492,7 @@ export default function HelpClient() {
         <section className="faq">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
             <h2>FAQs</h2>
-            {/* [2025-12-06 19:00:00] Search results count for Issue #147 */}
+{/* Search results count for Issue #147 */}
             {searchQuery && (
               <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
                 Found {filteredFAQs.reduce((sum, cat) => sum + cat.items.length, 0)} result{filteredFAQs.reduce((sum, cat) => sum + cat.items.length, 0) !== 1 ? 's' : ''} for &ldquo;{searchQuery}&rdquo;
@@ -552,7 +552,7 @@ export default function HelpClient() {
           </p>
         </section>
 
-        {/* [2025-12-10 00:00:00] 留言本表单 */}
+{/* 留言本表单 */}
         <GuestBookForm />
       </div>
     </section>

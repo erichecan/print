@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-01-30 23:00:00] Design Lab 4.0: 禁止硬编码域与散落 baseURL
+# Design Lab 4.0: 禁止硬编码域与散落 baseURL
 
 echo "🔍 检查硬编码 URL..."
 
@@ -13,7 +13,7 @@ if [ -n "$HARDCODED_URLS" ]; then
 fi
 
 # 检查散落的 baseURL
-# [2025-12-26] Disabled due to excessive false positives (matches variable names like 'baseUrl' in Pagination.tsx)
+# Disabled due to excessive false positives (matches variable names like 'baseUrl' in Pagination.tsx)
 # SCATTERED_BASEURL=$(grep -r "baseURL\|baseUrl\|BASE_URL" apps/web/src --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" | grep -v "env.ts" | grep -v "apiClient.ts" | grep -v "api-config.ts" | grep -v "sitemap.ts" | grep -v "route.ts" | grep -v "lib/api.ts" | grep -v "customink-images.ts" | grep -v "Catalog" | grep -v "ProductsClient.tsx" | grep -v "offline-orders/page.tsx" | grep -v ".test." | grep -v ".spec." || true)
 
 # if [ -n "$SCATTERED_BASEURL" ]; then

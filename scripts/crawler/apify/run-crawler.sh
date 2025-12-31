@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-12-17] CustomInk 素材抓取定时任务脚本
+# CustomInk 素材抓取定时任务脚本
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"

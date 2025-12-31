@@ -2,10 +2,10 @@
 
 /**
  * Admin Orders Page - Unified Order Management
- * [2025-11-12 01:25:45] 订单列表与筛选
- * [2025-11-15 16:28:00] 还原 prototype/admin/admin/orders.html 布局
- * [2025-12-06 16:40:00] 添加批量订单处理功能 (Issue #87)
- * [2025-12-08] 统一订单管理：合并线上订单（Order）和线下订单（OfflineOrder）
+* 订单列表与筛选
+* 还原 prototype/admin/admin/orders.html 布局
+* 添加批量订单处理功能 (Issue #87)
+* 统一订单管理：合并线上订单（Order）和线下订单（OfflineOrder）
  */
 import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -42,7 +42,7 @@ export default function AdminOrdersPage() {
   const [searchInput, setSearchInput] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-  // [2025-12-06 16:40:00] Batch selection state for Issue #87
+// Batch selection state for Issue #87
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [batchUpdateStatus, setBatchUpdateStatus] = useState<string>('');
@@ -56,7 +56,7 @@ export default function AdminOrdersPage() {
   const pagination = data?.pagination;
   const warnings = data?.meta?.warnings;
 
-  // [2025-12-08] 显示警告信息
+// 显示警告信息
   useEffect(() => {
     if (warnings && warnings.length > 0) {
       if (warnings.includes('onlineQueryFailed')) {
@@ -68,7 +68,7 @@ export default function AdminOrdersPage() {
     }
   }, [warnings, showWarningToast]);
 
-  // [2025-12-06 16:40:00] Batch selection handlers for Issue #87
+// Batch selection handlers for Issue #87
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedOrderIds(new Set(orders.map((order) => order.compositeId)));
@@ -90,7 +90,7 @@ export default function AdminOrdersPage() {
   const isAllSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
   const isIndeterminate = selectedOrderIds.size > 0 && selectedOrderIds.size < orders.length;
 
-  // [2025-12-08] 批量导出（使用统一订单API）
+// 批量导出（使用统一订单API）
   const handleBatchExport = async () => {
     try {
       await unifiedOrdersApi.export({
@@ -123,7 +123,7 @@ export default function AdminOrdersPage() {
     }));
   };
 
-  // [2025-12-08] 批量更新处理（注意：统一订单的批量更新需要按类型分发）
+// 批量更新处理（注意：统一订单的批量更新需要按类型分发）
   const handleBatchUpdate = async () => {
     if (selectedOrderIds.size === 0) {
       alert('Please select at least one order');
@@ -172,8 +172,8 @@ export default function AdminOrdersPage() {
     }
   };
 
-  // [2025-12-08] 获取订单详情链接
-  // [2025-12-30] 修复：offline 订单应该链接到 sales 订单详情页面
+// 获取订单详情链接
+// 修复：offline 订单应该链接到 sales 订单详情页面
   const getOrderDetailLink = (order: UnifiedOrderDTO) => {
     if (order.type === 'online') {
       return `/admin/orders/${order.id}`;
@@ -266,7 +266,7 @@ export default function AdminOrdersPage() {
         </button>
       </div>
 
-      {/* [2025-12-06 16:40:00] Batch operations toolbar for Issue #87 */}
+{/* Batch operations toolbar for Issue #87 */}
       {selectedOrderIds.size > 0 && (
         <div
           style={{

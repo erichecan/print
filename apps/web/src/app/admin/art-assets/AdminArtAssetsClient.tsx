@@ -2,12 +2,12 @@
 
 /**
  * Admin Art Assets Client Component
- * [2025-01-28 01:05:00] Client component for managing art assets
+* Client component for managing art assets
  */
 import { useState, useMemo } from 'react';
 import { adminArtAssetsApi, ArtAsset } from '@/lib/api';
-import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-01-28 08:45:00] 国际化支持
-// [2025-01-28 02:35:00] 暂时移除 Next.js Image 组件，使用普通 img 标签以避免图片加载问题
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // 国际化支持
+// 暂时移除 Next.js Image 组件，使用普通 img 标签以避免图片加载问题
 // import Image from 'next/image';
 
 interface AdminArtAssetsClientProps {
@@ -51,7 +51,7 @@ export default function AdminArtAssetsClient({
   setIsActiveFilter,
   mutate,
 }: AdminArtAssetsClientProps) {
-  const { t } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
+const { t } = useAdminI18n(); // 国际化支持
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingAsset, setEditingAsset] = useState<ArtAsset | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -66,7 +66,7 @@ export default function AdminArtAssetsClient({
     console.log('[AdminArtAssets] Processed assets array:', result);
     console.log('[AdminArtAssets] Assets count:', result.length);
 
-    // [2025-01-28 02:30:00] 添加日志以便调试图片显示问题
+// 添加日志以便调试图片显示问题
     if (result.length > 0) {
       console.log('[AdminArtAssets] ✅ Loaded assets:', result.length);
       result.forEach((asset, index) => {
@@ -101,7 +101,7 @@ export default function AdminArtAssetsClient({
       const image = formData.get('image') as File;
       const sortOrder = formData.get('sortOrder') ? parseInt(formData.get('sortOrder') as string) : undefined;
 
-      // [2025-01-27] 验证必填字段
+// 验证必填字段
       if (!category || !name) {
         alert('Category and name are required');
         return;
@@ -112,7 +112,7 @@ export default function AdminArtAssetsClient({
         return;
       }
 
-      // [2025-01-27] 验证文件类型
+// 验证文件类型
       if (!image.type.startsWith('image/')) {
         alert('Please select a valid image file');
         return;
@@ -197,7 +197,7 @@ export default function AdminArtAssetsClient({
     }
   };
 
-  // [2025-01-28 02:40:00] 添加组件渲染日志（只在开发环境或首次渲染时显示）
+// 添加组件渲染日志（只在开发环境或首次渲染时显示）
   if (typeof window !== 'undefined') {
     console.log('[AdminArtAssets] ===== Component render =====');
     console.log('[AdminArtAssets] Props:', { isLoading, error, hasData: !!data, assetsCount: assets.length });
@@ -313,7 +313,7 @@ export default function AdminArtAssetsClient({
                         (() => {
                           const imageSrc = asset.thumbnailUrl || asset.imageUrl || asset.image_url;
                           console.log('[AdminArtAssets] Rendering image:', { assetId: asset.id, imageSrc });
-                          // [2025-01-28 02:35:00] 使用普通 img 标签以避免 Next.js Image 组件的限制
+// 使用普通 img 标签以避免 Next.js Image 组件的限制
                           return (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img

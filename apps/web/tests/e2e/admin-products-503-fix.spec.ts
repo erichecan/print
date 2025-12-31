@@ -1,7 +1,7 @@
 /**
  * Admin Products 503 Fix E2E Test
- * [2025-01-27 19:00:00] 验证 503 Service Unavailable 错误已修复
- * [2025-01-27 19:30:00] 修复：添加图片上传验证
+* 验证 503 Service Unavailable 错误已修复
+* 修复：添加图片上传验证
  */
 import { test, expect } from '@playwright/test';
 

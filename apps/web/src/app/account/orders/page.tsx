@@ -2,7 +2,7 @@
 
 /**
  * Account Orders Page
- * [2025-11-12 01:10:12] 展示已登录用户的订单历史，支持发票下载
+* 展示已登录用户的订单历史，支持发票下载
  */
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
@@ -41,16 +41,16 @@ export default function AccountOrdersPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
-  // [2025-01-27 12:10:00] 添加筛选和搜索状态
-  // [2025-12-06 13:30:00] Enhanced with payment status filter
+// 添加筛选和搜索状态
+// Enhanced with payment status filter
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt_desc');
-  // [2025-12-06 13:30:00] Debounce search query
+// Debounce search query
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
 
-  // [2025-12-06 13:30:00] Debounce search query
+// Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -64,7 +64,7 @@ export default function AccountOrdersPage() {
       setLoading(true);
       setError(null);
       try {
-        // [2025-12-06 13:30:00] Enhanced: Pass search, paymentStatus to API
+// Enhanced: Pass search, paymentStatus to API
         const data = await ordersApi.list(
           page,
           pagination.limit,
@@ -109,7 +109,7 @@ export default function AccountOrdersPage() {
         setLoading(false);
       }
     },
-    [pagination.limit, statusFilter, paymentStatusFilter, sortBy, debouncedSearchQuery] // [2025-12-06 13:30:00] Use debouncedSearchQuery
+[pagination.limit, statusFilter, paymentStatusFilter, sortBy, debouncedSearchQuery] // Use debouncedSearchQuery
   );
 
   useEffect(() => {
@@ -133,7 +133,7 @@ export default function AccountOrdersPage() {
     };
   }, [fetchOrders, router]);
 
-  // [2025-12-06 13:30:00] Refetch orders when filters change
+// Refetch orders when filters change
   useEffect(() => {
     fetchOrders(1);
   }, [debouncedSearchQuery, statusFilter, paymentStatusFilter, sortBy]);
@@ -151,7 +151,7 @@ export default function AccountOrdersPage() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('[2025-11-12 01:10:12] 发票下载失败', err);
+console.error(' 发票下载失败', err);
       alert('Unable to download invoice. Please try again later.');
     } finally {
       setDownloading(null);
@@ -196,8 +196,8 @@ export default function AccountOrdersPage() {
         </Link>
       </header>
 
-      {/* [2025-01-27 12:10:00] 添加筛选和搜索功能 */}
-      {/* [2025-12-06 13:30:00] Enhanced with payment status filter and improved UI */}
+{/* 添加筛选和搜索功能 */}
+{/* Enhanced with payment status filter and improved UI */}
       <div className="filters-section">
         <div className="filters-row">
           <div className="filter-group">

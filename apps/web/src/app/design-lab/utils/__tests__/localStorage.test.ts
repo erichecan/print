@@ -1,6 +1,5 @@
 /**
  * localStorage 工具测试
- * [2025-01-31 00:25:00]
  */
 import {
   saveDesignToLocalStorage,

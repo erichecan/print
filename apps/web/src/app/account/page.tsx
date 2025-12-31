@@ -1,6 +1,6 @@
 /**
  * Account Overview Page
- * [2025-01-27] Redirect to Orders page by default as requested
+* Redirect to Orders page by default as requested
  */
 'use client';
 

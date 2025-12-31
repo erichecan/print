@@ -1,6 +1,6 @@
 /**
  * Account Designs Page E2E Tests
- * [2025-01-31 00:30:00] 测试 My Account 设计页面功能
+* 测试 My Account 设计页面功能
  */
 import { test, expect } from '@playwright/test';
 

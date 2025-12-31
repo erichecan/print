@@ -1,6 +1,6 @@
 /**
  * Token 解析调试测试
- * [2025-12-07 08:10:00] 使用 Chrome DevTools 验证 token 是否被正确解析和传递
+* 使用 Chrome DevTools 验证 token 是否被正确解析和传递
  */
 import { test, expect } from '@playwright/test';
 

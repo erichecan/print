@@ -1,4 +1,4 @@
-// [2025-01-31 19:50:00] 订单项颜色尺码覆盖 API 路由
+// 订单项颜色尺码覆盖 API 路由
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateSizeOverrides } from '@/lib/services/orderRules';

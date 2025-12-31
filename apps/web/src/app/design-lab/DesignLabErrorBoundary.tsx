@@ -1,6 +1,6 @@
 /**
  * Design Lab Error Boundary
- * [2025-01-28 03:50:00] 客户端错误边界组件，用于捕获 Design Lab 的错误
+* 客户端错误边界组件，用于捕获 Design Lab 的错误
  */
 'use client';
 

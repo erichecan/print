@@ -1,7 +1,7 @@
 /**
  * Product Colors Modal - 产品颜色选择模态
- * [2025-01-30 18:30:00] 实现产品颜色选择模态，对齐 Custom Ink
- * [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg 更新模态标题和结构，完全匹配 Custom Ink
+* 实现产品颜色选择模态，对齐 Custom Ink
+* 根据 designlab-colors01.jpeg 更新模态标题和结构，完全匹配 Custom Ink
  */
 'use client';
 
@@ -35,13 +35,13 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
 
   if (!isOpen) return null;
 
-  // [2025-01-30 21:50:00] 修复：点击颜色后不关闭模态，只更新产品图片，直到用户点击 Done 或 Cancel
+// 修复：点击颜色后不关闭模态，只更新产品图片，直到用户点击 Done 或 Cancel
   const handleColorClick = (color: ProductColor) => {
     if (color.isAvailable) {
       onSelectColor(color.name);
       // 不关闭模态，让用户可以继续选择其他颜色
 
-      // [2025-12-08] 埋点：产品颜色切换
+// 埋点：产品颜色切换
       if (typeof window !== 'undefined') {
         const { analytics } = require('@/lib/analytics');
         analytics.track('product_color_changed', {
@@ -56,7 +56,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
     <div className="dl-modal-overlay" onClick={onClose}>
       <div className="dl-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
-          {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg 更新标题为 "Choose Your Product Color" */}
+{/* 根据 designlab-colors01.jpeg 更新标题为 "Choose Your Product Color" */}
           <h3 className="dl-modal__title">Choose Your Product Color</h3>
           <button
             className="dl-modal__close"
@@ -76,7 +76,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
           )}
 
           {/* Colors 色板矩阵 */}
-          {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，Ordering fewer than 6? 复选框应在 Colors 标题右侧 */}
+{/* 根据 designlab-colors01.jpeg，Ordering fewer than 6? 复选框应在 Colors 标题右侧 */}
           <div className="dl-modal__section">
             <div className="dl-modal__section-header">
               <h4 className="dl-modal__section-title">Colors:</h4>
@@ -109,7 +109,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
                     disabled={!color.isAvailable}
                     title={color.name}
                   >
-                    {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，checkmark 应在右上角 */}
+{/* 根据 designlab-colors01.jpeg，checkmark 应在右上角 */}
                     <div
                       className="dl-color-item__swatch"
                       style={{ backgroundColor: color.hex || '#cccccc' }}
@@ -146,7 +146,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
               })}
             </div>
 
-            {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 Sizes Available in 显示 */}
+{/* 根据 designlab-colors01.jpeg，添加 Sizes Available in 显示 */}
             {selectedColor && (() => {
               const selectedColorObj = colors.find(c => c.name === selectedColor);
               if (selectedColorObj && selectedColorObj.availableSizes.length > 0) {
@@ -164,7 +164,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
               return null;
             })()}
 
-            {/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 "Add this product in another color" 部分 */}
+{/* 根据 designlab-colors01.jpeg，添加 "Add this product in another color" 部分 */}
             <div className="dl-modal__pick-another">
               <div className="dl-modal__pick-another-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -201,7 +201,7 @@ const ProductColorsModal: React.FC<ProductColorsModalProps> = ({
           >
             Cancel
           </button>
-          {/* [2025-01-30 21:50:00] 添加 Done 按钮，确认颜色选择 */}
+{/* 添加 Done 按钮，确认颜色选择 */}
           <button
             className="dl-modal__btn dl-modal__btn--primary"
             onClick={onClose}

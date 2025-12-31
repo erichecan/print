@@ -1,4 +1,4 @@
-// [2025-11-02 20:52:00] Utility helper functions
+// Utility helper functions
 const { v4: uuidv4 } = require('uuid');
 
 /**

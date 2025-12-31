@@ -1,12 +1,12 @@
 /**
  * Sales Offline Order Controller
- * [2025-12-02 04:47:00] 为 Sales/Sales Manager 提供线下订单列表和详情接口
+* 为 Sales/Sales Manager 提供线下订单列表和详情接口
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 
-// [2025-12-02 04:47:00] Sales 订单映射函数
-// [2025-01-28 21:30:00] 添加 configuration 和其他字段支持详情页面显示
+// Sales 订单映射函数
+// 添加 configuration 和其他字段支持详情页面显示
 const mapSalesOfflineOrder = (order, includeDetails = false) => {
   const base = {
     id: order.id,
@@ -32,7 +32,7 @@ const mapSalesOfflineOrder = (order, includeDetails = false) => {
     updatedAt: order.updatedAt,
   };
 
-  // [2025-01-28 21:30:00] 详情接口包含完整配置信息
+// 详情接口包含完整配置信息
   if (includeDetails) {
     return {
       ...base,
@@ -49,7 +49,7 @@ const mapSalesOfflineOrder = (order, includeDetails = false) => {
 
 /**
  * GET /api/sales/orders
- * [2025-12-02 04:47:00] Sales 订单列表
+* Sales 订单列表
  */
 exports.listSalesOrders = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -74,7 +74,7 @@ exports.listSalesOrders = async (req, res) => {
 
     const where = {};
 
-    // [2025-12-02 04:47:00] 普通 Sales 只看自己提交的订单（通过 metadata.submittedByUserId）
+// 普通 Sales 只看自己提交的订单（通过 metadata.submittedByUserId）
     if (!isManager && userId) {
       where.metadata = {
         path: ['submittedByUserId'],
@@ -82,7 +82,7 @@ exports.listSalesOrders = async (req, res) => {
       };
     }
 
-    // [2025-12-07 04:50:00] 查询订单时，同时获取创建者信息（用于销售主管查看）
+// 查询订单时，同时获取创建者信息（用于销售主管查看）
     const [orders, total] = await prisma.$transaction([
       prisma.offlineOrder.findMany({
         where,
@@ -93,14 +93,14 @@ exports.listSalesOrders = async (req, res) => {
           { orderCode: 'desc' },
         ],
         include: {
-          // [2025-12-07 04:50:00] 通过 metadata.submittedByUserId 查找创建者
+// 通过 metadata.submittedByUserId 查找创建者
           // 注意：这里需要手动查询用户信息，因为 Prisma 不支持通过 JSON 字段关联
         },
       }),
       prisma.offlineOrder.count({ where }),
     ]);
 
-    // [2025-12-07 04:50:00] 获取所有订单的创建者信息
+// 获取所有订单的创建者信息
     const submittedByUserIds = orders
       .map(order => order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id)
       .filter(Boolean);
@@ -117,7 +117,7 @@ exports.listSalesOrders = async (req, res) => {
     res.json({
       data: orders.map(order => {
         const mapped = mapSalesOfflineOrder(order);
-        // [2025-12-07 04:50:00] 添加创建者信息
+// 添加创建者信息
         const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id;
         if (submittedByUserId && creatorMap.has(submittedByUserId)) {
           const creator = creatorMap.get(submittedByUserId);
@@ -150,7 +150,7 @@ exports.listSalesOrders = async (req, res) => {
 
 /**
  * GET /api/sales/orders/:id
- * [2025-12-02 04:47:00] Sales 订单详情
+* Sales 订单详情
  */
 exports.getSalesOrderById = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -186,13 +186,13 @@ exports.getSalesOrderById = async (req, res) => {
       return res.status(404).json({ error: 'Offline order not found' });
     }
 
-    // [2025-12-02 04:47:00] 普通 Sales 只能访问自己提交的订单
+// 普通 Sales 只能访问自己提交的订单
     const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
     if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
       return res.status(403).json({ error: 'You do not have permission to view this order' });
     }
 
-    // [2025-01-28 21:30:00] 详情接口包含完整配置信息
+// 详情接口包含完整配置信息
     res.json({
       order: {
         ...mapSalesOfflineOrder(order, true), // 传入 true 包含详情字段
@@ -213,7 +213,7 @@ exports.getSalesOrderById = async (req, res) => {
 
 /**
  * PATCH /api/sales/orders/:id/stage
- * [2025-12-07 03:00:00] Sales 更新订单阶段
+* Sales 更新订单阶段
  */
 exports.updateSalesOrderStage = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -256,7 +256,7 @@ exports.updateSalesOrderStage = async (req, res) => {
       return res.status(404).json({ error: 'Offline order not found' });
     }
 
-    // [2025-12-07 03:00:00] 普通 Sales 只能修改自己提交的订单
+// 普通 Sales 只能修改自己提交的订单
     const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
     if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
       return res.status(403).json({ error: 'You do not have permission to update this order' });
@@ -354,8 +354,8 @@ exports.updateSalesOrderStage = async (req, res) => {
 
 /**
  * PATCH /api/sales/orders/:id/status
- * [2025-12-07 05:15:00] Sales 更新订单状态（ACTIVE, COMPLETED, CANCELLED）
- * [2025-12-07 05:25:00] 支持同时更新加急状态（rushOrder）
+* Sales 更新订单状态（ACTIVE, COMPLETED, CANCELLED）
+* 支持同时更新加急状态（rushOrder）
  */
 exports.updateSalesOrderStatus = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -377,7 +377,7 @@ exports.updateSalesOrderStatus = async (req, res) => {
       newStatus: status,
     });
 
-    // [2025-12-07 05:15:00] 验证状态值
+// 验证状态值
     const validStatuses = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
     const normalizedStatus = status ? String(status).toUpperCase() : null;
     if (!normalizedStatus || !validStatuses.includes(normalizedStatus)) {
@@ -387,8 +387,8 @@ exports.updateSalesOrderStatus = async (req, res) => {
       });
     }
 
-    // [2025-12-07 05:15:00] 查找订单并验证权限
-    // [2025-12-07 08:00:00] 修复：包含 rushOrder 字段用于比较
+// 查找订单并验证权限
+// 修复：包含 rushOrder 字段用于比较
     const order = await prisma.offlineOrder.findUnique({
       where: { id },
       select: {
@@ -403,17 +403,17 @@ exports.updateSalesOrderStatus = async (req, res) => {
       return res.status(404).json({ error: 'Offline order not found' });
     }
 
-    // [2025-12-07 05:15:00] 普通 Sales 只能修改自己提交的订单
+// 普通 Sales 只能修改自己提交的订单
     const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
     if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
       return res.status(403).json({ error: 'You do not have permission to update this order' });
     }
 
-    // [2025-12-07 05:15:00] 检查是否需要更新
+// 检查是否需要更新
     const statusUnchanged = order.status === normalizedStatus;
     const rushOrderNeedsUpdate = rushOrder !== undefined && order.rushOrder !== Boolean(rushOrder);
     
-    // [2025-12-07 05:30:00] 如果状态和加急标记都没有变化，直接返回
+// 如果状态和加急标记都没有变化，直接返回
     if (statusUnchanged && !rushOrderNeedsUpdate) {
       const currentOrder = await prisma.offlineOrder.findUnique({
         where: { id },
@@ -441,14 +441,14 @@ exports.updateSalesOrderStatus = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Sales';
 
-    // [2025-12-07 05:15:00] 更新订单状态
-    // [2025-12-07 05:25:00] 如果提供了 rushOrder，同时更新加急状态
-    // [2025-12-07 19:55:00] 修复：状态更新不需要创建 stage history（stage history 用于阶段变更，不是状态变更）
+// 更新订单状态
+// 如果提供了 rushOrder，同时更新加急状态
+// 修复：状态更新不需要创建 stage history（stage history 用于阶段变更，不是状态变更）
     const updateData = {
       status: normalizedStatus,
     };
 
-    // [2025-12-07 05:25:00] 如果提供了 rushOrder 参数，更新加急状态
+// 如果提供了 rushOrder 参数，更新加急状态
     if (rushOrder !== undefined) {
       updateData.rushOrder = Boolean(rushOrder);
     }

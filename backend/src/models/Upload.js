@@ -1,4 +1,4 @@
-// [2025-11-02 20:58:00] Upload model
+// Upload model
 module.exports = (sequelize, DataTypes) => {
   const Upload = sequelize.define('Upload', {
     id: {

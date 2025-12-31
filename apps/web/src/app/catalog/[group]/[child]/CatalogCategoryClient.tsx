@@ -1,6 +1,6 @@
 /**
  * Catalog Category Client Component
- * [2025-12-11 23:05:00] 客户端组件：处理分类商品列表数据加载与展示
+* 客户端组件：处理分类商品列表数据加载与展示
  */
 'use client';
 
@@ -38,7 +38,7 @@ const fetcher = (url: string) =>
 export function CatalogCategoryClient({ groupSlug, childSlug }: CatalogCategoryClientProps) {
   const [categoryInfo, setCategoryInfo] = useState<{ name: string; description?: string } | null>(null);
 
-  // [2025-12-11 23:05:00] 获取分类信息
+// 获取分类信息
   useEffect(() => {
     fetch(`${API_BASE_URL}/categories/${childSlug}`)
       .then((r) => r.json())
@@ -55,7 +55,7 @@ export function CatalogCategoryClient({ groupSlug, childSlug }: CatalogCategoryC
       });
   }, [childSlug]);
 
-  // [2025-12-11 23:05:00] 获取该分类下的产品列表
+// 获取该分类下的产品列表
   const { data: productsData, error, isLoading } = useSWR<{
     data: Product[];
     pagination: {

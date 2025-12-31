@@ -1,6 +1,6 @@
 /**
  * Hook to detect mobile device
- * [2025-01-29 04:05:00] 检测是否为移动设备
+* 检测是否为移动设备
  */
 'use client';
 
@@ -10,7 +10,7 @@ export function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // [2025-01-29 04:05:00] 检测移动设备
+// 检测移动设备
     const checkMobile = () => {
       // 检查窗口宽度
       const isMobileWidth = window.innerWidth <= 768;

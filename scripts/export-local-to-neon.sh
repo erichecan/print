@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-01-29 02:30:00] 从本地数据库导出数据到 Neon 数据库
+# 从本地数据库导出数据到 Neon 数据库
 # 使用方法: ./scripts/export-local-to-neon.sh
 
 set -e

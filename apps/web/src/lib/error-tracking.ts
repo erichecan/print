@@ -1,6 +1,6 @@
 /**
  * Error Tracking and Digest Association
- * [2025-12-09 14:45:00] 错误追踪工具，关联 digest 到服务器日志
+* 错误追踪工具，关联 digest 到服务器日志
  * 
  * 用途：
  * - 在生产环境生成 traceId 并关联 digest

@@ -1,6 +1,6 @@
 /**
  * Design Lab 上传图片功能测试脚本（使用 Chrome DevTools Protocol）
- * [2025-01-31 19:30:00] 独立脚本，不依赖完整的测试环境
+* 独立脚本，不依赖完整的测试环境
  * 使用方法: node apps/web/scripts/test-design-lab-upload-cdp.js
  */
 const { chromium } = require('playwright');
@@ -177,7 +177,7 @@ async function testDesignLabUpload() {
     await page.waitForTimeout(3000);
 
     console.log('6️⃣  验证上传图片是否在画布上...');
-    // [2025-01-31 19:40:00] 等待更长时间，确保所有异步操作完成
+// 等待更长时间，确保所有异步操作完成
     await page.waitForTimeout(2000);
     
     const canvasObjects = await page.evaluate(() => {
@@ -228,7 +228,7 @@ async function testDesignLabUpload() {
     }
 
     console.log('8️⃣  再次验证上传图片是否仍然存在...');
-    await page.waitForTimeout(2000); // [2025-01-31 19:40:00] 等待更长时间，确保所有异步操作完成
+await page.waitForTimeout(2000); // 等待更长时间，确保所有异步操作完成
     
     const canvasObjectsAfterReload = await page.evaluate(() => {
       const canvas = window.fabricCanvas || (window.DesignLabCanvas && window.DesignLabCanvas.getCanvas());

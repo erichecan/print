@@ -1,5 +1,5 @@
 /**
- * [2025-11-24 10:40:22] 后台订单管理端到端测试
+* 后台订单管理端到端测试
  */
 import { test, expect } from './fixtures/test-base';
 
@@ -8,14 +8,14 @@ const SEEDED_ORDER = process.env.E2E_SEEDED_ORDER || 'ORD-1001';
 test.describe('后台订单管理', () => {
   test('管理员可以搜索订单并更新状态', async ({ page, adminAccount }) => {
     await page.goto('/admin/login');
-    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:55:00] 等待页面加载
+await page.waitForLoadState('domcontentloaded'); // 等待页面加载
     
-    // [2025-11-28 16:55:00] 等待表单元素可见
+// 等待表单元素可见
     await page.waitForSelector('#email, input[type="email"]', { timeout: 10000 });
     await page.fill('#email', adminAccount.email);
     await page.fill('#password', adminAccount.password);
     
-    // [2025-11-28 16:55:00] 监听登录 API 请求
+// 监听登录 API 请求
     const loginApiPromise = page.waitForResponse(
       (response) => response.url().includes('/api/auth/login'),
       { timeout: 30000 }
@@ -30,7 +30,7 @@ test.describe('后台订单管理', () => {
       throw new Error(`登录失败: ${errorData.error || 'HTTP ' + loginResponse.status()}`);
     }
     
-    // [2025-11-28 16:55:00] 增加超时时间并等待页面加载
+// 增加超时时间并等待页面加载
     await page.waitForURL(/\/admin$/, { timeout: 30000 });
     await page.waitForLoadState('domcontentloaded');
 
@@ -49,7 +49,7 @@ test.describe('后台订单管理', () => {
     const fulfillmentSelect = page.locator('.admin-form select').first();
     await fulfillmentSelect.selectOption('PROCESSING');
     
-    // [2025-12-06 18:00:00] Test status update note field for Issue #177
+// Test status update note field for Issue #177
     const noteField = page.locator('textarea[placeholder*="状态更新备注"]');
     if (await noteField.isVisible().catch(() => false)) {
       await noteField.fill('测试状态更新备注');
@@ -58,7 +58,7 @@ test.describe('后台订单管理', () => {
     await page.getByRole('button', { name: '保存更改' }).click();
     await expect(page.locator('.admin-alert')).toContainText(/订单更新成功|Order updated successfully/i);
     
-    // [2025-12-06 18:00:00] Test status history display for Issue #177
+// Test status history display for Issue #177
     const statusHistoryButton = page.getByRole('button', { name: /查看状态历史|View Status History/i });
     if (await statusHistoryButton.isVisible().catch(() => false)) {
       await statusHistoryButton.click();
@@ -73,7 +73,7 @@ test.describe('后台订单管理', () => {
     }
   });
   
-  // [2025-12-06 18:00:00] Test status transition validation for Issue #177
+// Test status transition validation for Issue #177
   test('管理员可以看到状态转换提示', async ({ page, adminAccount }) => {
     await page.goto('/admin/login');
     await page.waitForLoadState('domcontentloaded');

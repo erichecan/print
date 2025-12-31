@@ -1,4 +1,4 @@
-// [2025-01-27 19:35:00] Coupon Usage model
+// Coupon Usage model
 module.exports = (sequelize, DataTypes) => {
   const CouponUsage = sequelize.define('CouponUsage', {
     id: {

@@ -1,7 +1,7 @@
 /**
  * API Route Configuration
- * [2025-01-29 23:25:00] 统一管理 Next.js API 路由的后端 URL 配置
- * [2025-12-09] 修复：使用统一的环境变量配置模块
+* 统一管理 Next.js API 路由的后端 URL 配置
+* 修复：使用统一的环境变量配置模块
  * 
  * @deprecated 请使用 @/config/env 中的 getBackendApiBaseUrl()
  * 保留此文件以保持向后兼容
@@ -11,22 +11,22 @@ import { getBackendApiBaseUrl } from '@/config/env';
 
 /**
  * 获取后端 API 基础 URL
- * [2025-12-09] 修复：委托给统一的环境变量配置模块
+* 修复：委托给统一的环境变量配置模块
  * 
  * @deprecated 请直接使用 getBackendApiBaseUrl() from @/config/env
  */
 export function getBackendApiBase(): string {
   return getBackendApiBaseUrl();
   const isDevelopment = process.env.NODE_ENV === 'development';
-  // [2025-12-09] 检测是否在构建时（Next.js 构建阶段）
+// 检测是否在构建时（Next.js 构建阶段）
   // 构建时允许使用默认值，运行时再严格检查
   // 如果 NEXT_PHASE 存在，说明在构建阶段
   const isBuildTime = !!process.env.NEXT_PHASE;
   
-  // [2025-12-09] 优先使用 NEXT_PUBLIC_API_URL（前端环境变量）
+// 优先使用 NEXT_PUBLIC_API_URL（前端环境变量）
   const publicApiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (publicApiUrl) {
-    // [2025-12-09] 构建时完全跳过 localhost 检查
+// 构建时完全跳过 localhost 检查
     // 只在运行时（非构建时）检查 localhost
     if (!isDevelopment && !isBuildTime && (publicApiUrl.includes('localhost') || publicApiUrl.includes('127.0.0.1'))) {
       console.error('[API Route Config] ❌ 错误：生产环境检测到 localhost API 地址！', publicApiUrl);
@@ -40,7 +40,7 @@ export function getBackendApiBase(): string {
   // 回退到 API_BASE_URL（服务器端环境变量）
   const apiBaseUrl = process.env.API_BASE_URL;
   if (apiBaseUrl) {
-    // [2025-12-09] 构建时完全跳过 localhost 检查
+// 构建时完全跳过 localhost 检查
     if (!isDevelopment && !isBuildTime && (apiBaseUrl.includes('localhost') || apiBaseUrl.includes('127.0.0.1'))) {
       console.error('[API Route Config] ❌ 错误：生产环境 API_BASE_URL 包含 localhost！', apiBaseUrl);
       throw new Error('生产环境 API 配置错误：API_BASE_URL 包含 localhost。请设置正确的环境变量。');
@@ -52,7 +52,7 @@ export function getBackendApiBase(): string {
   // 回退到 NEXT_PUBLIC_API_BASE_URL
   const publicApiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (publicApiBaseUrl) {
-    // [2025-12-09] 构建时完全跳过 localhost 检查
+// 构建时完全跳过 localhost 检查
     if (!isDevelopment && !isBuildTime && (publicApiBaseUrl.includes('localhost') || publicApiBaseUrl.includes('127.0.0.1'))) {
       console.error('[API Route Config] ❌ 错误：生产环境 NEXT_PUBLIC_API_BASE_URL 包含 localhost！', publicApiBaseUrl);
       throw new Error('生产环境 API 配置错误：NEXT_PUBLIC_API_BASE_URL 包含 localhost。请设置正确的环境变量。');
@@ -61,7 +61,7 @@ export function getBackendApiBase(): string {
     return url.endsWith('/api') ? url : `${url}/api`;
   }
   
-  // [2025-12-09] 构建时允许回退到默认值，运行时再检查
+// 构建时允许回退到默认值，运行时再检查
   if (!isDevelopment && !isBuildTime) {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL、API_BASE_URL 或 NEXT_PUBLIC_API_BASE_URL。';
     console.error('[API Route Config] ❌', errorMsg);
@@ -75,7 +75,7 @@ export function getBackendApiBase(): string {
     throw new Error(errorMsg);
   }
   
-  // [2025-12-09] 开发环境或构建时回退到 localhost
+// 开发环境或构建时回退到 localhost
   if (isBuildTime) {
     console.warn('[API Route Config] ⚠️ 构建时未配置 API 地址，使用默认值（运行时需要配置环境变量）:', DEFAULT_API_BASE_DEV);
   } else {

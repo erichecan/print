@@ -1,6 +1,6 @@
 /**
  * Categories Section Component
- * [2025-01-27 18:50:00] 首页分类展示组件，从 API 读取分类数据
+* 首页分类展示组件，从 API 读取分类数据
  */
 'use client';
 

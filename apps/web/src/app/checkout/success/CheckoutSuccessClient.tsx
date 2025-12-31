@@ -2,8 +2,8 @@
 
 /**
  * Checkout Success Client Component
- * [2025-11-14 06:05:12] 从页面拆分为客户端组件并保留业务逻辑
- * [2025-01-29 14:30:00] Enhanced: Handle return_url from Stripe confirmPayment
+* 从页面拆分为客户端组件并保留业务逻辑
+* Enhanced: Handle return_url from Stripe confirmPayment
  */
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -15,12 +15,12 @@ export function CheckoutSuccessClient() {
   const router = useRouter();
   const orderNumber = searchParams?.get('orderNumber') || '';
   const email = searchParams?.get('email') || '';
-  const paymentIntentId = searchParams?.get('payment_intent') || ''; // [2025-01-29 14:30:00] From Stripe return_url
+const paymentIntentId = searchParams?.get('payment_intent') || ''; // From Stripe return_url
   const [copied, setCopied] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // [2025-01-29 14:30:00] Handle return_url from Stripe - confirm order if payment_intent is present
+// Handle return_url from Stripe - confirm order if payment_intent is present
   useEffect(() => {
     if (paymentIntentId && !orderNumber && !isProcessing && !error) {
       setIsProcessing(true);
@@ -29,7 +29,7 @@ export function CheckoutSuccessClient() {
       // Note: In a real scenario, you might want to call an API endpoint to retrieve order details
       // For now, we'll redirect to a page that can handle the payment_intent
       // The backend webhook should have already processed the payment
-      console.log('[2025-01-29 14:30:00] Payment intent from return_url:', paymentIntentId);
+console.log(' Payment intent from return_url:', paymentIntentId);
       
       // The order should already be confirmed by webhook, but we can verify
       // For now, just show a message that payment is being processed
@@ -52,11 +52,11 @@ export function CheckoutSuccessClient() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('[2025-01-27 10:35:00] Failed to copy order number:', err);
+console.error(' Failed to copy order number:', err);
     }
   };
 
-  // [2025-01-29 14:30:00] Show processing state if payment_intent is present but orderNumber is not yet available
+// Show processing state if payment_intent is present but orderNumber is not yet available
   if (paymentIntentId && !orderNumber && isProcessing) {
     return (
       <div className="success-page">

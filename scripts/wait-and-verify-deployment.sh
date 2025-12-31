@@ -1,6 +1,5 @@
 #!/bin/bash
 # 等待部署完成并验证所有功能
-# [2025-01-29 14:35:00]
 
 BUILD_ID=${1:-"0dddc675-a6d5-41f8-88d2-80958f941a31"}
 PROJECT_ID="moonlit-gamma-479502-r6"

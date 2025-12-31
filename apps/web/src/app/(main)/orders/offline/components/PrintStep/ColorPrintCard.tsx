@@ -1,4 +1,4 @@
-// [2025-01-31 19:50:00] 颜色印刷配置卡片组件
+// 颜色印刷配置卡片组件
 
 'use client';
 
@@ -14,7 +14,7 @@ interface ColorPrintCardProps {
 
 export function ColorPrintCard({ color, prevColor, onChange }: ColorPrintCardProps) {
   /**
-   * [2025-01-31 19:50:00] 复制上一颜色的配置
+* 复制上一颜色的配置
    */
   const copyPrev = () => {
     if (!prevColor) return;
@@ -30,7 +30,7 @@ export function ColorPrintCard({ color, prevColor, onChange }: ColorPrintCardPro
   };
 
   /**
-   * [2025-01-31 19:50:00] 应用模板配置
+* 应用模板配置
    */
   const applyTemplate = (name: string) => {
     try {
@@ -44,7 +44,7 @@ export function ColorPrintCard({ color, prevColor, onChange }: ColorPrintCardPro
   };
 
   /**
-   * [2025-01-31 19:50:00] 切换高级模式（允许尺码覆盖）
+* 切换高级模式（允许尺码覆盖）
    */
   const toggleOverrides = (checked: boolean) => {
     onChange({ ...color, allowSizeOverrides: checked });
@@ -132,7 +132,7 @@ interface SizeOverridesListProps {
 
 function SizeOverridesList({ color, onChange }: SizeOverridesListProps) {
   /**
-   * [2025-01-31 19:50:00] 设置尺码覆盖配置
+* 设置尺码覆盖配置
    */
   const setOverride = (sizeCode: string, cfgs: PrintConfig[]) => {
     const next = {

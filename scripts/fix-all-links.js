@@ -1,4 +1,4 @@
-// [2025-11-02 22:40:00] Script to fix all internal links across pages
+// Script to fix all internal links across pages
 // This ensures all navigation links work correctly for Netlify deployment
 
 /**

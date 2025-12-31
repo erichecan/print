@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-12-10 00:40:00] 解决失败的迁移状态
+# 解决失败的迁移状态
 
 PROJECT_ID=${GCP_PROJECT_ID:-$(gcloud config get-value project)}
 REGION=${GCP_REGION:-us-central1}

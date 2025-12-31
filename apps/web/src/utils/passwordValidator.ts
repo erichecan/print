@@ -1,6 +1,6 @@
 /**
  * Password Validator Utility
- * [2025-12-06 12:30:00] Password strength validation utility for frontend
+* Password strength validation utility for frontend
  */
 
 export type PasswordStrength = 'weak' | 'medium' | 'strong';
@@ -20,7 +20,6 @@ export interface PasswordValidationResult {
 
 /**
  * Validate password strength
- * [2025-12-06 12:30:00]
  */
 export function validatePasswordStrength(password: string): PasswordValidationResult {
   const errors: string[] = [];
@@ -63,7 +62,6 @@ export function validatePasswordStrength(password: string): PasswordValidationRe
 
 /**
  * Get password strength description
- * [2025-12-06 12:30:00]
  */
 export function getPasswordStrengthDescription(strength: PasswordStrength): string {
   const descriptions = {
@@ -76,7 +74,6 @@ export function getPasswordStrengthDescription(strength: PasswordStrength): stri
 
 /**
  * Get password strength color
- * [2025-12-06 12:30:00]
  */
 export function getPasswordStrengthColor(strength: PasswordStrength): string {
   const colors = {

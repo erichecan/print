@@ -1,6 +1,6 @@
 /**
  * Custom Ink Product Image Research - Playwright + CDP
- * [2025-01-30 19:45:00] 使用 Chrome DevTools Protocol 分析 Custom Ink 商品主图加载方式
+* 使用 Chrome DevTools Protocol 分析 Custom Ink 商品主图加载方式
  * 
  * 目标：
  * - 采集商品主图资源请求（URL、状态码、请求头、响应头、Referrer、Initiator）

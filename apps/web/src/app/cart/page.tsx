@@ -1,19 +1,18 @@
 /**
  * Cart Page
- * [2025-11-05 00:25:00]
- * [2025-01-27 20:00:00] 添加优惠券功能
- * [2025-11-16 12:32:00] 对齐原型化购物车布局与摘要
+* 添加优惠券功能
+* 对齐原型化购物车布局与摘要
  */
 'use client';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // [2025-12-08] 修复：使用 router.push 替代 Link 避免 RSC 路由问题
+import { useRouter } from 'next/navigation'; // 修复：使用 router.push 替代 Link 避免 RSC 路由问题
 import { useMemo, useState, useEffect } from 'react';
 import { useCart } from '@/contexts/CartContext';
-import { couponApi, promotionApi, Promotion } from '@/lib/api'; // [2025-01-28 12:40:00] 添加促销活动 API
-import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:50:00] Toast 通知
-import useSWR from 'swr'; // [2025-01-28 12:40:00] 用于获取促销活动
+import { couponApi, promotionApi, Promotion } from '@/lib/api'; // 添加促销活动 API
+import { useToast } from '@/hooks/useToast'; // Toast 通知
+import useSWR from 'swr'; // 用于获取促销活动
 
 interface AppliedCoupon {
   code: string;
@@ -23,21 +22,21 @@ interface AppliedCoupon {
 }
 
 export default function CartPage() {
-  const router = useRouter(); // [2025-12-08] 修复：使用 router.push 替代 Link 避免 RSC 路由问题
+const router = useRouter(); // 修复：使用 router.push 替代 Link 避免 RSC 路由问题
   const { cart, isLoading, updateItem, removeItem } = useCart();
-  const { success, error: showError, info } = useToast(); // [2025-01-27 16:50:00] Toast 通知
+const { success, error: showError, info } = useToast(); // Toast 通知
   const [updating, setUpdating] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [postalCode, setPostalCode] = useState('');
-  // [2025-12-13 14:30:00] 修复：初始值为空，仅在用户点击 Update 且输入无效时才显示错误
+// 修复：初始值为空，仅在用户点击 Update 且输入无效时才显示错误
   const [postalError, setPostalError] = useState('');
   const [showCouponForm, setShowCouponForm] = useState(false);
-  const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // [2025-12-08] 防止重复点击
+const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防止重复点击
   
-  // [2025-01-28 12:40:00] 获取每个商品的促销活动信息
+// 获取每个商品的促销活动信息
   const productIds = cart?.items.map((item) => item.productId).filter(Boolean) || [];
   const { data: promotionsData } = useSWR(
     productIds.length > 0 ? ['cart-promotions', productIds] : null,
@@ -48,7 +47,7 @@ export default function CartPage() {
           try {
             const result = await promotionApi.getForProduct(productId);
             if (result.promotions && result.promotions.length > 0) {
-              // [2025-01-28 12:40:00] 选择折扣最大的促销活动
+// 选择折扣最大的促销活动
               const bestPromotion = result.promotions.sort((a, b) => {
                 const aValue = a.discountType === 'percentage' ? a.discountValue : a.discountValue;
                 const bValue = b.discountType === 'percentage' ? b.discountValue : b.discountValue;
@@ -65,7 +64,7 @@ export default function CartPage() {
     }
   );
 
-  // [2025-01-28 12:40:00] 计算促销折扣总额
+// 计算促销折扣总额
   const promotionDiscount = useMemo(() => {
     if (!cart || !promotionsData) return 0;
     let total = 0;
@@ -105,7 +104,7 @@ export default function CartPage() {
     []
   );
 
-  // [2025-01-27 16:50:00] 优化数量更新交互反馈
+// 优化数量更新交互反馈
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
       showError('Quantity must be at least 1');
@@ -122,8 +121,8 @@ export default function CartPage() {
     }
   };
 
-  // [2025-01-27 16:50:00] 优化删除交互反馈
-  // [2025-12-19 02:50:00] 添加详细调试日志，修复删除功能
+// 优化删除交互反馈
+// 添加详细调试日志，修复删除功能
   const handleRemove = async (itemId: string) => {
     console.log('[Cart] handleRemove() ===== START =====');
     console.log('[Cart] Item ID:', itemId);
@@ -150,7 +149,7 @@ export default function CartPage() {
       await removeItem(itemId);
       console.log('[Cart] ✅ Item removed successfully');
       success('Item removed from cart');
-      // [2025-01-27 16:50:00] 如果应用了优惠券，重新验证
+// 如果应用了优惠券，重新验证
       if (appliedCoupon) {
         handleApplyCoupon();
       }
@@ -169,7 +168,7 @@ export default function CartPage() {
     }
   };
 
-  // [2025-01-27 16:50:00] 优化优惠券应用交互反馈
+// 优化优惠券应用交互反馈
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !cart) {
       showError('Please enter a coupon code');
@@ -197,7 +196,7 @@ export default function CartPage() {
     }
   };
 
-  // [2025-01-27 16:50:00] 优化移除优惠券交互反馈
+// 优化移除优惠券交互反馈
   const handleRemoveCoupon = () => {
     const code = appliedCoupon?.code;
     setAppliedCoupon(null);
@@ -208,8 +207,8 @@ export default function CartPage() {
     }
   };
 
-  // [2025-01-27 16:50:00] 优化邮政编码更新交互反馈
-  // [2025-12-13 14:30:00] 修复：仅在用户点击 Update 且输入无效时才显示错误
+// 优化邮政编码更新交互反馈
+// 修复：仅在用户点击 Update 且输入无效时才显示错误
   const handlePostalUpdate = () => {
     if (!postalCode.trim() || postalCode.trim().length < 5) {
       const errorMsg = 'Please enter a valid zip/postal code.';
@@ -217,7 +216,7 @@ export default function CartPage() {
       showError(errorMsg);
       return;
     }
-    // [2025-12-13 14:30:00] 修复：清除错误提示（使用空字符串而非 null）
+// 修复：清除错误提示（使用空字符串而非 null）
     setPostalError('');
     success('Postal code updated. Prices will be calculated at checkout.');
   };
@@ -228,7 +227,7 @@ export default function CartPage() {
     return Math.max(0, cart.total - discount);
   };
 
-  // [2025-12-13 15:55:00] CustomInk风格：优化空购物车状态显示
+// CustomInk风格：优化空购物车状态显示
   const renderEmptyState = () => (
     <section className="cart-new">
       <div className="cart-new__top">
@@ -299,7 +298,7 @@ export default function CartPage() {
     </section>
   );
 
-  // [2025-12-13 15:55:00] CustomInk风格：优化加载状态显示
+// CustomInk风格：优化加载状态显示
   if (isLoading) {
     return (
       <section className="cart-new">
@@ -365,10 +364,10 @@ export default function CartPage() {
 
       <div className="cart-new__hero">
         <h1>My Cart</h1>
-        {/* [2025-12-13 14:30:00] 删除：移除顶部重复的邮编提示文案 */}
+{/* 删除：移除顶部重复的邮编提示文案 */}
       </div>
 
-      {/* [2025-12-13 14:30:00] 删除：移除顶部红框邮编输入模块，邮编输入仅保留在右侧 Summary 区域 */}
+{/* 删除：移除顶部红框邮编输入模块，邮编输入仅保留在右侧 Summary 区域 */}
 
       <div className="cart-new__grid">
         <div className="cart-new__main">
@@ -382,7 +381,7 @@ export default function CartPage() {
                     width={144} 
                     height={144}
                     onError={(e) => {
-                      // [2025-01-29 12:00:00] 图片加载失败时显示占位符
+// 图片加载失败时显示占位符
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       const placeholder = target.nextElementSibling as HTMLElement;
@@ -393,7 +392,7 @@ export default function CartPage() {
                     unoptimized={item.thumbnail.startsWith('http') && !item.thumbnail.includes('storage.googleapis.com')}
                   />
                 ) : null}
-                {/* [2025-12-13 15:50:00] 图片占位符：当图片加载失败或无图片时显示 */}
+{/* 图片占位符：当图片加载失败或无图片时显示 */}
                 <div 
                   className="cart-card__placeholder" 
                   style={{ 
@@ -414,7 +413,7 @@ export default function CartPage() {
                 <div className="cart-card__top">
                   <div>
                     <p className="cart-card__design-name">{item.productName}</p>
-                    {/* [2025-12-13 15:45:00] 暂时隐藏 Edit Design 按钮（功能待实现） */}
+{/* 暂时隐藏 Edit Design 按钮（功能待实现） */}
                     {/* <button type="button" className="cart-card__link">
                       Edit Design
                     </button> */}
@@ -431,8 +430,8 @@ export default function CartPage() {
                 <p className="cart-card__product">
                   {item.productName}
                   <span>{item.variantDescription || 'Heather Dark Grey | Printing'}</span>
-                  {/* [2025-01-28 12:40:00] 显示促销活动标签 */}
-                  {/* [2025-12-13 15:55:00] CustomInk风格：优化促销标签样式 */}
+{/* 显示促销活动标签 */}
+{/* CustomInk风格：优化促销标签样式 */}
                   {promotionsData?.[item.productId] && (
                     <span className="cart-card__promotion-badge">
                       {promotionsData[item.productId].discountType === 'percentage'
@@ -484,7 +483,7 @@ export default function CartPage() {
             </article>
           ))}
 
-          {/* [2025-12-13 15:45:00] 注释掉 Delivery Options 板块（暂时下线） */}
+{/* 注释掉 Delivery Options 板块（暂时下线） */}
           {/* <section className="cart-delivery">
             <h3>Delivery Options</h3>
             <div className="cart-delivery__options">
@@ -497,7 +496,7 @@ export default function CartPage() {
             </div>
           </section> */}
 
-          {/* [2025-12-13 15:45:00] 注释掉 Add Your Design to More Styles 板块（暂时下线） */}
+{/* 注释掉 Add Your Design to More Styles 板块（暂时下线） */}
           {/* <section className="cart-upsell">
             <div className="cart-upsell__header">
               <h3>Add Your Design to More Styles</h3>
@@ -527,7 +526,7 @@ export default function CartPage() {
               <span>Subtotal ({cart.itemCount} items)</span>
               <span>${cart.subtotal.toFixed(2)}</span>
             </div>
-            {/* [2025-01-28 12:40:00] 显示促销折扣 */}
+{/* 显示促销折扣 */}
             {promotionDiscount > 0 && (
               <div className="summary-panel__row" style={{ color: '#e74c3c' }}>
                 <span>Promotion Discount</span>
@@ -575,7 +574,7 @@ export default function CartPage() {
               type="button"
               className="summary-panel__primary"
               onClick={() => {
-                // [2025-12-08] 修复：使用 router.push 替代 Link，避免 RSC 路由问题和 404 错误
+// 修复：使用 router.push 替代 Link，避免 RSC 路由问题和 404 错误
                 if (navigatingToCheckout) return; // 防止重复点击
                 setNavigatingToCheckout(true);
                 
@@ -662,7 +661,7 @@ export default function CartPage() {
         </aside>
       </div>
 
-      {/* [2025-01-30 12:00:00] 移除购物车底部联系信息 */}
+{/* 移除购物车底部联系信息 */}
     </section>
   );
 }

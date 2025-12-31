@@ -1,7 +1,7 @@
 /**
  * Canvas Product Image E2E Test
- * [2025-01-30 20:15:00] 验证 Design Lab 4.0 主图加载、居中与图层顺序
- * [2025-01-30 20:55:00] 修复：验证循环修复和状态机保护
+* 验证 Design Lab 4.0 主图加载、居中与图层顺序
+* 修复：验证循环修复和状态机保护
  */
 
 import { test, expect } from '@playwright/test';
@@ -183,7 +183,7 @@ test.describe('Design Lab 4.0 - Canvas Product Image', () => {
   });
 
   test('should not have repeated add/remove loop for product image', async ({ page }) => {
-    // [2025-01-30 20:55:00] 验证循环修复：不应出现重复的加载-移除循环
+// 验证循环修复：不应出现重复的加载-移除循环
     const addLogs: string[] = [];
     const removeLogs: string[] = [];
     const loopWarnings: string[] = [];
@@ -251,7 +251,7 @@ test.describe('Design Lab 4.0 - Canvas Product Image', () => {
   });
 
   test('product image should be centered correctly', async ({ page }) => {
-    // [2025-01-30 20:55:00] 验证居中算法修复
+// 验证居中算法修复
     await page.goto('/design-lab', { waitUntil: 'networkidle' });
     await page.waitForSelector('canvas', { timeout: 10000 });
     await page.waitForTimeout(3000); // 等待图片加载

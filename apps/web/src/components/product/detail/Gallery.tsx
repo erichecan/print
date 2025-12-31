@@ -1,6 +1,6 @@
 /**
  * Gallery Component - Redbubble Style
- * [2025-11-19 09:00:00] 参考图一：左侧竖向缩略图列 + 大图区域，支持放大/灯箱
+* 参考图一：左侧竖向缩略图列 + 大图区域，支持放大/灯箱
  */
 'use client';
 
@@ -24,7 +24,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-  // [2025-11-19 09:00:00] 键盘导航支持
+// 键盘导航支持
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isLightboxOpen) return;
     
@@ -57,7 +57,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
     <>
       <section className={styles.gallery} aria-label="Product gallery">
         <div className={styles.galleryContainer}>
-          {/* [2025-11-19 09:00:00] 参考图一位置：左侧竖向缩略图列 */}
+{/* 参考图一位置：左侧竖向缩略图列 */}
           <div className={styles.galleryThumbnails}>
             {images.map((img, index) => (
               <button
@@ -78,7 +78,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
             ))}
           </div>
 
-          {/* [2025-11-19 09:00:00] 参考图一位置：大图区域 */}
+{/* 参考图一位置：大图区域 */}
           <div className={styles.galleryMain}>
             <div 
               className={styles.galleryMainImageWrapper}
@@ -115,7 +115,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
         </div>
       </section>
 
-      {/* [2025-11-19 09:00:00] 灯箱模态框 */}
+{/* 灯箱模态框 */}
       {isLightboxOpen && (
         <div 
           className={styles.galleryLightbox}

@@ -1,7 +1,7 @@
 /**
  * Account Error Boundary
- * [2025-01-27 15:00:00] 账户页面错误边界组件
- * [2025-01-27 18:25:00] 增强错误追踪和可观测性
+* 账户页面错误边界组件
+* 增强错误追踪和可观测性
  */
 'use client';
 
@@ -16,13 +16,13 @@ interface AccountErrorProps {
 
 export default function AccountError({ error, reset }: AccountErrorProps) {
   useEffect(() => {
-    // [2025-01-27 18:25:00] 记录错误并获取追踪信息
+// 记录错误并获取追踪信息
     const traceId = logServerError(error, {
       path: typeof window !== 'undefined' ? window.location.pathname : '/account',
       method: 'GET',
     });
     
-    // [2025-01-27 18:25:00] 上报错误到遥测服务
+// 上报错误到遥测服务
     reportServerError({
       digest: error.digest,
       traceId,

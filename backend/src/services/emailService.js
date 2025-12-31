@@ -1,6 +1,6 @@
 /**
  * Email Service
- * [2025-01-27 10:00:00] Email service for sending order confirmations, refunds, etc.
+* Email service for sending order confirmations, refunds, etc.
  */
 const nodemailer = require('nodemailer');
 const logger = require('../utils/logger');
@@ -63,7 +63,6 @@ function getTransporter() {
 
 /**
  * Generate order confirmation email HTML
- * [2025-01-27 10:00:00]
  */
 function generateOrderConfirmationEmail(order) {
   const orderDate = new Date(order.createdAt).toLocaleDateString('en-CA', {
@@ -178,7 +177,7 @@ function generateOrderConfirmationEmail(order) {
 
 /**
  * Generate shipping notification email HTML
- * [2025-01-27 19:00:00] 添加发货通知邮件模板
+* 添加发货通知邮件模板
  */
 function generateShippingNotificationEmail(order, trackingNumber, carrier) {
   const shipDate = new Date().toLocaleDateString('en-CA', {
@@ -249,7 +248,7 @@ function generateShippingNotificationEmail(order, trackingNumber, carrier) {
 
 /**
  * Generate contact form submission email HTML
- * [2025-01-27 19:05:00] 联系表单提交邮件模板
+* 联系表单提交邮件模板
  */
 function generateContactFormEmail(formData) {
   return `
@@ -297,7 +296,6 @@ function generateContactFormEmail(formData) {
 
 /**
  * Generate refund confirmation email HTML
- * [2025-01-27 10:00:00]
  */
 function generateRefundConfirmationEmail(order, refundAmount, reason) {
   const refundDate = new Date().toLocaleDateString('en-CA', {
@@ -346,7 +344,6 @@ function generateRefundConfirmationEmail(order, refundAmount, reason) {
 
 /**
  * Send order confirmation email
- * [2025-01-27 10:00:00]
  */
 async function sendOrderConfirmation(order) {
   try {
@@ -404,7 +401,6 @@ async function sendOrderConfirmation(order) {
 
 /**
  * Send refund confirmation email
- * [2025-01-27 10:00:00]
  */
 async function sendRefundConfirmation(order, refundAmount, reason) {
   try {
@@ -443,7 +439,7 @@ async function sendRefundConfirmation(order, refundAmount, reason) {
 
 /**
  * Send shipping notification email
- * [2025-01-27 19:00:00] 发送发货通知邮件
+* 发送发货通知邮件
  */
 async function sendShippingNotification(order, trackingNumber, carrier) {
   try {
@@ -482,7 +478,7 @@ async function sendShippingNotification(order, trackingNumber, carrier) {
 
 /**
  * Send contact form submission notification
- * [2025-01-27 19:05:00] 发送联系表单提交通知
+* 发送联系表单提交通知
  */
 async function sendContactFormNotification(formData) {
   try {
@@ -521,7 +517,7 @@ async function sendContactFormNotification(formData) {
 
 /**
  * Send low stock alert email
- * [2025-12-07 04:15:00] 发送低库存警报邮件
+* 发送低库存警报邮件
  */
 async function sendLowStockAlert(product, variant, currentStock, threshold) {
   try {
@@ -567,7 +563,7 @@ async function sendLowStockAlert(product, variant, currentStock, threshold) {
 
 /**
  * Generate password reset email HTML
- * [2025-01-30 18:45:00] 生成密码重置邮件HTML
+* 生成密码重置邮件HTML
  */
 function generatePasswordResetEmail(resetUrl, userName) {
   const appName = process.env.APP_NAME || 'Suvernire Plus';
@@ -609,7 +605,7 @@ function generatePasswordResetEmail(resetUrl, userName) {
 
 /**
  * Send password reset email
- * [2025-01-30 18:45:00] 发送密码重置邮件
+* 发送密码重置邮件
  */
 async function sendPasswordResetEmail(email, resetToken, userName) {
   try {

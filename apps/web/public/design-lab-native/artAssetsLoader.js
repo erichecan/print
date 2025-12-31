@@ -1,12 +1,12 @@
 /**
  * Art Assets Loader - CMS 素材库加载器
- * [2025-01-28 04:15:00] 从后端 API 获取 CMS 素材库并显示在 art 面板中
- * [2025-01-29 12:30:00] 修复：使用动态 API 地址，避免硬编码 localhost
+* 从后端 API 获取 CMS 素材库并显示在 art 面板中
+* 修复：使用动态 API 地址，避免硬编码 localhost
  */
 (function() {
   'use strict';
 
-  // [2025-01-29 12:30:00] 动态获取 API 地址：优先使用全局配置，否则使用当前域名
+// 动态获取 API 地址：优先使用全局配置，否则使用当前域名
   function getApiBaseUrl() {
     // 优先使用 window 全局配置（如果页面设置了）
     if (typeof window !== 'undefined' && window.API_BASE_URL) {
@@ -31,7 +31,7 @@
   let artAssetsCache = null;
   let loadingArtAssets = false;
 
-  // [2025-01-28 04:15:00] 从 API 获取所有素材
+// 从 API 获取所有素材
   async function fetchArtAssets() {
     if (loadingArtAssets) {
       console.log('[ArtAssetsLoader] Already loading, waiting...');
@@ -48,7 +48,7 @@
 
     try {
       const response = await fetch(`${API_BASE_URL}/art-assets`).catch(error => {
-        // [2025-01-27] 处理网络错误（后端服务可能未运行）
+// 处理网络错误（后端服务可能未运行）
         console.warn('[ArtAssetsLoader] Network error (backend may not be running):', error);
         return null;
       });
@@ -59,7 +59,7 @@
       }
       
       if (!response.ok) {
-        // [2025-01-27] 静默处理错误，不阻止应用继续运行
+// 静默处理错误，不阻止应用继续运行
         console.warn('[ArtAssetsLoader] HTTP error:', response.status, '- Continuing without art assets');
         return {};
       }
@@ -95,7 +95,7 @@
     }
   }
 
-  // [2025-01-28 04:15:00] 渲染 CMS 素材到 art 面板
+// 渲染 CMS 素材到 art 面板
   function renderArtAssets(artAssets) {
     const artGrid = document.querySelector('.panel[data-panel="art"] .panel__art-grid');
     if (!artGrid) {
@@ -108,7 +108,7 @@
       timestamp: new Date().toISOString()
     });
 
-    // [2025-01-28 04:15:00] 清空现有内容（保留基本形状按钮）
+// 清空现有内容（保留基本形状按钮）
     const existingButtons = artGrid.querySelectorAll('.panel__art-item[data-art]');
     existingButtons.forEach(btn => {
       const artType = btn.getAttribute('data-art');
@@ -118,7 +118,7 @@
       }
     });
 
-    // [2025-01-28 04:15:00] 按分类渲染素材
+// 按分类渲染素材
     Object.keys(artAssets).forEach(category => {
       const assets = artAssets[category];
       if (!Array.isArray(assets) || assets.length === 0) {
@@ -131,10 +131,10 @@
         timestamp: new Date().toISOString()
       });
 
-      // [2025-01-28 04:15:00] 创建分类标题（可选）
+// 创建分类标题（可选）
       // 如果需要显示分类标题，可以在这里添加
 
-      // [2025-01-28 04:15:00] 渲染每个素材
+// 渲染每个素材
       assets.forEach(asset => {
         const imageUrl = asset.imageUrl || asset.image_url;
         if (!imageUrl) {
@@ -149,7 +149,7 @@
         button.setAttribute('aria-label', asset.name || 'Art');
         button.setAttribute('title', asset.name || 'Art');
 
-        // [2025-01-28 04:15:00] 创建图片元素
+// 创建图片元素
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = asset.name || 'Art';
@@ -158,7 +158,7 @@
         img.style.objectFit = 'contain';
         img.style.borderRadius = '4px';
 
-        // [2025-01-28 04:15:00] 图片加载错误处理
+// 图片加载错误处理
         img.onerror = () => {
           console.error('[ArtAssetsLoader] ❌ Failed to load image:', {
             url: imageUrl,
@@ -181,8 +181,8 @@
         button.appendChild(img);
         artGrid.appendChild(button);
 
-        // [2025-01-28 04:15:00] 绑定点击事件
-        // [2025-01-28 04:20:00] 使用 toolbar 的 addArt 函数以保持一致性
+// 绑定点击事件
+// 使用 toolbar 的 addArt 函数以保持一致性
         button.addEventListener('click', () => {
           console.log('[ArtAssetsLoader] 📋 Art asset clicked:', {
             name: asset.name,
@@ -190,16 +190,16 @@
             timestamp: new Date().toISOString()
           });
 
-          // [2025-01-28 04:20:00] 使用 toolbar 的 addArt 函数（支持 URL）
+// 使用 toolbar 的 addArt 函数（支持 URL）
           if (window.DesignLabToolbar && window.DesignLabToolbar.addArt) {
             window.DesignLabToolbar.addArt(imageUrl);
           } else if (window.DesignLabCanvas && window.DesignLabCanvas.addImage) {
-            // [2025-01-28 04:15:00] 降级方案：直接调用 canvasManager
+// 降级方案：直接调用 canvasManager
             window.DesignLabCanvas.addImage(imageUrl);
             
-            // [2025-01-27] 历史已在 addImage 中添加前保存，这里不需要重复保存
+// 历史已在 addImage 中添加前保存，这里不需要重复保存
             
-            // [2025-01-28 04:15:00] 返回 home 面板
+// 返回 home 面板
             if (window.DesignLabPanel) {
               window.DesignLabPanel.openPanel('home');
             }
@@ -216,7 +216,7 @@
     });
   }
 
-  // [2025-01-28 04:15:00] 初始化：加载并渲染素材
+// 初始化：加载并渲染素材
   async function init() {
     console.log('[ArtAssetsLoader] ===== INITIALIZING =====', {
       timestamp: new Date().toISOString()
@@ -238,7 +238,7 @@
     }
   }
 
-  // [2025-01-28 04:15:00] 导出全局 API
+// 导出全局 API
   window.DesignLabArtAssetsLoader = {
     init,
     fetchArtAssets,
@@ -249,7 +249,7 @@
     }
   };
 
-  // [2025-01-28 04:15:00] DOM 加载完成后自动初始化
+// DOM 加载完成后自动初始化
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

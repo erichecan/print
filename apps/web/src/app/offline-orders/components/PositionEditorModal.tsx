@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 位置编辑弹窗组件
+* 位置编辑弹窗组件
  * 用于编辑单个印刷位置的详细配置
  */
 'use client';
@@ -9,9 +9,9 @@ import { PositionConfig, PositionKey } from '@/types/order';
 
 interface PositionEditorModalProps {
   positionKey: PositionKey;
-  size?: string; // [2025-12-19] 如果提供，表示编辑per-size override
+size?: string; // 如果提供，表示编辑per-size override
   initialConfig?: PositionConfig | null;
-  defaultConfig?: PositionConfig | null; // [2025-12-19] 默认配置（用于per-size override时显示）
+defaultConfig?: PositionConfig | null; // 默认配置（用于per-size override时显示）
   onSave: (config: PositionConfig) => void;
   onCancel: () => void;
 }
@@ -36,7 +36,7 @@ const PRINT_METHODS = [
   { value: '其他', label: '其他' }
 ] as const;
 
-// [2025-12-13 15:20:00] 单位转换工具函数
+// 单位转换工具函数
 const INCH_TO_MM = 25.4;
 const mmToInch = (mm: number | undefined): string => {
   if (mm === undefined || mm === null || isNaN(mm)) return '';
@@ -62,7 +62,7 @@ export function PositionEditorModal({
     initialConfig?.method || defaultConfig?.method || 'DTF'
   );
   
-  // [2025-12-13 15:20:00] 将输入单位改为 inch，内部仍存储 mm
+// 将输入单位改为 inch，内部仍存储 mm
   // 初始化时将 mm 转换为 inch 显示
   const [widthInch, setWidthInch] = useState<string>(() => {
     const mm = initialConfig?.widthMm || defaultConfig?.widthMm;
@@ -74,25 +74,25 @@ export function PositionEditorModal({
   });
   
   const [inkOrFilm, setInkOrFilm] = useState(initialConfig?.inkOrFilm || defaultConfig?.inkOrFilm || '');
-  // [2025-01-30 11:15:00] 移除单价字段（非必填，已移除）
+// 移除单价字段（非必填，已移除）
   const [notes, setNotes] = useState(initialConfig?.notes || defaultConfig?.notes || '');
   const [dstFileFee, setDstFileFee] = useState<string>(
     initialConfig?.dstFileFee?.toString() || defaultConfig?.dstFileFee?.toString() || ''
   );
   
-  // [2025-12-13 15:20:00] 计算显示用的 mm 值（从 inch 转换）
+// 计算显示用的 mm 值（从 inch 转换）
   const widthMmDisplay = widthInch ? inchToMm(widthInch) : undefined;
   const heightMmDisplay = heightInch ? inchToMm(heightInch) : undefined;
 
-  // [2025-12-19] 处理保存
-  // [2025-01-30 11:15:00] 单价字段已移除，使用默认值0
-  // [2025-12-13 15:20:00] 保存时将 inch 转换为 mm
+// 处理保存
+// 单价字段已移除，使用默认值0
+// 保存时将 inch 转换为 mm
   const handleSave = () => {
     const config: PositionConfig = {
       positionKey,
       enabled,
       method,
-      unitPrice: 0, // [2025-01-30 11:15:00] 单价字段已移除，使用默认值0
+unitPrice: 0, // 单价字段已移除，使用默认值0
       widthMm: inchToMm(widthInch),
       heightMm: inchToMm(heightInch),
       inkOrFilm: inkOrFilm || undefined,
@@ -101,7 +101,7 @@ export function PositionEditorModal({
       designAssetId: initialConfig?.designAssetId || defaultConfig?.designAssetId || null
     };
 
-    // [2025-12-19] 验证：至少需要宽度或高度
+// 验证：至少需要宽度或高度
     if (!config.widthMm && !config.heightMm) {
       alert('请至少填写宽度或高度');
       return;
@@ -128,7 +128,7 @@ export function PositionEditorModal({
             </button>
           </div>
 
-          {/* [2025-12-19] 显示默认配置提示（如果是per-size override） */}
+{/* 显示默认配置提示（如果是per-size override） */}
           {size && defaultConfig && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
               <div className="font-medium text-blue-900 mb-1">默认配置：</div>
@@ -141,7 +141,7 @@ export function PositionEditorModal({
                   : defaultConfig.heightMm
                   ? `高${defaultConfig.heightMm}mm`
                   : '未设置'}
-                {/* [2025-01-30 11:15:00] 移除单价显示 */}
+{/* 移除单价显示 */}
               </div>
               <div className="text-xs text-blue-600 mt-1">
                 下方设置将覆盖默认配置，未设置的字段将继承默认值
@@ -179,7 +179,7 @@ export function PositionEditorModal({
               </select>
             </div>
 
-            {/* [2025-12-13 15:30:00] 尺寸输入：改为 inch 单位，自动显示 mm 换算值 */}
+{/* 尺寸输入：改为 inch 单位，自动显示 mm 换算值 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -191,7 +191,7 @@ export function PositionEditorModal({
                     value={widthInch}
                     onChange={(e) => setWidthInch(e.target.value)}
                     onKeyDown={(e) => {
-                      // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+// 修复：阻止Enter键触发表单提交
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
@@ -202,7 +202,7 @@ export function PositionEditorModal({
                     min="0"
                     step="0.01"
                   />
-                  {/* [2025-12-13 15:30:00] 在输入框右侧显示换算后的 mm 值 */}
+{/* 在输入框右侧显示换算后的 mm 值 */}
                   {widthInch && widthMmDisplay !== undefined && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
                       {widthMmDisplay}mm
@@ -220,7 +220,7 @@ export function PositionEditorModal({
                     value={heightInch}
                     onChange={(e) => setHeightInch(e.target.value)}
                     onKeyDown={(e) => {
-                      // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+// 修复：阻止Enter键触发表单提交
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         e.stopPropagation();
@@ -231,7 +231,7 @@ export function PositionEditorModal({
                     min="0"
                     step="0.01"
                   />
-                  {/* [2025-12-13 15:30:00] 在输入框右侧显示换算后的 mm 值 */}
+{/* 在输入框右侧显示换算后的 mm 值 */}
                   {heightInch && heightMmDisplay !== undefined && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 pointer-events-none">
                       {heightMmDisplay}mm
@@ -251,7 +251,7 @@ export function PositionEditorModal({
                 value={inkOrFilm}
                 onChange={(e) => setInkOrFilm(e.target.value)}
                 onKeyDown={(e) => {
-                  // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+// 修复：阻止Enter键触发表单提交
                   if (e.key === 'Enter') {
                     e.preventDefault();
                     e.stopPropagation();
@@ -262,7 +262,7 @@ export function PositionEditorModal({
               />
             </div>
 
-            {/* [2025-01-30 11:15:00] 单价字段已移除（非必填） */}
+{/* 单价字段已移除（非必填） */}
 
             {/* DST File Fee（仅Embroidery） */}
             {method === 'Embroidery' && (
@@ -275,7 +275,7 @@ export function PositionEditorModal({
                   value={dstFileFee}
                   onChange={(e) => setDstFileFee(e.target.value)}
                   onKeyDown={(e) => {
-                    // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交
+// 修复：阻止Enter键触发表单提交
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       e.stopPropagation();
@@ -298,7 +298,7 @@ export function PositionEditorModal({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 onKeyDown={(e) => {
-                  // [2025-12-18 16:45:00] 修复：阻止Enter键触发表单提交（但允许Shift+Enter换行）
+// 修复：阻止Enter键触发表单提交（但允许Shift+Enter换行）
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -309,7 +309,7 @@ export function PositionEditorModal({
               />
             </div>
 
-            {/* [2025-12-19] 文件上传（未来实现） */}
+{/* 文件上传（未来实现） */}
             <div className="text-sm text-gray-500">
               <p>文件上传功能将在后续版本中实现</p>
             </div>

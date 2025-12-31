@@ -1,13 +1,12 @@
 /**
  * Server-side Account Utilities
- * [2025-01-27 18:00:00] 服务端账户数据获取安全封装，使用 Result 风格避免抛错
+* 服务端账户数据获取安全封装，使用 Result 风格避免抛错
  */
 import { getBackendApiBaseUrl } from '@/config/env';
 import { generateTraceId } from '@/shared/errors';
 
 /**
  * Result 类型：安全的数据获取结果
- * [2025-01-27 18:00:00]
  */
 export type Result<T> = 
   | { ok: true; data: T }
@@ -15,24 +14,23 @@ export type Result<T> =
 
 /**
  * 安全获取会话信息（不抛错）
- * [2025-01-27 18:00:00]
  */
 export async function getSessionSafe(requestId?: string): Promise<Result<{ userId: string; email: string; [key: string]: any }>> {
   const traceId = requestId || generateTraceId();
   const timestamp = new Date().toISOString();
   
-  // [2025-12-12 14:15:00] 增强：记录函数调用开始
+// 增强：记录函数调用开始
   console.debug('[Account] getSessionSafe called', { traceId, timestamp, hasRequestId: !!requestId });
   
   try {
-    // [2025-01-30 19:25:00] 导入 cookies（Next.js 14 App Router）
+// 导入 cookies（Next.js 14 App Router）
     // 注意：cookies() 必须在 Server Component 中调用，且组件必须标记为 dynamic
     const { cookies } = await import('next/headers');
     let cookieStore;
     try {
       cookieStore = await cookies();
     } catch (cookiesError) {
-      // [2025-01-30 19:25:00] 修复：捕获 cookies() 调用可能的错误
+// 修复：捕获 cookies() 调用可能的错误
       console.error('[Account] Failed to get cookies', {
         traceId,
         timestamp,
@@ -52,7 +50,7 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       return { ok: false, code: 'NO_TOKEN', message: 'No authentication token found' };
     }
     
-    // [2025-12-12 14:15:00] 增强：记录 token 存在（不记录完整 token）
+// 增强：记录 token 存在（不记录完整 token）
     console.debug('[Account] Token found, proceeding to fetch session', { 
       traceId, 
       timestamp,
@@ -60,11 +58,11 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       tokenPrefix: token ? token.substring(0, 10) + '...' : 'null',
     });
 
-    // [2025-12-12 14:15:00] 获取后端 API URL（可能抛出错误）
+// 获取后端 API URL（可能抛出错误）
     let backendApiUrl: string;
     try {
       backendApiUrl = getBackendApiBaseUrl();
-      // [2025-01-30 19:20:00] 修复：安全地解析 URL，避免 new URL() 抛出错误
+// 修复：安全地解析 URL，避免 new URL() 抛出错误
       let urlHost: string | null = null;
       try {
         urlHost = new URL(backendApiUrl).hostname;
@@ -76,7 +74,7 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
           error: urlError instanceof Error ? urlError.message : String(urlError),
         });
       }
-      // [2025-12-12 14:15:00] 增强：记录成功获取 API URL（不记录完整 URL 以避免泄露）
+// 增强：记录成功获取 API URL（不记录完整 URL 以避免泄露）
       console.debug('[Account] Backend API URL retrieved', {
         traceId,
         timestamp,
@@ -84,14 +82,14 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
         urlHost: urlHost || 'unknown',
       });
     } catch (configError) {
-      // [2025-01-30 19:00:00] 增强：记录详细的配置错误信息，确保错误被完全捕获
+// 增强：记录详细的配置错误信息，确保错误被完全捕获
       console.error('[Account] Failed to get backend API URL', { 
         traceId, 
         timestamp,
         error: configError instanceof Error ? configError.message : String(configError),
         errorName: configError instanceof Error ? configError.name : 'Unknown',
         errorStack: process.env.NODE_ENV === 'development' && configError instanceof Error ? configError.stack : undefined,
-        // [2025-01-30 19:00:00] 记录当前环境变量状态（用于调试）
+// 记录当前环境变量状态（用于调试）
         envVars: {
           NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ? '已设置' : '未设置',
           API_BASE_URL: process.env.API_BASE_URL ? '已设置' : '未设置',
@@ -100,7 +98,7 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
           NEXT_PHASE: process.env.NEXT_PHASE,
         },
       });
-      // [2025-01-30 19:00:00] 返回错误结果，不抛出错误，避免导致 Server Component 渲染失败
+// 返回错误结果，不抛出错误，避免导致 Server Component 渲染失败
       return { 
         ok: false, 
         code: 'CONFIG_ERROR', 
@@ -108,7 +106,7 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       };
     }
 
-    // [2025-12-12 14:15:00] 修复：添加 fetch 超时和网络错误处理
+// 修复：添加 fetch 超时和网络错误处理
     // 创建 AbortController 用于超时控制
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
@@ -125,12 +123,12 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
           'X-Trace-Id': traceId,
         },
         cache: 'no-store',
-        signal: controller.signal, // [2025-12-12 14:15:00] 添加超时控制
+signal: controller.signal, // 添加超时控制
       });
     } catch (fetchError) {
       clearTimeout(timeoutId);
       
-      // [2025-12-12 14:15:00] 处理网络错误、超时等 fetch 异常
+// 处理网络错误、超时等 fetch 异常
       const isAbortError = fetchError instanceof Error && fetchError.name === 'AbortError';
       const isNetworkError = fetchError instanceof TypeError && 
                             (fetchError.message.includes('fetch') || 
@@ -165,7 +163,7 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
         timestamp,
         status: response.status,
         statusText: response.statusText,
-        // [2025-12-12 14:15:00] 添加响应头信息用于调试
+// 添加响应头信息用于调试
         headers: Object.fromEntries(response.headers.entries()),
       });
       return { 
@@ -176,7 +174,7 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       };
     }
 
-    // [2025-12-12 14:15:00] 修复：添加 JSON 解析错误处理
+// 修复：添加 JSON 解析错误处理
     let user: any;
     try {
       user = await response.json();
@@ -194,13 +192,13 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
         message: 'Failed to parse backend response',
       };
     }
-    // [2025-12-12 14:15:00] 增强：记录成功获取会话的详细信息
+// 增强：记录成功获取会话的详细信息
     console.info('[Account] Session retrieved successfully', { 
       traceId, 
       timestamp,
       userId: user.id || user.userId,
       email: user.email ? user.email.substring(0, 3) + '***' : 'no-email',
-      // [2025-12-12 14:15:00] 记录响应状态用于调试
+// 记录响应状态用于调试
       responseStatus: response.status,
       responseHeaders: {
         contentType: response.headers.get('content-type'),
@@ -217,20 +215,20 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
       }
     };
   } catch (error) {
-    // [2025-12-19] 超级安全模式：确保日志记录本身不会导致崩溃
+// 超级安全模式：确保日志记录本身不会导致崩溃
     try {
-      // [2025-12-12 14:15:00] 增强：记录详细的错误信息，包括错误类型和上下文
+// 增强：记录详细的错误信息，包括错误类型和上下文
       console.error('[Account] getSessionSafe error', {
         traceId,
         timestamp,
         error: error instanceof Error ? error.message : String(error),
         errorName: error instanceof Error ? error.name : 'Unknown',
         stack: error instanceof Error ? error.stack : undefined,
-        // [2025-12-12 14:15:00] 记录错误类型用于分类
+// 记录错误类型用于分类
         errorType: error instanceof TypeError ? 'TypeError' :
                   error instanceof Error && error.name === 'AbortError' ? 'AbortError' :
                   error instanceof Error ? error.constructor.name : 'Unknown',
-        // [2025-12-12 14:15:00] 记录环境信息用于调试
+// 记录环境信息用于调试
         environment: {
           NODE_ENV: process.env.NODE_ENV,
           NEXT_PHASE: process.env.NEXT_PHASE,
@@ -250,7 +248,6 @@ export async function getSessionSafe(requestId?: string): Promise<Result<{ userI
 
 /**
  * 安全获取账户数据（不抛错）
- * [2025-01-27 18:05:00]
  */
 export async function getAccountDataSafe(
   userId: string, 

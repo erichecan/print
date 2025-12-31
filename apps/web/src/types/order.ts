@@ -1,5 +1,5 @@
-// [2025-01-31 19:50:00] 订单颜色级别印刷配置类型定义
-// [2025-12-19] 扩展：支持按颜色分组的印刷位管理和per-size overrides
+// 订单颜色级别印刷配置类型定义
+// 扩展：支持按颜色分组的印刷位管理和per-size overrides
 
 export type PrintPosition = 
   | 'front' 
@@ -11,10 +11,10 @@ export type PrintPosition =
   | 'tag_outside' 
   | 'custom';
 
-// [2025-12-19] 印刷位置键类型（用于per-size overrides）
+// 印刷位置键类型（用于per-size overrides）
 export type PositionKey = 'front' | 'back' | 'left_sleeve' | 'right_sleeve' | 'pocket' | 'tag_inside' | 'tag_outside' | 'custom';
 
-// [2025-12-19] 位置配置（支持新的按颜色分组模式）
+// 位置配置（支持新的按颜色分组模式）
 export type PositionConfig = {
   positionKey: PositionKey;
   enabled: boolean;
@@ -28,20 +28,20 @@ export type PositionConfig = {
   dstFileFee?: number; // DST File Fee（仅Embroidery）
 };
 
-// [2025-12-19] 按颜色分组的订单项配置
+// 按颜色分组的订单项配置
 export type OrderItemColorGroup = {
   id: string; // 颜色组ID
   colorCode: string; // 颜色代码
   colorName: string; // 颜色名称
   quantities: Record<string, number>; // 尺码 -> 数量映射
   positions: PositionConfig[]; // 该颜色组的默认印刷位置配置
-  unitPrice: number; // [2025-12-19 02:30:00] 颜色级别的单价（适用于该颜色的所有尺码）
+unitPrice: number; // 颜色级别的单价（适用于该颜色的所有尺码）
   perSizeOverrides?: Array<{ // per-size overrides（可选）
     size: string; // 尺码：'XS'|'S'|'M'|'L'|'XL'|'2XL'|'3XL'|...
     overrides: PositionConfig[]; // 该尺码的覆盖配置
   }>;
-  inheritFromPrevious?: boolean; // [2025-12-19] 是否继承上一个颜色的配置
-  inheritsFromColorId?: string | null; // [2025-12-19] 继承自哪个颜色组ID
+inheritFromPrevious?: boolean; // 是否继承上一个颜色的配置
+inheritsFromColorId?: string | null; // 继承自哪个颜色组ID
 };
 
 export type PrintConfig = {
@@ -101,7 +101,7 @@ export type ValidationResult = {
   path?: string 
 };
 
-// [2025-12-19] 定价计算结果
+// 定价计算结果
 export type PricingCalculationResult = {
   total: number; // 总价
   currency: 'CAD' | 'USD'; // 货币
@@ -114,7 +114,7 @@ export type PricingCalculationResult = {
   }>;
 };
 
-// [2025-12-19] 颜色组更新操作
+// 颜色组更新操作
 export type ColorGroupUpdateAction = 
   | { type: 'update'; groupId: string; updates: Partial<OrderItemColorGroup> }
   | { type: 'inherit'; fromGroupId: string; toGroupId: string }

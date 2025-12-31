@@ -2,10 +2,10 @@
 
 /**
  * Admin Product Form
- * [2025-11-11 23:22:48] 后台商品创建/编辑表单
+* 后台商品创建/编辑表单
  */
 import { useEffect, useMemo, useState, useRef } from 'react';
-import Image from 'next/image'; // [2025-11-16 13:20:00] 商品图片预览使用 Next Image
+import Image from 'next/image'; // 商品图片预览使用 Next Image
 import { useForm, useFieldArray } from 'react-hook-form';
 import useSWR from 'swr';
 import {
@@ -48,12 +48,12 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
   const [imagePreviews, setImagePreviews] = useState<{ [key: number]: string }>({});
-  const [traceId, setTraceId] = useState<string | null>(null); // [2025-01-27 18:00:00] 添加 traceId 状态
+const [traceId, setTraceId] = useState<string | null>(null); // 添加 traceId 状态
   const fileRefs = useRef<{ [key: number]: File }>({});
-  const abortControllerRef = useRef<AbortController | null>(null); // [2025-01-27 18:00:00] 用于取消请求
+const abortControllerRef = useRef<AbortController | null>(null); // 用于取消请求
   const isUploadingAny = useMemo(() => Object.values(uploadingImages).some(Boolean), [uploadingImages]);
 
-  // [2025-12-30] 自动关闭成功提示
+// 自动关闭成功提示
   useEffect(() => {
     if (saveSuccess) {
       const timer = setTimeout(() => {
@@ -71,7 +71,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   const categories = useMemo<AdminCategorySummary[]>(() => {
     const list = categoryResponse?.data ?? [];
 
-    // [2025-12-31] FIX: If product has a category that's not in the (active/limited) list, 
+// FIX: If product has a category that's not in the (active/limited) list, 
     // we must add it as an option so the select element doesn't reset to empty.
     if (product?.category && !list.find(c => c.id === product.category?.id)) {
       return [...list, {
@@ -111,7 +111,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     },
   });
 
-  // [2025-11-16 16:05:00] 自动生成/规范化 slug，展示说明
+// 自动生成/规范化 slug，展示说明
   const nameValue = watch('name');
   const slugValue = watch('slug');
   useEffect(() => {
@@ -128,7 +128,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     }
   }, [nameValue, slugValue, setValue]);
 
-  // [2025-12-31] 自动计算毛利：(促销价 || 基础价) - 单位成本
+// 自动计算毛利：(促销价 || 基础价) - 单位成本
   const basePriceValue = watch('basePrice');
   const salePriceValue = watch('salePrice');
   const unitCostValue = watch('unitCost');
@@ -164,7 +164,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   });
 
 
-  // [2025-01-27 15:10:00] Handle file selection and preview
+// Handle file selection and preview
   const handleFileSelect = async (index: number, files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -206,7 +206,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     }
   };
 
-  // [2025-01-27 15:10:00] Upload image to server
+// Upload image to server
   const handleImageUpload = async (productId: string, index: number, file: File) => {
     setUploadingImages((prev) => ({ ...prev, [index]: true }));
     setUploadProgress((prev) => ({ ...prev, [index]: 0 }));
@@ -223,7 +223,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
       );
 
       if (response.images && response.images.length > 0) {
-        // [2025-12-31] FIX: uploadImages returns ALL images for the product, 
+// FIX: uploadImages returns ALL images for the product, 
         // the newly uploaded one will be at the end of the sorted list.
         const uploadedImage = response.images[response.images.length - 1];
         setValue(`images.${index}.url` as any, uploadedImage.url);
@@ -233,7 +233,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         if (uploadedImage.sortOrder !== undefined) {
           setValue(`images.${index}.sortOrder` as any, uploadedImage.sortOrder);
         }
-        // [2025-12-31] Clear file ref after successful upload
+// Clear file ref after successful upload
         delete fileRefs.current[index];
       }
     } catch (error: any) {
@@ -244,7 +244,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     }
   };
 
-  // [2025-01-27 15:10:00] Handle drag and drop
+// Handle drag and drop
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -303,7 +303,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   }, [product, reset]);
 
   const onSubmit = async (values: AdminProductPayload) => {
-    // [2025-01-27 18:00:00] 防止重复提交
+// 防止重复提交
     if (submitting) {
       return;
     }
@@ -312,11 +312,11 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     setTraceId(null);
     setSubmitting(true);
 
-    // [2025-01-27 18:00:00] 创建新的 AbortController
+// 创建新的 AbortController
     abortControllerRef.current = new AbortController();
 
     try {
-      // [2025-01-27 15:15:00] Store files to upload after product creation
+// Store files to upload after product creation
       const filesToUpload: { [index: number]: File } = {};
       const currentImages = watch('images') || [];
 
@@ -350,7 +350,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
                 ? parseNumber(variant.priceAdjustment)
                 : 0,
           })),
-        // [2025-01-27 15:15:00] Filter out temporary file placeholders, keep only valid URLs
+// Filter out temporary file placeholders, keep only valid URLs
         images: values.images
           ?.filter((image, index) => {
             // If it's a file placeholder (starts with file://), don't include in payload
@@ -373,8 +373,8 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           ? await adminProductsApi.create(payload)
           : await adminProductsApi.update(product!.id, payload);
 
-      // [2025-01-27 15:15:00] Upload any pending files after product creation/update
-      // [2025-12-31] FIX: Also enable for 'edit' mode to handle race conditions or missed uploads
+// Upload any pending files after product creation/update
+// FIX: Also enable for 'edit' mode to handle race conditions or missed uploads
       const hasPendingFiles = Object.keys(fileRefs.current).length > 0;
       if (response.id && hasPendingFiles) {
         const uploadPromises: Promise<void>[] = [];
@@ -408,7 +408,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         onSuccess(response);
       }
     } catch (error: any) {
-      // [2025-01-27 18:00:00] 统一错误处理，提取 traceId 和错误码
+// 统一错误处理，提取 traceId 和错误码
       const errorMessage = error?.message || '提交失败，请稍后再试';
       const errorTraceId = error?.traceId || null;
       const errorCode = error?.errorCode || null;
@@ -446,7 +446,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     }
   };
 
-  // [2025-01-27 18:00:00] 重试函数
+// 重试函数
   const handleRetry = () => {
     if (submitting) return;
     // 重新触发表单提交
@@ -573,7 +573,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         )}
         {imageFields.map((field, index) => {
           const imageUrl = watch(`images.${index}.url` as any) || '';
-          // [2025-01-27 16:00:00] 过滤掉 file:// URL，避免浏览器报错
+// 过滤掉 file:// URL，避免浏览器报错
           const validImageUrl = imageUrl && !imageUrl.startsWith('file://')
             ? (imageUrl.startsWith('http') || imageUrl.startsWith('/') ? imageUrl : null)
             : null;
@@ -583,7 +583,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
 
           return (
             <div key={field.id} className="repeatable">
-              {/* [2025-01-27 15:10:00] Image Preview */}
+{/* Image Preview */}
               {preview && (
                 <div className="image-preview-container">
                   <Image
@@ -593,7 +593,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
                     height={320}
                     className="image-preview"
                     unoptimized
-                  />{/* [2025-11-16 13:20:00] 使用 Next Image 统一预览行为 */}
+/>{/* 使用 Next Image 统一预览行为 */}
                   {isUploading && (
                     <div className="upload-overlay">
                       <div className="upload-progress">
@@ -605,7 +605,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
                 </div>
               )}
 
-              {/* [2025-01-27 15:10:00] File Upload Area */}
+{/* File Upload Area */}
               <div
                 className="upload-area"
                 onDragOver={handleDragOver}
@@ -627,7 +627,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
                 )}
               </div>
 
-              {/* [2025-01-27 15:10:00] URL Input (Alternative) */}
+{/* URL Input (Alternative) */}
               <div className="form-field">
                 <label>图片地址 {!preview && '*'}</label>
                 <input
@@ -963,7 +963,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           color: #991b1b;
           margin-bottom: 16px;
         }
-        /* [2025-01-27 15:10:00] Image Upload Styles */
+/* Image Upload Styles */
         .image-preview-container {
           position: relative;
           margin-bottom: 16px;

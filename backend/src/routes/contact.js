@@ -1,6 +1,6 @@
 /**
  * Contact Form Routes
- * [2025-01-27 19:10:00] 联系表单提交路由
+* 联系表单提交路由
  */
 const express = require('express');
 const router = express.Router();
@@ -10,7 +10,7 @@ const logger = require('../utils/logger');
 /**
  * POST /api/contact
  * Submit contact form
- * [2025-01-27 19:10:00] 处理联系表单提交
+* 处理联系表单提交
  */
 router.post('/', async (req, res) => {
   try {

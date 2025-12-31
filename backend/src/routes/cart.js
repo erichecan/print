@@ -1,6 +1,5 @@
 /**
  * Cart Routes
- * [2025-01-27 00:00:00]
  */
 const express = require('express');
 const router = express.Router();

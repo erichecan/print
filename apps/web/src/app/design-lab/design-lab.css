@@ -1,6 +1,6 @@
 /**
  * Design Lab CSS - Custom Ink 100% 像素级复刻
- * [2025-01-30 14:00:00] 根据 COMPETITOR-ANALYSIS-DESIGN-LAB.md 实现
+* 根据 COMPETITOR-ANALYSIS-DESIGN-LAB.md 实现
  */
 
 /* CSS 变量定义 - Custom Ink 颜色方案 */
@@ -9,7 +9,7 @@
   --dl-header-height: 64px;
   --dl-rail-width: 80px;
   --dl-tool-panel-width: 430px;
-  /* [2025-01-30 16:45:00] 左侧工具面板宽度 */
+/* 左侧工具面板宽度 */
   --dl-sidebar-width: 120px;
   --dl-bottom-bar-height: 80px;
 
@@ -68,20 +68,20 @@
   min-height: 100vh;
   height: 100vh;
   display: grid !important;
-  /* [2025-01-30 21:30:00] 强制应用 Grid 布局 */
+/* 强制应用 Grid 布局 */
   grid-template-rows: var(--dl-header-height) 1fr var(--dl-bottom-bar-height);
-  /* [2025-01-30 16:45:00] 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
+/* 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
   grid-template-columns: var(--dl-rail-width) var(--dl-tool-panel-width) 1fr var(--dl-sidebar-width);
   background: var(--dl-bg-primary) !important;
-  /* [2025-01-30 21:30:00] 强制应用背景色 */
+/* 强制应用背景色 */
   overflow: hidden;
   position: relative;
   width: 100%;
   isolation: isolate;
-  /* [2025-01-30 21:35:00] 创建新的堆叠上下文，避免 z-index 冲突 */
+/* 创建新的堆叠上下文，避免 z-index 冲突 */
 }
 
-/* [2025-01-30 21:35:00] 确保所有交互元素可点击 */
+/* 确保所有交互元素可点击 */
 .design-lab-new button,
 .design-lab-new a,
 .design-lab-new [role="button"] {
@@ -92,7 +92,7 @@
 /* ============================================
    1. Header - 顶部导航栏
    ============================================ */
-/* [2025-12-06 12:50:00] 修复：Header 定位 - element-1 x:41 是相对于整个页面的 */
+/* 修复：Header 定位 - element-1 x:41 是相对于整个页面的 */
 .dl-header {
   grid-column: 1 / -1;
   grid-row: 1;
@@ -114,7 +114,7 @@
   gap: var(--dl-space-6);
 }
 
-/* [2025-12-06 12:50:00] 修复：Header left 定位 - element-1 x:41 是相对于整个页面的 */
+/* 修复：Header left 定位 - element-1 x:41 是相对于整个页面的 */
 /* 计算：Header padding-left (24px) + header__left margin-left = 41px */
 /* 所以 header__left margin-left = 41 - 24 = 17px */
 .dl-header__left {
@@ -125,7 +125,7 @@
   /* 41px (element-1 x) - 24px (Header padding-left) = 17px */
 }
 
-/* [2025-12-06 12:50:00] 修复：Logo 定位 - 需要确保 Logo + gap + breadcrumb = element-1 x:41 */
+/* 修复：Logo 定位 - 需要确保 Logo + gap + breadcrumb = element-1 x:41 */
 .dl-header__logo {
   font-size: var(--dl-font-lg);
   font-weight: var(--dl-font-weight-bold);
@@ -138,8 +138,8 @@
   /* 让 Logo 自然宽度 */
 }
 
-/* [2025-12-06 12:35:00] 修复：Header breadcrumb 定位 - element-1 x:41, element-2 x:177 */
-/* [2025-12-06 12:50:00] 修复：element-1 x:41 是相对于整个页面的，需要计算 Logo 宽度和 gap */
+/* 修复：Header breadcrumb 定位 - element-1 x:41, element-2 x:177 */
+/* 修复：element-1 x:41 是相对于整个页面的，需要计算 Logo 宽度和 gap */
 .dl-header__breadcrumb {
   display: flex;
   align-items: center;
@@ -159,9 +159,9 @@
   text-decoration: underline;
 }
 
-/* [2025-01-30 23:15:00] 修复：My Designs 按钮样式对齐 Custom Ink - element-1 */
-/* [2025-12-06 12:35:00] 修复：确保位置和颜色正确 - x:41, y:0, width:116, height:32, color: rgb(74, 74, 74) */
-/* [2025-12-06 12:50:00] 修复：element-1 x:41 是相对于整个页面的，需要调整 header__left 的 margin-left */
+/* 修复：My Designs 按钮样式对齐 Custom Ink - element-1 */
+/* 修复：确保位置和颜色正确 - x:41, y:0, width:116, height:32, color: rgb(74, 74, 74) */
+/* 修复：element-1 x:41 是相对于整个页面的，需要调整 header__left 的 margin-left */
 .dl-header__breadcrumb-link--button {
   background: transparent;
   border: none;
@@ -203,8 +203,8 @@
   border-radius: var(--dl-radius-sm);
 }
 
-/* [2025-01-30 23:15:00] 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */
-/* [2025-12-06 12:35:00] 修复：确保位置和颜色正确 - x:177, y:0, width:139, height:32, color: rgba(0, 0, 0, 0.57) */
+/* 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */
+/* 修复：确保位置和颜色正确 - x:177, y:0, width:139, height:32, color: rgba(0, 0, 0, 0.57) */
 .dl-header__breadcrumb-current--button {
   background: transparent;
   border: none;
@@ -277,7 +277,7 @@
   grid-column: 1 / -1;
   grid-row: 2;
   display: grid;
-  /* [2025-01-30 16:45:00] 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
+/* 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
   grid-template-columns: var(--dl-rail-width) var(--dl-tool-panel-width) 1fr var(--dl-sidebar-width);
   height: 100%;
   overflow: hidden;
@@ -286,9 +286,9 @@
 /* ============================================
    2. Dark Rail - 左侧深灰色工具栏
    ============================================ */
-/* [2025-01-30 23:20:00] 修复：Rail 背景色对齐 Custom Ink - rgb(34, 32, 32) */
-/* [2025-12-06 12:30:00] 修复：确保 Rail 宽度和布局正确 */
-/* [2025-12-06 12:35:00] 修复：确保 Rail 按钮位置正确 - 所有按钮 x:16 */
+/* 修复：Rail 背景色对齐 Custom Ink - rgb(34, 32, 32) */
+/* 修复：确保 Rail 宽度和布局正确 */
+/* 修复：确保 Rail 按钮位置正确 - 所有按钮 x:16 */
 .dl-rail {
   grid-column: 1;
   background: rgb(34, 32, 32);
@@ -301,7 +301,7 @@
   /* 确保垂直排列 */
   /* 确保垂直排列 */
   align-items: center !important;
-  /* [2025-12-31] Changed to center alignment per user request */
+/* Changed to center alignment per user request */
   padding: 0;
   /* 移除 padding，使用 margin 控制位置 */
   padding-top: 137px;
@@ -313,11 +313,11 @@
   /* 确保定位上下文 */
 }
 
-/* [2025-01-30 23:20:00] 修复：Rail 按钮样式对齐 Custom Ink - element-8 到 element-12 */
-/* [2025-01-31 00:00:00] 像素级对齐：element-9 (Add Text) - x:16, y:239, width:68, height:70, color: rgb(191, 191, 191) */
-/* [2025-12-06 12:30:00] 修复：确保 Rail 按钮颜色正确应用，防止被其他样式覆盖 */
-/* [2025-12-06 12:35:00] 修复：确保 Rail 按钮位置正确 - x:16, 垂直排列 */
-/* [2025-12-20 02:40:00] 5.0 版本：修复 Rail 按钮高度，确保覆盖 globals.css 中的样式 */
+/* 修复：Rail 按钮样式对齐 Custom Ink - element-8 到 element-12 */
+/* 像素级对齐：element-9 (Add Text) - x:16, y:239, width:68, height:70, color: rgb(191, 191, 191) */
+/* 修复：确保 Rail 按钮颜色正确应用，防止被其他样式覆盖 */
+/* 修复：确保 Rail 按钮位置正确 - x:16, 垂直排列 */
+/* 5.0 版本：修复 Rail 按钮高度，确保覆盖 globals.css 中的样式 */
 .dl-rail__btn {
   display: flex !important;
   flex-direction: column !important;
@@ -329,21 +329,21 @@
   height: 70px !important;
   /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
   min-height: 70px !important;
-  /* [2025-12-20 02:40:00] 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
+/* 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
   padding: 0 var(--dl-space-1);
   background: transparent !important;
   border: none !important;
   color: rgb(191, 191, 191) !important;
   /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 - 使用 !important 防止覆盖 */
   cursor: pointer !important;
-  /* [2025-01-30 21:35:00] 强制启用指针事件 */
+/* 强制启用指针事件 */
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-normal);
   font-family: var(--dl-font-family);
   border-radius: 0 !important;
   pointer-events: auto !important;
-  /* [2025-01-30 21:35:00] 确保按钮可点击 */
+/* 确保按钮可点击 */
   position: relative;
   z-index: 10;
   -webkit-user-select: none;
@@ -351,7 +351,7 @@
   margin: 0;
   /* 确保没有外边距影响位置 */
   margin-left: 0 !important;
-  /* [2025-12-31] Removed margin-left to allow centering */
+/* Removed margin-left to allow centering */
 }
 
 .dl-rail__btn-icon {
@@ -364,7 +364,7 @@
   color: rgb(191, 191, 191);
 }
 
-/* [2025-12-06 12:35:00] 修复：Product Colors 和 Add Names 按钮高度为 86px */
+/* 修复：Product Colors 和 Add Names 按钮高度为 86px */
 .dl-rail__btn[aria-label*="Product colors"],
 .dl-rail__btn[aria-label*="Product Colors"],
 .dl-rail__btn[aria-label*="Add names"],
@@ -373,26 +373,26 @@
   /* element-11 和 element-12 的高度 */
 }
 
-/* [2025-12-06 12:35:00] 修复：Rail 按钮垂直间距 - element-8 y:169, element-9 y:239 (间距 70px) */
+/* 修复：Rail 按钮垂直间距 - element-8 y:169, element-9 y:239 (间距 70px) */
 .dl-rail__btn:first-of-type {
   margin-top: 32px;
   /* element-8 y:169 - Rail padding-top:137 = 32px */
 }
 
-/* [2025-12-06 12:35:00] 修复：Rail 按钮之间的间距 - 标准按钮高度 70px */
+/* 修复：Rail 按钮之间的间距 - 标准按钮高度 70px */
 .dl-rail__btn:not(:first-of-type) {
   margin-top: 0;
   /* 按钮之间没有间距，因为高度已经包含了间距 */
 }
 
-/* [2025-12-06 12:35:00] 修复：Product Colors 和 Add Names 之间的间距 - element-11 y:379, element-12 y:466 (间距 87px) */
+/* 修复：Product Colors 和 Add Names 之间的间距 - element-11 y:379, element-12 y:466 (间距 87px) */
 .dl-rail__btn[aria-label*="Product colors"]+.dl-rail__btn,
 .dl-rail__btn[aria-label*="Product Colors"]+.dl-rail__btn {
   margin-top: 1px;
   /* element-12 y:466 - (element-11 y:379 + element-11 height:86) = 1px */
 }
 
-/* [2025-01-30 23:20:00] 修复：Rail 按钮悬停效果对齐 Custom Ink */
+/* 修复：Rail 按钮悬停效果对齐 Custom Ink */
 .dl-rail__btn:hover {
   background: rgba(255, 255, 255, 0.1);
   /* 浅色悬停背景 */
@@ -400,8 +400,8 @@
   /* 悬停时文本变白 */
 }
 
-/* [2025-01-30 23:20:00] 修复：Rail 按钮激活状态对齐 Custom Ink */
-/* [2025-12-06 12:40:00] 修复：确保激活状态样式正确应用，使用 !important 防止覆盖 */
+/* 修复：Rail 按钮激活状态对齐 Custom Ink */
+/* 修复：确保激活状态样式正确应用，使用 !important 防止覆盖 */
 .dl-rail__btn.is-active {
   background: rgba(255, 255, 255, 0.15) !important;
   /* 激活时背景更亮 */
@@ -411,7 +411,7 @@
   /* 蓝色左边框 */
 }
 
-/* [2025-12-06 12:40:00] 修复：确保激活状态的标签颜色也变白 */
+/* 修复：确保激活状态的标签颜色也变白 */
 .dl-rail__btn.is-active .dl-rail__btn-label {
   color: rgb(255, 255, 255) !important;
   /* 激活时标签文本也变白 */
@@ -453,7 +453,7 @@
   color: rgb(255, 255, 255);
 }
 
-/* [2025-01-31 00:00:00] Add Names 图标样式 - 显示 "00" */
+/* Add Names 图标样式 - 显示 "00" */
 .dl-rail__icon--names {
   display: flex;
   align-items: center;
@@ -506,7 +506,7 @@
   gap: var(--dl-space-4);
 }
 
-/* [2025-12-20 02:25:00] 5.0 版本：ToolPanel 占位符样式 */
+/* 5.0 版本：ToolPanel 占位符样式 */
 .dl-tool-panel__placeholder {
   display: flex;
   flex-direction: column;
@@ -625,7 +625,7 @@
 }
 
 /* Upload Panel 样式 */
-/* [2025-01-30 23:30:00] Upload Panel 样式 - 根据 designlab-upload01.jpeg 和 designlab-upload03.jpeg 更新 */
+/* Upload Panel 样式 - 根据 designlab-upload01.jpeg 和 designlab-upload03.jpeg 更新 */
 .dl-upload-panel {
   display: flex;
   flex-direction: column;
@@ -858,7 +858,7 @@
   text-decoration: underline;
 }
 
-/* [2025-01-30 23:30:00] Edit Upload Panel 样式 - 根据 designlab-upload02.jpeg 更新 */
+/* Edit Upload Panel 样式 - 根据 designlab-upload02.jpeg 更新 */
 .dl-edit-upload-panel {
   display: flex;
   flex-direction: column;
@@ -949,7 +949,7 @@
   font-size: var(--dl-font-sm);
 }
 
-/* [2025-12-08] Upload Size编辑功能样式 */
+/* Upload Size编辑功能样式 */
 .dl-edit-upload-panel__size-header {
   display: flex;
   justify-content: space-between;
@@ -1072,7 +1072,7 @@
   align-items: flex-start;
 }
 
-/* [2025-01-30 10:45:00] 工具组样式 - 支持带标签的工具（Center、Layering、Flip） */
+/* 工具组样式 - 支持带标签的工具（Center、Layering、Flip） */
 .dl-edit-upload-panel__tool-group {
   display: flex;
   flex-direction: column;
@@ -1265,7 +1265,7 @@
 }
 
 /* Text Panel 样式 */
-/* [2025-01-31 00:00:00] 像素级对齐 Custom Ink designlab-addtext01.jpeg - Add Text 面板 */
+/* 像素级对齐 Custom Ink designlab-addtext01.jpeg - Add Text 面板 */
 .dl-text-panel {
   display: flex;
   flex-direction: column;
@@ -1287,7 +1287,7 @@
   width: 100%;
 }
 
-/* [2025-01-31 00:00:00] 根据 Custom Ink 截图，label 可能隐藏或使用不同文本 */
+/* 根据 Custom Ink 截图，label 可能隐藏或使用不同文本 */
 .dl-text-panel__label {
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-medium);
@@ -1296,7 +1296,7 @@
   /* display: none; */
 }
 
-/* [2025-01-31 00:00:00] 文本输入框样式对齐 Custom Ink */
+/* 文本输入框样式对齐 Custom Ink */
 .dl-text-panel__input {
   width: 100%;
   padding: var(--dl-space-3);
@@ -1320,7 +1320,7 @@
   color: var(--dl-text-secondary);
 }
 
-/* [2025-01-31 00:00:00] Add To Design 按钮样式对齐 Custom Ink - 蓝色按钮 */
+/* Add To Design 按钮样式对齐 Custom Ink - 蓝色按钮 */
 .dl-text-panel__add-btn {
   padding: var(--dl-space-3) var(--dl-space-6);
   background: var(--dl-color-primary);
@@ -1345,7 +1345,7 @@
   background: #003d7a;
 }
 
-/* [2025-12-08] 禁用状态样式 */
+/* 禁用状态样式 */
 .dl-text-panel__add-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -1358,7 +1358,7 @@
   color: var(--dl-text-secondary);
 }
 
-/* [2025-01-31 00:00:00] 像素级对齐 Custom Ink designlab-addtext03.jpeg - Edit Text 面板 */
+/* 像素级对齐 Custom Ink designlab-addtext03.jpeg - Edit Text 面板 */
 .dl-edit-text-panel {
   display: flex;
   flex-direction: column;
@@ -1380,7 +1380,7 @@
   padding-bottom: 0;
 }
 
-/* [2025-12-16 03:02:00] Text 面板工具栏样式 */
+/* Text 面板工具栏样式 */
 .dl-edit-text-panel__section--toolbar {
   padding-bottom: var(--dl-space-4);
   border-bottom: 1px solid var(--dl-border-color);
@@ -1784,7 +1784,7 @@
   flex-wrap: wrap;
 }
 
-/* [2025-12-08] 超出安全区警示样式 */
+/* 超出安全区警示样式 */
 .dl-edit-text-panel__section--warning {
   border-top: 2px solid #f59e0b;
   background: #fef3c7;
@@ -1825,7 +1825,7 @@
   overflow-y: auto;
 }
 
-/* [2025-12-08] Art Panel子分类导航样式 */
+/* Art Panel子分类导航样式 */
 .dl-art-panel__subcategories {
   display: flex;
   flex-wrap: wrap;
@@ -1861,7 +1861,7 @@
   flex: 1;
 }
 
-/* [2025-12-08] Art Panel搜索框样式 */
+/* Art Panel搜索框样式 */
 .dl-art-panel__search {
   position: relative;
   margin-bottom: var(--dl-space-4);
@@ -2098,8 +2098,8 @@
   padding-bottom: 0;
 }
 
-/* [2025-12-16 03:05:00] Art 面板工具栏样式 */
-/* [2025-01-30 13:50:00] 修复：布局与 upload/text 保持一致 */
+/* Art 面板工具栏样式 */
+/* 修复：布局与 upload/text 保持一致 */
 .dl-edit-art-panel__section--toolbar {
   padding-bottom: var(--dl-space-4);
   border-bottom: 1px solid var(--dl-border-color);
@@ -2112,7 +2112,7 @@
   align-items: flex-start;
 }
 
-/* [2025-01-30 13:50:00] 工具组样式 - 支持带标签的工具（Center、Layering、Flip） */
+/* 工具组样式 - 支持带标签的工具（Center、Layering、Flip） */
 .dl-edit-art-panel__tool-group {
   display: flex;
   flex-direction: column;
@@ -2281,7 +2281,7 @@
   border-radius: 50%;
 }
 
-/* [2025-01-30 13:50:00] Art Size 输入框样式 - 参考 upload 实现 */
+/* Art Size 输入框样式 - 参考 upload 实现 */
 .dl-edit-art-panel__size-inputs {
   display: flex;
   align-items: center;
@@ -2348,7 +2348,7 @@
   border-color: var(--dl-color-primary);
 }
 
-/* [2025-01-30 13:40:00] Edit Color 样式 - 参考 text 实现 */
+/* Edit Color 样式 - 参考 text 实现 */
 .dl-edit-art-panel__color-group {
   display: flex;
   align-items: center;
@@ -2395,7 +2395,7 @@
   padding: var(--dl-space-4);
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化模态尺寸 */
+/* 根据 designlab-colors01.jpeg，优化模态尺寸 */
 .dl-modal {
   background: var(--dl-bg-panel);
   border-radius: var(--dl-radius-md);
@@ -2504,7 +2504,7 @@
   margin: 0 0 var(--dl-space-2) 0;
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，Colors 标题和复选框应在同一行 */
+/* 根据 designlab-colors01.jpeg，Colors 标题和复选框应在同一行 */
 .dl-modal__section-header {
   display: flex;
   align-items: center;
@@ -2552,7 +2552,7 @@
 }
 
 /* Colors Grid 样式 */
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg 更新颜色网格为 8 列布局 */
+/* 根据 designlab-colors01.jpeg 更新颜色网格为 8 列布局 */
 .dl-colors-grid {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -2579,7 +2579,7 @@
   }
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化颜色卡片样式 */
+/* 根据 designlab-colors01.jpeg，优化颜色卡片样式 */
 .dl-color-item {
   display: flex;
   flex-direction: column;
@@ -2615,7 +2615,7 @@
   cursor: not-allowed;
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化色块尺寸 */
+/* 根据 designlab-colors01.jpeg，优化色块尺寸 */
 .dl-color-item__swatch {
   width: 40px;
   height: 40px;
@@ -2628,7 +2628,7 @@
   overflow: hidden;
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，checkmark 应在右上角 */
+/* 根据 designlab-colors01.jpeg，checkmark 应在右上角 */
 .dl-color-item__check {
   position: absolute;
   top: 4px;
@@ -2636,7 +2636,7 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
 
-/* [2025-01-31 XX:XX:XX] 根据 designlab-colors01.jpeg，颜色名称可能不显示在每个卡片中 */
+/* 根据 designlab-colors01.jpeg，颜色名称可能不显示在每个卡片中 */
 .dl-color-item__info {
   display: none;
   /* 根据截图，颜色名称不在卡片中显示，而是在下方显示 */
@@ -2662,7 +2662,7 @@
   font-weight: var(--dl-font-weight-medium);
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 Sizes Available 样式 */
+/* 根据 designlab-colors01.jpeg，添加 Sizes Available 样式 */
 .dl-modal__sizes-available {
   margin-top: var(--dl-space-4);
   padding-top: var(--dl-space-4);
@@ -2682,7 +2682,7 @@
   line-height: 1.6;
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，添加 Pick Another Color 样式 */
+/* 根据 designlab-colors01.jpeg，添加 Pick Another Color 样式 */
 .dl-modal__pick-another {
   display: flex;
   align-items: flex-start;
@@ -2730,11 +2730,11 @@
 /* ============================================
    4. Canvas - 中央画布区域
    ============================================ */
-/* [2025-12-20 02:55:00] 5.0 版本：Canvas 在 .dl-main 容器内，不需要 grid-row: 2 */
+/* 5.0 版本：Canvas 在 .dl-main 容器内，不需要 grid-row: 2 */
 .dl-canvas {
   grid-column: 3;
   /* 在 .dl-main 的 grid 中，Canvas 是第 3 列 */
-  /* [2025-12-20 02:55:00] 5.0 版本：移除 grid-row: 2，因为 .dl-main 内部只有一个 grid row */
+/* 5.0 版本：移除 grid-row: 2，因为 .dl-main 内部只有一个 grid row */
   background: var(--dl-bg-primary);
   display: flex;
   align-items: center;
@@ -2747,14 +2747,14 @@
   /* 允许 flex 子元素缩小 */
   padding: 0;
   margin: 0;
-  /* [2025-12-19 23:30:00] 临时添加边框，用于确认section区域 */
+/* 临时添加边框，用于确认section区域 */
   border: 3px solid #00ff00;
   /* 绿色边框，非常明显 */
 }
 
 .dl-canvas__preview {
   width: 100%;
-  /* [2025-12-20 02:00:00] 阶段2修复：使用 height: 100% 限制在可视区域内，避免产生滚动条 */
+/* 阶段2修复：使用 height: 100% 限制在可视区域内，避免产生滚动条 */
   height: 100%;
   display: flex;
   align-items: center;
@@ -2762,10 +2762,10 @@
   justify-content: center;
   /* 水平居中 */
   position: relative;
-  /* [2025-12-20 02:00:00] 移除 padding，避免占用额外空间导致滚动 */
+/* 移除 padding，避免占用额外空间导致滚动 */
   padding: 0;
   margin: 0;
-  /* [2025-12-20 02:00:00] 限制容器不超出父容器 */
+/* 限制容器不超出父容器 */
   overflow: hidden;
 }
 
@@ -2773,7 +2773,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-  /* [2025-12-20 01:55:00] 阶段2修复：使用简单的 flexbox 居中 */
+/* 阶段2修复：使用简单的 flexbox 居中 */
   display: flex;
   align-items: center;
   /* 垂直居中 */
@@ -2785,8 +2785,8 @@
   padding: 0;
 }
 
-/* [2025-12-20 01:55:00] 阶段2修复：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
-/* [2025-12-20 02:25:00] 5.0 版本：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
+/* 阶段2修复：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
+/* 5.0 版本：简单的 HTML 图片标签样式 - 完整显示（contain 模式） */
 .dl-canvas__product-image {
   position: absolute;
   top: 0;
@@ -2800,39 +2800,39 @@
   z-index: 0;
 }
 
-/* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
+/* 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
 /* Fabric.js自动创建的canvas-container，需要确保居中 */
 .dl-canvas__product .canvas-container {
   position: relative !important;
   /* 覆盖Fabric.js的绝对定位 */
   margin: 0 auto !important;
   /* 水平居中 */
-  /* [2025-12-20 01:25:00] 自适应 .dl-canvas section，填满可用空间 */
+/* 自适应 .dl-canvas section，填满可用空间 */
   width: 100%;
   height: 100%;
   max-width: 100%;
   max-height: 100%;
-  /* [2025-12-20 01:25:00] 保持宽高比（逻辑尺寸比例：4000/4800 = 5/6），但允许自适应容器 */
+/* 保持宽高比（逻辑尺寸比例：4000/4800 = 5/6），但允许自适应容器 */
   /* 如果容器比例与逻辑比例不一致，会通过 CSS object-fit 处理 */
 }
 
-/* [2025-12-20 01:25:00] 确保upper-canvas和lower-canvas都使用自适应CSS尺寸 */
+/* 确保upper-canvas和lower-canvas都使用自适应CSS尺寸 */
 .dl-canvas__product .canvas-container .upper-canvas,
 .dl-canvas__product .canvas-container .lower-canvas {
   position: absolute !important;
   /* Fabric.js要求绝对定位 */
   left: 0 !important;
   top: 0 !important;
-  /* [2025-12-20 01:25:00] 使用 100% 填充 container，由 container 的 aspect-ratio 控制尺寸 */
+/* 使用 100% 填充 container，由 container 的 aspect-ratio 控制尺寸 */
   width: 100% !important;
   height: 100% !important;
 }
 
-/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js Canvas 容器样式 */
+/* 5.0 版本：Fabric.js Canvas 容器样式 */
 .dl-canvas__fabric {
-  /* [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
-  /* [2025-01-30 22:35:00] 确保画布可见且可交互 */
-  /* [2025-12-20 01:25:00] 移除固定尺寸，使用自适应尺寸 */
+/* 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
+/* 确保画布可见且可交互 */
+/* 移除固定尺寸，使用自适应尺寸 */
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -2845,8 +2845,8 @@
   /* 保持比例，填满容器 */
 }
 
-/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 自动创建的 canvas-container 样式 */
-/* [2025-12-20 03:45:00] 修复：关键问题 - Fabric.js 会设置 inline style width/height 为逻辑尺寸（4000x4800） */
+/* 5.0 版本：Fabric.js 自动创建的 canvas-container 样式 */
+/* 修复：关键问题 - Fabric.js 会设置 inline style width/height 为逻辑尺寸（4000x4800） */
 /* 我们需要用 !important 强制覆盖这些 inline style，让容器自适应父元素 */
 .dl-canvas__preview .canvas-container,
 .dl-canvas__fabric-container {
@@ -2860,12 +2860,12 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  /* [2025-12-20 03:45:00] 确保容器能够正确缩放 */
+/* 确保容器能够正确缩放 */
   box-sizing: border-box !important;
 }
 
-/* [2025-12-20 03:40:00] 5.0 版本：Fabric.js 的 upper-canvas 和 lower-canvas 样式 */
-/* [2025-12-20 03:45:00] 修复：upper-canvas 和 lower-canvas 应该填充 container，但逻辑尺寸（4000x4800）应该在 canvas 元素上 */
+/* 5.0 版本：Fabric.js 的 upper-canvas 和 lower-canvas 样式 */
+/* 修复：upper-canvas 和 lower-canvas 应该填充 container，但逻辑尺寸（4000x4800）应该在 canvas 元素上 */
 .dl-canvas__preview .canvas-container .upper-canvas,
 .dl-canvas__preview .canvas-container .lower-canvas,
 .dl-canvas__fabric-container .upper-canvas,
@@ -2878,13 +2878,13 @@
   height: 100% !important;
   /* 填充 container */
   display: block !important;
-  /* [2025-12-20 03:45:00] canvas 元素本身会保持逻辑尺寸（4000x4800），但通过 CSS 缩放显示 */
+/* canvas 元素本身会保持逻辑尺寸（4000x4800），但通过 CSS 缩放显示 */
   object-fit: contain !important;
 }
 
 .dl-canvas__placeholder {
-  /* [2025-01-30 22:35:00] Placeholder 应该绝对定位，不遮挡画布 */
-  /* [2025-01-31 16:15:00] 修复：确保 placeholder 正确显示，只在画布未初始化时显示 */
+/* Placeholder 应该绝对定位，不遮挡画布 */
+/* 修复：确保 placeholder 正确显示，只在画布未初始化时显示 */
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2899,13 +2899,13 @@
   padding: var(--dl-space-4);
   z-index: 0;
   pointer-events: none;
-  /* [2025-01-30 22:35:00] 不阻止画布交互 */
-  /* [2025-01-31 16:15:00] 确保 placeholder 在画布初始化后隐藏 */
+/* 不阻止画布交互 */
+/* 确保 placeholder 在画布初始化后隐藏 */
   opacity: 1;
   transition: opacity 0.3s ease;
 }
 
-/* [2025-12-08] 左上浮层：Undo/Redo按钮 */
+/* 左上浮层：Undo/Redo按钮 */
 .dl-canvas__floating-controls {
   position: absolute;
   top: var(--dl-space-4);
@@ -2941,7 +2941,7 @@
   cursor: not-allowed;
 }
 
-/* [2025-12-08] Zoom视图控制按钮 */
+/* Zoom视图控制按钮 */
 .dl-canvas__zoom-controls {
   position: absolute;
   top: var(--dl-space-4);
@@ -3084,7 +3084,7 @@
   overflow-y: auto;
 }
 
-/* [2025-01-30 23:25:00] 修复：Sidebar 按钮样式对齐 Custom Ink - element-13 到 element-16 */
+/* 修复：Sidebar 按钮样式对齐 Custom Ink - element-13 到 element-16 */
 .dl-sidebar__btn {
   display: flex;
   flex-direction: column;
@@ -3114,7 +3114,7 @@
   /* 无阴影 */
 }
 
-/* [2025-01-30 23:25:00] 修复：Sidebar 按钮悬停和激活状态对齐 Custom Ink */
+/* 修复：Sidebar 按钮悬停和激活状态对齐 Custom Ink */
 .dl-sidebar__btn:hover {
   background: rgba(0, 0, 0, 0.05);
   /* 浅色悬停背景 */
@@ -3142,7 +3142,7 @@
   position: relative;
 }
 
-/* [2025-01-30 23:55:00] 修复：Sidebar 缩略图图片样式 */
+/* 修复：Sidebar 缩略图图片样式 */
 .dl-sidebar__thumbnail-image {
   width: 100%;
   height: 100%;
@@ -3196,7 +3196,7 @@
   gap: var(--dl-space-4);
 }
 
-/* [2025-01-30 23:30:00] 修复：Add Products 按钮样式对齐 Custom Ink - element-3 */
+/* 修复：Add Products 按钮样式对齐 Custom Ink - element-3 */
 .dl-bottom-bar__add-products {
   padding: var(--dl-space-3) var(--dl-space-6);
   border: 1px solid rgb(30, 57, 210);
@@ -3262,7 +3262,7 @@
   color: var(--dl-text-primary);
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化底部 Product pill 的链接样式 */
+/* 根据 designlab-colors01.jpeg，优化底部 Product pill 的链接样式 */
 .dl-bottom-bar__product-links {
   display: flex;
   align-items: center;
@@ -3270,7 +3270,7 @@
   font-size: var(--dl-font-sm);
 }
 
-/* [2025-01-30 23:30:00] 修复：Change Product/Color 链接样式对齐 Custom Ink - element-4, element-5 */
+/* 修复：Change Product/Color 链接样式对齐 Custom Ink - element-4, element-5 */
 .dl-bottom-bar__link {
   color: rgb(30, 57, 210);
   /* Custom Ink 链接颜色 */
@@ -3291,7 +3291,7 @@
   /* 悬停时深蓝色 */
 }
 
-/* [2025-01-31 12:00:00] 根据 designlab-colors01.jpeg，优化颜色显示样式 */
+/* 根据 designlab-colors01.jpeg，优化颜色显示样式 */
 .dl-bottom-bar__color {
   display: flex;
   align-items: center;
@@ -3338,7 +3338,7 @@
   height: 16px;
 }
 
-/* [2025-01-30 23:30:00] 修复：Save | Share 按钮样式对齐 Custom Ink - element-6 */
+/* 修复：Save | Share 按钮样式对齐 Custom Ink - element-6 */
 .dl-bottom-bar__btn--secondary {
   background: rgb(255, 255, 255);
   /* 白色背景 - MuiButton-outlined */
@@ -3359,7 +3359,7 @@
   color: rgb(30, 57, 210);
 }
 
-/* [2025-01-30 23:30:00] 修复：Get Price 按钮样式对齐 Custom Ink - element-7 */
+/* 修复：Get Price 按钮样式对齐 Custom Ink - element-7 */
 .dl-bottom-bar__btn--primary {
   background: rgb(30, 57, 210);
   /* 蓝色背景 - MuiButton-contained */
@@ -3379,7 +3379,7 @@
 
 /* ============================================
    响应式设计 - 阶段 7 实现
-   [2025-01-30 23:55:00] 完善响应式布局，支持桌面端、平板端和移动端
+完善响应式布局，支持桌面端、平板端和移动端
    ============================================ */
 
 /* 7.2 平板端 (768px - 1024px) */
@@ -3414,14 +3414,14 @@
   }
 }
 
-/* [2025-01-30 20:00:00] Names & Numbers Modal Styles */
+/* Names & Numbers Modal Styles */
 .dl-modal--large {
   max-width: 900px;
   width: 90vw;
   max-height: 90vh;
 }
 
-/* [2025-01-31 00:00:00] 根据 designlab-addnames01.jpeg 修复介绍页样式 */
+/* 根据 designlab-addnames01.jpeg 修复介绍页样式 */
 .dl-names-numbers-intro {
   text-align: center;
   padding: var(--dl-space-6);
@@ -3531,7 +3531,7 @@
   text-align: center;
 }
 
-/* [2025-01-31 00:00:00] 价格信息样式 - 根据 designlab-addnames02.jpeg 和 designlab-addnames03.jpeg */
+/* 价格信息样式 - 根据 designlab-addnames02.jpeg 和 designlab-addnames03.jpeg */
 .dl-names-numbers-tools__pricing {
   padding: var(--dl-space-3) 0;
   border-top: 1px solid var(--dl-border-color);
@@ -3551,7 +3551,7 @@
   margin: var(--dl-space-1) 0;
 }
 
-/* [2025-01-31 00:00:00] 说明文本样式 */
+/* 说明文本样式 */
 .dl-names-numbers-tools__notes {
   padding: var(--dl-space-3) 0;
   border-top: 1px solid var(--dl-border-color);
@@ -3569,7 +3569,7 @@
   width: 100%;
 }
 
-/* [2025-01-31 00:00:00] 返回箭头按钮样式 */
+/* 返回箭头按钮样式 */
 .dl-modal__btn--back {
   display: flex;
   align-items: center;
@@ -3597,7 +3597,7 @@
   gap: var(--dl-space-4);
 }
 
-/* [2025-01-31 00:00:00] 根据 designlab-addnames04.png 和 designlab-addnames05.png 修复 List 页样式 */
+/* 根据 designlab-addnames04.png 和 designlab-addnames05.png 修复 List 页样式 */
 .dl-names-numbers-list__title {
   font-size: var(--dl-font-lg);
   font-weight: var(--dl-font-weight-bold);
@@ -3678,7 +3678,7 @@
   cursor: pointer;
 }
 
-/* [2025-01-31 00:00:00] Add More 和 Manage List 链接样式 */
+/* Add More 和 Manage List 链接样式 */
 .dl-names-numbers-list__actions {
   display: flex;
   gap: var(--dl-space-4);
@@ -3722,7 +3722,7 @@
   text-decoration: underline;
 }
 
-/* [2025-01-31 00:00:00] 摘要框样式 */
+/* 摘要框样式 */
 .dl-names-numbers-list__summary {
   background: var(--dl-bg-panel);
   border: 1px solid var(--dl-border-color);
@@ -3743,7 +3743,7 @@
   margin: 0;
 }
 
-/* [2025-01-31 00:00:00] Helpful Hints 框样式 */
+/* Helpful Hints 框样式 */
 .dl-names-numbers-list__hints {
   background: #f5f5f5;
   border: 1px solid var(--dl-border-color);
@@ -3781,7 +3781,7 @@
   text-decoration: underline;
 }
 
-/* [2025-01-31 00:00:00] Additional Items 模态样式 - 根据 designlab-addnames06.png */
+/* Additional Items 模态样式 - 根据 designlab-addnames06.png */
 .dl-names-numbers-quantities {
   display: flex;
   flex-direction: column;
@@ -3971,7 +3971,7 @@
 
 /* ============================================
    Layer Management Panel - 图层管理面板
-   [2025-12-06 13:00:00] 实现图层管理功能，对齐 Custom Ink
+实现图层管理功能，对齐 Custom Ink
    ============================================ */
 .dl-layer-management-panel {
   display: flex;
@@ -4188,7 +4188,7 @@
 
 /* ============================================
    Product Colors Panel
-   [2025-12-20] 产品颜色选择面板样式
+产品颜色选择面板样式
    ============================================ */
 
 .dl-product-colors-panel {
@@ -4499,7 +4499,7 @@
 
 /* ============================================
    Color Picker Styles - Custom Ink Style
-   [2025-12-28 01:40:00] Matching screenshot grid and styles
+Matching screenshot grid and styles
    ============================================ */
 
 .dl-color-picker {

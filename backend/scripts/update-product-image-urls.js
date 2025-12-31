@@ -1,6 +1,6 @@
 /**
  * 更新商品图片 URL 为本地路径
- * [2025-01-28 22:35:00] 将数据库中的 Custom Ink CDN URL 替换为本地路径
+* 将数据库中的 Custom Ink CDN URL 替换为本地路径
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 const prisma = new PrismaClient();
 
-// [2025-01-28 22:35:00] 商品 slug 到本地图片路径的映射
+// 商品 slug 到本地图片路径的映射
 const PRODUCT_IMAGE_DIR = path.join(__dirname, '../../apps/web/public/assets/products');
 
 async function updateImageUrls() {

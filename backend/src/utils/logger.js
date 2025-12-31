@@ -1,4 +1,4 @@
-// [2025-11-02 20:52:00] Winston logger configuration
+// Winston logger configuration
 const winston = require('winston');
 const path = require('path');
 

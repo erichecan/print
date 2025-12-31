@@ -1,6 +1,6 @@
 #!/bin/bash
 # GCP Deployment Script - FREE TIER OPTIMIZED
-# [2025-01-27] Automated deployment script for GCP Cloud Run
+# Automated deployment script for GCP Cloud Run
 # ⚠️ 默认使用免费配置 (minScale: 0) 以避免持续运行费用
 set -e
 
@@ -81,9 +81,9 @@ echo -n "${API_URL}" | gcloud secrets versions add api-url --data-file=- || \
 
 # Build and push frontend (with backend URL for build-time API URL)
 echo -e "${GREEN}🏗️  Building frontend Docker image...${NC}"
-# [2025-01-30 17:50:00] 修复：在构建时从 Secret Manager 读取 Stripe key 并传入，确保 NEXT_PUBLIC_* 变量在构建时内联
+# 修复：在构建时从 Secret Manager 读取 Stripe key 并传入，确保 NEXT_PUBLIC_* 变量在构建时内联
 echo -e "${GREEN}📌 使用后端 URL 构建前端: ${API_URL}${NC}"
-# [2025-01-30 17:50:00] 从 Secret Manager 读取 Stripe publishable key（构建时必须）
+# 从 Secret Manager 读取 Stripe publishable key（构建时必须）
 STRIPE_PUBLISHABLE_KEY=$(gcloud secrets versions access latest --secret=stripe-publishable-key --project=${PROJECT_ID} 2>/dev/null || echo "")
 if [ -z "$STRIPE_PUBLISHABLE_KEY" ]; then
     echo -e "${RED}❌ 错误: 无法从 Secret Manager 读取 stripe-publishable-key${NC}"
@@ -92,7 +92,7 @@ if [ -z "$STRIPE_PUBLISHABLE_KEY" ]; then
     exit 1
 fi
 echo -e "${GREEN}✅ 已从 Secret Manager 读取 Stripe publishable key (长度: ${#STRIPE_PUBLISHABLE_KEY} 字符)${NC}"
-# [2025-01-27 20:50:00] 修复：使用项目根目录作为构建上下文，以便访问 prisma 目录
+# 修复：使用项目根目录作为构建上下文，以便访问 prisma 目录
 docker build --no-cache --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_URL="${API_URL}" \
   --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="${STRIPE_PUBLISHABLE_KEY}" \

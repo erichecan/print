@@ -1,14 +1,14 @@
 /**
- * [2025-11-24 10:35:09] 商品目录端到端测试：验证列表展示、排序与分页
+* 商品目录端到端测试：验证列表展示、排序与分页
  */
 import { test, expect } from './fixtures/test-base';
 
 test.describe('商品目录', () => {
   test('支持排序与分页', async ({ page }) => {
     await page.goto('/products');
-    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:55:00] 等待页面加载
+await page.waitForLoadState('domcontentloaded'); // 等待页面加载
     
-    // [2025-11-28 17:50:00] 先等待商品 API 响应，确保数据加载完成
+// 先等待商品 API 响应，确保数据加载完成
     try {
       await page.waitForResponse(
         (response) => {
@@ -22,7 +22,7 @@ test.describe('商品目录', () => {
       console.log('商品 API 响应超时，继续查找商品卡片...');
     }
     
-    // [2025-11-28 17:50:00] 等待商品卡片出现，使用多种选择器
+// 等待商品卡片出现，使用多种选择器
     const productCard = page.locator('.product-card-new, .product-card, [class*="product"], article').first();
     
     // 等待商品卡片可见
@@ -34,7 +34,7 @@ test.describe('商品目录', () => {
       await page.waitForTimeout(2000);
     }
     
-    // [2025-11-28 17:50:00] 检查是否有商品显示（即使没有商品卡片，也可能有其他元素）
+// 检查是否有商品显示（即使没有商品卡片，也可能有其他元素）
     const hasProducts = await productCard.isVisible({ timeout: 5000 }).catch(() => false);
     
     if (!hasProducts) {
@@ -70,7 +70,7 @@ test.describe('商品目录', () => {
   });
 
   test('筛选条件应该可以通过取消选择来重置', async ({ page }) => {
-    // [2025-11-28 17:15:00] Clear All 按钮已被移除，改为实时筛选（参考 Custom Ink）
+// Clear All 按钮已被移除，改为实时筛选（参考 Custom Ink）
     // 测试通过取消选择筛选条件来重置筛选
     await page.goto('/products?collection=t-shirts&sort=name_desc&page=2');
     await page.waitForLoadState('domcontentloaded');
@@ -79,7 +79,7 @@ test.describe('商品目录', () => {
     await page.waitForSelector('.plp-new__title', { timeout: 15000 }).catch(() => {});
     await expect(page.locator('.plp-new__title')).toContainText('T-shirts', { timeout: 10000 });
     
-    // [2025-11-28 17:15:00] 由于是实时筛选，可以通过取消选择所有筛选条件来"重置"
+// 由于是实时筛选，可以通过取消选择所有筛选条件来"重置"
     // 或者直接导航到基础 URL
     await page.goto('/products?collection=t-shirts');
     await page.waitForLoadState('domcontentloaded');

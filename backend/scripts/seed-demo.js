@@ -1,8 +1,8 @@
-// [2025-11-16 16:10:00] Seed demo data into Prisma schema tables using pg
+// Seed demo data into Prisma schema tables using pg
 const { Client } = require('pg');
 const { randomUUID } = require('crypto');
 
-// [2025-11-19 07:35:00] Convert dollar amounts to integer cents for base_price_cents column
+// Convert dollar amounts to integer cents for base_price_cents column
 function toCents(amount) {
   return Math.round((amount ?? 0) * 100);
 }

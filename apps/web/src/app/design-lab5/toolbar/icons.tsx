@@ -1,12 +1,12 @@
 /**
  * Design Lab 5.x - 编辑工具栏图标
- * [2025-12-16 02:25:10] 初始实现：Center / Layering / Flip / Duplicate / Crop / Text Align / Rotation 图标
+* 初始实现：Center / Layering / Flip / Duplicate / Crop / Text Align / Rotation 图标
  */
 'use client';
 
 import React from 'react';
 
-// 2025-12-16 02:25:10 Center 图标（复用 EditUploadPanel 中的 SVG）
+// Center 图标（复用 EditUploadPanel 中的 SVG）
 export const CenterIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg
     id="dl-center-icon"
@@ -27,7 +27,7 @@ export const CenterIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   </svg>
 );
 
-// 2025-12-16 02:25:10 Layering 图标（双箭头，上下）
+// Layering 图标（双箭头，上下）
 export const LayeringUpIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg
     width={size}
@@ -56,7 +56,7 @@ export const LayeringDownIcon: React.FC<{ size?: number }> = ({ size = 20 }) => 
   </svg>
 );
 
-// 2025-12-16 02:25:10 Flip 图标（水平/垂直） - 复用 Upload 面板 SVG
+// Flip 图标（水平/垂直） - 复用 Upload 面板 SVG
 export const FlipHorizontalIcon: React.FC<{ size?: number }> = ({ size = 18 }) => (
   <svg
     width={size}
@@ -103,7 +103,7 @@ export const FlipVerticalIcon: React.FC<{ size?: number }> = ({ size = 18 }) => 
   </svg>
 );
 
-// 2025-12-16 02:25:10 Duplicate 图标（双矩形）
+// Duplicate 图标（双矩形）
 export const DuplicateIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg
     width={size}
@@ -119,7 +119,7 @@ export const DuplicateIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   </svg>
 );
 
-// 2025-12-16 02:25:10 Crop 图标
+// Crop 图标
 export const CropIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg
     width={size}
@@ -136,7 +136,7 @@ export const CropIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   </svg>
 );
 
-// 2025-12-16 02:25:10 Rotation 图标（简单圆形箭头）
+// Rotation 图标（简单圆形箭头）
 export const RotationIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg
     width={size}
@@ -152,7 +152,7 @@ export const RotationIcon: React.FC<{ size?: number }> = ({ size = 16 }) => (
   </svg>
 );
 
-// 2025-12-16 02:25:10 文本对齐图标
+// 文本对齐图标
 export const TextAlignLeftIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
   <svg
     width={size}

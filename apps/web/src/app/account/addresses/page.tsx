@@ -1,6 +1,6 @@
 /**
  * Address Management Page
- * [2025-01-27 12:30:00] User address management: list, add, edit, delete, set default
+* User address management: list, add, edit, delete, set default
  */
 'use client';
 
@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, addressesApi, type Address, type AddressPayload } from '@/lib/api';
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // [2025-01-27 15:55:00] Use route mapping
+import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // Use route mapping
 
 export default function AddressesPage() {
   const router = useRouter();
@@ -36,7 +36,7 @@ export default function AddressesPage() {
       setLoading(true);
       setError(null);
       const data = await addressesApi.list();
-      // [2025-12-20] Fix: handle response format { addresses: [], count: ... } or [...]
+// Fix: handle response format { addresses: [], count: ... } or [...]
       if (Array.isArray(data)) {
         setAddresses(data);
       } else if (data && typeof data === 'object' && 'addresses' in data && Array.isArray((data as any).addresses)) {

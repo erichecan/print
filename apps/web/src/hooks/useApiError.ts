@@ -1,6 +1,6 @@
 /**
  * API Error Handling Hook
- * [2025-01-27 10:45:00] 统一 API 错误处理 Hook，提供错误提示和重试机制
+* 统一 API 错误处理 Hook，提供错误提示和重试机制
  */
 import { useState, useCallback } from 'react';
 

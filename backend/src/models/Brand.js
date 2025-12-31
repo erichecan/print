@@ -1,4 +1,4 @@
-// [2025-11-02 20:55:00] Brand model
+// Brand model
 module.exports = (sequelize, DataTypes) => {
   const Brand = sequelize.define('Brand', {
     id: {

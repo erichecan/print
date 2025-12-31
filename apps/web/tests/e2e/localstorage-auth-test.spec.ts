@@ -1,6 +1,6 @@
 /**
  * localStorage + Authorization Header 认证测试
- * [2025-12-07 08:00:00] 验证新的认证流程
+* 验证新的认证流程
  */
 import { test, expect } from '@playwright/test';
 

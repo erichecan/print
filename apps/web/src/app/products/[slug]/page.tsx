@@ -1,11 +1,11 @@
-// [2025-11-19 09:50:00] 商品详情页面包装器
-// [2025-12-06 21:00:00] 优化 SEO 元数据，从 API 获取实际产品信息 for Issue #154
+// 商品详情页面包装器
+// 优化 SEO 元数据，从 API 获取实际产品信息 for Issue #154
 import { ProductDetail } from '@/components/product/detail/ProductDetail';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import { API_BASE_URL } from '@/lib/api-config';
 
-// [2025-12-06 21:00:00] 从 API 获取产品信息用于 SEO 元数据 for Issue #154
+// 从 API 获取产品信息用于 SEO 元数据 for Issue #154
 async function getProductForSEO(slug: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/products/${slug}`, {
@@ -23,8 +23,8 @@ async function getProductForSEO(slug: string) {
   }
 }
 
-// [2025-11-19] 生成产品详情页基础 SEO 元数据
-// [2025-12-06 21:00:00] 优化为从 API 获取实际产品信息 for Issue #154
+// 生成产品详情页基础 SEO 元数据
+// 优化为从 API 获取实际产品信息 for Issue #154
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await getProductForSEO(params.slug);
   
@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   });
 }
 
-// [2025-11-19] 为静态导出模式添加 generateStaticParams
+// 为静态导出模式添加 generateStaticParams
 export async function generateStaticParams() {
   return [];
 }

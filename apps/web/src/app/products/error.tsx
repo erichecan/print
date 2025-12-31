@@ -1,6 +1,6 @@
 /**
  * Products Page Error Boundary
- * [2025-12-09 14:45:00] 商品列表页错误处理
+* 商品列表页错误处理
  */
 'use client';
 

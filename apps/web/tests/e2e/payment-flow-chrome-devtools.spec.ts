@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 12:30:00] 使用 Chrome DevTools Protocol 进行支付功能测试
+* 使用 Chrome DevTools Protocol 进行支付功能测试
  * 这个测试脚本直接使用 CDP 进行深度调试，不依赖完整的测试环境
  */
 import { test, expect, chromium } from '@playwright/test';

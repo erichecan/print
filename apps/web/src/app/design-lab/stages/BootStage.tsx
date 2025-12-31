@@ -1,6 +1,6 @@
 /**
  * Design Lab Boot Stage
- * [2025-01-30 23:30:00] Design Lab 4.0: Boot 阶段（超轻量、零业务）
+* Design Lab 4.0: Boot 阶段（超轻量、零业务）
  * 
  * 职责：
  * - 验证必需的环境变量（构建时 fail）
@@ -35,7 +35,7 @@ export function BootStage({ children }: BootStageProps) {
   }, []);
 
   if (bootStatus === 'checking') {
-    // [2025-01-30 17:40:00] 修复：移除 styled-jsx，使用纯内联样式
+// 修复：移除 styled-jsx，使用纯内联样式
     return (
       <div style={{ 
         minHeight: '100vh', 

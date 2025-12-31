@@ -1,6 +1,6 @@
 /**
  * Design Lab 保存与分享功能测试 (M6)
- * [2025-01-27 12:00:00] 测试 Save、Share、设计恢复
+* 测试 Save、Share、设计恢复
  */
 import { test, expect } from './fixtures/test-base';
 import {

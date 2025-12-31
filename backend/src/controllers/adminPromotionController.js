@@ -1,24 +1,24 @@
 /**
  * Admin Promotion Controller
- * [2025-11-15 15:20:00] Manage promotional campaigns
- * [2025-01-28 12:10:00] 迁移到 Prisma
+* Manage promotional campaigns
+* 迁移到 Prisma
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 
-// [2025-01-28 12:10:00] Map Prisma promotion to API format
+// Map Prisma promotion to API format
 const mapPromotion = (promotion) => ({
   id: promotion.id,
   title: promotion.title,
   description: promotion.description,
   bannerImageUrl: promotion.bannerImageUrl,
   linkUrl: promotion.linkUrl,
-  // [2025-01-28 12:10:00] 新增折扣相关字段
-  discountType: promotion.discountType === 'PERCENTAGE' ? 'percentage' : promotion.discountType === 'FIXED' ? 'fixed' : 'buy_get_free', // [2025-12-06 18:00:00] Support buy-get-free type
+// 新增折扣相关字段
+discountType: promotion.discountType === 'PERCENTAGE' ? 'percentage' : promotion.discountType === 'FIXED' ? 'fixed' : 'buy_get_free', // Support buy-get-free type
   discountValue: Number(promotion.discountValue),
   minOrderValue: promotion.minOrderValue ? Number(promotion.minOrderValue) : null,
   maxDiscount: promotion.maxDiscount ? Number(promotion.maxDiscount) : null,
-  // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+// Buy-get-free promotion fields for Issue #139
   buyQuantity: promotion.buyQuantity || null,
   getQuantity: promotion.getQuantity || null,
   giftProduct: promotion.giftProduct ? { id: promotion.giftProduct.id, name: promotion.giftProduct.name } : null,
@@ -29,7 +29,7 @@ const mapPromotion = (promotion) => ({
   sortOrder: promotion.sortOrder,
   createdAt: promotion.createdAt.toISOString(),
   updatedAt: promotion.updatedAt.toISOString(),
-  // [2025-01-28 12:10:00] 关联数据
+// 关联数据
   products: promotion.products?.map((pp) => ({
     id: pp.product.id,
     name: pp.product.name,
@@ -53,7 +53,7 @@ exports.listPromotions = async (req, res) => {
   try {
     const { search, status = 'all' } = req.query;
 
-    // [2025-01-28 12:10:00] Build Prisma where clause
+// Build Prisma where clause
     const where = {};
     if (search) {
       where.title = { contains: search, mode: 'insensitive' };
@@ -82,7 +82,7 @@ exports.listPromotions = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,
@@ -120,7 +120,7 @@ exports.createPromotion = async (req, res) => {
       return res.status(400).json({ error: 'Title is required' });
     }
 
-    // [2025-01-28 12:10:00] 验证必需字段
+// 验证必需字段
     if (!payload.discountType || !payload.discountValue || !payload.startDate || !payload.endDate) {
       return res.status(400).json({
         error: 'Missing required fields',
@@ -133,8 +133,8 @@ exports.createPromotion = async (req, res) => {
       });
     }
 
-    // [2025-01-28 12:10:00] Map discount type string to enum
-    // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+// Map discount type string to enum
+// Support buy-get-free type for Issue #139
     let discountType = 'FIXED';
     if (payload.discountType === 'percentage' || payload.discountType === 'PERCENTAGE') {
       discountType = 'PERCENTAGE';
@@ -142,7 +142,7 @@ exports.createPromotion = async (req, res) => {
       discountType = 'BUY_GET_FREE';
     }
 
-    // [2025-01-28 12:10:00] Parse dates
+// Parse dates
     const startDate = new Date(payload.startDate);
     const endDate = new Date(payload.endDate);
 
@@ -156,7 +156,7 @@ exports.createPromotion = async (req, res) => {
         discountValue: Number(payload.discountValue) || 0,
         minOrderValue: payload.minOrderValue ? Number(payload.minOrderValue) : null,
         maxDiscount: payload.maxDiscount ? Number(payload.maxDiscount) : null,
-        // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+// Buy-get-free promotion fields for Issue #139
         buyQuantity: payload.buyQuantity ? Number(payload.buyQuantity) : null,
         getQuantity: payload.getQuantity ? Number(payload.getQuantity) : null,
         giftProductId: payload.giftProductId || null,
@@ -182,7 +182,7 @@ exports.createPromotion = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,
@@ -213,13 +213,13 @@ exports.updatePromotion = async (req, res) => {
     const { id } = req.params;
     const payload = req.body || {};
 
-    // [2025-01-28 12:10:00] Check if promotion exists
+// Check if promotion exists
     const existingPromotion = await prisma.promotion.findUnique({ where: { id } });
     if (!existingPromotion) {
       return res.status(404).json({ error: 'Promotion not found' });
     }
 
-    // [2025-01-28 12:10:00] Build update data
+// Build update data
     const updateData = {};
     if (payload.title !== undefined) {
       updateData.title = payload.title;
@@ -234,7 +234,7 @@ exports.updatePromotion = async (req, res) => {
       updateData.linkUrl = payload.linkUrl || null;
     }
     if (payload.discountType !== undefined) {
-      // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+// Support buy-get-free type for Issue #139
       if (payload.discountType === 'percentage' || payload.discountType === 'PERCENTAGE') {
         updateData.discountType = 'PERCENTAGE';
       } else if (payload.discountType === 'buy_get_free' || payload.discountType === 'BUY_GET_FREE') {
@@ -264,7 +264,7 @@ exports.updatePromotion = async (req, res) => {
     if (payload.sortOrder !== undefined) {
       updateData.sortOrder = payload.sortOrder;
     }
-    // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+// Buy-get-free promotion fields for Issue #139
     if (payload.buyQuantity !== undefined) {
       updateData.buyQuantity = payload.buyQuantity ? Number(payload.buyQuantity) : null;
     }
@@ -297,7 +297,7 @@ exports.updatePromotion = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,
@@ -340,7 +340,7 @@ exports.deletePromotion = async (req, res) => {
   }
 };
 
-// [2025-01-28 12:10:00] 添加商品到促销活动
+// 添加商品到促销活动
 exports.addProductsToPromotion = async (req, res) => {
   try {
     const { id } = req.params;
@@ -350,13 +350,13 @@ exports.addProductsToPromotion = async (req, res) => {
       return res.status(400).json({ error: 'productIds array is required' });
     }
 
-    // [2025-01-28 12:10:00] Check if promotion exists
+// Check if promotion exists
     const promotion = await prisma.promotion.findUnique({ where: { id } });
     if (!promotion) {
       return res.status(404).json({ error: 'Promotion not found' });
     }
 
-    // [2025-01-28 12:10:00] Create promotion-product associations
+// Create promotion-product associations
     await prisma.promotionProduct.createMany({
       data: productIds.map((productId) => ({
         promotionId: id,
@@ -365,7 +365,7 @@ exports.addProductsToPromotion = async (req, res) => {
       skipDuplicates: true, // Skip if already exists
     });
 
-    // [2025-01-28 12:10:00] Return updated promotion
+// Return updated promotion
     const updatedPromotion = await prisma.promotion.findUnique({
       where: { id },
       include: {
@@ -384,7 +384,7 @@ exports.addProductsToPromotion = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,
@@ -410,7 +410,7 @@ exports.addProductsToPromotion = async (req, res) => {
   }
 };
 
-// [2025-01-28 12:10:00] 从促销活动移除商品
+// 从促销活动移除商品
 exports.removeProductFromPromotion = async (req, res) => {
   try {
     const { id, productId } = req.params;
@@ -422,7 +422,7 @@ exports.removeProductFromPromotion = async (req, res) => {
       },
     });
 
-    // [2025-01-28 12:10:00] Return updated promotion
+// Return updated promotion
     const updatedPromotion = await prisma.promotion.findUnique({
       where: { id },
       include: {
@@ -441,7 +441,7 @@ exports.removeProductFromPromotion = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,
@@ -471,7 +471,7 @@ exports.removeProductFromPromotion = async (req, res) => {
   }
 };
 
-// [2025-01-28 12:10:00] 添加类目到促销活动
+// 添加类目到促销活动
 exports.addCategoriesToPromotion = async (req, res) => {
   try {
     const { id } = req.params;
@@ -481,13 +481,13 @@ exports.addCategoriesToPromotion = async (req, res) => {
       return res.status(400).json({ error: 'categoryIds array is required' });
     }
 
-    // [2025-01-28 12:10:00] Check if promotion exists
+// Check if promotion exists
     const promotion = await prisma.promotion.findUnique({ where: { id } });
     if (!promotion) {
       return res.status(404).json({ error: 'Promotion not found' });
     }
 
-    // [2025-01-28 12:10:00] Create promotion-category associations
+// Create promotion-category associations
     await prisma.promotionCategory.createMany({
       data: categoryIds.map((categoryId) => ({
         promotionId: id,
@@ -496,7 +496,7 @@ exports.addCategoriesToPromotion = async (req, res) => {
       skipDuplicates: true, // Skip if already exists
     });
 
-    // [2025-01-28 12:10:00] Return updated promotion
+// Return updated promotion
     const updatedPromotion = await prisma.promotion.findUnique({
       where: { id },
       include: {
@@ -515,7 +515,7 @@ exports.addCategoriesToPromotion = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,
@@ -541,7 +541,7 @@ exports.addCategoriesToPromotion = async (req, res) => {
   }
 };
 
-// [2025-01-28 12:10:00] 从促销活动移除类目
+// 从促销活动移除类目
 exports.removeCategoryFromPromotion = async (req, res) => {
   try {
     const { id, categoryId } = req.params;
@@ -553,7 +553,7 @@ exports.removeCategoryFromPromotion = async (req, res) => {
       },
     });
 
-    // [2025-01-28 12:10:00] Return updated promotion
+// Return updated promotion
     const updatedPromotion = await prisma.promotion.findUnique({
       where: { id },
       include: {
@@ -572,7 +572,7 @@ exports.removeCategoryFromPromotion = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,
@@ -602,31 +602,31 @@ exports.removeCategoryFromPromotion = async (req, res) => {
   }
 };
 
-// [2025-01-28 12:10:00] 设置促销活动关联的优惠券
+// 设置促销活动关联的优惠券
 exports.setPromotionCoupon = async (req, res) => {
   try {
     const { id } = req.params;
     const { couponId } = req.body || {};
 
-    // [2025-01-28 12:10:00] Check if promotion exists
+// Check if promotion exists
     const promotion = await prisma.promotion.findUnique({ where: { id } });
     if (!promotion) {
       return res.status(404).json({ error: 'Promotion not found' });
     }
 
-    // [2025-01-28 12:10:00] If couponId is null, remove the association
+// If couponId is null, remove the association
     if (!couponId) {
       await prisma.promotionCoupon.deleteMany({
         where: { promotionId: id },
       });
     } else {
-      // [2025-01-28 12:10:00] Check if coupon exists
+// Check if coupon exists
       const coupon = await prisma.coupon.findUnique({ where: { id: couponId } });
       if (!coupon) {
         return res.status(404).json({ error: 'Coupon not found' });
       }
 
-      // [2025-01-28 12:10:00] Upsert promotion-coupon association
+// Upsert promotion-coupon association
       await prisma.promotionCoupon.upsert({
         where: { promotionId: id },
         update: { couponId: couponId },
@@ -637,7 +637,7 @@ exports.setPromotionCoupon = async (req, res) => {
       });
     }
 
-    // [2025-01-28 12:10:00] Return updated promotion
+// Return updated promotion
     const updatedPromotion = await prisma.promotion.findUnique({
       where: { id },
       include: {
@@ -656,7 +656,7 @@ exports.setPromotionCoupon = async (req, res) => {
             coupon: true,
           },
         },
-        // [2025-12-06 18:00:00] Include gift product and variant for Issue #139
+// Include gift product and variant for Issue #139
         giftProduct: {
           select: {
             id: true,

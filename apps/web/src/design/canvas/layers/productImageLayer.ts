@@ -1,8 +1,8 @@
 /**
  * Product Image Layer
- * [2025-01-30 20:05:00] 产品主图图层管理
- * [2025-01-30 20:50:00] 修复：引入有限状态机（FSM）和幂等保护，防止重复加载-移除循环
- * [2025-12-20 00:20:00] 阶段2：添加 applyCoverCentered() 函数，实现单一真理的幂等布局
+* 产品主图图层管理
+* 修复：引入有限状态机（FSM）和幂等保护，防止重复加载-移除循环
+* 阶段2：添加 applyCoverCentered() 函数，实现单一真理的幂等布局
  * 
  * 职责：
  * - 加载产品主图
@@ -18,7 +18,7 @@ import { debugLog } from '@/utils/debugLogger';
 
 /**
  * ProductImageLayer 状态枚举
- * [2025-01-30 20:50:00] 引入有限状态机防止重复加载
+* 引入有限状态机防止重复加载
  */
 export enum ProductImageLayerState {
   IDLE = 'idle',
@@ -30,7 +30,7 @@ export enum ProductImageLayerState {
 
 /**
  * 稳定的对象键生成器
- * [2025-01-30 20:50:00] 基于商品 SKU + view + colorId，避免因 URL query 变动触发重建
+* 基于商品 SKU + view + colorId，避免因 URL query 变动触发重建
  */
 function generateStableKey(
   colorName: string | null | undefined,
@@ -44,8 +44,8 @@ function generateStableKey(
 
 /**
  * 应用居中布局（阶段2：单一真理的幂等布局函数）
- * [2025-12-20 01:00:00] 阶段2修复：直接使用 .dl-canvas section 的实际 DOM 尺寸，不依赖 Fabric 逻辑坐标系
- * [2025-12-20 01:10:00] 阶段2更新：支持 contain 策略（不裁剪图片）
+* 阶段2修复：直接使用 .dl-canvas section 的实际 DOM 尺寸，不依赖 Fabric 逻辑坐标系
+* 阶段2更新：支持 contain 策略（不裁剪图片）
  * 
  * 要求：
  * - originX/originY = 'center'
@@ -68,9 +68,9 @@ function applyCoverCentered(params: {
   fabricModule: typeof fabric;
   fitMode?: 'contain' | 'cover';
 }): void {
-  const { image, canvas, canvasWidth, canvasHeight, fitMode = 'contain' } = params; // [2025-12-20 01:30:00] 修复：解构 canvasWidth 和 canvasHeight
+const { image, canvas, canvasWidth, canvasHeight, fitMode = 'contain' } = params; // 修复：解构 canvasWidth 和 canvasHeight
   
-  // [2025-12-20 01:00:00] 阶段2修复：获取图片原始尺寸
+// 阶段2修复：获取图片原始尺寸
   const imgWidth = (image as any).width || 0;
   const imgHeight = (image as any).height || 0;
   
@@ -79,7 +79,7 @@ function applyCoverCentered(params: {
     return;
   }
   
-  // [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - 使用固定高分辨率逻辑尺寸
+// 阶段2修复：改为 Custom Ink 方式 - 使用固定高分辨率逻辑尺寸
   // 逻辑尺寸：使用传入的 canvasWidth × canvasHeight（4000 × 4800）
   // DOM 显示尺寸：由 CSS 自适应（基于 .dl-canvas section）
   // 不修改 Canvas 的逻辑尺寸，使用固定值
@@ -88,7 +88,7 @@ function applyCoverCentered(params: {
   const logicalCenterX = logicalCanvasWidth / 2;
   const logicalCenterY = logicalCanvasHeight / 2;
   
-  // [2025-12-20 01:25:00] 确保 Canvas 的逻辑尺寸正确（初始化时应该已经设置）
+// 确保 Canvas 的逻辑尺寸正确（初始化时应该已经设置）
   // 只在逻辑尺寸不匹配时才更新（避免重复设置）
   if (canvas.width !== logicalCanvasWidth || canvas.height !== logicalCanvasHeight) {
     console.log('[ProductImageLayer] applyCoverCentered: Setting canvas logical dimensions:', {
@@ -101,39 +101,39 @@ function applyCoverCentered(params: {
     }, { cssOnly: false }); // 更新逻辑尺寸，不仅仅是 CSS
   }
   
-  // [2025-12-20 01:25:00] 阶段2修复：根据 fitMode 计算缩放比例（使用逻辑尺寸）
+// 阶段2修复：根据 fitMode 计算缩放比例（使用逻辑尺寸）
   // contain: 使用较小的缩放比例，确保完整显示（不裁剪，可能有留白）
   // cover: 使用较大的缩放比例，确保填满逻辑 Canvas（允许裁切边缘）
-  // [2025-12-20 01:15:00] 用户需求：填充整个绿色区域但不裁剪图片 = contain 模式（完整显示，留白是正常的）
+// 用户需求：填充整个绿色区域但不裁剪图片 = contain 模式（完整显示，留白是正常的）
   const scaleX = logicalCanvasWidth / imgWidth;
   const scaleY = logicalCanvasHeight / imgHeight;
   const scale = fitMode === 'contain' 
     ? Math.min(scaleX, scaleY) // contain: 使用较小值，完整显示图片，不裁剪
     : Math.max(scaleX, scaleY); // cover: 使用较大值，填满逻辑 Canvas，可能裁剪边缘
   
-  // [2025-12-20 01:00:00] 阶段2修复：设置 origin 为 center（必须在 scale 之前）
+// 阶段2修复：设置 origin 为 center（必须在 scale 之前）
   image.set({
     originX: 'center',
     originY: 'center',
   });
   
-  // [2025-12-20 01:00:00] 阶段2修复：设置缩放
+// 阶段2修复：设置缩放
   image.set({
     scaleX: scale,
     scaleY: scale,
   });
   
-  // [2025-12-20 01:25:00] 阶段2修复：设置位置为逻辑 Canvas 中心（固定高分辨率中心点）
+// 阶段2修复：设置位置为逻辑 Canvas 中心（固定高分辨率中心点）
   // 严格使用 logicalCenterX 和 logicalCenterY，不使用 || 0 回退
   image.set({
     left: logicalCenterX,
     top: logicalCenterY,
   });
   
-  // [2025-12-20 01:00:00] 阶段2修复：更新坐标系统
+// 阶段2修复：更新坐标系统
   image.setCoords();
   
-  // [2025-12-20 01:00:00] 阶段2修复：确保不可选中且不在交互层
+// 阶段2修复：确保不可选中且不在交互层
   image.set({
     selectable: false,
     evented: false,
@@ -185,7 +185,7 @@ export interface ProductImageLayerResult {
 
 /**
  * ProductImageLayer 管理器（单例模式）
- * [2025-01-30 20:50:00] 管理状态，防止重复加载
+* 管理状态，防止重复加载
  */
 class ProductImageLayerManager {
   private state: ProductImageLayerState = ProductImageLayerState.IDLE;
@@ -315,7 +315,7 @@ class ProductImageLayerManager {
   }
 
   /**
-   * [2025-01-31 19:00:00] 清除旧图片的管理状态（当 stableKey 改变时调用）
+* 清除旧图片的管理状态（当 stableKey 改变时调用）
    * 这允许旧图片被移除，即使它当前被 manager 管理
    */
   clearOldImageState(): void {
@@ -329,7 +329,7 @@ class ProductImageLayerManager {
       });
       // 重置移除计数，允许移除旧图片
       this.removalCount = 0;
-      // [2025-01-31 19:00:00] 清除 currentImage，这样在移除时不会被识别为当前管理的图片
+// 清除 currentImage，这样在移除时不会被识别为当前管理的图片
       // 移除逻辑会正常工作，因为 image !== this.currentImage 会返回 true
       this.currentImage = null;
       // 注意：保留 currentStableKey，这样 startLoading 可以正确设置新的 stableKey
@@ -352,7 +352,7 @@ class ProductImageLayerManager {
 const manager = new ProductImageLayerManager();
 
 /**
- * [2025-12-19 21:30:00] 幂等的底图布局函数 - 强制居中并设置正确的尺寸
+* 幂等的底图布局函数 - 强制居中并设置正确的尺寸
  * 统一处理所有路径的底图布局，确保底图始终居中且尺寸正确
  */
 function applyProductImageLayout(params: {
@@ -363,7 +363,7 @@ function applyProductImageLayout(params: {
   safeAreaWidth: number;
   safeAreaHeight: number;
   fitMode?: 'contain' | 'cover';
-  fabricModule?: typeof fabric; // [2025-12-19 22:35:00] 添加fabric模块参数，用于创建调试标记
+fabricModule?: typeof fabric; // 添加fabric模块参数，用于创建调试标记
 }): void {
   const {
     image,
@@ -375,7 +375,7 @@ function applyProductImageLayout(params: {
     fitMode = 'cover',
   } = params;
 
-  // [2025-12-19 21:30:00] 获取图片原始尺寸（考虑viewportTransform）
+// 获取图片原始尺寸（考虑viewportTransform）
   // 如果canvas有viewportTransform，需要使用逻辑尺寸计算
   const vpt = canvas.viewportTransform;
   let logicalCanvasWidth = canvasWidth;
@@ -392,7 +392,7 @@ function applyProductImageLayout(params: {
     });
   }
 
-  // [2025-12-19 21:30:00] 获取图片原始尺寸（Fabric Image的内部尺寸，不受scale影响）
+// 获取图片原始尺寸（Fabric Image的内部尺寸，不受scale影响）
   const imageNaturalWidth = (image as any).width || 0;
   const imageNaturalHeight = (image as any).height || 0;
 
@@ -401,7 +401,7 @@ function applyProductImageLayout(params: {
     return;
   }
 
-  // [2025-12-19 22:00:00] 计算fit（使用逻辑坐标系）
+// 计算fit（使用逻辑坐标系）
   // 根据视图类型调整safeArea配置（sleeve视图更窄，需要单独配置）
   let effectiveSafeAreaWidth = safeAreaWidth;
   let effectiveSafeAreaHeight = safeAreaHeight;
@@ -410,7 +410,7 @@ function applyProductImageLayout(params: {
   const view = (image as any).data?.view || (image as any).data?.imageOptions?.view;
   if (view === 'sleeve') {
     // sleeve视图更窄，使用更高的safeAreaWidth（接近填满宽度）
-    effectiveSafeAreaWidth = 0.95; // [2025-12-19 22:00:00] sleeve视图使用95%宽度
+effectiveSafeAreaWidth = 0.95; // sleeve视图使用95%宽度
     effectiveSafeAreaHeight = safeAreaHeight; // 保持高度不变
   }
   
@@ -424,7 +424,7 @@ function applyProductImageLayout(params: {
     fit: fitMode,
   });
 
-  // [2025-12-19 23:30:00] 计算商品图片的目标位置：基于.dl-canvas section的视觉中心
+// 计算商品图片的目标位置：基于.dl-canvas section的视觉中心
   // 获取.dl-canvas section的实际尺寸和位置
   let targetCenterX = logicalCanvasWidth / 2; // 默认使用Fabric.js逻辑中心
   let targetCenterY = logicalCanvasHeight / 2;
@@ -482,7 +482,7 @@ function applyProductImageLayout(params: {
     }
   }
 
-  // [2025-12-19 21:30:00] 强制设置布局属性（无条件覆盖旧值）
+// 强制设置布局属性（无条件覆盖旧值）
   // 1. 先设置origin为center（必须在scale之前）
   image.set({
     originX: 'center',
@@ -501,25 +501,25 @@ function applyProductImageLayout(params: {
   // 4. 更新坐标系统
   image.setCoords();
 
-  // [2025-12-19 21:30:00] 确保不可选中且不在交互层
+// 确保不可选中且不在交互层
   image.set({
     selectable: false,
     evented: false,
   });
 
-  // [2025-12-19 23:30:00] 计算误差（用于验证是否居中）- 基于section视觉中心
+// 计算误差（用于验证是否居中）- 基于section视觉中心
   const leftDiff = Math.abs(image.left - targetCenterX);
   const topDiff = Math.abs(image.top - targetCenterY);
   const isCentered = leftDiff <= 2 && topDiff <= 2;
   
-  // [2025-12-19 22:30:00] 计算尺寸占比（用于验证是否铺满）
+// 计算尺寸占比（用于验证是否铺满）
   const scaledWidth = imageNaturalWidth * fit.scale;
   const scaledHeight = imageNaturalHeight * fit.scale;
   const widthRatio = scaledWidth / (logicalCanvasWidth * effectiveSafeAreaWidth);
   const heightRatio = scaledHeight / (logicalCanvasHeight * effectiveSafeAreaHeight);
   const isFull = widthRatio >= 1.0 || heightRatio >= 1.0;
   
-  // [2025-12-19 22:30:00] 获取Canvas DOM元素的实际渲染尺寸（用于诊断视觉偏差）
+// 获取Canvas DOM元素的实际渲染尺寸（用于诊断视觉偏差）
   const canvasElementForDOM = canvas.getElement();
   let canvasDOMWidth = 0;
   let canvasDOMHeight = 0;
@@ -532,11 +532,11 @@ function applyProductImageLayout(params: {
     canvasActualHeight = canvas.height || 0;
   }
   
-  // [2025-12-19 22:30:00] 计算视觉中心（基于Canvas DOM元素的实际尺寸）
+// 计算视觉中心（基于Canvas DOM元素的实际尺寸）
   const visualCenterX = canvasDOMWidth / 2;
   const visualCenterY = canvasDOMHeight / 2;
   
-  // [2025-12-19 22:30:00] 计算底图在DOM坐标系中的视觉位置
+// 计算底图在DOM坐标系中的视觉位置
   // 需要将逻辑坐标转换为DOM像素坐标
   const devicePixelRatio = window.devicePixelRatio || 1;
   const logicalToDOMScale = canvasDOMWidth / logicalCanvasWidth; // 逻辑尺寸到DOM尺寸的缩放比例
@@ -545,7 +545,7 @@ function applyProductImageLayout(params: {
   const visualLeftDiff = Math.abs(imageDOMLeft - visualCenterX);
   const visualTopDiff = Math.abs(imageDOMTop - visualCenterY);
   
-  // [2025-12-19 22:15:00] 详细日志输出（用于验证修复）
+// 详细日志输出（用于验证修复）
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('📍 [ProductImageLayer] 底图布局验证报告');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -595,12 +595,12 @@ function applyProductImageLayout(params: {
   }
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   
-  // [2025-12-19 22:35:00] 在画布上添加临时坐标标记（开发环境或手动启用）
+// 在画布上添加临时坐标标记（开发环境或手动启用）
   // 启用方法：在浏览器Console中执行 window.__DEBUG_PRODUCT_IMAGE__ = true; location.reload();
   const shouldShowMarkers = process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && (window as any).__DEBUG_PRODUCT_IMAGE__);
-  const shouldShowCenterSquare = true; // [2025-12-19 22:35:00] 总是显示红色中心标记，用于验证CSS布局
+const shouldShowCenterSquare = true; // 总是显示红色中心标记，用于验证CSS布局
   
-  // [2025-12-19 22:35:00] 添加红色正方形标记在逻辑中心（用于验证CSS布局）
+// 添加红色正方形标记在逻辑中心（用于验证CSS布局）
   if (shouldShowCenterSquare && params.fabricModule) {
         try {
           const fabricMod = params.fabricModule;
@@ -619,7 +619,7 @@ function applyProductImageLayout(params: {
             canvas.remove(existingLabel);
           }
           
-          // [2025-12-19 23:30:00] 红色方块应该标记section视觉中心，而不是Fabric.js逻辑中心
+// 红色方块应该标记section视觉中心，而不是Fabric.js逻辑中心
           const debugCenterX = sectionVisualCenterX;
           const debugCenterY = sectionVisualCenterY;
           
@@ -664,14 +664,14 @@ function applyProductImageLayout(params: {
           canvas.add(centerSquare);
           canvas.add(centerLabel);
           
-          // [2025-12-19 23:10:00] 添加基准线：水平线和垂直线，用于验证真实的.dl-canvas section区域
+// 添加基准线：水平线和垂直线，用于验证真实的.dl-canvas section区域
           // 移除旧的基准线（如果存在）
           const oldHorizontalLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_horizontal_line');
           const oldVerticalLine = canvas.getObjects().find((obj: any) => obj.name === '__debug_vertical_line');
           if (oldHorizontalLine) canvas.remove(oldHorizontalLine);
           if (oldVerticalLine) canvas.remove(oldVerticalLine);
           
-          // [2025-12-19 23:10:00] 获取真实的.dl-canvas section的实际尺寸
+// 获取真实的.dl-canvas section的实际尺寸
           const canvasElement = canvas.getElement();
           let actualCanvasSectionWidth = logicalCanvasWidth;
           let actualCanvasSectionHeight = logicalCanvasHeight;
@@ -704,7 +704,7 @@ function applyProductImageLayout(params: {
                 const scaleX = logicalCanvasWidth / (containerRect.width || logicalCanvasWidth);
                 const scaleY = logicalCanvasHeight / (containerRect.height || logicalCanvasHeight);
                 
-                // [2025-12-19 23:15:00] 计算.dl-canvas边界在Fabric.js逻辑坐标系中的位置
+// 计算.dl-canvas边界在Fabric.js逻辑坐标系中的位置
                 // Fabric.js坐标系是从(0,0)开始的，对应container的左上角
                 // .dl-canvas的左边界对应Fabric.js坐标：-containerOffsetX * scaleX（如果container在section内部，则为负值）
                 const sectionLeftInFabric = -containerOffsetX * scaleX;
@@ -731,7 +731,7 @@ function applyProductImageLayout(params: {
                 console.log(`   Fabric.js canvas尺寸: ${logicalCanvasWidth.toFixed(0)} × ${logicalCanvasHeight.toFixed(0)}`);
                 console.log(`   section视觉中心: (${sectionVisualCenterX.toFixed(0)}, ${sectionVisualCenterY.toFixed(0)})`);
                 
-                // [2025-12-19 23:15:00] 绘制基准线：从.dl-canvas section的左边界到右边界，从顶部到底部
+// 绘制基准线：从.dl-canvas section的左边界到右边界，从顶部到底部
                 // 注意：如果section边界超出Fabric.js canvas范围，我们只能绘制到canvas边界
                 const horizontalLine = new fabricMod.Line(
                   [lineLeft, sectionVisualCenterY, lineRight, sectionVisualCenterY],
@@ -799,7 +799,7 @@ function applyProductImageLayout(params: {
           }
           
           // 移到最上层（在底图之上，但可能被用户内容覆盖）
-          // [2025-12-19 22:40:00] 修复：使用canvas的方法而不是对象的bringToFront
+// 修复：使用canvas的方法而不是对象的bringToFront
           try {
             canvas.bringObjectToFront(centerSquare);
             canvas.bringObjectToFront(centerLabel);
@@ -844,7 +844,7 @@ function applyProductImageLayout(params: {
     }
   }
   
-  // [2025-12-19 22:15:00] 添加详细的调试标记（仅在开发环境或手动启用时）
+// 添加详细的调试标记（仅在开发环境或手动启用时）
   if (shouldShowMarkers && params.fabricModule) {
     try {
       const fabricMod = params.fabricModule;
@@ -958,7 +958,7 @@ function applyProductImageLayout(params: {
 
 /**
  * 查找画布中已存在的产品图片对象
- * [2025-01-30 20:50:00] 通过稳定键查找，避免重复创建
+* 通过稳定键查找，避免重复创建
  */
 function findExistingProductImage(
   canvas: fabric.Canvas,
@@ -977,7 +977,7 @@ function findExistingProductImage(
 
 /**
  * 移除旧的产品图片（幂等保护）
- * [2025-01-30 20:50:00] 确保不会重复移除导致循环
+* 确保不会重复移除导致循环
  */
 function removeExistingProductImage(
   canvas: fabric.Canvas,
@@ -1006,19 +1006,19 @@ function removeExistingProductImage(
   });
   // #endregion
   
-  // [2025-01-30 21:55:00] 修复：只移除匹配稳定键的图片（严格匹配）
+// 修复：只移除匹配稳定键的图片（严格匹配）
   // 不按名称前缀移除，避免误移除正在加载的图片
   for (const obj of objects) {
     const objName = obj.name || '';
     const objDataStableKey = (obj as any).data?.stableKey;
     const objStableKeyMatch = objName === stableKey || objDataStableKey === stableKey;
     
-    // [2025-01-31 19:00:00] 只移除匹配稳定键的图片，且不是要排除的图片
+// 只移除匹配稳定键的图片，且不是要排除的图片
     if (objStableKeyMatch && obj !== excludeImage) {
       const isCurrentImage = obj === manager.getCurrentImage();
       const managerState = manager.getState();
       
-      // [2025-01-31 19:00:00] 详细日志记录移除决策过程
+// 详细日志记录移除决策过程
       console.log('[ProductImageLayer] Evaluating removal for object:', {
         objName,
         objStableKey: objDataStableKey || objName,
@@ -1029,7 +1029,7 @@ function removeExistingProductImage(
         isExcluded: obj === excludeImage,
       });
       
-      // [2025-01-30 21:55:00] 额外检查：如果对象是当前正在管理的图片，且状态是 LOADING 或 LOADED，不移除
+// 额外检查：如果对象是当前正在管理的图片，且状态是 LOADING 或 LOADED，不移除
       if (isCurrentImage && 
           (managerState === ProductImageLayerState.LOADING || 
            managerState === ProductImageLayerState.LOADED)) {
@@ -1096,8 +1096,8 @@ function removeExistingProductImage(
 
 /**
  * 加载产品主图并添加到画布
- * [2025-01-30 20:05:00] 实现分阶段初始化：skeleton→主图加载→fit+center
- * [2025-01-30 20:50:00] 修复：引入 FSM 和幂等保护，防止重复加载-移除循环
+* 实现分阶段初始化：skeleton→主图加载→fit+center
+* 修复：引入 FSM 和幂等保护，防止重复加载-移除循环
  */
 export async function loadProductImageLayer(
   options: ProductImageLayerOptions
@@ -1108,8 +1108,8 @@ export async function loadProductImageLayer(
     canvasWidth,
     canvasHeight,
     imageOptions,
-    safeAreaWidth = 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
-    safeAreaHeight = 0.9, // [2025-12-19 22:00:00] 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+safeAreaWidth = 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+safeAreaHeight = 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
     gitSha,
     productId,
   } = options;
@@ -1126,7 +1126,7 @@ export async function loadProductImageLayer(
   });
   // #endregion
   
-  // 2. [2025-01-31 19:00:00] 如果 stableKey 改变，先清除旧图片的管理状态，允许移除旧图片
+// 2. 如果 stableKey 改变，先清除旧图片的管理状态，允许移除旧图片
   const currentStableKey = manager.getCurrentStableKey();
   if (currentStableKey && currentStableKey !== stableKey) {
     console.log('[ProductImageLayer] Stable key changed, clearing old image state to allow removal:', {
@@ -1143,19 +1143,19 @@ export async function loadProductImageLayer(
     if (existingImage) {
       console.log('[ProductImageLayer] Using existing product image, reapplying layout:', stableKey);
       
-      // [2025-12-20 00:20:00] 阶段2：使用 applyCoverCentered() 确保底图居中
-      // [2025-12-20 00:50:00] 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
-      // [2025-12-20 01:10:00] 阶段2更新：使用 contain 策略（不裁剪图片）
+// 阶段2：使用 applyCoverCentered() 确保底图居中
+// 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
+// 阶段2更新：使用 contain 策略（不裁剪图片）
       applyCoverCentered({
         image: existingImage,
         canvas,
         canvasWidth,
         canvasHeight,
         fabricModule,
-        fitMode: 'contain', // [2025-12-20 01:15:00] 使用 contain 策略：完整显示图片，不裁剪（可能留白）
+fitMode: 'contain', // 使用 contain 策略：完整显示图片，不裁剪（可能留白）
       });
       
-      // [2025-12-19 21:30:00] 确保在最底层且不可选中
+// 确保在最底层且不可选中
       try {
         const objs = canvas.getObjects();
         const idx = objs.indexOf(existingImage);
@@ -1171,7 +1171,7 @@ export async function loadProductImageLayer(
       
       canvas.renderAll();
       
-      // [2025-12-19 21:30:00] 计算fit结果用于返回值（使用当前实际值）
+// 计算fit结果用于返回值（使用当前实际值）
       const fit: FitResult = {
         width: (existingImage.width || 0) * (existingImage.scaleX || 1),
         height: (existingImage.height || 0) * (existingImage.scaleY || 1),
@@ -1229,12 +1229,12 @@ export async function loadProductImageLayer(
     });
     // #endregion
     
-    // 5. [2025-01-31 19:00:00] 移除所有旧的产品图片（匹配稳定键的，以及所有其他 product-image- 开头的图片）
+// 5. 移除所有旧的产品图片（匹配稳定键的，以及所有其他 product-image- 开头的图片）
     // 先移除匹配稳定键的图片
     removeExistingProductImage(canvas, stableKey, null);
     
-    // [2025-01-31 19:30:00] 然后移除所有其他以 product-image- 开头的图片（切换产品/颜色时）
-    // [2025-01-31 19:30:00] 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
+// 然后移除所有其他以 product-image- 开头的图片（切换产品/颜色时）
+// 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
     const allObjects = canvas.getObjects();
     console.log('[ProductImageLayer] 🔍 Before cleanup - all canvas objects:', allObjects.map((obj, idx) => ({
       index: idx,
@@ -1253,7 +1253,7 @@ export async function loadProductImageLayer(
       const isCurrentKey = objName === stableKey || objStableKey === stableKey;
       const isUploadImage = objLayerType === 'upload';
       
-      // [2025-01-31 19:30:00] 安全检查：绝对不移除上传图片
+// 安全检查：绝对不移除上传图片
       if (isUploadImage) {
         console.log('[ProductImageLayer] ⚠️ Skipping upload image (protected from removal):', {
           objName,
@@ -1263,10 +1263,10 @@ export async function loadProductImageLayer(
         continue;
       }
       
-      // [2025-01-31 19:30:00] 移除所有产品图片，除了当前要加载的这个
+// 移除所有产品图片，除了当前要加载的这个
       // 如果 stableKey 不匹配，强制移除，不经过 canRemove 状态检查
       if (isProductImage && !isCurrentKey) {
-        // [2025-01-31 19:30:00] stableKey 不匹配，强制移除（绕过 canRemove 状态检查）
+// stableKey 不匹配，强制移除（绕过 canRemove 状态检查）
         // 因为已经在 startLoading 之前通过 clearOldImageState 清除了旧图片的管理状态
         console.log('[ProductImageLayer] 🗑️ Force removing old product image (different stableKey):', {
           objName,
@@ -1327,38 +1327,38 @@ export async function loadProductImageLayer(
             evented: false,
             excludeFromExport: false, // 允许导出
             name: stableKey, // 使用稳定键作为名称
-            originX: 'center', // [2025-12-19 22:00:00] 修复：初始就使用center原点，避免布局问题
+originX: 'center', // 修复：初始就使用center原点，避免布局问题
             originY: 'center',
             data: {
               stableKey,
               layerType: 'product-image',
               zIndex: 0, // 底层
-              view: imageOptions.view, // [2025-12-19 22:00:00] 保存view信息，用于sleeve视图的特殊配置
-              imageOptions, // [2025-12-19 22:00:00] 保存完整imageOptions，便于后续查询view
+view: imageOptions.view, // 保存view信息，用于sleeve视图的特殊配置
+imageOptions, // 保存完整imageOptions，便于后续查询view
             },
           });
           
-          // [2025-12-20 00:20:00] 阶段2：使用 applyCoverCentered() 确保底图居中
-          // [2025-12-20 00:50:00] 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
-          // [2025-12-20 01:10:00] 阶段2更新：使用 contain 策略（不裁剪图片）
+// 阶段2：使用 applyCoverCentered() 确保底图居中
+// 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
+// 阶段2更新：使用 contain 策略（不裁剪图片）
           applyCoverCentered({
             image: fabricImg,
             canvas,
             canvasWidth,
             canvasHeight,
             fabricModule,
-            fitMode: 'contain', // [2025-12-20 01:15:00] 使用 contain 策略：完整显示图片，不裁剪（可能留白）
+fitMode: 'contain', // 使用 contain 策略：完整显示图片，不裁剪（可能留白）
           });
           
-          // [2025-12-20 00:20:00] 阶段2：获取fit结果用于返回值
+// 阶段2：获取fit结果用于返回值
           const fit: FitResult = {
             width: (fabricImg.width || 0) * (fabricImg.scaleX || 1),
             height: (fabricImg.height || 0) * (fabricImg.scaleY || 1),
             left: fabricImg.left || 0,
             top: fabricImg.top || 0,
             scale: fabricImg.scaleX || 1,
-            safeAreaWidth: canvasWidth, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
-            safeAreaHeight: canvasHeight, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
+safeAreaWidth: canvasWidth, // 阶段2：cover模式使用完整Canvas尺寸
+safeAreaHeight: canvasHeight, // 阶段2：cover模式使用完整Canvas尺寸
           };
           
           // 10. 添加到画布
@@ -1376,7 +1376,7 @@ export async function loadProductImageLayer(
           // 11. 移动到最底层（确保 zIndex 最小）
           try {
             // 强制移动到最底层
-            // [2025-01-30 22:25:00] 修复：Fabric.js v6 使用 sendObjectToBack 而不是 sendToBack
+// 修复：Fabric.js v6 使用 sendObjectToBack 而不是 sendToBack
             try {
               if (typeof (canvas as any).sendObjectToBack === 'function') {
                 (canvas as any).sendObjectToBack(fabricImg);
@@ -1424,14 +1424,14 @@ export async function loadProductImageLayer(
               console.warn('[ProductImageLayer] sendToBack did not work, manually moved to front of array');
             }
             
-            // [2025-01-30 22:25:00] 确保 zIndex 为 0，并禁用 bringToFront
+// 确保 zIndex 为 0，并禁用 bringToFront
             (fabricImg as any).zIndex = 0;
             fabricImg.bringToFront = function() {
               // 重写 bringToFront 以防止被移到前面
               console.warn('[ProductImageLayer] Prevented bringToFront on product image');
               // 立即将其移回底层
               try {
-                // [2025-01-30 22:25:00] 修复：使用 sendObjectToBack
+// 修复：使用 sendObjectToBack
                 if (typeof (canvas as any).sendObjectToBack === 'function') {
                   (canvas as any).sendObjectToBack(fabricImg);
                 } else if (typeof (fabricImg as any).sendObjectToBack === 'function') {
@@ -1473,16 +1473,16 @@ export async function loadProductImageLayer(
           });
           // #endregion
           
-          // [2025-12-20 00:20:00] 阶段2：在标记加载完成前，最后一次强制应用布局（幂等保证）
-          // [2025-12-20 00:50:00] 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
-          // [2025-12-20 01:10:00] 阶段2更新：使用 contain 策略（不裁剪图片）
+// 阶段2：在标记加载完成前，最后一次强制应用布局（幂等保证）
+// 阶段2修复：传递 canvas 参数以计算 .dl-canvas section 中心
+// 阶段2更新：使用 contain 策略（不裁剪图片）
           applyCoverCentered({
             image: fabricImg,
             canvas,
             canvasWidth,
             canvasHeight,
             fabricModule,
-            fitMode: 'contain', // [2025-12-20 01:15:00] 使用 contain 策略：完整显示图片，不裁剪（可能留白）
+fitMode: 'contain', // 使用 contain 策略：完整显示图片，不裁剪（可能留白）
           });
           
           // 确保在最底层
@@ -1503,18 +1503,18 @@ export async function loadProductImageLayer(
           manager.markLoaded(fabricImg, stableKey);
           manager.markAttached();
           
-          // [2025-12-20 00:20:00] 阶段2：使用最新的fit值（从image获取）
+// 阶段2：使用最新的fit值（从image获取）
           const finalFit: FitResult = {
             width: (fabricImg.width || 0) * (fabricImg.scaleX || 1),
             height: (fabricImg.height || 0) * (fabricImg.scaleY || 1),
             left: fabricImg.left || 0,
             top: fabricImg.top || 0,
             scale: fabricImg.scaleX || 1,
-            safeAreaWidth: canvasWidth, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
-            safeAreaHeight: canvasHeight, // [2025-12-20 00:20:00] 阶段2：cover模式使用完整Canvas尺寸
+safeAreaWidth: canvasWidth, // 阶段2：cover模式使用完整Canvas尺寸
+safeAreaHeight: canvasHeight, // 阶段2：cover模式使用完整Canvas尺寸
           };
           
-          // [2025-01-30 22:30:00] 详细调试：检查图片是否真的可见
+// 详细调试：检查图片是否真的可见
           const imgProps = {
             visible: fabricImg.visible,
             opacity: fabricImg.opacity,
@@ -1548,7 +1548,7 @@ export async function loadProductImageLayer(
             state: manager.getState(),
           });
           
-          // [2025-01-30 22:30:00] 详细输出所有属性（展开对象）
+// 详细输出所有属性（展开对象）
           console.log('[ProductImageLayer] 🔍 Image properties check:');
           console.log('  visible:', imgProps.visible);
           console.log('  opacity:', imgProps.opacity);
@@ -1564,7 +1564,7 @@ export async function loadProductImageLayer(
           console.log('  canvasHeight:', imgProps.canvasHeight);
           console.log('  full imgProps:', JSON.stringify(imgProps, null, 2));
           
-          // [2025-01-30 22:30:00] 检查图片是否在画布范围内
+// 检查图片是否在画布范围内
           const imgBounds = fabricImg.getBoundingRect();
           const isInCanvas = imgBounds.left >= 0 && 
                             imgBounds.top >= 0 && 
@@ -1580,7 +1580,7 @@ export async function loadProductImageLayer(
           console.log('  canvasSize:', { width: canvas.width, height: canvas.height });
           console.log('  full bounds:', JSON.stringify(imgBounds, null, 2));
           
-          // [2025-01-30 22:30:00] 检查画布上所有对象
+// 检查画布上所有对象
           const allObjects = canvas.getObjects();
           console.log('[ProductImageLayer] 🔍 Canvas objects:', allObjects.length, 'objects');
           allObjects.forEach((obj, idx) => {
@@ -1599,7 +1599,7 @@ export async function loadProductImageLayer(
             });
           });
           
-          // [2025-01-30 22:30:00] 检查画布元素本身
+// 检查画布元素本身
           const canvasElement = canvas.getElement();
           if (canvasElement) {
             const canvasStyle = window.getComputedStyle(canvasElement);
@@ -1614,7 +1614,7 @@ export async function loadProductImageLayer(
             console.log('  zIndex:', canvasStyle.zIndex);
           }
           
-          // [2025-01-30 22:30:00] 检查图片是否真的渲染
+// 检查图片是否真的渲染
           if (!fabricImg.visible || fabricImg.opacity === 0) {
             console.warn('[ProductImageLayer] ⚠️ WARNING: Image is not visible!', {
               visible: fabricImg.visible,

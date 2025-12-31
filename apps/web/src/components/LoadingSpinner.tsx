@@ -1,6 +1,6 @@
 /**
  * Loading Spinner Component
- * [2025-01-27 10:55:00] 统一的加载状态组件，支持不同尺寸和样式
+* 统一的加载状态组件，支持不同尺寸和样式
  */
 import React from 'react';
 
@@ -87,7 +87,7 @@ export function LoadingSpinner({
 
 /**
  * Skeleton Loader Component
- * [2025-01-27 10:55:00] 骨架屏组件，用于内容加载时的占位
+* 骨架屏组件，用于内容加载时的占位
  */
 interface SkeletonProps {
   width?: string;

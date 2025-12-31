@@ -1,6 +1,6 @@
 /**
  * Pricing API - 报价相关 API 封装
- * [2025-12-18 21:23:43] 创建报价模块 API 封装
+* 创建报价模块 API 封装
  */
 import { designLabApi } from '@/lib/api';
 

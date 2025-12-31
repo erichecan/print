@@ -1,6 +1,6 @@
 /**
  * Stripe Tests
- * [2025-01-30 23:00:00] Design Lab 4.0: stripe 初始化空值防护测试
+* Design Lab 4.0: stripe 初始化空值防护测试
  */
 
 import { getStripe, validateStripeConfig } from '../stripe';

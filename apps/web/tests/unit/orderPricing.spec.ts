@@ -1,4 +1,4 @@
-// [2025-01-31 19:50:00] 订单价格估算单元测试
+// 订单价格估算单元测试
 
 import { describe, it, expect } from 'vitest';
 import { estimateOrderItemPricing } from '@/lib/services/orderPricing';

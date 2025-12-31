@@ -17,13 +17,13 @@
   margin-right: auto;
 }
 
-/* [2025-11-19 08:30:00] 分类区域容器 */
+/* 分类区域容器 */
 .staticCategories {
   background: var(--color-bg-subtle);
   padding: 80px 0;
 }
 
-/* [2025-11-19 08:30:00] 修复分类网格布局：桌面端一行4个，响应式适配 */
+/* 修复分类网格布局：桌面端一行4个，响应式适配 */
 .staticCategoriesGrid {
   display: grid;
   gap: 24px;
@@ -33,7 +33,7 @@
   margin-bottom: 48px;
 }
 
-/* [2025-11-19 08:30:00] 分类卡片样式：限制最大宽度，防止图片过大 */
+/* 分类卡片样式：限制最大宽度，防止图片过大 */
 .categoryCard {
   background: #fff;
   border: 1px solid var(--color-border);
@@ -62,7 +62,7 @@
   transform: translateY(-4px);
 }
 
-/* [2025-11-19 08:30:00] 图片容器：限制尺寸，保持正方形比例 */
+/* 图片容器：限制尺寸，保持正方形比例 */
 .categoryCardImage {
   width: 100%;
   aspect-ratio: 1;
@@ -73,7 +73,7 @@
   max-width: 100%;
 }
 
-/* [2025-11-19 08:30:00] 图片样式：确保图片填满容器但不溢出 */
+/* 图片样式：确保图片填满容器但不溢出 */
 .categoryImage {
   transition: transform 0.3s ease, filter 0.3s ease;
   width: 100%;
@@ -109,7 +109,7 @@
   flex: 1;
 }
 
-/* [2025-11-19 08:30:00] CTA 按钮容器 */
+/* CTA 按钮容器 */
 .staticCategoriesCta {
   text-align: center;
   margin-top: 32px;
@@ -152,7 +152,7 @@
   border-color: var(--color-text);
 }
 
-/* [2025-11-19 08:30:00] 响应式设计：平板3列，移动端2列，小屏1列 */
+/* 响应式设计：平板3列，移动端2列，小屏1列 */
 @media (max-width: 1200px) {
   .staticCategoriesGrid {
     grid-template-columns: repeat(3, 1fr);
@@ -219,7 +219,7 @@
   }
 }
 
-/* [2025-11-19 08:30:00] 加载动画：渐进式显示效果 */
+/* 加载动画：渐进式显示效果 */
 @keyframes fadeInUp {
   from {
     opacity: 0;

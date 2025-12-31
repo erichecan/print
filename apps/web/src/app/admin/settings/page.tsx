@@ -131,7 +131,7 @@ export default function AdminSettingsPage() {
     setOfflineStages((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
-      // [2025-01-28] Ensure legacy "label" field is also updated for compatibility
+// Ensure legacy "label" field is also updated for compatibility
       if (field === 'labelEn' || field === 'labelZh') {
         const stage = next[index];
         next[index].label = stage.labelZh || stage.labelEn || stage.label;
@@ -165,7 +165,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  // [2025-01-28 08:00:00] CMS 内容管理已移至独立的 /admin/content-manager 页面
+// CMS 内容管理已移至独立的 /admin/content-manager 页面
 
   if (isLoading && !data) {
     return <div className="admin-table-placeholder">Loading settings…</div>;

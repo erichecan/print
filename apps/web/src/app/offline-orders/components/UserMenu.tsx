@@ -1,6 +1,6 @@
 /**
  * User Menu Component
- * [2025-12-06 17:05:00] 右上角用户菜单（头像、查看订单、退出登录）
+* 右上角用户菜单（头像、查看订单、退出登录）
  */
 'use client';
 
@@ -14,7 +14,7 @@ export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // [2025-12-06 17:05:00] 点击外部关闭菜单
+// 点击外部关闭菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -31,7 +31,7 @@ export function UserMenu() {
     };
   }, [isOpen]);
 
-  // [2025-12-06 17:05:00] 如果没有登录，不显示菜单
+// 如果没有登录，不显示菜单
   if (!user) {
     return null;
   }
@@ -52,12 +52,12 @@ export function UserMenu() {
     setIsOpen(false);
   };
 
-  // [2025-12-06 17:05:00] 获取用户显示名称
+// 获取用户显示名称
   const displayName = user.firstName && user.lastName
     ? `${user.firstName} ${user.lastName}`
     : user.firstName || user.lastName || user.email;
 
-  // [2025-12-06 17:05:00] 获取用户头像首字母
+// 获取用户头像首字母
   const initials = displayName
     .split(' ')
     .map(n => n[0])

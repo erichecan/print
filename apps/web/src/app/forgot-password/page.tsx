@@ -1,6 +1,6 @@
 /**
  * Forgot Password Page
- * [2025-11-15 11:25:00] 创建忘记密码页面
+* 创建忘记密码页面
  */
 'use client';
 

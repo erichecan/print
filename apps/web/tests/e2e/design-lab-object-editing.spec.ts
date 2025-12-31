@@ -1,6 +1,6 @@
 /**
  * Design Lab 对象编辑功能测试 (M4)
- * [2025-01-27 12:00:00] 测试 Upload/Text/Art 对象的各种编辑操作
+* 测试 Upload/Text/Art 对象的各种编辑操作
  */
 import { test, expect } from './fixtures/test-base';
 import {

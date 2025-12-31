@@ -1,6 +1,6 @@
 /**
  * 设计卡片组件
- * [2025-01-31 00:02:00] 显示设计信息、来源标识、操作按钮
+* 显示设计信息、来源标识、操作按钮
  */
 'use client';
 
@@ -16,7 +16,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
   const router = useRouter();
 
   const handleEdit = () => {
-    // [2025-01-31 00:02:00] 优先使用云端ID，如果不存在则使用本地ID
+// 优先使用云端ID，如果不存在则使用本地ID
     const designId = design.cloudId || design.localId || design.id;
     const source = design.cloudId ? 'cloud' : 'local';
     router.push(`/design-lab?designId=${designId}&source=${source}`);
@@ -34,13 +34,13 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
       return;
     }
 
-    // [2025-12-28] TEMPORARY: Remove confirm dialog to test core functionality
+// TEMPORARY: Remove confirm dialog to test core functionality
     // TODO: Implement proper confirmation modal that doesn't auto-dismiss
     console.log('[DesignCard] Calling onDelete directly (no confirmation)');
     onDelete(design);
   };
 
-  // [2025-01-31 00:02:00] Format Date
+// Format Date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -50,7 +50,7 @@ export function DesignCard({ design, onDelete }: DesignCardProps) {
     });
   };
 
-  // [2025-01-31 00:02:00] Source Badge
+// Source Badge
   const getSourceBadge = () => {
     const badges = [];
     if (design.source === 'cloud' || design.source === 'both') {

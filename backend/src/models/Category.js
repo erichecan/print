@@ -1,4 +1,4 @@
-// [2025-11-02 20:55:00] Category model
+// Category model
 module.exports = (sequelize, DataTypes) => {
   const Category = sequelize.define('Category', {
     id: {

@@ -2,7 +2,7 @@
 
 /**
  * Design Lab 5.x - 通用编辑工具栏组件
- * [2025-12-16 02:32:20] 初始实现：
+* 初始实现：
  * - UploadEditControls：Center / Layering / Flip / Duplicate / Crop / Rotation
  * - TextEditControls：Center / Layering / Text Align / Duplicate / Rotation
  * - ArtEditControls：Center / Layering / Flip / Duplicate / Rotation
@@ -262,7 +262,7 @@ export const TextEditControls: React.FC<TextEditControlsProps> = ({
           <DuplicateIcon size={18} />
         </button>
 
-        {/* [2025-12-16 07:12:00] 旋转控件去重：移除底部工具栏的旋转条（保留上方 Rotation 区块） */}
+{/* 旋转控件去重：移除底部工具栏的旋转条（保留上方 Rotation 区块） */}
       </div>
     </div>
   );
@@ -293,7 +293,7 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
 }) => {
   return (
     <>
-      {/* Positioning Controls - [2025-01-30 13:50:00] 布局与 upload/text 保持一致 */}
+{/* Positioning Controls - 布局与 upload/text 保持一致 */}
       <div className="dl-edit-art-panel__section">
         <div className="dl-edit-art-panel__controls">
           {/* Center Tool */}
@@ -310,7 +310,7 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
             <div className="dl-edit-art-panel__tool-label">Center</div>
           </div>
 
-          {/* Layering Tool - [2025-01-30 14:00:00] 只保留 Bring to Front 和 Send to Back（删除 +1 和 -1） */}
+{/* Layering Tool - 只保留 Bring to Front 和 Send to Back（删除 +1 和 -1） */}
           <div className="dl-edit-art-panel__tool-group">
             <div className="dl-edit-art-panel__tool-buttons">
               <button
@@ -376,7 +376,7 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
         </div>
       </div>
 
-      {/* Rotation - [2025-01-30 13:50:00] 布局与 upload 保持一致 */}
+{/* Rotation - 布局与 upload 保持一致 */}
       <div className="dl-edit-art-panel__section">
         <label className="dl-edit-art-panel__label">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>

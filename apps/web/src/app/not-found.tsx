@@ -1,7 +1,7 @@
 'use client';
-// [2025-11-10 23:55:03] 自定义 404 页面以避免默认 _error 组件触发 SSR useContext 异常
-// [2025-01-27 14:15:00] 修复静态导出模式下的 404 页面结构
-// [2025-01-27 15:10:00] Next.js 15: 使用 Link 组件替代 a 标签以满足 ESLint 要求
+// 自定义 404 页面以避免默认 _error 组件触发 SSR useContext 异常
+// 修复静态导出模式下的 404 页面结构
+// Next.js 15: 使用 Link 组件替代 a 标签以满足 ESLint 要求
 import Link from 'next/link';
 
 export default function NotFoundPage() {

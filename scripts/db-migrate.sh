@@ -1,5 +1,5 @@
 #!/bin/bash
-# Database migration script [2025-11-12 03:15:00]
+# Database migration script 
 # Usage: ./scripts/db-migrate.sh [--reset]
 
 set -e

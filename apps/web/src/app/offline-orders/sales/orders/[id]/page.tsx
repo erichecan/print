@@ -1,6 +1,6 @@
 /**
  * Sales Offline Order Detail Page
- * [2025-12-03 23:30:00] 重新设计订单详情页面，展示所有创建订单时的字段，采用 refined minimalism 风格
+* 重新设计订单详情页面，展示所有创建订单时的字段，采用 refined minimalism 风格
  */
 'use client';
 
@@ -46,7 +46,7 @@ export default function SalesOrderDetailPage() {
 
       try {
         // 获取订单详情和阶段配置
-        // [2025-12-07 08:00:00] 修复：使用 authenticatedFetch 确保 token 正确传递
+// 修复：使用 authenticatedFetch 确保 token 正确传递
         const [detail, stagesRes] = await Promise.all([
           salesOrdersApi.get(orderId),
           authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
@@ -54,7 +54,7 @@ export default function SalesOrderDetailPage() {
             .catch(() => ({ stages: [] }))
         ]);
         if (!cancelled) {
-          // [2025-12-30] 添加详细的数据结构日志以诊断产品信息问题
+// 添加详细的数据结构日志以诊断产品信息问题
           console.log('[Order Detail] Full order data:', {
             hasDetails: !!detail,
             hasConfiguration: !!detail?.configuration,
@@ -69,7 +69,7 @@ export default function SalesOrderDetailPage() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          // [2025-12-09] 友好的错误提示
+// 友好的错误提示
           if (err.message?.includes('404') || err.message?.includes('不存在') || err.message?.includes('Not Found')) {
             setError('订单不存在或已被删除。');
           } else {
@@ -92,10 +92,10 @@ export default function SalesOrderDetailPage() {
 
   const meta = order;
 
-  // [2025-12-03 23:30:00] 解析配置信息
+// 解析配置信息
   const config: OfflineOrderConfiguration | null = meta?.configuration || null;
 
-  // [2025-12-03 23:30:00] 按产品分组印刷位置
+// 按产品分组印刷位置
   const printPositionsByProduct = useMemo(() => {
     if (!config?.printPositions) return {};
     const grouped: Record<string, typeof config.printPositions> = {};
@@ -109,13 +109,13 @@ export default function SalesOrderDetailPage() {
     return grouped;
   }, [config]);
 
-  // [2025-12-03 23:30:00] 计算每个产品的总数量和总金额
-  // [2025-12-19 00:10:00] 修复：添加安全检查，防止 variants 为 undefined 时调用 reduce
+// 计算每个产品的总数量和总金额
+// 修复：添加安全检查，防止 variants 为 undefined 时调用 reduce
   const productTotals = useMemo(() => {
     if (!config?.productItems) return {};
     const totals: Record<string, { quantity: number; total: number }> = {};
     config.productItems.forEach((item) => {
-      // [2025-12-19 00:10:00] 安全检查：确保 variants 存在且是数组
+// 安全检查：确保 variants 存在且是数组
       const variants = item.variants || [];
       const quantity = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
       const total = variants.reduce((sum, v) => sum + ((v.quantity || 0) * (v.unitPrice || 0)), 0);
@@ -138,7 +138,7 @@ export default function SalesOrderDetailPage() {
     router.push('/offline-orders/sales/orders');
   };
 
-  // [2025-12-07 03:00:00] 更新订单阶段
+// 更新订单阶段
   const handleUpdateStage = async (newStageKey: string) => {
     if (!order || updatingStage) return;
 
@@ -180,7 +180,7 @@ export default function SalesOrderDetailPage() {
                   {meta.rushOrder && <span className="status-badge status-rush">加急</span>}
                   {meta.stage?.label && <span className="status-badge status-stage">{meta.stage.label}</span>}
                 </div>
-                {/* [2025-12-07 03:00:00] 修改订单阶段 */}
+{/* 修改订单阶段 */}
                 {stages.length > 0 && (
                   <div className="order-stage-update">
                     <label className="stage-update-label">
@@ -261,7 +261,7 @@ export default function SalesOrderDetailPage() {
           </div>
         ) : (
           <div className="order-detail-content">
-            {/* [2025-12-03 23:30:00] 项目信息 */}
+{/* 项目信息 */}
             <section className="order-section">
               <h2 className="section-title">项目信息</h2>
               <div className="info-grid">
@@ -308,7 +308,7 @@ export default function SalesOrderDetailPage() {
               </div>
             </section>
 
-            {/* [2025-12-03 23:30:00] 客户信息 */}
+{/* 客户信息 */}
             <section className="order-section">
               <h2 className="section-title">客户信息</h2>
               <div className="info-grid">
@@ -335,8 +335,8 @@ export default function SalesOrderDetailPage() {
               </div>
             </section>
 
-            {/* [2025-12-03 23:30:00] 产品列表 */}
-            {/* [2025-12-30] 添加产品信息缺失时的友好提示 */}
+{/* 产品列表 */}
+{/* 添加产品信息缺失时的友好提示 */}
             <section className="order-section order-section-wide">
               <h2 className="section-title">产品列表</h2>
               {config?.productItems && config.productItems.length > 0 ? (
@@ -396,7 +396,7 @@ export default function SalesOrderDetailPage() {
               )}
             </section>
 
-            {/* [2025-12-03 23:30:00] 印刷位置 */}
+{/* 印刷位置 */}
             {config?.printPositions && config.printPositions.length > 0 && (
               <section className="order-section order-section-wide">
                 <h2 className="section-title">印刷位置</h2>
@@ -478,7 +478,7 @@ export default function SalesOrderDetailPage() {
               </section>
             )}
 
-            {/* [2025-12-03 23:30:00] 价格信息 */}
+{/* 价格信息 */}
             {config?.pricing && (
               <section className="order-section">
                 <h2 className="section-title">价格信息</h2>
@@ -501,7 +501,7 @@ export default function SalesOrderDetailPage() {
               </section>
             )}
 
-            {/* [2025-12-03 23:30:00] 发票信息 */}
+{/* 发票信息 */}
             {config?.requiresInvoice && config.invoiceInfo && (
               <section className="order-section">
                 <h2 className="section-title">发票信息</h2>
@@ -544,7 +544,7 @@ export default function SalesOrderDetailPage() {
               </section>
             )}
 
-            {/* [2025-12-03 23:30:00] 附件 */}
+{/* 附件 */}
             {meta.assets && meta.assets.length > 0 && (
               <section className="order-section order-section-wide">
                 <h2 className="section-title">附件 ({meta.assets.length})</h2>
@@ -570,7 +570,7 @@ export default function SalesOrderDetailPage() {
               </section>
             )}
 
-            {/* [2025-12-03 23:30:00] 生产信息 */}
+{/* 生产信息 */}
             {meta.productionWorkOrder && (
               <section className="order-section order-section-wide">
                 <h2 className="section-title">生产信息</h2>
@@ -619,7 +619,7 @@ export default function SalesOrderDetailPage() {
       </div>
 
       <style jsx>{`
-        /* [2025-12-03 23:30:00] Refined Minimalism 设计风格 - 优雅、精致、简洁 */
+/* Refined Minimalism 设计风格 - 优雅、精致、简洁 */
         .order-detail-shell {
           min-height: 100vh;
           padding: 2rem 1rem;

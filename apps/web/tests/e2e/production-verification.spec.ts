@@ -1,6 +1,6 @@
 /**
  * 线上环境综合验证测试
- * [2025-11-28 11:35:00] 集成所有验证测试，检查修改是否生效
+* 集成所有验证测试，检查修改是否生效
  */
 import { test, expect } from '@playwright/test';
 
@@ -10,7 +10,7 @@ const BACKEND_URL = process.env.API_BASE_URL || 'https://print-main-backend-hsbq
 test.describe('线上环境综合验证', () => {
   test('验证筛选功能修复是否生效', async ({ page }) => {
     await page.goto(`${FRONTEND_URL}/products`);
-    // [2025-11-28 11:45:00] 使用 domcontentloaded 替代 networkidle，避免超时
+// 使用 domcontentloaded 替代 networkidle，避免超时
     await page.waitForLoadState('domcontentloaded');
     
     // 等待筛选区域加载
@@ -52,7 +52,7 @@ test.describe('线上环境综合验证', () => {
     
     // 访问登录页面
     await page.goto(`${FRONTEND_URL}/admin/login`);
-    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:45:00] 改用 domcontentloaded 避免超时
+await page.waitForLoadState('domcontentloaded'); // 改用 domcontentloaded 避免超时
     
     // 验证可以访问登录页面
     await expect(page).toHaveURL(/\/admin\/login/);

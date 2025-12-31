@@ -1,6 +1,6 @@
 /**
  * API Client Tests
- * [2025-01-30 23:00:00] Design Lab 4.0: apiClient 错误分类测试
+* Design Lab 4.0: apiClient 错误分类测试
  */
 
 import { apiClient, ApiError, ApiErrorType } from '../apiClient';

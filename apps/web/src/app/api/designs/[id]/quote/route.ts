@@ -2,22 +2,22 @@ import { NextResponse } from 'next/server';
 
 import { getBackendApiBase } from '@/lib/api-route-config';
 
-// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+// 修复：强制动态路由，防止构建时静态生成
 export const dynamic = 'force-dynamic';
 
 const API_BASE = getBackendApiBase();
 
-// [2025-01-27 22:10:00] Next.js 14.2 App Router: params 是对象（不是 Promise）
+// Next.js 14.2 App Router: params 是对象（不是 Promise）
 type RouteParams = {
   params: {
     id: string;
   };
 };
 
-// [2025-01-27 22:10:00] POST /api/designs/:id/quote - 获取设计报价
+// POST /api/designs/:id/quote - 获取设计报价
 export async function POST(request: Request, { params }: RouteParams) {
   const timestamp = new Date().toISOString();
-  // [2025-01-28 00:20:00] Next.js 15: params 可能是 Promise，需要 await
+// Next.js 15: params 可能是 Promise，需要 await
   const { id } = params instanceof Promise ? await params : params;
 
   console.log('[Next.js API Route] ========================================');
@@ -49,7 +49,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       timestamp
     });
 
-    // [2025-01-27] 获取请求的cookies，传递给后端
+// 获取请求的cookies，传递给后端
     const cookies = request.headers.get('cookie') || '';
 
     const startTime = performance.now();
@@ -92,7 +92,7 @@ export async function POST(request: Request, { params }: RouteParams) {
       });
     }
 
-    // [2025-01-27] 传递后端的cookies到响应
+// 传递后端的cookies到响应
     const responseHeaders = new Headers({
       'content-type': contentType,
     });

@@ -1,4 +1,4 @@
-// [2025-01-27 21:40:00] Design Template routes
+// Design Template routes
 const express = require('express');
 const router = express.Router();
 const templateController = require('../controllers/designTemplateController');

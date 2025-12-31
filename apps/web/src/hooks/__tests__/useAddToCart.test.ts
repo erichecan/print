@@ -1,6 +1,6 @@
 /**
  * useAddToCart Hook Tests
- * [2025-12-08] 测试 Add to Cart 功能的成功/失败/未选规格等场景
+* 测试 Add to Cart 功能的成功/失败/未选规格等场景
  */
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAddToCart } from '../useAddToCart';

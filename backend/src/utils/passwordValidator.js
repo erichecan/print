@@ -1,11 +1,10 @@
 /**
  * Password Validator Utility
- * [2025-12-06 12:30:00] Password strength validation utility
+* Password strength validation utility
  */
 
 /**
  * Validate password strength
- * [2025-12-06 12:30:00]
  * @param {string} password - Password to validate
  * @returns {{ valid: boolean, strength: string, errors: string[] }} Validation result
  */
@@ -61,7 +60,6 @@ function validatePasswordStrength(password) {
 
 /**
  * Get password strength description
- * [2025-12-06 12:30:00]
  * @param {string} strength - Password strength (weak, medium, strong)
  * @returns {string} Description
  */

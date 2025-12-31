@@ -1,11 +1,11 @@
 /**
  * Toolbar - 工具栏与工具功能
- * [2025-11-19 10:40:00] 管理工具栏交互、工具切换、文件上传等
+* 管理工具栏交互、工具切换、文件上传等
  */
 (function() {
   'use strict';
 
-  // [2025-01-27] 立即初始化 window.DesignLabToolbar 对象，确保其他脚本可以检测到
+// 立即初始化 window.DesignLabToolbar 对象，确保其他脚本可以检测到
   console.log('[Toolbar] ===== SCRIPT LOADING =====', {
     timestamp: new Date().toISOString(),
     hasWindow: typeof window !== 'undefined',
@@ -46,9 +46,9 @@
     return el ? !!el.checked : false;
   }
 
-  // [2025-11-19 12:00:00] 初始化工具栏（适配新面板结构）
+// 初始化工具栏（适配新面板结构）
   function init() {
-    // [2025-11-19 12:00:00] 文件上传（upload 面板）
+// 文件上传（upload 面板）
     fileInput = document.getElementById('file-input');
     const uploadArea = document.getElementById('upload-area');
     const browseBtn = document.getElementById('btn-browse-computer');
@@ -60,7 +60,7 @@
     }
     
     if (uploadArea && fileInput) {
-      // [2025-11-19 12:00:00] 拖拽上传（整个页面）
+// 拖拽上传（整个页面）
       document.addEventListener('dragover', (e) => {
         e.preventDefault();
         if (uploadArea) uploadArea.classList.add('is-dragover');
@@ -86,7 +86,7 @@
       });
     }
 
-    // [2025-11-19 12:00:00] 添加文本按钮（text 面板）
+// 添加文本按钮（text 面板）
     const addTextBtn = document.getElementById('btn-add-text-to-design');
     if (addTextBtn) {
       addTextBtn.addEventListener('click', () => {
@@ -110,17 +110,17 @@
       });
     }
 
-    // [2025-11-19 12:00:00] Art 面板交互
-    // [2025-01-28 04:20:00] 支持基本形状（data-art）和 CMS 素材（data-art-url）
+// Art 面板交互
+// 支持基本形状（data-art）和 CMS 素材（data-art-url）
     const artItems = document.querySelectorAll('.panel__art-item');
     artItems.forEach(item => {
       item.addEventListener('click', () => {
-        // [2025-01-28 04:20:00] 优先检查是否有 URL（CMS 素材）
+// 优先检查是否有 URL（CMS 素材）
         const artUrl = item.getAttribute('data-art-url');
         if (artUrl) {
           addArt(artUrl);
         } else {
-          // [2025-11-19 12:00:00] 基本形状（star, heart, circle, triangle, square）
+// 基本形状（star, heart, circle, triangle, square）
           const artType = item.getAttribute('data-art');
           if (artType) {
             addArt(artType);
@@ -144,10 +144,10 @@
       artRotateBtn.addEventListener('click', () => rotateArt());
     }
 
-    // [2025-01-27] 隐藏颜色功能，2期开发
+// 隐藏颜色功能，2期开发
     // initColorPanel();
 
-    // [2025-01-27] Names and Numbers 功能实现
+// Names and Numbers 功能实现
     // 绑定复选框，控制选项显示/隐藏
     const namesEnabled = document.getElementById('names-enabled');
     const numbersEnabled = document.getElementById('numbers-enabled');
@@ -170,7 +170,7 @@
       numbersOptions.style.display = numbersEnabled.checked ? 'block' : 'none';
     }
     
-    // [2025-11-24 10:45:00] Names and Numbers 表单直接在面板中显示，无需模态框
+// Names and Numbers 表单直接在面板中显示，无需模态框
     // 在面板打开时自动初始化表单（在 panelManager 中处理）
     const namesPanel = document.querySelector('.panel[data-panel="names"]');
     if (namesPanel) {
@@ -178,7 +178,7 @@
       initNamesNumbersForm();
     }
     
-    // [2025-11-24 11:15:00] 绑定 Step 1 "Add To Design" 按钮
+// 绑定 Step 1 "Add To Design" 按钮
     const addExampleBtn = document.getElementById('btn-add-example-to-design');
     if (addExampleBtn) {
       addExampleBtn.addEventListener('click', () => {
@@ -186,7 +186,7 @@
       });
     }
     
-    // [2025-11-24 11:25:00] 绑定 Step 2 "Done" 按钮（Save 和 Get Price 使用底部按钮）
+// 绑定 Step 2 "Done" 按钮（Save 和 Get Price 使用底部按钮）
     const doneBtn = document.getElementById('btn-names-numbers-done');
     if (doneBtn) {
       doneBtn.addEventListener('click', () => {
@@ -194,7 +194,7 @@
       });
     }
 
-    // [2025-11-19 10:40:00] 颜色模态框关闭
+// 颜色模态框关闭
     const colorModal = document.getElementById('color-modal');
     if (colorModal) {
       const closeBtn = colorModal.querySelector('.dl-modal__close');
@@ -212,24 +212,24 @@
     }
   }
 
-  // [2025-11-19 10:40:00] 选择工具
+// 选择工具
   function selectTool(tool) {
     currentTool = tool;
     
-    // [2025-11-19 11:15:00] 隐藏启动面板，显示工具面板
+// 隐藏启动面板，显示工具面板
     const guidePanel = document.getElementById('guide-panel');
     const toolsPanel = document.getElementById('tools-panel');
     if (guidePanel) guidePanel.style.display = 'none';
     if (toolsPanel) toolsPanel.style.display = 'flex';
     
-    // [2025-11-19 10:40:00] 更新 Rail 按钮状态
+// 更新 Rail 按钮状态
     document.querySelectorAll('.dl-rail__btn[data-tool]').forEach(btn => {
       const isActive = btn.getAttribute('data-tool') === tool;
       btn.classList.toggle('is-active', isActive);
       btn.setAttribute('aria-pressed', isActive);
     });
 
-    // [2025-11-19 10:40:00] 切换到对应 Tab
+// 切换到对应 Tab
     if (tool === 'upload') switchTab('upload');
     else if (tool === 'text') switchTab('text');
     else if (tool === 'art') switchTab('art');
@@ -237,7 +237,7 @@
     else if (tool === 'edit') switchTab('edit');
   }
   
-  // [2025-11-19 11:15:00] 处理启动面板操作
+// 处理启动面板操作
   function handleGuideAction(action) {
     if (action === 'upload') {
       selectTool('upload');
@@ -250,27 +250,27 @@
     } else if (action === 'art') {
       selectTool('art');
     } else if (action === 'products') {
-      // [2025-11-19 11:15:00] 显示产品选择（TODO）
+// 显示产品选择（TODO）
       console.log('[Toolbar] Change products');
     }
   }
 
-  // [2025-11-19 10:40:00] 切换 Tab
+// 切换 Tab
   function switchTab(tab) {
-    // [2025-11-19 10:40:00] 更新 Tab 按钮
+// 更新 Tab 按钮
     document.querySelectorAll('.dl-tabs__btn').forEach(btn => {
       const isActive = btn.getAttribute('data-tab') === tab;
       btn.classList.toggle('is-active', isActive);
     });
 
-    // [2025-11-19 10:40:00] 显示对应面板
+// 显示对应面板
     document.querySelectorAll('.dl-panel').forEach(panel => {
       const isActive = panel.id === `panel-${tab}`;
       panel.classList.toggle('is-active', isActive);
     });
   }
 
-  // [2025-11-19 10:40:00] 处理文件上传
+// 处理文件上传
   function handleFileUpload(file) {
     const timestamp = new Date().toISOString();
     console.log('[Upload] ===== handleFileUpload CALLED =====', {
@@ -299,7 +299,7 @@
         timestamp: new Date().toISOString()
       });
       
-      // [2025-01-28 00:25:00] 检查 DesignLabCanvas 是否可用
+// 检查 DesignLabCanvas 是否可用
       if (!window.DesignLabCanvas) {
         console.error('[Upload] ❌ DesignLabCanvas is not available:', {
           timestamp: new Date().toISOString()
@@ -347,7 +347,7 @@
     reader.readAsDataURL(file);
   }
 
-  // [2025-11-19 12:15:00] 从 Text 面板添加文本
+// 从 Text 面板添加文本
   function addTextFromPanel(textOverride) {
     if (!window.DesignLabCanvas) return null;
 
@@ -389,35 +389,35 @@
     return textObj;
   }
 
-  // [2025-11-19 10:40:00] 兼容旧逻辑的工具栏添加文本
+// 兼容旧逻辑的工具栏添加文本
   function addTextFromToolbar(defaultText = 'Your Text') {
     return addTextFromPanel(defaultText);
   }
 
-  // [2025-11-19 12:00:00] 添加 Art（使用 addShape 或 SVG）
-  // [2025-01-28 04:20:00] 支持从 CMS 加载的素材 URL
+// 添加 Art（使用 addShape 或 SVG）
+// 支持从 CMS 加载的素材 URL
   function addArt(type) {
     if (window.DesignLabCanvas) {
-      // [2025-01-28 04:20:00] 如果 type 是 URL（从 CMS 加载的素材），直接使用 addImage
+// 如果 type 是 URL（从 CMS 加载的素材），直接使用 addImage
       if (typeof type === 'string' && (type.startsWith('http://') || type.startsWith('https://') || type.startsWith('data:'))) {
         console.log('[Toolbar] Adding art from URL:', type);
         window.DesignLabCanvas.addImage(type);
         
-        // [2025-01-27] 历史已在 addImage 中添加前保存，这里不需要重复保存
+// 历史已在 addImage 中添加前保存，这里不需要重复保存
         
-        // [2025-11-19 12:00:00] 返回 home 面板
+// 返回 home 面板
         if (window.DesignLabPanel) {
           window.DesignLabPanel.openPanel('home');
         }
         return;
       }
 
-      // [2025-11-19 12:00:00] 使用 addShape 添加基本形状
+// 使用 addShape 添加基本形状
       if (type === 'circle' || type === 'square' || type === 'triangle') {
         const shapeType = type === 'square' ? 'rect' : type;
         window.DesignLabCanvas.addShape(shapeType);
       } else {
-        // [2025-11-19 12:00:00] 对于 star 和 heart，使用 SVG
+// 对于 star 和 heart，使用 SVG
         let svgContent = '';
         switch (type) {
           case 'star':
@@ -434,21 +434,21 @@
         }
       }
       
-      // [2025-01-27] 历史已在 addShape/addImage 中添加前保存，这里不需要重复保存
+// 历史已在 addShape/addImage 中添加前保存，这里不需要重复保存
       
-      // [2025-11-19 12:00:00] 返回 home 面板
+// 返回 home 面板
       if (window.DesignLabPanel) {
         window.DesignLabPanel.openPanel('home');
       }
     }
   }
 
-  // [2025-11-19 10:40:00] 添加形状
+// 添加形状
   function addShape(type) {
     window.DesignLabCanvas.addShape(type);
   }
 
-  // [2025-11-19 12:20:00] 获取当前画布与选中对象
+// 获取当前画布与选中对象
   function getActiveDrawable() {
     if (!window.DesignLabCanvas || !window.DesignLabCanvas.getCanvas) return {};
     const canvas = window.DesignLabCanvas.getCanvas();
@@ -462,14 +462,14 @@
     if (canvas) {
       canvas.requestRenderAll();
       if (window.DesignLabLayers) window.DesignLabLayers.updateLayers();
-      // [2025-01-27] 不在 notifyCanvasChanges 中保存状态 - 具体操作（addText/addImage/addShape）已在添加前保存
+// 不在 notifyCanvasChanges 中保存状态 - 具体操作（addText/addImage/addShape）已在添加前保存
       // if (window.DesignLabHistory) {
       //   window.DesignLabHistory.saveState();
       // }
     }
   }
 
-  // [2025-11-19 12:20:00] 翻转对象
+// 翻转对象
   function flipArt() {
     const { canvas, obj } = getActiveDrawable();
     if (!canvas || !obj) {
@@ -482,7 +482,7 @@
     return true;
   }
 
-  // [2025-11-19 12:20:00] 复制对象
+// 复制对象
   function duplicateArt() {
     const { canvas, obj } = getActiveDrawable();
     if (!canvas || !obj) {
@@ -502,7 +502,7 @@
     return true;
   }
 
-  // [2025-11-19 12:20:00] 旋转对象
+// 旋转对象
   function rotateArt(angle = 15) {
     const { canvas, obj } = getActiveDrawable();
     if (!canvas || !obj) {
@@ -515,9 +515,9 @@
     return true;
   }
 
-  // [2025-11-19 12:00:00] 初始化颜色面板（所有工具面板共用）
-  // [2025-01-28 04:40:00] 修复为 8x8 网格，64 种颜色，匹配截图设计
-  // [2025-01-27] 隐藏颜色功能，2期开发
+// 初始化颜色面板（所有工具面板共用）
+// 修复为 8x8 网格，64 种颜色，匹配截图设计
+// 隐藏颜色功能，2期开发
   function initColorPanel() {
     // 颜色面板已隐藏，直接返回
     return;
@@ -526,7 +526,7 @@
 
     const store = window.DesignLabStore.getStore();
     
-    // [2025-01-28 04:40:00] 64 种颜色（8x8 网格），包含各种常用颜色
+// 64 种颜色（8x8 网格），包含各种常用颜色
     const colorPalette = [
       '#ffffff', '#f5f5f5', '#e5e5e5', '#d4d4d4', '#a3a3a3', '#737373', '#525252', '#404040',
       '#000000', '#1c1c1e', '#2c2c2e', '#3a3a3c', '#48484a', '#636366', '#8e8e93', '#aeaeb2',
@@ -547,10 +547,10 @@
       colorBtn.setAttribute('aria-label', `Select color ${colorValue}`);
       colorBtn.setAttribute('tabindex', '0');
 
-      // [2025-01-28 04:40:00] 只显示颜色方块，不显示文字
+// 只显示颜色方块，不显示文字
       colorBtn.innerHTML = `<div class="panel__color-swatch" style="background-color: ${colorValue};"></div>`;
 
-      // [2025-01-28 04:40:00] 检查是否是当前选中的颜色（从 store 获取）
+// 检查是否是当前选中的颜色（从 store 获取）
       const currentColor = store?.product?.color || 'Red';
       const colorMap = {
         Red: '#ff1f3d',
@@ -566,7 +566,7 @@
       colorBtn.setAttribute('aria-pressed', String(isActive));
 
       colorBtn.addEventListener('click', () => {
-        // [2025-01-28 04:40:00] 根据颜色值找到对应的颜色名称，或使用十六进制值
+// 根据颜色值找到对应的颜色名称，或使用十六进制值
         const colorName = Object.keys(colorMap).find(key => colorMap[key].toLowerCase() === colorValue.toLowerCase()) || colorValue;
         changeProductColor(colorName);
       });
@@ -575,7 +575,7 @@
     });
   }
 
-  // [2025-11-19 12:00:00] 切换产品颜色
+// 切换产品颜色
   function changeProductColor(color) {
     if (!window.DesignLabStore) return;
     const store = window.DesignLabStore.getStore();
@@ -601,11 +601,11 @@
       updateProductInfo();
     }
 
-    // [2025-01-27] 颜色显示元素已隐藏，2期开发
+// 颜色显示元素已隐藏，2期开发
     // const currentColorDisplay = document.getElementById('current-color-display');
     // if (currentColorDisplay) currentColorDisplay.textContent = color;
 
-    // [2025-01-28 04:40:00] 更新颜色指示点
+// 更新颜色指示点
     // const currentColorDot = document.getElementById('current-color-dot');
     // if (currentColorDot) {
     //   const colorMap = {
@@ -619,11 +619,11 @@
     //   currentColorDot.style.backgroundColor = colorValue;
     // }
 
-    // [2025-01-28 04:50:00] 更新尺码显示（颜色面板已隐藏，此功能也暂时禁用）
+// 更新尺码显示（颜色面板已隐藏，此功能也暂时禁用）
     // updateSizesDisplay();
 
-    // [2025-01-27] 颜色面板已隐藏，2期开发
-    // [2025-01-28 04:40:00] 更新颜色网格中的选中状态
+// 颜色面板已隐藏，2期开发
+// 更新颜色网格中的选中状态
     // const colorMap = {
     //   Red: '#ff1f3d',
     //   'Heather Dark Grey': '#4a5568',
@@ -643,7 +643,7 @@
     console.log('productColor:', { color, side: 'all' });
   }
 
-  // [2025-11-19 11:30:00] 显示颜色模态框
+// 显示颜色模态框
   function showColorModal() {
     const modal = document.getElementById('color-modal');
     if (!modal) return;
@@ -659,7 +659,7 @@
         colorBtn.textContent = color;
         colorBtn.classList.toggle('is-active', color === store.product.color);
         colorBtn.addEventListener('click', () => {
-          // [2025-11-19 11:30:00] 切换颜色（只切换当前 product 颜色或底图着色层）
+// 切换颜色（只切换当前 product 颜色或底图着色层）
           if (window.changeColor) {
             window.changeColor(color);
           } else {
@@ -682,7 +682,7 @@
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
     
-    // [2025-11-19 11:30:00] 绑定关闭按钮
+// 绑定关闭按钮
     const closeBtn = modal.querySelector('.dl-modal__close');
     if (closeBtn) {
       closeBtn.onclick = () => {
@@ -692,11 +692,11 @@
     }
   }
   
-  // [2025-11-19 11:15:00] 导出 showColorModal 供外部调用
-  // [2025-01-27] 注意：不要在这里初始化 window.DesignLabToolbar，它会在文件末尾统一导出
+// 导出 showColorModal 供外部调用
+// 注意：不要在这里初始化 window.DesignLabToolbar，它会在文件末尾统一导出
   // 如果需要提前使用，可以在导出对象中添加方法
 
-  // [2025-11-19 10:40:00] 隐藏颜色模态框
+// 隐藏颜色模态框
   function hideColorModal() {
     const modal = document.getElementById('color-modal');
     if (modal) {
@@ -705,24 +705,24 @@
     }
   }
 
-  // [2025-11-19 10:40:00] 更新产品信息显示
+// 更新产品信息显示
   function updateProductInfo() {
     const store = window.DesignLabStore.getStore();
     const productName = document.getElementById('product-name');
-    // [2025-01-27] 颜色元素已隐藏，2期开发
+// 颜色元素已隐藏，2期开发
     // const productColor = document.getElementById('product-color');
     
     if (productName) productName.textContent = store.product.name;
-    // [2025-01-27] 颜色显示已隐藏，2期开发
+// 颜色显示已隐藏，2期开发
     // if (productColor) productColor.textContent = store.product.color;
   }
 
-  // [2025-01-28 04:50:00] 更新尺码显示（方形按钮，蓝色边框）
+// 更新尺码显示（方形按钮，蓝色边框）
   function updateSizesDisplay() {
     const sizesGrid = document.getElementById('product-sizes-grid');
     if (!sizesGrid) return;
 
-    // [2025-01-28 04:50:00] 所有可用尺码
+// 所有可用尺码
     const allSizes = ['YS', 'YM', 'YL', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
     
     sizesGrid.innerHTML = '';
@@ -734,7 +734,7 @@
       sizeBtn.setAttribute('aria-label', `Size ${size}`);
       sizeBtn.setAttribute('tabindex', '0');
       
-      // [2025-01-28 04:50:00] 点击尺码按钮（可以扩展为实际功能）
+// 点击尺码按钮（可以扩展为实际功能）
       sizeBtn.addEventListener('click', () => {
         // 移除其他按钮的选中状态
         document.querySelectorAll('.panel__size-btn').forEach(btn => {
@@ -749,13 +749,13 @@
     });
   }
 
-  // [2025-11-19 10:40:00] 初始化时更新产品信息
+// 初始化时更新产品信息
   updateProductInfo();
   
-  // [2025-01-28 04:50:00] 初始化时更新尺码显示（颜色面板已隐藏，此功能也暂时禁用）
+// 初始化时更新尺码显示（颜色面板已隐藏，此功能也暂时禁用）
   // updateSizesDisplay();
 
-  // [2025-11-24 10:45:00] 初始化表单（创建初始8行，直接在面板中显示）
+// 初始化表单（创建初始8行，直接在面板中显示）
   function initNamesNumbersForm() {
     console.log('[Toolbar] ===== initNamesNumbersForm CALLED =====', {
       timestamp: new Date().toISOString()
@@ -767,7 +767,7 @@
       return;
     }
     
-    // [2025-11-24 10:45:00] 如果已经初始化过，不重复初始化
+// 如果已经初始化过，不重复初始化
     if (rowsContainer.dataset.initialized === 'true') {
       console.log('[Toolbar] Form already initialized');
       return;
@@ -775,23 +775,23 @@
     
     console.log('[Toolbar] ✅ Rows container found');
     
-    // [2025-11-24 10:45:00] 清空容器
+// 清空容器
     rowsContainer.innerHTML = '';
     
-    // [2025-11-24 11:15:00] 创建初始5行（默认显示5行）
+// 创建初始5行（默认显示5行）
     console.log('[Toolbar] Creating 5 initial rows...');
     for (let i = 0; i < 5; i++) {
       addNamesNumbersRow();
     }
     console.log('[Toolbar] ✅ Created 5 rows, total rows:', rowsContainer.children.length);
     
-    // [2025-11-24 10:45:00] 标记已初始化
+// 标记已初始化
     rowsContainer.dataset.initialized = 'true';
     
-    // [2025-11-24 10:45:00] 绑定 Add More 按钮
+// 绑定 Add More 按钮
     const addMoreBtn = document.getElementById('btn-add-more-rows');
     if (addMoreBtn) {
-      // [2025-11-24 10:45:00] 移除旧的监听器，避免重复绑定
+// 移除旧的监听器，避免重复绑定
       const newAddMoreBtn = addMoreBtn.cloneNode(true);
       addMoreBtn.parentNode.replaceChild(newAddMoreBtn, addMoreBtn);
       
@@ -804,19 +804,19 @@
       console.warn('[Toolbar] ⚠️ Add More button not found');
     }
     
-    // [2025-11-24 10:45:00] 更新总计
+// 更新总计
     updateNamesNumbersTotals();
     console.log('[Toolbar] ✅ Form initialization completed');
   }
   
-  // [2025-11-24 10:45:00] 添加一行输入（适合面板显示）
+// 添加一行输入（适合面板显示）
   function addNamesNumbersRow() {
     const rowsContainer = document.getElementById('names-numbers-rows');
     if (!rowsContainer) return;
     
     const row = document.createElement('div');
     row.className = 'names-numbers-table__row';
-    // [2025-11-24 10:45:00] 使用 grid 布局，适合面板显示
+// 使用 grid 布局，适合面板显示
     row.style.display = 'grid';
     row.style.gridTemplateColumns = '2fr 1fr 1fr';
     row.style.gap = '8px';
@@ -844,7 +844,7 @@
     
     rowsContainer.appendChild(row);
     
-    // [2025-11-24 10:45:00] 绑定输入事件，更新总计
+// 绑定输入事件，更新总计
     const inputs = row.querySelectorAll('input, select');
     inputs.forEach(input => {
       input.addEventListener('input', () => {
@@ -856,7 +856,7 @@
     });
   }
   
-  // [2025-01-27] 更新总计和尺寸摘要
+// 更新总计和尺寸摘要
   function updateNamesNumbersTotals() {
     const rows = document.querySelectorAll('.names-numbers-table__row');
     let totalNames = 0;
@@ -878,13 +878,13 @@
         if (name) totalNames++;
         if (number && number !== '00') totalNumbers++;
         if (size) {
-          // [2025-01-27] 统计每个尺寸的数量
+// 统计每个尺寸的数量
           sizesMap.set(size, (sizesMap.get(size) || 0) + 1);
         }
       }
     });
     
-    // [2025-11-24 10:45:00] 更新总计显示
+// 更新总计显示
     const totalNamesEl = document.getElementById('total-names');
     const totalNumbersEl = document.getElementById('total-numbers');
     const totalItemsEl = document.getElementById('total-items');
@@ -894,7 +894,7 @@
     if (totalItemsEl) totalItemsEl.textContent = totalItems;
   }
   
-  // [2025-11-24 11:15:00] Step 1: 添加示例文字到画布（EXAMPLE 和 00）
+// Step 1: 添加示例文字到画布（EXAMPLE 和 00）
   function addExampleToCanvas() {
     if (!window.DesignLabCanvas || !window.DesignLabCanvas.getCanvas) {
       console.error('[Toolbar] Canvas not available');
@@ -908,7 +908,7 @@
       return;
     }
     
-    // [2025-11-24 11:15:00] 获取 Step 1 的设置
+// 获取 Step 1 的设置
     const namesEnabled = getCheckboxValue('names-enabled');
     const namesSide = getInputValue('names-side', 'back');
     const namesHeight = parseFloat(getInputValue('names-height', '2'));
@@ -919,16 +919,16 @@
     const numbersHeight = parseFloat(getInputValue('numbers-height', '8'));
     const numbersColor = getInputValue('numbers-color', '#00ffff');
     
-    // [2025-11-24 11:15:00] 保存当前面
+// 保存当前面
     const store = window.DesignLabStore.getStore();
     const originalSide = store.currentSide;
     const canvasHeight = canvas.height || 1200;
     const canvasWidth = canvas.width || 1000;
     
-    // [2025-11-24 11:15:00] 添加示例名字（如果启用）
+// 添加示例名字（如果启用）
     let nameTextObj = null;
     if (namesEnabled) {
-      // [2025-11-24 11:15:00] 切换到目标面
+// 切换到目标面
       if (namesSide !== originalSide) {
         if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
           window.DesignLabCanvas.saveCurrentSide();
@@ -941,11 +941,11 @@
         }
       }
       
-      // [2025-11-24 11:15:00] 重新获取 canvas 对象（可能在切换面后改变）
+// 重新获取 canvas 对象（可能在切换面后改变）
       const currentCanvasForName = window.DesignLabCanvas.getCanvas();
       if (!currentCanvasForName) return;
       
-      // [2025-11-24 11:15:00] 直接添加文本并调整位置
+// 直接添加文本并调整位置
       const fontSize = namesHeight * 30;
       const nameText = window.DesignLabCanvas.addText('EXAMPLE', {
         fontSize: fontSize,
@@ -956,7 +956,7 @@
       });
       
       if (nameText && currentCanvasForName) {
-        // [2025-11-24 11:15:00] 向上偏移，为数字留出空间
+// 向上偏移，为数字留出空间
         const canvasH = currentCanvasForName.height || 1200;
         nameText.set('top', (canvasH / 2) - (fontSize / 2 + 30));
         currentCanvasForName.setActiveObject(nameText);
@@ -965,12 +965,12 @@
       }
     }
     
-    // [2025-11-24 11:15:00] 添加示例数字（如果启用）
+// 添加示例数字（如果启用）
     if (numbersEnabled) {
-      // [2025-11-24 11:15:00] 获取当前面（可能已被名字切换改变）
+// 获取当前面（可能已被名字切换改变）
       const currentSideAfterName = window.DesignLabStore.getStore().currentSide;
       
-      // [2025-11-24 11:15:00] 切换到目标面
+// 切换到目标面
       if (numbersSide !== currentSideAfterName) {
         if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
           window.DesignLabCanvas.saveCurrentSide();
@@ -983,11 +983,11 @@
         }
       }
       
-      // [2025-11-24 11:15:00] 重新获取 canvas 对象（可能在切换面后改变）
+// 重新获取 canvas 对象（可能在切换面后改变）
       const currentCanvas = window.DesignLabCanvas.getCanvas();
       if (!currentCanvas) return;
       
-      // [2025-11-24 11:15:00] 直接添加文本并调整位置
+// 直接添加文本并调整位置
       const fontSize = numbersHeight * 30;
       const numberText = window.DesignLabCanvas.addText('00', {
         fontSize: fontSize,
@@ -998,7 +998,7 @@
       });
       
       if (numberText && currentCanvas) {
-        // [2025-11-24 11:15:00] 向下偏移，避免与名字重叠
+// 向下偏移，避免与名字重叠
         const canvasH = currentCanvas.height || 1200;
         const offset = nameTextObj && namesSide === numbersSide ? (namesHeight * 30 / 2 + numbersHeight * 30 / 2 + 30) : 0;
         numberText.set('top', (canvasH / 2) + offset);
@@ -1007,7 +1007,7 @@
       }
     }
     
-    // [2025-11-24 11:15:00] 切换回原来的面
+// 切换回原来的面
     const finalSide = window.DesignLabStore.getStore().currentSide;
     if (originalSide !== finalSide) {
       if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
@@ -1024,10 +1024,10 @@
     console.log('[Toolbar] Example text added to canvas');
   }
   
-  // [2025-11-24 11:15:00] Step 2: 保存整个设计（包括 Names and Numbers 订单数据）
-  // [2025-11-24 11:25:00] 已移除 - 不再使用，Save 和 Get Price 使用底部按钮
+// Step 2: 保存整个设计（包括 Names and Numbers 订单数据）
+// 已移除 - 不再使用，Save 和 Get Price 使用底部按钮
   function _handleNamesNumbersSave_removed() {
-    // [2025-11-24 11:15:00] 收集所有行的数据
+// 收集所有行的数据
     const rows = document.querySelectorAll('.names-numbers-table__row');
     const items = [];
     
@@ -1045,7 +1045,7 @@
       }
     });
     
-    // [2025-11-24 11:15:00] 保存订单数据到 store
+// 保存订单数据到 store
     const store = window.DesignLabStore.getStore();
     if (!store.namesNumbersOrder) {
       store.namesNumbersOrder = {};
@@ -1057,16 +1057,16 @@
       items: document.getElementById('total-items')?.textContent || '0'
     };
     
-    // [2025-11-24 11:15:00] 保存当前面的设计
+// 保存当前面的设计
     if (window.DesignLabCanvas) {
       window.DesignLabCanvas.saveCurrentSide();
     }
     
-    // [2025-11-24 11:15:00] 调用全局保存函数（保存整个设计）
+// 调用全局保存函数（保存整个设计）
     if (typeof window.saveDesign === 'function') {
       window.saveDesign();
     } else {
-      // [2025-11-24 11:15:00] 如果没有全局函数，只保存到 localStorage
+// 如果没有全局函数，只保存到 localStorage
       if (window.DesignLabStore && window.DesignLabStore.save) {
         window.DesignLabStore.save();
       }
@@ -1076,9 +1076,9 @@
     console.log('[Toolbar] Design and Names/Numbers order saved:', items);
   }
   
-  // [2025-11-24 11:25:00] 已移除 - 不再使用，Save 和 Get Price 使用底部按钮
+// 已移除 - 不再使用，Save 和 Get Price 使用底部按钮
   function _handleNamesNumbersGetPrice_removed() {
-    // [2025-11-24 11:15:00] 收集所有行的数据
+// 收集所有行的数据
     const rows = document.querySelectorAll('.names-numbers-table__row');
     const items = [];
     
@@ -1101,7 +1101,7 @@
       return;
     }
     
-    // [2025-11-24 11:15:00] 保存订单数据到 store（价格计算可能需要这些信息）
+// 保存订单数据到 store（价格计算可能需要这些信息）
     const store = window.DesignLabStore.getStore();
     if (!store.namesNumbersOrder) {
       store.namesNumbersOrder = {};
@@ -1113,16 +1113,16 @@
       items: document.getElementById('total-items')?.textContent || '0'
     };
     
-    // [2025-11-24 11:15:00] 保存当前面的设计
+// 保存当前面的设计
     if (window.DesignLabCanvas) {
       window.DesignLabCanvas.saveCurrentSide();
     }
     
-    // [2025-11-24 11:15:00] 调用全局 getPrice 函数（会保存设计并计算价格）
+// 调用全局 getPrice 函数（会保存设计并计算价格）
     if (typeof window.getPrice === 'function') {
       window.getPrice();
     } else {
-      // [2025-11-24 11:15:00] 如果全局函数不存在，显示简单估算
+// 如果全局函数不存在，显示简单估算
       const totalNames = parseInt(document.getElementById('total-names')?.textContent || '0');
       const totalNumbers = parseInt(document.getElementById('total-numbers')?.textContent || '0');
       const quantity = parseInt(document.getElementById('quantity-input')?.value || '1');
@@ -1136,9 +1136,9 @@
     console.log('[Toolbar] Getting price for', items.length, 'items');
   }
   
-  // [2025-11-24 11:25:00] Step 2 Done 按钮：只保存订单数据，不添加文字到画布
+// Step 2 Done 按钮：只保存订单数据，不添加文字到画布
   function handleNamesNumbersDone() {
-    // [2025-11-24 11:25:00] 收集所有行的数据
+// 收集所有行的数据
     const rows = document.querySelectorAll('.names-numbers-table__row');
     const items = [];
     
@@ -1156,7 +1156,7 @@
       }
     });
     
-    // [2025-11-24 11:25:00] 保存订单数据到 store（Save 和 Get Price 按钮会使用这些数据）
+// 保存订单数据到 store（Save 和 Get Price 按钮会使用这些数据）
     const store = window.DesignLabStore.getStore();
     if (!store.namesNumbersOrder) {
       store.namesNumbersOrder = {};
@@ -1168,12 +1168,12 @@
       items: document.getElementById('total-items')?.textContent || '0'
     };
     
-    // [2025-11-24 11:25:00] 保存到 localStorage
+// 保存到 localStorage
     if (window.DesignLabStore && window.DesignLabStore.save) {
       window.DesignLabStore.save();
     }
     
-    // [2025-11-24 11:25:00] 返回 home 面板
+// 返回 home 面板
     if (window.DesignLabPanel) {
       window.DesignLabPanel.openPanel('home');
     }
@@ -1181,12 +1181,12 @@
     console.log('[Toolbar] Names/Numbers order data saved:', items.length, 'items');
   }
   
-  // [2025-01-27] 添加名字或数字到指定面
+// 添加名字或数字到指定面
   function addNamesNumbersToSide(text, side, heightInches, color, type) {
     const store = window.DesignLabStore.getStore();
     const currentSide = store.currentSide;
     
-    // [2025-01-27] 如果目标面不是当前面，需要切换
+// 如果目标面不是当前面，需要切换
     if (side !== currentSide) {
       // 保存当前面
       if (window.DesignLabCanvas && window.DesignLabCanvas.saveCurrentSide) {
@@ -1202,11 +1202,11 @@
       }
     }
     
-    // [2025-11-24 11:15:00] 计算字体大小（英寸转像素，使用更合理的缩放比例）
+// 计算字体大小（英寸转像素，使用更合理的缩放比例）
     // 原来使用 100 DPI 太大，改为 30 DPI，这样 2 英寸 = 60px，8 英寸 = 240px
     const fontSize = heightInches * 30;
     
-    // [2025-01-27] 使用 DesignLabCanvas 的 addText 方法添加文本
+// 使用 DesignLabCanvas 的 addText 方法添加文本
     const textObj = window.DesignLabCanvas.addText(text, {
       fontSize: fontSize,
       fontFamily: 'Arial',
@@ -1216,7 +1216,7 @@
     });
     
     if (textObj) {
-      // [2025-01-27] 历史已在 addText 中添加前保存，这里不需要重复保存
+// 历史已在 addText 中添加前保存，这里不需要重复保存
       
       console.log('[Toolbar] Added', type, 'to', side, ':', text);
     } else {
@@ -1224,8 +1224,8 @@
     }
   }
 
-  // [2025-11-19 12:00:00] 导出全局 API
-  // [2025-01-27] 确保不会覆盖已有的对象，合并所有方法
+// 导出全局 API
+// 确保不会覆盖已有的对象，合并所有方法
   const exportedMethods = {
     init,
     addTextFromPanel,
@@ -1238,13 +1238,13 @@
     updateProductInfo,
     updateSizesDisplay,
     addShape,
-    // [2025-11-24 10:45:00] Names and Numbers 表单初始化（供 panelManager 调用）
+// Names and Numbers 表单初始化（供 panelManager 调用）
     initNamesNumbersForm,
-    showColorModal, // [2025-01-27] 导出 showColorModal
-    hideColorModal, // [2025-01-27] 导出 hideColorModal
+showColorModal, // 导出 showColorModal
+hideColorModal, // 导出 hideColorModal
   };
   
-  // [2025-01-27] 合并到现有对象或创建新对象
+// 合并到现有对象或创建新对象
   if (window.DesignLabToolbar && typeof window.DesignLabToolbar === 'object') {
     Object.assign(window.DesignLabToolbar, exportedMethods);
   } else {
@@ -1260,7 +1260,7 @@
     timestamp: new Date().toISOString()
   });
   
-  // [2025-01-27] 触发自定义事件，通知其他脚本 toolbar.js 已加载完成
+// 触发自定义事件，通知其他脚本 toolbar.js 已加载完成
   if (typeof window !== 'undefined' && window.dispatchEvent) {
     window.dispatchEvent(new CustomEvent('toolbar:ready', {
       detail: { methods: Object.keys(window.DesignLabToolbar) }

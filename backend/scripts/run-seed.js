@@ -1,4 +1,4 @@
-// [2025-11-28 12:15:00] 自动运行 seed 数据脚本（包括 admin 用户）
+// 自动运行 seed 数据脚本（包括 admin 用户）
 // 用于 GCP 部署后确保 seed 数据已创建
 const { execSync } = require('child_process');
 const logger = require('../src/utils/logger');
@@ -23,7 +23,7 @@ async function runSeed() {
       // 继续执行，可能数据已经存在
     }
     
-    // [2025-11-28 12:15:00] 也可以运行 Prisma seed（如果存在）
+// 也可以运行 Prisma seed（如果存在）
     try {
       logger.info('📦 运行 Prisma seed...');
       execSync('npx prisma db seed --schema=./prisma/schema.prisma', {

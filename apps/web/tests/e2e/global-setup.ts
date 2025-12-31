@@ -1,5 +1,5 @@
 /**
- * [2025-11-24 10:30:02] Playwright 全局前置：加载环境变量并重置测试数据库
+* Playwright 全局前置：加载环境变量并重置测试数据库
  */
 import { FullConfig } from '@playwright/test';
 import { execSync } from 'node:child_process';
@@ -18,7 +18,7 @@ async function globalSetup(_config: FullConfig) {
     console.warn(`[E2E setup] 未找到环境文件：${envFile}`);
   }
 
-  // [2025-01-29 13:00:00] 允许跳过数据库重置（用于快速测试）
+// 允许跳过数据库重置（用于快速测试）
   if (process.env.SKIP_DB_RESET === '1') {
     console.log('[E2E setup] Skipping database reset (SKIP_DB_RESET=1)');
     return;

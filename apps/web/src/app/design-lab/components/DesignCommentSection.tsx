@@ -1,6 +1,6 @@
 /**
  * Design Comment Section - 设计评论组件
- * [2025-12-10] 实现设计评论功能的前端 UI
+* 实现设计评论功能的前端 UI
  */
 'use client';
 

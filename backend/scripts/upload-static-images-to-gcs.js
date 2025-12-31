@@ -1,5 +1,5 @@
 /**
- * [2025-12-01 21:40:00] 一次性脚本：将本地静态图片上传到 GCP Cloud Storage
+* 一次性脚本：将本地静态图片上传到 GCP Cloud Storage
  * 
  * 覆盖范围：
  * - apps/web/public/assets/products/**     -> product/{slug}/{filename}
@@ -76,14 +76,14 @@ function inferTypeAndSegments(relPath) {
 async function main() {
   const startedAt = new Date().toISOString();
   console.log(
-    `[2025-12-01 21:40:00] 🔧 开始上传本地静态图片到 GCS... (${startedAt})`
+` 🔧 开始上传本地静态图片到 GCS... (${startedAt})`
   );
 
   try {
     const bucket = getImageBucketName();
     const baseUrl = getImageBaseUrl();
     console.log(
-      `[2025-12-01 21:40:00] 目标 Bucket: ${bucket}, 基础 URL: ${baseUrl}`
+` 目标 Bucket: ${bucket}, 基础 URL: ${baseUrl}`
     );
 
     const allFiles = walkDir(WEB_PUBLIC_ASSETS).filter((f) => {
@@ -94,7 +94,7 @@ async function main() {
     });
 
     console.log(
-      `[2025-12-01 21:40:00] 在 apps/web/public/assets 下找到 ${allFiles.length} 个图片文件`
+` 在 apps/web/public/assets 下找到 ${allFiles.length} 个图片文件`
     );
 
     let successCount = 0;
@@ -106,30 +106,30 @@ async function main() {
       const objectPath = buildObjectPath(type, segments);
 
       console.log(
-        `[2025-12-01 21:40:00] 上传文件: ${rel} -> ${objectPath}`
+` 上传文件: ${rel} -> ${objectPath}`
       );
 
       try {
         const publicUrl = await uploadFileToGcs(filePath, objectPath);
         successCount += 1;
         console.log(
-          `[2025-12-01 21:40:00] ✅ 成功: ${rel} => ${publicUrl}`
+` ✅ 成功: ${rel} => ${publicUrl}`
         );
       } catch (err) {
         failCount += 1;
         console.error(
-          `[2025-12-01 21:40:00] ❌ 失败: ${rel} => ${objectPath}`,
+` ❌ 失败: ${rel} => ${objectPath}`,
           err.message
         );
       }
     }
 
-    console.log('\n[2025-12-01 21:40:00] 📊 上传完成统计:');
+console.log('\n 📊 上传完成统计:');
     console.log(`  ✅ 成功: ${successCount}`);
     console.log(`  ❌ 失败: ${failCount}`);
   } catch (error) {
     console.error(
-      '[2025-12-01 21:40:00] ❌ 上传过程出现致命错误:',
+' ❌ 上传过程出现致命错误:',
       error
     );
     process.exitCode = 1;
@@ -138,7 +138,7 @@ async function main() {
 
 if (require.main === module) {
   main().then(() => {
-    console.log('[2025-12-01 21:40:00] 🎉 静态图片上传脚本执行结束');
+console.log(' 🎉 静态图片上传脚本执行结束');
   });
 }
 

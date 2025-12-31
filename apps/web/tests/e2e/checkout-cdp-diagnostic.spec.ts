@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 23:20:00] CDP Playwright 闭环诊断测试
+* CDP Playwright 闭环诊断测试
  * 使用 Chrome DevTools Protocol (CDP) 进行深度诊断
  * 重点测试：添加购物车、Buy Now、Place Order 按钮、Coupon Apply
  */

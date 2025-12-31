@@ -1,6 +1,6 @@
 /**
  * Product upload helpers
- * [2025-01-27 14:58:00] Utilities for handling product image uploads
+* Utilities for handling product image uploads
  */
 const path = require('path');
 const fs = require('fs');
@@ -19,7 +19,7 @@ const parseEnvExtensions = (rawValue) => {
     .map((item) => (item.startsWith('.') ? item : `.${item}`));
 };
 
-// [2025-01-27 14:58:00] Ensure the product upload directory exists on disk
+// Ensure the product upload directory exists on disk
 const ensureProductUploadRoot = () => {
   if (!fs.existsSync(PRODUCT_UPLOAD_DIR)) {
     fs.mkdirSync(PRODUCT_UPLOAD_DIR, { recursive: true });
@@ -27,32 +27,32 @@ const ensureProductUploadRoot = () => {
   return PRODUCT_UPLOAD_DIR;
 };
 
-// [2025-01-27 14:58:00] Resolve allowed image extensions from environment
+// Resolve allowed image extensions from environment
 const getAllowedImageExtensions = () =>
   parseEnvExtensions(process.env.PRODUCT_IMAGE_ALLOWED_EXTENSIONS);
 
-// [2025-01-27 14:58:00] Validate that the uploaded file has an allowed image extension
+// Validate that the uploaded file has an allowed image extension
 const isImageExtensionAllowed = (fileName) => {
   const lower = fileName?.toString().toLowerCase() || '';
   return getAllowedImageExtensions().some((ext) => lower.endsWith(ext));
 };
 
-// [2025-01-27 14:58:00] Build the storage key (relative path) for persisted assets
+// Build the storage key (relative path) for persisted assets
 const buildStorageKey = (fileName) => path.join('products', fileName).replace(/\\/g, '/');
 
-// [2025-01-27 16:15:00] Construct the public URL served from express static middleware
-// [2025-01-27 16:15:00] 支持返回完整的后端服务器URL，以便Next.js Image组件可以访问
+// Construct the public URL served from express static middleware
+// 支持返回完整的后端服务器URL，以便Next.js Image组件可以访问
 const buildPublicUrl = (storageKey, req = null) => {
   const relativeUrl = `${UPLOADS_PUBLIC_PREFIX}/${storageKey}`;
   
-  // [2025-01-27 16:15:00] 如果提供了请求对象，返回完整的后端服务器URL
+// 如果提供了请求对象，返回完整的后端服务器URL
   if (req) {
     const protocol = req.protocol || 'http';
     const host = req.get('host') || 'localhost:3001';
     return `${protocol}://${host}${relativeUrl}`;
   }
   
-  // [2025-01-27 16:15:00] 如果有环境变量配置的后端URL，使用它
+// 如果有环境变量配置的后端URL，使用它
   const backendUrl = process.env.BACKEND_URL || process.env.API_BASE_URL || process.env.FRONTEND_URL;
   if (backendUrl) {
     try {
@@ -65,12 +65,12 @@ const buildPublicUrl = (storageKey, req = null) => {
     }
   }
   
-  // [2025-01-27 16:15:00] 默认返回完整的本地开发URL
+// 默认返回完整的本地开发URL
   const defaultHost = process.env.PORT ? `localhost:${process.env.PORT}` : 'localhost:3001';
   return `http://${defaultHost}${relativeUrl}`;
 };
 
-// [2025-01-27 14:58:00] Translate a public asset URL back to its storage key
+// Translate a public asset URL back to its storage key
 const extractStorageKeyFromUrl = (url) => {
   if (!url) return null;
   const normalized = url.startsWith('http') ? new URL(url).pathname : url;

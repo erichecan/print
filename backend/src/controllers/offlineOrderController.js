@@ -1,5 +1,5 @@
-// [2025-11-08 06:56:10] Offline POD order controller
-// [2025-12-06 12:00:00] Enhanced with unified error handling
+// Offline POD order controller
+// Enhanced with unified error handling
 const path = require('path');
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -42,7 +42,7 @@ const safeJsonParse = (value) => {
 
 /**
  * 生成订单编号
- * [2025-12-18 21:39:07] 修改规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
+* 修改规则：最后6位 = 前3位流水号（001开始递增）+ 后3位随机字母
  * @param {Object} tx - Prisma transaction 对象（可选）
  * @returns {Promise<string>} 订单编号
  */
@@ -50,7 +50,7 @@ const generateOrderCode = async (tx = null) => {
   const timestamp = new Date();
   const datePart = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
 
-  // [2025-12-18 21:39:07] 获取当天的最大流水号
+// 获取当天的最大流水号
   const prismaClient = tx || prisma;
   const todayStart = new Date(timestamp);
   todayStart.setHours(0, 0, 0, 0);
@@ -95,7 +95,7 @@ const generateOrderCode = async (tx = null) => {
   const nextSequence = maxSequence + 1;
   const sequencePart = String(nextSequence).padStart(3, '0');
 
-  // [2025-12-18 22:03:15] 生成3位随机字母
+// 生成3位随机字母
   const generateRandomLetters = () => {
     const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     let result = '';
@@ -209,11 +209,10 @@ const mapOrder = (order) => ({
 /**
  * POST /api/offline-orders
  * Create offline POD order
- * [2025-11-08 06:56:10]
  */
 exports.createOfflineOrder = async (req, res) => {
   try {
-    // [2025-11-28 16:00:00] 添加详细日志用于调试
+// 添加详细日志用于调试
     logger.info('[offlineOrderController] Creating offline order...');
     logger.info('[offlineOrderController] Request body keys:', Object.keys(req.body || {}));
     logger.info('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
@@ -234,13 +233,13 @@ exports.createOfflineOrder = async (req, res) => {
       requiresProof,
       rushOrder,
       configuration,
-      orderNotes // [2025-12-19] PRD v2.0: 支持从orderNotes字段获取
+orderNotes // PRD v2.0: 支持从orderNotes字段获取
     } = req.body;
 
-    // [2025-12-19] PRD v2.0: 解析configuration以获取orderNotes（如果projectName不存在）
+// PRD v2.0: 解析configuration以获取orderNotes（如果projectName不存在）
     const configData = safeJsonParse(configuration);
 
-    // [2025-12-19] PRD v2.0: projectName现在是可选字段，如果不存在则从orderNotes或configuration中提取
+// PRD v2.0: projectName现在是可选字段，如果不存在则从orderNotes或configuration中提取
     // 优先级：projectName > orderNotes > configuration.orderNotes > 订单编号（默认值）
     let finalProjectName = projectName?.trim() || null;
     if (!finalProjectName) {
@@ -249,11 +248,11 @@ exports.createOfflineOrder = async (req, res) => {
         null;
     }
 
-    // [2025-12-19] PRD v2.0: 如果仍然没有projectName，使用订单编号作为默认值（在生成订单编号后设置）
+// PRD v2.0: 如果仍然没有projectName，使用订单编号作为默认值（在生成订单编号后设置）
     // 这里先设置为null，稍后在生成订单编号后设置默认值
 
-    // [2025-12-19] PRD v2.0: 移除所有必填验证，所有字段都改为可选
-    // [2025-12-18 16:30:00] 修复：移除 contactName 和 email 的必填验证，与前端保持一致
+// PRD v2.0: 移除所有必填验证，所有字段都改为可选
+// 修复：移除 contactName 和 email 的必填验证，与前端保持一致
     // 只保留邮箱格式验证（如果提供了邮箱）
     if (email && email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -267,10 +266,10 @@ exports.createOfflineOrder = async (req, res) => {
       }
     }
 
-    // [2025-01-28 19:20:00] 获取初始阶段，确保不为 undefined
+// 获取初始阶段，确保不为 undefined
     const initialStage = await getInitialStage();
 
-    // [2025-01-28 19:20:00] 验证 initialStage 是否有效
+// 验证 initialStage 是否有效
     if (!initialStage || !initialStage.key || !initialStage.label) {
       logger.error('[offlineOrderController] Invalid initial stage:', initialStage);
       return res.status(500).json({
@@ -279,13 +278,13 @@ exports.createOfflineOrder = async (req, res) => {
       });
     }
 
-    // [2025-12-19] PRD v2.0: 生成订单编号，如果projectName仍然为空，使用订单编号作为默认值
-    // [2025-12-18 21:39:07] 注意：订单编号在事务中生成，这里先不生成
+// PRD v2.0: 生成订单编号，如果projectName仍然为空，使用订单编号作为默认值
+// 注意：订单编号在事务中生成，这里先不生成
     let generatedOrderCode = null;
 
     const orderPayload = {
-      orderCode: '', // [2025-12-18 21:39:07] 订单编号在事务中生成，这里先留空
-      projectName: finalProjectName, // [2025-12-19] 使用处理后的projectName（可能来自orderNotes或订单编号）
+orderCode: '', // 订单编号在事务中生成，这里先留空
+projectName: finalProjectName, // 使用处理后的projectName（可能来自orderNotes或订单编号）
       primaryProduct: primaryProduct?.trim() || null,
       quantity: quantity ? parseInt(quantity, 10) || null : null,
       deliveryDate: parseDate(deliveryDate),
@@ -297,7 +296,7 @@ exports.createOfflineOrder = async (req, res) => {
       stageLabel: initialStage.label,
       stagePosition: initialStage.position ?? 0,
       status: 'ACTIVE',
-      // [2025-12-18 16:30:00] 修复：contactName 和 email 改为可选字段，使用默认值或null
+// 修复：contactName 和 email 改为可选字段，使用默认值或null
       contactName: contactName?.trim() || '未提供',
       company: company?.trim() || null,
       email: email?.trim() || null,
@@ -305,7 +304,7 @@ exports.createOfflineOrder = async (req, res) => {
       configuration: configData || {
         source: 'web-intake',
         artworkNotes: artworkNotes?.trim() || null,
-        orderNotes: orderNotes?.trim() || null // [2025-12-19] PRD v2.0: 包含orderNotes到configuration
+orderNotes: orderNotes?.trim() || null // PRD v2.0: 包含orderNotes到configuration
       },
       metadata: {
         submittedFrom: 'offline-pod-intake',
@@ -319,7 +318,7 @@ exports.createOfflineOrder = async (req, res) => {
     const assetPayloads = files.map(buildAssetPayload);
 
     const order = await prisma.$transaction(async (tx) => {
-      // [2025-12-18 21:39:07] 在事务中生成订单编号（使用流水号）
+// 在事务中生成订单编号（使用流水号）
       let uniqueCode = await generateOrderCode(tx);
       let exists = await tx.offlineOrder.findUnique({ where: { orderCode: uniqueCode } });
       // 如果发生冲突（理论上不应该发生），重新生成
@@ -334,7 +333,7 @@ exports.createOfflineOrder = async (req, res) => {
         throw new Error('Failed to generate unique order code after multiple retries');
       }
 
-      // [2025-12-19] 如果projectName仍然为空，使用订单编号作为默认值
+// 如果projectName仍然为空，使用订单编号作为默认值
       if (!finalProjectName) {
         finalProjectName = uniqueCode;
         logger.info('[offlineOrderController] projectName not provided, using orderCode as default:', finalProjectName);
@@ -344,7 +343,7 @@ exports.createOfflineOrder = async (req, res) => {
         data: {
           ...orderPayload,
           orderCode: uniqueCode,
-          projectName: finalProjectName, // [2025-12-18 21:39:07] 使用处理后的projectName
+projectName: finalProjectName, // 使用处理后的projectName
           assets: assetPayloads.length
             ? {
               create: assetPayloads.map((asset) => ({
@@ -392,7 +391,7 @@ exports.createOfflineOrder = async (req, res) => {
       order: mapOrder(order)
     });
   } catch (error) {
-    // [2025-01-28 09:00:00] 增强错误日志，输出详细错误信息
+// 增强错误日志，输出详细错误信息
     logger.error('[offlineOrderController] Failed to create offline order:', error);
     logger.error('[offlineOrderController] Error details:', {
       message: error.message,
@@ -404,7 +403,7 @@ exports.createOfflineOrder = async (req, res) => {
     logger.error('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
     logger.error('[offlineOrderController] Request files:', req.files ? `Files count: ${req.files.length}` : 'No files');
 
-    // [2025-11-28 16:00:00] 返回更详细的错误信息，帮助前端调试
+// 返回更详细的错误信息，帮助前端调试
     const errorResponse = {
       error: 'Server Error',
       message: 'Failed to create offline order',
@@ -435,7 +434,6 @@ exports.createOfflineOrder = async (req, res) => {
 
 /**
  * GET /api/admin/offline-orders
- * [2025-11-08 06:56:10]
  */
 exports.listOfflineOrders = async (req, res, next) => {
   try {
@@ -522,7 +520,6 @@ exports.listOfflineOrders = async (req, res, next) => {
 
 /**
  * GET /api/admin/offline-orders/metrics/summary
- * [2025-11-08 06:56:10]
  */
 exports.getOfflineOrderMetrics = async (req, res, next) => {
   try {
@@ -582,7 +579,6 @@ exports.getOfflineOrderMetrics = async (req, res, next) => {
 
 /**
  * GET /api/admin/offline-orders/:id
- * [2025-11-08 06:56:10]
  */
 exports.getOfflineOrderById = async (req, res) => {
   try {
@@ -629,7 +625,6 @@ exports.getOfflineOrderById = async (req, res) => {
 
 /**
  * PATCH /api/admin/offline-orders/:id/stage
- * [2025-11-08 06:56:10]
  */
 exports.updateOfflineOrderStage = async (req, res) => {
   try {
@@ -726,7 +721,6 @@ exports.updateOfflineOrderStage = async (req, res) => {
 
 /**
  * PATCH /api/admin/offline-orders/:id
- * [2025-11-08 06:56:10]
  */
 exports.updateOfflineOrder = async (req, res) => {
   try {
@@ -759,7 +753,7 @@ exports.updateOfflineOrder = async (req, res) => {
     if (requiresMockups !== undefined) data.requiresMockups = parseBoolean(requiresMockups);
     if (requiresProof !== undefined) data.requiresProof = parseBoolean(requiresProof);
     if (rushOrder !== undefined) data.rushOrder = parseBoolean(rushOrder);
-    // [2025-12-18 16:30:00] 修复：contactName 和 email 改为可选字段，允许为空或null
+// 修复：contactName 和 email 改为可选字段，允许为空或null
     if (contactName !== undefined) {
       const trimmedName = contactName?.toString().trim();
       data.contactName = trimmedName || null;
@@ -767,7 +761,7 @@ exports.updateOfflineOrder = async (req, res) => {
     if (company !== undefined) data.company = company?.trim() || null;
     if (email !== undefined) {
       const trimmedEmail = email?.toString().trim();
-      // [2025-12-18 16:30:00] 如果提供了邮箱，验证格式；如果为空，允许设置为null
+// 如果提供了邮箱，验证格式；如果为空，允许设置为null
       if (trimmedEmail) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(trimmedEmail)) {
@@ -1245,7 +1239,6 @@ exports.createOrUpdateProductionWorkOrder = async (req, res) => {
 
 /**
  * GET /api/admin/offline-orders/config/stages
- * [2025-11-08 06:56:10]
  */
 exports.getOfflineWorkflowStages = async (req, res) => {
   try {
@@ -1265,7 +1258,6 @@ exports.getOfflineWorkflowStages = async (req, res) => {
 
 /**
  * PUT /api/admin/offline-orders/config/stages
- * [2025-11-08 06:56:10]
  */
 exports.updateOfflineWorkflowStages = async (req, res) => {
   try {
@@ -1307,8 +1299,8 @@ exports.updateOfflineWorkflowStages = async (req, res) => {
 
 /**
  * GET /api/offline-orders/config
- * [2025-12-07 02:30:00] PRD v2.0: 获取订单创建所需的所有配置数据
- * [2025-01-27 12:00:00] 重构：使用snake_case模型和字段名
+* PRD v2.0: 获取订单创建所需的所有配置数据
+* 重构：使用snake_case模型和字段名
  * 返回：产品列表、颜色列表、尺码费用配置、可用性配置等
  */
 exports.getOrderConfig = async (req, res, next) => {
@@ -1318,7 +1310,7 @@ exports.getOrderConfig = async (req, res, next) => {
     let sizeFees = [];
     let availability = [];
 
-    // [2025-12-08 01:00:00] 调试：检查 Prisma Client 状态
+// 调试：检查 Prisma Client 状态
     logger.info('[getOrderConfig] Starting getOrderConfig...');
     logger.info('[getOrderConfig] Prisma available:', !!prisma);
     if (prisma) {
@@ -1446,14 +1438,14 @@ exports.getOrderConfig = async (req, res, next) => {
 
 /**
  * DELETE /api/admin/offline-orders/:id
- * [2025-12-18 17:30:00] 删除线下订单
- * [2025-12-19 00:25:00] 修复：使用事务手动删除关联数据，确保删除顺序正确
+* 删除线下订单
+* 修复：使用事务手动删除关联数据，确保删除顺序正确
  */
 exports.deleteOfflineOrder = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // [2025-12-18 17:30:00] 检查订单是否存在
+// 检查订单是否存在
     const existing = await prisma.offlineOrder.findUnique({
       where: { id },
       select: {
@@ -1473,7 +1465,7 @@ exports.deleteOfflineOrder = async (req, res, next) => {
       });
     }
 
-    // [2025-12-19 00:25:00] 使用事务删除，确保删除顺序正确
+// 使用事务删除，确保删除顺序正确
     // 即使 Prisma schema 配置了 onDelete: Cascade，手动删除可以确保兼容性
     await prisma.$transaction(async (tx) => {
       // 1. 先删除 ProductionWorkOrder 的 events（如果有）
@@ -1518,7 +1510,7 @@ exports.deleteOfflineOrder = async (req, res, next) => {
         message: '订单不存在',
       });
     }
-    // [2025-12-19 00:25:00] 增强错误日志，输出详细错误信息
+// 增强错误日志，输出详细错误信息
     logger.error('[deleteOfflineOrder] Error deleting order:', {
       orderId: id,
       error: error.message,

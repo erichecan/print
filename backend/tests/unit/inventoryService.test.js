@@ -1,6 +1,6 @@
 /**
  * Inventory Service Tests
- * [2025-01-27 14:20:00] Tests for inventory management service
+* Tests for inventory management service
  */
 jest.mock('../../src/lib/prisma', () => ({
   variant: {
@@ -14,7 +14,7 @@ jest.mock('../../src/lib/prisma', () => ({
 const prisma = require('../../src/lib/prisma');
 const inventoryService = require('../../src/services/inventoryService');
 
-describe('[2025-01-27 14:20:00] inventoryService', () => {
+describe(' inventoryService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

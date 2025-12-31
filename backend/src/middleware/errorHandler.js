@@ -1,11 +1,11 @@
 /**
  * Error Handler Middleware
- * [2025-01-27 11:05:00] Unified error handling middleware
- * [2025-12-06 12:00:00] Enhanced error logging with more context
+* Unified error handling middleware
+* Enhanced error logging with more context
  */
 const logger = require('../utils/logger');
 const { AppError } = require('../utils/errors');
-// [2025-01-27 23:10:00] 安全地导入 ValidationError，避免 undefined 导致 instanceof 错误
+// 安全地导入 ValidationError，避免 undefined 导致 instanceof 错误
 let ExpressValidationError;
 try {
   const expressValidator = require('express-validator');
@@ -17,7 +17,6 @@ try {
 
 /**
  * Handle validation errors from express-validator
- * [2025-01-27 11:05:00]
  */
 function handleValidationError(err) {
   const errors = {};
@@ -55,7 +54,6 @@ function handleValidationError(err) {
 
 /**
  * Handle Prisma errors
- * [2025-01-27 11:05:00]
  */
 function handlePrismaError(err) {
   // Prisma unique constraint violation
@@ -105,7 +103,6 @@ function handlePrismaError(err) {
 
 /**
  * Handle Stripe errors
- * [2025-01-27 11:05:00]
  */
 function handleStripeError(err) {
   const statusCode = err.statusCode || 400;
@@ -121,7 +118,6 @@ function handleStripeError(err) {
 
 /**
  * Format error response
- * [2025-01-27 11:05:00]
  */
 function formatErrorResponse(err, req) {
   // Handle custom AppError
@@ -136,7 +132,7 @@ function formatErrorResponse(err, req) {
   }
   
   // Also check for ValidationError instance
-  // [2025-01-27 23:10:00] 安全地检查 instanceof，避免 ExpressValidationError 未定义
+// 安全地检查 instanceof，避免 ExpressValidationError 未定义
   if ((ExpressValidationError && err instanceof ExpressValidationError) || err.name === 'ValidationError') {
     return handleValidationError(err);
   }
@@ -191,13 +187,12 @@ function formatErrorResponse(err, req) {
 
 /**
  * Error handler middleware
- * [2025-01-27 11:05:00]
  */
 function errorHandler(err, req, res, next) {
   // Log error
   const errorResponse = formatErrorResponse(err, req);
 
-  // [2025-12-06 12:00:00] Enhanced error logging with more context
+// Enhanced error logging with more context
   const logContext = {
     error: err.message,
     statusCode: errorResponse.statusCode,
@@ -232,7 +227,6 @@ function errorHandler(err, req, res, next) {
 
 /**
  * Async handler wrapper to catch async errors
- * [2025-01-27 11:05:00]
  */
 function asyncHandler(fn) {
   return (req, res, next) => {
@@ -242,7 +236,6 @@ function asyncHandler(fn) {
 
 /**
  * 404 Not Found handler
- * [2025-01-27 11:05:00]
  */
 function notFoundHandler(req, res) {
   res.status(404).json({

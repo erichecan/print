@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
  * Seed Default Offline Order Products and Colors via API
- * [2025-12-07 08:30:00] 通过 API 创建默认的线下订单产品和颜色数据
+* 通过 API 创建默认的线下订单产品和颜色数据
  */
 const path = require('path');
 const fs = require('fs');
 
-// [2025-12-07 08:30:00] 加载环境变量
+// 加载环境变量
 const rootEnvPath = path.join(__dirname, '../../.env');
 const backendEnvPath = path.join(__dirname, '../.env');
 
@@ -18,10 +18,10 @@ if (fs.existsSync(rootEnvPath)) {
   require('dotenv').config();
 }
 
-// [2025-12-07 08:30:00] 支持从环境变量或命令行参数获取 API URL
+// 支持从环境变量或命令行参数获取 API URL
 const API_BASE_URL = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-// [2025-12-07 08:20:00] 默认产品列表（根据截图）
+// 默认产品列表（根据截图）
 const DEFAULT_PRODUCTS = [
   // T-shirts 类别
   { name: 'Short Sleeve T-shirts', imageUrl: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/front-large_extended.png', displayOrder: 1 },
@@ -56,7 +56,7 @@ const DEFAULT_PRODUCTS = [
   { name: '其他', imageUrl: null, displayOrder: 26 },
 ];
 
-// [2025-12-07 08:20:00] 默认颜色列表（根据截图）
+// 默认颜色列表（根据截图）
 const DEFAULT_COLORS = [
   { name: 'Black', hexCode: '#000000' },
   { name: 'Bright Blue', hexCode: '#0066FF' },

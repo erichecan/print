@@ -1,6 +1,6 @@
 /**
  * Design Lab Canvas Engine
- * [2025-01-30 23:00:00] Design Lab 4.0: 初始化顺序与事件总线
+* Design Lab 4.0: 初始化顺序与事件总线
  */
 
 import type { fabric } from 'fabric';
@@ -27,8 +27,8 @@ export class CanvasEngine {
 
   /**
    * 初始化画布
-   * [2025-01-30 23:00:00] Design Lab 4.0: 初始化顺序与事件总线
-   * [2025-01-30 20:10:00] 修复：分阶段初始化（skeleton→主图加载→fit+center）
+* Design Lab 4.0: 初始化顺序与事件总线
+* 修复：分阶段初始化（skeleton→主图加载→fit+center）
    */
   async initialize(
     canvasElement: HTMLCanvasElement,
@@ -52,7 +52,7 @@ export class CanvasEngine {
     }
 
     try {
-      // [2025-12-20 01:25:00] 阶段2修复：改为 Custom Ink 方式 - 固定高分辨率逻辑尺寸
+// 阶段2修复：改为 Custom Ink 方式 - 固定高分辨率逻辑尺寸
       // 逻辑尺寸：4000 × 4800（高分辨率，用于 Fabric.js 坐标系）
       // DOM 显示尺寸：由 CSS 自适应（基于 .dl-canvas section）
       const LOGICAL_WIDTH = 4000;
@@ -72,12 +72,12 @@ export class CanvasEngine {
       const devicePixelRatio = window.devicePixelRatio || 1;
       const scale = devicePixelRatio;
       
-      // [2025-12-20 01:25:00] 设置画布实际像素尺寸（逻辑尺寸 × devicePixelRatio）
+// 设置画布实际像素尺寸（逻辑尺寸 × devicePixelRatio）
       // 这是 Fabric.js 内部使用的实际像素尺寸，用于高 DPI 显示
       this.canvas.setWidth(LOGICAL_WIDTH * scale);
       this.canvas.setHeight(LOGICAL_HEIGHT * scale);
       
-      // [2025-12-20 01:25:00] DOM 显示尺寸由 CSS 控制（自适应 .dl-canvas section）
+// DOM 显示尺寸由 CSS 控制（自适应 .dl-canvas section）
       // 不再在这里设置固定的 CSS 尺寸，让 CSS 来处理显示尺寸
       const container = (this.canvas as any).containerEl || (this.canvas as any).wrapperEl;
       if (container) {
@@ -86,7 +86,7 @@ export class CanvasEngine {
         container.style.margin = '0 auto';
       }
       
-      // [2025-12-20 01:25:00] Canvas 元素的 CSS 尺寸由 CSS 文件控制（自适应）
+// Canvas 元素的 CSS 尺寸由 CSS 文件控制（自适应）
       // 这里不再设置固定尺寸
       
       this.canvas.setZoom(1);
@@ -107,7 +107,7 @@ export class CanvasEngine {
       this.setupEventListeners();
 
       // 5. 阶段 2: 加载产品主图（如果启用）
-      // [2025-01-30 20:55:00] 修复：使用一次性 ready 事件，防止重复触发
+// 修复：使用一次性 ready 事件，防止重复触发
       if (options?.loadProductImage && options?.productImageOptions) {
         try {
           const { loadProductImageLayer } = await import('./layers/productImageLayer');
@@ -129,7 +129,7 @@ export class CanvasEngine {
           };
           this.canvas.on('product-image:ready', readyHandler);
           
-          // [2025-12-20 01:25:00] 使用固定的高分辨率逻辑尺寸
+// 使用固定的高分辨率逻辑尺寸
           const productImageResult = await loadProductImageLayer({
             canvas: this.canvas,
             fabric: fabricModule,

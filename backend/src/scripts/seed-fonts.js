@@ -1,11 +1,11 @@
 /**
  * Seed Fonts - 初始化字体数据
- * [2025-01-30 19:00:00] 将配置文件中的字体导入到数据库
+* 将配置文件中的字体导入到数据库
  */
 const { Font } = require('../models');
 const logger = require('../utils/logger');
 
-// [2025-01-30 19:00:00] 从配置文件读取字体数据（作为后备）
+// 从配置文件读取字体数据（作为后备）
 const defaultFonts = [
   // Latin Fonts
   { name: 'Arial', previewText: 'Aa', category: 'latin', source: 'system', sortOrder: 1 },

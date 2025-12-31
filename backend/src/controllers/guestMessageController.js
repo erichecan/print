@@ -1,6 +1,6 @@
 /**
  * Guest Message Controller
- * [2025-12-10 00:00:00] 留言本控制器 - 处理 help center 留言
+* 留言本控制器 - 处理 help center 留言
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -10,7 +10,7 @@ const { BadRequestError, NotFoundError, InternalServerError } = require('../util
 /**
  * POST /api/guest-messages
  * Create a new guest message
- * [2025-12-10 00:00:00] 创建新留言
+* 创建新留言
  */
 exports.createGuestMessage = async (req, res) => {
   try {
@@ -96,7 +96,7 @@ exports.createGuestMessage = async (req, res) => {
 /**
  * GET /api/admin/guest-messages
  * List all guest messages (admin only)
- * [2025-12-10 00:00:00] 获取所有留言（管理员）
+* 获取所有留言（管理员）
  */
 exports.listGuestMessages = async (req, res) => {
   try {
@@ -152,7 +152,7 @@ exports.listGuestMessages = async (req, res) => {
 /**
  * GET /api/admin/guest-messages/:id
  * Get a single guest message (admin only)
- * [2025-12-10 00:00:00] 获取单个留言（管理员）
+* 获取单个留言（管理员）
  */
 exports.getGuestMessage = async (req, res) => {
   try {
@@ -194,7 +194,7 @@ exports.getGuestMessage = async (req, res) => {
 /**
  * PATCH /api/admin/guest-messages/:id/status
  * Update guest message status (admin only)
- * [2025-12-10 00:00:00] 更新留言状态（管理员）
+* 更新留言状态（管理员）
  */
 exports.updateGuestMessageStatus = async (req, res) => {
   try {
@@ -259,7 +259,7 @@ exports.updateGuestMessageStatus = async (req, res) => {
 /**
  * DELETE /api/admin/guest-messages/:id
  * Delete a guest message (admin only)
- * [2025-12-10 00:00:00] 删除留言（管理员）
+* 删除留言（管理员）
  */
 exports.deleteGuestMessage = async (req, res) => {
   try {

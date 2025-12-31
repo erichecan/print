@@ -1,11 +1,11 @@
-/* [2025-11-19 09:22:00] TagsTrending Component Styles */
+/* TagsTrending Component Styles */
 
 .tagsTrending {
   padding: 40px 0;
   border-top: 1px solid #e5e7eb;
 }
 
-/* [2025-11-19 09:22:00] 参考图一位置：搜索条 */
+/* 参考图一位置：搜索条 */
 .tagsTrendingSearch {
   margin-bottom: 24px;
 }
@@ -48,7 +48,7 @@
   background: #e5e7eb;
 }
 
-/* [2025-11-19 09:22:00] 参考图一位置：主题词 Chips */
+/* 参考图一位置：主题词 Chips */
 .tagsTrendingTags {
   display: flex;
   flex-wrap: wrap;
@@ -73,7 +73,7 @@
   transform: translateY(-1px);
 }
 
-/* [2025-11-19 09:22:00] 参考图一位置：Trending topics */
+/* 参考图一位置：Trending topics */
 .tagsTrendingTrending {
   padding-top: 24px;
   border-top: 1px solid #e5e7eb;

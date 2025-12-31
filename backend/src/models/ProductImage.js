@@ -1,4 +1,4 @@
-// [2025-11-02 20:56:00] ProductImage model
+// ProductImage model
 module.exports = (sequelize, DataTypes) => {
   const ProductImage = sequelize.define('ProductImage', {
     id: {

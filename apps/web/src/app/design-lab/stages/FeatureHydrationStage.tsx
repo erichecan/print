@@ -1,6 +1,6 @@
 /**
  * Design Lab Feature Hydration Stage
- * [2025-01-30 23:30:00] Design Lab 4.0: Feature Hydration 阶段
+* Design Lab 4.0: Feature Hydration 阶段
  * 
  * 职责：
  * - 延迟加载字体预览数据
@@ -22,7 +22,7 @@ export function FeatureHydrationStage({ children }: FeatureHydrationStageProps) 
   const [hydrationStatus, setHydrationStatus] = useState<'idle' | 'hydrating' | 'ready'>('idle');
 
   useEffect(() => {
-    // [2025-01-30 23:30:00] Design Lab 4.0: 延迟加载高级功能
+// Design Lab 4.0: 延迟加载高级功能
     // 这些功能不阻塞画布初始化，可以异步加载
     const hydrateFeatures = async () => {
       setHydrationStatus('hydrating');

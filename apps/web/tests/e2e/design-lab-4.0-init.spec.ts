@@ -1,6 +1,6 @@
 /**
  * Design Lab 4.0 初始化测试
- * [2025-01-30 23:00:00] Design Lab 4.0: 无白屏、无 digest、画布进入可编辑
+* Design Lab 4.0: 无白屏、无 digest、画布进入可编辑
  */
 
 import { test, expect } from '@playwright/test';

@@ -2,7 +2,7 @@
 
 /**
  * Checkout Failure Client Component
- * [2025-11-14 06:06:20] 提取客户端逻辑以便 Suspense 包裹
+* 提取客户端逻辑以便 Suspense 包裹
  */
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -15,7 +15,7 @@ export function CheckoutFailureClient() {
   const reason = searchParams?.get('reason') || '';
 
   const handleRetryCheckout = () => {
-    // [2025-11-14 06:06:20] 如果购物车还有商品，返回结账页面；否则返回购物车
+// 如果购物车还有商品，返回结账页面；否则返回购物车
     if (cart && cart.items.length > 0) {
       router.push('/checkout');
     } else {

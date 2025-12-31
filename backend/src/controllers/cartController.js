@@ -1,8 +1,7 @@
 /**
  * Cart Controller
- * [2025-11-04 23:50:00]
- * [2025-01-27 13:40:00] Enhanced with inventory validation
- * [2025-01-29 12:00:00] 添加图片 URL 优化处理
+* Enhanced with inventory validation
+* 添加图片 URL 优化处理
  */
 const prisma = require('../lib/prisma');
 const { v4: uuidv4 } = require('uuid');
@@ -13,7 +12,6 @@ const { optimizeImageUrl } = require('../utils/imageHelper');
 
 /**
  * Get or create cart for user/session
- * [2025-11-04 23:50:00]
  */
 async function getOrCreateCart(userId, sessionId) {
   if (userId) {
@@ -23,7 +21,7 @@ async function getOrCreateCart(userId, sessionId) {
       include: {
         items: {
           include: {
-            design: true, // [2025-01-31] Include design details
+design: true, // Include design details
             variant: {
               include: {
                 product: {
@@ -36,7 +34,7 @@ async function getOrCreateCart(userId, sessionId) {
                 },
               },
             },
-            design: true, // [2025-01-31] Include design details
+design: true, // Include design details
           },
         },
       },
@@ -60,7 +58,7 @@ async function getOrCreateCart(userId, sessionId) {
                   },
                 },
               },
-              design: true, // [2025-01-31] Include design details
+design: true, // Include design details
             },
           },
         },
@@ -86,7 +84,7 @@ async function getOrCreateCart(userId, sessionId) {
                 },
               },
             },
-            design: true, // [2025-01-31] Include design details
+design: true, // Include design details
           },
         },
       },
@@ -110,7 +108,7 @@ async function getOrCreateCart(userId, sessionId) {
                   },
                 },
               },
-              design: true, // [2025-01-31] Include design details
+design: true, // Include design details
             },
           },
         },
@@ -124,15 +122,14 @@ async function getOrCreateCart(userId, sessionId) {
 
 /**
  * GET /api/cart - Get current cart
- * [2025-11-04 23:50:00]
  */
-// [2025-01-29 00:20:00] GET /api/cart - Get current cart
+// GET /api/cart - Get current cart
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
-    // [2025-01-29 00:20:00] 添加日志用于调试购物车为空的问题
+// 添加日志用于调试购物车为空的问题
     logger.info('Getting cart', {
       userId: userId || null,
       sessionId: sessionId || null,
@@ -154,7 +151,7 @@ exports.getCart = async (req, res) => {
 
     const cart = await getOrCreateCart(userId, sessionId);
 
-    // [2025-01-29 00:20:00] 添加日志记录购物车状态
+// 添加日志记录购物车状态
     logger.info('Cart retrieved', {
       cartId: cart.id,
       itemCount: cart.items?.length || 0,
@@ -162,7 +159,7 @@ exports.getCart = async (req, res) => {
       sessionId: sessionId || null,
     });
 
-    // [2025-01-29 00:30:00] 确保 sessionId cookie 被设置（即使已经有 cookie，也要确保响应中包含）
+// 确保 sessionId cookie 被设置（即使已经有 cookie，也要确保响应中包含）
     // 这样可以确保浏览器在跨域情况下正确保存 cookie
     if (!userId && sessionId) {
       const isProduction = process.env.NODE_ENV === 'production';
@@ -183,7 +180,7 @@ exports.getCart = async (req, res) => {
     const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
 
     // Format items for response
-    // [2025-01-29 12:00:00] 优化图片 URL，确保返回完整的绝对路径
+// 优化图片 URL，确保返回完整的绝对路径
     const items = cart.items
       .filter(item => {
         if (!item.variant) {
@@ -200,7 +197,7 @@ exports.getCart = async (req, res) => {
         // 获取图片 URL（优先使用设计缩略图，其次是 variant 的 imageUrl，最后是 product 的第一张图片）
         let thumbnailUrl = item.design?.thumbnailUrl || item.variant.imageUrl || item.variant.product.images?.[0]?.url || null;
 
-        // [2025-01-29 12:00:00] 使用 optimizeImageUrl 优化图片 URL，确保是完整的绝对路径
+// 使用 optimizeImageUrl 优化图片 URL，确保是完整的绝对路径
         if (thumbnailUrl) {
           try {
             thumbnailUrl = optimizeImageUrl(thumbnailUrl, { req }) || thumbnailUrl;
@@ -222,8 +219,8 @@ exports.getCart = async (req, res) => {
           quantity: item.quantity,
           unitPrice: Number(item.priceSnapshot),
           subtotal: Number(item.priceSnapshot) * item.quantity,
-          // [2025-01-28 23:50:00] 修复：ProductImage 模型使用 url 字段，不是 imageUrl
-          // [2025-01-29 12:00:00] 优化后的图片 URL
+// 修复：ProductImage 模型使用 url 字段，不是 imageUrl
+// 优化后的图片 URL
           thumbnail: thumbnailUrl,
           designId: item.designId,
           sizeBreakdown: item.sizeBreakdown,
@@ -247,17 +244,16 @@ exports.getCart = async (req, res) => {
 
 /**
  * POST /api/cart/items - Add item to cart
- * [2025-11-04 23:50:00]
- * [2025-01-27 17:30:00] Support adding design to cart (designId + variantId)
+* Support adding design to cart (designId + variantId)
  */
-// [2025-01-29 00:25:00] POST /api/cart/items - Add item to cart
+// POST /api/cart/items - Add item to cart
 exports.addItem = async (req, res) => {
   try {
     const { variantId, designId, quantity = 1, sizeBreakdown, metadata } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
-    // [2025-01-29 00:25:00] 添加日志用于调试购物车为空的问题
+// 添加日志用于调试购物车为空的问题
     logger.info('Adding item to cart - request received', {
       variantId,
       quantity,
@@ -275,7 +271,7 @@ exports.addItem = async (req, res) => {
       return res.status(400).json({ error: 'Quantity must be at least 1' });
     }
 
-    // [2025-01-28 23:35:00] Verify variant exists and get price
+// Verify variant exists and get price
     // 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
     const variant = await prisma.variant.findUnique({
       where: { id: variantId },
@@ -288,7 +284,7 @@ exports.addItem = async (req, res) => {
       return res.status(404).json({ error: 'Product variant not found' });
     }
 
-    // [2025-01-27 17:30:00] If designId is provided, verify design exists and belongs to user
+// If designId is provided, verify design exists and belongs to user
     let design = null;
     if (designId) {
       design = await prisma.design.findUnique({
@@ -314,7 +310,7 @@ exports.addItem = async (req, res) => {
     }
 
     // Check stock availability
-    // [2025-01-27 13:40:00] Inventory validation
+// Inventory validation
     const totalQuantity = quantity; // Will check existing item quantity below
     const stockCheck = await checkStockAvailability(variantId, totalQuantity);
 
@@ -331,7 +327,7 @@ exports.addItem = async (req, res) => {
       });
     }
 
-    // [2025-01-28 23:55:00] Calculate price in dollars for priceSnapshot
+// Calculate price in dollars for priceSnapshot
     // 参考 productController.js: price = (basePrice + priceAdjustment) / 100
     // basePrice 是 cents (Int), priceAdjustment 是 Decimal(10,2) 但实际存储的值是 cents 的数值
     // priceSnapshot should be stored in dollars (Decimal) for cart items
@@ -341,10 +337,10 @@ exports.addItem = async (req, res) => {
     const priceInCents = basePriceInCents + priceAdjustmentInCents;
     const price = priceInCents / 100; // Convert to dollars for priceSnapshot (Decimal)
 
-    // [2025-01-29 00:20:00] Get or create cart
+// Get or create cart
     const cart = await getOrCreateCart(userId, sessionId);
 
-    // [2025-01-29 00:20:00] 记录购物车ID用于调试
+// 记录购物车ID用于调试
     logger.info('Cart retrieved for adding item', {
       cartId: cart.id,
       userId: userId || null,
@@ -352,7 +348,7 @@ exports.addItem = async (req, res) => {
       existingItemCount: cart.items?.length || 0,
     });
 
-    // [2025-01-27 17:30:00] Check if item already exists in cart (considering designId)
+// Check if item already exists in cart (considering designId)
     const existingItem = await prisma.cartItem.findFirst({
       where: {
         cartId: cart.id,
@@ -404,13 +400,13 @@ exports.addItem = async (req, res) => {
         },
       });
 
-      // [2025-01-27 17:30:00] If designId is provided, we need to link it to the cart item
+// If designId is provided, we need to link it to the cart item
       // Since Prisma schema doesn't support designId in CartItem, we'll use a workaround:
       // Store design reference in a separate table or extend the schema later
       // For now, we'll return the designId in the response for frontend to handle
     }
 
-    // [2025-01-29 00:15:00] 记录添加成功的日志
+// 记录添加成功的日志
     logger.info('Item added to cart successfully', {
       cartItemId: cartItem.id,
       variantId: cartItem.variantId,
@@ -420,7 +416,7 @@ exports.addItem = async (req, res) => {
       sessionId: sessionId || null,
     });
 
-    // [2025-01-29 00:30:00] 确保 sessionId cookie 被设置（即使已经有 cookie，也要确保响应中包含）
+// 确保 sessionId cookie 被设置（即使已经有 cookie，也要确保响应中包含）
     // 这样可以确保浏览器在跨域情况下正确保存 cookie
     if (!userId && sessionId) {
       const isProduction = process.env.NODE_ENV === 'production';
@@ -440,7 +436,7 @@ exports.addItem = async (req, res) => {
       quantity: cartItem.quantity,
     });
   } catch (error) {
-    // [2025-01-29 00:15:00] 增强错误日志记录
+// 增强错误日志记录
     logger.error('Error adding item to cart:', {
       error: error.message,
       stack: error.stack,
@@ -455,7 +451,6 @@ exports.addItem = async (req, res) => {
 
 /**
  * PATCH /api/cart/items/:id - Update item quantity
- * [2025-11-04 23:50:00]
  */
 exports.updateItem = async (req, res) => {
   try {
@@ -487,7 +482,7 @@ exports.updateItem = async (req, res) => {
     }
 
     // Check stock availability for new quantity
-    // [2025-01-27 13:40:00] Inventory validation
+// Inventory validation
     const stockCheck = await checkStockAvailability(cartItem.variantId, quantity);
 
     if (!stockCheck.sufficient) {
@@ -524,7 +519,6 @@ exports.updateItem = async (req, res) => {
 
 /**
  * DELETE /api/cart/items/:id - Remove item from cart
- * [2025-11-04 23:50:00]
  */
 exports.removeItem = async (req, res) => {
   try {
@@ -532,7 +526,7 @@ exports.removeItem = async (req, res) => {
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
 
-    // [2025-01-31 01:00:00] 添加详细日志，便于调试
+// 添加详细日志，便于调试
     logger.info('Removing cart item', {
       itemId: id,
       userId: userId || null,
@@ -541,7 +535,7 @@ exports.removeItem = async (req, res) => {
       hasSessionCookie: !!req.cookies?.sessionId,
     });
 
-    // [2025-01-31 02:30:00] Fix: Find item first, then verify ownership
+// Fix: Find item first, then verify ownership
     // This handles cases where user might have multiple carts (guest + user) 
     // and the item belongs to one of them, ensuring successful deletion.
     const cartItem = await prisma.cartItem.findUnique({
@@ -601,7 +595,6 @@ exports.removeItem = async (req, res) => {
 
 /**
  * DELETE /api/cart - Clear cart
- * [2025-11-04 23:50:00]
  */
 exports.clearCart = async (req, res) => {
   try {

@@ -1,22 +1,22 @@
 /**
  * Collection Detail Page
- * [2025-11-11 22:29:20] TODO scaffold
- * [2025-11-12 00:02:00] Fetches collection hero and product grid from backend
- * [2025-01-27 18:05:00] 补充 SEO 元数据
+* TODO scaffold
+* Fetches collection hero and product grid from backend
+* 补充 SEO 元数据
  */
 
 import Link from 'next/link';
-import Image from 'next/image'; // [2025-11-11 06:06:54] 使用 Next Image 提升性能
+import Image from 'next/image'; // 使用 Next Image 提升性能
 import { notFound, redirect } from 'next/navigation';
-// [2025-12-09] 修复：使用相对路径，通过 Next.js API 路由代理
+// 修复：使用相对路径，通过 Next.js API 路由代理
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-// [2025-01-27 18:05:00] 生成分类页面 SEO 元数据
+// 生成分类页面 SEO 元数据
 // 注意：由于是客户端数据获取，这里使用基础元数据模板
-// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+// 修复：Next.js 15 中 params 可能是 Promise，需要 await
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> | { slug: string } }): Promise<Metadata> {
-  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+// 处理 params 可能是 Promise 的情况
   const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
   const slug = resolvedParams.slug;
   const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
@@ -58,9 +58,9 @@ const currencyFormatter = new Intl.NumberFormat('en-CA', {
   currency: 'CAD',
 });
 
-// [2025-12-09] 修复：使用相对路径，通过 Next.js API 路由代理
+// 修复：使用相对路径，通过 Next.js API 路由代理
 async function fetchCollection(slug: string) {
-  // [2025-12-09] 使用相对路径，通过 Next.js API 路由代理到后端
+// 使用相对路径，通过 Next.js API 路由代理到后端
   // 这样可以确保在服务端组件中正确获取数据，避免环境变量问题
   const apiUrl = `/api/collections/${slug}`;
   
@@ -97,20 +97,20 @@ async function fetchCollection(slug: string) {
   }
 }
 
-// [2025-01-27 14:25:00] 为静态导出模式添加 generateStaticParams
+// 为静态导出模式添加 generateStaticParams
 export async function generateStaticParams() {
   // 返回空数组，因为分类 slug 是动态的，无法在构建时预生成
   // 页面会在客户端运行时动态加载
   return [];
 }
 
-// [2025-12-09 14:30:00] 修复：Next.js 15 中 params 可能是 Promise，需要 await
+// 修复：Next.js 15 中 params 可能是 Promise，需要 await
 export default async function CollectionPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
-  // [2025-12-09 14:30:00] 处理 params 可能是 Promise 的情况
+// 处理 params 可能是 Promise 的情况
   const resolvedParams = await (params instanceof Promise ? params : Promise.resolve(params));
   const { slug } = resolvedParams;
   
-  // [2025-01-30 12:00:00] 特殊处理：promotional-products 重定向到新的页面路由
+// 特殊处理：promotional-products 重定向到新的页面路由
   if (slug === 'promotional-products') {
     redirect('/promotional-products');
   }

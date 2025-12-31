@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Netlify 环境变量更新脚本
- * [2025-11-15 11:45:00] 通过 Netlify API 更新站点环境变量
+* 通过 Netlify API 更新站点环境变量
  * 
  * 使用方法:
  *   node scripts/update-netlify-env.js <SITE_ID> <VARIABLE_KEY> <VARIABLE_VALUE> [NETLIFY_TOKEN]

@@ -1,8 +1,8 @@
-// 2025-10-31 00:20:40 Mobile nav toggle and testimonials auto-rotate
-// 2025-10-31 00:28:20 Expanded interactions: debounce, sticky header, hero carousel, lazy loading, CTA ripple
+// Mobile nav toggle and testimonials auto-rotate
+// Expanded interactions: debounce, sticky header, hero carousel, lazy loading, CTA ripple
 
 (function () {
-  // 2025-10-31 00:28:20 Utilities: debounce
+// Utilities: debounce
   function debounce(fn, wait) {
     var t;
     return function () {
@@ -12,7 +12,7 @@
     };
   }
 
-  // 2025-10-31 00:20:40 Mobile navigation toggle
+// Mobile navigation toggle
   var toggle = document.getElementById('nav-toggle');
   var nav = document.getElementById('site-nav');
   if (toggle && nav) {
@@ -22,7 +22,7 @@
     });
   }
 
-  // 2025-10-31 00:28:20 Sticky header on scroll
+// Sticky header on scroll
   var header = document.getElementById('main-header');
   if (header) {
     var onScroll = debounce(function () {
@@ -33,7 +33,7 @@
     onScroll();
   }
 
-  // 2025-10-31 00:20:40 Testimonials auto-rotate
+// Testimonials auto-rotate
   var carousel = document.querySelector('[data-carousel]');
   if (carousel) {
     var slides = Array.from(carousel.querySelectorAll('.review-slide'));
@@ -57,7 +57,7 @@
     }
   }
 
-  // 2025-10-31 00:28:20 Hero carousel auto-rotate
+// Hero carousel auto-rotate
   var hero = document.querySelector('[data-hero-carousel]');
   if (hero) {
     var heroSlides = Array.from(hero.querySelectorAll('[data-hero-slide]'));
@@ -77,7 +77,7 @@
     }
   }
 
-  // 2025-10-31 00:28:20 Lazy load images via IntersectionObserver
+// Lazy load images via IntersectionObserver
   var io;
   if ('IntersectionObserver' in window) {
     io = new IntersectionObserver(function (entries) {
@@ -105,7 +105,7 @@
     });
   }
 
-  // 2025-10-31 00:28:20 CTA ripple effect
+// CTA ripple effect
   document.addEventListener('click', function (e) {
     var btn = e.target.closest('a[role="button"], button');
     if (!btn) return;
@@ -120,7 +120,7 @@
     setTimeout(function () { ripple.remove(); }, 600);
   }, { passive: true });
 
-  // 2025-10-31 02:25:00 Load hero assets from CMS-friendly config
+// Load hero assets from CMS-friendly config
   (function loadHeroFromConfig() {
     try {
       fetch('./assets/hero/hero.json', { cache: 'no-cache' })

@@ -2,7 +2,7 @@
 
 /**
  * Admin User Detail Client
- * [2025-11-15 14:35:40] 接入 /api/admin/users/:id 数据
+* 接入 /api/admin/users/:id 数据
  */
 import { useState } from 'react';
 import Link from 'next/link';

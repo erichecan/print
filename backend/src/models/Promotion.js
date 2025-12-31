@@ -1,4 +1,4 @@
-// [2025-11-02 20:58:00] Promotion model
+// Promotion model
 module.exports = (sequelize, DataTypes) => {
   const Promotion = sequelize.define('Promotion', {
     id: {

@@ -1,15 +1,15 @@
 /**
  * Edit Upload Panel - 编辑上传图片面板
- * [2025-01-30 17:20:00] 实现 Edit Upload 面板，包含 Size、Center、Layering、Flip、Duplicate、Rotation 等控件
- * [2025-01-30 23:30:00] 根据 designlab-upload02.jpeg 更新控件顺序和样式，完全匹配 Custom Ink
+* 实现 Edit Upload 面板，包含 Size、Center、Layering、Flip、Duplicate、Rotation 等控件
+* 根据 designlab-upload02.jpeg 更新控件顺序和样式，完全匹配 Custom Ink
  */
 'use client';
 
 import React, { useState, useEffect } from 'react';
-// [2025-01-30 21:45:00] 修复 fabric.js 导入：在 Next.js 中使用命名空间导入
+// 修复 fabric.js 导入：在 Next.js 中使用命名空间导入
 import * as fabric from 'fabric';
-import { UploadEditControls } from '../../../design-lab5/toolbar/controls'; // 2025-12-16 02:35:10 复用 Upload 工具栏组件
-import { applyCornerControls } from '../../../design-lab5/upload-controls/registerUploadCornerControls'; // [2025-12-16 05:10:00] 导入角控件应用函数
+import { UploadEditControls } from '../../../design-lab5/toolbar/controls'; // 复用 Upload 工具栏组件
+import { applyCornerControls } from '../../../design-lab5/upload-controls/registerUploadCornerControls'; // 导入角控件应用函数
 
 interface EditUploadPanelProps {
   selectedImage: fabric.Image | null;
@@ -18,7 +18,7 @@ interface EditUploadPanelProps {
   onReset?: () => void;
   onSave?: () => void;
   onClose?: () => void;
-  // [2025-12-16 07:14:10] 已移除上传评分模块：保留回调仅为兼容旧调用点（当前面板不再渲染入口）
+// 已移除上传评分模块：保留回调仅为兼容旧调用点（当前面板不再渲染入口）
   onOpenRatingModal?: () => void;
 }
 
@@ -32,14 +32,14 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   onOpenRatingModal
 }) => {
   const [size, setSize] = useState({ width: 0, height: 0 });
-  const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 }); // [2025-12-08] 英寸单位尺寸
+const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 }); // 英寸单位尺寸
   const [rotation, setRotation] = useState(0);
-  // [2025-01-30 10:30:00] 移除 makeOneColor 和 removeBackground 状态（功能已移除）
+// 移除 makeOneColor 和 removeBackground 状态（功能已移除）
   const [originalImageData, setOriginalImageData] = useState<string | null>(null);
-  const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // [2025-12-08] 比例锁状态
-  const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // [2025-12-08] 原始宽高比
+const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // 比例锁状态
+const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽高比
 
-  // [2025-01-30 23:30:00] 保存原始图片数据用于 Reset
+// 保存原始图片数据用于 Reset
   useEffect(() => {
     if (selectedImage && !originalImageData) {
       selectedImage.toDataURL((dataUrl) => {
@@ -48,8 +48,8 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   }, [selectedImage, originalImageData]);
 
-  // [2025-01-30 17:20:00] 更新尺寸和旋转值
-  // [2025-12-08] 添加英寸单位计算和原始宽高比保存
+// 更新尺寸和旋转值
+// 添加英寸单位计算和原始宽高比保存
   useEffect(() => {
     if (selectedImage) {
       // 计算实际尺寸（考虑缩放）
@@ -65,15 +65,15 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       setSizeInches({ width: widthInches, height: heightInches }); // 英寸单位
       setRotation(selectedImage.angle || 0);
 
-      // [2025-12-08] 保存原始宽高比
+// 保存原始宽高比
       if (actualHeight > 0) {
         setOriginalAspectRatio(actualWidth / actualHeight);
       }
     }
   }, [selectedImage]);
 
-  // [2025-01-30 17:20:00] Center 按钮
-  // [2025-01-30 22:05:00] 添加调试日志和错误处理
+// Center 按钮
+// 添加调试日志和错误处理
   const handleCenter = () => {
     if (!selectedImage || !canvas) {
       console.warn('[EditUploadPanel] handleCenter: selectedImage or canvas is null');
@@ -96,7 +96,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     onUpdate();
   };
 
-  // [2025-12-16 04:00:00] Bring to Front - 修复 Fabric.js v6 API
+// Bring to Front - 修复 Fabric.js v6 API
   const handleBringToFront = () => {
     if (!selectedImage || !canvas) return;
     try {
@@ -122,8 +122,8 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // [2025-12-16 04:00:00] Send to Back - 修复 Fabric.js v6 API
-  // [2025-12-16 04:15:00] 限制：不能将对象移到商品底图（background）下面
+// Send to Back - 修复 Fabric.js v6 API
+// 限制：不能将对象移到商品底图（background）下面
   const handleSendToBack = async () => {
     if (!selectedImage || !canvas) return;
 
@@ -136,15 +136,15 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       const backgroundIndex = objects.findIndex((obj: any) => {
         const name = (obj as any).name || '';
         const layerType = (obj as any).data?.layerType;
-        // [2025-12-16 06:20:00] 兼容 5.0：底图名称为 product-image-base
+// 兼容 5.0：底图名称为 product-image-base
         return name === 'background' || name === 'product-image-base' || name.startsWith('product-image-') || layerType === 'product' || layerType === 'product-image';
       });
 
-      // [2025-12-16 04:50:00] 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
+// 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
       // 如果没有找到商品底图，则移动到索引 0（最底层）
       const targetIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
 
-      // [2025-12-16 04:50:00] 添加调试日志
+// 添加调试日志
       console.log('[EditUploadPanel] sendToBack called:', {
         currentIndex,
         backgroundIndex,
@@ -153,13 +153,13 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
         selectedImageName: (selectedImage as any).name,
       });
 
-      // [2025-12-16 04:50:00] 如果已经在目标位置，不需要移动
+// 如果已经在目标位置，不需要移动
       if (currentIndex === targetIndex) {
         console.log('[EditUploadPanel] Already at target position, skipping');
         return;
       }
 
-      // [2025-12-16 06:20:30] 修复根因：不再先 sendObjectToBack（会把对象送到绝对底层，必然跑到商品底图后面）
+// 修复根因：不再先 sendObjectToBack（会把对象送到绝对底层，必然跑到商品底图后面）
       // 直接将对象移动到“商品底图之后的第一个位置”（backgroundIndex + 1），使用 Fabric API 保证顺序生效
       if (typeof (canvas as any).moveObjectTo === 'function') {
         (canvas as any).moveObjectTo(selectedImage, targetIndex);
@@ -176,7 +176,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
 
       canvas.renderAll();
 
-      // [2025-12-16 06:20:30] 最终验证（保留 debug 日志）
+// 最终验证（保留 debug 日志）
       const verifiedObjects = canvas.getObjects();
       const verifiedIndex = verifiedObjects.indexOf(selectedImage);
       const verifiedBackgroundIndex = verifiedObjects.findIndex((obj: any) => {
@@ -200,7 +200,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // [2025-01-30 17:20:00] Flip Horizontal
+// Flip Horizontal
   const handleFlipHorizontal = () => {
     if (!selectedImage) return;
     selectedImage.set('flipX', !selectedImage.flipX);
@@ -211,7 +211,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // [2025-01-30 17:20:00] Flip Vertical
+// Flip Vertical
   const handleFlipVertical = () => {
     if (!selectedImage) return;
     selectedImage.set('flipY', !selectedImage.flipY);
@@ -222,7 +222,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // [2025-12-16 04:02:00] Duplicate - 修复 clone API 兼容性问题
+// Duplicate - 修复 clone API 兼容性问题
   const handleDuplicate = async () => {
     if (!selectedImage || !canvas) return;
 
@@ -258,7 +258,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
 
       canvas.add(cloned);
 
-      // [2025-12-16 06:21:10] 修复根因：统一使用 applyCornerControls
+// 修复根因：统一使用 applyCornerControls
       try {
         applyCornerControls({ canvas, obj: cloned });
         console.log('[EditUploadPanel] ✅ 角控件已应用到复制的对象');
@@ -275,7 +275,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // [2025-12-08] 处理尺寸变化
+// 处理尺寸变化
   const handleSizeChange = (widthInches: number, heightInches: number) => {
     if (!selectedImage) return;
 
@@ -306,7 +306,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // [2025-01-30 17:20:00] Rotation slider
+// Rotation slider
   const handleRotationSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const angle = parseFloat(e.target.value);
     setRotation(angle);
@@ -321,7 +321,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     }
   };
 
-  // 2025-12-16 02:35:10 数字输入框调整角度
+// 数字输入框调整角度
   const handleRotationInputChange = (angle: number) => {
     setRotation(angle);
     if (selectedImage) {
@@ -335,7 +335,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
   };
 
 
-  // [2025-01-30 23:30:00] Reset To Original
+// Reset To Original
   const handleReset = () => {
     if (!selectedImage || !originalImageData) return;
 
@@ -364,13 +364,13 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
     });
   };
 
-  // [2025-01-30 23:30:00] Save Design
+// Save Design
   const handleSave = () => {
     onSave?.();
     onUpdate();
   };
 
-  // [2025-01-30 10:30:00] 移除 Edit Colors 颜色色板（功能已移除）
+// 移除 Edit Colors 颜色色板（功能已移除）
 
   if (!selectedImage) {
     return (
@@ -398,7 +398,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
       </div>
 
       <div className="dl-edit-upload-panel__content">
-        {/* Upload Size - [2025-12-08] 添加编辑功能和比例锁 */}
+{/* Upload Size - 添加编辑功能和比例锁 */}
         <div className="dl-edit-upload-panel__section">
           <div className="dl-edit-upload-panel__size-header">
             <label className="dl-edit-upload-panel__label">Upload Size</label>
@@ -432,7 +432,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
                 if (newWidth > 0) {
                   let newHeight = sizeInches.height;
                   if (aspectRatioLocked) {
-                    // [2025-12-08] 锁定比例时，按比例计算高度
+// 锁定比例时，按比例计算高度
                     newHeight = newWidth / originalAspectRatio;
                   }
                   handleSizeChange(newWidth, newHeight);
@@ -452,7 +452,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
                 if (newHeight > 0) {
                   let newWidth = sizeInches.width;
                   if (aspectRatioLocked) {
-                    // [2025-12-08] 锁定比例时，按比例计算宽度
+// 锁定比例时，按比例计算宽度
                     newWidth = newHeight * originalAspectRatio;
                   }
                   handleSizeChange(newWidth, newHeight);
@@ -466,7 +466,7 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
           </div>
         </div>
 
-        {/* [2025-01-30 10:30:00] 移除 Edit Colors、Make One Color New! 和 Remove Background Color 模块（按需求） */}
+{/* 移除 Edit Colors、Make One Color New! 和 Remove Background Color 模块（按需求） */}
 
         {/* Positioning + Rotation Controls（统一封装为 UploadEditControls） */}
         <UploadEditControls
@@ -502,10 +502,10 @@ const EditUploadPanel: React.FC<EditUploadPanelProps> = ({
         </div>
 
         {/* Information Box */}
-        {/* [2025-12-16 07:14:10] 按产品要求移除：Pantone 提示模块（避免 Upload 面板出现无关营销信息） */}
+{/* 按产品要求移除：Pantone 提示模块（避免 Upload 面板出现无关营销信息） */}
 
         {/* Feedback Link */}
-        {/* [2025-12-16 07:14:10] 按产品要求移除：Upload 体验评分入口（截图中的模块） */}
+{/* 按产品要求移除：Upload 体验评分入口（截图中的模块） */}
       </div>
     </div>
   );

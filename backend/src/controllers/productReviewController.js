@@ -1,6 +1,6 @@
 /**
  * Product Review Controller
- * [2025-01-27 21:45:00] 产品评价管理
+* 产品评价管理
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -38,7 +38,7 @@ exports.getProductReviews = async (req, res) => {
       return res.json(cached);
     }
     
-    // [2025-11-18 14:30:00] Removed user include due to missing relation; frontend handles anonymous data
+// Removed user include due to missing relation; frontend handles anonymous data
     const [reviews, total] = await Promise.all([
       prisma.productReview.findMany({
         where,
@@ -161,7 +161,7 @@ exports.createProductReview = async (req, res) => {
       }
     }
     
-    // [2025-11-18 14:30:00] Create review without eager-loading user relation
+// Create review without eager-loading user relation
     const review = await prisma.productReview.create({
       data: {
         productId,

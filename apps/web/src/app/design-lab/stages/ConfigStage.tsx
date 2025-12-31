@@ -1,6 +1,6 @@
 /**
  * Design Lab Config Stage
- * [2025-01-30 23:30:00] Design Lab 4.0: Config 阶段
+* Design Lab 4.0: Config 阶段
  * 
  * 职责：
  * - 加载静态配置（fonts/artwork 分类、images 白名单）
@@ -21,7 +21,7 @@ export function ConfigStage({ children }: ConfigStageProps) {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // [2025-01-30 23:30:00] Design Lab 4.0: 加载静态配置
+// Design Lab 4.0: 加载静态配置
     // 这里可以加载字体分类、素材库分类等静态配置
     // 目前使用默认配置，失败不影响初始化
     try {

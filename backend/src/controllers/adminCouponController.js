@@ -1,13 +1,13 @@
 /**
  * Admin Coupon Controller
- * [2025-11-15 15:15:00] Coupon CRUD for admin console
- * [2025-01-28 11:20:00] 迁移到 Prisma
+* Coupon CRUD for admin console
+* 迁移到 Prisma
  */
 const prisma = require('../lib/prisma');
 
 const toDecimal = (value) => (value === undefined || value === null ? null : Number(value));
 
-// [2025-01-28 11:20:00] Map Prisma coupon to API format
+// Map Prisma coupon to API format
 const mapCoupon = (coupon) => ({
   id: coupon.id,
   code: coupon.code,
@@ -29,7 +29,7 @@ exports.listCoupons = async (req, res) => {
   try {
     const { search, status = 'all' } = req.query;
 
-    // [2025-01-28 11:20:00] Build Prisma where clause
+// Build Prisma where clause
     const where = {};
     if (search) {
       where.code = { contains: search, mode: 'insensitive' };
@@ -73,10 +73,10 @@ exports.createCoupon = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // [2025-01-28 11:20:00] Map type string to enum
+// Map type string to enum
     const couponType = type.toUpperCase() === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED';
 
-    // [2025-01-28 11:20:00] Parse dates (expecting YYYY-MM-DD format)
+// Parse dates (expecting YYYY-MM-DD format)
     const startDateObj = new Date(startDate);
     const endDateObj = new Date(endDate);
 
@@ -98,7 +98,7 @@ exports.createCoupon = async (req, res) => {
     res.status(201).json({ data: mapCoupon(coupon) });
   } catch (error) {
     console.error('[adminCouponController] createCoupon error:', error);
-    // [2025-01-28 11:20:00] Prisma unique constraint error code is P2002
+// Prisma unique constraint error code is P2002
     if (error.code === 'P2002') {
       return res.status(409).json({ error: 'Coupon code already exists' });
     }
@@ -111,13 +111,13 @@ exports.updateCoupon = async (req, res) => {
     const { id } = req.params;
     const payload = req.body || {};
 
-    // [2025-01-28 11:20:00] Check if coupon exists
+// Check if coupon exists
     const existingCoupon = await prisma.coupon.findUnique({ where: { id } });
     if (!existingCoupon) {
       return res.status(404).json({ error: 'Coupon not found' });
     }
 
-    // [2025-01-28 11:20:00] Build update data
+// Build update data
     const updateData = {};
     if (payload.code) {
       updateData.code = payload.code.toUpperCase().trim();
@@ -201,14 +201,14 @@ exports.deleteCoupon = async (req, res) => {
 
 /**
  * Get coupon statistics
- * [2025-12-06 17:30:00] Coupon statistics for Issue #138
+* Coupon statistics for Issue #138
  */
 exports.getCouponStatistics = async (req, res) => {
   try {
     const { couponId, startDate, endDate } = req.query;
     const timestamp = new Date().toISOString();
 
-    // [2025-12-06 17:30:00] Build date filter
+// Build date filter
     const dateFilter = {};
     if (startDate) {
       dateFilter.gte = new Date(startDate);
@@ -217,13 +217,13 @@ exports.getCouponStatistics = async (req, res) => {
       dateFilter.lte = new Date(endDate);
     }
 
-    // [2025-12-06 17:30:00] Build coupon filter
+// Build coupon filter
     const couponFilter = {};
     if (couponId) {
       couponFilter.couponId = couponId;
     }
 
-    // [2025-12-06 17:30:00] Get overall statistics
+// Get overall statistics
     const totalCoupons = await prisma.coupon.count();
     const activeCoupons = await prisma.coupon.count({ where: { isActive: true } });
     const totalUsage = await prisma.orderCoupon.count({
@@ -233,7 +233,7 @@ exports.getCouponStatistics = async (req, res) => {
       },
     });
 
-    // [2025-12-06 17:30:00] Calculate total discount amount
+// Calculate total discount amount
     const orderCoupons = await prisma.orderCoupon.findMany({
       where: {
         ...couponFilter,
@@ -246,7 +246,7 @@ exports.getCouponStatistics = async (req, res) => {
 
     const totalDiscountAmount = orderCoupons.reduce((sum, oc) => sum + Number(oc.discountAmount), 0);
 
-    // [2025-12-06 17:30:00] Get top used coupons
+// Get top used coupons
     const topCoupons = await prisma.orderCoupon.groupBy({
       by: ['couponId'],
       where: {
@@ -266,7 +266,7 @@ exports.getCouponStatistics = async (req, res) => {
       take: 10,
     });
 
-    // [2025-12-06 17:30:00] Get coupon details for top coupons
+// Get coupon details for top coupons
     const topCouponDetails = await Promise.all(
       topCoupons.map(async (tc) => {
         const coupon = await prisma.coupon.findUnique({
@@ -295,7 +295,7 @@ exports.getCouponStatistics = async (req, res) => {
       })
     );
 
-    // [2025-12-06 17:30:00] Get usage by date (last 30 days)
+// Get usage by date (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
@@ -315,7 +315,7 @@ exports.getCouponStatistics = async (req, res) => {
       },
     });
 
-    // [2025-12-06 17:30:00] Format usage by date
+// Format usage by date
     const formattedUsageByDate = usageByDate.map((ubd) => ({
       date: ubd.createdAt.toISOString().split('T')[0],
       usageCount: ubd._count.id,
@@ -343,14 +343,14 @@ exports.getCouponStatistics = async (req, res) => {
 
 /**
  * Get coupon detail statistics
- * [2025-12-06 17:30:00] Get detailed statistics for a specific coupon
+* Get detailed statistics for a specific coupon
  */
 exports.getCouponDetailStatistics = async (req, res) => {
   try {
     const { id } = req.params;
     const { startDate, endDate } = req.query;
 
-    // [2025-12-06 17:30:00] Check if coupon exists
+// Check if coupon exists
     const coupon = await prisma.coupon.findUnique({
       where: { id },
       include: {
@@ -383,15 +383,15 @@ exports.getCouponDetailStatistics = async (req, res) => {
       return res.status(404).json({ error: 'Coupon not found' });
     }
 
-    // [2025-12-06 17:30:00] Calculate statistics
+// Calculate statistics
     const usageCount = coupon.orderCoupons.length;
     const totalDiscount = coupon.orderCoupons.reduce((sum, oc) => sum + Number(oc.discountAmount), 0);
     const averageDiscount = usageCount > 0 ? totalDiscount / usageCount : 0;
 
-    // [2025-12-06 17:30:00] Get unique users count
+// Get unique users count
     const uniqueUsers = new Set(coupon.orderCoupons.map((oc) => oc.userId).filter(Boolean)).size;
 
-    // [2025-12-06 17:30:00] Get usage by date
+// Get usage by date
     const usageByDate = coupon.orderCoupons.reduce((acc, oc) => {
       const date = oc.createdAt.toISOString().split('T')[0];
       if (!acc[date]) {

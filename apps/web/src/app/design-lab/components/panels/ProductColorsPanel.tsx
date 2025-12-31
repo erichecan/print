@@ -1,6 +1,6 @@
 /**
  * Product Colors Panel - 产品颜色选择面板
- * [2025-12-20] Adapted from ProductColorsModal to display in the left ToolPanel area.
+* Adapted from ProductColorsModal to display in the left ToolPanel area.
  */
 'use client';
 

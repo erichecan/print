@@ -1,6 +1,6 @@
 /**
  * Color Selector Modal - 颜色选择器适配器
- * [2025-12-18 21:18:56] 复用现有的 ProductColorsModal，添加适配层
+* 复用现有的 ProductColorsModal，添加适配层
  */
 'use client';
 
@@ -30,7 +30,7 @@ const ColorSelectorModal: React.FC<ColorSelectorModalProps> = ({
   const [colors, setColors] = React.useState<ProductColor[]>(providedColors || []);
   const [loading, setLoading] = React.useState(false);
 
-  // [2025-12-18 21:18:56] 如果提供了颜色列表，直接使用；否则从 API 获取
+// 如果提供了颜色列表，直接使用；否则从 API 获取
   React.useEffect(() => {
     if (isOpen && !providedColors && productId) {
       loadColors();

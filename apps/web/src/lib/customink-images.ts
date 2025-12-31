@@ -1,6 +1,6 @@
 /**
  * Custom Ink Image Utilities (GCS Backed)
- * [2025-12-20] Refactored to use GCS hosted images directly.
+* Refactored to use GCS hosted images directly.
  * Custom Ink Dependencies have been removed from runtime logic.
  */
 
@@ -43,7 +43,7 @@ export function getDefaultProductImageUrl(
   colorName: string | null = 'White',
   view: ViewType = 'front'
 ): string {
-  // [2025-12-28] Use researched assets for specific views if they match our demo color
+// Use researched assets for specific views if they match our demo color
   // or just force them for now to ensure the feature works for the user review
   if (view === 'left-sleeve') return ASSETS.leftSleeve;
   if (view === 'right-sleeve') return ASSETS.rightSleeve;
@@ -63,7 +63,7 @@ export function getDefaultProductBaseImages(colorName: string | null = 'White'):
   'right-sleeve': string;
 } {
   const safeColor = colorName || 'White';
-  // [2025-12-28] For Demo: If color is 'Irish Green' (or anything for now), reuse the high-res assets we found
+// For Demo: If color is 'Irish Green' (or anything for now), reuse the high-res assets we found
   // to ensure the sleeve feature looks correct.
   // Ideally we would map every color.
 

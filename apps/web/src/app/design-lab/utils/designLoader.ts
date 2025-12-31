@@ -1,6 +1,6 @@
 /**
  * 设计加载工具
- * [2025-01-30 23:55:00] 从云端或本地加载设计到 Design Lab
+* 从云端或本地加载设计到 Design Lab
  */
 'use client';
 
@@ -10,14 +10,13 @@ import { getLocalDesignById, type LocalDesignDraft } from './localStorage';
 
 /**
  * 设计加载结果
- * [2025-01-30 23:55:00]
  */
 export interface DesignLoadResult {
   success: boolean;
   design?: {
     id: string;
     name: string;
-    canvasData: DesignCanvasSnapshot; // [2025-01-31 00:15:00] 使用正确的类型
+canvasData: DesignCanvasSnapshot; // 使用正确的类型
     productInfo: {
       productId: string;
       productName: string;
@@ -37,7 +36,6 @@ export interface DesignLoadResult {
 
 /**
  * 从云端加载设计
- * [2025-01-30 23:55:00]
  */
 async function loadDesignFromCloud(designId: string): Promise<DesignLoadResult> {
   try {
@@ -49,7 +47,7 @@ async function loadDesignFromCloud(designId: string): Promise<DesignLoadResult> 
 
     const design = response.data;
 
-    // [2025-01-31 00:15:00] 转换云端设计格式为 Design Lab 需要的格式
+// 转换云端设计格式为 Design Lab 需要的格式
     // 云端设计可能只有单面数据（canvasSnapshot），需要转换为三面格式
     const canvasSnapshot: DesignCanvasSnapshot = design.canvasSnapshot || {
       size: { width: 4000, height: 4800 },
@@ -71,7 +69,7 @@ async function loadDesignFromCloud(designId: string): Promise<DesignLoadResult> 
         currentView: 'front', // 默认视图
         viewCanvases: {
           front: canvasSnapshot,
-          back: { size: canvasSnapshot.size, objects: [] }, // [2025-01-31 00:15:00] 云端设计可能只有单面数据
+back: { size: canvasSnapshot.size, objects: [] }, // 云端设计可能只有单面数据
           sleeve: { size: canvasSnapshot.size, objects: [] },
         },
       },
@@ -89,7 +87,6 @@ async function loadDesignFromCloud(designId: string): Promise<DesignLoadResult> 
 
 /**
  * 从本地加载设计
- * [2025-01-30 23:55:00]
  */
 function loadDesignFromLocal(designId: string): DesignLoadResult {
   try {
@@ -124,7 +121,6 @@ function loadDesignFromLocal(designId: string): DesignLoadResult {
 
 /**
  * 加载设计到 Design Lab
- * [2025-01-30 23:55:00]
  * @param designId 设计ID
  * @param source 来源：'cloud' 或 'local'
  */
@@ -141,7 +137,6 @@ export async function loadDesignToDesignLab(
 
 /**
  * 根据合并设计对象加载设计
- * [2025-01-30 23:55:00]
  * 优先加载云端版本，如果不存在则加载本地版本
  */
 export async function loadMergedDesign(

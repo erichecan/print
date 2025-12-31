@@ -1,5 +1,5 @@
 /**
- * [2025-11-28 17:10:00] 数据库状态检查测试 - 验证 Admin 用户和商品数据
+* 数据库状态检查测试 - 验证 Admin 用户和商品数据
  */
 import { test, expect } from '@playwright/test';
 

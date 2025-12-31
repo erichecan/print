@@ -1,4 +1,4 @@
-// [2025-01-30 19:00:00] Font model for Design Lab font management
+// Font model for Design Lab font management
 module.exports = (sequelize, DataTypes) => {
   const Font = sequelize.define('Font', {
     id: {

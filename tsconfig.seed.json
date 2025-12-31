@@ -1,5 +1,5 @@
 {
-  "_comment": "ts-node seed compiler config [2025-11-18 11:18:45]",
+"_comment": "ts-node seed compiler config ",
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "Node"

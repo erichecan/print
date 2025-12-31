@@ -1,7 +1,7 @@
 /**
  * 促销产品类别数据
- * [2025-01-29 12:00:00] 定义促销产品页面的类别数据结构
- * [2025-01-30 15:30:00] 修复：减少到 18 个分类，每个分类分配独特的 GCS 图片，避免重复显示
+* 定义促销产品页面的类别数据结构
+* 修复：减少到 18 个分类，每个分类分配独特的 GCS 图片，避免重复显示
  * 参考 Custom Ink 促销产品页面的类别列表
  */
 
@@ -16,8 +16,8 @@ export interface PromotionalCategory {
 
 /**
  * 促销产品类别列表
- * [2025-01-29 12:00:00] 基于 Custom Ink 页面的类别，稍后会根据爬取的图片更新
- * [2025-01-30 15:30:00] 修复：减少到 18 个分类，每个分类分配独特的 GCS 图片，避免重复显示
+* 基于 Custom Ink 页面的类别，稍后会根据爬取的图片更新
+* 修复：减少到 18 个分类，每个分类分配独特的 GCS 图片，避免重复显示
  */
 export const promotionalCategories: PromotionalCategory[] = [
   {
@@ -168,7 +168,7 @@ export const promotionalCategories: PromotionalCategory[] = [
 
 /**
  * 根据slug获取类别
- * [2025-01-29 12:00:00] 辅助函数，用于查找类别
+* 辅助函数，用于查找类别
  */
 export function getCategoryBySlug(slug: string): PromotionalCategory | undefined {
   return promotionalCategories.find(cat => cat.slug === slug);
@@ -176,7 +176,7 @@ export function getCategoryBySlug(slug: string): PromotionalCategory | undefined
 
 /**
  * 获取排序后的类别列表
- * [2025-01-29 12:00:00] 返回按order字段排序的类别列表
+* 返回按order字段排序的类别列表
  */
 export function getSortedCategories(): PromotionalCategory[] {
   return [...promotionalCategories].sort((a, b) => a.order - b.order);

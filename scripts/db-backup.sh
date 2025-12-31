@@ -1,5 +1,5 @@
 #!/bin/bash
-# Database backup script [2025-11-12 03:15:00]
+# Database backup script 
 # Usage: ./scripts/db-backup.sh [output-dir]
 
 set -e

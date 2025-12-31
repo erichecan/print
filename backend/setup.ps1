@@ -1,4 +1,4 @@
-<# 后端快速初始化脚本 [2025-11-10 12:55:00] #>
+<# 后端快速初始化脚本 #>
 param(
   [switch]$InstallDependencies = $true,
   [switch]$GeneratePrisma = $true

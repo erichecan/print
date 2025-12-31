@@ -1,4 +1,4 @@
-// [2025-11-11 15:32:12] Design Lab routes
+// Design Lab routes
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -41,7 +41,7 @@ router.post(
 router.post('/:id/assets', authenticate, designController.generateAssetUploadUrl);
 router.post('/:id/quote', authenticateOptional, designController.requestQuote);
 router.post('/:id/order', authenticateOptional, designController.submitDesignOrder);
-// [2025-12-08] 分享设计
+// 分享设计
 router.post('/:id/share', authenticateOptional, designController.shareDesign);
 router.get('/share/:shareToken', designController.getDesignByShareToken); // 公开访问，无需认证
 

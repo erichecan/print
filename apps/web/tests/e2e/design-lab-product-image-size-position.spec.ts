@@ -1,6 +1,6 @@
 /**
  * Design Lab 底图大小与位置测试
- * [2025-12-19 21:30:00] 验证底图严格居中（left/top等于画布中心，误差≤2px）
+* 验证底图严格居中（left/top等于画布中心，误差≤2px）
  */
 import { test, expect } from './fixtures/test-base';
 import {
@@ -16,11 +16,11 @@ test.describe('Design Lab 底图大小与位置', () => {
   });
 
   test('底图应该严格居中（left/top等于画布中心，误差≤2px）', async ({ page }) => {
-    // [2025-12-19 21:30:00] 等待canvas初始化
+// 等待canvas初始化
     await page.waitForSelector('canvas', { timeout: 15000 });
     await page.waitForTimeout(3000); // 等待底图加载完成
     
-    // [2025-12-19 21:30:00] 通过evaluate获取Fabric canvas中的product-image对象信息
+// 通过evaluate获取Fabric canvas中的product-image对象信息
     const productImageInfo = await page.evaluate(() => {
       const fabricCanvas = (window as any).fabricCanvas || (window as any).DesignLabCanvas?.getCanvas();
       if (!fabricCanvas) return null;
@@ -34,7 +34,7 @@ test.describe('Design Lab 底图大小与位置', () => {
       
       if (!productImage) return null;
       
-      // [2025-12-19 21:30:00] 获取画布逻辑尺寸（考虑viewportTransform）
+// 获取画布逻辑尺寸（考虑viewportTransform）
       const vpt = fabricCanvas.viewportTransform;
       let logicalCanvasWidth = fabricCanvas.width || 1000;
       let logicalCanvasHeight = fabricCanvas.height || 1200;
@@ -69,27 +69,27 @@ test.describe('Design Lab 底图大小与位置', () => {
       };
     });
     
-    // [2025-12-19 21:30:00] 验证product-image对象存在
+// 验证product-image对象存在
     expect(productImageInfo).toBeTruthy();
     expect(productImageInfo?.found).toBe(true);
     
     if (productImageInfo) {
-      // [2025-12-19 21:30:00] 验证居中位置（误差阈值 ≤ 2px）- 这是最关键的测试
+// 验证居中位置（误差阈值 ≤ 2px）- 这是最关键的测试
       expect(productImageInfo.leftDiff, `left应该等于${productImageInfo.centerX}，实际是${productImageInfo.productImageLeft}，误差${productImageInfo.leftDiff}`).toBeLessThanOrEqual(2);
       expect(productImageInfo.topDiff, `top应该等于${productImageInfo.centerY}，实际是${productImageInfo.productImageTop}，误差${productImageInfo.topDiff}`).toBeLessThanOrEqual(2);
       
-      // [2025-12-19 21:30:00] 验证originX和originY是center（用于真正的居中）
+// 验证originX和originY是center（用于真正的居中）
       expect(productImageInfo.originX, 'originX应该是center').toBe('center');
       expect(productImageInfo.originY, 'originY应该是center').toBe('center');
     }
   });
 
   test('切换视图后底图仍应居中', async ({ page }) => {
-    // [2025-12-19 21:30:00] 等待canvas初始化
+// 等待canvas初始化
     await page.waitForSelector('canvas', { timeout: 15000 });
     await page.waitForTimeout(3000);
     
-    // [2025-12-19 21:30:00] 验证初始视图（front）的居中
+// 验证初始视图（front）的居中
     const checkCentered = async (viewName: string) => {
       const info = await page.evaluate((view) => {
         const fabricCanvas = (window as any).fabricCanvas || (window as any).DesignLabCanvas?.getCanvas();
@@ -141,14 +141,14 @@ test.describe('Design Lab 底图大小与位置', () => {
     
     await checkCentered('front');
     
-    // [2025-12-19 21:30:00] 切换到back视图
+// 切换到back视图
     const backButton = page.locator('button[aria-label*="Back" i], .dl-sidebar__btn:has-text("Back")').first();
     if (await backButton.isVisible({ timeout: 2000 }).catch(() => false)) {
       await backButton.click();
       await page.waitForTimeout(2000); // 等待视图切换和底图加载
       await checkCentered('back');
       
-      // [2025-12-19 21:30:00] 切换回front视图
+// 切换回front视图
       const frontButton = page.locator('button[aria-label*="Front" i], .dl-sidebar__btn:has-text("Front")').first();
       if (await frontButton.isVisible({ timeout: 2000 }).catch(() => false)) {
         await frontButton.click();
@@ -159,7 +159,7 @@ test.describe('Design Lab 底图大小与位置', () => {
   });
 
   test('底图尺寸应该达到90%×90%目标占比（CustomInk风格：铺满画布主要区域）', async ({ page }) => {
-    // [2025-12-19 21:30:00] 等待canvas初始化
+// 等待canvas初始化
     await page.waitForSelector('canvas', { timeout: 15000 });
     await page.waitForTimeout(3000);
     
@@ -189,8 +189,8 @@ test.describe('Design Lab 底图大小与位置', () => {
       const actualWidth = (productImage.width || 0) * scaleX;
       const actualHeight = (productImage.height || 0) * scaleY;
       
-      const targetWidth = logicalCanvasWidth * 0.9; // [2025-12-19 22:00:00] 更新为90%
-      const targetHeight = logicalCanvasHeight * 0.9; // [2025-12-19 22:00:00] 保持90%
+const targetWidth = logicalCanvasWidth * 0.9; // 更新为90%
+const targetHeight = logicalCanvasHeight * 0.9; // 保持90%
       
       return {
         found: true,
@@ -209,28 +209,28 @@ test.describe('Design Lab 底图大小与位置', () => {
     expect(productImageInfo?.found).toBe(true);
     
     if (productImageInfo) {
-      // [2025-12-19 22:00:00] cover模式：至少一边应该达到或超过目标（90%）
+// cover模式：至少一边应该达到或超过目标（90%）
       const widthOk = productImageInfo.widthRatio >= 1.0;
       const heightOk = productImageInfo.heightRatio >= 1.0;
       expect(widthOk || heightOk, 'cover模式：至少一边应该达到目标尺寸（90%）').toBe(true);
       
-      // [2025-12-19 22:00:00] 验证尺寸应该接近90%（cover模式下，至少有一边达到或超过90%）
+// 验证尺寸应该接近90%（cover模式下，至少有一边达到或超过90%）
       const isWidthNear90 = productImageInfo.widthRatio >= 0.95 && productImageInfo.widthRatio <= 1.05;
       const isHeightNear90 = productImageInfo.heightRatio >= 0.95 && productImageInfo.heightRatio <= 1.05;
       expect(isWidthNear90 || isHeightNear90, 'cover模式：至少一边应该接近90%目标尺寸').toBe(true);
       
-      // [2025-12-19 21:30:00] 尺寸不应该过大（不超过1.2倍）
+// 尺寸不应该过大（不超过1.2倍）
       expect(productImageInfo.widthRatio).toBeLessThanOrEqual(1.2);
       expect(productImageInfo.heightRatio).toBeLessThanOrEqual(1.2);
     }
   });
 
   test('底图应该在最底层，不影响其他图层', async ({ page }) => {
-    // [2025-12-19 21:30:00] 等待canvas初始化
+// 等待canvas初始化
     await page.waitForSelector('canvas', { timeout: 15000 });
     await page.waitForTimeout(3000);
     
-    // [2025-12-19 21:30:00] 验证product-image对象不可选中
+// 验证product-image对象不可选中
     const isSelectable = await page.evaluate(() => {
       const fabricCanvas = (window as any).fabricCanvas || (window as any).DesignLabCanvas?.getCanvas();
       if (!fabricCanvas) return null;
@@ -254,7 +254,7 @@ test.describe('Design Lab 底图大小与位置', () => {
     expect(isSelectable).toBeTruthy();
     expect(isSelectable?.selectable).toBe(false);
     expect(isSelectable?.evented).toBe(false);
-    // [2025-12-19 21:30:00] 验证底图在objects数组的第一个位置（最底层）
+// 验证底图在objects数组的第一个位置（最底层）
     expect(isSelectable?.index).toBe(0);
   });
 });

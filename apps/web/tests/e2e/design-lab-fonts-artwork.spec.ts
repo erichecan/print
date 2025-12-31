@@ -1,6 +1,6 @@
 /**
  * Design Lab 字体与素材库测试 (M5)
- * [2025-01-27 12:00:00] 测试字体选择器、素材库浏览
+* 测试字体选择器、素材库浏览
  */
 import { test, expect } from './fixtures/test-base';
 import {

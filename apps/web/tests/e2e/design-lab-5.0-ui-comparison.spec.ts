@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.0 UI Comparison Test
- * [2025-12-20 02:35:00] 对比 5.0 版本与 4.0 版本的 UI 结构
+* 对比 5.0 版本与 4.0 版本的 UI 结构
  */
 import { test, expect } from '@playwright/test';
 

@@ -1,6 +1,6 @@
 /**
  * usePricing Hook - 报价管理 Hook
- * [2025-12-18 21:23:43] 管理报价请求、加入购物车等功能
+* 管理报价请求、加入购物车等功能
  */
 import { useState, useCallback } from 'react';
 import * as fabric from 'fabric';
@@ -16,7 +16,7 @@ interface UsePricingOptions {
   variantId?: string;
   canvasWidth?: number;
   canvasHeight?: number;
-  currentView?: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'; // [2025-12-18 21:23:43] 当前视图
+currentView?: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'; // 当前视图
 }
 
 interface UsePricingReturn {

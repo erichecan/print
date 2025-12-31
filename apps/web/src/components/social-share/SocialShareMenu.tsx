@@ -1,6 +1,6 @@
 /**
  * Social Media Share Menu Component
- * [2025-12-06 20:00:00] 社交媒体分享菜单组件 for Issue #142
+* 社交媒体分享菜单组件 for Issue #142
  */
 'use client';
 

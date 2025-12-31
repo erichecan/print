@@ -1,6 +1,6 @@
 /**
  * Design Lab 上传图片功能测试
- * [2025-01-31 19:30:00] 测试上传图片后不会被误删的问题
+* 测试上传图片后不会被误删的问题
  * 使用 Playwright + Chrome DevTools Protocol
  */
 import { test, expect, chromium } from '@playwright/test';
@@ -10,7 +10,7 @@ const DESIGN_LAB_URL = `${FRONTEND_URL}/design-lab`;
 
 test.describe('Design Lab 上传图片测试', () => {
   test('上传图片后应该保留在画布上，不会被误删', async () => {
-    // [2025-01-31 19:30:00] 启动浏览器并启用 CDP
+// 启动浏览器并启用 CDP
     const browser = await chromium.launch({
       headless: false, // 显示浏览器窗口便于调试
       devtools: true, // 打开 DevTools
@@ -22,7 +22,7 @@ test.describe('Design Lab 上传图片测试', () => {
 
     const page = await context.newPage();
 
-    // [2025-01-31 19:30:00] 启用 CDP 会话
+// 启用 CDP 会话
     const client = await context.newCDPSession(page);
     
     // 启用网络和运行时域
@@ -31,7 +31,7 @@ test.describe('Design Lab 上传图片测试', () => {
     await client.send('Page.enable');
     await client.send('DOM.enable');
 
-    // [2025-01-31 19:30:00] 监听控制台消息（特别是 [DesignLab] 前缀的日志）
+// 监听控制台消息（特别是 [DesignLab] 前缀的日志）
     const consoleMessages: Array<{ type: string; message: string; timestamp: number }> = [];
     client.on('Runtime.consoleAPICalled', (event) => {
       const args = event.args.map((arg: any) => {
@@ -51,7 +51,7 @@ test.describe('Design Lab 上传图片测试', () => {
       }
     });
 
-    // [2025-01-31 19:30:00] 监听对象移除事件
+// 监听对象移除事件
     const objectRemovedEvents: Array<{ name: string; layerType: string; timestamp: number }> = [];
     
     // 通过页面注入监听器

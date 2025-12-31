@@ -1,6 +1,6 @@
 /**
  * Cookie 详细调试测试
- * [2025-12-07 07:20:00] 详细检查 Cookie 传递的每个环节
+* 详细检查 Cookie 传递的每个环节
  */
 import { test, expect } from '@playwright/test';
 

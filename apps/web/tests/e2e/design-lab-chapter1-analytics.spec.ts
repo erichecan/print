@@ -1,6 +1,6 @@
 /**
  * Design Lab Chapter 1 - Analytics E2E Tests
- * [2025-12-08] 测试第1章的目标指标收集功能
+* 测试第1章的目标指标收集功能
  */
 import { test, expect } from '@playwright/test';
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 简单检查数据库中的产品和颜色数据
- * [2025-12-07 17:55:00] 直接查询数据库
+* 直接查询数据库
  */
 
 const { PrismaClient } = require('@prisma/client');

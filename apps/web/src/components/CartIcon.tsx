@@ -1,8 +1,7 @@
 /**
  * Cart Icon Component
- * [2025-11-05 00:20:00]
- * [2025-11-11 23:59:30] Added "Cart" label for navigation parity
- * [2025-12-08] 重构：支持 99+ 显示和动画效果
+* Added "Cart" label for navigation parity
+* 重构：支持 99+ 显示和动画效果
  */
 'use client';
 
@@ -12,12 +11,12 @@ import { useEffect, useState } from 'react';
 
 export function CartIcon() {
   const { cart, isLoading } = useCart();
-  // [2025-01-28 03:40:00] cart 现在保证不是 null，但为了安全仍然使用可选链
+// cart 现在保证不是 null，但为了安全仍然使用可选链
   const itemCount = cart?.itemCount || 0;
   const [displayCount, setDisplayCount] = useState(itemCount);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  // [2025-12-08] 当 itemCount 变化时，更新显示并触发动画
+// 当 itemCount 变化时，更新显示并触发动画
   useEffect(() => {
     if (itemCount !== displayCount) {
       setIsAnimating(true);
@@ -28,7 +27,7 @@ export function CartIcon() {
     }
   }, [itemCount, displayCount]);
 
-  // [2025-12-08] 格式化角标数字：超过 99 显示 "99+"
+// 格式化角标数字：超过 99 显示 "99+"
   const badgeText = displayCount > 99 ? '99+' : displayCount.toString();
   const badgeWidth = displayCount > 99 ? 'auto' : '20px';
   const badgePadding = displayCount > 99 ? '0 6px' : '0';

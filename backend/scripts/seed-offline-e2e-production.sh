@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-01-28 21:00:00] 线上环境 Seed 脚本运行助手
+# 线上环境 Seed 脚本运行助手
 # 使用方法: ./seed-offline-e2e-production.sh
 
 set -e

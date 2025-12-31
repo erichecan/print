@@ -1,6 +1,6 @@
 /**
  * Payment Method Controller
- * [2025-12-06 17:20:00] Payment method management controller for Issue #112
+* Payment method management controller for Issue #112
  */
 const paymentMethodService = require('../services/paymentMethodService');
 const logger = require('../utils/logger');
@@ -8,7 +8,6 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 
 /**
  * GET /api/payment-methods - Get user's payment methods
- * [2025-12-06 17:20:00]
  */
 exports.getPaymentMethods = async (req, res) => {
   try {
@@ -35,7 +34,6 @@ exports.getPaymentMethods = async (req, res) => {
 
 /**
  * POST /api/payment-methods - Save payment method
- * [2025-12-06 17:20:00]
  */
 exports.savePaymentMethod = async (req, res) => {
   try {
@@ -83,7 +81,6 @@ exports.savePaymentMethod = async (req, res) => {
 
 /**
  * GET /api/payment-methods/:id - Get payment method by ID
- * [2025-12-06 17:20:00]
  */
 exports.getPaymentMethod = async (req, res) => {
   try {
@@ -118,7 +115,6 @@ exports.getPaymentMethod = async (req, res) => {
 
 /**
  * PATCH /api/payment-methods/:id/default - Set payment method as default
- * [2025-12-06 17:20:00]
  */
 exports.setDefaultPaymentMethod = async (req, res) => {
   try {
@@ -151,7 +147,6 @@ exports.setDefaultPaymentMethod = async (req, res) => {
 
 /**
  * DELETE /api/payment-methods/:id - Delete payment method
- * [2025-12-06 17:20:00]
  */
 exports.deletePaymentMethod = async (req, res) => {
   try {

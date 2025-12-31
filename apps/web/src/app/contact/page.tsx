@@ -1,15 +1,15 @@
 /**
  * Contact Page
- * [2025-11-11 22:30:35] Scaffold
- * [2025-11-12 00:05:40] Added support channels and response time details
- * [2025-01-27 17:15:00] 补充 SEO 元数据
- * [2025-01-27 19:20:00] 添加联系表单提交功能
+* Scaffold
+* Added support channels and response time details
+* 补充 SEO 元数据
+* 添加联系表单提交功能
  */
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import ContactClient from './ContactClient';
 
-// [2025-01-27 17:15:00] 生成联系页面 SEO 元数据
+// 生成联系页面 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Contact Us - Get Help with Your Order',
   description: 'Need help with an order, artwork, or shipping? Contact Suvernire Plus by phone, email, or live chat. Our merch specialists are available seven days a week.',

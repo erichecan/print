@@ -1,7 +1,6 @@
 /**
  * Migration: Add performance indexes for frequently queried fields
- * [2025-01-27 14:55:00]
- * [2025-01-11 14:10:00] 添加重复索引检查，防止迁移失败
+* 添加重复索引检查，防止迁移失败
  */
 
 module.exports = {
@@ -9,7 +8,7 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
     
     try {
-      // [2025-01-11 14:10:00] 检查索引是否存在，避免重复创建导致迁移失败
+// 检查索引是否存在，避免重复创建导致迁移失败
       const checkIndex = async (tableName, indexName) => {
         const results = await queryInterface.sequelize.query(
           `SELECT indexname FROM pg_indexes WHERE tablename = $1 AND indexname = $2;`,
@@ -22,7 +21,7 @@ module.exports = {
         return Array.isArray(results) && results.length > 0;
       };
 
-      // [2025-01-28 01:35:00] 检查列是否存在
+// 检查列是否存在
       const checkColumn = async (tableName, columnName) => {
         const results = await queryInterface.sequelize.query(
           `SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND column_name = $2;`,
@@ -35,7 +34,7 @@ module.exports = {
         return Array.isArray(results) && results.length > 0;
       };
 
-      // [2025-01-28 01:40:00] 检查表是否存在
+// 检查表是否存在
       const checkTable = async (tableName) => {
         const results = await queryInterface.sequelize.query(
           `SELECT table_name FROM information_schema.tables WHERE table_name = $1;`,
@@ -65,7 +64,7 @@ module.exports = {
         });
       }
 
-      // [2025-01-28 01:35:00] 只有在 base_price 列存在时才创建索引
+// 只有在 base_price 列存在时才创建索引
       if (await checkColumn('products', 'base_price') && !(await checkIndex('products', 'idx_products_base_price'))) {
         await queryInterface.addIndex('products', ['base_price'], {
           name: 'idx_products_base_price',
@@ -87,7 +86,7 @@ module.exports = {
         });
       }
 
-      // [2025-01-28 01:40:00] 只有在表存在时才创建索引
+// 只有在表存在时才创建索引
       if (await checkTable('product_variants') && !(await checkIndex('product_variants', 'idx_product_variants_stock_quantity'))) {
         await queryInterface.addIndex('product_variants', ['stock_quantity'], {
           name: 'idx_product_variants_stock_quantity',

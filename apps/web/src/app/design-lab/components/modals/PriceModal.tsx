@@ -1,6 +1,6 @@
 /**
  * Price Modal - 价格报价模态框
- * [2025-12-06 12:30:00] 显示设计报价信息
+* 显示设计报价信息
  */
 'use client';
 
@@ -151,7 +151,7 @@ const PriceModal: React.FC<PriceModalProps> = ({
                 <button
                   className="dl-modal__btn dl-modal__btn--secondary"
                   onClick={() => {
-                    // [2025-12-08] 埋点：加车点击
+// 埋点：加车点击
                     if (typeof window !== 'undefined') {
                       const { analytics } = require('@/lib/analytics');
                       analytics.track('add_to_cart_clicked', {

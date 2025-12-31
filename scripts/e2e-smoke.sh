@@ -1,6 +1,6 @@
 #!/bin/bash
-# E2E smoke test script [2025-11-12 03:25:00]
-# [2025-11-24 10:44:55] 支持 RUN_PLAYWRIGHT=1 触发完整 UI 回归
+# E2E smoke test script 
+# 支持 RUN_PLAYWRIGHT=1 触发完整 UI 回归
 # Usage: RUN_PLAYWRIGHT=1 ./scripts/e2e-smoke.sh [base-url]
 
 set -e

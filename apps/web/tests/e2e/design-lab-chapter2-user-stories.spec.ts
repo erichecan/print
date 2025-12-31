@@ -1,6 +1,6 @@
 /**
  * Design Lab Chapter 2 - User Stories E2E Tests
- * [2025-12-08] 测试第2章的核心用户故事
+* 测试第2章的核心用户故事
  */
 import { test, expect } from '@playwright/test';
 

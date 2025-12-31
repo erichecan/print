@@ -1,6 +1,6 @@
 /**
  * Apify Crawler for Emojis -> Animals Category
- * [2025-12-11 23:15:00] 使用 Apify MCP 或 Puppeteer 抓取艺术素材
+* 使用 Apify MCP 或 Puppeteer 抓取艺术素材
  * 
  * 目标：从互联网来源抓取 Emojis -> Animals 分类的艺术素材
  * 输出：/tmp/art-crawler/emojis/animals/{slug}.{ext} 和 metadata.json
@@ -11,12 +11,12 @@ import * as path from 'path';
 import * as https from 'https';
 import * as http from 'http';
 
-// [2025-12-11 23:15:00] 配置
+// 配置
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
 const OUTPUT_DIR = path.join('/tmp', 'art-crawler', 'emojis', 'animals');
 const METADATA_FILE = path.join(OUTPUT_DIR, 'metadata.json');
 
-// [2025-12-11 23:15:00] 确保输出目录存在
+// 确保输出目录存在
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
@@ -35,7 +35,7 @@ interface ArtworkMetadata {
 }
 
 /**
- * [2025-12-12 00:10:00] 下载图片到本地（支持重定向）
+* 下载图片到本地（支持重定向）
  */
 function downloadImage(url: string, filePath: string, redirectCount = 0): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -48,7 +48,7 @@ function downloadImage(url: string, filePath: string, redirectCount = 0): Promis
     const file = fs.createWriteStream(filePath);
     
     const request = protocol.get(url, (response) => {
-      // [2025-12-12 00:10:00] 处理重定向
+// 处理重定向
       if (response.statusCode === 301 || response.statusCode === 302 || response.statusCode === 307 || response.statusCode === 308) {
         file.close();
         fs.unlink(filePath, () => {});
@@ -84,7 +84,7 @@ function downloadImage(url: string, filePath: string, redirectCount = 0): Promis
 }
 
 /**
- * [2025-12-11 23:15:00] 生成 slug
+* 生成 slug
  */
 function generateSlug(title: string): string {
   return title
@@ -94,14 +94,14 @@ function generateSlug(title: string): string {
 }
 
 /**
- * [2025-12-11 23:15:00] 主函数：抓取 Emojis -> Animals 分类
+* 主函数：抓取 Emojis -> Animals 分类
  */
 async function crawlEmojisAnimals() {
-  console.log('[2025-12-11 23:15:00] 开始抓取 Emojis -> Animals 分类...\n');
+console.log(' 开始抓取 Emojis -> Animals 分类...\n');
   
   const metadata: ArtworkMetadata[] = [];
   
-  // [2025-12-12 00:00:00] 从 OpenClipart 和 FreeSVG 抓取公共领域资源
+// 从 OpenClipart 和 FreeSVG 抓取公共领域资源
   // 所有资源均为 Public Domain，可自由使用
   const sampleSources = [
     {
@@ -190,14 +190,14 @@ async function crawlEmojisAnimals() {
     }
   }
   
-  // [2025-12-11 23:15:00] 保存 metadata
+// 保存 metadata
   fs.writeFileSync(METADATA_FILE, JSON.stringify(metadata, null, 2));
   console.log(`\n✅ 抓取完成！共 ${metadata.length} 个素材`);
   console.log(`📁 输出目录: ${OUTPUT_DIR}`);
   console.log(`📄 Metadata: ${METADATA_FILE}\n`);
 }
 
-// [2025-12-12 00:05:00] 运行
+// 运行
 crawlEmojisAnimals().catch(console.error);
 
 export { crawlEmojisAnimals };

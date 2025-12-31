@@ -1,5 +1,5 @@
-// [2025-11-02 20:52:00] Redis configuration for caching and sessions
-// [2025-11-15 10:50:00] 修改为可选连接，避免在没有 Redis 时持续报错
+// Redis configuration for caching and sessions
+// 修改为可选连接，避免在没有 Redis 时持续报错
 const Redis = require('ioredis');
 require('dotenv').config();
 
@@ -31,7 +31,7 @@ if (hasRedisConfig) {
       lazyConnect: true // 延迟连接，避免启动时立即连接
     };
 
-  // [2025-11-14 06:29:00] 支持 REDIS_URL 以便容器内部直接使用 redis 服务
+// 支持 REDIS_URL 以便容器内部直接使用 redis 服务
   redis = new Redis(redisConnectionOptions);
 
   redis.on('connect', () => {
@@ -62,12 +62,12 @@ if (hasRedisConfig) {
   console.log('ℹ️  Redis not configured, caching disabled.');
 }
 
-// [2025-01-29 00:05:00] Import memory cache as fallback
+// Import memory cache as fallback
 const memoryCache = require('./memoryCache');
 
 // Helper functions
-// [2025-11-15 10:50:00] 修改为检查 Redis 是否可用，不可用时优雅降级
-// [2025-01-29 00:05:00] 添加内存缓存作为后备方案
+// 修改为检查 Redis 是否可用，不可用时优雅降级
+// 添加内存缓存作为后备方案
 const getCache = async (key) => {
   // Try Redis first
   if (redis && redisEnabled) {
@@ -118,7 +118,7 @@ const deleteCache = async (key) => {
   }
 };
 
-// [2025-11-15 10:50:00] 添加 keys 方法的包装，用于管理员清除缓存
+// 添加 keys 方法的包装，用于管理员清除缓存
 const getRedisKeys = async (pattern) => {
   if (!redis || !redisEnabled) {
     return [];
@@ -130,7 +130,7 @@ const getRedisKeys = async (pattern) => {
   }
 };
 
-// [2025-11-15 10:50:00] 导出 mock redis 对象，用于管理员清除缓存功能
+// 导出 mock redis 对象，用于管理员清除缓存功能
 const mockRedis = {
   keys: async () => [],
   del: async () => 0

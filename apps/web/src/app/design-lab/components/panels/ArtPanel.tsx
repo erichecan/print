@@ -1,18 +1,18 @@
 /**
  * Art Panel - 艺术素材面板
- * [2025-01-30 18:00:00] 实现 Artwork Categories 界面
- * [2025-12-04 21:50:00] 优化大类网格 UI，调整为 3 列布局，对齐 Custom Ink 设计
- * [2025-12-11 23:40:00] 重构：使用新的 artworks API，支持分类树、分页、搜索
+* 实现 Artwork Categories 界面
+* 优化大类网格 UI，调整为 3 列布局，对齐 Custom Ink 设计
+* 重构：使用新的 artworks API，支持分类树、分页、搜索
  */
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { artworksApi, type Artwork, type CategoryNode } from '@/lib/api';
 
-// [2025-01-30 13:25:00] CORS 修复：将 GCS URL 转换为代理 URL
+// CORS 修复：将 GCS URL 转换为代理 URL
 const getProxyUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
-  // [2025-01-30 13:25:00] 如果是 GCS URL，使用图片代理
+// 如果是 GCS URL，使用图片代理
   if (url.includes('storage.googleapis.com') || url.includes('.storage.googleapis.com')) {
     return `/api/image-proxy?src=${encodeURIComponent(url)}`;
   }
@@ -35,7 +35,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 48;
 
-  // [2025-12-11 23:40:00] 加载分类树
+// 加载分类树
   useEffect(() => {
     const loadCategoriesTree = async () => {
       try {
@@ -56,7 +56,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     loadCategoriesTree();
   }, []);
 
-  // [2025-12-11 23:40:00] 加载艺术作品
+// 加载艺术作品
   const loadArtworks = useCallback(async (topSlug?: string, subSlug?: string, query?: string, pageNum = 1) => {
     try {
       setLoading(true);
@@ -81,7 +81,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     }
   }, [pageSize]);
 
-  // [2025-12-11 23:40:00] 当选择分类或搜索时加载素材
+// 当选择分类或搜索时加载素材
   useEffect(() => {
     if (currentTopCategory) {
       loadArtworks(
@@ -93,13 +93,13 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     }
   }, [currentTopCategory, currentSubcategory, searchQuery, loadArtworks]);
 
-  // [2025-12-11 23:40:00] 显示分类网格（一级分类）
+// 显示分类网格（一级分类）
   if (!currentTopCategory) {
     return (
       <div className="dl-art-panel">
         <div className="dl-art-panel__header">
           <h2 className="dl-art-panel__title">Artwork Categories</h2>
-          {/* [2025-12-11 23:40:00] 搜索框 */}
+{/* 搜索框 */}
           <div className="dl-art-panel__search">
             <input
               type="text"
@@ -108,7 +108,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                // [2025-12-11 23:40:00] 如果有搜索词，直接加载搜索结果
+// 如果有搜索词，直接加载搜索结果
                 if (e.target.value.trim()) {
                   loadArtworks(undefined, undefined, e.target.value, 1);
                   setCurrentTopCategory({ id: '', name: 'Search Results', slug: 'search', count: 0, children: [] });
@@ -154,7 +154,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     );
   }
 
-  // [2025-12-11 23:40:00] 显示分类下的素材列表
+// 显示分类下的素材列表
   const subcategories = currentTopCategory.children || [];
 
   return (
@@ -177,7 +177,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
           Back to Categories
         </button>
         <h3 className="dl-art-panel__category-title">{currentTopCategory.name}</h3>
-        {/* [2025-12-11 23:40:00] 分类页面也显示搜索框 */}
+{/* 分类页面也显示搜索框 */}
         <div className="dl-art-panel__search">
           <input
             type="text"
@@ -197,7 +197,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
         </div>
       </div>
 
-      {/* [2025-12-11 23:40:00] 子分类导航 */}
+{/* 子分类导航 */}
       {subcategories.length > 0 && (
         <div className="dl-art-panel__subcategories">
           <button
@@ -248,7 +248,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                       data-testid={`artwork-${artwork.slug}`}
                     >
                       {(() => {
-                        // [2025-01-30 13:25:00] CORS 修复：使用代理 URL
+// CORS 修复：使用代理 URL
                         const thumbnailUrl = getProxyUrl(artwork.thumbnailUrl);
                         const imageUrl = getProxyUrl(artwork.imageUrl);
 
@@ -278,7 +278,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                     </button>
                   ))}
                 </div>
-                {/* [2025-12-11 23:40:00] 分页控件 */}
+{/* 分页控件 */}
                 {totalPages > 1 && (
                   <div className="dl-art-panel__pagination">
                     <button

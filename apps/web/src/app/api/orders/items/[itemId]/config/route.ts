@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 订单项配置API路由
+* 订单项配置API路由
  * GET: 读取颜色组、位置信息与override
  * POST: 保存颜色组与overrides
  */
@@ -13,7 +13,7 @@ export async function GET(
   try {
     const { itemId } = params;
     
-    // [2025-12-19] 调用后端API获取配置
+// 调用后端API获取配置
     const response = await fetch(`${API_BASE_URL}/orders/items/${itemId}/config`, {
       method: 'GET',
       headers: {
@@ -49,7 +49,7 @@ export async function POST(
     const { itemId } = params;
     const body = await request.json();
     
-    // [2025-12-19] 调用后端API保存配置
+// 调用后端API保存配置
     const response = await fetch(`${API_BASE_URL}/orders/items/${itemId}/config`, {
       method: 'POST',
       headers: {

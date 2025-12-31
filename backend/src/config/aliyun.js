@@ -1,4 +1,4 @@
-// [2025-11-02 20:52:00] Aliyun OSS configuration for file storage
+// Aliyun OSS configuration for file storage
 const OSS = require('ali-oss');
 require('dotenv').config();
 

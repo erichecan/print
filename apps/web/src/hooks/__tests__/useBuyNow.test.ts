@@ -1,6 +1,6 @@
 /**
  * useBuyNow Hook Tests
- * [2025-12-08] 测试 Buy Now 功能的成功/失败场景
+* 测试 Buy Now 功能的成功/失败场景
  */
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useBuyNow } from '../useBuyNow';

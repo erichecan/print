@@ -1,6 +1,6 @@
 /**
  * Order Service Tests
- * [2025-01-27 14:25:00] Tests for order state machine and business logic
+* Tests for order state machine and business logic
  */
 jest.mock('../../src/lib/prisma', () => ({
   order: {
@@ -17,7 +17,7 @@ jest.mock('../../src/lib/prisma', () => ({
 const prisma = require('../../src/lib/prisma');
 const orderService = require('../../src/services/orderService');
 
-describe('[2025-01-27 14:25:00] orderService', () => {
+describe(' orderService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

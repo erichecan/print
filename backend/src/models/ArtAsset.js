@@ -1,4 +1,4 @@
-// [2025-01-28 00:40:00] ArtAsset model for Design Lab CMS
+// ArtAsset model for Design Lab CMS
 module.exports = (sequelize, DataTypes) => {
   const ArtAsset = sequelize.define('ArtAsset', {
     id: {

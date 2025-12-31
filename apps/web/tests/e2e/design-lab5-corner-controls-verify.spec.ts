@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.1 - 角控件修复验证
- * [2025-12-16 03:40:00] 简化版验证脚本，直接检查角控件是否正确应用
+* 简化版验证脚本，直接检查角控件是否正确应用
  */
 import { test, expect } from './fixtures/test-base';
 import {

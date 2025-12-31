@@ -1,6 +1,6 @@
 /**
  * Social Media Share Button Component
- * [2025-12-06 20:00:00] 社交媒体分享按钮组件 for Issue #142
+* 社交媒体分享按钮组件 for Issue #142
  */
 'use client';
 
@@ -22,7 +22,7 @@ interface SocialShareButtonProps {
   iconOnly?: boolean;
 }
 
-// [2025-12-06 20:00:00] 社交媒体平台配置 for Issue #142
+// 社交媒体平台配置 for Issue #142
 const platformConfig = {
   facebook: {
     name: 'Facebook',
@@ -109,7 +109,7 @@ export function SocialShareButton({
     e.preventDefault();
 
     if (platform === 'copy') {
-      // [2025-12-06 20:00:00] 复制链接到剪贴板 for Issue #142
+// 复制链接到剪贴板 for Issue #142
       try {
         await navigator.clipboard.writeText(config.url);
         setCopied(true);
@@ -133,7 +133,7 @@ export function SocialShareButton({
         document.body.removeChild(textArea);
       }
     } else {
-      // [2025-12-06 20:00:00] 打开社交媒体分享窗口 for Issue #142
+// 打开社交媒体分享窗口 for Issue #142
       const shareUrl = platformInfo.getUrl(config);
       const width = 600;
       const height = 400;

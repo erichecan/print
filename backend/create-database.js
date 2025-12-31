@@ -1,4 +1,4 @@
-// [2025-11-04 23:30:00] 自动创建 PostgreSQL 数据库脚本
+// 自动创建 PostgreSQL 数据库脚本
 const { Client } = require('pg');
 require('dotenv').config();
 

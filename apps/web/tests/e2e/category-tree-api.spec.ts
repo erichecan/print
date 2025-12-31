@@ -1,6 +1,6 @@
 /**
  * 分类树 API 测试
- * [2025-12-11 22:40:00] 测试 /api/categories/tree 接口，验证分类树结构和产品计数
+* 测试 /api/categories/tree 接口，验证分类树结构和产品计数
  */
 import { test, expect } from '@playwright/test';
 

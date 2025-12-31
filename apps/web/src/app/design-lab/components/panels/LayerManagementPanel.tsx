@@ -1,6 +1,6 @@
 /**
  * Layer Management Panel - 图层管理面板
- * [2025-12-06] 实现图层管理功能，对齐 Custom Ink
+* 实现图层管理功能，对齐 Custom Ink
  */
 'use client';
 
@@ -14,7 +14,7 @@ interface LayerItem {
   visible: boolean;
   locked: boolean;
   object: fabric.Object;
-  groupId?: string; // [2025-12-06 13:00:00] 图层分组 ID
+groupId?: string; // 图层分组 ID
 }
 
 interface LayerGroup {
@@ -39,7 +39,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
   const [layers, setLayers] = useState<LayerItem[]>([]);
   const [groups, setGroups] = useState<LayerGroup[]>([]);
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set()); // [2025-12-06 13:00:00] 展开的分组
+const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set()); // 展开的分组
 
   // 获取图层类型图标
   const getLayerIcon = (type: string) => {
@@ -76,7 +76,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
 
     const objects = canvas.getObjects().filter((obj: fabric.Object) => {
       const objName = (obj as any).name || '';
-      // [2025-01-30 23:30:00] 排除背景图片和产品主图（产品主图不显示在图层列表中）
+// 排除背景图片和产品主图（产品主图不显示在图层列表中）
       return objName !== 'background' && !objName.startsWith('product-image-');
     });
 
@@ -85,7 +85,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
       if (obj.type === 'i-text' || obj.type === 'textbox' || obj.type === 'text') {
         type = 'text';
       } else if (obj.type === 'image') {
-        // [2025-12-06 12:00:00] 根据对象名称判断是 art 还是 image
+// 根据对象名称判断是 art 还是 image
         const objName = (obj as any).name || '';
         if (objName.startsWith('art_')) {
           type = 'art';
@@ -94,7 +94,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
         }
       }
 
-      // [2025-12-06 12:00:00] 为对象添加唯一 ID（如果还没有）
+// 为对象添加唯一 ID（如果还没有）
       if (!(obj as any).id) {
         (obj as any).id = `layer-${Date.now()}-${index}`;
       }
@@ -106,7 +106,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
         visible: obj.visible !== false,
         locked: obj.selectable === false,
         object: obj,
-        groupId: (obj as any).groupId || undefined // [2025-12-06 13:00:00] 图层分组 ID
+groupId: (obj as any).groupId || undefined // 图层分组 ID
       };
     });
 
@@ -114,14 +114,14 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     setLayers(layerItems.reverse());
   }, [canvas]);
 
-  // [2025-01-30 23:25:00] 监听画布变化
+// 监听画布变化
   useEffect(() => {
     if (!canvas) return;
 
     // 初始更新
     updateLayers();
 
-    // [2025-01-30 23:25:00] 监听对象添加/删除/修改
+// 监听对象添加/删除/修改
     const handleObjectAdded = () => {
       console.log('[LayerManagementPanel] Object added, updating layers');
       updateLayers();
@@ -144,7 +144,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
       updateLayers();
     };
 
-    // [2025-01-30 23:25:00] 监听渲染完成事件，确保图层列表在对象渲染后更新
+// 监听渲染完成事件，确保图层列表在对象渲染后更新
     const handleAfterRender = () => {
       updateLayers();
     };
@@ -166,7 +166,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     };
   }, [canvas, updateLayers]);
   
-  // [2025-01-30 23:25:00] 监听 onUpdate 回调（当画布状态变化时触发）
+// 监听 onUpdate 回调（当画布状态变化时触发）
   useEffect(() => {
     if (onUpdate && canvas) {
       // 当 onUpdate 被调用时，也更新图层列表
@@ -224,7 +224,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     }
   };
 
-  // [2025-12-08] 重命名图层
+// 重命名图层
   const handleRenameLayer = (layer: LayerItem, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canvas) return;
@@ -280,8 +280,8 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
 
     if (draggedIndex === -1 || targetIndex === -1) return;
 
-    // [2025-12-16 04:10:00] 移动对象 - 修复 Fabric.js v6 API
-    // [2025-12-16 04:15:00] 限制：不能将对象移到商品底图（background/product-image）下面
+// 移动对象 - 修复 Fabric.js v6 API
+// 限制：不能将对象移到商品底图（background/product-image）下面
     try {
       const objects = canvas.getObjects();
       
@@ -324,7 +324,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     onUpdate?.();
   };
 
-  // [2025-12-06 13:00:00] 创建图层分组
+// 创建图层分组
   const handleCreateGroup = () => {
     if (!canvas) return;
 
@@ -357,7 +357,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     onUpdate?.();
   };
 
-  // [2025-12-06 13:00:00] 取消分组
+// 取消分组
   const handleUngroup = (groupId: string) => {
     if (!canvas) return;
 
@@ -377,7 +377,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     onUpdate?.();
   };
 
-  // [2025-12-06 13:00:00] 切换分组展开/折叠
+// 切换分组展开/折叠
   const handleToggleGroup = (groupId: string) => {
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(groupId)) {
@@ -388,7 +388,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     setExpandedGroups(newExpanded);
   };
 
-  // [2025-12-06 13:00:00] 切换分组可见性
+// 切换分组可见性
   const handleToggleGroupVisibility = (group: LayerGroup, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canvas) return;
@@ -407,7 +407,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     onUpdate?.();
   };
 
-  // [2025-12-06 13:00:00] 切换分组锁定
+// 切换分组锁定
   const handleToggleGroupLock = (group: LayerGroup, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!canvas) return;
@@ -429,12 +429,12 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
     onUpdate?.();
   };
 
-  // [2025-12-06 13:00:00] 获取分组中的图层
+// 获取分组中的图层
   const getGroupLayers = (groupId: string): LayerItem[] => {
     return layers.filter(layer => layer.groupId === groupId);
   };
 
-  // [2025-12-06 13:00:00] 获取未分组的图层
+// 获取未分组的图层
   const getUngroupedLayers = (): LayerItem[] => {
     return layers.filter(layer => !layer.groupId);
   };
@@ -469,7 +469,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
           </div>
         ) : (
           <>
-            {/* [2025-12-06 13:00:00] 渲染分组 */}
+{/* 渲染分组 */}
             {groups.map((group) => {
               const groupLayers = getGroupLayers(group.id);
               const isExpanded = expandedGroups.has(group.id);
@@ -597,7 +597,7 @@ const LayerManagementPanel: React.FC<LayerManagementPanelProps> = ({
               );
             })}
 
-            {/* [2025-12-06 13:00:00] 渲染未分组的图层 */}
+{/* 渲染未分组的图层 */}
             {getUngroupedLayers().map((layer) => {
             const isSelected = canvas?.getActiveObject() === layer.object;
             const isDragging = draggedLayerId === layer.id;

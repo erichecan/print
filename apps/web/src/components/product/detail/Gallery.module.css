@@ -1,4 +1,4 @@
-/* [2025-11-19 09:00:00] Gallery Component Styles - Redbubble Style */
+/* Gallery Component Styles - Redbubble Style */
 
 .gallery {
   width: 100%;
@@ -10,7 +10,7 @@
   align-items: flex-start;
 }
 
-/* [2025-11-19 09:00:00] 参考图一位置：左侧竖向缩略图列 */
+/* 参考图一位置：左侧竖向缩略图列 */
 .galleryThumbnails {
   display: none;
   flex-direction: column;
@@ -70,7 +70,7 @@
   object-fit: cover;
 }
 
-/* [2025-11-19 09:00:00] 参考图一位置：大图区域 */
+/* 参考图一位置：大图区域 */
 .galleryMain {
   flex: 1;
   position: relative;
@@ -118,7 +118,7 @@
   pointer-events: none;
 }
 
-/* [2025-11-19 09:00:00] 灯箱样式 */
+/* 灯箱样式 */
 .galleryLightbox {
   position: fixed;
   top: 0;

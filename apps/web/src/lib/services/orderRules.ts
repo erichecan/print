@@ -1,4 +1,4 @@
-// [2025-01-31 19:50:00] 订单印刷配置校验规则服务
+// 订单印刷配置校验规则服务
 
 import type { 
   PrintConfig, 
@@ -35,7 +35,7 @@ export const RULES = {
 };
 
 /**
- * [2025-01-31 19:50:00] 检查印刷区域是否超出限制
+* 检查印刷区域是否超出限制
  */
 export function checkAreaLimit(cfg: PrintConfig): string[] {
   const lim = RULES.maxArea[cfg.position];
@@ -47,7 +47,7 @@ export function checkAreaLimit(cfg: PrintConfig): string[] {
 }
 
 /**
- * [2025-01-31 19:50:00] 检查工艺特定配置
+* 检查工艺特定配置
  */
 export function methodChecks(
   method: 'dtf' | 'screen' | 'embroidery',
@@ -75,7 +75,7 @@ export function methodChecks(
 }
 
 /**
- * [2025-01-31 19:50:00] 校验颜色配置
+* 校验颜色配置
  */
 export function validateColorConfigs(colors: OrderItemColorInput[]): { errors: string[] } {
   const errors: string[] = [];
@@ -93,7 +93,7 @@ export function validateColorConfigs(colors: OrderItemColorInput[]): { errors: s
 }
 
 /**
- * [2025-01-31 19:50:00] 校验尺码覆盖配置
+* 校验尺码覆盖配置
  */
 export function validateSizeOverrides(overrides: SizeOverride[]): { errors: string[] } {
   const errors: string[] = [];
@@ -114,7 +114,7 @@ export function validateSizeOverrides(overrides: SizeOverride[]): { errors: stri
 }
 
 /**
- * [2025-01-31 19:50:00] 校验印刷可行性（包含工艺检查）
+* 校验印刷可行性（包含工艺检查）
  */
 export function validatePrintFeasibility(item: OrderItemPayload): ValidationResult[] {
   const out: ValidationResult[] = [];
@@ -142,7 +142,7 @@ export function validatePrintFeasibility(item: OrderItemPayload): ValidationResu
 }
 
 /**
- * [2025-01-31 19:50:00] 判断是否为深色（需要白色底基）
+* 判断是否为深色（需要白色底基）
  */
 function isDeepColor(colorCode: string): boolean {
   return /black|navy|dark|brown|charcoal/i.test(colorCode);

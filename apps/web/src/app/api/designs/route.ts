@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getBackendApiBase } from '@/lib/api-route-config';
 
-// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+// 修复：强制动态路由，防止构建时静态生成
 export const dynamic = 'force-dynamic';
 
 const API_BASE = getBackendApiBase();
 
-// [2025-01-27 22:10:00] POST /api/designs - 创建设计草稿
+// POST /api/designs - 创建设计草稿
 export async function POST(request: Request) {
   const timestamp = new Date().toISOString();
   
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       timestamp
     });
 
-    // [2025-01-27] 获取请求的cookies，传递给后端
+// 获取请求的cookies，传递给后端
     const cookies = request.headers.get('cookie') || '';
     
     const startTime = performance.now();
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // [2025-01-27] 传递后端的cookies到响应
+// 传递后端的cookies到响应
     const responseHeaders = new Headers({
       'content-type': contentType,
     });

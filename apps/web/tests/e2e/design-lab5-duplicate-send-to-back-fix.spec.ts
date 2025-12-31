@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.0 - 工具栏复制角控件和 Send to Back 功能修复测试
- * [2025-12-16 06:00:00] 验证工具栏复制角控件问题和 Send to Back 功能
+* 验证工具栏复制角控件问题和 Send to Back 功能
  */
 import { test, expect } from './fixtures/test-base';
 import {
@@ -69,7 +69,7 @@ test.describe('Design Lab 5.0: 工具栏复制角控件和 Send to Back 修复',
         if (!activeObj) return null;
 
         const controls = (activeObj as any).controls || {};
-        // [2025-12-16 06:24:40] 兼容两套角控件：5.1 使用 cornerDelete/cornerDuplicate/cornerResize；5.0 使用 deleteIcon/duplicateIcon/resizeIcon
+// 兼容两套角控件：5.1 使用 cornerDelete/cornerDuplicate/cornerResize；5.0 使用 deleteIcon/duplicateIcon/resizeIcon
         const hasCornerControls = !!(controls.cornerDelete || controls.cornerDuplicate || controls.cornerResize);
         const hasIconControls = !!(controls.deleteIcon || controls.duplicateIcon || controls.resizeIcon);
         return {
@@ -195,7 +195,7 @@ test.describe('Design Lab 5.0: 工具栏复制角控件和 Send to Back 修复',
         if (!activeObj) return { success: false, error: 'No active object' };
 
         const controls = (activeObj as any).controls || {};
-        // [2025-12-16 06:24:40] 兼容两套控件 key
+// 兼容两套控件 key
         const duplicateControl = controls.cornerDuplicate || controls.duplicateIcon;
 
         if (!duplicateControl) {
@@ -437,7 +437,7 @@ test.describe('Design Lab 5.0: 工具栏复制角控件和 Send to Back 修复',
         return;
       }
 
-      // [2025-12-16 06:22:40] 修复测试稳定性：每次上传前都重新打开 Upload 面板并重新查找 input
+// 修复测试稳定性：每次上传前都重新打开 Upload 面板并重新查找 input
       const getFileInput = () => page.locator('input[type="file"]').first();
       
       // 上传第一张图片

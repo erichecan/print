@@ -1,10 +1,10 @@
-// 2025-11-01 00:00:00 Admin internationalization (Chinese/English)
+// Admin internationalization (Chinese/English)
 
 const i18n = {
   translations: {
     en: {
       // Sidebar
-      // [2025-11-10 10:30:00] Added cost management navigation translations
+// Added cost management navigation translations
       dashboard: "Dashboard",
       products: "Products",
       costManagement: "Cost Management",
@@ -60,7 +60,7 @@ const i18n = {
       expandSidebar: "Expand sidebar",
       
       // Products
-      // [2025-11-10 10:30:00] Added cost management field translations
+// Added cost management field translations
       productManagement: "Products",
       newProduct: "+ New Product",
       productName: "Product Name",
@@ -94,7 +94,7 @@ const i18n = {
       timeframe30Days: "Last 30 days",
       timeframe90Days: "Last 90 days",
       timeframe12Months: "Last 12 months",
-      // [2025-11-10 10:30:00] Cost management messaging
+// Cost management messaging
       costLoading: "Loading cost data...",
       costNoResults: "No products match your filters.",
       costInvalidNumber: "Please enter a valid number.",
@@ -219,7 +219,7 @@ const i18n = {
     },
     zh: {
       // Sidebar
-      // [2025-11-10 10:30:00] 新增成本管理导航文案
+// 新增成本管理导航文案
       dashboard: "仪表板",
       products: "商品管理",
       costManagement: "成本管理",
@@ -275,7 +275,7 @@ const i18n = {
       expandSidebar: "展开侧边栏",
       
       // Products
-      // [2025-11-10 10:30:00] 新增成本管理字段文案
+// 新增成本管理字段文案
       productManagement: "商品管理",
       newProduct: "+ 新建商品",
       productName: "商品名称",
@@ -309,7 +309,7 @@ const i18n = {
       timeframe30Days: "最近30天",
       timeframe90Days: "最近90天",
       timeframe12Months: "最近12个月",
-      // [2025-11-10 10:30:00] 成本管理提示文案
+// 成本管理提示文案
       costLoading: "正在加载成本数据...",
       costNoResults: "没有符合条件的商品。",
       costInvalidNumber: "请输入有效的数字。",
@@ -592,7 +592,7 @@ function ensureProductionNav() {
     navContainer.appendChild(navList);
   }
 
-  // [2025-11-10 15:42:25] Canonical admin navigation structure to prevent duplicates
+// Canonical admin navigation structure to prevent duplicates
   const NAV_ITEMS = [
     { key: 'dashboard', href: 'index.html', icon: '📊', label: 'dashboard' },
     { key: 'products', href: 'products.html', icon: '🛍️', label: 'products' },

@@ -1,4 +1,4 @@
-// [2025-11-02 20:56:00] ProductReview model
+// ProductReview model
 module.exports = (sequelize, DataTypes) => {
   const ProductReview = sequelize.define('ProductReview', {
     id: {

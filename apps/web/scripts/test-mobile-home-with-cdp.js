@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 12:00:00] 使用 Chrome DevTools Protocol 测试移动端首页
+* 使用 Chrome DevTools Protocol 测试移动端首页
  * 独立脚本，不依赖完整的测试环境
  */
 const { chromium } = require('playwright');

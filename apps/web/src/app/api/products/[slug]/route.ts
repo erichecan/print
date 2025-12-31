@@ -1,33 +1,33 @@
 /**
  * Next.js API Route: Product Detail API 代理
- * [2025-12-03 04:20:00] 代理 /api/products/:slug 请求到后端
+* 代理 /api/products/:slug 请求到后端
  * 支持同时使用 slug 或数字 ID（后端已支持）
- * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
+* 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBaseUrl } from '@/config/env';
 
-// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+// 修复：强制动态路由，防止构建时静态生成
 export const dynamic = 'force-dynamic';
 
-// [2025-12-09] 修复：使用统一的环境变量配置模块
-// [2025-12-09] 延迟获取 API_BASE，确保在运行时获取正确的环境变量
+// 修复：使用统一的环境变量配置模块
+// 延迟获取 API_BASE，确保在运行时获取正确的环境变量
 function getApiBase(): string {
   try {
     return getBackendApiBaseUrl();
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[API Products Detail] Failed to get backend API base:', errorMessage);
-    // [2025-12-09] 如果获取失败，在生产环境抛出错误，开发环境回退到 localhost
+// 如果获取失败，在生产环境抛出错误，开发环境回退到 localhost
     if (process.env.NODE_ENV === 'production') {
       throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
     }
-    // [2025-12-19 15:24:45] 修复：与本仓库默认本地后端端口 4000 对齐（webapp-testing/Playwright/后端启动脚本）
+// 修复：与本仓库默认本地后端端口 4000 对齐（webapp-testing/Playwright/后端启动脚本）
     return 'http://localhost:3001/api';
   }
 }
 
-// [2025-12-03 04:20:00] Next.js 15: params 可能是 Promise
+// Next.js 15: params 可能是 Promise
 type RouteParams = {
   params: Promise<{ slug: string }> | { slug: string };
 };
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, context: RouteParams) {
   const timestamp = new Date().toISOString();
   
   try {
-    // [2025-12-03 04:20:00] 处理 Next.js 15 的异步 params
+// 处理 Next.js 15 的异步 params
     const params = await Promise.resolve(context.params);
     const { slug } = params;
     
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, context: RouteParams) {
     const queryString = searchParams.toString();
     const fullPath = queryString ? `/products/${slug}?${queryString}` : `/products/${slug}`;
     
-    // [2025-12-09] 修复：在运行时获取 API_BASE，确保使用最新的环境变量
+// 修复：在运行时获取 API_BASE，确保使用最新的环境变量
     const API_BASE = getApiBase();
     
     // 构建后端 URL

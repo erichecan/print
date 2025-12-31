@@ -1,5 +1,5 @@
 # Cloud Run service configuration for frontend
-# [2025-01-27] Frontend service definition for GCP Cloud Run
+# Frontend service definition for GCP Cloud Run
 apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:

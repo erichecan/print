@@ -1,4 +1,4 @@
-// [2025-11-02 20:52:00] Application constants
+// Application constants
 
 const USER_ROLES = {
   CUSTOMER: 'customer',

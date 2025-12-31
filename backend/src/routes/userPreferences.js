@@ -1,6 +1,6 @@
 /**
  * User Preferences Routes
- * [2025-01-27 14:45:00] User notification preferences and account settings routes
+* User notification preferences and account settings routes
  */
 const express = require('express');
 const router = express.Router();

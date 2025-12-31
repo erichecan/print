@@ -1,6 +1,6 @@
 /**
  * Create User Modal Component
- * [2025-01-28 18:40:00] 创建/邀请用户的模态框组件
+* 创建/邀请用户的模态框组件
  */
 'use client';
 
@@ -26,14 +26,14 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
     emailVerified: false,
   });
 
-  // [2025-01-28 18:40:00] 处理表单提交
+// 处理表单提交
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
     try {
-      // [2025-01-28 18:40:00] 验证邮箱格式
+// 验证邮箱格式
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email)) {
         setError('Please enter a valid email address');
@@ -41,14 +41,14 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
         return;
       }
 
-      // [2025-01-28 18:40:00] 如果提供了密码，验证密码长度
+// 如果提供了密码，验证密码长度
       if (formData.password && formData.password.length < 8) {
         setError('Password must be at least 8 characters');
         setLoading(false);
         return;
       }
 
-      // [2025-01-28 18:40:00] 准备提交数据（移除空字符串）
+// 准备提交数据（移除空字符串）
       const payload: AdminCreateUserPayload = {
         email: formData.email.trim(),
         role: formData.role || 'CUSTOMER',
@@ -68,10 +68,10 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
         payload.phone = formData.phone.trim();
       }
 
-      // [2025-01-28 18:40:00] 调用 API 创建用户
+// 调用 API 创建用户
       await adminUsersApi.create(payload);
 
-      // [2025-01-28 18:40:00] 重置表单并关闭模态框
+// 重置表单并关闭模态框
       setFormData({
         email: '',
         password: '',
@@ -92,7 +92,7 @@ export function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUserModalP
     }
   };
 
-  // [2025-01-28 18:40:00] 处理输入变化
+// 处理输入变化
   const handleChange = (field: keyof AdminCreateUserPayload, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null); // 清除错误信息

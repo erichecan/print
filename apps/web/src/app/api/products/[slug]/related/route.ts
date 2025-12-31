@@ -1,18 +1,18 @@
 /**
  * Next.js API Route: Related Products API 代理
- * [2025-12-03 04:20:00] 代理 /api/products/:slug/related 请求到后端
+* 代理 /api/products/:slug/related 请求到后端
  * 支持查询参数 ?limit=8
- * [2025-12-09] 修复：添加 dynamic 配置，防止构建时静态生成
+* 修复：添加 dynamic 配置，防止构建时静态生成
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { getBackendApiBase } from '@/lib/api-route-config';
 
-// [2025-12-09] 修复：强制动态路由，防止构建时静态生成
+// 修复：强制动态路由，防止构建时静态生成
 export const dynamic = 'force-dynamic';
 
 const API_BASE = getBackendApiBase();
 
-// [2025-12-03 04:20:00] Next.js 15: params 可能是 Promise
+// Next.js 15: params 可能是 Promise
 type RouteParams = {
   params: Promise<{ slug: string }> | { slug: string };
 };
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, context: RouteParams) {
   const timestamp = new Date().toISOString();
   
   try {
-    // [2025-12-03 04:20:00] 处理 Next.js 15 的异步 params
+// 处理 Next.js 15 的异步 params
     const params = await Promise.resolve(context.params);
     const { slug } = params;
     

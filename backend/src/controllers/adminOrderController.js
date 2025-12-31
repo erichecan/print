@@ -1,8 +1,8 @@
 /**
  * Admin Order Controller
- * [2025-11-12 01:05:02] 后台订单管理接口
- * [2025-01-27 10:15:00] Enhanced with Stripe refund integration and email notifications
- * [2025-01-27 13:10:00] Enhanced with order state machine validation
+* 后台订单管理接口
+* Enhanced with Stripe refund integration and email notifications
+* Enhanced with order state machine validation
  */
 const prisma = require('../lib/prisma');
 const Stripe = require('stripe');
@@ -24,7 +24,7 @@ const getClientIp = (req) => {
   return req.ip || null;
 };
 
-// [2025-01-28 08:30:00] Audit Logs 功能已移除
+// Audit Logs 功能已移除
 
 exports.listOrders = async (req, res) => {
   try {
@@ -115,7 +115,7 @@ exports.listOrders = async (req, res) => {
 
 /**
  * Get order status history
- * [2025-12-06 10:30:00] 获取订单状态历史记录
+* 获取订单状态历史记录
  */
 exports.getOrderStatusHistory = async (req, res) => {
   try {
@@ -224,8 +224,8 @@ exports.getOrderById = async (req, res) => {
 
 /**
  * PATCH /api/admin/orders/:id/status - Update order status with state machine validation
- * [2025-11-12 01:05:02] Original implementation
- * [2025-01-27 13:10:00] Enhanced with state machine validation
+* Original implementation
+* Enhanced with state machine validation
  */
 exports.updateOrderStatus = async (req, res) => {
   try {
@@ -250,7 +250,7 @@ exports.updateOrderStatus = async (req, res) => {
     const updateData = {};
     const changes = {};
 
-    // [2025-12-06 10:30:00] Validate and update order status with state machine
+// Validate and update order status with state machine
     // Use orderService.updateOrderStatus to ensure history recording and email notifications
     if (status) {
       const normalizedStatus = String(status).toUpperCase();
@@ -277,7 +277,7 @@ exports.updateOrderStatus = async (req, res) => {
         throw validationError;
       }
 
-      // [2025-12-06 10:30:00] Use orderService.updateOrderStatus to handle status update
+// Use orderService.updateOrderStatus to handle status update
       // This will automatically record history and send email notifications
       try {
         const actorId = req.user?.id || null;
@@ -324,7 +324,7 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     // Update tracking information
-    // [2025-01-27 14:05:00] Enhanced tracking update with shipment creation
+// Enhanced tracking update with shipment creation
     if (trackingNumber !== undefined || carrier !== undefined) {
       updateData.trackingNumber = trackingNumber !== undefined ? trackingNumber || null : undefined;
       updateData.carrier = carrier !== undefined ? carrier || null : undefined;
@@ -346,7 +346,7 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(400).json({ error: 'No update fields provided' });
     }
 
-    // [2025-12-06 10:30:00] Update order and create/update shipment if tracking info provided
+// Update order and create/update shipment if tracking info provided
     // Note: If status was updated, it's already handled by orderService.updateOrderStatus above
     // So we only update other fields here
     let shipmentUpdated = false;
@@ -411,7 +411,7 @@ exports.updateOrderStatus = async (req, res) => {
         });
 
         if (existingShipment) {
-          // [2025-12-06 15:00:00] Check if tracking info changed
+// Check if tracking info changed
           const trackingChanged =
             existingShipment.trackingNumber !== trackingNumber || existingShipment.carrier !== carrier;
           shipmentUpdated = trackingChanged;
@@ -440,7 +440,7 @@ exports.updateOrderStatus = async (req, res) => {
       return updatedOrder;
     });
 
-    // [2025-12-06 15:00:00] Send tracking update notification if tracking info was added or updated
+// Send tracking update notification if tracking info was added or updated
     if (shipmentUpdated && trackingNumber && carrier) {
       try {
         // Fetch full order details for email
@@ -481,7 +481,7 @@ exports.updateOrderStatus = async (req, res) => {
       }
     }
 
-    // [2025-01-28 08:30:00] Audit Logs 功能已移除
+// Audit Logs 功能已移除
 
     logger.info('Order status updated by admin', {
       orderId: order.id,
@@ -526,8 +526,8 @@ exports.updateOrderStatus = async (req, res) => {
 
 /**
  * POST /api/admin/orders/:id/refund - Process refund for an order
- * [2025-01-27 10:15:00] Enhanced with Stripe refund integration
- * [2025-12-06 14:00:00] Enhanced with unified error handling
+* Enhanced with Stripe refund integration
+* Enhanced with unified error handling
  */
 exports.recordRefund = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -662,7 +662,7 @@ exports.recordRefund = async (req, res, next) => {
       },
     });
 
-    // [2025-01-28 08:30:00] Audit Logs 功能已移除
+// Audit Logs 功能已移除
 
     // Send refund confirmation email (don't fail if email fails)
     try {
@@ -709,7 +709,7 @@ exports.recordRefund = async (req, res, next) => {
 
 /**
  * PATCH /api/admin/orders/batch/status - Batch update order statuses
- * [2025-12-06 16:40:00] Batch order status update for Issue #87
+* Batch order status update for Issue #87
  */
 exports.batchUpdateStatus = async (req, res) => {
   try {
@@ -822,7 +822,7 @@ exports.batchUpdateStatus = async (req, res) => {
 
 /**
  * GET /api/admin/orders/export - Export orders to CSV
- * [2025-12-06 16:40:00] Batch export orders for Issue #87
+* Batch export orders for Issue #87
  */
 exports.exportOrders = async (req, res) => {
   try {
@@ -975,7 +975,7 @@ exports.exportOrders = async (req, res) => {
 
 /**
  * POST /api/admin/orders/:id/shipment/label - Generate shipping label via EasyShip
- * [2025-12-06 15:30:00] Generate shipping label using EasyShip API
+* Generate shipping label using EasyShip API
  */
 exports.generateShippingLabel = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -1024,7 +1024,7 @@ exports.generateShippingLabel = async (req, res, next) => {
       );
     }
 
-    // [2025-12-06 15:30:00] Prepare shipment data for EasyShip
+// Prepare shipment data for EasyShip
     const shipmentData = {
       orderId: order.id,
       orderNumber: order.orderNumber,
@@ -1041,7 +1041,7 @@ exports.generateShippingLabel = async (req, res, next) => {
       rateId: rateId || null,
     };
 
-    // [2025-12-06 15:30:00] Create shipment via EasyShip API
+// Create shipment via EasyShip API
     let easyshipResult;
     try {
       easyshipResult = await easyshipService.createShipment(shipmentData);
@@ -1060,7 +1060,7 @@ exports.generateShippingLabel = async (req, res, next) => {
       );
     }
 
-    // [2025-12-06 15:30:00] Update or create shipment record
+// Update or create shipment record
     const shipment = await prisma.$transaction(async (tx) => {
       if (existingShipment) {
         return await tx.shipment.update({
@@ -1085,7 +1085,7 @@ exports.generateShippingLabel = async (req, res, next) => {
       }
     });
 
-    // [2025-12-06 15:30:00] Update order status to SHIPPED if not already
+// Update order status to SHIPPED if not already
     if (order.status !== 'SHIPPED' && order.status !== 'DELIVERED') {
       try {
         await updateOrderStatus(order.id, 'SHIPPED', {
@@ -1138,7 +1138,7 @@ exports.generateShippingLabel = async (req, res, next) => {
 
 /**
  * GET /api/admin/orders/:id/shipment/rates - Get shipping rates from EasyShip
- * [2025-12-06 15:30:00] Get available shipping rates for an order
+* Get available shipping rates for an order
  */
 exports.getShippingRates = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -1166,7 +1166,7 @@ exports.getShippingRates = async (req, res, next) => {
       return next(new NotFoundError('订单不存在'));
     }
 
-    // [2025-12-06 15:30:00] Get shipping rates from EasyShip
+// Get shipping rates from EasyShip
     const rateData = {
       currency: order.currency || 'CAD',
       shippingAddress: order.shippingAddress,

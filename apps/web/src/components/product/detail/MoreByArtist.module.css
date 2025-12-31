@@ -1,4 +1,4 @@
-/* [2025-11-19 09:18:00] MoreByArtist Component Styles */
+/* MoreByArtist Component Styles */
 
 .more-by-artist {
   padding: 40px 0;
@@ -32,8 +32,8 @@
   text-decoration: underline;
 }
 
-/* [2025-12-11 22:58:00] 修复栅格系统：移动端一列、平板两列、桌面四列 */
-/* [2025-01-30 10:00:00] 优化响应式布局：手机1-2列、平板2-3列、桌面4列 */
+/* 修复栅格系统：移动端一列、平板两列、桌面四列 */
+/* 优化响应式布局：手机1-2列、平板2-3列、桌面4列 */
 .more-by-artist-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -75,7 +75,7 @@
   }
 }
 
-/* [2025-12-11 09:21:35] 统一卡片样式：同宽、统一间距 */
+/* 统一卡片样式：同宽、统一间距 */
 .more-by-artist-item {
   text-decoration: none;
   color: inherit;
@@ -96,8 +96,8 @@
   transform: translateY(-4px);
 }
 
-/* [2025-12-11 09:21:35] 统一图片比例和样式 */
-/* [2025-01-30 10:00:00] 统一卡片尺寸与比例（3:2），图像覆盖裁剪 */
+/* 统一图片比例和样式 */
+/* 统一卡片尺寸与比例（3:2），图像覆盖裁剪 */
 .more-by-artist-image-wrapper {
   width: 100%;
   aspect-ratio: 3 / 2;
@@ -120,7 +120,7 @@
   transform: scale(1.05);
 }
 
-/* [2025-12-11 09:21:35] 统一信息区域：标题/价格对齐 */
+/* 统一信息区域：标题/价格对齐 */
 .more-by-artist-info {
   display: flex;
   flex-direction: column;
@@ -148,7 +148,7 @@
   color: #1f2937;
 }
 
-/* [2025-12-11 09:21:35] 移动端优化：保持一列布局 */
+/* 移动端优化：保持一列布局 */
 @media (max-width: 639px) {
   .more-by-artist-grid {
     grid-template-columns: 1fr;

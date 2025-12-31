@@ -1,6 +1,6 @@
 /**
  * Guest Book Form Component
- * [2025-12-10 00:00:00] 留言本表单组件 - 用于 help center
+* 留言本表单组件 - 用于 help center
  */
 'use client';
 
@@ -36,7 +36,7 @@ export default function GuestBookForm({ onSuccess }: GuestBookFormProps) {
     setIsSubmitting(true);
 
     try {
-      // [2025-12-18 23:20:00] 修复：使用完整的 API 路径 /api/guest-messages
+// 修复：使用完整的 API 路径 /api/guest-messages
       await apiPost('/api/guest-messages', {
         name: formData.name,
         email: formData.email,

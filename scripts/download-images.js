@@ -1,4 +1,4 @@
-// [2025-11-02 22:12:00] Image download helper script
+// Image download helper script
 /**
  * Image Download Helper
  * This script helps download images from URLs and save them locally

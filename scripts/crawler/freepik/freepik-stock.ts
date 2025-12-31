@@ -1,6 +1,6 @@
 /**
  * Freepik Stock Content API Crawler
- * [2025-01-30 12:50:30] 使用 Freepik API 按分类爬取素材，每个分类至少 20 个
+* 使用 Freepik API 按分类爬取素材，每个分类至少 20 个
  * 
  * 用法: ts-node scripts/crawler/freepik/freepik-stock.ts
  */
@@ -10,12 +10,12 @@ import * as path from 'path';
 import * as https from 'https';
 import * as http from 'http';
 
-// [2025-01-30 12:50:30] 配置
+// 配置
 const FREEPIK_API_KEY = process.env.FREEPIK_API_KEY || 'FPSXf8c495dd8d76fb0b2dfda9263c28d3db';
 const OUTPUT_ROOT = path.join('/tmp', 'art-crawler');
 const MIN_ITEMS_PER_CATEGORY = 20;
 
-// [2025-01-30 12:50:30] 分类配置：topCategory / subCategory / 搜索词
+// 分类配置：topCategory / subCategory / 搜索词
 const CATEGORIES = [
   { top: 'freepik', sub: 'emojis-animals', term: 'animal emoji vector' },
   { top: 'freepik', sub: 'emojis-faces', term: 'smiley emoji vector' },
@@ -74,14 +74,14 @@ interface FreepikApiResponse {
 }
 
 /**
- * [2025-01-30 12:50:30] 生成 slug
+* 生成 slug
  */
 function generateSlug(title: string, id: number): string {
   return `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}-${id}`;
 }
 
 /**
- * [2025-01-30 12:50:30] 下载图片到本地（支持重定向）
+* 下载图片到本地（支持重定向）
  */
 function downloadImage(url: string, filePath: string, redirectCount = 0): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -129,17 +129,17 @@ function downloadImage(url: string, filePath: string, redirectCount = 0): Promis
 }
 
 /**
- * [2025-01-30 12:50:30] 调用 Freepik API
+* 调用 Freepik API
  */
 async function fetchFreepikResources(term: string, page: number, limit: number): Promise<FreepikApiResponse> {
   return new Promise((resolve, reject) => {
-    // [2025-01-30 12:55:00] 修复：使用 type 参数而不是 filters（根据 Freepik API 文档）
+// 修复：使用 type 参数而不是 filters（根据 Freepik API 文档）
     const params = new URLSearchParams({
       term,
       page: String(page),
       limit: String(limit),
       order: 'relevance',
-      type: 'vector', // [2025-01-30 12:55:00] 使用 type 参数过滤矢量资源
+type: 'vector', // 使用 type 参数过滤矢量资源
     });
 
     const url = `https://api.freepik.com/v1/resources?${params.toString()}`;
@@ -176,7 +176,7 @@ async function fetchFreepikResources(term: string, page: number, limit: number):
 }
 
 /**
- * [2025-01-30 12:50:30] 爬取单个分类
+* 爬取单个分类
  */
 async function crawlCategory({ top, sub, term }: { top: string; sub: string; term: string }) {
   console.log(`\n[Freepik] 开始分类: ${top} -> ${sub}（term="${term}"）\n`);
@@ -210,25 +210,25 @@ async function crawlCategory({ top, sub, term }: { top: string; sub: string; ter
         const title = item.title || `Freepik Resource ${id}`;
         const slug = generateSlug(title, id);
 
-        // [2025-01-30 12:50:30] 获取图片 URL
+// 获取图片 URL
         const imageUrl = item.image?.source?.url;
         if (!imageUrl) {
           console.log(`  ⚠️  跳过（无图片 URL）: ${title}`);
           continue;
         }
 
-        // [2025-01-30 12:50:30] 提取标签和授权信息
+// 提取标签和授权信息
         const licenseType = item.licenses?.[0]?.type || 'freemium';
         const authorName = item.author?.name || 'Unknown';
         const tags = [term, ...(item.image?.type ? [item.image.type] : [])];
 
-        // [2025-01-30 12:50:30] 确定文件扩展名
+// 确定文件扩展名
         const urlExt = path.extname(new URL(imageUrl).pathname) || '.jpg';
         const fileName = `${slug}${urlExt}`;
         const filePath = path.join(categoryDir, fileName);
 
         try {
-          // [2025-01-30 12:50:30] 下载图片到本地
+// 下载图片到本地
           await downloadImage(imageUrl, filePath);
           
           const artwork: ArtworkMetadata = {
@@ -252,7 +252,7 @@ async function crawlCategory({ top, sub, term }: { top: string; sub: string; ter
 
       page += 1;
       
-      // [2025-01-30 12:50:30] 避免无限循环
+// 避免无限循环
       if (page > 10) {
         console.log(`  ⚠️  已达到最大页数限制（10页）`);
         break;
@@ -264,7 +264,7 @@ async function crawlCategory({ top, sub, term }: { top: string; sub: string; ter
     }
   }
 
-  // [2025-01-30 12:50:30] 保存 metadata
+// 保存 metadata
   fs.writeFileSync(metadataFile, JSON.stringify(metadata, null, 2), 'utf-8');
   console.log(`\n✅ 分类 ${top} -> ${sub} 完成: 共 ${metadata.length} 个素材`);
   console.log(`📁 输出目录: ${categoryDir}`);
@@ -272,7 +272,7 @@ async function crawlCategory({ top, sub, term }: { top: string; sub: string; ter
 }
 
 /**
- * [2025-01-30 12:50:30] 主函数
+* 主函数
  */
 async function main() {
   console.log('[Freepik] 开始爬取素材...');
@@ -282,7 +282,7 @@ async function main() {
   for (const category of CATEGORIES) {
     try {
       await crawlCategory(category);
-      // [2025-01-30 12:50:30] 添加延迟，避免 API 限流
+// 添加延迟，避免 API 限流
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -293,7 +293,7 @@ async function main() {
   console.log('\n✅ Freepik 爬取完成！\n');
 }
 
-// [2025-01-30 12:50:30] 运行
+// 运行
 main().catch((error) => {
   console.error('❌ 脚本执行失败:', error);
   process.exit(1);

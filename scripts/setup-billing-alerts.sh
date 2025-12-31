@@ -1,6 +1,6 @@
 #!/bin/bash
 # Setup GCP Billing Alerts Script
-# [2025-01-27] Automatically set up billing alerts to prevent unexpected charges
+# Automatically set up billing alerts to prevent unexpected charges
 set -e
 
 # Colors

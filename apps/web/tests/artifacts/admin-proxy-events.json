@@ -1,6 +1,6 @@
 {
   "testRun": {
-    "timestamp": "2025-01-27T18:00:00Z",
+"timestamp": "T18:00:00Z",
     "description": "管理后台代理层错误修复测试记录",
     "version": "1.0.0"
   },

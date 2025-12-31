@@ -1,4 +1,4 @@
-// [2025-11-02 22:13:00] Content Manager JavaScript
+// Content Manager JavaScript
 /**
  * Content Manager
  * Manages non-product images through JSON configuration
@@ -69,7 +69,7 @@ class ContentManager {
 
   /**
    * Handle file upload
-   * [2025-11-02 22:20:00] Enhanced file upload with automatic download and path update
+* Enhanced file upload with automatic download and path update
    */
   async handleFileUpload(category, key, file) {
     if (!file) return;
@@ -156,7 +156,7 @@ class ContentManager {
 
   /**
    * Download image file to user's download folder
-   * [2025-11-02 22:20:00] Helper function to save uploaded image
+* Helper function to save uploaded image
    */
   async downloadImageFile(file, fileName, targetDir) {
     // Create a download link
@@ -294,7 +294,7 @@ class ContentManager {
 
   /**
    * Setup event listeners
-   * [2025-11-02 22:20:00] Enhanced to handle dynamically generated content
+* Enhanced to handle dynamically generated content
    */
   setupEventListeners() {
     // Remove existing listeners to avoid duplicates

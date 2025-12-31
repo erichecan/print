@@ -1,6 +1,6 @@
 /**
  * Admin User Controller
- * [2025-11-15 14:05:00] Provides user listing and detail views for admin UI
+* Provides user listing and detail views for admin UI
  */
 const prisma = require('../lib/prisma');
 
@@ -187,24 +187,24 @@ exports.getUserDetail = async (req, res) => {
 
 /**
  * POST /api/admin/users - Create a new user
- * [2025-01-28 18:30:00] 创建新用户（支持设置角色、激活状态等）
+* 创建新用户（支持设置角色、激活状态等）
  */
 exports.createUser = async (req, res) => {
   try {
     const { email, password, firstName, lastName, phone, role, emailVerified } = req.body;
 
-    // [2025-01-28 18:30:00] 验证必填字段
+// 验证必填字段
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-    // [2025-01-28 18:30:00] 验证邮箱格式
+// 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    // [2025-01-28 18:30:00] 检查用户是否已存在
+// 检查用户是否已存在
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
@@ -213,13 +213,13 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // [2025-01-28 18:30:00] 验证角色
+// 验证角色
     const validRoles = ['CUSTOMER', 'ADMIN'];
     const userRole = role && validRoles.includes(role.toUpperCase())
       ? role.toUpperCase()
       : 'CUSTOMER';
 
-    // [2025-01-28 18:30:00] 处理密码（如果提供）
+// 处理密码（如果提供）
     let passwordHash = null;
     if (password) {
       if (password.length < 8) {
@@ -228,14 +228,14 @@ exports.createUser = async (req, res) => {
       const bcrypt = require('bcryptjs');
       passwordHash = await bcrypt.hash(password, 10);
     } else {
-      // [2025-01-28 18:30:00] 如果没有提供密码，生成一个临时密码（用于邀请场景）
+// 如果没有提供密码，生成一个临时密码（用于邀请场景）
       const bcrypt = require('bcryptjs');
       const crypto = require('crypto');
       const tempPassword = crypto.randomBytes(16).toString('hex');
       passwordHash = await bcrypt.hash(tempPassword, 10);
     }
 
-    // [2025-01-28 18:30:00] 创建用户
+// 创建用户
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -276,7 +276,7 @@ exports.createUser = async (req, res) => {
   } catch (error) {
     console.error('[adminUserController] createUser error:', error);
 
-    // [2025-01-28 18:30:00] 处理 Prisma 唯一约束错误
+// 处理 Prisma 唯一约束错误
     if (error.code === 'P2002') {
       return res.status(400).json({ error: 'User with this email already exists' });
     }

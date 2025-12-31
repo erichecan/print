@@ -1,6 +1,6 @@
 /**
  * Offline Orders i18n dictionary
- * [2025-01-27 20:00:00] Provide bilingual (en/zh) strings for the offline orders intake page
+* Provide bilingual (en/zh) strings for the offline orders intake page
  */
 export type OfflineOrdersLocale = 'en' | 'zh';
 
@@ -24,7 +24,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     step4Description: 'Fill in project name and notes',
     step5Title: 'File Upload',
     step5Description: 'Upload design files and attachments',
-    // [2025-12-07 02:00:00] PRD v2.0: 3步流程的新标题
+// PRD v2.0: 3步流程的新标题
     step2TitleV2: 'Customer Information and Invoice',
     step2DescriptionV2: 'Fill in customer information and invoice details',
     step3TitleV2: 'File Upload',
@@ -42,7 +42,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     // Step 1
     step1Heading: 'Multi-product Customization',
     step1Intro: 'Supports customizing multiple products simultaneously, each product can choose different variations (size, color, etc.) and quantity',
-    // [2025-11-28 14:22:50] Step1/2 文案微调：添加商品 / 按产品配置印刷位置
+// Step1/2 文案微调：添加商品 / 按产品配置印刷位置
     addProduct: 'Add product',
     selectProductType: 'Select product type...',
     pleaseAddProducts: 'Please add product types first, then add variations (size, color, etc.) and quantity for each product',
@@ -152,7 +152,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     errorAddress: 'Address is required for invoice',
     errorProjectName: 'Project name is required',
     errorPaymentMethod: 'Payment method is required',
-    // [2025-12-07 02:00:00] PRD v2.0: 支付相关翻译
+// PRD v2.0: 支付相关翻译
     paymentInfo: 'Payment Information',
     paymentMethod: 'Payment Method',
     selectPaymentMethod: 'Select payment method...',
@@ -190,7 +190,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     step4Description: '填写项目名称和备注',
     step5Title: '文件上传',
     step5Description: '上传设计文件和附件',
-    // [2025-12-07 02:00:00] PRD v2.0: 3步流程的新标题
+// PRD v2.0: 3步流程的新标题
     step2TitleV2: '客户信息和Invoice',
     step2DescriptionV2: '填写客户信息和Invoice信息',
     step3TitleV2: '文件上传',
@@ -317,7 +317,7 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     errorAddress: '发票地址是必填项',
     errorProjectName: '项目名称是必填项',
     errorPaymentMethod: '支付方式是必填项',
-    // [2025-12-07 02:00:00] PRD v2.0: 支付相关翻译
+// PRD v2.0: 支付相关翻译
     paymentInfo: '支付信息',
     paymentMethod: '支付方式',
     selectPaymentMethod: '选择支付方式...',

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 修复管理员账户脚本
- * [2025-11-15 12:00:00] 创建或更新管理员账户，确保邮箱和密码正确
+* 创建或更新管理员账户，确保邮箱和密码正确
  * 
  * 使用方法:
  *   node scripts/fix-admin-user.js [DATABASE_URL]
@@ -15,7 +15,7 @@ const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
 
-// [2025-01-27 15:40:00] 尝试从backend/.env文件读取DATABASE_URL
+// 尝试从backend/.env文件读取DATABASE_URL
 try {
   const envPath = path.join(__dirname, '../backend/.env');
   if (fs.existsSync(envPath)) {
@@ -35,7 +35,7 @@ try {
 
 const prisma = new PrismaClient();
 
-// [2025-01-27 15:30:00] 管理员账户配置 - 支持多种邮箱拼写
+// 管理员账户配置 - 支持多种邮箱拼写
 const ADMIN_EMAILS = [
   'admin@souvenirplus.com',      // 标准邮箱
   'admin@suvernireplus.com',     // 旧邮箱（seeder中的拼写）
@@ -50,7 +50,7 @@ async function fixAdminUser() {
   try {
     console.log('🔍 检查管理员账户...\n');
 
-    // [2025-01-27 15:30:00] 检查所有可能的管理员邮箱
+// 检查所有可能的管理员邮箱
     let primaryAdmin = null;
     const foundAdmins = [];
     
@@ -66,7 +66,7 @@ async function fixAdminUser() {
       }
     }
 
-    // [2025-01-27 15:30:00] 如果找到了主要邮箱，更新其密码
+// 如果找到了主要邮箱，更新其密码
     if (primaryAdmin) {
       console.log(`✅ 找到现有管理员账户: ${ADMIN_EMAIL}`);
       
@@ -85,7 +85,7 @@ async function fixAdminUser() {
       console.log(`   密码: ${ADMIN_PASSWORD}`);
       console.log(`   角色: ADMIN\n`);
     } else if (foundAdmins.length > 0) {
-      // [2025-01-27 15:30:00] 如果找到了其他变体，更新为主要邮箱
+// 如果找到了其他变体，更新为主要邮箱
       const firstFound = foundAdmins[0];
       console.log(`⚠️  找到旧的管理员邮箱: ${firstFound.email}`);
       console.log(`   正在更新为主要邮箱: ${ADMIN_EMAIL}\n`);
@@ -110,7 +110,7 @@ async function fixAdminUser() {
       
       primaryAdmin = { email: ADMIN_EMAIL };
       
-      // [2025-01-27 15:30:00] 删除其他变体邮箱（避免重复）
+// 删除其他变体邮箱（避免重复）
       for (let i = 1; i < foundAdmins.length; i++) {
         const duplicate = foundAdmins[i];
         if (duplicate.email !== firstFound.email) {
@@ -121,7 +121,7 @@ async function fixAdminUser() {
         }
       }
     } else {
-      // [2025-01-27 15:30:00] 如果都不存在，创建新的管理员账户
+// 如果都不存在，创建新的管理员账户
       console.log(`⚠️  未找到管理员账户，正在创建...\n`);
       
       const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 10);
@@ -160,11 +160,11 @@ async function fixAdminUser() {
   }
 }
 
-// [2025-01-27 15:45:00] 主函数 - 支持从.env文件、环境变量或参数读取DATABASE_URL
+// 主函数 - 支持从.env文件、环境变量或参数读取DATABASE_URL
 async function main() {
   let dbUrl = process.argv[2] || process.env.DATABASE_URL;
   
-  // [2025-01-27 15:45:00] 如果还没有DATABASE_URL，尝试从环境变量构建（本地开发场景）
+// 如果还没有DATABASE_URL，尝试从环境变量构建（本地开发场景）
   if (!dbUrl) {
     const dbHost = process.env.DB_HOST || 'localhost';
     const dbPort = process.env.DB_PORT || 5432;
@@ -194,7 +194,7 @@ async function main() {
     process.exit(1);
   }
 
-  // [2025-01-27 15:45:00] 检查是否是 Neon 数据库（通过 URL 判断）
+// 检查是否是 Neon 数据库（通过 URL 判断）
   const isNeon = dbUrl.includes('neon.tech') || dbUrl.includes('neon');
   if (isNeon) {
     console.log('🌐 检测到 Neon 数据库，连接到线上数据库...\n');

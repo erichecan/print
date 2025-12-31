@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.1 - 角控件与工具栏测试
- * [2025-12-16 03:10:00] 测试 upload/text/art 三类对象的角控件（删除/复制/缩放）和工具栏按钮
+* 测试 upload/text/art 三类对象的角控件（删除/复制/缩放）和工具栏按钮
  */
 import { test, expect } from './fixtures/test-base';
 import {

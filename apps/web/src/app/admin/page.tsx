@@ -1,7 +1,7 @@
 /**
  * Admin Dashboard (Next.js version faithfully mirroring prototype/admin/admin/index.html)
- * [2025-11-05 00:50:00] 初版 HTML
- * [2025-11-15 12:40:00] React 版本 1:1 还原内容 / 布局 / 样式
+* 初版 HTML
+* React 版本 1:1 还原内容 / 布局 / 样式
  */
 'use client';
 

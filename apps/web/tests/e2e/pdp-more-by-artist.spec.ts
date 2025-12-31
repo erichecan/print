@@ -1,6 +1,6 @@
 /**
  * PDP More by this artist 条件渲染测试
- * [2025-01-30 10:00:00] 验证 More by this artist 板块的条件渲染逻辑
+* 验证 More by this artist 板块的条件渲染逻辑
  */
 import { test, expect } from '@playwright/test';
 
@@ -12,7 +12,7 @@ test.describe('PDP More by this artist 条件渲染', () => {
   let productWithoutBrand: { slug: string };
 
   test.beforeAll(async ({ request }) => {
-    // [2025-01-30 10:00:00] 获取一个有品牌的产品
+// 获取一个有品牌的产品
     const productsResponse = await request.get(`${API_URL}/api/products?limit=20`);
     const productsData = await productsResponse.json();
     
@@ -55,19 +55,19 @@ test.describe('PDP More by this artist 条件渲染', () => {
     await page.goto(`${FRONTEND_URL}/products/${productWithBrand.slug}`);
     await page.waitForLoadState('domcontentloaded');
     
-    // [2025-01-30 10:00:00] 等待产品详情页加载
+// 等待产品详情页加载
     await page.waitForSelector('h1, [data-testid="product-detail"]', { 
       timeout: 15000 
     }).catch(() => {});
 
-    // [2025-01-30 10:00:00] 检查是否有同一品牌的其它商品
+// 检查是否有同一品牌的其它商品
     const brandProductsResponse = await page.request.get(
       `${API_URL}/api/brands/${productWithBrand.brandId}/products?excludeProductId=${productWithBrand.slug}&limit=12`
     );
     const brandProductsData = await brandProductsResponse.json();
 
     if (brandProductsData.items && brandProductsData.items.length > 0) {
-      // [2025-01-30 10:00:00] 如果有商品，应该显示板块
+// 如果有商品，应该显示板块
       await page.waitForSelector('[data-testid="artist-more-section"]', {
         timeout: 10000,
       }).catch(() => {});
@@ -76,14 +76,14 @@ test.describe('PDP More by this artist 条件渲染', () => {
       const count = await section.count();
       
       if (count > 0) {
-        // [2025-01-30 10:00:00] 验证板块可见
+// 验证板块可见
         await expect(section.first()).toBeVisible();
         
-        // [2025-01-30 10:00:00] 验证标题存在
+// 验证标题存在
         const title = section.locator('h2:has-text("More by this artist")');
         await expect(title).toBeVisible();
         
-        // [2025-01-30 10:00:00] 验证至少有一个商品卡片
+// 验证至少有一个商品卡片
         const cards = section.locator('[data-testid^="artist-more-card-"]');
         const cardCount = await cards.count();
         expect(cardCount).toBeGreaterThan(0);
@@ -92,7 +92,7 @@ test.describe('PDP More by this artist 条件渲染', () => {
   });
 
   test('无同一品牌商品时应该隐藏 More by this artist 板块', async ({ page }) => {
-    // [2025-01-30 10:00:00] 创建一个没有同一品牌商品的场景
+// 创建一个没有同一品牌商品的场景
     // 这里我们需要找到一个品牌，该品牌只有一个商品
     await page.goto(`${FRONTEND_URL}/products/${productWithBrand.slug}`);
     await page.waitForLoadState('domcontentloaded');
@@ -101,19 +101,19 @@ test.describe('PDP More by this artist 条件渲染', () => {
       timeout: 15000 
     }).catch(() => {});
 
-    // [2025-01-30 10:00:00] 检查品牌商品数量
+// 检查品牌商品数量
     const brandProductsResponse = await page.request.get(
       `${API_URL}/api/brands/${productWithBrand.brandId}/products?excludeProductId=${productWithBrand.slug}&limit=12`
     );
     const brandProductsData = await brandProductsResponse.json();
 
     if (brandProductsData.items && brandProductsData.items.length === 0) {
-      // [2025-01-30 10:00:00] 如果没有商品，板块应该不存在
+// 如果没有商品，板块应该不存在
       const section = page.locator('[data-testid="artist-more-section"]');
       const count = await section.count();
       expect(count).toBe(0);
     } else {
-      // [2025-01-30 10:00:00] 如果有商品，测试通过（因为无法创建无商品场景）
+// 如果有商品，测试通过（因为无法创建无商品场景）
       test.skip();
     }
   });
@@ -126,20 +126,20 @@ test.describe('PDP More by this artist 条件渲染', () => {
       timeout: 15000 
     }).catch(() => {});
 
-    // [2025-01-30 10:00:00] 等待板块加载
+// 等待板块加载
     const section = page.locator('[data-testid="artist-more-section"]');
     const sectionCount = await section.count();
 
     if (sectionCount > 0) {
-      // [2025-01-30 10:00:00] 验证板块有正确的 data-testid
+// 验证板块有正确的 data-testid
       await expect(section.first()).toHaveAttribute('data-testid', 'artist-more-section');
       
-      // [2025-01-30 10:00:00] 验证商品卡片有正确的 data-testid
+// 验证商品卡片有正确的 data-testid
       const cards = section.locator('[data-testid^="artist-more-card-"]');
       const cardCount = await cards.count();
       
       if (cardCount > 0) {
-        // [2025-01-30 10:00:00] 验证第一个卡片有正确的 data-testid 格式
+// 验证第一个卡片有正确的 data-testid 格式
         const firstCard = cards.first();
         const testId = await firstCard.getAttribute('data-testid');
         expect(testId).toMatch(/^artist-more-card-/);
@@ -160,7 +160,7 @@ test.describe('PDP More by this artist 条件渲染', () => {
     const sectionCount = await section.count();
 
     if (sectionCount > 0) {
-      // [2025-01-30 10:00:00] 查找网格容器
+// 查找网格容器
       const grid = section.locator('.more-by-artist-grid, [class*="grid"]').first();
       const gridCount = await grid.count();
 
@@ -173,7 +173,7 @@ test.describe('PDP More by this artist 条件渲染', () => {
           };
         });
 
-        // [2025-01-30 10:00:00] 桌面端应该是 4 列
+// 桌面端应该是 4 列
         const columnCount = gridStyle.gridTemplateColumns.split(' ').length;
         expect(columnCount).toBe(4);
       }
@@ -204,7 +204,7 @@ test.describe('PDP More by this artist 条件渲染', () => {
           };
         });
 
-        // [2025-01-30 10:00:00] 平板端应该是 2-3 列
+// 平板端应该是 2-3 列
         const columnCount = gridStyle.gridTemplateColumns.split(' ').length;
         expect(columnCount).toBeGreaterThanOrEqual(2);
         expect(columnCount).toBeLessThanOrEqual(3);
@@ -236,7 +236,7 @@ test.describe('PDP More by this artist 条件渲染', () => {
           };
         });
 
-        // [2025-01-30 10:00:00] 手机端应该是 1-2 列
+// 手机端应该是 1-2 列
         const columnCount = gridStyle.gridTemplateColumns.split(' ').length;
         expect(columnCount).toBeGreaterThanOrEqual(1);
         expect(columnCount).toBeLessThanOrEqual(2);

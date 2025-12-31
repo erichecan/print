@@ -1,8 +1,8 @@
 # Cloud Build configuration for GCP deployment
-# [2025-01-27] Configured for multi-service deployment (backend + frontend)
+# Configured for multi-service deployment (backend + frontend)
 steps:
   # Compute build metadata (SHA + UTC build time) for both build-time and runtime injection
-  # [2025-12-19 15:36:40] 修复：gcloud builds submit 的 source 通常不包含 .git，不能依赖 git rev-parse
+# 修复：gcloud builds submit 的 source 通常不包含 .git，不能依赖 git rev-parse
   # 目标：确保 NEXT_PUBLIC_BUILD_SHA/TIME 100% 有值（且不为 unknown/dev），用于前端控制台与 /api/version
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'compute-build-meta'
@@ -10,7 +10,7 @@ steps:
     args:
       - '-c'
       - |
-        # [2025-12-19 15:40:30] 注意：Cloud Build 会对“美元符号+花括号”的文本模式做 substitution 预处理
+# 注意：Cloud Build 会对“美元符号+花括号”的文本模式做 substitution 预处理
         # 这里避免使用 bash 的参数展开语法（带花括号），改用 if 判断，防止触发 INVALID_ARGUMENT。
         set -eo pipefail
         # 优先级：git(若存在) -> SHORT_SHA/COMMIT_SHA(触发器) -> BUILD_ID -> 时间戳
@@ -74,7 +74,7 @@ steps:
       - '-c'
       - |
         STRIPE_KEY=$$(cat /workspace/stripe-key.txt)
-        # [2025-12-19 15:36:40] 修复：从 build-meta.env 读取构建版本信息（不依赖 .git）
+# 修复：从 build-meta.env 读取构建版本信息（不依赖 .git）
         set -euo pipefail
         source /workspace/build-meta.env
         docker build \
@@ -84,7 +84,7 @@ steps:
           --build-arg NEXT_PUBLIC_BUILD_TIME="$$BUILD_TIME" \
           -t ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/frontend:latest \
           -f apps/web/Dockerfile \
-          . # [2025-12-19] 修复：构建上下文改为项目根目录，与Dockerfile匹配
+. # 修复：构建上下文改为项目根目录，与Dockerfile匹配
     waitFor: ['read-stripe-key', 'compute-build-meta']
 
   # Push backend image to Artifact Registry
@@ -112,7 +112,7 @@ steps:
     args:
       - '-c'
       - |
-        # [2025-12-19 15:36:40] 修复：从 build-meta.env 读取构建版本信息（不依赖 .git）
+# 修复：从 build-meta.env 读取构建版本信息（不依赖 .git）
         set -euo pipefail
         source /workspace/build-meta.env
         gcloud run deploy ${_BACKEND_SERVICE_NAME} \
@@ -135,7 +135,7 @@ steps:
     args:
       - '-c'
       - |
-        # [2025-12-19 15:37:10] 修复：使用 bash 读取 build-meta.env，确保变量能在 gcloud 参数中展开
+# 修复：使用 bash 读取 build-meta.env，确保变量能在 gcloud 参数中展开
         set -euo pipefail
         source /workspace/build-meta.env
         gcloud run deploy ${_FRONTEND_SERVICE_NAME} \

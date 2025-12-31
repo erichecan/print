@@ -1,18 +1,17 @@
 /**
  * Cart Context
- * [2025-11-05 00:15:00]
  */
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
-import { cartApi, CartResponse, CartItemResponse } from '@/lib/api'; // [2025-11-10 22:52:03] Reuse typed cart API responses
+import { cartApi, CartResponse, CartItemResponse } from '@/lib/api'; // Reuse typed cart API responses
 import useSWR from 'swr';
 
-type CartItem = CartItemResponse; // [2025-11-10 22:52:03] Alias to shared API response type
-type Cart = CartResponse; // [2025-11-10 22:52:03] Alias to shared API response type
+type CartItem = CartItemResponse; // Alias to shared API response type
+type Cart = CartResponse; // Alias to shared API response type
 
 interface CartContextType {
-  cart: Cart; // [2025-01-28 03:30:00] 改为非 null，始终有默认值
+cart: Cart; // 改为非 null，始终有默认值
   isLoading: boolean;
   error: Error | null;
   addItem: (variantId: string, quantity?: number, designId?: string) => Promise<void>;
@@ -24,7 +23,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// [2025-01-28 03:30:00] 默认空购物车结构
+// 默认空购物车结构
 const EMPTY_CART: CartResponse = {
   items: [],
   subtotal: 0,
@@ -35,12 +34,12 @@ const EMPTY_CART: CartResponse = {
 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  // [2025-12-08] 修复：防止重复初始化（React Strict Mode 在开发环境下会双重渲染）
+// 修复：防止重复初始化（React Strict Mode 在开发环境下会双重渲染）
   const mountedRef = useRef(false);
   const initCountRef = useRef(0);
   
-  // [2025-12-08] 只在首次挂载时打印初始化日志
-  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+// 只在首次挂载时打印初始化日志
+// 修复：使用 try-catch 包装 console.log，防止格式化错误
   if (!mountedRef.current) {
     initCountRef.current += 1;
     try {
@@ -63,16 +62,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // [2025-12-08] 修复：使用稳定的 SWR key，避免重复初始化
+// 修复：使用稳定的 SWR key，避免重复初始化
   const SWR_KEY = '/cart';
   
-  // [2025-01-28 03:35:00] 使用更安全的错误处理方式
-  // [2025-01-27 22:45:00] Hooks 必须在组件顶层调用，不能在 try-catch 内
+// 使用更安全的错误处理方式
+// Hooks 必须在组件顶层调用，不能在 try-catch 内
   const { data, error, mutate, isLoading } = useSWR<CartResponse>(
       SWR_KEY,
       async () => {
-        // [2025-12-08] 防止重复获取（在开发环境下 React Strict Mode 可能导致双重调用）
-        // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+// 防止重复获取（在开发环境下 React Strict Mode 可能导致双重调用）
+// 修复：使用 try-catch 包装 console.log，防止格式化错误
         try {
           if (mountedRef.current) {
             console.log('[CartProvider] ===== FETCHING CART (already mounted) =====', {
@@ -88,7 +87,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
         try {
           const result = await cartApi.get();
-          // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+// 修复：使用 try-catch 包装 console.log，防止格式化错误
           try {
             console.log('[CartProvider] ✅ Cart fetched successfully:', {
               timestamp: new Date().toISOString(),
@@ -99,17 +98,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
           return result;
         } catch (err: any) {
-          // [2025-01-28 03:35:00] 记录详细错误信息
-          // [2025-12-20 03:35:00] 优化：如果是后端服务错误（500/503），静默处理，减少控制台噪音
+// 记录详细错误信息
+// 优化：如果是后端服务错误（500/503），静默处理，减少控制台噪音
           const isServerError = err?.message?.includes('500') || 
                                err?.message?.includes('503') ||
                                err?.message?.includes('Service Unavailable') ||
                                err?.message?.includes('Internal Server Error') ||
                                err?.message?.includes('无法连接到后端服务器');
           
-          // [2025-12-20 03:35:00] 只有在非服务错误时才详细记录错误（保留对真正错误的可见性）
+// 只有在非服务错误时才详细记录错误（保留对真正错误的可见性）
           if (!isServerError && process.env.NODE_ENV === 'development') {
-            // [2025-12-08] 修复：使用 try-catch 包装 console.error，防止格式化错误
+// 修复：使用 try-catch 包装 console.error，防止格式化错误
             try {
               console.error('[CartProvider] ❌ Error fetching cart:', {
                 timestamp: new Date().toISOString(),
@@ -129,7 +128,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
               }
             }
           } else if (isServerError && process.env.NODE_ENV === 'development') {
-            // [2025-12-20 03:35:00] 后端服务不可用时，只记录一个警告（而不是错误）
+// 后端服务不可用时，只记录一个警告（而不是错误）
             try {
               console.warn('[CartProvider] 后端购物车服务暂时不可用，使用空购物车');
             } catch (e) {
@@ -141,14 +140,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       },
       {
-        revalidateOnFocus: false, // [2025-01-28 03:30:00] 禁用自动重新验证，避免频繁调用
-        revalidateOnReconnect: false, // [2025-01-28 03:30:00] 禁用重连时自动验证
+revalidateOnFocus: false, // 禁用自动重新验证，避免频繁调用
+revalidateOnReconnect: false, // 禁用重连时自动验证
         refreshInterval: 0,
         shouldRetryOnError: false, // 不自动重试
-        fallbackData: EMPTY_CART, // [2025-01-28 03:30:00] 提供默认值，避免 undefined
+fallbackData: EMPTY_CART, // 提供默认值，避免 undefined
         onError: (err) => {
-          // [2025-01-28 03:35:00] 记录详细的 SWR 错误
-          // [2025-12-08] 修复：使用 try-catch 包装 console.error，防止格式化错误
+// 记录详细的 SWR 错误
+// 修复：使用 try-catch 包装 console.error，防止格式化错误
           try {
             console.error('[CartProvider] ❌ SWR error (non-fatal):', {
               timestamp: new Date().toISOString(),
@@ -169,8 +168,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
           }
         },
         onErrorRetry: () => {
-          // [2025-01-28 03:30:00] 禁用错误重试
-          // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+// 禁用错误重试
+// 修复：使用 try-catch 包装 console.log，防止格式化错误
           try {
             console.log('[CartProvider] Error retry disabled');
           } catch (e) {
@@ -181,8 +180,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
   );
 
-  // [2025-12-08] 只在首次挂载时打印 SWR 完成日志
-  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+// 只在首次挂载时打印 SWR 完成日志
+// 修复：使用 try-catch 包装 console.log，防止格式化错误
   if (!mountedRef.current) {
     try {
       console.log('[CartProvider] ===== SWR HOOK COMPLETED =====', {
@@ -196,7 +195,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // [2025-12-08] 标记已挂载，防止重复初始化
+// 标记已挂载，防止重复初始化
   useEffect(() => {
     mountedRef.current = true;
     return () => {
@@ -204,8 +203,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // [2025-01-29 12:00:00] 监听购物车更新事件，确保实时更新
-  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+// 监听购物车更新事件，确保实时更新
+// 修复：使用 try-catch 包装 console.log，防止格式化错误
   useEffect(() => {
     const handleCartUpdate = () => {
       try {
@@ -226,7 +225,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       await cartApi.addItem(variantId, quantity, designId);
       await mutate(); // Refresh cart
-      // [2025-01-29 12:00:00] 触发更新事件，确保其他组件也能收到通知
+// 触发更新事件，确保其他组件也能收到通知
       window.dispatchEvent(new CustomEvent('cart:updated'));
     } catch (err) {
       console.error('Error adding item to cart:', err);
@@ -244,14 +243,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // [2025-12-19 02:50:00] 添加详细调试日志，修复删除功能
+// 添加详细调试日志，修复删除功能
   const removeItem = async (itemId: string) => {
     try {
       console.log('[CartContext] removeItem() called:', itemId);
       await cartApi.removeItem(itemId);
       console.log('[CartContext] ✅ Item removed, refreshing cart');
       await mutate(); // Refresh cart
-      // [2025-12-19 02:50:00] 触发购物车更新事件，确保其他组件也能收到通知
+// 触发购物车更新事件，确保其他组件也能收到通知
       window.dispatchEvent(new CustomEvent('cart:updated'));
       console.log('[CartContext] ✅ Cart update event dispatched');
     } catch (err) {
@@ -270,11 +269,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // [2025-01-28 03:35:00] 确保 cart 始终有值，避免 null 导致的问题
+// 确保 cart 始终有值，避免 null 导致的问题
   const cart = data || EMPTY_CART;
 
-  // [2025-12-08] 减少渲染日志，只在必要时打印（避免重复日志）
-  // [2025-12-08] 修复：使用 try-catch 包装 console.log，防止格式化错误
+// 减少渲染日志，只在必要时打印（避免重复日志）
+// 修复：使用 try-catch 包装 console.log，防止格式化错误
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
   if (renderCountRef.current <= 2 || process.env.NODE_ENV === 'development') {

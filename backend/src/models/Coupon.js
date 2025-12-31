@@ -1,4 +1,4 @@
-// [2025-11-02 20:58:00] Coupon model
+// Coupon model
 module.exports = (sequelize, DataTypes) => {
   const Coupon = sequelize.define('Coupon', {
     id: {

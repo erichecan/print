@@ -1,6 +1,6 @@
 /**
  * 商品图片下载脚本
- * [2025-01-28 21:40:00] 从 JSON 文件中读取商品数据，下载所有图片到本地
+* 从 JSON 文件中读取商品数据，下载所有图片到本地
  * 
  * 使用说明：
  * node backend/scripts/download-product-images.js [json-file-path]
@@ -17,7 +17,7 @@ const DATA_DIR = path.join(__dirname, '../data/scraped-products');
 const ALL_PRODUCTS_FILE = path.join(DATA_DIR, 'all-products.json');
 const IMAGES_DIR = path.join(__dirname, '../../apps/web/public/assets/products');
 
-// [2025-01-28 21:40:00] 下载图片到本地
+// 下载图片到本地
 function downloadImage(imageUrl, outputPath) {
   return new Promise((resolve, reject) => {
     if (!imageUrl || !imageUrl.startsWith('http')) {
@@ -94,7 +94,7 @@ function downloadImage(imageUrl, outputPath) {
   });
 }
 
-// [2025-01-28 21:40:00] 从页面提取图片 URL
+// 从页面提取图片 URL
 async function extractImageUrls(productInfo, page) {
   const images = [];
   
@@ -155,7 +155,7 @@ async function extractImageUrls(productInfo, page) {
   return images;
 }
 
-// [2025-01-28 21:40:00] 下载商品图片
+// 下载商品图片
 async function downloadProductImages(productData) {
   const product = productData.product;
   const slug = product.slug;
@@ -240,7 +240,7 @@ async function downloadProductImages(productData) {
   return downloadedImages;
 }
 
-// [2025-01-28 21:40:00] 主函数
+// 主函数
 async function main() {
   console.log('🖼️  开始下载商品图片...\n');
   

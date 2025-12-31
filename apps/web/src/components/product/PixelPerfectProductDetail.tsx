@@ -1,6 +1,6 @@
 /**
  * Pixel Perfect Product Detail Component
- * [2025-11-19] 像素级精确复刻的商品详情页面，包含完整的占位符逻辑
+* 像素级精确复刻的商品详情页面，包含完整的占位符逻辑
  */
 'use client';
 
@@ -136,7 +136,7 @@ const LoadingSkeleton = () => {
 
 export function PixelPerfectProductDetail() {
   const params = useParams();
-  const router = useRouter(); // [2025-01-28 03:10:00] 添加 router 用于导航
+const router = useRouter(); // 添加 router 用于导航
   const slug = params?.slug as string;
   const { addItem } = useCart();
   const { success, error: showError } = useToast();
@@ -163,7 +163,7 @@ export function PixelPerfectProductDetail() {
   const [activeTab, setActiveTab] = useState<'description' | 'specs' | 'reviews'>('description');
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
 
-  // [2025-11-19 08:50:00] 获取唯一颜色和尺寸（安全处理 product 为 null 的情况）
+// 获取唯一颜色和尺寸（安全处理 product 为 null 的情况）
   const colors = product?.variants 
     ? Array.from(new Set(product.variants.map(v => v.color).filter(Boolean))) as string[]
     : [];
@@ -172,13 +172,13 @@ export function PixelPerfectProductDetail() {
     : [];
   const colorVariants = product?.variants?.filter(v => v.color && v.colorHex) || [];
 
-  // [2025-11-19 08:50:00] 找到选中的变体（需要先检查 product 是否存在）
+// 找到选中的变体（需要先检查 product 是否存在）
   const selectedVariant = product?.variants?.find(
     v => (selectedColor ? v.color === selectedColor : !v.color) &&
        (selectedSize ? v.size === selectedSize : !v.size)
   );
 
-  // [2025-11-19 08:50:00] 价格计算：安全处理 basePrice 可能为 null 的情况
+// 价格计算：安全处理 basePrice 可能为 null 的情况
   // 后端返回的 basePrice 是整数（分），price.base 是元，优先使用 price.base
   const basePriceInDollars = product?.price?.base ?? (product?.basePrice != null ? Number(product.basePrice) / 100 : 0);
   
@@ -298,7 +298,7 @@ export function PixelPerfectProductDetail() {
     }
   }, [selectedVariant, quantity, addItem, success, showError]);
 
-  // [2025-12-08 14:40:00] 开始设计 - 跳转到新的 Design Lab 页面
+// 开始设计 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {
     if (!selectedVariant) {
       showError('请选择颜色和尺寸');
@@ -308,7 +308,7 @@ export function PixelPerfectProductDetail() {
     try {
       persistDesignLabPayload(selectedVariant);
       
-      // [2025-12-08 14:40:00] 使用新的 URL 构建函数
+// 使用新的 URL 构建函数
       const designUrl = buildNewDesignUrlSafe({
         variantId: selectedVariant.id,
         productId: product?.id,
@@ -317,7 +317,7 @@ export function PixelPerfectProductDetail() {
         referrer: 'product_detail',
       });
       
-      // [2025-12-08 14:40:00] 使用 router.push 进行客户端导航
+// 使用 router.push 进行客户端导航
       router.push(designUrl);
     } catch (error) {
       console.error('[PixelPerfectProductDetail] Failed to build design URL:', error);
@@ -344,7 +344,7 @@ export function PixelPerfectProductDetail() {
     );
   }
 
-  // [2025-11-19 08:50:00] 安全获取图片 URL
+// 安全获取图片 URL
   const fallbackImage = '/assets/hero/hero-card-tee.jpg';
   const currentImage = product?.images?.[selectedImageIndex]?.url || product?.images?.[0]?.url || fallbackImage;
 

@@ -1,6 +1,6 @@
 /**
  * Save & Share Modal
- * [2025-12-08] 保存和分享设计模态框
+* 保存和分享设计模态框
  */
 'use client';
 
@@ -9,7 +9,7 @@ import { designLabApi } from '@/lib/api';
 import { SocialShareMenu } from '@/components/social-share/SocialShareMenu';
 import './SaveShareModal.css';
 
-// [2025-12-08] 修复：确保在客户端环境中使用window
+// 修复：确保在客户端环境中使用window
 const getBaseUrl = () => {
   if (typeof window !== 'undefined') {
     return window.location.origin;
@@ -54,12 +54,12 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
         setSaving(false);
         onClose();
         console.log('[SaveShareModal] ✅ Design saved successfully to My Designs!');
-        // [2025-12-28] REMOVED: alert() auto-dismisses due to React re-render
+// REMOVED: alert() auto-dismisses due to React re-render
         // TODO: Implement toast notification instead
       }, 500);
     } catch (error) {
       console.error('[SaveShareModal] ❌ Failed to save design:', error);
-      // [2025-12-28] REMOVED: alert() auto-dismisses due to React re-render
+// REMOVED: alert() auto-dismisses due to React re-render
       // TODO: Implement toast notification instead
       setSaving(false);
     }
@@ -80,7 +80,7 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
         <div className="dl-modal__body">
           <div className="dl-save-share-modal__content">
             <p className="dl-save-share-modal__description">
-              {/* [2025-12-19 16:02:20] 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
+{/* 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
               Save your design to access it later from &quot;My Designs&quot;.
             </p>
             <div className="dl-save-share-modal__form">
@@ -95,7 +95,7 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
               </label>
               {!designId && (
                 <p className="dl-save-share-modal__hint" style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>
-                  {/* [2025-12-19 16:02:20] 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
+{/* 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
                   Your design will be saved when you click &quot;Save Design&quot;.
                 </p>
               )}

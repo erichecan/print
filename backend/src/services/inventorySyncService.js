@@ -1,6 +1,6 @@
 /**
  * Inventory Sync Service
- * [2025-12-06 17:10:00] Inventory synchronization service for Issue #89
+* Inventory synchronization service for Issue #89
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -10,7 +10,6 @@ const inventoryService = require('./inventoryService');
 
 /**
  * Sync inventory from a supplier
- * [2025-12-06 17:10:00]
  * @param {string} supplierId - Supplier ID
  * @param {Object} options - Sync options
  * @returns {Promise<Object>} Sync result
@@ -247,7 +246,6 @@ async function syncInventoryFromSupplier(supplierId, options = {}) {
 
 /**
  * Get sync history for a supplier
- * [2025-12-06 17:10:00]
  */
 async function getSyncHistory(supplierId, options = {}) {
   const { limit = 50, offset = 0 } = options;
@@ -281,7 +279,6 @@ async function getSyncHistory(supplierId, options = {}) {
 
 /**
  * Get sync status for all suppliers
- * [2025-12-06 17:10:00]
  */
 async function getAllSuppliersSyncStatus() {
   try {
@@ -303,7 +300,7 @@ async function getAllSuppliersSyncStatus() {
       latestSync: supplier.syncs[0] || null,
     }));
   } catch (error) {
-    // [2025-01-27 18:00:00] 增强错误日志
+// 增强错误日志
     logger.error('Error fetching suppliers sync status', {
       error: error.message,
       stack: error.stack,

@@ -1,6 +1,6 @@
 /**
  * Admin Fonts Client Component
- * [2025-01-30 19:00:00] 字体管理客户端组件
+* 字体管理客户端组件
  */
 'use client';
 
@@ -183,7 +183,7 @@ export default function AdminFontsClient({
 
   return (
     <div>
-      {/* [2025-12-09] 移除重复的 admin-page-header，因为 AdminShell 已经提供了标题 */}
+{/* 移除重复的 admin-page-header，因为 AdminShell 已经提供了标题 */}
       {/* 使用简单的操作栏替代 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <p className="text-muted" style={{ margin: 0 }}>Manage fonts for Design Lab</p>

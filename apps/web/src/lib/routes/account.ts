@@ -1,6 +1,6 @@
 /**
  * Account Routes Configuration
- * [2025-01-27 14:30:00] 统一管理账户相关路由，避免硬编码路径分散
+* 统一管理账户相关路由，避免硬编码路径分散
  */
 export const ACCOUNT_ROUTES = {
   dashboard: '/account',

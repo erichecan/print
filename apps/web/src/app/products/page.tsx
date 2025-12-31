@@ -1,31 +1,31 @@
 /**
  * Product Listing Page
- * [2025-11-11 22:28:40] Initial scaffold
- * [2025-11-12 00:00:20] Connected to products API with filters, search, and pagination
- * [2025-01-27 13:20:00] Removed TODO marker, page is production-ready
- * [2025-01-27 17:00:00] 补充 SEO 元数据
- * [2025-01-27 18:30:00] 完全重新设计布局以匹配参考设计，包含完整的筛选器和产品卡片
+* Initial scaffold
+* Connected to products API with filters, search, and pagination
+* Removed TODO marker, page is production-ready
+* 补充 SEO 元数据
+* 完全重新设计布局以匹配参考设计，包含完整的筛选器和产品卡片
  */
 
 import Link from 'next/link';
-import Image from 'next/image'; // [2025-11-11 06:07:23] 使用 Next Image 组件提升性能
-// [2025-12-10] 使用统一的 API 客户端
+import Image from 'next/image'; // 使用 Next Image 组件提升性能
+// 使用统一的 API 客户端
 import { apiGet } from '@/lib/apiClient';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import SortSelect from './SortSelect';
 
-// [2025-12-11 23:05:00] 分组分类导航组件（替换原有的树状导航）
+// 分组分类导航组件（替换原有的树状导航）
 const SidebarGrouped = dynamic(() => import('@/components/catalog/SidebarGrouped').then(mod => mod.SidebarGrouped), { ssr: false });
-// [2025-01-27 16:45:00] 客户端筛选组件
+// 客户端筛选组件
 const ProductFiltersClient = dynamic(() => import('@/components/products/ProductFilters').then(mod => ({ default: mod.ProductFilters })), { ssr: false });
-// [2025-01-27 17:00:00] 动态筛选器组件（从API获取筛选选项和数量）
+// 动态筛选器组件（从API获取筛选选项和数量）
 const DynamicFilters = dynamic(() => import('@/components/products/DynamicFilters').then(mod => mod.DynamicFilters), { ssr: false });
-// [2025-01-28 15:30:00] 移动端筛选抽屉组件
+// 移动端筛选抽屉组件
 const MobileFilterDrawer = dynamic(() => import('@/components/products/MobileFilterDrawer').then(mod => mod.MobileFilterDrawer), { ssr: false });
 
-// [2025-01-27 17:00:00] 生成产品列表页 SEO 元数据
+// 生成产品列表页 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Browse All Products - Custom T-Shirts, Hoodies & More',
   description: 'Browse our full catalog of custom t-shirts, hoodies, apparel, and promotional products. Filter by category, price, and brand. Free shipping available.',
@@ -40,9 +40,9 @@ type SearchParams = {
   search?: string;
   sort?: string;
   collection?: string;
-  brand?: string; // [2025-01-27 14:00:00] 品牌筛选
-  minPrice?: string; // [2025-01-27 14:00:00] 最低价格
-  maxPrice?: string; // [2025-01-27 14:00:00] 最高价格
+brand?: string; // 品牌筛选
+minPrice?: string; // 最低价格
+maxPrice?: string; // 最高价格
 };
 
 type ProductListItem = {
@@ -99,7 +99,7 @@ const SORT_OPTIONS = [
   { label: 'Name: Z to A', value: 'name_desc' },
 ];
 
-// [2025-01-27 18:30:00] T-shirt分类列表
+// T-shirt分类列表
 const TSHIRT_CATEGORIES = [
   { name: 'Short Sleeve T-shirts', slug: 'short-sleeve-t-shirts', active: true },
   { name: 'Long Sleeve T-shirts', slug: 'long-sleeve-t-shirts', active: false },
@@ -108,7 +108,7 @@ const TSHIRT_CATEGORIES = [
   { name: "Women's T-shirts", slug: 'womens-t-shirts', active: false },
 ];
 
-// [2025-01-27 18:30:00] 筛选选项数据
+// 筛选选项数据
 const FIT_OPTIONS = [
   { name: 'Standard Fit', count: 156 },
   { name: 'Relaxed Fit', count: 44 },
@@ -221,7 +221,7 @@ function mapSortValue(value: string | undefined) {
   }
 }
 
-// [2025-12-10] 使用统一的 API 客户端，移除 buildApiUrl
+// 使用统一的 API 客户端，移除 buildApiUrl
 async function fetchProducts(searchParams: SearchParams) {
   const page = Number(searchParams.page || '1');
   const limit = Number(searchParams.limit || '12');
@@ -233,9 +233,9 @@ async function fetchProducts(searchParams: SearchParams) {
       limit: limit.toString(),
       search: searchParams.search,
       collection: searchParams.collection,
-      brand: searchParams.brand, // [2025-01-27 14:00:00] 品牌筛选
-      minPrice: searchParams.minPrice, // [2025-01-27 14:00:00] 最低价格
-      maxPrice: searchParams.maxPrice, // [2025-01-27 14:00:00] 最高价格
+brand: searchParams.brand, // 品牌筛选
+minPrice: searchParams.minPrice, // 最低价格
+maxPrice: searchParams.maxPrice, // 最高价格
       sort,
       order,
     }, {
@@ -258,7 +258,7 @@ async function fetchCollections() {
     });
     return response;
   } catch (error) {
-    // [2025-12-10] 如果获取 collections 失败，返回空数组而不是抛出错误
+// 如果获取 collections 失败，返回空数组而不是抛出错误
     console.warn('[Products Page] Failed to fetch collections:', error);
     return [] as Collection[];
   }
@@ -293,27 +293,27 @@ function normalizeSearchParams(
     search: toStringValue(params.search),
     sort: toStringValue(params.sort),
     collection: toStringValue(params.collection),
-    brand: toStringValue(params.brand), // [2025-01-27 14:00:00] 品牌筛选
-    minPrice: toStringValue(params.minPrice), // [2025-01-27 14:00:00] 最低价格
-    maxPrice: toStringValue(params.maxPrice), // [2025-01-27 14:00:00] 最高价格
+brand: toStringValue(params.brand), // 品牌筛选
+minPrice: toStringValue(params.minPrice), // 最低价格
+maxPrice: toStringValue(params.maxPrice), // 最高价格
   };
 }
 
 export default async function ProductsPage({
   searchParams,
 }: {
-  // [2025-01-27 15:15:00] Next.js 15: searchParams 现在是异步的
+// Next.js 15: searchParams 现在是异步的
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const resolvedSearchParams = await (searchParams ?? Promise.resolve({}));
   const normalizedParams = normalizeSearchParams(resolvedSearchParams);
   
-  // [2025-01-27 16:45:00] 创建客户端筛选器包装组件（必须在服务器组件中处理）
+// 创建客户端筛选器包装组件（必须在服务器组件中处理）
   let collections: Collection[] = [];
   let productsResponse: ProductsResponse | null = null;
   let fetchError: string | null = null;
 
-  // [2025-11-16 16:28:00] 解耦列表与集合请求，避免 /collections 404 影响产品渲染
+// 解耦列表与集合请求，避免 /collections 404 影响产品渲染
   const productsPromise = fetchProducts(normalizedParams).catch((error: unknown) => {
     fetchError = error instanceof Error ? error.message : 'Unexpected error loading products.';
     return null;
@@ -332,11 +332,11 @@ export default async function ProductsPage({
   const currentSort = normalizedParams.sort || '';
   const currentSearch = normalizedParams.search || '';
   const currentCollection = normalizedParams.collection || '';
-  const currentBrand = normalizedParams.brand || ''; // [2025-01-27 14:00:00] 当前品牌筛选
-  const currentMinPrice = normalizedParams.minPrice || ''; // [2025-01-27 14:00:00] 当前最低价格
-  const currentMaxPrice = normalizedParams.maxPrice || ''; // [2025-01-27 14:00:00] 当前最高价格
+const currentBrand = normalizedParams.brand || ''; // 当前品牌筛选
+const currentMinPrice = normalizedParams.minPrice || ''; // 当前最低价格
+const currentMaxPrice = normalizedParams.maxPrice || ''; // 当前最高价格
 
-  // [2025-01-27 14:00:00] 从产品数据中提取品牌列表
+// 从产品数据中提取品牌列表
   const brands: Brand[] = Array.from(
     new Map(
       products
@@ -354,38 +354,38 @@ export default async function ProductsPage({
       ? buildRoute(normalizedParams, { page: String(pagination.page + 1) })
       : null;
 
-  // [2025-11-16 16:45:00] 使用动态导入的客户端组件，禁用 SSR，避免服务端报错影响页面渲染
+// 使用动态导入的客户端组件，禁用 SSR，避免服务端报错影响页面渲染
   const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false });
 
-  // [2025-01-27 18:30:00] 获取当前分类名称用于面包屑
+// 获取当前分类名称用于面包屑
   const currentCategoryName = currentCollection 
     ? collections.find(c => c.slug === currentCollection)?.name || 'T-shirts'
     : 'T-shirts';
 
   return (
     <div className="catalog-page">
-      {/* [2025-01-27 18:30:00] 完全重新设计的布局以匹配参考设计 */}
+{/* 完全重新设计的布局以匹配参考设计 */}
       <section className="plp-new">
         <div className="container plp-new__grid">
           {/* 左侧筛选器 */}
           <aside className="plp-new__sidebar">
-            {/* [2025-12-11 23:05:00] 使用分组分类导航组件 */}
+{/* 使用分组分类导航组件 */}
             <SidebarGrouped 
               selected={{
                 groupSlug: searchParams?.group as string,
                 childSlug: searchParams?.category as string,
               }}
             />
-            {/* [2025-01-27 16:45:00] 使用客户端筛选组件处理筛选逻辑 */}
+{/* 使用客户端筛选组件处理筛选逻辑 */}
             <ProductFiltersClient currentCollection={currentCollection} currentBrand={currentBrand} brands={brands} />
-            {/* [2025-01-27 17:00:00] 使用动态筛选器组件（从API获取筛选选项和数量） */}
-            {/* [2025-01-28] 移除表单和按钮，改为实时筛选（参考 Custom Ink） */}
+{/* 使用动态筛选器组件（从API获取筛选选项和数量） */}
+{/* 移除表单和按钮，改为实时筛选（参考 Custom Ink） */}
             <DynamicFilters currentCollection={currentCollection} />
           </aside>
 
           {/* 主内容区 */}
           <div className="plp-new__main">
-            {/* [2025-01-28 15:30:00] 移动端筛选按钮 */}
+{/* 移动端筛选按钮 */}
             <MobileFilterDrawer 
               currentCollection={currentCollection} 
               currentBrand={currentBrand} 

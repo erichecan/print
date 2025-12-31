@@ -1,6 +1,6 @@
 /**
  * Supplier Service
- * [2025-12-06 17:10:00] Supplier API integration service for Issue #89
+* Supplier API integration service for Issue #89
  */
 const axios = require('axios');
 const prisma = require('../lib/prisma');
@@ -9,7 +9,6 @@ const { BadRequestError, NotFoundError } = require('../utils/errors');
 
 /**
  * Fetch inventory data from supplier API
- * [2025-12-06 17:10:00]
  * @param {Object} supplier - Supplier record from database
  * @returns {Promise<Array>} Array of inventory items from supplier
  */
@@ -102,7 +101,6 @@ async function fetchSupplierInventory(supplier) {
 
 /**
  * Map supplier SKU to internal variant SKU
- * [2025-12-06 17:10:00]
  * @param {Object} supplierItem - Item from supplier API
  * @param {Object} supplier - Supplier configuration
  * @returns {Object} Mapped inventory data
@@ -125,7 +123,6 @@ function mapSupplierItemToInventory(supplierItem, supplier) {
 
 /**
  * Get all active suppliers
- * [2025-12-06 17:10:00]
  */
 async function getActiveSuppliers() {
   try {
@@ -146,7 +143,6 @@ async function getActiveSuppliers() {
 
 /**
  * Get supplier by ID
- * [2025-12-06 17:10:00]
  */
 async function getSupplierById(supplierId) {
   try {
@@ -173,7 +169,6 @@ async function getSupplierById(supplierId) {
 
 /**
  * Create or update supplier
- * [2025-12-06 17:10:00]
  */
 async function upsertSupplier(data) {
   try {
@@ -224,7 +219,6 @@ async function upsertSupplier(data) {
 
 /**
  * Update supplier sync status
- * [2025-12-06 17:10:00]
  */
 async function updateSupplierSyncStatus(supplierId, status, error = null) {
   try {

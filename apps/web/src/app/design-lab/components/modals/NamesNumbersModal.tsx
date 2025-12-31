@@ -1,6 +1,6 @@
 /**
  * Names & Numbers Modal - 名字和号码添加模态
- * [2025-01-30 20:00:00] 实现 Names & Numbers 两步流程，对齐 Custom Ink
+* 实现 Names & Numbers 两步流程，对齐 Custom Ink
  */
 'use client';
 
@@ -36,8 +36,8 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
   onClose,
   onAddToCanvas,
 }) => {
-  // [2025-01-30 21:50:00] 修复：跳过 intro，直接显示 tools 配置页面（与 Custom Ink 一致）
-  // [2025-01-31 00:00:00] 根据截图，应该先显示 intro 介绍页
+// 修复：跳过 intro，直接显示 tools 配置页面（与 Custom Ink 一致）
+// 根据截图，应该先显示 intro 介绍页
   const [step, setStep] = useState<Step>('intro');
   const [config, setConfig] = useState<NamesNumbersConfig>({
     addNames: true,
@@ -56,22 +56,22 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
     { name: '', number: '', size: '' },
     { name: '', number: '', size: '' },
   ]);
-  // [2025-01-31 13:30:00] 修复 React Hooks 错误：将所有 hooks 移到早期返回之前
-  // [2025-01-31 00:00:00] Additional Items 状态
+// 修复 React Hooks 错误：将所有 hooks 移到早期返回之前
+// Additional Items 状态
   const [showAdditionalItems, setShowAdditionalItems] = useState(false);
   const [additionalItemsCount, setAdditionalItemsCount] = useState<Record<string, number>>({});
   const [hasAdditionalItems, setHasAdditionalItems] = useState(false);
 
-  // [2025-01-30 21:50:00] 修复：Add To Design 按钮应该添加示例文本到画布，然后进入列表页面
+// 修复：Add To Design 按钮应该添加示例文本到画布，然后进入列表页面
   const handleAddExample = () => {
-    // [2025-01-30 20:00:00] 添加示例文本到画布
+// 添加示例文本到画布
     const exampleItems: NameNumberItem[] = [
       { name: 'EXAMPLE', number: '00', size: 'M' },
     ];
     onAddToCanvas(exampleItems, config);
-    // [2025-01-30 21:50:00] 添加示例后进入列表页面，让用户输入实际的 names/numbers
+// 添加示例后进入列表页面，让用户输入实际的 names/numbers
     setStep('list');
-    // [2025-01-30 21:50:00] 预填充示例数据到列表
+// 预填充示例数据到列表
     setItems([
       { name: 'EXAMPLE', number: '00', size: 'M' },
       { name: '', number: '', size: '' },
@@ -80,7 +80,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
       { name: '', number: '', size: '' },
     ]);
 
-    // [2025-12-08] 埋点：Names & Numbers 添加
+// 埋点：Names & Numbers 添加
     if (typeof window !== 'undefined') {
       const { analytics } = require('@/lib/analytics');
       analytics.track('names_numbers_added', {
@@ -101,12 +101,12 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
   };
 
   const handleDone = () => {
-    // [2025-01-30 20:00:00] 过滤空项并添加到画布
+// 过滤空项并添加到画布
     const validItems = items.filter(
       (item) => item.name.trim() || item.number.trim()
     );
     if (validItems.length > 0) {
-      // [2025-01-31 00:00:00] 根据截图，Done 后应该进入 Additional Items 模态
+// 根据截图，Done 后应该进入 Additional Items 模态
       setShowAdditionalItems(true);
       setStep('quantities');
       // 初始化数量
@@ -129,7 +129,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
     }
   };
 
-  // [2025-01-31 00:00:00] Additional Items Done 处理
+// Additional Items Done 处理
   const handleQuantitiesDone = () => {
     // 最终添加到画布
     const validItems = items.filter(
@@ -155,7 +155,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
   const totalNumbers = items.filter((item) => item.number.trim()).length;
   const totalItems = items.filter((item) => item.name.trim() || item.number.trim()).length;
 
-  // [2025-01-31 13:50:00] 修复 React Hooks 错误：移除早期返回，因为父组件已经使用条件渲染
+// 修复 React Hooks 错误：移除早期返回，因为父组件已经使用条件渲染
   // 这样可以确保 hooks 在每次渲染时都以相同的顺序和数量被调用
   if (!isOpen) {
     return null;
@@ -165,7 +165,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
     <div className="dl-modal-overlay" onClick={onClose}>
       <div className="dl-modal dl-modal--large" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
-          {/* [2025-01-31 00:00:00] 根据截图，Tools 页标题应该是 "Names and Numbers Tools" */}
+{/* 根据截图，Tools 页标题应该是 "Names and Numbers Tools" */}
           <h3 className="dl-modal__title" data-testid="names-numbers-modal-title">
             {step === 'tools' ? 'Names and Numbers Tools' : step === 'list' ? 'My List' : step === 'quantities' ? 'My Quantities' : 'Names & Numbers'}
           </h3>
@@ -180,10 +180,10 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
         </div>
 
         <div className="dl-modal__body">
-          {/* Step 1: Intro Page - [2025-01-31 00:00:00] 根据 designlab-addnames01.jpeg 修复介绍页 */}
+{/* Step 1: Intro Page - 根据 designlab-addnames01.jpeg 修复介绍页 */}
           {step === 'intro' && (
             <div className="dl-names-numbers-intro">
-              {/* [2025-01-31 00:00:00] 添加介绍图片 */}
+{/* 添加介绍图片 */}
               <div className="dl-names-numbers-intro__image">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -195,11 +195,11 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                   }}
                 />
               </div>
-              {/* [2025-01-31 00:00:00] 更新介绍文本，匹配 Custom Ink */}
+{/* 更新介绍文本，匹配 Custom Ink */}
               <p className="dl-names-numbers-intro__description">
                 Use personalized Names & Numbers for projects like team jerseys where you need a unique name and/or number for each item.
               </p>
-              {/* [2025-01-31 00:00:00] 更新按钮文本 */}
+{/* 更新按钮文本 */}
               <button
                 className="dl-modal__btn dl-modal__btn--primary"
                 onClick={() => setStep('tools')}
@@ -368,7 +368,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                 )}
               </div>
 
-              {/* [2025-01-31 00:00:00] Step 2 按钮 - 根据 designlab-addnames02.jpeg 和 designlab-addnames03.jpeg */}
+{/* Step 2 按钮 - 根据 designlab-addnames02.jpeg 和 designlab-addnames03.jpeg */}
               <div className="dl-names-numbers-tools__section">
                 <button
                   className="dl-modal__btn dl-modal__btn--primary dl-modal__btn--block"
@@ -379,14 +379,14 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                 </button>
               </div>
 
-              {/* [2025-01-31 00:00:00] 价格信息 - 根据截图添加 */}
+{/* 价格信息 - 根据截图添加 */}
               <div className="dl-names-numbers-tools__pricing">
                 <p className="dl-names-numbers-tools__pricing-text">Full list required for accurate pricing</p>
                 <p className="dl-names-numbers-tools__pricing-item">Names: $5.50 each item</p>
                 <p className="dl-names-numbers-tools__pricing-item">Numbers: $3.50 each item</p>
               </div>
 
-              {/* [2025-01-31 00:00:00] 说明文本 - 根据截图添加 */}
+{/* 说明文本 - 根据截图添加 */}
               <div className="dl-names-numbers-tools__notes">
                 <p>&quot;EXAMPLE&quot; and &quot;00&quot; are sample placeholders</p>
                 <p>Our artists will expertly place each name/number from your list</p>
@@ -395,10 +395,10 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
             </div>
           )}
 
-          {/* Step 2: List Page - [2025-01-31 00:00:00] 根据 designlab-addnames04.png 和 designlab-addnames05.png 修复 */}
+{/* Step 2: List Page - 根据 designlab-addnames04.png 和 designlab-addnames05.png 修复 */}
           {step === 'list' && (
             <div className="dl-names-numbers-list">
-              {/* [2025-01-31 00:00:00] 更新标题和副标题 */}
+{/* 更新标题和副标题 */}
               <h4 className="dl-names-numbers-list__title">My List</h4>
               <p className="dl-names-numbers-list__subtitle">Enter your full list and sizes for accurate pricing</p>
 
@@ -413,7 +413,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
               <div className="dl-names-numbers-list__table-body">
                 {items.map((item, index) => (
                   <div key={index} className="dl-names-numbers-list__table-row">
-                    {/* [2025-01-31 00:00:00] 更新占位符文本，匹配 Custom Ink */}
+{/* 更新占位符文本，匹配 Custom Ink */}
                     <input
                       type="text"
                       className="dl-names-numbers-list__input"
@@ -455,7 +455,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                 ))}
               </div>
 
-              {/* [2025-01-31 00:00:00] Add More 和 Manage List 链接 */}
+{/* Add More 和 Manage List 链接 */}
               <div className="dl-names-numbers-list__actions">
                 <button
                   className="dl-names-numbers-list__add-more"
@@ -476,7 +476,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                 </button>
               </div>
 
-              {/* [2025-01-31 00:00:00] Totals 和 Sizes 摘要框 */}
+{/* Totals 和 Sizes 摘要框 */}
               <div className="dl-names-numbers-list__summary">
                 <div className="dl-names-numbers-list__totals">
                   <strong>Totals:</strong> {totalNames} name{totalNames !== 1 ? 's' : ''} and {totalNumbers} number{totalNumbers !== 1 ? 's' : ''} on {totalItems} item{totalItems !== 1 ? 's' : ''}
@@ -486,7 +486,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
                 </div>
               </div>
 
-              {/* [2025-01-31 00:00:00] Helpful Hints 框 - 根据 designlab-addnames04.png */}
+{/* Helpful Hints 框 - 根据 designlab-addnames04.png */}
               <div className="dl-names-numbers-list__hints">
                 <h5 className="dl-names-numbers-list__hints-title">Helpful Hints</h5>
                 <ul className="dl-names-numbers-list__hints-list">
@@ -501,7 +501,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
             </div>
           )}
 
-          {/* [2025-01-31 00:00:00] Step 3: Additional Items 模态 - 根据 designlab-addnames06.png */}
+{/* Step 3: Additional Items 模态 - 根据 designlab-addnames06.png */}
           {step === 'quantities' && (
             <div className="dl-names-numbers-quantities">
               <h4 className="dl-names-numbers-quantities__title">My Quantities</h4>
@@ -588,7 +588,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
           )}
           {step === 'list' && (
             <>
-              {/* [2025-01-31 00:00:00] 返回箭头按钮 - 根据截图 */}
+{/* 返回箭头按钮 - 根据截图 */}
               <button
                 className="dl-modal__btn dl-modal__btn--back"
                 onClick={() => setStep('tools')}
@@ -610,7 +610,7 @@ const NamesNumbersModal: React.FC<NamesNumbersModalProps> = ({
           )}
           {step === 'quantities' && (
             <>
-              {/* [2025-01-31 00:00:00] 返回箭头按钮 */}
+{/* 返回箭头按钮 */}
               <button
                 className="dl-modal__btn dl-modal__btn--back"
                 onClick={() => setStep('list')}

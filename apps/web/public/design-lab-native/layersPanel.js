@@ -1,15 +1,15 @@
 /**
  * Layers Panel - 图层面板与双向同步
- * [2025-11-19 10:35:00] 管理图层列表、显示/隐藏、锁定、排序、重命名等功能
+* 管理图层列表、显示/隐藏、锁定、排序、重命名等功能
  */
 (function() {
   'use strict';
 
   let layersList = null;
 
-  // [2025-11-19 10:35:00] 初始化图层面板
+// 初始化图层面板
   function init() {
-    // [2025-11-19 11:05:00] Layers 现在在 Tools 面板中，不是独立的右侧面板
+// Layers 现在在 Tools 面板中，不是独立的右侧面板
     layersList = document.getElementById('layers-list');
     if (!layersList) {
       console.warn('[LayersPanel] layers-list element not found');
@@ -19,33 +19,33 @@
     updateLayers();
   }
 
-  // [2025-11-19 10:35:00] 更新图层列表
+// 更新图层列表
   function updateLayers() {
     if (!layersList) return;
 
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
 
-    // [2025-11-19 10:35:00] 获取所有对象（排除背景）
+// 获取所有对象（排除背景）
     const objects = canvas.getObjects().filter(obj => obj.name !== 'background');
     
-    // [2025-11-19 10:35:00] 按 z-index 排序（从后往前）
+// 按 z-index 排序（从后往前）
     objects.sort((a, b) => {
       const indexA = canvas.getObjects().indexOf(a);
       const indexB = canvas.getObjects().indexOf(b);
       return indexB - indexA; // 反向排序，最上层显示在列表顶部
     });
 
-    // [2025-11-19 10:35:00] 清空列表
+// 清空列表
     layersList.innerHTML = '';
 
-    // [2025-11-19 10:35:00] 生成图层项
+// 生成图层项
     objects.forEach((obj, index) => {
       const layerItem = createLayerItem(obj, index);
       layersList.appendChild(layerItem);
     });
 
-    // [2025-11-19 10:35:00] 如果没有对象，显示提示
+// 如果没有对象，显示提示
     if (objects.length === 0) {
       const emptyMsg = document.createElement('div');
       emptyMsg.className = 'dl-layers__empty';
@@ -54,9 +54,9 @@
     }
   }
 
-  // [2025-11-19 10:35:00] 创建图层项
+// 创建图层项
   function createLayerItem(obj, index) {
-    // [2025-11-19 10:55:00] 处理组对象
+// 处理组对象
     if (obj.type === 'group') {
       return createGroupLayerItem(obj, index);
     }
@@ -66,20 +66,20 @@
     item.setAttribute('draggable', 'true');
     item.setAttribute('role', 'listitem');
     
-    // [2025-11-19 10:35:00] 选中状态
+// 选中状态
     if (obj === window.DesignLabCanvas.getCanvas().getActiveObject()) {
       item.classList.add('is-selected');
     }
 
-    // [2025-11-19 11:30:00] 缩略图（生成真实缩略图或显示类型图标）
+// 缩略图（生成真实缩略图或显示类型图标）
     const thumb = document.createElement('div');
     thumb.className = 'dl-layer-item__thumb';
     
-    // [2025-11-19 11:30:00] 尝试生成真实缩略图
+// 尝试生成真实缩略图
     try {
       const canvas = window.DesignLabCanvas.getCanvas();
       if (canvas && obj.type === 'image' && obj._element) {
-        // [2025-11-19 11:30:00] 图片对象：使用实际图片
+// 图片对象：使用实际图片
         const img = document.createElement('img');
         img.src = obj._element.src || obj.getSrc();
         img.style.width = '100%';
@@ -87,7 +87,7 @@
         img.style.objectFit = 'cover';
         thumb.appendChild(img);
       } else {
-        // [2025-11-19 11:30:00] 其他对象：显示类型图标
+// 其他对象：显示类型图标
         const icon = document.createElement('span');
         icon.className = 'dl-layer-icon';
         if (obj.type === 'i-text' || obj.type === 'text') {
@@ -112,14 +112,14 @@
       thumb.appendChild(icon);
     }
     
-    // [2025-11-19 10:35:00] 名称（可编辑）
+// 名称（可编辑）
     const name = document.createElement('div');
     name.className = 'dl-layer-item__name';
     name.textContent = obj.name || `Layer ${index + 1}`;
     name.setAttribute('contenteditable', 'true');
     name.setAttribute('role', 'textbox');
     
-    // [2025-11-19 10:35:00] 重命名处理
+// 重命名处理
     name.addEventListener('blur', () => {
       obj.set('name', name.textContent);
       window.DesignLabCanvas.getCanvas().renderAll();
@@ -132,11 +132,11 @@
       }
     });
 
-    // [2025-11-19 10:35:00] 控件
+// 控件
     const controls = document.createElement('div');
     controls.className = 'dl-layer-item__controls';
     
-    // [2025-11-19 11:30:00] 可见性按钮
+// 可见性按钮
     const visibilityBtn = document.createElement('button');
     visibilityBtn.className = 'dl-layer-control';
     visibilityBtn.setAttribute('aria-label', obj.visible ? 'Hide layer' : 'Show layer');
@@ -148,7 +148,7 @@
       toggleVisibility(obj.name);
     };
     
-    // [2025-11-19 11:30:00] 锁定按钮
+// 锁定按钮
     const lockBtn = document.createElement('button');
     lockBtn.className = 'dl-layer-control';
     const isLocked = obj.lockMovementX;
@@ -161,7 +161,7 @@
       toggleLock(obj.name);
     };
     
-    // [2025-11-19 10:35:00] 上移按钮
+// 上移按钮
     const upBtn = document.createElement('button');
     upBtn.className = 'dl-layer-control';
     upBtn.setAttribute('aria-label', 'Move up');
@@ -171,7 +171,7 @@
       moveLayer(obj.name, 'up');
     };
     
-    // [2025-11-19 10:35:00] 下移按钮
+// 下移按钮
     const downBtn = document.createElement('button');
     downBtn.className = 'dl-layer-control';
     downBtn.setAttribute('aria-label', 'Move down');
@@ -181,7 +181,7 @@
       moveLayer(obj.name, 'down');
     };
     
-    // [2025-11-19 10:35:00] 删除按钮
+// 删除按钮
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'dl-layer-control';
     deleteBtn.setAttribute('aria-label', 'Delete layer');
@@ -197,13 +197,13 @@
     controls.appendChild(downBtn);
     controls.appendChild(deleteBtn);
 
-    // [2025-11-19 10:35:00] 点击选择
+// 点击选择
     item.onclick = (e) => {
       if (e.target.closest('.dl-layer-control')) return;
       selectLayer(obj.name);
     };
 
-    // [2025-11-19 10:35:00] 拖拽排序
+// 拖拽排序
     item.addEventListener('dragstart', (e) => {
       e.dataTransfer.setData('text/plain', obj.name);
       item.classList.add('is-dragging');
@@ -240,13 +240,13 @@
     return item;
   }
 
-  // [2025-11-19 10:35:00] 选择图层
+// 选择图层
   function selectLayer(layerId) {
     window.DesignLabCanvas.selectObject(layerId);
     updateLayers(); // 更新选中状态
   }
 
-  // [2025-11-19 10:35:00] 清除选择
+// 清除选择
   function clearSelection() {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (canvas) {
@@ -256,7 +256,7 @@
     updateLayers();
   }
 
-  // [2025-11-19 11:30:00] 切换可见性（双向同步）
+// 切换可见性（双向同步）
   function toggleVisibility(layerId) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
@@ -268,14 +268,14 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-01-27] 图层显示/隐藏不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+// 图层显示/隐藏不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
       // if (window.DesignLabHistory) {
       //   window.DesignLabHistory.saveState();
       // }
     }
   }
 
-  // [2025-11-19 11:30:00] 切换锁定（双向同步）
+// 切换锁定（双向同步）
   function toggleLock(layerId) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
@@ -293,14 +293,14 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-01-27] 图层锁定不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+// 图层锁定不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
       // if (window.DesignLabHistory) {
       //   window.DesignLabHistory.saveState();
       // }
     }
   }
 
-  // [2025-11-19 10:35:00] 移动图层
+// 移动图层
   function moveLayer(layerId, direction) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
@@ -318,7 +318,7 @@
       canvas.sendToBack(obj);
     }
 
-    // [2025-11-19 10:35:00] 确保背景在最底层
+// 确保背景在最底层
     const bg = canvas.getObjects().find(o => o.name === 'background');
     if (bg) {
       canvas.sendToBack(bg);
@@ -327,13 +327,13 @@
     canvas.renderAll();
     updateLayers();
     
-    // [2025-01-27] 图层移动不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+// 图层移动不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
     // if (window.DesignLabHistory) {
     //   window.DesignLabHistory.saveState();
     // }
   }
 
-  // [2025-11-19 11:30:00] 删除图层（带日志）
+// 删除图层（带日志）
   function removeLayer(layerId) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
@@ -347,7 +347,7 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-01-27] 删除图层不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+// 删除图层不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
       // 删除操作虽然影响图层，但不是用户期望 undo 的"添加"操作
       // if (window.DesignLabHistory) {
       //   window.DesignLabHistory.saveState();
@@ -355,7 +355,7 @@
     }
   }
 
-  // [2025-11-19 10:35:00] 重新排序图层
+// 重新排序图层
   function reorderLayer(layerId, targetId) {
     const canvas = window.DesignLabCanvas.getCanvas();
     if (!canvas) return;
@@ -373,7 +373,7 @@
         canvas.moveTo(obj, targetIndex);
       }
       
-      // [2025-11-19 10:35:00] 确保背景在最底层
+// 确保背景在最底层
       const bg = canvas.getObjects().find(o => o.name === 'background');
       if (bg) {
         canvas.sendToBack(bg);
@@ -382,22 +382,22 @@
       canvas.renderAll();
       updateLayers();
       
-      // [2025-01-27] 图层重新排序不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+// 图层重新排序不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
       // if (window.DesignLabHistory) {
       //   window.DesignLabHistory.saveState();
       // }
     }
   }
 
-  // [2025-11-19 10:55:00] 创建组图层项（平铺显示，二期可改为树结构）
+// 创建组图层项（平铺显示，二期可改为树结构）
   function createGroupLayerItem(groupObj, index) {
     const item = createLayerItem(groupObj, index);
     item.classList.add('is-group');
-    // [2025-11-19 10:55:00] 二期：添加展开/折叠功能
+// 二期：添加展开/折叠功能
     return item;
   }
 
-  // [2025-11-19 10:35:00] 获取拖拽后的元素
+// 获取拖拽后的元素
   function getDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.dl-layer-item:not(.is-dragging)')];
     
@@ -413,7 +413,7 @@
     }, { offset: Number.NEGATIVE_INFINITY }).element;
   }
 
-  // [2025-11-19 10:35:00] 导出全局 API
+// 导出全局 API
   window.DesignLabLayers = {
     init,
     updateLayers,

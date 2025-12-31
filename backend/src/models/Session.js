@@ -1,4 +1,4 @@
-// [2025-11-02 20:58:00] Session model
+// Session model
 module.exports = (sequelize, DataTypes) => {
   const Session = sequelize.define('Session', {
     id: {

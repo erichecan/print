@@ -1,6 +1,6 @@
 /**
  * Product Filters Component
- * [2025-01-27 16:45:00] 客户端筛选器组件，处理筛选表单提交
+* 客户端筛选器组件，处理筛选表单提交
  */
 'use client';
 
@@ -17,7 +17,7 @@ export function ProductFilters({ currentCollection, currentBrand, brands = [] }:
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // [2025-01-27 16:45:00] 处理筛选表单提交
+// 处理筛选表单提交
   const handleFilterSubmit = useCallback((e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -137,7 +137,7 @@ export function ProductFilters({ currentCollection, currentBrand, brands = [] }:
     router.push(`/products${query ? `?${query}` : ''}`);
   }, [router, searchParams]);
 
-  // [2025-01-27 16:45:00] 从URL参数恢复筛选状态
+// 从URL参数恢复筛选状态
   useEffect(() => {
     const form = document.getElementById('filters-form') as HTMLFormElement;
     if (!form) return;
@@ -184,7 +184,7 @@ export function ProductFilters({ currentCollection, currentBrand, brands = [] }:
     }
   }, [searchParams]);
 
-  // [2025-01-27 16:45:00] 将筛选逻辑注入到现有表单
+// 将筛选逻辑注入到现有表单
   useEffect(() => {
     const form = document.getElementById('filters-form') as HTMLFormElement;
     if (!form) return;

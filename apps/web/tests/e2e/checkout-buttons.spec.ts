@@ -1,5 +1,5 @@
 /**
- * [2025-11-29 22:00:00] 结账页按钮功能端到端测试
+* 结账页按钮功能端到端测试
  * 测试 Place Order 和 Apply Coupon 按钮的启用/禁用逻辑
  */
 import { test, expect } from './fixtures/test-base';

@@ -1,6 +1,6 @@
 /**
  * Environment Configuration - 统一环境变量管理
- * [2025-01-30 23:00:00] Design Lab 4.0: 构建时 fail，无隐式回退
+* Design Lab 4.0: 构建时 fail，无隐式回退
  * 
  * 原则：
  * 1. 生产环境必须配置环境变量，不允许 localhost 或空值
@@ -32,7 +32,7 @@ function normalizeApiUrl(base: string): string {
 
 /**
  * 验证环境变量（生产环境强制校验）
- * [2025-12-10] 在构建时和生产运行时进行严格校验
+* 在构建时和生产运行时进行严格校验
  */
 function validateEnvVar(name: string, value: string | undefined, allowEmpty = false): string {
   if (!value || value.trim() === '') {
@@ -59,7 +59,7 @@ function validateEnvVar(name: string, value: string | undefined, allowEmpty = fa
 
 /**
  * 构建时环境变量校验
- * [2025-01-30 23:00:00] Design Lab 4.0: 构建时 fail，无隐式回退
+* Design Lab 4.0: 构建时 fail，无隐式回退
  */
 export function validateEnvAtBuildTime(): void {
   if (isBuildTime || isProduction) {
@@ -81,7 +81,7 @@ export function validateEnvAtBuildTime(): void {
 
 /**
  * 获取前端 API 基础 URL
- * [2025-01-30 23:00:00] Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
+* Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
  * 
  * 优先级：
  * 1. NEXT_PUBLIC_API_URL（前端环境变量，构建时内联）
@@ -90,7 +90,7 @@ export function validateEnvAtBuildTime(): void {
  * 4. 开发环境：允许回退到 localhost:3001/api
  */
 export function getFrontendApiBaseUrl(): string {
-  // [2025-12-21] Fix: In development mode, prioritize local backend to avoid session/auth mismatches
+// Fix: In development mode, prioritize local backend to avoid session/auth mismatches
   // caused by accidental usage of production API URL in local environment.
   if (isDevelopment) {
     // Check if we should explicitly use remote API (via a new bespoke flag, or just check if the env var is set AND we want to respect it)
@@ -106,7 +106,7 @@ export function getFrontendApiBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL;
 
   if (envUrl) {
-    // [2025-01-30 23:00:00] Design Lab 4.0: 生产环境检测到 localhost，直接 fail
+// Design Lab 4.0: 生产环境检测到 localhost，直接 fail
     if (isProduction && containsLocalhost(envUrl)) {
       const errorMsg = `生产环境 API 配置错误：NEXT_PUBLIC_API_URL 包含 localhost (${envUrl})。请设置正确的生产环境 API 服务器地址。`;
       console.error('[Env Config] ❌', errorMsg);
@@ -116,7 +116,7 @@ export function getFrontendApiBaseUrl(): string {
     return normalizeApiUrl(envUrl);
   }
 
-  // [2025-01-30 23:00:00] Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
+// Design Lab 4.0: 生产环境运行时，必须配置环境变量，无隐式回退
   if (isProduction) {
     const errorMsg = '生产环境未配置 API 地址环境变量。请设置 NEXT_PUBLIC_API_URL 或 NEXT_PUBLIC_API_BASE_URL。';
     console.error('[Env Config] ❌', errorMsg);
@@ -124,14 +124,14 @@ export function getFrontendApiBaseUrl(): string {
   }
 
   // 开发环境：允许回退到 localhost
-  // [2025-12-19 15:21:05] 修复：本仓库默认本地后端端口为 3001 (backend/.env PORT=3001)
+// 修复：本仓库默认本地后端端口为 3001 (backend/.env PORT=3001)
   console.warn('[Env Config] ⚠️ 开发环境未配置 API 地址，使用默认值: http://localhost:3001/api');
   return 'http://localhost:3001/api';
 }
 
 /**
  * 获取后端 API 基础 URL
- * [2025-12-10] 用于 Next.js API 路由代理到后端
+* 用于 Next.js API 路由代理到后端
  * 
  * 优先级：
  * 1. NEXT_PUBLIC_API_URL（前端环境变量）
@@ -142,8 +142,8 @@ export function getFrontendApiBaseUrl(): string {
  */
 /**
  * 获取后端 API 基础 URL
- * [2025-12-10] 用于 Next.js API 路由代理到后端
- * [2025-12-12 14:15:00] 增强错误处理和日志记录
+* 用于 Next.js API 路由代理到后端
+* 增强错误处理和日志记录
  * 
  * 优先级：
  * 1. NEXT_PUBLIC_API_URL（前端环境变量）
@@ -156,7 +156,7 @@ export function getBackendApiBaseUrl(): string {
   const traceId = `env-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   const timestamp = new Date().toISOString();
 
-  // [2025-12-12 14:15:00] 增强：记录环境变量检查过程
+// 增强：记录环境变量检查过程
   console.debug('[Env Config] getBackendApiBaseUrl called', {
     traceId,
     timestamp,
@@ -166,7 +166,7 @@ export function getBackendApiBaseUrl(): string {
     isBuildTime,
   });
 
-  // [2025-12-21] Fix: In development mode, prioritize local backend for SSR/Proxy as well
+// Fix: In development mode, prioritize local backend for SSR/Proxy as well
   if (isDevelopment && !isBuildTime) {
     const forceRemote = process.env.NEXT_PUBLIC_USE_REMOTE_API === 'true';
     if (!forceRemote) {
@@ -185,7 +185,7 @@ export function getBackendApiBaseUrl(): string {
       return finalUrl;
     }
   } catch (error) {
-    // [2025-12-12 14:15:00] 增强：记录环境变量验证错误
+// 增强：记录环境变量验证错误
     console.error('[Env Config] NEXT_PUBLIC_API_URL validation failed', {
       traceId,
       timestamp,
@@ -246,7 +246,7 @@ export function getBackendApiBaseUrl(): string {
   }
 
   // 开发环境或构建时：允许回退到 localhost
-  // [2025-12-19 15:21:05] 修复：默认本地后端端口改为 3001 (backend/.env PORT=3001)
+// 修复：默认本地后端端口改为 3001 (backend/.env PORT=3001)
   const DEFAULT_API_BASE_DEV = 'http://localhost:3001/api';
   if (isBuildTime) {
     console.warn('[Env Config] ⚠️ 构建时未配置 API 地址，使用默认值（运行时需要配置环境变量）:', DEFAULT_API_BASE_DEV, {
@@ -264,15 +264,15 @@ export function getBackendApiBaseUrl(): string {
 
 /**
  * 获取 Stripe Publishable Key（客户端）
- * [2025-12-10] 用于客户端 Stripe 初始化
- * [2025-01-30 18:00:00] 修复：生产环境缺失时抛出明确的错误信息，包含配置指导
+* 用于客户端 Stripe 初始化
+* 修复：生产环境缺失时抛出明确的错误信息，包含配置指导
  * 
  * 生产环境必须配置，不允许空值
  */
 export function getStripePublishableKey(): string {
   const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
-  // [2025-01-30 18:00:00] 生产环境严格校验
+// 生产环境严格校验
   if (!key || key.trim() === '') {
     if (isProduction) {
       const errorMsg = `生产环境必须配置环境变量 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY。请设置正确的值。
@@ -291,7 +291,7 @@ export function getStripePublishableKey(): string {
     return '';
   }
 
-  // [2025-01-30 18:00:00] 验证 key 格式（以 pk_ 开头）
+// 验证 key 格式（以 pk_ 开头）
   const trimmedKey = key.trim();
   if (!trimmedKey.startsWith('pk_test_') && !trimmedKey.startsWith('pk_live_')) {
     if (isProduction) {
@@ -307,7 +307,7 @@ export function getStripePublishableKey(): string {
 
 /**
  * 获取 Stripe Secret Key（服务端）
- * [2025-12-10] 用于服务端 Stripe 操作
+* 用于服务端 Stripe 操作
  * 
  * 生产环境必须配置，不允许空值
  */
@@ -330,7 +330,7 @@ export function getStripeSecretKey(): string {
 
 /**
  * 验证环境变量配置
- * [2025-12-10] 在应用启动时调用，确保配置正确
+* 在应用启动时调用，确保配置正确
  */
 export function validateEnvConfig(): void {
   try {

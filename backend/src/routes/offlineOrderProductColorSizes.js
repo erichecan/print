@@ -1,4 +1,4 @@
-// [2025-12-06] PRD v2.0: 线下订单产品-颜色-尺码可用性配置路由
+// PRD v2.0: 线下订单产品-颜色-尺码可用性配置路由
 const express = require('express');
 const router = express.Router();
 const offlineOrderProductColorSizeController = require('../controllers/offlineOrderProductColorSizeController');

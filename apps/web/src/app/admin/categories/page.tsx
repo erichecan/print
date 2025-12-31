@@ -2,8 +2,8 @@
 
 /**
  * Admin Categories Page
- * [2025-11-11 23:25:24] 后台分类列表页
- * [2025-11-15 16:25:00] 还原 prototype/admin/admin/categories.html 卡片布局
+* 后台分类列表页
+* 还原 prototype/admin/admin/categories.html 卡片布局
  */
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -22,7 +22,7 @@ const initialFilters: CategoryFilters = {
   status: 'all',
 };
 
-// [2025-11-15 16:25:00] Category icon fallback，确保 UI 与原型一致
+// Category icon fallback，确保 UI 与原型一致
 const CATEGORY_ICON_MAP: Record<string, string> = {
   tshirt: '👕',
   shirt: '👕',
@@ -59,7 +59,7 @@ export default function AdminCategoriesPage() {
         search: params.search || undefined,
         status: params.status === 'all' ? undefined : params.status,
       })
-  ); // [2025-11-11 06:10:00] 为 SWR fetcher 参数显式声明类型，避免推断为 string
+); // 为 SWR fetcher 参数显式声明类型，避免推断为 string
 
   const categories = data?.data ?? [];
   const pagination = data?.pagination;

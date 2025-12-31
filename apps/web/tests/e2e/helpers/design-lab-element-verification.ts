@@ -1,6 +1,6 @@
 /**
  * Design Lab 元素验证工具
- * [2025-12-06 12:30:00] 基于 ELEMENT-INVENTORY.json 验证元素位置和样式
+* 基于 ELEMENT-INVENTORY.json 验证元素位置和样式
  */
 import { Page } from '@playwright/test';
 import * as fs from 'fs';

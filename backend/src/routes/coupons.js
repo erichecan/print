@@ -1,6 +1,6 @@
 /**
  * Coupon Routes
- * [2025-01-27 19:40:00] 优惠券路由
+* 优惠券路由
  */
 const express = require('express');
 const router = express.Router();

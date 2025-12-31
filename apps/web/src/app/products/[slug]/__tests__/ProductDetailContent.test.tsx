@@ -1,6 +1,6 @@
 /**
  * ProductDetailContent Component Tests
- * [2025-12-08] 测试商品详情页的 Add to Cart 和 Buy Now 功能
+* 测试商品详情页的 Add to Cart 和 Buy Now 功能
  */
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { ProductDetailContent } from '../ProductDetailContent';

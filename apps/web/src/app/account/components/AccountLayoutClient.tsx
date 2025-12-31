@@ -1,6 +1,6 @@
 /**
  * Account Layout Client Wrapper
- * [2025-12-18 22:55:00] Client Component wrapper，提供 AccountProvider
+* Client Component wrapper，提供 AccountProvider
  */
 'use client';
 

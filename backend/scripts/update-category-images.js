@@ -1,4 +1,4 @@
-// [2025-11-19] 更新数据库中分类的imageUrl字段
+// 更新数据库中分类的imageUrl字段
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();

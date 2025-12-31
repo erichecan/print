@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 00:00:00] 结账页面综合诊断测试
+* 结账页面综合诊断测试
  * 使用 Chrome DevTools Protocol (CDP) 和 Playwright 进行闭环测试
  * 重点测试：添加购物车、Buy Now、Place Order 按钮、Coupon Apply
  */

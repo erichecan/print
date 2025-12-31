@@ -1,6 +1,6 @@
 /**
  * Server Error Telemetry
- * [2025-01-27 18:10:00] 服务端错误上报和追踪
+* 服务端错误上报和追踪
  */
 import { generateTraceId } from '@/shared/errors';
 
@@ -20,14 +20,13 @@ export interface ServerErrorPayload {
 
 /**
  * 上报服务端错误到遥测端点
- * [2025-01-27 18:10:00]
  */
 export async function reportServerError(payload: ServerErrorPayload): Promise<void> {
   const traceId = payload.traceId || generateTraceId();
   const timestamp = new Date().toISOString();
   
   try {
-    // [2025-01-27 18:10:00] 在生产环境，可以上报到遥测服务
+// 在生产环境，可以上报到遥测服务
     // 目前先记录到服务器日志，后续可以集成 Sentry 或其他服务
     const errorLog = {
       ...payload,

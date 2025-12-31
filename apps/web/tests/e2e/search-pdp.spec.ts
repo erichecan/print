@@ -1,14 +1,14 @@
 /**
- * [2025-11-24 10:36:02] 搜索与商品详情端到端测试
+* 搜索与商品详情端到端测试
  */
 import { test, expect } from './fixtures/test-base';
 
 test.describe('搜索与详情页', () => {
   test('站点搜索可定位商品并成功添加到购物车', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('domcontentloaded'); // [2025-11-28 16:55:00] 等待页面加载
+await page.waitForLoadState('domcontentloaded'); // 等待页面加载
     
-    // [2025-11-28 16:55:00] 等待搜索框出现
+// 等待搜索框出现
     const searchInput = page.getByLabel('Search query').or(page.locator('input[name*="search"]')).first();
     await searchInput.waitFor({ state: 'visible', timeout: 10000 });
     await searchInput.fill('Classic Crew Tee');
@@ -21,7 +21,7 @@ test.describe('搜索与详情页', () => {
     await expect(page).toHaveURL(/products\?search=/, { timeout: 10000 });
     await page.waitForLoadState('domcontentloaded');
     
-    // [2025-11-28 17:50:00] 先等待商品列表 API 响应
+// 先等待商品列表 API 响应
     try {
       await page.waitForResponse(
         (response) => {
@@ -34,7 +34,7 @@ test.describe('搜索与详情页', () => {
       console.log('商品搜索 API 响应超时，继续查找商品...');
     }
     
-    // [2025-11-28 17:50:00] 等待商品卡片出现，使用更宽松的选择器
+// 等待商品卡片出现，使用更宽松的选择器
     // 先查找所有商品卡片
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000);
@@ -59,7 +59,7 @@ test.describe('搜索与详情页', () => {
     
     await targetCard.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
     
-    // [2025-11-28 17:50:00] 如果找不到特定商品，尝试查找第一个商品
+// 如果找不到特定商品，尝试查找第一个商品
     const isVisible = await targetCard.isVisible({ timeout: 5000 }).catch(() => false);
     if (!isVisible && cardCount > 0) {
       // 使用第一个商品卡片

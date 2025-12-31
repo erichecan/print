@@ -1,13 +1,13 @@
 /**
  * Image Proxy API Route
- * [2025-01-27 19:15:00] 服务器端图片代理，用于绕过防盗链和统一缓存
+* 服务器端图片代理，用于绕过防盗链和统一缓存
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { generateTraceId } from '@/shared/errors';
 
 /**
  * OPTIONS /api/image-proxy
- * [2025-01-30 19:00:00] 处理 CORS 预检请求
+* 处理 CORS 预检请求
  */
 export async function OPTIONS(request: NextRequest) {
   const headers = new Headers();
@@ -19,8 +19,8 @@ export async function OPTIONS(request: NextRequest) {
 
 /**
  * GET /api/image-proxy
- * [2025-01-27 19:15:00] 代理外部图片，添加缓存头和错误处理
- * [2025-01-30 19:00:00] 增强：添加 CORS 支持、改进错误处理
+* 代理外部图片，添加缓存头和错误处理
+* 增强：添加 CORS 支持、改进错误处理
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
                    generateTraceId();
   const timestamp = new Date().toISOString();
 
-  // [2025-01-30 19:00:00] 添加 CORS 头，确保浏览器可以访问错误响应
+// 添加 CORS 头，确保浏览器可以访问错误响应
   const corsHeaders = new Headers();
   corsHeaders.set('Access-Control-Allow-Origin', '*');
   corsHeaders.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   corsHeaders.set('X-Request-Id', requestId);
   corsHeaders.set('X-Trace-Id', requestId);
 
-  // [2025-01-27 19:15:00] 验证 src 参数
+// 验证 src 参数
   if (!src || !/^https?:\/\//.test(src)) {
     console.warn('[Image Proxy] Invalid src parameter', { 
       requestId, 
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // [2025-01-27 19:15:00] 白名单检查（可选，增强安全性）
+// 白名单检查（可选，增强安全性）
   const allowedDomains = [
     'storage.googleapis.com',
     'print-main-product-images',
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // [2025-01-27 19:15:00] 从上游获取图片
+// 从上游获取图片
     const response = await fetch(src, {
       headers: {
         'User-Agent': 'PrintMain/1.0',
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
         'X-Request-Id': requestId,
         'X-Trace-Id': requestId,
       },
-      // [2025-01-27 19:15:00] 设置超时（10秒）
+// 设置超时（10秒）
       signal: AbortSignal.timeout(10000),
     });
 
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
         statusText: response.statusText,
         src: src.substring(0, 100)
       });
-      // [2025-01-30 19:00:00] 添加详细的错误信息，包括原始 URL
+// 添加详细的错误信息，包括原始 URL
       return NextResponse.json(
         { 
           error: 'Upstream error', 
@@ -123,20 +123,20 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // [2025-01-27 19:15:00] 读取图片数据
+// 读取图片数据
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // [2025-01-27 19:15:00] 获取内容类型
+// 获取内容类型
     const contentType = response.headers.get('content-type') || 'image/jpeg';
 
-    // [2025-01-27 19:15:00] 设置响应头
-    // [2025-01-30 19:00:00] 添加 CORS 头，确保浏览器可以访问
+// 设置响应头
+// 添加 CORS 头，确保浏览器可以访问
     const headers = new Headers(corsHeaders);
     headers.set('Content-Type', contentType);
     headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400');
     
-    // [2025-01-27 19:15:00] 复制上游的缓存相关头（如果有）
+// 复制上游的缓存相关头（如果有）
     const upstreamCacheControl = response.headers.get('cache-control');
     if (upstreamCacheControl) {
       headers.set('X-Upstream-Cache-Control', upstreamCacheControl);
@@ -163,8 +163,8 @@ export async function GET(request: NextRequest) {
       src: src.substring(0, 100)
     });
 
-    // [2025-01-27 19:15:00] 返回错误响应
-    // [2025-01-30 19:00:00] 添加 CORS 头和详细错误信息
+// 返回错误响应
+// 添加 CORS 头和详细错误信息
     return NextResponse.json(
       { 
         error: 'Proxy failed',

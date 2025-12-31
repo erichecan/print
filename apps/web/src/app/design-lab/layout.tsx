@@ -1,6 +1,6 @@
 /**
  * Design Lab Layout
- * [2025-01-30 23:30:00] Design Lab 4.0: Boot/Config/Data Prefetch/Canvas Ready/Feature Hydration 分阶段骨架
+* Design Lab 4.0: Boot/Config/Data Prefetch/Canvas Ready/Feature Hydration 分阶段骨架
  */
 
 import { Suspense } from 'react';
@@ -15,7 +15,7 @@ export default function DesignLabLayout({
 }: { 
   children: React.ReactNode;
 }) {
-  // [2025-01-30 23:30:00] Design Lab 4.0: 分阶段初始化
+// Design Lab 4.0: 分阶段初始化
   // CanvasReadyStage 将在 DesignLabClient 中处理，因为需要 canvas ref
   return (
     <DesignLabErrorBoundary>
@@ -35,7 +35,7 @@ export default function DesignLabLayout({
 }
 
 function DesignLabSkeleton() {
-  // [2025-01-30 17:35:00] 修复：移除 styled-jsx，使用纯内联样式（Server Component 兼容）
+// 修复：移除 styled-jsx，使用纯内联样式（Server Component 兼容）
   return (
     <section style={{ 
       minHeight: '100vh', 

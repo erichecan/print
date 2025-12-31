@@ -1,6 +1,6 @@
 /**
  * SidebarGrouped Component Tests
- * [2025-12-11 23:05:00] 测试分组导航组件的渲染、折叠、选中态与计数
+* 测试分组导航组件的渲染、折叠、选中态与计数
  */
 import { test, expect } from '@playwright/test';
 import React from 'react';

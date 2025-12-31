@@ -1,5 +1,5 @@
 #!/bin/bash
-# [2025-12-01 22:40:00] GCS Bucket 创建脚本
+# GCS Bucket 创建脚本
 # 如果命令行无法创建，请使用 GCP 控制台手动创建
 
 set -e

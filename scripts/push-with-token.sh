@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# [2025-01-27 16:30:00] GitHub Push with Token Script
+# GitHub Push with Token Script
 # 此脚本用于通过 GitHub Personal Access Token 推送代码
 
 echo "🚀 GitHub 代码推送助手"

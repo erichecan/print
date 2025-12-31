@@ -1,6 +1,5 @@
 /**
  * Order Detail Page
- * [2025-11-05 01:00:00]
  */
 'use client';
 
@@ -12,11 +11,11 @@ import Link from 'next/link';
 
 export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
   const searchParams = useSearchParams();
-  const email = searchParams?.get('email') ?? ''; // [2025-11-11 06:14:29] 兼容返回 null 的情况，保持类型安全
+const email = searchParams?.get('email') ?? ''; // 兼容返回 null 的情况，保持类型安全
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [downloading, setDownloading] = useState(false); // [2025-11-12 01:13:22] 控制发票下载状态
+const [downloading, setDownloading] = useState(false); // 控制发票下载状态
 
   useEffect(() => {
     if (!email) {
@@ -50,7 +49,7 @@ export function OrderDetailContent({ orderNumber }: { orderNumber: string }) {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('[2025-11-12 01:13:22] Guest invoice download failed', err);
+console.error(' Guest invoice download failed', err);
       alert('Unable to download the invoice right now. Please try again later.');
     } finally {
       setDownloading(false);

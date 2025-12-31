@@ -1,9 +1,9 @@
 /**
  * Returns & Exchanges Page
- * [2025-11-11 22:31:00] Scaffold
- * [2025-11-12 00:06:00] Documented return windows and support flow
- * [2025-01-27 17:35:00] 补充 SEO 元数据
- * [2025-11-16 12:45:00] 对齐原型化排版与内容分区
+* Scaffold
+* Documented return windows and support flow
+* 补充 SEO 元数据
+* 对齐原型化排版与内容分区
  */
 import Link from 'next/link';
 import { generateSEOMetadata } from '@/lib/seo';

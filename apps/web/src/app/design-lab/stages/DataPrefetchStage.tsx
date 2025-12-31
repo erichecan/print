@@ -1,6 +1,6 @@
 /**
  * Design Lab Data Prefetch Stage
- * [2025-01-30 23:30:00] Design Lab 4.0: Data Prefetch 阶段
+* Design Lab 4.0: Data Prefetch 阶段
  * 
  * 职责：
  * - 从 URL 参数获取 productId、colorId、designId

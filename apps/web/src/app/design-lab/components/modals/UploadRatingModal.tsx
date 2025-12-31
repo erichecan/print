@@ -1,6 +1,6 @@
 /**
  * Upload Rating Modal
- * [2025-12-08] 上传体验评分模态框
+* 上传体验评分模态框
  */
 'use client';
 

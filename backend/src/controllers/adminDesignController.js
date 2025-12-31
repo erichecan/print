@@ -1,6 +1,6 @@
 /**
  * Admin Design Controller
- * [2025-11-15 15:05:00] Provides design review listing and moderation APIs
+* Provides design review listing and moderation APIs
  */
 const prisma = require('../lib/prisma');
 
@@ -17,7 +17,7 @@ const STATUS_FILTERS = {
   rejected: ['ARCHIVED'],
 };
 
-// [2025-01-27 16:30:00] 添加空值检查，避免访问 null 对象的属性时出错
+// 添加空值检查，避免访问 null 对象的属性时出错
 const mapDesignSummary = (design) => {
   if (!design) return null;
   
@@ -95,7 +95,7 @@ exports.listDesigns = async (req, res) => {
     ]);
 
     res.json({
-      data: designs.map(mapDesignSummary).filter(Boolean), // [2025-01-27 16:30:00] 过滤掉 null 值
+data: designs.map(mapDesignSummary).filter(Boolean), // 过滤掉 null 值
       pagination: {
         page,
         limit,

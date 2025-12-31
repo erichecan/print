@@ -50,8 +50,8 @@ const baseOrder = {
   trackingNumber: null,
   carrier: null,
   estimatedDelivery: null,
-  createdAt: new Date('2025-11-10T00:00:00Z'),
-  updatedAt: new Date('2025-11-10T00:00:00Z'),
+createdAt: new Date('T00:00:00Z'),
+updatedAt: new Date('T00:00:00Z'),
   items: [
     {
       id: 'item-1',
@@ -72,7 +72,7 @@ const baseOrder = {
   shipments: [],
 };
 
-describe('[2025-11-12 02:10:00] orderController.getOrderByOrderNumber', () => {
+describe(' orderController.getOrderByOrderNumber', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -148,7 +148,7 @@ describe('[2025-11-12 02:10:00] orderController.getOrderByOrderNumber', () => {
   });
 });
 
-describe('[2025-01-27 12:30:00] orderController.getOrders', () => {
+describe(' orderController.getOrders', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -220,7 +220,7 @@ describe('[2025-01-27 12:30:00] orderController.getOrders', () => {
   });
 });
 
-describe('[2025-01-27 12:30:00] orderController.getOrderById', () => {
+describe(' orderController.getOrderById', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

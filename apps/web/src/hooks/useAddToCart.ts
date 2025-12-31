@@ -1,6 +1,6 @@
 /**
  * useAddToCart Hook
- * [2025-12-08] 重构 Add to Cart 功能，包含防抖、错误处理和埋点
+* 重构 Add to Cart 功能，包含防抖、错误处理和埋点
  */
 'use client';
 

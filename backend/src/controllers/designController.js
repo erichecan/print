@@ -1,12 +1,12 @@
 /**
  * Design Controller
- * [2025-11-11 15:26:30] 提供 Design Lab 草稿、素材上传、报价与下单接口
+* 提供 Design Lab 草稿、素材上传、报价与下单接口
  */
 const { v4: uuidv4 } = require('uuid');
 const prisma = require('../lib/prisma');
 const { getUploadSignedUrl } = require('../config/aws');
 
-// [2025-11-11 15:26:30] 校验设计归属权，支持用户或会话草稿
+// 校验设计归属权，支持用户或会话草稿
 const fetchOwnedDesign = async (designId, { user, sessionId }) => {
   const design = await prisma.design.findUnique({
     where: { id: designId },
@@ -33,14 +33,14 @@ const fetchOwnedDesign = async (designId, { user, sessionId }) => {
   return { design };
 };
 
-// [2025-11-11 15:26:30] 创建 Design Lab 草稿
+// 创建 Design Lab 草稿
 exports.createDesignDraft = async (req, res) => {
   try {
     let { productVariantId, name, canvas, pricing, thumbnailUrl } = req.body || {};
     const userId = req.user?.id || null;
     const sessionId = userId ? null : req.sessionId || uuidv4();
 
-    // [2025-01-31 04:00:00] Fix: Backend fallback for 'default' variant ID
+// Fix: Backend fallback for 'default' variant ID
     // If frontend sends 'default' (e.g. failure to resolve), we find a valid one here.
     if (productVariantId === 'default') {
       try {
@@ -68,7 +68,7 @@ exports.createDesignDraft = async (req, res) => {
       return res.status(400).json({ error: 'productVariantId is required' });
     }
 
-    // [2025-11-18 14:30:00] Updated for Variant model rename
+// Updated for Variant model rename
     const variant = await prisma.variant.findUnique({
       where: { id: productVariantId },
       include: {
@@ -137,12 +137,12 @@ exports.createDesignDraft = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[2025-11-11 15:26:30] createDesignDraft error:', error);
+console.error(' createDesignDraft error:', error);
     res.status(500).json({ error: 'Failed to create design draft' });
   }
 };
 
-// [2025-11-11 15:26:30] 获取单个 Design 草稿
+// 获取单个 Design 草稿
 exports.getDesignDraft = async (req, res) => {
   try {
     const { id } = req.params;
@@ -154,12 +154,12 @@ exports.getDesignDraft = async (req, res) => {
 
     return res.json({ data: result.design });
   } catch (error) {
-    console.error('[2025-11-11 15:26:30] getDesignDraft error:', error);
+console.error(' getDesignDraft error:', error);
     return res.status(500).json({ error: 'Failed to load design draft' });
   }
 };
 
-// [2025-11-11 15:26:30] 更新 Design 草稿并记录版本
+// 更新 Design 草稿并记录版本
 exports.updateDesignDraft = async (req, res) => {
   try {
     const { id } = req.params;
@@ -201,12 +201,12 @@ exports.updateDesignDraft = async (req, res) => {
 
     return res.json({ data: updated });
   } catch (error) {
-    console.error('[2025-11-11 15:26:30] updateDesignDraft error:', error);
+console.error(' updateDesignDraft error:', error);
     return res.status(500).json({ error: 'Failed to update design draft' });
   }
 };
 
-// [2025-01-31 04:30:00] 删除 Design 草稿
+// 删除 Design 草稿
 exports.deleteDesign = async (req, res) => {
   const { id } = req.params;
   const userId = req.user?.id;
@@ -234,7 +234,7 @@ exports.deleteDesign = async (req, res) => {
   }
 };
 
-// [2025-11-11 15:26:30] 生成素材上传签名 URL（需要登录）
+// 生成素材上传签名 URL（需要登录）
 exports.generateAssetUploadUrl = async (req, res) => {
   try {
     const { id } = req.params;
@@ -281,12 +281,12 @@ exports.generateAssetUploadUrl = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[2025-11-11 15:26:30] generateAssetUploadUrl error:', error);
+console.error(' generateAssetUploadUrl error:', error);
     return res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 };
 
-// [2025-11-11 15:26:30] 计算报价（扩展版：考虑使用的面、图层数、数量折扣）
+// 计算报价（扩展版：考虑使用的面、图层数、数量折扣）
 exports.requestQuote = async (req, res) => {
   try {
     const { id } = req.params;
@@ -306,17 +306,17 @@ exports.requestQuote = async (req, res) => {
     // 基础价格（Base Price）来自产品定义
     const basePrice = Number(variant.product.basePrice || 0);
 
-    // [2025-01-28 07:00:00] 计算使用的面数（front, back, sleeve）
+// 计算使用的面数（front, back, sleeve）
     const sidesCount = Array.isArray(sidesUsed) ? sidesUsed.length : 0;
     const additionalSides = Math.max(0, sidesCount - 1);
     const sidesFee = additionalSides * 2 * 100; // 转换为分，每个额外面 $2
 
-    // [2025-01-28 07:00:00] 图层复杂度费用
+// 图层复杂度费用
     const baseLayers = 5;
     const additionalLayers = Math.max(0, layerCount - baseLayers);
     const layersFee = additionalLayers * 0.5 * 100; // 转换为分，每个额外图层 $0.50
 
-    // [2025-01-28 07:00:00] 数量折扣
+// 数量折扣
     let quantityDiscount = 0;
     if (quantity >= 50) {
       quantityDiscount = 0.15;
@@ -326,7 +326,7 @@ exports.requestQuote = async (req, res) => {
       quantityDiscount = 0.05;
     }
 
-    // [2025-12-31] Fetch global size fees for synchronization
+// Fetch global size fees for synchronization
     let globalSizeFees = [];
     try {
       globalSizeFees = await prisma.offline_order_size_fees.findMany();
@@ -355,7 +355,7 @@ exports.requestQuote = async (req, res) => {
 
       const sizeAdjustmentMap = {};
       allVariants.forEach(v => {
-        // [2025-12-31] Synchronize with global size fee config
+// Synchronize with global size fee config
         const globalFee = v.size ? globalFeeMap[v.size] : undefined;
         sizeAdjustmentMap[v.size] = globalFee !== undefined ? globalFee : Number(v.priceAdjustment || 0);
       });
@@ -382,7 +382,7 @@ exports.requestQuote = async (req, res) => {
 
     } else {
       // 老逻辑：使用当前 design 关联的变体价格
-      // [2025-12-31] Synchronize with global size fee config
+// Synchronize with global size fee config
       const globalFee = variant.size ? globalFeeMap[variant.size] : undefined;
       const effectiveAdjustment = globalFee !== undefined ? globalFee : defaultAdjustment;
 
@@ -390,13 +390,13 @@ exports.requestQuote = async (req, res) => {
       totalAdjustment = effectiveAdjustment * quantity;
     }
 
-    // [2025-01-28 07:00:00] 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers）
+// 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers）
     let unitPrice = weightedUnitPrice + sidesFee + layersFee;
 
-    // [2025-01-28 07:00:00] 应用数量折扣
+// 应用数量折扣
     const discountedUnitPrice = unitPrice * (1 - quantityDiscount);
 
-    // [2025-01-28 07:00:00] 计算总价
+// 计算总价
     const finalQuantity = (sizeQuantities && sizeQuantities.length > 0) ?
       sizeQuantities.reduce((sum, sq) => sum + (sq.quantity || 0), 0) :
       quantity;
@@ -427,12 +427,12 @@ exports.requestQuote = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[2025-11-11 15:26:30] requestQuote error:', error);
+console.error(' requestQuote error:', error);
     return res.status(500).json({ error: 'Failed to calculate quote' });
   }
 };
 
-// [2025-11-11 15:26:30] 锁定设计并生成下单草稿
+// 锁定设计并生成下单草稿
 exports.submitDesignOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -469,7 +469,7 @@ exports.submitDesignOrder = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[2025-11-11 15:26:30] submitDesignOrder error:', error);
+console.error(' submitDesignOrder error:', error);
     return res.status(500).json({ error: 'Failed to submit design order' });
   }
 };
@@ -502,7 +502,7 @@ exports.uploadSignature = async (req, res) => {
   }
 };
 
-// [2025-12-08] 分享设计（生成分享链接）
+// 分享设计（生成分享链接）
 exports.shareDesign = async (req, res) => {
   try {
     const { id } = req.params;
@@ -548,12 +548,12 @@ exports.shareDesign = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[2025-12-08] shareDesign error:', error);
+console.error(' shareDesign error:', error);
     return res.status(500).json({ error: 'Failed to share design' });
   }
 };
 
-// [2025-12-08] 通过分享token获取设计（公开访问）
+// 通过分享token获取设计（公开访问）
 exports.getDesignByShareToken = async (req, res) => {
   try {
     const { shareToken } = req.params;
@@ -599,7 +599,7 @@ exports.getDesignByShareToken = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('[2025-12-08] getDesignByShareToken error:', error);
+console.error(' getDesignByShareToken error:', error);
     return res.status(500).json({ error: 'Failed to get design by share token' });
   }
 };

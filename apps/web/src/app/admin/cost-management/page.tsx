@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { adminCostManagementApi, AdminCostRow, AdminCostSummary } from '@/lib/api';
-import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-01-28 08:45:00] 国际化支持
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // 国际化支持
 
 export default function CostManagementPage() {
-  const { t } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
+const { t } = useAdminI18n(); // 国际化支持
   const [search, setSearch] = useState('');
   const summaryQuery = useSWR('admin-cost-summary', adminCostManagementApi.getSummary);
   const productsQuery = useSWR(['admin-cost-products', search], ([, searchQuery]) =>

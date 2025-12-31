@@ -1,6 +1,6 @@
 /**
  * Jest Configuration
- * [2025-01-27 11:30:00] Jest 测试配置
+* Jest 测试配置
  */
 const nextJest = require('next/jest');
 

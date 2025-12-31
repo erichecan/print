@@ -1,13 +1,11 @@
 /**
  * Collection Controller
- * [2025-11-04 23:52:00]
  */
 const prisma = require('../lib/prisma');
 
 /**
  * Get collections list
  * GET /api/collections
- * [2025-11-04 23:52:00]
  */
 exports.getCollections = async (req, res) => {
   try {
@@ -44,7 +42,6 @@ exports.getCollections = async (req, res) => {
 /**
  * Get collection by slug with products
  * GET /api/collections/:slug
- * [2025-11-04 23:52:00]
  */
 exports.getCollectionBySlug = async (req, res) => {
   try {

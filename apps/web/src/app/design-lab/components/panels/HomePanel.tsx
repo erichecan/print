@@ -1,13 +1,13 @@
 /**
  * Home Panel - 引导面板
- * [2025-01-30 16:55:00] 显示 "What's next for you?" 引导界面
+* 显示 "What's next for you?" 引导界面
  */
 'use client';
 
 import React from 'react';
 
 interface HomePanelProps {
-  onAction: (action: 'upload' | 'text' | 'art') => void; // [2025-12-19 21:25:00] 移除：products、layers、templates、export
+onAction: (action: 'upload' | 'text' | 'art') => void; // 移除：products、layers、templates、export
 }
 
 const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
@@ -49,7 +49,7 @@ const HomePanel: React.FC<HomePanelProps> = ({ onAction }) => {
           <span>Add Art</span>
         </button>
         
-        {/* [2025-12-19 21:25:00] 移除：Change Products、Templates、Layers、Export 四个功能按钮 */}
+{/* 移除：Change Products、Templates、Layers、Export 四个功能按钮 */}
       </div>
       
       <p className="dl-home-panel__hint">

@@ -1,9 +1,9 @@
-// [2025-01-31 19:50:00] 订单价格估算服务
+// 订单价格估算服务
 
 import type { OrderItemPayload, PricingBreakdown, PrintConfig } from '@/types/order';
 
 /**
- * [2025-01-31 19:50:00] 估算订单项价格（考虑尺码覆盖拆批）
+* 估算订单项价格（考虑尺码覆盖拆批）
  */
 export function estimateOrderItemPricing(item: OrderItemPayload): PricingBreakdown {
   const batches: PricingBreakdown['batches'] = [];
@@ -48,7 +48,7 @@ export function estimateOrderItemPricing(item: OrderItemPayload): PricingBreakdo
 }
 
 /**
- * [2025-01-31 19:50:00] 生成印刷位配置的唯一键
+* 生成印刷位配置的唯一键
  */
 function keyForPositions(cfgs: PrintConfig[]): string {
   return cfgs
@@ -58,7 +58,7 @@ function keyForPositions(cfgs: PrintConfig[]): string {
 }
 
 /**
- * [2025-01-31 19:50:00] 计算单价（基于工艺、位置数量、面积）
+* 计算单价（基于工艺、位置数量、面积）
  */
 function unitPrice(method: 'dtf' | 'screen' | 'embroidery', k: string): number {
   // 简化示例：按位点数量与面积估算单价
@@ -75,7 +75,7 @@ function unitPrice(method: 'dtf' | 'screen' | 'embroidery', k: string): number {
 }
 
 /**
- * [2025-01-31 19:50:00] 四舍五入到2位小数
+* 四舍五入到2位小数
  */
 function round2(n: number): number {
   return Math.round(n * 100) / 100;

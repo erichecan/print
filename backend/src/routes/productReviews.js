@@ -1,4 +1,4 @@
-// [2025-01-27 21:45:00] Product Review routes
+// Product Review routes
 const express = require('express');
 const router = express.Router();
 const reviewController = require('../controllers/productReviewController');

@@ -1,6 +1,6 @@
 /**
  * Fonts Configuration
- * [2025-01-30 18:50:00] 字体配置文件，支持从配置文件或 API 加载字体
+* 字体配置文件，支持从配置文件或 API 加载字体
  * 字体可以在这里管理，也可以后续迁移到数据库进行后台管理
  */
 
@@ -19,7 +19,7 @@ export interface FontInfo {
 }
 
 /**
- * [2025-01-30 18:50:00] 字体库配置
+* 字体库配置
  * 可以在这里添加更多免费字体
  * 后续可以迁移到数据库，通过后台管理界面管理
  */
@@ -79,7 +79,7 @@ export const FONTS_CONFIG: FontInfo[] = [
 ];
 
 /**
- * [2025-01-30 18:50:00] 获取所有启用的字体
+* 获取所有启用的字体
  */
 export function getActiveFonts(): FontInfo[] {
   return FONTS_CONFIG.filter(font => font.isActive !== false).sort((a, b) => {
@@ -102,14 +102,14 @@ export function getActiveFonts(): FontInfo[] {
 }
 
 /**
- * [2025-01-30 18:50:00] 按分类获取字体
+* 按分类获取字体
  */
 export function getFontsByCategory(category: FontCategory): FontInfo[] {
   return getActiveFonts().filter(font => font.category === category);
 }
 
 /**
- * [2025-01-30 18:50:00] 获取所有分类
+* 获取所有分类
  */
 export function getFontCategories(): FontCategory[] {
   const categories = new Set<FontCategory>();
@@ -118,7 +118,7 @@ export function getFontCategories(): FontCategory[] {
 }
 
 /**
- * [2025-01-30 18:50:00] 分类标签映射
+* 分类标签映射
  */
 export const FONT_CATEGORY_LABELS: Record<FontCategory, string> = {
   latin: 'Latin Fonts',

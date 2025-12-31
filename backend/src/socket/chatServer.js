@@ -1,13 +1,13 @@
 /**
  * WebSocket Server for Customer Service Chat
- * [2025-12-07 01:30:00] Issue #144 - Real-time chat support
+* Issue #144 - Real-time chat support
  */
 const { Server } = require('socket.io');
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const jwt = require('jsonwebtoken');
 
-// [2025-12-07 01:30:00] Get JWT secret for authentication
+// Get JWT secret for authentication
 function getJwtSecret() {
   const DEFAULT_JWT_SECRET = 'your_jwt_secret_key_change_in_production';
   const secret = process.env.JWT_SECRET;
@@ -30,7 +30,7 @@ function initializeChatServer(httpServer) {
     path: '/socket.io',
   });
 
-  // [2025-12-07 01:30:00] Authentication middleware for Socket.IO
+// Authentication middleware for Socket.IO
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
@@ -63,7 +63,7 @@ function initializeChatServer(httpServer) {
               },
             });
 
-            // [2025-12-07 01:30:00] Verify agent role if connecting as agent
+// Verify agent role if connecting as agent
             if (userType === 'agent' && user.role !== 'ADMIN' && user.role !== 'SALES' && user.role !== 'SALES_MANAGER') {
               return next(new Error('Insufficient permissions for agent access'));
             }
@@ -89,7 +89,7 @@ function initializeChatServer(httpServer) {
     }
   });
 
-  // [2025-12-07 01:30:00] Handle client connections
+// Handle client connections
   io.on('connection', async (socket) => {
     logger.info('[ChatServer] Client connected', {
       socketId: socket.id,
@@ -98,7 +98,7 @@ function initializeChatServer(httpServer) {
       hasSession: !!socket.sessionId,
     });
 
-    // [2025-12-07 01:30:00] Join user's room for notifications
+// Join user's room for notifications
     if (socket.userId) {
       socket.join(`user:${socket.userId}`);
     }
@@ -106,7 +106,7 @@ function initializeChatServer(httpServer) {
       socket.join(`session:${socket.sessionId}`);
     }
 
-    // [2025-12-07 01:30:00] Join agent room if user is an agent
+// Join agent room if user is an agent
     if (socket.userType === 'agent' && socket.user) {
       socket.join('agents');
       // Notify other agents that a new agent is online
@@ -116,7 +116,7 @@ function initializeChatServer(httpServer) {
       });
     }
 
-    // [2025-12-07 01:30:00] Handle joining a chat room
+// Handle joining a chat room
     socket.on('room:join', async (data) => {
       try {
         const { roomId } = data;
@@ -192,7 +192,7 @@ function initializeChatServer(httpServer) {
       }
     });
 
-    // [2025-12-07 01:30:00] Handle sending a message
+// Handle sending a message
     socket.on('message:send', async (data) => {
       try {
         const { roomId, content } = data;
@@ -285,7 +285,7 @@ function initializeChatServer(httpServer) {
       }
     });
 
-    // [2025-12-07 01:30:00] Handle marking messages as read
+// Handle marking messages as read
     socket.on('message:read', async (data) => {
       try {
         const { roomId, messageIds } = data;
@@ -333,7 +333,7 @@ function initializeChatServer(httpServer) {
       }
     });
 
-    // [2025-12-07 01:30:00] Handle disconnection
+// Handle disconnection
     socket.on('disconnect', () => {
       logger.info('[ChatServer] Client disconnected', {
         socketId: socket.id,

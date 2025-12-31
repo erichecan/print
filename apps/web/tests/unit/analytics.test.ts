@@ -1,6 +1,6 @@
 /**
  * Analytics Unit Tests
- * [2025-12-08] 测试埋点系统的核心功能
+* 测试埋点系统的核心功能
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { analytics, getAnalytics } from '@/lib/analytics';

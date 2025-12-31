@@ -1,9 +1,9 @@
 /**
  * Shipping Information Page
- * [2025-11-11 22:31:25] Scaffold
- * [2025-11-12 00:06:20] Added delivery timelines and rate overview
- * [2025-01-27 17:40:00] 补充 SEO 元数据
- * [2025-11-16 12:50:00] 对齐原型化运费文案与分区
+* Scaffold
+* Added delivery timelines and rate overview
+* 补充 SEO 元数据
+* 对齐原型化运费文案与分区
  */
 import Link from 'next/link';
 import { generateSEOMetadata } from '@/lib/seo';

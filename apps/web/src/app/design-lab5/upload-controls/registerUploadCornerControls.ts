@@ -1,6 +1,6 @@
 /**
  * Design Lab 5.1 - 通用角控件注册模块
- * [2025-12-16 02:07:45] 初始实现：抽象上传/文字/艺术对象通用角控件（删除 / 复制 / 缩放）
+* 初始实现：抽象上传/文字/艺术对象通用角控件（删除 / 复制 / 缩放）
  *
  * 注意：
  * - 只作用于前景对象（upload / text / art），不会修改商品底图（layerType === 'product' 或 name === 'background'）
@@ -34,12 +34,12 @@ interface RegisteredCornerControls {
   applyCornerControlsToObject: (obj: fabric.Object) => void;
 }
 
-// [2025-12-16 02:07:45] 使用 WeakMap 以 Canvas 为 key 存储注册结果，避免内存泄漏
+// 使用 WeakMap 以 Canvas 为 key 存储注册结果，避免内存泄漏
 const registeredForCanvas = new WeakMap<fabric.Canvas, RegisteredCornerControls>();
 
 /**
  * 创建一个圆形按钮控件
- * [2025-12-16 02:07:45] 内部工具：统一配置位置/尺寸/渲染/鼠标拦截
+* 内部工具：统一配置位置/尺寸/渲染/鼠标拦截
  */
 function createCircleControl(params: {
   fabricModule: typeof fabric;
@@ -73,9 +73,9 @@ function createCircleControl(params: {
     cursorStyle: 'pointer',
     sizeX: size,
     sizeY: size,
-    touchCornerSize: size, // [2025-12-21] Fix: Ensure touch hit area matches visual size (160px)
-    transparentCorners: false, // [2025-12-21] Fix: Ensure corners are treated as opaque for hit detection
-    // [2025-12-16 02:07:45] 防止点击控件时取消选中
+touchCornerSize: size, // Fix: Ensure touch hit area matches visual size (160px)
+transparentCorners: false, // Fix: Ensure corners are treated as opaque for hit detection
+// 防止点击控件时取消选中
     mouseDownHandler: () => true,
     render: function (
       this: fabric.Control,
@@ -116,7 +116,7 @@ function createCircleControl(params: {
 
 /**
  * 注册通用角控件（删除 / 复制 / 缩放）
- * [2025-12-16 02:07:45] 可通过 matcher 控制哪些对象启用控件（upload / text / art）
+* 可通过 matcher 控制哪些对象启用控件（upload / text / art）
  */
 export function registerCornerControls(params: {
   fabric: typeof fabric;
@@ -311,7 +311,7 @@ export function registerCornerControls(params: {
 }
 
 // ------------------------------------------------------------------
-// [2025-01-30] Universal Controls for Layout (Upload / Text / Art)
+// Universal Controls for Layout (Upload / Text / Art)
 // ------------------------------------------------------------------
 
 /**

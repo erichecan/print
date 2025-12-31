@@ -1,7 +1,7 @@
 /**
  * Admin Login Page
- * [2025-01-28 07:30:00] Admin-only login page, separate from customer login
- * [2025-01-28 08:15:00] Added I18n Provider for language switching
+* Admin-only login page, separate from customer login
+* Added I18n Provider for language switching
  */
 import { Suspense } from 'react';
 import { AdminI18nProvider } from '@/contexts/adminI18nContext';

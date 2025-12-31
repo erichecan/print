@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 清理数据库中除黑白之外的所有颜色变体
- * [2025-12-04 22:15:00] 删除所有颜色不是 Black/White/黑/白 的产品变体
+* 删除所有颜色不是 Black/White/黑/白 的产品变体
  */
 
 const { PrismaClient } = require('@prisma/client');

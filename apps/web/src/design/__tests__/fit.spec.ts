@@ -1,6 +1,6 @@
 /**
  * Fit Algorithm Unit Tests
- * [2025-01-30 20:20:00] 测试画布图片适配算法
+* 测试画布图片适配算法
  */
 
 import { calculateImageFit, fitImageToCanvas } from '../utils/fit';
@@ -39,7 +39,7 @@ describe('Fit Algorithm', () => {
     });
     
     it('should center image correctly (center origin)', () => {
-      // [2025-01-30 20:55:00] 修复：验证基于 center 原点的居中算法
+// 修复：验证基于 center 原点的居中算法
       const result = calculateImageFit({
         canvasWidth: 1000,
         canvasHeight: 1200,

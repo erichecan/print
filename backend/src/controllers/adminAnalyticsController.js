@@ -1,19 +1,19 @@
 /**
  * Admin Analytics Controller
- * [2025-12-06 21:30:00] 管理后台报表和分析控制器 for Issue #160
- * [2025-01-27 18:00:00] 修复：使用共享的 prisma 实例，避免连接池问题
+* 管理后台报表和分析控制器 for Issue #160
+* 修复：使用共享的 prisma 实例，避免连接池问题
  */
 const prisma = require('../lib/prisma');
 
 /**
  * Get sales analytics
- * [2025-12-06 21:30:00] 获取销售报表数据 for Issue #160
+* 获取销售报表数据 for Issue #160
  */
 exports.getSalesAnalytics = async (req, res) => {
   try {
     const { startDate, endDate, period = 'day' } = req.query;
     
-    // [2025-12-06 21:30:00] Build date filter
+// Build date filter
     const dateFilter = {};
     if (startDate) {
       dateFilter.gte = new Date(startDate);
@@ -22,7 +22,7 @@ exports.getSalesAnalytics = async (req, res) => {
       dateFilter.lte = new Date(endDate);
     }
     
-    // [2025-12-06 21:30:00] Get orders with date filter
+// Get orders with date filter
     const orders = await prisma.order.findMany({
       where: {
         paymentStatus: 'COMPLETED',
@@ -41,21 +41,21 @@ exports.getSalesAnalytics = async (req, res) => {
       },
     });
     
-    // [2025-12-06 21:30:00] Calculate total revenue
+// Calculate total revenue
     const totalRevenue = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
     
-    // [2025-12-06 21:30:00] Calculate total orders
+// Calculate total orders
     const totalOrders = orders.length;
     
-    // [2025-12-06 21:30:00] Calculate average order value
+// Calculate average order value
     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
     
-    // [2025-12-06 21:30:00] Calculate total items sold
+// Calculate total items sold
     const totalItemsSold = orders.reduce((sum, order) => {
       return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
     }, 0);
     
-    // [2025-12-06 21:30:00] Group by period (day/week/month)
+// Group by period (day/week/month)
     const revenueByPeriod = {};
     orders.forEach((order) => {
       const date = new Date(order.createdAt);
@@ -79,7 +79,7 @@ exports.getSalesAnalytics = async (req, res) => {
       revenueByPeriod[key].items += order.items.reduce((sum, item) => sum + item.quantity, 0);
     });
     
-    // [2025-12-06 21:30:00] Convert to array and sort
+// Convert to array and sort
     const revenueByPeriodArray = Object.entries(revenueByPeriod)
       .map(([date, data]) => ({
         date,
@@ -89,7 +89,7 @@ exports.getSalesAnalytics = async (req, res) => {
       }))
       .sort((a, b) => a.date.localeCompare(b.date));
     
-    // [2025-12-06 21:30:00] Get top selling products
+// Get top selling products
     const orderItems = await prisma.orderItem.findMany({
       where: {
         order: {
@@ -147,7 +147,7 @@ exports.getSalesAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
+// 增强错误日志，包含详细错误信息
     console.error('[adminAnalyticsController] getSalesAnalytics error:', {
       error: error.message,
       stack: error.stack,
@@ -162,13 +162,13 @@ exports.getSalesAnalytics = async (req, res) => {
 
 /**
  * Get user analytics
- * [2025-12-06 21:30:00] 获取用户分析数据 for Issue #160
+* 获取用户分析数据 for Issue #160
  */
 exports.getUserAnalytics = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    // [2025-12-06 21:30:00] Build date filter
+// Build date filter
     const dateFilter = {};
     if (startDate) {
       dateFilter.gte = new Date(startDate);
@@ -177,12 +177,12 @@ exports.getUserAnalytics = async (req, res) => {
       dateFilter.lte = new Date(endDate);
     }
     
-    // [2025-12-06 21:30:00] Get total users
+// Get total users
     const totalUsers = await prisma.user.count({
       ...(Object.keys(dateFilter).length > 0 ? { where: { createdAt: dateFilter } } : {}),
     });
     
-    // [2025-12-06 21:30:00] Get new users by period
+// Get new users by period
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
@@ -204,7 +204,7 @@ exports.getUserAnalytics = async (req, res) => {
       count: ubd._count.id,
     })).sort((a, b) => a.date.localeCompare(b.date));
     
-    // [2025-12-06 21:30:00] Get users with orders
+// Get users with orders
     const usersWithOrders = await prisma.user.findMany({
       where: {
         orders: {
@@ -233,7 +233,7 @@ exports.getUserAnalytics = async (req, res) => {
       },
     });
     
-    // [2025-12-06 21:30:00] Calculate customer lifetime value
+// Calculate customer lifetime value
     const customerStats = usersWithOrders.map((user) => {
       const totalSpent = user.orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
       const orderCount = user.orders.length;
@@ -249,12 +249,12 @@ exports.getUserAnalytics = async (req, res) => {
       };
     });
     
-    // [2025-12-06 21:30:00] Get top customers
+// Get top customers
     const topCustomers = customerStats
       .sort((a, b) => b.totalSpent - a.totalSpent)
       .slice(0, 10);
     
-    // [2025-12-06 21:30:00] Get user registration by period
+// Get user registration by period
     const registrationByPeriod = await prisma.user.groupBy({
       by: ['createdAt'],
       where: {
@@ -285,7 +285,7 @@ exports.getUserAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
+// 增强错误日志，包含详细错误信息
     console.error('[adminAnalyticsController] getUserAnalytics error:', {
       error: error.message,
       stack: error.stack,
@@ -300,13 +300,13 @@ exports.getUserAnalytics = async (req, res) => {
 
 /**
  * Get product analytics
- * [2025-12-06 21:30:00] 获取产品分析数据 for Issue #160
+* 获取产品分析数据 for Issue #160
  */
 exports.getProductAnalytics = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    // [2025-12-06 21:30:00] Build date filter
+// Build date filter
     const dateFilter = {};
     if (startDate) {
       dateFilter.gte = new Date(startDate);
@@ -315,12 +315,12 @@ exports.getProductAnalytics = async (req, res) => {
       dateFilter.lte = new Date(endDate);
     }
     
-    // [2025-12-06 21:30:00] Get total products
+// Get total products
     const totalProducts = await prisma.product.count({
       where: { isActive: true },
     });
     
-    // [2025-12-06 21:30:00] Get product sales
+// Get product sales
     const orderItems = await prisma.orderItem.findMany({
       where: {
         order: {
@@ -351,7 +351,7 @@ exports.getProductAnalytics = async (req, res) => {
       },
     });
     
-    // [2025-12-06 21:30:00] Aggregate product sales
+// Aggregate product sales
     const productSales = {};
     orderItems.forEach((item) => {
       const productId = item.productId;
@@ -378,17 +378,17 @@ exports.getProductAnalytics = async (req, res) => {
       averageOrderValue: p.orderCount > 0 ? Number((p.revenue / p.orderCount).toFixed(2)) : 0,
     }));
     
-    // [2025-12-06 21:30:00] Get top selling products
+// Get top selling products
     const topSellingProducts = productStats
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 10);
     
-    // [2025-12-06 21:30:00] Get top revenue products
+// Get top revenue products
     const topRevenueProducts = productStats
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 10);
     
-    // [2025-12-06 21:30:00] Get sales by category
+// Get sales by category
     const salesByCategory = {};
     productStats.forEach((product) => {
       const category = product.category;
@@ -426,7 +426,7 @@ exports.getProductAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    // [2025-01-27 18:00:00] 增强错误日志，包含详细错误信息
+// 增强错误日志，包含详细错误信息
     console.error('[adminAnalyticsController] getProductAnalytics error:', {
       error: error.message,
       stack: error.stack,

@@ -1,18 +1,18 @@
 /**
  * Canvas Manager - Fabric.js 画布管理与三面切换
- * [2025-11-19 10:20:00] 封装 Fabric Canvas，管理三面画布、对象操作、背景层
+* 封装 Fabric Canvas，管理三面画布、对象操作、背景层
  */
 (function() {
   'use strict';
 
   let canvas = null;
   let backgroundImage = null;
-  // [2025-01-27 22:20:00] 将画布尺寸从 900x700 调整为 1000x1200
+// 将画布尺寸从 900x700 调整为 1000x1200
   const CANVAS_WIDTH = 1000;
   const CANVAS_HEIGHT = 1200;
   const devicePixelRatio = window.devicePixelRatio || 1;
 
-  // [2025-11-19 10:20:00] 初始化画布
+// 初始化画布
   function initCanvas(canvasElementParam) {
     if (!window.fabric) {
       console.error('[CanvasManager] Fabric.js not loaded');
@@ -22,40 +22,40 @@
     canvas = new window.fabric.Canvas(canvasElementParam, {
       width: CANVAS_WIDTH,
       height: CANVAS_HEIGHT,
-      backgroundColor: 'transparent', // [2025-11-21 11:30:00] 改为透明，不遮挡产品图片
+backgroundColor: 'transparent', // 改为透明，不遮挡产品图片
       preserveObjectStacking: true,
       selection: true,
       stateful: true
     });
 
-    // [2025-11-19 10:20:00] 高 DPI 适配
+// 高 DPI 适配
     const scale = devicePixelRatio;
     
-    // [2025-11-21 12:40:00] 设置画布实际尺寸（像素尺寸）和 CSS 尺寸
+// 设置画布实际尺寸（像素尺寸）和 CSS 尺寸
     // 实际尺寸 = 逻辑尺寸 * devicePixelRatio（用于高 DPI 渲染）
     // CSS 尺寸 = 逻辑尺寸（用于布局）
     canvas.setWidth(CANVAS_WIDTH * scale);
     canvas.setHeight(CANVAS_HEIGHT * scale);
     
-    // [2025-11-21 12:40:00] 设置 CSS 尺寸为逻辑尺寸
+// 设置 CSS 尺寸为逻辑尺寸
     const canvasElement = canvas.getElement();
     if (canvasElement) {
       canvasElement.style.width = CANVAS_WIDTH + 'px';
       canvasElement.style.height = CANVAS_HEIGHT + 'px';
     }
     
-    // [2025-11-21 12:50:00] 重要：不要设置 zoom，因为这会改变坐标系统
+// 重要：不要设置 zoom，因为这会改变坐标系统
     // 高 DPI 适配应该通过 setWidth/setHeight 和 CSS 来实现，而不是 zoom
     // canvas.setZoom(scale); // 注释掉，避免坐标系统混乱
     
-    // [2025-11-21 12:50:00] viewportTransform 应该初始化为单位矩阵，然后通过 CSS 处理高 DPI
+// viewportTransform 应该初始化为单位矩阵，然后通过 CSS 处理高 DPI
     // 或者，如果需要 zoom，应该设置为 1，然后通过其他方式处理高 DPI
-    canvas.setZoom(1); // [2025-11-21 12:50:00] 设置为 1，使用逻辑坐标系统
+canvas.setZoom(1); // 设置为 1，使用逻辑坐标系统
     
-    // [2025-11-21 12:50:00] viewportTransform 初始化为单位矩阵 [1, 0, 0, 1, 0, 0]
+// viewportTransform 初始化为单位矩阵 [1, 0, 0, 1, 0, 0]
     canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     
-    // [2025-11-21 12:50:00] 验证尺寸设置
+// 验证尺寸设置
     const actualWidth = canvas.width;
     const actualHeight = canvas.height;
     const expectedWidth = CANVAS_WIDTH;
@@ -72,7 +72,7 @@
     console.log('[CanvasManager] ViewportTransform:', canvas.viewportTransform, '(should be [1,0,0,1,0,0])');
     console.log('[CanvasManager] ===================================');
     
-    // [2025-11-21 12:50:00] 如果尺寸不匹配，强制设置
+// 如果尺寸不匹配，强制设置
     if (actualWidth !== expectedWidth || actualHeight !== expectedHeight) {
       console.warn('[CanvasManager] Canvas size mismatch! Forcing correct size...');
       canvas.setWidth(expectedWidth);
@@ -84,7 +84,7 @@
       console.log('[CanvasManager] After force set:', 'width=' + canvas.width + ', height=' + canvas.height);
     }
 
-    // [2025-11-19 10:20:00] 设置对象默认属性
+// 设置对象默认属性
     window.fabric.Object.prototype.set({
       borderColor: '#3b82f6',
       cornerColor: '#3b82f6',
@@ -95,20 +95,20 @@
       rotatingPointOffset: 40
     });
 
-    // [2025-11-19 10:55:00] 支持多选（Ctrl/Cmd+Click）
+// 支持多选（Ctrl/Cmd+Click）
     canvas.on('selection:created', (e) => {
       const activeObjects = canvas.getActiveObjects();
       if (activeObjects.length > 1) {
-        // [2025-11-19 10:55:00] 多选时显示组合控制点
+// 多选时显示组合控制点
         canvas.renderAll();
       }
     });
 
-    // [2025-11-19 10:55:00] Shift+拖拽等比缩放，Alt+拖拽从中心缩放
+// Shift+拖拽等比缩放，Alt+拖拽从中心缩放
     canvas.on('object:scaling', (e) => {
       const obj = e.target;
       if (e.e && e.e.shiftKey) {
-        // [2025-11-19 10:55:00] 等比缩放
+// 等比缩放
         const scaleX = obj.scaleX;
         const scaleY = obj.scaleY;
         const scale = Math.max(Math.abs(scaleX), Math.abs(scaleY));
@@ -119,12 +119,12 @@
       }
     });
 
-    // [2025-11-19 10:20:00] 对象选择事件
+// 对象选择事件
     canvas.on('selection:created', handleSelection);
     canvas.on('selection:updated', handleSelection);
     canvas.on('selection:cleared', handleSelectionCleared);
     
-    // [2025-11-19 10:20:00] 对象变更事件
+// 对象变更事件
     canvas.on('object:added', handleObjectAdded);
     canvas.on('object:removed', handleObjectRemoved);
     canvas.on('object:modified', handleObjectModified);
@@ -132,24 +132,24 @@
     canvas.on('object:scaling', handleObjectScaling);
     canvas.on('object:rotating', handleObjectRotating);
 
-    // [2025-11-19 10:55:00] 对齐吸附与参考线
+// 对齐吸附与参考线
     canvas.on('object:moving', handleObjectMovingWithSnap);
     canvas.on('object:moved', handleObjectMoved);
 
-    // [2025-11-19 10:20:00] 加载当前面的背景图
+// 加载当前面的背景图
     loadBackgroundForCurrentSide();
     
-    // [2025-11-19 10:55:00] 加载当前面的数据
+// 加载当前面的数据
     loadSide(window.DesignLabStore.getCurrentSide());
 
-    // [2025-01-27] 不保存初始空状态 - undo 只记录图层操作（上传图片、add text、add art）
+// 不保存初始空状态 - undo 只记录图层操作（上传图片、add text、add art）
     // 初始状态不应该被记录，这样用户 undo 时不会回到空画布
 
     console.log('[CanvasManager] Canvas initialized');
     return true;
   }
 
-  // [2025-11-21 11:20:00] 加载当前面的背景图（导出为全局函数）
+// 加载当前面的背景图（导出为全局函数）
   function loadBackgroundForCurrentSide() {
     if (!canvas) {
       console.warn('[CanvasManager] Cannot load background - canvas not initialized');
@@ -164,17 +164,17 @@
       return;
     }
 
-    // [2025-11-19 10:20:00] 移除旧背景
+// 移除旧背景
     if (backgroundImage) {
       canvas.remove(backgroundImage);
       backgroundImage = null;
     }
     
-    // [2025-11-21 11:40:00] 先使用原生 Image 对象加载图片
+// 先使用原生 Image 对象加载图片
     const img = new Image();
     img.crossOrigin = 'anonymous';
     
-    // [2025-11-21 11:40:00] 设置超时
+// 设置超时
     let timeoutId = setTimeout(() => {
       console.error('[CanvasManager] Image load timeout after 15 seconds');
       img.onload = null;
@@ -184,7 +184,7 @@
     img.onload = () => {
       clearTimeout(timeoutId);
       
-      // [2025-11-21 12:00:00] 将原生 Image 转换为 Fabric Image
+// 将原生 Image 转换为 Fabric Image
       const fabricImg = new window.fabric.Image(img, {
         selectable: false,
         evented: false,
@@ -194,17 +194,17 @@
         originY: 'top'
       });
       
-      // [2025-11-21 12:00:00] 产品图片占据画布中间约 65% 宽、75% 高的区域
+// 产品图片占据画布中间约 65% 宽、75% 高的区域
       const targetWidth = CANVAS_WIDTH * 0.65;
       const targetHeight = CANVAS_HEIGHT * 0.75;
       
-      // [2025-11-21 12:00:00] 计算缩放比例，保持宽高比
+// 计算缩放比例，保持宽高比
       const scaleX = targetWidth / fabricImg.width;
       const scaleY = targetHeight / fabricImg.height;
       const scale = Math.min(scaleX, scaleY);
       fabricImg.scale(scale);
       
-      // [2025-11-21 12:30:00] 居中图片
+// 居中图片
       const scaledWidth = fabricImg.width * scale;
       const scaledHeight = fabricImg.height * scale;
       const left = CANVAS_WIDTH / 2 - scaledWidth / 2;
@@ -213,16 +213,16 @@
       fabricImg.set({ left, top });
       fabricImg.setCoords();
       
-      // [2025-11-19 10:20:00] 移除旧背景
+// 移除旧背景
       if (backgroundImage) {
         canvas.remove(backgroundImage);
         backgroundImage = null;
       }
       
-      // [2025-11-21 11:50:00] 先添加到画布
+// 先添加到画布
       canvas.add(fabricImg);
       
-      // [2025-11-21 11:50:00] 移动到最底层（兼容不同版本的 Fabric.js）
+// 移动到最底层（兼容不同版本的 Fabric.js）
       try {
         if (typeof canvas.sendToBack === 'function') {
           canvas.sendToBack(fabricImg);
@@ -231,7 +231,7 @@
         } else if (typeof canvas.moveTo === 'function') {
           canvas.moveTo(fabricImg, 0);
         } else {
-          // [2025-11-21 11:50:00] 如果都没有，手动移动到最底层
+// 如果都没有，手动移动到最底层
           const objects = canvas.getObjects();
           const index = objects.indexOf(fabricImg);
           if (index > 0) {
@@ -255,7 +255,7 @@
       console.error('[CanvasManager] Image URL:', imageUrl);
       console.error('[CanvasManager] This might be a CORS issue or invalid URL');
       
-      // [2025-11-21 11:40:00] 尝试不使用 CORS 重新加载
+// 尝试不使用 CORS 重新加载
       console.log('[CanvasManager] Retrying without CORS...');
       const imgRetry = new Image();
       imgRetry.onload = () => {
@@ -268,7 +268,7 @@
           originY: 'top'
         });
         
-        // [2025-11-21 12:00:00] 使用相同的缩放逻辑
+// 使用相同的缩放逻辑
         const targetWidth = CANVAS_WIDTH * 0.65;
         const targetHeight = CANVAS_HEIGHT * 0.75;
         const scaleX = targetWidth / fabricImg.width;
@@ -276,7 +276,7 @@
         const scale = Math.min(scaleX, scaleY);
         fabricImg.scale(scale);
         
-        // [2025-11-21 12:00:00] 居中图片（使用 left/top origin）
+// 居中图片（使用 left/top origin）
         const scaledWidth = fabricImg.width * scale;
         const scaledHeight = fabricImg.height * scale;
         const left = (CANVAS_WIDTH - scaledWidth) / 2;
@@ -292,7 +292,7 @@
         }
         canvas.add(fabricImg);
         
-        // [2025-11-21 11:50:00] 兼容不同版本的 Fabric.js
+// 兼容不同版本的 Fabric.js
         try {
           if (typeof canvas.sendToBack === 'function') {
             canvas.sendToBack(fabricImg);
@@ -315,51 +315,51 @@
       imgRetry.src = imageUrl;
     };
     
-    // [2025-11-21 11:40:00] 开始加载图片
+// 开始加载图片
     img.src = imageUrl;
   }
 
-  // [2025-11-19 11:30:00] 切换画布面（保存当前面 canvas.toDatalessJSON() + 缩略图 toDataURL({multiplier:0.2})）
+// 切换画布面（保存当前面 canvas.toDatalessJSON() + 缩略图 toDataURL({multiplier:0.2})）
   function switchSide(side) {
     if (!canvas) return false;
 
     const store = window.DesignLabStore;
     const currentSide = store.getCurrentSide();
 
-    // [2025-11-19 11:30:00] 保存当前面的数据
+// 保存当前面的数据
     if (currentSide !== side) {
-      // [2025-11-19 11:30:00] 保存当前面数据（在切换前）：canvas.toDatalessJSON() + 缩略图
+// 保存当前面数据（在切换前）：canvas.toDatalessJSON() + 缩略图
       const currentObjects = canvas.getObjects().filter(obj => obj.name !== 'background');
       const currentData = canvas.toDatalessJSON(currentObjects);
       const currentThumb = canvas.toDataURL({ multiplier: 0.2, format: 'png' });
       store.setCurrentSideData(currentData, currentThumb);
       
-      // [2025-11-19 11:30:00] 切换面
+// 切换面
       if (store.setActiveSide(side)) {
-        // [2025-11-19 11:30:00] 清空画布
+// 清空画布
         canvas.clear();
         backgroundImage = null;
         
-        // [2025-11-19 11:30:00] 加载新面的背景（产品底图，selectable=false, evented=false, excludeFromExport=true）
+// 加载新面的背景（产品底图，selectable=false, evented=false, excludeFromExport=true）
         loadBackgroundForCurrentSide();
         
-        // [2025-11-19 11:30:00] 加载新面的数据（若空，仅展示对应颜色的产品底图）
+// 加载新面的数据（若空，仅展示对应颜色的产品底图）
         loadSide(side);
         
-        // [2025-11-19 11:30:00] 通知历史管理器切换面
+// 通知历史管理器切换面
         if (window.DesignLabHistory) {
           window.DesignLabHistory.switchSide(side);
           
-          // [2025-01-27] 切换面不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+// 切换面不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
           // 切换面时不应该创建历史记录，因为这只是查看不同面的设计
         }
         
-        // [2025-11-19 11:30:00] 通知图层面板更新
+// 通知图层面板更新
         if (window.DesignLabLayers) {
           window.DesignLabLayers.updateLayers();
         }
         
-        // [2025-11-19 11:30:00] 隐藏参考线
+// 隐藏参考线
         hideGuideLines();
         
         return true;
@@ -368,18 +368,18 @@
     return false;
   }
 
-  // [2025-11-19 10:20:00] 保存当前面的数据
+// 保存当前面的数据
   function saveCurrentSide() {
     if (!canvas) return;
     
     const store = window.DesignLabStore;
     const side = store.getCurrentSide();
     
-    // [2025-11-19 10:20:00] 获取画布 JSON（排除背景）
+// 获取画布 JSON（排除背景）
     const objects = canvas.getObjects().filter(obj => obj.name !== 'background');
     const canvasJSON = canvas.toDatalessJSON(objects);
     
-    // [2025-11-19 10:20:00] 生成缩略图
+// 生成缩略图
     const thumbDataURL = canvas.toDataURL({
       format: 'png',
       multiplier: 0.2,
@@ -389,7 +389,7 @@
     store.setCurrentSideData(canvasJSON, thumbDataURL);
   }
 
-  // [2025-11-19 10:55:00] 自动保存（节流）
+// 自动保存（节流）
   let autoSaveTimer = null;
   function autoSave() {
     if (autoSaveTimer) clearTimeout(autoSaveTimer);
@@ -398,8 +398,8 @@
     }, 1200);
   }
 
-  // [2025-11-19 10:20:00] 加载指定面的数据
-  // [2025-01-28 05:30:00] 如果 sideData.canvasJSON 为 null，确保画布是空的
+// 加载指定面的数据
+// 如果 sideData.canvasJSON 为 null，确保画布是空的
   function loadSide(side) {
     if (!canvas) return;
     
@@ -407,14 +407,14 @@
     const sideData = store.getStore().sides[side];
     
     if (sideData && sideData.canvasJSON) {
-      // [2025-11-19 10:55:00] 临时保存背景
+// 临时保存背景
       const bg = backgroundImage;
       
       canvas.loadFromJSON(sideData.canvasJSON, () => {
-        // [2025-11-19 10:55:00] 恢复背景
+// 恢复背景
         if (bg) {
           canvas.add(bg);
-          // [2025-11-21 11:50:00] 兼容不同版本的 Fabric.js
+// 兼容不同版本的 Fabric.js
           try {
             if (typeof canvas.sendToBack === 'function') {
               canvas.sendToBack(bg);
@@ -431,29 +431,29 @@
         canvas.renderAll();
         console.log('[CanvasManager] Loaded side:', side);
         
-        // [2025-11-19 10:55:00] 更新图层面板
+// 更新图层面板
         if (window.DesignLabLayers) {
           window.DesignLabLayers.updateLayers();
         }
       });
     } else {
-      // [2025-01-28 05:30:00] 如果没有数据，清空画布（排除背景）
+// 如果没有数据，清空画布（排除背景）
       const objects = canvas.getObjects().filter(obj => obj.name !== 'background');
       objects.forEach(obj => canvas.remove(obj));
       canvas.renderAll();
       
-      // [2025-11-19 10:55:00] 更新图层面板
+// 更新图层面板
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
     }
   }
 
-  // [2025-11-19 10:20:00] 添加文本对象
+// 添加文本对象
   function addText(text = 'Your Text', options = {}) {
     if (!canvas) return null;
 
-    // [2025-01-27] 在添加文字前先保存当前状态，这样 undo 时可以删除这个文字
+// 在添加文字前先保存当前状态，这样 undo 时可以删除这个文字
     console.log('[CanvasManager] 📋 Saving state BEFORE adding text...', {
       timestamp: new Date().toISOString()
     });
@@ -479,7 +479,7 @@
       canvas.setActiveObject(textObj);
       canvas.renderAll();
       
-      // [2025-11-19 11:30:00] 通知图层面板
+// 通知图层面板
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
@@ -489,7 +489,7 @@
       return textObj;
   }
 
-  // [2025-11-19 12:00:00] 添加图片对象（文件 > 4000px 等比压至最长边 2000px；添加到当前面 canvas，位置居中）
+// 添加图片对象（文件 > 4000px 等比压至最长边 2000px；添加到当前面 canvas，位置居中）
   function addImage(imageUrl, options = {}) {
     const timestamp = new Date().toISOString();
     console.log('[CanvasManager] ===== addImage CALLED =====', {
@@ -505,7 +505,7 @@
       return null;
     }
 
-    // [2025-01-27] 在添加图片前先保存当前状态，这样 undo 时可以删除这个图片
+// 在添加图片前先保存当前状态，这样 undo 时可以删除这个图片
     console.log('[CanvasManager] 📋 Saving state BEFORE adding image...', {
       timestamp: new Date().toISOString()
     });
@@ -524,11 +524,11 @@
       imageUrlType: imageUrl.startsWith('data:') ? 'data URL' : imageUrl.startsWith('http') ? 'HTTP URL' : 'other'
     });
 
-    // [2025-01-28 00:35:00] 使用原生 Image 对象加载，然后转换为 Fabric Image
+// 使用原生 Image 对象加载，然后转换为 Fabric Image
     // 这样可以更好地控制加载过程和错误处理
     const imgElement = new Image();
     
-    // [2025-01-28 00:35:00] 设置 crossOrigin（如果需要）
+// 设置 crossOrigin（如果需要）
     if (fromUrlOptions.crossOrigin) {
       imgElement.crossOrigin = fromUrlOptions.crossOrigin;
     }
@@ -542,7 +542,7 @@
       });
 
       try {
-        // [2025-01-28 00:35:00] 将原生 Image 转换为 Fabric Image
+// 将原生 Image 转换为 Fabric Image
         const fabricImage = new window.fabric.Image(imgElement);
         
         console.log('[CanvasManager] ✅ Fabric image created:', {
@@ -551,8 +551,8 @@
           timestamp: new Date().toISOString()
         });
 
-        // [2025-01-28 04:30:00] 智能缩放：确保图片适合画布大小，与画布比例相当
-        // [2025-01-28 04:35:00] 缩放比例改为 30%
+// 智能缩放：确保图片适合画布大小，与画布比例相当
+// 缩放比例改为 30%
         // 画布尺寸：1000x1200，比例约 5:6
         // 目标：图片缩放到画布的 30%，既能看清又不会太大
         
@@ -567,20 +567,20 @@
           timestamp: new Date().toISOString()
         });
         
-        // [2025-01-28 04:35:00] 计算画布的可用区域（30% 的画布大小，留边距）
+// 计算画布的可用区域（30% 的画布大小，留边距）
         const SCALE_RATIO = 0.3; // 30%
         const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;  // 300px
         const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO; // 360px
         
-        // [2025-01-28 04:30:00] 计算缩放比例，确保图片既能完整显示，又不会超出目标区域
+// 计算缩放比例，确保图片既能完整显示，又不会超出目标区域
         const scaleX = targetMaxWidth / originalWidth;
         const scaleY = targetMaxHeight / originalHeight;
         const scale = Math.min(scaleX, scaleY, 1); // 不超过原始大小，只缩小不放大
 
-        // [2025-01-28 04:30:00] 应用缩放
+// 应用缩放
         fabricImage.scale(scale);
 
-        // [2025-11-19 12:00:00] 位置居中
+// 位置居中
         const left = options.left !== undefined ? options.left : CANVAS_WIDTH / 2;
         const top = options.top !== undefined ? options.top : CANVAS_HEIGHT / 2;
 
@@ -612,7 +612,7 @@
         canvas.setActiveObject(fabricImage);
         canvas.renderAll();
         
-        // [2025-01-28 04:35:00] 验证图片是否在画布内
+// 验证图片是否在画布内
         const imageBounds = fabricImage.getBoundingRect();
         const isWithinCanvas = 
           imageBounds.left >= 0 && 
@@ -634,7 +634,7 @@
           timestamp: new Date().toISOString()
         });
         
-        // [2025-11-19 12:00:00] 通知图层面板
+// 通知图层面板
         if (window.DesignLabLayers) {
           window.DesignLabLayers.updateLayers();
           console.log('[CanvasManager] ✅ Layers panel updated', {
@@ -646,7 +646,7 @@
           });
         }
         
-        // [2025-01-27] 历史已在添加前保存，这里不需要再保存
+// 历史已在添加前保存，这里不需要再保存
         
         const currentSide = window.DesignLabStore ? window.DesignLabStore.getCurrentSide() : 'front';
         console.log('[CanvasManager] ===== addImage SUCCESS =====', {
@@ -674,17 +674,17 @@
       alert('加载图片失败，请检查图片格式或重试');
     };
 
-    // [2025-01-28 00:35:00] 开始加载图片
+// 开始加载图片
     imgElement.src = imageUrl;
     
-    return null; // [2025-01-28 00:25:00] 异步函数，返回 null
+return null; // 异步函数，返回 null
   }
 
-  // [2025-11-19 10:20:00] 添加形状对象
+// 添加形状对象
   function addShape(type, options = {}) {
     if (!canvas) return null;
 
-    // [2025-01-27] 在添加形状前先保存当前状态，这样 undo 时可以删除这个形状
+// 在添加形状前先保存当前状态，这样 undo 时可以删除这个形状
     console.log('[CanvasManager] 📋 Saving state BEFORE adding shape...', {
       timestamp: new Date().toISOString()
     });
@@ -740,12 +740,12 @@
       canvas.setActiveObject(shape);
       canvas.renderAll();
       
-      // [2025-11-19 10:20:00] 通知图层面板
+// 通知图层面板
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
       
-      // [2025-01-27] 历史已在添加前保存，这里不需要再保存
+// 历史已在添加前保存，这里不需要再保存
       
       const currentSide = window.DesignLabStore.getCurrentSide();
       console.log('[CanvasManager] add:', { id: shape.name, type: 'shape', side: currentSide });
@@ -754,7 +754,7 @@
     return shape;
   }
 
-  // [2025-11-19 10:20:00] 删除选中对象
+// 删除选中对象
   function removeSelected() {
     if (!canvas) return;
     
@@ -770,19 +770,19 @@
       canvas.discardActiveObject();
       canvas.renderAll();
       
-      // [2025-11-19 10:20:00] 通知图层面板
+// 通知图层面板
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
       
-      // [2025-11-19 10:20:00] 记录历史
+// 记录历史
       if (window.DesignLabHistory) {
         window.DesignLabHistory.saveState();
       }
     }
   }
 
-  // [2025-11-19 10:20:00] 选择对象
+// 选择对象
   function selectObject(objectId) {
     if (!canvas) return;
     
@@ -793,7 +793,7 @@
     }
   }
 
-  // [2025-11-19 10:20:00] 对象选择事件处理
+// 对象选择事件处理
   function handleSelection(e) {
     if (window.DesignLabLayers) {
       const activeObj = e.selected ? e.selected[0] : e.target;
@@ -803,28 +803,28 @@
     }
   }
 
-  // [2025-11-19 10:20:00] 选择清除事件处理
+// 选择清除事件处理
   function handleSelectionCleared() {
     if (window.DesignLabLayers) {
       window.DesignLabLayers.clearSelection();
     }
   }
 
-  // [2025-11-19 10:20:00] 对象添加事件处理
+// 对象添加事件处理
   function handleObjectAdded(e) {
     if (window.DesignLabLayers) {
       window.DesignLabLayers.updateLayers();
     }
   }
 
-  // [2025-11-19 10:20:00] 对象删除事件处理
+// 对象删除事件处理
   function handleObjectRemoved(e) {
     if (window.DesignLabLayers) {
       window.DesignLabLayers.updateLayers();
     }
   }
 
-    // [2025-11-19 10:20:00] 对象修改事件处理（节流）
+// 对象修改事件处理（节流）
   let modifyTimer = null;
   function handleObjectModified() {
     if (modifyTimer) clearTimeout(modifyTimer);
@@ -832,17 +832,17 @@
       if (window.DesignLabLayers) {
         window.DesignLabLayers.updateLayers();
       }
-      // [2025-01-27] 对象修改（移动、缩放等）不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
+// 对象修改（移动、缩放等）不记录历史 - undo 只记录图层操作（上传图片、add text、add art）
       // 用户拖动、调整大小等操作不应该被 undo 记录
       // if (window.DesignLabHistory) {
       //   window.DesignLabHistory.saveState();
       // }
-      // [2025-11-19 10:55:00] 自动保存
+// 自动保存
       autoSave();
     }, 300);
   }
 
-  // [2025-11-19 10:20:00] 对象移动事件处理（节流）
+// 对象移动事件处理（节流）
   let moveTimer = null;
   function handleObjectMoving() {
     if (moveTimer) clearTimeout(moveTimer);
@@ -851,7 +851,7 @@
     }, 16); // ~60fps
   }
 
-  // [2025-11-19 10:20:00] 对象缩放事件处理（节流）
+// 对象缩放事件处理（节流）
   let scaleTimer = null;
   function handleObjectScaling() {
     if (scaleTimer) clearTimeout(scaleTimer);
@@ -860,7 +860,7 @@
     }, 16);
   }
 
-  // [2025-11-19 10:20:00] 对象旋转事件处理（节流）
+// 对象旋转事件处理（节流）
   let rotateTimer = null;
   function handleObjectRotating() {
     if (rotateTimer) clearTimeout(rotateTimer);
@@ -869,7 +869,7 @@
     }, 16);
   }
 
-  // [2025-11-19 10:55:00] 对齐吸附与参考线
+// 对齐吸附与参考线
   const SNAP_THRESHOLD = 8;
   let guideLines = [];
 
@@ -895,17 +895,17 @@
     hideGuideLines();
   }
 
-  // [2025-11-19 10:55:00] 获取吸附点
+// 获取吸附点
   function getSnapPoints(obj) {
     const points = [];
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
 
-    // [2025-11-19 10:55:00] 画布中心线
+// 画布中心线
     points.push({ x: centerX, y: 0, type: 'vertical' });
     points.push({ x: 0, y: centerY, type: 'horizontal' });
 
-    // [2025-11-19 10:55:00] 其他对象的边和中心
+// 其他对象的边和中心
     canvas.getObjects().forEach(otherObj => {
       if (otherObj === obj || otherObj.name === 'background') return;
       
@@ -920,7 +920,7 @@
     return points;
   }
 
-  // [2025-11-19 10:55:00] 吸附到点
+// 吸附到点
   function snapToPoints(obj, snapPoints) {
     const bounds = obj.getBoundingRect();
     const objCenterX = bounds.left + bounds.width / 2;
@@ -960,7 +960,7 @@
     };
   }
 
-  // [2025-11-19 10:55:00] 显示参考线
+// 显示参考线
   function showGuideLines(guides) {
     hideGuideLines();
     
@@ -975,14 +975,14 @@
       line.className = 'dl-guide-line';
       
       if (guide.type === 'vertical') {
-        // [2025-11-19 10:55:00] 垂直参考线：相对于画布位置
+// 垂直参考线：相对于画布位置
         const canvasX = guide.x * canvas.getZoom() + canvas.viewportTransform[4];
         line.style.left = (canvasX - wrapperRect.left + wrapper.scrollLeft) + 'px';
         line.style.top = '0';
         line.style.width = '1px';
         line.style.height = wrapper.clientHeight + 'px';
       } else {
-        // [2025-11-19 10:55:00] 水平参考线：相对于画布位置
+// 水平参考线：相对于画布位置
         const canvasY = guide.y * canvas.getZoom() + canvas.viewportTransform[5];
         line.style.left = '0';
         line.style.top = (canvasY - wrapperRect.top + wrapper.scrollTop) + 'px';
@@ -1000,19 +1000,19 @@
     });
   }
 
-  // [2025-11-19 10:55:00] 隐藏参考线
+// 隐藏参考线
   function hideGuideLines() {
     guideLines.forEach(line => line.remove());
     guideLines = [];
   }
 
-  // [2025-11-19 10:20:00] 导出画布为图片
+// 导出画布为图片
   function exportCanvas(format = 'png', side = null, options = {}) {
     if (!canvas) return null;
 
     const targetSide = side || window.DesignLabStore.getCurrentSide();
     
-    // [2025-11-19 10:20:00] 如果导出其他面，需要临时切换
+// 如果导出其他面，需要临时切换
     let switched = false;
     if (side && side !== window.DesignLabStore.getCurrentSide()) {
       saveCurrentSide();
@@ -1023,12 +1023,12 @@
     let dataURL = null;
 
     if (format === 'svg') {
-      // [2025-11-19 10:55:00] SVG 导出
+// SVG 导出
       const objects = canvas.getObjects().filter(obj => obj.name !== 'background');
       const svg = canvas.toSVG({ objects: objects });
       dataURL = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
     } else {
-      // [2025-11-19 10:20:00] PNG/JPG 导出
+// PNG/JPG 导出
       dataURL = canvas.toDataURL({
         format: format,
         multiplier: options.multiplier || 2,
@@ -1037,7 +1037,7 @@
       });
     }
 
-    // [2025-11-19 10:20:00] 恢复原面
+// 恢复原面
     if (switched) {
       switchSide(window.DesignLabStore.getCurrentSide());
     }
@@ -1046,13 +1046,13 @@
     return dataURL;
   }
 
-  // [2025-11-19 10:20:00] 获取画布实例
+// 获取画布实例
   function getCanvas() {
     return canvas;
   }
 
-  // [2025-11-19 10:20:00] 导出全局 API
-  // [2025-01-28 05:35:00] 添加获取和设置背景图的方法，供 history.js 使用
+// 导出全局 API
+// 添加获取和设置背景图的方法，供 history.js 使用
   window.DesignLabCanvas = {
     init: initCanvas,
     getCanvas,

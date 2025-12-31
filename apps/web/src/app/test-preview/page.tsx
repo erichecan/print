@@ -1,6 +1,6 @@
 /**
  * Product Detail Preview Test
- * [2025-11-19] 预览像素级精确商品详情页面
+* 预览像素级精确商品详情页面
  */
 'use client';
 

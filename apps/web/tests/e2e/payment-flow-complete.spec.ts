@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 12:00:00] 支付功能完整测试和修复验证
+* 支付功能完整测试和修复验证
  * 测试4个关键问题：
  * 1. 添加购物车无弹窗，实时更新购物车图标数字
  * 2. 购物车实时更新，无需刷新页面
@@ -34,12 +34,12 @@ test.describe('支付功能完整测试', () => {
       }
     } catch (error) {
       console.warn('[Test] Error finding product via API:', error);
-      // [2025-01-29 13:00:00] 使用 fallback，允许测试继续
+// 使用 fallback，允许测试继续
       availableProductSlug = 'classic-crew-tee'; // Fallback
       console.log('[Test] Using fallback product slug:', availableProductSlug);
     }
     
-    // [2025-01-29 13:00:00] 如果没有找到商品，使用默认值
+// 如果没有找到商品，使用默认值
     if (!availableProductSlug) {
       availableProductSlug = 'classic-crew-tee';
       console.log('[Test] No product found, using default:', availableProductSlug);

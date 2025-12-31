@@ -1,6 +1,6 @@
 /**
  * Design Lab 100% 复刻闭环测试
- * [2025-12-06 12:30:00] 完整的视觉对比、功能验证和交互测试
+* 完整的视觉对比、功能验证和交互测试
  */
 import { test, expect } from './fixtures/test-base';
 import {

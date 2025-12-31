@@ -1,6 +1,6 @@
 /**
  * Brand Logo URL Helper
- * [2025-01-29 13:50:00] 根据环境返回正确的品牌logo URL
+* 根据环境返回正确的品牌logo URL
  * - 生产环境：使用前端服务URL访问存储在GCP的logo
  * - 开发环境：使用相对路径
  * - 品牌logo都是从Custom Ink爬取，存储在GCP前端服务的public目录
@@ -8,7 +8,7 @@
 
 /**
  * 获取品牌logo的完整URL
- * [2025-01-29 13:50:00] 品牌logo存储在GCP前端服务，使用相对路径即可（浏览器会自动解析）
+* 品牌logo存储在GCP前端服务，使用相对路径即可（浏览器会自动解析）
  * 如果需要完整URL（例如在SSR或API响应中），可以使用此函数
  */
 export function getBrandLogoUrl(relativePath: string): string {

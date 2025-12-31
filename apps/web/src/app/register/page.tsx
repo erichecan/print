@@ -1,6 +1,5 @@
 /**
  * Register Page
- * [2025-11-05 00:45:00]
  */
 'use client';
 

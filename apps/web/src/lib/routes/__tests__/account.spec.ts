@@ -1,6 +1,6 @@
 /**
  * Account Routes Unit Tests
- * [2025-01-27 16:30:00] 测试账户路由映射
+* 测试账户路由映射
  */
 import { ACCOUNT_ROUTES } from '../account';
 

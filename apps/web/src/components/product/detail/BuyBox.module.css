@@ -1,4 +1,4 @@
-/* [2025-11-19 09:05:00] BuyBox Component Styles - Redbubble Style */
+/* BuyBox Component Styles - Redbubble Style */
 
 .buybox {
   background: #fff;
@@ -9,7 +9,7 @@
   gap: 20px;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：商品标题 */
+/* 参考图一位置：商品标题 */
 .buybox-title {
   font-size: 28px;
   font-weight: 700;
@@ -18,7 +18,7 @@
   margin: 0;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：设计/艺术家行 */
+/* 参考图一位置：设计/艺术家行 */
 .buyboxArtist {
   font-size: 14px;
   color: #6b7280;
@@ -37,7 +37,7 @@
   text-decoration: underline;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：价格（原价+现价+折扣+ends soon） */
+/* 参考图一位置：价格（原价+现价+折扣+ends soon） */
 .buyboxPrice {
   display: flex;
   flex-direction: column;
@@ -73,7 +73,7 @@
   width: fit-content;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：评分 */
+/* 参考图一位置：评分 */
 .buyboxRating {
   display: flex;
   align-items: center;
@@ -131,7 +131,7 @@
   margin: 0;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：Style下拉 */
+/* 参考图一位置：Style下拉 */
 .buyboxSelect {
   padding: 10px 12px;
   border: 1px solid #d1d5db;
@@ -153,7 +153,7 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：Color 圆形色块 */
+/* 参考图一位置：Color 圆形色块 */
 .buyboxColors {
   display: flex;
   flex-wrap: wrap;
@@ -198,7 +198,7 @@
   background: #ef4444;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：Size（S–3XL）+ Size Guide */
+/* 参考图一位置：Size（S–3XL）+ Size Guide */
 .buyboxSizeHeader {
   display: flex;
   justify-content: space-between;
@@ -260,7 +260,7 @@
   margin-top: 2px;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：Print Location 单选 */
+/* 参考图一位置：Print Location 单选 */
 .buyboxPrintLocations {
   display: flex;
   flex-direction: column;
@@ -291,7 +291,7 @@
   color: #374151;
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：数量步进器 */
+/* 参考图一位置：数量步进器 */
 .buyboxQuantity {
   display: flex;
   align-items: center;
@@ -349,14 +349,14 @@
   margin: 0;
 }
 
-/* [2025-11-19 10:00:00] 三个按钮容器 - 同一行 */
+/* 三个按钮容器 - 同一行 */
 .buyboxButtons {
   display: flex;
   gap: 12px;
   margin-top: 8px;
 }
 
-/* [2025-11-19 10:00:00] 开始设计按钮 */
+/* 开始设计按钮 */
 .buyboxStartDesign {
   flex: 1;
   padding: 10px 16px;
@@ -376,7 +376,7 @@
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
-/* [2025-11-19 09:05:00] 参考图一位置：加入购物车按钮 */
+/* 参考图一位置：加入购物车按钮 */
 .buyboxAddToCart {
   flex: 1;
   padding: 10px 16px;
@@ -448,7 +448,7 @@
     font-size: 28px;
   }
   
-  /* [2025-11-19 10:00:00] 移动端按钮堆叠 */
+/* 移动端按钮堆叠 */
   .buyboxButtons {
     flex-direction: column;
     gap: 8px;

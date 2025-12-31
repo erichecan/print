@@ -1,6 +1,6 @@
 /**
  * Inventory Service
- * [2025-01-27 13:30:00] Inventory management service
+* Inventory management service
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -8,15 +8,13 @@ const { BadRequestError } = require('../utils/errors');
 
 /**
  * Low stock threshold (configurable via env)
- * [2025-01-27 13:30:00]
  */
 const LOW_STOCK_THRESHOLD = parseInt(process.env.LOW_STOCK_THRESHOLD) || 10;
 
 /**
  * Decrease inventory for order items
- * [2025-01-27 13:30:00]
  */
-// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+// 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function decreaseInventory(orderItems) {
   try {
     const results = await prisma.$transaction(
@@ -61,7 +59,7 @@ async function decreaseInventory(orderItems) {
       })),
     });
 
-    // [2025-12-06 16:00:00] Check for low stock alerts after inventory decrease
+// Check for low stock alerts after inventory decrease
     try {
       await checkAndSendLowStockAlerts(results);
     } catch (alertError) {
@@ -83,9 +81,8 @@ async function decreaseInventory(orderItems) {
 
 /**
  * Increase inventory (restore stock)
- * [2025-01-27 13:30:00]
  */
-// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+// 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function increaseInventory(orderItems) {
   try {
     const results = await prisma.$transaction(
@@ -131,9 +128,8 @@ async function increaseInventory(orderItems) {
 
 /**
  * Check if variant has sufficient stock
- * [2025-01-27 13:30:00]
  */
-// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+// 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function checkStockAvailability(variantId, requestedQuantity) {
   const variant = await prisma.variant.findUnique({
     where: { id: variantId },
@@ -175,7 +171,6 @@ async function checkStockAvailability(variantId, requestedQuantity) {
 
 /**
  * Check stock availability for multiple items
- * [2025-01-27 13:30:00]
  */
 async function checkMultipleStockAvailability(items) {
   const checks = await Promise.all(
@@ -194,13 +189,12 @@ async function checkMultipleStockAvailability(items) {
 
 /**
  * Get low stock products
- * [2025-01-27 13:30:00]
- * [2025-12-06 16:00:00] Enhanced with per-variant threshold support
+* Enhanced with per-variant threshold support
  */
-// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+// 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD) {
   try {
-    // [2025-12-06 16:00:00] Get all active variants and filter by threshold
+// Get all active variants and filter by threshold
     // Variants with custom threshold use that, others use global threshold
     const allVariants = await prisma.variant.findMany({
       where: {
@@ -223,7 +217,7 @@ async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD) {
       },
     });
 
-    // [2025-12-06 16:00:00] Filter variants that are below their threshold
+// Filter variants that are below their threshold
     const lowStockVariants = allVariants.filter((variant) => {
       const variantThreshold = variant.lowStockThreshold ?? threshold;
       return variant.stockQuantity <= variantThreshold;
@@ -259,9 +253,8 @@ async function getLowStockProducts(threshold = LOW_STOCK_THRESHOLD) {
 
 /**
  * Get out of stock products
- * [2025-01-27 13:30:00]
  */
-// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+// 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function getOutOfStockProducts() {
   try {
     const outOfStockVariants = await prisma.variant.findMany({
@@ -309,9 +302,8 @@ async function getOutOfStockProducts() {
 
 /**
  * Update variant stock quantity
- * [2025-01-27 13:30:00]
  */
-// [2025-01-28 23:40:00] 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
+// 修复：使用正确的 Prisma 模型名 Variant（不是 productVariant）
 async function updateStockQuantity(variantId, newQuantity) {
   try {
     const variant = await prisma.variant.update({
@@ -347,7 +339,7 @@ async function updateStockQuantity(variantId, newQuantity) {
 
 /**
  * Check and send low stock alerts for variants
- * [2025-12-06 16:00:00] Check if variants are below threshold and send alerts
+* Check if variants are below threshold and send alerts
  */
 async function checkAndSendLowStockAlerts(variants) {
   const timestamp = new Date().toISOString();
@@ -412,7 +404,7 @@ async function checkAndSendLowStockAlerts(variants) {
 
 /**
  * Update low stock threshold for a variant
- * [2025-12-06 16:00:00] Set custom threshold for a variant
+* Set custom threshold for a variant
  */
 async function updateLowStockThreshold(variantId, threshold) {
   const timestamp = new Date().toISOString();

@@ -1,15 +1,15 @@
 /**
  * Art Asset Controller
- * [2025-01-28 00:45:00] CRUD operations for Design Lab art assets
+* CRUD operations for Design Lab art assets
  */
 const { ArtAsset } = require('../models');
 const logger = require('../utils/logger');
 const path = require('path');
 const fs = require('fs').promises;
-const fsSync = require('fs'); // [2025-01-28 02:20:00] 同步文件系统操作
+const fsSync = require('fs'); // 同步文件系统操作
 const { optimizeImageUrl } = require('../utils/imageHelper');
 
-// [2025-01-28 00:45:00] 确保素材上传目录存在
+// 确保素材上传目录存在
 const ensureArtAssetUploadRoot = () => {
   const uploadRoot = path.join(__dirname, '../../uploads/art-assets');
   if (!require('fs').existsSync(uploadRoot)) {
@@ -18,12 +18,12 @@ const ensureArtAssetUploadRoot = () => {
   return uploadRoot;
 };
 
-// [2025-01-28 00:45:00] 构建存储键
+// 构建存储键
 const buildStorageKey = (filename) => {
   return `art-assets/${filename}`;
 };
 
-// [2025-01-28 00:45:00] 构建公共 URL
+// 构建公共 URL
 const buildPublicUrl = (storageKey, req) => {
   const baseUrl = req.protocol + '://' + req.get('host');
   return `${baseUrl}/uploads/${storageKey}`;
@@ -54,7 +54,7 @@ exports.getArtAssets = async (req, res) => {
       attributes: ['id', 'category', 'name', 'image_url', 'thumbnail_url', 'width', 'height', 'sort_order']
     });
 
-    // [2025-01-28 00:45:00] 按分类分组
+// 按分类分组
     const groupedAssets = assets.reduce((acc, asset) => {
       const category = asset.category || 'Other';
       if (!acc[category]) {
@@ -133,7 +133,7 @@ exports.getAllArtAssets = async (req, res) => {
     if (category) {
       where.category = category;
     }
-    // [2025-01-27] 正确处理 isActive 参数（支持字符串和布尔值）
+// 正确处理 isActive 参数（支持字符串和布尔值）
     if (isActive !== undefined && isActive !== null && isActive !== '') {
       if (typeof isActive === 'string') {
         where.is_active = isActive === 'true' || isActive === '1';
@@ -146,7 +146,7 @@ exports.getAllArtAssets = async (req, res) => {
     
     logger.info('[getAllArtAssets] Query params', { where, offset, limit: parseInt(limit) });
     
-    // [2025-01-28 02:00:00] 暂时移除 include，避免关联查询错误
+// 暂时移除 include，避免关联查询错误
     const { count, rows: assets } = await ArtAsset.findAndCountAll({
       where,
       order: [['sort_order', 'ASC'], ['created_at', 'DESC']],
@@ -162,7 +162,7 @@ exports.getAllArtAssets = async (req, res) => {
     
     logger.info('[getAllArtAssets] Query result', { count, assetsCount: assets.length });
 
-    // [2025-01-28 02:30:00] 转换数据格式，将下划线命名转换为驼峰命名
+// 转换数据格式，将下划线命名转换为驼峰命名
     const formattedAssets = assets.map(asset => {
       const formatted = {
         id: asset.id,
@@ -180,7 +180,7 @@ exports.getAllArtAssets = async (req, res) => {
         updatedAt: asset.updated_at,
         createdBy: asset.created_by
       };
-      // [2025-01-28 02:30:00] 记录图片 URL 以便调试
+// 记录图片 URL 以便调试
       logger.debug('Formatted asset imageUrl:', formatted.imageUrl);
       return formatted;
     });
@@ -210,14 +210,14 @@ exports.getArtAsset = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // [2025-01-28 02:00:00] 暂时移除 include，避免关联查询错误
+// 暂时移除 include，避免关联查询错误
     const asset = await ArtAsset.findByPk(id);
 
     if (!asset) {
       return res.status(404).json({ error: 'Art asset not found' });
     }
 
-    // [2025-01-28 02:05:00] 转换数据格式，将下划线命名转换为驼峰命名
+// 转换数据格式，将下划线命名转换为驼峰命名
     const formattedAsset = {
       id: asset.id,
       category: asset.category,
@@ -252,7 +252,7 @@ exports.getArtAsset = async (req, res) => {
  */
 exports.createArtAsset = async (req, res) => {
   try {
-    // [2025-01-28 02:20:00] 添加详细日志
+// 添加详细日志
     logger.info('=== Creating Art Asset ===');
     logger.info('Request body:', req.body);
     logger.info('Request file:', req.file ? {
@@ -269,7 +269,7 @@ exports.createArtAsset = async (req, res) => {
     const { category, name, sortOrder } = req.body;
     const file = req.file;
 
-    // [2025-01-27] 改进错误处理，提供更详细的错误信息
+// 改进错误处理，提供更详细的错误信息
     if (!file) {
       logger.warn('No file uploaded');
       logger.warn('Request body keys:', Object.keys(req.body));
@@ -299,7 +299,7 @@ exports.createArtAsset = async (req, res) => {
     logger.info('Upload root:', uploadRoot);
     logger.info('File path:', file.path);
     
-    // [2025-01-28 02:20:00] 检查文件是否存在
+// 检查文件是否存在
     if (!fsSync.existsSync(file.path)) {
       logger.error('File does not exist at path:', file.path);
       return res.status(500).json({ error: 'Uploaded file not found' });
@@ -312,7 +312,7 @@ exports.createArtAsset = async (req, res) => {
     logger.info('Expected file path:', path.join(uploadRoot, file.filename));
     logger.info('File exists:', fsSync.existsSync(path.join(uploadRoot, file.filename)));
 
-    // [2025-01-28 00:45:00] 获取图片尺寸（如果可能）
+// 获取图片尺寸（如果可能）
     let width = null;
     let height = null;
     try {
@@ -336,11 +336,11 @@ exports.createArtAsset = async (req, res) => {
       mime_type: file.mimetype,
       sort_order: sortOrder ? parseInt(sortOrder) : 0,
       created_by: req.user?.id || null,
-      is_active: true // [2025-01-28 02:20:00] 默认启用
+is_active: true // 默认启用
     });
     logger.info('Asset created:', asset.id);
 
-    // [2025-01-28 02:05:00] 转换数据格式
+// 转换数据格式
     const formattedAsset = {
       id: asset.id,
       category: asset.category,
@@ -396,7 +396,7 @@ exports.updateArtAsset = async (req, res) => {
     const updateData = {};
     if (category) updateData.category = category;
     if (name) updateData.name = name;
-    // [2025-01-28 02:10:00] 处理 isActive，支持字符串和布尔值
+// 处理 isActive，支持字符串和布尔值
     if (isActive !== undefined) {
       if (typeof isActive === 'string') {
         updateData.is_active = isActive === 'true';
@@ -406,7 +406,7 @@ exports.updateArtAsset = async (req, res) => {
     }
     if (sortOrder !== undefined) updateData.sort_order = parseInt(sortOrder);
 
-    // [2025-01-28 00:45:00] 如果上传了新文件，更新图片 URL
+// 如果上传了新文件，更新图片 URL
     if (file) {
       const uploadRoot = ensureArtAssetUploadRoot();
       const storageKey = buildStorageKey(file.filename);
@@ -437,10 +437,10 @@ exports.updateArtAsset = async (req, res) => {
 
     await asset.update(updateData);
     
-    // [2025-01-28 02:05:00] 重新加载以获取最新数据
+// 重新加载以获取最新数据
     await asset.reload();
 
-    // [2025-01-28 02:05:00] 转换数据格式
+// 转换数据格式
     const formattedAsset = {
       id: asset.id,
       category: asset.category,

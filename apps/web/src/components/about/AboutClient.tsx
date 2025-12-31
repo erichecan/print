@@ -1,6 +1,6 @@
 /**
  * About Client Component
- * [2025-01-28 06:40:00] Client component for about page that fetches CMS content
+* Client component for about page that fetches CMS content
  */
 'use client';
 
@@ -8,11 +8,11 @@ import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
 
 export function AboutClient() {
-  // [2025-01-28 06:40:00] 从 CMS 获取关于页内容
+// 从 CMS 获取关于页内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const aboutPage = contentData?.data?.aboutPage;
 
-  // [2025-01-28 06:40:00] 使用 CMS 数据或默认值（向后兼容）
+// 使用 CMS 数据或默认值（向后兼容）
   const headerTitle = aboutPage?.headerTitle || 'Built by merch makers who care';
   const headerDescription =
     aboutPage?.headerDescription ||

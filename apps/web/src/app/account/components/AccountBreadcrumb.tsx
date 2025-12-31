@@ -1,6 +1,6 @@
 /**
  * Account Breadcrumb Component
- * [2025-01-27 14:45:00] 账户页面面包屑导航组件
+* 账户页面面包屑导航组件
  */
 'use client';
 

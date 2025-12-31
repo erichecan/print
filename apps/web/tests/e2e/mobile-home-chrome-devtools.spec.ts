@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 12:00:00] 使用 Chrome DevTools Protocol 测试移动端首页
+* 使用 Chrome DevTools Protocol 测试移动端首页
  * 验证新的视觉元素和样式是否正确加载
  */
 import { test, expect, chromium } from '@playwright/test';
@@ -8,7 +8,7 @@ const FRONTEND_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 test.describe('移动端首页 Chrome DevTools 测试', () => {
   test('测试移动端首页视觉元素和样式', async () => {
-    // [2025-01-29 12:00:00] 启动浏览器并启用 CDP
+// 启动浏览器并启用 CDP
     const browser = await chromium.launch({
       headless: false, // 显示浏览器窗口
       devtools: true, // 打开 DevTools
@@ -21,7 +21,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
 
     const page = await context.newPage();
 
-    // [2025-01-29 12:00:00] 启用 CDP 会话
+// 启用 CDP 会话
     const client = await context.newCDPSession(page);
     
     // 启用网络和运行时域
@@ -30,7 +30,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
     await client.send('Page.enable');
     await client.send('DOM.enable');
 
-    // [2025-01-29 12:00:00] 监听控制台消息
+// 监听控制台消息
     const consoleMessages: string[] = [];
     client.on('Runtime.consoleAPICalled', (event) => {
       const args = event.args.map((arg: any) => {
@@ -41,7 +41,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       consoleMessages.push(`[Console ${event.type}]: ${args}`);
     });
 
-    // [2025-01-29 12:00:00] 监听网络请求，特别是图片加载
+// 监听网络请求，特别是图片加载
     const imageLoads: Array<{ url: string; status: number }> = [];
     client.on('Network.responseReceived', (event) => {
       if (event.response.url.includes('/assets/hero/') || 
@@ -53,7 +53,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       }
     });
 
-    // [2025-01-29 12:00:00] 监听图片加载失败
+// 监听图片加载失败
     const imageLoadFailures: string[] = [];
     client.on('Network.loadingFailed', (event) => {
       if (event.type === 'Image') {
@@ -66,7 +66,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       await page.goto(FRONTEND_URL, { waitUntil: 'networkidle' });
       await page.waitForTimeout(2000); // 等待页面完全加载
 
-      // [2025-01-29 12:00:00] 验证 Hero 区域
+// 验证 Hero 区域
       console.log('2️⃣  验证 Hero 区域...');
       const heroSection = page.locator('.home-mobile__hero');
       await expect(heroSection).toBeVisible();
@@ -91,7 +91,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       expect(buttonText).toContain('Get Started');
       console.log('✅ Hero 按钮:', buttonText);
 
-      // [2025-01-29 12:00:00] 验证分类区域
+// 验证分类区域
       console.log('3️⃣  验证分类区域...');
       const categoriesSection = page.locator('.home-mobile__categories');
       await expect(categoriesSection).toBeVisible();
@@ -108,7 +108,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       expect(categoryImageSrc).toBeTruthy();
       console.log('✅ 分类图片加载:', categoryImageSrc);
 
-      // [2025-01-29 12:00:00] 验证样式
+// 验证样式
       console.log('4️⃣  验证样式...');
       
       // 验证 Hero 区域样式
@@ -136,7 +136,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       expect(buttonStyles.boxShadow).toBeTruthy();
       console.log('✅ 按钮样式正确:', buttonStyles);
 
-      // [2025-01-29 12:00:00] 验证动画
+// 验证动画
       console.log('5️⃣  验证动画...');
       const heroTitleStyles = await heroTitle.evaluate((el) => {
         const styles = window.getComputedStyle(el);
@@ -148,7 +148,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       expect(heroTitleStyles.textShadow).toBeTruthy();
       console.log('✅ 动画样式正确');
 
-      // [2025-01-29 12:00:00] 截图
+// 截图
       console.log('6️⃣  截图保存...');
       await page.screenshot({ 
         path: 'test-results/mobile-home-full.png',
@@ -161,7 +161,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       });
       console.log('✅ Hero 区域截图已保存');
 
-      // [2025-01-29 12:00:00] 验证控制台错误
+// 验证控制台错误
       const errors = consoleMessages.filter(msg => 
         msg.includes('error') || msg.includes('Error') || msg.includes('failed')
       );
@@ -172,7 +172,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
         console.log('✅ 无控制台错误');
       }
 
-      // [2025-01-29 12:00:00] 验证图片加载
+// 验证图片加载
       if (imageLoadFailures.length > 0) {
         console.warn('⚠️  发现图片加载失败:', imageLoadFailures.length);
       } else {
@@ -210,7 +210,7 @@ test.describe('移动端首页 Chrome DevTools 测试', () => {
       await page.goto(FRONTEND_URL, { waitUntil: 'networkidle' });
       await page.waitForTimeout(2000);
 
-      // [2025-01-29 12:00:00] 验证小屏幕布局
+// 验证小屏幕布局
       const categoriesGrid = page.locator('.home-mobile__categories-grid');
       const gridStyles = await categoriesGrid.evaluate((el) => {
         const styles = window.getComputedStyle(el);

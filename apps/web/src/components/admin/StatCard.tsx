@@ -1,6 +1,6 @@
 /**
  * Stat Card Component
- * [2025-12-06 21:30:00] 统计卡片组件 for Issue #160
+* 统计卡片组件 for Issue #160
  */
 interface StatCardProps {
   label: string;

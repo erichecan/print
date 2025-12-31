@@ -1,6 +1,6 @@
 /**
  * Cart Controller Tests
- * [2025-01-27 12:15:00] Unit tests for cart API
+* Unit tests for cart API
  */
 jest.mock('../../src/lib/prisma', () => ({
   cart: {
@@ -79,7 +79,7 @@ const mockCart = {
   ],
 };
 
-describe('[2025-01-27 12:15:00] cartController.getCart', () => {
+describe(' cartController.getCart', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -148,7 +148,7 @@ describe('[2025-01-27 12:15:00] cartController.getCart', () => {
   });
 });
 
-describe('[2025-01-27 12:15:00] cartController.addItem', () => {
+describe(' cartController.addItem', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -292,7 +292,7 @@ describe('[2025-01-27 12:15:00] cartController.addItem', () => {
   });
 });
 
-describe('[2025-01-27 12:15:00] cartController.updateItem', () => {
+describe(' cartController.updateItem', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -389,7 +389,7 @@ describe('[2025-01-27 12:15:00] cartController.updateItem', () => {
   });
 });
 
-describe('[2025-01-27 12:15:00] cartController.removeItem', () => {
+describe(' cartController.removeItem', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -450,7 +450,7 @@ describe('[2025-01-27 12:15:00] cartController.removeItem', () => {
   });
 });
 
-describe('[2025-01-27 12:15:00] cartController.clearCart', () => {
+describe(' cartController.clearCart', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

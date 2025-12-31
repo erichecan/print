@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 尺码×位置矩阵组件
+* 尺码×位置矩阵组件
  * 在启用per-size overrides时显示，支持单元格级别的覆盖设置
  */
 'use client';
@@ -26,7 +26,7 @@ const POSITION_LABELS: Record<PositionKey, string> = {
 };
 
 export function SizePositionMatrix({ group, onChange, onEdit }: SizePositionMatrixProps) {
-  // [2025-12-19] 获取有数量的尺码列表
+// 获取有数量的尺码列表
   const sizesWithQty = Object.entries(group.quantities)
     .filter(([_, qty]) => qty > 0)
     .map(([size]) => size)
@@ -40,7 +40,7 @@ export function SizePositionMatrix({ group, onChange, onEdit }: SizePositionMatr
     );
   }
 
-  // [2025-12-19] 获取某个尺码×位置的生效配置
+// 获取某个尺码×位置的生效配置
   const getEffectiveConfig = (size: string, positionKey: PositionKey): PositionConfig | null => {
     // 先查找override
     const sizeOverride = group.perSizeOverrides?.find(o => o.size === size);
@@ -55,7 +55,7 @@ export function SizePositionMatrix({ group, onChange, onEdit }: SizePositionMatr
     return defaultConfig || null;
   };
 
-  // [2025-12-19] 检查某个单元格是否有override
+// 检查某个单元格是否有override
   const hasOverride = (size: string, positionKey: PositionKey): boolean => {
     const sizeOverride = group.perSizeOverrides?.find(o => o.size === size);
     return !!sizeOverride?.overrides.find(p => p.positionKey === positionKey);
@@ -104,7 +104,7 @@ export function SizePositionMatrix({ group, onChange, onEdit }: SizePositionMatr
                       overridden={overridden}
                       onEdit={() => onEdit(positionKey, size)}
                       onRemoveOverride={() => {
-                        // [2025-12-19] 移除override，回到默认配置
+// 移除override，回到默认配置
                         const overrides = group.perSizeOverrides || [];
                         const sizeOverride = overrides.find(o => o.size === size);
                         if (sizeOverride) {

@@ -1,6 +1,5 @@
 /**
  * Type Definitions for Redbubble Product Detail
- * [2025-11-19 09:35:00]
  */
 
 export interface ProductData {

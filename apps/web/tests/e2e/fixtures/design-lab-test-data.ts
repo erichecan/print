@@ -1,12 +1,11 @@
 /**
  * Design Lab 测试数据
- * [2025-01-27 12:00:00] 提供测试所需的静态数据
+* 提供测试所需的静态数据
  */
 import * as path from 'path';
 
 /**
  * 测试图片文件路径
- * [2025-01-27 12:00:00]
  */
 export const TEST_IMAGES = {
   // 小图片（用于快速测试）- 使用项目根目录的 favicon
@@ -19,7 +18,6 @@ export const TEST_IMAGES = {
 
 /**
  * 测试文字内容
- * [2025-01-27 12:00:00]
  */
 export const TEST_TEXTS = {
   simple: 'Hello World',
@@ -31,7 +29,6 @@ export const TEST_TEXTS = {
 
 /**
  * 测试产品数据
- * [2025-01-27 12:00:00]
  */
 export const TEST_PRODUCTS = {
   tshirt: {
@@ -48,7 +45,6 @@ export const TEST_PRODUCTS = {
 
 /**
  * 测试尺码配置
- * [2025-01-27 12:00:00]
  */
 export const TEST_SIZES = {
   youth: ['YS', 'YM', 'YL'],
@@ -58,7 +54,6 @@ export const TEST_SIZES = {
 
 /**
  * 测试颜色配置
- * [2025-01-27 12:00:00]
  */
 export const TEST_COLORS = {
   black: { name: 'Black', hex: '#000000' },
@@ -69,7 +64,6 @@ export const TEST_COLORS = {
 
 /**
  * 测试 Names & Numbers 数据
- * [2025-01-27 12:00:00]
  */
 export const TEST_NAMES_NUMBERS = {
   names: ['John', 'Jane', 'Bob', 'Alice'],
@@ -83,7 +77,6 @@ export const TEST_NAMES_NUMBERS = {
 
 /**
  * 测试字体名称
- * [2025-01-27 12:00:00]
  */
 export const TEST_FONTS = {
   popular: ['Arial', 'Helvetica', 'Times New Roman'],
@@ -93,7 +86,6 @@ export const TEST_FONTS = {
 
 /**
  * 测试素材分类
- * [2025-01-27 12:00:00]
  */
 export const TEST_ART_CATEGORIES = [
   'Emojis',
@@ -118,7 +110,6 @@ export const TEST_ART_CATEGORIES = [
 
 /**
  * 测试数量配置
- * [2025-01-27 12:00:00]
  */
 export const TEST_QUANTITIES = {
   small: { S: 2, M: 3, L: 2 },
@@ -128,7 +119,6 @@ export const TEST_QUANTITIES = {
 
 /**
  * 测试配送选项
- * [2025-01-27 12:00:00]
  */
 export const TEST_SHIPPING_OPTIONS = {
   single: 'Ship to single address',
@@ -137,7 +127,6 @@ export const TEST_SHIPPING_OPTIONS = {
 
 /**
  * 测试支付选项
- * [2025-01-27 12:00:00]
  */
 export const TEST_PAYMENT_OPTIONS = {
   iPay: 'I will pay for the entire order',
@@ -146,7 +135,6 @@ export const TEST_PAYMENT_OPTIONS = {
 
 /**
  * 测试尺码选择选项
- * [2025-01-27 12:00:00]
  */
 export const TEST_SIZE_OPTIONS = {
   iKnow: 'I know the sizes I need',

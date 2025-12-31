@@ -1,4 +1,4 @@
-// [2025-11-02 22:10:00] Image loader - Dynamically load images from JSON config
+// Image loader - Dynamically load images from JSON config
 /**
  * Image Loader
  * Loads images dynamically from content-config.json

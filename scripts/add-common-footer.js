@@ -1,8 +1,8 @@
-// [2025-11-02 22:50:00] Script to add common footer to all pages
+// Script to add common footer to all pages
 // This ensures consistent navigation across all pages
 
 const commonFooterHTML = `
-<!-- [2025-11-02 22:50:00] Common footer with fixed links -->
+<!-- Common footer with fixed links -->
 <section class="footer-info" aria-label="Site Information">
 	<div class="container footergrid">
 		<div>
@@ -20,7 +20,7 @@ const commonFooterHTML = `
 				<li><a href="account.html">My Account</a></li>
 				<li><a href="order-tracking.html">Track Order</a></li>
 				<li><a href="cart.html">View Cart</a></li>
-				<!-- [2025-01-30 12:00:00] 移除 My Designs 链接 -->
+				<!-- 移除 My Designs 链接 -->
 			</ul>
 		</div>
 		<div>

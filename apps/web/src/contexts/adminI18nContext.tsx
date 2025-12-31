@@ -2,7 +2,7 @@
 
 /**
  * Admin I18n Context
- * [2025-11-16 14:25:00] Provide locale state, translation helper, and DOM sync for data-i18n attributes
+* Provide locale state, translation helper, and DOM sync for data-i18n attributes
  */
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { ADMIN_TRANSLATIONS, AdminLocale } from '@/translations/admin';
@@ -92,7 +92,7 @@ export function AdminI18nProvider({ children }: { children: ReactNode }) {
           const key = element.getAttribute('data-i18n');
           if (key) {
             const translation = t(key);
-            // [2025-12-21] Fix: Prevent infinite loops and child destruction
+// Fix: Prevent infinite loops and child destruction
             // Only update if text is different AND element has no element children (to protect icons/react nodes)
             // Or if it's a simple text-only element that React expects to be text
             if (element.textContent !== translation && element.children.length === 0) {

@@ -1,6 +1,6 @@
 /**
  * ProductFeatures Component - Redbubble Style
- * [2025-11-19 09:12:00] 参考图一：产品特性列表
+* 参考图一：产品特性列表
  */
 'use client';
 
@@ -17,7 +17,7 @@ interface ProductFeaturesProps {
 export function ProductFeatures({ features, rating }: ProductFeaturesProps) {
   return (
     <div className={styles.productFeatures}>
-      {/* [2025-11-19 09:12:00] 参考图一位置：评分显示 */}
+{/* 参考图一位置：评分显示 */}
       <div className={styles.productFeaturesRating} aria-label={`${rating.average} out of 5 stars, ${rating.count} reviews`}>
         <div className={styles.productFeaturesRatingStars} aria-hidden="true">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -33,7 +33,7 @@ export function ProductFeatures({ features, rating }: ProductFeaturesProps) {
         <span className={styles.productFeaturesRatingCount}>({rating.count} reviews)</span>
       </div>
 
-      {/* [2025-11-19 09:12:00] 参考图一位置：Product features 列表 */}
+{/* 参考图一位置：Product features 列表 */}
       <div className={styles.productFeaturesList}>
         <h3 className={styles.productFeaturesTitle}>Product features</h3>
         <ul className={styles.productFeaturesItems} role="list">

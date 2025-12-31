@@ -1,11 +1,11 @@
 /**
  * 统一错误类型和错误码定义
- * [2025-01-27 18:00:00] 创建统一错误处理规范
+* 创建统一错误处理规范
  */
 
 /**
  * 错误码枚举
- * [2025-01-27 18:00:00] 定义标准错误码，便于前端和后端统一处理
+* 定义标准错误码，便于前端和后端统一处理
  */
 export enum ErrorCode {
   // 验证错误 (400)
@@ -37,7 +37,7 @@ export enum ErrorCode {
 
 /**
  * 标准错误响应结构
- * [2025-01-27 18:00:00] 统一错误响应格式，包含错误码、消息和追踪ID
+* 统一错误响应格式，包含错误码、消息和追踪ID
  */
 export interface StandardErrorResponse {
   error: {
@@ -51,7 +51,7 @@ export interface StandardErrorResponse {
 
 /**
  * 创建标准错误响应
- * [2025-01-27 18:00:00] 辅助函数，用于创建标准化的错误响应
+* 辅助函数，用于创建标准化的错误响应
  */
 export function createErrorResponse(
   code: ErrorCode,
@@ -72,7 +72,7 @@ export function createErrorResponse(
 
 /**
  * 生成追踪ID
- * [2025-01-27 18:00:00] 生成唯一的请求追踪ID，用于日志关联
+* 生成唯一的请求追踪ID，用于日志关联
  */
 export function generateTraceId(): string {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;

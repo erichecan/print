@@ -1,6 +1,6 @@
 /**
  * Authentication Context
- * [2025-01-28 07:30:00] Global authentication state management for customer users
+* Global authentication state management for customer users
  */
 'use client';
 
@@ -29,14 +29,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await authApi.me();
       setUser(data);
     } catch (err: any) {
-      // [2025-12-03 03:55:00] 静默处理 401 错误（未登录是正常状态）
-      // [2025-12-20 03:35:00] 静默处理后端服务不可用错误（500/503），这些错误不影响应用核心功能
+// 静默处理 401 错误（未登录是正常状态）
+// 静默处理后端服务不可用错误（500/503），这些错误不影响应用核心功能
       setUser(null);
       // UNAUTHORIZED 是预期的错误（用户未登录），不设置 error
       if (err instanceof Error && err.message === 'UNAUTHORIZED') {
         setError(null);
       } else if (err instanceof Error) {
-        // [2025-12-20 03:35:00] 如果是后端服务错误（500/503），静默处理，不影响应用使用
+// 如果是后端服务错误（500/503），静默处理，不影响应用使用
         const isServerError = err.message?.includes('500') || 
                              err.message?.includes('503') ||
                              err.message?.includes('Service Unavailable') ||
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error('Logout failed:', err);
     } finally {
-      // [2025-12-07 07:55:00] 无论后端请求是否成功，都清除用户状态
+// 无论后端请求是否成功，都清除用户状态
       setUser(null);
       setError(null);
     }

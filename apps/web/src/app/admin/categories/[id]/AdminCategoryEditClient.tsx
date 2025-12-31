@@ -2,7 +2,7 @@
 
 /**
  * Admin Category Edit Client Component
- * [2025-01-27 14:30:00] 提取客户端逻辑到单独组件
+* 提取客户端逻辑到单独组件
  */
 import useSWR from 'swr';
 import { useRouter } from 'next/navigation';

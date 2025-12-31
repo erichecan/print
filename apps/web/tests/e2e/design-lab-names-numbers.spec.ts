@@ -1,6 +1,6 @@
 /**
  * Design Lab Names & Numbers 功能测试 (M2)
- * [2025-01-27 12:00:00] 测试 Tools 面板、My List、My Quantities、尺码校验
+* 测试 Tools 面板、My List、My Quantities、尺码校验
  */
 import { test, expect } from './fixtures/test-base';
 import {

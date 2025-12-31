@@ -1,7 +1,7 @@
 /**
  * Admin Login Client Component
- * [2025-01-28 07:30:00] Admin-only login, validates ADMIN role and redirects to /admin
- * [2025-01-28 08:15:00] Added internationalization support
+* Admin-only login, validates ADMIN role and redirects to /admin
+* Added internationalization support
  */
 'use client';
 
@@ -13,7 +13,7 @@ import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 export default function AdminLoginClient() {
   const router = useRouter();
-  const { t, locale, setLocale } = useAdminI18n(); // [2025-01-28 08:15:00] 使用国际化
+const { t, locale, setLocale } = useAdminI18n(); // 使用国际化
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -27,14 +27,14 @@ export default function AdminLoginClient() {
     try {
       const response = await authApi.login(email, password);
       
-      // [2025-01-28 07:30:00] 验证用户角色必须是 ADMIN
+// 验证用户角色必须是 ADMIN
       if (response.user?.role !== 'ADMIN' && response.user?.role !== 'admin') {
         setError(t('accessDenied'));
         setLoading(false);
         return;
       }
       
-      // [2025-01-28 07:30:00] 管理员登录成功，跳转到后台
+// 管理员登录成功，跳转到后台
       router.push('/admin');
       router.refresh();
     } catch (err: any) {
@@ -47,7 +47,7 @@ export default function AdminLoginClient() {
   return (
     <div className="container">
       <div className="auth-card">
-        {/* [2025-01-28 08:15:00] 语言切换按钮 */}
+{/* 语言切换按钮 */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', gap: '8px', border: '1px solid #ddd', borderRadius: '4px', padding: '4px' }}>
             <button

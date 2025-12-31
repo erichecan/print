@@ -1,5 +1,5 @@
 /**
- * [2025-12-19] 颜色组卡片组件
+* 颜色组卡片组件
  * 显示和编辑单个颜色组的印刷位置配置
  */
 'use client';
@@ -13,9 +13,9 @@ import { PositionEditorModal } from './PositionEditorModal';
 interface ColorGroupCardProps {
   group: OrderItemColorGroup;
   onUpdate: (updated: OrderItemColorGroup) => void;
-  onInherit?: () => void; // [2025-12-19] 继承上一颜色的回调
-  onCopyToOthers?: () => void; // [2025-12-19] 复制到其他颜色的回调
-  previousGroup?: OrderItemColorGroup | null; // [2025-12-19] 上一个颜色组（用于继承）
+onInherit?: () => void; // 继承上一颜色的回调
+onCopyToOthers?: () => void; // 复制到其他颜色的回调
+previousGroup?: OrderItemColorGroup | null; // 上一个颜色组（用于继承）
 }
 
 export function ColorGroupCard({ 
@@ -31,7 +31,7 @@ export function ColorGroupCard({
     size?: string;
   } | null>(null);
 
-  // [2025-12-19] 切换per-size overrides模式
+// 切换per-size overrides模式
   const handleTogglePerSize = (enabled: boolean) => {
     setPerSizeEnabled(enabled);
     onUpdate({
@@ -40,7 +40,7 @@ export function ColorGroupCard({
     });
   };
 
-  // [2025-12-19] 更新位置列表
+// 更新位置列表
   const handlePositionsUpdate = (positions: typeof group.positions) => {
     onUpdate({
       ...group,
@@ -48,7 +48,7 @@ export function ColorGroupCard({
     });
   };
 
-  // [2025-12-19] 处理继承上一颜色
+// 处理继承上一颜色
   const handleInherit = () => {
     if (previousGroup && previousGroup.positions.length > 0) {
       // 复制位置配置（不复制文件二进制，仅引用）
@@ -67,12 +67,12 @@ export function ColorGroupCard({
     }
   };
 
-  // [2025-12-19] 打开位置编辑弹窗
+// 打开位置编辑弹窗
   const handleEditPosition = (positionKey: PositionKey, size?: string) => {
     setEditingPosition({ positionKey, size });
   };
 
-  // [2025-12-19] 保存位置编辑
+// 保存位置编辑
   const handleSavePosition = (config: typeof group.positions[0]) => {
     if (editingPosition?.size) {
       // 更新per-size override
@@ -118,7 +118,7 @@ export function ColorGroupCard({
     setEditingPosition(null);
   };
 
-  // [2025-12-19] 检查是否有数量
+// 检查是否有数量
   const hasQuantities = Object.values(group.quantities).some(qty => qty > 0);
 
   return (
@@ -129,7 +129,7 @@ export function ColorGroupCard({
           <span className="text-sm text-gray-500">({group.colorCode})</span>
         </div>
         <div className="flex items-center gap-2">
-          {/* [2025-12-19] 继承上一颜色按钮 */}
+{/* 继承上一颜色按钮 */}
           {previousGroup && (
             <button
               type="button"
@@ -140,7 +140,7 @@ export function ColorGroupCard({
               继承上一颜色
             </button>
           )}
-          {/* [2025-12-19] 复制到其他颜色按钮 */}
+{/* 复制到其他颜色按钮 */}
           {onCopyToOthers && (
             <button
               type="button"
@@ -154,7 +154,7 @@ export function ColorGroupCard({
         </div>
       </header>
 
-      {/* [2025-12-19] Per-size overrides开关 */}
+{/* Per-size overrides开关 */}
       {hasQuantities && (
         <div className="mb-4 flex items-center gap-2">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -171,7 +171,7 @@ export function ColorGroupCard({
         </div>
       )}
 
-      {/* [2025-12-19] 根据模式显示不同的UI */}
+{/* 根据模式显示不同的UI */}
       {!perSizeEnabled ? (
         <PositionList
           positions={group.positions}
@@ -186,7 +186,7 @@ export function ColorGroupCard({
         />
       )}
 
-      {/* [2025-12-19] 位置编辑弹窗 */}
+{/* 位置编辑弹窗 */}
       {editingPosition && (
         <PositionEditorModal
           positionKey={editingPosition.positionKey}

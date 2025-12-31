@@ -1,13 +1,12 @@
 /**
  * Validation Middleware
- * [2025-01-27 11:15:00] Express-validator wrapper for unified validation
+* Express-validator wrapper for unified validation
  */
 const { validationResult } = require('express-validator');
 const { ValidationError } = require('../utils/errors');
 
 /**
  * Middleware to check validation results
- * [2025-01-27 11:15:00]
  */
 function validate(req, res, next) {
   const errors = validationResult(req);

@@ -1,13 +1,13 @@
 /**
  * Catalog Category Page - 分类商品列表页
- * [2025-12-11 23:05:00] 支持 /catalog/[group]/[child] 路由格式
+* 支持 /catalog/[group]/[child] 路由格式
  */
 import { Metadata } from 'next';
 import { generateSEOMetadata } from '@/lib/seo';
 import dynamic from 'next/dynamic';
 import { CatalogCategoryClient } from './CatalogCategoryClient';
 
-// [2025-12-11 23:05:00] 动态导入客户端组件
+// 动态导入客户端组件
 const SidebarGrouped = dynamic(
   () => import('@/components/catalog/SidebarGrouped').then((mod) => mod.SidebarGrouped),
   { ssr: false }
@@ -20,7 +20,7 @@ type Props = {
   }>;
 };
 
-// [2025-12-11 23:05:00] 生成 SEO 元数据
+// 生成 SEO 元数据
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { group, child } = await params;
   const categoryName = child.replace(/-/g, ' ');

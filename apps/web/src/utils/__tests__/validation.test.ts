@@ -1,6 +1,6 @@
 /**
  * Validation Utilities Tests
- * [2025-01-27 11:35:00] 表单验证工具函数测试
+* 表单验证工具函数测试
  */
 import {
   validateEmail,

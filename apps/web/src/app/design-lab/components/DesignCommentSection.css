@@ -1,5 +1,5 @@
 /* Design Comment Section 样式 */
-/* [2025-12-10] 设计评论组件样式 */
+/* 设计评论组件样式 */
 .dl-comment-section {
   padding: var(--dl-space-4);
   background: var(--dl-bg-panel);

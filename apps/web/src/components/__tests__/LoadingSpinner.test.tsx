@@ -1,6 +1,6 @@
 /**
  * LoadingSpinner Component Tests
- * [2025-01-27 11:40:00] LoadingSpinner 组件测试
+* LoadingSpinner 组件测试
  */
 import { render, screen } from '@testing-library/react';
 import { LoadingSpinner, Skeleton } from '../LoadingSpinner';

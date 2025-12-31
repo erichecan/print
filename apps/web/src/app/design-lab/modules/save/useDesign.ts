@@ -1,6 +1,6 @@
 /**
  * useDesign Hook - 设计管理 Hook
- * [2025-12-18 21:20:48] 管理设计保存、更新、分享等功能
+* 管理设计保存、更新、分享等功能
  */
 import { useState, useCallback, useEffect } from 'react';
 import * as fabric from 'fabric';
@@ -21,7 +21,7 @@ interface UseDesignProps {
   canvasHeight: number;
   productVariantId?: string;
   initialDesignId?: string | null;
-  designName: string; // [2025-12-28] Changed from initialDesignName to designName (reactive)
+designName: string; // Changed from initialDesignName to designName (reactive)
 }
 
 interface UseDesignReturn {
@@ -43,14 +43,14 @@ export function useDesign({
   canvasHeight,
   productVariantId,
   initialDesignId,
-  designName: propDesignName, // [2025-12-28] Renamed to avoid confusion
+designName: propDesignName, // Renamed to avoid confusion
 }: UseDesignProps): UseDesignReturn {
   const [designId, setDesignId] = useState<string | null>(initialDesignId || null);
-  const [designName, setDesignName] = useState(propDesignName); // [2025-12-28] Use prop value
+const [designName, setDesignName] = useState(propDesignName); // Use prop value
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  // [2025-12-28] CRITICAL FIX: Update designName when prop changes
+// CRITICAL FIX: Update designName when prop changes
   useEffect(() => {
     console.log('[useDesign] Design name updated:', propDesignName);
     setDesignName(propDesignName);
@@ -78,14 +78,14 @@ export function useDesign({
       let savedDesignId = designId;
 
       if (!savedDesignId) {
-        // [2025-12-28] CRITICAL FIX: Validate productVariantId before creating design
+// CRITICAL FIX: Validate productVariantId before creating design
         let validProductVariantId = productVariantId;
 
         if (!validProductVariantId || validProductVariantId === 'undefined' || validProductVariantId === '') {
           console.error('[useDesign] Missing or invalid productVariantId:', productVariantId);
           console.log('[useDesign] Using fallback variant ID from database...');
 
-          // [2025-12-28] FINAL FIX: Use actual variant ID from database
+// FINAL FIX: Use actual variant ID from database
           // This is a valid variant ID from the 'Classic Crew Tee' product (White, S)
           // Query: SELECT v.id FROM variants v JOIN products p ON v.product_id = p.id 
           //        WHERE p.is_customizable = true AND p.is_active = true LIMIT 1
@@ -95,7 +95,7 @@ export function useDesign({
 
         console.log('[useDesign] Creating design with productVariantId:', validProductVariantId);
 
-        // [2025-12-28] Generate thumbnail from canvas
+// Generate thumbnail from canvas
         let thumbnailUrl: string | undefined;
         try {
           thumbnailUrl = targetCanvas.toDataURL({
@@ -108,16 +108,16 @@ export function useDesign({
           console.error('[useDesign] Failed to generate thumbnail:', thumbError);
         }
 
-        // [2025-12-28] CRITICAL: Use nameOverride if provided, otherwise use state
+// CRITICAL: Use nameOverride if provided, otherwise use state
         const finalDesignName = nameOverride || designName;
         console.log('[useDesign] Creating design with name:', finalDesignName, nameOverride ? '(from parameter)' : '(from state)');
 
         // 创建新设计
         const payload: CreateDesignPayload = {
-          name: finalDesignName, // [2025-12-28] Use the final name (parameter or state)
+name: finalDesignName, // Use the final name (parameter or state)
           canvas: snapshot,
           productVariantId: validProductVariantId,
-          thumbnailUrl, // [2025-12-28] Include thumbnail
+thumbnailUrl, // Include thumbnail
         };
 
         console.log('[useDesign] Create payload:', { name: payload.name, productVariantId: payload.productVariantId, hasThumbnail: !!payload.thumbnailUrl });
@@ -126,7 +126,7 @@ export function useDesign({
         savedDesignId = newDesign.id;
         setDesignId(savedDesignId);
       } else {
-        // [2025-12-28] Generate thumbnail for update too
+// Generate thumbnail for update too
         let thumbnailUrl: string | undefined;
         try {
           thumbnailUrl = targetCanvas.toDataURL({
@@ -143,7 +143,7 @@ export function useDesign({
         const payload: UpdateDesignPayload = {
           name: designName,
           canvas: snapshot,
-          thumbnailUrl, // [2025-12-28] Include thumbnail
+thumbnailUrl, // Include thumbnail
         };
 
         await updateDesign(savedDesignId, payload);
@@ -160,7 +160,7 @@ export function useDesign({
     }
   }, [canvas, canvasWidth, canvasHeight, designId, designName, productVariantId]);
 
-  // [2025-12-18 21:20:48] 更新设计名称的辅助函数
+// 更新设计名称的辅助函数
   const updateDesignName = useCallback((name: string) => {
     setDesignName(name);
   }, []);

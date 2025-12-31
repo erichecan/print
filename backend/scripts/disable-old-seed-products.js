@@ -1,12 +1,12 @@
 /**
  * 禁用旧的 seed 数据商品脚本
- * [2025-01-28 22:10:00] 禁用旧的 seed 数据商品，只保留新导入的 Custom Ink 商品
+* 禁用旧的 seed 数据商品，只保留新导入的 Custom Ink 商品
  */
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// [2025-01-28 22:10:00] 旧的 seed 数据商品列表（需要禁用的）
+// 旧的 seed 数据商品列表（需要禁用的）
 const OLD_SEED_PRODUCTS = [
   'Unstructured Dad Cap',
   'test',
@@ -21,7 +21,7 @@ const OLD_SEED_PRODUCTS = [
   '特思通'
 ];
 
-// [2025-01-28 22:10:00] 旧的 seed 数据商品 slug 列表
+// 旧的 seed 数据商品 slug 列表
 const OLD_SEED_SLUGS = [
   'unstructured-dad-cap',
   'test',

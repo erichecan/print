@@ -1,6 +1,6 @@
 /**
  * Environment Configuration Tests
- * [2025-01-30 23:00:00] Design Lab 4.0: env 校验测试
+* Design Lab 4.0: env 校验测试
  */
 
 import { getFrontendApiBaseUrl, validateEnvAtBuildTime } from '../env';
@@ -65,7 +65,7 @@ describe('Environment Configuration', () => {
       delete process.env.NEXT_PUBLIC_API_BASE_URL;
 
       const url = getFrontendApiBaseUrl();
-      // [2025-12-19 15:24:45] 修复：默认本地后端端口与仓库测试/脚本对齐为 4000
+// 修复：默认本地后端端口与仓库测试/脚本对齐为 4000
       expect(url).toBe('http://localhost:3001/api');
     });
   });

@@ -1,6 +1,6 @@
 /**
  * Sales Login Page
- * [2025-12-02 04:50:00] 线下订单 Sales 登录入口，复用通用登录逻辑
+* 线下订单 Sales 登录入口，复用通用登录逻辑
  */
 'use client';
 
@@ -16,7 +16,7 @@ export default function SalesLoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // [2025-12-07 08:30:00] Use global auth context to update state after login
+// Use global auth context to update state after login
   const { refresh } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,14 +28,14 @@ export default function SalesLoginPage() {
       const response = await authApi.login(email, password);
       const role = String(response.user?.role || '').toUpperCase();
 
-      // [2025-12-02 04:50:00] 仅允许 SALES / SALES_MANAGER / ADMIN 进入 Sales 区域
+// 仅允许 SALES / SALES_MANAGER / ADMIN 进入 Sales 区域
       if (!['SALES', 'SALES_MANAGER', 'ADMIN'].includes(role)) {
         setError('当前账号没有 Sales 权限，请联系管理员开通。');
         setLoading(false);
         return;
       }
 
-      // [2025-12-07 08:30:00] Valid login, refresh global auth state so AuthProvider knows we are logged in
+// Valid login, refresh global auth state so AuthProvider knows we are logged in
       await refresh();
 
       router.push('/offline-orders/sales/orders');

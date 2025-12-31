@@ -12,7 +12,7 @@ import {
   OfflineOrderHistoryEntry,
   ProductionWorkOrderPayload,
 } from '@/lib/api';
-import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-01-28 08:45:00] 国际化支持
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // 国际化支持
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   month: 'short',
@@ -37,7 +37,7 @@ function toInputDate(value?: string | null) {
 const BOARD_KEY = 'admin-offline-orders-board';
 
 export default function AdminOfflineOrdersPage() {
-  const { t, locale } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
+const { t, locale } = useAdminI18n(); // 国际化支持
   const [search, setSearch] = useState('');
   const [rushFilter, setRushFilter] = useState<'all' | 'rush' | 'standard'>('all');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export default function AdminOfflineOrdersPage() {
   const [assigneeNameDraft, setAssigneeNameDraft] = useState('');
   const [uploading, setUploading] = useState(false);
   const [detailRevision, setDetailRevision] = useState('');
-  // [2025-11-16 15:05:00] Trello-style拖拽状态：追踪拖拽中的卡片与目标列
+// Trello-style拖拽状态：追踪拖拽中的卡片与目标列
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null);
   const [draggingFromStage, setDraggingFromStage] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
@@ -151,14 +151,14 @@ export default function AdminOfflineOrdersPage() {
     [mutateBoard, mutateDetail, mutateMetrics]
   );
 
-  // [2025-11-16 15:05:00] 拖拽辅助函数：统一重置状态，避免列高亮遗留
+// 拖拽辅助函数：统一重置状态，避免列高亮遗留
   const resetDragState = useCallback(() => {
     setDraggingOrderId(null);
     setDraggingFromStage(null);
     setDragOverStage(null);
   }, []);
 
-  // [2025-11-16 15:05:00] 卡片拖拽起始：记录来源列并设置拖拽数据
+// 卡片拖拽起始：记录来源列并设置拖拽数据
   const handleCardDragStart = useCallback(
     (event: ReactDragEvent<HTMLDivElement>, order: AdminOfflineOrderSummary) => {
       event.dataTransfer.setData('text/plain', order.id);
@@ -170,12 +170,12 @@ export default function AdminOfflineOrdersPage() {
     []
   );
 
-  // [2025-11-16 15:05:00] 拖拽结束：无论成功与否都清理状态
+// 拖拽结束：无论成功与否都清理状态
   const handleCardDragEnd = useCallback(() => {
     resetDragState();
   }, [resetDragState]);
 
-  // [2025-11-16 15:05:00] 列上方拖拽：允许放置并实时更新高亮列
+// 列上方拖拽：允许放置并实时更新高亮列
   const handleColumnDragOver = useCallback(
     (event: ReactDragEvent<HTMLElement>, stageKey: string) => {
       if (!draggingOrderId) {
@@ -190,14 +190,14 @@ export default function AdminOfflineOrdersPage() {
     [draggingOrderId, dragOverStage]
   );
 
-  // [2025-11-16 15:05:00] 列离开时移除高亮，避免闪烁
+// 列离开时移除高亮，避免闪烁
   const handleColumnDragLeave = useCallback((event: ReactDragEvent<HTMLElement>, stageKey: string) => {
     if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node)) {
       setDragOverStage((current) => (current === stageKey ? null : current));
     }
   }, []);
 
-  // [2025-11-16 15:05:00] 放置卡片：仅当目标列不同才触发 stage 更新
+// 放置卡片：仅当目标列不同才触发 stage 更新
   const handleColumnDrop = useCallback(
     async (event: ReactDragEvent<HTMLElement>, stageKey: string) => {
       event.preventDefault();
@@ -323,7 +323,7 @@ export default function AdminOfflineOrdersPage() {
 
   return (
     <div style={{ marginTop: 24 }}>
-      {/* [2025-01-31 20:15:00] 顶部导航链接 */}
+{/* 顶部导航链接 */}
       <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginTop: 0, marginBottom: '1rem' }}>
         <Link
           href="/admin/orders"
@@ -538,7 +538,7 @@ export default function AdminOfflineOrdersPage() {
               <p className="detail-error">{t('orderNotFound')}</p>
             ) : (
               <div className="kanban-detail-body">
-                {/* [2025-11-15 17:05:00] Stage + note controls mirror prototype detail workflow */}
+{/* Stage + note controls mirror prototype detail workflow */}
                 <div className="admin-form">
                   <h3>{t('stage')}</h3>
                   <div className="admin-grid-two">

@@ -1,6 +1,6 @@
 /**
  * Sales Offline Orders List Page
- * [2025-12-02 04:52:00] Sales 查看自己线下订单列表
+* Sales 查看自己线下订单列表
  */
 'use client';
 
@@ -11,7 +11,7 @@ import api from '@/lib/api';
 import useSWR from 'swr';
 import { useAuth } from '@/contexts/AuthContext';
 
-// [2025-12-07 08:15:00] 状态选择组件 - 参考 PillSelect 的单选版样式
+// 状态选择组件 - 参考 PillSelect 的单选版样式
 function StatusSelector({
   orderId,
   currentValue,
@@ -183,7 +183,7 @@ function StatusSelector({
   );
 }
 
-// [2025-01-27 13:00:00] 配置管理相关接口类型
+// 配置管理相关接口类型
 interface Color {
   id: string;
   name: string;
@@ -197,7 +197,7 @@ interface Product {
   isCustomerOwned: boolean;
 }
 
-// [2025-01-27 14:00:00] 尺码费用接口
+// 尺码费用接口
 interface SizeFee {
   id: string;
   size: string;
@@ -217,7 +217,7 @@ export default function SalesOrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
 
-  // [2025-12-18 17:50:00] 在页面加载时打印构建版本信息，便于验证部署
+// 在页面加载时打印构建版本信息，便于验证部署
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const sha = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
@@ -233,10 +233,10 @@ export default function SalesOrdersPage() {
     });
   }, []);
 
-  // [2025-01-27 13:00:00] Tab状态管理
+// Tab状态管理
   const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
 
-  // [2025-01-27 13:00:00] 配置管理状态
+// 配置管理状态
   const [configTab, setConfigTab] = useState<'colors' | 'products' | 'size-fees'>('colors');
   const [colors, setColors] = useState<Color[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -253,13 +253,13 @@ export default function SalesOrdersPage() {
   const [editProductImageUrl, setEditProductImageUrl] = useState('');
   const [editProductIsCustomerOwned, setEditProductIsCustomerOwned] = useState(false);
 
-  // [2025-01-27 14:00:00] 尺码费用状态
+// 尺码费用状态
   const [sizeFees, setSizeFees] = useState<SizeFee[]>([]);
   const [editingSizeFeeId, setEditingSizeFeeId] = useState<string | null>(null);
   const [editSizeFeeValue, setEditSizeFeeValue] = useState<string>('');
 
-  // [2025-12-07 05:15:00] 订单状态选项
-  // [2025-12-07 06:50:00] 添加 ACTIVE_RUSH 状态
+// 订单状态选项
+// 添加 ACTIVE_RUSH 状态
   const statusOptions = [
     { value: 'ACTIVE', label: 'ACTIVE' },
     { value: 'ACTIVE_RUSH', label: 'ACTIVE (加急)' },
@@ -268,7 +268,7 @@ export default function SalesOrdersPage() {
   ];
 
 
-  // [2025-01-27 14:05:00] Auth Effect: Redirect if not logged in
+// Auth Effect: Redirect if not logged in
   useEffect(() => {
     if (authLoading) return;
 
@@ -296,9 +296,9 @@ export default function SalesOrdersPage() {
       if (authLoading || !currentUser) return;
 
       try {
-        // [2025-12-07 04:55:00] 获取阶段配置（用于快速修改状态）
-        // [2025-12-07 05:30:00] 使用代理 API 访问，确保认证正确传递
-        // [2025-12-07 08:00:00] 修复：使用 authenticatedFetch 确保 token 正确传递
+// 获取阶段配置（用于快速修改状态）
+// 使用代理 API 访问，确保认证正确传递
+// 修复：使用 authenticatedFetch 确保 token 正确传递
         try {
           const { authenticatedFetch } = await import('@/lib/api');
           const stagesRes = await authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
@@ -346,7 +346,7 @@ export default function SalesOrdersPage() {
     router.push(`/offline-orders/sales/orders/${orderId}`);
   };
 
-  // [2025-12-18 17:30:00] 删除订单
+// 删除订单
   const handleDeleteOrder = async (orderId: string, orderCode: string) => {
     if (!confirm(`确定要删除订单 ${orderCode} 吗？此操作不可恢复。`)) {
       return;
@@ -355,7 +355,7 @@ export default function SalesOrdersPage() {
     setDeletingOrder(orderId);
     try {
       await salesOrdersApi.delete(orderId);
-      // [2025-12-18 17:30:00] 删除成功后刷新列表
+// 删除成功后刷新列表
       setOrders(orders.filter(o => o.id !== orderId));
       alert('订单已删除');
     } catch (err: any) {
@@ -365,7 +365,7 @@ export default function SalesOrdersPage() {
     }
   };
 
-  // [2025-12-07 04:55:00] 快速修改订单阶段
+// 快速修改订单阶段
   const handleQuickUpdateStage = async (orderId: string, newStageKey: string) => {
     if (!newStageKey) return;
 
@@ -382,14 +382,14 @@ export default function SalesOrdersPage() {
     }
   };
 
-  // [2025-12-07 05:15:00] 快速修改订单状态
-  // [2025-12-07 06:50:00] 支持 ACTIVE_RUSH 状态
+// 快速修改订单状态
+// 支持 ACTIVE_RUSH 状态
   const handleQuickUpdateStatus = async (orderId: string, newStatus: string) => {
     if (!newStatus) return;
 
     setUpdatingStatus(orderId);
     try {
-      // [2025-12-07 06:50:00] 处理 ACTIVE_RUSH 状态
+// 处理 ACTIVE_RUSH 状态
       let actualStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
       let rushOrder: boolean | undefined;
 
@@ -416,8 +416,8 @@ export default function SalesOrdersPage() {
 
   const isManager = currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase());
 
-  // [2025-01-27 13:10:00] 配置管理数据获取
-  // [2025-12-07 08:10:00] 修复：使用 authenticatedFetch 确保 token 正确传递
+// 配置管理数据获取
+// 修复：使用 authenticatedFetch 确保 token 正确传递
   const { data: colorsData, mutate: mutateColors } = useSWR(
     activeTab === 'config' && configTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
     async (url) => {
@@ -428,7 +428,7 @@ export default function SalesOrdersPage() {
     }
   );
 
-  // [2025-12-07 08:10:00] 修复：使用 authenticatedFetch 确保 token 正确传递
+// 修复：使用 authenticatedFetch 确保 token 正确传递
   const { data: productsData, mutate: mutateProducts } = useSWR(
     activeTab === 'config' && configTab === 'products' ? '/api/proxy/admin/offline-order-products' : null,
     async (url) => {
@@ -451,7 +451,7 @@ export default function SalesOrdersPage() {
     }
   }, [productsData]);
 
-  // [2025-01-27 14:10:00] 尺码费用SWR
+// 尺码费用SWR
   const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(
     activeTab === 'config' && configTab === 'size-fees' ? '/api/proxy/admin/offline-order-size-fees' : null,
     async (url) => {
@@ -468,7 +468,7 @@ export default function SalesOrdersPage() {
     }
   }, [sizeFeesData]);
 
-  // [2025-01-27 13:15:00] 颜色管理函数
+// 颜色管理函数
   const handleCreateColor = async () => {
     if (!newColorName.trim()) return;
     try {
@@ -508,7 +508,7 @@ export default function SalesOrdersPage() {
     }
   };
 
-  // [2025-01-27 13:20:00] 产品管理函数
+// 产品管理函数
   const handleCreateProduct = async () => {
     if (!newProductName.trim()) return;
     try {
@@ -557,7 +557,7 @@ export default function SalesOrdersPage() {
     }
   };
 
-  // [2025-01-27 14:15:00] 尺码费用管理函数
+// 尺码费用管理函数
   const handleUpdateSizeFee = async (id: string, size: string) => {
     const fee = parseFloat(editSizeFeeValue);
     if (isNaN(fee) || fee < 0) {
@@ -600,7 +600,7 @@ export default function SalesOrdersPage() {
             <p>在这里查看你创建的线下订单（主管可查看全部订单）。</p>
           </div>
           <div className="sales-orders-header-actions">
-            {/* [2025-01-31 20:35:00] 顶部导航按钮 - 放在新建订单按钮旁边 */}
+{/* 顶部导航按钮 - 放在新建订单按钮旁边 */}
             <button
               type="button"
               className="sales-orders-nav-btn sales-orders-nav-btn-secondary"
@@ -625,7 +625,7 @@ export default function SalesOrdersPage() {
           </div>
         </header>
 
-        {/* [2025-01-27 13:30:00] Tab切换 */}
+{/* Tab切换 */}
         <div className="sales-orders-tabs">
           <button
             type="button"
@@ -647,7 +647,7 @@ export default function SalesOrdersPage() {
 
         {error && <div className="sales-orders-error">{error}</div>}
 
-        {/* [2025-01-27 13:35:00] 订单列表Tab内容 */}
+{/* 订单列表Tab内容 */}
         {activeTab === 'orders' && (
           <div className="sales-orders-tab-content">
 
@@ -760,7 +760,7 @@ export default function SalesOrdersPage() {
           </div>
         )}
 
-        {/* [2025-01-27 13:40:00] 配置管理Tab内容 */}
+{/* 配置管理Tab内容 */}
         {activeTab === 'config' && isManager && (
           <div className="sales-orders-tab-content">
             <div className="config-sub-tabs">
@@ -1163,7 +1163,7 @@ export default function SalesOrdersPage() {
           align-items: center;
           flex-wrap: wrap;
         }
-        /* [2025-01-31 20:35:00] 顶部导航按钮样式 - 确保显示和圆角 */
+/* 顶部导航按钮样式 - 确保显示和圆角 */
         .sales-orders-nav-btn {
           border: none !important;
           border-radius: 999px !important;
@@ -1193,7 +1193,7 @@ export default function SalesOrdersPage() {
           background: #e5e7eb !important;
           color: #1f2937 !important;
         }
-        /* [2025-01-27 13:50:00] Tab样式 */
+/* Tab样式 */
         .sales-orders-tabs {
           display: flex;
           gap: 0.5rem;
@@ -1222,7 +1222,7 @@ export default function SalesOrdersPage() {
         .sales-orders-tab-content {
           min-height: 400px;
         }
-        /* [2025-01-27 13:55:00] 配置管理样式 */
+/* 配置管理样式 */
         .config-sub-tabs {
           display: flex;
           gap: 0.5rem;
@@ -1445,8 +1445,8 @@ export default function SalesOrdersPage() {
           border-color: #2563eb;
           box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
-        /* [2025-12-07 08:15:00] StatusSelector 样式已迁移到 Tailwind CSS */
-        /* [2025-01-31 20:40:00] 添加 fallback 样式确保圆角正确显示 */
+/* StatusSelector 样式已迁移到 Tailwind CSS */
+/* 添加 fallback 样式确保圆角正确显示 */
         button[aria-haspopup="listbox"] {
           border-radius: 0.75rem !important; /* rounded-xl fallback */
         }

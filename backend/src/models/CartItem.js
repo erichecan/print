@@ -1,4 +1,4 @@
-// [2025-11-02 20:57:00] CartItem model
+// CartItem model
 module.exports = (sequelize, DataTypes) => {
   const CartItem = sequelize.define('CartItem', {
     id: {

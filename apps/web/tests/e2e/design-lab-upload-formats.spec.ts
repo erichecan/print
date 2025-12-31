@@ -1,6 +1,6 @@
 /**
  * Design Lab Upload Formats E2E Test
- * [2025-01-30 20:40:00] 验证支持 AVIF 和 WebP 格式上传
+* 验证支持 AVIF 和 WebP 格式上传
  */
 
 import { test, expect } from '@playwright/test';

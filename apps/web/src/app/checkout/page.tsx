@@ -1,7 +1,6 @@
 /**
  * Checkout Page
- * [2025-11-05 00:30:00]
- * [2025-11-12 00:45:10] Checkout UX 改造：费用预估、地址持久化、结果页提示
+* Checkout UX 改造：费用预估、地址持久化、结果页提示
  */
 'use client';
 
@@ -26,12 +25,12 @@ import {
   PaymentMethod,
 } from '@/lib/api';
 import { validateAddressForm, formatCanadianPostalCode, formatPhoneNumber } from '@/utils/validation';
-import { useToast } from '@/hooks/useToast'; // [2025-01-27 16:55:00] Toast 通知
-import { mapStripeError } from '@/utils/stripeErrorMapping'; // [2025-01-29 14:30:00] Stripe error mapping
-import { getStripe, isStripeConfigured } from '@/lib/stripe'; // [2025-12-10] 使用统一的 Stripe 初始化
+import { useToast } from '@/hooks/useToast'; // Toast 通知
+import { mapStripeError } from '@/utils/stripeErrorMapping'; // Stripe error mapping
+import { getStripe, isStripeConfigured } from '@/lib/stripe'; // 使用统一的 Stripe 初始化
 
-// [2025-12-10] 使用统一的 Stripe 初始化，确保 key 正确配置
-// [2025-01-30 12:00:00] 修复：使用统一的 Stripe 初始化函数，避免配置错误
+// 使用统一的 Stripe 初始化，确保 key 正确配置
+// 修复：使用统一的 Stripe 初始化函数，避免配置错误
 const stripePromise = isStripeConfigured() ? getStripe() : Promise.resolve(null);
 
 interface ShippingAddressForm {
@@ -50,8 +49,8 @@ interface CheckoutTotals {
   subtotal: number;
   shipping: number;
   tax: number;
-  promotionDiscount?: number; // [2025-01-28 12:45:00] 促销折扣
-  discount?: number; // [2025-01-27 20:10:00] 总折扣（促销+优惠券）
+promotionDiscount?: number; // 促销折扣
+discount?: number; // 总折扣（促销+优惠券）
   total: number;
 }
 
@@ -64,7 +63,7 @@ interface ShippingRate {
 
 const emptyTotals: CheckoutTotals = {
   subtotal: 0,
-  discount: 0, // [2025-01-28 11:35:00] 添加折扣字段
+discount: 0, // 添加折扣字段
   shipping: 0,
   tax: 0,
   total: 0,
@@ -80,7 +79,7 @@ const mapAddressForApi = (address: ShippingAddressForm): CheckoutAddressPayload 
   province: address.province,
   postalCode: address.postalCode,
   country: address.country,
-}); // [2025-11-12 00:45:10] 统一转换地址数据发送给后端
+}); // 统一转换地址数据发送给后端
 
 function CheckoutSkeleton() {
   return (
@@ -134,7 +133,7 @@ function CheckoutSummary({
 }: {
   cart: CartResponse;
   totals: CheckoutTotals;
-  appliedCoupon?: { code: string; discountAmount: number; id?: string } | null; // [2025-01-27 20:10:00] 已应用的优惠券 [2025-01-28 11:35:00] 添加 id 字段
+appliedCoupon?: { code: string; discountAmount: number; id?: string } | null; // 已应用的优惠券 添加 id 字段
 }) {
   const shippingText =
     totals.shipping > 0 ? `$${totals.shipping.toFixed(2)}` : 'Calculated at checkout';
@@ -170,14 +169,14 @@ function CheckoutSummary({
           <span>Subtotal</span>
           <span>${totals.subtotal.toFixed(2)}</span>
         </div>
-        {/* [2025-01-28 12:45:00] 显示促销折扣 */}
+{/* 显示促销折扣 */}
         {totals.promotionDiscount && totals.promotionDiscount > 0 && (
           <div className="summary-row discount" style={{ color: '#e74c3c' }}>
             <span>Promotion Discount</span>
             <span>-${totals.promotionDiscount.toFixed(2)}</span>
           </div>
         )}
-        {/* [2025-01-27 20:10:00] 显示优惠券折扣 */}
+{/* 显示优惠券折扣 */}
         {appliedCoupon && (
           <div className="summary-row discount">
             <span>Discount ({appliedCoupon.code})</span>
@@ -208,27 +207,27 @@ function CheckoutSummary({
 function CheckoutForm({
   cart,
   onTotalsChange,
-  onCouponChange, // [2025-01-27 20:20:00] 传递优惠券状态给父组件
+onCouponChange, // 传递优惠券状态给父组件
 }: {
   cart: CartResponse;
   onTotalsChange: (totals: CheckoutTotals) => void;
-  onCouponChange?: (coupon: { code: string; discountAmount: number; id?: string } | null) => void; // [2025-01-27 20:20:00] [2025-01-28 11:35:00] 添加 id 字段
+onCouponChange?: (coupon: { code: string; discountAmount: number; id?: string } | null) => void; //  添加 id 字段
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
-  const { error: showError, warning: showWarning } = useToast(); // [2025-01-27 16:55:00] Toast 通知
+const { error: showError, warning: showWarning } = useToast(); // Toast 通知
 
-  // [2025-01-30 12:00:00] 修复TDZ错误：将cardComplete定义移到useEffect之前
+// 修复TDZ错误：将cardComplete定义移到useEffect之前
   const [cardComplete, setCardComplete] = useState(false);
 
-  // [2025-11-29 21:25:00] 调试日志：监控 Stripe 加载状态
-  // [2025-01-29 12:00:00] 增强 Stripe 加载状态监控
-  // [2025-01-30 12:00:00] 使用统一的 Stripe 配置获取函数
-  // [2025-01-30 12:00:00] 修复TDZ错误：将useEffect移到cardComplete定义之后
+// 调试日志：监控 Stripe 加载状态
+// 增强 Stripe 加载状态监控
+// 使用统一的 Stripe 配置获取函数
+// 修复TDZ错误：将useEffect移到cardComplete定义之后
   useEffect(() => {
     try {
-      // [2025-01-30 12:00:00] 使用统一的 Stripe 配置检查
+// 使用统一的 Stripe 配置检查
       const stripeKey = isStripeConfigured() ? 'configured' : 'not-configured';
       console.log('[Checkout Debug] Stripe state:', JSON.stringify({
         stripe: stripe ? 'loaded' : 'not-loaded',
@@ -287,21 +286,21 @@ function CheckoutForm({
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [cardError, setCardError] = useState<string | null>(null);
-  // [2025-01-30 12:00:00] cardComplete已移到组件顶部，避免TDZ错误
+// cardComplete已移到组件顶部，避免TDZ错误
   const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'confirming'>('form');
-  // [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112)
+// Saved payment methods for quick checkout (Issue #112)
   const [savedPaymentMethods, setSavedPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null); // 'new' or payment method ID
   const [savePaymentMethod, setSavePaymentMethod] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // [2025-01-27 20:15:00] 优惠券状态
+// 优惠券状态
   const [couponCode, setCouponCode] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); // [2025-01-28 11:35:00] 添加 id 字段
+const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); // 添加 id 字段
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
 
-  // [2025-01-27 11:20:00] 地址持久化：从 localStorage 加载保存的地址
+// 地址持久化：从 localStorage 加载保存的地址
   useEffect(() => {
     try {
       const savedAddress = localStorage.getItem('checkout_shipping_address');
@@ -314,11 +313,11 @@ function CheckoutForm({
         setSameBilling(savedBillingSame === 'true');
       }
     } catch (err) {
-      console.error('[2025-01-27 11:20:00] Failed to load saved address:', err);
+console.error(' Failed to load saved address:', err);
     }
   }, []);
 
-  // [2025-12-06 17:20:00] Load saved payment methods for logged-in users (Issue #112)
+// Load saved payment methods for logged-in users (Issue #112)
   useEffect(() => {
     const loadPaymentMethods = async () => {
       try {
@@ -350,21 +349,21 @@ function CheckoutForm({
     loadPaymentMethods();
   }, []);
 
-  // [2025-01-27 11:20:00] 地址持久化：自动保存地址到 localStorage
+// 地址持久化：自动保存地址到 localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
         localStorage.setItem('checkout_shipping_address', JSON.stringify(address));
         localStorage.setItem('checkout_same_billing', String(sameBilling));
       } catch (err) {
-        console.error('[2025-01-27 11:20:00] Failed to save address:', err);
+console.error(' Failed to save address:', err);
       }
     }, 500); // 防抖：500ms 后保存
 
     return () => clearTimeout(timer);
   }, [address, sameBilling]);
 
-  // [2025-11-29 21:50:00] 调试日志：监听地址状态变化
+// 调试日志：监听地址状态变化
   useEffect(() => {
     console.log('[Checkout Debug] Address state changed:', JSON.stringify(address, null, 2));
   }, [address]);
@@ -380,7 +379,7 @@ function CheckoutForm({
       address.postalCode.trim().length > 0 &&
       address.country.trim().length > 0
     );
-    // [2025-11-29 21:05:00] 调试日志：记录 addressReady 状态
+// 调试日志：记录 addressReady 状态
     const addressFields = {
       fullName: address.fullName.trim().length > 0,
       email: address.email.trim().length > 0,
@@ -429,7 +428,7 @@ function CheckoutForm({
     bootstrap();
   }, [cart.subtotal, notifyTotals]);
 
-  // [2025-01-27 20:15:00] 应用优惠券
+// 应用优惠券
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !addressReady) return;
 
@@ -447,9 +446,9 @@ function CheckoutForm({
       };
       setAppliedCoupon(applied);
       setCouponCode('');
-      onCouponChange?.(applied); // [2025-01-27 20:20:00] 通知父组件
+onCouponChange?.(applied); // 通知父组件
 
-      // [2025-01-27 20:15:00] 更新总计以包含折扣
+// 更新总计以包含折扣
       const newTotal = Math.max(0, totals.total - discountAmount);
       notifyTotals({
         ...totals,
@@ -464,15 +463,15 @@ function CheckoutForm({
     }
   };
 
-  // [2025-01-27 20:15:00] 移除优惠券
+// 移除优惠券
   const handleRemoveCoupon = () => {
     const discountToRemove = appliedCoupon?.discountAmount || 0;
     setAppliedCoupon(null);
     setCouponCode('');
     setCouponError(null);
-    onCouponChange?.(null); // [2025-01-27 20:20:00] 通知父组件
+onCouponChange?.(null); // 通知父组件
 
-    // [2025-01-28 11:35:00] 重新计算总计（移除折扣）
+// 重新计算总计（移除折扣）
     if (addressReady) {
       // 调用 prepare API 获取不包含折扣的完整费用明细
       checkoutApi
@@ -515,17 +514,17 @@ function CheckoutForm({
       setIsCalculatingTotals(true);
       setRatesError(null);
       try {
-        // [2025-01-28 11:35:00] 传递优惠券代码到 prepare API
+// 传递优惠券代码到 prepare API
         const result: any = await checkoutApi.prepare({
           shippingAddress: mapAddressForApi(address),
           shippingMethod,
           ...(appliedCoupon ? { couponCode: appliedCoupon.code } : {}),
         });
 
-        // [2025-01-28 11:35:00] 使用 prepare API 返回的折扣（如果提供了优惠券代码）
+// 使用 prepare API 返回的折扣（如果提供了优惠券代码）
         notifyTotals({
           subtotal: result.subtotal ?? cart.subtotal,
-          discount: result.discount ?? 0, // [2025-01-28 11:35:00] 使用 API 返回的折扣
+discount: result.discount ?? 0, // 使用 API 返回的折扣
           shipping: result.shipping ?? 0,
           tax: result.tax ?? 0,
           total: result.total ?? cart.subtotal,
@@ -576,9 +575,9 @@ function CheckoutForm({
     }
   }, [addressReady, loadShippingRates]);
 
-  // [2025-11-29 21:05:00] 调试日志：输出按钮状态（状态变化时）
+// 调试日志：输出按钮状态（状态变化时）
   useEffect(() => {
-    // [2025-11-29 21:30:00] 改进 Place Order 按钮禁用条件，包括地址和运费验证
+// 改进 Place Order 按钮禁用条件，包括地址和运费验证
     const placeOrderDisabled = !stripe || isSubmitting || isFetchingRates || isCalculatingTotals || !cardComplete || !addressReady || !selectedShipping || shippingRates.length === 0;
     const applyCouponDisabled = applyingCoupon || !couponCode.trim() || !addressReady;
 
@@ -615,7 +614,7 @@ function CheckoutForm({
       },
     };
 
-    // [2025-11-29 21:20:00] 使用 JSON.stringify 确保对象内容可见
+// 使用 JSON.stringify 确保对象内容可见
     console.log('[Checkout Debug] Button states:', JSON.stringify(debugInfo, null, 2));
   }, [stripe, isSubmitting, isFetchingRates, isCalculatingTotals, cardComplete, addressReady, selectedShipping, shippingRates.length, applyingCoupon, couponCode]);
 
@@ -623,7 +622,7 @@ function CheckoutForm({
     event.preventDefault();
     if (!stripe || !elements) return;
 
-    // [2025-01-27 11:25:00] 使用统一的验证函数
+// 使用统一的验证函数
     const addressValidation = validateAddressForm(address);
     const validationErrors: string[] = [...addressValidation.errors];
     const missing: string[] = [];
@@ -669,7 +668,7 @@ function CheckoutForm({
       setMissingFields(missing);
       const errorMsg = 'Please correct the highlighted fields before continuing.';
       setSubmitError(errorMsg);
-      showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
+showError(errorMsg); // 显示 Toast 通知
       return;
     }
 
@@ -679,13 +678,13 @@ function CheckoutForm({
     setIsSubmitting(true);
     setPaymentStep('processing');
 
-    // [2025-12-06 17:20:00] Validate payment method selection (Issue #112)
+// Validate payment method selection (Issue #112)
     if (selectedPaymentMethod === 'new' && !cardComplete) {
       const errorMsg = 'Please complete your card details';
       setCardError(errorMsg);
       setIsSubmitting(false);
       setPaymentStep('form');
-      showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
+showError(errorMsg); // 显示 Toast 通知
       return;
     }
 
@@ -701,8 +700,8 @@ function CheckoutForm({
       const shippingPayload = mapAddressForApi(address);
       const billingPayload = sameBilling ? shippingPayload : mapAddressForApi(billingAddress);
 
-      // [2025-01-28 11:35:00] 传递优惠券信息到 createPaymentIntent
-      // [2025-01-29 14:30:00] Enhanced: Pass amount for validation, customerEmail, metadata
+// 传递优惠券信息到 createPaymentIntent
+// Enhanced: Pass amount for validation, customerEmail, metadata
       const paymentIntentResponse = await checkoutApi.createPaymentIntent(
         shippingPayload,
         selectedShipping,
@@ -715,7 +714,7 @@ function CheckoutForm({
         { cartId: cart.id } // metadata
       );
 
-      // [2025-01-28 11:35:00] 更新优惠券状态（如果 paymentIntentResponse 包含优惠券信息）
+// 更新优惠券状态（如果 paymentIntentResponse 包含优惠券信息）
       if (paymentIntentResponse.coupon && appliedCoupon) {
         setAppliedCoupon({
           ...appliedCoupon,
@@ -729,12 +728,12 @@ function CheckoutForm({
 
       setPaymentStep('confirming');
 
-      // [2025-01-29 14:30:00] Use confirmPayment with return_url and receipt_email
-      // [2025-12-06 17:20:00] Use saved payment method or new card (Issue #112)
+// Use confirmPayment with return_url and receipt_email
+// Use saved payment method or new card (Issue #112)
       let paymentIntent;
       let stripeError = null;
 
-      // [2025-01-29 14:30:00] Build return URL for 3D Secure and other redirects
+// Build return URL for 3D Secure and other redirects
       const returnUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/checkout/success?payment_intent=${paymentIntentResponse.paymentIntentId}`
         : '/checkout/success';
@@ -746,7 +745,7 @@ function CheckoutForm({
           throw new Error('Selected payment method not found');
         }
 
-        // [2025-01-29 14:30:00] Use confirmCardPayment for saved payment methods
+// Use confirmCardPayment for saved payment methods
         // Note: receipt_email is set when creating PaymentIntent, return_url not supported by confirmCardPayment
         const { error, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
           paymentIntentResponse.clientSecret,
@@ -764,7 +763,7 @@ function CheckoutForm({
           throw new Error('Payment form is not ready. Please reload and try again.');
         }
 
-        // [2025-01-29 14:30:00] Use confirmCardPayment with CardElement
+// Use confirmCardPayment with CardElement
         // Note: receipt_email is set when creating PaymentIntent (backend)
         // For 3D Secure, Stripe will handle redirects automatically
         const { error, paymentIntent: confirmedIntent } = await stripe.confirmCardPayment(
@@ -792,7 +791,7 @@ function CheckoutForm({
         stripeError = error;
         paymentIntent = confirmedIntent;
 
-        // [2025-12-06 17:20:00] Save payment method if requested
+// Save payment method if requested
         if (savePaymentMethod && paymentIntent?.payment_method) {
           try {
             const paymentMethodId = typeof paymentIntent.payment_method === 'string'
@@ -824,20 +823,20 @@ function CheckoutForm({
         }
       }
 
-      // [2025-01-29 14:30:00] Handle payment result - check for redirect
+// Handle payment result - check for redirect
       // Note: With confirmCardPayment, 3D Secure is handled automatically
       // If status is requires_action, Stripe Elements will show the authentication modal
       // We don't need to handle redirects manually with confirmCardPayment
 
       if (stripeError) {
-        // [2025-01-29 14:30:00] Use error mapping for user-friendly messages
+// Use error mapping for user-friendly messages
         const errorMapping = mapStripeError(stripeError);
         setSubmitError(errorMapping.userMessage);
         setCardError(errorMapping.userMessage);
         setPaymentStep('form');
-        showError(errorMapping.userMessage); // [2025-01-27 16:55:00] 显示 Toast 通知
+showError(errorMapping.userMessage); // 显示 Toast 通知
 
-        // [2025-01-29 14:30:00] Log error details for debugging
+// Log error details for debugging
         console.error('[Payment Error]', {
           message: errorMapping.message,
           userMessage: errorMapping.userMessage,
@@ -853,11 +852,11 @@ function CheckoutForm({
         const errorMsg = 'Payment was not completed. Please verify details and retry.';
         setSubmitError(errorMsg);
         setPaymentStep('form');
-        showError(errorMsg); // [2025-01-27 16:55:00] 显示 Toast 通知
+showError(errorMsg); // 显示 Toast 通知
         return; // 不跳转，让用户有机会重试
       }
 
-      // [2025-01-28 11:35:00] 传递优惠券信息到 confirm API
+// 传递优惠券信息到 confirm API
       const order = await checkoutApi.confirm(
         paymentIntentResponse.paymentIntentId,
         shippingPayload,
@@ -868,12 +867,12 @@ function CheckoutForm({
         appliedCoupon?.id || paymentIntentResponse.coupon?.id // 优先使用 appliedCoupon 的 id
       );
 
-      // [2025-01-27 11:20:00] 支付成功后清除保存的地址信息
+// 支付成功后清除保存的地址信息
       try {
         localStorage.removeItem('checkout_shipping_address');
         localStorage.removeItem('checkout_same_billing');
       } catch (err) {
-        console.error('[2025-01-27 11:20:00] Failed to clear saved address:', err);
+console.error(' Failed to clear saved address:', err);
       }
 
       router.push(
@@ -882,7 +881,7 @@ function CheckoutForm({
         )}&email=${encodeURIComponent(shippingPayload.email)}`
       );
     } catch (error: unknown) {
-      // [2025-01-27 10:30:00] 统一错误处理：区分可重试错误和不可重试错误
+// 统一错误处理：区分可重试错误和不可重试错误
       const message =
         error instanceof Error
           ? error.message
@@ -964,12 +963,12 @@ function CheckoutForm({
           value={address.phone}
           onChange={(event) => {
             let value = event.target.value;
-            // [2025-01-27 11:25:00] 自动格式化电话号码（可选，用户输入时保持灵活）
+// 自动格式化电话号码（可选，用户输入时保持灵活）
             // 只在失去焦点时格式化
             setAddress({ ...address, phone: value });
           }}
           onBlur={(event) => {
-            // [2025-01-27 11:25:00] 失去焦点时格式化电话号码
+// 失去焦点时格式化电话号码
             const formatted = formatPhoneNumber(event.target.value);
             if (formatted !== event.target.value) {
               setAddress({ ...address, phone: formatted });
@@ -1042,7 +1041,7 @@ function CheckoutForm({
             value={address.postalCode}
             onChange={(event) => {
               let value = event.target.value;
-              // [2025-01-27 11:25:00] 自动格式化加拿大邮政编码
+// 自动格式化加拿大邮政编码
               if (address.country === 'CA') {
                 value = formatCanadianPostalCode(value);
               }
@@ -1113,7 +1112,7 @@ function CheckoutForm({
       </div>
 
       <h2>Payment Information</h2>
-      {/* [2025-12-06 17:20:00] Saved payment methods for quick checkout (Issue #112) */}
+{/* Saved payment methods for quick checkout (Issue #112) */}
       {isLoggedIn && savedPaymentMethods.length > 0 && (
         <div className="payment-card">
           <label>Saved Payment Methods</label>
@@ -1191,19 +1190,19 @@ function CheckoutForm({
                 },
               }}
               onChange={(event) => {
-                // [2025-01-27 11:10:00] 实时监听卡片输入状态
-                // [2025-01-29 12:00:00] 改进卡片状态检测，确保 cardComplete 正确更新
+// 实时监听卡片输入状态
+// 改进卡片状态检测，确保 cardComplete 正确更新
                 if (event.error) {
                   setCardError(event.error.message);
                   setCardComplete(false);
                 } else {
                   setCardError(null);
-                  // [2025-01-29 12:00:00] 确保 cardComplete 状态正确更新
+// 确保 cardComplete 状态正确更新
                   // event.complete 为 true 表示所有必填字段都已填写且有效
                   const isComplete = event.complete === true && !event.empty;
                   setCardComplete(isComplete);
                 }
-                // [2025-11-29 21:05:00] 调试日志：记录卡片状态变化
+// 调试日志：记录卡片状态变化
                 const cardState = {
                   complete: event.complete,
                   error: event.error?.message || null,
@@ -1333,7 +1332,7 @@ function CheckoutForm({
         </div>
       )}
 
-      {/* [2025-01-27 20:15:00] 优惠券输入 */}
+{/* 优惠券输入 */}
       <h2>Coupon Code</h2>
       <div className="coupon-section">
         {appliedCoupon ? (
@@ -1660,7 +1659,7 @@ function CheckoutForm({
             transform: rotate(360deg);
           }
         }
-        /* [2025-01-27 20:15:00] 优惠券样式 */
+/* 优惠券样式 */
         .coupon-section {
           display: grid;
           gap: 12px;
@@ -1780,17 +1779,17 @@ export default function CheckoutPage() {
   const { cart, isLoading } = useCart();
   const router = useRouter();
   const [checkoutTotals, setCheckoutTotals] = useState<CheckoutTotals>(emptyTotals);
-  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); // [2025-01-27 20:20:00] [2025-01-28 11:35:00] 添加 id 字段
-  const [appliedPromotions, setAppliedPromotions] = useState<Array<{ promotionId: string; promotionTitle: string; productId: string; discountAmount: number }>>([]); // [2025-01-28 12:45:00] 应用的促销活动
+const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discountAmount: number; id?: string } | null>(null); //  添加 id 字段
+const [appliedPromotions, setAppliedPromotions] = useState<Array<{ promotionId: string; promotionTitle: string; productId: string; discountAmount: number }>>([]); // 应用的促销活动
 
-  // [2025-12-21] Debug: Disable auto-redirect to diagnose "Checkout shows empty" issue
+// Debug: Disable auto-redirect to diagnose "Checkout shows empty" issue
   // useEffect(() => {
   //   if (!isLoading && (!cart || cart.items.length === 0)) {
   //     router.push('/cart');
   //   }
   // }, [cart, isLoading, router]);
 
-  // [2025-01-28 12:45:00] 初始化时获取促销活动信息
+// 初始化时获取促销活动信息
   useEffect(() => {
     if (cart && cart.items.length > 0) {
       // 通过 prepareCheckout 获取促销信息（在 CheckoutForm 中处理）
@@ -1860,13 +1859,13 @@ export default function CheckoutPage() {
             <CheckoutForm
               cart={cart}
               onTotalsChange={setCheckoutTotals}
-              onCouponChange={setAppliedCoupon} // [2025-01-27 20:20:00] 接收优惠券状态
+onCouponChange={setAppliedCoupon} // 接收优惠券状态
             />
           </Elements>
           <CheckoutSummary
             cart={cart}
             totals={checkoutTotals}
-            appliedCoupon={appliedCoupon} // [2025-01-27 20:20:00] 传递优惠券状态
+appliedCoupon={appliedCoupon} // 传递优惠券状态
           />
         </div>
       </div>

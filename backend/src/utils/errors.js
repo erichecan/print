@@ -1,11 +1,10 @@
 /**
  * Custom Error Classes
- * [2025-01-27 11:00:00] Unified error handling with custom error classes
+* Unified error handling with custom error classes
  */
 
 /**
  * Base Application Error
- * [2025-01-27 11:00:00]
  */
 class AppError extends Error {
   constructor(message, statusCode = 500, code = null, details = null) {
@@ -47,7 +46,6 @@ class AppError extends Error {
 
 /**
  * Bad Request Error (400)
- * [2025-01-27 11:00:00]
  */
 class BadRequestError extends AppError {
   constructor(message = 'Bad request', details = null) {
@@ -57,7 +55,6 @@ class BadRequestError extends AppError {
 
 /**
  * Unauthorized Error (401)
- * [2025-01-27 11:00:00]
  */
 class UnauthorizedError extends AppError {
   constructor(message = 'Authentication required', details = null) {
@@ -67,7 +64,6 @@ class UnauthorizedError extends AppError {
 
 /**
  * Forbidden Error (403)
- * [2025-01-27 11:00:00]
  */
 class ForbiddenError extends AppError {
   constructor(message = 'Access denied', details = null) {
@@ -77,7 +73,6 @@ class ForbiddenError extends AppError {
 
 /**
  * Not Found Error (404)
- * [2025-01-27 11:00:00]
  */
 class NotFoundError extends AppError {
   constructor(message = 'Resource not found', details = null) {
@@ -87,7 +82,6 @@ class NotFoundError extends AppError {
 
 /**
  * Conflict Error (409)
- * [2025-01-27 11:00:00]
  */
 class ConflictError extends AppError {
   constructor(message = 'Resource conflict', details = null) {
@@ -97,7 +91,6 @@ class ConflictError extends AppError {
 
 /**
  * Validation Error (422)
- * [2025-01-27 11:00:00]
  */
 class ValidationError extends AppError {
   constructor(message = 'Validation failed', details = null) {
@@ -107,7 +100,6 @@ class ValidationError extends AppError {
 
 /**
  * Rate Limit Error (429)
- * [2025-01-27 11:00:00]
  */
 class RateLimitError extends AppError {
   constructor(message = 'Too many requests', details = null) {
@@ -117,7 +109,6 @@ class RateLimitError extends AppError {
 
 /**
  * Internal Server Error (500)
- * [2025-01-27 11:00:00]
  */
 class InternalServerError extends AppError {
   constructor(message = 'Internal server error', details = null) {
@@ -127,7 +118,6 @@ class InternalServerError extends AppError {
 
 /**
  * Service Unavailable Error (503)
- * [2025-01-27 11:00:00]
  */
 class ServiceUnavailableError extends AppError {
   constructor(message = 'Service unavailable', details = null) {

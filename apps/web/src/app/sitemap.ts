@@ -1,11 +1,11 @@
 /**
  * Sitemap generation for SEO
- * [2025-12-01 12:45:00] 实现动态 sitemap.xml，包含所有主要页面 URL
- * [2025-12-06 21:00:00] 添加动态产品页面 for Issue #154
+* 实现动态 sitemap.xml，包含所有主要页面 URL
+* 添加动态产品页面 for Issue #154
  */
 import { MetadataRoute } from 'next';
 
-// [2025-12-01 12:45:00] 获取站点基础 URL
+// 获取站点基础 URL
 function getSiteUrl(): string {
   // 优先使用环境变量
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL;
@@ -17,16 +17,16 @@ function getSiteUrl(): string {
   return 'https://suvernireplus.com';
 }
 
-// [2025-12-06 21:00:00] 获取所有产品用于动态 sitemap for Issue #154
-// [2025-12-09] 构建时如果无法获取产品，返回空数组（只包含静态页面）
+// 获取所有产品用于动态 sitemap for Issue #154
+// 构建时如果无法获取产品，返回空数组（只包含静态页面）
 async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: string }>> {
   try {
-    // [2025-12-09] 构建时直接使用环境变量，避免 api-config.ts 的构建时检查
+// 构建时直接使用环境变量，避免 api-config.ts 的构建时检查
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || 'http://localhost:3001';
     const normalizedUrl = apiBaseUrl.replace(/\/+$/, '');
     const apiUrl = normalizedUrl.endsWith('/api') ? normalizedUrl : `${normalizedUrl}/api`;
     
-    // [2025-12-09] 构建时可能无法访问后端 API，使用 try-catch 处理
+// 构建时可能无法访问后端 API，使用 try-catch 处理
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超时
     
@@ -48,7 +48,7 @@ async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: strin
       updatedAt: product.updatedAt || product.updated_at,
     }));
   } catch (error: any) {
-    // [2025-12-09] 构建时如果无法访问 API，只返回静态页面
+// 构建时如果无法访问 API，只返回静态页面
     if (error?.name === 'AbortError') {
       console.warn('[Sitemap] 获取产品列表超时（构建时可能无法访问后端 API），仅包含静态页面');
     } else {
@@ -62,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
   const now = new Date();
   
-  // [2025-12-01 12:45:00] 核心静态页面
+// 核心静态页面
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}/`,
@@ -168,7 +168,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
   
-  // [2025-12-06 21:00:00] 动态添加产品页面 for Issue #154
+// 动态添加产品页面 for Issue #154
   const products = await getAllProducts();
   const productPages: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${baseUrl}/products/${product.slug}`,

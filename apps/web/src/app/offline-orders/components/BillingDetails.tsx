@@ -1,5 +1,5 @@
 /**
- * [2025-12-19 02:30:00] 计费明细组件
+* 计费明细组件
  * 显示购物小票样式的计费明细，每个"产品包"一行
  */
 'use client';
@@ -36,7 +36,7 @@ interface BillingDetailsProps {
 }
 
 export function BillingDetails({ productItems, colorGroupsByProduct }: BillingDetailsProps) {
-  // [2025-12-19 02:30:00] 生成计费明细数据
+// 生成计费明细数据
   const billingItems: BillingItem[] = [];
 
   productItems.forEach((item) => {
@@ -47,7 +47,7 @@ export function BillingDetails({ productItems, colorGroupsByProduct }: BillingDe
       
       color.sizes.forEach((sizeData) => {
         if (sizeData.quantity > 0) {
-          // [2025-12-19 02:30:00] 获取印刷位置名称
+// 获取印刷位置名称
           const positions = colorGroup?.positions
             .filter(p => p.enabled)
             .map(p => {

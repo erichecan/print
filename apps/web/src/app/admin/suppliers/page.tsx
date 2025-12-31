@@ -2,7 +2,7 @@
 
 /**
  * Admin Suppliers Page
- * [2025-12-06 17:10:00] Supplier management and inventory sync monitoring for Issue #89
+* Supplier management and inventory sync monitoring for Issue #89
  */
 import { useState } from 'react';
 import useSWR from 'swr';

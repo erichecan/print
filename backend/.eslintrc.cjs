@@ -1,4 +1,4 @@
-// 后端 ESLint 配置（Node.js 环境） [2025-11-10 12:26:30]
+// 后端 ESLint 配置（Node.js 环境） 
 module.exports = {
   root: true,
   env: {

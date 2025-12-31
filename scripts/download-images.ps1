@@ -1,4 +1,4 @@
-# [2025-11-02 22:12:00] PowerShell script to download images
+# PowerShell script to download images
 # This script downloads images from content-config.json URLs
 
 $ErrorActionPreference = "Stop"

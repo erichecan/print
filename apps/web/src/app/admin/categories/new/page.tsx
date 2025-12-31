@@ -2,7 +2,7 @@
 
 /**
  * Admin Category Create Page
- * [2025-11-11 23:25:49] 新建分类页
+* 新建分类页
  */
 import { useRouter } from 'next/navigation';
 import { CategoryForm } from '@/components/admin/CategoryForm';

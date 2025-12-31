@@ -1,6 +1,6 @@
 /**
  * CustomInk Clipart Scheduled Crawler
- * [2025-12-17] 定时抓取脚本：每小时抓取 50 个素材，遍历全部类目
+* 定时抓取脚本：每小时抓取 50 个素材，遍历全部类目
  * 
  * 功能：
  * 1. 获取所有根分类
@@ -481,7 +481,7 @@ async function saveToDatabase(artwork: ArtworkMetadata, topCategoryId: string, s
 }
 
 async function crawlScheduled() {
-  console.log(`[2025-12-17] 开始定时抓取：每小时 ${MAX_ITEMS_PER_HOUR} 个素材\n`);
+console.log(` 开始定时抓取：每小时 ${MAX_ITEMS_PER_HOUR} 个素材\n`);
   
   const state = loadState();
   console.log(`📊 上次运行: ${state.lastRunTime}`);

@@ -1,6 +1,6 @@
 /**
  * Status Selector Verification Test
- * [2025-12-07 06:55:00] 验证状态选择器的样式和功能
+* 验证状态选择器的样式和功能
  */
 import { test, expect } from '@playwright/test';
 

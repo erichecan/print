@@ -1,4 +1,4 @@
-// [2025-11-10 10:30:00] Cost management dashboard interactions
+// Cost management dashboard interactions
 const state = {
   currency: 'CAD',
   search: '',

@@ -1,6 +1,6 @@
 /**
  * SafeImage Component
- * [2025-01-27 19:10:00] 容错图片组件，next/image 失败时回退到 <img>
+* 容错图片组件，next/image 失败时回退到 <img>
  * 确保图片加载失败不会导致页面 SSR 500 错误
  */
 'use client';
@@ -25,7 +25,7 @@ interface SafeImageProps {
 
 /**
  * SafeImage 组件
- * [2025-01-27 19:10:00] 优先使用 next/image，失败时回退到原生 <img>
+* 优先使用 next/image，失败时回退到原生 <img>
  */
 export default function SafeImage({
   src,
@@ -45,7 +45,7 @@ export default function SafeImage({
   const [imageError, setImageError] = useState(false);
 
   const handleError = () => {
-    // [2025-01-27 19:10:00] 记录错误日志，包含 requestId（如果可用）
+// 记录错误日志，包含 requestId（如果可用）
     const requestId = typeof window !== 'undefined'
       ? (document.querySelector('meta[name="x-request-id"]')?.getAttribute('content') || 'unknown')
       : 'unknown';
@@ -59,13 +59,13 @@ export default function SafeImage({
     setFallback(true);
     setImageError(true);
 
-    // [2025-01-27 19:10:00] 调用外部错误处理函数（如果有）
+// 调用外部错误处理函数（如果有）
     if (externalOnError) {
       externalOnError();
     }
   };
 
-  // [2025-01-27 19:10:00] 如果已经回退到 <img>，使用原生 img 标签
+// 如果已经回退到 <img>，使用原生 img 标签
   if (fallback || imageError) {
     if (fill) {
       return (
@@ -77,7 +77,7 @@ export default function SafeImage({
           style={style}
           loading={priority ? 'eager' : 'lazy'}
           onError={() => {
-            // [2025-01-27 19:10:00] 如果原生 img 也失败，显示占位图
+// 如果原生 img 也失败，显示占位图
             console.error('[SafeImage] Native <img> also failed', { src });
             if (typeof window !== 'undefined') {
               const img = document.querySelector(`img[src="${src}"]`) as HTMLImageElement;
@@ -101,7 +101,7 @@ export default function SafeImage({
         style={style}
         loading={priority ? 'eager' : 'lazy'}
         onError={() => {
-          // [2025-01-27 19:10:00] 如果原生 img 也失败，显示占位图
+// 如果原生 img 也失败，显示占位图
           console.error('[SafeImage] Native <img> also failed', { src });
           if (typeof window !== 'undefined') {
             const img = document.querySelector(`img[src="${src}"]`) as HTMLImageElement;
@@ -114,7 +114,7 @@ export default function SafeImage({
     );
   }
 
-  // [2025-01-27 19:10:00] 优先使用 next/image
+// 优先使用 next/image
   try {
     if (fill) {
       return (
@@ -149,7 +149,7 @@ export default function SafeImage({
       />
     );
   } catch (error) {
-    // [2025-01-27 19:10:00] 如果 Image 组件本身抛错，立即回退
+// 如果 Image 组件本身抛错，立即回退
     console.error('[SafeImage] Image component error', { src, error });
     return (
       // eslint-disable-next-line @next/next/no-img-element

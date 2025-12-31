@@ -2,7 +2,7 @@
 
 /**
  * Inventory Alerts Page
- * [2025-12-06 16:00:00] Display low stock and out of stock alerts
+* Display low stock and out of stock alerts
  */
 import { useState, useEffect } from 'react';
 import Link from 'next/link';

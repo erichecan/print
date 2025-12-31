@@ -1,12 +1,12 @@
 /**
  * Promotion Controller
- * [2025-01-28 12:15:00] 促销活动公共 API（供前端使用）
+* 促销活动公共 API（供前端使用）
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 
-// [2025-01-28 12:15:00] Map Prisma promotion to API format
-// [2025-11-29 20:10:00] 添加安全检查，处理可能的 null/undefined 值
+// Map Prisma promotion to API format
+// 添加安全检查，处理可能的 null/undefined 值
 const mapPromotion = (promotion) => {
   if (!promotion) {
     return null;
@@ -31,7 +31,7 @@ const mapPromotion = (promotion) => {
 /**
  * Get all active promotions
  * GET /api/promotions
- * [2025-01-28 12:15:00] 获取所有活跃的促销活动
+* 获取所有活跃的促销活动
  */
 exports.getActivePromotions = async (req, res) => {
   try {
@@ -57,7 +57,7 @@ exports.getActivePromotions = async (req, res) => {
       promotions = [];
     }
 
-    // [2025-11-29 20:20:00] 安全地映射促销活动
+// 安全地映射促销活动
     const mappedPromotions = promotions
       .filter((p) => p != null)
       .map((p) => {
@@ -79,7 +79,7 @@ exports.getActivePromotions = async (req, res) => {
       error: error.message,
       stack: error.stack,
     });
-    // [2025-11-29 20:20:00] 即使出错也返回空数组而不是 500
+// 即使出错也返回空数组而不是 500
     return res.json({ promotions: [] });
   }
 };
@@ -87,7 +87,7 @@ exports.getActivePromotions = async (req, res) => {
 /**
  * Get promotions for a specific product
  * GET /api/promotions/product/:productId
- * [2025-01-28 12:15:00] 获取指定商品的促销活动
+* 获取指定商品的促销活动
  */
 exports.getPromotionsForProduct = async (req, res) => {
   try {
@@ -101,8 +101,8 @@ exports.getPromotionsForProduct = async (req, res) => {
 
     const now = new Date();
 
-    // [2025-01-28 12:15:00] Find promotions that include this product directly
-    // [2025-11-29 20:15:00] 修复 Prisma 查询语法，使用正确的嵌套关系查询
+// Find promotions that include this product directly
+// 修复 Prisma 查询语法，使用正确的嵌套关系查询
     let productPromotions = [];
     try {
       productPromotions = await prisma.promotion.findMany({
@@ -134,7 +134,7 @@ exports.getPromotionsForProduct = async (req, res) => {
       productPromotions = [];
     }
 
-    // [2025-01-28 12:15:00] Find promotions that include this product's category
+// Find promotions that include this product's category
     let product = null;
     try {
       product = await prisma.product.findUnique({
@@ -188,7 +188,7 @@ exports.getPromotionsForProduct = async (req, res) => {
       }
     }
 
-    // [2025-01-28 12:15:00] Merge and deduplicate promotions (prefer product-specific over category)
+// Merge and deduplicate promotions (prefer product-specific over category)
     const allPromotions = [...(productPromotions || [])];
     const productPromotionIds = new Set((productPromotions || []).map((p) => p.id));
     (categoryPromotions || []).forEach((promo) => {
@@ -197,14 +197,14 @@ exports.getPromotionsForProduct = async (req, res) => {
       }
     });
 
-    // [2025-01-28 12:15:00] Sort by discount value (highest first) to get the best promotion
+// Sort by discount value (highest first) to get the best promotion
     allPromotions.sort((a, b) => {
       const aValue = a.discountType === 'PERCENTAGE' ? a.discountValue : a.discountValue;
       const bValue = b.discountType === 'PERCENTAGE' ? b.discountValue : b.discountValue;
       return bValue - aValue;
     });
 
-    // [2025-11-29 20:10:00] 安全地映射促销活动，处理可能的 null/undefined
+// 安全地映射促销活动，处理可能的 null/undefined
     let mappedPromotions = [];
     try {
       mappedPromotions = allPromotions
@@ -243,7 +243,7 @@ exports.getPromotionsForProduct = async (req, res) => {
       stack: error.stack,
       productId: req.params?.productId,
     });
-    // [2025-11-29 20:10:00] 即使出错也返回空数组而不是 500，避免影响前端功能
+// 即使出错也返回空数组而不是 500，避免影响前端功能
     return res.json({ promotions: [] });
   }
 };
@@ -251,7 +251,7 @@ exports.getPromotionsForProduct = async (req, res) => {
 /**
  * Get promotions for a specific category
  * GET /api/promotions/category/:categoryId
- * [2025-01-28 12:15:00] 获取指定类目的促销活动
+* 获取指定类目的促销活动
  */
 exports.getPromotionsForCategory = async (req, res) => {
   try {
@@ -285,7 +285,7 @@ exports.getPromotionsForCategory = async (req, res) => {
       promotions = [];
     }
 
-    // [2025-11-29 20:20:00] 安全地映射促销活动
+// 安全地映射促销活动
     const mappedPromotions = promotions
       .filter((p) => p != null)
       .map((p) => {
@@ -308,7 +308,7 @@ exports.getPromotionsForCategory = async (req, res) => {
       stack: error.stack,
       categoryId: req.params?.categoryId,
     });
-    // [2025-11-29 20:20:00] 即使出错也返回空数组而不是 500
+// 即使出错也返回空数组而不是 500
     return res.json({ promotions: [] });
   }
 };
@@ -316,7 +316,7 @@ exports.getPromotionsForCategory = async (req, res) => {
 /**
  * Calculate promotion discount for cart items
  * POST /api/promotions/calculate
- * [2025-01-28 12:15:00] 计算促销活动折扣（供结算使用）
+* 计算促销活动折扣（供结算使用）
  */
 exports.calculatePromotionDiscount = async (req, res) => {
   try {
@@ -330,12 +330,12 @@ exports.calculatePromotionDiscount = async (req, res) => {
     let totalDiscount = 0;
     const appliedPromotions = [];
 
-    // [2025-01-28 12:15:00] For each cart item, find the best promotion
+// For each cart item, find the best promotion
     for (const item of items) {
       const { productId, quantity, unitPrice } = item;
 
-      // [2025-01-28 12:15:00] Get promotions for this product
-      // [2025-11-29 20:25:00] 简化查询逻辑，与 getPromotionsForProduct 保持一致
+// Get promotions for this product
+// 简化查询逻辑，与 getPromotionsForProduct 保持一致
       // 首先获取产品的 categoryId
       let categoryId = null;
       try {
@@ -397,18 +397,18 @@ exports.calculatePromotionDiscount = async (req, res) => {
         continue;
       }
 
-      // [2025-01-28 12:15:00] Select the promotion with the highest discount
+// Select the promotion with the highest discount
       let bestPromotion = null;
       let bestDiscount = 0;
 
       for (const promotion of productPromotions) {
-        // [2025-01-28 12:15:00] Check minimum order value
+// Check minimum order value
         if (promotion.minOrderValue && subtotal < Number(promotion.minOrderValue)) {
           continue;
         }
 
-        // [2025-01-28 12:15:00] Calculate discount for this item
-        // [2025-12-06 18:00:00] Support buy-get-free promotions for Issue #139
+// Calculate discount for this item
+// Support buy-get-free promotions for Issue #139
         let itemDiscount = 0;
         const itemSubtotal = Number(unitPrice) * quantity;
 
@@ -419,7 +419,7 @@ exports.calculatePromotionDiscount = async (req, res) => {
             itemDiscount = Number(promotion.maxDiscount);
           }
         } else if (promotion.discountType === 'BUY_GET_FREE') {
-          // [2025-12-06 18:00:00] Buy X Get Y Free: Calculate free items discount
+// Buy X Get Y Free: Calculate free items discount
           const buyQty = promotion.buyQuantity || 1;
           const getQty = promotion.getQuantity || 1;
           
@@ -456,7 +456,7 @@ exports.calculatePromotionDiscount = async (req, res) => {
           promotionTitle: bestPromotion.title,
           productId: productId,
           discountAmount: Math.round(bestDiscount * 100) / 100,
-          // [2025-12-06 18:00:00] Include buy-get-free promotion details for Issue #139
+// Include buy-get-free promotion details for Issue #139
           promotionType: bestPromotion.discountType,
           buyQuantity: bestPromotion.buyQuantity,
           getQuantity: bestPromotion.getQuantity,
@@ -475,7 +475,7 @@ exports.calculatePromotionDiscount = async (req, res) => {
       error: error.message,
       stack: error.stack,
     });
-    // [2025-11-29 20:25:00] 即使出错也返回空折扣，避免影响结账流程
+// 即使出错也返回空折扣，避免影响结账流程
     return res.json({ discount: 0, promotions: [] });
   }
 };

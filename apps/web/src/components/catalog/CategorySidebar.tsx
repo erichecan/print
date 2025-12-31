@@ -1,6 +1,6 @@
 /**
  * Category Sidebar Component
- * [2025-12-11 09:21:35] 树状分类导航组件（参考 Custom Ink 左侧导航）
+* 树状分类导航组件（参考 Custom Ink 左侧导航）
  */
 'use client';
 
@@ -40,7 +40,7 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
   const searchParams = useSearchParams();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // [2025-12-11 09:21:35] 从 API 获取树状分类
+// 从 API 获取树状分类
   const { data: categoryTree, error, isLoading } = useSWR<CategoryTreeNode[]>(
     `${API_BASE_URL}/categories/tree`,
     fetcher,
@@ -50,7 +50,7 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
     }
   );
 
-  // [2025-12-11 09:21:35] 自动展开当前分类的父级
+// 自动展开当前分类的父级
   useEffect(() => {
     if (categoryTree && currentCategorySlug) {
       const findCategoryPath = (
@@ -83,7 +83,7 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
     }
   }, [categoryTree, currentCategorySlug]);
 
-  // [2025-12-11 09:21:35] 切换分类展开/收起
+// 切换分类展开/收起
   const toggleCategory = (slug: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
@@ -96,7 +96,7 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
     });
   };
 
-  // [2025-12-11 09:21:35] 构建分类链接 URL
+// 构建分类链接 URL
   const buildCategoryUrl = (slug: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set('category', slug);
@@ -104,7 +104,7 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
     return `/products?${params.toString()}`;
   };
 
-  // [2025-12-11 09:21:35] 过滤：只显示有产品的分类（含子类）
+// 过滤：只显示有产品的分类（含子类）
   const filterCategoriesWithProducts = (node: CategoryTreeNode): CategoryTreeNode | null => {
     // 如果当前分类有产品，保留
     if (node.productCount > 0) {
@@ -135,9 +135,9 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
     return null;
   };
 
-  // [2025-12-11 09:21:35] 渲染分类节点
+// 渲染分类节点
   const renderCategoryNode = (node: CategoryTreeNode, level: number = 0): JSX.Element | null => {
-    // [2025-12-11 22:35:00] 只渲染有产品的分类
+// 只渲染有产品的分类
     if (node.productCount === 0 && (!node.children || node.children.length === 0)) {
       return null;
     }
@@ -205,7 +205,7 @@ export function CategorySidebar({ currentCategorySlug }: CategorySidebarProps) {
     );
   }
 
-  // [2025-12-11 22:35:00] 过滤分类树：只显示有产品的分类
+// 过滤分类树：只显示有产品的分类
   const filteredCategoryTree = categoryTree
     .map((category) => filterCategoriesWithProducts(category))
     .filter((category): category is CategoryTreeNode => category !== null);

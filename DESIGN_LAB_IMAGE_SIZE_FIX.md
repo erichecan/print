@@ -1,6 +1,6 @@
 # Design Lab 图片尺寸调整日志
 
-**时间**: 2025-01-27 21:55:00  
+**时间**:  
 **问题**: 
 1. 404 错误：`GET http://localhost:3000/api/products/variant/b9ac1f4b-fd03-4aff-b6fe-e0066a71a24c 404 (Not Found)`
 2. 商品图片太小，需要调整为 1000px*1200px，响应式布局
@@ -62,7 +62,7 @@
 
 **变更后**:
 ```css
-/* [2025-01-27 21:55:00] 调整图片容器尺寸为 1000x1200px，响应式布局 */
+/* 调整图片容器尺寸为 1000x1200px，响应式布局 */
 .dl-visualization__image {
   max-width: 1000px;
 }

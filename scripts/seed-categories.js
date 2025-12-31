@@ -1,6 +1,6 @@
 /**
  * Seed Categories Script
- * [2025-01-27 18:50:00] 初始化 12 个产品分类及其图片 URL
+* 初始化 12 个产品分类及其图片 URL
  * 
  * Usage: node scripts/seed-categories.js
  */
@@ -112,11 +112,11 @@ async function main() {
   console.log('🌱 Starting category seeding...');
 
   try {
-    // [2025-01-27 18:50:00] 清空现有分类（可选，如果要重新初始化）
+// 清空现有分类（可选，如果要重新初始化）
     // await prisma.category.deleteMany({});
 
     for (const categoryData of categories) {
-      // [2025-01-27 18:50:00] 使用 upsert，如果已存在则更新，否则创建
+// 使用 upsert，如果已存在则更新，否则创建
       const category = await prisma.category.upsert({
         where: { slug: categoryData.slug },
         update: {

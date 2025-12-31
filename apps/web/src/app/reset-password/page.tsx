@@ -1,7 +1,7 @@
 /**
  * Reset Password Page
- * [2025-01-27] 创建重置密码页面，用户通过邮件链接访问此页面
- * [2025-01-27 22:50:00] 使用 Suspense 包装 useSearchParams 以避免预渲染错误
+* 创建重置密码页面，用户通过邮件链接访问此页面
+* 使用 Suspense 包装 useSearchParams 以避免预渲染错误
  */
 'use client';
 
@@ -22,7 +22,7 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [validToken, setValidToken] = useState<boolean | null>(null);
 
-  // [2025-01-27] 检查token是否存在
+// 检查token是否存在
   useEffect(() => {
     if (!token) {
       setValidToken(false);
@@ -74,7 +74,7 @@ function ResetPasswordForm() {
     }
   };
 
-  // [2025-01-27] Token无效时显示错误信息
+// Token无效时显示错误信息
   if (validToken === false) {
     return (
       <div className="container">

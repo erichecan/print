@@ -1,11 +1,10 @@
 /**
  * Authentication Controller
- * [2025-11-05 01:00:00]
- * [2025-12-06 12:30:00] Enhanced with unified error handling
+* Enhanced with unified error handling
  */
 const prisma = require('../lib/prisma');
 const { isConnectionError } = require('../lib/prisma');
-// [2025-11-09 20:50:12] Switch to bcryptjs to avoid native build dependency on Windows
+// Switch to bcryptjs to avoid native build dependency on Windows
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -29,8 +28,8 @@ function generateToken(userId) {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
-// [2025-11-15 12:25:00] Cookie 配置辅助函数，统一跨域 cookie 设置
-// [2025-12-02 03:50:00] Enhanced with validation and logging
+// Cookie 配置辅助函数，统一跨域 cookie 设置
+// Enhanced with validation and logging
 function getCookieOptions() {
   const isProduction = process.env.NODE_ENV === 'production';
   const cookieOptions = {
@@ -42,7 +41,7 @@ function getCookieOptions() {
     path: '/', // 确保 cookie 在所有路径下可用
   };
   
-  // [2025-12-02 03:50:00] 验证 Cookie 配置
+// 验证 Cookie 配置
   if (isProduction) {
     if (!cookieOptions.secure) {
       console.warn('[Auth] ⚠️  WARNING: Cookie secure flag is false in production!');
@@ -57,8 +56,7 @@ function getCookieOptions() {
 
 /**
  * POST /api/auth/register - Register new user
- * [2025-11-05 01:00:00]
- * [2025-01-30 19:40:00] Enhanced error handling and logging
+* Enhanced error handling and logging
  */
 exports.register = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -66,7 +64,7 @@ exports.register = async (req, res) => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
-    // [2025-01-30 19:40:00] Validation with detailed logging
+// Validation with detailed logging
     if (!email || !password) {
       console.log('[Auth] Register validation failed', {
         timestamp,
@@ -93,15 +91,15 @@ exports.register = async (req, res) => {
       hasLastName: !!lastName
     });
 
-    // [2025-01-30 19:40:00] Check if user already exists with detailed error handling
-    // [2025-01-30 20:05:00] 添加连接错误重试逻辑
+// Check if user already exists with detailed error handling
+// 添加连接错误重试逻辑
     let existingUser;
     try {
       existingUser = await prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
     } catch (dbError) {
-      // [2025-01-30 20:05:00] 如果是连接错误，尝试断开并重连
+// 如果是连接错误，尝试断开并重连
       if (isConnectionError(dbError)) {
         console.warn('[Auth] Database connection error, attempting to reconnect...', {
           timestamp,
@@ -110,7 +108,7 @@ exports.register = async (req, res) => {
         });
         try {
           await prisma.$disconnect();
-          // [2025-01-30 20:15:00] 增加重试等待时间，给 TLS 连接更多时间建立
+// 增加重试等待时间，给 TLS 连接更多时间建立
           await new Promise(resolve => setTimeout(resolve, 200));
           // 重试一次
           existingUser = await prisma.user.findUnique({
@@ -154,7 +152,7 @@ exports.register = async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    // [2025-01-30 19:40:00] Hash password with error handling
+// Hash password with error handling
     let passwordHash;
     try {
       passwordHash = await bcrypt.hash(password, 10);
@@ -171,8 +169,8 @@ exports.register = async (req, res) => {
       return res.status(500).json({ error: 'Failed to process password' });
     }
 
-    // [2025-01-30 19:40:00] Create user with detailed error handling
-    // [2025-01-30 20:05:00] 添加连接错误重试逻辑
+// Create user with detailed error handling
+// 添加连接错误重试逻辑
     let user;
     try {
       user = await prisma.user.create({
@@ -200,7 +198,7 @@ exports.register = async (req, res) => {
         role: user.role
       });
     } catch (dbError) {
-      // [2025-01-30 20:05:00] 如果是连接错误，尝试断开并重连
+// 如果是连接错误，尝试断开并重连
       if (isConnectionError(dbError)) {
         console.warn('[Auth] Database connection error creating user, attempting to reconnect...', {
           timestamp,
@@ -210,7 +208,7 @@ exports.register = async (req, res) => {
         });
         try {
           await prisma.$disconnect();
-          // [2025-01-30 20:15:00] 增加重试等待时间，给 TLS 连接更多时间建立
+// 增加重试等待时间，给 TLS 连接更多时间建立
           await new Promise(resolve => setTimeout(resolve, 200));
           // 重试一次
           user = await prisma.user.create({
@@ -269,7 +267,7 @@ exports.register = async (req, res) => {
       }
     }
 
-    // [2025-01-30 19:40:00] Generate token with error handling
+// Generate token with error handling
     let token;
     try {
       token = generateToken(user.id);
@@ -287,7 +285,7 @@ exports.register = async (req, res) => {
       return res.status(500).json({ error: 'Failed to generate authentication token' });
     }
 
-    // [2025-01-30 19:40:00] Set cookie with validation
+// Set cookie with validation
     try {
       const cookieOptions = getCookieOptions();
       res.cookie('token', token, cookieOptions);
@@ -338,8 +336,7 @@ exports.register = async (req, res) => {
 
 /**
  * POST /api/auth/login - Login user
- * [2025-11-05 01:00:00]
- * [2025-12-02 03:40:00] Enhanced error handling and logging
+* Enhanced error handling and logging
  */
 exports.login = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -347,7 +344,7 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // [2025-12-02 03:40:00] Validation with detailed logging
+// Validation with detailed logging
     if (!email || !password) {
       console.log('[Auth] Login validation failed', {
         timestamp,
@@ -364,15 +361,15 @@ exports.login = async (req, res) => {
       hasPassword: !!password
     });
 
-    // [2025-12-02 03:40:00] Find user with detailed error handling
-    // [2025-01-30 20:05:00] 添加连接错误重试逻辑
+// Find user with detailed error handling
+// 添加连接错误重试逻辑
     let user;
     try {
       user = await prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
     } catch (dbError) {
-      // [2025-01-30 20:05:00] 如果是连接错误，尝试断开并重连
+// 如果是连接错误，尝试断开并重连
       if (isConnectionError(dbError)) {
         console.warn('[Auth] Database connection error finding user, attempting to reconnect...', {
           timestamp,
@@ -382,7 +379,7 @@ exports.login = async (req, res) => {
         });
         try {
           await prisma.$disconnect();
-          // [2025-01-30 20:15:00] 增加重试等待时间，给 TLS 连接更多时间建立
+// 增加重试等待时间，给 TLS 连接更多时间建立
           await new Promise(resolve => setTimeout(resolve, 200));
           // 重试一次
           user = await prisma.user.findUnique({
@@ -421,7 +418,7 @@ exports.login = async (req, res) => {
         timestamp,
         email: normalizedEmail.substring(0, 3) + '***'
       });
-      // [2025-12-02 03:40:00] 使用通用错误消息，避免泄露用户是否存在
+// 使用通用错误消息，避免泄露用户是否存在
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
@@ -433,7 +430,7 @@ exports.login = async (req, res) => {
       hasPasswordHash: !!user.passwordHash
     });
 
-    // [2025-12-02 03:40:00] Verify password with detailed error handling
+// Verify password with detailed error handling
     let isValidPassword = false;
     try {
       if (!user.passwordHash) {
@@ -468,11 +465,11 @@ exports.login = async (req, res) => {
         userId: user.id,
         email: normalizedEmail.substring(0, 3) + '***'
       });
-      // [2025-12-02 03:40:00] 使用通用错误消息，避免泄露密码是否正确
+// 使用通用错误消息，避免泄露密码是否正确
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // [2025-12-02 03:40:00] Generate token
+// Generate token
     let token;
     try {
       token = generateToken(user.id);
@@ -490,7 +487,7 @@ exports.login = async (req, res) => {
       return res.status(500).json({ error: 'Failed to generate authentication token' });
     }
 
-    // [2025-12-02 03:40:00] Set cookie with validation
+// Set cookie with validation
     try {
       const cookieOptions = getCookieOptions();
       res.cookie('token', token, cookieOptions);
@@ -547,11 +544,10 @@ exports.login = async (req, res) => {
 
 /**
  * POST /api/auth/logout - Logout user
- * [2025-11-05 01:00:00]
  */
 exports.logout = async (req, res) => {
   try {
-    // [2025-11-15 12:25:00] 清除 cookie 时使用相同的选项
+// 清除 cookie 时使用相同的选项
     const cookieOptions = getCookieOptions();
     delete cookieOptions.maxAge; // clearCookie 不需要 maxAge
     res.clearCookie('token', cookieOptions);
@@ -565,8 +561,7 @@ exports.logout = async (req, res) => {
 
 /**
  * GET /api/auth/me - Get current user
- * [2025-11-05 01:00:00]
- * [2025-12-02 03:40:00] Enhanced error handling and logging
+* Enhanced error handling and logging
  */
 exports.me = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -633,8 +628,7 @@ exports.me = async (req, res) => {
 
 /**
  * POST /api/auth/forgot-password - Request password reset
- * [2025-11-05 01:00:00]
- * [2025-01-30 18:50:00] 实现完整的密码重置功能：生成token、保存到数据库、发送邮件
+* 实现完整的密码重置功能：生成token、保存到数据库、发送邮件
  */
 exports.forgotPassword = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -710,8 +704,7 @@ exports.forgotPassword = async (req, res) => {
 
 /**
  * POST /api/auth/reset-password - Reset password
- * [2025-11-05 01:00:00]
- * [2025-01-30 18:55:00] 实现完整的密码重置功能：验证token、更新密码、清除token
+* 实现完整的密码重置功能：验证token、更新密码、清除token
  */
 exports.resetPassword = async (req, res) => {
   const timestamp = new Date().toISOString();
@@ -781,7 +774,7 @@ exports.resetPassword = async (req, res) => {
 
 /**
  * PUT /api/auth/me - Update user profile
- * [2025-01-27 14:40:00] Update user profile information
+* Update user profile information
  */
 exports.updateProfile = async (req, res) => {
   try {
@@ -839,8 +832,8 @@ exports.updateProfile = async (req, res) => {
 
 /**
  * PUT /api/auth/me/password - Update password
- * [2025-01-27 14:40:00] Update user password
- * [2025-12-06 12:30:00] Enhanced with password strength validation and unified error handling
+* Update user password
+* Enhanced with password strength validation and unified error handling
  */
 exports.updatePassword = async (req, res, next) => {
   const timestamp = new Date().toISOString();
@@ -853,7 +846,7 @@ exports.updatePassword = async (req, res, next) => {
 
     const { currentPassword, newPassword } = req.body;
 
-    // [2025-12-06 12:30:00] Validate required fields
+// Validate required fields
     if (!currentPassword || !newPassword) {
       return next(new BadRequestError('当前密码和新密码为必填项', {
         missingFields: {
@@ -863,7 +856,7 @@ exports.updatePassword = async (req, res, next) => {
       }));
     }
 
-    // [2025-12-06 12:30:00] Validate password strength
+// Validate password strength
     const { validatePasswordStrength } = require('../utils/passwordValidator');
     const passwordValidation = validatePasswordStrength(newPassword);
 
@@ -874,7 +867,7 @@ exports.updatePassword = async (req, res, next) => {
       }));
     }
 
-    // [2025-12-06 12:30:00] Check if new password is different from current password
+// Check if new password is different from current password
     if (currentPassword === newPassword) {
       return next(new BadRequestError('新密码必须与当前密码不同'));
     }
@@ -942,7 +935,7 @@ exports.updatePassword = async (req, res, next) => {
 
 /**
  * GET /api/auth/check - Diagnostic endpoint for authentication status
- * [2025-12-02 03:45:00] Returns authentication status and configuration info
+* Returns authentication status and configuration info
  */
 exports.check = async (req, res) => {
   const timestamp = new Date().toISOString();

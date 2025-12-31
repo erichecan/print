@@ -1,15 +1,15 @@
 /**
  * Group Order Form Page Styles
- * [2025-01-30 12:00:00] 使用 frontend-design 设计 Group Order Form 页面样式
+* 使用 frontend-design 设计 Group Order Form 页面样式
  */
 
-/* [2025-01-30 12:00:00] 页面容器 */
+/* 页面容器 */
 .group-order-page {
   min-height: 100vh;
   background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
 }
 
-/* [2025-01-30 12:00:00] Hero 区域 - 使用 frontend-design 原则 */
+/* Hero 区域 - 使用 frontend-design 原则 */
 .group-order-hero {
   padding: 120px 0 80px;
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%);
@@ -107,7 +107,7 @@
   flex-wrap: wrap;
 }
 
-/* [2025-01-30 12:00:00] 按钮样式 */
+/* 按钮样式 */
 .group-order-btn {
   display: inline-flex;
   align-items: center;
@@ -170,7 +170,7 @@
   font-size: 20px;
 }
 
-/* [2025-01-30 12:00:00] 特性展示区域 */
+/* 特性展示区域 */
 .group-order-features {
   padding: 100px 0;
   background: #ffffff;
@@ -288,7 +288,7 @@
   margin: 0;
 }
 
-/* [2025-01-30 12:00:00] How it works 步骤区域 */
+/* How it works 步骤区域 */
 .group-order-steps {
   padding: 100px 0;
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%);
@@ -419,7 +419,7 @@
   margin: 0;
 }
 
-/* [2025-01-30 12:00:00] 客户评价区域 */
+/* 客户评价区域 */
 .group-order-testimonials {
   padding: 100px 0;
   background: #ffffff;
@@ -541,7 +541,7 @@
   color: #9ca3af;
 }
 
-/* [2025-01-30 12:00:00] CTA 区域 */
+/* CTA 区域 */
 .group-order-cta {
   padding: 100px 0;
   background: linear-gradient(135deg, #ff1f3d 0%, #e3002b 100%);
@@ -624,7 +624,7 @@
   box-shadow: 0 12px 32px rgba(255, 255, 255, 0.3);
 }
 
-/* [2025-01-30 12:00:00] 响应式设计 */
+/* 响应式设计 */
 @media (max-width: 1024px) {
   .group-order-hero__title {
     font-size: 52px;

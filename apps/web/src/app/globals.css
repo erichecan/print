@@ -1,4 +1,4 @@
-/* [2025-01-27 17:25:00] Tailwind CSS 指令 */
+/* Tailwind CSS 指令 */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,7 +15,7 @@
   border: 0;
 }
 
-/* [2025-11-11 23:55:30] Ported global design tokens and base layout styles from prototype */
+/* Ported global design tokens and base layout styles from prototype */
 
 :root {
   /* Brand palette */
@@ -32,16 +32,16 @@
   --container-padding-x: 16px;
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.1);
 
-  /* [2025-01-28 17:45:00] 响应式断点定义 */
+/* 响应式断点定义 */
   --breakpoint-mobile: 767px;
   --breakpoint-tablet: 1023px;
   --breakpoint-desktop: 1024px;
 
-  /* [2025-01-28 17:45:00] 触摸目标尺寸 */
+/* 触摸目标尺寸 */
   --touch-target-min: 44px;
   --spacing-touch: 8px;
 
-  /* [2025-12-04] Design Lab CSS 变量系统 - 100% 像素级复刻 Custom Ink */
+/* Design Lab CSS 变量系统 - 100% 像素级复刻 Custom Ink */
   /* 主背景系统 */
   --dl-bg-primary: #F5F5F5;
   --dl-bg-rail: #2C2C2C;
@@ -75,7 +75,7 @@
   --dl-font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
   --dl-font-heading: 'Inter', var(--dl-font-family);
 
-  /* [2025-01-30 18:40:00] 多语言字体变量 */
+/* 多语言字体变量 */
   --font-noto-sans-sc: var(--font-noto-sans-sc);
   --font-noto-sans-tc: var(--font-noto-sans-tc);
   --font-noto-sans-jp: var(--font-noto-sans-jp);
@@ -175,7 +175,7 @@ svg {
   height: auto;
 }
 
-/* [2025-01-27 22:17:00] 覆盖全局 img 样式，强制 Design Lab 图片尺寸 */
+/* 覆盖全局 img 样式，强制 Design Lab 图片尺寸 */
 .dl-visualization__image img,
 .dl-visualization__image .dl-visualization__img {
   max-width: none !important;
@@ -315,10 +315,10 @@ select {
   gap: 16px;
   padding: 12px 0;
   position: relative;
-  /* [2025-11-16 15:05:00] 作为 megamenu 定位容器，防止面板随触发项横向移动 */
+/* 作为 megamenu 定位容器，防止面板随触发项横向移动 */
 }
 
-/* [2025-11-16 13:50:00] Mega menu */
+/* Mega menu */
 .mega {
   list-style: none;
   margin: 0;
@@ -332,7 +332,7 @@ select {
   position: static;
 }
 
-/* [2025-11-16 15:05:00] 让面板基于父容器定位而非每个 li */
+/* 让面板基于父容器定位而非每个 li */
 .mega__trigger {
   display: inline-block;
   padding: 8px 6px;
@@ -344,7 +344,7 @@ select {
   right: 0;
   /* 占据容器宽度，避免最右侧被截断 */
   top: 100%;
-  /* [2025-11-16 15:40:00] 去掉触发项与面板之间的空隙，避免移入时消失 */
+/* 去掉触发项与面板之间的空隙，避免移入时消失 */
   background: #fff;
   border: 1px solid var(--color-border);
   border-radius: 12px;
@@ -361,7 +361,7 @@ select {
   right: 0;
   top: -8px;
   height: 8px;
-  /* [2025-11-16 15:40:00] 透明“桥接”区域，保证从触发项移动到面板时 hover 不中断 */
+/* 透明“桥接”区域，保证从触发项移动到面板时 hover 不中断 */
 }
 
 .mega__item:hover .mega__panel,
@@ -370,7 +370,7 @@ select {
   display: block;
 }
 
-/* [2025-11-16 15:05:00] 鼠标可移入面板不消失 */
+/* 鼠标可移入面板不消失 */
 .mega__cols {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -506,7 +506,7 @@ select {
 }
 
 /* Hero */
-/* [2025-01-30 10:20:00] 使用 frontend-design 优化 Hero 区域 */
+/* 使用 frontend-design 优化 Hero 区域 */
 .hero {
   background: linear-gradient(180deg, #fff 0%, var(--color-bg-subtle) 100%);
   padding: 80px 0;
@@ -514,7 +514,7 @@ select {
   overflow: hidden;
 }
 
-/* [2025-01-30 10:20:00] 添加装饰性背景元素 */
+/* 添加装饰性背景元素 */
 .hero::before {
   content: '';
   position: absolute;
@@ -599,7 +599,7 @@ select {
   transform: scale(1.05);
 }
 
-/* [2025-01-30 10:20:00] 响应式优化 */
+/* 响应式优化 */
 @media (max-width: 1024px) {
   .hero {
     padding: 64px 0;
@@ -620,7 +620,7 @@ select {
 }
 
 /* Promises */
-/* [2025-01-30 10:20:00] 优化服务承诺区域 */
+/* 优化服务承诺区域 */
 .promises {
   border-top: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
@@ -635,7 +635,7 @@ select {
   padding: 24px 0;
 }
 
-/* [2025-01-30 10:15:00] 服务承诺卡片 - 优化设计 */
+/* 服务承诺卡片 - 优化设计 */
 .promise-card {
   display: flex;
   align-items: center;
@@ -650,7 +650,7 @@ select {
   transform: translateX(4px);
 }
 
-/* [2025-01-30 10:15:00] 服务承诺图标 - 使用 canvas-design 设计 */
+/* 服务承诺图标 - 使用 canvas-design 设计 */
 .promise-card__icon {
   width: 48px;
   height: 48px;
@@ -694,7 +694,7 @@ select {
   display: grid;
   gap: 20px;
   grid-template-columns: repeat(4, 1fr);
-  /* [2025-01-27 19:00:00] 固定 4 列布局，一行 4 个，与截图一致 */
+/* 固定 4 列布局，一行 4 个，与截图一致 */
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -720,7 +720,7 @@ select {
     gap: 16px;
   }
 
-  /* [2025-01-28 17:30:00] 超小屏幕进一步优化 */
+/* 超小屏幕进一步优化 */
   .hero__title {
     font-size: 28px;
   }
@@ -754,7 +754,7 @@ select {
 .category-card__image {
   width: 100%;
   aspect-ratio: 1;
-  /* [2025-01-27 18:50:00] 保持正方形，与截图一致 */
+/* 保持正方形，与截图一致 */
   border-radius: 16px;
   margin-inline: auto;
   border: 1px solid var(--color-border);
@@ -768,8 +768,8 @@ select {
 }
 
 /* Brands */
-/* [2025-01-29 13:45:00] 品牌展示区域样式，匹配第二张图片的设计 */
-/* [2025-01-30 10:00:00] 使用 frontend-design 美化品牌部分，添加现代化设计元素 */
+/* 品牌展示区域样式，匹配第二张图片的设计 */
+/* 使用 frontend-design 美化品牌部分，添加现代化设计元素 */
 .brands {
   padding: 80px 0;
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%);
@@ -777,7 +777,7 @@ select {
   overflow: hidden;
 }
 
-/* [2025-01-30 10:00:00] 添加装饰性背景元素 */
+/* 添加装饰性背景元素 */
 .brands::before {
   content: '';
   position: absolute;
@@ -809,7 +809,7 @@ select {
   width: 100%;
 }
 
-/* [2025-01-30 10:00:00] 标题装饰线 */
+/* 标题装饰线 */
 .brands h2::after {
   content: '';
   position: absolute;
@@ -825,7 +825,7 @@ select {
 .brands__grid {
   display: grid;
   gap: 24px;
-  /* [2025-01-29 13:45:00] 使用7列布局，展示21个品牌，匹配第二张图片的布局 */
+/* 使用7列布局，展示21个品牌，匹配第二张图片的布局 */
   grid-template-columns: repeat(7, 1fr);
   align-items: center;
   justify-items: center;
@@ -851,7 +851,7 @@ select {
   cursor: pointer;
 }
 
-/* [2025-01-30 10:00:00] 悬停时的背景渐变效果 */
+/* 悬停时的背景渐变效果 */
 .brand-logo::before {
   content: '';
   position: absolute;
@@ -887,12 +887,12 @@ select {
   transition: filter 0.3s ease;
 }
 
-/* [2025-01-30 10:00:00] 悬停时轻微增强对比度 */
+/* 悬停时轻微增强对比度 */
 .brand-logo:hover img {
   filter: brightness(1.05) contrast(1.05);
 }
 
-/* [2025-01-30 10:00:00] 响应式布局 - 平板端 */
+/* 响应式布局 - 平板端 */
 @media (max-width: 1200px) {
   .brands {
     padding: 64px 0;
@@ -948,7 +948,7 @@ select {
   }
 }
 
-/* [2025-01-30 10:00:00] 品牌 logo 淡入动画 */
+/* 品牌 logo 淡入动画 */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -962,7 +962,7 @@ select {
 }
 
 /* Testimonials */
-/* [2025-01-30 10:25:00] 使用 frontend-design 优化客户评价区域 */
+/* 使用 frontend-design 优化客户评价区域 */
 .testimonials {
   background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 50%, #f8f9fa 100%);
   padding: 80px 0;
@@ -1066,7 +1066,7 @@ select {
 
 /* Enterprise CTA */
 /* Enterprise */
-/* [2025-01-30 10:30:00] 使用 frontend-design 优化企业服务区域 */
+/* 使用 frontend-design 优化企业服务区域 */
 .enterprise {
   background: linear-gradient(180deg, #fff 0%, var(--color-bg-subtle) 100%);
   padding: 80px 0;
@@ -1232,7 +1232,7 @@ select {
 
 @media (max-width: 768px) {
 
-  /* [2025-01-28 17:30:00] Hero 区域移动端优化 */
+/* Hero 区域移动端优化 */
   .hero {
     padding: 32px 0;
   }
@@ -1273,7 +1273,7 @@ select {
     min-height: 140px;
   }
 
-  /* [2025-01-28 17:30:00] Promises 移动端优化 */
+/* Promises 移动端优化 */
   .promises {
     padding: 20px 0;
   }
@@ -1294,7 +1294,7 @@ select {
     flex-shrink: 0;
   }
 
-  /* [2025-01-28 17:30:00] Categories 移动端优化（已有样式，补充细节） */
+/* Categories 移动端优化（已有样式，补充细节） */
   .categories {
     padding: 32px 0;
   }
@@ -1307,7 +1307,7 @@ select {
     font-size: 14px;
   }
 
-  /* [2025-01-29 13:45:00] Brands 移动端优化 - 3列布局 */
+/* Brands 移动端优化 - 3列布局 */
   .brands {
     padding: 32px 0;
   }
@@ -1334,7 +1334,7 @@ select {
   }
 }
 
-/* [2025-11-12 00:00:40] Product listing layout ported from prototype */
+/* Product listing layout ported from prototype */
 .products-page {
   background: var(--color-bg);
 }
@@ -1454,7 +1454,7 @@ select {
   height: 100%;
   object-fit: cover;
   border-radius: inherit;
-  /* [2025-11-11 06:07:52] 保持卡片圆角 */
+/* 保持卡片圆角 */
 }
 
 .product-card__placeholder {
@@ -1496,7 +1496,7 @@ select {
   border: 1px dashed var(--color-border);
 }
 
-/* [2025-01-27 16:40:00] 分页组件样式 */
+/* 分页组件样式 */
 .pagination {
   display: flex;
   flex-direction: column;
@@ -1585,7 +1585,7 @@ select {
   opacity: 0.4;
 }
 
-/* [2025-01-27 16:35:00] Toast notification styles */
+/* Toast notification styles */
 .toast-container {
   position: fixed;
   top: 20px;
@@ -1693,7 +1693,7 @@ select {
   }
 }
 
-/* [2025-11-12 00:02:20] Collection detail layout */
+/* Collection detail layout */
 .collection-page {
   background: var(--color-bg);
 }
@@ -1742,7 +1742,7 @@ select {
   padding: 48px 0 72px;
 }
 
-/* [2025-11-12 00:03:20] Order tracking form styles */
+/* Order tracking form styles */
 .order-tracking {
   padding: 64px 0 96px;
   display: grid;
@@ -1823,7 +1823,7 @@ select {
   color: var(--color-text-muted);
 }
 
-/* [2025-11-16 11:05:00] Storefront PLP shell aligned with prototype */
+/* Storefront PLP shell aligned with prototype */
 .catalog-page {
   background: var(--color-bg);
 }
@@ -1923,7 +1923,7 @@ select {
   justify-content: center;
 }
 
-/* [2025-01-27 16:50:00] 筛选操作按钮样式 */
+/* 筛选操作按钮样式 */
 .filter-actions {
   display: flex;
   gap: 12px;
@@ -2028,7 +2028,7 @@ select {
   font-size: 14px;
 }
 
-/* [2025-11-16 11:06:30] PDP layout blocks from prototype */
+/* PDP layout blocks from prototype */
 .breadcrumb {
   background: #fff;
   border-bottom: 1px solid var(--color-border);
@@ -2424,7 +2424,7 @@ select {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
-/* [2025-11-16 12:05:00] Help Center prototype */
+/* Help Center prototype */
 .help {
   display: flex;
   flex-direction: column;
@@ -2540,7 +2540,7 @@ select {
   border: 1px solid var(--color-border);
 }
 
-/* [2025-11-16 12:50:00] Policy/Content pages */
+/* Policy/Content pages */
 .policy {
   display: flex;
   flex-direction: column;
@@ -2651,7 +2651,7 @@ select {
   font-size: 14px;
 }
 
-/* [2025-11-16 11:07:45] Cart & checkout blocks from prototype */
+/* Cart & checkout blocks from prototype */
 .cart__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 360px;
@@ -2900,7 +2900,7 @@ select {
     grid-template-columns: 1fr;
   }
 
-  /* [2025-01-28 17:10:00] 结算页面移动端优化 */
+/* 结算页面移动端优化 */
   .checkout__grid {
     grid-template-columns: 1fr;
   }
@@ -2949,7 +2949,7 @@ select {
   }
 }
 
-/* [2025-01-27 18:30:00] 新的产品列表页样式 - 完全匹配参考设计 */
+/* 新的产品列表页样式 - 完全匹配参考设计 */
 .plp-new {
   background: #fff;
   padding: 24px 0 64px;
@@ -2965,21 +2965,21 @@ select {
 }
 
 /* 左侧筛选器 */
-/* [2025-11-28 10:45:00] 修复横向和纵向滚动条问题 */
+/* 修复横向和纵向滚动条问题 */
 .plp-new__sidebar {
   position: sticky;
   top: 96px;
   align-self: start;
   width: 280px;
-  /* [2025-11-28 10:45:00] 固定宽度，防止横向溢出 */
+/* 固定宽度，防止横向溢出 */
   max-height: calc(100vh - 120px);
   overflow-y: auto;
   overflow-x: hidden;
-  /* [2025-01-28 19:45:00] 隐藏横向滚动条，只允许纵向滚动 */
+/* 隐藏横向滚动条，只允许纵向滚动 */
   box-sizing: border-box;
-  /* [2025-11-28 10:45:00] 确保宽度计算包含 padding */
+/* 确保宽度计算包含 padding */
   max-width: 100%;
-  /* [2025-01-28 19:45:00] 确保不超过父容器 */
+/* 确保不超过父容器 */
 }
 
 .filters-new {
@@ -2987,14 +2987,14 @@ select {
   gap: 0;
 }
 
-/* [2025-11-28 11:10:00] 对比 Custom Ink 优化筛选区域样式 */
+/* 对比 Custom Ink 优化筛选区域样式 */
 .filter-section {
   border-bottom: 1px solid var(--color-border);
   padding: 16px 0;
   width: 100%;
-  /* [2025-11-28 10:45:00] 确保不超出父容器 */
+/* 确保不超出父容器 */
   box-sizing: border-box;
-  /* [2025-11-28 10:45:00] 包含 padding 在宽度计算内 */
+/* 包含 padding 在宽度计算内 */
 }
 
 .filter-section:first-child {
@@ -3003,7 +3003,7 @@ select {
 
 .filter-section:last-child {
   border-bottom: none;
-  /* [2025-11-28 11:10:00] 最后一个筛选项不显示底部边框 */
+/* 最后一个筛选项不显示底部边框 */
 }
 
 .filter-section__title {
@@ -3012,14 +3012,14 @@ select {
   color: var(--color-text);
   margin: 0;
   padding: 0;
-  /* [2025-11-28 11:10:00] 移除默认 padding */
+/* 移除默认 padding */
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
   user-select: none;
   line-height: 1.4;
-  /* [2025-11-28 11:10:00] 优化行高 */
+/* 优化行高 */
 }
 
 .filter-section__header {
@@ -3028,7 +3028,7 @@ select {
   justify-content: space-between;
 }
 
-/* [2025-11-28 10:50:00] 动态切换加号/减号图标 */
+/* 动态切换加号/减号图标 */
 .filter-toggle-icon {
   font-size: 18px;
   color: var(--color-text-muted);
@@ -3036,12 +3036,12 @@ select {
   transition: transform 0.2s ease;
 }
 
-/* [2025-11-28 10:50:00] 展开状态显示减号 */
+/* 展开状态显示减号 */
 details[open] .filter-toggle-icon::before {
   content: '−';
 }
 
-/* [2025-11-28 10:50:00] 收起状态显示加号 */
+/* 收起状态显示加号 */
 details:not([open]) .filter-toggle-icon::before {
   content: '+';
 }
@@ -3051,16 +3051,16 @@ details:not([open]) .filter-toggle-icon::before {
   display: grid;
   gap: 8px;
   width: 100%;
-  /* [2025-11-28 10:45:00] 确保不超出父容器 */
+/* 确保不超出父容器 */
   max-width: 100%;
-  /* [2025-01-28 19:45:00] 确保不超出父容器，防止横向滚动 */
+/* 确保不超出父容器，防止横向滚动 */
   box-sizing: border-box;
   overflow-wrap: break-word;
-  /* [2025-11-28 10:45:00] 防止长文本溢出 */
+/* 防止长文本溢出 */
   padding: 0;
-  /* [2025-11-28 11:10:00] 移除默认 padding */
+/* 移除默认 padding */
   overflow-x: hidden;
-  /* [2025-01-28 19:45:00] 防止横向溢出 */
+/* 防止横向溢出 */
 }
 
 .filter-category-list {
@@ -3107,9 +3107,9 @@ details:not([open]) .filter-toggle-icon::before {
   cursor: pointer;
   font-size: 14px;
   padding: 2px 0;
-  /* [2025-11-28 11:10:00] 添加轻微垂直间距 */
+/* 添加轻微垂直间距 */
   line-height: 1.4;
-  /* [2025-11-28 11:10:00] 优化行高 */
+/* 优化行高 */
 }
 
 .filter-checkbox input[type="checkbox"] {
@@ -3204,13 +3204,13 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* 颜色网格 */
-/* [2025-11-28 11:10:00] 对比 Custom Ink 优化颜色网格布局 */
+/* 对比 Custom Ink 优化颜色网格布局 */
 .color-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   justify-items: center;
-  /* [2025-11-28 11:10:00] 居中对齐颜色圆圈 */
+/* 居中对齐颜色圆圈 */
   align-items: center;
 }
 
@@ -3231,26 +3231,26 @@ details:not([open]) .filter-toggle-icon::before {
   height: 0;
 }
 
-/* [2025-11-28 11:05:00] 修复颜色圆形对齐问题 - 确保颜色在边框中心 */
-/* [2025-01-28 19:45:00] 修复颜色块为圆形：确保 width 和 height 完全相等，border-radius 50% */
+/* 修复颜色圆形对齐问题 - 确保颜色在边框中心 */
+/* 修复颜色块为圆形：确保 width 和 height 完全相等，border-radius 50% */
 .color-swatch__circle {
   display: block;
   width: 28px;
-  /* [2025-01-28 19:45:00] 固定宽度 */
+/* 固定宽度 */
   height: 28px;
-  /* [2025-01-28 19:45:00] 必须与 width 相同，确保是圆形 */
+/* 必须与 width 相同，确保是圆形 */
   border-radius: 50%;
-  /* [2025-01-28 19:45:00] 设置为圆形 */
+/* 设置为圆形 */
   border: 2px solid #e5e7eb;
   transition: border-color 0.2s, transform 0.2s;
   box-sizing: border-box;
-  /* [2025-11-28 11:05:00] 确保边框包含在尺寸内 */
+/* 确保边框包含在尺寸内 */
   background-clip: padding-box;
-  /* [2025-11-28 11:05:00] 确保背景色在边框内正确显示 */
+/* 确保背景色在边框内正确显示 */
   flex-shrink: 0;
-  /* [2025-01-28 19:45:00] 防止被压缩变形 */
+/* 防止被压缩变形 */
   flex-grow: 0;
-  /* [2025-01-28 19:45:00] 防止被拉伸变形 */
+/* 防止被拉伸变形 */
 }
 
 .color-swatch input:checked+.color-swatch__circle {
@@ -3482,7 +3482,7 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* 响应式设计 */
-/* [2025-01-28 16:00:00] 桌面端：3-4列布局 */
+/* 桌面端：3-4列布局 */
 @media (min-width: 1024px) {
   .product-grid-new {
     grid-template-columns: repeat(3, 1fr);
@@ -3495,7 +3495,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-01-28 16:00:00] 平板端：2列布局 */
+/* 平板端：2列布局 */
 @media (min-width: 768px) and (max-width: 1023px) {
   .product-grid-new {
     grid-template-columns: repeat(2, 1fr);
@@ -3514,14 +3514,14 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-01-28 16:00:00] 移动端：单列布局 */
+/* 移动端：单列布局 */
 @media (max-width: 767px) {
   .product-grid-new {
     grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  /* [2025-01-28 16:00:00] 优化移动端产品卡片内边距 */
+/* 优化移动端产品卡片内边距 */
   .product-card-new {
     padding: 12px;
   }
@@ -3540,7 +3540,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-01-28 15:30:00] 移动端筛选器样式 */
+/* 移动端筛选器样式 */
 .mobile-filter-toggle {
   display: none;
   /* 默认隐藏，移动端显示 */
@@ -3776,7 +3776,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-01-27 19:00:00] 产品详情页样式 - 完全匹配参考设计 */
+/* 产品详情页样式 - 完全匹配参考设计 */
 .pdp-breadcrumb {
   background: #fff;
   border-bottom: 1px solid var(--color-border);
@@ -3818,7 +3818,7 @@ details:not([open]) .filter-toggle-icon::before {
   padding: 0 16px;
 }
 
-/* [2025-01-27 17:10:00] 图片画廊 - 优化布局，缩略图垂直排列在左侧 */
+/* 图片画廊 - 优化布局，缩略图垂直排列在左侧 */
 .pdp-gallery {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -3970,7 +3970,7 @@ details:not([open]) .filter-toggle-icon::before {
   color: var(--color-text);
 }
 
-/* [2025-01-27 17:10:00] 品牌信息 */
+/* 品牌信息 */
 .pdp-details__brand {
   display: flex;
   align-items: center;
@@ -3993,7 +3993,7 @@ details:not([open]) .filter-toggle-icon::before {
   text-decoration: underline;
 }
 
-/* [2025-01-27 17:10:00] 价格显示（带折扣） */
+/* 价格显示（带折扣） */
 .pdp-details__price {
   display: flex;
   flex-direction: column;
@@ -4232,7 +4232,7 @@ details:not([open]) .filter-toggle-icon::before {
   color: var(--color-text-muted);
 }
 
-/* [2025-01-27 17:10:00] 样式选择器 */
+/* 样式选择器 */
 .pdp-details__style {
   display: grid;
   gap: 8px;
@@ -4274,7 +4274,7 @@ details:not([open]) .filter-toggle-icon::before {
   text-decoration: underline;
 }
 
-/* [2025-01-27 17:10:00] 印刷位置选择 */
+/* 印刷位置选择 */
 .pdp-details__print-location {
   display: grid;
   gap: 8px;
@@ -4315,7 +4315,7 @@ details:not([open]) .filter-toggle-icon::before {
   background: rgba(255, 31, 61, 0.1);
 }
 
-/* [2025-01-27 16:35:00] 颜色不可用状态 */
+/* 颜色不可用状态 */
 .pdp-color-swatch.is-unavailable {
   opacity: 0.4;
   cursor: not-allowed;
@@ -4338,7 +4338,7 @@ details:not([open]) .filter-toggle-icon::before {
   z-index: 2;
 }
 
-/* [2025-01-27 16:35:00] 尺码选择 */
+/* 尺码选择 */
 .pdp-details__sizes {
   display: grid;
   gap: 12px;
@@ -4419,7 +4419,7 @@ details:not([open]) .filter-toggle-icon::before {
   line-height: 1;
 }
 
-/* [2025-01-27 16:55:00] 数量选择器样式 */
+/* 数量选择器样式 */
 .pdp-details__quantity {
   display: grid;
   gap: 8px;
@@ -4559,7 +4559,7 @@ details:not([open]) .filter-toggle-icon::before {
   font-size: 14px;
 }
 
-/* [2025-01-27 17:10:00] 配送信息（在右侧详情区域） */
+/* 配送信息（在右侧详情区域） */
 .pdp-details__delivery-info {
   display: grid;
   gap: 8px;
@@ -4595,7 +4595,7 @@ details:not([open]) .filter-toggle-icon::before {
   text-decoration: underline;
 }
 
-/* [2025-01-27 17:10:00] 退货政策 */
+/* 退货政策 */
 .pdp-details__returns {
   display: flex;
   align-items: center;
@@ -4613,7 +4613,7 @@ details:not([open]) .filter-toggle-icon::before {
   color: var(--color-text);
 }
 
-/* [2025-01-27 17:10:00] 产品特性列表 */
+/* 产品特性列表 */
 .pdp-features {
   background: #fff;
   padding: 48px 0;
@@ -5110,7 +5110,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-12-04] Design Lab 新设计样式 - 100% 像素级复刻 Custom Ink */
+/* Design Lab 新设计样式 - 100% 像素级复刻 Custom Ink */
 /* 5 区域 Grid 布局系统 */
 .design-lab-new {
   min-height: 100vh;
@@ -5308,7 +5308,7 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* Rail 工具按钮（完全按照截图） */
-/* [2025-12-04] Rail 工具按钮（增强动画效果） */
+/* Rail 工具按钮（增强动画效果） */
 .dl-rail__btn {
   display: flex;
   flex-direction: column;
@@ -5649,7 +5649,7 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* 中间产品可视化区域 */
-/* [2025-12-04] 视图可视化区域（添加切换动画） */
+/* 视图可视化区域（添加切换动画） */
 .dl-visualization {
   background: #f8f9fa;
   padding: 32px;
@@ -5683,11 +5683,11 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-01-27 21:55:00] 调整图片容器尺寸为 1000x1200px，响应式布局 */
+/* 调整图片容器尺寸为 1000x1200px，响应式布局 */
 .dl-visualization__image {
   position: relative;
   width: 1000px;
-  /* [2025-01-27 22:15:00] 固定宽度为 1000px */
+/* 固定宽度为 1000px */
   max-width: 1000px;
   display: flex;
   align-items: center;
@@ -5711,7 +5711,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-01-27 22:17:00] 强制设置图片尺寸为 1000x1200px - 使用更具体的选择器 */
+/* 强制设置图片尺寸为 1000x1200px - 使用更具体的选择器 */
 .dl-visualization__image .dl-visualization__img,
 .dl-visualization__image img.dl-visualization__img,
 .dl-visualization__img[width="1000"] {
@@ -5754,7 +5754,7 @@ details:not([open]) .filter-toggle-icon::before {
   transition: opacity var(--dl-transition-base);
 }
 
-/* [2025-12-04] 视图切换时的淡入淡出效果 */
+/* 视图切换时的淡入淡出效果 */
 .dl-visualization__image {
   transition: opacity var(--dl-transition-base), transform var(--dl-transition-base);
 }
@@ -5773,7 +5773,7 @@ details:not([open]) .filter-toggle-icon::before {
   padding: 0 var(--dl-space-2);
 }
 
-/* [2025-12-04] 视图切换按钮（增强动画效果） */
+/* 视图切换按钮（增强动画效果） */
 .dl-view-btn {
   display: flex;
   flex-direction: column;
@@ -5981,7 +5981,7 @@ details:not([open]) .filter-toggle-icon::before {
   justify-content: center;
 }
 
-/* [2025-12-04] 操作栏按钮（优化视觉细节） */
+/* 操作栏按钮（优化视觉细节） */
 .dl-actions-bar__save-share {
   display: flex;
   align-items: center;
@@ -6391,7 +6391,7 @@ details:not([open]) .filter-toggle-icon::before {
   background: #f0f7ff;
 }
 
-/* [2025-12-04] 响应式适配（完全按照截图） */
+/* 响应式适配（完全按照截图） */
 @media (max-width: 1400px) {
 
   /* 中等屏幕：保持5区域布局，调整间距 */
@@ -6439,7 +6439,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-12-04] 响应式布局优化（移动端和平板端） */
+/* 响应式布局优化（移动端和平板端） */
 @media (max-width: 768px) {
 
   /* 移动端：简化布局 */
@@ -6616,7 +6616,7 @@ details:not([open]) .filter-toggle-icon::before {
   }
 }
 
-/* [2025-12-04] Design Lab 模态框样式（添加动画效果） */
+/* Design Lab 模态框样式（添加动画效果） */
 .dl-modal-overlay {
   position: fixed;
   inset: 0;
@@ -6829,7 +6829,7 @@ details:not([open]) .filter-toggle-icon::before {
   font-weight: 600;
 }
 
-/* [2025-12-04] 文本输入（完全按照 Custom Ink 截图） */
+/* 文本输入（完全按照 Custom Ink 截图） */
 .dl-text-input {
   width: 100%;
   padding: var(--dl-space-4) var(--dl-space-4);
@@ -6859,7 +6859,7 @@ details:not([open]) .filter-toggle-icon::before {
   box-shadow: 0 0 0 4px var(--dl-active-bg);
 }
 
-/* [2025-12-04] Add Text 主要区域（顶部大输入框 + 蓝色按钮） */
+/* Add Text 主要区域（顶部大输入框 + 蓝色按钮） */
 .dl-add-text-primary {
   margin-bottom: var(--dl-space-6);
 }
@@ -6915,7 +6915,7 @@ details:not([open]) .filter-toggle-icon::before {
   margin-top: 24px;
 }
 
-/* [2025-12-04] 文本选项折叠面板 */
+/* 文本选项折叠面板 */
 .dl-text-options {
   margin-top: var(--dl-space-6);
   border-top: 1px solid var(--dl-border-color);
@@ -6988,7 +6988,7 @@ details:not([open]) .filter-toggle-icon::before {
   font-size: 16px;
 }
 
-/* [2025-12-04] 艺术类别网格（完全按照 Custom Ink 设计） */
+/* 艺术类别网格（完全按照 Custom Ink 设计） */
 .dl-artwork-categories {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -7035,7 +7035,7 @@ details:not([open]) .filter-toggle-icon::before {
   display: block;
 }
 
-/* [2025-12-04] 返回按钮样式 */
+/* 返回按钮样式 */
 .dl-back-btn {
   background: none;
   border: none;
@@ -7059,7 +7059,7 @@ details:not([open]) .filter-toggle-icon::before {
   color: #003d7a;
 }
 
-/* [2025-12-04] 艺术网格项样式 */
+/* 艺术网格项样式 */
 .dl-art-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -7282,7 +7282,7 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* 名称和数字 */
-/* [2025-12-04] Names & Numbers UI 优化（完全按照 Custom Ink 设计） */
+/* Names & Numbers UI 优化（完全按照 Custom Ink 设计） */
 .dl-names-image {
   margin-bottom: 24px;
   border-radius: 12px;
@@ -7447,7 +7447,7 @@ details:not([open]) .filter-toggle-icon::before {
   margin: 4px 0;
 }
 
-/* [2025-01-27 22:00:00] Get Price流程模态框样式 */
+/* Get Price流程模态框样式 */
 .dl-modal--medium {
   max-width: 700px;
 }
@@ -8038,7 +8038,7 @@ details:not([open]) .filter-toggle-icon::before {
   text-decoration: underline;
 }
 
-/* [2025-01-27 23:45:00] Order Options面板完整样式 */
+/* Order Options面板完整样式 */
 .dl-price-summary {
   padding: 24px 0;
   border-bottom: 1px solid #e5e7eb;
@@ -8423,7 +8423,7 @@ details:not([open]) .filter-toggle-icon::before {
   line-height: 1.6;
 }
 
-/* [2025-01-27 23:50:00] 滤镜按钮样式 */
+/* 滤镜按钮样式 */
 .dl-edit-filters {
   display: flex;
   flex-direction: column;
@@ -8492,7 +8492,7 @@ details:not([open]) .filter-toggle-icon::before {
   margin-right: 8px;
 }
 
-/* [2025-12-04] Edit 面板样式（完全按照截图） */
+/* Edit 面板样式（完全按照截图） */
 .dl-edit-panel {
   position: fixed;
   right: 0;
@@ -8560,7 +8560,7 @@ details:not([open]) .filter-toggle-icon::before {
   font-family: var(--dl-font-family);
 }
 
-/* [2025-12-04] 编辑字段输入框（优化视觉细节） */
+/* 编辑字段输入框（优化视觉细节） */
 .dl-edit-field__input {
   width: 100%;
   padding: 10px 14px;
@@ -8910,7 +8910,7 @@ details:not([open]) .filter-toggle-icon::before {
   padding-right: 560px;
 }
 
-/* [2025-01-27 23:30:00] 精确位置控制样式 */
+/* 精确位置控制样式 */
 .dl-edit-position {
   display: flex;
   flex-direction: column;
@@ -9073,17 +9073,17 @@ details:not([open]) .filter-toggle-icon::before {
   box-shadow: 0 0 0 3px var(--dl-active-bg);
 }
 
-/* [2025-01-28 00:45:00] Cart page redesign */
-/* [2025-12-13 15:50:00] CustomInk风格：优化背景色和间距 */
+/* Cart page redesign */
+/* CustomInk风格：优化背景色和间距 */
 .cart-new {
   background: var(--color-bg-subtle);
-  /* [2025-12-13 15:50:00] 使用统一的浅灰背景 #f8f8f8 */
+/* 使用统一的浅灰背景 #f8f8f8 */
   padding: 24px clamp(16px, 3vw, 48px) 64px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   min-height: calc(100vh - 200px);
-  /* [2025-12-13 15:50:00] 确保页面有足够高度 */
+/* 确保页面有足够高度 */
 }
 
 .cart-new__top {
@@ -9124,83 +9124,83 @@ details:not([open]) .filter-toggle-icon::before {
   color: #1a202c;
 }
 
-/* [2025-12-13 14:30:00] 删除：移除不再使用的顶部提示和红框样式 */
+/* 删除：移除不再使用的顶部提示和红框样式 */
 /* .cart-new__subtitle 已删除 */
 /* .cart-new__alert* 相关样式已删除（顶部红框模块已移除） */
-/* [2025-12-13 15:50:00] CustomInk风格：优化网格布局，桌面端两列，移动端单列 */
+/* CustomInk风格：优化网格布局，桌面端两列，移动端单列 */
 .cart-new__grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
-  /* [2025-12-13 15:50:00] Summary 宽度略增，更易读 */
+/* Summary 宽度略增，更易读 */
   gap: 32px;
-  /* [2025-12-13 15:50:00] 增大间距，更清晰 */
+/* 增大间距，更清晰 */
   align-items: flex-start;
 }
 
-/* [2025-12-13 15:50:00] CustomInk风格：优化商品卡片样式 */
+/* CustomInk风格：优化商品卡片样式 */
 .cart-card {
   display: flex;
   gap: 20px;
-  /* [2025-12-13 15:50:00] 稍微紧凑的间距 */
+/* 稍微紧凑的间距 */
   background: var(--color-bg);
-  /* [2025-12-13 15:50:00] 使用统一的白色背景 */
+/* 使用统一的白色背景 */
   border-radius: 12px;
-  /* [2025-12-13 15:50:00] 稍微小一点的圆角，更现代 */
+/* 稍微小一点的圆角，更现代 */
   padding: 20px;
-  /* [2025-12-13 15:50:00] 稍微紧凑的内边距 */
+/* 稍微紧凑的内边距 */
   border: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 使用统一的边框色 */
+/* 使用统一的边框色 */
   margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  /* [2025-12-13 15:50:00] 轻微阴影，增加层次感 */
+/* 轻微阴影，增加层次感 */
   transition: box-shadow 0.2s ease;
-  /* [2025-12-13 15:50:00] 悬停效果 */
+/* 悬停效果 */
 }
 
 .cart-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  /* [2025-12-13 15:50:00] 悬停时阴影加深 */
+/* 悬停时阴影加深 */
 }
 
-/* [2025-12-13 15:50:00] CustomInk风格：优化图片区域，确保不破图、不塌陷 */
+/* CustomInk风格：优化图片区域，确保不破图、不塌陷 */
 .cart-card__media {
   flex: 0 0 144px;
   width: 144px;
   height: 144px;
-  /* [2025-12-13 15:50:00] 固定高度，防止塌陷 */
+/* 固定高度，防止塌陷 */
   min-width: 144px;
-  /* [2025-12-13 15:50:00] 最小宽度，防止压缩 */
+/* 最小宽度，防止压缩 */
   border-radius: 8px;
-  /* [2025-12-13 15:50:00] 与卡片圆角协调 */
+/* 与卡片圆角协调 */
   overflow: hidden;
   background: var(--color-bg-subtle);
-  /* [2025-12-13 15:50:00] 使用统一的背景色 */
+/* 使用统一的背景色 */
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  /* [2025-12-13 15:50:00] 用于占位符定位 */
+/* 用于占位符定位 */
 }
 
 .cart-card__media img {
   width: 100%;
   height: 100%;
-  /* [2025-12-13 15:50:00] 填满容器 */
+/* 填满容器 */
   object-fit: cover;
-  /* [2025-12-13 15:50:00] 保持比例，裁剪多余部分 */
+/* 保持比例，裁剪多余部分 */
   display: block;
-  /* [2025-12-13 15:50:00] 防止底部间距 */
+/* 防止底部间距 */
 }
 
-/* [2025-12-13 15:50:00] CustomInk风格：优化商品卡片内容区域 */
+/* CustomInk风格：优化商品卡片内容区域 */
 .cart-card__body {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  /* [2025-12-13 15:50:00] 稍微增大间距，更清晰 */
+/* 稍微增大间距，更清晰 */
   min-width: 0;
-  /* [2025-12-13 15:50:00] 防止内容溢出 */
+/* 防止内容溢出 */
 }
 
 .cart-card__top {
@@ -9212,41 +9212,41 @@ details:not([open]) .filter-toggle-icon::before {
 
 .cart-card__design-name {
   font-size: 18px;
-  /* [2025-12-13 15:50:00] 稍微增大字体，更突出 */
+/* 稍微增大字体，更突出 */
   font-weight: 600;
   margin: 0;
   color: var(--color-text);
-  /* [2025-12-13 15:50:00] 使用统一的文本色 */
+/* 使用统一的文本色 */
   line-height: 1.4;
-  /* [2025-12-13 15:50:00] 更好的行高 */
+/* 更好的行高 */
 }
 
 .cart-card__link {
   background: none;
   border: none;
   color: var(--color-primary);
-  /* [2025-12-13 15:50:00] 使用品牌主色 */
+/* 使用品牌主色 */
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
   padding: 4px 0;
-  /* [2025-12-13 15:50:00] 增加触摸目标 */
+/* 增加触摸目标 */
   transition: color 0.2s ease;
   text-decoration: underline;
   text-decoration-color: transparent;
-  /* [2025-12-13 15:50:00] 默认无下划线 */
+/* 默认无下划线 */
 }
 
 .cart-card__link:hover {
   color: var(--color-primary-600);
-  /* [2025-12-13 15:50:00] 悬停时变深 */
+/* 悬停时变深 */
   text-decoration-color: var(--color-primary-600);
-  /* [2025-12-13 15:50:00] 悬停时显示下划线 */
+/* 悬停时显示下划线 */
 }
 
 .cart-card__link:focus {
   outline: 2px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -9260,17 +9260,17 @@ details:not([open]) .filter-toggle-icon::before {
   background: none;
   border: none;
   font-size: 28px;
-  /* [2025-12-13 15:50:00] 稍微增大，更易点击 */
+/* 稍微增大，更易点击 */
   line-height: 1;
   cursor: pointer;
   color: var(--color-text-muted);
-  /* [2025-12-13 15:50:00] 使用统一的次要文本色 */
+/* 使用统一的次要文本色 */
   padding: 4px;
-  /* [2025-12-13 15:50:00] 增加触摸目标 */
+/* 增加触摸目标 */
   border-radius: 4px;
   transition: all 0.2s ease;
   min-width: 32px;
-  /* [2025-12-13 15:50:00] 确保足够大的点击区域 */
+/* 确保足够大的点击区域 */
   min-height: 32px;
   display: flex;
   align-items: center;
@@ -9279,14 +9279,14 @@ details:not([open]) .filter-toggle-icon::before {
 
 .cart-card__remove:hover {
   background: var(--color-bg-subtle);
-  /* [2025-12-13 15:50:00] 悬停背景 */
+/* 悬停背景 */
   color: var(--color-primary);
-  /* [2025-12-13 15:50:00] 悬停变红 */
+/* 悬停变红 */
 }
 
 .cart-card__remove:focus {
   outline: 2px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: 2px;
 }
 
@@ -9298,10 +9298,10 @@ details:not([open]) .filter-toggle-icon::before {
 .cart-card__product {
   margin: 0;
   color: var(--color-text);
-  /* [2025-12-13 15:50:00] 使用统一的文本色 */
+/* 使用统一的文本色 */
   font-weight: 600;
   font-size: 16px;
-  /* [2025-12-13 15:50:00] 稍微增大，更清晰 */
+/* 稍微增大，更清晰 */
   line-height: 1.5;
 }
 
@@ -9309,18 +9309,18 @@ details:not([open]) .filter-toggle-icon::before {
   display: block;
   font-weight: 400;
   color: var(--color-text-muted);
-  /* [2025-12-13 15:50:00] 使用统一的次要文本色 */
+/* 使用统一的次要文本色 */
   font-size: 14px;
   margin-top: 4px;
 }
 
-/* [2025-12-13 15:55:00] CustomInk风格：促销标签样式 */
+/* CustomInk风格：促销标签样式 */
 .cart-card__promotion-badge {
   display: inline-block;
   margin-left: 8px;
   padding: 3px 10px;
   background: var(--color-primary);
-  /* [2025-12-13 15:55:00] 使用品牌主色红色 */
+/* 使用品牌主色红色 */
   color: #fff;
   border-radius: 4px;
   font-size: 12px;
@@ -9332,16 +9332,16 @@ details:not([open]) .filter-toggle-icon::before {
 .cart-card__meta {
   font-size: 14px;
   color: var(--color-text-muted);
-  /* [2025-12-13 15:50:00] 使用统一的次要文本色 */
+/* 使用统一的次要文本色 */
   display: flex;
   align-items: center;
   gap: 8px;
-  /* [2025-12-13 15:50:00] 稍微增大间距 */
+/* 稍微增大间距 */
   flex-wrap: wrap;
   line-height: 1.5;
 }
 
-/* [2025-12-13 15:50:00] CustomInk风格：优化数量 stepper 和价格显示 */
+/* CustomInk风格：优化数量 stepper 和价格显示 */
 .cart-card__controls {
   margin-top: 12px;
   display: flex;
@@ -9355,24 +9355,24 @@ details:not([open]) .filter-toggle-icon::before {
   display: inline-flex;
   align-items: center;
   border: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 使用统一的边框色 */
+/* 使用统一的边框色 */
   border-radius: 8px;
-  /* [2025-12-13 15:50:00] 稍微小一点的圆角，更现代 */
+/* 稍微小一点的圆角，更现代 */
   overflow: hidden;
   background: var(--color-bg);
-  /* [2025-12-13 15:50:00] 白色背景 */
+/* 白色背景 */
 }
 
 .cart-card__qty button {
   border: none;
   background: transparent;
   width: 40px;
-  /* [2025-12-13 15:50:00] 稍微增大，更易点击 */
+/* 稍微增大，更易点击 */
   height: 40px;
   font-size: 18px;
   cursor: pointer;
   color: var(--color-text);
-  /* [2025-12-13 15:50:00] 使用统一的文本色 */
+/* 使用统一的文本色 */
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -9381,14 +9381,14 @@ details:not([open]) .filter-toggle-icon::before {
 
 .cart-card__qty button:hover:not(:disabled) {
   background: var(--color-bg-subtle);
-  /* [2025-12-13 15:50:00] 悬停背景 */
+/* 悬停背景 */
   color: var(--color-primary);
-  /* [2025-12-13 15:50:00] 悬停变红 */
+/* 悬停变红 */
 }
 
 .cart-card__qty button:focus {
   outline: 2px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: -2px;
   z-index: 1;
 }
@@ -9401,11 +9401,11 @@ details:not([open]) .filter-toggle-icon::before {
 
 .cart-card__qty input {
   width: 60px;
-  /* [2025-12-13 15:50:00] 稍微增大，更易读 */
+/* 稍微增大，更易读 */
   height: 40px;
   border: none;
   border-left: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 左右边框分隔 */
+/* 左右边框分隔 */
   border-right: 1px solid var(--color-border);
   text-align: center;
   font-weight: 600;
@@ -9413,19 +9413,19 @@ details:not([open]) .filter-toggle-icon::before {
   color: var(--color-text);
   background: var(--color-bg);
   -moz-appearance: textfield;
-  /* [2025-12-13 15:50:00] 移除 Firefox 数字输入框的上下箭头 */
+/* 移除 Firefox 数字输入框的上下箭头 */
 }
 
 .cart-card__qty input::-webkit-outer-spin-button,
 .cart-card__qty input::-webkit-inner-spin-button {
   -webkit-appearance: none;
-  /* [2025-12-13 15:50:00] 移除 Chrome/Safari 数字输入框的上下箭头 */
+/* 移除 Chrome/Safari 数字输入框的上下箭头 */
   margin: 0;
 }
 
 .cart-card__qty input:focus {
   outline: 2px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: -2px;
   z-index: 1;
 }
@@ -9438,15 +9438,15 @@ details:not([open]) .filter-toggle-icon::before {
 
 .cart-card__price {
   text-align: right;
-  /* [2025-12-13 15:50:00] 价格右对齐 */
+/* 价格右对齐 */
 }
 
 .cart-card__price span {
   font-size: 22px;
-  /* [2025-12-13 15:50:00] 稍微增大，更突出 */
+/* 稍微增大，更突出 */
   font-weight: 700;
   color: var(--color-text);
-  /* [2025-12-13 15:50:00] 使用统一的文本色 */
+/* 使用统一的文本色 */
   display: block;
   line-height: 1.2;
 }
@@ -9454,13 +9454,13 @@ details:not([open]) .filter-toggle-icon::before {
 .cart-card__price small {
   display: block;
   color: var(--color-text-muted);
-  /* [2025-12-13 15:50:00] 使用统一的次要文本色 */
+/* 使用统一的次要文本色 */
   font-size: 13px;
   font-weight: 400;
   margin-top: 2px;
 }
 
-/* [2025-12-13 15:45:00] 注释掉 cart-delivery 和 cart-upsell 相关样式（板块已下线） */
+/* 注释掉 cart-delivery 和 cart-upsell 相关样式（板块已下线） */
 /* .cart-delivery,
 .cart-upsell {
   background: #fff;
@@ -9489,7 +9489,7 @@ details:not([open]) .filter-toggle-icon::before {
   gap: 4px;
 } */
 
-/* [2025-01-27 17:15:00] Redbubble Style Product Detail Page */
+/* Redbubble Style Product Detail Page */
 .rb-product-page {
   max-width: 1400px;
   margin: 0 auto;
@@ -9993,7 +9993,7 @@ details:not([open]) .filter-toggle-icon::before {
   padding: 24px 16px;
 }
 
-/* [2025-01-27 17:20:00] 颜色选择空状态 */
+/* 颜色选择空状态 */
 .rb-color__empty {
   color: #999;
   font-size: 14px;
@@ -10001,7 +10001,7 @@ details:not([open]) .filter-toggle-icon::before {
   padding: 8px 0;
 }
 
-/* [2025-01-27 17:20:00] 图片画廊空状态优化 */
+/* 图片画廊空状态优化 */
 .rb-gallery__placeholder {
   width: 100%;
   height: 100%;
@@ -10020,7 +10020,7 @@ details:not([open]) .filter-toggle-icon::before {
   color: #ccc;
 }
 
-/* [2025-01-27 17:20:00] 相关产品推荐 */
+/* 相关产品推荐 */
 .rb-related {
   background: #fff;
   border-top: 1px solid #e0e0e0;
@@ -10086,7 +10086,7 @@ details:not([open]) .filter-toggle-icon::before {
   color: #1a1a1a;
 }
 
-/* [2025-01-27 17:20:00] 设计师/品牌推荐 */
+/* 设计师/品牌推荐 */
 .rb-brand {
   background: #fafafa;
   border-top: 1px solid #e0e0e0;
@@ -10151,7 +10151,7 @@ details:not([open]) .filter-toggle-icon::before {
   color: #1a1a1a;
 }
 
-/* [2025-12-13 15:45:00] 注释掉 cart-upsell__grid 及后续相关样式（板块已下线） */
+/* 注释掉 cart-upsell__grid 及后续相关样式（板块已下线） */
 /* .cart-upsell__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -10202,34 +10202,34 @@ details:not([open]) .filter-toggle-icon::before {
   padding: 8px 20px;
   cursor: pointer;
 } */
-/* [2025-12-13 15:50:00] CustomInk风格：优化 Summary 容器样式 */
+/* CustomInk风格：优化 Summary 容器样式 */
 .cart-new__summary {
   position: sticky;
   top: 24px;
-  /* [2025-12-13 15:50:00] 桌面端 sticky，滚动时保持在顶部 */
+/* 桌面端 sticky，滚动时保持在顶部 */
   display: flex;
   flex-direction: column;
   gap: 16px;
   align-self: flex-start;
-  /* [2025-12-13 15:50:00] 防止拉伸 */
+/* 防止拉伸 */
 }
 
-/* [2025-12-13 15:50:00] CustomInk风格：优化 Summary 面板样式 */
+/* CustomInk风格：优化 Summary 面板样式 */
 .summary-panel {
   background: var(--color-bg);
-  /* [2025-12-13 15:50:00] 使用统一的白色背景 */
+/* 使用统一的白色背景 */
   border: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 使用统一的边框色 */
+/* 使用统一的边框色 */
   border-radius: 12px;
-  /* [2025-12-13 15:50:00] 稍微小一点的圆角 */
+/* 稍微小一点的圆角 */
   padding: 24px;
-  /* [2025-12-13 15:50:00] 保持舒适的内边距 */
+/* 保持舒适的内边距 */
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* [2025-12-13 15:50:00] 稍微增大间距，更清晰 */
+/* 稍微增大间距，更清晰 */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  /* [2025-12-13 15:50:00] 轻微阴影，增加层次感 */
+/* 轻微阴影，增加层次感 */
 }
 
 .summary-panel__row {
@@ -10237,24 +10237,24 @@ details:not([open]) .filter-toggle-icon::before {
   justify-content: space-between;
   align-items: center;
   font-size: 15px;
-  /* [2025-12-13 15:50:00] 稍微增大字体，更易读 */
+/* 稍微增大字体，更易读 */
   color: var(--color-text);
-  /* [2025-12-13 15:50:00] 使用统一的文本色 */
+/* 使用统一的文本色 */
   padding: 8px 0;
-  /* [2025-12-13 15:50:00] 增加垂直间距 */
+/* 增加垂直间距 */
   line-height: 1.5;
 }
 
 .summary-panel__total {
   font-size: 24px;
-  /* [2025-12-13 15:50:00] 增大字体，更突出 */
+/* 增大字体，更突出 */
   font-weight: 700;
   color: var(--color-text);
-  /* [2025-12-13 15:50:00] 使用统一的文本色 */
+/* 使用统一的文本色 */
   padding-top: 12px;
-  /* [2025-12-13 15:50:00] 与上方分隔 */
+/* 与上方分隔 */
   border-top: 2px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 上方分隔线 */
+/* 上方分隔线 */
   margin-top: 4px;
 }
 
@@ -10262,12 +10262,12 @@ details:not([open]) .filter-toggle-icon::before {
 .summary-panel__secondary {
   text-align: center;
   padding: 16px 24px;
-  /* [2025-12-13 15:50:00] 更舒适的内边距 */
+/* 更舒适的内边距 */
   border-radius: 8px;
-  /* [2025-12-13 15:50:00] 稍微小一点的圆角 */
+/* 稍微小一点的圆角 */
   font-weight: 700;
   font-size: 16px;
-  /* [2025-12-13 15:50:00] 稍微增大字体 */
+/* 稍微增大字体 */
   display: block;
   width: 100%;
   cursor: pointer;
@@ -10278,24 +10278,24 @@ details:not([open]) .filter-toggle-icon::before {
 
 .summary-panel__primary {
   background: var(--color-primary);
-  /* [2025-12-13 15:50:00] 使用品牌主色红色 */
+/* 使用品牌主色红色 */
   color: #fff;
   margin-top: 8px;
-  /* [2025-12-13 15:50:00] 与上方分隔 */
+/* 与上方分隔 */
 }
 
 .summary-panel__primary:hover:not(:disabled) {
   background: var(--color-primary-600);
-  /* [2025-12-13 15:50:00] 悬停变深 */
+/* 悬停变深 */
   transform: translateY(-1px);
-  /* [2025-12-13 15:50:00] 轻微上浮效果 */
+/* 轻微上浮效果 */
   box-shadow: 0 4px 12px rgba(255, 31, 61, 0.3);
-  /* [2025-12-13 15:50:00] 悬停阴影 */
+/* 悬停阴影 */
 }
 
 .summary-panel__primary:focus {
   outline: 3px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: 2px;
 }
 
@@ -10308,20 +10308,20 @@ details:not([open]) .filter-toggle-icon::before {
 .summary-panel__secondary {
   background: transparent;
   border: 2px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 使用品牌主色 */
+/* 使用品牌主色 */
   color: var(--color-primary);
   margin-top: 8px;
 }
 
 .summary-panel__secondary:hover:not(:disabled) {
   background: var(--color-primary);
-  /* [2025-12-13 15:50:00] 悬停填充 */
+/* 悬停填充 */
   color: #fff;
 }
 
 .summary-panel__secondary:focus {
   outline: 3px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: 2px;
 }
 
@@ -10330,41 +10330,41 @@ details:not([open]) .filter-toggle-icon::before {
   cursor: not-allowed;
 }
 
-/* [2025-12-13 15:50:00] CustomInk风格：优化邮编输入和优惠券输入样式 */
-/* [2025-12-13 15:55:00] CustomInk风格：优化邮编输入区域布局 */
+/* CustomInk风格：优化邮编输入和优惠券输入样式 */
+/* CustomInk风格：优化邮编输入区域布局 */
 .summary-panel__zip {
   padding: 12px 0;
-  /* [2025-12-13 15:50:00] 增加垂直间距 */
+/* 增加垂直间距 */
   border-top: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 上方分隔线 */
+/* 上方分隔线 */
   border-bottom: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 下方分隔线 */
+/* 下方分隔线 */
   margin: 8px 0;
   display: flex;
-  /* [2025-12-13 15:55:00] 使用 flex 布局 */
+/* 使用 flex 布局 */
   flex-direction: column;
-  /* [2025-12-13 15:55:00] 垂直排列 */
+/* 垂直排列 */
   gap: 8px;
-  /* [2025-12-13 15:55:00] 标签和输入框之间的间距 */
+/* 标签和输入框之间的间距 */
 }
 
 .summary-panel__zip>div {
   display: flex;
-  /* [2025-12-13 15:55:00] 输入框和按钮在同一行 */
+/* 输入框和按钮在同一行 */
   gap: 8px;
-  /* [2025-12-13 15:55:00] 输入框和按钮之间的间距 */
+/* 输入框和按钮之间的间距 */
   align-items: flex-start;
 }
 
 .summary-panel__zip input {
   flex: 1;
-  /* [2025-12-13 15:55:00] 输入框占据剩余空间 */
+/* 输入框占据剩余空间 */
   margin-top: 0;
-  /* [2025-12-13 15:55:00] 移除上边距 */
+/* 移除上边距 */
   border: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 使用统一的边框色 */
+/* 使用统一的边框色 */
   border-radius: 6px;
-  /* [2025-12-13 15:50:00] 稍微小一点的圆角 */
+/* 稍微小一点的圆角 */
   padding: 10px 12px;
   width: 100%;
   font-size: 14px;
@@ -10375,28 +10375,28 @@ details:not([open]) .filter-toggle-icon::before {
 .summary-panel__zip input:focus {
   outline: none;
   border-color: var(--color-primary);
-  /* [2025-12-13 15:50:00] focus 时边框变红 */
+/* focus 时边框变红 */
   box-shadow: 0 0 0 3px rgba(255, 31, 61, 0.1);
-  /* [2025-12-13 15:50:00] focus 阴影 */
+/* focus 阴影 */
 }
 
-/* [2025-12-13 15:55:00] 移动端：邮编输入区域垂直排列 */
+/* 移动端：邮编输入区域垂直排列 */
 .summary-panel__zip>div {
   flex-direction: column;
-  /* [2025-12-13 15:55:00] 移动端垂直排列 */
+/* 移动端垂直排列 */
   align-items: stretch;
-  /* [2025-12-13 15:55:00] 拉伸到全宽 */
+/* 拉伸到全宽 */
 }
 
 .summary-panel__zip button {
   margin-left: 0;
-  /* [2025-12-13 15:55:00] 移除左边距，使用 gap */
+/* 移除左边距，使用 gap */
   margin-top: 0;
-  /* [2025-12-13 15:55:00] 移除上边距 */
+/* 移除上边距 */
   width: 100%;
-  /* [2025-12-13 15:55:00] 移动端按钮全宽 */
+/* 移动端按钮全宽 */
   background: var(--color-text-muted);
-  /* [2025-12-13 15:50:00] 使用次要文本色作为背景 */
+/* 使用次要文本色作为背景 */
   border: none;
   border-radius: 6px;
   padding: 10px 18px;
@@ -10406,19 +10406,19 @@ details:not([open]) .filter-toggle-icon::before {
   font-size: 14px;
   transition: all 0.2s ease;
   white-space: nowrap;
-  /* [2025-12-13 15:55:00] 防止文字换行 */
+/* 防止文字换行 */
   flex-shrink: 0;
-  /* [2025-12-13 15:55:00] 按钮不缩小 */
+/* 按钮不缩小 */
 }
 
 .summary-panel__zip button:hover:not(:disabled) {
   background: var(--color-text);
-  /* [2025-12-13 15:50:00] 悬停变深 */
+/* 悬停变深 */
 }
 
 .summary-panel__zip button:focus {
   outline: 3px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: 2px;
 }
 
@@ -10429,7 +10429,7 @@ details:not([open]) .filter-toggle-icon::before {
 
 .summary-panel__zip-error {
   color: var(--color-primary);
-  /* [2025-12-13 15:50:00] 使用品牌主色作为错误色 */
+/* 使用品牌主色作为错误色 */
   font-size: 13px;
   margin-top: 6px;
   font-weight: 500;
@@ -10437,16 +10437,16 @@ details:not([open]) .filter-toggle-icon::before {
 
 .summary-panel__coupon {
   padding: 12px 0;
-  /* [2025-12-13 15:50:00] 增加垂直间距 */
+/* 增加垂直间距 */
   border-top: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 上方分隔线 */
+/* 上方分隔线 */
   margin-top: 8px;
 }
 
 .summary-panel__coupon input {
   flex: 1;
   border: 1px solid var(--color-border);
-  /* [2025-12-13 15:50:00] 使用统一的边框色 */
+/* 使用统一的边框色 */
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 14px;
@@ -10457,9 +10457,9 @@ details:not([open]) .filter-toggle-icon::before {
 .summary-panel__coupon input:focus {
   outline: none;
   border-color: var(--color-primary);
-  /* [2025-12-13 15:50:00] focus 时边框变红 */
+/* focus 时边框变红 */
   box-shadow: 0 0 0 3px rgba(255, 31, 61, 0.1);
-  /* [2025-12-13 15:50:00] focus 阴影 */
+/* focus 阴影 */
 }
 
 .summary-panel__coupon div {
@@ -10472,7 +10472,7 @@ details:not([open]) .filter-toggle-icon::before {
 .summary-panel__coupon button {
   border: none;
   background: var(--color-text);
-  /* [2025-12-13 15:50:00] 使用文本色作为背景 */
+/* 使用文本色作为背景 */
   color: #fff;
   border-radius: 6px;
   padding: 10px 16px;
@@ -10485,12 +10485,12 @@ details:not([open]) .filter-toggle-icon::before {
 
 .summary-panel__coupon button:hover:not(:disabled) {
   background: var(--color-secondary);
-  /* [2025-12-13 15:50:00] 悬停变深 */
+/* 悬停变深 */
 }
 
 .summary-panel__coupon button:focus {
   outline: 3px solid var(--color-primary);
-  /* [2025-12-13 15:50:00] 明显的 focus 样式 */
+/* 明显的 focus 样式 */
   outline-offset: 2px;
 }
 
@@ -10499,18 +10499,18 @@ details:not([open]) .filter-toggle-icon::before {
   cursor: not-allowed;
 }
 
-/* [2025-12-13 15:50:00] CustomInk风格：优化提示徽章样式 */
+/* CustomInk风格：优化提示徽章样式 */
 .summary-panel__badge {
   background: #fff3e0;
-  /* [2025-12-13 15:50:00] 浅橙色背景，更柔和 */
+/* 浅橙色背景，更柔和 */
   border: 1px solid #ffcc80;
-  /* [2025-12-13 15:50:00] 橙色边框 */
+/* 橙色边框 */
   border-radius: 8px;
-  /* [2025-12-13 15:50:00] 稍微小一点的圆角 */
+/* 稍微小一点的圆角 */
   padding: 12px 16px;
-  /* [2025-12-13 15:50:00] 稍微紧凑的内边距 */
+/* 稍微紧凑的内边距 */
   color: #e65100;
-  /* [2025-12-13 15:50:00] 深橙色文本 */
+/* 深橙色文本 */
   font-weight: 600;
   font-size: 14px;
   line-height: 1.6;
@@ -10533,7 +10533,7 @@ details:not([open]) .filter-toggle-icon::before {
   align-items: center;
 }
 
-/* [2025-12-13 15:50:00] 平板和移动端：Summary 下沉到列表下方（非固定） */
+/* 平板和移动端：Summary 下沉到列表下方（非固定） */
 @media (max-width: 1024px) {
   .cart-new__grid {
     grid-template-columns: 1fr;
@@ -10542,21 +10542,21 @@ details:not([open]) .filter-toggle-icon::before {
 
   .cart-new__summary {
     position: static;
-    /* [2025-12-13 15:50:00] 移动端 Summary 下沉，不固定 */
+/* 移动端 Summary 下沉，不固定 */
     order: 2;
-    /* [2025-12-13 15:50:00] 确保 Summary 在商品列表下方 */
+/* 确保 Summary 在商品列表下方 */
   }
 
   .cart-new__main {
     order: 1;
-    /* [2025-12-13 15:50:00] 商品列表在上方 */
+/* 商品列表在上方 */
   }
 }
 
-/* [2025-01-28 17:00:00] 购物车页面移动端优化 */
+/* 购物车页面移动端优化 */
 @media (max-width: 767px) {
 
-  /* [2025-12-13 15:55:00] CustomInk风格：移动端商品卡片优化 */
+/* CustomInk风格：移动端商品卡片优化 */
   .cart-card {
     flex-direction: column;
     gap: 16px;
@@ -10568,27 +10568,27 @@ details:not([open]) .filter-toggle-icon::before {
     max-width: 200px;
     margin: 0 auto;
     height: 200px;
-    /* [2025-12-13 15:55:00] 移动端固定高度，保持一致性 */
+/* 移动端固定高度，保持一致性 */
   }
 
   .cart-card__controls {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
-    /* [2025-12-13 15:55:00] 稍微增大间距 */
+/* 稍微增大间距 */
   }
 
   .cart-card__qty {
     justify-content: center;
     width: 100%;
     max-width: 200px;
-    /* [2025-12-13 15:55:00] 限制最大宽度，更美观 */
+/* 限制最大宽度，更美观 */
     margin: 0 auto;
   }
 
   .cart-card__qty button {
     min-width: 44px;
-    /* [2025-12-13 15:55:00] 触摸目标尺寸 */
+/* 触摸目标尺寸 */
     min-height: 44px;
     width: 44px;
     height: 44px;
@@ -10596,38 +10596,38 @@ details:not([open]) .filter-toggle-icon::before {
 
   .cart-card__qty input {
     height: 44px;
-    /* [2025-12-13 15:55:00] 与按钮高度一致 */
+/* 与按钮高度一致 */
   }
 
   .cart-card__price {
     text-align: center;
-    /* [2025-12-13 15:55:00] 移动端居中显示 */
+/* 移动端居中显示 */
     width: 100%;
   }
 
   .cart-card__remove {
     min-width: 44px;
-    /* [2025-12-13 15:55:00] 触摸目标尺寸 */
+/* 触摸目标尺寸 */
     min-height: 44px;
     font-size: 28px;
   }
 
-  /* [2025-12-13 15:50:00] 移动端 Summary 下沉到列表下方（非固定） */
+/* 移动端 Summary 下沉到列表下方（非固定） */
   .cart-new__summary {
     position: static;
-    /* [2025-12-13 15:50:00] 不固定在底部，下沉显示 */
+/* 不固定在底部，下沉显示 */
     background: #fff;
     border: 1px solid var(--color-border);
     border-radius: 12px;
     box-shadow: var(--shadow-card);
   }
 
-  /* [2025-12-13 15:50:00] 移除固定摘要面板的底部空间 */
+/* 移除固定摘要面板的底部空间 */
   .cart-new__main {
     padding-bottom: 0;
   }
 
-  /* [2025-12-13 15:55:00] CustomInk风格：优化移动端字体大小和间距 */
+/* CustomInk风格：优化移动端字体大小和间距 */
   .cart-new__hero h1 {
     font-size: 24px;
     margin-bottom: 16px;
@@ -10635,49 +10635,49 @@ details:not([open]) .filter-toggle-icon::before {
 
   .cart-card__design-name {
     font-size: 16px;
-    /* [2025-12-13 15:55:00] 保持可读性 */
+/* 保持可读性 */
   }
 
   .cart-card__product {
     font-size: 15px;
-    /* [2025-12-13 15:55:00] 稍微减小，但仍清晰 */
+/* 稍微减小，但仍清晰 */
   }
 
   .summary-panel {
     padding: 20px;
-    /* [2025-12-13 15:55:00] 移动端稍微紧凑的内边距 */
+/* 移动端稍微紧凑的内边距 */
   }
 
   .summary-panel__primary {
     font-size: 16px;
-    /* [2025-12-13 15:55:00] 保持按钮文字清晰 */
+/* 保持按钮文字清晰 */
     padding: 16px 20px;
-    /* [2025-12-13 15:55:00] 触摸友好的尺寸 */
+/* 触摸友好的尺寸 */
   }
 
   .cart-new {
     padding: 16px;
-    /* [2025-12-13 15:55:00] 移动端减少外边距 */
+/* 移动端减少外边距 */
     padding-bottom: 32px;
-    /* [2025-12-13 15:55:00] 底部留出空间 */
+/* 底部留出空间 */
   }
 
   .cart-new__grid {
     gap: 16px;
-    /* [2025-12-13 15:55:00] 移动端稍微紧凑的间距 */
+/* 移动端稍微紧凑的间距 */
   }
 
-  /* [2025-12-13 15:55:00] 移动端：优惠券输入区域优化 */
+/* 移动端：优惠券输入区域优化 */
   .summary-panel__coupon div {
     flex-direction: column;
-    /* [2025-12-13 15:55:00] 移动端垂直排列 */
+/* 移动端垂直排列 */
     align-items: stretch;
-    /* [2025-12-13 15:55:00] 拉伸到全宽 */
+/* 拉伸到全宽 */
   }
 
   .summary-panel__coupon button {
     width: 100%;
-    /* [2025-12-13 15:55:00] 移动端按钮全宽 */
+/* 移动端按钮全宽 */
   }
 
   .cart-card__product {
@@ -10686,7 +10686,7 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* ============================================
-   [2025-01-28 15:00:00] 移动端响应式导航菜单
+移动端响应式导航菜单
    ============================================ */
 
 /* 移动端汉堡菜单按钮 */
@@ -10977,7 +10977,7 @@ details:not([open]) .filter-toggle-icon::before {
 }
 
 /* ============================================
-   [2025-01-28 16:30:00] 产品详情页面移动端优化
+产品详情页面移动端优化
    ============================================ */
 
 /* 移动端购买框固定在底部 */
@@ -11047,7 +11047,7 @@ details:not([open]) .filter-toggle-icon::before {
 
 
 /* ============================================
-   [2025-01-28 17:45:00] 统一响应式工具类和全局优化
+统一响应式工具类和全局优化
    ============================================ */
 
 /* 确保所有按钮和交互元素的最小触摸目标 */
@@ -11060,7 +11060,7 @@ select {
   min-width: var(--touch-target-min);
 }
 
-/* [2025-01-29 04:00:00] 桌面端专用样式 - 隐藏移动端组件 */
+/* 桌面端专用样式 - 隐藏移动端组件 */
 @media (min-width: 769px) {
   .desktop-only {
     display: block;
@@ -11071,7 +11071,7 @@ select {
   }
 }
 
-/* [2025-01-29 04:00:00] 移动端专用样式 - 隐藏桌面端组件 */
+/* 移动端专用样式 - 隐藏桌面端组件 */
 @media (max-width: 768px) {
   .desktop-only {
     display: none;
@@ -11154,7 +11154,7 @@ select {
   }
 }
 
-/* [2025-12-28 20:00:00] Inker Support Section Styles - Replicating Custom Ink */
+/* Inker Support Section Styles - Replicating Custom Ink */
 .inker-support {
   padding: 64px 0;
   background: #fff;

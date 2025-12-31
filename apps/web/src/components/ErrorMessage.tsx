@@ -1,6 +1,6 @@
 /**
  * Error Message Component
- * [2025-01-27 11:00:00] 统一的错误提示组件，支持不同类型的错误显示
+* 统一的错误提示组件，支持不同类型的错误显示
  */
 import React from 'react';
 import { ApiError } from '@/hooks/useApiError';

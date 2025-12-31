@@ -1,6 +1,6 @@
 /**
  * Admin Notifications Page
- * [2025-12-10 00:00:00] 管理员通知页面 - 查看留言本留言
+* 管理员通知页面 - 查看留言本留言
  */
 'use client';
 
@@ -61,7 +61,7 @@ export default function AdminNotificationsPage() {
         params.status = statusFilter;
       }
 
-      // [2025-12-18 23:20:00] 修复：使用完整的 API 路径
+// 修复：使用完整的 API 路径
       const response = await apiGet<{ data: GuestMessage[]; pagination: Pagination }>(
         '/api/admin/guest-messages',
         params
@@ -84,11 +84,11 @@ export default function AdminNotificationsPage() {
 
   const handleStatusChange = async (messageId: string, newStatus: 'UNREAD' | 'READ' | 'ARCHIVED') => {
     try {
-      // [2025-12-18 23:20:00] 修复：使用完整的 API 路径
+// 修复：使用完整的 API 路径
       await apiPatch(`/api/admin/guest-messages/${messageId}/status`, { status: newStatus });
       await fetchMessages();
       if (selectedMessage?.id === messageId) {
-        // [2025-12-18 23:20:00] 修复：使用完整的 API 路径
+// 修复：使用完整的 API 路径
         const updated = await apiGet<GuestMessage>(`/api/admin/guest-messages/${messageId}`);
         setSelectedMessage(updated);
       }
@@ -104,7 +104,7 @@ export default function AdminNotificationsPage() {
     }
 
     try {
-      // [2025-12-18 23:20:00] 修复：使用完整的 API 路径
+// 修复：使用完整的 API 路径
       await apiDelete(`/api/admin/guest-messages/${messageId}`);
       await fetchMessages();
       if (selectedMessage?.id === messageId) {

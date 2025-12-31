@@ -1,4 +1,4 @@
-// [2025-11-02 20:58:00] DesignAsset model
+// DesignAsset model
 module.exports = (sequelize, DataTypes) => {
   const DesignAsset = sequelize.define('DesignAsset', {
     id: {

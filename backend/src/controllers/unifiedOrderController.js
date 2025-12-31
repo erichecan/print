@@ -1,6 +1,6 @@
 /**
  * Unified Order Controller
- * [2025-12-08] 统一订单管理：合并线上订单（Order）和线下订单（OfflineOrder）
+* 统一订单管理：合并线上订单（Order）和线下订单（OfflineOrder）
  * 提供统一的查询、筛选、排序、分页和导出功能
  */
 const prisma = require('../lib/prisma');
@@ -113,7 +113,7 @@ const mapOfflineOrderToDTO = (order) => {
     orderNo: order.orderCode,
     customerName: order.contactName || '—',
     customerPhone: order.phone || null,
-    customerEmail: order.email || null, // [2025-12-18 16:30:00] email 可能为 null
+customerEmail: order.email || null, // email 可能为 null
     totalAmount,
     currency: configuration.currency || 'CAD',
     itemsCount,

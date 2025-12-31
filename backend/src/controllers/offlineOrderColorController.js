@@ -1,6 +1,6 @@
-// [2025-12-06] PRD v2.0: 线下订单颜色管理控制器
-// [2025-12-07 04:20:00] 从备份文件恢复
-// [2025-01-27 10:30:00] 重构：使用snake_case模型和字段名
+// PRD v2.0: 线下订单颜色管理控制器
+// 从备份文件恢复
+// 重构：使用snake_case模型和字段名
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { BadRequestError, NotFoundError, ConflictError, InternalServerError } = require('../utils/errors');
@@ -54,7 +54,7 @@ exports.createColor = async (req, res, next) => {
       return next(new ConflictError('Color with this name already exists'));
     }
 
-    // [2025-12-07 08:55:00] 创建颜色 - created_at 由 @default(now()) 自动处理
+// 创建颜色 - created_at 由 @default(now()) 自动处理
     const color = await prisma.offline_order_colors.create({
       data: {
         id: uuidv4(),

@@ -1,6 +1,6 @@
 /**
  * Design Lab Error Page
- * [2025-01-30 21:15:00] Next.js 错误页面组件
+* Next.js 错误页面组件
  */
 'use client';
 

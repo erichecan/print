@@ -1,16 +1,16 @@
 /**
  * Design Lab Page
- * [2025-01-30 23:00:00] Design Lab 4.0: 服务端组件仅做数据拼装与可序列化返回
+* Design Lab 4.0: 服务端组件仅做数据拼装与可序列化返回
  */
 import { Suspense } from 'react';
 import { generateSEOMetadata } from '@/lib/seo';
-// [2025-12-20 02:25:00] 5.0 版本：临时切换到极简版本进行开发
+// 5.0 版本：临时切换到极简版本进行开发
 import DesignLabClient from './DesignLabClient5.0';
 // import DesignLabClient from './DesignLabClient'; // 4.0 版本（已备份）
 import type { Metadata } from 'next';
 import { getBackendApiBaseUrl } from '@/config/env';
 
-// [2025-01-27 17:05:00] 生成 Design Lab 页面 SEO 元数据
+// 生成 Design Lab 页面 SEO 元数据
 export const metadata: Metadata = generateSEOMetadata({
   title: 'Design Lab - Online Custom Design Tool',
   description: 'Create custom designs for t-shirts, hoodies, and apparel with our professional online design tool. Upload artwork, add text, and preview your designs instantly.',
@@ -21,14 +21,14 @@ export const metadata: Metadata = generateSEOMetadata({
 
 /**
  * 服务端组件：仅做数据拼装与可序列化返回
- * [2025-01-30 23:00:00] Design Lab 4.0: 严格 RSC 边界，不包含客户端 API
+* Design Lab 4.0: 严格 RSC 边界，不包含客户端 API
  */
 export default async function DesignLabPage({
   searchParams,
 }: {
   searchParams: Promise<{ productId?: string; colorId?: string; designId?: string; variantId?: string; source?: string }>;
 }) {
-  // [2025-01-30 23:00:00] Design Lab 4.0: 服务端预取产品数据（可选，不阻塞）
+// Design Lab 4.0: 服务端预取产品数据（可选，不阻塞）
   const params = await searchParams;
   let initialProductData = null;
   
@@ -66,9 +66,9 @@ export default async function DesignLabPage({
     }
   }
 
-  // [2025-01-30 23:30:00] Design Lab 4.0: 使用 layout 的分阶段初始化
+// Design Lab 4.0: 使用 layout 的分阶段初始化
   // layout.tsx 会自动处理 Boot/Config/Data Prefetch/Feature Hydration 阶段
-  // [2025-01-31 18:30:00] 修复：DesignLabClient5.0 使用 useSearchParams()，必须用 Suspense 包裹
+// 修复：DesignLabClient5.0 使用 useSearchParams()，必须用 Suspense 包裹
   return (
     <Suspense fallback={
       <section style={{ 

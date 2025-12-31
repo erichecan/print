@@ -1,6 +1,6 @@
 /**
  * Address Controller
- * [2025-01-27 14:00:00] User address management API endpoints
+* User address management API endpoints
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -8,7 +8,6 @@ const { BadRequestError, ForbiddenError, NotFoundError } = require('../utils/err
 
 /**
  * GET /api/addresses - List user's addresses
- * [2025-01-27 14:00:00]
  */
 exports.getAddresses = async (req, res) => {
   try {
@@ -57,7 +56,6 @@ exports.getAddresses = async (req, res) => {
 
 /**
  * GET /api/addresses/:id - Get address by ID
- * [2025-01-27 14:00:00]
  */
 exports.getAddressById = async (req, res) => {
   try {
@@ -110,7 +108,6 @@ exports.getAddressById = async (req, res) => {
 
 /**
  * POST /api/addresses - Create new address
- * [2025-01-27 14:00:00]
  */
 exports.createAddress = async (req, res) => {
   try {
@@ -201,7 +198,6 @@ exports.createAddress = async (req, res) => {
 
 /**
  * PUT /api/addresses/:id - Update address
- * [2025-01-27 14:00:00]
  */
 exports.updateAddress = async (req, res) => {
   try {
@@ -303,7 +299,6 @@ exports.updateAddress = async (req, res) => {
 
 /**
  * DELETE /api/addresses/:id - Delete address
- * [2025-01-27 14:00:00]
  */
 exports.deleteAddress = async (req, res) => {
   try {
@@ -351,7 +346,6 @@ exports.deleteAddress = async (req, res) => {
 
 /**
  * PATCH /api/addresses/:id/set-default - Set address as default
- * [2025-01-27 14:00:00]
  */
 exports.setDefaultAddress = async (req, res) => {
   try {

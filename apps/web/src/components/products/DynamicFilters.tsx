@@ -1,6 +1,6 @@
 /**
  * Dynamic Filters Component
- * [2025-01-27 17:00:00] 动态筛选器组件，从API获取筛选选项和数量
+* 动态筛选器组件，从API获取筛选选项和数量
  */
 'use client';
 
@@ -20,7 +20,7 @@ const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((r)
   return r.json();
 });
 
-// [2025-01-27 17:00:00] 预设颜色列表（用于颜色选择器）
+// 预设颜色列表（用于颜色选择器）
 const COLOR_FAMILIES = [
   { name: 'Black', hex: '#000000' },
   { name: 'Blue', hex: '#0066CC' },
@@ -51,7 +51,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
   const searchParams = useSearchParams();
   const search = searchParams.get('search') || '';
 
-  // [2025-01-28] 实时筛选：当用户点击复选框时立即更新 URL
+// 实时筛选：当用户点击复选框时立即更新 URL
   const handleFilterChange = useCallback((filterName: string, value: string, checked: boolean) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -85,13 +85,13 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
     router.push(`${pathname}?${params.toString()}`);
   }, [router, pathname, searchParams]);
 
-  // [2025-01-28] 检查筛选值是否已选中
+// 检查筛选值是否已选中
   const isFilterChecked = useCallback((filterName: string, value: string) => {
     const currentValues = searchParams.get(filterName)?.split(',') || [];
     return currentValues.includes(value);
   }, [searchParams]);
 
-  // [2025-01-27 17:00:00] 从API获取筛选选项
+// 从API获取筛选选项
   const filterUrl = `${API_BASE_URL}/products/filters/options?collection=${currentCollection || ''}&search=${search}`;
   const { data: filterOptions, error, isLoading } = useSWR<FilterOptions>(
     filterUrl,
@@ -103,8 +103,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
     }
   );
 
-  // [2025-01-27 17:00:00] 合并API返回的颜色和预设颜色，显示数量
-  // [2025-01-28 19:55:00] 始终返回所有颜色，即使数量为0
+// 合并API返回的颜色和预设颜色，显示数量
+// 始终返回所有颜色，即使数量为0
   const getColorOptions = () => {
     if (!filterOptions) return COLOR_FAMILIES.map(c => ({ ...c, count: 0 }));
 
@@ -112,7 +112,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       (filterOptions.colors || []).map(c => [c.name.toLowerCase(), c.count || 0])
     );
 
-    // [2025-01-28 19:55:00] 使用后端返回的颜色列表（如果存在），否则使用预设颜色列表
+// 使用后端返回的颜色列表（如果存在），否则使用预设颜色列表
     const colorList = filterOptions.colors && filterOptions.colors.length > 0
       ? filterOptions.colors.map(c => ({
         name: c.name,
@@ -128,7 +128,7 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
     return colorList;
   };
 
-  // [2025-01-27 17:00:00] 获取分类树（一级和二级）
+// 获取分类树（一级和二级）
   const getCategoryTree = () => {
     if (!filterOptions) return [];
 
@@ -150,16 +150,16 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
     );
   }
 
-  // [2025-01-28 19:55:00] 即使加载失败，也显示固定的筛选选项（颜色等）
+// 即使加载失败，也显示固定的筛选选项（颜色等）
   // 如果出错，记录错误但不阻止渲染
   if (error) {
     console.error('[DynamicFilters] Error loading filters:', error);
   }
 
   const categoryTree = filterOptions ? getCategoryTree() : [];
-  const colorOptions = getColorOptions(); // [2025-01-28 19:55:00] 始终返回颜色列表，即使 filterOptions 为空
+const colorOptions = getColorOptions(); // 始终返回颜色列表，即使 filterOptions 为空
 
-  // [2025-01-29 02:00:00] 安全访问 filterOptions 的辅助函数，避免 undefined 错误
+// 安全访问 filterOptions 的辅助函数，避免 undefined 错误
   const safeFilterOptions = filterOptions || {
     fit: [],
     decoration: [],
@@ -176,11 +176,11 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
 
   return (
     <>
-      {/* [2025-01-31] Categories are now handled by SidebarGrouped component at the top of sidebar */}
+{/* Categories are now handled by SidebarGrouped component at the top of sidebar */}
       {/* {categoryTree.length > 0 && ( ... )} */}
 
-      {/* [2025-01-27 17:00:00] 动态Fit筛选（目前返回空数组，暂不显示） */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态Fit筛选（目前返回空数组，暂不显示） */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.fit.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -209,8 +209,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态Decoration筛选（目前返回空数组，暂不显示） */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态Decoration筛选（目前返回空数组，暂不显示） */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.decoration.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -299,8 +299,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </div>
       </div>
 
-      {/* [2025-01-27 17:00:00] 动态颜色选择 */}
-      {/* [2025-01-28 19:55:00] 始终显示颜色筛选，即使数量为0也显示 */}
+{/* 动态颜色选择 */}
+{/* 始终显示颜色筛选，即使数量为0也显示 */}
       <details className="filter-section" open>
         <summary className="filter-section__title">
           Color Family
@@ -335,14 +335,14 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
       </details>
 
       {/* Rush Delivery Available - 使用后端返回的数据 */}
-      {/* [2025-01-28 19:55:00] 始终显示 Rush Delivery 筛选，即使数量为0 */}
+{/* 始终显示 Rush Delivery 筛选，即使数量为0 */}
       <details className="filter-section" open>
         <summary className="filter-section__title">
           Rush Delivery Available
           <span className="filter-toggle-icon">−</span>
         </summary>
         <div className="filter-section__body">
-          {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
           {(safeFilterOptions.rushDelivery && safeFilterOptions.rushDelivery.length > 0
             ? safeFilterOptions.rushDelivery
             : RUSH_DELIVERY_OPTIONS.map(opt => ({ name: opt.days, label: opt.label, count: 0 }))
@@ -368,9 +368,9 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </div>
       </details>
 
-      {/* [2025-01-27 17:00:00] 动态品牌筛选 */}
-      {/* [2025-01-28 19:55:00] 始终显示品牌筛选，即使数量为0也显示 */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态品牌筛选 */}
+{/* 始终显示品牌筛选，即使数量为0也显示 */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.brands && safeFilterOptions.brands.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -399,8 +399,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态Material筛选（目前返回空数组，暂不显示） */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态Material筛选（目前返回空数组，暂不显示） */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.material.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -430,8 +430,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态Type筛选（目前返回空数组，暂不显示） */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态Type筛选（目前返回空数组，暂不显示） */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.type.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -460,8 +460,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态尺寸筛选 */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态尺寸筛选 */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.sizes.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -487,8 +487,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态Style筛选（目前返回空数组，暂不显示） */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态Style筛选（目前返回空数组，暂不显示） */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.style.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -517,8 +517,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态Neckline筛选（目前返回空数组，暂不显示） */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态Neckline筛选（目前返回空数组，暂不显示） */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.neckline.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -547,8 +547,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态Product Features筛选（目前返回空数组，暂不显示） */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态Product Features筛选（目前返回空数组，暂不显示） */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.features.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -578,8 +578,8 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
         </details>
       )}
 
-      {/* [2025-01-27 17:00:00] 动态价格筛选 */}
-      {/* [2025-01-29 02:00:00] 使用 safeFilterOptions 避免 undefined 错误 */}
+{/* 动态价格筛选 */}
+{/* 使用 safeFilterOptions 避免 undefined 错误 */}
       {safeFilterOptions.priceRanges.length > 0 && (
         <details className="filter-section" open>
           <summary className="filter-section__title">
@@ -608,6 +608,6 @@ export function DynamicFilters({ currentCollection }: DynamicFiltersProps) {
   );
 }
 
-// [2025-01-27 17:00:00] 默认导出以便 dynamic import 使用
+// 默认导出以便 dynamic import 使用
 export default DynamicFilters;
 

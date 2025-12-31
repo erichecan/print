@@ -1,5 +1,5 @@
 /**
- * [2025-01-29 12:45:00] 使用 Chrome DevTools Protocol 测试支付功能
+* 使用 Chrome DevTools Protocol 测试支付功能
  * 独立脚本，不依赖 Playwright 配置
  */
 const { chromium } = require('playwright');

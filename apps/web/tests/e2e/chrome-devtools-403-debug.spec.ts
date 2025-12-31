@@ -1,6 +1,6 @@
 /**
  * Chrome DevTools 403 错误调试测试
- * [2025-12-07 07:50:00] 使用 Chrome DevTools 进行详细调试
+* 使用 Chrome DevTools 进行详细调试
  */
 import { test, expect } from '@playwright/test';
 

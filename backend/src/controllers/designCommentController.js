@@ -1,6 +1,6 @@
 /**
  * Design Comment Controller
- * [2025-01-27 21:35:00] 设计评论管理
+* 设计评论管理
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');

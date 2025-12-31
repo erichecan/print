@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { adminPromotionsApi, AdminPromotion } from '@/lib/api';
-import { useAdminI18n } from '@/contexts/adminI18nContext'; // [2025-11-24 11:05:12] 引入后台 i18n，确保右侧内容双语
+import { useAdminI18n } from '@/contexts/adminI18nContext'; // 引入后台 i18n，确保右侧内容双语
 
 export default function AdminPromotionsPage() {
-  const { t } = useAdminI18n(); // [2025-11-24 11:05:12] 通过 t 函数输出中英文内容
+const { t } = useAdminI18n(); // 通过 t 函数输出中英文内容
   const [searchDraft, setSearchDraft] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [form, setForm] = useState({
@@ -14,13 +14,13 @@ export default function AdminPromotionsPage() {
     description: '',
     bannerImageUrl: '',
     linkUrl: '',
-    // [2025-01-28 12:50:00] 折扣相关字段
-    // [2025-12-06 18:00:00] Support buy-get-free type for Issue #139
+// 折扣相关字段
+// Support buy-get-free type for Issue #139
     discountType: 'percentage' as 'percentage' | 'fixed' | 'buy_get_free',
     discountValue: 0,
     minOrderValue: '',
     maxDiscount: '',
-    // [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139
+// Buy-get-free promotion fields for Issue #139
     buyQuantity: '',
     getQuantity: '',
     giftProductId: '',
@@ -43,7 +43,7 @@ export default function AdminPromotionsPage() {
 
   const handleCreate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // [2025-12-06 18:00:00] Validate buy-get-free promotion fields for Issue #139
+// Validate buy-get-free promotion fields for Issue #139
     if (form.discountType === 'buy_get_free') {
       if (!form.buyQuantity || Number(form.buyQuantity) < 1) {
         alert('Buy quantity is required and must be at least 1');
@@ -60,7 +60,7 @@ export default function AdminPromotionsPage() {
         ...form,
         minOrderValue: form.minOrderValue ? Number(form.minOrderValue) : undefined,
         maxDiscount: form.maxDiscount ? Number(form.maxDiscount) : undefined,
-        // [2025-12-06 18:00:00] Include buy-get-free fields for Issue #139
+// Include buy-get-free fields for Issue #139
         buyQuantity: form.buyQuantity ? Number(form.buyQuantity) : undefined,
         getQuantity: form.getQuantity ? Number(form.getQuantity) : undefined,
         giftProductId: form.giftProductId || undefined,
@@ -92,13 +92,13 @@ export default function AdminPromotionsPage() {
     }
   };
 
-  // [2025-11-16 18:05:00] Toggle promotion status inline
+// Toggle promotion status inline
   const togglePromotion = async (promotion: AdminPromotion) => {
     await adminPromotionsApi.update(promotion.id, { isActive: !promotion.isActive });
     mutate();
   };
 
-  // [2025-11-16 18:05:00] Quick edit title/period
+// Quick edit title/period
   const quickEdit = async (promotion: AdminPromotion) => {
     const nextTitle = window.prompt(t('promotionsPromptTitle'), promotion.title);
     if (nextTitle === null) return;
@@ -122,7 +122,7 @@ export default function AdminPromotionsPage() {
   };
 
   const formatDiscountDisplay = (promotion: AdminPromotion) => {
-    // [2025-12-06 18:00:00] Support buy-get-free promotion display for Issue #139
+// Support buy-get-free promotion display for Issue #139
     if (promotion.discountType === 'buy_get_free') {
       const buyQty = promotion.buyQuantity || 1;
       const getQty = promotion.getQuantity || 1;
@@ -134,7 +134,7 @@ export default function AdminPromotionsPage() {
     return promotion.discountType === 'percentage'
       ? t('percentageOff', { value: promotion.discountValue })
       : t('fixedOff', { value: promotion.discountValue.toFixed(2) });
-  }; // [2025-11-24 11:05:12] 统一折扣展示文本
+}; // 统一折扣展示文本
 
   const formatMinLabel = (value?: number | null) =>
     value ? t('promotionsMinValue', { amount: Number(value).toFixed(2) }) : '';
@@ -178,8 +178,8 @@ export default function AdminPromotionsPage() {
               onChange={(event) => setForm((prev) => ({ ...prev, bannerImageUrl: event.target.value }))}
             />
           </div>
-          {/* [2025-01-28 12:50:00] 折扣类型和值 */}
-          {/* [2025-12-06 18:00:00] Support buy-get-free type for Issue #139 */}
+{/* 折扣类型和值 */}
+{/* Support buy-get-free type for Issue #139 */}
           <div className="admin-form-group">
             <label>{t('promotionsDiscountTypeLabel')}</label>
             <select
@@ -205,7 +205,7 @@ export default function AdminPromotionsPage() {
             </div>
           ) : (
             <>
-              {/* [2025-12-06 18:00:00] Buy-get-free promotion fields for Issue #139 */}
+{/* Buy-get-free promotion fields for Issue #139 */}
               <div className="admin-form-group">
                 <label>{t('promotionsBuyQuantityLabel')}</label>
                 <input
@@ -377,8 +377,8 @@ export default function AdminPromotionsPage() {
                     </div>
                   </td>
                   <td>
-                    {/* [2025-01-28 12:50:00] 显示折扣信息 */}
-                    {/* [2025-12-06 18:00:00] Support buy-get-free promotion display for Issue #139 */}
+{/* 显示折扣信息 */}
+{/* Support buy-get-free promotion display for Issue #139 */}
                     {promotion.discountType ? (
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         <strong>{formatDiscountDisplay(promotion)}</strong>

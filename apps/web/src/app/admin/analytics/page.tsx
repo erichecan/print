@@ -1,6 +1,6 @@
 /**
  * Admin Analytics Page
- * [2025-12-06 21:30:00] 管理后台报表和分析页面 for Issue #160
+* 管理后台报表和分析页面 for Issue #160
  */
 'use client';
 
@@ -15,19 +15,19 @@ export default function AdminAnalyticsPage() {
   const [dateRange, setDateRange] = useState<{ startDate?: string; endDate?: string }>({});
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
 
-  // [2025-12-06 21:30:00] Fetch sales analytics
+// Fetch sales analytics
   const { data: salesData, isLoading: salesLoading } = useSWR(
     ['sales-analytics', dateRange, period],
     () => adminAnalyticsApi.getSales({ ...dateRange, period })
   );
 
-  // [2025-12-06 21:30:00] Fetch user analytics
+// Fetch user analytics
   const { data: usersData, isLoading: usersLoading } = useSWR(
     ['users-analytics', dateRange],
     () => adminAnalyticsApi.getUsers(dateRange)
   );
 
-  // [2025-12-06 21:30:00] Fetch product analytics
+// Fetch product analytics
   const { data: productsData, isLoading: productsLoading } = useSWR(
     ['products-analytics', dateRange],
     () => adminAnalyticsApi.getProducts(dateRange)
@@ -40,7 +40,7 @@ export default function AdminAnalyticsPage() {
       <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700 }}>Analytics & Reports</h1>
         
-        {/* [2025-12-06 21:30:00] Date range selector */}
+{/* Date range selector */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             type="date"
@@ -69,7 +69,7 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
 
-      {/* [2025-12-06 21:30:00] Tabs */}
+{/* Tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
         {(['sales', 'users', 'products'] as const).map((tab) => (
           <button
@@ -95,7 +95,7 @@ export default function AdminAnalyticsPage() {
         <div style={{ textAlign: 'center', padding: '48px', color: '#6b7280' }}>Loading analytics...</div>
       ) : (
         <>
-          {/* [2025-12-06 21:30:00] Sales Analytics */}
+{/* Sales Analytics */}
           {activeTab === 'sales' && salesData?.data && (
             <div style={{ display: 'grid', gap: '24px' }}>
               {/* Overview Stats */}
@@ -159,7 +159,7 @@ export default function AdminAnalyticsPage() {
             </div>
           )}
 
-          {/* [2025-12-06 21:30:00] User Analytics */}
+{/* User Analytics */}
           {activeTab === 'users' && usersData?.data && (
             <div style={{ display: 'grid', gap: '24px' }}>
               {/* Overview Stats */}
@@ -221,7 +221,7 @@ export default function AdminAnalyticsPage() {
             </div>
           )}
 
-          {/* [2025-12-06 21:30:00] Product Analytics */}
+{/* Product Analytics */}
           {activeTab === 'products' && productsData?.data && (
             <div style={{ display: 'grid', gap: '24px' }}>
               {/* Overview Stats */}

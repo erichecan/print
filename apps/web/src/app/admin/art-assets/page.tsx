@@ -2,7 +2,7 @@
 
 /**
  * Admin Art Assets Page
- * [2025-01-28 01:05:00] CMS for managing Design Lab art assets
+* CMS for managing Design Lab art assets
  */
 import { useState, useCallback } from 'react';
 import useSWR from 'swr';
@@ -16,7 +16,7 @@ export default function AdminArtAssetsPage() {
 
   const swrKey = ['admin-art-assets', page, categoryFilter, isActiveFilter];
   
-  // [2025-01-28 02:40:00] 添加 API 调用日志
+// 添加 API 调用日志
   const fetcher = async () => {
     console.log('[AdminArtAssetsPage] 📡 Fetching art assets...', { page, categoryFilter, isActiveFilter });
     try {
@@ -42,7 +42,7 @@ export default function AdminArtAssetsPage() {
   
   const { data, isLoading, error, mutate } = useSWR(swrKey, fetcher);
   
-  // [2025-01-28 02:40:00] 添加状态变化日志
+// 添加状态变化日志
   console.log('[AdminArtAssetsPage] State:', { isLoading, hasError: !!error, hasData: !!data });
 
   return (

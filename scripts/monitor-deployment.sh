@@ -1,6 +1,5 @@
 #!/bin/bash
 # 监控 Cloud Build 部署状态
-# [2025-01-29 14:20:00]
 
 BUILD_ID=${1:-"9131ff61-8ee1-4437-8841-07e472ba61c4"}
 PROJECT_ID="moonlit-gamma-479502-r6"

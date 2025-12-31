@@ -1,4 +1,4 @@
-# [2025-11-04 23:32:00] PostgreSQL 数据库自动设置脚本
+# PostgreSQL 数据库自动设置脚本
 
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "PostgreSQL 数据库自动设置" -ForegroundColor Cyan

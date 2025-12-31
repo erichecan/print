@@ -1,4 +1,4 @@
-// [2025-11-12 00:35:00] Shared helpers for offline order uploads
+// Shared helpers for offline order uploads
 const path = require('path');
 const fs = require('fs');
 

@@ -1,9 +1,9 @@
-// [2025-11-02 20:52:00] Database configuration using Sequelize
+// Database configuration using Sequelize
 const { Sequelize } = require('sequelize');
 const { URL } = require('url');
 require('dotenv').config();
 
-// [2025-01-11 14:05:00] 从 DATABASE_URL 解析数据库连接参数（用于 Sequelize CLI）
+// 从 DATABASE_URL 解析数据库连接参数（用于 Sequelize CLI）
 function parseDatabaseUrl(databaseUrl) {
   if (!databaseUrl) return null;
   
@@ -22,7 +22,7 @@ function parseDatabaseUrl(databaseUrl) {
   }
 }
 
-// [2025-01-11 14:05:00] 解析 DATABASE_URL（如果存在）以支持 Render/Neon 等平台
+// 解析 DATABASE_URL（如果存在）以支持 Render/Neon 等平台
 const dbUrlParts = parseDatabaseUrl(process.env.DATABASE_URL);
 
 // Configuration for Sequelize CLI
@@ -46,7 +46,7 @@ const config = {
     logging: false
   },
   production: {
-    // [2025-01-11 14:05:00] 优先使用 DATABASE_URL 解析的值，否则使用单独的环境变量
+// 优先使用 DATABASE_URL 解析的值，否则使用单独的环境变量
     username: dbUrlParts?.username || process.env.DB_USER,
     password: dbUrlParts?.password || process.env.DB_PASSWORD,
     database: dbUrlParts?.database || process.env.DB_NAME,
@@ -66,7 +66,7 @@ const config = {
 const env = process.env.NODE_ENV || 'development';
 const dbConfig = config[env];
 
-// [2025-11-16 16:40:00] 支持 DATABASE_URL 一键连接（Render/Neon/Heroku），否则回退到分字段配置
+// 支持 DATABASE_URL 一键连接（Render/Neon/Heroku），否则回退到分字段配置
 let sequelize;
 if (process.env.DATABASE_URL) {
   sequelize = new Sequelize(process.env.DATABASE_URL, {

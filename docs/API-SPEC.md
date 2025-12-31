@@ -220,7 +220,7 @@ Get reviews for a product.
       "rating": 5,
       "title": "Great quality!",
       "comment": "Perfect for custom printing...",
-      "createdAt": "2025-10-15T10:30:00Z"
+"createdAt": "T10:30:00Z"
     }
   ],
   "summary": {
@@ -427,7 +427,7 @@ Create new order (place order).
   "orderId": "ORD-2025-1001",
   "orderNumber": "ORD-2025-1001",
   "status": "pending",
-  "estimatedDelivery": "2025-11-15",
+"estimatedDelivery": "",
   "total": 39.98
 }
 ```
@@ -443,8 +443,8 @@ Get order details.
   "id": "ORD-2025-1001",
   "orderNumber": "ORD-2025-1001",
   "status": "processing",
-  "createdAt": "2025-11-01T10:00:00Z",
-  "estimatedDelivery": "2025-11-15",
+"createdAt": "T10:00:00Z",
+"estimatedDelivery": "",
   "items": [
     {
       "productName": "Gildan Midweight 50/50 Pullover Hoodie",
@@ -480,7 +480,7 @@ List user's orders.
       "id": "ORD-2025-1001",
       "orderNumber": "ORD-2025-1001",
       "status": "shipped",
-      "createdAt": "2025-11-01T10:00:00Z",
+"createdAt": "T10:00:00Z",
       "total": 49.97,
       "itemCount": 2,
       "thumbnail": "/assets/products/hoodie-thumb.jpg"
@@ -514,10 +514,10 @@ Get order tracking information.
   "trackingNumber": "TRK123456789",
   "carrier": "UPS",
   "status": "in_transit",
-  "estimatedDelivery": "2025-11-15",
+"estimatedDelivery": "",
   "events": [
     {
-      "date": "2025-11-05T08:00:00Z",
+"date": "T08:00:00Z",
       "location": "New York, NY",
       "status": "Shipped"
     }
@@ -550,7 +550,7 @@ Save a design.
     ],
     "products": [ { "productId": "108200", "variantId": "1" } ],
     "view": "front",
-    "createdAt": "2025-11-01T12:00:00Z"
+"createdAt": "T12:00:00Z"
   },
   "isPublic": false
 }
@@ -562,7 +562,7 @@ Save a design.
   "id": "design-123",
   "name": "My Custom Hoodie Design",
   "thumbnailUrl": "/assets/designs/thumb-123.jpg",
-  "createdAt": "2025-11-01T12:00:00Z"
+"createdAt": "T12:00:00Z"
 }
 ```
 
@@ -580,7 +580,7 @@ Get saved design.
   "designData": { ... },
   "thumbnailUrl": "/assets/designs/thumb-123.jpg",
   "status": "saved",
-  "createdAt": "2025-11-01T12:00:00Z"
+"createdAt": "T12:00:00Z"
 }
 ```
 
@@ -621,7 +621,7 @@ List user's saved designs.
       "id": "design-123",
       "name": "My Custom Hoodie Design",
       "thumbnailUrl": "/assets/designs/thumb-123.jpg",
-      "createdAt": "2025-11-01T12:00:00Z",
+"createdAt": "T12:00:00Z",
       "productName": "Gildan Midweight 50/50 Pullover Hoodie"
     }
   ],
@@ -663,7 +663,7 @@ Get user profile.
   "lastName": "Doe",
   "phone": "+1234567890",
   "emailVerified": true,
-  "createdAt": "2025-01-15T00:00:00Z"
+"createdAt": "T00:00:00Z"
 }
 ```
 

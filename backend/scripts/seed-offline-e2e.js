@@ -1,11 +1,11 @@
-// [2025-12-02 05:30:45] 线下订单 E2E 专用种子脚本（测试账号 + 测试订单）
+// 线下订单 E2E 专用种子脚本（测试账号 + 测试订单）
 require('dotenv').config();
 const { PrismaClient, UserRole, OfflineOrderStatus, ProductionWorkOrderStatus } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
-// [2025-12-02 05:30:45] 固定测试账号配置，便于 Playwright / 手工测试复用
+// 固定测试账号配置，便于 Playwright / 手工测试复用
 const TEST_SALES_USER = {
   email: 'offline-tester@example.com',
   password: 'OfflineTest123!',
@@ -14,7 +14,7 @@ const TEST_SALES_USER = {
   role: UserRole.SALES,
 };
 
-// [2025-12-02 05:30:45] 线下订单测试数据（3 个不同状态）
+// 线下订单测试数据（3 个不同状态）
 const OFFLINE_ORDERS_SEED = [
   {
     orderCode: 'OFF-E2E-CASE-1',
@@ -51,7 +51,7 @@ const OFFLINE_ORDERS_SEED = [
   },
 ];
 
-// [2025-12-02 05:30:45] 幂等创建/更新测试 Sales 用户
+// 幂等创建/更新测试 Sales 用户
 async function ensureTestSalesUser() {
   const existing = await prisma.user.findUnique({
     where: { email: TEST_SALES_USER.email.toLowerCase() },
@@ -84,7 +84,7 @@ async function ensureTestSalesUser() {
   });
 }
 
-// [2025-12-02 05:30:45] 为每个订单创建或更新 OfflineOrder + 可选生产工单
+// 为每个订单创建或更新 OfflineOrder + 可选生产工单
 async function ensureOfflineOrdersForUser(user) {
   const now = new Date();
 
@@ -151,7 +151,7 @@ async function ensureOfflineOrdersForUser(user) {
       },
     });
 
-    // [2025-12-02 05:30:45] 为第三个订单确保有一个完成的生产工单
+// 为第三个订单确保有一个完成的生产工单
     if (seed.orderCode === 'OFF-E2E-CASE-3') {
       if (existing.productionWorkOrder) {
         await prisma.productionWorkOrder.update({

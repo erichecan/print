@@ -1,6 +1,6 @@
 /**
  * Stripe Error Mapping Utility
- * [2025-01-29 14:30:00] Maps Stripe error codes to user-friendly messages
+* Maps Stripe error codes to user-friendly messages
  */
 
 export interface StripeError {
@@ -13,7 +13,6 @@ export interface StripeError {
 
 /**
  * Map Stripe error to user-friendly message
- * [2025-01-29 14:30:00]
  */
 export function mapStripeError(error: StripeError | Error | null | undefined): {
   message: string;

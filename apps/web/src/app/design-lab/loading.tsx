@@ -1,6 +1,6 @@
 /**
  * Design Lab Loading Component
- * [2025-01-30 21:20:00] Next.js 加载状态组件（Server Component）
+* Next.js 加载状态组件（Server Component）
  */
 export default function DesignLabLoading() {
   return (

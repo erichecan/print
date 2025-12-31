@@ -1,6 +1,6 @@
 /**
  * Error Boundary Component
- * [2025-01-27 10:50:00] React 错误边界组件，捕获组件树中的错误
+* React 错误边界组件，捕获组件树中的错误
  */
 'use client';
 
@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // [2025-01-27 10:50:00] 记录错误到控制台和错误追踪服务
+// 记录错误到控制台和错误追踪服务
     console.error('[ErrorBoundary] Caught error:', error, errorInfo);
     
     // 可以在这里集成 Sentry 或其他错误追踪服务

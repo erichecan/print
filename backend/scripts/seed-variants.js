@@ -1,8 +1,8 @@
-// [2025-11-16 16:20:00] Seed one in-stock variant for each product
+// Seed one in-stock variant for each product
 const { Client } = require('pg');
 const { randomUUID } = require('crypto');
 
-// [2025-11-19 07:36:00] Align variant defaults with Prisma schema requirements
+// Align variant defaults with Prisma schema requirements
 const DEFAULT_COLOR = 'UNSET';
 const DEFAULT_SIZE = 'ONE';
 

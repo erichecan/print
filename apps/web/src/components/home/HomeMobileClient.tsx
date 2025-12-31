@@ -1,6 +1,6 @@
 /**
  * Home Mobile Client Component
- * [2025-01-29 04:00:00] 移动端专用首页组件，参考 Custom Ink 移动端设计
+* 移动端专用首页组件，参考 Custom Ink 移动端设计
  */
 'use client';
 
@@ -8,7 +8,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { contentApi, categoriesApi, Category } from '@/lib/api';
 
-// [2025-01-29 23:15:00] 分类名称到图片文件的映射函数（与桌面端保持一致）
+// 分类名称到图片文件的映射函数（与桌面端保持一致）
 const getCategoryImagePath = (category: Category): string => {
   const slugToImageMap: Record<string, string> = {
     't-shirts': '/assets/categories/cat-tshirt.png',
@@ -60,21 +60,21 @@ const getCategoryImagePath = (category: Category): string => {
 };
 
 export function HomeMobileClient() {
-  // [2025-01-29 04:00:00] 从 CMS 获取首页内容
+// 从 CMS 获取首页内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const homePage = contentData?.data?.homePage;
 
-  // [2025-01-29 23:15:00] 从数据库获取分类数据
+// 从数据库获取分类数据
   const { data: categoriesData, error: categoriesError, isLoading: categoriesLoading } = useSWR(
     'categories',
     () => categoriesApi.list()
   );
 
-  // [2025-01-29 04:00:00] 使用 CMS 数据或默认值
+// 使用 CMS 数据或默认值
   const heroTitle = homePage?.heroTitle || 'Custom T-shirts & Promo Gear for Your Group';
   const heroSubtitle = homePage?.heroSubtitle || 'From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.';
 
-  // [2025-01-29 23:15:00] 使用数据库分类数据，如果没有则使用默认值
+// 使用数据库分类数据，如果没有则使用默认值
   const categories = categoriesData?.data?.length > 0
     ? categoriesData.data.map((category: Category) => ({
       id: category.id,
@@ -97,7 +97,7 @@ export function HomeMobileClient() {
       { id: 'cat-12', name: 'Athleticwear', slug: 'activewear', image: '/assets/categories/cat-activewear.png' },
     ];
 
-  // [2025-01-29 04:00:00] 品牌 logo（9个，3行3列）
+// 品牌 logo（9个，3行3列）
   const brandLogos = homePage?.brandLogos || [
     { id: 'brand-1', name: 'Nike', src: '/assets/brands/nike.svg' },
     { id: 'brand-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
@@ -118,7 +118,7 @@ export function HomeMobileClient() {
 
   return (
     <div className="home-mobile">
-      {/* [2025-01-29 12:00:00] Hero 区域 - 使用 canvas-design 创建的渐变背景 */}
+{/* Hero 区域 - 使用 canvas-design 创建的渐变背景 */}
       <section className="home-mobile__hero">
         <div className="home-mobile__hero-background">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -140,7 +140,7 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-      {/* [2025-01-29 04:00:00] 产品分类网格 - 12个分类，4行3列 */}
+{/* 产品分类网格 - 12个分类，4行3列 */}
       <section className="home-mobile__categories">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">
@@ -154,7 +154,7 @@ export function HomeMobileClient() {
                 className="home-mobile__category-card"
               >
                 <div className="home-mobile__category-image">
-                  {/* [2025-01-29 23:30:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={category.image}
@@ -174,12 +174,12 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-      {/* [2025-01-29 04:00:00] 新到货和 Swag 管理区域 */}
+{/* 新到货和 Swag 管理区域 */}
       <section className="home-mobile__new-arrivals">
         <div className="home-mobile__container">
           <div className="home-mobile__new-arrivals-grid">
             <div className="home-mobile__new-arrivals-image">
-              {/* [2025-01-29 23:30:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/assets/hero/hero-card-tee.jpg"
@@ -204,14 +204,14 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-      {/* [2025-01-29 04:00:00] Shop Featured Brands - 9个品牌，3行3列 */}
+{/* Shop Featured Brands - 9个品牌，3行3列 */}
       <section className="home-mobile__brands">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">Shop Featured Brands</h2>
           <div className="home-mobile__brands-grid">
             {brandLogos.map((brand) => (
               <div key={brand.id} className="home-mobile__brand-logo">
-                {/* [2025-01-29 23:20:00] 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={brand.src}
@@ -229,7 +229,7 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-      {/* [2025-01-29 04:00:00] "An Inker By Your Side" 支持区域 */}
+{/* "An Inker By Your Side" 支持区域 */}
       <section className="home-mobile__support">
         <div className="home-mobile__container">
           <div className="home-mobile__support-card">
@@ -255,7 +255,7 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-      {/* [2025-01-29 04:00:00] "Your Price Includes" 区域 */}
+{/* "Your Price Includes" 区域 */}
       <section className="home-mobile__price-includes">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">Your Price Includes</h2>
@@ -273,7 +273,7 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-      {/* [2025-01-29 04:00:00] 客户评价区域 */}
+{/* 客户评价区域 */}
       <section className="home-mobile__testimonials">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">What Our Customers Say</h2>

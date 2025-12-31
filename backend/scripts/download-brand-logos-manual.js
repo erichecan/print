@@ -1,6 +1,6 @@
 /**
  * 手动下载品牌 logo
- * [2025-01-29 03:30:00] 从已知的品牌网站或 CDN 下载品牌 logo
+* 从已知的品牌网站或 CDN 下载品牌 logo
  */
 
 const fs = require('fs');
@@ -11,12 +11,12 @@ const { URL } = require('url');
 
 const OUTPUT_DIR = path.join(__dirname, '../../apps/web/public/assets/brands');
 
-// [2025-01-29 03:30:00] 确保输出目录存在
+// 确保输出目录存在
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-// [2025-01-29 03:30:00] 下载图片
+// 下载图片
 function downloadImage(imageUrl, outputPath) {
   return new Promise((resolve, reject) => {
     if (!imageUrl || !imageUrl.startsWith('http')) {
@@ -84,7 +84,7 @@ function downloadImage(imageUrl, outputPath) {
   });
 }
 
-// [2025-01-29 03:30:00] 品牌 logo URL 映射（使用公开可用的 logo 或占位符）
+// 品牌 logo URL 映射（使用公开可用的 logo 或占位符）
 const brandLogos = [
   // 已有文件的品牌（跳过）
   { name: 'Nike', slug: 'nike', url: null, note: '已有文件' },

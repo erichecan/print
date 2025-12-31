@@ -1,6 +1,5 @@
 /**
  * Webhook Routes
- * [2025-11-04 23:58:00]
  */
 const express = require('express');
 const router = express.Router();

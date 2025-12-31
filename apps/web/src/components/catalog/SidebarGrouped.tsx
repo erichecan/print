@@ -1,7 +1,7 @@
 /**
  * SidebarGrouped Component - 分组类目导航
- * [2025-12-11 23:05:00] 实现分组结构、折叠/展开、选中态、精确计数显示
- * [2025-01-31 16:30:00] Refactored to use '/products/filters/options' API for consistent data and matched UI to reference.
+* 实现分组结构、折叠/展开、选中态、精确计数显示
+* Refactored to use '/products/filters/options' API for consistent data and matched UI to reference.
  */
 'use client';
 
@@ -43,13 +43,13 @@ const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((r)
 export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  // [2025-01-31] Fixed possible null searchParams
+// Fixed possible null searchParams
   const search = searchParams?.get('search') || '';
   const collection = searchParams?.get('collection') || ''; // Support collection filter if needed
 
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
-  // [2025-01-31] Switch to the robust filters API which already aggregates product data
+// Switch to the robust filters API which already aggregates product data
   // passing collection/search to get accurate counts
   const apiUrl = `${API_BASE_URL}/products/filters/options?collection=${collection}&search=${search}`;
 
@@ -62,7 +62,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
     }
   );
 
-  // [2025-01-31] Transform filter options categories into Group structure
+// Transform filter options categories into Group structure
   // The API returns a flat list or tree depending on backend, but DynamicFilters expected a tree.
   // Let's assume filterOptions.categories is the array of categories.
   const groups: CategoryGroup[] = (() => {
@@ -70,7 +70,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
 
     const rawCategories: any[] = filterOptions.categories;
 
-    // [2025-12-21] Fix: Identify all child categories to avoid rendering them as top-level duplicates
+// Fix: Identify all child categories to avoid rendering them as top-level duplicates
     const childIds = new Set<string>();
     rawCategories.forEach(cat => {
       if (cat.children && Array.isArray(cat.children)) {
@@ -108,7 +108,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
       });
   })();
 
-  // [2025-12-11 23:05:00] 从 URL 解析选中状态
+// 从 URL 解析选中状态
   useEffect(() => {
     // Legacy support for onSelect callback if used
     if (onSelect) {
@@ -117,7 +117,7 @@ export function SidebarGrouped({ selected, onSelect }: SidebarGroupedProps) {
     }
   }, [pathname, onSelect]);
 
-  // [2025-12-11 23:05:00] 切换分组折叠/展开
+// 切换分组折叠/展开
   const toggleGroup = (groupSlug: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);

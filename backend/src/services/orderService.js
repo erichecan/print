@@ -1,6 +1,6 @@
 /**
  * Order Service
- * [2025-01-27 13:00:00] Order state machine and business logic
+* Order state machine and business logic
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
@@ -9,7 +9,7 @@ const { sendOrderStatusUpdateNotification, sendOrderCancellationConfirmation } =
 
 /**
  * Order Status State Machine
- * [2025-01-27 13:00:00] Defines valid state transitions
+* Defines valid state transitions
  */
 const ORDER_STATUS_TRANSITIONS = {
   PENDING: ['PROCESSING', 'CANCELLED'],
@@ -22,7 +22,6 @@ const ORDER_STATUS_TRANSITIONS = {
 
 /**
  * Check if order status transition is valid
- * [2025-01-27 13:00:00]
  */
 function isValidStatusTransition(fromStatus, toStatus) {
   if (!fromStatus || !toStatus) {
@@ -44,7 +43,6 @@ function isValidStatusTransition(fromStatus, toStatus) {
 
 /**
  * Get allowed status transitions for current order status
- * [2025-01-27 13:00:00]
  */
 function getAllowedTransitions(currentStatus) {
   if (!currentStatus) {
@@ -57,7 +55,6 @@ function getAllowedTransitions(currentStatus) {
 
 /**
  * Validate order status transition
- * [2025-01-27 13:00:00]
  */
 function validateStatusTransition(order, newStatus) {
   const currentStatus = order.status;
@@ -96,7 +93,6 @@ function validateStatusTransition(order, newStatus) {
 
 /**
  * Update order status with validation and logging
- * [2025-01-27 13:00:00]
  */
 async function updateOrderStatus(orderId, newStatus, options = {}) {
   const { actorId, actorName, note, skipValidation = false } = options;
@@ -159,7 +155,7 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
     actorName,
   });
 
-  // [2025-12-06 10:30:00] Record status change history
+// Record status change history
   try {
     await prisma.orderStatusHistory.create({
       data: {
@@ -184,7 +180,7 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
     });
   }
 
-  // [2025-12-06 10:30:00] Send status update notification email (don't fail if email fails)
+// Send status update notification email (don't fail if email fails)
   try {
     // Fetch full order details for email
     const orderWithDetails = await prisma.order.findUnique({
@@ -203,7 +199,7 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
     });
 
     if (orderWithDetails) {
-      // [2025-12-06 11:00:00] If status changed to CANCELLED, send cancellation email
+// If status changed to CANCELLED, send cancellation email
       // Otherwise, send status update notification email
       if (normalizedNewStatus === 'CANCELLED' && order.status !== 'CANCELLED') {
         const cancelledBy = actorId ? 'admin' : 'system';
@@ -243,7 +239,6 @@ async function updateOrderStatus(orderId, newStatus, options = {}) {
 
 /**
  * Cancel order
- * [2025-01-27 13:00:00]
  */
 async function cancelOrder(orderId, options = {}) {
   const { userId, reason, restoreInventory = true, processRefund = true } = options;
@@ -296,7 +291,7 @@ async function cancelOrder(orderId, options = {}) {
       },
     });
 
-    // [2025-12-06 11:30:00] Restore inventory if needed
+// Restore inventory if needed
     // Use correct Prisma model name: Variant (not productVariant)
     if (restoreInventory) {
       for (const item of order.items) {
@@ -340,7 +335,7 @@ async function cancelOrder(orderId, options = {}) {
     processRefund,
   });
 
-  // [2025-12-06 11:00:00] Send cancellation confirmation email (don't fail if email fails)
+// Send cancellation confirmation email (don't fail if email fails)
   try {
     // Fetch full order details for email
     const orderWithDetails = await prisma.order.findUnique({
@@ -381,7 +376,6 @@ async function cancelOrder(orderId, options = {}) {
 
 /**
  * Check if order can be cancelled
- * [2025-01-27 13:00:00]
  */
 function canCancelOrder(order) {
   if (!order) {

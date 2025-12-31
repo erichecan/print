@@ -1,6 +1,6 @@
 /**
  * Design Lab 视觉对比工具
- * [2025-12-06 12:30:00] 截图对比和视觉验证
+* 截图对比和视觉验证
  */
 import { Page } from '@playwright/test';
 import * as fs from 'fs';

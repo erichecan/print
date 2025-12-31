@@ -1,6 +1,6 @@
 /**
  * Toast Component
- * [2025-01-27 16:35:00] 用于显示临时消息通知，替代 alert
+* 用于显示临时消息通知，替代 alert
  */
 'use client';
 

@@ -1,6 +1,6 @@
 /**
  * Static Categories Section Component
- * [2025-11-19] 使用数据库分类数据，动态映射到本地图片资源
+* 使用数据库分类数据，动态映射到本地图片资源
  */
 'use client';
 

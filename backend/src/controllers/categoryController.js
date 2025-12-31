@@ -1,14 +1,14 @@
 /**
  * Category Controller (Public)
- * [2025-01-27 18:50:00] 提供公共分类列表接口，用于首页展示
- * [2025-12-02 14:13:10] 分类公共接口说明：所有前台分类展示统一从 category 表读取，不再直接依赖静态类目配置
- * [2025-12-11 09:21:35] 添加树状分类 API 端点
+* 提供公共分类列表接口，用于首页展示
+* 分类公共接口说明：所有前台分类展示统一从 category 表读取，不再直接依赖静态类目配置
+* 添加树状分类 API 端点
  */
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 const { getCategoryTree, getTreeWithCounts, getProductsByCategorySlug } = require('../services/categories');
 
-// [2025-01-27 18:50:00] 获取所有活跃的分类（用于首页展示）
+// 获取所有活跃的分类（用于首页展示）
 exports.listCategories = async (req, res) => {
   try {
     const categories = await prisma.category.findMany({
@@ -33,7 +33,7 @@ exports.listCategories = async (req, res) => {
       data: categories,
     });
   } catch (error) {
-    logger.error('[2025-01-27 18:50:00] listCategories error:', {
+logger.error(' listCategories error:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
@@ -49,7 +49,7 @@ exports.listCategories = async (req, res) => {
   }
 };
 
-// [2025-01-27 18:50:00] 根据 slug 获取分类详情
+// 根据 slug 获取分类详情
 exports.getCategoryBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -73,7 +73,7 @@ exports.getCategoryBySlug = async (req, res) => {
 
     res.json(category);
   } catch (error) {
-    logger.error('[2025-01-27 18:50:00] getCategoryBySlug error:', error);
+logger.error(' getCategoryBySlug error:', error);
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch category',
@@ -81,7 +81,7 @@ exports.getCategoryBySlug = async (req, res) => {
   }
 };
 
-// [2025-12-11 09:21:35] 获取树状分类（含产品计数）
+// 获取树状分类（含产品计数）
 exports.getCategoryTree = async (req, res) => {
   try {
     const tree = await getCategoryTree();
@@ -89,7 +89,7 @@ exports.getCategoryTree = async (req, res) => {
       data: tree,
     });
   } catch (error) {
-    logger.error('[2025-12-11 09:21:35] getCategoryTree error:', error);
+logger.error(' getCategoryTree error:', error);
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch category tree',
@@ -97,7 +97,7 @@ exports.getCategoryTree = async (req, res) => {
   }
 };
 
-// [2025-12-11 23:05:00] 获取分组分类树（含精确计数）
+// 获取分组分类树（含精确计数）
 exports.getTreeWithCounts = async (req, res) => {
   try {
     const strategy = (req.query.strategy === 'aggregate') ? 'aggregate' : 'direct';
@@ -110,7 +110,7 @@ exports.getTreeWithCounts = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('[2025-12-11 23:05:00] getTreeWithCounts error:', error);
+logger.error(' getTreeWithCounts error:', error);
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch category tree with counts',
@@ -118,7 +118,7 @@ exports.getTreeWithCounts = async (req, res) => {
   }
 };
 
-// [2025-12-11 23:05:00] 根据分类 slug 获取产品列表
+// 根据分类 slug 获取产品列表
 exports.getProductsByCategorySlug = async (req, res) => {
   try {
     const { slug } = req.params;
@@ -140,7 +140,7 @@ exports.getProductsByCategorySlug = async (req, res) => {
       category: result.category,
     });
   } catch (error) {
-    logger.error('[2025-12-11 23:05:00] getProductsByCategorySlug error:', error);
+logger.error(' getProductsByCategorySlug error:', error);
     res.status(500).json({
       error: 'Server Error',
       message: 'Failed to fetch products by category',
