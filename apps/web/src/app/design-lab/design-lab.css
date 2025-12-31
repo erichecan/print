@@ -322,7 +322,6 @@
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: var(--dl-space-1);
   width: 68px !important;
   /* Custom Ink element-9 width */
   height: 70px !important;
@@ -433,7 +432,13 @@
   font-weight: 700;
   font-family: 'Arial', sans-serif;
   line-height: 1;
-  color: inherit;
+  color: rgb(191, 191, 191);
+}
+
+/* Ensure text icon also turns white on hover/active */
+.dl-rail__btn:hover .dl-rail__icon--text,
+.dl-rail__btn.is-active .dl-rail__icon--text {
+  color: rgb(255, 255, 255);
 }
 
 /* [2025-01-31 00:00:00] Add Names 图标样式 - 显示 "00" */
