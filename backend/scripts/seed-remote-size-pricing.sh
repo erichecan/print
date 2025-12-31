@@ -7,7 +7,7 @@ set -e
 echo "🚀 Seeding Remote Database with Size Pricing Configuration..."
 
 # Configuration
-PROJECT_ID="moonlit-gamma-479502-r6"
+PROJECT_ID="print-482914"
 REGION="us-central1"
 SERVICE_NAME="print-main-backend"
 
@@ -62,4 +62,4 @@ echo ""
 echo "✅ Remote database seeding complete!"
 echo ""
 echo "📝 To verify, check the admin panel:"
-echo "   https://print-main-frontend-234065158862.us-central1.run.app/offline-orders/sales/orders"
+echo "   https://print-main-frontend-651538279084.us-central1.run.app/offline-orders/sales/orders"

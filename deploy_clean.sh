@@ -52,8 +52,18 @@ else
     echo "🔑 Stripe Key fetched."
 fi
 
+# Get Backend URL for Frontend
+echo "📡 Fetching Backend URL..."
+BACKEND_URL=$(gcloud run services describe print-main-backend --project=$PROJECT_ID --region=$REGION --format='value(status.url)' 2>/dev/null)
+if [ -z "$BACKEND_URL" ]; then
+    echo "⚠️ Warning: Backend URL not found. Using fallback."
+    BACKEND_URL="https://print-main-backend-651538279084.us-central1.run.app"
+fi
+echo "🔗 Backend URL: $BACKEND_URL"
+
+echo "📦 Building Frontend..."
 docker build --platform linux/amd64 \
-  --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-651538279084.us-central1.run.app/api \
+  --build-arg NEXT_PUBLIC_API_URL="${BACKEND_URL}/api" \
   --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$STRIPE_KEY" \
   --build-arg NEXT_PUBLIC_BUILD_SHA="$TAG" \
   -f apps/web/Dockerfile \
@@ -69,7 +79,7 @@ gcloud run deploy $SERVICE_NAME \
   --region $REGION \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars NEXT_PUBLIC_API_URL=https://print-main-backend-651538279084.us-central1.run.app/api \
+  --set-env-vars NEXT_PUBLIC_API_URL="${BACKEND_URL}/api" \
   --set-secrets NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest \
   --project $PROJECT_ID
 
