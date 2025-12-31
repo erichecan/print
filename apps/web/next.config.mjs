@@ -257,6 +257,28 @@ const nextConfig = {
       },
     ];
   },
+  // [2025-12-31] Force disable caching for all routes to prevent stale content issues
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+        ],
+      },
+    ];
+  },
   reactStrictMode: true,
   // [2025-01-29 12:30:00] API URL 配置：开发环境使用 localhost，生产环境必须通过环境变量设置
   env: {

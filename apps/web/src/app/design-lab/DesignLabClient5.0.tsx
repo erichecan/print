@@ -89,6 +89,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       'right-sleeve'?: string;
     };
     productId: string;
+    slug?: string; // [2025-12-31] Added for Product Details link
     colorId?: string; // [2025-12-28] CRITICAL: This is the productVariantId
     productName?: string;
     variants?: Array<{ id: string; color: string; }>;
@@ -100,6 +101,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         color: initialProductData.color || 'White',
         baseImages: initialProductData.baseImages || getDefaultProductBaseImages(initialProductData.color || 'White'),
         productId: initialProductData.productId,
+        slug: initialProductData.slug,
         colorId: initialProductData.variantId, // [2025-12-28] CRITICAL: Set colorId from variantId
         productName: initialProductData.productName,
         variants: initialProductData.variants,
@@ -541,6 +543,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // [2025-12-31] Product List State for "Add Product" feature
   const [productList, setProductList] = useState<any[]>([productInfo]);
 
+  // [2025-12-31] Refinement: Product Carousel State
+  const [productScrollIndex, setProductScrollIndex] = useState(0);
+  const VISIBLE_PRODUCTS = 2;
+
+  const handleScrollLeft = () => {
+    setProductScrollIndex(prev => Math.max(0, prev - 1));
+  };
+
+  const handleScrollRight = () => {
+    setProductScrollIndex(prev => Math.min(Math.max(0, productList.length - VISIBLE_PRODUCTS), prev + 1));
+  };
+
   // [2025-12-31] Helper to sync productInfo with productList updates
   const updateProductList = (newProduct: any) => {
     setProductList(prev => {
@@ -578,6 +592,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           color,
           baseImages,
           productId: productDetail.productId,
+          slug: productDetail.slug, // [2025-12-31] Capture slug
           colorId: productDetail.variantId, // [2025-12-28] CRITICAL: Set colorId from variantId
           productName: productDetail.productName,
           variants: productDetail.variants, // [2025-12-28] Ensure variants are preserved
@@ -2611,7 +2626,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                       },
                       // [2025-12-14 07:45:00] 功能3：resize 图标 - 使用 actionHandler 实现缩放功能
                       // 使用 Fabric.js 的 controlsUtils 工具函数（如果可用），否则使用自定义实现
-                      // [2025-12-16 21:35:41] 修复：缩放后必须 setCoords，否则控件命中区域与图标渲染位置会逐渐偏离（放大后更明显）
+                      // [2025-12-16 21:35:41] 修复：缩放后必须 setCoords，否则控件命中区域与渲染位置会逐渐偏离（放大后更明显）
                       actionHandler: function (eventData: any, transformData: any, x: any, y: any) {
                         const target = transformData?.target as any;
                         const controlsUtils = (fabric as any).controlsUtils;
@@ -3111,7 +3126,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       canvas.setActiveObject(textObj);
       canvas.renderAll();
 
-      // [2025-12-16 07:10:00] 切换面板到 Edit Text（selection:created/updated 也会兜底）
+      // [2025-12-16 07:10:00] 切换面板到 Edit Text（selection:created/updated 也 会兜底）
       setSelectedText(textObj);
       setSelectedImage(null);
       setSelectedArt(null); // [2025-01-30 12:58:00] Add Art: 切换到文本编辑时清理艺术素材
@@ -3824,75 +3839,156 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
       {/* 6. BottomBar - 底部操作栏 */}
       <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
-        <div className="dl-bottom-bar__left">
+        <div className="dl-bottom-bar__left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             className="dl-bottom-bar__add-products"
             onClick={() => setIsCatalogModalOpen(true)}
             type="button"
+            style={{ flexShrink: 0 }}
           >
             + Add Products
           </button>
 
-          {/* [2025-12-31] Feature: Render list of active products */}
-          {productList.map((prod, index) => (
-            <div
-              key={`${prod.productId}-${index}`}
-              className={`dl-bottom-bar__product-info ${prod.productId === productInfo.productId ? 'is-active' : ''}`}
+          {/* Carousel Left Arrow */}
+          {productList.length > VISIBLE_PRODUCTS && (
+            <button
+              type="button"
+              onClick={handleScrollLeft}
+              disabled={productScrollIndex === 0}
               style={{
-                cursor: 'pointer',
-                opacity: prod.productId === productInfo.productId ? 1 : 0.6,
-                border: prod.productId === productInfo.productId ? '2px solid #0066cc' : '1px solid transparent',
-                borderRadius: '8px',
-                padding: '4px',
-                marginRight: '8px'
-              }}
-              onClick={() => {
-                // Switch active product
-                setProductInfo(prod);
-                // Update URL
-                if (typeof window !== 'undefined') {
-                  const url = new URL(window.location.href);
-                  url.searchParams.set('productId', prod.productId);
-                  if (prod.variantId) {
-                    url.searchParams.set('variantId', prod.variantId);
-                  }
-                  window.history.replaceState({}, '', url.toString());
-                }
+                background: 'none',
+                border: 'none',
+                color: '#333', // [2025-12-31] Dark color for visibility
+                cursor: productScrollIndex === 0 ? 'default' : 'pointer',
+                opacity: productScrollIndex === 0 ? 0.3 : 1,
+                fontSize: '20px',
+                padding: '0 8px'
               }}
             >
-              <div className="dl-bottom-bar__product-thumb">
-                {/* Simplified thumb logic */}
-                {prod.baseImages.front ? (
-                  <img src={prod.baseImages.front} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                ) : (
-                  <div className="dl-bottom-bar__product-thumb-placeholder">P</div>
-                )}
-              </div>
-              <div className="dl-bottom-bar__product-details">
-                <div className="dl-bottom-bar__product-name">
-                  {typeof prod.productName === 'object' ? (prod.productName as any).name : (prod.productName || 'Product')}
+              &lt;
+            </button>
+          )}
+
+          {/* Product List Viewport */}
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            overflow: 'hidden',
+            maxWidth: '500px' // Adjust based on card width approx 2 cards
+          }}>
+            {productList.slice(productScrollIndex, productScrollIndex + VISIBLE_PRODUCTS).map((prod, index) => {
+              // We need the original index to key correctly if we want stability, 
+              // but using logic index is cleaner.
+              // Actually, map index here is 0..1. Let's use computed index for keys/updates if needed? 
+              // unique key is productId-indexInFullList logic...
+              // Let's rely on prod.productId for key mostly.
+              // Note: productList might have duplicates if user adds same product twice? Assuming unique IDs or okay to duplicate.
+              // Let's use `prod.productId-${productScrollIndex + index}` to be safe.
+
+              const realIndex = productScrollIndex + index;
+              const isActive = prod.productId === productInfo.productId;
+
+              return (
+                <div
+                  key={`${prod.productId}-${realIndex}`}
+                  className={`dl-bottom-bar__product-info ${isActive ? 'is-active' : ''}`}
+                  style={{
+                    cursor: 'pointer',
+                    opacity: isActive ? 1 : 0.6,
+                    border: isActive ? '2px solid #0066cc' : '1px solid #ccc',
+                    borderRadius: '8px',
+                    padding: '6px',
+                    minWidth: '200px', // Fixed width for stability
+                    maxWidth: '200px',
+                    height: '70px',    // Fixed height
+                    boxSizing: 'border-box',
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: isActive ? 'rgba(0,102,204,0.1)' : 'transparent',
+                    flexShrink: 0
+                  }}
+                  onClick={() => {
+                    setProductInfo(prod);
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      url.searchParams.set('productId', prod.productId);
+                      if (prod.variantId) {
+                        url.searchParams.set('variantId', prod.variantId);
+                      }
+                      window.history.replaceState({}, '', url.toString());
+                    }
+                  }}
+                >
+                  <div className="dl-bottom-bar__product-thumb" style={{ width: '50px', height: '50px', flexShrink: 0 }}>
+                    {prod.baseImages.front ? (
+                      <img src={prod.baseImages.front} alt="Thumb" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    ) : (
+                      <div className="dl-bottom-bar__product-thumb-placeholder">P</div>
+                    )}
+                  </div>
+                  <div className="dl-bottom-bar__product-details" style={{ marginLeft: '8px', overflow: 'hidden', flex: 1 }}>
+                    <div className="dl-bottom-bar__product-name" style={{
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: '#333', // [2025-12-31] Dark color for visibility
+                      marginBottom: '4px'
+                    }} title={typeof prod.productName === 'object' ? (prod.productName as any).name : prod.productName}>
+                      {typeof prod.productName === 'object' ? (prod.productName as any).name : (prod.productName || 'Product')}
+                    </div>
+
+                    <div className="dl-bottom-bar__product-links">
+                      {/* Removed Change Product Button */}
+                      <button
+                        className="dl-bottom-bar__link"
+                        type="button"
+                        style={{ fontSize: '11px', color: '#0066cc', textDecoration: 'underline' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Open product details in new tab
+                          // Use slug if available, fallback to ID
+                          const targetId = prod.slug || prod.productId;
+                          if (targetId) {
+                            window.open(`/products/${targetId}`, '_blank');
+                          }
+                        }}
+                      >
+                        Product Details
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="dl-bottom-bar__product-links">
-                  <button
-                    className="dl-bottom-bar__link"
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsCatalogModalOpen(true);
-                    }}
-                  >
-                    Change Product
-                  </button>
-                  <span className="dl-bottom-bar__separator">|</span>
-                  <button className="dl-bottom-bar__link" type="button">Product Details</button>
-                </div>
-              </div>
-            </div>
-          ))}
+              );
+            })}
+          </div>
+
+          {/* Carousel Right Arrow */}
+          {productList.length > VISIBLE_PRODUCTS && (
+            <button
+              type="button"
+              onClick={handleScrollRight}
+              disabled={productScrollIndex >= productList.length - VISIBLE_PRODUCTS}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: '#333', // [2025-12-31] Dark color for visibility
+                cursor: productScrollIndex >= productList.length - VISIBLE_PRODUCTS ? 'default' : 'pointer',
+                opacity: productScrollIndex >= productList.length - VISIBLE_PRODUCTS ? 0.3 : 1,
+                fontSize: '20px',
+                padding: '0 8px'
+              }}
+            >
+              &gt;
+            </button>
+          )}
+
           <button
             className="dl-bottom-bar__link"
             type="button"
             onClick={() => handleToolClick('product-colors')}
+            style={{ marginLeft: '8px' }}
           >
             Change Color
           </button>
