@@ -23,6 +23,7 @@ async function getOrCreateCart(userId, sessionId) {
       include: {
         items: {
           include: {
+            design: true, // [2025-01-31] Include design details
             variant: {
               include: {
                 product: {
@@ -35,6 +36,7 @@ async function getOrCreateCart(userId, sessionId) {
                 },
               },
             },
+            design: true, // [2025-01-31] Include design details
           },
         },
       },
@@ -58,6 +60,7 @@ async function getOrCreateCart(userId, sessionId) {
                   },
                 },
               },
+              design: true, // [2025-01-31] Include design details
             },
           },
         },
@@ -83,6 +86,7 @@ async function getOrCreateCart(userId, sessionId) {
                 },
               },
             },
+            design: true, // [2025-01-31] Include design details
           },
         },
       },
@@ -106,6 +110,7 @@ async function getOrCreateCart(userId, sessionId) {
                   },
                 },
               },
+              design: true, // [2025-01-31] Include design details
             },
           },
         },
@@ -192,8 +197,8 @@ exports.getCart = async (req, res) => {
         return true;
       })
       .map((item) => {
-        // 获取图片 URL（优先使用 variant 的 imageUrl，否则使用 product 的第一张图片）
-        let thumbnailUrl = item.variant.imageUrl || item.variant.product.images?.[0]?.url || null;
+        // 获取图片 URL（优先使用设计缩略图，其次是 variant 的 imageUrl，最后是 product 的第一张图片）
+        let thumbnailUrl = item.design?.thumbnailUrl || item.variant.imageUrl || item.variant.product.images?.[0]?.url || null;
 
         // [2025-01-29 12:00:00] 使用 optimizeImageUrl 优化图片 URL，确保是完整的绝对路径
         if (thumbnailUrl) {
