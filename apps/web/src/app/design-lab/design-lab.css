@@ -322,6 +322,7 @@
   flex-direction: column !important;
   align-items: center !important;
   justify-content: center !important;
+  gap: 4px;
   width: 68px !important;
   /* Custom Ink element-9 width */
   height: 70px !important;
@@ -468,17 +469,12 @@
   color: currentColor;
 }
 
-/* [2025-01-31 00:00:00] 像素级对齐：element-24 (Add Text 文本) - x:19, y:285, width:64, height:16 */
-/* [2025-12-06 12:30:00] 修复：确保 Rail 按钮标签颜色正确应用 */
 .dl-rail__btn-label {
   font-size: var(--dl-font-sm);
-  line-height: 1.2;
+  line-height: 1;
   text-align: center;
-  margin-top: var(--dl-space-1);
   width: 64px;
   /* Custom Ink element-24 width */
-  height: 16px;
-  /* Custom Ink element-24 height */
   display: block;
   color: rgb(191, 191, 191) !important;
   /* Custom Ink element-24 color - 使用 !important 防止覆盖 */
