@@ -299,8 +299,9 @@
   /* 确保使用 flex 布局 */
   flex-direction: column !important;
   /* 确保垂直排列 */
-  align-items: flex-start !important;
-  /* 按钮靠左对齐，x:16 */
+  /* 确保垂直排列 */
+  align-items: center !important;
+  /* [2025-12-31] Changed to center alignment per user request */
   padding: 0;
   /* 移除 padding，使用 margin 控制位置 */
   padding-top: 137px;
@@ -349,8 +350,8 @@
   user-select: none;
   margin: 0;
   /* 确保没有外边距影响位置 */
-  margin-left: 16px !important;
-  /* element-8 到 element-12 的 x 位置都是 16 */
+  margin-left: 0 !important;
+  /* [2025-12-31] Removed margin-left to allow centering */
 }
 
 .dl-rail__btn-icon {

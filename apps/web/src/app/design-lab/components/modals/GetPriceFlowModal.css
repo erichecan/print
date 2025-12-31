@@ -192,6 +192,14 @@
   border-color: var(--gp-primary);
 }
 
+.dl-get-price-flow__radio-label.is-selected {
+  border-color: var(--gp-primary);
+  background: #f0f7ff;
+  border-width: 2px;
+  padding: 15px;
+  /* Adjust for border-width to keep same height */
+}
+
 .dl-get-price-flow__radio-label input[type="radio"] {
   width: 18px;
   height: 18px;
@@ -273,27 +281,160 @@
   padding: 32px;
   background: white;
   border: 2px solid var(--gp-primary);
-  border-radius: var(--gp-radius);
-  margin-bottom: 24px;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
-.dl-get-price-flow__price-item {
+/* Modern Price Card */
+.dl-get-price-flow__price-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.dl-get-price-flow__price-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.dl-get-price-flow__price-main-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .dl-get-price-flow__price-each {
-  font-size: 40px;
+  font-size: 48px;
   font-weight: 800;
-  color: var(--gp-primary);
+  letter-spacing: -0.025em;
+  color: #38bdf8;
+  /* sky-400 */
 }
 
-.dl-get-price-flow__price-total {
-  font-size: 18px;
-  color: var(--gp-text-muted);
+.dl-get-price-flow__price-each span {
+  font-size: 24px;
+  font-weight: 500;
+  color: #94a3b8;
+  /* slate-400 */
+  margin-left: 8px;
+}
+
+.dl-get-price-flow__price-total-wrap {
+  font-size: 16px;
+  color: #cbd5e1;
+  /* slate-300 */
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+/* Badges / Pills */
+.dl-get-price-flow__badges-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+
+.dl-get-price-flow__pill {
+  padding: 6px 14px;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Info Sections */
+.dl-get-price-flow__info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.dl-get-price-flow__info-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+
+.dl-get-price-flow__info-card:hover {
+  border-color: #cbd5e1;
+}
+
+.dl-get-price-flow__info-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dl-get-price-flow__info-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.dl-get-price-flow__info-content {
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.dl-get-price-flow__info-edit-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dl-get-price-flow__info-edit-btn:hover {
+  background: #e0f2fe;
+}
+
+/* Order List Item */
+.dl-get-price-flow__order-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.dl-get-price-flow__order-details-text {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.dl-get-price-flow__order-sizes-text {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
 }
 
 /* 底部操作 */

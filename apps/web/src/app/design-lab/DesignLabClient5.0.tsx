@@ -39,7 +39,11 @@ import { getProducts, getProductByVariant, getProduct, type Product, type Produc
 import SaveShareModal from './components/modals/SaveShareModal';
 import { useDesign } from './modules/save/useDesign';
 // [2025-12-18 21:23:43] 报价模块：导入报价相关组件和 hooks
-import GetPriceFlowModal from './components/modals/GetPriceFlowModal';
+import GetPriceFlowModal, {
+  OrderingOptions,
+  SizeQuantity,
+  GetPriceFlowStep
+} from './components/modals/GetPriceFlowModal';
 import { usePricing } from './modules/pricing/usePricing';
 import './design-lab.css';
 
@@ -231,28 +235,29 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     }
 
     // [2025-12-20] 修复：如果 URL 中没有 productId（无论是否有 colorId），都加载默认产品
-    // [2025-12-21] 改进：加载特定的 Design Lab 默认产品 (design-lab-default-tee)
+    // [2025-12-31] 改进：加载特定的系统内置 Design Lab 默认产品 (design-lab-default-tee)
     if (!productId && !initialProductData) {
-      console.log('[DesignLab 5.0] No product selected, fetching DEFAULT Design Lab product...');
-      // 只有在还没有产品ID时才获取
+      console.log('[DesignLab 5.0] No product selected, fetching SYSTEM DEFAULT Design Lab product...');
+
       if (!productInfo.productId) {
-        // 使用 slug 查询特定的默认产品
-        getProducts({ search: 'design-lab-default-tee', limit: 1 })
-          .then((response: any) => {
-            if (response.data && response.data.length > 0) {
-              const defaultProduct = response.data.find((p: any) => p.slug === 'design-lab-default-tee') || response.data[0];
-              console.log('[DesignLab 5.0] Loaded default product:', defaultProduct.name);
-              handleProductSelect(defaultProduct.id);
-            } else {
-              // Fallback to ANY product if the specific default one isn't found
-              getProducts({ limit: 1 }).then((res: any) => {
-                if (res.data && res.data.length > 0) {
-                  handleProductSelect(res.data[0].id);
-                }
-              });
+        // [2025-12-31] 直接通过 Slug 获取系统商品，不再通过搜索（搜索已过滤系统商品）
+        getProduct('design-lab-default-tee')
+          .then((detail: ProductDetail) => {
+            if (detail) {
+              console.log('[DesignLab 5.0] Loaded system default product:', detail.productName);
+              // 由于 detail 格式与 handleProductSelect 预期一致，我们可以直接更新
+              // 但为了保持一致，我们调用 handleProductSelect（它现在也能处理 slug/id）
+              handleProductSelect('design-lab-default-tee');
             }
           })
-          .catch((err: any) => console.warn('[DesignLab 5.0] Failed to load default product:', err));
+          .catch((err: any) => {
+            console.warn('[DesignLab 5.0] Failed to load system default product, trying any active product...', err);
+            getProducts({ limit: 1 }).then((res: any) => {
+              if (res.data && res.data.length > 0) {
+                handleProductSelect(res.data[0].id);
+              }
+            });
+          });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -447,6 +452,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // [2025-12-18 21:23:43] 报价模块：GetPriceFlowModal 状态
   const [showGetPriceModal, setShowGetPriceModal] = useState(false);
+  // [2025-12-31] Persistent state for GetPriceFlow
+  const [getPriceStep, setGetPriceStep] = useState<GetPriceFlowStep>('quantity');
+  const [getPriceOrderingOptions, setGetPriceOrderingOptions] = useState<OrderingOptions>({
+    orderType: 'buy-ship',
+    shipping: 'single-address',
+    sizesQuantities: 'i-know-sizes',
+    payment: 'i-pay',
+  });
+  const [getPriceSizeQuantities, setGetPriceSizeQuantities] = useState<SizeQuantity[]>([]);
+  const [getPriceEstimatedQuantity, setGetPriceEstimatedQuantity] = useState<number>(1);
+  const [getPriceQuoteData, setGetPriceQuoteData] = useState<any>(null);
 
   // [2025-12-20 03:00:00] 5.0 版本：功能叠加 - 视图切换功能
   // [2025-12-28] Updated: Save current view objects before switching
@@ -3339,7 +3355,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* [2025-12-20 03:10:00] 5.0 版本：功能3 - Rail 按钮点击交互 */}
         <nav ref={railRef} className="dl-rail" aria-label="Design tools" data-testid="rail">
           <button
-            className={`dl - rail__btn ${activeTool === 'upload' ? 'is-active' : ''} `}
+            className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''} `}
             onClick={() => handleToolClick('upload')}
             aria-label="Upload image"
             aria-pressed={activeTool === 'upload'}
@@ -3356,7 +3372,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl - rail__btn ${activeTool === 'text' ? 'is-active' : ''} `}
+            className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''} `}
             onClick={() => handleToolClick('text')}
             aria-label="Add text"
             aria-pressed={activeTool === 'text'}
@@ -3367,7 +3383,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl - rail__btn ${activeTool === 'art' ? 'is-active' : ''} `}
+            className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''} `}
             onClick={() => handleToolClick('art')}
             aria-label="Add art"
             aria-pressed={activeTool === 'art'}
@@ -3580,7 +3596,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         {/* [2025-12-20 02:50:00] 5.0 版本：添加 ref 用于调试 */}
         <aside ref={sidebarRef} className="dl-sidebar" aria-label="View options" data-testid="sidebar">
           <button
-            className={`dl - sidebar__btn ${currentView === 'front' ? 'is-active' : ''} `}
+            className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''} `}
             onClick={() => handleViewChange('front')}
             aria-label="Front view"
             aria-pressed={currentView === 'front'}
@@ -3601,7 +3617,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl - sidebar__btn ${currentView === 'back' ? 'is-active' : ''} `}
+            className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''} `}
             onClick={() => handleViewChange('back')}
             aria-label="Back view"
             aria-pressed={currentView === 'back'}
@@ -3622,7 +3638,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl - sidebar__btn ${currentView === 'left-sleeve' ? 'is-active' : ''} `}
+            className={`dl-sidebar__btn ${currentView === 'left-sleeve' ? 'is-active' : ''} `}
             onClick={() => handleViewChange('left-sleeve')}
             aria-label="Left Sleeve"
             aria-pressed={currentView === 'left-sleeve'}
@@ -3643,7 +3659,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl - sidebar__btn ${currentView === 'right-sleeve' ? 'is-active' : ''} `}
+            className={`dl-sidebar__btn ${currentView === 'right-sleeve' ? 'is-active' : ''} `}
             onClick={() => handleViewChange('right-sleeve')}
             aria-label="Right Sleeve"
             aria-pressed={currentView === 'right-sleeve'}
@@ -3664,7 +3680,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
 
           <button
-            className={`dl - sidebar__btn ${isZoomed ? 'is-active' : ''} `}
+            className={`dl-sidebar__btn ${isZoomed ? 'is-active' : ''} `}
             onClick={handleZoomToggle}
             aria-label="Zoom"
             aria-pressed={isZoomed}
@@ -3854,6 +3870,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         onAddToCart={handleAddToCart}
         getQuoteData={getQuoteDataInternal}
         productName={productInfo.productName}
+        // [2025-12-31] Pass persistent states
+        currentStep={getPriceStep}
+        setCurrentStep={setGetPriceStep}
+        orderingOptions={getPriceOrderingOptions}
+        setOrderingOptions={setGetPriceOrderingOptions}
+        sizeQuantities={getPriceSizeQuantities}
+        setSizeQuantities={setGetPriceSizeQuantities}
+        estimatedQuantity={getPriceEstimatedQuantity}
+        setEstimatedQuantity={setGetPriceEstimatedQuantity}
+        quoteData={getPriceQuoteData}
+        setQuoteData={setGetPriceQuoteData}
       />
 
       <ColorSelectorModal

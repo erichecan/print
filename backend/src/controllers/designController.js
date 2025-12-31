@@ -326,6 +326,13 @@ exports.requestQuote = async (req, res) => {
       quantityDiscount = 0.05;
     }
 
+    // [2025-12-31] Fetch global size fees for synchronization
+    const globalSizeFees = await prisma.offline_order_size_fees.findMany();
+    const globalFeeMap = {};
+    globalSizeFees.forEach(fee => {
+      globalFeeMap[fee.size] = Math.round(Number(fee.additional_fee) * 100);
+    });
+
     // 默认变体调整（如果未使用 sizeQuantities）
     const defaultAdjustment = Number(variant.priceAdjustment || 0);
 
@@ -343,7 +350,9 @@ exports.requestQuote = async (req, res) => {
 
       const sizeAdjustmentMap = {};
       allVariants.forEach(v => {
-        sizeAdjustmentMap[v.size] = Number(v.priceAdjustment || 0);
+        // [2025-12-31] Synchronize with global size fee config
+        const globalFee = v.size ? globalFeeMap[v.size] : undefined;
+        sizeAdjustmentMap[v.size] = globalFee !== undefined ? globalFee : Number(v.priceAdjustment || 0);
       });
 
       // 2. 根据每种尺寸的数量计算总价
@@ -368,8 +377,12 @@ exports.requestQuote = async (req, res) => {
 
     } else {
       // 老逻辑：使用当前 design 关联的变体价格
-      weightedUnitPrice = basePrice + defaultAdjustment;
-      totalAdjustment = defaultAdjustment * quantity;
+      // [2025-12-31] Synchronize with global size fee config
+      const globalFee = variant.size ? globalFeeMap[variant.size] : undefined;
+      const effectiveAdjustment = globalFee !== undefined ? globalFee : defaultAdjustment;
+
+      weightedUnitPrice = basePrice + effectiveAdjustment;
+      totalAdjustment = effectiveAdjustment * quantity;
     }
 
     // [2025-01-28 07:00:00] 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers）
@@ -379,14 +392,18 @@ exports.requestQuote = async (req, res) => {
     const discountedUnitPrice = unitPrice * (1 - quantityDiscount);
 
     // [2025-01-28 07:00:00] 计算总价
-    const subtotal = discountedUnitPrice * quantity;
-    const discountAmount = (unitPrice - discountedUnitPrice) * quantity;
+    const finalQuantity = (sizeQuantities && sizeQuantities.length > 0) ?
+      sizeQuantities.reduce((sum, sq) => sum + (sq.quantity || 0), 0) :
+      quantity;
+
+    const subtotal = discountedUnitPrice * finalQuantity;
+    const discountAmount = (unitPrice - discountedUnitPrice) * finalQuantity;
 
     return res.json({
       data: {
         unitPrice: Math.round(unitPrice) / 100, // 转换为元
         discountedUnitPrice: Math.round(discountedUnitPrice) / 100, // 转换为元
-        quantity,
+        quantity: finalQuantity,
         subtotal: Math.round(subtotal) / 100, // 转换为元
         discount: Math.round(discountAmount) / 100, // 转换为元
         total: Math.round(subtotal) / 100, // 转换为元

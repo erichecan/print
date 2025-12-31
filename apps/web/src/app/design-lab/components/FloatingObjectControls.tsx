@@ -164,6 +164,15 @@ export const FloatingObjectControls: React.FC<FloatingObjectControlsProps> = ({ 
         };
     }, [canvas, updateCoords]);
 
+    // [2025-12-31] Handle window resize to keep controls pinned
+    useEffect(() => {
+        const handleResize = () => {
+            requestAnimationFrame(updateCoords);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [updateCoords]);
+
     // Actions
     const handleDelete = () => {
         if (activeObject && canvas) {
