@@ -151,7 +151,7 @@ exports.updatePreferences = async (req, res) => {
       await prisma.$executeRaw`
         UPDATE settings 
         SET value = ${valueJson}::jsonb,
-            updated_by = ${userId},
+            updated_by = ${userId}::uuid,
             updated_at = ${now}
         WHERE key = ${preferenceKey}
       `;
@@ -161,7 +161,7 @@ exports.updatePreferences = async (req, res) => {
       const id = uuidv4();
       await prisma.$executeRaw`
         INSERT INTO settings (id, key, value, updated_by, updated_at)
-        VALUES (${id}::uuid, ${preferenceKey}, ${valueJson}::jsonb, ${userId}, ${now})
+        VALUES (${id}::uuid, ${preferenceKey}, ${valueJson}::jsonb, ${userId}::uuid, ${now})
       `;
       logger.info('[userPreferenceController] Preference created', { userId, preferenceKey });
     }

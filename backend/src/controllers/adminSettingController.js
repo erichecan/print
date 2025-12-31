@@ -579,7 +579,7 @@ const upsertSetting = async (key, value, userId) => {
       await prisma.$executeRaw`
         UPDATE settings 
         SET value = ${valueJson}::jsonb,
-            updated_by = ${userId || null},
+            updated_by = ${userId || null}::uuid,
             updated_at = ${now}
         WHERE key = ${key}
       `;
@@ -592,7 +592,7 @@ const upsertSetting = async (key, value, userId) => {
       // [2025-12-31] 修复：将字符串 UUID 转换为 PostgreSQL uuid 类型
       await prisma.$executeRaw`
        INSERT INTO settings (id, key, value, updated_by, updated_at)
-        VALUES (${id}::uuid, ${key}, ${valueJson}::jsonb, ${userId || null}, ${now})
+        VALUES (${id}::uuid, ${key}, ${valueJson}::jsonb, ${userId || null}::uuid, ${now})
       `;
       logger.info('[adminSettingController] Setting created', { key, userId: userId || 'system' });
     }
