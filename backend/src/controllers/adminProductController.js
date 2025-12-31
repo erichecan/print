@@ -14,6 +14,7 @@ const {
   buildPublicUrl,
   extractStorageKeyFromUrl,
 } = require('../utils/productUpload');
+const { uploadBufferToGcs, buildObjectPath } = require('../utils/gcsStorage');
 
 // 将 Prisma Decimal / string / number 安全转换为原始 number，便于做单位换算
 const toNumber = (value, fallback = 0) => {
@@ -279,7 +280,7 @@ exports.listProducts = async (req, res) => {
       where.categoryId = categoryId;
     }
 
-// Exclude system products from the regular admin list
+    // Exclude system products from the regular admin list
     where.isSystem = false;
 
     const [products, total] = await prisma.$transaction([
@@ -319,9 +320,9 @@ exports.listProducts = async (req, res) => {
       prisma.product.count({ where }),
     ]);
 
-// 将图片URL转换为完整的后端服务器URL
-// 添加空值检查，避免处理 null/undefined 时出错
-// 这里同时将数据库中的价格（分 / Decimal）转换为接口返回的金额（元/美元）
+    // 将图片URL转换为完整的后端服务器URL
+    // 添加空值检查，避免处理 null/undefined 时出错
+    // 这里同时将数据库中的价格（分 / Decimal）转换为接口返回的金额（元/美元）
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedProducts = products.map((product) => {
       const basePriceCents = toNumber(product.basePrice, 0);
@@ -356,8 +357,8 @@ exports.listProducts = async (req, res) => {
       },
     });
   } catch (error) {
-console.error(' listProducts error:', error);
-console.error(' Error details:', {
+    console.error(' listProducts error:', error);
+    console.error(' Error details:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
@@ -397,9 +398,9 @@ exports.getProductById = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-// 将图片URL转换为完整的后端服务器URL
-// 添加空值检查，避免处理 null/undefined 时出错
-// 同时将数据库中的 basePrice（分）与 salePrice（Decimal）转换为金额
+    // 将图片URL转换为完整的后端服务器URL
+    // 添加空值检查，避免处理 null/undefined 时出错
+    // 同时将数据库中的 basePrice（分）与 salePrice（Decimal）转换为金额
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const basePriceCents = toNumber(product.basePrice, 0);
     const salePriceValue = toNumber(product.salePrice, 0);
@@ -419,7 +420,7 @@ exports.getProductById = async (req, res) => {
 
     return res.json(normalizedProduct);
   } catch (error) {
-console.error(' getProductById error:', error);
+    console.error(' getProductById error:', error);
     return res.status(500).json({ error: 'Failed to load product' });
   }
 };
@@ -455,7 +456,7 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields: name, categoryId, sku, or basePrice' });
     }
 
-// 类型转换：basePrice 需要转换为分（整数）
+    // 类型转换：basePrice 需要转换为分（整数）
     // basePrice 在 schema 中是 Int 类型（base_price_cents），前端可能发送美元金额
     let basePriceCents;
     if (typeof basePrice === 'number') {
@@ -476,12 +477,12 @@ exports.createProduct = async (req, res) => {
       basePriceCents = parsed;
     }
 
-// 确保 basePriceCents 是有效的整数
+    // 确保 basePriceCents 是有效的整数
     if (!Number.isInteger(basePriceCents) || basePriceCents < 0) {
       return res.status(400).json({ error: 'basePrice must be a positive number' });
     }
 
-// 确保其他价格字段为 Decimal 类型（使用 Prisma.Decimal）
+    // 确保其他价格字段为 Decimal 类型（使用 Prisma.Decimal）
     const convertToDecimal = (value) => {
       if (value === undefined || value === null) return undefined;
       if (typeof value === 'string') return new Prisma.Decimal(value);
@@ -517,7 +518,7 @@ exports.createProduct = async (req, res) => {
           variants: variants && variants.length > 0
             ? {
               create: variants
-// 过滤掉无效的变体（缺少必需字段）
+                // 过滤掉无效的变体（缺少必需字段）
                 .filter((variant) => {
                   return variant && variant.sku && variant.color && variant.size;
                 })
@@ -539,7 +540,7 @@ exports.createProduct = async (req, res) => {
           images: images && images.length > 0
             ? {
               create: images
-// 过滤掉无效的URL（如file://协议）
+                // 过滤掉无效的URL（如file://协议）
                 .filter((image) => {
                   if (!image || !image.url) return false;
                   const url = image.url.trim();
@@ -565,7 +566,7 @@ exports.createProduct = async (req, res) => {
               })),
             }
             : undefined,
-// Keep categoryId column and productCategories relation in sync
+          // Keep categoryId column and productCategories relation in sync
           productCategories: {
             create: {
               categoryId: categoryId,
@@ -591,8 +592,8 @@ exports.createProduct = async (req, res) => {
       return created;
     });
 
-// 将图片URL转换为完整的后端服务器URL
-// 添加空值检查，避免处理 null/undefined 时出错
+    // 将图片URL转换为完整的后端服务器URL
+    // 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedResult = {
       ...result,
@@ -606,19 +607,19 @@ exports.createProduct = async (req, res) => {
       })),
     };
 
-// 创建商品后立即清理缓存，确保前台可以看到最新商品
-// 缓存清理失败不应该影响商品创建成功
+    // 创建商品后立即清理缓存，确保前台可以看到最新商品
+    // 缓存清理失败不应该影响商品创建成功
     try {
       await invalidateProductCache(result.slug);
     } catch (cacheError) {
-console.warn(' Failed to invalidate cache:', cacheError);
+      console.warn(' Failed to invalidate cache:', cacheError);
       // 缓存清理失败不影响商品创建成功
     }
 
     return res.status(201).json(normalizedResult);
   } catch (error) {
-// 增强错误日志，输出详细错误信息
-console.error(' createProduct error:', error);
+    // 增强错误日志，输出详细错误信息
+    console.error(' createProduct error:', error);
     console.error('Error details:', {
       message: error.message,
       code: error.code,
@@ -642,7 +643,7 @@ console.error(' createProduct error:', error);
       });
     }
 
-// 返回更详细的错误信息（开发环境）
+    // 返回更详细的错误信息（开发环境）
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
       return res.status(500).json({
         error: 'Failed to create product',
@@ -706,7 +707,7 @@ exports.updateProduct = async (req, res) => {
         finalSlug = await ensureUniqueSlug(tx, slugify(name), id);
       }
 
-// 更新逻辑中补齐价格字段的单位转换，保持与 createProduct 一致：
+      // 更新逻辑中补齐价格字段的单位转换，保持与 createProduct 一致：
       // - basePrice：前端提交金额（元/美元），这里统一转换为“分”存数据库
       // - 其他价格字段：统一转换为 Prisma.Decimal，避免类型不一致
       let basePriceCents;
@@ -728,7 +729,7 @@ exports.updateProduct = async (req, res) => {
         return value;
       };
 
-// 确保 categoryId 不是空字符串
+      // 确保 categoryId 不是空字符串
       const finalCategoryId = (categoryId && typeof categoryId === 'string' && categoryId.trim() !== '')
         ? categoryId
         : (categoryId === undefined ? undefined : existing.categoryId);
@@ -758,7 +759,7 @@ exports.updateProduct = async (req, res) => {
       });
 
       if (Array.isArray(variants)) {
-// 改进变体更新逻辑：upsert 避免 P2003 错误
+        // 改进变体更新逻辑：upsert 避免 P2003 错误
         // 获取所有现有变体
         const existingVariants = await tx.variant.findMany({
           where: { productId: id }
@@ -811,7 +812,7 @@ exports.updateProduct = async (req, res) => {
             await tx.variant.delete({ where: { id: vId } });
           } catch (delErr) {
             // 如果报错（通常是 P2003 外键约束），则保留该变体，但可以记录日志
-console.warn(` Cannot delete variant ${vId} due to references:`, delErr.message);
+            console.warn(` Cannot delete variant ${vId} due to references:`, delErr.message);
           }
         }
       }
@@ -843,7 +844,7 @@ console.warn(` Cannot delete variant ${vId} due to references:`, delErr.message)
         }
       }
 
-// Keep categoryId column and productCategories relation in sync
+      // Keep categoryId column and productCategories relation in sync
       if (categoryId && typeof categoryId === 'string') {
         // Find existing main category mappings to avoid duplicates or orphans
         // Note: For now we just ensure the CURRENT categoryId is in productCategories.
@@ -885,8 +886,8 @@ console.warn(` Cannot delete variant ${vId} due to references:`, delErr.message)
       return refreshed;
     });
 
-// 将图片URL转换为完整的后端服务器URL
-// 添加空值检查，避免处理 null/undefined 时出错
+    // 将图片URL转换为完整的后端服务器URL
+    // 添加空值检查，避免处理 null/undefined 时出错
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const basePriceCents = toNumber(result.basePrice, 0);
     const salePriceValue = toNumber(result.salePrice, 0);
@@ -904,13 +905,13 @@ console.warn(` Cannot delete variant ${vId} due to references:`, delErr.message)
       })),
     };
 
-// 更新商品后同步刷新缓存，避免旧数据残留
+    // 更新商品后同步刷新缓存，避免旧数据残留
     await invalidateProductCache(result.slug);
 
     return res.json(normalizedResult);
   } catch (error) {
-// 增强错误日志，包含详细错误信息
-console.error(' updateProduct error:', {
+    // 增强错误日志，包含详细错误信息
+    console.error(' updateProduct error:', {
       error: error.message,
       code: error.code,
       stack: error.stack,
@@ -953,12 +954,12 @@ exports.archiveProduct = async (req, res) => {
       data: { isActive: false },
     });
 
-// 归档商品后清理缓存，防止前台继续展示
+    // 归档商品后清理缓存，防止前台继续展示
     await invalidateProductCache(existing.slug);
 
     return res.json({ success: true });
   } catch (error) {
-console.error(' archiveProduct error:', error);
+    console.error(' archiveProduct error:', error);
     return res.status(500).json({ error: 'Failed to archive product' });
   }
 };
@@ -993,7 +994,7 @@ exports.updateProductStatus = async (req, res) => {
       },
     });
 
-// 状态变更也要刷新缓存，保证上架/下架即时生效
+    // 状态变更也要刷新缓存，保证上架/下架即时生效
     await invalidateProductCache(updated.slug);
 
     // eslint-disable-next-line no-unused-vars
@@ -1001,7 +1002,7 @@ exports.updateProductStatus = async (req, res) => {
 
     return res.json(payload);
   } catch (error) {
-console.error(' updateProductStatus error:', error);
+    console.error(' updateProductStatus error:', error);
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -1010,6 +1011,7 @@ console.error(' updateProductStatus error:', error);
 };
 
 // Handle direct product image uploads via admin panel
+// 修复：在 Cloud Run 环境下使用 memoryStorage + GCS 上传，避免只读文件系统报错
 exports.uploadProductImages = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1038,22 +1040,32 @@ exports.uploadProductImages = async (req, res) => {
 
     const existingCount = await prisma.productImage.count({ where: { productId: id } });
 
-    const { denormalizeImageUrl } = require('../utils/imageHelper');
+    // 并行上传所有图片到 GCS
+    const createPayload = await Promise.all(
+      files.map(async (file, index) => {
+        const timestamp = Date.now();
+        const safeName = file.originalname.replace(/[^a-z0-9.\-_]+/gi, '_');
+        const fileName = `${timestamp}-${safeName}`;
 
-    const createPayload = files.map((file, index) => {
-      const storageKey = buildStorageKey(file.filename);
-// 传递req对象以生成完整的后端服务器URL
-      const publicUrl = buildPublicUrl(storageKey, req);
-      const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
-      const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
+        // 构建 GCS 路径: products/:productId/:fileName
+        const objectPath = buildObjectPath('products', [id, fileName]);
 
-      return {
-        productId: id,
-        url: denormalizeImageUrl(publicUrl, req),
-        alt: sanitizeAltText(providedAlt, fallbackAlt),
-        sortOrder: existingCount + index,
-      };
-    });
+        // 直接从内存 Buffer 上传到 GCS
+        const gcsUrl = await uploadBufferToGcs(file.buffer, objectPath, {
+          contentType: file.mimetype,
+        });
+
+        const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
+        const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
+
+        return {
+          productId: id,
+          url: gcsUrl, // 存储完整的 GCS URL
+          alt: sanitizeAltText(providedAlt, fallbackAlt),
+          sortOrder: existingCount + index,
+        };
+      })
+    );
 
     const images = await prisma.$transaction(async (tx) => {
       await tx.productImage.createMany({ data: createPayload });
@@ -1064,8 +1076,7 @@ exports.uploadProductImages = async (req, res) => {
       });
     });
 
-// 将图片URL转换为完整的后端服务器URL
-// 添加空值检查，避免处理 null/undefined 时出错
+    // 将图片 URL 转换为优化的 URL（如果需要）
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedImages = (images || []).map((image) => ({
       ...image,
@@ -1080,7 +1091,14 @@ exports.uploadProductImages = async (req, res) => {
     });
   } catch (error) {
     console.error('[adminProductController] uploadProductImages error:', error);
-    res.status(500).json({ error: 'Failed to upload product images' });
+    // 检查是否是 GCS 配置错误
+    if (error.message && error.message.includes('GCS 配置缺失')) {
+      return res.status(500).json({ error: 'Storage service not configured correctly on server' });
+    }
+    res.status(500).json({
+      error: 'Failed to upload product images',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 

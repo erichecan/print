@@ -25,7 +25,7 @@ function getImageBucketName() {
   const bucket = process.env.GCP_IMAGE_BUCKET;
   if (!bucket) {
     throw new Error(
-' GCS 配置缺失: 请在环境变量中设置 GCP_IMAGE_BUCKET'
+      ' GCS 配置缺失: 请在环境变量中设置 GCP_IMAGE_BUCKET'
     );
   }
   return bucket;
@@ -79,12 +79,37 @@ async function uploadFileToGcs(localPath, objectPath, options = {}) {
   return `${baseUrl}/${objectPath}`;
 }
 
+/**
+ * 上传 Buffer 数据到 GCS，并返回公开访问 URL
+ */
+async function uploadBufferToGcs(buffer, objectPath, options = {}) {
+  const client = getStorageClient();
+  const bucketName = getImageBucketName();
+  const bucket = client.bucket(bucketName);
+  const file = bucket.file(objectPath);
+
+  const uploadOptions = {
+    resumable: false,
+    metadata: {
+      cacheControl:
+        options.cacheControl || 'public, max-age=31536000, immutable',
+      contentType: options.contentType || 'image/jpeg',
+    },
+  };
+
+  await file.save(buffer, uploadOptions);
+
+  const baseUrl = getImageBaseUrl();
+  return `${baseUrl}/${objectPath}`;
+}
+
 module.exports = {
   getStorageClient,
   getImageBucketName,
   getImageBaseUrl,
   buildObjectPath,
   uploadFileToGcs,
+  uploadBufferToGcs,
 };
 
 

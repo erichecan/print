@@ -19,18 +19,7 @@ router.post('/seed/design-lab', controller.seedDesignLabProduct);
 
 router.use(requireAdmin);
 
-const productUploadRoot = ensureProductUploadRoot(); // Ensure product upload directory exists
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, productUploadRoot);
-  },
-  filename: (_req, file, cb) => {
-    const timestamp = Date.now();
-    const safeName = file.originalname.replace(/[^a-z0-9.\-_]+/gi, '_');
-    cb(null, `${timestamp}-${safeName}`);
-  },
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
   if (!isImageExtensionAllowed(file.originalname)) {
