@@ -413,7 +413,12 @@ export default function AdminOrdersPage() {
                   </td>
                   <td>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td>
-                    <Link href={getOrderDetailLink(order)} className="btn-icon btn--outline" style={{ fontSize: 12 }}>
+                    <Link
+                      href={getOrderDetailLink(order)}
+                      className="btn-icon btn--outline"
+                      style={{ fontSize: 12 }}
+                      {...(order.type === 'offline' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                    >
                       View
                     </Link>
                   </td>
