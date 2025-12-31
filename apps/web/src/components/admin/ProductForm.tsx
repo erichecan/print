@@ -44,12 +44,23 @@ const parseNumber = (value: any) => {
 export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
   const [imagePreviews, setImagePreviews] = useState<{ [key: number]: string }>({});
   const [traceId, setTraceId] = useState<string | null>(null); // [2025-01-27 18:00:00] 添加 traceId 状态
   const fileRefs = useRef<{ [key: number]: File }>({});
   const abortControllerRef = useRef<AbortController | null>(null); // [2025-01-27 18:00:00] 用于取消请求
+
+  // [2025-12-30] 自动关闭成功提示
+  useEffect(() => {
+    if (saveSuccess) {
+      const timer = setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [saveSuccess]);
 
   const { data: categoryResponse } = useSWR(
     ['admin-categories', 'all'],
@@ -129,7 +140,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    
+
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowedTypes.includes(file.type)) {
@@ -188,7 +199,9 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         if (uploadedImage.alt) {
           setValue(`images.${index}.alt` as any, uploadedImage.alt);
         }
-        setValue(`images.${index}.sortOrder` as any, uploadedImage.sortOrder);
+        if (uploadedImage.sortOrder !== undefined) {
+          setValue(`images.${index}.sortOrder` as any, uploadedImage.sortOrder);
+        }
       }
     } catch (error: any) {
       setSubmitError(error?.message || '图片上传失败，请稍后再试');
@@ -234,20 +247,20 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         variants:
           product.variants?.length
             ? product.variants.map((variant) => ({
-                sku: variant.sku,
-                color: variant.color || '',
-                size: variant.size || '',
-                stockQuantity: variant.stockQuantity,
-                priceAdjustment: 0,
-              }))
+              sku: variant.sku,
+              color: variant.color || '',
+              size: variant.size || '',
+              stockQuantity: variant.stockQuantity,
+              priceAdjustment: 0,
+            }))
             : [defaultVariant],
         images:
           product.images?.length
             ? product.images.map((image) => ({
-                url: image.url,
-                alt: image.alt || '',
-                sortOrder: image.sortOrder,
-              }))
+              url: image.url,
+              alt: image.alt || '',
+              sortOrder: image.sortOrder,
+            }))
             : [defaultImage],
         collections: product.collectionProducts?.map(
           (item) => item.collection.id
@@ -261,14 +274,14 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     if (submitting) {
       return;
     }
-    
+
     setSubmitError(null);
     setTraceId(null);
     setSubmitting(true);
-    
+
     // [2025-01-27 18:00:00] 创建新的 AbortController
     abortControllerRef.current = new AbortController();
-    
+
     try {
       // [2025-01-27 15:15:00] Store files to upload after product creation
       const filesToUpload: { [index: number]: File } = {};
@@ -347,6 +360,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           fileRefs.current = {};
           // Refresh product data to get updated images
           const updatedProduct = await adminProductsApi.get(response.id);
+          setSaveSuccess(true);
           if (onSuccess) {
             onSuccess(updatedProduct);
           }
@@ -354,6 +368,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         }
       }
 
+      setSaveSuccess(true);
       if (onSuccess) {
         onSuccess(response);
       }
@@ -362,7 +377,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
       const errorMessage = error?.message || '提交失败，请稍后再试';
       const errorTraceId = error?.traceId || null;
       const errorCode = error?.errorCode || null;
-      
+
       // 构建用户友好的错误消息
       let userMessage = errorMessage;
       if (errorCode) {
@@ -379,10 +394,10 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           userMessage = '网络错误，请检查网络连接';
         }
       }
-      
+
       setSubmitError(userMessage);
       setTraceId(errorTraceId);
-      
+
       console.error('[ProductForm] Submit error:', {
         error: errorMessage,
         traceId: errorTraceId,
@@ -395,7 +410,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
       abortControllerRef.current = null;
     }
   };
-  
+
   // [2025-01-27 18:00:00] 重试函数
   const handleRetry = () => {
     if (submitting) return;
@@ -524,7 +539,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         {imageFields.map((field, index) => {
           const imageUrl = watch(`images.${index}.url` as any) || '';
           // [2025-01-27 16:00:00] 过滤掉 file:// URL，避免浏览器报错
-          const validImageUrl = imageUrl && !imageUrl.startsWith('file://') 
+          const validImageUrl = imageUrl && !imageUrl.startsWith('file://')
             ? (imageUrl.startsWith('http') || imageUrl.startsWith('/') ? imageUrl : null)
             : null;
           const preview = imagePreviews[index] || validImageUrl;
@@ -714,6 +729,17 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         </div>
       )}
 
+      {saveSuccess && (
+        <div className="success-notification" onClick={() => setSaveSuccess(false)}>
+          <span className="icon">✅</span>
+          <div className="content">
+            <strong>保存成功</strong>
+            <p>商品信息已成功更新至数据库。</p>
+          </div>
+          <button type="button" className="close-btn">×</button>
+        </div>
+      )}
+
       <div className="form-actions">
         <button type="submit" className="primary-btn" disabled={submitting}>
           {submitting ? '提交中…' : mode === 'create' ? '创建商品' : '保存修改'}
@@ -798,6 +824,50 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           font-size: 14px;
           color: #6b7280;
         }
+        .success-notification {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+          border-radius: 12px;
+          padding: 16px 20px;
+          color: #166534;
+          position: relative;
+          cursor: pointer;
+          animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+          from { transform: translateY(10px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        .success-notification .icon {
+          font-size: 24px;
+        }
+        .success-notification .content strong {
+          display: block;
+          font-size: 16px;
+          margin-bottom: 2px;
+        }
+        .success-notification .content p {
+          margin: 0;
+          font-size: 14px;
+          opacity: 0.9;
+        }
+        .success-notification .close-btn {
+          margin-left: auto;
+          background: none;
+          border: none;
+          color: #166534;
+          font-size: 20px;
+          cursor: pointer;
+          padding: 4px;
+          opacity: 0.6;
+        }
+        .success-notification:hover .close-btn {
+          opacity: 1;
+        }
+
         .repeatable {
           padding: 16px;
           border: 1px solid #e2e8f0;

@@ -1320,6 +1320,12 @@ export interface AdminProductSummary {
     url: string;
     alt?: string | null;
   } | null;
+  images?: Array<{
+    id: string;
+    url: string;
+    alt?: string | null;
+    sortOrder?: number;
+  }> | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -1520,7 +1526,7 @@ export const adminProductsApi = {
     }
 
     // 使用统一的 api 函数，自动走代理并包含认证头
-    return api<{ images: Array<{ id: string; url: string; alt?: string | null }> }>(
+    return api<{ images: Array<{ id: string; url: string; alt?: string | null; sortOrder?: number }> }>(
       `/admin/products/${productId}/images`,
       {
         method: 'POST',
@@ -2416,6 +2422,8 @@ export const adminOrdersApi = {
 export interface OfflineOrderStageMeta {
   key: string;
   label: string;
+  labelEn?: string;
+  labelZh?: string;
   description?: string;
   position?: number;
 }
@@ -2591,6 +2599,14 @@ export const adminOfflineOrdersApi = {
   delete: (id: string) =>
     api(`/admin/offline-orders/${id}`, {
       method: 'DELETE',
+    }),
+  // [2025-01-28] Global offline workflow stage configuration
+  getWorkflowStages: () =>
+    api<{ success: boolean; stages: OfflineOrderStage[] }>('/admin/offline-orders/config/stages'),
+  updateWorkflowStages: (stages: OfflineOrderStage[]) =>
+    api<{ success: boolean; stages: OfflineOrderStage[] }>('/admin/offline-orders/config/stages', {
+      method: 'PUT',
+      body: { stages },
     }),
 };
 

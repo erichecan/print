@@ -182,6 +182,10 @@ exports.listProducts = async (req, res) => {
     const normalizedProducts = products.map((product) => {
       const basePriceCents = toNumber(product.basePrice, 0);
       const salePriceValue = toNumber(product.salePrice, 0);
+      const images = (product.images || []).map((image) => ({
+        ...image,
+        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
+      }));
 
       return {
         ...product,
@@ -189,10 +193,8 @@ exports.listProducts = async (req, res) => {
         basePrice: basePriceCents / 100,
         // salePrice 在 schema 中是 Decimal，这里直接转为 number（金额）
         salePrice: salePriceValue,
-        images: (product.images || []).map((image) => ({
-          ...image,
-          url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
-        })),
+        images,
+        primaryImage: images[0] || null,
         variants: (product.variants || []).map((variant) => ({
           ...variant,
           imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
@@ -216,7 +218,7 @@ exports.listProducts = async (req, res) => {
       stack: error.stack,
       code: error.code,
     });
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to load products',
       ...(process.env.NODE_ENV === 'development' && { details: error.message }),
     });
@@ -327,7 +329,7 @@ exports.createProduct = async (req, res) => {
       }
       basePriceCents = parsed;
     }
-    
+
     // [2025-01-27 16:05:00] 确保 basePriceCents 是有效的整数
     if (!Number.isInteger(basePriceCents) || basePriceCents < 0) {
       return res.status(400).json({ error: 'basePrice must be a positive number' });
@@ -368,54 +370,54 @@ exports.createProduct = async (req, res) => {
           dimensions: dimensions || null,
           variants: variants && variants.length > 0
             ? {
-                create: variants
-                  // [2025-01-27 16:05:00] 过滤掉无效的变体（缺少必需字段）
-                  .filter((variant) => {
-                    return variant && variant.sku && variant.color && variant.size;
-                  })
-                  .map((variant) => ({
-                    color: variant.color.trim() || 'UNSET',
-                    colorHex: variant.colorHex ? variant.colorHex.trim() : null,
-                    size: variant.size.trim() || 'ONE',
-                    sku: variant.sku.trim(),
-                    priceAdjustment: variant.priceAdjustment 
-                      ? convertToDecimal(variant.priceAdjustment) 
-                      : new Prisma.Decimal(0),
-                    stockQuantity: typeof variant.stockQuantity === 'number' 
-                      ? Math.max(0, Math.floor(variant.stockQuantity)) 
-                      : 0,
-                    imageUrl: variant.imageUrl ? variant.imageUrl.trim() : null,
-                  })),
-              }
+              create: variants
+                // [2025-01-27 16:05:00] 过滤掉无效的变体（缺少必需字段）
+                .filter((variant) => {
+                  return variant && variant.sku && variant.color && variant.size;
+                })
+                .map((variant) => ({
+                  color: variant.color.trim() || 'UNSET',
+                  colorHex: variant.colorHex ? variant.colorHex.trim() : null,
+                  size: variant.size.trim() || 'ONE',
+                  sku: variant.sku.trim(),
+                  priceAdjustment: variant.priceAdjustment
+                    ? convertToDecimal(variant.priceAdjustment)
+                    : new Prisma.Decimal(0),
+                  stockQuantity: typeof variant.stockQuantity === 'number'
+                    ? Math.max(0, Math.floor(variant.stockQuantity))
+                    : 0,
+                  imageUrl: variant.imageUrl ? variant.imageUrl.trim() : null,
+                })),
+            }
             : undefined,
           images: images && images.length > 0
             ? {
-                create: images
-                  // [2025-01-27 16:00:00] 过滤掉无效的URL（如file://协议）
-                  .filter((image) => {
-                    if (!image || !image.url) return false;
-                    const url = image.url.trim();
-                    // 只允许 http、https 或相对路径
-                    return url.startsWith('http') || url.startsWith('/');
-                  })
-                  .map((image, index) => ({
-                    url: image.url.trim(),
-                    alt: image.alt ? image.alt.trim() : null,
-                    sortOrder:
-                      typeof image.sortOrder === 'number'
-                        ? image.sortOrder
-                        : index,
-                  })),
-              }
+              create: images
+                // [2025-01-27 16:00:00] 过滤掉无效的URL（如file://协议）
+                .filter((image) => {
+                  if (!image || !image.url) return false;
+                  const url = image.url.trim();
+                  // 只允许 http、https 或相对路径
+                  return url.startsWith('http') || url.startsWith('/');
+                })
+                .map((image, index) => ({
+                  url: image.url.trim(),
+                  alt: image.alt ? image.alt.trim() : null,
+                  sortOrder:
+                    typeof image.sortOrder === 'number'
+                      ? image.sortOrder
+                      : index,
+                })),
+            }
             : undefined,
           collectionProducts: collections.length
             ? {
-                create: collections.map((collectionId) => ({
-                  collection: {
-                    connect: { id: collectionId },
-                  },
-                })),
-              }
+              create: collections.map((collectionId) => ({
+                collection: {
+                  connect: { id: collectionId },
+                },
+              })),
+            }
             : undefined,
         },
         include: {
@@ -472,31 +474,31 @@ exports.createProduct = async (req, res) => {
       stack: error.stack?.split('\n').slice(0, 10).join('\n'), // 只输出前10行堆栈
     });
     console.error('Request body:', JSON.stringify(req.body, null, 2));
-    
+
     if (error.code === 'P2002') {
-      return res.status(409).json({ 
+      return res.status(409).json({
         error: 'SKU or slug already exists',
         details: error.meta?.target || 'Unknown field',
       });
     }
-    
+
     if (error.code === 'P2003') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Invalid foreign key reference',
         details: error.meta?.field_name || 'Unknown field',
       });
     }
-    
+
     // [2025-01-27 16:05:00] 返回更详细的错误信息（开发环境）
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: 'Failed to create product',
         details: error.message,
         code: error.code,
         meta: error.meta,
       });
     }
-    
+
     return res.status(500).json({ error: 'Failed to create product' });
   }
 };
@@ -613,7 +615,7 @@ exports.updateProduct = async (req, res) => {
         await tx.productImage.deleteMany({ where: { productId: id } });
         if (images.length) {
           await tx.productImage.createMany({
-            data: images.map((image, index) => ({
+            data: images.filter(img => img.url).map((image, index) => ({
               productId: id,
               url: image.url,
               alt: image.alt || null,
@@ -682,15 +684,15 @@ exports.updateProduct = async (req, res) => {
       code: error.code,
       stack: error.stack,
       name: error.name,
-      productId: id,
+      productId: req.params?.id,
     });
     if (error.code === 'P2002') {
-      return res.status(409).json({ 
+      return res.status(409).json({
         error: 'Duplicate SKU or slug',
         message: error.meta?.target ? `Duplicate value for ${error.meta.target}` : undefined,
       });
     }
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Failed to update product',
       message: process.env.NODE_ENV === 'development' ? error.message : undefined,
     });

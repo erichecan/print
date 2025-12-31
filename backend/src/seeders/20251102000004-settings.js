@@ -4,10 +4,17 @@ const { v4: uuidv4 } = require('uuid');
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const now = new Date();
-    
+
     // [2025-01-28 05:40:00] 清空默认阶段配置，由管理员通过设置页面配置
     const stageConfig = {
-      stages: []
+      stages: [
+        { key: 'pending-design', labelEn: 'Pending Design', labelZh: '待确认设计', description: 'Pending design confirmation', position: 0 },
+        { key: 'layout-proofing', labelEn: 'Layout/Proofing', labelZh: '设计排版/校样', description: 'Layout and proofing', position: 1 },
+        { key: 'printing', labelEn: 'Printing', labelZh: '印刷生产', description: 'In printing production', position: 2 },
+        { key: 'transfer', labelEn: 'Transfer', labelZh: '转印生产', description: 'In transfer production', position: 3 },
+        { key: 'qc', labelEn: 'Quality Control', labelZh: '出货审核', description: 'Quality control and shipping review', position: 4 },
+        { key: 'ready', labelEn: 'Ready', labelZh: '待取货/发货', description: 'Ready for pickup or shipment', position: 5 }
+      ]
     };
 
     const settings = [

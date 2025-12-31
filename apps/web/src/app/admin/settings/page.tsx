@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { adminSettingsApi, SiteSettingsPayload, adminProductionTemplatesApi, ProductionTemplate } from '@/lib/api';
+import { adminSettingsApi, SiteSettingsPayload, adminProductionTemplatesApi, ProductionTemplate, adminOfflineOrdersApi, OfflineOrderStage } from '@/lib/api';
 
 const DEFAULT_SETTINGS: SiteSettingsPayload = {
   siteName: 'suvernire plus',
@@ -28,6 +28,13 @@ export default function AdminSettingsPage() {
   const [templates, setTemplates] = useState<ProductionTemplate[]>([]);
   const [tplSaving, setTplSaving] = useState(false);
 
+  const { data: offlineStageData, isLoading: offlineStageLoading, error: offlineStageError, mutate: mutateOfflineStage } = useSWR(
+    'admin-offline-workflow-stages',
+    adminOfflineOrdersApi.getWorkflowStages
+  );
+  const [offlineStages, setOfflineStages] = useState<OfflineOrderStage[]>([]);
+  const [offlineStageSaving, setOfflineStageSaving] = useState(false);
+
   useEffect(() => {
     if (data?.data) {
       setSettings(data.data);
@@ -39,6 +46,12 @@ export default function AdminSettingsPage() {
       setTemplates(tplData.data);
     }
   }, [tplData]);
+
+  useEffect(() => {
+    if (offlineStageData?.stages) {
+      setOfflineStages(offlineStageData.stages);
+    }
+  }, [offlineStageData]);
 
   const handleChange = <K extends keyof SiteSettingsPayload>(key: K, value: SiteSettingsPayload[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -114,6 +127,44 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleOfflineStageChange = (index: number, field: keyof OfflineOrderStage, value: string) => {
+    setOfflineStages((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      // [2025-01-28] Ensure legacy "label" field is also updated for compatibility
+      if (field === 'labelEn' || field === 'labelZh') {
+        const stage = next[index];
+        next[index].label = stage.labelZh || stage.labelEn || stage.label;
+      }
+      return next;
+    });
+  };
+
+  const handleAddOfflineStage = () => {
+    setOfflineStages((prev) => [...prev, { key: '', label: '', labelEn: '', labelZh: '', position: prev.length }]);
+  };
+
+  const handleRemoveOfflineStage = (index: number) => {
+    setOfflineStages((prev) => {
+      const next = [...prev];
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
+  const handleOfflineStageSave = async () => {
+    try {
+      setOfflineStageSaving(true);
+      await adminOfflineOrdersApi.updateWorkflowStages(offlineStages);
+      await mutateOfflineStage();
+      alert('Offline workflow stages updated successfully');
+    } catch (apiError) {
+      alert((apiError as Error).message || 'Failed to save offline workflow stages');
+    } finally {
+      setOfflineStageSaving(false);
+    }
+  };
+
   // [2025-01-28 08:00:00] CMS 内容管理已移至独立的 /admin/content-manager 页面
 
   if (isLoading && !data) {
@@ -131,6 +182,77 @@ export default function AdminSettingsPage() {
           <h1 data-i18n="settings">Settings</h1>
           <p className="text-muted">Configure storefront, payments, and review workflow</p>
         </div>
+      </div>
+
+      <div className="admin-form" style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <h3 style={{ margin: 0, fontSize: 18 }}>Offline Workflow Stages</h3>
+          <span className="text-muted" style={{ fontSize: 13 }}>Global stages for Kanban Board</span>
+        </div>
+        {offlineStageLoading && !offlineStages.length && <div className="admin-table-placeholder">Loading stages…</div>}
+        {offlineStageError && <div className="admin-table-placeholder error">Failed to load offline workflow stages.</div>}
+        {!offlineStageLoading && (
+          <div style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
+            {offlineStages.map((stage, index) => (
+              <div key={`offline-stage-${index}`} style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr 1.5fr 1.5fr auto', gap: 12, alignItems: 'center', padding: '12px', background: '#f9fafb', borderRadius: 8, border: '1px solid #e5e7eb' }}>
+                <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 11, marginBottom: 4 }}>Key</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., printing"
+                    value={stage.key}
+                    onChange={(e) => handleOfflineStageChange(index, 'key', e.target.value)}
+                    style={{ fontSize: 13, padding: '6px 10px' }}
+                  />
+                </div>
+                <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 11, marginBottom: 4 }}>Label (EN)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., In Printing"
+                    value={stage.labelEn || ''}
+                    onChange={(e) => handleOfflineStageChange(index, 'labelEn', e.target.value)}
+                    style={{ fontSize: 13, padding: '6px 10px' }}
+                  />
+                </div>
+                <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 11, marginBottom: 4 }}>Label (ZH)</label>
+                  <input
+                    type="text"
+                    placeholder="例如：印刷生产"
+                    value={stage.labelZh || ''}
+                    onChange={(e) => handleOfflineStageChange(index, 'labelZh', e.target.value)}
+                    style={{ fontSize: 13, padding: '6px 10px' }}
+                  />
+                </div>
+                <div className="admin-form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 11, marginBottom: 4 }}>Description</label>
+                  <input
+                    type="text"
+                    placeholder="Optional description"
+                    value={stage.description || ''}
+                    onChange={(e) => handleOfflineStageChange(index, 'description', e.target.value)}
+                    style={{ fontSize: 13, padding: '6px 10px' }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="btn btn--outline btn--xs"
+                  onClick={() => handleRemoveOfflineStage(index)}
+                  style={{ marginTop: 20, color: '#ef4444', borderColor: '#ef4444' }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button type="button" className="btn btn--outline" style={{ borderStyle: 'dashed' }} onClick={handleAddOfflineStage}>
+              + Add Workflow Stage
+            </button>
+          </div>
+        )}
+        <button type="button" className="btn" onClick={handleOfflineStageSave} disabled={offlineStageSaving}>
+          {offlineStageSaving ? 'Saving…' : 'Save Workflow Stages'}
+        </button>
       </div>
 
       <div className="admin-form" style={{ marginBottom: 24 }}>

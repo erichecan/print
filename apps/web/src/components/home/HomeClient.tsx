@@ -34,11 +34,7 @@ export function HomeClient() {
     { id: 'default-4', title: 'Rush Options', detail: 'As fast as 3 days' },
   ];
 
-  const testimonials = homePage?.testimonials || [
-    { id: 'default-1', quote: 'Ordered with ease and delivered on time.', author: 'Mary B., NY', stars: 5 },
-    { id: 'default-2', quote: 'Top quality, fast delivery, stellar support. Highly recommend!', author: 'Ingrid D., MD', stars: 5 },
-    { id: 'default-3', quote: 'Great experience and responsive service. The site is easy to use.', author: 'Jenna F., WI', stars: 4 },
-  ];
+
 
 
   return (

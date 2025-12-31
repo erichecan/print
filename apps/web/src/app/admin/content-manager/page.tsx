@@ -356,9 +356,9 @@ export default function ContentManagerPage() {
           faqCategories: (helpPage.faqCategories || []).map((cat) =>
             cat.id === categoryId
               ? {
-                  ...cat,
-                  items: cat.items.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
-                }
+                ...cat,
+                items: cat.items.map((item) => (item.id === itemId ? { ...item, [field]: value } : item)),
+              }
               : cat
           ),
         },
@@ -467,9 +467,9 @@ export default function ContentManagerPage() {
           footerColumns: (staticTexts.footerColumns || []).map((col) =>
             col.id === columnId
               ? {
-                  ...col,
-                  links: col.links.map((link) => (link.id === linkId ? { ...link, [field]: value } : link)),
-                }
+                ...col,
+                links: col.links.map((link) => (link.id === linkId ? { ...link, [field]: value } : link)),
+              }
               : col
           ),
         },
@@ -879,129 +879,6 @@ export default function ContentManagerPage() {
             </div>
           </div>
 
-          {/* Testimonials */}
-          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3>{t('testimonials')}</h3>
-              <button type="button" className="btn btn--outline" onClick={() => addHomePageItem('testimonials')}>
-                {t('addTestimonial')}
-              </button>
-            </div>
-            <div style={{ display: 'grid', gap: 12 }}>
-              {safeContent.homePage?.testimonials?.map((testimonial) => (
-                <div key={testimonial.id} style={{ display: 'grid', gap: 8 }}>
-                  <textarea
-                    placeholder={t('quote')}
-                    value={testimonial.quote}
-                    onChange={(e) => updateHomePageItem('testimonials', testimonial.id, 'quote', e.target.value)}
-                    rows={2}
-                  />
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8 }}>
-                    <input
-                      type="text"
-                      placeholder={t('author')}
-                      value={testimonial.author}
-                      onChange={(e) => updateHomePageItem('testimonials', testimonial.id, 'author', e.target.value)}
-                    />
-                    <input
-                      type="number"
-                      placeholder={t('stars')}
-                      min={1}
-                      max={5}
-                      value={testimonial.stars}
-                      onChange={(e) => updateHomePageItem('testimonials', testimonial.id, 'stars', parseInt(e.target.value) || 5)}
-                    />
-                    <div></div>
-                    <button type="button" onClick={() => removeHomePageItem('testimonials', testimonial.id)}>
-                      ×
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Enterprise Panels */}
-          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3>Enterprise Panels</h3>
-              <button type="button" className="btn btn--outline" onClick={() => addHomePageItem('enterprisePanels')}>
-                + Add Panel
-              </button>
-            </div>
-            <div style={{ display: 'grid', gap: 12 }}>
-              {safeContent.homePage?.enterprisePanels?.map((panel) => (
-                <div key={panel.id} style={{ display: 'grid', gap: 8 }}>
-                  <input
-                    type="text"
-                    placeholder={t('title')}
-                    value={panel.title}
-                    onChange={(e) => updateHomePageItem('enterprisePanels', panel.id, 'title', e.target.value)}
-                  />
-                  <textarea
-                    placeholder={t('description')}
-                    value={panel.description}
-                    onChange={(e) => updateHomePageItem('enterprisePanels', panel.id, 'description', e.target.value)}
-                    rows={2}
-                  />
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8 }}>
-                    <input
-                      type="text"
-                      placeholder={t('ctaLabel')}
-                      value={panel.ctaLabel}
-                      onChange={(e) => updateHomePageItem('enterprisePanels', panel.id, 'ctaLabel', e.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('ctaHref')}
-                      value={panel.ctaHref}
-                      onChange={(e) => updateHomePageItem('enterprisePanels', panel.id, 'ctaHref', e.target.value)}
-                    />
-                    <select
-                      value={panel.ctaVariant || 'primary'}
-                      onChange={(e) => updateHomePageItem('enterprisePanels', panel.id, 'ctaVariant', e.target.value)}
-                    >
-                      <option value="primary">Primary</option>
-                      <option value="outline">Outline</option>
-                    </select>
-                    <button type="button" onClick={() => removeHomePageItem('enterprisePanels', panel.id)}>
-                      ×
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Brand Logos */}
-          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3>{t('brandLogos')}</h3>
-              <button type="button" className="btn btn--outline" onClick={() => addHomePageItem('brandLogos')}>
-                {t('addLogo')}
-              </button>
-            </div>
-            <div style={{ display: 'grid', gap: 12 }}>
-              {safeContent.homePage?.brandLogos?.map((logo) => (
-                <div key={logo.id} style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 12, alignItems: 'start' }}>
-                  <ImageUploader
-                    currentUrl={logo.src}
-                    onUploadComplete={(url) => updateHomePageItem('brandLogos', logo.id, 'src', url)}
-                    onRemove={() => updateHomePageItem('brandLogos', logo.id, 'src', '')}
-                  />
-                  <input
-                    type="text"
-                    placeholder={t('brandName')}
-                    value={logo.name}
-                    onChange={(e) => updateHomePageItem('brandLogos', logo.id, 'name', e.target.value)}
-                  />
-                  <button type="button" onClick={() => removeHomePageItem('brandLogos', logo.id)}>
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </section>
       )}
 

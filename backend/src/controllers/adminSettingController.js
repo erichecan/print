@@ -259,40 +259,6 @@ const DEFAULT_CONTENT_CONFIG = {
       { id: 'promise-3', title: 'Design Help', detail: '7 days a week' },
       { id: 'promise-4', title: 'Rush Options', detail: 'As fast as 3 days' },
     ],
-    testimonials: [
-      { id: 'testimonial-1', quote: 'Ordered with ease and delivered on time.', author: 'Mary B., NY', stars: 5 },
-      { id: 'testimonial-2', quote: 'Top quality, fast delivery, stellar support. Highly recommend!', author: 'Ingrid D., MD', stars: 5 },
-      { id: 'testimonial-3', quote: 'Great experience and responsive service. The site is easy to use.', author: 'Jenna F., WI', stars: 4 },
-    ],
-    enterprisePanels: [
-      {
-        id: 'enterprise-1',
-        title: 'Enterprise-Level Swag Management',
-        description: 'Get custom kits, white-glove service, address collection, and global shipping with our enterprise solution.',
-        ctaLabel: 'Get a Demo',
-        ctaHref: '/contact',
-      },
-      {
-        id: 'enterprise-2',
-        title: "We'll Do the Work",
-        description: 'Ship to one place or every place. Choose your design and we handle the rest—from packing to delivery tracking.',
-        ctaLabel: 'Start Designing',
-        ctaHref: '/design-lab', // [2025-12-08 14:40:00] 使用新的 Design Lab 页面
-        ctaVariant: 'outline',
-      },
-    ],
-    brandLogos: [
-      { id: 'brand-1', name: 'Nike', src: '/assets/brands/nike.svg' },
-      { id: 'brand-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
-      { id: 'brand-3', name: 'New Era', src: '/assets/brands/new-era.png' },
-      { id: 'brand-4', name: 'The North Face', src: '/assets/brands/northface.svg' },
-      { id: 'brand-5', name: 'Stanley', src: '/assets/brands/stanley.svg' },
-      { id: 'brand-6', name: 'Patagonia', src: '/assets/brands/patagonia.svg' },
-      { id: 'brand-7', name: 'Champion', src: '/assets/brands/champion.png' },
-      { id: 'brand-8', name: 'Adidas', src: '/assets/brands/adidas.png' },
-      { id: 'brand-9', name: 'Columbia', src: '/assets/brands/columbia.png' },
-      { id: 'brand-10', name: 'Hydro Flask', src: '/assets/brands/hydro-flask.png' },
-    ],
   },
   // [2025-01-28 05:55:00] 关于页内容配置
   aboutPage: {

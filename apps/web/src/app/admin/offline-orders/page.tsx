@@ -37,7 +37,7 @@ function toInputDate(value?: string | null) {
 const BOARD_KEY = 'admin-offline-orders-board';
 
 export default function AdminOfflineOrdersPage() {
-  const { t } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
+  const { t, locale } = useAdminI18n(); // [2025-01-28 08:45:00] 国际化支持
   const [search, setSearch] = useState('');
   const [rushFilter, setRushFilter] = useState<'all' | 'rush' | 'standard'>('all');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -469,7 +469,7 @@ export default function AdminOfflineOrdersPage() {
                   aria-dropeffect={draggingOrderId ? 'move' : undefined}
                 >
                   <header className="kanban-column-header">
-                    <h2>{stage.label}</h2>
+                    <h2>{locale === 'zh' ? stage.labelZh || stage.label : stage.labelEn || stage.label}</h2>
                     <span className="kanban-column-count">{cards.length}</span>
                   </header>
                   <div className="kanban-column-body">
@@ -494,7 +494,7 @@ export default function AdminOfflineOrdersPage() {
                             {order.rushOrder && <span className="kanban-card-chip is-alert">Rush</span>}
                           </header>
                           <p className="kanban-card-meta">
-                            #{order.orderCode} • {order.stage?.label ?? 'Unassigned'}
+                            #{order.orderCode} • {locale === 'zh' ? order.stage?.labelZh || order.stage?.label : order.stage?.labelEn || order.stage?.label}
                           </p>
                           <p className="kanban-card-detail">
                             {order.contact.company || '—'} · Delivery {formatDate(order.deliveryDate)}
@@ -548,7 +548,7 @@ export default function AdminOfflineOrdersPage() {
                     >
                       {stages.map((stage) => (
                         <option key={stage.key} value={stage.key}>
-                          {stage.label}
+                          {locale === 'zh' ? stage.labelZh || stage.label : stage.labelEn || stage.label}
                         </option>
                       ))}
                     </select>

@@ -6,10 +6,46 @@ const logger = require('../utils/logger');
 // [2025-01-28 19:15:00] 修复：提供默认阶段，避免 getInitialStage 返回 undefined
 const DEFAULT_STAGE_CONFIG = [
   {
-    key: 'new',
-    label: 'New',
-    description: 'New order received',
+    key: 'pending-design',
+    labelEn: 'Pending Design',
+    labelZh: '待确认设计',
+    description: 'Pending design confirmation',
     position: 0
+  },
+  {
+    key: 'layout-proofing',
+    labelEn: 'Layout/Proofing',
+    labelZh: '设计排版/校样',
+    description: 'Layout and proofing',
+    position: 1
+  },
+  {
+    key: 'printing',
+    labelEn: 'Printing',
+    labelZh: '印刷生产',
+    description: 'In printing production',
+    position: 2
+  },
+  {
+    key: 'transfer',
+    labelEn: 'Transfer',
+    labelZh: '转印生产',
+    description: 'In transfer production',
+    position: 3
+  },
+  {
+    key: 'qc',
+    labelEn: 'Quality Control',
+    labelZh: '出货审核',
+    description: 'Quality control and shipping review',
+    position: 4
+  },
+  {
+    key: 'ready',
+    labelEn: 'Ready',
+    labelZh: '待取货/发货',
+    description: 'Ready for pickup or shipment',
+    position: 5
   }
 ];
 
@@ -47,10 +83,13 @@ const normalizeStages = (stages = []) => {
 
   const normalized = source
     .map((stage, index) => {
-      const label = stage?.label?.toString().trim();
-      if (!label) return null;
+      // Handle legacy "label" field OR new bilingual labels
+      const labelEn = (stage?.labelEn || stage?.label || '').toString().trim();
+      const labelZh = (stage?.labelZh || stage?.label || '').toString().trim();
 
-      const key = slugify(stage.key || label);
+      if (!labelEn && !labelZh) return null;
+
+      const key = slugify(stage.key || labelEn || labelZh);
       if (!key || seen.has(key)) return null;
 
       const rawPosition =
@@ -61,7 +100,9 @@ const normalizeStages = (stages = []) => {
       seen.add(key);
       return {
         key,
-        label,
+        label: labelEn || labelZh, // Legacy compatibility
+        labelEn,
+        labelZh,
         description: stage?.description?.toString().trim() || '',
         position: rawPosition
       };

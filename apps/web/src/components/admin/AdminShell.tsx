@@ -118,6 +118,11 @@ const ICONS: Record<string, JSX.Element> = {
       <path fill="currentColor" d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
   ),
+  testimonials: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z" />
+    </svg>
+  ),
 };
 
 const NAV_LINKS = [
@@ -138,6 +143,7 @@ const NAV_LINKS = [
   { href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // [2025-12-06 17:10:00] Supplier management for Issue #89
   { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // [2025-01-28 01:10:00] Design Lab art assets CMS
   { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // [2025-01-30 19:00:00] Font management
+  { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials' }, // Dedicated testimonials management
   { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // [2025-01-28 08:00:00] Content Management System
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];

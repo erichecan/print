@@ -1285,7 +1285,7 @@ exports.updateOfflineWorkflowStages = async (req, res) => {
         prisma.offlineOrder.updateMany({
           where: { stageKey: stage.key },
           data: {
-            stageLabel: stage.label,
+            stageLabel: stage.labelZh || stage.labelEn || stage.label, // Use localized label as primary
             stagePosition: stage.position ?? index
           }
         })

@@ -15,6 +15,7 @@ import {
   AdminCategorySummary,
 } from '@/lib/api';
 import { useAdminI18n } from '@/contexts/adminI18nContext';
+import { useRouter } from 'next/navigation';
 
 type RemoteFilters = {
   page: number;
@@ -40,6 +41,7 @@ const statusOptions: Array<{ value: StatusFilter; labelKey: string; fallback: st
 
 export default function AdminProductsPage() {
   const { t } = useAdminI18n();
+  const router = useRouter();
   const [remoteFilters, setRemoteFilters] = useState<RemoteFilters>(remoteDefaults);
   const [searchDraft, setSearchDraft] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -50,14 +52,15 @@ export default function AdminProductsPage() {
 
   const swrKey = useMemo(() => ['admin-products', remoteFilters], [remoteFilters]);
 
-  const { data, isLoading, error, mutate } = useSWR(swrKey, ([, params]) =>
-    adminProductsApi.list({
-      page: params.page,
-      search: params.search || undefined,
-      status: params.status === 'all' ? undefined : params.status,
-      categoryId: params.categoryId || undefined,
-    })
-  );
+  const { data, isLoading, error, mutate } = useSWR(swrKey, ([, params]) => {
+    const p = params as RemoteFilters;
+    return adminProductsApi.list({
+      page: p.page,
+      search: p.search || undefined,
+      status: p.status === 'all' ? undefined : p.status,
+      categoryId: p.categoryId || undefined,
+    });
+  });
 
   const { data: categoryResponse } = useSWR('admin-product-categories', () =>
     adminCategoriesApi.list({ page: 1, limit: 200, status: 'active' })
@@ -348,8 +351,12 @@ export default function AdminProductsPage() {
             </thead>
             <tbody>
               {filteredProducts.map((product) => (
-                <tr key={product.id} data-entity="product" data-id={product.id}>
-                  <td>
+                <tr
+                  key={product.id}
+                  className="clickable-row"
+                  onClick={() => router.push(`/admin/products/${product.id}`)}
+                >
+                  <td onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       aria-label={`Select ${product.name}`}
@@ -363,6 +370,9 @@ export default function AdminProductsPage() {
                         {product.primaryImage?.url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={product.primaryImage.url} alt={product.primaryImage.alt || ''} />
+                        ) : product.images?.[0]?.url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={product.images[0].url} alt={product.images[0].alt || ''} />
                         ) : (
                           <div className="placeholder" />
                         )}
@@ -396,7 +406,7 @@ export default function AdminProductsPage() {
                   <td data-field="updatedAt">
                     {product.updatedAt ? new Date(product.updatedAt).toLocaleDateString() : '—'}
                   </td>
-                  <td>
+                  <td onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <button
                         type="button"
@@ -467,6 +477,15 @@ export default function AdminProductsPage() {
           </button>
         </div>
       )}
+      <style jsx global>{`
+        .clickable-row {
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+        }
+        .clickable-row:hover {
+          background-color: #f8fafc !important;
+        }
+      `}</style>
     </div>
   );
 }
