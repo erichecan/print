@@ -36,19 +36,29 @@ exports.trackEvents = async (req, res, next) => {
 
     // 使用批量插入（如果表存在）
     try {
+      // [2025-12-31] 修复：为 UUID 字段添加类型转换
       await prisma.$executeRaw`
         INSERT INTO design_lab_analytics_events (
           id, user_id, session_id, event_type, design_id, metadata, timestamp, created_at
         ) VALUES ${prisma.Prisma.join(
-          eventsToSave.map(e => 
-            prisma.Prisma.sql`(${e.id}, ${e.user_id}, ${e.session_id}, ${e.event_type}, ${e.design_id}, ${JSON.stringify(e.metadata)}::jsonb, ${e.timestamp}, ${e.created_at})`
-          )
-        )}
+        eventsToSave.map(e =>
+          prisma.Prisma.sql`(
+              ${e.id}::uuid, 
+              ${e.user_id}::uuid, 
+              ${e.session_id}, 
+              ${e.event_type}, 
+              ${e.design_id}::uuid, 
+              ${JSON.stringify(e.metadata)}::jsonb, 
+              ${e.timestamp}, 
+              ${e.created_at}
+            )`
+        )
+      )}
       `;
     } catch (error) {
       // 如果表不存在，记录日志但不失败（允许渐进式开发）
       logger.warn('[DesignLabAnalytics] Analytics events table may not exist:', error.message);
-      
+
       // 暂时只记录到日志
       events.forEach(event => {
         logger.info('[DesignLabAnalytics] Event tracked', {
@@ -101,7 +111,7 @@ exports.submitUploadRating = async (req, res, next) => {
     } catch (error) {
       // 如果表不存在，记录日志但不失败
       logger.warn('[DesignLabAnalytics] Upload ratings table may not exist:', error.message);
-      
+
       // 暂时只记录到日志
       logger.info('[DesignLabAnalytics] Upload rating submitted', {
         uploadId,
@@ -249,7 +259,7 @@ exports.getMetrics = async (req, res, next) => {
     } catch (error) {
       // 如果表不存在，返回模拟数据
       logger.warn('[DesignLabAnalytics] Analytics tables may not exist:', error.message);
-      
+
       res.json({
         success: true,
         data: {

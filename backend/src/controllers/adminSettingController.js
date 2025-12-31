@@ -542,8 +542,8 @@ const getSettingValue = async (key, defaultValue) => {
     let parsedValue = defaultValue;
     if (setting.value) {
       try {
-        parsedValue = typeof setting.value === 'string' 
-          ? JSON.parse(setting.value) 
+        parsedValue = typeof setting.value === 'string'
+          ? JSON.parse(setting.value)
           : setting.value;
       } catch (e) {
         logger.warn('Failed to parse setting value', { key, error: e.message });
@@ -564,26 +564,51 @@ const getSettingValue = async (key, defaultValue) => {
 
 const upsertSetting = async (key, value, userId) => {
   try {
-    const valueJson = JSON.stringify(value);
     const now = new Date();
-    
-    await prisma.$executeRaw`
-      INSERT INTO settings (id, key, value, updated_by, updated_at)
-      VALUES (gen_random_uuid(), ${key}, ${valueJson}::jsonb, ${userId || null}, ${now})
-      ON CONFLICT (key) 
-      DO UPDATE SET 
-        value = ${valueJson}::jsonb,
-        updated_by = ${userId || null},
-        updated_at = ${now}
-    `;
 
+    // [2025-12-31] 修复：分步处理，避免 PostgreSQL gen_random_uuid() 兼容性问题
+    // 1. 先检查记录是否存在
+    const existing = await prisma.$queryRaw`
+      SELECT * FROM settings WHERE key = ${key} LIMIT 1
+    `.then((results) => results[0] || null);
+
+    const valueJson = JSON.stringify(value);
+
+    if (existing) {
+      // 2a. 更新现有记录
+      await prisma.$executeRaw`
+        UPDATE settings 
+        SET value = ${valueJson}::jsonb,
+            updated_by = ${userId || null},
+            updated_at = ${now}
+        WHERE key = ${key}
+      `;
+      logger.info('[adminSettingController] Setting updated', { key, userId: userId || 'system' });
+    } else {
+      // 2b. 插入新记录 - 使用 Node.js UUID 生成
+      const { v4: uuidv4 } = require('uuid');
+      const id = uuidv4();
+
+      // [2025-12-31] 修复：将字符串 UUID 转换为 PostgreSQL uuid 类型
+      await prisma.$executeRaw`
+       INSERT INTO settings (id, key, value, updated_by, updated_at)
+        VALUES (${id}::uuid, ${key}, ${valueJson}::jsonb, ${userId || null}, ${now})
+      `;
+      logger.info('[adminSettingController] Setting created', { key, userId: userId || 'system' });
+    }
+
+    // 3. 获取更新后的值
     const setting = await prisma.$queryRaw`
       SELECT * FROM settings WHERE key = ${key} LIMIT 1
     `.then((results) => results[0]);
 
     return setting;
   } catch (error) {
-    logger.error('Error upserting setting', { key, error: error.message });
+    logger.error('[adminSettingController] Error upserting setting', {
+      key,
+      error: error.message,
+      stack: error.stack
+    });
     throw error;
   }
 };
@@ -611,11 +636,23 @@ exports.updateSiteSettings = async (req, res) => {
 
 exports.getContentConfig = async (req, res) => {
   try {
+    logger.info('[admin SettingController] getContentConfig called', {
+      userId: req.user?.id,
+      userRole: req.user?.role
+    });
     const data = await getSettingValue('site.content', DEFAULT_CONTENT_CONFIG);
     res.json({ data });
   } catch (error) {
-    console.error('[adminSettingController] getContentConfig error:', error);
-    res.status(500).json({ error: 'Failed to load content configuration' });
+    logger.error('[adminSettingController] getContentConfig error:', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.id
+    });
+    res.status(500).json({
+      error: 'Failed to load content configuration',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -632,15 +669,29 @@ exports.getPublicContentConfig = async (req, res) => {
 
 exports.updateContentConfig = async (req, res) => {
   try {
+    logger.info('[adminSettingController] updateContentConfig called', {
+      userId: req.user?.id,
+      userRole: req.user?.role,
+      bodyKeys: req.body ? Object.keys(req.body) : []
+    });
     const payload = {
       ...DEFAULT_CONTENT_CONFIG,
       ...(req.body || {}),
     };
     await upsertSetting('site.content', payload, req.user?.id);
+    logger.info('[adminSettingController] Content config updated successfully', { userId: req.user?.id });
     res.json({ data: payload });
   } catch (error) {
-    console.error('[adminSettingController] updateContentConfig error:', error);
-    res.status(500).json({ error: 'Failed to update content configuration' });
+    logger.error('[adminSettingController] updateContentConfig error:', {
+      error: error.message,
+      stack: error.stack,
+      userId: req.user?.id
+    });
+    res.status(500).json({
+      error: 'Failed to update content configuration',
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -665,15 +716,15 @@ exports.updateProductionTemplates = async (req, res) => {
         name: String(tpl.name || '').trim() || 'Template',
         stages: Array.isArray(tpl.stages)
           ? tpl.stages
-              .filter((s) => s && (s.key || s.label))
-              .map((s) => ({
-                key: String(s.key || '')
-                  .toLowerCase()
-                  .replace(/[^a-z0-9-]+/g, '-')
-                  .replace(/^-+|-+$/g, '')
-                  .substring(0, 60),
-                label: String(s.label || s.key || '').trim().substring(0, 60),
-              }))
+            .filter((s) => s && (s.key || s.label))
+            .map((s) => ({
+              key: String(s.key || '')
+                .toLowerCase()
+                .replace(/[^a-z0-9-]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+                .substring(0, 60),
+              label: String(s.label || s.key || '').trim().substring(0, 60),
+            }))
           : [],
       }));
 

@@ -173,11 +173,12 @@ export default function AdminOrdersPage() {
   };
 
   // [2025-12-08] 获取订单详情链接
+  // [2025-12-30] 修复：offline 订单应该链接到 sales 订单详情页面
   const getOrderDetailLink = (order: UnifiedOrderDTO) => {
     if (order.type === 'online') {
       return `/admin/orders/${order.id}`;
     } else {
-      return `/admin/offline-orders/${order.id}`;
+      return `/offline-orders/sales/orders/${order.id}`;
     }
   };
 

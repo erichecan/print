@@ -54,6 +54,16 @@ export default function SalesOrderDetailPage() {
             .catch(() => ({ stages: [] }))
         ]);
         if (!cancelled) {
+          // [2025-12-30] 添加详细的数据结构日志以诊断产品信息问题
+          console.log('[Order Detail] Full order data:', {
+            hasDetails: !!detail,
+            hasConfiguration: !!detail?.configuration,
+            hasProductItems: !!detail?.configuration?.productItems,
+            productItemsCount: detail?.configuration?.productItems?.length || 0,
+            productItemsSample: detail?.configuration?.productItems?.[0],
+            hasVariants: detail?.configuration?.productItems?.some(item => item.variants?.length > 0),
+            variantsCount: detail?.configuration?.productItems?.reduce((sum, item) => sum + (item.variants?.length || 0), 0) || 0
+          });
           setOrder(detail);
           setStages(stagesRes.stages || []);
         }
@@ -81,10 +91,10 @@ export default function SalesOrderDetailPage() {
   }, [orderId, router]);
 
   const meta = order;
-  
+
   // [2025-12-03 23:30:00] 解析配置信息
   const config: OfflineOrderConfiguration | null = meta?.configuration || null;
-  
+
   // [2025-12-03 23:30:00] 按产品分组印刷位置
   const printPositionsByProduct = useMemo(() => {
     if (!config?.printPositions) return {};
@@ -98,7 +108,7 @@ export default function SalesOrderDetailPage() {
     });
     return grouped;
   }, [config]);
-  
+
   // [2025-12-03 23:30:00] 计算每个产品的总数量和总金额
   // [2025-12-19 00:10:00] 修复：添加安全检查，防止 variants 为 undefined 时调用 reduce
   const productTotals = useMemo(() => {
@@ -131,7 +141,7 @@ export default function SalesOrderDetailPage() {
   // [2025-12-07 03:00:00] 更新订单阶段
   const handleUpdateStage = async (newStageKey: string) => {
     if (!order || updatingStage) return;
-    
+
     setUpdatingStage(true);
     try {
       const updated = await salesOrdersApi.updateStage(order.id, {
@@ -154,7 +164,7 @@ export default function SalesOrderDetailPage() {
         <header className="order-detail-header">
           <button type="button" className="order-detail-back" onClick={handleBack}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span>返回</span>
           </button>
@@ -326,9 +336,10 @@ export default function SalesOrderDetailPage() {
             </section>
 
             {/* [2025-12-03 23:30:00] 产品列表 */}
-            {config?.productItems && config.productItems.length > 0 && (
-              <section className="order-section order-section-wide">
-                <h2 className="section-title">产品列表</h2>
+            {/* [2025-12-30] 添加产品信息缺失时的友好提示 */}
+            <section className="order-section order-section-wide">
+              <h2 className="section-title">产品列表</h2>
+              {config?.productItems && config.productItems.length > 0 ? (
                 <div className="products-list">
                   {config.productItems.map((item) => {
                     const totals = productTotals[item.id] || { quantity: 0, total: 0 };
@@ -370,8 +381,20 @@ export default function SalesOrderDetailPage() {
                     );
                   })}
                 </div>
-              </section>
-            )}
+              ) : (
+                <div className="info-text" style={{
+                  padding: '2rem',
+                  textAlign: 'center',
+                  color: '#6b7280',
+                  backgroundColor: '#f9fafb',
+                  borderRadius: '8px',
+                  border: '1px solid #e5e7eb'
+                }}>
+                  <p style={{ margin: '0 0 0.5rem', fontWeight: 500, color: '#374151' }}>此订单暂无产品明细信息</p>
+                  <p style={{ margin: 0, fontSize: '0.875rem' }}>可能是创建订单时未添加产品，或数据同步问题。</p>
+                </div>
+              )}
+            </section>
 
             {/* [2025-12-03 23:30:00] 印刷位置 */}
             {config?.printPositions && config.printPositions.length > 0 && (
@@ -379,8 +402,8 @@ export default function SalesOrderDetailPage() {
                 <h2 className="section-title">印刷位置</h2>
                 <div className="print-positions-list">
                   {config.productItems?.map((item) => {
-                    const positions = printPositionsByProduct[item.id] || 
-                                     printPositionsByProduct[item.categoryName] || [];
+                    const positions = printPositionsByProduct[item.id] ||
+                      printPositionsByProduct[item.categoryName] || [];
                     if (positions.length === 0) return null;
                     return (
                       <div key={item.id} className="print-group">
@@ -535,9 +558,9 @@ export default function SalesOrderDetailPage() {
                       className="asset-item"
                     >
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M12.5 2.5H17.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        <path d="M8.33333 11.6667L17.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M17.5 12.5V15.8333C17.5 16.2754 17.3244 16.6993 17.0118 17.0118C16.6993 17.3244 16.2754 17.5 15.8333 17.5H4.16667C3.72464 17.5 3.30072 17.3244 2.98816 17.0118C2.67559 16.6993 2.5 16.2754 2.5 15.8333V4.16667C2.5 3.72464 2.67559 3.30072 2.98816 2.98816C3.30072 2.67559 3.72464 2.5 4.16667 2.5H7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12.5 2.5H17.5V7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M8.33333 11.6667L17.5 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                       <span className="asset-name">{asset.fileName}</span>
                       <span className="asset-size">{(asset.fileSize / (1024 * 1024)).toFixed(2)} MB</span>
@@ -569,10 +592,10 @@ export default function SalesOrderDetailPage() {
                     <span className="info-value">
                       {meta.productionWorkOrder.startDate
                         ? new Date(meta.productionWorkOrder.startDate).toLocaleDateString('zh-CN', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
                         : '—'}
                     </span>
                   </div>
@@ -581,10 +604,10 @@ export default function SalesOrderDetailPage() {
                     <span className="info-value">
                       {meta.productionWorkOrder.dueDate
                         ? new Date(meta.productionWorkOrder.dueDate).toLocaleDateString('zh-CN', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
                         : '—'}
                     </span>
                   </div>
