@@ -1162,9 +1162,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       originX: 'center',
       originY: 'center',
       fill: 'transparent',
-      stroke: '#999999', // Thin gray line
-      strokeWidth: 1,
-      strokeDashArray: [5, 5], // Finer dash
+      stroke: '#808080', // Dark gray border (visible on both white and dark backgrounds)
+      strokeWidth: 3, // 3px width
       selectable: false,
       evented: false,
     });
@@ -1177,7 +1176,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       top: -PRINTABLE_HEIGHT / 2 + 10,
       fontSize: 40, // Scaled for 4000x4800 canvas
       fontFamily: 'Arial',
-      fill: '#999999',
+      fill: '#808080', // Dark gray text
       originX: 'left',
       originY: 'top',
       selectable: false,
@@ -1195,9 +1194,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         originX: 'center',
         originY: 'center',
         fill: 'transparent',
-        stroke: '#999999',
-        strokeWidth: 1,
-        // strokeDashArray: [5, 5], // Solid or dashed? Custom Ink uses solid for sub-areas usually, but let's match style
+        stroke: '#808080', // Dark gray border
+        strokeWidth: 3, // 3px width
         selectable: false,
         evented: false,
       });
@@ -1207,7 +1205,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         top: LEFT_CHEST_OFFSET_Y - LEFT_CHEST_HEIGHT / 2 + 10,
         fontSize: 30,
         fontFamily: 'Arial',
-        fill: '#999999',
+        fill: '#808080', // Dark gray text
         originX: 'left',
         originY: 'top',
         selectable: false,
@@ -1370,10 +1368,110 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           }
         };
 
-        fabricCanvas.on('object:moving', showGuides);
+        // [2025-12-30] Boundary constraint helper
+        const getPrintableAreaBounds = (view: string) => {
+          const centerX = CANVAS_WIDTH / 2;
+          const centerY = CANVAS_HEIGHT / 2;
+
+          let width = PRINTABLE_WIDTH;
+          let height = PRINTABLE_HEIGHT;
+
+          if (view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve') {
+            width = SLEEVE_PRINTABLE_WIDTH;
+            height = SLEEVE_PRINTABLE_HEIGHT;
+          }
+
+          return {
+            left: centerX - width / 2,
+            top: centerY - height / 2,
+            right: centerX + width / 2,
+            bottom: centerY + height / 2,
+          };
+        };
+
+        // [2025-12-30] Enhanced object:moving with boundary constraints
+        fabricCanvas.on('object:moving', (e: any) => {
+          showGuides();
+
+          const obj = e.target;
+          if (!obj) return;
+
+          // Skip constraint for product image and guides
+          const layerType = obj.data?.layerType;
+          if (layerType === 'product-image' || layerType === 'guide') return;
+
+          // Get printable area boundaries
+          const bounds = getPrintableAreaBounds(currentView);
+
+          // Get object bounding rectangle (accounts for rotation, scale, etc.)
+          const objBounds = obj.getBoundingRect(true, true);
+
+          // Calculate how much the object exceeds the boundaries
+          const exceedsLeft = bounds.left - objBounds.left;
+          const exceedsTop = bounds.top - objBounds.top;
+          const exceedsRight = objBounds.left + objBounds.width - bounds.right;
+          const exceedsBottom = objBounds.top + objBounds.height - bounds.bottom;
+
+          // Adjust object position to constrain within bounds
+          if (exceedsLeft > 0) {
+            obj.left = obj.left! + exceedsLeft;
+          }
+          if (exceedsRight > 0) {
+            obj.left = obj.left! - exceedsRight;
+          }
+          if (exceedsTop > 0) {
+            obj.top = obj.top! + exceedsTop;
+          }
+          if (exceedsBottom > 0) {
+            obj.top = obj.top! - exceedsBottom;
+          }
+
+          obj.setCoords();
+        });
+
+        // [2025-12-30] Snap object back to bounds after drag/scale/rotate completes
+        fabricCanvas.on('object:modified', (e: any) => {
+          hideGuides();
+
+          const obj = e.target;
+          if (!obj) return;
+
+          // Skip constraint for product image and guides
+          const layerType = obj.data?.layerType;
+          if (layerType === 'product-image' || layerType === 'guide') return;
+
+          // Get printable area boundaries
+          const bounds = getPrintableAreaBounds(currentView);
+
+          // Get object bounding rectangle
+          const objBounds = obj.getBoundingRect(true, true);
+
+          // Calculate how much the object exceeds the boundaries
+          const exceedsLeft = bounds.left - objBounds.left;
+          const exceedsTop = bounds.top - objBounds.top;
+          const exceedsRight = objBounds.left + objBounds.width - bounds.right;
+          const exceedsBottom = objBounds.top + objBounds.height - bounds.bottom;
+
+          // Snap object position to constrain within bounds
+          if (exceedsLeft > 0) {
+            obj.left = obj.left! + exceedsLeft;
+          }
+          if (exceedsRight > 0) {
+            obj.left = obj.left! - exceedsRight;
+          }
+          if (exceedsTop > 0) {
+            obj.top = obj.top! + exceedsTop;
+          }
+          if (exceedsBottom > 0) {
+            obj.top = obj.top! - exceedsBottom;
+          }
+
+          obj.setCoords();
+          fabricCanvas.requestRenderAll();
+        });
+
         fabricCanvas.on('object:scaling', showGuides);
         fabricCanvas.on('object:rotating', showGuides);
-        fabricCanvas.on('object:modified', hideGuides); // Hide when interaction stops
         fabricCanvas.on('mouse:up', hideGuides); // Ensure it hides on mouse up even if not modified (e.g. just click)
         fabricCanvas.on('selection:cleared', hideGuides);
 
