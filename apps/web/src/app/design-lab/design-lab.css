@@ -328,7 +328,7 @@
   /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
   min-height: 70px !important;
   /* [2025-12-20 02:40:00] 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
-  padding: var(--dl-space-2) var(--dl-space-1);
+  padding: 4px var(--dl-space-1);
   background: transparent !important;
   border: none !important;
   color: rgb(191, 191, 191) !important;
@@ -350,6 +350,16 @@
   /* 确保没有外边距影响位置 */
   margin-left: 16px !important;
   /* element-8 到 element-12 的 x 位置都是 16 */
+}
+
+.dl-rail__btn-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+  color: rgb(191, 191, 191);
 }
 
 /* [2025-12-06 12:35:00] 修复：Product Colors 和 Add Names 按钮高度为 86px */
@@ -411,7 +421,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
   color: rgb(191, 191, 191);
 }
 
