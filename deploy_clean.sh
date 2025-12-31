@@ -18,8 +18,7 @@ APP_NAME="backend"
 SERVICE_NAME="print-main-backend"
 IMAGE_URL="${REGION}-docker.pkg.dev/${PROJECT_ID}/${ARTIFACT_REGISTRY}/${APP_NAME}:${TAG}"
 
-echo "📦 Building Backend (No Cache)..."
-docker build --no-cache --platform linux/amd64 \
+docker build --platform linux/amd64 \
   -f backend/Dockerfile \
   -t $IMAGE_URL \
   .
@@ -53,8 +52,7 @@ else
     echo "🔑 Stripe Key fetched."
 fi
 
-echo "📦 Building Frontend (No Cache)..."
-docker build --no-cache --platform linux/amd64 \
+docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-651538279084.us-central1.run.app/api \
   --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$STRIPE_KEY" \
   --build-arg NEXT_PUBLIC_BUILD_SHA="$TAG" \
@@ -71,7 +69,8 @@ gcloud run deploy $SERVICE_NAME \
   --region $REGION \
   --platform managed \
   --allow-unauthenticated \
-  --set-secrets NEXT_PUBLIC_API_URL=api-url:latest,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest \
+  --set-env-vars NEXT_PUBLIC_API_URL=https://print-main-backend-651538279084.us-central1.run.app/api \
+  --set-secrets NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=stripe-publishable-key:latest \
   --project $PROJECT_ID
 
 
