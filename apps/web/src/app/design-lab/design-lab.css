@@ -328,7 +328,7 @@
   /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
   min-height: 70px !important;
   /* [2025-12-20 02:40:00] 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
-  padding: 4px var(--dl-space-1);
+  padding: 0 var(--dl-space-1);
   background: transparent !important;
   border: none !important;
   color: rgb(191, 191, 191) !important;
@@ -358,7 +358,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 2px;
+  margin-bottom: 0;
   color: rgb(191, 191, 191);
 }
 
