@@ -15,6 +15,7 @@ const {
   extractStorageKeyFromUrl,
 } = require('../utils/productUpload');
 const { uploadBufferToGcs, buildObjectPath } = require('../utils/gcsStorage');
+const logger = require('../utils/logger'); // Import logger
 
 // 将 Prisma Decimal / string / number 安全转换为原始 number，便于做单位换算
 const toNumber = (value, fallback = 0) => {
@@ -1104,7 +1105,7 @@ exports.uploadProductImages = async (req, res) => {
       images: normalizedImages,
     });
   } catch (error) {
-    console.error('[adminProductController] uploadProductImages error:', error);
+    logger.error('[adminProductController] uploadProductImages error:', error);
     // 检查是否是 GCS 配置错误
     if (error.message && (error.message.includes('GCS') || error.message.includes('Bucket'))) {
       return res.status(500).json({

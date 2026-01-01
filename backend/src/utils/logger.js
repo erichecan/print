@@ -48,10 +48,18 @@ const logger = winston.createLogger({
 });
 
 // Console transport for development
+// Console transport
 if (process.env.NODE_ENV !== 'production') {
   logger.add(
     new winston.transports.Console({
       format: consoleFormat
+    })
+  );
+} else {
+  // In production, log to console in JSON format for Cloud Run
+  logger.add(
+    new winston.transports.Console({
+      format: logFormat
     })
   );
 }
