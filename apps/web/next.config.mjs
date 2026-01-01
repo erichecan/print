@@ -2,7 +2,7 @@
  * Next.js config
  * [2025-01-30 23:00:00] Design Lab 4.0: 构建时环境变量校验
  * Updated: 2025-11-04 00:00:00
- * [2025-01-27 12:00:00] Added Netlify output configuration
+
  * [2025-01-27 14:10:00] 移除 Sentry 配置，使用简单的错误处理方案
  * [2025-01-30 17:30:00] 修复：构建时验证改为内联，避免导入 TypeScript 模块
  */
@@ -87,7 +87,6 @@ const computedBuildSha = normalizeSha(
     process.env.GIT_SHA,
     process.env.COMMIT_SHA,
     process.env.GITHUB_SHA,
-    process.env.VERCEL_GIT_COMMIT_SHA,
     process.env.CI_COMMIT_SHA,
     process.env.SOURCE_VERSION
   )
@@ -293,7 +292,7 @@ const nextConfig = {
     NEXT_PUBLIC_BUILD_SHA: computedBuildSha,
     NEXT_PUBLIC_BUILD_TIME: computedBuildTime,
     // [2025-12-19 15:02:10] 兼容：历史代码使用 NEXT_PUBLIC_GIT_SHA，统一指向同一份 SHA
-    NEXT_PUBLIC_GIT_SHA: normalizeSha(pickFirstNonEmpty(process.env.NEXT_PUBLIC_GIT_SHA, computedBuildSha, process.env.VERCEL_GIT_COMMIT_SHA)) || 'dev',
+    NEXT_PUBLIC_GIT_SHA: normalizeSha(pickFirstNonEmpty(process.env.NEXT_PUBLIC_GIT_SHA, computedBuildSha)) || 'dev',
     // [2025-12-08 14:40:00] 新的 Design Lab 页面 URL 配置
     NEXT_PUBLIC_NEW_DESIGN_URL: process.env.NEXT_PUBLIC_NEW_DESIGN_URL || '',
     NEXT_PUBLIC_NEW_DESIGN_PATH: process.env.NEXT_PUBLIC_NEW_DESIGN_PATH || '/design-lab',
@@ -306,7 +305,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true, // 允许构建时忽略 ESLint 警告
   },
-  // [2025-11-14 06:18:00] 切换 Netlify SSR 插件，移除静态导出 output 配置
+  // [2025-11-14 06:18:00] 移除静态导出 output 配置
   // [2025-01-27 12:00:00] 配置图片优化（静态导出模式下需要）
   images: {
     // [2025-12-03 04:15:00] 图片优化器配置
@@ -317,7 +316,7 @@ const nextConfig = {
     // 但在 Cloud Run 上，由于静态资源路径问题，仍然禁用优化
     // [2025-01-30 12:00:00] 修复：在 Cloud Run 生产环境禁用图片优化，避免 400 错误
     unoptimized:
-      process.env.NETLIFY === 'true' ||
+
       process.env.NEXT_IMAGE_UNOPTIMIZED === 'true' ||
       process.env.DISABLE_IMAGE_OPTIMIZATION === 'true' ||
       (process.env.NODE_ENV === 'production' && process.env.GCP_DEPLOY === 'true'),

@@ -7,18 +7,8 @@ const { ensureOfflineUploadRoot, getAllowedExtensions, isExtensionAllowed } = re
 
 const router = express.Router();
 
-const uploadRoot = ensureOfflineUploadRoot();
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadRoot);
-  },
-  filename: (_req, file, cb) => {
-    const timestamp = Date.now();
-    const safeName = file.originalname.replace(/[^a-z0-9.\-_]+/gi, '_');
-    cb(null, `${timestamp}-${safeName}`);
-  }
-});
+// Use memory storage for GCS upload
+const storage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
   if (!isExtensionAllowed(file.originalname)) {

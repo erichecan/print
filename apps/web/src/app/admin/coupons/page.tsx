@@ -12,7 +12,7 @@ const couponTypes = [
 ];
 
 export default function AdminCouponsPage() {
-const { t } = useAdminI18n(); // 使用 t 输出中英文
+  const { t } = useAdminI18n(); // 使用 t 输出中英文
   const [searchDraft, setSearchDraft] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [form, setForm] = useState({
@@ -35,7 +35,7 @@ const { t } = useAdminI18n(); // 使用 t 输出中英文
     })
   );
 
-// Load coupon statistics for Issue #138
+  // Load coupon statistics for Issue #138
   const { data: statisticsData, isLoading: statisticsLoading } = useSWR('admin-coupons-statistics', () =>
     adminCouponsApi.getStatistics()
   );
@@ -73,8 +73,9 @@ const { t } = useAdminI18n(); // 使用 t 输出中英文
   };
 
   const deleteCoupon = async (coupon: AdminCoupon) => {
-    const confirmed = window.confirm(t('couponsConfirmDelete', { code: coupon.code }));
-    if (!confirmed) return;
+    // Confirm dialog removed per user request
+    // const confirmed = window.confirm(t('couponsConfirmDelete', { code: coupon.code }));
+    // if (!confirmed) return;
     await adminCouponsApi.remove(coupon.id);
     mutate();
   };
@@ -98,7 +99,7 @@ const { t } = useAdminI18n(); // 使用 t 输出中英文
         </div>
       </div>
 
-{/* Coupon Statistics Section for Issue #138 */}
+      {/* Coupon Statistics Section for Issue #138 */}
       {statistics && (
         <section className="admin-stats-grid" style={{ marginBottom: 24, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
           <div className="admin-stat-card" style={{ padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
@@ -119,7 +120,7 @@ const { t } = useAdminI18n(); // 使用 t 输出中英文
         </section>
       )}
 
-{/* Top Coupons Section */}
+      {/* Top Coupons Section */}
       {statistics && statistics.topCoupons.length > 0 && (
         <section style={{ marginBottom: 24, padding: 16, backgroundColor: '#f8fafc', borderRadius: 8, border: '1px solid #e2e8f0' }}>
           <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 600 }}>最受欢迎的优惠券</h3>
@@ -310,10 +311,10 @@ const { t } = useAdminI18n(); // 使用 t 输出中英文
                               const statsInfo = stats.data;
                               alert(
                                 `优惠券统计: ${coupon.code}\n\n` +
-                                  `使用次数: ${statsInfo.statistics.usageCount}\n` +
-                                  `总折扣: $${statsInfo.statistics.totalDiscount.toFixed(2)}\n` +
-                                  `平均折扣: $${statsInfo.statistics.averageDiscount.toFixed(2)}\n` +
-                                  `唯一用户: ${statsInfo.statistics.uniqueUsers}`
+                                `使用次数: ${statsInfo.statistics.usageCount}\n` +
+                                `总折扣: $${statsInfo.statistics.totalDiscount.toFixed(2)}\n` +
+                                `平均折扣: $${statsInfo.statistics.averageDiscount.toFixed(2)}\n` +
+                                `唯一用户: ${statsInfo.statistics.uniqueUsers}`
                               );
                             } catch (err) {
                               alert('无法加载统计信息');

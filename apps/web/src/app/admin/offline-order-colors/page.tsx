@@ -66,7 +66,8 @@ export default function OfflineOrderColorsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('确定要删除这个颜色吗？')) return;
+    // Confirm dialog removed per user request
+    // if (!confirm('确定要删除这个颜色吗？')) return;
     try {
       await api(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
       mutate();
@@ -81,7 +82,7 @@ export default function OfflineOrderColorsPage() {
   return (
     <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
       <h1>线下订单颜色管理</h1>
-      
+
       <div style={{ marginBottom: '2rem', padding: '1rem', background: '#f9fafb', borderRadius: '8px' }}>
         <h2>添加新颜色</h2>
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>

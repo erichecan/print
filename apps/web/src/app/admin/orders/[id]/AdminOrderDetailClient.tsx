@@ -35,7 +35,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [refundNote, setRefundNote] = useState('');
   const [refundAmount, setRefundAmount] = useState<string>('');
   const [showRefundModal, setShowRefundModal] = useState(false);
-// Shipping label generation
+  // Shipping label generation
   const [generatingLabel, setGeneratingLabel] = useState(false);
   const [loadingRates, setLoadingRates] = useState(false);
   const [shippingRates, setShippingRates] = useState<any[]>([]);
@@ -43,7 +43,7 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
   const [selectedRateId, setSelectedRateId] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
 
-// Audit Logs 功能已移除
+  // Audit Logs 功能已移除
 
   useEffect(() => {
     if (data) {
@@ -75,14 +75,14 @@ export default function AdminOrderDetailClient({ id }: { id: string }) {
       await mutate();
       setMessage('Order updated successfully.');
     } catch (err) {
-console.error(' 更新订单失败', err);
+      console.error(' 更新订单失败', err);
       setMessage('Failed to update order. Please try again.');
     } finally {
       setUpdating(false);
     }
   };
 
-// Load shipping rates
+  // Load shipping rates
   const loadShippingRates = async () => {
     if (!data) return;
     setLoadingRates(true);
@@ -91,7 +91,7 @@ console.error(' 更新订单失败', err);
       setShippingRates(ratesData.rates || []);
       setShowRatesModal(true);
     } catch (err: any) {
-console.error(' 加载运费报价失败', err);
+      console.error(' 加载运费报价失败', err);
       setMessage('获取运费报价失败，将使用默认设置生成标签');
       // Continue with label generation without rate selection
       handleGenerateLabel();
@@ -100,17 +100,18 @@ console.error(' 加载运费报价失败', err);
     }
   };
 
-// Generate shipping label
+  // Generate shipping label
   const handleGenerateLabel = async (rateId?: string) => {
     if (!data) return;
 
     // Check if label already exists
     const existingShipment = data.shipments?.find((s: any) => s.labelUrl);
-    if (existingShipment) {
-      if (!confirm(`该订单已存在发货标签。是否重新生成？`)) {
-        return;
-      }
-    }
+    // Confirm dialog removed per user request
+    // if (existingShipment) {
+    //   if (!confirm(`该订单已存在发货标签。是否重新生成？`)) {
+    //     return;
+    //   }
+    // }
 
     setGeneratingLabel(true);
     setMessage(null);
@@ -121,7 +122,7 @@ console.error(' 加载运费报价失败', err);
       setSelectedRateId('');
       setMessage(`发货标签已生成！跟踪号：${result.trackingNumber || 'N/A'}`);
     } catch (err: any) {
-console.error(' 生成发货标签失败', err);
+      console.error(' 生成发货标签失败', err);
       const errorMsg = err?.message || err?.error || '生成发货标签失败，请稍后重试';
       setMessage(errorMsg);
     } finally {
@@ -129,7 +130,7 @@ console.error(' 生成发货标签失败', err);
     }
   };
 
-// Enhanced refund handler with partial refund support
+  // Enhanced refund handler with partial refund support
   const handleRefund = async () => {
     if (!data) return;
 
@@ -163,7 +164,8 @@ console.error(' 生成发货标签失败', err);
       ? `确认退款订单 ${data.orderNumber} 的金额 $${amount.toFixed(2)}？${refundNote ? `\n退款原因：${refundNote}` : ''}`
       : `确认部分退款订单 ${data.orderNumber} 的金额 $${amount.toFixed(2)}（订单总额：$${orderTotal.toFixed(2)}）？${refundNote ? `\n退款原因：${refundNote}` : ''}`;
 
-    if (!confirm(confirmMsg)) return;
+    // Confirm dialog removed per user request
+    // if (!confirm(confirmMsg)) return;
 
     setRefundLoading(true);
     setMessage(null);
@@ -186,7 +188,7 @@ console.error(' 生成发货标签失败', err);
         setMessage(`${successMsg}。警告：${result.warning}`);
       }
     } catch (err: any) {
-console.error(' 退款处理失败', err);
+      console.error(' 退款处理失败', err);
       const errorMsg = err?.message || err?.error || '退款处理失败，请稍后重试';
       setMessage(errorMsg);
     } finally {
@@ -283,7 +285,7 @@ console.error(' 退款处理失败', err);
               <button type="button" className="btn btn--primary" onClick={handleUpdate} disabled={updating}>
                 {updating ? '保存中…' : '保存更改'}
               </button>
-{/* Generate shipping label button */}
+              {/* Generate shipping label button */}
               {order.status !== 'CANCELLED' && order.status !== 'REFUNDED' && (
                 <button
                   type="button"
@@ -294,7 +296,7 @@ console.error(' 退款处理失败', err);
                   {generatingLabel ? '生成中…' : loadingRates ? '加载报价…' : '生成发货标签'}
                 </button>
               )}
-{/* Enhanced refund button with modal */}
+              {/* Enhanced refund button with modal */}
               {data.paymentStatus === 'COMPLETED' && data.status !== 'REFUNDED' && (
                 <button
                   type="button"
@@ -313,7 +315,7 @@ console.error(' 退款处理失败', err);
             )}
           </div>
 
-{/* Refund modal */}
+          {/* Refund modal */}
           {showRefundModal && (
             <div
               style={{
@@ -474,7 +476,7 @@ console.error(' 退款处理失败', err);
             </div>
           </div>
 
-{/* Enhanced shipments section with label printing */}
+          {/* Enhanced shipments section with label printing */}
           {(order.shipments || []).length > 0 && (
             <div className="admin-form">
               <h3>发货信息</h3>
@@ -510,7 +512,7 @@ console.error(' 退款处理失败', err);
             </div>
           )}
 
-{/* Shipping rates modal */}
+          {/* Shipping rates modal */}
           {showRatesModal && (
             <div
               style={{
@@ -603,7 +605,7 @@ console.error(' 退款处理失败', err);
             </div>
           )}
 
-{/* Activity Log 功能已移除 */}
+          {/* Activity Log 功能已移除 */}
         </aside>
       </div>
     </div>

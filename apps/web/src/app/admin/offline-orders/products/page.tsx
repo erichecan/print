@@ -82,9 +82,10 @@ export default function SimpleOfflineOrderProductsPage() {
 
   // 删除产品
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm('确定要删除这个产品吗？')) {
-      return;
-    }
+    // Confirm dialog removed per user request
+    // if (!confirm('确定要删除这个产品吗？')) {
+    //   return;
+    // }
 
     try {
       await simpleOfflineOrderProductApi.delete(id);

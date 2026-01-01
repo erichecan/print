@@ -42,7 +42,7 @@ export default function AdminOrdersPage() {
   const [searchInput, setSearchInput] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
-// Batch selection state for Issue #87
+  // Batch selection state for Issue #87
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [batchUpdateStatus, setBatchUpdateStatus] = useState<string>('');
@@ -56,7 +56,7 @@ export default function AdminOrdersPage() {
   const pagination = data?.pagination;
   const warnings = data?.meta?.warnings;
 
-// 显示警告信息
+  // 显示警告信息
   useEffect(() => {
     if (warnings && warnings.length > 0) {
       if (warnings.includes('onlineQueryFailed')) {
@@ -68,7 +68,7 @@ export default function AdminOrdersPage() {
     }
   }, [warnings, showWarningToast]);
 
-// Batch selection handlers for Issue #87
+  // Batch selection handlers for Issue #87
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       setSelectedOrderIds(new Set(orders.map((order) => order.compositeId)));
@@ -90,7 +90,7 @@ export default function AdminOrdersPage() {
   const isAllSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
   const isIndeterminate = selectedOrderIds.size > 0 && selectedOrderIds.size < orders.length;
 
-// 批量导出（使用统一订单API）
+  // 批量导出（使用统一订单API）
   const handleBatchExport = async () => {
     try {
       await unifiedOrdersApi.export({
@@ -123,7 +123,7 @@ export default function AdminOrdersPage() {
     }));
   };
 
-// 批量更新处理（注意：统一订单的批量更新需要按类型分发）
+  // 批量更新处理（注意：统一订单的批量更新需要按类型分发）
   const handleBatchUpdate = async () => {
     if (selectedOrderIds.size === 0) {
       alert('Please select at least one order');
@@ -136,9 +136,10 @@ export default function AdminOrdersPage() {
     }
 
     const count = selectedOrderIds.size;
-    if (!confirm(`Update ${count} order(s)? Note: Status updates will be applied based on order type.`)) {
-      return;
-    }
+    // Confirm dialog removed per user request
+    // if (!confirm(`Update ${count} order(s)? Note: Status updates will be applied based on order type.`)) {
+    //   return;
+    // }
 
     setIsBatchUpdating(true);
     try {
@@ -172,8 +173,8 @@ export default function AdminOrdersPage() {
     }
   };
 
-// 获取订单详情链接
-// 修复：offline 订单应该链接到 sales 订单详情页面
+  // 获取订单详情链接
+  // 修复：offline 订单应该链接到 sales 订单详情页面
   const getOrderDetailLink = (order: UnifiedOrderDTO) => {
     if (order.type === 'online') {
       return `/admin/orders/${order.id}`;
@@ -266,7 +267,7 @@ export default function AdminOrdersPage() {
         </button>
       </div>
 
-{/* Batch operations toolbar for Issue #87 */}
+      {/* Batch operations toolbar for Issue #87 */}
       {selectedOrderIds.size > 0 && (
         <div
           style={{

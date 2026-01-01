@@ -17,9 +17,10 @@ export default function AdminSuppliersPage() {
   const suppliers = statusData?.suppliers || [];
 
   const handleSync = async (supplierId: string, force = false) => {
-    if (!confirm(`确定要${force ? '强制' : ''}同步库存吗？`)) {
-      return;
-    }
+    // Confirm dialog removed per user request
+    // if (!confirm(`确定要${force ? '强制' : ''}同步库存吗？`)) {
+    //   return;
+    // }
 
     try {
       const result = await suppliersApi.sync(supplierId, { force });

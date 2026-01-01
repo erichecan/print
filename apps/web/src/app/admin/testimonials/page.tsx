@@ -37,7 +37,8 @@ export default function TestimonialsAdminPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure?')) return;
+        // Confirm dialog removed per user request
+        // if (!confirm('Are you sure?')) return;
         try {
             await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/testimonials/${id}`, { method: 'DELETE' });
             fetchTestimonials();

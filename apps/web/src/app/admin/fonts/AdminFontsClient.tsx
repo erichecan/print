@@ -132,9 +132,10 @@ export default function AdminFontsClient({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this font?')) {
-      return;
-    }
+    // Confirm dialog removed per user request
+    // if (!confirm('Are you sure you want to delete this font?')) {
+    //   return;
+    // }
 
     try {
       await adminFontsApi.delete(id);
@@ -183,7 +184,7 @@ export default function AdminFontsClient({
 
   return (
     <div>
-{/* 移除重复的 admin-page-header，因为 AdminShell 已经提供了标题 */}
+      {/* 移除重复的 admin-page-header，因为 AdminShell 已经提供了标题 */}
       {/* 使用简单的操作栏替代 */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <p className="text-muted" style={{ margin: 0 }}>Manage fonts for Design Lab</p>

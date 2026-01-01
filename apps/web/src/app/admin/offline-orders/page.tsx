@@ -37,7 +37,7 @@ function toInputDate(value?: string | null) {
 const BOARD_KEY = 'admin-offline-orders-board';
 
 export default function AdminOfflineOrdersPage() {
-const { t, locale } = useAdminI18n(); // 国际化支持
+  const { t, locale } = useAdminI18n(); // 国际化支持
   const [search, setSearch] = useState('');
   const [rushFilter, setRushFilter] = useState<'all' | 'rush' | 'standard'>('all');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
@@ -52,7 +52,7 @@ const { t, locale } = useAdminI18n(); // 国际化支持
   const [assigneeNameDraft, setAssigneeNameDraft] = useState('');
   const [uploading, setUploading] = useState(false);
   const [detailRevision, setDetailRevision] = useState('');
-// Trello-style拖拽状态：追踪拖拽中的卡片与目标列
+  // Trello-style拖拽状态：追踪拖拽中的卡片与目标列
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null);
   const [draggingFromStage, setDraggingFromStage] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
@@ -151,14 +151,14 @@ const { t, locale } = useAdminI18n(); // 国际化支持
     [mutateBoard, mutateDetail, mutateMetrics]
   );
 
-// 拖拽辅助函数：统一重置状态，避免列高亮遗留
+  // 拖拽辅助函数：统一重置状态，避免列高亮遗留
   const resetDragState = useCallback(() => {
     setDraggingOrderId(null);
     setDraggingFromStage(null);
     setDragOverStage(null);
   }, []);
 
-// 卡片拖拽起始：记录来源列并设置拖拽数据
+  // 卡片拖拽起始：记录来源列并设置拖拽数据
   const handleCardDragStart = useCallback(
     (event: ReactDragEvent<HTMLDivElement>, order: AdminOfflineOrderSummary) => {
       event.dataTransfer.setData('text/plain', order.id);
@@ -170,12 +170,12 @@ const { t, locale } = useAdminI18n(); // 国际化支持
     []
   );
 
-// 拖拽结束：无论成功与否都清理状态
+  // 拖拽结束：无论成功与否都清理状态
   const handleCardDragEnd = useCallback(() => {
     resetDragState();
   }, [resetDragState]);
 
-// 列上方拖拽：允许放置并实时更新高亮列
+  // 列上方拖拽：允许放置并实时更新高亮列
   const handleColumnDragOver = useCallback(
     (event: ReactDragEvent<HTMLElement>, stageKey: string) => {
       if (!draggingOrderId) {
@@ -190,14 +190,14 @@ const { t, locale } = useAdminI18n(); // 国际化支持
     [draggingOrderId, dragOverStage]
   );
 
-// 列离开时移除高亮，避免闪烁
+  // 列离开时移除高亮，避免闪烁
   const handleColumnDragLeave = useCallback((event: ReactDragEvent<HTMLElement>, stageKey: string) => {
     if (!(event.currentTarget as HTMLElement).contains(event.relatedTarget as Node)) {
       setDragOverStage((current) => (current === stageKey ? null : current));
     }
   }, []);
 
-// 放置卡片：仅当目标列不同才触发 stage 更新
+  // 放置卡片：仅当目标列不同才触发 stage 更新
   const handleColumnDrop = useCallback(
     async (event: ReactDragEvent<HTMLElement>, stageKey: string) => {
       event.preventDefault();
@@ -323,7 +323,7 @@ const { t, locale } = useAdminI18n(); // 国际化支持
 
   return (
     <div style={{ marginTop: 24 }}>
-{/* 顶部导航链接 */}
+      {/* 顶部导航链接 */}
       <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginTop: 0, marginBottom: '1rem' }}>
         <Link
           href="/admin/orders"
@@ -538,7 +538,7 @@ const { t, locale } = useAdminI18n(); // 国际化支持
               <p className="detail-error">{t('orderNotFound')}</p>
             ) : (
               <div className="kanban-detail-body">
-{/* Stage + note controls mirror prototype detail workflow */}
+                {/* Stage + note controls mirror prototype detail workflow */}
                 <div className="admin-form">
                   <h3>{t('stage')}</h3>
                   <div className="admin-grid-two">
@@ -617,16 +617,17 @@ const { t, locale } = useAdminI18n(); // 国际化支持
                       className="btn btn--danger"
                       style={{ width: '100%', backgroundColor: '#ef4444', color: 'white', border: 'none' }}
                       onClick={async () => {
-                        if (confirm(t('confirmDeleteOrder'))) {
-                          try {
-                            await adminOfflineOrdersApi.delete(selectedDetail.id);
-                            setSelectedOrderId(null);
-                            await Promise.all([mutateBoard(), mutateMetrics()]);
-                          } catch (error) {
-                            console.error(error);
-                            alert((error as Error).message);
-                          }
+                        // Confirm dialog removed per user request
+                        // if (confirm(t('confirmDeleteOrder'))) {
+                        try {
+                          await adminOfflineOrdersApi.delete(selectedDetail.id);
+                          setSelectedOrderId(null);
+                          await Promise.all([mutateBoard(), mutateMetrics()]);
+                        } catch (error) {
+                          console.error(error);
+                          alert((error as Error).message);
                         }
+                        // }
                       }}
                     >
                       {t('deleteOrder')}

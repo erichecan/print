@@ -154,11 +154,12 @@ export default function AdminProductsPage() {
   };
 
   const handleArchive = async (product: AdminProductSummary) => {
-// 使用 i18n 文案提示归档确认
-    const confirmed = window.confirm(t('confirmArchiveProduct', { name: product.name }));
-    if (!confirmed) {
-      return;
-    }
+    // 使用 i18n 文案提示归档确认
+    // Confirm dialog removed per user request
+    // const confirmed = window.confirm(t('confirmArchiveProduct', { name: product.name }));
+    // if (!confirmed) {
+    //   return;
+    // }
     await adminProductsApi.archive(product.id);
     mutate();
   };

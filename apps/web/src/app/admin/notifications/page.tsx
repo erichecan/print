@@ -61,7 +61,7 @@ export default function AdminNotificationsPage() {
         params.status = statusFilter;
       }
 
-// 修复：使用完整的 API 路径
+      // 修复：使用完整的 API 路径
       const response = await apiGet<{ data: GuestMessage[]; pagination: Pagination }>(
         '/api/admin/guest-messages',
         params
@@ -84,11 +84,11 @@ export default function AdminNotificationsPage() {
 
   const handleStatusChange = async (messageId: string, newStatus: 'UNREAD' | 'READ' | 'ARCHIVED') => {
     try {
-// 修复：使用完整的 API 路径
+      // 修复：使用完整的 API 路径
       await apiPatch(`/api/admin/guest-messages/${messageId}/status`, { status: newStatus });
       await fetchMessages();
       if (selectedMessage?.id === messageId) {
-// 修复：使用完整的 API 路径
+        // 修复：使用完整的 API 路径
         const updated = await apiGet<GuestMessage>(`/api/admin/guest-messages/${messageId}`);
         setSelectedMessage(updated);
       }
@@ -99,12 +99,13 @@ export default function AdminNotificationsPage() {
   };
 
   const handleDelete = async (messageId: string) => {
-    if (!confirm('Are you sure you want to delete this message?')) {
-      return;
-    }
+    // Confirm dialog removed per user request
+    // if (!confirm('Are you sure you want to delete this message?')) {
+    //   return;
+    // }
 
     try {
-// 修复：使用完整的 API 路径
+      // 修复：使用完整的 API 路径
       await apiDelete(`/api/admin/guest-messages/${messageId}`);
       await fetchMessages();
       if (selectedMessage?.id === messageId) {

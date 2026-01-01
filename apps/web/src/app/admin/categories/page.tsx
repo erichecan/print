@@ -59,7 +59,7 @@ export default function AdminCategoriesPage() {
         search: params.search || undefined,
         status: params.status === 'all' ? undefined : params.status,
       })
-); // 为 SWR fetcher 参数显式声明类型，避免推断为 string
+  ); // 为 SWR fetcher 参数显式声明类型，避免推断为 string
 
   const categories = data?.data ?? [];
   const pagination = data?.pagination;
@@ -70,8 +70,9 @@ export default function AdminCategoriesPage() {
   };
 
   const handleArchive = async (category: AdminCategorySummary) => {
-    const confirmed = window.confirm(`确定归档分类「${category.name}」吗？`);
-    if (!confirmed) return;
+    // Confirm dialog removed per user request
+    // const confirmed = window.confirm(`确定归档分类「${category.name}」吗？`);
+    // if (!confirmed) return;
     await adminCategoriesApi.archive(category.id);
     mutate();
   };

@@ -41,7 +41,8 @@ export default function AdminUserDetailClient({ id }: Props) {
   };
 
   const handleDeleteUser = async () => {
-    if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+    // Confirm dialog removed per user request
+    // if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
     setIsDeleting(true);
     try {
       await adminUsersApi.delete(id);

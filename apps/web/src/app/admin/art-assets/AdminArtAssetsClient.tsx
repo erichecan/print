@@ -51,7 +51,7 @@ export default function AdminArtAssetsClient({
   setIsActiveFilter,
   mutate,
 }: AdminArtAssetsClientProps) {
-const { t } = useAdminI18n(); // 国际化支持
+  const { t } = useAdminI18n(); // 国际化支持
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingAsset, setEditingAsset] = useState<ArtAsset | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -66,7 +66,7 @@ const { t } = useAdminI18n(); // 国际化支持
     console.log('[AdminArtAssets] Processed assets array:', result);
     console.log('[AdminArtAssets] Assets count:', result.length);
 
-// 添加日志以便调试图片显示问题
+    // 添加日志以便调试图片显示问题
     if (result.length > 0) {
       console.log('[AdminArtAssets] ✅ Loaded assets:', result.length);
       result.forEach((asset, index) => {
@@ -101,7 +101,7 @@ const { t } = useAdminI18n(); // 国际化支持
       const image = formData.get('image') as File;
       const sortOrder = formData.get('sortOrder') ? parseInt(formData.get('sortOrder') as string) : undefined;
 
-// 验证必填字段
+      // 验证必填字段
       if (!category || !name) {
         alert('Category and name are required');
         return;
@@ -112,7 +112,7 @@ const { t } = useAdminI18n(); // 国际化支持
         return;
       }
 
-// 验证文件类型
+      // 验证文件类型
       if (!image.type.startsWith('image/')) {
         alert('Please select a valid image file');
         return;
@@ -173,9 +173,10 @@ const { t } = useAdminI18n(); // 国际化支持
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this art asset?')) {
-      return;
-    }
+    // Confirm dialog removed per user request
+    // if (!confirm('Are you sure you want to delete this art asset?')) {
+    //   return;
+    // }
 
     try {
       await adminArtAssetsApi.delete(id);
@@ -197,7 +198,7 @@ const { t } = useAdminI18n(); // 国际化支持
     }
   };
 
-// 添加组件渲染日志（只在开发环境或首次渲染时显示）
+  // 添加组件渲染日志（只在开发环境或首次渲染时显示）
   if (typeof window !== 'undefined') {
     console.log('[AdminArtAssets] ===== Component render =====');
     console.log('[AdminArtAssets] Props:', { isLoading, error, hasData: !!data, assetsCount: assets.length });
@@ -313,7 +314,7 @@ const { t } = useAdminI18n(); // 国际化支持
                         (() => {
                           const imageSrc = asset.thumbnailUrl || asset.imageUrl || asset.image_url;
                           console.log('[AdminArtAssets] Rendering image:', { assetId: asset.id, imageSrc });
-// 使用普通 img 标签以避免 Next.js Image 组件的限制
+                          // 使用普通 img 标签以避免 Next.js Image 组件的限制
                           return (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
