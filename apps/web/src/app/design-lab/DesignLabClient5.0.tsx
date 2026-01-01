@@ -544,7 +544,15 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   };
 
   // Product List State for "Add Product" feature
-  const [productList, setProductList] = useState<any[]>([productInfo]);
+  const [productList, setProductList] = useState<any[]>([]);
+
+  // Sync productList with productInfo changes (for initial load)
+  useEffect(() => {
+    if (productInfo.productId && productList.length === 0) {
+      console.log('[DesignLab 5.0] Initializing productList with first product:', productInfo.productName);
+      setProductList([productInfo]);
+    }
+  }, [productInfo.productId]); // Only run when productId is set for the first time
 
   // Refinement: Product Carousel State
   const [productScrollIndex, setProductScrollIndex] = useState(0);
