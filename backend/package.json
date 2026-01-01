@@ -20,10 +20,9 @@
     "prisma:studio": "prisma studio --schema=../prisma/schema.prisma",
     "migrate:deploy": "node scripts/run-migrations.js",
     "fix:base-price": "node scripts/fix-base-price-column.js",
-    "fix:base-price-sql": "node scripts/fix-base-price-direct-sql.js",
-"// 线下订单 E2E 专用种子脚本": "",
+    "// 线下订单 E2E 专用种子脚本": "",
     "seed:offline-e2e": "node scripts/seed-offline-e2e.js",
-"// 生产环境 Sales 账号种子脚本": "",
+    "// 生产环境 Sales 账号种子脚本": "",
     "seed:sales-production": "node scripts/seed-sales-production.js"
   },
   "keywords": [
@@ -77,7 +76,7 @@
     "sequelize-cli": "^6.6.2",
     "supertest": "^6.3.3"
   },
-"_devDependenciesNote": "后端开发工具保持与现有代码兼容 ",
+  "_devDependenciesNote": "后端开发工具保持与现有代码兼容 ",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"

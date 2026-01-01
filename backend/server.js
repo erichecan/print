@@ -11,26 +11,26 @@ const validateDatabaseUrl = () => {
   const databaseUrl = process.env.DATABASE_URL;
 
   if (!databaseUrl) {
-console.error(' ❌ DATABASE_URL environment variable is not set');
-console.error('  请检查 Secret Manager 中的 database-url secret 是否正确配置');
+    console.error(' ❌ DATABASE_URL environment variable is not set');
+    console.error('  请检查 Secret Manager 中的 database-url secret 是否正确配置');
     throw new Error('DATABASE_URL environment variable is required');
   }
 
-// 验证 URL 格式
+  // 验证 URL 格式
   if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
-console.error(' ❌ Invalid DATABASE_URL format');
-console.error('  期望格式: postgresql://user:password@host:port/database');
-console.error('  当前格式:', databaseUrl.substring(0, 30) + '...');
+    console.error(' ❌ Invalid DATABASE_URL format');
+    console.error('  期望格式: postgresql://user:password@host:port/database');
+    console.error('  当前格式:', databaseUrl.substring(0, 30) + '...');
     throw new Error(`Invalid DATABASE_URL format. Expected postgresql:// or postgres://, got: ${databaseUrl.substring(0, 30)}...`);
   }
 
-// 记录 URL 前缀（不暴露密码）
+  // 记录 URL 前缀（不暴露密码）
   try {
     const urlParts = databaseUrl.split('@');
     if (urlParts.length > 1) {
       const hostPart = urlParts[1].split('/')[0];
-console.log(' ✅ DATABASE_URL validated');
-console.log('  数据库主机:', hostPart);
+      console.log(' ✅ DATABASE_URL validated');
+      console.log('  数据库主机:', hostPart);
     }
   } catch (e) {
     // 忽略解析错误，继续执行
@@ -45,23 +45,23 @@ const validateJwtSecret = () => {
 
   if (!jwtSecret || jwtSecret === DEFAULT_JWT_SECRET) {
     if (isProduction) {
-console.error(' ❌ CRITICAL: JWT_SECRET is not set or using default value in PRODUCTION!');
-console.error('  这是一个严重的安全风险！');
-console.error('  请立即设置 JWT_SECRET 环境变量为强随机字符串');
-console.error('  生成方法: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+      console.error(' ❌ CRITICAL: JWT_SECRET is not set or using default value in PRODUCTION!');
+      console.error('  这是一个严重的安全风险！');
+      console.error('  请立即设置 JWT_SECRET 环境变量为强随机字符串');
+      console.error('  生成方法: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
       throw new Error('JWT_SECRET must be set in production environment');
     } else {
-console.warn(' ⚠️ WARNING: JWT_SECRET is not set or using default value');
-console.warn('  开发环境可以使用默认值，但生产环境必须设置强随机字符串');
-console.warn('  生成方法: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+      console.warn(' ⚠️ WARNING: JWT_SECRET is not set or using default value');
+      console.warn('  开发环境可以使用默认值，但生产环境必须设置强随机字符串');
+      console.warn('  生成方法: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
     }
   } else {
     if (jwtSecret.length < 32) {
-console.warn(' ⚠️ WARNING: JWT_SECRET is shorter than recommended (32 characters)');
-console.warn('  建议使用至少 32 字符的强随机字符串');
+      console.warn(' ⚠️ WARNING: JWT_SECRET is shorter than recommended (32 characters)');
+      console.warn('  建议使用至少 32 字符的强随机字符串');
     } else {
-console.log(' ✅ JWT_SECRET validated');
-console.log('  长度:', jwtSecret.length, '字符');
+      console.log(' ✅ JWT_SECRET validated');
+      console.log('  长度:', jwtSecret.length, '字符');
     }
   }
 };
@@ -74,9 +74,9 @@ console.log(' 🔌 PORT:', PORT);
 // 验证环境变量
 try {
   validateJwtSecret();
-console.log(' ✅ JWT_SECRET validated');
+  console.log(' ✅ JWT_SECRET validated');
 } catch (error) {
-console.error(' ❌ JWT_SECRET validation failed:', error.message);
+  console.error(' ❌ JWT_SECRET validation failed:', error.message);
   process.exit(1);
 }
 
@@ -99,32 +99,36 @@ const runMigrationsIfEnabled = () => {
         });
         logger.info('✅ Database migrations completed.');
 
-// 迁移后自动修复 base_price 列问题
-// 使用直接 SQL 脚本，不依赖 Prisma Client
-        try {
-          logger.info('🔧 Running database column fix (direct SQL)...');
-          execSync('node scripts/fix-base-price-direct-sql.js', {
-            stdio: 'inherit',
-            timeout: 30000, // 30秒超时
-            cwd: __dirname,
-          });
-          logger.info('✅ Database column fix completed.');
+        // 迁移后自动修复 base_price 列问题
+        // 使用直接 SQL 脚本，不依赖 Prisma Client
+        // 修复后重新生成 Prisma Client 以确保使用正确的 schema
+        /* 
+        // 暂时注释掉不存在的脚本
+      try {
+        logger.info('🔧 Running database column fix (direct SQL)...');
+        execSync('node scripts/fix-base-price-direct-sql.js', {
+          stdio: 'inherit',
+          timeout: 30000, // 30秒超时
+          cwd: __dirname,
+        });
+        logger.info('✅ Database column fix completed.');
 
 // 修复后重新生成 Prisma Client 以确保使用正确的 schema
-          logger.info('🔧 Regenerating Prisma Client after column fix...');
-          execSync('npx prisma generate --schema=./prisma/schema.prisma', {
-            stdio: 'inherit',
-            timeout: 30000,
-            cwd: __dirname,
-          });
-          logger.info('✅ Prisma Client regenerated.');
-        } catch (fixError) {
-          logger.warn('⚠️  Database column fix failed, but server will continue to start');
-          logger.warn('   错误详情:', fixError.message);
-          // 不退出，让服务器继续启动
-        }
+        logger.info('🔧 Regenerating Prisma Client after column fix...');
+        execSync('npx prisma generate --schema=./prisma/schema.prisma', {
+          stdio: 'inherit',
+          timeout: 30000,
+          cwd: __dirname,
+        });
+        logger.info('✅ Prisma Client regenerated.');
+      } catch (fixError) {
+        logger.warn('⚠️  Database column fix failed, but server will continue to start');
+        logger.warn('   错误详情:', fixError.message);
+        // 不退出，让服务器继续启动
+      }
+      */
       } catch (migrationError) {
-// 迁移失败时不退出服务器
+        // 迁移失败时不退出服务器
         // 如果数据库已经是最新的，迁移失败不应该阻止服务器启动
         logger.warn('⚠️  Database migrations failed, but server will continue to start');
         logger.warn('   如果数据库已经是最新状态，可以忽略此错误');
@@ -136,7 +140,7 @@ const runMigrationsIfEnabled = () => {
     }
   } catch (error) {
     logger.error('❌ Failed to run migrations:', error);
-// 即使迁移失败，也继续启动服务器
+    // 即使迁移失败，也继续启动服务器
     logger.warn('⚠️  Server will continue to start despite migration failure');
   }
 };
@@ -160,7 +164,7 @@ const server = httpServer.listen(PORT, () => {
   logger.info(`💬 WebSocket available at ws://localhost:${PORT}/socket.io`);
   logger.info(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
-// 服务器启动后，异步测试数据库连接和运行迁移
+  // 服务器启动后，异步测试数据库连接和运行迁移
   testConnection().then(() => {
     logger.info('✅ Database connection verified');
     runMigrationsIfEnabled();
