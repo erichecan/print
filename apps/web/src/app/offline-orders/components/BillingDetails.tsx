@@ -33,21 +33,22 @@ interface BillingDetailsProps {
     }>;
   }>;
   colorGroupsByProduct: Record<string, OrderItemColorGroup[]>;
+  dstFileFee?: number;
 }
 
-export function BillingDetails({ productItems, colorGroupsByProduct }: BillingDetailsProps) {
-// 生成计费明细数据
+export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee = 0 }: BillingDetailsProps) {
+  // 生成计费明细数据
   const billingItems: BillingItem[] = [];
 
   productItems.forEach((item) => {
     const colorGroups = colorGroupsByProduct[item.id] || [];
-    
+
     item.colors.forEach((color) => {
       const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
-      
+
       color.sizes.forEach((sizeData) => {
         if (sizeData.quantity > 0) {
-// 获取印刷位置名称
+          // 获取印刷位置名称
           const positions = colorGroup?.positions
             .filter(p => p.enabled)
             .map(p => {
@@ -66,13 +67,16 @@ export function BillingDetails({ productItems, colorGroupsByProduct }: BillingDe
             })
             .join(', ') || '无位置';
 
+          // Effective Unit Price = Base Unit Price + Additional Fee (Size Fee)
+          const effectiveUnitPrice = sizeData.unitPrice + (sizeData.additionalFee || 0);
+
           billingItems.push({
             productName: item.productName,
             colorName: color.colorName,
             size: sizeData.size,
             quantity: sizeData.quantity,
             positions,
-            unitPrice: sizeData.unitPrice,
+            unitPrice: effectiveUnitPrice,
             subtotal: sizeData.subtotal
           });
         }
@@ -108,10 +112,25 @@ export function BillingDetails({ productItems, colorGroupsByProduct }: BillingDe
                 <td className="py-2 px-3 text-gray-700">{item.size}</td>
                 <td className="py-2 px-3 text-right text-gray-700">{item.quantity}</td>
                 <td className="py-2 px-3 text-gray-600 text-xs">{item.positions}</td>
-                <td className="py-2 px-3 text-right text-gray-700">${item.unitPrice.toFixed(2)}</td>
+                <td className="py-2 px-3 text-right text-gray-700">
+                  ${item.unitPrice.toFixed(2)}
+                  {/* If there is a diff between base and effective, we could show it, but simpler is better */}
+                </td>
                 <td className="py-2 px-3 text-right font-medium text-gray-900">${item.subtotal.toFixed(2)}</td>
               </tr>
             ))}
+            {/* DST File Fee Row */}
+            {dstFileFee > 0 && (
+              <tr className="border-b border-gray-200 bg-blue-50/50">
+                <td className="py-2 px-3 text-gray-900 font-medium" colSpan={5}>
+                  DST File Fee (Embroidery Setup)
+                </td>
+                <td className="py-2 px-3 text-right text-gray-700">-</td>
+                <td className="py-2 px-3 text-right font-medium text-gray-900">
+                  ${dstFileFee.toFixed(2)}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

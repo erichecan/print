@@ -2790,8 +2790,10 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
     };
   }, []); // 只在组件挂载时初始化一次
 
-  // 步骤2 - 当视图切换或产品信息改变时更新商品图片
+  // 5.0 版本：步骤2 - 当视图切换或产品信息改变时更新商品图片
   // 修复：添加 canvasInitialized state 作为依赖，确保 Canvas 初始化完成后触发加载
+  const prevViewRef = useRef(currentView); // Track previous view to distinguish view change vs product change
+
   useEffect(() => {
     // Skip product image loading if we're currently loading a design
     if (isLoadingDesign) {
@@ -2880,7 +2882,17 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
       addPrintableArea(currentView);
     };
 
-    restoreViewObjects();
+    // CRITICAL FIX: Only restore view objects if the VIEW has actually changed.
+    // If only the product changed (but view is same), we want to KEEP existing objects.
+    if (prevViewRef.current !== currentView) {
+      console.log('[DesignLab 5.0] View changed (Restoring objects):', { from: prevViewRef.current, to: currentView });
+      restoreViewObjects();
+      prevViewRef.current = currentView;
+    } else {
+      console.log('[DesignLab 5.0] Product change prevented canvas reset (Preserving objects)');
+      // If product changed, we still ensure printable area is correct (it might depend on product spec later, right now view based)
+      // But we DO NOT clear the canvas.
+    }
 
     // 小延迟确保 Canvas 容器样式已经稳定
     const timer = setTimeout(() => {

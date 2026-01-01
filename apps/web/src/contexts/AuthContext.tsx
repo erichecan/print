@@ -12,7 +12,7 @@ interface AuthContextType {
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
-  logout: () => Promise<void>;
+  logout: (redirectUrl?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,18 +29,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await authApi.me();
       setUser(data);
     } catch (err: any) {
-// 静默处理 401 错误（未登录是正常状态）
-// 静默处理后端服务不可用错误（500/503），这些错误不影响应用核心功能
+      // 静默处理 401 错误（未登录是正常状态）
+      // 静默处理后端服务不可用错误（500/503），这些错误不影响应用核心功能
       setUser(null);
       // UNAUTHORIZED 是预期的错误（用户未登录），不设置 error
       if (err instanceof Error && err.message === 'UNAUTHORIZED') {
         setError(null);
       } else if (err instanceof Error) {
-// 如果是后端服务错误（500/503），静默处理，不影响应用使用
-        const isServerError = err.message?.includes('500') || 
-                             err.message?.includes('503') ||
-                             err.message?.includes('Service Unavailable') ||
-                             err.message?.includes('Internal Server Error');
+        // 如果是后端服务错误（500/503），静默处理，不影响应用使用
+        const isServerError = err.message?.includes('500') ||
+          err.message?.includes('503') ||
+          err.message?.includes('Service Unavailable') ||
+          err.message?.includes('Internal Server Error');
         if (isServerError) {
           // 后端服务不可用时，用户仍然可以使用应用（未登录状态），不设置 error
           setError(null);
@@ -60,15 +60,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = async () => {
+  const logout = async (redirectUrl: string = '/login') => {
     try {
       await authApi.logout();
     } catch (err) {
       console.error('Logout failed:', err);
     } finally {
-// 无论后端请求是否成功，都清除用户状态
+      // 无论后端请求是否成功，都清除用户状态
       setUser(null);
       setError(null);
+      // Ensure local storage is cleared
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        // Clear any other auth related keys if needed
+        localStorage.removeItem('offline-order-intake-draft'); // Optional: clear drafts on logout? Maybe keep it.
+        // Force redirect
+        window.location.href = redirectUrl;
+      }
     }
   };
 

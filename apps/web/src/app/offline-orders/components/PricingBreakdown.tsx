@@ -49,7 +49,7 @@ export function PricingBreakdown({ breakdown }: PricingBreakdownProps) {
                           key={pIdx}
                           className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs"
                         >
-                          {pos.positionKey} (${pos.unitPrice.toFixed(2)})
+                          {pos.positionKey} {pos.unitPrice > 0 ? `($${pos.unitPrice.toFixed(2)})` : ''}
                         </span>
                       ))}
                     </div>

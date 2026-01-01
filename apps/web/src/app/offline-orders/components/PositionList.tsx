@@ -26,7 +26,7 @@ const POSITION_LABELS: Record<PositionKey, string> = {
 export function PositionList({ positions, onChange, onEdit }: PositionListProps) {
   const allPositionKeys: PositionKey[] = ['front', 'back', 'left_sleeve', 'right_sleeve', 'pocket', 'tag_inside', 'tag_outside', 'custom'];
 
-// 切换位置启用状态
+  // 切换位置启用状态
   const handleTogglePosition = (positionKey: PositionKey) => {
     const existing = positions.find(p => p.positionKey === positionKey);
     if (existing) {
@@ -54,25 +54,26 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
     }
   };
 
-// 获取位置的显示信息
+  // 获取位置的显示信息
   const getPositionInfo = (positionKey: PositionKey) => {
     const config = positions.find(p => p.positionKey === positionKey);
     if (!config || !config.enabled) {
       return null;
     }
-    
+
     const sizeInfo = config.widthMm && config.heightMm
       ? `${config.widthMm}×${config.heightMm}mm`
       : config.widthMm
-      ? `宽${config.widthMm}mm`
-      : config.heightMm
-      ? `高${config.heightMm}mm`
-      : '未设置尺寸';
-    
+        ? `宽${config.widthMm}mm`
+        : config.heightMm
+          ? `高${config.heightMm}mm`
+          : '未设置尺寸';
+
     return {
       method: config.method,
       size: sizeInfo,
       price: config.unitPrice,
+      dstFileFee: config.dstFileFee || 0,
       hasFile: !!config.designAssetId
     };
   };
@@ -89,11 +90,10 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
           return (
             <div
               key={key}
-              className={`border rounded-lg p-3 cursor-pointer transition-all ${
-                isEnabled
+              className={`border rounded-lg p-3 cursor-pointer transition-all ${isEnabled
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-              }`}
+                }`}
               onClick={() => handleTogglePosition(key)}
             >
               <div className="flex items-center justify-between mb-2">
@@ -126,7 +126,14 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
                 <div className="text-xs text-gray-600 space-y-1 mt-2">
                   <div>工艺: {info.method}</div>
                   <div>尺寸: {info.size}</div>
-                  <div>单价: ${info.price.toFixed(2)}</div>
+                  {/* Only show Unit Price if > 0 */}
+                  {info.price > 0 && (
+                    <div>单价: ${info.price.toFixed(2)}</div>
+                  )}
+                  {/* Show DST Fee if exists and > 0 */}
+                  {info.dstFileFee > 0 && (
+                    <div className="text-blue-600">DST Fee: ${info.dstFileFee.toFixed(2)}</div>
+                  )}
                   {info.hasFile && (
                     <div className="text-green-600">✓ 已上传文件</div>
                   )}

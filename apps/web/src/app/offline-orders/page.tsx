@@ -285,7 +285,11 @@ function UserMenu() {
       await authApi.logout();
       setUser(null);
       setShowMenu(false);
-      window.location.reload();
+      // Robust logout: clear token and force redirect
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/offline-orders/sales/login';
+      }
     } catch (err) {
       console.error('Logout failed:', err);
     }
@@ -2174,6 +2178,12 @@ export default function OfflineOrdersIntakePage() {
                   <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
                 </div>
               )}
+              {calculateDstFileFee > 0 && (
+                <div className="flex justify-between items-center text-sm">
+                  <span>DST File Fee：</span>
+                  <span>${calculateDstFileFee.toFixed(2)} CAD</span>
+                </div>
+              )}
               {formState.requiresInvoice && (
                 <>
                   <div className="flex justify-between items-center text-sm">
@@ -2197,6 +2207,7 @@ export default function OfflineOrdersIntakePage() {
           <BillingDetails
             productItems={formState.productItems}
             colorGroupsByProduct={formState.colorGroupsByProduct}
+            dstFileFee={calculateDstFileFee}
           />
         </section>
       </div>
@@ -2391,6 +2402,58 @@ export default function OfflineOrdersIntakePage() {
               ))}
             </ul>
           )}
+
+          {/* PRD v2.0: Step 3 Price Summary (Before Submit) */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">订单汇总</h3>
+
+            {/* Price Details Summary Box */}
+            <div className="mb-4 p-5 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">{t('priceDetails') || '价格明细'}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span>{t('subtotal') || '小计'}：</span>
+                  <span>${calculateSubtotal.toFixed(2)} CAD</span>
+                </div>
+                {formState.discount > 0 && (
+                  <div className="flex justify-between items-center text-sm text-red-600">
+                    <span>{t('discount')} ({formState.discount}%)：</span>
+                    <span>-${calculateDiscountAmount.toFixed(2)} CAD</span>
+                  </div>
+                )}
+                {/* Only show DST fee summary here if it's not part of subtotal (it isn't) */}
+                {calculateDstFileFee > 0 && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span>DST File Fee：</span>
+                    <span>${calculateDstFileFee.toFixed(2)} CAD</span>
+                  </div>
+                )}
+
+                {formState.requiresInvoice && (
+                  <>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>{t('beforeTax') || '税前金额'}：</span>
+                      <span>${(calculateSubtotal - calculateDiscountAmount + calculateDstFileFee).toFixed(2)} CAD</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span>{t('tax')} (13% HST)：</span>
+                      <span>${calculateTaxAmount.toFixed(2)} CAD</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
+                  <span className="font-semibold">{t('total')}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}：</span>
+                  <strong className="text-xl text-blue-700">${calculateTotal.toFixed(2)} CAD</strong>
+                </div>
+              </div>
+            </div>
+
+            <BillingDetails
+              productItems={formState.productItems}
+              colorGroupsByProduct={formState.colorGroupsByProduct}
+              dstFileFee={calculateDstFileFee}
+            />
+          </div>
         </div>
       </div>
     );

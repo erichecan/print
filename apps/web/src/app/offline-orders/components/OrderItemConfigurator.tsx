@@ -7,8 +7,8 @@
 import { useState, useCallback } from 'react';
 import { OrderItemColorGroup, PositionKey } from '@/types/order';
 import { ColorGroupCard } from './ColorGroupCard';
-import { calcOrderItemPricing, validateColorGroups } from '@/lib/services/orderItemPricing';
-import { PricingBreakdown } from './PricingBreakdown';
+
+import { validateColorGroups } from '@/lib/services/orderItemPricing';
 
 interface OrderItemConfiguratorProps {
   productItemId: string; // 产品项ID
@@ -23,8 +23,6 @@ export function OrderItemConfigurator({
   onUpdate,
   onValidationChange
 }: OrderItemConfiguratorProps) {
-  const [showPricing, setShowPricing] = useState(false);
-
   // 更新单个颜色组
   const handleGroupUpdate = useCallback((index: number, updated: OrderItemColorGroup) => {
     const newGroups = [...colorGroups];
@@ -120,9 +118,6 @@ export function OrderItemConfigurator({
     onValidationChange?.(validation.valid, validation.errors);
   }, [colorGroups, onUpdate, onValidationChange]);
 
-  // 计算定价
-  const pricingResult = calcOrderItemPricing(colorGroups);
-
   // 验证配置
   const validation = validateColorGroups(colorGroups);
 
@@ -154,25 +149,6 @@ export function OrderItemConfigurator({
         </div>
       )}
 
-      {/* 操作栏 */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-        <button
-          type="button"
-          onClick={() => setShowPricing(!showPricing)}
-          className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-        >
-          {showPricing ? '隐藏' : '显示'}报价明细
-        </button>
-
-        <div className="text-lg font-semibold text-gray-900">
-          总计: ${pricingResult.total.toFixed(2)} {pricingResult.currency}
-        </div>
-      </div>
-
-      {/* 报价明细 */}
-      {showPricing && (
-        <PricingBreakdown breakdown={pricingResult.breakdown} />
-      )}
     </div>
   );
 }
