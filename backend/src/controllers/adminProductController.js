@@ -818,17 +818,26 @@ exports.updateProduct = async (req, res) => {
       }
 
       if (Array.isArray(images)) {
+        // Only update images if the array is provided.
+        // Frontend sends the complete list of desired images.
+        // We delete all existing and re-create to ensure sync (simplest approach for ordering).
+        // WARNING: This assumes frontend sends EVERYTHING.
+
         await tx.productImage.deleteMany({ where: { productId: id } });
-        if (images.length) {
-          await tx.productImage.createMany({
-            data: images.filter(img => img.url).map((image, index) => ({
+
+        if (images.length > 0) {
+          const validImages = images
+            .filter(img => img && img.url && typeof img.url === 'string')
+            .map((image, index) => ({
               productId: id,
-              url: denormalizeImageUrl(image.url, req),
-              alt: image.alt || null,
-              sortOrder:
-                typeof image.sortOrder === 'number' ? image.sortOrder : index,
-            })),
-          });
+              url: denormalizeImageUrl(image.url.trim(), req), // Ensure URL is relative/clean
+              alt: image.alt ? image.alt.trim() : null,
+              sortOrder: typeof image.sortOrder === 'number' ? image.sortOrder : index,
+            }));
+
+          if (validImages.length > 0) {
+            await tx.productImage.createMany({ data: validImages });
+          }
         }
       }
 
@@ -1050,20 +1059,25 @@ exports.uploadProductImages = async (req, res) => {
         // 构建 GCS 路径: products/:productId/:fileName
         const objectPath = buildObjectPath('products', [id, fileName]);
 
-        // 直接从内存 Buffer 上传到 GCS
-        const gcsUrl = await uploadBufferToGcs(file.buffer, objectPath, {
-          contentType: file.mimetype,
-        });
+        try {
+          // 直接从内存 Buffer 上传到 GCS
+          const gcsUrl = await uploadBufferToGcs(file.buffer, objectPath, {
+            contentType: file.mimetype,
+          });
 
-        const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
-        const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
+          const fallbackAlt = file.originalname ? file.originalname.replace(/\.[^/.]+$/, '') : null;
+          const providedAlt = altValues[index] || (altValues.length === 1 ? altValues[0] : null);
 
-        return {
-          productId: id,
-          url: gcsUrl, // 存储完整的 GCS URL
-          alt: sanitizeAltText(providedAlt, fallbackAlt),
-          sortOrder: existingCount + index,
-        };
+          return {
+            productId: id,
+            url: gcsUrl, // 存储完整的 GCS URL
+            alt: sanitizeAltText(providedAlt, fallbackAlt),
+            sortOrder: existingCount + index,
+          };
+        } catch (uploadError) {
+          console.error(`[uploadProductImages] Failed to upload file ${fileName}:`, uploadError);
+          throw new Error(`Failed to upload ${fileName} to storage: ${uploadError.message}`);
+        }
       })
     );
 
@@ -1092,8 +1106,11 @@ exports.uploadProductImages = async (req, res) => {
   } catch (error) {
     console.error('[adminProductController] uploadProductImages error:', error);
     // 检查是否是 GCS 配置错误
-    if (error.message && error.message.includes('GCS 配置缺失')) {
-      return res.status(500).json({ error: 'Storage service not configured correctly on server' });
+    if (error.message && (error.message.includes('GCS') || error.message.includes('Bucket'))) {
+      return res.status(500).json({
+        error: 'Storage configuration error',
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Please check server logs'
+      });
     }
     res.status(500).json({
       error: 'Failed to upload product images',

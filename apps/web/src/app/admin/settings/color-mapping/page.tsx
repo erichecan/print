@@ -49,7 +49,7 @@ export default function ColorMappingPage() {
                         formData.append('colorName', colorName);
                         formData.append('view', view);
 
-                        const uploadRes = await fetch('/api/admin/product-images/upload', {
+                        const uploadRes = await fetch('/api/product-color-images/upload', {
                             method: 'POST',
                             body: formData,
                         });
@@ -64,7 +64,7 @@ export default function ColorMappingPage() {
             }
 
             // 2. Update HEX mapping
-            const res = await fetch('/api/admin/product-data/update', {
+            const res = await fetch('/api/product-color-images/update-mapping', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

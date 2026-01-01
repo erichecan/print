@@ -65,7 +65,7 @@ docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/backend:latest
 BACKEND_URL=$(gcloud run services describe ${BACKEND_SERVICE} --region ${REGION} --format 'value(status.url)' 2>/dev/null || echo "")
 if [ -z "$BACKEND_URL" ]; then
     echo -e "${YELLOW}⚠️  Backend service not found, will use placeholder URL${NC}"
-    BACKEND_URL="https://print-main-backend-234065158862.us-central1.run.app"
+    BACKEND_URL="https://print-main-backend-651538279084.us-central1.run.app"
 fi
 API_URL="${BACKEND_URL}/api"
 echo -e "${GREEN}📌 Using API URL for frontend build: ${API_URL}${NC}"
@@ -131,7 +131,7 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --cpu 1 \
   --timeout 600 \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production,AUTO_MIGRATE=false \
+  --set-env-vars NODE_ENV=production,AUTO_MIGRATE=false,GCP_IMAGE_BUCKET=print-main-product-images \
   --cpu-boost
 
 # Get backend URL (update if changed)

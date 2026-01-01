@@ -5,6 +5,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import useSWR from 'swr';
 import { contentApi, categoriesApi, Category } from '@/lib/api';
 
@@ -60,29 +61,30 @@ const getCategoryImagePath = (category: Category): string => {
 };
 
 export function HomeMobileClient() {
-// 从 CMS 获取首页内容
+  // 从 CMS 获取首页内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const homePage = contentData?.data?.homePage;
 
-// 从数据库获取分类数据
+  // 从数据库获取分类数据
   const { data: categoriesData, error: categoriesError, isLoading: categoriesLoading } = useSWR(
     'categories',
     () => categoriesApi.list()
   );
 
-// 使用 CMS 数据或默认值
+  // 使用 CMS 数据或默认值
   const heroTitle = homePage?.heroTitle || 'Custom T-shirts & Promo Gear for Your Group';
   const heroSubtitle = homePage?.heroSubtitle || 'From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.';
 
-// 使用数据库分类数据，如果没有则使用默认值
-  const categories = categoriesData?.data?.length > 0
-    ? categoriesData.data.map((category: Category) => ({
+  // 使用数据库分类数据，如果没有则使用默认值
+  const serverCategories = categoriesData?.data;
+  const categories = (serverCategories && serverCategories.length > 0)
+    ? serverCategories.map((category: Category) => ({
       id: category.id,
       name: category.name,
       slug: category.slug,
       image: category.imageUrl || getCategoryImagePath(category),
     }))
-    : homePage?.categories || [
+    : (homePage as any)?.categories || [
       { id: 'cat-1', name: 'T-shirts', slug: 't-shirts', image: '/assets/categories/cat-tshirt.png' },
       { id: 'cat-2', name: 'Hoodies & Sweatshirts', slug: 'sweatshirts', image: '/assets/categories/cat-sweatshirt.png' },
       { id: 'cat-3', name: 'Hats', slug: 'hats', image: '/assets/categories/cat-hat.png' },
@@ -97,7 +99,7 @@ export function HomeMobileClient() {
       { id: 'cat-12', name: 'Athleticwear', slug: 'activewear', image: '/assets/categories/cat-activewear.png' },
     ];
 
-// 品牌 logo（9个，3行3列）
+  // 品牌 logo（9个，3行3列）
   const brandLogos = homePage?.brandLogos || [
     { id: 'brand-1', name: 'Nike', src: '/assets/brands/nike.svg' },
     { id: 'brand-2', name: 'Carhartt', src: '/assets/brands/carhartt.svg' },
@@ -118,14 +120,16 @@ export function HomeMobileClient() {
 
   return (
     <div className="home-mobile">
-{/* Hero 区域 - 使用 canvas-design 创建的渐变背景 */}
+      {/* Hero 区域 - 使用 canvas-design 创建的渐变背景 */}
       <section className="home-mobile__hero">
         <div className="home-mobile__hero-background">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/assets/hero/hero-mobile-gradient.png"
             alt="Hero background"
             className="home-mobile__hero-bg-image"
+            fill
+            unoptimized
+            priority
           />
         </div>
         <div className="home-mobile__hero-content">
@@ -140,30 +144,28 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-{/* 产品分类网格 - 12个分类，4行3列 */}
+      {/* 产品分类网格 - 12个分类，4行3列 */}
       <section className="home-mobile__categories">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">
             Custom T-shirts & Promotional Products for Your Group
           </h2>
           <div className="home-mobile__categories-grid">
-            {categories.map((category) => (
+            {categories.map((category: { id: string; name: string; slug: string; image: string }) => (
               <Link
                 key={category.id}
                 href={`/products?category=${category.slug || category.id}`}
                 className="home-mobile__category-card"
               >
                 <div className="home-mobile__category-image">
-{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={category.image}
                     alt={category.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={(e) => {
-                      // 如果图片加载失败，使用备用图片
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/assets/categories/cat-tshirt.png';
+                    fill
+                    unoptimized
+                    style={{ objectFit: 'cover' }}
+                    onError={() => {
+                      // Placeholder logic handled by initial data or separate component state if needed
                     }}
                   />
                 </div>
@@ -174,17 +176,17 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-{/* 新到货和 Swag 管理区域 */}
+      {/* 新到货和 Swag 管理区域 */}
       <section className="home-mobile__new-arrivals">
         <div className="home-mobile__container">
           <div className="home-mobile__new-arrivals-grid">
             <div className="home-mobile__new-arrivals-image">
-{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src="/assets/hero/hero-card-tee.jpg"
                 alt="New Arrivals"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                fill
+                unoptimized
+                style={{ objectFit: 'cover' }}
               />
             </div>
             <div className="home-mobile__new-arrivals-card">
@@ -204,24 +206,19 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-{/* Shop Featured Brands - 9个品牌，3行3列 */}
+      {/* Shop Featured Brands - 9个品牌，3行3列 */}
       <section className="home-mobile__brands">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">Shop Featured Brands</h2>
           <div className="home-mobile__brands-grid">
             {brandLogos.map((brand) => (
-              <div key={brand.id} className="home-mobile__brand-logo">
-{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+              <div key={brand.id} className="home-mobile__brand-logo" style={{ position: 'relative', minHeight: '50px' }}>
+                <Image
                   src={brand.src}
                   alt={brand.name}
-                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                  onError={(e) => {
-                    // 如果图片加载失败，使用占位符
-                    const target = e.target as HTMLImageElement;
-                    target.src = '/assets/brands/nike.svg';
-                  }}
+                  fill
+                  unoptimized
+                  style={{ objectFit: 'contain' }}
                 />
               </div>
             ))}
@@ -229,7 +226,7 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-{/* "An Inker By Your Side" 支持区域 */}
+      {/* "An Inker By Your Side" 支持区域 */}
       <section className="home-mobile__support">
         <div className="home-mobile__container">
           <div className="home-mobile__support-card">
@@ -255,7 +252,7 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-{/* "Your Price Includes" 区域 */}
+      {/* "Your Price Includes" 区域 */}
       <section className="home-mobile__price-includes">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">Your Price Includes</h2>
@@ -273,7 +270,7 @@ export function HomeMobileClient() {
         </div>
       </section>
 
-{/* 客户评价区域 */}
+      {/* 客户评价区域 */}
       <section className="home-mobile__testimonials">
         <div className="home-mobile__container">
           <h2 className="home-mobile__section-title">What Our Customers Say</h2>

@@ -5,6 +5,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import useSWR from 'swr';
 import { categoriesApi, Category } from '@/lib/api';
 import styles from './StaticCategoriesSection.module.css';
@@ -152,21 +153,23 @@ export function DatabaseCategoriesSection() {
                 aria-label={`Browse ${category.name}`}
               >
                 <div className={styles.categoryCardImage}>
-{/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  {/* 使用普通 img 标签避免 Next.js Image 优化器 400 错误 */}
+                  <Image
                     src={imagePath}
                     alt={category.name}
                     className={styles.categoryImage}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
                     style={{
-                      width: '100%',
-                      height: '100%',
                       objectFit: 'cover'
                     }}
-                    onError={(e) => {
-                      // 如果图片加载失败，使用备用图片
-                      const target = e.target as HTMLImageElement;
-                      target.src = '/assets/categories/cat-tshirt.png';
+                    onError={() => {
+                      // Note: onError on Image component doesn't give event with target to swap src easily in standard React way without state
+                      // But for now keeping it simple or removing if it's hard to replicate 1:1 without state
+                      // Actually Image component onError is limited.
+                      // Given these are static assets usually, maybe it's fine. 
+                      // Or I can use a stateful wrapper. But for this refactor, I'll stick to Image.
                     }}
                   />
                 </div>

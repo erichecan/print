@@ -4,6 +4,7 @@
 * Added core service terms and responsibilities
 * 补充 SEO 元数据
  */
+import React from 'react';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
@@ -46,28 +47,38 @@ const terms = [
 
 export default function TermsOfServicePage() {
   return (
-    <section className="container" style={{ padding: '72px 0', display: 'grid', gap: '28px', maxWidth: '720px' }}>
-      <header style={{ display: 'grid', gap: '12px' }}>
-        <h1>Terms of Service</h1>
-        <p>
-          These terms outline how Suvernire Plus operates, what you can expect from us, and the responsibilities
-          you take on when placing an order.
-        </p>
-      </header>
+    <div className="bg-gray-50 min-h-screen pb-20">
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
+            Terms of Service
+          </h1>
+          <p className="text-lg text-gray-500">
+            These terms outline how Suvernire Plus operates, what you can expect from us, and the responsibilities
+            you take on when placing an order.
+          </p>
+        </div>
+      </div>
 
-      {terms.map((term) => (
-        <section key={term.title} style={{ display: 'grid', gap: '12px' }}>
-          <h2>{term.title}</h2>
-          <p>{term.body}</p>
-        </section>
-      ))}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-8 sm:p-12 space-y-12">
+            {terms.map((term) => (
+              <section key={term.title}>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">{term.title}</h2>
+                <p className="text-gray-600 leading-relaxed">{term.body}</p>
+              </section>
+            ))}
 
-      <section style={{ display: 'grid', gap: '12px' }}>
-        <h2>Contact</h2>
-        <p>
-          Questions about these terms? Email <a href="mailto:legal@suvernireplus.com">legal@suvernireplus.com</a>.
-        </p>
-      </section>
-    </section>
+            <section className="bg-red-50 rounded-lg p-6 border border-red-100">
+              <h2 className="text-lg font-bold text-gray-900 mb-2">Contact</h2>
+              <p className="text-gray-700">
+                Questions about these terms? Email <a href="mailto:legal@suvernireplus.com" className="text-red-600 hover:text-red-800 font-medium">legal@suvernireplus.com</a>.
+              </p>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

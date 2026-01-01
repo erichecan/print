@@ -76,14 +76,14 @@ interface ProductColor {
 }
 
 interface DesignLabClientProps {
-initialProductData?: any; // Design Lab 4.0: 服务端预取的产品数据
+  initialProductData?: any; // Design Lab 4.0: 服务端预取的产品数据
 }
 
 const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData }) => {
   const searchParams = useSearchParams();
-const { error: showErrorToast, warning: showWarningToast, success: showSuccessToast } = useToast(); // Toast hooks
+  const { error: showErrorToast, warning: showWarningToast, success: showSuccessToast } = useToast(); // Toast hooks
 
-// 版本号显示 - 在 console 打印 SHA + UTC
+  // 版本号显示 - 在 console 打印 SHA + UTC
   useEffect(() => {
     const getVersion = async () => {
       try {
@@ -132,44 +132,44 @@ const { error: showErrorToast, warning: showWarningToast, success: showSuccessTo
 
     getVersion();
 
-// 埋点：Design Lab 打开
+    // 埋点：Design Lab 打开
     analytics.track('design_lab_opened', {
       productId: searchParams.get('productId'),
       colorId: searchParams.get('colorId'),
     });
   }, []);
 
-// 状态管理
+  // 状态管理
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'zoom'>('front');
-const [showGuidePanel, setShowGuidePanel] = useState(false); // 默认隐藏，因为工具面板会显示
-// 移除：showTemplateLibrary 状态（已移除模板库功能）
-const [showPriceModal, setShowPriceModal] = useState(false); // 价格模态框显示状态（旧版，保留兼容）
-const [showGetPriceFlowModal, setShowGetPriceFlowModal] = useState(false); // Get Price流程模态框
-const [priceQuote, setPriceQuote] = useState<any>(null); // 价格报价数据
-const [priceLoading, setPriceLoading] = useState(false); // 价格加载状态
-const [priceError, setPriceError] = useState<string | null>(null); // 价格错误信息
-const [quoteQuantity, setQuoteQuantity] = useState(1); // 报价数量
-const [currentDesignId, setCurrentDesignId] = useState<string | null>(null); // 当前设计 ID
+  const [showGuidePanel, setShowGuidePanel] = useState(false); // 默认隐藏，因为工具面板会显示
+  // 移除：showTemplateLibrary 状态（已移除模板库功能）
+  const [showPriceModal, setShowPriceModal] = useState(false); // 价格模态框显示状态（旧版，保留兼容）
+  const [showGetPriceFlowModal, setShowGetPriceFlowModal] = useState(false); // Get Price流程模态框
+  const [priceQuote, setPriceQuote] = useState<any>(null); // 价格报价数据
+  const [priceLoading, setPriceLoading] = useState(false); // 价格加载状态
+  const [priceError, setPriceError] = useState<string | null>(null); // 价格错误信息
+  const [quoteQuantity, setQuoteQuantity] = useState(1); // 报价数量
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(null); // 当前设计 ID
   const [designName, setDesignName] = useState('Untitled Design');
-// 工具面板状态管理
-// 同时更新 ref，确保事件处理器能访问最新值
+  // 工具面板状态管理
+  // 同时更新 ref，确保事件处理器能访问最新值
   const [toolPanelType, setToolPanelType] = useState<ToolPanelType>('home');
 
-// 同步更新 ref
+  // 同步更新 ref
   useEffect(() => {
     toolPanelTypeRef.current = toolPanelType;
   }, [toolPanelType]);
 
-// 选中的图片对象
+  // 选中的图片对象
   const [selectedImage, setSelectedImage] = useState<fabric.Image | null>(null);
-// 选中的文本对象
+  // 选中的文本对象
   const [selectedText, setSelectedText] = useState<fabric.IText | null>(null);
-// 选中的艺术素材对象
+  // 选中的艺术素材对象
   const [selectedArt, setSelectedArt] = useState<fabric.Image | null>(null);
-// 产品信息状态
-// 根据 designlab-index.jpeg，在初始化时设置默认产品信息，确保画布始终有产品图片
-// 修复：将类型从 ProductInfo | null 改为 ProductInfo，因为初始化时总是返回非 null 对象
+  // 产品信息状态
+  // 根据 designlab-index.jpeg，在初始化时设置默认产品信息，确保画布始终有产品图片
+  // 修复：将类型从 ProductInfo | null 改为 ProductInfo，因为初始化时总是返回非 null 对象
   const [productInfo, setProductInfo] = useState<ProductInfo>(() => {
     // 在初始化时设置默认产品信息，确保画布始终有产品图片
     const defaultColor = 'White';
@@ -186,40 +186,40 @@ const [currentDesignId, setCurrentDesignId] = useState<string | null>(null); // 
   const [productColors, setProductColors] = useState<ProductColor[]>([]);
   const [showColorModal, setShowColorModal] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
-// Names & Numbers 状态
+  // Names & Numbers 状态
   const [showNamesNumbersModal, setShowNamesNumbersModal] = useState(false);
-// 上传体验评分模态框状态
+  // 上传体验评分模态框状态
   const [showUploadRatingModal, setShowUploadRatingModal] = useState(false);
   const [currentUploadId, setCurrentUploadId] = useState<string>('');
-// Save & Share 模态框状态
+  // Save & Share 模态框状态
   const [showSaveShareModal, setShowSaveShareModal] = useState(false);
-// Recent Uploads 状态
+  // Recent Uploads 状态
   const [recentUploads, setRecentUploads] = useState<Array<{ id: string; url: string; thumbnail: string }>>([]);
-// 防止选择清除事件在添加对象后立即触发
+  // 防止选择清除事件在添加对象后立即触发
   const isAddingObjectRef = useRef(false);
-// 防止快照清理在编辑对象期间误删活动对象
+  // 防止快照清理在编辑对象期间误删活动对象
   const isEditingObjectRef = useRef(false);
-// 跟踪对象删除的来源，用于区分用户删除和快照清理
+  // 跟踪对象删除的来源，用于区分用户删除和快照清理
   const removalContextRef = useRef<'user-delete' | 'snapshot-cleanup' | 'background-reload' | 'unknown'>('unknown');
-// 根据 designlab-index.jpeg，添加画布初始化状态跟踪
+  // 根据 designlab-index.jpeg，添加画布初始化状态跟踪
   const [canvasInitialized, setCanvasInitialized] = useState(false);
-// Canvas初始化错误状态
+  // Canvas初始化错误状态
   const [canvasInitError, setCanvasInitError] = useState<Error | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
   const backgroundImageRef = useRef<fabric.Image | null>(null);
-// 使用 ref 存储 fabric 对象，确保在 loadFallbackImage 和 loadBackgroundImage 中使用时 fabric 已加载
+  // 使用 ref 存储 fabric 对象，确保在 loadFallbackImage 和 loadBackgroundImage 中使用时 fabric 已加载
   const fabricRef = useRef<typeof fabric | null>(null);
-// 使用 ref 跟踪当前面板类型，避免闭包问题
+  // 使用 ref 跟踪当前面板类型，避免闭包问题
   const toolPanelTypeRef = useRef<ToolPanelType>('home');
-// 使用 ref 跟踪已加载的背景图片，避免重复加载和无限循环
+  // 使用 ref 跟踪已加载的背景图片，避免重复加载和无限循环
   const backgroundImageLoadedRef = useRef<string>('');
-// 修复：添加加载锁，防止并发加载导致重复移除
+  // 修复：添加加载锁，防止并发加载导致重复移除
   const isLoadingBackgroundRef = useRef<boolean>(false);
-// 使用 ref 跟踪 productInfo，避免在 loadBackgroundImage 中依赖 productInfo
-// 修复：必须在 productInfo 定义之后初始化，使用默认值
+  // 使用 ref 跟踪 productInfo，避免在 loadBackgroundImage 中依赖 productInfo
+  // 修复：必须在 productInfo 定义之后初始化，使用默认值
   const productInfoRef = useRef<ProductInfo>({
     productId: 'default',
     productName: 'Gildan Softstyle Jersey T-shirt',
@@ -230,12 +230,12 @@ const [currentDesignId, setCurrentDesignId] = useState<string | null>(null); // 
     gallery: [],
   });
 
-// 同步更新 productInfo ref，避免在 loadBackgroundImage 中依赖 productInfo
+  // 同步更新 productInfo ref，避免在 loadBackgroundImage 中依赖 productInfo
   useEffect(() => {
     productInfoRef.current = productInfo;
   }, [productInfo]);
 
-// 从 store 获取状态
+  // 从 store 获取状态
   const {
     setView,
     currentView: storeView,
@@ -243,32 +243,32 @@ const [currentDesignId, setCurrentDesignId] = useState<string | null>(null); // 
     canvas: storeCanvas,
     viewCanvases,
     getCurrentViewCanvas,
-setViewCanvases, // 批量更新视图画布
+    setViewCanvases, // 批量更新视图画布
     history,
     future
   } = useDesignLabStore();
 
-// 计算 Undo/Redo 可用状态
+  // 计算 Undo/Redo 可用状态
   const canUndo = history.length > 0;
   const canRedo = future.length > 0;
 
-// 阶段2修复：改为 Custom Ink 方式 - 固定高分辨率逻辑尺寸
+  // 阶段2修复：改为 Custom Ink 方式 - 固定高分辨率逻辑尺寸
   // 逻辑尺寸：4000 × 4800（高分辨率，用于 Fabric.js 坐标系）
   // DOM 显示尺寸：基于 .dl-canvas section 自适应（通过 CSS 或 viewportTransform 缩放）
   const CANVAS_WIDTH = 4000;
   const CANVAS_HEIGHT = 4800;
 
-// 加载产品背景图片
-// 更新为使用实际产品图片
-// 移到 loadProductInfo 之前，避免初始化顺序问题
-// 支持 zoom 视图（虽然不会加载背景）
-// 加载占位图片的辅助函数，确保至少显示一个图片
-// 修复：添加错误处理，如果占位图加载失败，创建纯色矩形作为备用方案
-// 修复：使用 fabricRef 确保 fabric 对象已加载
+  // 加载产品背景图片
+  // 更新为使用实际产品图片
+  // 移到 loadProductInfo 之前，避免初始化顺序问题
+  // 支持 zoom 视图（虽然不会加载背景）
+  // 加载占位图片的辅助函数，确保至少显示一个图片
+  // 修复：添加错误处理，如果占位图加载失败，创建纯色矩形作为备用方案
+  // 修复：使用 fabricRef 确保 fabric 对象已加载
   const loadFallbackImage = useCallback((viewKey: 'front' | 'back' | 'sleeve', canvas: fabric.Canvas) => {
     if (!canvas) return;
 
-// 检查 fabric 对象是否已加载
+    // 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       console.warn('[DesignLab] Fabric not loaded yet, skipping fallback image');
       return;
@@ -276,7 +276,7 @@ setViewCanvases, // 批量更新视图画布
 
     const fabric = fabricRef.current;
 
-// 创建一个简单的纯色矩形作为备用背景，避免依赖外部图片服务
+    // 创建一个简单的纯色矩形作为备用背景，避免依赖外部图片服务
     const createSolidColorBackground = () => {
       // 移除旧背景
       if (backgroundImageRef.current) {
@@ -292,21 +292,21 @@ setViewCanvases, // 批量更新视图画布
         backgroundImageRef.current = null;
       }
 
-// 统一使用 calculateImageFit 函数计算占位背景的位置和尺寸
+      // 统一使用 calculateImageFit 函数计算占位背景的位置和尺寸
       // 使用一个假设的图片尺寸来计算安全区
       const fit = calculateImageFit({
         canvasWidth: CANVAS_WIDTH,
         canvasHeight: CANVAS_HEIGHT,
-imageWidth: CANVAS_WIDTH * 0.8, // 修复：增大占位图片尺寸，从65%改为80%
-imageHeight: CANVAS_HEIGHT * 0.9, // 修复：增大占位图片尺寸，从75%改为90%
-safeAreaWidth: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
-safeAreaHeight: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
-fit: 'cover', // 修复：改为cover模式（填充安全区，视觉更大更突出）
+        imageWidth: CANVAS_WIDTH * 0.8, // 修复：增大占位图片尺寸，从65%改为80%
+        imageHeight: CANVAS_HEIGHT * 0.9, // 修复：增大占位图片尺寸，从75%改为90%
+        safeAreaWidth: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+        safeAreaHeight: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+        fit: 'cover', // 修复：改为cover模式（填充安全区，视觉更大更突出）
       });
 
       // 使用浅灰色矩形作为占位背景
       const rect = new fabric.Rect({
-left: fit.left, // 使用画布中心坐标
+        left: fit.left, // 使用画布中心坐标
         top: fit.top,
         width: fit.width,
         height: fit.height,
@@ -317,12 +317,12 @@ left: fit.left, // 使用画布中心坐标
         evented: false,
         excludeFromExport: true,
         name: 'background',
-originX: 'center', // 统一使用 center 原点以实现真正的居中
+        originX: 'center', // 统一使用 center 原点以实现真正的居中
         originY: 'center',
       });
 
       canvas.add(rect);
-// 修复：Fabric.js v6 使用 sendObjectToBack
+      // 修复：Fabric.js v6 使用 sendObjectToBack
       try {
         if (typeof (canvas as any).sendObjectToBack === 'function') {
           (canvas as any).sendObjectToBack(rect);
@@ -341,16 +341,16 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       backgroundImageRef.current = rect as any; // 类型转换，因为 ref 是 fabric.Image
       canvas.renderAll();
       console.log('[DesignLab] Created solid color background as fallback');
-// 释放加载锁
+      // 释放加载锁
       isLoadingBackgroundRef.current = false;
     };
 
-// 尝试使用更可靠的占位图服务，如果失败则使用纯色背景
+    // 尝试使用更可靠的占位图服务，如果失败则使用纯色背景
     // 使用 via.placeholder.com 作为备用，它更可靠
     const fallbackUrl = `https://via.placeholder.com/900x700/f0f0f0/d0d0d0?text=T-Shirt+${viewKey}`;
     console.log('[DesignLab] Loading fallback placeholder image:', fallbackUrl);
 
-// 添加超时处理
+    // 添加超时处理
     let imageLoaded = false;
     const timeoutId = setTimeout(() => {
       if (!imageLoaded) {
@@ -376,7 +376,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
           const objName = (backgroundImageRef.current as any).name || '';
           const isProductImage = objName?.startsWith('product-image-');
 
-// 修复：如果是产品图片，不应该移除
+          // 修复：如果是产品图片，不应该移除
           if (!isProductImage) {
             const objName = (backgroundImageRef.current as any).name || 'unnamed';
             const objLayerType = (backgroundImageRef.current as any).data?.layerType;
@@ -392,39 +392,39 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
           }
         }
 
-// 设置图片属性，统一使用 center 原点
+        // 设置图片属性，统一使用 center 原点
         fabricImg.set({
           selectable: false,
           evented: false,
           excludeFromExport: true,
           name: 'background',
-originX: 'center', // 统一使用 center 原点以实现真正的居中
+          originX: 'center', // 统一使用 center 原点以实现真正的居中
           originY: 'center',
         });
 
-// 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
+        // 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
         const fit = calculateImageFit({
           canvasWidth: CANVAS_WIDTH,
           canvasHeight: CANVAS_HEIGHT,
           imageWidth: fabricImg.width || 1,
           imageHeight: fabricImg.height || 1,
-safeAreaWidth: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
-safeAreaHeight: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
-fit: 'cover', // 修复：改为cover模式（填充安全区，视觉更大更突出）
+          safeAreaWidth: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+          safeAreaHeight: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+          fit: 'cover', // 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
 
-// 应用 fit 结果（居中 + 缩放）
+        // 应用 fit 结果（居中 + 缩放）
         fabricImg.scale(fit.scale);
         fabricImg.set({
           left: fit.left,
           top: fit.top,
-originX: 'center', // 统一使用 center 原点以实现真正的居中
+          originX: 'center', // 统一使用 center 原点以实现真正的居中
           originY: 'center',
         });
         fabricImg.setCoords();
 
         canvas.add(fabricImg);
-// 修复：Fabric.js v6 使用 sendObjectToBack
+        // 修复：Fabric.js v6 使用 sendObjectToBack
         try {
           if (typeof (canvas as any).sendObjectToBack === 'function') {
             (canvas as any).sendObjectToBack(fabricImg);
@@ -452,14 +452,14 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         backgroundImageRef.current = fabricImg;
         canvas.renderAll();
         console.log('[DesignLab] Fallback placeholder image loaded successfully');
-// 释放加载锁
+        // 释放加载锁
         isLoadingBackgroundRef.current = false;
       },
       {
         crossOrigin: 'anonymous'
       }
     ).catch((error) => {
-// 如果 fromURL 返回 Promise 并失败，使用纯色背景
+      // 如果 fromURL 返回 Promise 并失败，使用纯色背景
       imageLoaded = true;
       clearTimeout(timeoutId);
       console.error('[DesignLab] Failed to load fallback image from URL:', fallbackUrl, error);
@@ -467,10 +467,10 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     });
   }, [CANVAS_WIDTH, CANVAS_HEIGHT]);
 
-// 根据 designlab-index.jpeg，优化背景图片加载逻辑：添加详细日志、错误处理、超时处理
-// 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
-// 确保首页能够有默认的图片展示，所有功能能够在这张底图上进行
-// 修复：添加加载锁，防止并发加载导致重复移除
+  // 根据 designlab-index.jpeg，优化背景图片加载逻辑：添加详细日志、错误处理、超时处理
+  // 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
+  // 确保首页能够有默认的图片展示，所有功能能够在这张底图上进行
+  // 修复：添加加载锁，防止并发加载导致重复移除
   const loadBackgroundImage = useCallback(async (view: 'front' | 'back' | 'sleeve' | 'zoom') => {
     if (view === 'zoom') {
       console.log('[DesignLab] Zoom view, skipping background image load');
@@ -481,13 +481,13 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       return;
     }
 
-// 检查 fabric 对象是否已加载
+    // 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       console.warn('[DesignLab] Fabric not loaded yet, skipping background image load');
       return;
     }
 
-// 检查加载锁，防止并发加载
+    // 检查加载锁，防止并发加载
     if (isLoadingBackgroundRef.current) {
       console.log('[DesignLab] Background image is already loading, skipping duplicate call');
       return;
@@ -500,7 +500,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     isLoadingBackgroundRef.current = true;
 
     // 生成稳定键用于检查是否已加载
-// 修复：使用与 productImageLayer 相同的稳定键生成逻辑
+    // 修复：使用与 productImageLayer 相同的稳定键生成逻辑
     const viewKey = view as 'front' | 'back' | 'sleeve';
     const currentProductInfo = productInfoRef.current;
     const stableKey = `product-image-${currentProductInfo?.productId || 'default'}-${currentProductInfo?.color || 'White'}-${viewKey}`;
@@ -515,16 +515,16 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     });
     // #endregion
 
-// 修复：在加载新图片前，先移除所有旧的产品图片（不同稳定键的）
+    // 修复：在加载新图片前，先移除所有旧的产品图片（不同稳定键的）
     const existingObjects = canvas.getObjects();
     const existingProductImage = existingObjects.find((obj: any) =>
       obj.name === stableKey || obj.data?.stableKey === stableKey
     );
 
-// 阶段2修复：如果已存在相同稳定键的图片，更新 ref 并跳过加载
-// 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
+    // 阶段2修复：如果已存在相同稳定键的图片，更新 ref 并跳过加载
+    // 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
     if (existingProductImage) {
-// 修复：热重载时 backgroundImageRef.current 可能未设置，需要更新它
+      // 修复：热重载时 backgroundImageRef.current 可能未设置，需要更新它
       if (backgroundImageRef.current !== existingProductImage) {
         console.log('[DesignLab] 🔄 Updating backgroundImageRef to existing image (hot reload fix):', stableKey);
         backgroundImageRef.current = existingProductImage as fabric.Image;
@@ -550,7 +550,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         const isCurrentKey = objName === stableKey || (obj as any).data?.stableKey === stableKey;
         const isUploadImage = objLayerType === 'upload';
 
-// 安全检查：绝对不移除上传图片
+        // 安全检查：绝对不移除上传图片
         if (isUploadImage) {
           console.log('[DesignLab] ⚠️ Skipping upload image (protected from removal):', {
             objName,
@@ -647,7 +647,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         stableKey: result.stableKey,
       });
 
-// 验证底图位置和尺寸（用于确认修复）
+      // 验证底图位置和尺寸（用于确认修复）
       if (result.success && result.image) {
         const productImage = result.image;
         const vpt = canvas.viewportTransform;
@@ -697,14 +697,14 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         backgroundImageRef.current = result.image;
         backgroundImageLoadedRef.current = imageKey;
 
-// 验证图片是否在最底层
+        // 验证图片是否在最底层
         const finalObjects = canvas.getObjects();
         const productImageIndex = finalObjects.indexOf(result.image);
         if (productImageIndex !== 0) {
           console.warn('[DesignLab] ⚠️ Product image is not at the bottom! Index:', productImageIndex, 'Expected: 0');
           // 强制移到最底层
           try {
-// 修复：Fabric.js v6 使用 sendObjectToBack
+            // 修复：Fabric.js v6 使用 sendObjectToBack
             try {
               if (typeof (canvas as any).sendObjectToBack === 'function') {
                 (canvas as any).sendObjectToBack(result.image);
@@ -769,7 +769,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
 
         console.log('[DesignLab] ✅ Product image loaded using new productImageLayer, stableKey:', result.stableKey);
 
-// 详细调试：验证图片是否真的在画布上并且可见
+        // 详细调试：验证图片是否真的在画布上并且可见
         if (result.image && canvas) {
           const img = result.image;
           const isOnCanvas = canvas.getObjects().includes(img);
@@ -790,7 +790,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
             bounds: imgBounds,
           };
 
-// 详细输出所有属性（展开对象）
+          // 详细输出所有属性（展开对象）
           console.log('[DesignLab] 🔍 Product image verification:');
           console.log('  visible:', imgProps.visible);
           console.log('  opacity:', imgProps.opacity);
@@ -807,7 +807,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
           console.log('  bounds:', imgProps.bounds);
           console.log('  full imgProps:', JSON.stringify(imgProps, null, 2));
 
-// 检查所有画布对象
+          // 检查所有画布对象
           const allObjs = canvas.getObjects();
           console.log('[DesignLab] 🔍 All canvas objects:', allObjs.length, 'objects');
           allObjs.forEach((obj, idx) => {
@@ -826,7 +826,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
             });
           });
 
-// 检查画布元素的样式
+          // 检查画布元素的样式
           const canvasElement = canvas.getElement();
           if (canvasElement) {
             const canvasStyle = window.getComputedStyle(canvasElement);
@@ -849,7 +849,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
             console.log('  position:', canvasStyle.position);
           }
 
-// 检查画布容器的样式
+          // 检查画布容器的样式
           const canvasContainer = canvasElement?.parentElement;
           if (canvasContainer) {
             const containerStyle = window.getComputedStyle(canvasContainer);
@@ -877,7 +877,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
             console.log('  paddingBottom:', containerStyle.paddingBottom);
           }
 
-// 检查所有父元素的位置
+          // 检查所有父元素的位置
           let parent = canvasElement?.parentElement;
           let level = 0;
           console.log('[DesignLab] 🔍 Parent elements check:');
@@ -918,7 +918,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
             level++;
           }
 
-// 检查是否有滚动容器需要滚动
+          // 检查是否有滚动容器需要滚动
           console.log('[DesignLab] 🔍 Scroll check:');
           let scrollParent = canvasElement?.parentElement;
           while (scrollParent) {
@@ -937,7 +937,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
             scrollParent = scrollParent.parentElement;
           }
 
-// 检查视口位置
+          // 检查视口位置
           console.log('[DesignLab] 🔍 Viewport check:');
           console.log('  window.innerHeight:', window.innerHeight);
           console.log('  window.innerWidth:', window.innerWidth);
@@ -958,7 +958,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
           }
         }
 
-// 释放加载锁（在成功返回前）
+        // 释放加载锁（在成功返回前）
         isLoadingBackgroundRef.current = false;
         return; // 成功加载，退出
       } else {
@@ -974,17 +974,17 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       // 继续使用旧方法（锁会在旧方法结束时释放）
     }
 
-// 旧方法：检查是否正在加载，避免重复加载（已经在上面检查过，这里作为双重保险）
+    // 旧方法：检查是否正在加载，避免重复加载（已经在上面检查过，这里作为双重保险）
     const imageKeyOld = `${view}-${productInfoRef.current?.color || 'White'}-${productInfoRef.current?.baseImages?.[view] || ''}`;
     if (backgroundImageLoadedRef.current === imageKeyOld && backgroundImageRef.current) {
       console.log('[DesignLab] Background image already loaded for this view and color (old method check), skipping:', imageKeyOld);
-// 释放加载锁
+      // 释放加载锁
       isLoadingBackgroundRef.current = false;
       return;
     }
 
-// 移除旧背景
-// 修复：只移除不是产品图片的背景（避免移除 productImageLayer 创建的图片）
+    // 移除旧背景
+    // 修复：只移除不是产品图片的背景（避免移除 productImageLayer 创建的图片）
     if (backgroundImageRef.current) {
       const objName = (backgroundImageRef.current as any).name || '';
       const isProductImage = objName?.startsWith('product-image-');
@@ -992,7 +992,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       // 如果是产品图片，不应该在这里移除（由 productImageLayer 管理）
       if (isProductImage) {
         console.log('[DesignLab] Skipping removal of product image (managed by productImageLayer):', objName);
-// 释放加载锁
+        // 释放加载锁
         isLoadingBackgroundRef.current = false;
         return; // 如果是产品图片，直接返回，不继续使用旧方法
       }
@@ -1008,12 +1008,12 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       backgroundImageRef.current = null;
     }
 
-// 使用产品图片或占位图片
-// 优先使用 Custom Ink 的真实图片 URL
-// 支持从 API 动态获取图片 URL
-// 确保即使 productInfo 为空也能显示默认图片
-// 修复：使用 ref 访问最新的 productInfo，避免依赖导致无限循环
-// viewKey 和 currentProductInfo 已在上面定义，这里直接使用
+    // 使用产品图片或占位图片
+    // 优先使用 Custom Ink 的真实图片 URL
+    // 支持从 API 动态获取图片 URL
+    // 确保即使 productInfo 为空也能显示默认图片
+    // 修复：使用 ref 访问最新的 productInfo，避免依赖导致无限循环
+    // viewKey 和 currentProductInfo 已在上面定义，这里直接使用
     let imageUrl: string;
 
     if (currentProductInfo?.baseImages?.[viewKey]) {
@@ -1021,20 +1021,20 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       imageUrl = currentProductInfo.baseImages[viewKey];
       console.log('[DesignLab] Using baseImages URL for view:', viewKey, imageUrl);
     } else if (currentProductInfo?.color) {
-// 尝试从 API 获取图片 URL（如果可用）
+      // 尝试从 API 获取图片 URL（如果可用）
       // 注意：这里是同步调用，所以先使用静态生成，后续可以优化为异步
       imageUrl = getDefaultProductImageUrl(currentProductInfo.color, viewKey);
       console.log('[DesignLab] Using default product image URL for color:', currentProductInfo.color, 'view:', viewKey, imageUrl);
 
-// 异步尝试从 API 获取并更新（不阻塞当前加载）
-// 修复：使用函数式更新，避免依赖 productInfo 导致无限循环
+      // 异步尝试从 API 获取并更新（不阻塞当前加载）
+      // 修复：使用函数式更新，避免依赖 productInfo 导致无限循环
       if (typeof window !== 'undefined' && currentProductInfo.color) {
         getProductBaseImagesFromAPI(currentProductInfo.color).then((apiImages) => {
           if (apiImages && apiImages[viewKey] && apiImages[viewKey] !== imageUrl) {
             // 如果 API 返回了不同的 URL，更新 productInfo 并重新加载
             console.log('[DesignLab] API returned different image URL, updating productInfo');
             setProductInfo((prev) => {
-// 检查是否真的需要更新，避免不必要的更新
+              // 检查是否真的需要更新，避免不必要的更新
               if (prev.baseImages?.[viewKey] === apiImages[viewKey]) {
                 return prev;
               }
@@ -1050,20 +1050,20 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         });
       }
     } else {
-// 如果没有 productInfo，使用默认白色产品的图片，确保首页始终有底图显示
+      // 如果没有 productInfo，使用默认白色产品的图片，确保首页始终有底图显示
       const defaultColor = 'White';
       imageUrl = getDefaultProductImageUrl(defaultColor, viewKey);
       console.log('[DesignLab] No productInfo or color, using default White product image:', imageUrl);
     }
 
-// 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
-// 修复：添加完善的错误处理，确保图片加载失败时不会报错
+    // 修复：使用 Fabric.js 的 fromURL 方法，参考开源项目实现方式
+    // 修复：添加完善的错误处理，确保图片加载失败时不会报错
     console.log('[DesignLab] Loading background image:', imageUrl);
 
     let imageLoaded = false;
     let timeoutId: NodeJS.Timeout | null = null;
 
-// 图片加载成功回调
+    // 图片加载成功回调
     const onImageLoaded = (fabricImg: fabric.Image | null) => {
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -1080,39 +1080,39 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       console.log('[DesignLab] Background image loaded successfully:', imageUrl, 'Dimensions:', fabricImg.width, 'x', fabricImg.height);
 
       try {
-// 设置图片属性，确保底图不可选择和不可交互，但始终显示在最底层
-// 统一使用 center 原点
+        // 设置图片属性，确保底图不可选择和不可交互，但始终显示在最底层
+        // 统一使用 center 原点
         fabricImg.set({
           selectable: false,
           evented: false,
           excludeFromExport: true,
           name: 'background',
-originX: 'center', // 统一使用 center 原点以实现真正的居中
+          originX: 'center', // 统一使用 center 原点以实现真正的居中
           originY: 'center',
         });
 
-// 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
+        // 统一使用 calculateImageFit 函数，确保与 productImageLayer 一致的缩放和居中策略
         const fit = calculateImageFit({
           canvasWidth: CANVAS_WIDTH,
           canvasHeight: CANVAS_HEIGHT,
           imageWidth: fabricImg.width || 1,
           imageHeight: fabricImg.height || 1,
-safeAreaWidth: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
-safeAreaHeight: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
-fit: 'cover', // 修复：改为cover模式（填充安全区，视觉更大更突出）
+          safeAreaWidth: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+          safeAreaHeight: 0.9, // 修复：增大底图尺寸占比至90%（CustomInk风格：铺满画布主要区域）
+          fit: 'cover', // 修复：改为cover模式（填充安全区，视觉更大更突出）
         });
 
-// 应用 fit 结果（居中 + 缩放）
+        // 应用 fit 结果（居中 + 缩放）
         fabricImg.scale(fit.scale);
         fabricImg.set({
           left: fit.left,
           top: fit.top,
-originX: 'center', // 统一使用 center 原点以实现真正的居中
+          originX: 'center', // 统一使用 center 原点以实现真正的居中
           originY: 'center',
         });
         fabricImg.setCoords();
 
-// 移除旧背景
+        // 移除旧背景
         if (backgroundImageRef.current) {
           const objName = (backgroundImageRef.current as any).name || 'unnamed';
           const objLayerType = (backgroundImageRef.current as any).data?.layerType;
@@ -1128,8 +1128,8 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
 
         canvas.add(fabricImg);
 
-// 移动到最底层，确保所有功能（上传图片、文字、art）都能在底图上操作
-// 修复：Fabric.js v6 使用 sendObjectToBack
+        // 移动到最底层，确保所有功能（上传图片、文字、art）都能在底图上操作
+        // 修复：Fabric.js v6 使用 sendObjectToBack
         try {
           if (typeof (canvas as any).sendObjectToBack === 'function') {
             (canvas as any).sendObjectToBack(fabricImg);
@@ -1158,10 +1158,10 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         }
 
         backgroundImageRef.current = fabricImg;
-// 标记图片已加载，避免重复加载
+        // 标记图片已加载，避免重复加载
         const currentImageKey = `${viewKey}-${productInfoRef.current?.color || 'White'}-${imageUrl}`;
         backgroundImageLoadedRef.current = currentImageKey;
-// 释放加载锁（在标记完成之前）
+        // 释放加载锁（在标记完成之前）
         isLoadingBackgroundRef.current = false;
         console.log('[DesignLab] ✅ Background image added to canvas successfully, marked as loaded:', currentImageKey);
         canvas.renderAll();
@@ -1172,7 +1172,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       }
     };
 
-// 图片加载失败回调
+    // 图片加载失败回调
     const onImageError = (error: any) => {
       if (timeoutId) {
         clearTimeout(timeoutId);
@@ -1183,7 +1183,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       loadFallbackImage(viewKey, canvas);
     };
 
-// 设置超时，如果 10 秒内没加载成功，使用占位图
+    // 设置超时，如果 10 秒内没加载成功，使用占位图
     timeoutId = setTimeout(() => {
       if (!imageLoaded && !backgroundImageRef.current) {
         console.warn('[DesignLab] Image load timeout after 10 seconds, using fallback placeholder');
@@ -1191,8 +1191,8 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       }
     }, 10000);
 
-// 使用 try-catch 包装 fromURL 调用，确保错误被捕获
-// 修复：使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
+    // 使用 try-catch 包装 fromURL 调用，确保错误被捕获
+    // 修复：使用原生 Image 对象加载，然后转换为 Fabric Image，更可靠
     console.log('[DesignLab] Loading image using native Image object:', imageUrl);
 
     const imgElement = new Image();
@@ -1201,7 +1201,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     imgElement.onload = () => {
       console.log('[DesignLab] ✅ Native Image loaded successfully, dimensions:', imgElement.width, 'x', imgElement.height);
       try {
-// 使用 fabricRef 确保 fabric 对象已加载
+        // 使用 fabricRef 确保 fabric 对象已加载
         if (!fabricRef.current) {
           console.error('[DesignLab] ❌ Fabric not loaded yet, cannot create Fabric Image');
           onImageError(new Error('Fabric not loaded'));
@@ -1229,17 +1229,17 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       console.error('[DesignLab] Error setting image src:', error);
       onImageError(error);
     }
-}, [CANVAS_WIDTH, CANVAS_HEIGHT, loadFallbackImage]); // 移除 productInfo 依赖，使用 ref 访问
+  }, [CANVAS_WIDTH, CANVAS_HEIGHT, loadFallbackImage]); // 移除 productInfo 依赖，使用 ref 访问
 
-// 加载产品信息
-// 增强：添加variantId验证、错误处理和默认图片展示逻辑
+  // 加载产品信息
+  // 增强：添加variantId验证、错误处理和默认图片展示逻辑
   const loadProductInfo = useCallback(async (variantId?: string) => {
     if (!variantId) {
       // 如果没有 variantId，使用默认值或从 URL 获取
       const urlVariantId = searchParams?.get('variantId');
       if (!urlVariantId) {
         console.log('[DesignLab] No variantId provided, using default product');
-// 埋点：缺少variantId
+        // 埋点：缺少variantId
         analytics.track('designer_open_failed_missing_variant', {
           referrer: searchParams?.get('referrer') || 'unknown',
         });
@@ -1249,11 +1249,11 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       variantId = urlVariantId;
     }
 
-// 验证variantId格式（UUID格式）
+    // 验证variantId格式（UUID格式）
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(variantId)) {
       console.error('[DesignLab] Invalid variantId format:', variantId);
-// 埋点：无效variantId
+      // 埋点：无效variantId
       analytics.track('designer_open_failed_invalid_variant', {
         variantId: variantId,
         referrer: searchParams?.get('referrer') || 'unknown',
@@ -1266,17 +1266,17 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     try {
       const data = await productsApi.getByVariant(variantId);
 
-// 检查是否有默认图片
+      // 检查是否有默认图片
       const hasDefaultImage = data.baseImages?.front || data.baseImages?.back || data.baseImages?.sleeve;
 
       setProductInfo(data);
 
-// 使用 API 返回的颜色详细信息
+      // 使用 API 返回的颜色详细信息
       if (data.colorDetails && data.colorDetails.length > 0) {
-// API 已返回颜色详细信息，直接使用
+        // API 已返回颜色详细信息，直接使用
         setProductColors(data.colorDetails);
       } else if (data.variants && Array.isArray(data.variants)) {
-// 如果 API 没有返回 colorDetails，从变体数据构建
+        // 如果 API 没有返回 colorDetails，从变体数据构建
         const colorMap = new Map<string, { hex: string; sizes: Set<string>; isAvailable: boolean }>();
 
         data.variants.forEach((variant: any) => {
@@ -1314,7 +1314,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         });
         setProductColors(colors);
       } else {
-// 如果都没有，使用简化版本
+        // 如果都没有，使用简化版本
         const colors: ProductColor[] = data.colors.map((colorName) => ({
           name: colorName,
           hex: '#cccccc',
@@ -1324,15 +1324,15 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         setProductColors(colors);
       }
 
-// 检查画布是否有用户内容
+      // 检查画布是否有用户内容
       const hasUserContent = fabricCanvasRef.current && fabricCanvasRef.current.getObjects().some((obj: fabric.Object) => {
         const objName = (obj as any).name || '';
         return objName && objName !== 'background';
       });
 
-// 如果没有用户内容且有默认图片，显示默认图片
+      // 如果没有用户内容且有默认图片，显示默认图片
       if (!hasUserContent && hasDefaultImage && fabricCanvasRef.current) {
-// 埋点：显示默认图片
+        // 埋点：显示默认图片
         analytics.track('designer_default_image_shown', {
           variantId: variantId,
           imageUrl: data.baseImages?.front || data.baseImages?.back || data.baseImages?.sleeve,
@@ -1340,11 +1340,11 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         });
         loadBackgroundImage(currentView);
       } else if (fabricCanvasRef.current) {
-// 更新背景图片（即使有用户内容，也要更新背景）
+        // 更新背景图片（即使有用户内容，也要更新背景）
         loadBackgroundImage(currentView);
       }
 
-// 埋点：设计器打开成功
+      // 埋点：设计器打开成功
       analytics.track('designer_open_success', {
         variantId: variantId,
         productId: data.productId,
@@ -1354,19 +1354,19 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     } catch (error: any) {
       console.error('[DesignLab] Error loading product info:', error);
 
-// 错误处理：如果获取默认图失败，使用占位图
+      // 错误处理：如果获取默认图失败，使用占位图
       const errorMessage = error?.message || 'Unknown error';
       const isNotFound = errorMessage.includes('404') || errorMessage.includes('not found');
 
       if (isNotFound) {
-// 埋点：variantId不存在
+        // 埋点：variantId不存在
         analytics.track('designer_open_failed_missing_variant', {
           variantId: variantId,
           referrer: searchParams?.get('referrer') || 'unknown',
         });
         showErrorToast('Product variant not found. Please return to the product page and try again.');
       } else {
-// 埋点：获取默认图失败，使用占位图
+        // 埋点：获取默认图失败，使用占位图
         analytics.track('designer_default_image_fallback', {
           variantId: variantId,
           error: errorMessage,
@@ -1400,8 +1400,8 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     }
   }, [searchParams, currentView, loadBackgroundImage, showErrorToast, showWarningToast]);
 
-// 将 Fabric 画布状态转换为 DesignCanvasSnapshot
-// 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
+  // 将 Fabric 画布状态转换为 DesignCanvasSnapshot
+  // 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
   const canvasToSnapshot = useCallback((canvas: fabric.Canvas): DesignCanvasSnapshot => {
     const objects = canvas.getObjects()
       .filter((obj: fabric.Object) => obj.name !== 'background') // 排除背景图
@@ -1413,13 +1413,13 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     };
   }, [CANVAS_WIDTH, CANVAS_HEIGHT]);
 
-// 从 DesignCanvasSnapshot 恢复 Fabric 画布
-// 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
-// 修复：为恢复的对象添加删除控件
-// 修复：使用 fabricRef 确保 fabric 对象已加载
-// 修复：添加编辑会话保护，防止在编辑期间误删活动对象
+  // 从 DesignCanvasSnapshot 恢复 Fabric 画布
+  // 移到 handleAddNamesNumbers 之前，避免初始化顺序问题
+  // 修复：为恢复的对象添加删除控件
+  // 修复：使用 fabricRef 确保 fabric 对象已加载
+  // 修复：添加编辑会话保护，防止在编辑期间误删活动对象
   const snapshotToCanvas = useCallback((snapshot: DesignCanvasSnapshot, canvas: fabric.Canvas) => {
-// 检查 fabric 对象是否已加载
+    // 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       console.warn('[DesignLab] Fabric not loaded yet, cannot restore canvas snapshot');
       return;
@@ -1427,35 +1427,35 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
 
     const fabric = fabricRef.current;
 
-// 编辑会话保护：如果正在编辑对象，跳过快照清理
+    // 编辑会话保护：如果正在编辑对象，跳过快照清理
     if (isEditingObjectRef.current) {
       console.log('[DesignLab] Skipping snapshotToCanvas while editing object (protect editing object from stale snapshot overwrite)');
       return;
     }
 
-// 获取当前活动对象，在编辑会话期间保护它
+    // 获取当前活动对象，在编辑会话期间保护它
     const activeObject = canvas.getActiveObject();
     const isActiveText = activeObject && (activeObject.type === 'i-text' || activeObject.type === 'textbox');
     const currentPanel = toolPanelTypeRef.current;
     const isEditTextPanel = currentPanel === 'edit-text';
 
-// 修复：清除现有对象（保留背景、产品图片和上传图片）
-// 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
-// 重要：在编辑文本面板期间，保护当前活动的文本对象
+    // 修复：清除现有对象（保留背景、产品图片和上传图片）
+    // 重要：必须排除上传图片（layerType: 'upload'），避免误删用户上传的内容
+    // 重要：在编辑文本面板期间，保护当前活动的文本对象
     const objectsToRemove = canvas.getObjects().filter((obj: fabric.Object) => {
       const objName = (obj as any).name || '';
       const objLayerType = (obj as any).data?.layerType;
       const isUploadImage = objLayerType === 'upload';
 
-// 编辑会话保护：如果对象是当前活动的文本对象，且正在编辑面板，则保护它
+      // 编辑会话保护：如果对象是当前活动的文本对象，且正在编辑面板，则保护它
       if (isEditTextPanel && isActiveText && obj === activeObject) {
         console.log('[DesignLab] Protecting active text object during edit session:', objName);
         return false;
       }
 
-// 保留背景、产品图片和上传图片
-// 修复：保留debug标记对象（__debug_开头的对象），用于视觉验证
-// 修复：保留debug基准线（__debug_horizontal_line和__debug_vertical_line）
+      // 保留背景、产品图片和上传图片
+      // 修复：保留debug标记对象（__debug_开头的对象），用于视觉验证
+      // 修复：保留debug基准线（__debug_horizontal_line和__debug_vertical_line）
       const isDebugMarker = objName.startsWith('__debug_');
       return objName !== 'background' &&
         !objName.startsWith('product-image-') &&
@@ -1463,7 +1463,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         !isDebugMarker; // 重要：不移除上传图片、debug标记和debug基准线
     });
 
-// 标记删除来源为快照清理
+    // 标记删除来源为快照清理
     removalContextRef.current = 'snapshot-cleanup';
 
     objectsToRemove.forEach((obj: fabric.Object) => {
@@ -1478,16 +1478,16 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       canvas.remove(obj);
     });
 
-// 重置删除来源标记
+    // 重置删除来源标记
     removalContextRef.current = 'unknown';
 
-// 移除旧 deleteControl 逻辑，新的角控件系统会自动通过 object:added 事件应用
+    // 移除旧 deleteControl 逻辑，新的角控件系统会自动通过 object:added 事件应用
 
     // 恢复对象
     snapshot.objects.forEach((objData: any) => {
       fabric.util.enlivenObjects([objData], (objects: fabric.Object[]) => {
         objects.forEach(obj => {
-// 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
+          // 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
           canvas.add(obj);
         });
         canvas.renderAll();
@@ -1495,15 +1495,15 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     });
   }, []);
 
-// 初始化时加载产品信息
-// 修复：即使没有 variantId，也要加载默认产品图片
+  // 初始化时加载产品信息
+  // 修复：即使没有 variantId，也要加载默认产品图片
   useEffect(() => {
     const variantId = searchParams?.get('variantId');
     if (variantId) {
       loadProductInfo(variantId);
     } else {
-// 没有 variantId 时，设置默认产品信息以显示默认图片
-// 使用 Custom Ink 的真实图片 URL
+      // 没有 variantId 时，设置默认产品信息以显示默认图片
+      // 使用 Custom Ink 的真实图片 URL
       const defaultColor = 'White';
       const defaultProductInfo: ProductInfo = {
         productId: 'default',
@@ -1518,22 +1518,22 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     }
   }, [searchParams, loadProductInfo]);
 
-// 根据 designlab-index.jpeg，移除依赖 fabricCanvasRef.current 的 useEffect
+  // 根据 designlab-index.jpeg，移除依赖 fabricCanvasRef.current 的 useEffect
   // 因为 ref 不能作为依赖项，会导致问题。改为使用 canvasInitialized 状态标志
 
-// 当 productInfo 更新后，重新加载背景图片
-// 修复：使用 ref 跟踪，避免无限循环
-// 修复：loadBackgroundImage 内部已经检查重复加载，这里只需要检查 productInfo 是否真的变化了
-// 修复：检查加载锁，避免在加载过程中重复触发
+  // 当 productInfo 更新后，重新加载背景图片
+  // 修复：使用 ref 跟踪，避免无限循环
+  // 修复：loadBackgroundImage 内部已经检查重复加载，这里只需要检查 productInfo 是否真的变化了
+  // 修复：检查加载锁，避免在加载过程中重复触发
   useEffect(() => {
     if (fabricCanvasRef.current && canvasInitialized && productInfo && currentView !== 'zoom') {
-// 如果正在加载，跳过（避免重复触发）
+      // 如果正在加载，跳过（避免重复触发）
       if (isLoadingBackgroundRef.current) {
         console.log('[DesignLab] Background image is loading, skipping trigger from useEffect');
         return;
       }
 
-// 检查是否已经加载过当前视图的图片，避免重复加载
+      // 检查是否已经加载过当前视图的图片，避免重复加载
       const imageKey = `${currentView}-${productInfo.color}-${productInfo.baseImages?.[currentView] || ''}`;
       if (backgroundImageLoadedRef.current === imageKey) {
         console.log('[DesignLab] ProductInfo updated but image already loaded, skipping:', imageKey);
@@ -1541,13 +1541,13 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       }
 
       console.log('[DesignLab] ProductInfo updated, reloading background image');
-// loadBackgroundImage 内部会检查并标记已加载
+      // loadBackgroundImage 内部会检查并标记已加载
       loadBackgroundImage(currentView);
     }
-}, [productInfo?.color, productInfo?.baseImages?.front, productInfo?.baseImages?.back, productInfo?.baseImages?.sleeve, currentView, canvasInitialized, loadBackgroundImage]); // 添加 loadBackgroundImage 到依赖
+  }, [productInfo?.color, productInfo?.baseImages?.front, productInfo?.baseImages?.back, productInfo?.baseImages?.sleeve, currentView, canvasInitialized, loadBackgroundImage]); // 添加 loadBackgroundImage 到依赖
 
-// 工具点击处理
-// 修复：确保点击 Rail 按钮后保持激活状态，而不是切换
+  // 工具点击处理
+  // 修复：确保点击 Rail 按钮后保持激活状态，而不是切换
   const handleToolClick = (tool: string) => {
     // 如果点击的是当前激活的工具，保持激活状态（不取消）
     // 如果点击的是其他工具，切换到新工具
@@ -1557,28 +1557,28 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     // 如果已经是激活状态，保持激活（不设置为 null）
     setShowGuidePanel(false);
 
-// 根据工具类型切换工具面板
+    // 根据工具类型切换工具面板
     switch (tool) {
       case 'upload':
         setToolPanelType('upload');
-// 不再直接触发文件选择，而是显示 Upload 面板
+        // 不再直接触发文件选择，而是显示 Upload 面板
         break;
       case 'text':
         setToolPanelType('text');
-// 埋点：文字添加
+        // 埋点：文字添加
         analytics.track('text_added', {});
         break;
       case 'art':
         setToolPanelType('art');
-// 埋点：素材添加
+        // 埋点：素材添加
         analytics.track('art_added', {});
         break;
       case 'colors':
-// 显示颜色选择面板
+        // 显示颜色选择面板
         setToolPanelType('colors');
         break;
       case 'names':
-// 打开 Names & Numbers 模态
+        // 打开 Names & Numbers 模态
         setShowNamesNumbersModal(true);
         break;
       default:
@@ -1587,7 +1587,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     }
   };
 
-// 处理 Names & Numbers 添加到画布
+  // 处理 Names & Numbers 添加到画布
   const handleAddNamesNumbers = useCallback(async (items: Array<{ name: string; number: string; size: string }>, config: any) => {
     if (!fabricCanvasRef.current) {
       showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
@@ -1598,7 +1598,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
     const originalView = currentView;
 
     try {
-// 收集需要添加到不同视图的文本对象
+      // 收集需要添加到不同视图的文本对象
       const textsByView: Record<string, Array<{ text: string; fontSize: number; color: string; type: 'name' | 'number'; index: number }>> = {
         front: [],
         back: [],
@@ -1606,7 +1606,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
       };
 
       items.forEach((item, index) => {
-// 添加名字（如果配置了）
+        // 添加名字（如果配置了）
         if (config.addNames && item.name.trim()) {
           const fontSize = config.nameHeight * 30;
           const view = config.nameSide || 'front';
@@ -1620,7 +1620,7 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
           });
         }
 
-// 添加号码（如果配置了）
+        // 添加号码（如果配置了）
         if (config.addNumbers && item.number.trim()) {
           const fontSize = config.numberHeight * 30;
           const view = config.numberSide || 'back';
@@ -1635,48 +1635,48 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
         }
       });
 
-// 为每个视图添加文本对象
+      // 为每个视图添加文本对象
       for (const [view, texts] of Object.entries(textsByView)) {
         if (texts.length === 0 || view === 'zoom') continue;
 
         const targetView = view as 'front' | 'back' | 'sleeve';
 
-// 切换到目标视图（如果需要）
+        // 切换到目标视图（如果需要）
         if (targetView !== currentView) {
           setView(targetView);
           setCurrentView(targetView);
-// 等待视图切换和画布加载完成
+          // 等待视图切换和画布加载完成
           await new Promise(resolve => setTimeout(resolve, 100));
 
-// 加载目标视图的画布数据
+          // 加载目标视图的画布数据
           const targetViewCanvas = viewCanvases[targetView];
           if (targetViewCanvas && fabricCanvasRef.current) {
             snapshotToCanvas(targetViewCanvas, fabricCanvasRef.current);
-// 重新加载背景图片
+            // 重新加载背景图片
             loadBackgroundImage(targetView);
           }
         }
 
-// 添加文本对象到当前画布
+        // 添加文本对象到当前画布
         if (fabricCanvasRef.current) {
           const canvas = fabricCanvasRef.current;
 
           texts.forEach((textData, textIndex) => {
-// 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
+            // 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
             const textObj = new fabric.IText(textData.text, {
-// 交互属性：确保对象可选择、可编辑、有控制点和边框
+              // 交互属性：确保对象可选择、可编辑、有控制点和边框
               selectable: true,
               evented: true,
               hasControls: true,
               hasBorders: true,
-// 锁定属性：允许所有变换操作
+              // 锁定属性：允许所有变换操作
               lockRotation: false,
               lockScalingX: false,
               lockScalingY: false,
               lockUniScaling: false,
               lockMovementX: false,
               lockMovementY: false,
-// 变换中心：使用中心点进行缩放和旋转
+              // 变换中心：使用中心点进行缩放和旋转
               centeredScaling: true,
               centeredRotation: true,
               left: CANVAS_WIDTH / 2,
@@ -1690,28 +1690,28 @@ originX: 'center', // 统一使用 center 原点以实现真正的居中
               originY: 'center',
               data: {
                 layerType: 'text',
-zIndex: 20, // 文字图层 zIndex 为 20（最上层）
+                zIndex: 20, // 文字图层 zIndex 为 20（最上层）
               },
             });
 
-// 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
+            // 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
 
             canvas.add(textObj);
           });
 
           canvas.renderAll();
 
-// 保存到对应视图的画布
+          // 保存到对应视图的画布
           const snapshot = canvasToSnapshot(canvas);
           setCanvas(snapshot, { pushHistory: true });
         }
       }
 
-// 恢复原始视图
+      // 恢复原始视图
       if (originalView !== currentView) {
         setView(originalView);
         setCurrentView(originalView);
-// 加载原始视图的画布数据
+        // 加载原始视图的画布数据
         const originalViewCanvas = viewCanvases[originalView];
         if (originalViewCanvas && fabricCanvasRef.current) {
           snapshotToCanvas(originalViewCanvas, fabricCanvasRef.current);
@@ -1724,7 +1724,7 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层）
       console.error('[DesignLab] Error adding names and numbers:', error);
       alert('Failed to add names and numbers: ' + (error as Error).message);
 
-// 出错时恢复原始视图
+      // 出错时恢复原始视图
       if (originalView !== currentView) {
         setView(originalView);
         setCurrentView(originalView);
@@ -1737,20 +1737,20 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层）
     }
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, currentView, viewCanvases, canvasToSnapshot, snapshotToCanvas, setCanvas, setView, loadBackgroundImage]);
 
-// 处理颜色选择
-// 根据 designlab-colors01.jpeg，优化颜色选择后立即更新所有视图的图片
-// 确保颜色变化时更新所有视图（front/back/sleeve）的底图
+  // 处理颜色选择
+  // 根据 designlab-colors01.jpeg，优化颜色选择后立即更新所有视图的图片
+  // 确保颜色变化时更新所有视图（front/back/sleeve）的底图
   const handleColorSelect = useCallback(async (colorName: string) => {
     if (!productInfo) return;
 
     try {
       console.log('[DesignLab] Changing color to:', colorName);
 
-// 从当前产品信息中查找对应颜色的变体
+      // 从当前产品信息中查找对应颜色的变体
       // 如果 productInfo 包含 variants 数据，直接使用
       let targetVariantId: string | null = null;
 
-// 尝试从 API 返回的变体数据中查找
+      // 尝试从 API 返回的变体数据中查找
       const productData = productInfo as any;
       if (productData.variants && Array.isArray(productData.variants)) {
         // 优先查找 M 尺寸的变体
@@ -1768,7 +1768,7 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层）
         }
       }
 
-// 如果找不到变体，尝试通过产品 slug 获取完整产品信息
+      // 如果找不到变体，尝试通过产品 slug 获取完整产品信息
       if (!targetVariantId) {
         try {
           const productSlug = productInfo.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -1793,27 +1793,27 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层）
       }
 
       if (targetVariantId) {
-// 重新加载产品信息（使用新颜色的变体）
+        // 重新加载产品信息（使用新颜色的变体）
         await loadProductInfo(targetVariantId);
       } else {
-// 修复：如果找不到变体，立即更新颜色和 baseImages
-// 确保立即更新所有视图的图片
-// 更新：立即更新所有视图的底图，确保颜色变化时所有视图都更新
+        // 修复：如果找不到变体，立即更新颜色和 baseImages
+        // 确保立即更新所有视图的图片
+        // 更新：立即更新所有视图的底图，确保颜色变化时所有视图都更新
         const newBaseImages = getDefaultProductBaseImages(colorName);
         setProductInfo({
           ...productInfo,
           color: colorName,
-baseImages: newBaseImages, // 立即更新图片 URL，确保颜色切换时图片立即更新
+          baseImages: newBaseImages, // 立即更新图片 URL，确保颜色切换时图片立即更新
         });
 
-// 立即更新所有视图的背景图片（front/back/sleeve），确保颜色变化时所有视图的底图都更新
+        // 立即更新所有视图的背景图片（front/back/sleeve），确保颜色变化时所有视图的底图都更新
         if (fabricCanvasRef.current) {
           // 更新当前视图的背景图片
           if (currentView !== 'zoom') {
             loadBackgroundImage(currentView);
           }
 
-// 更新其他视图的背景图片（如果它们已经加载过）
+          // 更新其他视图的背景图片（如果它们已经加载过）
           // 注意：这里只更新当前画布，其他视图会在切换时自动加载新图片
           // 但为了确保一致性，我们也可以在这里预加载
           const viewsToUpdate: Array<'front' | 'back' | 'sleeve'> = ['front', 'back', 'sleeve'];
@@ -1831,13 +1831,13 @@ baseImages: newBaseImages, // 立即更新图片 URL，确保颜色切换时图�
     }
   }, [productInfo, currentView, loadBackgroundImage, loadProductInfo]);
 
-// Home 面板操作处理
-// 移除：products、layers、templates、export 四个功能
+  // Home 面板操作处理
+  // 移除：products、layers、templates、export 四个功能
   const handleHomeAction = (action: 'upload' | 'text' | 'art') => {
     handleToolClick(action);
   };
 
-// 返回 Home 面板
+  // 返回 Home 面板
   const handleBackToHome = () => {
     setToolPanelType('home');
     setActiveTool(null);
@@ -1846,16 +1846,16 @@ baseImages: newBaseImages, // 立即更新图片 URL，确保颜色切换时图�
     setSelectedArt(null);
   };
 
-// 添加文本功能
-// 修复：确保添加文本后正确切换到 Edit Text 面板，不会被 selection:cleared 事件覆盖
-// 修复：使用 fabricRef 确保 fabric 对象已加载
+  // 添加文本功能
+  // 修复：确保添加文本后正确切换到 Edit Text 面板，不会被 selection:cleared 事件覆盖
+  // 修复：使用 fabricRef 确保 fabric 对象已加载
   const handleAddText = useCallback((text: string) => {
     if (!fabricCanvasRef.current) {
       alert('Canvas not initialized');
       return;
     }
 
-// 检查 fabric 对象是否已加载
+    // 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       alert('Design Lab is still loading. Please wait...');
       return;
@@ -1865,10 +1865,10 @@ baseImages: newBaseImages, // 立即更新图片 URL，确保颜色切换时图�
     const canvas = fabricCanvasRef.current;
 
     try {
-// 设置标志，防止选择清除事件在添加对象后立即触发
+      // 设置标志，防止选择清除事件在添加对象后立即触发
       isAddingObjectRef.current = true;
 
-// 获取画布逻辑尺寸
+      // 获取画布逻辑尺寸
       // Fabric.js 的坐标系统基于逻辑尺寸（1000x1200），而不是实际像素尺寸
       // 即使画布的实际像素尺寸是 1000 * devicePixelRatio，坐标系统仍然是 1000x1200
       // 所以直接使用常量 CANVAS_WIDTH 和 CANVAS_HEIGHT 是正确的
@@ -1877,39 +1877,39 @@ baseImages: newBaseImages, // 立即更新图片 URL，确保颜色切换时图�
       const scaleX = vpt ? vpt[0] : 1;
       const scaleY = vpt ? vpt[3] : 1;
 
-// 获取画布的逻辑尺寸
+      // 获取画布的逻辑尺寸
       // canvas.width 返回的是实际像素尺寸，需要除以缩放因子得到逻辑尺寸
       // 如果 viewport transform 是单位矩阵，scaleX 和 scaleY 都是 1
       const canvasLogicalWidth = (canvas.width || CANVAS_WIDTH) / scaleX;
       const canvasLogicalHeight = (canvas.height || CANVAS_HEIGHT) / scaleY;
 
-// 计算画布逻辑中心点
+      // 计算画布逻辑中心点
       // 由于 originX 和 originY 设置为 'center'，文本对象的 left/top 应该指向中心点
       const centerX = canvasLogicalWidth / 2;
       const centerY = canvasLogicalHeight / 2;
 
-// 创建 Fabric IText 对象
-// 修复：设置 zIndex 确保在文字图层（最上层）
-// 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
+      // 创建 Fabric IText 对象
+      // 修复：设置 zIndex 确保在文字图层（最上层）
+      // 修复：添加交互属性，确保文本对象可以拖动、缩放、旋转
       const textObj = new fabric.IText(text, {
-// 交互属性：确保对象可选择、可编辑、有控制点和边框
+        // 交互属性：确保对象可选择、可编辑、有控制点和边框
         selectable: true,
         evented: true,
         hasControls: true,
         hasBorders: true,
-// 锁定属性：允许所有变换操作
+        // 锁定属性：允许所有变换操作
         lockRotation: false,
         lockScalingX: false,
         lockScalingY: false,
         lockUniScaling: false,
         lockMovementX: false,
         lockMovementY: false,
-// 变换中心：使用中心点进行缩放和旋转
+        // 变换中心：使用中心点进行缩放和旋转
         centeredScaling: true,
         centeredRotation: true,
         data: {
           layerType: 'text',
-zIndex: 20, // 文字图层 zIndex 为 20（最上层，高于上传图层的 10）
+          zIndex: 20, // 文字图层 zIndex 为 20（最上层，高于上传图层的 10）
         },
         left: centerX,
         top: centerY,
@@ -1921,19 +1921,19 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层，高于上传图层的 10
         originY: 'center'
       });
 
-// 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
+      // 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
 
-// 先添加对象到画布
+      // 先添加对象到画布
       canvas.add(textObj);
 
-// 确保坐标正确更新
+      // 确保坐标正确更新
       textObj.setCoords();
 
-// 设置对象并选中，这会触发 selection:created 事件
+      // 设置对象并选中，这会触发 selection:created 事件
       canvas.setActiveObject(textObj);
       canvas.renderAll();
 
-// 添加调试日志，记录画布尺寸、文本位置和 viewport transform
+      // 添加调试日志，记录画布尺寸、文本位置和 viewport transform
       console.log('[DesignLab] Text added at center:', {
         canvasActualWidth: canvas.width,
         canvasActualHeight: canvas.height,
@@ -1952,18 +1952,18 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层，高于上传图层的 10
         CANVAS_HEIGHT,
       });
 
-// 设置状态，handleSelection 会识别文本对象并切换到 Edit Text 面板
+      // 设置状态，handleSelection 会识别文本对象并切换到 Edit Text 面板
       // 但我们也在这里设置，确保即使 handleSelection 没有正确触发，面板也会切换
       setSelectedText(textObj);
       setToolPanelType('edit-text');
 
       console.log('[DesignLab] Text added and selected, panel should be edit-text');
 
-// 同步到 store
+      // 同步到 store
       const snapshot = canvasToSnapshot(canvas);
       setCanvas(snapshot, { pushHistory: true });
 
-// 延迟重置标志，确保 selection:created 事件先触发
+      // 延迟重置标志，确保 selection:created 事件先触发
       setTimeout(() => {
         isAddingObjectRef.current = false;
       }, 100);
@@ -1974,15 +1974,15 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层，高于上传图层的 10
     }
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
-// 添加艺术素材功能
-// 修复：使用 fabricRef 确保 fabric 对象已加载
+  // 添加艺术素材功能
+  // 修复：使用 fabricRef 确保 fabric 对象已加载
   const handleAddArt = useCallback((artUrl: string, artName: string) => {
     if (!fabricCanvasRef.current) {
       showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
       return;
     }
 
-// 检查 fabric 对象是否已加载
+    // 检查 fabric 对象是否已加载
     if (!fabricRef.current) {
       showErrorToast('Design Lab is still loading. Please wait...');
       return;
@@ -1990,33 +1990,33 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层，高于上传图层的 10
 
     const fabric = fabricRef.current;
 
-// 使用原生 Image 对象加载图片
+    // 使用原生 Image 对象加载图片
     const imgElement = new Image();
     imgElement.crossOrigin = 'anonymous';
 
     imgElement.onload = () => {
       try {
-// 创建 Fabric Image 对象
-// 修复：添加完整的交互属性，确保艺术素材对象可以拖动、缩放、旋转
+        // 创建 Fabric Image 对象
+        // 修复：添加完整的交互属性，确保艺术素材对象可以拖动、缩放、旋转
         const fabricImage = new fabric.Image(imgElement, {
-// 交互属性：确保对象可选择、可编辑、有控制点和边框
+          // 交互属性：确保对象可选择、可编辑、有控制点和边框
           selectable: true,
           evented: true,
           hasControls: true,
           hasBorders: true,
-// 锁定属性：允许所有变换操作
+          // 锁定属性：允许所有变换操作
           lockRotation: false,
           lockScalingX: false,
           lockScalingY: false,
           lockUniScaling: false,
           lockMovementX: false,
           lockMovementY: false,
-// 变换中心：使用中心点进行缩放和旋转
+          // 变换中心：使用中心点进行缩放和旋转
           centeredScaling: true,
           centeredRotation: true,
         });
 
-// 智能缩放：缩放到画布的 30%
+        // 智能缩放：缩放到画布的 30%
         const SCALE_RATIO = 0.3;
         const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
         const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
@@ -2030,32 +2030,32 @@ zIndex: 20, // 文字图层 zIndex 为 20（最上层，高于上传图层的 10
 
         fabricImage.scale(scale);
 
-// 居中位置
+        // 居中位置
         fabricImage.set({
           left: CANVAS_WIDTH / 2,
           top: CANVAS_HEIGHT / 2,
           originX: 'center',
           originY: 'center',
-name: `art_${Date.now()}`, // 使用 art_ 前缀标识艺术素材
+          name: `art_${Date.now()}`, // 使用 art_ 前缀标识艺术素材
           data: {
             layerType: 'art',
-zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和文字图层的 20 之间）
+            zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和文字图层的 20 之间）
           },
         });
 
         const canvas = fabricCanvasRef.current;
         if (canvas) {
-// 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
+          // 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
 
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
           canvas.renderAll();
 
-// 自动切换到 Edit Art 面板
+          // 自动切换到 Edit Art 面板
           setSelectedArt(fabricImage);
           setToolPanelType('edit-art');
 
-// 同步到 store
+          // 同步到 store
           const snapshot = canvasToSnapshot(canvas);
           setCanvas(snapshot, { pushHistory: true });
         }
@@ -2073,15 +2073,15 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
     imgElement.src = artUrl;
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
-// 重新选择 Art（返回到 Art Categories）
+  // 重新选择 Art（返回到 Art Categories）
   const handleChangeArt = useCallback(() => {
     setToolPanelType('art');
     setSelectedArt(null);
   }, []);
 
-// 文件上传处理
-// 添加详细的调试日志和错误处理
-// 添加文件验证和Toast错误提示
+  // 文件上传处理
+  // 添加详细的调试日志和错误处理
+  // 添加文件验证和Toast错误提示
   const handleFileUpload = useCallback((file: File) => {
     console.log('[DesignLab] handleFileUpload called:', {
       fileName: file.name,
@@ -2090,13 +2090,13 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
       canvasInitialized: !!fabricCanvasRef.current
     });
 
-// 文件格式验证（支持 AVIF 和 WebP）
+    // 文件格式验证（支持 AVIF 和 WebP）
     if (!file.type.startsWith('image/')) {
       showErrorToast('Please upload an image file (JPG, PNG, GIF, WebP, AVIF, etc.)');
       return;
     }
 
-// 文件大小验证（20 MB = 20 * 1024 * 1024 bytes）
+    // 文件大小验证（20 MB = 20 * 1024 * 1024 bytes）
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
     if (file.size > MAX_FILE_SIZE) {
       const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
@@ -2104,14 +2104,14 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
       return;
     }
 
-// 文件类型验证（支持 AVIF 和 WebP 格式）
+    // 文件类型验证（支持 AVIF 和 WebP 格式）
     const allowedTypes = [
       'image/jpeg',
       'image/jpg',
       'image/png',
       'image/gif',
       'image/webp',
-'image/avif', // 新增 AVIF 格式支持
+      'image/avif', // 新增 AVIF 格式支持
       'image/svg+xml'
     ];
     const normalizedFileType = file.type.toLowerCase();
@@ -2120,7 +2120,7 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
       return;
     }
 
-// 分辨率检查（警告，不阻止上传）
+    // 分辨率检查（警告，不阻止上传）
     const checkImageResolution = (imageUrl: string) => {
       const img = new Image();
       img.onload = () => {
@@ -2132,7 +2132,7 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
           showWarningToast(
             `Low resolution detected (${img.width}×${img.height}px). Recommended: 300 DPI or higher for best print quality. You can continue, but we'll remind you again during checkout.`
           );
-// 标记为低分辨率，在 Content Check 时再次提醒
+          // 标记为低分辨率，在 Content Check 时再次提醒
           // 这个标记可以存储在对象的数据中
         }
       };
@@ -2145,7 +2145,7 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
       return;
     }
 
-// 显示上传进度提示
+    // 显示上传进度提示
     showSuccessToast(`Uploading "${file.name}"...`);
 
     const reader = new FileReader();
@@ -2165,14 +2165,14 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
           return;
         }
 
-// 检查分辨率（异步，不阻塞上传）
+        // 检查分辨率（异步，不阻塞上传）
         if (file.type !== 'image/svg+xml') {
           checkImageResolution(imageUrl);
         }
 
-// 使用原生 Image 对象加载图片
+        // 使用原生 Image 对象加载图片
         const imgElement = new Image();
-// 对于 data URL，不需要设置 crossOrigin
+        // 对于 data URL，不需要设置 crossOrigin
         if (!imageUrl.startsWith('data:')) {
           imgElement.crossOrigin = 'anonymous';
         }
@@ -2186,7 +2186,7 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
           });
 
           try {
-// 检查 fabric 对象是否已加载
+            // 检查 fabric 对象是否已加载
             if (!fabricRef.current) {
               console.error('[DesignLab] ❌ Fabric not loaded yet, cannot create Fabric Image');
               showErrorToast('Canvas library not loaded. Please refresh the page.');
@@ -2194,38 +2194,38 @@ zIndex: 15, // 艺术素材图层 zIndex 为 15（介于上传图层的 10 和�
             }
             const fabric = fabricRef.current;
 
-// 检查画布是否已初始化
+            // 检查画布是否已初始化
             if (!fabricCanvasRef.current) {
               console.error('[DesignLab] ❌ Canvas not initialized, cannot add image');
               showErrorToast('Canvas not initialized. Please wait for the design lab to load.');
               return;
             }
 
-// 设置标志，防止 selection:cleared 事件在添加对象后立即触发导致图片被移除
+            // 设置标志，防止 selection:cleared 事件在添加对象后立即触发导致图片被移除
             isAddingObjectRef.current = true;
 
-// 创建 Fabric Image 对象
-// 修复：设置 zIndex 确保在上传图层（高于产品图片）
+            // 创建 Fabric Image 对象
+            // 修复：设置 zIndex 确保在上传图层（高于产品图片）
             const fabricImage = new fabric.Image(imgElement, {
-// 确保图片对象是可选择和可编辑的
-// 修复：添加完整的交互属性，确保图片对象可以拖动、缩放、旋转
+              // 确保图片对象是可选择和可编辑的
+              // 修复：添加完整的交互属性，确保图片对象可以拖动、缩放、旋转
               selectable: true,
               evented: true,
               hasControls: true,
               hasBorders: true,
-// 锁定属性：允许所有变换操作
+              // 锁定属性：允许所有变换操作
               lockRotation: false,
               lockScalingX: false,
               lockScalingY: false,
               lockUniScaling: false,
               lockMovementX: false,
               lockMovementY: false,
-// 变换中心：使用中心点进行缩放和旋转
+              // 变换中心：使用中心点进行缩放和旋转
               centeredScaling: true,
               centeredRotation: true,
               data: {
                 layerType: 'upload',
-zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
+                zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
               },
             });
 
@@ -2236,7 +2236,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
               scaleY: fabricImage.scaleY
             });
 
-// 智能缩放：缩放到画布的 30%
+            // 智能缩放：缩放到画布的 30%
             const SCALE_RATIO = 0.3;
             const targetMaxWidth = CANVAS_WIDTH * SCALE_RATIO;
             const targetMaxHeight = CANVAS_HEIGHT * SCALE_RATIO;
@@ -2260,27 +2260,27 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
 
             fabricImage.scale(scale);
 
-// 居中位置
+            // 居中位置
             fabricImage.set({
               left: CANVAS_WIDTH / 2,
               top: CANVAS_HEIGHT / 2,
               originX: 'center',
               originY: 'center',
               name: `image_${Date.now()}`,
-// Fix selection overlap: verify pixels for transparency
+              // Fix selection overlap: verify pixels for transparency
               perPixelTargetFind: true,
               targetFindTolerance: 4,
-// Fix control misalignment: ensure no padding shifts controls
+              // Fix control misalignment: ensure no padding shifts controls
               padding: 0,
               transparentCorners: false,
             });
 
-// 确保坐标已更新
+            // 确保坐标已更新
             fabricImage.setCoords();
 
             const canvas = fabricCanvasRef.current;
             if (canvas) {
-// 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
+              // 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
 
               console.log('[DesignLab] Adding image to canvas:', {
                 canvasWidth: canvas.width,
@@ -2290,11 +2290,11 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
                 imageScale: scale
               });
 
-// 1. 先添加对象到画布
+              // 1. 先添加对象到画布
               canvas.add(fabricImage);
               canvas.renderAll();
 
-// 验证图片是否真的在画布上
+              // 验证图片是否真的在画布上
               const allObjects = canvas.getObjects();
               const addedImage = allObjects.find((obj: any) => obj === fabricImage);
 
@@ -2314,23 +2314,23 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
                 imageIndex: allObjects.indexOf(fabricImage),
               });
 
-// 2. 使用 requestAnimationFrame 确保渲染完成后再选中对象
+              // 2. 使用 requestAnimationFrame 确保渲染完成后再选中对象
               // 这样可以确保 selection:created 事件正确触发
               console.log('[DesignLab] Scheduling setActiveObject in requestAnimationFrame');
               requestAnimationFrame(() => {
                 console.log('[DesignLab] Executing setActiveObject for uploaded image');
-// 选中对象，这会触发 selection:created 事件
+                // 选中对象，这会触发 selection:created 事件
                 canvas.setActiveObject(fabricImage);
                 canvas.renderAll();
 
-// 3. 在下一个帧设置状态和切换面板，确保 selection:created 事件先处理
+                // 3. 在下一个帧设置状态和切换面板，确保 selection:created 事件先处理
                 requestAnimationFrame(() => {
                   console.log('[DesignLab] Setting selectedImage and switching to edit-upload panel');
-// 自动切换到 Edit Upload 面板
+                  // 自动切换到 Edit Upload 面板
                   setSelectedImage(fabricImage);
                   setToolPanelType('edit-upload');
 
-// 强制触发图层列表更新
+                  // 强制触发图层列表更新
                   console.log('[DesignLab] Triggering handleCanvasUpdate to refresh layer list');
                   handleCanvasUpdate();
 
@@ -2338,7 +2338,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
                 });
               });
 
-// 保存到 Recent Uploads
+              // 保存到 Recent Uploads
               const uploadId = `upload_${Date.now()}`;
               const thumbnail = imageUrl; // 使用原始图片 URL 作为缩略图
               setRecentUploads(prev => {
@@ -2347,26 +2347,26 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
                 return newUploads.slice(0, 10);
               });
 
-// 保存 uploadId 以便评分时使用
+              // 保存 uploadId 以便评分时使用
               setCurrentUploadId(uploadId);
 
-// 同步到 store（在上传成功后立即同步，不等待选中）
+              // 同步到 store（在上传成功后立即同步，不等待选中）
               const snapshot = canvasToSnapshot(canvas);
               setCanvas(snapshot, { pushHistory: true });
 
               console.log('[DesignLab] Image upload completed successfully');
 
-// 埋点：上传成功
+              // 埋点：上传成功
               analytics.track('upload_success', {
                 uploadId: uploadId,
                 fileSize: file.size,
                 fileType: file.type,
               });
 
-// 上传成功提示
+              // 上传成功提示
               showSuccessToast(`Image "${file.name}" uploaded successfully!`);
 
-// 延长延迟重置标志，确保 selection:created 事件先触发，并且给用户足够的时间与对象交互
+              // 延长延迟重置标志，确保 selection:created 事件先触发，并且给用户足够的时间与对象交互
               // 从300ms延长到500ms，给更多时间让 selection:created 事件处理完成
               setTimeout(() => {
                 isAddingObjectRef.current = false;
@@ -2389,7 +2389,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
           console.error('[DesignLab] Image URL (first 100 chars):', imageUrl?.substring(0, 100));
           showErrorToast('Failed to load the image. The file may be corrupted. Please try a different file.');
 
-// 埋点：上传失败
+          // 埋点：上传失败
           analytics.track('upload_failed', {
             fileName: file.name,
             fileSize: file.size,
@@ -2418,7 +2418,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
     reader.readAsDataURL(file);
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
-// 拖拽上传功能
+  // 拖拽上传功能
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
@@ -2432,14 +2432,14 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
         const file = files[0];
-// 支持 AVIF 和 WebP 格式的拖拽上传
+        // 支持 AVIF 和 WebP 格式的拖拽上传
         const allowedTypes = [
           'image/jpeg',
           'image/jpg',
           'image/png',
           'image/gif',
           'image/webp',
-'image/avif', // 新增 AVIF 格式支持
+          'image/avif', // 新增 AVIF 格式支持
           'image/svg+xml'
         ];
         const fileType = file.type.toLowerCase();
@@ -2453,7 +2453,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
       }
     };
 
-// 在整个画布区域监听拖拽
+    // 在整个画布区域监听拖拽
     const canvasElement = canvasRef.current;
     if (canvasElement) {
       canvasElement.addEventListener('dragover', handleDragOver);
@@ -2468,8 +2468,8 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
     };
   }, [handleFileUpload]);
 
-// 画布更新回调
-// 添加调试日志，确保回调被正确调用
+  // 画布更新回调
+  // 添加调试日志，确保回调被正确调用
   const handleCanvasUpdate = useCallback(() => {
     if (fabricCanvasRef.current) {
       console.log('[DesignLab] Canvas updated, saving snapshot');
@@ -2480,7 +2480,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
     }
   }, [canvasToSnapshot, setCanvas]);
 
-// Recent Upload Click 处理
+  // Recent Upload Click 处理
   const handleRecentUploadClick = useCallback((upload: { id: string; url: string; thumbnail: string }) => {
     if (!fabricCanvasRef.current) return;
 
@@ -2489,7 +2489,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
 
     imgElement.onload = () => {
       try {
-// 检查 fabric 对象是否已加载
+        // 检查 fabric 对象是否已加载
         if (!fabricRef.current) {
           console.error('[DesignLab] Fabric not loaded yet, cannot create Fabric Image');
           return;
@@ -2516,7 +2516,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
 
         const canvas = fabricCanvasRef.current;
         if (canvas) {
-// 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
+          // 角控件会在 object:added 事件中自动应用（通过 registerCornerControls）
 
           canvas.add(fabricImage);
           canvas.setActiveObject(fabricImage);
@@ -2541,19 +2541,19 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
     imgElement.src = upload.url;
   }, [CANVAS_WIDTH, CANVAS_HEIGHT, canvasToSnapshot, setCanvas]);
 
-// Reset To Original 处理
+  // Reset To Original 处理
   const handleResetUpload = useCallback(() => {
     // Reset 逻辑在 EditUploadPanel 中处理
     console.log('[DesignLab] Reset upload requested');
   }, []);
 
-// Save Design 处理
-// 更新：打开Save & Share模态框
+  // Save Design 处理
+  // 更新：打开Save & Share模态框
   const handleSaveDesign = useCallback(() => {
     setShowSaveShareModal(true);
   }, []);
 
-// 实际保存设计的处理函数
+  // 实际保存设计的处理函数
   const handleSaveDesignConfirm = useCallback(async (newName?: string) => {
     if (!fabricCanvasRef.current) return;
 
@@ -2561,21 +2561,21 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
       const snapshot = canvasToSnapshot(fabricCanvasRef.current);
       setCanvas(snapshot, { pushHistory: true });
 
-// 更新设计名称如果提供了新名称
+      // 更新设计名称如果提供了新名称
       if (newName && newName !== designName) {
         setDesignName(newName);
       }
 
       const currentName = newName || designName;
 
-// Generate thumbnail for both local and cloud storage
+      // Generate thumbnail for both local and cloud storage
       const thumbnailDataUrl = fabricCanvasRef.current.toDataURL({
         format: 'png',
         quality: 0.8,
         multiplier: 0.5,
       });
 
-// Force sync to local storage immediately
+      // Force sync to local storage immediately
       if (productInfo) {
         saveDesignToLocalStorage(
           currentName,
@@ -2602,7 +2602,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
       if (!designId) {
         let productVariantId = productInfo?.variantId;
 
-// Fix: Improve fallback logic for default/missing variant
+        // Fix: Improve fallback logic for default/missing variant
         if (!productVariantId || productVariantId === 'default') {
           try {
             console.log('[DesignLab] Finding valid variant for save...');
@@ -2651,7 +2651,7 @@ zIndex: 10, // 上传图层 zIndex 为 10（高于产品图片的 0）
           name: currentName,
           canvas: snapshot,
           productVariantId: productVariantId || '',
-thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
+          thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
         };
 
         const response = await designLabApi.createDraft(payload);
@@ -2666,12 +2666,12 @@ thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
         const payload = {
           name: currentName,
           canvas: snapshot,
-thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
+          thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
         };
         await designLabApi.updateDraft(designId, payload);
       }
 
-// 埋点：设计保存
+      // 埋点：设计保存
       analytics.track('design_saved', {
         designId: designId,
         designName: currentName,
@@ -2686,10 +2686,10 @@ thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
     }
   }, [fabricCanvasRef, canvasToSnapshot, setCanvas, currentDesignId, designName, productInfo, setCurrentDesignId, currentView]);
 
-// Get Price 处理
-// 更新：打开完整的Get Price流程模态框
+  // Get Price 处理
+  // 更新：打开完整的Get Price流程模态框
   const handleGetPrice = useCallback(async () => {
-// 埋点：Get Price 点击
+    // 埋点：Get Price 点击
     analytics.track('get_price_clicked', {
       designId: currentDesignId,
       productId: productInfo?.productId,
@@ -2701,7 +2701,7 @@ thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
       return;
     }
 
-// 打开Get Price流程模态框
+    // 打开Get Price流程模态框
     // 确保设计已保存
     let designId = currentDesignId;
     if (!designId) {
@@ -3314,67 +3314,7 @@ thumbnailUrl: thumbnailDataUrl, // Sync thumbnail to cloud
 
 // 注册通用角控件（删除/复制/缩放）for upload/text/art 三类对象
         // 替换旧的 deleteControl 实现，使用新的模块化角控件系统
-        const matcher = (obj: fabric.Object) => {
-          const layerType = (obj as any).data?.layerType;
-          const name = (obj as any).name || '';
-          const objType = obj.type;
 
-          // upload 对象：layerType === 'upload' 或 name 以 image_ 开头（排除 art_）
-          if (layerType === 'upload' || (name.startsWith('image_') && !name.startsWith('art_'))) {
-            return true;
-          }
-
-          // text 对象：layerType === 'text' 或 type 是 i-text/text/textbox
-          if (layerType === 'text' || objType === 'i-text' || objType === 'text' || objType === 'textbox' || name.startsWith('text_')) {
-            return true;
-          }
-
-          // art 对象：layerType === 'art' 或 name 以 art_ 开头
-          if (layerType === 'art' || name.startsWith('art_')) {
-            return true;
-          }
-
-          return false;
-        };
-
-        try {
-/*
-          registerCornerControls({
-            fabric: fabricModule,
-            canvas: fabricCanvas,
-            matcher,
-            options: {
-              controlSize: 160, 
-              buttonBackground: '#ffffff',
-              buttonBorder: '#e5e7eb',
-              buttonBorderWidth: 3,
-              deleteIconColor: '#ef4444',
-              copyIconColor: '#2563eb',
-              resizeIconColor: '#2563eb',
-              onObjectDeleted: (target, targetCanvas) => {
-                removalContextRef.current = 'user-delete';
-                const snapshot = canvasToSnapshot(targetCanvas);
-                setCanvas(snapshot, { pushHistory: true });
-              },
-              onObjectModified: (target, targetCanvas) => {
-                const snapshot = canvasToSnapshot(targetCanvas);
-                setCanvas(snapshot, { pushHistory: true });
-              }
-            }
-          });
-          */
-
-
-    console.log('[DesignLab] ✅ 通用角控件已注册（upload/text/art 三类对象）');
-
-
-// 为现有对象应用角控件（如果 canvas 上已有对象）
-// REMOVED: Using FloatingObjectControls instead.
-
-  } catch (error) {
-    console.error('[DesignLab] ❌ 注册通用角控件失败:', error);
-    // 不阻断初始化，但记录错误
-  }
 
 // 保持向后兼容：保留 deleteControl 引用（但实际使用新系统）
   // 为了兼容旧代码中对 (canvas as any).deleteControl 的引用
@@ -4153,472 +4093,472 @@ useEffect(() => {
 return (
   <div className="design-lab-new">
     {/* 1. Header - 顶部导航栏 */}
-{/* 阶段1：添加 data-testid 用于 Playwright 测试 */}
-    < header className="dl-header" data - testid="header" >
-    <div className="dl-header__content">
-      <div className="dl-header__left">
-{/* 使用主站Logo图片，点击跳转到主站首页 */}
-        <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
-          <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
-        </Link>
-        <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
-{/* 移除My Designs按钮，改用本地存储，无需跳转 */}
-{/* 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
-          <button
-            className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
-            onClick={() => {
-              const newName = prompt('Enter design name:', designName);
-              if (newName) setDesignName(newName);
-            }}
-            type="button"
-          >
-            {designName}
-          </button>
-        </nav>
-      </div>
-      <div className="dl-header__right">
-{/* 修复：添加"Talk to a Real Person"文案 */}
-        <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
-          📞 Talk to a Real Person: 416 916 6352
-        </a>
-{/* 修复：Chat Now 链接到留言本 */}
-{/* 修复：Chat Now 在新窗口打开 */}
-        <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
-        <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
-      </div>
+{/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+    < header className = "dl-header" data - testid="header" >
+  <div className="dl-header__content">
+    <div className="dl-header__left">
+      {/* 使用主站Logo图片，点击跳转到主站首页 */}
+      <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
+        <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
+      </Link>
+      <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
+        {/* 移除My Designs按钮，改用本地存储，无需跳转 */}
+        {/* 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
+        <button
+          className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
+          onClick={() => {
+            const newName = prompt('Enter design name:', designName);
+            if (newName) setDesignName(newName);
+          }}
+          type="button"
+        >
+          {designName}
+        </button>
+      </nav>
     </div>
+    <div className="dl-header__right">
+      {/* 修复：添加"Talk to a Real Person"文案 */}
+      <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
+        📞 Talk to a Real Person: 416 916 6352
+      </a>
+      {/* 修复：Chat Now 链接到留言本 */}
+      {/* 修复：Chat Now 在新窗口打开 */}
+      <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
+      <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
+    </div>
+  </div>
   </header >
 
   {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */ }
-< div className="dl-main" >
-  {/* 2. Dark Rail - 左侧深灰色工具栏 */}
-{/* 阶段1：添加 data-testid 用于 Playwright 测试 */}
-  <nav className="dl-rail" aria-label="Design tools" data-testid="rail">
+  < div className = "dl-main" >
+    {/* 2. Dark Rail - 左侧深灰色工具栏 */ }
+{/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+<nav className="dl-rail" aria-label="Design tools" data-testid="rail">
+  <button
+    className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('upload')}
+    aria-label="Upload image"
+    aria-pressed={activeTool === 'upload'}
+  >
+    <span className="dl-rail__btn-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+    </span>
+    <span className="dl-rail__btn-label">Upload</span>
+  </button>
+
+  <button
+    className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('text')}
+    aria-label="Add text"
+    aria-pressed={activeTool === 'text'}
+  >
+    <span className="dl-rail__btn-icon dl-rail__icon--text">T</span>
+    <span className="dl-rail__btn-label">Add Text</span>
+  </button>
+
+  <button
+    className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('art')}
+    aria-label="Add art"
+    aria-pressed={activeTool === 'art'}
+  >
+    <span className="dl-rail__btn-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+        <circle cx="8.5" cy="8.5" r="1.5" />
+        <polyline points="21 15 16 10 5 21" />
+      </svg>
+    </span>
+    <span className="dl-rail__btn-label">Add Art</span>
+  </button>
+
+  {/* 启用 Product Colors 功能 */}
+  <button
+    className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
+    onClick={() => handleToolClick('colors')}
+    aria-label="Product colors"
+    aria-pressed={activeTool === 'colors'}
+  >
+    <span className="dl-rail__btn-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+        <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+        <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+        <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
+      </svg>
+    </span>
+    <span className="dl-rail__btn-label">Product Colors</span>
+  </button>
+
+  {/* 暂时屏蔽 Add Names 功能 */}
+  {false && (
     <button
-      className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
-      onClick={() => handleToolClick('upload')}
-      aria-label="Upload image"
-      aria-pressed={activeTool === 'upload'}
+      className={`dl-rail__btn ${activeTool === 'names' ? 'is-active' : ''}`}
+      onClick={() => handleToolClick('names')}
+      aria-label="Add names"
+      aria-pressed={activeTool === 'names'}
     >
-      <span className="dl-rail__btn-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
+      {/* 根据截图，Add Names 按钮应该显示 "00" 图标 */}
+      <span className="dl-rail__btn-icon dl-rail__icon--names">
+        <span className="dl-rail__icon-text">00</span>
       </span>
-      <span className="dl-rail__btn-label">Upload</span>
+      <span className="dl-rail__btn-label">Add Names</span>
     </button>
+  )}
+</nav>
 
+{/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */ }
+<ToolPanel panelType={toolPanelType} onBack={handleBackToHome}>
+  {toolPanelType === 'home' && (
+    <HomePanel onAction={handleHomeAction} />
+  )}
+  {toolPanelType === 'upload' && (
+    <UploadPanel
+      onFileSelect={handleFileUpload}
+      onBrowseClick={() => { }}
+      recentUploads={recentUploads}
+      onRecentUploadClick={handleRecentUploadClick}
+      onClose={handleBackToHome}
+    />
+  )}
+  {toolPanelType === 'text' && (
+    <TextPanel onAddText={handleAddText} />
+  )}
+  {toolPanelType === 'art' && (
+    <ArtPanel onSelectArt={handleAddArt} />
+  )}
+  {toolPanelType === 'colors' && (
+    <ProductColorsPanel
+      colors={productColors}
+      selectedColor={productInfo?.color || null}
+      onSelectColor={handleColorSelect}
+      onClose={handleBackToHome}
+      productName={productInfo?.productName}
+    />
+  )}
+  {toolPanelType === 'edit-upload' && (
+    <EditUploadPanel
+      selectedImage={selectedImage}
+      canvas={fabricCanvasRef.current}
+      onUpdate={handleCanvasUpdate}
+      onReset={handleResetUpload}
+      onSave={handleSaveDesign}
+      onClose={handleBackToHome}
+      onOpenRatingModal={() => {
+        // 打开上传体验评分模态框
+        const uploadId = `upload_${Date.now()}`;
+        setCurrentUploadId(uploadId);
+        setShowUploadRatingModal(true);
+      }}
+    />
+  )}
+  {toolPanelType === 'edit-text' && (
+    <EditTextPanel
+      selectedText={selectedText}
+      canvas={fabricCanvasRef.current}
+      onUpdate={handleCanvasUpdate}
+    />
+  )}
+  {toolPanelType === 'edit-art' && (
+    <EditArtPanel
+      selectedArt={selectedArt}
+      canvas={fabricCanvasRef.current}
+      onUpdate={handleCanvasUpdate}
+      onChangeArt={handleChangeArt}
+    />
+  )}
+  {/* 移除：layers 功能 */}
+</ToolPanel>
+
+{/* 移除：模板库面板功能 */ }
+
+{/* 4. Canvas - 中央画布区域 */ }
+{/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+<section className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
+  {/* 左上浮层：Undo/Redo按钮 */}
+  <div className="dl-canvas__floating-controls">
     <button
-      className={`dl-rail__btn ${activeTool === 'text' ? 'is-active' : ''}`}
-      onClick={() => handleToolClick('text')}
-      aria-label="Add text"
-      aria-pressed={activeTool === 'text'}
+      className="dl-canvas__floating-btn"
+      onClick={() => {
+        undo();
+        // 从store获取更新后的canvas并应用到fabric canvas
+        const updatedSnapshot = getCurrentViewCanvas();
+        if (fabricCanvasRef.current) {
+          snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
+        }
+      }}
+      aria-label="Undo"
+      title="Undo"
+      disabled={!canUndo}
     >
-      <span className="dl-rail__btn-icon dl-rail__icon--text">T</span>
-      <span className="dl-rail__btn-label">Add Text</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M3 7v6h6" />
+        <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+      </svg>
     </button>
-
     <button
-      className={`dl-rail__btn ${activeTool === 'art' ? 'is-active' : ''}`}
-      onClick={() => handleToolClick('art')}
-      aria-label="Add art"
-      aria-pressed={activeTool === 'art'}
+      className="dl-canvas__floating-btn"
+      onClick={() => {
+        redo();
+        // 从store获取更新后的canvas并应用到fabric canvas
+        const updatedSnapshot = getCurrentViewCanvas();
+        if (fabricCanvasRef.current) {
+          snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
+        }
+      }}
+      aria-label="Redo"
+      title="Redo"
+      disabled={!canRedo}
     >
-      <span className="dl-rail__btn-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <circle cx="8.5" cy="8.5" r="1.5" />
-          <polyline points="21 15 16 10 5 21" />
-        </svg>
-      </span>
-      <span className="dl-rail__btn-label">Add Art</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 7v6h-6" />
+        <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
+      </svg>
     </button>
+  </div>
+  {/* Canvas初始化错误显示 */}
+  {canvasInitError && !canvasInitialized && (
+    <CanvasLoadingError
+      error={canvasInitError}
+      onRetry={() => {
+        setCanvasInitError(null);
+        setCanvasInitialized(false);
+        // 触发重新初始化（通过重新挂载或重新执行useEffect）
+        window.location.reload();
+      }}
+      showDetails={process.env.NODE_ENV === 'development'}
+    />
+  )}
 
-{/* 启用 Product Colors 功能 */}
-    <button
-      className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
-      onClick={() => handleToolClick('colors')}
-      aria-label="Product colors"
-      aria-pressed={activeTool === 'colors'}
-    >
-      <span className="dl-rail__btn-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-          <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-          <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-          <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1-1.25 0-2.45-.2-3.57-.57-.4-.11-.81-.03-1.1.24l-2.2 2.2c-2.83-1.45-4.6-4.33-4.6-7.59 0-4.42 3.58-8 8-8s8 3.58 8 8v1c0 .55.45 1 1 1h3c.55 0 1 .45 1 1 0 5.52-4.48 10-10 10z" />
-        </svg>
-      </span>
-      <span className="dl-rail__btn-label">Product Colors</span>
-    </button>
-
-{/* 暂时屏蔽 Add Names 功能 */}
-    {false && (
+  {/* Zoom视图控制按钮 */}
+  {currentView === 'zoom' && !canvasInitError && (
+    <div className="dl-canvas__zoom-controls">
       <button
-        className={`dl-rail__btn ${activeTool === 'names' ? 'is-active' : ''}`}
-        onClick={() => handleToolClick('names')}
-        aria-label="Add names"
-        aria-pressed={activeTool === 'names'}
-      >
-{/* 根据截图，Add Names 按钮应该显示 "00" 图标 */}
-        <span className="dl-rail__btn-icon dl-rail__icon--names">
-          <span className="dl-rail__icon-text">00</span>
-        </span>
-        <span className="dl-rail__btn-label">Add Names</span>
-      </button>
-    )}
-  </nav>
-
-  {/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */}
-  <ToolPanel panelType={toolPanelType} onBack={handleBackToHome}>
-    {toolPanelType === 'home' && (
-      <HomePanel onAction={handleHomeAction} />
-    )}
-    {toolPanelType === 'upload' && (
-      <UploadPanel
-        onFileSelect={handleFileUpload}
-        onBrowseClick={() => { }}
-        recentUploads={recentUploads}
-        onRecentUploadClick={handleRecentUploadClick}
-        onClose={handleBackToHome}
-      />
-    )}
-    {toolPanelType === 'text' && (
-      <TextPanel onAddText={handleAddText} />
-    )}
-    {toolPanelType === 'art' && (
-      <ArtPanel onSelectArt={handleAddArt} />
-    )}
-    {toolPanelType === 'colors' && (
-      <ProductColorsPanel
-        colors={productColors}
-        selectedColor={productInfo?.color || null}
-        onSelectColor={handleColorSelect}
-        onClose={handleBackToHome}
-        productName={productInfo?.productName}
-      />
-    )}
-    {toolPanelType === 'edit-upload' && (
-      <EditUploadPanel
-        selectedImage={selectedImage}
-        canvas={fabricCanvasRef.current}
-        onUpdate={handleCanvasUpdate}
-        onReset={handleResetUpload}
-        onSave={handleSaveDesign}
-        onClose={handleBackToHome}
-        onOpenRatingModal={() => {
-// 打开上传体验评分模态框
-          const uploadId = `upload_${Date.now()}`;
-          setCurrentUploadId(uploadId);
-          setShowUploadRatingModal(true);
-        }}
-      />
-    )}
-    {toolPanelType === 'edit-text' && (
-      <EditTextPanel
-        selectedText={selectedText}
-        canvas={fabricCanvasRef.current}
-        onUpdate={handleCanvasUpdate}
-      />
-    )}
-    {toolPanelType === 'edit-art' && (
-      <EditArtPanel
-        selectedArt={selectedArt}
-        canvas={fabricCanvasRef.current}
-        onUpdate={handleCanvasUpdate}
-        onChangeArt={handleChangeArt}
-      />
-    )}
-{/* 移除：layers 功能 */}
-  </ToolPanel>
-
-{/* 移除：模板库面板功能 */}
-
-  {/* 4. Canvas - 中央画布区域 */}
-{/* 阶段1：添加 data-testid 用于 Playwright 测试 */}
-  <section className="dl-canvas" aria-label="Design canvas" data-testid="canvas">
-{/* 左上浮层：Undo/Redo按钮 */}
-    <div className="dl-canvas__floating-controls">
-      <button
-        className="dl-canvas__floating-btn"
-        onClick={() => {
-          undo();
-// 从store获取更新后的canvas并应用到fabric canvas
-          const updatedSnapshot = getCurrentViewCanvas();
-          if (fabricCanvasRef.current) {
-            snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
-          }
-        }}
-        aria-label="Undo"
-        title="Undo"
-        disabled={!canUndo}
+        className="dl-canvas__zoom-btn"
+        onClick={handleZoomIn}
+        aria-label="Zoom In"
+        title="Zoom In"
+        disabled={zoomLevel >= 3}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M3 7v6h6" />
-          <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
-        </svg>
-      </button>
-      <button
-        className="dl-canvas__floating-btn"
-        onClick={() => {
-          redo();
-// 从store获取更新后的canvas并应用到fabric canvas
-          const updatedSnapshot = getCurrentViewCanvas();
-          if (fabricCanvasRef.current) {
-            snapshotToCanvas(updatedSnapshot, fabricCanvasRef.current);
-          }
-        }}
-        aria-label="Redo"
-        title="Redo"
-        disabled={!canRedo}
-      >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 7v6h-6" />
-          <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13" />
-        </svg>
-      </button>
-    </div>
-{/* Canvas初始化错误显示 */}
-    {canvasInitError && !canvasInitialized && (
-      <CanvasLoadingError
-        error={canvasInitError}
-        onRetry={() => {
-          setCanvasInitError(null);
-          setCanvasInitialized(false);
-          // 触发重新初始化（通过重新挂载或重新执行useEffect）
-          window.location.reload();
-        }}
-        showDetails={process.env.NODE_ENV === 'development'}
-      />
-    )}
-
-{/* Zoom视图控制按钮 */}
-    {currentView === 'zoom' && !canvasInitError && (
-      <div className="dl-canvas__zoom-controls">
-        <button
-          className="dl-canvas__zoom-btn"
-          onClick={handleZoomIn}
-          aria-label="Zoom In"
-          title="Zoom In"
-          disabled={zoomLevel >= 3}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-            <line x1="11" y1="8" x2="11" y2="14" />
-            <line x1="8" y1="11" x2="14" y2="11" />
-          </svg>
-        </button>
-        <button
-          className="dl-canvas__zoom-btn"
-          onClick={handleZoomOut}
-          aria-label="Zoom Out"
-          title="Zoom Out"
-          disabled={zoomLevel <= 0.5}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <path d="M21 21l-4.35-4.35" />
-            <line x1="8" y1="11" x2="14" y2="11" />
-          </svg>
-        </button>
-        <button
-          className="dl-canvas__zoom-btn"
-          onClick={handleZoomReset}
-          aria-label="Reset Zoom"
-          title="Reset Zoom"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-            <path d="M21 3v5h-5" />
-            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-            <path d="M3 21v-5h5" />
-          </svg>
-        </button>
-        <span className="dl-canvas__zoom-level">{Math.round(zoomLevel * 100)}%</span>
-      </div>
-    )}
-    {/* 产品预览区域 */}
-    <div
-      className="dl-canvas__preview"
-      onMouseDown={currentView === 'zoom' ? handleZoomMouseDown : undefined}
-      onMouseMove={currentView === 'zoom' ? handleZoomMouseMove : undefined}
-      onMouseUp={currentView === 'zoom' ? handleZoomMouseUp : undefined}
-      onMouseLeave={currentView === 'zoom' ? handleZoomMouseUp : undefined}
-      style={{ cursor: currentView === 'zoom' && isZoomDragging ? 'grabbing' : currentView === 'zoom' ? 'grab' : 'default' }}
-    >
-      <div className="dl-canvas__product">
-{/* 阶段2修复：使用简单的 HTML <img> 标签显示商品图片 */}
-        {/* 不使用 Fabric.js 逻辑定位，使用简单的 HTML/CSS 居中铺满 */}
-        {(() => {
-// 处理 zoom 视图：使用 front 视图的图片
-          const viewForImage = currentView === 'zoom' ? 'front' : currentView;
-          const imageUrl = productInfo?.baseImages?.[viewForImage];
-          return imageUrl ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={imageUrl}
-              alt={`Product ${viewForImage} view`}
-              className="dl-canvas__product-image"
-            />
-          ) : null;
-        })()}
-{/* Fabric.js 画布 */}
-{/* 移除 placeholder，直接显示画布，图片会在加载完成后自动显示 */}
-{/* 只在Canvas未初始化错误时显示Canvas元素 */}
-        {!canvasInitError && (
-          <>
-            <canvas ref={canvasRef} className="dl-canvas__fabric" />
-            <FloatingObjectControls canvas={fabricCanvasRef.current} fabricModule={fabricRef.current} />
-          </>
-        )}
-      </div>
-
-      {/* 引导面板 - "What's next for you?" */}
-      {showGuidePanel && (
-        <div className="dl-guide-panel">
-          <h3 className="dl-guide-panel__title">What&apos;s next for you?</h3>
-          <div className="dl-guide-panel__actions">
-            <button
-              className="dl-guide-panel__action"
-              onClick={() => handleGuideAction('upload')}
-              aria-label="Upload"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              <span>Upload</span>
-            </button>
-            <button
-              className="dl-guide-panel__action"
-              onClick={() => handleGuideAction('text')}
-              aria-label="Add Text"
-            >
-              <span className="dl-guide-panel__text-icon">abc</span>
-              <span>Add Text</span>
-            </button>
-            <button
-              className="dl-guide-panel__action"
-              onClick={() => handleGuideAction('art')}
-              aria-label="Add Art"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
-              </svg>
-              <span>Add Art</span>
-            </button>
-            <button
-              className="dl-guide-panel__action"
-              onClick={() => handleGuideAction('products')}
-              aria-label="Change Products"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 0 1-8 0" />
-              </svg>
-              <span>Change Products</span>
-            </button>
-          </div>
-          <p className="dl-guide-panel__hint">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="16" x2="12" y2="12" />
-              <line x1="12" y1="8" x2="12.01" y2="8" />
-            </svg>
-            Drag & drop a file anywhere to upload
-          </p>
-        </div>
-      )}
-    </div>
-  </section>
-
-  {/* 5. Sidebar - 右侧视图切换面板 */}
-{/* 阶段1：添加 data-testid 用于 Playwright 测试 */}
-  <aside className="dl-sidebar" aria-label="View options" data-testid="sidebar">
-    <button
-      className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
-      onClick={() => handleViewChange('front')}
-      aria-label="Front view"
-      aria-pressed={currentView === 'front'}
-    >
-      <div className="dl-sidebar__thumbnail">
-        {productInfo?.baseImages?.front ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={getThumbnailImageUrl(productInfo.color || 'White', 'front')}
-            alt="Front view thumbnail"
-            className="dl-sidebar__thumbnail-image"
-          />
-        ) : (
-          <div className="dl-sidebar__thumbnail-placeholder">Front</div>
-        )}
-      </div>
-      <span className="dl-sidebar__label">Front</span>
-    </button>
-
-    <button
-      className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''}`}
-      onClick={() => handleViewChange('back')}
-      aria-label="Back view"
-      aria-pressed={currentView === 'back'}
-    >
-      <div className="dl-sidebar__thumbnail">
-        {productInfo?.baseImages?.back ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={getThumbnailImageUrl(productInfo.color || 'White', 'back')}
-            alt="Back view thumbnail"
-            className="dl-sidebar__thumbnail-image"
-          />
-        ) : (
-          <div className="dl-sidebar__thumbnail-placeholder">Back</div>
-        )}
-      </div>
-      <span className="dl-sidebar__label">Back</span>
-    </button>
-
-    <button
-      className={`dl-sidebar__btn ${currentView === 'sleeve' ? 'is-active' : ''}`}
-      onClick={() => handleViewChange('sleeve')}
-      aria-label="Sleeve Design"
-      aria-pressed={currentView === 'sleeve'}
-    >
-      <span className="dl-sidebar__label">Sleeve Design</span>
-    </button>
-
-    <button
-      className={`dl-sidebar__btn ${currentView === 'zoom' ? 'is-active' : ''}`}
-      onClick={() => handleViewChange('zoom')}
-      aria-label="Zoom"
-      aria-pressed={currentView === 'zoom'}
-    >
-      <span className="dl-sidebar__icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="11" cy="11" r="8" />
           <path d="M21 21l-4.35-4.35" />
+          <line x1="11" y1="8" x2="11" y2="14" />
+          <line x1="8" y1="11" x2="14" y2="11" />
         </svg>
-      </span>
-      <span className="dl-sidebar__label">Zoom</span>
-    </button>
-  </aside>
+      </button>
+      <button
+        className="dl-canvas__zoom-btn"
+        onClick={handleZoomOut}
+        aria-label="Zoom Out"
+        title="Zoom Out"
+        disabled={zoomLevel <= 0.5}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+          <line x1="8" y1="11" x2="14" y2="11" />
+        </svg>
+      </button>
+      <button
+        className="dl-canvas__zoom-btn"
+        onClick={handleZoomReset}
+        aria-label="Reset Zoom"
+        title="Reset Zoom"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+          <path d="M21 3v5h-5" />
+          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+          <path d="M3 21v-5h5" />
+        </svg>
+      </button>
+      <span className="dl-canvas__zoom-level">{Math.round(zoomLevel * 100)}%</span>
+    </div>
+  )}
+  {/* 产品预览区域 */}
+  <div
+    className="dl-canvas__preview"
+    onMouseDown={currentView === 'zoom' ? handleZoomMouseDown : undefined}
+    onMouseMove={currentView === 'zoom' ? handleZoomMouseMove : undefined}
+    onMouseUp={currentView === 'zoom' ? handleZoomMouseUp : undefined}
+    onMouseLeave={currentView === 'zoom' ? handleZoomMouseUp : undefined}
+    style={{ cursor: currentView === 'zoom' && isZoomDragging ? 'grabbing' : currentView === 'zoom' ? 'grab' : 'default' }}
+  >
+    <div className="dl-canvas__product">
+      {/* 阶段2修复：使用简单的 HTML <img> 标签显示商品图片 */}
+      {/* 不使用 Fabric.js 逻辑定位，使用简单的 HTML/CSS 居中铺满 */}
+      {(() => {
+        // 处理 zoom 视图：使用 front 视图的图片
+        const viewForImage = currentView === 'zoom' ? 'front' : currentView;
+        const imageUrl = productInfo?.baseImages?.[viewForImage];
+        return imageUrl ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={imageUrl}
+            alt={`Product ${viewForImage} view`}
+            className="dl-canvas__product-image"
+          />
+        ) : null;
+      })()}
+      {/* Fabric.js 画布 */}
+      {/* 移除 placeholder，直接显示画布，图片会在加载完成后自动显示 */}
+      {/* 只在Canvas未初始化错误时显示Canvas元素 */}
+      {!canvasInitError && (
+        <>
+          <canvas ref={canvasRef} className="dl-canvas__fabric" />
+          <FloatingObjectControls canvas={fabricCanvasRef.current} fabricModule={fabricRef.current} />
+        </>
+      )}
+    </div>
+
+    {/* 引导面板 - "What's next for you?" */}
+    {showGuidePanel && (
+      <div className="dl-guide-panel">
+        <h3 className="dl-guide-panel__title">What&apos;s next for you?</h3>
+        <div className="dl-guide-panel__actions">
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('upload')}
+            aria-label="Upload"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span>Upload</span>
+          </button>
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('text')}
+            aria-label="Add Text"
+          >
+            <span className="dl-guide-panel__text-icon">abc</span>
+            <span>Add Text</span>
+          </button>
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('art')}
+            aria-label="Add Art"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <span>Add Art</span>
+          </button>
+          <button
+            className="dl-guide-panel__action"
+            onClick={() => handleGuideAction('products')}
+            aria-label="Change Products"
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            <span>Change Products</span>
+          </button>
+        </div>
+        <p className="dl-guide-panel__hint">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          Drag & drop a file anywhere to upload
+        </p>
+      </div>
+    )}
+  </div>
+</section>
+
+{/* 5. Sidebar - 右侧视图切换面板 */ }
+{/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
+<aside className="dl-sidebar" aria-label="View options" data-testid="sidebar">
+  <button
+    className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('front')}
+    aria-label="Front view"
+    aria-pressed={currentView === 'front'}
+  >
+    <div className="dl-sidebar__thumbnail">
+      {productInfo?.baseImages?.front ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={getThumbnailImageUrl(productInfo.color || 'White', 'front')}
+          alt="Front view thumbnail"
+          className="dl-sidebar__thumbnail-image"
+        />
+      ) : (
+        <div className="dl-sidebar__thumbnail-placeholder">Front</div>
+      )}
+    </div>
+    <span className="dl-sidebar__label">Front</span>
+  </button>
+
+  <button
+    className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('back')}
+    aria-label="Back view"
+    aria-pressed={currentView === 'back'}
+  >
+    <div className="dl-sidebar__thumbnail">
+      {productInfo?.baseImages?.back ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
+        <img
+          src={getThumbnailImageUrl(productInfo.color || 'White', 'back')}
+          alt="Back view thumbnail"
+          className="dl-sidebar__thumbnail-image"
+        />
+      ) : (
+        <div className="dl-sidebar__thumbnail-placeholder">Back</div>
+      )}
+    </div>
+    <span className="dl-sidebar__label">Back</span>
+  </button>
+
+  <button
+    className={`dl-sidebar__btn ${currentView === 'sleeve' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('sleeve')}
+    aria-label="Sleeve Design"
+    aria-pressed={currentView === 'sleeve'}
+  >
+    <span className="dl-sidebar__label">Sleeve Design</span>
+  </button>
+
+  <button
+    className={`dl-sidebar__btn ${currentView === 'zoom' ? 'is-active' : ''}`}
+    onClick={() => handleViewChange('zoom')}
+    aria-label="Zoom"
+    aria-pressed={currentView === 'zoom'}
+  >
+    <span className="dl-sidebar__icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8" />
+        <path d="M21 21l-4.35-4.35" />
+      </svg>
+    </span>
+    <span className="dl-sidebar__label">Zoom</span>
+  </button>
+</aside>
 </div >
 
-{/* 5. Bottom Bar - 底部操作栏 */ }
+  {/* 5. Bottom Bar - 底部操作栏 */ }
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
 <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
   <div className="dl-bottom-bar__left">
     <button
       className="dl-bottom-bar__add-products"
       onClick={() => {
-// 打开产品选择器（跳转到产品列表页面，带返回参数）
+        // 打开产品选择器（跳转到产品列表页面，带返回参数）
         if (typeof window !== 'undefined') {
           const currentUrl = new URL(window.location.href);
           const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
@@ -4632,7 +4572,7 @@ return (
       <div className="dl-bottom-bar__product-thumb">
         <div className="dl-bottom-bar__product-thumb-placeholder">T</div>
       </div>
-{/* 根据 designlab-colors01.jpeg，优化底部 Product pill 的颜色显示 */}
+      {/* 根据 designlab-colors01.jpeg，优化底部 Product pill 的颜色显示 */}
       <div className="dl-bottom-bar__product-details">
         <div className="dl-bottom-bar__product-name">
           {productInfo?.productName || 'Gildan Softstyle Jersey T-shirt'}
@@ -4641,7 +4581,7 @@ return (
           <button
             className="dl-bottom-bar__link"
             onClick={() => {
-// 打开产品选择器（跳转到产品列表页面，带返回参数）
+              // 打开产品选择器（跳转到产品列表页面，带返回参数）
               if (typeof window !== 'undefined') {
                 const currentUrl = new URL(window.location.href);
                 const returnUrl = encodeURIComponent(currentUrl.pathname + currentUrl.search);
@@ -4681,7 +4621,7 @@ return (
       </svg>
       Save | Share
     </button>
-{/* Save & Share 模态框 */}
+    {/* Save & Share 模态框 */}
     <SaveShareModal
       isOpen={showSaveShareModal}
       onClose={() => setShowSaveShareModal(false)}
@@ -4702,7 +4642,7 @@ return (
       }}
       onShare={(shareUrl) => {
         console.log('[DesignLab] Design shared:', shareUrl);
-// 埋点：设计分享
+        // 埋点：设计分享
         analytics.track('design_shared', {
           designId: currentDesignId,
           shareUrl: shareUrl,
@@ -4726,15 +4666,15 @@ return (
 <input
   ref={fileInputRef}
   type="file"
-accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml" // 明确支持 AVIF 和 WebP 格式
+  accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml" // 明确支持 AVIF 和 WebP 格式
   style={{ display: 'none' }}
   onChange={(e) => {
-// 文件上传处理逻辑
+    // 文件上传处理逻辑
     const file = e.target.files?.[0];
     if (file) {
       handleFileUpload(file);
     }
-// 重置 input，允许重复选择同一文件
+    // 重置 input，允许重复选择同一文件
     e.target.value = '';
   }}
 />
@@ -4781,7 +4721,7 @@ accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg
   onClose={() => setShowGetPriceFlowModal(false)}
   designId={currentDesignId}
   getQuoteData={async () => {
-// 计算报价所需的数据（使用的面和图层数）
+    // 计算报价所需的数据（使用的面和图层数）
     if (!fabricCanvasRef.current) {
       return { sidesUsed: ['front'], layerCount: 0 };
     }
@@ -4813,13 +4753,13 @@ accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg
     return { sidesUsed, layerCount };
   }}
   onAddToCart={async (orderData) => {
-// 处理加车逻辑
+    // 处理加车逻辑
     try {
       if (!productInfo?.variantId) {
         throw new Error('Product variant not selected');
       }
 
-// 调用加车API
+      // 调用加车API
       // 注意：当前API只支持简单的 variantId + quantity + designId
       // 对于复杂的 sizeQuantities，我们需要在后端扩展API或在前端处理
       const response = await cartApi.addItem(
@@ -4829,14 +4769,14 @@ accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg
       );
 
       if (response.success) {
-// 埋点：加车成功
+        // 埋点：加车成功
         analytics.track('add_to_cart_success', {
           designId: orderData.designId,
           totalQuantity: orderData.totalQuantity,
           sizeQuantities: orderData.sizeQuantities,
         });
 
-// 触发购物车更新事件
+        // 触发购物车更新事件
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('cart:updated'));
         }
@@ -4847,7 +4787,7 @@ accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg
       }
     } catch (error: any) {
       console.error('[DesignLab] Failed to add to cart:', error);
-// 显示错误提示（不弹窗，使用toast）
+      // 显示错误提示（不弹窗，使用toast）
       throw error;
     }
   }}

@@ -7,11 +7,10 @@
  */
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
-import type React from 'react';
 import GuestBookForm from '@/components/help/GuestBookForm';
 
 // 默认快速链接（向后兼容）
@@ -222,7 +221,7 @@ const defaultFaqCategories = [
       },
     ],
   },
-// Additional FAQ categories for Issue #147
+  // Additional FAQ categories for Issue #147
   {
     id: 'default-account',
     category: 'Account & Settings',
@@ -374,18 +373,18 @@ const defaultFaqCategories = [
 ];
 
 export default function HelpClient() {
-// 从 CMS 获取帮助页内容
+  // 从 CMS 获取帮助页内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const helpPage = contentData?.data?.helpPage;
 
-// 使用 CMS 数据或默认值（向后兼容）
+  // 使用 CMS 数据或默认值（向后兼容）
   const quickLinks = helpPage?.quickLinks || defaultQuickLinks;
   const faqCategories = helpPage?.faqCategories || defaultFaqCategories;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
 
-// Enhanced search with fuzzy matching and highlighting for Issue #147
+  // Enhanced search with fuzzy matching and highlighting for Issue #147
   const filteredFAQs = useMemo(() => {
     if (!searchQuery.trim()) {
       return faqCategories;
@@ -393,24 +392,24 @@ export default function HelpClient() {
 
     const query = searchQuery.toLowerCase().trim();
     const queryWords = query.split(/\s+/).filter(Boolean);
-    
+
     return faqCategories
       .map((category) => {
         const filteredItems = category.items.filter((item) => {
           const questionLower = item.question.toLowerCase();
           const answerLower = item.answer.toLowerCase();
-          
+
           // Exact match (highest priority)
           if (questionLower.includes(query) || answerLower.includes(query)) {
             return true;
           }
-          
+
           // Fuzzy match: all query words must appear somewhere
           return queryWords.every(
             (word) => questionLower.includes(word) || answerLower.includes(word)
           );
         });
-        
+
         return {
           ...category,
           items: filteredItems,
@@ -419,17 +418,17 @@ export default function HelpClient() {
       .filter((category) => category.items.length > 0);
   }, [searchQuery, faqCategories]);
 
-// Highlight search terms in text for Issue #147
+  // Highlight search terms in text for Issue #147
   const highlightText = (text: string, query: string): React.ReactNode => {
     if (!query.trim()) return text;
-    
+
     const queryWords = query.trim().split(/\s+/).filter(Boolean);
     if (queryWords.length === 0) return text;
-    
+
     // Create a regex that matches any of the query words
     const regex = new RegExp(`(${queryWords.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
     const parts = text.split(regex);
-    
+
     return (
       <>
         {parts.map((part, index) => {
@@ -451,12 +450,22 @@ export default function HelpClient() {
   };
 
   return (
-    <section className="help">
-      <div className="help-hero">
-        <div className="container">
-          <h1>Help Center</h1>
-          <p>Find answers fast or contact our team for hands-on support.</p>
-          <div className="help-search">
+    <div className="bg-gray-50 min-h-screen pb-20">
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-6">
+            Help Center
+          </h1>
+          <p className="max-w-2xl mx-auto text-xl text-gray-500 mb-10">
+            Find answers fast or contact our team for hands-on support.
+          </p>
+
+          <div className="max-w-2xl mx-auto relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             <input
               type="search"
               placeholder="Search for help... (e.g., shipping, returns, design)"
@@ -468,62 +477,106 @@ export default function HelpClient() {
                 }
               }}
               aria-label="Search help center"
+              className="w-full pl-12 pr-12 py-4 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-red-500 focus:border-red-500 sm:text-lg shadow-sm"
             />
-            <button type="button" onClick={() => setSearchQuery('')} style={{ display: searchQuery ? 'block' : 'none' }}>
-              Clear
-            </button>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center"
+              >
+                <svg className="h-5 w-5 text-gray-400 hover:text-gray-600 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="container help__grid">
-        <section>
-          <h2 className="eyebrow">Quick links</h2>
-          <div className="quick-links">
-            {quickLinks.map((link) => (
-              <Link key={link.id || link.label} href={link.href} className="card">
-                <span aria-hidden="true">{link.icon}</span>
-                <span>{link.label}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 space-y-16">
 
-        <section className="faq">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h2>FAQs</h2>
-{/* Search results count for Issue #147 */}
+        {/* Quick Links */}
+        {!searchQuery && (
+          <section>
+            <div className="flex items-center space-x-2 mb-6 ml-1">
+              <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Quick links</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {quickLinks.map((link) => (
+                <Link
+                  key={link.id || link.label}
+                  href={link.href}
+                  className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-red-100 transition-all flex items-center space-x-4 group"
+                >
+                  <span className="text-3xl group-hover:scale-110 transition-transform duration-200" aria-hidden="true">{link.icon}</span>
+                  <span className="font-semibold text-gray-900 group-hover:text-red-600 transition-colors">{link.label}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section className="space-y-8">
+          <div className="flex justify-between items-end border-b border-gray-200 pb-4">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {searchQuery ? 'Search Results' : 'Frequently Asked Questions'}
+            </h2>
+            {/* Search results count for Issue #147 */}
             {searchQuery && (
-              <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
+              <p className="text-sm text-gray-500">
                 Found {filteredFAQs.reduce((sum, cat) => sum + cat.items.length, 0)} result{filteredFAQs.reduce((sum, cat) => sum + cat.items.length, 0) !== 1 ? 's' : ''} for &ldquo;{searchQuery}&rdquo;
               </p>
             )}
           </div>
-          <div className="faq__grid">
+
+          <div className="grid grid-cols-1 gap-8">
             {filteredFAQs.map((category) => (
-              <article key={category.id || category.category} className="faq-card">
-                <header>
-                  <span aria-hidden="true">{category.icon}</span>
-                  <h3>{category.category}</h3>
+              <article key={category.id || category.category} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <header className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex items-center space-x-3">
+                  <span className="text-2xl" aria-hidden="true">{category.icon}</span>
+                  <h3 className="text-lg font-bold text-gray-900">{category.category}</h3>
                 </header>
-                <div>
+                <div className="divide-y divide-gray-100">
                   {category.items.map((item) => {
                     const faqId = item.id || `${category.category}-${item.question}`;
                     const isExpanded = expandedFaq === faqId;
                     return (
-                      <div key={faqId} className="faq-item">
-                        <button type="button" onClick={() => toggleFaq(faqId)} aria-expanded={isExpanded}>
-                          {searchQuery ? highlightText(item.question, searchQuery) : item.question}
-                          <span aria-hidden="true">{isExpanded ? '−' : '+'}</span>
+                      <div key={faqId} className="bg-white">
+                        <button
+                          type="button"
+                          onClick={() => toggleFaq(faqId)}
+                          aria-expanded={isExpanded}
+                          className="w-full text-left px-6 py-4 focus:outline-none focus:bg-gray-50 hover:bg-gray-50 transition-colors flex justify-between items-start"
+                        >
+                          <span className="font-medium text-gray-900 pr-8">
+                            {searchQuery ? highlightText(item.question, searchQuery) : item.question}
+                          </span>
+                          <span className="flex-shrink-0 ml-4 text-gray-400">
+                            {isExpanded ? (
+                              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            ) : (
+                              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                              </svg>
+                            )}
+                          </span>
                         </button>
-                        {isExpanded ? (
-                          <p>{searchQuery ? highlightText(item.answer, searchQuery) : item.answer}</p>
-                        ) : (
-                          <p>
-                            {searchQuery
-                              ? highlightText(item.answer.substring(0, 120) + '…', searchQuery)
-                              : item.answer.substring(0, 120) + '…'}
-                          </p>
+                        {isExpanded && (
+                          <div className="px-6 pb-6 pt-2 text-gray-600 leading-relaxed animate-fadeIn">
+                            {searchQuery ? highlightText(item.answer, searchQuery) : item.answer}
+                          </div>
+                        )}
+                        {!isExpanded && !searchQuery && (
+                          // Optional: show preview if desired, otherwise hide
+                          <div className="hidden"></div>
+                        )}
+                        {!isExpanded && searchQuery && (
+                          <div className="px-6 pb-4 pt-0 text-sm text-gray-500">
+                            {highlightText(item.answer.substring(0, 120) + '…', searchQuery)}
+                          </div>
                         )}
                       </div>
                     );
@@ -535,26 +588,48 @@ export default function HelpClient() {
         </section>
 
         {filteredFAQs.length === 0 && searchQuery && (
-          <div className="faq-empty">
-            <p>No results found for &ldquo;{searchQuery}&rdquo;.</p>
-            <p>
-              Try different keywords or <Link href="/contact">contact our support team</Link>.
+          <div className="text-center py-16 bg-white rounded-xl border border-gray-100 shadow-sm">
+            <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-gray-100 mb-4">
+              <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No results found for &ldquo;{searchQuery}&rdquo;</h3>
+            <p className="text-gray-500">
+              Try different keywords or <Link href="/contact" className="text-red-600 hover:text-red-800 font-medium">contact our support team</Link>.
             </p>
           </div>
         )}
 
-        <section className="help-box">
-          <h2>Still need help?</h2>
-          <p>
-            Can&rsquo;t find what you&rsquo;re looking for? Reach out via <Link href="/contact">contact form</Link>, email{' '}
-            <a href="mailto:support@suvernireplus.com">support@suvernireplus.com</a>, or call{' '}
-            <a href="tel:4169166352">416 916 6352</a>.
-          </p>
+        <section className="bg-red-600 rounded-2xl p-8 sm:p-12 text-center text-white relative overflow-hidden">
+          {/* Decorative circles */}
+          <div className="absolute top-0 left-0 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-red-500 rounded-full opacity-50"></div>
+          <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-80 h-80 bg-red-700 rounded-full opacity-50"></div>
+
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold mb-4">Still need help?</h2>
+            <p className="text-red-100 text-lg mb-8">
+              Can&rsquo;t find what you&rsquo;re looking for? Our friendly team is here to help.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <Link
+                href="/contact"
+                className="w-full sm:w-auto px-8 py-3 bg-white text-red-600 rounded-lg font-bold hover:bg-red-50 transition-colors shadow-lg"
+              >
+                Contact Support
+              </Link>
+              <div className="text-red-200 font-medium px-4">or</div>
+              <div className="flex flex-col sm:items-start text-center sm:text-left">
+                <a href="mailto:support@suvernireplus.com" className="text-white hover:underline font-medium block">support@suvernireplus.com</a>
+                <a href="tel:4169166352" className="text-white hover:underline font-medium block">416 916 6352</a>
+              </div>
+            </div>
+          </div>
         </section>
 
-{/* 留言本表单 */}
+        {/* 留言本表单 */}
         <GuestBookForm />
       </div>
-    </section>
+    </div>
   );
 }

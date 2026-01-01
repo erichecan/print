@@ -60,7 +60,7 @@ const TestimonialCarousel = () => {
 
                                 {/* Content */}
                                 <blockquote className="text-gray-700 italic mb-4 flex-grow text-sm">
-                                    "{testimonial.content}"
+                                    &ldquo;{testimonial.content}&rdquo;
                                 </blockquote>
 
                                 {/* Author */}

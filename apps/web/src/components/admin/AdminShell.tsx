@@ -130,21 +130,22 @@ const NAV_LINKS = [
   { href: '/admin/products', label: 'Products', icon: 'products', i18n: 'products' },
   { href: '/admin/categories', label: 'Categories', icon: 'categories', i18n: 'categories' },
   { href: '/admin/orders', label: 'Orders', icon: 'orders', i18n: 'orders' },
-{ href: '/admin/notifications', label: 'Notifications', icon: 'notifications', i18n: 'notifications' }, // Guest messages notifications
+  { href: '/admin/notifications', label: 'Notifications', icon: 'notifications', i18n: 'notifications' }, // Guest messages notifications
   { href: '/admin/users', label: 'Users', icon: 'users', i18n: 'users' },
   { href: '/admin/designs', label: 'Design Review', icon: 'design', i18n: 'designReview' },
-{ href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // 生产管理
-{ href: '/admin/inventory-alerts', label: 'Inventory Alerts', icon: 'inventory', i18n: 'inventoryAlerts' }, // 库存预警
-{ href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // 成本管理 - 使用 costManagement 翻译键
-{ href: '/admin/offline-order-size-fees', label: 'Size Fees', icon: 'costs', i18n: 'sizeFees' }, // Added Size Fees configuration
+  { href: '/admin/offline-orders', label: 'Production', icon: 'production', i18n: 'production' }, // 生产管理
+  { href: '/admin/inventory-alerts', label: 'Inventory Alerts', icon: 'inventory', i18n: 'inventoryAlerts' }, // 库存预警
+  { href: '/admin/cost-management', label: 'Costs', icon: 'costs', i18n: 'costManagement' }, // 成本管理 - 使用 costManagement 翻译键
+  { href: '/admin/offline-order-size-fees', label: 'Size Fees', icon: 'costs', i18n: 'sizeFees' }, // Added Size Fees configuration
   { href: '/admin/coupons', label: 'Coupons', icon: 'coupons', i18n: 'coupons' },
   { href: '/admin/promotions', label: 'Promotions', icon: 'promotions', i18n: 'promotions' },
-{ href: '/admin/analytics', label: 'Analytics', icon: 'analytics', i18n: 'analytics' }, // Analytics and Reports for Issue #160
-{ href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // Supplier management for Issue #89
-{ href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // Design Lab art assets CMS
-{ href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // Font management
+  { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', i18n: 'analytics' }, // Analytics and Reports for Issue #160
+  { href: '/admin/suppliers', label: 'Suppliers', icon: 'suppliers', i18n: 'suppliers' }, // Supplier management for Issue #89
+  { href: '/admin/art-assets', label: 'Art Assets', icon: 'artAssets', i18n: 'artAssets' }, // Design Lab art assets CMS
+  { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // Font management
   { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials' }, // Dedicated testimonials management
-{ href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // Content Management System
+  { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // Content Management System
+  { href: '/admin/settings/color-mapping', label: 'Color Mapping', icon: 'settings', i18n: 'colorMapping' },
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];
 
@@ -166,7 +167,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         if (!mounted) {
           return;
         }
-// 检查用户角色，必须是 ADMIN（支持大小写）
+        // 检查用户角色，必须是 ADMIN（支持大小写）
         if (data.role !== 'ADMIN' && data.role !== 'admin') {
           setAuthState('forbidden');
           setAuthMessage('Access denied. Admin privileges required. Please use customer login at /login for account access.');
@@ -178,7 +179,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       .catch((error: unknown) => {
         if (!mounted) return;
 
-// 区分网络错误和认证错误
+        // 区分网络错误和认证错误
         const errorMessage = error instanceof Error ? error.message : String(error);
         const isNetworkError = errorMessage.includes('Network error') ||
           errorMessage.includes('connect to server') ||
@@ -209,13 +210,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     };
   }, [router, pathname, t]);
 
-// 未登录时直接跳转到管理员专用登录页
-// 如果当前路径是登录页面，则不执行重定向，避免循环
+  // 未登录时直接跳转到管理员专用登录页
+  // 如果当前路径是登录页面，则不执行重定向，避免循环
   useEffect(() => {
     if (authState !== 'unauthenticated') {
       return;
     }
-// 如果已经在登录页面，不执行重定向
+    // 如果已经在登录页面，不执行重定向
     if (pathname === '/admin/login' || pathname?.startsWith('/admin/login?')) {
       return;
     }
@@ -227,9 +228,9 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     await authApi.logout();
     setUser(null);
     setAuthState('unauthenticated');
-// 使用 i18n 消息提示退出状态
+    // 使用 i18n 消息提示退出状态
     setAuthMessage(t('logoutMessage'));
-// 退出后跳转到管理员登录页面
+    // 退出后跳转到管理员登录页面
     router.push('/admin/login');
   };
 
@@ -244,7 +245,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
       return pathname === href || pathname.startsWith(`${href}/`);
     },
     [pathname],
-); // useCallback 保持导航判定引用稳定
+  ); // useCallback 保持导航判定引用稳定
 
   const currentNav = useMemo(() => {
     return NAV_LINKS.find((link) => isActive(link.href, link.exact));
@@ -252,13 +253,13 @@ export default function AdminShell({ children }: { children: ReactNode }) {
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => !prev);
-}, []); // useCallback 防止事件绑定抖动
+  }, []); // useCallback 防止事件绑定抖动
 
   const toggleSidebarMobile = () => {
     setSidebarOpen((prev) => !prev);
   };
 
-// 语言切换按钮，写入本地偏好
+  // 语言切换按钮，写入本地偏好
   const handleLocaleChange = (nextLocale: 'en' | 'zh') => {
     if (nextLocale === locale) {
       return;
@@ -285,7 +286,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
     );
   }
 
-// 保留占位提示，但展示为自动跳转状态
+  // 保留占位提示，但展示为自动跳转状态
   if (authState === 'unauthenticated') {
     return (
       <div className="admin-shell__container">

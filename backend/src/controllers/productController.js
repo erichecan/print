@@ -106,7 +106,7 @@ const FIXED_RUSH_DELIVERY_OPTIONS = [
  */
 exports.getFilterOptions = async (req, res) => {
   try {
-// 检查 Prisma 是否已初始化
+    // 检查 Prisma 是否已初始化
     let prismaClient;
     try {
       prismaClient = prisma;
@@ -115,7 +115,7 @@ exports.getFilterOptions = async (req, res) => {
         throw new Error('Prisma Client not initialized');
       }
     } catch (prismaError) {
-logger.warn(' Prisma Client not available, returning default filter options');
+      logger.warn(' Prisma Client not available, returning default filter options');
       // 返回默认数据
       const defaultFilterData = {
         categories: [],
@@ -195,16 +195,16 @@ logger.warn(' Prisma Client not available, returning default filter options');
       return res.json(cachedFilters);
     }
 
-// 先获取符合条件的产品ID列表，然后用于统计
-// 使用 prismaClient 而不是 prisma
+    // 先获取符合条件的产品ID列表，然后用于统计
+    // 使用 prismaClient 而不是 prisma
     const matchingProductIds = await prismaClient.product.findMany({
       where: baseWhere,
       select: { id: true },
     });
     const productIds = matchingProductIds.map(p => p.id);
 
-// 获取分类统计（包括一级和二级分类）
-// 使用 prismaClient 而不是 prisma
+    // 获取分类统计（包括一级和二级分类）
+    // 使用 prismaClient 而不是 prisma
     const allCategories = await prismaClient.category.findMany({
       where: {
         isActive: true,
@@ -219,7 +219,7 @@ logger.warn(' Prisma Client not available, returning default filter options');
       orderBy: { sortOrder: 'asc' },
     });
 
-// 获取每个分类的商品数量
+    // 获取每个分类的商品数量
     const categoryCounts = await Promise.all(
       allCategories.map(async (cat) => {
         const productCount = await prismaClient.product.count({
@@ -249,8 +249,8 @@ logger.warn(' Prisma Client not available, returning default filter options');
 
     const categories = categoryCounts.filter(cat => cat.count > 0 || cat.children.some(c => c.count > 0));
 
-// 获取品牌统计
-// 使用 prismaClient 而不是 prisma
+    // 获取品牌统计
+    // 使用 prismaClient 而不是 prisma
     const allBrands = await prismaClient.brand.findMany({
       where: {
         isActive: true,
@@ -258,7 +258,7 @@ logger.warn(' Prisma Client not available, returning default filter options');
       orderBy: { name: 'asc' },
     });
 
-// 获取所有品牌的商品数量（用于后续返回所有品牌）
+    // 获取所有品牌的商品数量（用于后续返回所有品牌）
     const brands = await Promise.all(
       allBrands.map(async (brand) => {
         const productCount = await prismaClient.product.count({
@@ -274,9 +274,9 @@ logger.warn(' Prisma Client not available, returning default filter options');
       })
     );
 
-// 获取颜色统计（从variants）
+    // 获取颜色统计（从variants）
     // color是String（必填），colorHex是String?（可选），只需过滤空字符串
-// 使用 prismaClient 而不是 prisma
+    // 使用 prismaClient 而不是 prisma
     const colorStats = await prismaClient.variant.groupBy({
       by: ['color', 'colorHex'],
       where: {
@@ -291,11 +291,11 @@ logger.warn(' Prisma Client not available, returning default filter options');
       _count: {
         _all: true,
       },
-}).catch(() => []); // 如果查询失败，返回空数组
+    }).catch(() => []); // 如果查询失败，返回空数组
 
-// 获取尺寸统计（从variants）
+    // 获取尺寸统计（从variants）
     // size是String（必填），只需过滤空字符串
-// 使用 prismaClient 而不是 prisma
+    // 使用 prismaClient 而不是 prisma
     const sizeStats = await prismaClient.variant.groupBy({
       by: ['size'],
       where: {
@@ -307,10 +307,10 @@ logger.warn(' Prisma Client not available, returning default filter options');
       _count: {
         _all: true,
       },
-}).catch(() => []); // 如果查询失败，返回空数组
+    }).catch(() => []); // 如果查询失败，返回空数组
 
-// 获取价格范围统计
-// 使用 prismaClient 而不是 prisma
+    // 获取价格范围统计
+    // 使用 prismaClient 而不是 prisma
     const products = await prismaClient.product.findMany({
       where: baseWhere,
       select: {
@@ -322,7 +322,7 @@ logger.warn(' Prisma Client not available, returning default filter options');
     const minPrice = Math.min(...prices, 0);
     const maxPrice = Math.max(...prices, 0);
 
-// 价格区间统计
+    // 价格区间统计
     const priceRanges = [
       { name: '$', min: 0, max: 20, count: 0 },
       { name: '$$', min: 20, max: 40, count: 0 },
@@ -337,7 +337,7 @@ logger.warn(' Prisma Client not available, returning default filter options');
       });
     });
 
-// 格式化分类数据
+    // 格式化分类数据
     const categoryTree = categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
@@ -351,7 +351,7 @@ logger.warn(' Prisma Client not available, returning default filter options');
       })),
     }));
 
-// 格式化品牌数据：返回所有品牌，即使数量为0
+    // 格式化品牌数据：返回所有品牌，即使数量为0
     const brandOptions = allBrands.map((brand) => {
       const brandWithCount = brands.find(b => b.id === brand.id);
       return {
@@ -361,7 +361,7 @@ logger.warn(' Prisma Client not available, returning default filter options');
       };
     });
 
-// 格式化颜色数据：返回固定颜色列表，即使数量为0
+    // 格式化颜色数据：返回固定颜色列表，即使数量为0
     // 创建颜色统计映射
     const colorStatsMap = new Map(
       colorStats.map((stat) => [stat.color.toLowerCase(), stat._count._all])
@@ -378,7 +378,7 @@ logger.warn(' Prisma Client not available, returning default filter options');
       };
     });
 
-// 格式化尺寸数据
+    // 格式化尺寸数据
     const sizeOptions = sizeStats
       .map((stat) => ({
         name: stat.size,
@@ -395,12 +395,12 @@ logger.warn(' Prisma Client not available, returning default filter options');
         return a.name.localeCompare(b.name);
       });
 
-// 格式化 Rush Delivery 选项：返回固定列表，即使数量为0
+    // 格式化 Rush Delivery 选项：返回固定列表，即使数量为0
     // 注意：Rush Delivery 目前不在数据库中存储，所以所有选项数量都为0
     const rushDeliveryOptions = FIXED_RUSH_DELIVERY_OPTIONS.map((option) => ({
       name: option.name,
       label: option.label,
-count: 0, // 目前没有存储 Rush Delivery 数据，数量为0
+      count: 0, // 目前没有存储 Rush Delivery 数据，数量为0
     }));
 
     const filterData = {
@@ -416,7 +416,7 @@ count: 0, // 目前没有存储 Rush Delivery 数据，数量为0
         min: minPrice,
         max: maxPrice,
       },
-// 目前数据库中不存在的字段，返回空数组
+      // 目前数据库中不存在的字段，返回空数组
       fit: [],
       decoration: [],
       material: [],
@@ -424,7 +424,7 @@ count: 0, // 目前没有存储 Rush Delivery 数据，数量为0
       style: [],
       neckline: [],
       features: [],
-// 返回固定的 Rush Delivery 选项列表
+      // 返回固定的 Rush Delivery 选项列表
       rushDelivery: rushDeliveryOptions,
     };
 
@@ -432,15 +432,15 @@ count: 0, // 目前没有存储 Rush Delivery 数据，数量为0
 
     res.json(filterData);
   } catch (error) {
-// 增强错误处理：即使数据库查询失败，也返回默认的筛选选项，避免前端崩溃
-logger.error(' Failed to get filter options:', {
+    // 增强错误处理：即使数据库查询失败，也返回默认的筛选选项，避免前端崩溃
+    logger.error(' Failed to get filter options:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
       meta: error.meta,
     });
 
-// 返回默认的筛选选项数据，确保前端能正常渲染
+    // 返回默认的筛选选项数据，确保前端能正常渲染
     const defaultFilterData = {
       categories: [],
       brands: FIXED_COLOR_LIST.map(() => ({ name: '', slug: '', count: 0 })), // 空品牌列表
@@ -474,7 +474,7 @@ logger.error(' Failed to get filter options:', {
       })),
     };
 
-// 返回默认数据而不是500错误，确保前端能正常显示筛选器
+    // 返回默认数据而不是500错误，确保前端能正常显示筛选器
     res.status(200).json(defaultFilterData);
   }
 };
@@ -489,20 +489,20 @@ exports.getProducts = async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
     const skip = (page - 1) * limit;
     const collectionSlug = req.query.collection;
-const categorySlug = req.query.category; // 支持 category 筛选
+    const categorySlug = req.query.category; // 支持 category 筛选
     const search = req.query.search;
-// 只使用数据库中实际存在的列名，避免 Prisma 映射问题
-// 添加 basePrice 到允许的排序字段，支持价格排序
+    // 只使用数据库中实际存在的列名，避免 Prisma 映射问题
+    // 添加 basePrice 到允许的排序字段，支持价格排序
     const allowedSortFields = ['createdAt', 'name', 'updatedAt', 'basePrice'];
     const requestedSort = req.query.sort || 'createdAt';
-// 如果请求的是 price，需要特殊处理（考虑 salePrice）
+    // 如果请求的是 price，需要特殊处理（考虑 salePrice）
     const isPriceSort = requestedSort === 'price';
-// 如果请求的是 price，映射到 basePrice（用于数据库排序，后续会重新排序）
+    // 如果请求的是 price，映射到 basePrice（用于数据库排序，后续会重新排序）
     const mappedSort = isPriceSort ? 'basePrice' : requestedSort;
     const sortBy = allowedSortFields.includes(mappedSort) ? mappedSort : 'createdAt';
     const sortOrder = req.query.order === 'asc' ? 'asc' : 'desc';
 
-// 读取筛选参数
+    // 读取筛选参数
     const colorFilter = req.query.color ? req.query.color.split(',') : [];
     const brandFilter = req.query.brand ? req.query.brand.split(',') : [];
     const sizeFilter = req.query.size ? req.query.size.split(',') : [];
@@ -515,8 +515,8 @@ const categorySlug = req.query.category; // 支持 category 筛选
     const andConditions = [];
 
     // Filter out products with no available variants (optional, can be controlled by query param)
-// Out-of-stock filtering
-// 支持仅使用产品库存的简单商品，避免前端看不到新建商品
+    // Out-of-stock filtering
+    // 支持仅使用产品库存的简单商品，避免前端看不到新建商品
     const includeOutOfStock = req.query.includeOutOfStock === 'true';
     if (!includeOutOfStock) {
       andConditions.push({
@@ -562,8 +562,8 @@ const categorySlug = req.query.category; // 支持 category 筛选
       });
     }
 
-// Filter by category (slug)
-// 修改为包含所有子分类的商品
+    // Filter by category (slug)
+    // 修改为包含所有子分类的商品
     if (categorySlug) {
       const categoryIds = await getCategoryIdsIncludingChildren(categorySlug);
       if (categoryIds.length > 0) {
@@ -582,7 +582,7 @@ const categorySlug = req.query.category; // 支持 category 筛选
       }
     }
 
-// Filter by brand
+    // Filter by brand
     if (brandFilter.length > 0) {
       andConditions.push({
         brand: {
@@ -594,7 +594,7 @@ const categorySlug = req.query.category; // 支持 category 筛选
       });
     }
 
-// Filter by color (通过 variants)
+    // Filter by color (通过 variants)
     if (colorFilter.length > 0) {
       andConditions.push({
         variants: {
@@ -607,7 +607,7 @@ const categorySlug = req.query.category; // 支持 category 筛选
       });
     }
 
-// Filter by size (通过 variants)
+    // Filter by size (通过 variants)
     if (sizeFilter.length > 0) {
       andConditions.push({
         variants: {
@@ -635,9 +635,9 @@ const categorySlug = req.query.category; // 支持 category 筛选
       where.AND = andConditions;
     }
 
-// 构建缓存key，包含所有筛选条件
-// 添加新的筛选参数到缓存key
-// 价格排序时，缓存键使用 'price' 而不是 'basePrice'，确保缓存正确
+    // 构建缓存key，包含所有筛选条件
+    // 添加新的筛选参数到缓存key
+    // 价格排序时，缓存键使用 'price' 而不是 'basePrice'，确保缓存正确
     const cacheKey = `products:list:${JSON.stringify({
       page,
       limit,
@@ -647,7 +647,7 @@ const categorySlug = req.query.category; // 支持 category 筛选
       color: colorFilter.join(',') || '',
       brand: brandFilter.join(',') || '',
       size: sizeFilter.join(',') || '',
-sort: isPriceSort ? 'price' : sortBy, // 价格排序时使用 'price'
+      sort: isPriceSort ? 'price' : sortBy, // 价格排序时使用 'price'
       order: sortOrder,
       includeOutOfStock,
     })}`;
@@ -658,7 +658,7 @@ sort: isPriceSort ? 'price' : sortBy, // 价格排序时使用 'price'
       return res.json(cachedResponse);
     }
 
-// 如果按价格排序，需要先查询所有产品（在当前筛选条件下），然后按实际价格排序
+    // 如果按价格排序，需要先查询所有产品（在当前筛选条件下），然后按实际价格排序
     // 实际价格 = salePrice（如果有且小于 basePrice）或 basePrice
     const shouldFetchAllForPriceSort = isPriceSort;
 
@@ -666,8 +666,8 @@ sort: isPriceSort ? 'price' : sortBy, // 价格排序时使用 'price'
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
-skip: shouldFetchAllForPriceSort ? 0 : skip, // 价格排序时先查询所有
-take: shouldFetchAllForPriceSort ? undefined : limit, // 价格排序时不限制数量
+        skip: shouldFetchAllForPriceSort ? 0 : skip, // 价格排序时先查询所有
+        take: shouldFetchAllForPriceSort ? undefined : limit, // 价格排序时不限制数量
         orderBy: { [sortBy]: sortOrder },
         select: {
           id: true,
@@ -700,14 +700,14 @@ take: shouldFetchAllForPriceSort ? undefined : limit, // 价格排序时不限�
               sortOrder: true,
             },
             orderBy: { sortOrder: 'asc' },
-// 移除 take: 1 限制，返回所有图片
+            // 移除 take: 1 限制，返回所有图片
           },
           variants: {
             select: {
               id: true,
               color: true,
               colorHex: true,
-imageUrl: true, // 包含 imageUrl 用于颜色悬停切换
+              imageUrl: true, // 包含 imageUrl 用于颜色悬停切换
               stockQuantity: true,
             },
             orderBy: { stockQuantity: 'desc' },
@@ -717,11 +717,11 @@ imageUrl: true, // 包含 imageUrl 用于颜色悬停切换
       prisma.product.count({ where }),
     ]);
 
-// 如果按价格排序，需要按实际价格重新排序
+    // 如果按价格排序，需要按实际价格重新排序
     // 实际价格 = salePrice（如果有且小于 basePrice）或 basePrice
     let sortedProducts = products;
     if (isPriceSort) {
-// 计算实际价格的辅助函数
+      // 计算实际价格的辅助函数
       const getActualPrice = (product) => {
         const basePrice = toNumber(product.basePrice) / 100; // basePrice 从分转换为元
         const salePrice = toNumber(product.salePrice, 0);
@@ -731,7 +731,7 @@ imageUrl: true, // 包含 imageUrl 用于颜色悬停切换
         return salePriceInDollars > 0 && salePriceInDollars < basePrice ? salePriceInDollars : basePrice;
       };
 
-// 按实际价格排序
+      // 按实际价格排序
       sortedProducts = products.sort((a, b) => {
         const priceA = getActualPrice(a);
         const priceB = getActualPrice(b);
@@ -743,7 +743,7 @@ imageUrl: true, // 包含 imageUrl 用于颜色悬停切换
         }
       });
 
-// 重新排序后，应用分页
+      // 重新排序后，应用分页
       sortedProducts = sortedProducts.slice(skip, skip + limit);
     }
 
@@ -751,7 +751,7 @@ imageUrl: true, // 包含 imageUrl 用于颜色悬停切换
       const primaryImage = product.images[0];
       const primaryVariant = product.variants[0];
 
-// 将图片URL转换为完整的后端服务器URL
+      // 将图片URL转换为完整的后端服务器URL
       const imageUrl = primaryImage
         ? optimizeImageUrl(primaryImage.url, req)
         : null;
@@ -761,8 +761,8 @@ imageUrl: true, // 包含 imageUrl 用于颜色悬停切换
         name: product.name,
         slug: product.slug,
         price: {
-base: toNumber(product.basePrice) / 100, // basePrice 从分转换为元
-// salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
+          base: toNumber(product.basePrice) / 100, // basePrice 从分转换为元
+          // salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
           // 但如果历史数据中 salePrice 可能是以"分"存储的，需要兼容处理
           // 检查：如果 salePrice 值很大（> 1000），可能是"分"，需要除以 100；否则是"元"
           sale: (() => {
@@ -779,7 +779,7 @@ base: toNumber(product.basePrice) / 100, // basePrice 从分转换为元
             alt: primaryImage.alt || product.name,
           }
           : null,
-// 返回完整的图片数组
+        // 返回完整的图片数组
         images: (product.images || []).map((image) => ({
           id: image.id || null,
           url: image.url ? (optimizeImageUrl(image.url, req) || image.url) : null,
@@ -798,22 +798,22 @@ base: toNumber(product.basePrice) / 100, // basePrice 从分转换为元
             slug: product.brand.slug,
           }
           : null,
-// 添加variants信息用于颜色显示
-// 包含 imageUrl 字段用于颜色悬停切换图片
-// 修复：确保 imageUrl 正确返回，即使 optimizeImageUrl 返回 null 也使用原始值
+        // 添加variants信息用于颜色显示
+        // 包含 imageUrl 字段用于颜色悬停切换图片
+        // 修复：确保 imageUrl 正确返回，即使 optimizeImageUrl 返回 null 也使用原始值
         variants: product.variants
-.filter((v) => v.color && v.color.trim() !== '') // 只返回有颜色信息的variant
+          .filter((v) => v.color && v.color.trim() !== '') // 只返回有颜色信息的variant
           .map((v) => {
             let finalImageUrl = null;
             if (v.imageUrl && v.imageUrl.trim() !== '') {
-// 尝试优化 URL，如果失败则使用原始值
+              // 尝试优化 URL，如果失败则使用原始值
               const optimized = optimizeImageUrl(v.imageUrl, req);
               finalImageUrl = optimized || v.imageUrl;
             }
             return {
               color: v.color || null,
               colorHex: v.colorHex || null,
-imageUrl: finalImageUrl, // 包含变体图片URL
+              imageUrl: finalImageUrl, // 包含变体图片URL
             };
           }),
         rating: {
@@ -837,14 +837,14 @@ imageUrl: finalImageUrl, // 包含变体图片URL
 
     res.json(response);
   } catch (error) {
-logger.error(' Failed to get products:', {
+    logger.error(' Failed to get products:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
       meta: error.meta,
     });
 
-// 如果数据库连接失败或查询错误，返回空数组而不是错误
+    // 如果数据库连接失败或查询错误，返回空数组而不是错误
     // 这样可以避免前端因为数据库问题而完全无法工作
     // const isConnectionError = error.code === 'P1001' || 
     //                          error.code === 'P2002' || 
@@ -854,8 +854,8 @@ logger.error(' Failed to get products:', {
     //                          error.message.includes('does not exist');
 
     // if (isConnectionError) {
-//  logger.warn(' Database connection/table issue, returning empty products list');
-//  // 修复：确保 limit 变量已定义
+    //  logger.warn(' Database connection/table issue, returning empty products list');
+    //  // 修复：确保 limit 变量已定义
     //   const defaultLimit = parseInt(req.query.limit, 10) || 20;
     //   return res.json({
     //     data: [],
@@ -868,10 +868,10 @@ logger.error(' Failed to get products:', {
     //   });
     // }
 
-// // 对于其他查询错误，也返回空数组（可能是数据不存在）
+    // // 对于其他查询错误，也返回空数组（可能是数据不存在）
     // // 这样可以避免前端因为数据问题而完全无法工作
-// logger.warn(' Query error, returning empty products list to prevent frontend failure');
-// // 修复：确保 limit 变量已定义
+    // logger.warn(' Query error, returning empty products list to prevent frontend failure');
+    // // 修复：确保 limit 变量已定义
     // const defaultLimit = parseInt(req.query.limit, 10) || 20;
     // return res.json({
     //   data: [],
@@ -915,7 +915,7 @@ exports.getProductBySlug = async (req, res) => {
       return res.json(cachedProduct);
     }
 
-// 修复：Product id 是 UUID，不是数字，应该始终使用 slug 查找
+    // 修复：Product id 是 UUID，不是数字，应该始终使用 slug 查找
     // 之前的代码错误地尝试将数字 slug 当作 id 查找，导致 Prisma 查询失败
     const product = await prisma.product.findUnique({
       where: { slug },
@@ -996,13 +996,13 @@ exports.getProductBySlug = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-// 防御性检查：确保产品数据完整
+    // 防御性检查：确保产品数据完整
     if (!product.id) {
       logger.error('Product data incomplete: missing id', { slug: req.params.slug, product });
       return res.status(500).json({ error: 'Product data is incomplete' });
     }
 
-// 安全地获取评分数据，避免查询失败导致整个请求失败
+    // 安全地获取评分数据，避免查询失败导致整个请求失败
     let avgRating = { _avg: { rating: null }, _count: { rating: 0 } };
     try {
       avgRating = await prisma.productReview.aggregate({
@@ -1019,7 +1019,7 @@ exports.getProductBySlug = async (req, res) => {
       // 继续执行，使用默认值
     }
 
-// 防御性处理关联数据，避免 null/undefined 导致错误
+    // 防御性处理关联数据，避免 null/undefined 导致错误
     const formattedProduct = {
       id: product.id,
       name: product.name || '',
@@ -1028,8 +1028,8 @@ exports.getProductBySlug = async (req, res) => {
       longDescription: product.longDescription || null,
       basePrice: toNumber(product.basePrice, 0),
       price: {
-base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
-// salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
+        base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
+        // salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
         // 但如果历史数据中 salePrice 可能是以"分"存储的，需要兼容处理
         sale: (() => {
           const saleValue = toNumber(product.salePrice, 0);
@@ -1042,7 +1042,7 @@ base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
         onSale: (() => {
           const sale = toNumber(product.salePrice, 0);
           const base = toNumber(product.basePrice, 0);
-// 比较时需要统一单位（都转换为元）
+          // 比较时需要统一单位（都转换为元）
           const saleInYuan = sale > 1000 ? sale / 100 : sale;
           const baseInYuan = base / 100;
           return saleInYuan > 0 && saleInYuan !== baseInYuan;
@@ -1081,11 +1081,23 @@ base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
       ? formattedProduct.images[0]
       : null;
 
+    // Constructed baseImages for Design Lab compatibility
+    const fallbackImage = formattedProduct.primaryImage?.url || '/assets/hero/hero-card-tee.jpg';
+    const optimizedImages = formattedProduct.images.map(img => img.url);
+
+    formattedProduct.baseImages = {
+      front: fallbackImage,
+      back: optimizedImages[1] || fallbackImage,
+      sleeve: optimizedImages[2] || fallbackImage,
+      'left-sleeve': optimizedImages[3] || fallbackImage, // Additional views if available
+      'right-sleeve': optimizedImages[4] || fallbackImage
+    };
+
     await setCache(cacheKey, formattedProduct, PRODUCT_DETAIL_CACHE_TTL);
 
     res.json(formattedProduct);
   } catch (error) {
-// 增强错误日志，记录 Prisma 错误代码和元数据
+    // 增强错误日志，记录 Prisma 错误代码和元数据
     const errorDetails = {
       error: error.message,
       stack: error.stack,
@@ -1097,7 +1109,7 @@ base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
 
     logger.error('Failed to fetch product by slug', errorDetails);
 
-// 区分不同类型的错误
+    // 区分不同类型的错误
     // Prisma P2025: Record not found (应该返回 404)
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Product not found' });
@@ -1134,7 +1146,7 @@ exports.getRelatedProducts = async (req, res) => {
     const { slug } = req.params;
     const limit = parseInt(req.query.limit) || 4;
 
-// 修复：Product id 是 UUID，不是数字，应该始终使用 slug 查找
+    // 修复：Product id 是 UUID，不是数字，应该始终使用 slug 查找
     const currentProduct = await prisma.product.findUnique({
       where: { slug },
       select: { id: true, categoryId: true, brandId: true },
@@ -1145,7 +1157,7 @@ exports.getRelatedProducts = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-// 检查 categoryId 是否为 null，如果为 null 则返回空数组
+    // 检查 categoryId 是否为 null，如果为 null 则返回空数组
     if (!currentProduct.categoryId) {
       logger.warn('Product has no categoryId, returning empty related products', {
         productId: currentProduct.id,
@@ -1173,7 +1185,7 @@ exports.getRelatedProducts = async (req, res) => {
 
     const productIds = candidateProducts.map((p) => p.id);
 
-// 安全地获取评分统计，避免查询失败
+    // 安全地获取评分统计，避免查询失败
     let ratingStats = [];
     if (productIds.length > 0) {
       try {
@@ -1283,8 +1295,8 @@ exports.getRelatedProducts = async (req, res) => {
         slug: product.slug,
         basePrice: toNumber(product.basePrice, 0),
         price: {
-base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
-// salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
+          base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
+          // salePrice 在数据库中存储为 Decimal(10,2)，单位是"元"，不需要除以 100
           // 但如果历史数据中 salePrice 可能是以"分"存储的，需要兼容处理
           sale: (() => {
             const saleValue = toNumber(product.salePrice, 0);
@@ -1307,7 +1319,7 @@ base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
 
     res.json({ data: formattedRelated });
   } catch (error) {
-// 增强错误日志，记录 Prisma 错误代码和元数据
+    // 增强错误日志，记录 Prisma 错误代码和元数据
     const errorDetails = {
       error: error.message,
       stack: error.stack,
@@ -1320,7 +1332,7 @@ base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
 
     logger.error('Failed to fetch related products', errorDetails);
 
-// 区分不同类型的错误
+    // 区分不同类型的错误
     // Prisma P2025: Record not found (应该返回 404)
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Product not found' });
@@ -1339,7 +1351,7 @@ base: toNumber(product.basePrice, 0) / 100, // basePrice 从分转换为元
     logger.error('Returning empty array due to error in getRelatedProducts', errorDetails);
     res.status(500).json({
       error: 'Failed to fetch related products',
-data: [], // 返回空数组，避免前端完全失败
+      data: [], // 返回空数组，避免前端完全失败
       ...(process.env.NODE_ENV === 'development' && {
         details: error.message,
         code: error.code,
@@ -1386,7 +1398,7 @@ exports.getProductByVariantId = async (req, res) => {
       },
     });
 
-// FALLBACK: If not found as variant, check if it's a productId
+    // FALLBACK: If not found as variant, check if it's a productId
     let productFallback = null;
     if (!variant) {
       console.log('[Backend] Not found as variant, checking as product ID:', { variantId, timestamp });
@@ -1401,7 +1413,7 @@ exports.getProductByVariantId = async (req, res) => {
       });
 
       if (productFallback && productFallback.variants && productFallback.variants.length > 0) {
-// Prioritize 'White' variant as default, otherwise usage alphabetical/stock sort
+        // Prioritize 'White' variant as default, otherwise usage alphabetical/stock sort
         let defaultVariant = productFallback.variants.find(v => v.color === 'White');
 
         if (!defaultVariant) {
@@ -1473,7 +1485,7 @@ exports.getProductByVariantId = async (req, res) => {
       )
     );
 
-// 构建颜色详细信息（包含 hex、可用尺寸等）
+    // 构建颜色详细信息（包含 hex、可用尺寸等）
     const colorDetails = [];
     const colorMap = new Map();
 
@@ -1509,7 +1521,7 @@ exports.getProductByVariantId = async (req, res) => {
       });
     });
 
-// Fetch global size fees for synchronization with Design Lab
+    // Fetch global size fees for synchronization with Design Lab
     const globalSizeFees = await prisma.offline_order_size_fees.findMany();
     const globalFeeMap = {};
     globalSizeFees.forEach(fee => {
@@ -1523,11 +1535,11 @@ exports.getProductByVariantId = async (req, res) => {
       variantId: variant.id,
       color: variant.color || null,
       colors,
-colorDetails, // 添加颜色详细信息
+      colorDetails, // 添加颜色详细信息
       baseImages,
       gallery: optimizedImages,
       variants: product.variants.map((v) => {
-// Synchronize with global size fee config
+        // Synchronize with global size fee config
         const globalFee = v.size ? globalFeeMap[v.size] : undefined;
 
         return {
@@ -1540,7 +1552,7 @@ colorDetails, // 添加颜色详细信息
           // Use global fee if configured, otherwise fallback to specific variant's adjustment
           priceAdjustment: globalFee !== undefined ? globalFee : Number(v.priceAdjustment || 0),
         };
-}), // 添加变体列表，用于颜色切换
+      }), // 添加变体列表，用于颜色切换
     };
 
     console.log('[Backend] Sending response:', {

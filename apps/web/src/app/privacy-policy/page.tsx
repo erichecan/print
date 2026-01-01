@@ -4,6 +4,7 @@
 * Added data collection, usage, and rights overview
 * 补充 SEO 元数据
  */
+import React from 'react';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
 
@@ -41,37 +42,47 @@ const sections = [
 
 export default function PrivacyPolicyPage() {
   return (
-    <section className="container" style={{ padding: '72px 0', display: 'grid', gap: '28px', maxWidth: '720px' }}>
-      <header style={{ display: 'grid', gap: '12px' }}>
-        <h1>Privacy Policy</h1>
-        <p>
-          Your trust matters. This policy explains what data we collect, how it is used, and the controls you have
-          over your information when working with Suvernire Plus.
-        </p>
-      </header>
+    <div className="bg-gray-50 min-h-screen pb-20">
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-4">
+            Privacy Policy
+          </h1>
+          <p className="text-lg text-gray-500">
+            Your trust matters. This policy explains what data we collect, how it is used, and the controls you have
+            over your information when working with Suvernire Plus.
+          </p>
+        </div>
+      </div>
 
-      {sections.map((section) => (
-        <section key={section.title} style={{ display: 'grid', gap: '12px' }}>
-          <h2>{section.title}</h2>
-          <p>{section.body}</p>
-        </section>
-      ))}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-8 sm:p-12 space-y-12">
+            {sections.map((section) => (
+              <section key={section.title}>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">{section.title}</h2>
+                <p className="text-gray-600 leading-relaxed">{section.body}</p>
+              </section>
+            ))}
 
-      <section style={{ display: 'grid', gap: '12px' }}>
-        <h2>Security</h2>
-        <p>
-          We encrypt data in transit, restrict system access to authorized employees, and routinely audit our
-          infrastructure. If a security event occurs, we will notify affected users promptly.
-        </p>
-      </section>
+            <section>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Security</h2>
+              <p className="text-gray-600 leading-relaxed">
+                We encrypt data in transit, restrict system access to authorized employees, and routinely audit our
+                infrastructure. If a security event occurs, we will notify affected users promptly.
+              </p>
+            </section>
 
-      <section style={{ display: 'grid', gap: '12px' }}>
-        <h2>Contact</h2>
-        <p>
-          Questions? Email <a href="mailto:privacy@suvernireplus.com">privacy@suvernireplus.com</a> or write to
-          Suvernire Plus, 250 Front Street W, Suite 1200, Toronto, ON M5V 3G5, Canada.
-        </p>
-      </section>
-    </section>
+            <section className="bg-red-50 rounded-lg p-6 border border-red-100">
+              <h2 className="text-lg font-bold text-gray-900 mb-2">Contact</h2>
+              <p className="text-gray-700">
+                Questions? Email <a href="mailto:privacy@suvernireplus.com" className="text-red-600 hover:text-red-800 font-medium">privacy@suvernireplus.com</a> or write to
+                Suvernire Plus, 250 Front Street W, Suite 1200, Toronto, ON M5V 3G5, Canada.
+              </p>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

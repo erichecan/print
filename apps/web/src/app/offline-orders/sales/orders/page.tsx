@@ -217,7 +217,7 @@ export default function SalesOrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
 
-// 在页面加载时打印构建版本信息，便于验证部署
+  // 在页面加载时打印构建版本信息，便于验证部署
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const sha = process.env.NEXT_PUBLIC_BUILD_SHA || 'unknown';
@@ -233,10 +233,10 @@ export default function SalesOrdersPage() {
     });
   }, []);
 
-// Tab状态管理
+  // Tab状态管理
   const [activeTab, setActiveTab] = useState<'orders' | 'config'>('orders');
 
-// 配置管理状态
+  // 配置管理状态
   const [configTab, setConfigTab] = useState<'colors' | 'products' | 'size-fees'>('colors');
   const [colors, setColors] = useState<Color[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -253,13 +253,13 @@ export default function SalesOrdersPage() {
   const [editProductImageUrl, setEditProductImageUrl] = useState('');
   const [editProductIsCustomerOwned, setEditProductIsCustomerOwned] = useState(false);
 
-// 尺码费用状态
+  // 尺码费用状态
   const [sizeFees, setSizeFees] = useState<SizeFee[]>([]);
   const [editingSizeFeeId, setEditingSizeFeeId] = useState<string | null>(null);
   const [editSizeFeeValue, setEditSizeFeeValue] = useState<string>('');
 
-// 订单状态选项
-// 添加 ACTIVE_RUSH 状态
+  // 订单状态选项
+  // 添加 ACTIVE_RUSH 状态
   const statusOptions = [
     { value: 'ACTIVE', label: 'ACTIVE' },
     { value: 'ACTIVE_RUSH', label: 'ACTIVE (加急)' },
@@ -268,7 +268,7 @@ export default function SalesOrdersPage() {
   ];
 
 
-// Auth Effect: Redirect if not logged in
+  // Auth Effect: Redirect if not logged in
   useEffect(() => {
     if (authLoading) return;
 
@@ -296,9 +296,9 @@ export default function SalesOrdersPage() {
       if (authLoading || !currentUser) return;
 
       try {
-// 获取阶段配置（用于快速修改状态）
-// 使用代理 API 访问，确保认证正确传递
-// 修复：使用 authenticatedFetch 确保 token 正确传递
+        // 获取阶段配置（用于快速修改状态）
+        // 使用代理 API 访问，确保认证正确传递
+        // 修复：使用 authenticatedFetch 确保 token 正确传递
         try {
           const { authenticatedFetch } = await import('@/lib/api');
           const stagesRes = await authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
@@ -346,18 +346,26 @@ export default function SalesOrdersPage() {
     router.push(`/offline-orders/sales/orders/${orderId}`);
   };
 
-// 删除订单
+  // 删除订单
   const handleDeleteOrder = async (orderId: string, orderCode: string) => {
-    if (!confirm(`确定要删除订单 ${orderCode} 吗？此操作不可恢复。`)) {
-      return;
-    }
+    // confirmation removed as per user request to avoid cancellation issues
 
     setDeletingOrder(orderId);
     try {
       await salesOrdersApi.delete(orderId);
-// 删除成功后刷新列表
+      // 删除成功后刷新列表
       setOrders(orders.filter(o => o.id !== orderId));
-      alert('订单已删除');
+      // alert('订单已删除'); // Alert might also be annoying or block, but user only complained about confirm dialog. Keeping alert for feedback or removing?
+      // User said "click delete button, also has a dialog, maybe inexplicably clicked cancel".
+      // Alert is technically a dialog but it's purely informational.
+      // However, usually toast is better. For now I'll check if I should keep alert.
+      // The user said "also remove all similar dialogs".
+      // I'll keep the logic simple: just do it. I'll verify if I should remove alert too.
+      // Standard practice: if no confirm, maybe show a toast or nothing.
+      // I'll leave the alert('订单已删除') if not explicitly asked to remove success feedback,
+      // but 'confirm' is blocking and requires choice.
+      // Actually, if I remove confirm, I should probably use a non-blocking toast.
+      // But let's just remove the confirm first.
     } catch (err: any) {
       alert(err.message || '删除失败，请稍后重试');
     } finally {
@@ -365,7 +373,7 @@ export default function SalesOrdersPage() {
     }
   };
 
-// 快速修改订单阶段
+  // 快速修改订单阶段
   const handleQuickUpdateStage = async (orderId: string, newStageKey: string) => {
     if (!newStageKey) return;
 
@@ -382,14 +390,14 @@ export default function SalesOrdersPage() {
     }
   };
 
-// 快速修改订单状态
-// 支持 ACTIVE_RUSH 状态
+  // 快速修改订单状态
+  // 支持 ACTIVE_RUSH 状态
   const handleQuickUpdateStatus = async (orderId: string, newStatus: string) => {
     if (!newStatus) return;
 
     setUpdatingStatus(orderId);
     try {
-// 处理 ACTIVE_RUSH 状态
+      // 处理 ACTIVE_RUSH 状态
       let actualStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
       let rushOrder: boolean | undefined;
 
@@ -416,8 +424,8 @@ export default function SalesOrdersPage() {
 
   const isManager = currentUser?.role && ['SALES_MANAGER', 'ADMIN'].includes(String(currentUser.role).toUpperCase());
 
-// 配置管理数据获取
-// 修复：使用 authenticatedFetch 确保 token 正确传递
+  // 配置管理数据获取
+  // 修复：使用 authenticatedFetch 确保 token 正确传递
   const { data: colorsData, mutate: mutateColors } = useSWR(
     activeTab === 'config' && configTab === 'colors' ? '/api/proxy/admin/offline-order-colors' : null,
     async (url) => {
@@ -428,7 +436,7 @@ export default function SalesOrdersPage() {
     }
   );
 
-// 修复：使用 authenticatedFetch 确保 token 正确传递
+  // 修复：使用 authenticatedFetch 确保 token 正确传递
   const { data: productsData, mutate: mutateProducts } = useSWR(
     activeTab === 'config' && configTab === 'products' ? '/api/proxy/admin/offline-order-products' : null,
     async (url) => {
@@ -451,7 +459,7 @@ export default function SalesOrdersPage() {
     }
   }, [productsData]);
 
-// 尺码费用SWR
+  // 尺码费用SWR
   const { data: sizeFeesData, mutate: mutateSizeFees } = useSWR(
     activeTab === 'config' && configTab === 'size-fees' ? '/api/proxy/admin/offline-order-size-fees' : null,
     async (url) => {
@@ -468,7 +476,7 @@ export default function SalesOrdersPage() {
     }
   }, [sizeFeesData]);
 
-// 颜色管理函数
+  // 颜色管理函数
   const handleCreateColor = async () => {
     if (!newColorName.trim()) return;
     try {
@@ -499,7 +507,7 @@ export default function SalesOrdersPage() {
   };
 
   const handleDeleteColor = async (id: string) => {
-    if (!confirm('确定要删除这个颜色吗？')) return;
+    // confirmation removed
     try {
       await api(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
       mutateColors();
@@ -508,7 +516,7 @@ export default function SalesOrdersPage() {
     }
   };
 
-// 产品管理函数
+  // 产品管理函数
   const handleCreateProduct = async () => {
     if (!newProductName.trim()) return;
     try {
@@ -548,7 +556,7 @@ export default function SalesOrdersPage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm('确定要删除这个产品吗？')) return;
+    // confirmation removed
     try {
       await api(`/api/proxy/admin/offline-order-products/${id}`, { method: 'DELETE' });
       mutateProducts();
@@ -557,7 +565,7 @@ export default function SalesOrdersPage() {
     }
   };
 
-// 尺码费用管理函数
+  // 尺码费用管理函数
   const handleUpdateSizeFee = async (id: string, size: string) => {
     const fee = parseFloat(editSizeFeeValue);
     if (isNaN(fee) || fee < 0) {
@@ -600,7 +608,7 @@ export default function SalesOrdersPage() {
             <p>在这里查看你创建的线下订单（主管可查看全部订单）。</p>
           </div>
           <div className="sales-orders-header-actions">
-{/* 顶部导航按钮 - 放在新建订单按钮旁边 */}
+            {/* 顶部导航按钮 - 放在新建订单按钮旁边 */}
             <button
               type="button"
               className="sales-orders-nav-btn sales-orders-nav-btn-secondary"
@@ -625,7 +633,7 @@ export default function SalesOrdersPage() {
           </div>
         </header>
 
-{/* Tab切换 */}
+        {/* Tab切换 */}
         <div className="sales-orders-tabs">
           <button
             type="button"
@@ -647,7 +655,7 @@ export default function SalesOrdersPage() {
 
         {error && <div className="sales-orders-error">{error}</div>}
 
-{/* 订单列表Tab内容 */}
+        {/* 订单列表Tab内容 */}
         {activeTab === 'orders' && (
           <div className="sales-orders-tab-content">
 
@@ -760,7 +768,7 @@ export default function SalesOrdersPage() {
           </div>
         )}
 
-{/* 配置管理Tab内容 */}
+        {/* 配置管理Tab内容 */}
         {activeTab === 'config' && isManager && (
           <div className="sales-orders-tab-content">
             <div className="config-sub-tabs">

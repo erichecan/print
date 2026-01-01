@@ -5,6 +5,7 @@
 * 补充 SEO 元数据
 * 对齐原型化排版与内容分区
  */
+import React from 'react';
 import Link from 'next/link';
 import { generateSEOMetadata } from '@/lib/seo';
 import type { Metadata } from 'next';
@@ -67,7 +68,7 @@ export default function ReturnsPage() {
               </li>
             </ol>
           </nav>
-          <p className="text-base font-semibold text-blue-600 tracking-wide uppercase mb-2">Support</p>
+          <p className="text-base font-semibold text-red-600 tracking-wide uppercase mb-2">Support</p>
           <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 tracking-tight mb-4">
             Returns & Refunds
           </h1>
@@ -81,8 +82,8 @@ export default function ReturnsPage() {
         {/* Core Value Props */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-6">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center mb-6">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -92,8 +93,8 @@ export default function ReturnsPage() {
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-6">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center mb-6">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
             </div>
@@ -103,8 +104,8 @@ export default function ReturnsPage() {
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 hover:shadow-md transition-shadow">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-6">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center mb-6">
+              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
@@ -164,8 +165,8 @@ export default function ReturnsPage() {
               <ol className="relative border-l border-gray-200 ml-3 space-y-8">
                 {returnProcess.map((step, index) => (
                   <li key={step} className="ml-6">
-                    <span className="absolute flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full -left-4 ring-4 ring-white">
-                      <span className="text-blue-600 font-bold text-sm">{index + 1}</span>
+                    <span className="absolute flex items-center justify-center w-8 h-8 bg-red-100 rounded-full -left-4 ring-4 ring-white">
+                      <span className="text-red-600 font-bold text-sm">{index + 1}</span>
                     </span>
                     <p className="text-lg text-gray-700 font-medium">{step}</p>
                   </li>
@@ -212,7 +213,7 @@ export default function ReturnsPage() {
 
           <div className="space-y-8">
             {/* Sidebar: Need Help */}
-            <div className="bg-blue-50 rounded-xl p-8 border border-blue-100 sticky top-8">
+            <div className="bg-red-50 rounded-xl p-8 border border-red-100 sticky top-8">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Need Help?</h2>
               <p className="text-gray-600 mb-6">
                 Our customer success team is on standby to assist with returns and exchanges.
@@ -227,10 +228,10 @@ export default function ReturnsPage() {
                   </div>
                 ))}
               </div>
-              <div className="mt-8 pt-6 border-t border-blue-100">
+              <div className="mt-8 pt-6 border-t border-red-100">
                 <a
                   href="mailto:returns@suvernireplus.com"
-                  className="block w-full text-center bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                  className="block w-full text-center bg-red-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-red-700 transition-colors shadow-sm"
                 >
                   Contact Support
                 </a>

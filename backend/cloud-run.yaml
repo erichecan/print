@@ -50,6 +50,8 @@ spec:
           value: "https://FRONTEND_SERVICE_URL"
         - name: CORS_ORIGINS
           value: "https://FRONTEND_SERVICE_URL"
+        - name: GCP_IMAGE_BUCKET
+          value: "print-main-product-images"
         resources:
           limits:
             cpu: "1000m"
