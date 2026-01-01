@@ -25,11 +25,11 @@ function getApiBase(): string {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[API Proxy] Failed to get backend API base:', errorMessage);
-// 如果获取失败，在生产环境抛出错误，开发环境回退到 localhost
+    // 如果获取失败，在生产环境抛出错误，开发环境回退到 localhost
     if (process.env.NODE_ENV === 'production') {
       throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
     }
-// 修复：与本仓库默认本地后端端口 4000 对齐（webapp-testing/Playwright/后端启动脚本）
+    // 修复：与本仓库默认本地后端端口 4000 对齐（webapp-testing/Playwright/后端启动脚本）
     return 'http://localhost:3001/api';
   }
 }
@@ -42,7 +42,7 @@ const AUTH_REQUIRED_PATHS = [
   '/addresses',
   '/designs',
   '/cart',
-'/sales', // Sales API 需要认证
+  '/sales', // Sales API 需要认证
 ];
 
 // 代理配置：超时和重试
@@ -69,7 +69,7 @@ async function fetchWithTimeout(
 ): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  
+
   try {
     const response = await fetch(url, {
       ...options,
@@ -99,7 +99,7 @@ async function fetchWithRetry(
 ): Promise<Response> {
   let lastError: Error | null = null;
   const errors: Array<{ attempt: number; error: string; timestamp: string }> = [];
-  
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const attemptStartTime = Date.now();
     console.log(`[API Proxy] 🔄 Attempt ${attempt + 1}/${maxRetries + 1}`, {
@@ -110,8 +110,8 @@ async function fetchWithRetry(
     });
     try {
       const response = await fetchWithTimeout(url, options);
-// 记录成功信息
-// 修复：记录所有尝试的成功信息
+      // 记录成功信息
+      // 修复：记录所有尝试的成功信息
       console.log(`[API Proxy] ✅ Attempt ${attempt + 1} succeeded`, {
         traceId,
         url,
@@ -132,15 +132,15 @@ async function fetchWithRetry(
       };
       errors.push(errorInfo);
       lastError = error;
-      
-// 记录每次尝试的详细错误信息
+
+      // 记录每次尝试的详细错误信息
       console.error(`[API Proxy] ❌ Fetch attempt ${attempt + 1}/${maxRetries + 1} failed:`, {
         traceId,
         url,
         ...errorInfo,
         stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined,
       });
-      
+
       // 如果是最后一次尝试，抛出包含所有错误信息的错误
       if (attempt === maxRetries) {
         const enhancedError = new Error(
@@ -151,8 +151,8 @@ async function fetchWithRetry(
         enhancedError.url = url;
         throw enhancedError;
       }
-      
-// 修复：增加重试间隔，给冷启动更多时间
+
+      // 修复：增加重试间隔，给冷启动更多时间
       const retryDelay = RETRY_DELAY_MS * (attempt + 1);
       console.log(`[API Proxy] ⏳ Retrying in ${retryDelay}ms...`, {
         traceId,
@@ -163,7 +163,7 @@ async function fetchWithRetry(
       await new Promise(resolve => setTimeout(resolve, retryDelay));
     }
   }
-  
+
   throw lastError || new Error('Request failed after retries');
 }
 
@@ -176,12 +176,12 @@ async function handleProxyRequest(
   request: NextRequest,
   context: { params: { path: string[] } }
 ) {
-// 修复：Next.js 14.2.33 使用同步对象，直接使用 params
-// 生成 traceId 用于请求追踪
+  // 修复：Next.js 14.2.33 使用同步对象，直接使用 params
+  // 生成 traceId 用于请求追踪
   const timestamp = new Date().toISOString();
   const traceId = generateTraceId();
-  
-// 添加初始日志，确认函数被调用
+
+  // 添加初始日志，确认函数被调用
   console.log('[API Proxy] handleProxyRequest called', {
     timestamp,
     traceId,
@@ -190,13 +190,13 @@ async function handleProxyRequest(
     params: context.params,
     path: context.params?.path,
   });
-  
+
   let params: { path: string[] };
   try {
-// Next.js 14.2.33 使用同步对象，直接使用 params
+    // Next.js 14.2.33 使用同步对象，直接使用 params
     params = context.params;
-    
-// 验证 params 结构
+
+    // 验证 params 结构
     if (!params || typeof params !== 'object' || !('path' in params)) {
       console.error('[API Proxy] ❌ Invalid params structure:', {
         timestamp,
@@ -206,8 +206,8 @@ async function handleProxyRequest(
       });
       throw new Error('Invalid params structure: missing path property');
     }
-    
-// 增强日志：记录参数解析过程
+
+    // 增强日志：记录参数解析过程
     console.log('[API Proxy] 📍 Params resolved', {
       timestamp,
       hasParams: !!params,
@@ -231,11 +231,11 @@ async function handleProxyRequest(
       { status: 400 }
     );
   }
-  
+
   try {
-// 构建后端 API 路径
-// 修复：确保 path 存在且是数组
-// 增强：更健壮的路径解析
+    // 构建后端 API 路径
+    // 修复：确保 path 存在且是数组
+    // 增强：更健壮的路径解析
     let pathSegments: string[] = [];
     if (params?.path) {
       if (Array.isArray(params.path)) {
@@ -244,8 +244,8 @@ async function handleProxyRequest(
         pathSegments = [params.path];
       }
     }
-    
-// 如果 pathSegments 为空，尝试从 URL 中提取
+
+    // 如果 pathSegments 为空，尝试从 URL 中提取
     if (pathSegments.length === 0) {
       const urlPath = request.nextUrl.pathname;
       const match = urlPath.match(/^\/api\/proxy\/(.+)$/);
@@ -253,10 +253,10 @@ async function handleProxyRequest(
         pathSegments = match[1].split('/').filter(Boolean);
       }
     }
-    
+
     const backendPath = pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
-    
-// 增强日志：记录路径解析过程
+
+    // 增强日志：记录路径解析过程
     console.log('[API Proxy] 📍 Path Resolution', {
       timestamp,
       originalParams: params?.path,
@@ -264,24 +264,24 @@ async function handleProxyRequest(
       backendPath,
       urlPath: request.nextUrl.pathname,
     });
-    
-// 检查是否需要认证（可选，用于日志）
+
+    // 检查是否需要认证（可选，用于日志）
     const needsAuth = requiresAuth(backendPath);
-    
-// 获取查询参数
+
+    // 获取查询参数
     const searchParams = request.nextUrl.searchParams;
     const queryString = searchParams.toString();
     const fullPath = queryString ? `${backendPath}?${queryString}` : backendPath;
-    
-// 修复：在运行时获取 API_BASE，确保使用最新的环境变量
+
+    // 修复：在运行时获取 API_BASE，确保使用最新的环境变量
     const API_BASE = getApiBase();
-    
-// 构建后端 URL
-// 修复：API_BASE 已经包含 /api，直接拼接 backendPath
+
+    // 构建后端 URL
+    // 修复：API_BASE 已经包含 /api，直接拼接 backendPath
     // backendPath 已经以 / 开头（如 /cart, /sales/orders），所以直接拼接即可
     const upstreamUrl = `${API_BASE}${fullPath}`;
-    
-// 增强日志：记录完整的 URL 构建过程
+
+    // 增强日志：记录完整的 URL 构建过程
     console.log('[API Proxy] 🔗 URL Construction', {
       timestamp,
       API_BASE,
@@ -289,18 +289,18 @@ async function handleProxyRequest(
       fullPath,
       upstreamUrl,
     });
-    
-// 简化：直接从 Authorization header 读取 token（不再使用 Cookie）
+
+    // 简化：直接从 Authorization header 读取 token（不再使用 Cookie）
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
     const token = authHeader.replace(/^Bearer\s+/i, '') || null;
     const hasToken = !!token;
-    
-// 修复：购物车 API 需要 Cookie（sessionId）来识别访客购物车
-// 准备请求头：同时支持 Authorization header 和 Cookie
+
+    // 修复：购物车 API 需要 Cookie（sessionId）来识别访客购物车
+    // 准备请求头：同时支持 Authorization header 和 Cookie
     const cookieHeader = request.headers.get('cookie') || '';
     const hasCookie = !!cookieHeader;
-    
-// 增强日志：记录 Cookie 信息
+
+    // 增强日志：记录 Cookie 信息
     console.log('[API Proxy] 🔍 Request Details', {
       timestamp,
       method: request.method,
@@ -312,20 +312,20 @@ async function handleProxyRequest(
       cookieKeys: cookieHeader ? cookieHeader.split(';').map(c => c.split('=')[0].trim()).filter(Boolean) : [],
       queryString: queryString || 'none',
     });
-    
-// 添加 traceId 和 X-Request-Id 头
+
+    // 添加 traceId 和 X-Request-Id 头
     const headers: HeadersInit = {
-// 如果存在 token，添加到 Authorization header
+      // 如果存在 token，添加到 Authorization header
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-// 修复：转发 Cookie 到后端，购物车功能需要 sessionId
+      // 修复：转发 Cookie 到后端，购物车功能需要 sessionId
       ...(cookieHeader ? { 'Cookie': cookieHeader } : {}),
-// 添加追踪ID，便于上游服务日志关联
+      // 添加追踪ID，便于上游服务日志关联
       'X-Request-Id': traceId,
       'X-Trace-Id': traceId,
     };
-    
-// 复制其他请求头（排除一些不需要的）
-// 修复：不再排除 cookie，因为已经在上面单独处理了
+
+    // 复制其他请求头（排除一些不需要的）
+    // 修复：不再排除 cookie，因为已经在上面单独处理了
     const excludeHeaders = ['host', 'connection', 'content-length', 'transfer-encoding', 'authorization', 'x-request-id', 'x-trace-id', 'cookie'];
     request.headers.forEach((value, key) => {
       const lowerKey = key.toLowerCase();
@@ -333,17 +333,17 @@ async function handleProxyRequest(
         headers[key] = value;
       }
     });
-    
-// 添加 X-Forwarded-For 头
-    const forwardedFor = request.headers.get('x-forwarded-for') || 
-                         request.headers.get('x-real-ip') || 
-                         'unknown';
+
+    // 添加 X-Forwarded-For 头
+    const forwardedFor = request.headers.get('x-forwarded-for') ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
     headers['X-Forwarded-For'] = forwardedFor;
-    
-// 准备请求体
+
+    // 准备请求体
     let body: BodyInit | undefined;
     const contentType = request.headers.get('content-type');
-    
+
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       if (contentType?.includes('application/json')) {
         try {
@@ -356,6 +356,19 @@ async function handleProxyRequest(
       } else if (contentType?.includes('multipart/form-data') || contentType?.includes('application/x-www-form-urlencoded')) {
         // FormData 需要特殊处理
         body = await request.formData();
+
+        // CRITICAL FIX: Loop 4 - Remove Content-Type header for FormData
+        // When passing FormData to fetch, the browser/runtime will automatically set the correct
+        // Content-Type with the generated boundary. If we keep the original Content-Type,
+        // it will have the OLD boundary from the client request, causing "Unexpected end of form"
+        // error on the backend because boundaries don't match.
+        if (headers['content-type']) {
+          delete headers['content-type'];
+        }
+        if (headers['Content-Type']) {
+          delete headers['Content-Type'];
+        }
+        console.log('[API Proxy] 🔧 Removed Content-Type header for FormData to allow auto-boundary generation');
       } else {
         // 其他类型，尝试作为文本
         try {
@@ -365,8 +378,8 @@ async function handleProxyRequest(
         }
       }
     }
-    
-// 增强日志：记录 Cookie 信息
+
+    // 增强日志：记录 Cookie 信息
     console.log('[API Proxy] Forwarding to upstream', {
       timestamp,
       traceId,
@@ -379,11 +392,11 @@ async function handleProxyRequest(
       headersCookie: headers['Cookie'] || 'none',
       hasBody: !!body
     });
-    
-// 转发请求到后端
-// 使用带超时和重试的 fetch
-// 修复：增强错误诊断和日志
-// 修复：添加更多日志点，确保请求生命周期可追踪
+
+    // 转发请求到后端
+    // 使用带超时和重试的 fetch
+    // 修复：增强错误诊断和日志
+    // 修复：添加更多日志点，确保请求生命周期可追踪
     let upstream: Response;
     const requestStartTime = Date.now();
     console.log('[API Proxy] 🚀 Starting fetchWithRetry', {
@@ -395,7 +408,7 @@ async function handleProxyRequest(
       timeout: PROXY_TIMEOUT_MS,
     });
     try {
-// 修复：在服务器端，Cookie 需要手动添加到 headers 中
+      // 修复：在服务器端，Cookie 需要手动添加到 headers 中
       // credentials: 'include' 在服务器端不起作用，因为服务器端 fetch 没有浏览器上下文
       // 我们已经手动将 Cookie 添加到 headers 中，所以不需要 credentials 选项
       upstream = await fetchWithRetry(
@@ -409,7 +422,7 @@ async function handleProxyRequest(
         MAX_RETRIES,
         traceId
       );
-      
+
       console.log('[API Proxy] ✅ fetchWithRetry completed', {
         timestamp,
         traceId,
@@ -418,7 +431,7 @@ async function handleProxyRequest(
         statusText: upstream.statusText,
         duration: Date.now() - requestStartTime,
       });
-      
+
       const requestDuration = Date.now() - requestStartTime;
       console.log('[API Proxy] ✅ Request succeeded', {
         timestamp,
@@ -430,9 +443,9 @@ async function handleProxyRequest(
       });
     } catch (fetchError: any) {
       const requestDuration = Date.now() - requestStartTime;
-      
-// 增强错误日志，包含所有重试尝试的信息
-// 修复：确保错误日志一定会输出
+
+      // 增强错误日志，包含所有重试尝试的信息
+      // 修复：确保错误日志一定会输出
       console.error('[API Proxy] ❌ Fetch error (all attempts failed):', {
         timestamp,
         traceId,
@@ -449,49 +462,49 @@ async function handleProxyRequest(
         bodySize: body ? (typeof body === 'string' ? body.length : 'FormData/Blob') : 0,
         stack: process.env.NODE_ENV === 'development' ? (fetchError?.stack || fetchError?.originalError?.stack) : undefined,
       });
-      
-// 提供更详细的错误信息
-// 使用统一错误响应格式
-// 修复：更准确地识别超时和连接错误
-// 修复：检查所有错误尝试，更准确分类
+
+      // 提供更详细的错误信息
+      // 使用统一错误响应格式
+      // 修复：更准确地识别超时和连接错误
+      // 修复：检查所有错误尝试，更准确分类
       const errorMessage = fetchError?.message || fetchError?.originalError?.message || 'Unknown error';
       const allErrorMessages = [
         errorMessage,
         ...(fetchError?.allErrors?.map((e: any) => e.error) || []),
       ].join('; ');
-      
-// 改进错误分类：更准确地识别不同类型的错误
-      const isTimeout = allErrorMessages.includes('timeout') || 
-                        allErrorMessages.includes('AbortError') || 
-                        allErrorMessages.includes('aborted') ||
-                        fetchError?.name === 'AbortError' ||
-                        fetchError?.originalError?.name === 'AbortError';
-      
+
+      // 改进错误分类：更准确地识别不同类型的错误
+      const isTimeout = allErrorMessages.includes('timeout') ||
+        allErrorMessages.includes('AbortError') ||
+        allErrorMessages.includes('aborted') ||
+        fetchError?.name === 'AbortError' ||
+        fetchError?.originalError?.name === 'AbortError';
+
       // 网络连接错误：无法建立连接、DNS 解析失败、网络不可达等
-      const isConnectionError = allErrorMessages.includes('ECONNREFUSED') || 
-                                allErrorMessages.includes('ENOTFOUND') ||
-                                allErrorMessages.includes('ECONNRESET') ||
-                                allErrorMessages.includes('ETIMEDOUT') ||
-                                allErrorMessages.includes('fetch failed') ||
-                                allErrorMessages.includes('Failed to fetch') ||
-                                allErrorMessages.includes('NetworkError') ||
-                                allErrorMessages.includes('Network request failed') ||
-                                allErrorMessages.includes('ERR_NETWORK') ||
-                                allErrorMessages.includes('ERR_CONNECTION_REFUSED') ||
-                                allErrorMessages.includes('ERR_CONNECTION_RESET') ||
-                                allErrorMessages.includes('ERR_CONNECTION_TIMED_OUT') ||
-                                (fetchError?.name === 'TypeError' && 
-                                 (allErrorMessages.includes('fetch') || 
-                                  allErrorMessages.includes('network'))) ||
-                                (fetchError?.originalError?.name === 'TypeError' && 
-                                 (allErrorMessages.includes('fetch') || 
-                                  allErrorMessages.includes('network')));
-      
+      const isConnectionError = allErrorMessages.includes('ECONNREFUSED') ||
+        allErrorMessages.includes('ENOTFOUND') ||
+        allErrorMessages.includes('ECONNRESET') ||
+        allErrorMessages.includes('ETIMEDOUT') ||
+        allErrorMessages.includes('fetch failed') ||
+        allErrorMessages.includes('Failed to fetch') ||
+        allErrorMessages.includes('NetworkError') ||
+        allErrorMessages.includes('Network request failed') ||
+        allErrorMessages.includes('ERR_NETWORK') ||
+        allErrorMessages.includes('ERR_CONNECTION_REFUSED') ||
+        allErrorMessages.includes('ERR_CONNECTION_RESET') ||
+        allErrorMessages.includes('ERR_CONNECTION_TIMED_OUT') ||
+        (fetchError?.name === 'TypeError' &&
+          (allErrorMessages.includes('fetch') ||
+            allErrorMessages.includes('network'))) ||
+        (fetchError?.originalError?.name === 'TypeError' &&
+          (allErrorMessages.includes('fetch') ||
+            allErrorMessages.includes('network')));
+
       // 服务器错误：5xx 状态码、服务器内部错误等
       const isServerError = allErrorMessages.includes('500') ||
-                            allErrorMessages.includes('Internal Server Error') ||
-                            allErrorMessages.includes('UPSTREAM_500');
-      
+        allErrorMessages.includes('Internal Server Error') ||
+        allErrorMessages.includes('UPSTREAM_500');
+
       // 根据错误类型选择错误码
       let errorCode: ErrorCode;
       if (isTimeout) {
@@ -503,8 +516,8 @@ async function handleProxyRequest(
       } else {
         errorCode = ErrorCode.PROXY_ERROR;
       }
-      
-// 根据错误类型提供用户友好的错误消息
+
+      // 根据错误类型提供用户友好的错误消息
       let userMessage: string;
       if (isTimeout) {
         userMessage = '请求超时，请稍后重试';
@@ -515,12 +528,12 @@ async function handleProxyRequest(
       } else {
         userMessage = '请求处理失败，请稍后重试';
       }
-      
+
       const errorResponse = createErrorResponse(
         errorCode,
         userMessage,
         traceId,
-// 修复：生产环境也提供基本错误信息，便于排查
+        // 修复：生产环境也提供基本错误信息，便于排查
         {
           url: upstreamUrl,
           error: errorMessage,
@@ -528,13 +541,13 @@ async function handleProxyRequest(
           duration: requestDuration,
           attempts: fetchError?.allErrors?.length || 1,
           // 生产环境隐藏详细堆栈，但保留关键信息
-          ...(process.env.NODE_ENV === 'development' ? { 
+          ...(process.env.NODE_ENV === 'development' ? {
             stack: fetchError?.stack || fetchError?.originalError?.stack,
             allErrors: fetchError?.allErrors,
           } : {}),
         }
       );
-      
+
       console.error('[API Proxy] ❌ Returning error response', {
         timestamp,
         traceId,
@@ -542,15 +555,15 @@ async function handleProxyRequest(
         status: isTimeout ? 504 : 503,
         userMessage,
       });
-      
+
       return NextResponse.json(
         errorResponse,
         { status: isTimeout ? 504 : 503 }
       );
     }
-    
-// 读取响应体
-// 修复：添加响应体读取前的日志
+
+    // 读取响应体
+    // 修复：添加响应体读取前的日志
     console.log('[API Proxy] 📖 Reading response body', {
       timestamp,
       traceId,
@@ -559,9 +572,9 @@ async function handleProxyRequest(
     });
     const responseBody = await upstream.text();
     const responseContentType = upstream.headers.get('content-type') || 'application/json';
-    
-// 增强响应日志
-// 添加 traceId 到日志
+
+    // 增强响应日志
+    // 添加 traceId 到日志
     console.log('[API Proxy] 📥 Upstream Response', {
       timestamp,
       traceId,
@@ -572,20 +585,20 @@ async function handleProxyRequest(
       hasSetCookie: !!upstream.headers.get('set-cookie'),
       setCookieHeaders: upstream.headers.getSetCookie?.() || [],
     });
-    
-// 创建响应头
+
+    // 创建响应头
     const responseHeaders = new Headers({
       'content-type': responseContentType,
     });
-    
-// 复制 Set-Cookie 头（这样浏览器可以保存认证 Cookie）
+
+    // 复制 Set-Cookie 头（这样浏览器可以保存认证 Cookie）
     const setCookieHeaders = upstream.headers.getSetCookie?.() || [];
     if (setCookieHeaders.length > 0) {
       console.log('[API Proxy] Setting cookies', {
         timestamp,
         cookieCount: setCookieHeaders.length
       });
-// 修改 Cookie 的 domain，确保 Cookie 可以在前端域名下使用
+      // 修改 Cookie 的 domain，确保 Cookie 可以在前端域名下使用
       setCookieHeaders.forEach(cookie => {
         let modifiedCookie = cookie;
         // 如果 Cookie 包含 domain，移除它（让浏览器使用当前域名）
@@ -615,8 +628,8 @@ async function handleProxyRequest(
         responseHeaders.set('set-cookie', setCookieHeader);
       }
     }
-    
-// 复制其他相关头
+
+    // 复制其他相关头
     const accessControlHeaders = [
       'access-control-expose-headers',
       'access-control-allow-credentials',
@@ -628,11 +641,11 @@ async function handleProxyRequest(
         responseHeaders.set(headerName, headerValue);
       }
     });
-    
-// 记录响应状态，增强错误日志
-// 统一错误包装，添加 traceId
+
+    // 记录响应状态，增强错误日志
+    // 统一错误包装，添加 traceId
     if (!upstream.ok) {
-// 尝试解析错误响应体，获取详细错误信息
+      // 尝试解析错误响应体，获取详细错误信息
       let errorDetails: any = null;
       try {
         if (responseContentType.includes('application/json')) {
@@ -642,7 +655,7 @@ async function handleProxyRequest(
         // 如果无法解析 JSON，使用原始文本
         errorDetails = { raw: responseBody.substring(0, 500) };
       }
-      
+
       console.error('[API Proxy] ❌ Upstream Error', {
         timestamp,
         traceId,
@@ -654,8 +667,8 @@ async function handleProxyRequest(
         errorDetails: errorDetails || responseBody.substring(0, 500),
         bodyPreview: responseBody.substring(0, 500),
       });
-      
-// 统一错误包装：将上游错误转换为标准格式
+
+      // 统一错误包装：将上游错误转换为标准格式
       let errorCode: ErrorCode;
       if (upstream.status === 400) {
         errorCode = ErrorCode.VALIDATION_ERROR;
@@ -672,7 +685,7 @@ async function handleProxyRequest(
       } else {
         errorCode = ErrorCode.UNKNOWN;
       }
-      
+
       // 如果上游已经返回了标准错误格式，保留它；否则包装为标准格式
       let wrappedError: any;
       if (errorDetails && errorDetails.error && errorDetails.traceId) {
@@ -691,11 +704,11 @@ async function handleProxyRequest(
           errorDetails?.details || errorDetails
         );
       }
-      
+
       // 添加 traceId 到响应头
       responseHeaders.set('X-Trace-Id', traceId);
       responseHeaders.set('X-Request-Id', traceId);
-      
+
       console.log('[API Proxy] 📤 Returning error response to client', {
         timestamp,
         traceId,
@@ -703,7 +716,7 @@ async function handleProxyRequest(
         errorCode,
         path: backendPath,
       });
-      
+
       return NextResponse.json(
         wrappedError,
         {
@@ -718,13 +731,13 @@ async function handleProxyRequest(
         bodyLength: responseBody.length,
         path: backendPath,
       });
-      
-// 成功响应也添加 traceId 到响应头
+
+      // 成功响应也添加 traceId 到响应头
       responseHeaders.set('X-Trace-Id', traceId);
       responseHeaders.set('X-Request-Id', traceId);
     }
-    
-// 修复：添加最终响应返回日志
+
+    // 修复：添加最终响应返回日志
     console.log('[API Proxy] 📤 Returning success response to client', {
       timestamp,
       traceId,
@@ -733,16 +746,16 @@ async function handleProxyRequest(
       bodyLength: responseBody.length,
       contentType: responseContentType,
     });
-    
+
     return new NextResponse(responseBody, {
       status: upstream.status,
       headers: responseHeaders,
     });
   } catch (error: any) {
-// 增强错误日志，记录完整的错误信息用于调试
+    // 增强错误日志，记录完整的错误信息用于调试
     const errorTraceId = traceId || generateTraceId();
     const errorTimestamp = new Date().toISOString();
-    
+
     console.error('[API Proxy] ❌ Proxy error (catch block):', {
       timestamp: errorTimestamp,
       traceId: errorTraceId,
@@ -755,14 +768,14 @@ async function handleProxyRequest(
       pathIsArray: Array.isArray(params?.path),
       urlPath: request.nextUrl.pathname,
       method: request.method,
-// 记录更多上下文信息
+      // 记录更多上下文信息
       hasParams: !!params,
       paramsKeys: params ? Object.keys(params) : [],
       originalError: error?.originalError?.message,
       allErrors: error?.allErrors,
     });
-    
-// 在生产环境也提供基本错误信息，便于排查
+
+    // 在生产环境也提供基本错误信息，便于排查
     const errorResponse = createErrorResponse(
       ErrorCode.PROXY_ERROR,
       '代理请求失败',
@@ -771,7 +784,7 @@ async function handleProxyRequest(
         error: error?.message || 'Unknown error',
         path: params?.path,
         method: request.method,
-// 生产环境也提供错误类型，便于排查
+        // 生产环境也提供错误类型，便于排查
         errorType: error?.name || error?.constructor?.name || 'Unknown',
         ...(process.env.NODE_ENV === 'development' ? {
           stack: error?.stack,
@@ -781,10 +794,10 @@ async function handleProxyRequest(
         } : {}),
       }
     );
-    
+
     return NextResponse.json(
       errorResponse,
-      { 
+      {
         status: 500,
         headers: {
           'X-Trace-Id': errorTraceId,
@@ -807,7 +820,7 @@ export async function GET(
   request: NextRequest,
   context: RouteContext
 ) {
-// 添加初始日志，确认路由被调用
+  // 添加初始日志，确认路由被调用
   console.log('[API Proxy] GET handler called', {
     timestamp: new Date().toISOString(),
     url: request.nextUrl.pathname,
