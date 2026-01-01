@@ -45,6 +45,7 @@ steps:
     id: 'build-backend'
     args:
       - 'build'
+      - '--no-cache'
       - '-t'
       - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REGISTRY}/backend:latest'
       - '-t'
@@ -78,6 +79,7 @@ steps:
         set -euo pipefail
         source /workspace/build-meta.env
         docker build \
+          --no-cache \
           --build-arg NEXT_PUBLIC_API_URL=https://print-main-backend-651538279084.us-central1.run.app/api \
           --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$$STRIPE_KEY" \
           --build-arg NEXT_PUBLIC_BUILD_SHA="$$BUILD_SHA" \
