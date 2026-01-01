@@ -13,7 +13,7 @@ import { ToastProvider } from '@/hooks/useToast'; // 全局 Toast 提供者
 import { AuthProvider } from '@/contexts/AuthContext'; // 全局认证状态管理
 import { GlobalErrorFilter } from '@/components/GlobalErrorFilter'; // 全局错误过滤器
 import { StripeConfigValidator } from '@/components/StripeConfigValidator'; // Stripe 配置验证组件
-import { VersionChecker } from '@/components/VersionChecker'; // 版本检查组件
+
 import LayoutWrapper from './LayoutWrapper';
 import './globals.css';
 import './globals-mobile.css';
@@ -109,9 +109,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} ${notoSansSC.variable} ${notoSansTC.variable} ${notoSansJP.variable} ${notoSansDevanagari.variable}`}>
-<GlobalErrorFilter /> {/* 过滤不相关的浏览器错误 */}
-<StripeConfigValidator /> {/* Stripe 配置验证 */}
-<VersionChecker /> {/* 版本检查和更新提示 */}
+        <GlobalErrorFilter /> {/* 过滤不相关的浏览器错误 */}
+        <StripeConfigValidator /> {/* Stripe 配置验证 */}
+
         <AuthProvider>
           <CartProvider>
             <ToastProvider>
