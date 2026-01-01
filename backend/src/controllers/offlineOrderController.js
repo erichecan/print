@@ -1474,35 +1474,9 @@ exports.deleteOfflineOrder = async (req, res, next) => {
       });
     }
 
-    // 使用事务删除，确保删除顺序正确
-    // 即使 Prisma schema 配置了 onDelete: Cascade，手动删除可以确保兼容性
-    await prisma.$transaction(async (tx) => {
-      // 1. 先删除 ProductionWorkOrder 的 events（如果有）
-      if (existing.productionWorkOrder && existing.productionWorkOrder.id) {
-        await tx.productionWorkOrderEvent.deleteMany({
-          where: { workOrderId: existing.productionWorkOrder.id },
-        });
-
-        // 2. 删除 ProductionWorkOrder
-        await tx.productionWorkOrder.delete({
-          where: { id: existing.productionWorkOrder.id },
-        });
-      }
-
-      // 3. 删除 OfflineOrderAsset
-      await tx.offlineOrderAsset.deleteMany({
-        where: { orderId: id },
-      });
-
-      // 4. 删除 OfflineOrderStageHistory
-      await tx.offlineOrderStageHistory.deleteMany({
-        where: { orderId: id },
-      });
-
-      // 5. 最后删除订单本身
-      await tx.offlineOrder.delete({
-        where: { id },
-      });
+    // 直接删除订单，依赖数据库的级联删除（Cascade Delete）处理关联数据
+    await prisma.offlineOrder.delete({
+      where: { id },
     });
 
     logger.info(`[deleteOfflineOrder] Order deleted: ${existing.orderCode} (${id})`);
