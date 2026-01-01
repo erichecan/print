@@ -344,7 +344,7 @@ async function handleProxyRequest(
     let body: BodyInit | undefined;
     const contentType = request.headers.get('content-type');
 
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
+    if (request.method !== 'GET' && request.method !== 'HEAD' && request.method !== 'DELETE') {
       if (contentType?.includes('application/json')) {
         try {
           const jsonBody = await request.json();
@@ -375,6 +375,7 @@ async function handleProxyRequest(
           body = await request.text();
         } catch (e) {
           // 如果无法读取，body 为 undefined
+          console.warn('[API Proxy] Failed to read request body as text', { error: e });
         }
       }
     }
@@ -756,7 +757,7 @@ async function handleProxyRequest(
     const errorTraceId = traceId || generateTraceId();
     const errorTimestamp = new Date().toISOString();
 
-    console.error('[API Proxy] ❌ Proxy error (catch block):', {
+    console.error('[API Proxy] ❌ Proxy error (catch block):', JSON.stringify({
       timestamp: errorTimestamp,
       traceId: errorTraceId,
       error: error?.message,
@@ -773,7 +774,7 @@ async function handleProxyRequest(
       paramsKeys: params ? Object.keys(params) : [],
       originalError: error?.originalError?.message,
       allErrors: error?.allErrors,
-    });
+    }));
 
     // 在生产环境也提供基本错误信息，便于排查
     const errorResponse = createErrorResponse(
