@@ -28,20 +28,17 @@ const mapUserSummary = (user, orderTotalsMap) => {
 
 exports.listUsers = async (req, res) => {
   try {
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const { page, limit, search, role, status } = req.query;
     const skip = (page - 1) * limit;
-    const search = req.query.search?.trim();
-    const role = req.query.role;
-    const status = req.query.status;
+    const trimmedSearch = search; // paginationQuery already trims search
 
     const where = {};
 
-    if (search) {
+    if (trimmedSearch) {
       where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { firstName: { contains: search, mode: 'insensitive' } },
-        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: trimmedSearch, mode: 'insensitive' } },
+        { firstName: { contains: trimmedSearch, mode: 'insensitive' } },
+        { lastName: { contains: trimmedSearch, mode: 'insensitive' } },
       ];
     }
 
@@ -193,18 +190,18 @@ exports.createUser = async (req, res) => {
   try {
     const { email, password, firstName, lastName, phone, role, emailVerified } = req.body;
 
-// 验证必填字段
+    // 验证必填字段
     if (!email) {
       return res.status(400).json({ error: 'Email is required' });
     }
 
-// 验证邮箱格式
+    // 验证邮箱格式
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-// 检查用户是否已存在
+    // 检查用户是否已存在
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     });
@@ -213,13 +210,13 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-// 验证角色
+    // 验证角色
     const validRoles = ['CUSTOMER', 'ADMIN'];
     const userRole = role && validRoles.includes(role.toUpperCase())
       ? role.toUpperCase()
       : 'CUSTOMER';
 
-// 处理密码（如果提供）
+    // 处理密码（如果提供）
     let passwordHash = null;
     if (password) {
       if (password.length < 8) {
@@ -228,14 +225,14 @@ exports.createUser = async (req, res) => {
       const bcrypt = require('bcryptjs');
       passwordHash = await bcrypt.hash(password, 10);
     } else {
-// 如果没有提供密码，生成一个临时密码（用于邀请场景）
+      // 如果没有提供密码，生成一个临时密码（用于邀请场景）
       const bcrypt = require('bcryptjs');
       const crypto = require('crypto');
       const tempPassword = crypto.randomBytes(16).toString('hex');
       passwordHash = await bcrypt.hash(tempPassword, 10);
     }
 
-// 创建用户
+    // 创建用户
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
@@ -276,7 +273,7 @@ exports.createUser = async (req, res) => {
   } catch (error) {
     console.error('[adminUserController] createUser error:', error);
 
-// 处理 Prisma 唯一约束错误
+    // 处理 Prisma 唯一约束错误
     if (error.code === 'P2002') {
       return res.status(400).json({ error: 'User with this email already exists' });
     }

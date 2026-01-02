@@ -36,55 +36,49 @@ const isMissingArtworkTablesError = (error) => {
  */
 exports.getArtworks = async (req, res) => {
   try {
-    const {
-      top,           // 一级分类 slug
-      sub,           // 二级分类 slug
-      query,         // 搜索关键词
-      page = 1,      // 页码
-      pageSize = 48, // 每页数量
-    } = req.query;
+    const { page = 1, limit = 48, search, topCategory, subCategory } = req.query;
 
     const where = {
       is_active: true,
       status: 'active',
     };
 
-// 分类过滤
-    if (top || sub) {
+    // 分类过滤
+    if (topCategory || subCategory) {
       const categoryWhere = {};
-      
-      if (top) {
-        const topCategory = await prisma.artwork_categories.findUnique({
-          where: { slug: top },
+
+      if (topCategory) {
+        const foundTopCategory = await prisma.artwork_categories.findUnique({
+          where: { slug: topCategory },
         });
-        if (topCategory) {
-          categoryWhere.top_category_id = topCategory.id;
+        if (foundTopCategory) {
+          categoryWhere.top_category_id = foundTopCategory.id;
         }
       }
-      
-      if (sub) {
-        const subCategory = await prisma.artwork_categories.findUnique({
-          where: { slug: sub },
+
+      if (subCategory) {
+        const foundSubCategory = await prisma.artwork_categories.findUnique({
+          where: { slug: subCategory },
         });
-        if (subCategory) {
-          categoryWhere.sub_category_id = subCategory.id;
+        if (foundSubCategory) {
+          categoryWhere.sub_category_id = foundSubCategory.id;
         }
       }
-      
+
       Object.assign(where, categoryWhere);
     }
 
-// 搜索过滤（名称、标签）
-    if (query) {
+    // 搜索过滤（名称、标签）
+    if (search) {
       where.OR = [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { tags: { has: query } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { tags: { has: search } },
       ];
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(pageSize);
-    const take = parseInt(pageSize);
+    const skip = (page - 1) * limit;
+    const take = limit;
 
     const [artworks, total] = await Promise.all([
       prisma.art_assets.findMany({
@@ -107,25 +101,25 @@ exports.getArtworks = async (req, res) => {
       prisma.art_assets.count({ where }),
     ]);
 
-// 格式化响应
-// 修复：只有当 gcs_key 存在时才使用 GCS URL，否则直接使用 image_url（支持外部 URL）
+    // 格式化响应
+    // 修复：只有当 gcs_key 存在时才使用 GCS URL，否则直接使用 image_url（支持外部 URL）
     const formattedArtworks = artworks.map(artwork => {
       let imageUrl = artwork.image_url; // 默认使用 image_url（可能是外部 URL）
       let thumbnailUrl = artwork.thumbnail_url;
-      
-// 如果存在 gcs_key，尝试构建 GCS URL（需要 GCS 配置）
+
+      // 如果存在 gcs_key，尝试构建 GCS URL（需要 GCS 配置）
       if (artwork.gcs_key) {
         try {
           const baseUrl = gcsUtils.getImageBaseUrl();
           imageUrl = `${baseUrl}/${artwork.gcs_key}`;
           thumbnailUrl = artwork.thumbnail_url || `${baseUrl}/${artwork.gcs_key.replace(/\.(png|jpg|jpeg|svg)$/i, '@200x200.jpg')}`;
         } catch (error) {
-// GCS 配置缺失时，回退到 image_url（外部 URL）
+          // GCS 配置缺失时，回退到 image_url（外部 URL）
           console.warn(`[getArtworks] GCS not configured, using image_url for artwork ${artwork.id}:`, error.message);
           // imageUrl 和 thumbnailUrl 保持默认值（使用 image_url）
         }
       }
-      
+
       return {
         id: artwork.id,
         title: artwork.name,
@@ -155,14 +149,14 @@ exports.getArtworks = async (req, res) => {
       success: true,
       data: formattedArtworks,
       pagination: {
-        page: parseInt(page),
-        pageSize: parseInt(pageSize),
-        total,
-        totalPages: Math.ceil(total / parseInt(pageSize)),
+        total: total,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(total / limit),
       },
     });
   } catch (error) {
-// Dev 降级：表未创建时返回空列表，避免页面报 500（生产环境仍返回 500）
+    // Dev 降级：表未创建时返回空列表，避免页面报 500（生产环境仍返回 500）
     if (process.env.NODE_ENV === 'development' && isMissingArtworkTablesError(error)) {
       console.warn('[getArtworks] Missing artwork tables in dev DB, returning empty data:', error?.message);
       return res.json({
@@ -192,7 +186,7 @@ exports.getArtworks = async (req, res) => {
  */
 exports.getCategoriesTree = async (req, res) => {
   try {
-// 获取所有一级分类
+    // 获取所有一级分类
     const topCategories = await prisma.artwork_categories.findMany({
       where: {
         parent_id: null,
@@ -201,7 +195,7 @@ exports.getCategoriesTree = async (req, res) => {
       orderBy: { sort_order: 'asc' },
     });
 
-// 获取所有二级分类
+    // 获取所有二级分类
     const subCategories = await prisma.artwork_categories.findMany({
       where: {
         parent_id: { not: null },
@@ -210,14 +204,14 @@ exports.getCategoriesTree = async (req, res) => {
       orderBy: { sort_order: 'asc' },
     });
 
-// 构建树状结构并计算计数
+    // 构建树状结构并计算计数
     const tree = await Promise.all(
       topCategories.map(async (topCategory) => {
         const children = subCategories
           .filter(sub => sub.parent_id === topCategory.id)
           .map(sub => ({ id: sub.id, name: sub.name, slug: sub.slug }));
 
-// 计算一级分类下的素材总数
+        // 计算一级分类下的素材总数
         const topCount = await prisma.art_assets.count({
           where: {
             top_category_id: topCategory.id,
@@ -226,7 +220,7 @@ exports.getCategoriesTree = async (req, res) => {
           },
         });
 
-// 计算每个二级分类的计数
+        // 计算每个二级分类的计数
         const childrenWithCounts = await Promise.all(
           children.map(async (child) => {
             const subCategory = subCategories.find(s => s.id === child.id);
@@ -256,7 +250,7 @@ exports.getCategoriesTree = async (req, res) => {
       data: tree,
     });
   } catch (error) {
-// Dev 降级：表未创建时返回空分类树，避免前端 ArtPanel 报错阻断
+    // Dev 降级：表未创建时返回空分类树，避免前端 ArtPanel 报错阻断
     if (process.env.NODE_ENV === 'development' && isMissingArtworkTablesError(error)) {
       console.warn('[getCategoriesTree] Missing artwork tables in dev DB, returning empty tree:', error?.message);
       return res.json({
@@ -281,6 +275,11 @@ exports.getCategoriesTree = async (req, res) => {
 exports.getArtwork = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Manual UUID check or simple length check to avoid Prisma errors on bad input
+    if (!id || !/^[0-9a-fA-F-]{36}$/.test(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid ID format' });
+    }
 
     const artwork = await prisma.art_assets.findUnique({
       where: { id },

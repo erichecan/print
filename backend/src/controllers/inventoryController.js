@@ -20,7 +20,7 @@ const prisma = require('../lib/prisma');
 exports.getLowStockProducts = async (req, res, next) => {
   const timestamp = new Date().toISOString();
   try {
-    const threshold = req.query.threshold ? parseInt(req.query.threshold) : undefined;
+    const threshold = req.query.threshold ? Math.min(Math.max(parseInt(req.query.threshold, 10) || 0, 0), 1000000) : undefined;
 
     const lowStockProducts = await getLowStockProducts(threshold);
 
@@ -166,7 +166,7 @@ exports.getLowStockThreshold = async (req, res, next) => {
 exports.getInventoryAlerts = async (req, res, next) => {
   const timestamp = new Date().toISOString();
   try {
-    const threshold = req.query.threshold ? parseInt(req.query.threshold) : undefined;
+    const threshold = req.query.threshold ? Math.min(Math.max(parseInt(req.query.threshold, 10) || 0, 0), 1000000) : undefined;
 
     const [lowStockProducts, outOfStockProducts] = await Promise.all([
       getLowStockProducts(threshold),

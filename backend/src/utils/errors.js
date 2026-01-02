@@ -7,11 +7,13 @@
  * Base Application Error
  */
 class AppError extends Error {
-  constructor(message, statusCode = 500, code = null, details = null) {
+  constructor(message, statusCode = 500, code = null, category = 'UNKNOWN', hint = null, details = null) {
     super(message);
     this.name = this.constructor.name;
     this.statusCode = statusCode;
     this.code = code || this.getDefaultCode(statusCode);
+    this.category = category;
+    this.hint = hint;
     this.details = details;
     this.isOperational = true;
     Error.captureStackTrace(this, this.constructor);
@@ -38,6 +40,9 @@ class AppError extends Error {
       statusCode: this.statusCode,
       code: this.code,
       message: this.message,
+      // TraceId will be injected by the error handler if not present
+      category: this.category,
+      ...(this.hint && { hint: this.hint }),
       ...(this.details && { details: this.details }),
       timestamp: new Date().toISOString(),
     };
@@ -48,8 +53,8 @@ class AppError extends Error {
  * Bad Request Error (400)
  */
 class BadRequestError extends AppError {
-  constructor(message = 'Bad request', details = null) {
-    super(message, 400, 'BAD_REQUEST', details);
+  constructor(message = 'Bad request', details = null, hint = null) {
+    super(message, 400, 'BAD_REQUEST', 'CLIENT_ERROR', hint, details);
   }
 }
 
@@ -57,8 +62,8 @@ class BadRequestError extends AppError {
  * Unauthorized Error (401)
  */
 class UnauthorizedError extends AppError {
-  constructor(message = 'Authentication required', details = null) {
-    super(message, 401, 'UNAUTHORIZED', details);
+  constructor(message = 'Authentication required', details = null, hint = null) {
+    super(message, 401, 'UNAUTHORIZED', 'AUTH_ERROR', hint, details);
   }
 }
 
@@ -66,8 +71,8 @@ class UnauthorizedError extends AppError {
  * Forbidden Error (403)
  */
 class ForbiddenError extends AppError {
-  constructor(message = 'Access denied', details = null) {
-    super(message, 403, 'FORBIDDEN', details);
+  constructor(message = 'Access denied', details = null, hint = null) {
+    super(message, 403, 'FORBIDDEN', 'AUTH_ERROR', hint, details);
   }
 }
 
@@ -75,8 +80,8 @@ class ForbiddenError extends AppError {
  * Not Found Error (404)
  */
 class NotFoundError extends AppError {
-  constructor(message = 'Resource not found', details = null) {
-    super(message, 404, 'NOT_FOUND', details);
+  constructor(message = 'Resource not found', details = null, hint = null) {
+    super(message, 404, 'NOT_FOUND', 'CLIENT_ERROR', hint, details);
   }
 }
 
@@ -84,8 +89,8 @@ class NotFoundError extends AppError {
  * Conflict Error (409)
  */
 class ConflictError extends AppError {
-  constructor(message = 'Resource conflict', details = null) {
-    super(message, 409, 'CONFLICT', details);
+  constructor(message = 'Resource conflict', details = null, hint = null) {
+    super(message, 409, 'CONFLICT', 'CLIENT_ERROR', hint, details);
   }
 }
 
@@ -93,8 +98,8 @@ class ConflictError extends AppError {
  * Validation Error (422)
  */
 class ValidationError extends AppError {
-  constructor(message = 'Validation failed', details = null) {
-    super(message, 422, 'VALIDATION_ERROR', details);
+  constructor(message = 'Validation failed', details = null, hint = null) {
+    super(message, 422, 'VALIDATION_ERROR', 'VALIDATION_ERROR', hint, details);
   }
 }
 
@@ -102,8 +107,8 @@ class ValidationError extends AppError {
  * Rate Limit Error (429)
  */
 class RateLimitError extends AppError {
-  constructor(message = 'Too many requests', details = null) {
-    super(message, 429, 'RATE_LIMIT_EXCEEDED', details);
+  constructor(message = 'Too many requests', details = null, hint = null) {
+    super(message, 429, 'RATE_LIMIT_EXCEEDED', 'RATE_LIMIT', hint, details);
   }
 }
 
@@ -111,8 +116,8 @@ class RateLimitError extends AppError {
  * Internal Server Error (500)
  */
 class InternalServerError extends AppError {
-  constructor(message = 'Internal server error', details = null) {
-    super(message, 500, 'INTERNAL_SERVER_ERROR', details);
+  constructor(message = 'Internal server error', details = null, hint = null) {
+    super(message, 500, 'INTERNAL_SERVER_ERROR', 'SERVER_ERROR', hint, details);
   }
 }
 
@@ -120,8 +125,8 @@ class InternalServerError extends AppError {
  * Service Unavailable Error (503)
  */
 class ServiceUnavailableError extends AppError {
-  constructor(message = 'Service unavailable', details = null) {
-    super(message, 503, 'SERVICE_UNAVAILABLE', details);
+  constructor(message = 'Service unavailable', details = null, hint = null) {
+    super(message, 503, 'SERVICE_UNAVAILABLE', 'DEPENDENCY_ERROR', hint, details);
   }
 }
 

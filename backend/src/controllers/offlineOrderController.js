@@ -11,6 +11,7 @@ const {
 } = require('../services/offlineWorkflowService');
 const { uploadBufferToGcs } = require('../utils/gcsStorage');
 const { InternalServerError } = require('../utils/errors');
+const { sanitizeFilename } = require('../utils/pathSanitizer');
 
 
 const parseBoolean = (value) => {
@@ -116,7 +117,7 @@ const generateWorkOrderCode = () => {
 
 const processAssetUpload = async (file) => {
   const timestamp = Date.now();
-  const safeName = file.originalname.replace(/[^a-z0-9.\-_]+/gi, '_');
+  const safeName = sanitizeFilename(file.originalname);
   const filename = `${timestamp}-${safeName}`;
   const storageKey = `offline-orders/${filename}`;
 

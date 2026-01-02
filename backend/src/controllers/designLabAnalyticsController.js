@@ -36,7 +36,7 @@ exports.trackEvents = async (req, res, next) => {
 
     // 使用批量插入（如果表存在）
     try {
-// 修复：为 UUID 字段添加类型转换
+      // 修复：为 UUID 字段添加类型转换
       await prisma.$executeRaw`
         INSERT INTO design_lab_analytics_events (
           id, user_id, session_id, event_type, design_id, metadata, timestamp, created_at
@@ -103,7 +103,7 @@ exports.submitUploadRating = async (req, res, next) => {
           id: uuidv4(),
           user_id: userId,
           upload_id: uploadId,
-          rating: parseInt(rating),
+          rating: Math.min(Math.max(parseInt(rating, 10) || 1, 1), 5),
           comment: comment || null,
           created_at: new Date(),
         },

@@ -9,7 +9,7 @@ export default function GlobalError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string };
+  error: Error & { digest?: string; traceId?: string; category?: string };
   reset: () => void;
 }) {
   const [logInfo, setLogInfo] = useState<ReturnType<typeof getErrorLogInfo>>({});
@@ -57,7 +57,15 @@ export default function GlobalError({
             {logInfo.traceId && (
               <div style={{ marginBottom: '0.5rem' }}>
                 <span style={{ fontWeight: 'bold', color: '#52606d' }}>Trace ID:</span>
-                <code style={{ marginLeft: '0.5rem', fontFamily: 'monospace', color: '#364152' }}>{logInfo.traceId}</code>
+                <code style={{ marginLeft: '0.5rem', fontFamily: 'monospace', color: '#364152' }}>
+                  {error.traceId || (error as any).statusText || logInfo.traceId}
+                </code>
+              </div>
+            )}
+            {(error as any).category && (
+              <div style={{ marginBottom: '0.5rem' }}>
+                <span style={{ fontWeight: 'bold', color: '#52606d' }}>Category:</span>
+                <code style={{ marginLeft: '0.5rem', fontFamily: 'monospace', color: '#364152' }}>{(error as any).category}</code>
               </div>
             )}
             {logInfo.consoleLink && (

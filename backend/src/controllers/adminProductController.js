@@ -254,20 +254,17 @@ const invalidateProductCache = async (slug) => {
 // 后台商品列表（分页 / 搜索 / 状态过滤）
 exports.listProducts = async (req, res) => {
   try {
-    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const { page, limit, search, status, categoryId } = req.query;
     const skip = (page - 1) * limit;
-    const search = req.query.search?.trim();
-    const status = req.query.status;
-    const categoryId = req.query.categoryId;
 
     const where = {};
 
     if (search) {
+      const trimmedSearch = search; // paginationQuery already trims search
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } },
+        { name: { contains: trimmedSearch, mode: 'insensitive' } },
+        { description: { contains: trimmedSearch, mode: 'insensitive' } },
+        { sku: { contains: trimmedSearch, mode: 'insensitive' } },
       ];
     }
 

@@ -9,15 +9,24 @@ const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
-  winston.format.json()
+  winston.format.json({
+    replacer: (key, value) => {
+      // Handle Google Cloud Logging trace if traceId is present
+      if (key === 'traceId' && value) {
+        // This will be processed by the Google Cloud Logging agent
+        return value;
+      }
+      return value;
+    }
+  })
 );
 
 // Console format for development
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    let msg = `${timestamp} [${level}]: ${message}`;
+  winston.format.printf(({ timestamp, level, message, traceId, ...meta }) => {
+    let msg = `${timestamp} [${level}]${traceId ? ` [${traceId}]` : ''}: ${message}`;
     if (Object.keys(meta).length > 0) {
       msg += ` ${JSON.stringify(meta)}`;
     }

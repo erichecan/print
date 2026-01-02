@@ -20,21 +20,27 @@ export function useApiError() {
 
     if (err instanceof Error) {
       // 检查是否是网络错误
-      const isNetworkError = err.message.includes('network') || 
-                            err.message.includes('timeout') ||
-                            err.message.includes('Failed to fetch');
+      const isNetworkError = err.message.includes('network') ||
+        err.message.includes('timeout') ||
+        err.message.includes('Failed to fetch');
+
+      const status = (err as any).statusCode || (err as any).status;
+      const isRetryableStatus = status === 429 || status === 503 || status === 502 || status === 504 || status >= 500;
 
       apiError = {
         message: err.message,
-        retryable: isNetworkError,
+        status,
+        code: (err as any).category || (err as any).code,
+        retryable: isNetworkError || isRetryableStatus,
       };
     } else if (typeof err === 'object' && err !== null) {
       const errorObj = err as Record<string, unknown>;
+      const status = errorObj.status as number || errorObj.statusCode as number;
       apiError = {
         message: (errorObj.message as string) || 'An unexpected error occurred',
         code: errorObj.code as string,
-        status: errorObj.status as number,
-        retryable: (errorObj.status as number) >= 500 || (errorObj.status as number) === 408,
+        status,
+        retryable: status === 429 || status === 503 || status === 502 || status === 504 || status >= 500 || status === 408,
       };
     } else {
       apiError = {

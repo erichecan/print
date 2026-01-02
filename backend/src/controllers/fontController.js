@@ -12,7 +12,7 @@ const logger = require('../utils/logger');
 exports.getFonts = async (req, res) => {
   try {
     const { category, isActive } = req.query;
-    
+
     const where = {};
     if (category) {
       where.category = category;
@@ -45,7 +45,7 @@ exports.getFonts = async (req, res) => {
       ]
     });
 
-// 按分类分组
+    // 按分类分组
     const groupedFonts = fonts.reduce((acc, font) => {
       const category = font.category || 'latin';
       if (!acc[category]) {
@@ -73,6 +73,9 @@ exports.getFonts = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching fonts:', error);
+    if (process.env.NODE_ENV === 'development' && (error.code === 'P2021' || error.message?.includes('does not exist'))) {
+      return res.json({ success: true, data: [], categories: [] });
+    }
     res.status(500).json({ error: 'Failed to fetch fonts' });
   }
 };
@@ -84,7 +87,12 @@ exports.getFonts = async (req, res) => {
 exports.getFontsByCategory = async (req, res) => {
   try {
     const { category } = req.params;
-    
+
+    const VALID_CATEGORIES = ['latin', 'chinese', 'japanese', 'hindi', 'arabic', 'korean', 'thai'];
+    if (!category || !VALID_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+
     const fonts = await Font.findAll({
       where: {
         category,
@@ -120,6 +128,9 @@ exports.getFontsByCategory = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching fonts by category:', error);
+    if (process.env.NODE_ENV === 'development' && (error.code === 'P2021' || error.message?.includes('does not exist'))) {
+      return res.json({ success: true, data: [] });
+    }
     res.status(500).json({ error: 'Failed to fetch fonts' });
   }
 };
@@ -132,7 +143,7 @@ exports.getAllFonts = async (req, res) => {
   try {
     const { page = 1, limit = 50, category, isActive, source } = req.query;
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    
+
     const where = {};
     if (category) {
       where.category = category;
@@ -192,7 +203,7 @@ exports.getAllFonts = async (req, res) => {
 exports.getFont = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const font = await Font.findByPk(id);
 
     if (!font) {
@@ -368,7 +379,7 @@ exports.updateFont = async (req, res) => {
 exports.deleteFont = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const font = await Font.findByPk(id);
     if (!font) {
       return res.status(404).json({ error: 'Font not found' });

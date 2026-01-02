@@ -406,9 +406,11 @@ async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
     // 添加更详细的错误信息用于调试
     const fullError = new Error(errorMessage);
     (fullError as any).status = response?.status;
+    (fullError as any).statusCode = response?.status; // Ensure compatibility with ApiError
     (fullError as any).details = errorDetails;
     (fullError as any).traceId = traceId;
-    (fullError as any).errorCode = errorDetails?.error?.code;
+    (fullError as any).errorCode = errorDetails?.error?.code || (errorDetails as any)?.code;
+    (fullError as any).category = (fullError as any).errorCode;
     throw fullError;
   }
 

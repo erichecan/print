@@ -5,6 +5,7 @@ const multer = require('multer');
 const offlineOrderController = require('../controllers/offlineOrderController');
 const { ensureOfflineUploadRoot, getAllowedExtensions, isExtensionAllowed } = require('../utils/offlineUpload');
 const { requireAdmin, authorizeRoles } = require('../middleware/auth');
+const { sanitizeFilename } = require('../utils/pathSanitizer');
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const timestamp = Date.now();
-    const safeName = file.originalname.replace(/[^a-z0-9.\-_]+/gi, '_');
+    const safeName = sanitizeFilename(file.originalname);
     cb(null, `${timestamp}-${safeName}`);
   }
 });

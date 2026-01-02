@@ -10,6 +10,8 @@ const {
   getAllowedImageExtensions,
   isImageExtensionAllowed,
 } = require('../utils/productUpload');
+const validate = require('../middleware/validate');
+const schemas = require('../utils/schemas');
 
 const router = express.Router();
 
@@ -49,7 +51,7 @@ router.get('/out-of-stock', inventoryController.getOutOfStockProducts);
 router.get('/variants/:id/low-stock-threshold', inventoryController.getLowStockThreshold);
 router.patch('/variants/:id/low-stock-threshold', inventoryController.updateLowStockThreshold);
 
-router.get('/', controller.listProducts);
+router.get('/', validate(schemas.paginationQuery, 'query'), controller.listProducts);
 router.get('/:id', controller.getProductById);
 router.post('/', controller.createProduct);
 router.put('/:id', controller.updateProduct);

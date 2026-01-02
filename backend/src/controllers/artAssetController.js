@@ -36,7 +36,7 @@ const buildPublicUrl = (storageKey, req) => {
 exports.getArtAssets = async (req, res) => {
   try {
     const { category, isActive } = req.query;
-    
+
     const where = {};
     if (category) {
       where.category = category;
@@ -54,7 +54,7 @@ exports.getArtAssets = async (req, res) => {
       attributes: ['id', 'category', 'name', 'image_url', 'thumbnail_url', 'width', 'height', 'sort_order']
     });
 
-// 按分类分组
+    // 按分类分组
     const groupedAssets = assets.reduce((acc, asset) => {
       const category = asset.category || 'Other';
       if (!acc[category]) {
@@ -89,7 +89,7 @@ exports.getArtAssets = async (req, res) => {
 exports.getArtAssetsByCategory = async (req, res) => {
   try {
     const { category } = req.params;
-    
+
     const assets = await ArtAsset.findAll({
       where: {
         category,
@@ -126,14 +126,14 @@ exports.getAllArtAssets = async (req, res) => {
       query: req.query,
       user: req.user ? { id: req.user.id, email: req.user.email } : 'No user'
     });
-    
-    const { category, isActive, page = 1, limit = 50 } = req.query;
-    
+
+    const { category, isActive, page, limit } = req.query;
+
     const where = {};
     if (category) {
       where.category = category;
     }
-// 正确处理 isActive 参数（支持字符串和布尔值）
+    // 正确处理 isActive 参数（支持字符串和布尔值）
     if (isActive !== undefined && isActive !== null && isActive !== '') {
       if (typeof isActive === 'string') {
         where.is_active = isActive === 'true' || isActive === '1';
@@ -142,15 +142,15 @@ exports.getAllArtAssets = async (req, res) => {
       }
     }
 
-    const offset = (parseInt(page) - 1) * parseInt(limit);
-    
-    logger.info('[getAllArtAssets] Query params', { where, offset, limit: parseInt(limit) });
-    
-// 暂时移除 include，避免关联查询错误
+    const offset = (page - 1) * limit;
+
+    logger.info('[getAllArtAssets] Query params', { where, offset, limit });
+
+    // 暂时移除 include，避免关联查询错误
     const { count, rows: assets } = await ArtAsset.findAndCountAll({
       where,
       order: [['sort_order', 'ASC'], ['created_at', 'DESC']],
-      limit: parseInt(limit),
+      limit,
       offset,
       // include: [{
       //   model: require('../models').User,
@@ -159,10 +159,10 @@ exports.getAllArtAssets = async (req, res) => {
       //   required: false
       // }]
     });
-    
+
     logger.info('[getAllArtAssets] Query result', { count, assetsCount: assets.length });
 
-// 转换数据格式，将下划线命名转换为驼峰命名
+    // 转换数据格式，将下划线命名转换为驼峰命名
     const formattedAssets = assets.map(asset => {
       const formatted = {
         id: asset.id,
@@ -180,7 +180,7 @@ exports.getAllArtAssets = async (req, res) => {
         updatedAt: asset.updated_at,
         createdBy: asset.created_by
       };
-// 记录图片 URL 以便调试
+      // 记录图片 URL 以便调试
       logger.debug('Formatted asset imageUrl:', formatted.imageUrl);
       return formatted;
     });
@@ -190,9 +190,9 @@ exports.getAllArtAssets = async (req, res) => {
       data: formattedAssets,
       pagination: {
         total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / parseInt(limit))
+        page,
+        limit,
+        totalPages: Math.ceil(count / limit)
       }
     });
   } catch (error) {
@@ -209,15 +209,15 @@ exports.getAllArtAssets = async (req, res) => {
 exports.getArtAsset = async (req, res) => {
   try {
     const { id } = req.params;
-    
-// 暂时移除 include，避免关联查询错误
+
+    // 暂时移除 include，避免关联查询错误
     const asset = await ArtAsset.findByPk(id);
 
     if (!asset) {
       return res.status(404).json({ error: 'Art asset not found' });
     }
 
-// 转换数据格式，将下划线命名转换为驼峰命名
+    // 转换数据格式，将下划线命名转换为驼峰命名
     const formattedAsset = {
       id: asset.id,
       category: asset.category,
@@ -252,7 +252,7 @@ exports.getArtAsset = async (req, res) => {
  */
 exports.createArtAsset = async (req, res) => {
   try {
-// 添加详细日志
+    // 添加详细日志
     logger.info('=== Creating Art Asset ===');
     logger.info('Request body:', req.body);
     logger.info('Request file:', req.file ? {
@@ -269,27 +269,27 @@ exports.createArtAsset = async (req, res) => {
     const { category, name, sortOrder } = req.body;
     const file = req.file;
 
-// 改进错误处理，提供更详细的错误信息
+    // 改进错误处理，提供更详细的错误信息
     if (!file) {
       logger.warn('No file uploaded');
       logger.warn('Request body keys:', Object.keys(req.body));
       logger.warn('Request files:', req.files);
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Image file is required',
         details: 'Please select an image file to upload'
       });
     }
 
     if (!category || !name) {
-      logger.warn('Missing required fields:', { 
-        category: category || 'missing', 
+      logger.warn('Missing required fields:', {
+        category: category || 'missing',
         name: name || 'missing',
         bodyKeys: Object.keys(req.body)
       });
       const missingFields = [];
       if (!category) missingFields.push('category');
       if (!name) missingFields.push('name');
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Category and name are required',
         details: `Missing fields: ${missingFields.join(', ')}`
       });
@@ -298,8 +298,8 @@ exports.createArtAsset = async (req, res) => {
     const uploadRoot = ensureArtAssetUploadRoot();
     logger.info('Upload root:', uploadRoot);
     logger.info('File path:', file.path);
-    
-// 检查文件是否存在
+
+    // 检查文件是否存在
     if (!fsSync.existsSync(file.path)) {
       logger.error('File does not exist at path:', file.path);
       return res.status(500).json({ error: 'Uploaded file not found' });
@@ -312,7 +312,7 @@ exports.createArtAsset = async (req, res) => {
     logger.info('Expected file path:', path.join(uploadRoot, file.filename));
     logger.info('File exists:', fsSync.existsSync(path.join(uploadRoot, file.filename)));
 
-// 获取图片尺寸（如果可能）
+    // 获取图片尺寸（如果可能）
     let width = null;
     let height = null;
     try {
@@ -336,11 +336,11 @@ exports.createArtAsset = async (req, res) => {
       mime_type: file.mimetype,
       sort_order: sortOrder ? parseInt(sortOrder) : 0,
       created_by: req.user?.id || null,
-is_active: true // 默认启用
+      is_active: true // 默认启用
     });
     logger.info('Asset created:', asset.id);
 
-// 转换数据格式
+    // 转换数据格式
     const formattedAsset = {
       id: asset.id,
       category: asset.category,
@@ -371,7 +371,7 @@ is_active: true // 默认启用
       name: error.name,
       code: error.code
     });
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create art asset',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -396,7 +396,7 @@ exports.updateArtAsset = async (req, res) => {
     const updateData = {};
     if (category) updateData.category = category;
     if (name) updateData.name = name;
-// 处理 isActive，支持字符串和布尔值
+    // 处理 isActive，支持字符串和布尔值
     if (isActive !== undefined) {
       if (typeof isActive === 'string') {
         updateData.is_active = isActive === 'true';
@@ -406,7 +406,7 @@ exports.updateArtAsset = async (req, res) => {
     }
     if (sortOrder !== undefined) updateData.sort_order = parseInt(sortOrder);
 
-// 如果上传了新文件，更新图片 URL
+    // 如果上传了新文件，更新图片 URL
     if (file) {
       const uploadRoot = ensureArtAssetUploadRoot();
       const storageKey = buildStorageKey(file.filename);
@@ -436,11 +436,11 @@ exports.updateArtAsset = async (req, res) => {
     }
 
     await asset.update(updateData);
-    
-// 重新加载以获取最新数据
+
+    // 重新加载以获取最新数据
     await asset.reload();
 
-// 转换数据格式
+    // 转换数据格式
     const formattedAsset = {
       id: asset.id,
       category: asset.category,

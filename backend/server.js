@@ -176,13 +176,43 @@ const server = httpServer.listen(PORT, () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  process.exit(0);
-});
+// Set server timeout to 60 seconds (shorter than Cloud Run's default 300s/5m)
+// This prevents 504 Gateway Timeouts from the load balancer by ensuring the server
+// closes the connection first if it hangs.
+server.setTimeout(60000); // 60 seconds
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  process.exit(0);
-});
+// Graceful shutdown
+const gracefulShutdown = async (signal) => {
+  logger.info(`${signal} signal received: closing HTTP server`);
+
+  // Stop accepting new connections
+  server.close(async () => {
+    logger.info('HTTP server closed');
+
+    try {
+      // Close database connections
+      const prisma = require('./src/lib/prisma');
+      await prisma.$disconnect();
+      logger.info('✅ Database connections closed');
+
+      // Close Redis if used
+      // const { redis } = require('./src/config/redis');
+      // if (redis) await redis.quit();
+
+      process.exit(0);
+    } catch (err) {
+      logger.error('Error during graceful shutdown:', err);
+      process.exit(1);
+    }
+  });
+
+  // Force exit if cleanup takes too long (e.g. 10s)
+  setTimeout(() => {
+    logger.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 

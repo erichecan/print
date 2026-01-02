@@ -16,12 +16,12 @@ exports.getCollections = async (req, res) => {
       include: {
         _count: {
           select: {
-            collectionProducts: true,
+            products: true,
           },
         },
       },
       orderBy: {
-        sortOrder: 'asc',
+        name: 'asc',
       },
     });
 
@@ -31,10 +31,14 @@ exports.getCollections = async (req, res) => {
       slug: collection.slug,
       description: collection.description,
       imageUrl: collection.imageUrl,
-      productCount: collection._count.collectionProducts,
+      productCount: collection._count.products,
     })));
   } catch (error) {
     console.error('Error fetching collections:', error);
+    // Graceful degradation for dev if table missing
+    if (process.env.NODE_ENV === 'development' && (error.code === 'P2021' || error.message?.includes('does not exist'))) {
+      return res.json([]);
+    }
     res.status(500).json({ error: 'Failed to fetch collections' });
   }
 };
@@ -46,14 +50,14 @@ exports.getCollections = async (req, res) => {
 exports.getCollectionBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
     const skip = (page - 1) * limit;
 
     const collection = await prisma.collection.findUnique({
       where: { slug },
       include: {
-        collectionProducts: {
+        products: {
           skip,
           take: limit,
           include: {
@@ -86,7 +90,7 @@ exports.getCollectionBySlug = async (req, res) => {
         },
         _count: {
           select: {
-            collectionProducts: true,
+            products: true,
           },
         },
       },
@@ -96,7 +100,7 @@ exports.getCollectionBySlug = async (req, res) => {
       return res.status(404).json({ error: 'Collection not found' });
     }
 
-    const products = collection.collectionProducts.map((cp) => cp.product);
+    const products = collection.products.map((cp) => cp.product);
 
     res.json({
       id: collection.id,
@@ -108,8 +112,8 @@ exports.getCollectionBySlug = async (req, res) => {
       pagination: {
         page,
         limit,
-        total: collection._count.collectionProducts,
-        totalPages: Math.ceil(collection._count.collectionProducts / limit),
+        total: collection._count.products,
+        totalPages: Math.ceil(collection._count.products / limit),
       },
     });
   } catch (error) {
