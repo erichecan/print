@@ -283,6 +283,8 @@ exports.listProducts = async (req, res) => {
 
     // Exclude system products from the regular admin list
     where.isSystem = false;
+    // Exclude deleted products
+    where.deleted = false;
 
     const [products, total] = await prisma.$transaction([
       prisma.product.findMany({
@@ -655,6 +657,84 @@ exports.createProduct = async (req, res) => {
     }
 
     return res.status(500).json({ error: 'Failed to create product' });
+  }
+};
+
+/**
+ * 软删除商品
+ * 标记 deleted=true, deletedAt=now
+ * 必须校验是否是系统商品
+ */
+exports.deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    if (!product) {
+      return res.status(404).json({
+        ok: false,
+        error: {
+          code: 'PRODUCT_NOT_FOUND',
+          message: 'Product not found'
+        }
+      });
+    }
+
+    if (product.isSystem) {
+      return res.status(403).json({
+        ok: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Cannot delete a system protected product'
+        }
+      });
+    }
+
+    // Soft delete
+    await prisma.product.update({
+      where: { id },
+      data: {
+        deleted: true,
+        deletedAt: new Date(),
+        isActive: false // Also deactivate
+      }
+    });
+
+    // Invalidate cache
+    const { optimizeImageUrl } = require('../utils/imageHelper'); // Re-import if needed locally or just use existing require if top-level
+    // Call helper if available in scope, or replicate logic
+    // We have access to invalidateProductCache in outer scope? Yes.
+    // Wait, invalidateProductCache serves for caching logic.
+    // Using the one defined in file.
+    try {
+      await deleteCache(`products:detail:${product.slug}`);
+      const { getRedisKeys, redis } = require('../config/redis');
+      const listKeys = await getRedisKeys('products:list:*');
+      if (listKeys.length) {
+        await redis.del(...listKeys);
+      }
+    } catch (e) {
+      console.warn('Failed to clear cache on delete', e);
+    }
+
+    return res.json({
+      ok: true,
+      message: 'Product deleted successfully',
+      data: { id }
+    });
+
+  } catch (error) {
+    console.error('deleteProduct error:', error);
+    return res.status(500).json({
+      ok: false,
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Failed to delete product'
+      }
+    });
   }
 };
 

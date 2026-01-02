@@ -140,7 +140,7 @@ const remotePatterns = [
     protocol: 'https',
     hostname: 'storage.googleapis.com',
     port: '',
-    pathname: '/print-main-product-images/**',
+    pathname: '/**',
   },
   {
     protocol: 'https',

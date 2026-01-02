@@ -53,7 +53,7 @@ router.get('/', controller.listProducts);
 router.get('/:id', controller.getProductById);
 router.post('/', controller.createProduct);
 router.put('/:id', controller.updateProduct);
-router.delete('/:id', controller.archiveProduct);
+router.delete('/:id', controller.deleteProduct);
 router.patch('/:id/status', controller.updateProductStatus);
 router.post(
   '/:id/images',

@@ -39,13 +39,18 @@ export class ApiError extends Error {
 * 支持相对路径和绝对路径
  */
 function buildApiUrl(path: string, params?: Record<string, string | number | boolean | undefined>): string {
-// 修复：使用统一的环境变量配置，在运行时获取
+  // 修复：使用统一的环境变量配置，在运行时获取
   const apiBase = getFrontendApiBaseUrl();
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  
+
   if (apiBase.startsWith('http://') || apiBase.startsWith('https://')) {
-    // 绝对 URL：使用 new URL
-    const url = new URL(cleanPath, apiBase);
+    // Fix: Use string concatenation to preserve /api prefix in apiBase
+    // new URL('/products', 'http://localhost:3001/api') results in 'http://localhost:3001/products' (strips /api)
+    const baseUrl = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
+    const endpoint = cleanPath.startsWith('/') ? cleanPath : `/${cleanPath}`;
+    const fullUrl = `${baseUrl}${endpoint}`;
+
+    const url = new URL(fullUrl);
     if (params) {
       Object.entries(params)
         .filter(([, value]) => value !== undefined && value !== null && value !== '')
@@ -90,7 +95,7 @@ export async function apiClient<T = any>(
     params,
     headers = {},
     timeout = 10000,
-credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
+    credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
   } = options;
 
   const url = buildApiUrl(path, params);
@@ -117,10 +122,10 @@ credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-// Design Lab 4.0: 统一错误分类
+      // Design Lab 4.0: 统一错误分类
       const contentType = response.headers.get('content-type');
       let errorData: any = null;
-      
+
       try {
         if (contentType?.includes('application/json')) {
           errorData = await response.json();
@@ -136,8 +141,8 @@ credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
       } catch (parseError) {
         errorData = { message: `HTTP ${response.status} ${response.statusText}` };
       }
-      
-// Design Lab 4.0: 统一错误分类
+
+      // Design Lab 4.0: 统一错误分类
       let errorType: ApiErrorType;
       if (response.status === 401) {
         errorType = ApiErrorType.UNAUTHORIZED;
@@ -152,9 +157,9 @@ credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
       } else {
         errorType = ApiErrorType.UNKNOWN;
       }
-      
+
       const errorMessage = errorData?.message || errorData?.error || `API request failed: ${response.status} ${response.statusText}`;
-      
+
       console.error('[API Client] Request failed:', {
         url,
         method,
@@ -163,7 +168,7 @@ credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
         errorType,
         error: errorMessage.substring(0, 200),
       });
-      
+
       throw new ApiError(
         errorType,
         errorMessage,
@@ -181,12 +186,12 @@ credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
     }
   } catch (error: any) {
     clearTimeout(timeoutId);
-    
+
     if (error instanceof ApiError) {
       throw error;
     }
-    
-// Design Lab 4.0: 网络错误分类
+
+    // Design Lab 4.0: 网络错误分类
     if (error.name === 'AbortError') {
       throw new ApiError(
         ApiErrorType.TIMEOUT,
@@ -195,8 +200,8 @@ credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
         error
       );
     }
-    
-// Design Lab 4.0: 网络错误分类
+
+    // Design Lab 4.0: 网络错误分类
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new ApiError(
         ApiErrorType.NETWORK_ERROR,
@@ -205,13 +210,13 @@ credentials = 'include', // Design Lab 4.0: 浏览器端默认 'include'
         error
       );
     }
-    
+
     console.error('[API Client] Request error:', {
       url,
       method,
       error: error?.message || 'Unknown error',
     });
-    
+
     throw new ApiError(
       ApiErrorType.UNKNOWN,
       error?.message || 'Unknown error',

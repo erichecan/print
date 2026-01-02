@@ -58,7 +58,7 @@ export async function getProducts(params?: {
   try {
     const response: any = await productsApi.list(params);
 
-// Map backend response to Design Lab Product interface
+    // Map backend response to Design Lab Product interface
     if (response && response.data) {
       const mappedData = response.data.map((item: any) => ({
         id: item.id,
@@ -106,7 +106,7 @@ export async function getProductByVariant(variantId: string): Promise<ProductDet
  */
 export async function getProduct(productId: string): Promise<ProductDetail> {
   try {
-// First try slug lookup (standard for Design Lab default)
+    // First try slug lookup (standard for Design Lab default)
     const response: any = await productsApi.getBySlug(productId);
 
     // The slug API returns { id, name, ... } but we need { productId, productName, ... }
@@ -118,9 +118,11 @@ export async function getProduct(productId: string): Promise<ProductDetail> {
         // Ensure other fields are mapped if needed
         baseImages: response.images && response.images.length > 0 ? {
           front: response.images[0]?.url,
-          back: response.images[1]?.url || response.images[0]?.url,
-          sleeve: response.images[2]?.url || response.images[0]?.url,
-        } : { front: '', back: '', sleeve: '' }, // Fallback
+          back: response.images[1]?.url,
+          sleeve: response.images[2]?.url,
+          'left-sleeve': response.images[2]?.url,
+          'right-sleeve': response.images[3]?.url,
+        } : { front: '', back: '', sleeve: '', 'left-sleeve': '', 'right-sleeve': '' }, // Fallback
       } as ProductDetail;
     }
 

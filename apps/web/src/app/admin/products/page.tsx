@@ -153,15 +153,14 @@ export default function AdminProductsPage() {
     mutate();
   };
 
-  const handleArchive = async (product: AdminProductSummary) => {
-    // 使用 i18n 文案提示归档确认
-    // Confirm dialog removed per user request
-    // const confirmed = window.confirm(t('confirmArchiveProduct', { name: product.name }));
-    // if (!confirmed) {
-    //   return;
-    // }
-    await adminProductsApi.archive(product.id);
-    mutate();
+  const handleDelete = async (product: AdminProductSummary) => {
+    // Direct delete without confirmation per user request
+    try {
+      await adminProductsApi.delete(product.id);
+      mutate();
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete product');
+    }
   };
 
   const handleBulkAction = async () => {
@@ -172,8 +171,8 @@ export default function AdminProductsPage() {
     try {
       const requests: Array<Promise<unknown>> = [];
       selectedIds.forEach((id) => {
-        if (bulkAction === 'archive') {
-          requests.push(adminProductsApi.archive(id));
+        if (bulkAction === 'delete') {
+          requests.push(adminProductsApi.delete(id));
         } else if (bulkAction === 'activate') {
           requests.push(adminProductsApi.updateStatus(id, true));
         } else if (bulkAction === 'deactivate') {
@@ -298,8 +297,8 @@ export default function AdminProductsPage() {
             <option value="deactivate" data-i18n="bulkDeactivate">
               Disable
             </option>
-            <option value="archive" data-i18n="bulkArchive">
-              Archive
+            <option value="delete" data-i18n="bulkDelete">
+              Delete
             </option>
           </select>
           <button
@@ -429,10 +428,11 @@ export default function AdminProductsPage() {
                           <button
                             type="button"
                             role="menuitem"
-                            onClick={() => handleArchive(product)}
-                            data-i18n="archiveProduct"
+                            onClick={() => handleDelete(product)}
+                            className="text-danger"
+                            data-i18n="deleteProduct"
                           >
-                            {t('archiveProduct')}
+                            {t('deleteProduct') || 'Delete'}
                           </button>
                         </div>
                       </div>
