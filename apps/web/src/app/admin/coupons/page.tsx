@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { adminCouponsApi, AdminCoupon } from '@/lib/api';
-import { useAdminI18n } from '@/contexts/adminI18nContext'; // 引入 i18n 以实现右侧内容双语
+import { useAdminI18n } from '@/contexts/adminI18nContext';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 // Coupon statistics for Issue #138
 
 const couponTypes = [
@@ -27,6 +28,9 @@ export default function AdminCouponsPage() {
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
   });
   const [saving, setSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [couponToDelete, setCouponToDelete] = useState<AdminCoupon | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, isLoading, error, mutate } = useSWR(['admin-coupons', searchDraft, statusFilter], () =>
     adminCouponsApi.list({
@@ -72,12 +76,25 @@ export default function AdminCouponsPage() {
     mutate();
   };
 
-  const deleteCoupon = async (coupon: AdminCoupon) => {
-    // Confirm dialog removed per user request
-    // const confirmed = window.confirm(t('couponsConfirmDelete', { code: coupon.code }));
-    // if (!confirmed) return;
-    await adminCouponsApi.remove(coupon.id);
-    mutate();
+  const deleteCoupon = (coupon: AdminCoupon) => {
+    setCouponToDelete(coupon);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteCoupon = async () => {
+    if (!couponToDelete) return;
+    try {
+      setIsDeleting(true);
+      await adminCouponsApi.remove(couponToDelete.id);
+      setIsDeleteModalOpen(false);
+      setCouponToDelete(null);
+      mutate();
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('Delete failed. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const formatDiscount = (coupon: AdminCoupon) =>
@@ -338,6 +355,15 @@ export default function AdminCouponsPage() {
           </table>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={isDeleting}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteCoupon}
+        title={t('delete')}
+        itemName={couponToDelete?.code}
+        description={t('couponsConfirmDelete', { code: couponToDelete?.code })}
+      />
     </div>
   );
 }

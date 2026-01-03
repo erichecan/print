@@ -6,8 +6,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { authApi, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct } from '@/lib/api';
-import useSWR from 'swr';
+import { authApi, simpleOfflineOrderProductApi, AdminOfflineOrderProduct } from '@/lib/api';
+import useSWR, { mutate } from 'swr';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 export default function SimpleOfflineOrderProductsPage() {
   const router = useRouter();
@@ -18,7 +19,11 @@ export default function SimpleOfflineOrderProductsPage() {
   const [newProductImageUrl, setNewProductImageUrl] = useState('');
   const [newProductIsCustomerOwned, setNewProductIsCustomerOwned] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<AdminOfflineOrderProduct | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [productToDeleteId, setProductToDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 认证检查
   useEffect(() => {
@@ -49,7 +54,7 @@ export default function SimpleOfflineOrderProductsPage() {
     }
   );
 
-  const products: SimpleOfflineOrderProduct[] = productsData?.data || [];
+  const products: AdminOfflineOrderProduct[] = productsData?.data || [];
 
   // 添加产品
   const handleAddProduct = async (e: React.FormEvent) => {
@@ -60,7 +65,7 @@ export default function SimpleOfflineOrderProductsPage() {
     }
 
     setIsSubmitting(true);
-    setError('');
+    setError(null);
 
     try {
       await simpleOfflineOrderProductApi.create({
@@ -81,22 +86,28 @@ export default function SimpleOfflineOrderProductsPage() {
   };
 
   // 删除产品
-  const handleDeleteProduct = async (id: string) => {
-    // Confirm dialog removed per user request
-    // if (!confirm('确定要删除这个产品吗？')) {
-    //   return;
-    // }
+  const handleDeleteProduct = (id: string) => {
+    setProductToDeleteId(id);
+    setIsDeleteModalOpen(true);
+  };
 
+  const confirmDeleteProduct = async () => {
+    if (!productToDeleteId) return;
+    setIsDeleting(true);
     try {
-      await simpleOfflineOrderProductApi.delete(id);
+      await simpleOfflineOrderProductApi.delete(productToDeleteId);
+      setIsDeleteModalOpen(false);
+      setProductToDeleteId(null);
       mutateProducts();
     } catch (err: any) {
       setError(err.message || '删除产品失败');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   // 切换产品状态
-  const handleToggleActive = async (product: SimpleOfflineOrderProduct) => {
+  const handleToggleActive = async (product: AdminOfflineOrderProduct) => {
     try {
       await simpleOfflineOrderProductApi.update(product.id, {
         isActive: !product.isActive,
@@ -253,6 +264,14 @@ export default function SimpleOfflineOrderProductsPage() {
               </div>
             )}
           </div>
+          <DeleteConfirmationModal
+            isOpen={isDeleteModalOpen}
+            isDeleting={isDeleting}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={confirmDeleteProduct}
+            title="删除产品"
+            description="确定要删除这个产品吗？此操作无法撤销。"
+          />
         </div>
       </div>
     </div>

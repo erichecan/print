@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
 import api from '@/lib/api';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 interface Color {
   id: string;
@@ -22,6 +23,9 @@ export default function OfflineOrderColorsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editHex, setEditHex] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [colorToDelete, setColorToDelete] = useState<Color | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, error, mutate } = useSWR('/api/proxy/admin/offline-order-colors', async (url) => {
     const response = await fetch(url, { credentials: 'include' });
@@ -65,14 +69,23 @@ export default function OfflineOrderColorsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    // Confirm dialog removed per user request
-    // if (!confirm('确定要删除这个颜色吗？')) return;
+  const handleDelete = (color: Color) => {
+    setColorToDelete(color);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!colorToDelete) return;
     try {
-      await api(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
+      setIsDeleting(true);
+      await api(`/api/proxy/admin/offline-order-colors/${colorToDelete.id}`, { method: 'DELETE' });
+      setIsDeleteModalOpen(false);
+      setColorToDelete(null);
       mutate();
     } catch (err: any) {
       alert(err.message || '删除失败');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -186,7 +199,7 @@ export default function OfflineOrderColorsPage() {
                       编辑
                     </button>
                     <button
-                      onClick={() => handleDelete(color.id)}
+                      onClick={() => handleDelete(color)}
                       style={{ padding: '0.25rem 0.5rem', borderRadius: '4px', border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer' }}
                     >
                       删除
@@ -202,6 +215,15 @@ export default function OfflineOrderColorsPage() {
       {colors.length === 0 && (
         <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>暂无颜色配置</p>
       )}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={isDeleting}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="删除颜色"
+        itemName={colorToDelete?.name}
+        description="确定要删除这个颜色吗？此操作无法撤销。"
+      />
     </div>
   );
 }

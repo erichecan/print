@@ -10,6 +10,7 @@ import Link from 'next/link';
 import useSWR, { mutate } from 'swr';
 import { adminUsersApi, AdminUserSummary } from '@/lib/api';
 import { CreateUserModal } from '@/components/admin/CreateUserModal';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 type RemoteFilters = {
   page: number;
@@ -29,18 +30,23 @@ export default function AdminUsersPage() {
   const [filters, setFilters] = useState<RemoteFilters>(remoteDefaults);
   const [searchDraft, setSearchDraft] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框状态
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框状态
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<AdminUserSummary | null>(null);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const swrKey = useMemo(() => ['admin-users', filters], [filters]);
 
-  const { data, isLoading, error } = useSWR(swrKey, ([, params]) =>
-    adminUsersApi.list({
-      page: params.page,
-      search: params.search || undefined,
-      role: params.role === 'all' ? undefined : params.role,
-      status: params.status === 'all' ? undefined : params.status,
-    })
-  );
+  const { data, isLoading, error } = useSWR(swrKey, ([, params]) => {
+    const p = params as RemoteFilters;
+    return adminUsersApi.list({
+      page: p.page,
+      search: p.search || undefined,
+      role: p.role === 'all' ? undefined : p.role,
+      status: p.status === 'all' ? undefined : p.status,
+    });
+  });
 
   const users = data?.data ?? [];
   const pagination = data?.pagination;
@@ -90,7 +96,7 @@ const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框�
   const canPrev = filters.page > 1;
   const canNext = filters.page < totalPages;
 
-// 用户创建成功后的回调
+  // 用户创建成功后的回调
   const handleUserCreated = () => {
     // 刷新用户列表
     mutate(swrKey);
@@ -100,6 +106,37 @@ const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框�
     }
   };
 
+  const executeBulkDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const requests = Array.from(selectedIds).map((id) => adminUsersApi.delete(id));
+      await Promise.all(requests);
+      setSelectedIds(new Set());
+      setIsBulkDeleteModalOpen(false);
+      mutate(swrKey);
+    } catch (err: any) {
+      alert(err.message || 'Bulk delete failed');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
+    try {
+      await adminUsersApi.delete(userToDelete.id);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
+      mutate(swrKey);
+    } catch (err: any) {
+      alert(err.message || 'Delete user failed');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+
   return (
     <div style={{ marginTop: 24 }}>
       <div className="admin-page-header">
@@ -108,9 +145,9 @@ const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框�
           <p className="text-muted">Manage customer and admin accounts</p>
         </div>
         <div className="admin-btn-group">
-          <button 
-            type="button" 
-            className="btn btn--primary" 
+          <button
+            type="button"
+            className="btn btn--primary"
             onClick={() => setIsCreateModalOpen(true)}
           >
             + Invite User
@@ -118,7 +155,7 @@ const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框�
         </div>
       </div>
 
-{/* 创建用户模态框 */}
+      {/* 创建用户模态框 */}
       <CreateUserModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -210,9 +247,22 @@ const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框�
                   </td>
                   <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                   <td>
-                    <Link href={`/admin/users/${user.id}`} className="btn-icon btn--outline" style={{ fontSize: 12 }}>
-                      View
-                    </Link>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Link href={`/admin/users/${user.id}`} className="btn-icon btn--outline" style={{ fontSize: 12 }}>
+                        View
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserToDelete(user);
+                          setIsDeleteModalOpen(true);
+                        }}
+                        className="btn-icon btn--outline text-danger"
+                        style={{ fontSize: 12, color: '#ef4444' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -244,6 +294,24 @@ const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // 模态框�
           </button>
         </div>
       )}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={isDeleting}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        itemName={userToDelete?.fullName || userToDelete?.email}
+        description="Are you sure you want to delete this user? This action cannot be undone."
+      />
+      <DeleteConfirmationModal
+        isOpen={isBulkDeleteModalOpen}
+        isDeleting={isDeleting}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={executeBulkDelete}
+        title="Delete Selected Users"
+        description={`Are you sure you want to delete ${selectedIds.size} selected users? This action cannot be undone.`}
+        confirmLabel={`Delete ${selectedIds.size} Users`}
+      />
     </div>
   );
 }

@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { adminPromotionsApi, AdminPromotion } from '@/lib/api';
-import { useAdminI18n } from '@/contexts/adminI18nContext'; // 引入后台 i18n，确保右侧内容双语
+import { useAdminI18n } from '@/contexts/adminI18nContext';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 export default function AdminPromotionsPage() {
   const { t } = useAdminI18n(); // 通过 t 函数输出中英文内容
@@ -31,6 +32,9 @@ export default function AdminPromotionsPage() {
     isActive: true,
   });
   const [saving, setSaving] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [promotionToDelete, setPromotionToDelete] = useState<AdminPromotion | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data, isLoading, error, mutate } = useSWR(['admin-promotions', searchDraft, statusFilter], () =>
     adminPromotionsApi.list({
@@ -114,12 +118,25 @@ export default function AdminPromotionsPage() {
     mutate();
   };
 
-  const removePromotion = async (promotion: AdminPromotion) => {
-    // Confirm dialog removed per user request
-    // const confirmed = window.confirm(t('promotionsConfirmDelete', { title: promotion.title }));
-    // if (!confirmed) return;
-    await adminPromotionsApi.remove(promotion.id);
-    mutate();
+  const removePromotion = (promotion: AdminPromotion) => {
+    setPromotionToDelete(promotion);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeletePromotion = async () => {
+    if (!promotionToDelete) return;
+    try {
+      setIsDeleting(true);
+      await adminPromotionsApi.remove(promotionToDelete.id);
+      setIsDeleteModalOpen(false);
+      setPromotionToDelete(null);
+      mutate();
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('Delete failed. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const formatDiscountDisplay = (promotion: AdminPromotion) => {
@@ -435,6 +452,15 @@ export default function AdminPromotionsPage() {
           </table>
         )}
       </div>
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={isDeleting}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeletePromotion}
+        title={t('delete')}
+        itemName={promotionToDelete?.title}
+        description={t('promotionsConfirmDelete', { title: promotionToDelete?.title })}
+      />
     </div>
   );
 }

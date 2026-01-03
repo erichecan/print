@@ -13,6 +13,7 @@ import {
   ProductionWorkOrderPayload,
 } from '@/lib/api';
 import { useAdminI18n } from '@/contexts/adminI18nContext'; // 国际化支持
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   month: 'short',
@@ -56,6 +57,8 @@ export default function AdminOfflineOrdersPage() {
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null);
   const [draggingFromStage, setDraggingFromStage] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const listParams = useMemo(() => {
     const params: Record<string, any> = {};
@@ -322,398 +325,411 @@ export default function AdminOfflineOrdersPage() {
   }, []);
 
   return (
-    <div style={{ marginTop: 24 }}>
-      {/* 顶部导航链接 */}
-      <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginTop: 0, marginBottom: '1rem' }}>
-        <Link
-          href="/admin/orders"
-          className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
-        >
-          进入主站管理后台
-        </Link>
-        <Link
-          href="/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:underline"
-        >
-          返回主站
-        </Link>
-      </div>
-      <div className="kanban-page">
-        <section className="kanban-toolbar">
-          <div className="kanban-toolbar-main">
-            <div className="admin-search kanban-search">
-              <input
-                type="search"
-                placeholder={t('searchOrdersOrCompanies')}
-                aria-label={t('searchOrdersOrCompanies')}
-                value={search}
-                onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
-              />
-            </div>
-            <select
-              className="kanban-select"
-              aria-label="Filter by priority"
-              value={rushFilter}
-              onChange={(event) => setRushFilter(event.target.value as typeof rushFilter)}
-            >
-              <option value="all">{t('allPriorities')}</option>
-              <option value="rush">{t('rush')} ({rushCounts.rush})</option>
-              <option value="standard">{t('standard')} ({rushCounts.standard})</option>
-            </select>
-            <select className="kanban-select" aria-label={t('allOwners')} disabled>
-              <option>{t('allOwners')}</option>
-            </select>
-            <button type="button" className="btn btn--outline" onClick={handleDateRange}>
-              {t('dateRange')}
-            </button>
-          </div>
-          <div className="kanban-toolbar-actions">
-            <button type="button" className="btn" onClick={handleSaveView}>
-              {t('saveView')}
-            </button>
-            <button type="button" className="btn btn--outline" onClick={handleExportCsv}>
-              {t('exportCsv')}
-            </button>
-            <Link href="/offline-orders" className="btn btn--primary" target="_blank" rel="noopener noreferrer">
-              {t('newOfflineOrder')}
-            </Link>
-            <button type="button" className="btn btn--outline" onClick={handleRefresh}>
-              {t('refresh')}
-            </button>
-          </div>
-        </section>
-
-        {metricsLoading && !metricsData ? (
-          <div className="kanban-metrics" aria-live="polite">
-            {[0, 1, 2, 3].map((index) => (
-              <div key={index} className="kanban-metric-card">
-                <span className="kanban-metric-label">{t('loading')}</span>
-                <strong className="kanban-metric-value">--</strong>
+    <>
+      <div style={{ marginTop: 24 }}>
+        {/* 顶部导航链接 */}
+        <div className="mb-4 flex gap-3 items-center justify-end p-4 bg-white border-b" style={{ marginTop: 0, marginBottom: '1rem' }}>
+          <Link
+            href="/admin/orders"
+            className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline"
+          >
+            进入主站管理后台
+          </Link>
+          <Link
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 hover:underline"
+          >
+            返回主站
+          </Link>
+        </div>
+        <div className="kanban-page">
+          <section className="kanban-toolbar">
+            <div className="kanban-toolbar-main">
+              <div className="admin-search kanban-search">
+                <input
+                  type="search"
+                  placeholder={t('searchOrdersOrCompanies')}
+                  aria-label={t('searchOrdersOrCompanies')}
+                  value={search}
+                  onChange={(event: ChangeEvent<HTMLInputElement>) => setSearch(event.target.value)}
+                />
               </div>
-            ))}
-          </div>
-        ) : metricsError ? (
-          <div className="kanban-metrics" aria-live="polite">
-            <div className="kanban-metric-card">
-              <span className="kanban-metric-label">{t('failedToLoadMetrics')}</span>
-              <strong className="kanban-metric-value">!</strong>
-            </div>
-          </div>
-        ) : metricsData ? (
-          <section className="kanban-metrics" aria-label="Offline workflow metrics">
-            <div className="kanban-metric-card">
-              <span className="kanban-metric-label">{t('ordersInProgress')}</span>
-              <strong className="kanban-metric-value">{metricsData.summary.active}</strong>
-            </div>
-            <div className="kanban-metric-card">
-              <span className="kanban-metric-label">{t('averageCycleTime')}</span>
-              <strong className="kanban-metric-value">{metricsData.summary.completed ? '6.4 days' : '--'}</strong>
-            </div>
-            <div className="kanban-metric-card">
-              <span className="kanban-metric-label">{t('rushOrders')}</span>
-              <strong className="kanban-metric-value">{metricsData.summary.rushActive}</strong>
-            </div>
-            <div className="kanban-metric-card">
-              <span className="kanban-metric-label">{t('delayed')}</span>
-              <strong className="kanban-metric-value">{metricsData.summary.cancelled}</strong>
-            </div>
-          </section>
-        ) : null}
-
-        <section className="kanban-config-entry">
-          <p>
-            {t('workflowStagesCustomizable')}{' '}
-            <Link href="/admin/settings" target="_blank">
-              {t('systemSettings')}
-            </Link>
-            {t('useButtonToAdjust')}
-          </p>
-          <button type="button" className="btn btn--outline" onClick={handleCustomizeWorkflow}>
-            {t('customizeWorkflow')}
-          </button>
-        </section>
-
-        {isLoading ? (
-          <div className="kanban-board" aria-live="polite">
-            <div className="kanban-column">
-              <div className="kanban-column-body">{t('loadingBoard')}</div>
-            </div>
-          </div>
-        ) : boardError ? (
-          <div className="kanban-board">
-            <div className="kanban-column">
-              <div className="kanban-column-body">{t('failedToLoadOrders')}</div>
-            </div>
-          </div>
-        ) : (boardData?.orders || []).length === 0 ? (
-          <div className="kanban-board">
-            <div className="kanban-column">
-              <div className="kanban-column-body">{t('noOrdersMatchFilters')}</div>
-            </div>
-          </div>
-        ) : (
-          <section className="kanban-board" id="offlineBoard" aria-label="Offline order workflow board">
-            {stages.map((stage) => {
-              const cards = groupedOrders.get(stage.key) || [];
-              const columnClassName = `kanban-column${dragOverStage === stage.key ? ' is-drop-target' : ''}`;
-              return (
-                <article
-                  key={stage.key}
-                  className={columnClassName}
-                  data-stage-column
-                  onDragOver={(event) => handleColumnDragOver(event, stage.key)}
-                  onDrop={(event) => handleColumnDrop(event, stage.key)}
-                  onDragLeave={(event) => handleColumnDragLeave(event, stage.key)}
-                  aria-dropeffect={draggingOrderId ? 'move' : undefined}
-                >
-                  <header className="kanban-column-header">
-                    <h2>{locale === 'zh' ? stage.labelZh || stage.label : stage.labelEn || stage.label}</h2>
-                    <span className="kanban-column-count">{cards.length}</span>
-                  </header>
-                  <div className="kanban-column-body">
-                    {cards.length === 0 ? (
-                      <div className="kanban-card-placeholder">{t('dropOrdersHere')}</div>
-                    ) : (
-                      cards.map((order) => (
-                        <div
-                          key={order.id}
-                          className={`kanban-card${draggingOrderId === order.id ? ' is-dragging' : ''}`}
-                          role="button"
-                          tabIndex={0}
-                          draggable
-                          aria-grabbed={draggingOrderId === order.id}
-                          onClick={() => handleSelectOrder(order)}
-                          onKeyDown={(event) => event.key === 'Enter' && handleSelectOrder(order)}
-                          onDragStart={(event) => handleCardDragStart(event, order)}
-                          onDragEnd={handleCardDragEnd}
-                        >
-                          <header className="kanban-card-header">
-                            <span className="kanban-card-title">{order.projectName}</span>
-                            {order.rushOrder && <span className="kanban-card-chip is-alert">Rush</span>}
-                          </header>
-                          <p className="kanban-card-meta">
-                            #{order.orderCode} • {locale === 'zh' ? order.stage?.labelZh || order.stage?.label : order.stage?.labelEn || order.stage?.label}
-                          </p>
-                          <p className="kanban-card-detail">
-                            {order.contact.company || '—'} · Delivery {formatDate(order.deliveryDate)}
-                          </p>
-                          <p className="kanban-card-detail">
-                            {order.contact.name || '—'} • {order.contact.email || '—'}
-                          </p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <footer className="kanban-column-footer">
-                    <button type="button" className="btn btn--ghost" onClick={() => selectedOrderId && setNoteDraft('')}>
-                      + {t('addNote')}
-                    </button>
-                  </footer>
-                </article>
-              );
-            })}
-          </section>
-        )}
-
-
-        {selectedOrderId && (
-          <section className="kanban-detail-panel" aria-live="polite">
-            <div className="kanban-detail-header">
-              <div>
-                <h2>{selectedDetail?.projectName || t('orderDetail')}</h2>
-                {selectedDetail && <p>#{selectedDetail.orderCode}</p>}
-              </div>
-              <button type="button" className="btn btn--outline" onClick={() => setSelectedOrderId(null)}>
-                {t('close')}
+              <select
+                className="kanban-select"
+                aria-label="Filter by priority"
+                value={rushFilter}
+                onChange={(event) => setRushFilter(event.target.value as typeof rushFilter)}
+              >
+                <option value="all">{t('allPriorities')}</option>
+                <option value="rush">{t('rush')} ({rushCounts.rush})</option>
+                <option value="standard">{t('standard')} ({rushCounts.standard})</option>
+              </select>
+              <select className="kanban-select" aria-label={t('allOwners')} disabled>
+                <option>{t('allOwners')}</option>
+              </select>
+              <button type="button" className="btn btn--outline" onClick={handleDateRange}>
+                {t('dateRange')}
               </button>
             </div>
+            <div className="kanban-toolbar-actions">
+              <button type="button" className="btn" onClick={handleSaveView}>
+                {t('saveView')}
+              </button>
+              <button type="button" className="btn btn--outline" onClick={handleExportCsv}>
+                {t('exportCsv')}
+              </button>
+              <Link href="/offline-orders" className="btn btn--primary" target="_blank" rel="noopener noreferrer">
+                {t('newOfflineOrder')}
+              </Link>
+              <button type="button" className="btn btn--outline" onClick={handleRefresh}>
+                {t('refresh')}
+              </button>
+            </div>
+          </section>
 
-            {detailLoading ? (
-              <p>{t('loadingOrder')}</p>
-            ) : detailError ? (
-              <p className="detail-error">{t('failedToLoadOrderDetail')}</p>
-            ) : !selectedDetail ? (
-              <p className="detail-error">{t('orderNotFound')}</p>
-            ) : (
-              <div className="kanban-detail-body">
-                {/* Stage + note controls mirror prototype detail workflow */}
-                <div className="admin-form">
-                  <h3>{t('stage')}</h3>
-                  <div className="admin-grid-two">
-                    <select
-                      value={stageDraft || selectedDetail.stage?.key || ''}
-                      onChange={(event) => setStageDraft(event.target.value)}
-                    >
-                      {stages.map((stage) => (
-                        <option key={stage.key} value={stage.key}>
-                          {locale === 'zh' ? stage.labelZh || stage.label : stage.labelEn || stage.label}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="btn btn--primary"
-                      disabled={!stageDraft}
-                      onClick={() => stageDraft && handleStageChange(selectedDetail.id, stageDraft)}
-                    >
-                      {t('updateStage')}
-                    </button>
-                  </div>
+          {metricsLoading && !metricsData ? (
+            <div className="kanban-metrics" aria-live="polite">
+              {[0, 1, 2, 3].map((index) => (
+                <div key={index} className="kanban-metric-card">
+                  <span className="kanban-metric-label">{t('loading')}</span>
+                  <strong className="kanban-metric-value">--</strong>
                 </div>
+              ))}
+            </div>
+          ) : metricsError ? (
+            <div className="kanban-metrics" aria-live="polite">
+              <div className="kanban-metric-card">
+                <span className="kanban-metric-label">{t('failedToLoadMetrics')}</span>
+                <strong className="kanban-metric-value">!</strong>
+              </div>
+            </div>
+          ) : metricsData ? (
+            <section className="kanban-metrics" aria-label="Offline workflow metrics">
+              <div className="kanban-metric-card">
+                <span className="kanban-metric-label">{t('ordersInProgress')}</span>
+                <strong className="kanban-metric-value">{metricsData.summary.active}</strong>
+              </div>
+              <div className="kanban-metric-card">
+                <span className="kanban-metric-label">{t('averageCycleTime')}</span>
+                <strong className="kanban-metric-value">{metricsData.summary.completed ? '6.4 days' : '--'}</strong>
+              </div>
+              <div className="kanban-metric-card">
+                <span className="kanban-metric-label">{t('rushOrders')}</span>
+                <strong className="kanban-metric-value">{metricsData.summary.rushActive}</strong>
+              </div>
+              <div className="kanban-metric-card">
+                <span className="kanban-metric-label">{t('delayed')}</span>
+                <strong className="kanban-metric-value">{metricsData.summary.cancelled}</strong>
+              </div>
+            </section>
+          ) : null}
 
-                <div className="admin-grid-two">
-                  <div className="admin-form">
-                    <h3>{t('notes')}</h3>
-                    <form className="detail-form" onSubmit={handleAddNote}>
-                      <textarea
-                        value={noteDraft}
-                        onChange={(event) => setNoteDraft(event.target.value)}
-                        placeholder={t('addInternalNote')}
-                        rows={3}
-                      />
-                      <button type="submit" className="btn btn--primary" disabled={!noteDraft.trim()}>
-                        {t('addNote')}
-                      </button>
-                    </form>
-                    <ul className="detail-notes">
-                      {(selectedDetail.histories || []).map((history: OfflineOrderHistoryEntry) => (
-                        <li key={history.id}>
-                          <div className="audit-meta">
-                            <span>{history.actorName || 'System'}</span>
-                            <span>{formatDate(history.createdAt)}</span>
+          <section className="kanban-config-entry">
+            <p>
+              {t('workflowStagesCustomizable')}{' '}
+              <Link href="/admin/settings" target="_blank">
+                {t('systemSettings')}
+              </Link>
+              {t('useButtonToAdjust')}
+            </p>
+            <button type="button" className="btn btn--outline" onClick={handleCustomizeWorkflow}>
+              {t('customizeWorkflow')}
+            </button>
+          </section>
+
+          {isLoading ? (
+            <div className="kanban-board" aria-live="polite">
+              <div className="kanban-column">
+                <div className="kanban-column-body">{t('loadingBoard')}</div>
+              </div>
+            </div>
+          ) : boardError ? (
+            <div className="kanban-board">
+              <div className="kanban-column">
+                <div className="kanban-column-body">{t('failedToLoadOrders')}</div>
+              </div>
+            </div>
+          ) : (boardData?.orders || []).length === 0 ? (
+            <div className="kanban-board">
+              <div className="kanban-column">
+                <div className="kanban-column-body">{t('noOrdersMatchFilters')}</div>
+              </div>
+            </div>
+          ) : (
+            <section className="kanban-board" id="offlineBoard" aria-label="Offline order workflow board">
+              {stages.map((stage) => {
+                const cards = groupedOrders.get(stage.key) || [];
+                const columnClassName = `kanban-column${dragOverStage === stage.key ? ' is-drop-target' : ''}`;
+                return (
+                  <article
+                    key={stage.key}
+                    className={columnClassName}
+                    data-stage-column
+                    onDragOver={(event) => handleColumnDragOver(event, stage.key)}
+                    onDrop={(event) => handleColumnDrop(event, stage.key)}
+                    onDragLeave={(event) => handleColumnDragLeave(event, stage.key)}
+                    aria-dropeffect={draggingOrderId ? 'move' : undefined}
+                  >
+                    <header className="kanban-column-header">
+                      <h2>{locale === 'zh' ? stage.labelZh || stage.label : stage.labelEn || stage.label}</h2>
+                      <span className="kanban-column-count">{cards.length}</span>
+                    </header>
+                    <div className="kanban-column-body">
+                      {cards.length === 0 ? (
+                        <div className="kanban-card-placeholder">{t('dropOrdersHere')}</div>
+                      ) : (
+                        cards.map((order) => (
+                          <div
+                            key={order.id}
+                            className={`kanban-card${draggingOrderId === order.id ? ' is-dragging' : ''}`}
+                            role="button"
+                            tabIndex={0}
+                            draggable
+                            aria-grabbed={draggingOrderId === order.id}
+                            onClick={() => handleSelectOrder(order)}
+                            onKeyDown={(event) => event.key === 'Enter' && handleSelectOrder(order)}
+                            onDragStart={(event) => handleCardDragStart(event, order)}
+                            onDragEnd={handleCardDragEnd}
+                          >
+                            <header className="kanban-card-header">
+                              <span className="kanban-card-title">{order.projectName}</span>
+                              {order.rushOrder && <span className="kanban-card-chip is-alert">Rush</span>}
+                            </header>
+                            <p className="kanban-card-meta">
+                              #{order.orderCode} • {locale === 'zh' ? order.stage?.labelZh || order.stage?.label : order.stage?.labelEn || order.stage?.label}
+                            </p>
+                            <p className="kanban-card-detail">
+                              {order.contact.company || '—'} · Delivery {formatDate(order.deliveryDate)}
+                            </p>
+                            <p className="kanban-card-detail">
+                              {order.contact.name || '—'} • {order.contact.email || '—'}
+                            </p>
                           </div>
-                          <p>{history.note || `${t('movedTo')} ${history.toStageKey}`}</p>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                        ))
+                      )}
+                    </div>
+                    <footer className="kanban-column-footer">
+                      <button type="button" className="btn btn--ghost" onClick={() => selectedOrderId && setNoteDraft('')}>
+                        + {t('addNote')}
+                      </button>
+                    </footer>
+                  </article>
+                );
+              })}
+            </section>
+          )}
 
-                  <div className="admin-form">
-                    <h3>{t('assets')}</h3>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={(event) => handleUploadAssets(event.target.files)}
-                      disabled={uploading}
-                    />
-                    <ul className="detail-assets">
-                      {(selectedDetail.assets || []).map((asset) => (
-                        <li key={asset.id}>
-                          <a href={asset.url} target="_blank" rel="noopener noreferrer">
-                            {asset.fileName}
-                          </a>
-                          <span>{formatDate(asset.uploadedAt)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
 
-                  <div className="admin-form">
-                    <h3>{t('actions')}</h3>
-                    <button
-                      type="button"
-                      className="btn btn--danger"
-                      style={{ width: '100%', backgroundColor: '#ef4444', color: 'white', border: 'none' }}
-                      onClick={async () => {
-                        // Confirm dialog removed per user request
-                        // if (confirm(t('confirmDeleteOrder'))) {
-                        try {
-                          await adminOfflineOrdersApi.delete(selectedDetail.id);
-                          setSelectedOrderId(null);
-                          await Promise.all([mutateBoard(), mutateMetrics()]);
-                        } catch (error) {
-                          console.error(error);
-                          alert((error as Error).message);
-                        }
-                        // }
-                      }}
-                    >
-                      {t('deleteOrder')}
-                    </button>
-                  </div>
+          {selectedOrderId && (
+            <section className="kanban-detail-panel" aria-live="polite">
+              <div className="kanban-detail-header">
+                <div>
+                  <h2>{selectedDetail?.projectName || t('orderDetail')}</h2>
+                  {selectedDetail && <p>#{selectedDetail.orderCode}</p>}
                 </div>
+                <button type="button" className="btn btn--outline" onClick={() => setSelectedOrderId(null)}>
+                  {t('close')}
+                </button>
+              </div>
 
-                <div className="admin-form">
-                  <h3>{t('production')}</h3>
-                  <form className="detail-form" onSubmit={handleProductionUpdate}>
-                    <select value={productionStatusDraft} onChange={(event) => setProductionStatusDraft(event.target.value)}>
-                      <option value="">{t('status')}</option>
-                      <option value="awaiting-assets">{t('awaitingAssets')}</option>
-                      <option value="in-production">{t('inProduction')}</option>
-                      <option value="qc">{t('qualityControl')}</option>
-                      <option value="completed">{t('completed')}</option>
-                    </select>
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder={t('priority')}
-                      value={priorityDraft}
-                      onChange={(event) => setPriorityDraft(event.target.value === '' ? '' : Number(event.target.value))}
-                    />
-                    <label>
-                      {t('start')}
-                      <input type="date" value={startDateDraft} onChange={(event) => setStartDateDraft(event.target.value)} />
-                    </label>
-                    <label>
-                      {t('due')}
-                      <input type="date" value={dueDateDraft} onChange={(event) => setDueDateDraft(event.target.value)} />
-                    </label>
-                    <input
-                      type="text"
-                      placeholder={t('assigneeId')}
-                      value={assigneeIdDraft}
-                      onChange={(event) => setAssigneeIdDraft(event.target.value)}
-                    />
-                    <input
-                      type="text"
-                      placeholder={t('assigneeName')}
-                      value={assigneeNameDraft}
-                      onChange={(event) => setAssigneeNameDraft(event.target.value)}
-                    />
-                    <textarea
-                      rows={3}
-                      placeholder={t('productionNote')}
-                      value={productionNoteDraft}
-                      onChange={(event) => setProductionNoteDraft(event.target.value)}
-                    />
-                    <button type="submit" className="btn btn--primary">
-                      {t('saveProductionUpdate')}
-                    </button>
-                  </form>
-                </div>
-
-                <div className="admin-grid-two">
+              {detailLoading ? (
+                <p>{t('loadingOrder')}</p>
+              ) : detailError ? (
+                <p className="detail-error">{t('failedToLoadOrderDetail')}</p>
+              ) : !selectedDetail ? (
+                <p className="detail-error">{t('orderNotFound')}</p>
+              ) : (
+                <div className="kanban-detail-body">
+                  {/* Stage + note controls mirror prototype detail workflow */}
                   <div className="admin-form">
-                    <h3>{t('customer')}</h3>
-                    <p className="text-muted">{selectedDetail.contact?.email || '—'}</p>
-                    <div className="address-block">
-                      <h4>{t('company')}</h4>
-                      <p>{selectedDetail.contact?.company || '—'}</p>
+                    <h3>{t('stage')}</h3>
+                    <div className="admin-grid-two">
+                      <select
+                        value={stageDraft || selectedDetail.stage?.key || ''}
+                        onChange={(event) => setStageDraft(event.target.value)}
+                      >
+                        {stages.map((stage) => (
+                          <option key={stage.key} value={stage.key}>
+                            {locale === 'zh' ? stage.labelZh || stage.label : stage.labelEn || stage.label}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        disabled={!stageDraft}
+                        onClick={() => stageDraft && handleStageChange(selectedDetail.id, stageDraft)}
+                      >
+                        {t('updateStage')}
+                      </button>
                     </div>
                   </div>
+
+                  <div className="admin-grid-two">
+                    <div className="admin-form">
+                      <h3>{t('notes')}</h3>
+                      <form className="detail-form" onSubmit={handleAddNote}>
+                        <textarea
+                          value={noteDraft}
+                          onChange={(event) => setNoteDraft(event.target.value)}
+                          placeholder={t('addInternalNote')}
+                          rows={3}
+                        />
+                        <button type="submit" className="btn btn--primary" disabled={!noteDraft.trim()}>
+                          {t('addNote')}
+                        </button>
+                      </form>
+                      <ul className="detail-notes">
+                        {(selectedDetail.histories || []).map((history: OfflineOrderHistoryEntry) => (
+                          <li key={history.id}>
+                            <div className="audit-meta">
+                              <span>{history.actorName || 'System'}</span>
+                              <span>{formatDate(history.createdAt)}</span>
+                            </div>
+                            <p>{history.note || `${t('movedTo')} ${history.toStageKey}`}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="admin-form">
+                      <h3>{t('assets')}</h3>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={(event) => handleUploadAssets(event.target.files)}
+                        disabled={uploading}
+                      />
+                      <ul className="detail-assets">
+                        {(selectedDetail.assets || []).map((asset) => (
+                          <li key={asset.id}>
+                            <a href={asset.url} target="_blank" rel="noopener noreferrer">
+                              {asset.fileName}
+                            </a>
+                            <span>{formatDate(asset.uploadedAt)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="admin-form">
+                      <h3>{t('actions')}</h3>
+                      <button
+                        type="button"
+                        className="btn btn--danger"
+                        style={{ width: '100%', backgroundColor: '#ef4444', color: 'white', border: 'none' }}
+                        onClick={() => setIsDeleteModalOpen(true)}
+                      >
+                        {t('deleteOrder')}
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="admin-form">
-                    <h3>{t('timeline')}</h3>
-                    <ul className="detail-notes">
-                      {(selectedDetail.productionWorkOrder?.events || []).map((event) => (
-                        <li key={event.id}>
-                          <div className="audit-meta">
-                            <span>{event.status || t('update')}</span>
-                            <span>{formatDate(event.createdAt)}</span>
-                          </div>
-                          {event.note && <p>{event.note}</p>}
-                        </li>
-                      ))}
-                    </ul>
+                    <h3>{t('production')}</h3>
+                    <form className="detail-form" onSubmit={handleProductionUpdate}>
+                      <select value={productionStatusDraft} onChange={(event) => setProductionStatusDraft(event.target.value)}>
+                        <option value="">{t('status')}</option>
+                        <option value="awaiting-assets">{t('awaitingAssets')}</option>
+                        <option value="in-production">{t('inProduction')}</option>
+                        <option value="qc">{t('qualityControl')}</option>
+                        <option value="completed">{t('completed')}</option>
+                      </select>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder={t('priority')}
+                        value={priorityDraft}
+                        onChange={(event) => setPriorityDraft(event.target.value === '' ? '' : Number(event.target.value))}
+                      />
+                      <label>
+                        {t('start')}
+                        <input type="date" value={startDateDraft} onChange={(event) => setStartDateDraft(event.target.value)} />
+                      </label>
+                      <label>
+                        {t('due')}
+                        <input type="date" value={dueDateDraft} onChange={(event) => setDueDateDraft(event.target.value)} />
+                      </label>
+                      <input
+                        type="text"
+                        placeholder={t('assigneeId')}
+                        value={assigneeIdDraft}
+                        onChange={(event) => setAssigneeIdDraft(event.target.value)}
+                      />
+                      <input
+                        type="text"
+                        placeholder={t('assigneeName')}
+                        value={assigneeNameDraft}
+                        onChange={(event) => setAssigneeNameDraft(event.target.value)}
+                      />
+                      <textarea
+                        rows={3}
+                        placeholder={t('productionNote')}
+                        value={productionNoteDraft}
+                        onChange={(event) => setProductionNoteDraft(event.target.value)}
+                      />
+                      <button type="submit" className="btn btn--primary">
+                        {t('saveProductionUpdate')}
+                      </button>
+                    </form>
+                  </div>
+
+                  <div className="admin-grid-two">
+                    <div className="admin-form">
+                      <h3>{t('customer')}</h3>
+                      <p className="text-muted">{selectedDetail.contact?.email || '—'}</p>
+                      <div className="address-block">
+                        <h4>{t('company')}</h4>
+                        <p>{selectedDetail.contact?.company || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="admin-form">
+                      <h3>{t('timeline')}</h3>
+                      <ul className="detail-notes">
+                        {(selectedDetail.productionWorkOrder?.events || []).map((event) => (
+                          <li key={event.id}>
+                            <div className="audit-meta">
+                              <span>{event.status || t('update')}</span>
+                              <span>{formatDate(event.createdAt)}</span>
+                            </div>
+                            {event.note && <p>{event.note}</p>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </section>
-        )}
+              )}
+            </section>
+          )}
+        </div>
       </div>
-    </div>
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={isDeleting}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={async () => {
+          if (!selectedDetail) return;
+          try {
+            setIsDeleting(true);
+            await adminOfflineOrdersApi.delete(selectedDetail.id);
+            setIsDeleteModalOpen(false);
+            setSelectedOrderId(null);
+            await Promise.all([mutateBoard(), mutateMetrics()]);
+          } catch (error) {
+            console.error(error);
+            alert((error as Error).message);
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+        title={t('deleteOrder')}
+        itemName={selectedDetail?.projectName}
+        description={t('confirmDeleteOrder') || 'Are you sure you want to delete this order?'}
+      />
+    </>
   );
 }
 

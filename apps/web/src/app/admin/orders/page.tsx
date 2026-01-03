@@ -12,6 +12,7 @@ import Link from 'next/link';
 import useSWR from 'swr';
 import { unifiedOrdersApi, UnifiedOrderDTO, UnifiedOrderListParams } from '@/lib/api';
 import { useToast } from '@/hooks/useToast';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 const TYPE_OPTIONS = [
   { label: 'All Orders', value: 'all' },
@@ -46,7 +47,7 @@ export default function AdminOrdersPage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [isBatchUpdating, setIsBatchUpdating] = useState(false);
   const [batchUpdateStatus, setBatchUpdateStatus] = useState<string>('');
-
+  const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
   const swrKey = useMemo(() => ['unified-orders', filters], [filters]);
   const { data, isLoading, mutate, error } = useSWR(swrKey, ([, params]: [string, UnifiedOrderListParams]) =>
     unifiedOrdersApi.list(params)
@@ -136,11 +137,11 @@ export default function AdminOrdersPage() {
     }
 
     const count = selectedOrderIds.size;
-    // Confirm dialog removed per user request
-    // if (!confirm(`Update ${count} order(s)? Note: Status updates will be applied based on order type.`)) {
-    //   return;
-    // }
+    setIsBatchModalOpen(true);
+  };
 
+  const executeBatchUpdate = async () => {
+    const count = selectedOrderIds.size;
     setIsBatchUpdating(true);
     try {
       // 分离线上和线下订单
@@ -164,6 +165,7 @@ export default function AdminOrdersPage() {
 
       setSelectedOrderIds(new Set());
       setBatchUpdateStatus('');
+      setIsBatchModalOpen(false);
       await mutate();
     } catch (error: any) {
       console.error('Batch update error:', error);
@@ -172,7 +174,6 @@ export default function AdminOrdersPage() {
       setIsBatchUpdating(false);
     }
   };
-
   // 获取订单详情链接
   // 修复：offline 订单应该链接到 sales 订单详情页面
   const getOrderDetailLink = (order: UnifiedOrderDTO) => {
@@ -196,258 +197,269 @@ export default function AdminOrdersPage() {
     `${value.toFixed(2)}${currency ? ` ${currency}` : ''}`;
 
   return (
-    <div style={{ marginTop: 24 }}>
-      <div className="admin-page-header">
-        <div>
-          <h1 data-i18n="orders">Orders</h1>
-          <p className="text-muted">Track fulfillment progress and customer activity</p>
-        </div>
-      </div>
-
-      <div className="admin-filters admin-filters--wrap">
-        <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>
-          <input
-            type="search"
-            placeholder="Search order #, name, email, phone, notes..."
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            minLength={2}
-          />
-          <button type="submit" className="btn btn--outline btn--xs">
-            Search
-          </button>
-        </form>
-        <select value={filters.type || 'all'} onChange={handleFilterChange('type')}>
-          {TYPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <select value={filters.status || 'all'} onChange={handleFilterChange('status')}>
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => {
-              setDateFrom(e.target.value);
-              setFilters((prev) => ({
-                ...prev,
-                page: 1,
-                dateFrom: e.target.value || undefined,
-              }));
-            }}
-            placeholder="From"
-            style={{ padding: '6px', border: '1px solid #d1d5db', borderRadius: '4px' }}
-          />
-          <span>to</span>
-          <input
-            type="date"
-            value={dateTo}
-            onChange={(e) => {
-              setDateTo(e.target.value);
-              setFilters((prev) => ({
-                ...prev,
-                page: 1,
-                dateTo: e.target.value || undefined,
-              }));
-            }}
-            placeholder="To"
-            style={{ padding: '6px', border: '1px solid #d1d5db', borderRadius: '4px' }}
-          />
-        </div>
-        <button type="button" className="btn" onClick={handleBatchExport} disabled={isLoading}>
-          Export CSV
-        </button>
-      </div>
-
-      {/* Batch operations toolbar for Issue #87 */}
-      {selectedOrderIds.size > 0 && (
-        <div
-          style={{
-            padding: '12px 16px',
-            backgroundColor: '#f3f4f6',
-            border: '1px solid #e5e7eb',
-            borderRadius: '8px',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            flexWrap: 'wrap',
-          }}
-        >
-          <strong style={{ color: '#374151' }}>
-            {selectedOrderIds.size} order{selectedOrderIds.size > 1 ? 's' : ''} selected
-          </strong>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <select
-              value={batchUpdateStatus}
-              onChange={(e) => setBatchUpdateStatus(e.target.value)}
-              style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
-            >
-              <option value="">Update Status...</option>
-              {STATUS_OPTIONS.filter((opt) => opt.value !== 'all').map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={handleBatchUpdate}
-              disabled={isBatchUpdating || !batchUpdateStatus}
-              style={{
-                padding: '6px 16px',
-                backgroundColor: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: isBatchUpdating || !batchUpdateStatus ? 'not-allowed' : 'pointer',
-                opacity: isBatchUpdating || !batchUpdateStatus ? 0.6 : 1,
-                fontSize: '14px',
-              }}
-            >
-              {isBatchUpdating ? 'Updating...' : 'Update Selected'}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedOrderIds(new Set());
-                setBatchUpdateStatus('');
-              }}
-              style={{
-                padding: '6px 16px',
-                backgroundColor: 'transparent',
-                color: '#6b7280',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px',
-              }}
-            >
-              Clear Selection
-            </button>
+    <>
+      <div style={{ marginTop: 24 }}>
+        <div className="admin-page-header">
+          <div>
+            <h1 data-i18n="orders">Orders</h1>
+            <p className="text-muted">Track fulfillment progress and customer activity</p>
           </div>
         </div>
-      )}
 
-      <div className="admin-table-wrapper">
-        {isLoading ? (
-          <div className="admin-table-placeholder">Loading orders…</div>
-        ) : orders.length === 0 ? (
-          <div className="admin-table-placeholder">No orders found.</div>
-        ) : (
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th style={{ width: '40px' }}>
-                  <input
-                    type="checkbox"
-                    checked={isAllSelected}
-                    ref={(input) => {
-                      if (input) input.indeterminate = isIndeterminate;
-                    }}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    style={{ cursor: 'pointer' }}
-                  />
-                </th>
-                <th>Type</th>
-                <th>Order #</th>
-                <th>Customer</th>
-                <th>Contact</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order: UnifiedOrderDTO) => (
-                <tr key={order.compositeId}>
-                  <td>
-                    <input
-                      type="checkbox"
-                      checked={selectedOrderIds.has(order.compositeId)}
-                      onChange={(e) => handleSelectOrder(order.compositeId, e.target.checked)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                  </td>
-                  <td>
-                    <span
-                      className={`badge ${order.type === 'online' ? 'badge-primary' : 'badge-secondary'}`}
-                      style={{
-                        backgroundColor: order.type === 'online' ? '#3b82f6' : '#6b7280',
-                        color: 'white',
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        fontWeight: '500',
-                      }}
-                    >
-                      {order.type === 'online' ? 'Online' : 'Offline'}
-                    </span>
-                  </td>
-                  <td>
-                    <Link href={getOrderDetailLink(order)}>#{order.orderNo}</Link>
-                  </td>
-                  <td>{order.customerName || '—'}</td>
-                  <td>
-                    <div style={{ fontSize: '12px' }}>
-                      {order.customerEmail && <div>{order.customerEmail}</div>}
-                      {order.customerPhone && <div style={{ color: '#6b7280' }}>{order.customerPhone}</div>}
-                      {!order.customerEmail && !order.customerPhone && '—'}
-                    </div>
-                  </td>
-                  <td>{order.itemsCount} items</td>
-                  <td>
-                    {order.totalAmount > 0 ? `${order.currency || 'CAD'} ${formatCurrency(order.totalAmount)}` : '—'}
-                  </td>
-                  <td>
-                    <span className={`badge badge-${order.status.toLowerCase()}`}>{order.status}</span>
-                  </td>
-                  <td>{new Date(order.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <Link
-                      href={getOrderDetailLink(order)}
-                      className="btn-icon btn--outline"
-                      style={{ fontSize: 12 }}
-                      {...(order.type === 'offline' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {pagination && pagination.totalPages > 1 && (
-        <div className="admin-pagination">
-          <button type="button" disabled={pagination.page === 1} onClick={() => goToPage(pagination.page - 1)}>
-            Previous
-          </button>
-          <span>
-            Page {pagination.page} / {pagination.totalPages} (Total: {pagination.total} orders)
-          </span>
-          <button
-            type="button"
-            disabled={pagination.page === pagination.totalPages}
-            onClick={() => goToPage(pagination.page + 1)}
-          >
-            Next
+        <div className="admin-filters admin-filters--wrap">
+          <form className="admin-search admin-search-form" onSubmit={handleSearchSubmit}>
+            <input
+              type="search"
+              placeholder="Search order #, name, email, phone, notes..."
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              minLength={2}
+            />
+            <button type="submit" className="btn btn--outline btn--xs">
+              Search
+            </button>
+          </form>
+          <select value={filters.type || 'all'} onChange={handleFilterChange('type')}>
+            {TYPE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <select value={filters.status || 'all'} onChange={handleFilterChange('status')}>
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                setFilters((prev) => ({
+                  ...prev,
+                  page: 1,
+                  dateFrom: e.target.value || undefined,
+                }));
+              }}
+              placeholder="From"
+              style={{ padding: '6px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+            />
+            <span>to</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                setFilters((prev) => ({
+                  ...prev,
+                  page: 1,
+                  dateTo: e.target.value || undefined,
+                }));
+              }}
+              placeholder="To"
+              style={{ padding: '6px', border: '1px solid #d1d5db', borderRadius: '4px' }}
+            />
+          </div>
+          <button type="button" className="btn" onClick={handleBatchExport} disabled={isLoading}>
+            Export CSV
           </button>
         </div>
-      )}
-    </div>
+
+        {/* Batch operations toolbar for Issue #87 */}
+        {selectedOrderIds.size > 0 && (
+          <div
+            style={{
+              padding: '12px 16px',
+              backgroundColor: '#f3f4f6',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '16px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <strong style={{ color: '#374151' }}>
+              {selectedOrderIds.size} order{selectedOrderIds.size > 1 ? 's' : ''} selected
+            </strong>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                value={batchUpdateStatus}
+                onChange={(e) => setBatchUpdateStatus(e.target.value)}
+                style={{ padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '14px' }}
+              >
+                <option value="">Update Status...</option>
+                {STATUS_OPTIONS.filter((opt) => opt.value !== 'all').map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleBatchUpdate}
+                disabled={isBatchUpdating || !batchUpdateStatus}
+                style={{
+                  padding: '6px 16px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: isBatchUpdating || !batchUpdateStatus ? 'not-allowed' : 'pointer',
+                  opacity: isBatchUpdating || !batchUpdateStatus ? 0.6 : 1,
+                  fontSize: '14px',
+                }}
+              >
+                {isBatchUpdating ? 'Updating...' : 'Update Selected'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedOrderIds(new Set());
+                  setBatchUpdateStatus('');
+                }}
+                style={{
+                  padding: '6px 16px',
+                  backgroundColor: 'transparent',
+                  color: '#6b7280',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                Clear Selection
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="admin-table-wrapper">
+          {isLoading ? (
+            <div className="admin-table-placeholder">Loading orders…</div>
+          ) : orders.length === 0 ? (
+            <div className="admin-table-placeholder">No orders found.</div>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '40px' }}>
+                    <input
+                      type="checkbox"
+                      checked={isAllSelected}
+                      ref={(input) => {
+                        if (input) input.indeterminate = isIndeterminate;
+                      }}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </th>
+                  <th>Type</th>
+                  <th>Order #</th>
+                  <th>Customer</th>
+                  <th>Contact</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order: UnifiedOrderDTO) => (
+                  <tr key={order.compositeId}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedOrderIds.has(order.compositeId)}
+                        onChange={(e) => handleSelectOrder(order.compositeId, e.target.checked)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${order.type === 'online' ? 'badge-primary' : 'badge-secondary'}`}
+                        style={{
+                          backgroundColor: order.type === 'online' ? '#3b82f6' : '#6b7280',
+                          color: 'white',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: '500',
+                        }}
+                      >
+                        {order.type === 'online' ? 'Online' : 'Offline'}
+                      </span>
+                    </td>
+                    <td>
+                      <Link href={getOrderDetailLink(order)}>#{order.orderNo}</Link>
+                    </td>
+                    <td>{order.customerName || '—'}</td>
+                    <td>
+                      <div style={{ fontSize: '12px' }}>
+                        {order.customerEmail && <div>{order.customerEmail}</div>}
+                        {order.customerPhone && <div style={{ color: '#6b7280' }}>{order.customerPhone}</div>}
+                        {!order.customerEmail && !order.customerPhone && '—'}
+                      </div>
+                    </td>
+                    <td>{order.itemsCount} items</td>
+                    <td>
+                      {order.totalAmount > 0 ? `${order.currency || 'CAD'} ${formatCurrency(order.totalAmount)}` : '—'}
+                    </td>
+                    <td>
+                      <span className={`badge badge-${order.status.toLowerCase()}`}>{order.status}</span>
+                    </td>
+                    <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <Link
+                        href={getOrderDetailLink(order)}
+                        className="btn-icon btn--outline"
+                        style={{ fontSize: 12 }}
+                        {...(order.type === 'offline' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {pagination && pagination.totalPages > 1 && (
+          <div className="admin-pagination">
+            <button type="button" disabled={pagination.page === 1} onClick={() => goToPage(pagination.page - 1)}>
+              Previous
+            </button>
+            <span>
+              Page {pagination.page} / {pagination.totalPages} (Total: {pagination.total} orders)
+            </span>
+            <button
+              type="button"
+              disabled={pagination.page === pagination.totalPages}
+              onClick={() => goToPage(pagination.page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
+        <DeleteConfirmationModal
+          isOpen={isBatchModalOpen}
+          isDeleting={isBatchUpdating}
+          onClose={() => setIsBatchModalOpen(false)}
+          onConfirm={executeBatchUpdate}
+          title="Batch Update Orders"
+          description={`Are you sure you want to update the status of ${selectedOrderIds.size} selected order(s) to "${batchUpdateStatus}"?`}
+          confirmLabel="Confirm Update"
+        />
+      </div>
+    </>
   );
 }
 

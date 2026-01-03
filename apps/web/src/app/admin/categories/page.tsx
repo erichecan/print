@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { adminCategoriesApi, AdminCategorySummary } from '@/lib/api';
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 type CategoryFilters = {
   page: number;
@@ -50,6 +51,9 @@ export default function AdminCategoriesPage() {
   const router = useRouter();
   const [filters, setFilters] = useState<CategoryFilters>(initialFilters);
   const [searchInput, setSearchInput] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<AdminCategorySummary | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const swrKey = useMemo(() => ['admin-categories', filters], [filters]);
 
@@ -71,12 +75,25 @@ export default function AdminCategoriesPage() {
     mutate();
   };
 
-  const handleArchive = async (category: AdminCategorySummary) => {
-    // Confirm dialog removed per user request
-    // const confirmed = window.confirm(`确定归档分类「${category.name}」吗？`);
-    // if (!confirmed) return;
-    await adminCategoriesApi.archive(category.id);
-    mutate();
+  const handleArchive = (category: AdminCategorySummary) => {
+    setCategoryToDelete(category);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmArchive = async () => {
+    if (!categoryToDelete) return;
+    try {
+      setIsDeleting(true);
+      await adminCategoriesApi.archive(categoryToDelete.id);
+      setIsDeleteModalOpen(false);
+      setCategoryToDelete(null);
+      mutate();
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert('Delete failed. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -219,6 +236,15 @@ export default function AdminCategoriesPage() {
           })}
         </div>
       )}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        isDeleting={isDeleting}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmArchive}
+        title="Archive Category"
+        itemName={categoryToDelete?.name}
+        description="Are you sure you want to archive this category? It will no longer be visible to customers."
+      />
       <style jsx>{`
         .clickable-row {
           cursor: pointer;
