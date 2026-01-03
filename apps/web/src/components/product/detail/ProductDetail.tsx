@@ -374,6 +374,7 @@ export function ProductDetail() {
               onBuyNow={handleBuyNow}
               onStartDesign={handleStartDesign}
               productId={apiProduct?.id} // 传递实际的 productId
+              variants={apiProduct?.variants || []}
             />
 
             {/* 参考图一位置：配送和退货信息 */}
