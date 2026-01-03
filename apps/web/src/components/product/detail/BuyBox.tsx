@@ -66,6 +66,7 @@ interface BuyBoxProps {
   onStartDesign?: (payload: any) => void;
   variantId?: string; // 添加 variantId 支持
   productId?: string; // 添加 productId 支持
+  variants?: any[];
 }
 
 export function BuyBox({
