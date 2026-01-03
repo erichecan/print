@@ -25,18 +25,18 @@ ENV NEXT_PUBLIC_BUILD_SHA=${NEXT_PUBLIC_BUILD_SHA}
 ENV NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME}
 # 构建前检查必需的环境变量（使用 POSIX 兼容语法）
 RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ "$NEXT_PUBLIC_API_URL" = "" ]; then \
-      echo "❌ 错误: NEXT_PUBLIC_API_URL 未设置"; \
-      exit 1; \
-    fi && \
-    if [ -z "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" ] || [ "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" = "" ]; then \
-      echo "❌ 错误: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 未设置（必须在构建时传入）"; \
-      exit 1; \
-    fi && \
-    if ! echo "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | grep -qE "^pk_(test|live)_"; then \
-      echo "❌ 错误: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 格式错误（必须以 pk_test_ 或 pk_live_ 开头）"; \
-      exit 1; \
-    fi && \
-    echo "✅ 环境变量检查通过"
+  echo "❌ 错误: NEXT_PUBLIC_API_URL 未设置"; \
+  exit 1; \
+  fi && \
+  if [ -z "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" ] || [ "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" = "" ]; then \
+  echo "❌ 错误: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 未设置（必须在构建时传入）"; \
+  exit 1; \
+  fi && \
+  if ! echo "$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" | grep -qE "^pk_(test|live)_"; then \
+  echo "❌ 错误: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 格式错误（必须以 pk_test_ 或 pk_live_ 开头）"; \
+  exit 1; \
+  fi && \
+  echo "✅ 环境变量检查通过"
 COPY --from=deps /app/node_modules ./node_modules
 # 复制 apps/web 目录内容（构建上下文现在是项目根目录）
 COPY apps/web/package*.json ./
@@ -52,11 +52,10 @@ COPY prisma ./prisma
 # 修复：安装 apps/web 的依赖（next 等）
 RUN npm install --production=false
 # 生成 Prisma Client（API 路由需要）
-# 修复：在 Docker 构建时生成 Prisma Client
-# 使用 --ignore-scripts 避免 postinstall 脚本干扰，然后手动生成
-RUN npm install prisma@5.19.1 --save-dev --ignore-scripts || true
-# 尝试生成 Prisma Client，如果失败则继续（构建可能会失败，但至少尝试）
-RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate --schema=./prisma/schema.prisma || (echo "⚠️ Prisma generate failed, trying to continue..." && sleep 1)
+# 确保 Prisma Client 在构建前生成
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate --schema=./prisma/schema.prisma
+# 验证 Prisma Client 已生成
+RUN test -d ./node_modules/.prisma/client || (echo "❌ Prisma Client generation failed" && exit 1)
 RUN npm run build
 
 FROM node:18-bullseye-slim AS runner
