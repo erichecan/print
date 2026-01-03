@@ -260,7 +260,7 @@ export function BuyBox({
             <button
               key={color.name}
               className={`${styles.buyboxColor} ${selectedColor === color.name ? styles.isSelected : ''} ${!color.available ? styles.isUnavailable : ''}`}
-              onClick={() => color.available && setSelectedColor(color.name)}
+              onClick={() => color.available && handleColorSelect(color.name)}
               disabled={!color.available}
               aria-label={`Select color ${color.name}`}
               aria-pressed={selectedColor === color.name}
@@ -278,19 +278,28 @@ export function BuyBox({
           <Link href="#size-guide" className={styles.buyboxSizeGuide}>Size Guide</Link>
         </div>
         <div className={styles.buyboxSizes} role="radiogroup" aria-label="Select size">
-          {sizes.map((size) => (
-            <button
-              key={size.value}
-              className={`${styles.buyboxSize} ${selectedSize === size.value ? styles.isSelected : ''} ${!size.available ? styles.isUnavailable : ''}`}
-              onClick={() => size.available && setSelectedSize(size.value)}
-              disabled={!size.available}
-              aria-label={`Select size ${size.label}${!size.available ? ' (out of stock)' : ''}`}
-              aria-pressed={selectedSize === size.value}
-            >
-              {size.label}
-              {!size.available && <span className={styles.buyboxSizeUnavailable}>Out of stock</span>}
-            </button>
-          ))}
+          {sizes.map((size) => {
+            // Check robust availability relative to selected color
+            const isAvailableForColor = availableSizesForColor.some(s => s.toLowerCase() === size.value.toLowerCase());
+            const isGloballyAvailable = size.available; // Fallback if no variants provided
+
+            // Is selectable if it exists in the variants for this color (or fallback global)
+            const isSelectable = variants && variants.length > 0 ? isAvailableForColor : isGloballyAvailable;
+
+            return (
+              <button
+                key={size.value}
+                className={`${styles.buyboxSize} ${selectedSize === size.value ? styles.isSelected : ''} ${!isSelectable ? styles.isUnavailable : ''}`}
+                onClick={() => isSelectable && setSelectedSize(size.value)}
+                disabled={!isSelectable}
+                aria-label={`Select size ${size.label}${!isSelectable ? ' (out of stock)' : ''}`}
+                aria-pressed={selectedSize === size.value}
+              >
+                {size.label}
+                {!isSelectable && <span className={styles.buyboxSizeUnavailable}>Out of stock</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
