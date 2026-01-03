@@ -1546,7 +1546,7 @@ export const adminProductsApi = {
     api<AdminProductDetail>('/admin/products', { method: 'POST', body: data }),
   update: (id: string, data: Partial<AdminProductPayload>) =>
     api<AdminProductDetail>(`/admin/products/${id}`, { method: 'PUT', body: data }),
-  archive: (id: string) => api(`/admin/products/${id}`, { method: 'DELETE' }),
+  delete: (id: string) => api(`/admin/products/${id}`, { method: 'DELETE' }),
   updateStatus: (id: string, isActive: boolean) =>
     api<AdminProductDetail>(`/admin/products/${id}/status`, { method: 'PATCH', body: { isActive } }),
   uploadImages: async (productId: string, files: File[], altTexts?: string[]) => {
