@@ -1471,10 +1471,14 @@ exports.getProductByVariantId = async (req, res) => {
       optimizedImages[0] ||
       '/assets/hero/hero-card-tee.jpg';
 
+    // Use exact indices from uploaded order
+    // 0: Front, 1: Back, 2: Left Sleeve, 3: Right Sleeve
     const baseImages = {
-      front: fallbackImage,
-      back: optimizedImages[1] || fallbackImage,
-      sleeve: optimizedImages[2] || fallbackImage,
+      front: optimizedImages[0] || fallbackImage,
+      back: optimizedImages[1] || null, // Don't fallback to front
+      sleeve: optimizedImages[2] || null, // Legacy support
+      'left-sleeve': optimizedImages[2] || null,
+      'right-sleeve': optimizedImages[3] || null,
     };
 
     const colors = Array.from(
