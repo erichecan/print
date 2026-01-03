@@ -2990,8 +2990,8 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               selectable: true, // 步骤1：可选择
               evented: true, // 步骤1：可交互
               hasControls: true, // 必须为 true 才能显示自定义控件（默认控件会在 addIconControlsToObject 中隐藏）
-              hasBorders: false, // Remove borders as per user request
-              borderColor: '#808080',
+              hasBorders: false, // Ensure borders are off
+              borderColor: 'transparent',
               borderScaleFactor: 2,
               lockMovementX: false, // 步骤1：允许拖拽移动
               lockMovementY: false, // 步骤1：允许拖拽移动
@@ -3040,7 +3040,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
             // 步骤2：确保选中时边框正确显示
             fabricImage.set({
               hasBorders: false,
-              borderColor: '#808080', // 灰色边框
+              borderColor: 'transparent', // 隐藏选中框
               borderScaleFactor: 2, // 2px 宽度
             });
             fabricImage.setCoords();
@@ -3196,7 +3196,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
           evented: true,
           hasControls: true,
           hasBorders: false,
-          borderColor: '#808080',
+          borderColor: 'transparent',
           borderScaleFactor: 2,
           lockRotation: false,
           lockScalingX: false,
@@ -3312,8 +3312,8 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               selectable: true,
               evented: true,
               hasControls: true,
-              hasBorders: true,
-              borderColor: '#808080',
+              hasBorders: false,
+              borderColor: 'transparent',
               borderScaleFactor: 2,
               lockRotation: false,
               lockScalingX: false,

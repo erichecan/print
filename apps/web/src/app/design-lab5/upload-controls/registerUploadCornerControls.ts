@@ -73,9 +73,9 @@ function createCircleControl(params: {
     cursorStyle: 'pointer',
     sizeX: size,
     sizeY: size,
-touchCornerSize: size, // Fix: Ensure touch hit area matches visual size (160px)
-transparentCorners: false, // Fix: Ensure corners are treated as opaque for hit detection
-// 防止点击控件时取消选中
+    touchCornerSize: size, // Fix: Ensure touch hit area matches visual size (160px)
+    transparentCorners: false, // Fix: Ensure corners are treated as opaque for hit detection
+    // 防止点击控件时取消选中
     mouseDownHandler: () => true,
     render: function (
       this: fabric.Control,
@@ -279,8 +279,9 @@ export function registerCornerControls(params: {
       transparentCorners: false,
       cornerColor: 'transparent',
       cornerStrokeColor: 'transparent',
-      borderColor: '#2563eb', // 选中框颜色
-      borderDashArray: [4, 4],
+      borderColor: 'transparent', // 隐藏选中框
+      hasBorders: false, // 禁用边框绘制
+      borderDashArray: [], // 移除虚线
       padding: 5,
     });
   };
