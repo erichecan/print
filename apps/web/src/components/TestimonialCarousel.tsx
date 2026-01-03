@@ -11,6 +11,8 @@ type Testimonial = {
     avatarUrl?: string;
 };
 
+import { getFrontendApiBaseUrl } from '@/config/env';
+
 const TestimonialCarousel = () => {
     const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
@@ -18,7 +20,8 @@ const TestimonialCarousel = () => {
     useEffect(() => {
         const fetchTestimonials = async () => {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/testimonials/active`);
+                const baseUrl = getFrontendApiBaseUrl();
+                const response = await fetch(`${baseUrl}/testimonials/active`);
                 if (response.ok) {
                     const data = await response.json();
                     // Take up to 12 items for 3 rows x 4 columns layout

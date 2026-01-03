@@ -3456,17 +3456,41 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               <span className="dl-header__breadcrumb-current">Untitled Design</span>
             </nav>
           </div>
+          {/* Contact Section: Phone & Chat */}
           <div className="dl-header__right">
-            <div className="dl-header__contact">
-              <span className="dl-header__contact-label">Talk to a Real Person:</span>
-              <a href="tel:4169166352" className="dl-header__contact-phone">416 916 6352</a>
+            {/* Contact Section: Phone & Chat */}
+            <div className="dl-header__contact-group">
+              {/* Phone Block */}
+              <div className="dl-header__contact-item">
+                <span className="dl-header__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 0 0-1.01.24l-1.57 1.97c-2.83-1.49-5.15-3.8-6.62-6.63l1.97-1.57c.23-.24.31-.56.25-.87-.38-1.1-.56-2.29-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z" />
+                  </svg>
+                </span>
+                <div className="dl-header__text-group">
+                  <span className="dl-header__label">Talk to a Real Person</span>
+                  <a href="tel:4169166352" className="dl-header__action">416 916 6352</a>
+                </div>
+              </div>
+
+              {/* Chat Block */}
+              <div className="dl-header__contact-item">
+                <span className="dl-header__icon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
+                  </svg>
+                </span>
+                <div className="dl-header__text-group">
+                  <span className="dl-header__label">Chat with a Real Person</span>
+                  <a href="/help#guestbook" className="dl-header__action" target="_blank" rel="noopener noreferrer">Chat now</a>
+                </div>
+              </div>
             </div>
-            {/* 修复：Chat Now 在新窗口打开 */}
-            <a href="/help#guestbook" className="dl-header__chat-link" target="_blank" rel="noopener noreferrer">Chat Now</a>
+
             <Link href="/login" className="dl-header__signin-link">Sign In</Link>
           </div>
         </div>
-      </header>
+      </header >
 
       {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */}
       {/* 5.0 版本：修复布局结构，所有列必须在 .dl-main 容器内 */}
@@ -3827,44 +3851,46 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
       </div>
 
       {/* 鼠标位置调试面板 */}
-      {mouseDebug && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '10px',
-            right: '10px',
-            backgroundColor: mouseDebug.onControl ? '#4CAF50' : 'rgba(0, 0, 0, 0.8)',
-            color: mouseDebug.onControl ? '#fff' : '#fff',
-            padding: '12px 16px',
-            borderRadius: '8px',
-            fontFamily: 'monospace',
-            fontSize: '12px',
-            zIndex: 10000,
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
-            pointerEvents: 'none',
-            border: mouseDebug.onControl ? '2px solid #4CAF50' : '1px solid #333',
-            transition: 'all 0.2s ease',
-          }}
-        >
-          <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>
-            🖱️ 鼠标位置 {mouseDebug.onControl && '✅ 在控件上'}
+      {
+        mouseDebug && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '10px',
+              right: '10px',
+              backgroundColor: mouseDebug.onControl ? '#4CAF50' : 'rgba(0, 0, 0, 0.8)',
+              color: mouseDebug.onControl ? '#fff' : '#fff',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              fontFamily: 'monospace',
+              fontSize: '12px',
+              zIndex: 10000,
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+              pointerEvents: 'none',
+              border: mouseDebug.onControl ? '2px solid #4CAF50' : '1px solid #333',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '14px' }}>
+              🖱️ 鼠标位置 {mouseDebug.onControl && '✅ 在控件上'}
+            </div>
+            <div style={{ lineHeight: '1.6' }}>
+              <div>屏幕: ({mouseDebug.x}, {mouseDebug.y})</div>
+              <div>画布: ({mouseDebug.canvasX}, {mouseDebug.canvasY})</div>
+              {mouseDebug.targetObject && (
+                <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                  <div>对象: {mouseDebug.targetObject}</div>
+                  {mouseDebug.controlType && (
+                    <div style={{ color: mouseDebug.onControl ? '#FFD700' : '#fff' }}>
+                      控件: {mouseDebug.controlType}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          <div style={{ lineHeight: '1.6' }}>
-            <div>屏幕: ({mouseDebug.x}, {mouseDebug.y})</div>
-            <div>画布: ({mouseDebug.canvasX}, {mouseDebug.canvasY})</div>
-            {mouseDebug.targetObject && (
-              <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
-                <div>对象: {mouseDebug.targetObject}</div>
-                {mouseDebug.controlType && (
-                  <div style={{ color: mouseDebug.onControl ? '#FFD700' : '#fff' }}>
-                    控件: {mouseDebug.controlType}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        )
+      }
 
       {/* 6. BottomBar - 底部操作栏 */}
       <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">

@@ -75,6 +75,10 @@ async function uploadFileToGcs(localPath, objectPath, options = {}) {
 
   await bucket.upload(localPath, uploadOptions);
 
+  // Ensure the file is public
+  const file = bucket.file(objectPath);
+  await file.makePublic();
+
   const baseUrl = getImageBaseUrl();
   return `${baseUrl}/${objectPath}`;
 }
@@ -98,6 +102,7 @@ async function uploadBufferToGcs(buffer, objectPath, options = {}) {
   };
 
   await file.save(buffer, uploadOptions);
+  await file.makePublic();
 
   const baseUrl = getImageBaseUrl();
   return `${baseUrl}/${objectPath}`;

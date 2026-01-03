@@ -9,7 +9,7 @@
   --dl-header-height: 64px;
   --dl-rail-width: 80px;
   --dl-tool-panel-width: 430px;
-/* 左侧工具面板宽度 */
+  /* 左侧工具面板宽度 */
   --dl-sidebar-width: 120px;
   --dl-bottom-bar-height: 80px;
 
@@ -68,17 +68,17 @@
   min-height: 100vh;
   height: 100vh;
   display: grid !important;
-/* 强制应用 Grid 布局 */
+  /* 强制应用 Grid 布局 */
   grid-template-rows: var(--dl-header-height) 1fr var(--dl-bottom-bar-height);
-/* 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
+  /* 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
   grid-template-columns: var(--dl-rail-width) var(--dl-tool-panel-width) 1fr var(--dl-sidebar-width);
   background: var(--dl-bg-primary) !important;
-/* 强制应用背景色 */
+  /* 强制应用背景色 */
   overflow: hidden;
   position: relative;
   width: 100%;
   isolation: isolate;
-/* 创建新的堆叠上下文，避免 z-index 冲突 */
+  /* 创建新的堆叠上下文，避免 z-index 冲突 */
 }
 
 /* 确保所有交互元素可点击 */
@@ -270,6 +270,59 @@
   border-color: var(--dl-border-color);
 }
 
+/* Updated Contact Section Styles */
+.dl-header__contact-group {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  /* Space between Phone and Chat blocks */
+  margin-right: 24px;
+}
+
+.dl-header__contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dl-header__icon {
+  color: #1F2937;
+  /* Dark gray for icons */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dl-header__text-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.dl-header__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1F2937;
+  /* Dark text */
+}
+
+.dl-header__action {
+  font-size: 14px;
+  font-weight: 700;
+  color: #DC2626;
+  /* Red color for numbers/action */
+  text-decoration: none;
+}
+
+.dl-header__action:hover {
+  text-decoration: underline;
+}
+
+.dl-header__signin-link {
+  /* Ensure SignIn aligns nicely */
+  margin-left: 12px;
+}
+
 /* ============================================
    2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar
    ============================================ */
@@ -277,7 +330,7 @@
   grid-column: 1 / -1;
   grid-row: 2;
   display: grid;
-/* 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
+  /* 更新布局：Rail (80px) + 工具面板 (430px) + Canvas (1fr) + Sidebar (120px) */
   grid-template-columns: var(--dl-rail-width) var(--dl-tool-panel-width) 1fr var(--dl-sidebar-width);
   height: 100%;
   overflow: hidden;
@@ -301,7 +354,7 @@
   /* 确保垂直排列 */
   /* 确保垂直排列 */
   align-items: center !important;
-/* Changed to center alignment per user request */
+  /* Changed to center alignment per user request */
   padding: 0;
   /* 移除 padding，使用 margin 控制位置 */
   padding-top: 137px;
@@ -329,21 +382,21 @@
   height: 70px !important;
   /* Custom Ink element-9 height - 默认高度，Product Colors 和 Add Names 会覆盖为 86px */
   min-height: 70px !important;
-/* 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
+  /* 5.0 版本：修复被 globals.css 的 min-height: 44px 覆盖的问题 */
   padding: 0 var(--dl-space-1);
   background: transparent !important;
   border: none !important;
   color: rgb(191, 191, 191) !important;
   /* Custom Ink Rail 按钮文本颜色 - element-9, element-24 - 使用 !important 防止覆盖 */
   cursor: pointer !important;
-/* 强制启用指针事件 */
+  /* 强制启用指针事件 */
   transition: all var(--dl-transition-base);
   font-size: var(--dl-font-sm);
   font-weight: var(--dl-font-weight-normal);
   font-family: var(--dl-font-family);
   border-radius: 0 !important;
   pointer-events: auto !important;
-/* 确保按钮可点击 */
+  /* 确保按钮可点击 */
   position: relative;
   z-index: 10;
   -webkit-user-select: none;
@@ -351,7 +404,7 @@
   margin: 0;
   /* 确保没有外边距影响位置 */
   margin-left: 0 !important;
-/* Removed margin-left to allow centering */
+  /* Removed margin-left to allow centering */
 }
 
 .dl-rail__btn-icon {
@@ -2734,7 +2787,7 @@
 .dl-canvas {
   grid-column: 3;
   /* 在 .dl-main 的 grid 中，Canvas 是第 3 列 */
-/* 5.0 版本：移除 grid-row: 2，因为 .dl-main 内部只有一个 grid row */
+  /* 5.0 版本：移除 grid-row: 2，因为 .dl-main 内部只有一个 grid row */
   background: var(--dl-bg-primary);
   display: flex;
   align-items: center;
@@ -2747,14 +2800,14 @@
   /* 允许 flex 子元素缩小 */
   padding: 0;
   margin: 0;
-/* 临时添加边框，用于确认section区域 */
+  /* 临时添加边框，用于确认section区域 */
   border: 3px solid #00ff00;
   /* 绿色边框，非常明显 */
 }
 
 .dl-canvas__preview {
   width: 100%;
-/* 阶段2修复：使用 height: 100% 限制在可视区域内，避免产生滚动条 */
+  /* 阶段2修复：使用 height: 100% 限制在可视区域内，避免产生滚动条 */
   height: 100%;
   display: flex;
   align-items: center;
@@ -2762,10 +2815,10 @@
   justify-content: center;
   /* 水平居中 */
   position: relative;
-/* 移除 padding，避免占用额外空间导致滚动 */
+  /* 移除 padding，避免占用额外空间导致滚动 */
   padding: 0;
   margin: 0;
-/* 限制容器不超出父容器 */
+  /* 限制容器不超出父容器 */
   overflow: hidden;
 }
 
@@ -2773,7 +2826,7 @@
   position: relative;
   width: 100%;
   height: 100%;
-/* 阶段2修复：使用简单的 flexbox 居中 */
+  /* 阶段2修复：使用简单的 flexbox 居中 */
   display: flex;
   align-items: center;
   /* 垂直居中 */
@@ -2807,12 +2860,12 @@
   /* 覆盖Fabric.js的绝对定位 */
   margin: 0 auto !important;
   /* 水平居中 */
-/* 自适应 .dl-canvas section，填满可用空间 */
+  /* 自适应 .dl-canvas section，填满可用空间 */
   width: 100%;
   height: 100%;
   max-width: 100%;
   max-height: 100%;
-/* 保持宽高比（逻辑尺寸比例：4000/4800 = 5/6），但允许自适应容器 */
+  /* 保持宽高比（逻辑尺寸比例：4000/4800 = 5/6），但允许自适应容器 */
   /* 如果容器比例与逻辑比例不一致，会通过 CSS object-fit 处理 */
 }
 
@@ -2823,16 +2876,16 @@
   /* Fabric.js要求绝对定位 */
   left: 0 !important;
   top: 0 !important;
-/* 使用 100% 填充 container，由 container 的 aspect-ratio 控制尺寸 */
+  /* 使用 100% 填充 container，由 container 的 aspect-ratio 控制尺寸 */
   width: 100% !important;
   height: 100% !important;
 }
 
 /* 5.0 版本：Fabric.js Canvas 容器样式 */
 .dl-canvas__fabric {
-/* 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
-/* 确保画布可见且可交互 */
-/* 移除固定尺寸，使用自适应尺寸 */
+  /* 阶段2修复：改为 Custom Ink 方式 - DOM 显示尺寸自适应 */
+  /* 确保画布可见且可交互 */
+  /* 移除固定尺寸，使用自适应尺寸 */
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -2860,7 +2913,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-/* 确保容器能够正确缩放 */
+  /* 确保容器能够正确缩放 */
   box-sizing: border-box !important;
 }
 
@@ -2878,13 +2931,13 @@
   height: 100% !important;
   /* 填充 container */
   display: block !important;
-/* canvas 元素本身会保持逻辑尺寸（4000x4800），但通过 CSS 缩放显示 */
+  /* canvas 元素本身会保持逻辑尺寸（4000x4800），但通过 CSS 缩放显示 */
   object-fit: contain !important;
 }
 
 .dl-canvas__placeholder {
-/* Placeholder 应该绝对定位，不遮挡画布 */
-/* 修复：确保 placeholder 正确显示，只在画布未初始化时显示 */
+  /* Placeholder 应该绝对定位，不遮挡画布 */
+  /* 修复：确保 placeholder 正确显示，只在画布未初始化时显示 */
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2899,8 +2952,8 @@
   padding: var(--dl-space-4);
   z-index: 0;
   pointer-events: none;
-/* 不阻止画布交互 */
-/* 确保 placeholder 在画布初始化后隐藏 */
+  /* 不阻止画布交互 */
+  /* 确保 placeholder 在画布初始化后隐藏 */
   opacity: 1;
   transition: opacity 0.3s ease;
 }
