@@ -17,9 +17,12 @@
   gap: 12px;
   max-height: 600px;
   overflow-y: auto;
+  overflow-x: hidden;
   flex-shrink: 0;
   scrollbar-width: thin;
   scrollbar-color: #e5e7eb transparent;
+  padding: 8px 4px;
+  width: 96px;
 }
 
 .galleryThumbnails::-webkit-scrollbar {
@@ -207,27 +210,26 @@
   .galleryContainer {
     flex-direction: column;
   }
-  
+
   .galleryMainImageWrapper {
     aspect-ratio: 4/5;
   }
-  
+
   .galleryLightbox {
     padding: 20px;
   }
-  
+
   .galleryLightboxPrev,
   .galleryLightboxNext {
     width: 40px;
     height: 40px;
   }
-  
+
   .galleryLightboxPrev {
     left: 10px;
   }
-  
+
   .galleryLightboxNext {
     right: 10px;
   }
 }
-

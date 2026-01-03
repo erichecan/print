@@ -48,12 +48,12 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
   const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
   const [imagePreviews, setImagePreviews] = useState<{ [key: number]: string }>({});
-const [traceId, setTraceId] = useState<string | null>(null); // 添加 traceId 状态
+  const [traceId, setTraceId] = useState<string | null>(null); // 添加 traceId 状态
   const fileRefs = useRef<{ [key: number]: File }>({});
-const abortControllerRef = useRef<AbortController | null>(null); // 用于取消请求
+  const abortControllerRef = useRef<AbortController | null>(null); // 用于取消请求
   const isUploadingAny = useMemo(() => Object.values(uploadingImages).some(Boolean), [uploadingImages]);
 
-// 自动关闭成功提示
+  // 自动关闭成功提示
   useEffect(() => {
     if (saveSuccess) {
       const timer = setTimeout(() => {
@@ -71,7 +71,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
   const categories = useMemo<AdminCategorySummary[]>(() => {
     const list = categoryResponse?.data ?? [];
 
-// FIX: If product has a category that's not in the (active/limited) list, 
+    // FIX: If product has a category that's not in the (active/limited) list, 
     // we must add it as an option so the select element doesn't reset to empty.
     if (product?.category && !list.find(c => c.id === product.category?.id)) {
       return [...list, {
@@ -111,7 +111,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
     },
   });
 
-// 自动生成/规范化 slug，展示说明
+  // 自动生成/规范化 slug，展示说明
   const nameValue = watch('name');
   const slugValue = watch('slug');
   useEffect(() => {
@@ -128,7 +128,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
     }
   }, [nameValue, slugValue, setValue]);
 
-// 自动计算毛利：(促销价 || 基础价) - 单位成本
+  // 自动计算毛利：(促销价 || 基础价) - 单位成本
   const basePriceValue = watch('basePrice');
   const salePriceValue = watch('salePrice');
   const unitCostValue = watch('unitCost');
@@ -164,7 +164,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
   });
 
 
-// Handle file selection and preview
+  // Handle file selection and preview
   const handleFileSelect = async (index: number, files: FileList | null) => {
     if (!files || files.length === 0) return;
 
@@ -206,7 +206,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
     }
   };
 
-// Upload image to server
+  // Upload image to server
   const handleImageUpload = async (productId: string, index: number, file: File) => {
     setUploadingImages((prev) => ({ ...prev, [index]: true }));
     setUploadProgress((prev) => ({ ...prev, [index]: 0 }));
@@ -223,7 +223,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
       );
 
       if (response.images && response.images.length > 0) {
-// FIX: uploadImages returns ALL images for the product, 
+        // FIX: uploadImages returns ALL images for the product, 
         // the newly uploaded one will be at the end of the sorted list.
         const uploadedImage = response.images[response.images.length - 1];
         setValue(`images.${index}.url` as any, uploadedImage.url);
@@ -233,7 +233,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
         if (uploadedImage.sortOrder !== undefined) {
           setValue(`images.${index}.sortOrder` as any, uploadedImage.sortOrder);
         }
-// Clear file ref after successful upload
+        // Clear file ref after successful upload
         delete fileRefs.current[index];
       }
     } catch (error: any) {
@@ -244,7 +244,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
     }
   };
 
-// Handle drag and drop
+  // Handle drag and drop
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -303,7 +303,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
   }, [product, reset]);
 
   const onSubmit = async (values: AdminProductPayload) => {
-// 防止重复提交
+    // 防止重复提交
     if (submitting) {
       return;
     }
@@ -312,11 +312,11 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
     setTraceId(null);
     setSubmitting(true);
 
-// 创建新的 AbortController
+    // 创建新的 AbortController
     abortControllerRef.current = new AbortController();
 
     try {
-// Store files to upload after product creation
+      // Store files to upload after product creation
       const filesToUpload: { [index: number]: File } = {};
       const currentImages = watch('images') || [];
 
@@ -350,7 +350,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
                 ? parseNumber(variant.priceAdjustment)
                 : 0,
           })),
-// Filter out temporary file placeholders, keep only valid URLs
+        // Filter out temporary file placeholders, keep only valid URLs
         images: values.images
           ?.filter((image, index) => {
             // If it's a file placeholder (starts with file://), don't include in payload
@@ -373,8 +373,8 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
           ? await adminProductsApi.create(payload)
           : await adminProductsApi.update(product!.id, payload);
 
-// Upload any pending files after product creation/update
-// FIX: Also enable for 'edit' mode to handle race conditions or missed uploads
+      // Upload any pending files after product creation/update
+      // FIX: Also enable for 'edit' mode to handle race conditions or missed uploads
       const hasPendingFiles = Object.keys(fileRefs.current).length > 0;
       if (response.id && hasPendingFiles) {
         const uploadPromises: Promise<void>[] = [];
@@ -408,7 +408,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
         onSuccess(response);
       }
     } catch (error: any) {
-// 统一错误处理，提取 traceId 和错误码
+      // 统一错误处理，提取 traceId 和错误码
       const errorMessage = error?.message || '提交失败，请稍后再试';
       const errorTraceId = error?.traceId || null;
       const errorCode = error?.errorCode || null;
@@ -446,7 +446,7 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
     }
   };
 
-// 重试函数
+  // 重试函数
   const handleRetry = () => {
     if (submitting) return;
     // 重新触发表单提交
@@ -458,587 +458,647 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
 
   return (
     <form className="admin-form" onSubmit={handleSubmit(onSubmit)}>
-      <div className="form-grid">
-        <div className="form-card">
-          <h2>基础信息</h2>
-          <div className="form-field">
-            <label>商品名称 *</label>
-            <input type="text" {...register('name', { required: true })} />
-            {errors.name && <span className="error">请填写商品名称</span>}
-          </div>
-          <div className="form-field">
-            <label>自定义 Slug</label>
-            <input
-              type="text"
-              {...register('slug')}
-              placeholder="不填写则自动生成"
-              title="Slug 用于 URL（仅字母/数字/连字符），例如 /products/custom-tee"
-            />
-            <small style={{ color: '#64748b' }}>
-              Slug = URL 唯一标识（仅字母/数字/连字符），示例：/products/custom-tee
-            </small>
-          </div>
-          <div className="form-field">
-            <label>SKU *</label>
-            <input type="text" {...register('sku', { required: true })} />
-            {errors.sku && <span className="error">请填写 SKU</span>}
-          </div>
-          <div className="form-field">
-            <label>所属分类 *</label>
-            <select {...register('categoryId', { required: true })}>
-              <option value="">选择分类</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-            {errors.categoryId && (
-              <span className="error">请选择分类</span>
-            )}
-          </div>
-          <div className="form-field">
-            <label>描述</label>
-            <textarea rows={3} {...register('description')} />
-          </div>
-          <div className="form-field">
-            <label>详细描述</label>
-            <textarea rows={5} {...register('longDescription')} />
-          </div>
-        </div>
-
-        <div className="form-card">
-          <h2>定价与库存</h2>
-          <div className="form-field">
-            <label>基础价格 *</label>
-            <input
-              type="number"
-              step="0.01"
-              {...register('basePrice', { required: true, min: 0 })}
-            />
-            {errors.basePrice && (
-              <span className="error">请填写基础价格</span>
-            )}
-          </div>
-          <div className="form-field">
-            <label>促销价格</label>
-            <input type="number" step="0.01" {...register('salePrice')} />
-          </div>
-          <div className="form-field">
-            <label>单位成本</label>
-            <input type="number" step="0.01" {...register('unitCost')} />
-          </div>
-          <div className="form-field">
-            <label>毛利</label>
-            <input type="number" step="0.01" {...register('grossProfit')} />
-          </div>
-          <div className="form-field">
-            <label>库存数量</label>
-            <input type="number" {...register('stockQuantity')} />
-          </div>
-          <div className="form-row">
-            <label className="checkbox">
-              <input type="checkbox" {...register('isActive')} />
-              <span>上架展示</span>
-            </label>
-            <label className="checkbox">
-              <input type="checkbox" {...register('isCustomizable')} />
-              <span>支持定制</span>
-            </label>
-          </div>
-          <div className="form-field">
-            <label>重量(kg)</label>
-            <input type="number" step="0.01" {...register('weight')} />
-          </div>
-          <div className="form-field">
-            <label>尺寸说明</label>
-            <input type="text" {...register('dimensions')} />
-          </div>
-        </div>
-      </div>
-
-      <div className="form-card">
-        <div className="form-card-header">
-          <h2>商品图片</h2>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => appendImage(defaultImage)}
-          >
-            添加图片
-          </button>
-        </div>
-        {imageFields.length === 0 && (
-          <p className="hint">尚未添加图片，可上传文件或使用 CDN/S3 URL。</p>
-        )}
-        {imageFields.map((field, index) => {
-          const imageUrl = watch(`images.${index}.url` as any) || '';
-// 过滤掉 file:// URL，避免浏览器报错
-          const validImageUrl = imageUrl && !imageUrl.startsWith('file://')
-            ? (imageUrl.startsWith('http') || imageUrl.startsWith('/') ? imageUrl : null)
-            : null;
-          const preview = imagePreviews[index] || validImageUrl;
-          const isUploading = uploadingImages[index] || false;
-          const progress = uploadProgress[index] || 0;
-
-          return (
-            <div key={field.id} className="repeatable">
-{/* Image Preview */}
-              {preview && (
-                <div className="image-preview-container">
-                  <Image
-                    src={preview}
-                    alt="Preview"
-                    width={320}
-                    height={320}
-                    className="image-preview"
-                    unoptimized
-/>{/* 使用 Next Image 统一预览行为 */}
-                  {isUploading && (
-                    <div className="upload-overlay">
-                      <div className="upload-progress">
-                        <div className="progress-bar" style={{ width: `${progress}%` }} />
-                        <span>上传中 {progress}%</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-{/* File Upload Area */}
-              <div
-                className="upload-area"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, index)}
-              >
-                <input
-                  type="file"
-                  id={`image-upload-${index}`}
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
-                  style={{ display: 'none' }}
-                  onChange={(e) => handleFileSelect(index, e.target.files)}
-                  disabled={isUploading}
-                />
-                <label htmlFor={`image-upload-${index}`} className="upload-button">
-                  {isUploading ? '上传中...' : preview ? '更换图片' : '选择图片或拖拽到此处'}
-                </label>
-                {mode === 'edit' && product?.id && (
-                  <span className="upload-hint">（编辑模式下，图片将立即上传）</span>
-                )}
-              </div>
-
-{/* URL Input (Alternative) */}
-              <div className="form-field">
-                <label>图片地址 {!preview && '*'}</label>
-                <input
-                  type="text"
-                  {...register(`images.${index}.url` as const, { required: !preview })}
-                  placeholder="或直接输入图片URL"
-                  disabled={isUploading}
-                />
-              </div>
-              <div className="form-field">
-                <label>ALT 文案</label>
-                <input
-                  type="text"
-                  {...register(`images.${index}.alt` as const)}
-                  placeholder="图片描述（用于SEO）"
-                  disabled={isUploading}
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-field">
-                  <label>排序值</label>
-                  <input
-                    type="number"
-                    {...register(`images.${index}.sortOrder` as const)}
-                    disabled={isUploading}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="text-button danger"
-                  onClick={() => {
-                    removeImage(index);
-                    setImagePreviews((prev) => {
-                      const newPrev = { ...prev };
-                      delete newPrev[index];
-                      return newPrev;
-                    });
-                    // Clear file reference
-                    delete fileRefs.current[index];
-                  }}
-                  disabled={isUploading}
-                >
-                  删除
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="form-card">
-        <div className="form-card-header">
-          <h2>商品变体</h2>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => appendVariant(defaultVariant)}
-          >
-            添加变体
-          </button>
-        </div>
-        {variantFields.length === 0 && (
-          <p className="hint">暂无变体，点击右上角按钮添加。</p>
-        )}
-        {variantFields.map((field, index) => (
-          <div key={field.id} className="repeatable">
+      <div className="layout-grid">
+        {/* Left Column: Main Content */}
+        <div className="main-col">
+          {/* 1. Title & Description */}
+          <div className="card">
             <div className="form-field">
-              <label>变体 SKU *</label>
+              <label>Title</label>
               <input
                 type="text"
-                {...register(`variants.${index}.sku` as const, { required: true })}
+                {...register('name', { required: true })}
+                placeholder="Short sleeve t-shirt"
+                className="input-lg"
+              />
+              {errors.name && <span className="error">Please enter product title</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Description</label>
+              <textarea
+                rows={6}
+                {...register('description')}
+                placeholder="Description"
               />
             </div>
-            <div className="form-grid-inline">
+
+            <div className="form-field">
+              <label>Detailed Description</label>
+              <textarea
+                rows={6}
+                {...register('longDescription')}
+                placeholder="Detailed Description"
+              />
+            </div>
+          </div>
+
+          {/* 2. Media */}
+          <div className="card">
+            <div className="card-header">
+              <h3>Media</h3>
+              <button
+                type="button"
+                className="text-btn"
+                onClick={() => appendImage(defaultImage)}
+              >
+                Add from URL
+              </button>
+            </div>
+
+            <div className="media-grid">
+              {/* Media Upload Area */}
+              <div
+                className="media-upload-area"
+                onDragOver={handleDragOver}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const files = e.dataTransfer.files;
+                  if (files.length > 0) {
+                    // Find next available index
+                    const nextIndex = imageFields.length;
+                    // Need to handle multiple files, for now just first one loosely
+                    // Actually handleFileSelect handles one index.
+                    // Ideally we should append multiple fields. 
+                    // For simplicity in this UI, we treat dropping on the 'area' as appending new.
+                    appendImage({ ...defaultImage });
+                    setTimeout(() => handleFileSelect(nextIndex, files), 0);
+                  }
+                }}
+              >
+                <div className="upload-placeholder">
+                  <span className="upload-icon">📷</span>
+                  <div className="upload-text">
+                    <label className="upload-trigger">
+                      Upload new
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          if (e.target.files?.length) {
+                            const startIndex = imageFields.length;
+                            Array.from(e.target.files).forEach((file, i) => {
+                              appendImage({ ...defaultImage });
+                              setTimeout(() => handleFileSelect(startIndex + i, e.target.files), 0);
+                            });
+                          }
+                        }}
+                      />
+                    </label>
+                    {' '}or drag and drop
+                  </div>
+                </div>
+              </div>
+
+              {/* Media List */}
+              {imageFields.map((field, index) => {
+                const imageUrl = watch(`images.${index}.url` as any) || '';
+                const validImageUrl = imageUrl && !imageUrl.startsWith('file://')
+                  ? (imageUrl.startsWith('http') || imageUrl.startsWith('/') ? imageUrl : null)
+                  : null;
+                const preview = imagePreviews[index] || validImageUrl;
+                const isUploading = uploadingImages[index] || false;
+
+                // If no URL and no preview, it's a newly added field waiting for input
+                if (!preview && !imageUrl) return null; // Or show a small input box
+
+                return (
+                  <div key={field.id} className="media-item">
+                    <div className="media-preview">
+                      {preview ? (
+                        <Image
+                          src={preview}
+                          alt="Product"
+                          fill
+                          sizes="100px"
+                          style={{ objectFit: 'cover' }}
+                          unoptimized
+                        />
+                      ) : (
+                        <div className="media-placeholder" />
+                      )}
+                      {isUploading && <div className="media-loading">...</div>}
+                    </div>
+                    <div className="media-actions">
+                      <button type="button" onClick={() => removeImage(index)} title="Remove">×</button>
+                    </div>
+                    {/* Hidden inputs for URL fallback if needed */}
+                    <input type="hidden" {...register(`images.${index}.url` as const)} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Pricing */}
+          <div className="card">
+            <h3>Usage Pricing</h3>
+            <div className="form-row">
               <div className="form-field">
-                <label>颜色</label>
-                <input type="text" {...register(`variants.${index}.color` as const)} />
+                <label>Price</label>
+                <div className="input-prefix">
+                  <span>$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...register('basePrice', { required: true, min: 0 })}
+                  />
+                </div>
               </div>
               <div className="form-field">
-                <label>尺码</label>
-                <input type="text" {...register(`variants.${index}.size` as const)} />
+                <label>Compare at price</label>
+                <div className="input-prefix">
+                  <span>$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    {...register('salePrice')}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="form-row border-top pt-4 mt-4">
+              <div className="form-field">
+                <label>Cost per item</label>
+                <div className="input-prefix">
+                  <span>$</span>
+                  <input type="number" step="0.01" placeholder="0.00" {...register('unitCost')} />
+                </div>
+                <small>Customers won't see this</small>
               </div>
               <div className="form-field">
-                <label>库存</label>
+                <label>Profit</label>
+                <div className="input-prefix input-disabled">
+                  <span>$</span>
+                  <input type="text" disabled value={watch('grossProfit') || '--'} />
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Margin</label>
+                <div className="input-prefix input-disabled">
+                  <span>%</span>
+                  <input
+                    type="text"
+                    disabled
+                    value={(() => {
+                      const price = Number(watch('basePrice') || 0);
+                      const cost = Number(watch('unitCost') || 0);
+                      if (!price) return '--';
+                      return Math.round(((price - cost) / price) * 100) + '%';
+                    })()}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. Inventory */}
+          <div className="card">
+            <h3>Inventory</h3>
+            <div className="form-row">
+              <div className="form-field">
+                <label>SKU (Stock Keeping Unit)</label>
+                <input type="text" {...register('sku')} />
+              </div>
+              <div className="form-field">
+                <label>Barcode (ISBN, UPC, GTIN, etc.)</label>
+                <input type="text" placeholder="" />
+              </div>
+            </div>
+
+            <div className="checkbox-row">
+              <input type="checkbox" id="trackQuantity" checked readOnly />
+              <label htmlFor="trackQuantity">Track quantity</label>
+            </div>
+
+            <div className="form-field border-top pt-4 mt-4">
+              <div className="flex-row-between">
+                <label>Quantity</label>
                 <input
                   type="number"
-                  {...register(`variants.${index}.stockQuantity` as const)}
-                />
-              </div>
-              <div className="form-field">
-                <label>价格调整</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  {...register(`variants.${index}.priceAdjustment` as const)}
+                  style={{ width: '150px' }}
+                  {...register('stockQuantity')}
                 />
               </div>
             </div>
-            <button
-              type="button"
-              className="text-button danger"
-              onClick={() => removeVariant(index)}
-            >
-              删除变体
-            </button>
           </div>
-        ))}
+
+          {/* 5. Shipping */}
+          <div className="card">
+            <h3>Shipping</h3>
+            <div className="checkbox-row mb-4">
+              <input type="checkbox" id="physicalProduct" checked readOnly />
+              <label htmlFor="physicalProduct">This is a physical product</label>
+            </div>
+
+            <div className="form-row">
+              <div className="form-field">
+                <label>Weight</label>
+                <div className="input-suffix">
+                  <input type="number" step="0.01" {...register('weight')} placeholder="0.0" />
+                  <span>kg</span>
+                </div>
+              </div>
+              <div className="form-field">
+                <label>Dimensions</label>
+                <input type="text" {...register('dimensions')} placeholder="L x W x H" />
+              </div>
+            </div>
+          </div>
+
+          {/* 6. Variants */}
+          <div className="card">
+            <div className="card-header">
+              <h3>Variants</h3>
+              <button type="button" className="text-btn" onClick={() => appendVariant(defaultVariant)}>
+                + Add Option
+              </button>
+            </div>
+
+            <div className="checkbox-row mb-4">
+              <input type="checkbox" {...register('isCustomizable')} id="isCustomizable" />
+              <label htmlFor="isCustomizable">This product has options, like size or color</label>
+            </div>
+
+            <div className="variants-list">
+              {variantFields.map((field, index) => (
+                <div key={field.id} className="variant-item form-row">
+                  <div className="form-field" style={{ flex: 2 }}>
+                    {index === 0 && <label>Option Name</label>}
+                    <input
+                      type="text"
+                      placeholder="Color / Size"
+                      value={`${watch(`variants.${index}.color`) || ''} ${watch(`variants.${index}.size`) || ''}`.trim()}
+                      readOnly
+                    />
+                  </div>
+                  <div className="form-field" style={{ flex: 1 }}>
+                    {index === 0 && <label>Values</label>}
+                    <div className="flex-row gap-2">
+                      <input type="text" placeholder="Color" {...register(`variants.${index}.color` as const)} />
+                      <input type="text" placeholder="Size" {...register(`variants.${index}.size` as const)} />
+                    </div>
+                  </div>
+                  <div className="form-field" style={{ width: '80px' }}>
+                    {index === 0 && <label>Price</label>}
+                    <input type="number" step="0.01" {...register(`variants.${index}.priceAdjustment` as const)} placeholder="0.00" />
+                  </div>
+                  <div className="form-field" style={{ width: '80px' }}>
+                    {index === 0 && <label>Stock</label>}
+                    <input type="number" {...register(`variants.${index}.stockQuantity` as const)} placeholder="0" />
+                  </div>
+                  <div className="form-field" style={{ width: '30px', paddingTop: index === 0 ? '28px' : '0' }}>
+                    <button type="button" className="icon-btn" onClick={() => removeVariant(index)}>×</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Sidebar */}
+        <div className="sidebar-col">
+          {/* 1. Status */}
+          <div className="card">
+            <h3>Status</h3>
+            <select {...register('isActive', {
+              setValueAs: v => (v === 'true' || v === true),
+            })} className="select-full">
+              <option value="true">Active</option>
+              <option value="false">Draft</option>
+            </select>
+          </div>
+
+          {/* 2. Publishing */}
+          <div className="card">
+            <h3>Publishing</h3>
+            <div className="channel-list">
+              <div className="channel-item">
+                <div className="status-dot active" />
+                <span>Online Store</span>
+              </div>
+              <div className="channel-item">
+                <div className="status-dot active" />
+                <span>Point of Sale</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Organization */}
+          <div className="card">
+            <h3>Product organization</h3>
+
+            <div className="form-field">
+              <label>Category</label>
+              <select {...register('categoryId', { required: true })}>
+                <option value="">Select Category</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {errors.categoryId && <span className="error">Required</span>}
+            </div>
+
+            <div className="form-field">
+              <label>Product Type</label>
+              <input type="text" placeholder="e.g. T-Shirt" />
+            </div>
+
+            <div className="form-field">
+              <label>Vendor</label>
+              <input type="text" placeholder="e.g. Gildan" />
+            </div>
+
+            <div className="form-field">
+              <label>Collections</label>
+              <select multiple {...register('collections')} className="select-multiple">
+                <option value="" disabled>Select collections</option>
+                {/* Placeholder for collections */}
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>Tags</label>
+              <input type="text" placeholder="Vintage, Cotton, Summer" />
+              <small>Separate by comma</small>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {submitError && (
-        <div className="form-error">
-          <div>{submitError}</div>
-          {traceId && (
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-              追踪ID: {traceId}
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={handleRetry}
-            disabled={submitting}
-            style={{
-              marginTop: '8px',
-              padding: '6px 12px',
-              background: '#f1f5f9',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            重试
+      <div className="page-actions-bar">
+        {submitError && <span className="error-msg">{submitError}</span>}
+        {saveSuccess && <span className="success-msg">Saved successfully</span>}
+        <div className="actions-right">
+          <button type="button" className="secondary-btn" onClick={() => reset()}>Discard</button>
+          <button type="submit" className="primary-btn" disabled={submitting}>
+            {submitting ? 'Saving...' : 'Save'}
           </button>
         </div>
-      )}
-
-      {saveSuccess && (
-        <div className="success-notification" onClick={() => setSaveSuccess(false)}>
-          <span className="icon">✅</span>
-          <div className="content">
-            <strong>保存成功</strong>
-            <p>商品信息已成功更新至数据库。</p>
-          </div>
-          <button type="button" className="close-btn">×</button>
-        </div>
-      )}
-
-      <div className="form-actions">
-        <button type="submit" className="primary-btn" disabled={submitting || isUploadingAny}>
-          {submitting ? '提交中…' : isUploadingAny ? '正在上传图片…' : mode === 'create' ? '创建商品' : '保存修改'}
-        </button>
       </div>
 
       <style jsx>{`
         .admin-form {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
+          padding-bottom: 80px;
         }
-        .form-grid {
+        .layout-grid {
           display: grid;
-          gap: 24px;
-          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          grid-template-columns: 2fr 1fr;
+          gap: 20px;
+          max-width: 1200px;
+          margin: 0 auto;
         }
-        .form-card {
-          background: #ffffff;
-          border-radius: 12px;
-          padding: 24px;
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+        @media (max-width: 900px) {
+          .layout-grid {
+            grid-template-columns: 1fr;
+          }
         }
-        .form-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 16px;
+        
+        .card {
+          background: #fff;
+          border-radius: 8px;
+          padding: 20px;
+          margin-bottom: 20px;
+          border: 1px solid #e1e3e5;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        h2 {
-          margin: 0 0 16px;
-          font-size: 18px;
+        .card h3 {
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0 0 16px 0;
+          color: #202223;
         }
+        .card-header {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+           margin-bottom: 16px;
+        }
+        .card-header h3 { margin-bottom: 0; }
+        
         .form-field {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
           margin-bottom: 16px;
         }
         .form-field label {
+          display: block;
+          margin-bottom: 6px;
           font-size: 14px;
-          color: #475569;
+          color: #202223;
+          font-weight: 400;
         }
-        .form-field input,
-        .form-field select,
-        .form-field textarea {
-          border: 1px solid #cbd5f5;
-          border-radius: 8px;
-          padding: 10px 12px;
+        .form-field input[type="text"],
+        .form-field input[type="number"],
+        .form-field textarea,
+        .form-field select {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #c9cccf;
+          border-radius: 4px;
           font-size: 14px;
-          transition: border 0.2s ease, box-shadow 0.2s ease;
-        }
-        .form-field textarea {
-          resize: vertical;
+          color: #202223;
+          transition: border-color 0.2s;
         }
         .form-field input:focus,
-        .form-field select:focus,
-        .form-field textarea:focus {
-          border-color: #ff1f3d;
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(255, 31, 61, 0.1);
+        .form-field textarea:focus,
+        .form-field select:focus {
+           border-color: #005bd3;
+           outline: none;
+           box-shadow: 0 0 0 1px #005bd3;
         }
+        
+        .input-lg {
+          padding: 10px 12px;
+          font-size: 16px;
+        }
+        
         .form-row {
           display: flex;
           gap: 16px;
-          flex-wrap: wrap;
-          align-items: center;
         }
-        .form-grid-inline {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-          gap: 16px;
-          margin-bottom: 12px;
+        .form-row .form-field {
+          flex: 1;
         }
-        .checkbox {
-          display: inline-flex;
+        .flex-row-between {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+        }
+        
+        .border-top {
+          border-top: 1px solid #e1e3e5;
+        }
+        .pt-4 { padding-top: 16px; }
+        .mt-4 { margin-top: 16px; }
+        .mb-4 { margin-bottom: 16px; }
+        
+        .checkbox-row {
+          display: flex;
           align-items: center;
           gap: 8px;
-          font-size: 14px;
+          margin-bottom: 12px;
         }
-        .hint {
-          font-size: 14px;
-          color: #6b7280;
+        
+        .input-prefix, .input-suffix {
+           position: relative;
+           display: flex;
+           align-items: center;
         }
-        .success-notification {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          background: #f0fdf4;
-          border: 1px solid #bbf7d0;
-          border-radius: 12px;
-          padding: 16px 20px;
-          color: #166534;
-          position: relative;
-          cursor: pointer;
-          animation: slideIn 0.3s ease-out;
+        .input-prefix span {
+           position: absolute;
+           left: 10px;
+           color: #6d7175;
+           z-index: 1;
         }
-        @keyframes slideIn {
-          from { transform: translateY(10px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
+        .input-prefix input {
+           padding-left: 24px !important;
         }
-        .success-notification .icon {
-          font-size: 24px;
+        
+        .input-suffix input {
+           padding-right: 32px !important;
         }
-        .success-notification .content strong {
-          display: block;
-          font-size: 16px;
-          margin-bottom: 2px;
+        .input-suffix span {
+           position: absolute;
+           right: 10px;
+           color: #6d7175;
         }
-        .success-notification .content p {
-          margin: 0;
-          font-size: 14px;
-          opacity: 0.9;
+        
+        .input-disabled input {
+           background-color: #f6f6f7;
+           color: #8c9196;
         }
-        .success-notification .close-btn {
-          margin-left: auto;
-          background: none;
-          border: none;
-          color: #166534;
-          font-size: 20px;
-          cursor: pointer;
-          padding: 4px;
-          opacity: 0.6;
+        
+        .media-grid {
+           display: grid;
+           grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+           gap: 12px;
         }
-        .success-notification:hover .close-btn {
-          opacity: 1;
+        .media-upload-area {
+           grid-column: 1 / -1;
+           border: 1px dashed #c9cccf;
+           border-radius: 4px;
+           padding: 24px;
+           text-align: center;
+           cursor: pointer;
+           transition: background 0.2s;
         }
-
-        .repeatable {
-          padding: 16px;
-          border: 1px solid #e2e8f0;
-          border-radius: 10px;
-          margin-bottom: 16px;
-          background: #f8fafc;
+        .media-upload-area:hover {
+           background: #fcfcfc;
+           border-color: #8c9196;
         }
-        .text-button {
-          background: none;
-          border: none;
-          color: #ff1f3d;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 600;
+        .upload-trigger {
+           color: #005bd3;
+           font-weight: 600;
+           cursor: pointer;
+           text-decoration: underline;
         }
-        .text-button.danger {
-          color: #ef4444;
+        
+        .media-item {
+           position: relative;
+           aspect-ratio: 1;
+           border: 1px solid #e1e3e5;
+           border-radius: 4px;
+           overflow: hidden;
         }
-        .form-error {
-          padding: 12px 16px;
-          border-radius: 10px;
-          background: rgba(239, 68, 68, 0.12);
-          color: #b91c1c;
+        .media-actions {
+           position: absolute;
+           top: 4px;
+           right: 4px;
+           display: none;
         }
-        .form-actions {
-          display: flex;
-          justify-content: flex-end;
+        .media-item:hover .media-actions {
+           display: block;
         }
+        
+        .page-actions-bar {
+           position: fixed;
+           bottom: 0;
+           left: 0;
+           right: 0;
+           background: #fff;
+           border-top: 1px solid #e1e3e5;
+           padding: 16px 24px;
+           display: flex;
+           justify-content: flex-end;
+           align-items: center;
+           z-index: 100;
+           gap: 16px;
+           box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        .actions-right {
+           display: flex;
+           gap: 12px;
+        }
+        
         .primary-btn {
-          padding: 12px 24px;
-          background: #ff1f3d;
-          border: none;
-          border-radius: 999px;
-          color: #fff;
-          font-size: 15px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+           background: #008060;
+           color: #fff;
+           border: none;
+           padding: 8px 16px;
+           border-radius: 4px;
+           font-weight: 500;
+           cursor: pointer;
+           font-size: 14px;
         }
         .primary-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 10px 20px rgba(255, 31, 61, 0.25);
+           background: #006e52;
         }
         .primary-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          box-shadow: none;
+           background: #bdc1cc;
+           cursor: not-allowed;
         }
-        .error {
-          font-size: 12px;
-          color: #ef4444;
+        
+        .secondary-btn {
+           background: #fff;
+           color: #202223;
+           border: 1px solid #c9cccf;
+           padding: 8px 16px;
+           border-radius: 4px;
+           font-weight: 500;
+           cursor: pointer;
+           font-size: 14px;
         }
-        .form-error {
-          padding: 12px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          border-radius: 8px;
-          color: #991b1b;
-          margin-bottom: 16px;
+        .secondary-btn:hover {
+           background: #f6f6f7;
         }
-/* Image Upload Styles */
-        .image-preview-container {
-          position: relative;
-          margin-bottom: 16px;
-          border-radius: 8px;
-          overflow: hidden;
-          background: #f8fafc;
-          border: 1px solid #e2e8f0;
+        
+        .text-btn {
+           background: none;
+           border: none;
+           color: #005bd3;
+           cursor: pointer;
+           font-weight: 500;
         }
-        .image-preview {
-          width: 100%;
-          max-width: 300px;
-          height: auto;
-          display: block;
-          object-fit: contain;
+        .text-btn:hover {
+           text-decoration: underline;
         }
-        .upload-overlay {
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0, 0, 0, 0.7);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
+        
+        .error { color: #d72c0d; font-size: 12px; margin-top: 4px; display: block; }
+        .success-msg { color: #008060; font-weight: 500; }
+        
+        .channel-list {
+           display: flex;
+           flex-direction: column;
+           gap: 8px;
         }
-        .upload-progress {
-          text-align: center;
-          width: 80%;
+        .channel-item {
+           display: flex;
+           align-items: center;
+           gap: 8px;
+           font-size: 14px;
         }
-        .progress-bar {
-          height: 4px;
-          background: #ff1f3d;
-          border-radius: 2px;
-          margin-bottom: 8px;
-          transition: width 0.3s ease;
+        .status-dot {
+           width: 8px;
+           height: 8px;
+           border-radius: 50%;
+           background: #ccc;
         }
-        .upload-area {
-          border: 2px dashed #cbd5e1;
-          border-radius: 8px;
-          padding: 24px;
-          text-align: center;
-          margin-bottom: 16px;
-          background: #f8fafc;
-          transition: border-color 0.2s ease, background 0.2s ease;
-        }
-        .upload-area:hover {
-          border-color: #ff1f3d;
-          background: #fff5f5;
-        }
-        .upload-button {
-          display: inline-block;
-          padding: 10px 20px;
-          background: #ff1f3d;
-          color: white;
-          border-radius: 6px;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 600;
-          transition: background 0.2s ease;
-        }
-        .upload-button:hover {
-          background: #e3002b;
-        }
-        .upload-button:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .upload-hint {
-          display: block;
-          margin-top: 8px;
-          font-size: 12px;
-          color: #64748b;
-        }
+        .status-dot.active { background: #90ee90; }
       `}</style>
     </form>
   );

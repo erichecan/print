@@ -8,15 +8,15 @@ interface ApiProduct {
   id: string;
   name: string;
   slug: string;
-  description: string | null;
-  basePrice: number;
+  description?: string | null;
+  basePrice: number | string;
   price?: {
     base: number;
     sale: number;
     currency: string;
     onSale?: boolean;
   };
-  sku: string;
+  sku?: string;
   variants: Array<{
     id: string;
     color: string | null;
@@ -39,7 +39,7 @@ interface ApiProduct {
     name: string;
     slug: string;
   } | null;
-  rating: {
+  rating?: {
     average: number;
     count: number;
   };
@@ -55,7 +55,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     ? Math.round(((apiProduct.price.base - apiProduct.price.sale) / apiProduct.price.base) * 100)
     : 0;
 
-// 提取唯一颜色
+  // 提取唯一颜色
   const colorMap = new Map<string, { hex: string; available: boolean }>();
   apiProduct.variants.forEach(v => {
     if (v.color) {
@@ -81,7 +81,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     available: data.available,
   }));
 
-// 提取唯一尺码
+  // 提取唯一尺码
   const sizeMap = new Map<string, { stock: number; available: boolean }>();
   apiProduct.variants.forEach(v => {
     if (v.size) {
@@ -112,7 +112,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
       return a.value.localeCompare(b.value);
     });
 
-// 转换图片数据
+  // 转换图片数据
   const images = apiProduct.images
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(img => ({
@@ -122,18 +122,18 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
       thumbnail: img.url, // 可以后续优化为生成缩略图
     }));
 
-// 生成产品特性（从描述中提取或使用默认）
+  // 生成产品特性（从描述中提取或使用默认）
   const features = apiProduct.description
     ? apiProduct.description.split('.').filter(f => f.trim().length > 0).slice(0, 6)
     : [
-        'Premium quality materials',
-        'Comfortable fit',
-        'Durable construction',
-        'Easy care',
-      ];
+      'Premium quality materials',
+      'Comfortable fit',
+      'Durable construction',
+      'Easy care',
+    ];
 
-// 转换相关产品
-  const moreByArtist = (relatedProducts || []).slice(0, 6).map((p, index) => ({
+  // 转换相关产品
+  const allRelated = (relatedProducts || []).map((p) => ({
     id: p.id,
     title: p.name,
     url: p.images[0]?.url || 'https://picsum.photos/seed/' + p.id + '/300/300',
@@ -141,7 +141,13 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     link: `/products/${p.slug}`,
   }));
 
-// 生成标签（基于分类和品牌）
+  // 随机打乱并取 8 个作为 "You might like"
+  const shuffled = [...allRelated].sort(() => 0.5 - Math.random());
+  const youMightLike = shuffled.slice(0, 8);
+
+  const moreByArtist = allRelated.slice(0, 6);
+
+  // 生成标签（基于分类和品牌）
   const tags: string[] = [];
   if (apiProduct.category) {
     tags.push(`${apiProduct.category.name.toLowerCase()} t-shirts`);
@@ -264,7 +270,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
       },
     ],
     moreByArtist,
-    youMightLike: moreByArtist.slice(0, 6),
+    youMightLike,
     tags,
     trending: ['retro designs', 'vintage aesthetic'],
   };

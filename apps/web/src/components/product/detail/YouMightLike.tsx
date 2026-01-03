@@ -7,6 +7,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 
+import styles from './YouMightLike.module.css';
+
 interface RecommendedProduct {
   id: string;
   title: string;
@@ -30,33 +32,33 @@ export function YouMightLike({ title, products }: YouMightLikeProps) {
   };
 
   return (
-    <section className="you-might-like" aria-label={title}>
-      <div className="you-might-like-header">
-        <h2 className="you-might-like-title">{title}</h2>
-        <Link href="/products" className="you-might-like-link">
+    <section className={styles['you-might-like']} aria-label={title}>
+      <div className={styles['you-might-like-header']}>
+        <h2 className={styles['you-might-like-title']}>{title}</h2>
+        <Link href="/products" className={styles['you-might-like-link']}>
           See more
         </Link>
       </div>
-      <div className="you-might-like-grid">
+      <div className={styles['you-might-like-grid']}>
         {products.map((product) => (
           <Link
             key={product.id}
             href={product.link}
-            className="you-might-like-item"
+            className={styles['you-might-like-item']}
             aria-label={`${product.title} - ${formatPrice(product.price)}`}
           >
-            <div className="you-might-like-image-wrapper">
+            <div className={styles['you-might-like-image-wrapper']}>
               <Image
                 src={product.url}
                 alt={product.title}
                 width={300}
                 height={300}
-                className="you-might-like-image"
+                className={styles['you-might-like-image']}
               />
             </div>
-            <div className="you-might-like-info">
-              <div className="you-might-like-title-text">{product.title}</div>
-              <div className="you-might-like-price">{formatPrice(product.price)}</div>
+            <div className={styles['you-might-like-info']}>
+              <div className={styles['you-might-like-title-text']}>{product.title}</div>
+              <div className={styles['you-might-like-price']}>{formatPrice(product.price)}</div>
             </div>
           </Link>
         ))}

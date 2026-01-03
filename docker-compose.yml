@@ -9,13 +9,13 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-- "5432:5432" # Expose Postgres to host for local tools
+      - "5432:5432" # Expose Postgres to host for local tools
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - app-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,20 +23,20 @@ services:
   backend:
     build:
       context: .
-dockerfile: ./backend/Dockerfile # 调整构建上下文以便复制根目录下的 Prisma schema
+      dockerfile: ./backend/Dockerfile # 调整构建上下文以便复制根目录下的 Prisma schema
     environment:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/suvernireplus}
-DB_HOST: ${DB_HOST:-postgres} # Ensure Sequelize connects via service hostname
-DB_PORT: ${DB_PORT:-5432} # Keep port in sync with postgres service
-DB_NAME: ${DB_NAME:-suvernireplus} # Provide database name fallback
-DB_USER: ${DB_USER:-postgres} # Provide database user for Sequelize config
-DB_PASSWORD: ${DB_PASSWORD:-postgres} # Provide password for Sequelize config
+      DB_HOST: ${DB_HOST:-postgres} # Ensure Sequelize connects via service hostname
+      DB_PORT: ${DB_PORT:-5432} # Keep port in sync with postgres service
+      DB_NAME: ${DB_NAME:-suvernireplus} # Provide database name fallback
+      DB_USER: ${DB_USER:-postgres} # Provide database user for Sequelize config
+      DB_PASSWORD: ${DB_PASSWORD:-postgres} # Provide password for Sequelize config
       JWT_SECRET: ${JWT_SECRET:-change_me_in_prod}
-STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder} # Redacted default to avoid leaking secrets
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-sk_test_placeholder} # Redacted default to avoid leaking secrets
       STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
-REDIS_URL: ${REDIS_URL:-redis://redis:6379} # 为 ioredis 提供容器内地址
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379} # 为 ioredis 提供容器内地址
     depends_on:
       postgres:
         condition: service_healthy
@@ -47,7 +47,7 @@ REDIS_URL: ${REDIS_URL:-redis://redis:6379} # 为 ioredis 提供容器内地址
     networks:
       - app-net
 
-# Redis 缓存服务，供后台速率限制与会话使用
+  # Redis 缓存服务，供后台速率限制与会话使用
   redis:
     image: redis:7-alpine
     ports:
@@ -74,7 +74,7 @@ REDIS_URL: ${REDIS_URL:-redis://redis:6379} # 为 ioredis 提供容器内地址
 volumes:
   pgdata:
 
+
 networks:
   app-net:
     driver: bridge
-
