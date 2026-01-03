@@ -62,7 +62,7 @@ gcloud run deploy ${BACKEND_SERVICE} \
   --allow-unauthenticated \
   --add-cloudsql-instances ${PROJECT_ID}:${REGION}:${DB_INSTANCE} \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
-  --set-env-vars NODE_ENV=production,AUTO_MIGRATE=true \
+  --set-env-vars NODE_ENV=production,AUTO_MIGRATE=true,GCP_IMAGE_BUCKET=print-482914-images \
   --memory 512Mi \
   --cpu 1 \
   --min-instances 1 \

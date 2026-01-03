@@ -7,6 +7,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration, authenticatedFetch } from '@/lib/api';
+import { BillingDetails } from '@/app/offline-orders/components/BillingDetails';
+import { OrderItemColorGroup } from '@/types/order';
 
 export default function SalesOrderDetailPage() {
   const router = useRouter();
@@ -46,7 +48,7 @@ export default function SalesOrderDetailPage() {
 
       try {
         // 获取订单详情和阶段配置
-// 修复：使用 authenticatedFetch 确保 token 正确传递
+        // 修复：使用 authenticatedFetch 确保 token 正确传递
         const [detail, stagesRes] = await Promise.all([
           salesOrdersApi.get(orderId),
           authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
@@ -54,7 +56,7 @@ export default function SalesOrderDetailPage() {
             .catch(() => ({ stages: [] }))
         ]);
         if (!cancelled) {
-// 添加详细的数据结构日志以诊断产品信息问题
+          // 添加详细的数据结构日志以诊断产品信息问题
           console.log('[Order Detail] Full order data:', {
             hasDetails: !!detail,
             hasConfiguration: !!detail?.configuration,
@@ -69,7 +71,7 @@ export default function SalesOrderDetailPage() {
         }
       } catch (err: any) {
         if (!cancelled) {
-// 友好的错误提示
+          // 友好的错误提示
           if (err.message?.includes('404') || err.message?.includes('不存在') || err.message?.includes('Not Found')) {
             setError('订单不存在或已被删除。');
           } else {
@@ -92,10 +94,10 @@ export default function SalesOrderDetailPage() {
 
   const meta = order;
 
-// 解析配置信息
+  // 解析配置信息
   const config: OfflineOrderConfiguration | null = meta?.configuration || null;
 
-// 按产品分组印刷位置
+  // 按产品分组印刷位置
   const printPositionsByProduct = useMemo(() => {
     if (!config?.printPositions) return {};
     const grouped: Record<string, typeof config.printPositions> = {};
@@ -109,20 +111,92 @@ export default function SalesOrderDetailPage() {
     return grouped;
   }, [config]);
 
-// 计算每个产品的总数量和总金额
-// 修复：添加安全检查，防止 variants 为 undefined 时调用 reduce
   const productTotals = useMemo(() => {
     if (!config?.productItems) return {};
     const totals: Record<string, { quantity: number; total: number }> = {};
+
+    // PRD v2.0: 优先使用 colorGroupsByProduct
+    if (config.colorGroupsByProduct) {
+      Object.entries(config.colorGroupsByProduct).forEach(([productId, groups]) => {
+        let totalQty = 0;
+        let totalAmount = 0;
+        groups.forEach((group: any) => {
+          const qty = Object.values(group.quantities || {}).reduce((sum: number, q: any) => sum + (Number(q) || 0), 0);
+          totalQty += qty;
+          totalAmount += qty * (group.unitPrice || 0);
+        });
+        totals[productId] = { quantity: totalQty, total: totalAmount };
+      });
+      return totals;
+    }
+
     config.productItems.forEach((item) => {
-// 安全检查：确保 variants 存在且是数组
       const variants = item.variants || [];
       const quantity = variants.reduce((sum, v) => sum + (v.quantity || 0), 0);
       const total = variants.reduce((sum, v) => sum + ((v.quantity || 0) * (v.unitPrice || 0)), 0);
       totals[item.id] = { quantity, total };
     });
     return totals;
-  }, [config?.productItems]);
+  }, [config?.productItems, config?.colorGroupsByProduct]);
+
+  // Transform data for BillingDetails component
+  const billingData = useMemo(() => {
+    if (!config?.productItems) return null;
+
+    const transformedItems = config.productItems.map(item => {
+      const colorsMap: Record<string, any> = {};
+
+      if (config.colorGroupsByProduct && config.colorGroupsByProduct[item.id]) {
+        config.colorGroupsByProduct[item.id].forEach(group => {
+          const sizes = Object.entries(group.quantities || {}).map(([size, quantity]) => ({
+            size,
+            quantity: Number(quantity),
+            unitPrice: group.unitPrice || 0,
+            additionalFee: 0, // In this structure, unitPrice is often inclusive
+            subtotal: Number(quantity) * (group.unitPrice || 0)
+          })).filter(s => s.quantity > 0);
+
+          if (sizes.length > 0) {
+            colorsMap[group.colorCode] = {
+              colorId: group.colorCode,
+              colorName: group.colorName,
+              sizes
+            };
+          }
+        });
+      } else {
+        // Fallback for legacy variants
+        (item.variants || []).forEach(v => {
+          if (!colorsMap[v.color]) {
+            colorsMap[v.color] = {
+              colorId: v.color,
+              colorName: v.color,
+              sizes: []
+            };
+          }
+          colorsMap[v.color].sizes.push({
+            size: v.size,
+            quantity: v.quantity,
+            unitPrice: v.unitPrice,
+            additionalFee: 0,
+            subtotal: v.quantity * v.unitPrice
+          });
+        });
+      }
+
+      return {
+        id: item.id,
+        productName: item.categoryName || meta?.primaryProduct || '未知产品',
+        colors: Object.values(colorsMap)
+      };
+    }).filter(item => item.colors.length > 0);
+
+    return {
+      productItems: transformedItems,
+      colorGroupsByProduct: (config.colorGroupsByProduct as Record<string, OrderItemColorGroup[]>) || {},
+      dstFileFee: Number(config.pricing?.dstFileFee || meta?.dst_file_fee || 0)
+    };
+  }, [config, meta?.dst_file_fee]);
 
   if (authChecking) {
     return (
@@ -138,7 +212,7 @@ export default function SalesOrderDetailPage() {
     router.push('/offline-orders/sales/orders');
   };
 
-// 更新订单阶段
+  // 更新订单阶段
   const handleUpdateStage = async (newStageKey: string) => {
     if (!order || updatingStage) return;
 
@@ -180,7 +254,7 @@ export default function SalesOrderDetailPage() {
                   {meta.rushOrder && <span className="status-badge status-rush">加急</span>}
                   {meta.stage?.label && <span className="status-badge status-stage">{meta.stage.label}</span>}
                 </div>
-{/* 修改订单阶段 */}
+                {/* 修改订单阶段 */}
                 {stages.length > 0 && (
                   <div className="order-stage-update">
                     <label className="stage-update-label">
@@ -261,7 +335,7 @@ export default function SalesOrderDetailPage() {
           </div>
         ) : (
           <div className="order-detail-content">
-{/* 项目信息 */}
+            {/* 项目信息 */}
             <section className="order-section">
               <h2 className="section-title">项目信息</h2>
               <div className="info-grid">
@@ -287,6 +361,12 @@ export default function SalesOrderDetailPage() {
                     }) : '—'}
                   </span>
                 </div>
+                {meta!.dst_file_fee && Number(meta!.dst_file_fee) > 0 && (
+                  <div className="info-item">
+                    <span className="info-label">DST File Fee</span>
+                    <span className="info-value">${Number(meta!.dst_file_fee).toFixed(2)} CAD</span>
+                  </div>
+                )}
                 {(meta.requiresMockups || meta.requiresProof || meta.rushOrder) && (
                   <div className="info-item info-item-full">
                     <span className="info-label">特殊要求</span>
@@ -308,7 +388,7 @@ export default function SalesOrderDetailPage() {
               </div>
             </section>
 
-{/* 客户信息 */}
+            {/* 客户信息 */}
             <section className="order-section">
               <h2 className="section-title">客户信息</h2>
               <div className="info-grid">
@@ -335,48 +415,91 @@ export default function SalesOrderDetailPage() {
               </div>
             </section>
 
-{/* 产品列表 */}
-{/* 添加产品信息缺失时的友好提示 */}
+            {/* 产品列表 */}
+            {/* 添加产品信息缺失时的友好提示 */}
             <section className="order-section order-section-wide">
               <h2 className="section-title">产品列表</h2>
               {config?.productItems && config.productItems.length > 0 ? (
                 <div className="products-list">
                   {config.productItems.map((item) => {
                     const totals = productTotals[item.id] || { quantity: 0, total: 0 };
+                    // PRD v2.0: 获取该产品的颜色组
+                    const colorGroups = config.colorGroupsByProduct?.[item.id] || [];
+
                     return (
                       <div key={item.id} className="product-card">
                         <div className="product-header">
-                          <h3 className="product-name">{item.categoryName}</h3>
+                          <h3 className="product-name">{item.categoryName || meta?.primaryProduct || '未知产品'}</h3>
                           <div className="product-summary">
                             <span>{totals.quantity} 件</span>
                             <span className="product-total">${totals.total.toFixed(2)} CAD</span>
                           </div>
                         </div>
-                        <table className="variants-table">
-                          <thead>
-                            <tr>
-                              <th>尺码</th>
-                              <th>颜色</th>
-                              <th>数量</th>
-                              <th>单价</th>
-                              <th>小计</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(item.variants || []).map((variant, idx) => {
-                              const variantTotal = (variant.quantity || 0) * (variant.unitPrice || 0);
-                              return (
-                                <tr key={idx}>
-                                  <td>{variant.size || '—'}</td>
-                                  <td>{variant.color || '—'}</td>
-                                  <td>{variant.quantity || 0}</td>
-                                  <td>${(variant.unitPrice || 0).toFixed(2)}</td>
-                                  <td className="variant-total">${variantTotal.toFixed(2)}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+
+                        {colorGroups.length > 0 ? (
+                          <div className="color-groups">
+                            {colorGroups.map((group: any, gIdx: number) => (
+                              <div key={gIdx} className="color-group-box" style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #f0f0f0', borderRadius: '12px' }}>
+                                <div style={{ marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                  <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: group.colorHex || '#eee', border: '1px solid #ddd' }} />
+                                  <span>{group.colorName}</span>
+                                  <span style={{ marginLeft: 'auto', color: '#666', fontSize: '0.875rem' }}>单价: ${group.unitPrice?.toFixed(2)}</span>
+                                </div>
+                                <table className="variants-table">
+                                  <thead>
+                                    <tr>
+                                      <th>尺码</th>
+                                      <th>数量</th>
+                                      <th>单价</th>
+                                      <th>小计</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {Object.entries(group.quantities || {}).map(([size, qty], idx) => {
+                                      const q = Number(qty) || 0;
+                                      if (q === 0) return null;
+                                      const subtotal = q * (group.unitPrice || 0);
+                                      return (
+                                        <tr key={idx}>
+                                          <td>{size}</td>
+                                          <td>{q}</td>
+                                          <td>${(group.unitPrice || 0).toFixed(2)}</td>
+                                          <td className="variant-total">${subtotal.toFixed(2)}</td>
+                                        </tr>
+                                      );
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <table className="variants-table">
+                            <thead>
+                              <tr>
+                                <th>尺码</th>
+                                <th>颜色</th>
+                                <th>数量</th>
+                                <th>单价</th>
+                                <th>小计</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(item.variants || []).map((variant, idx) => {
+                                const variantTotal = (variant.quantity || 0) * (variant.unitPrice || 0);
+                                return (
+                                  <tr key={idx}>
+                                    <td>{variant.size || '—'}</td>
+                                    <td>{variant.color || '—'}</td>
+                                    <td>{variant.quantity || 0}</td>
+                                    <td>${(variant.unitPrice || 0).toFixed(2)}</td>
+                                    <td className="variant-total">${variantTotal.toFixed(2)}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        )}
                       </div>
                     );
                   })}
@@ -396,12 +519,12 @@ export default function SalesOrderDetailPage() {
               )}
             </section>
 
-{/* 印刷位置 */}
+            {/* 印刷位置 */}
             {config?.printPositions && config.printPositions.length > 0 && (
               <section className="order-section order-section-wide">
                 <h2 className="section-title">印刷位置</h2>
                 <div className="print-positions-list">
-                  {config.productItems?.map((item) => {
+                  {(config.productItems || []).map((item) => {
                     const positions = printPositionsByProduct[item.id] ||
                       printPositionsByProduct[item.categoryName] || [];
                     if (positions.length === 0) return null;
@@ -410,98 +533,160 @@ export default function SalesOrderDetailPage() {
                         <h3 className="print-group-title">{item.categoryName}</h3>
                         <div className="print-positions">
                           {positions.map((pos, idx) => (
-                            <div key={idx} className="print-position-item">
-                              <div className="print-position-header">
-                                <span className="print-position-name">{pos.position}</span>
-                                <span className="print-position-size">
-                                  {pos.width}&quot; × {pos.height}&quot;
-                                </span>
+                            <div key={idx} className="print-position-item" style={{ display: 'block' }}>
+                              <div className="print-position-header" style={{ marginBottom: '8px' }}>
+                                <span className="print-position-name" style={{ fontSize: '1.1rem', fontWeight: 600 }}>{pos.position}</span>
+                                <span className="print-position-status" style={{
+                                  marginLeft: 'auto',
+                                  fontSize: '0.75rem',
+                                  color: '#10b981',
+                                  background: '#ecfdf5',
+                                  padding: '2px 8px',
+                                  borderRadius: '99px'
+                                }}>已启用</span>
                               </div>
-                              {pos.notes && (
-                                <p className="print-position-notes">{pos.notes}</p>
-                              )}
+                              <div className="print-position-details" style={{ fontSize: '0.9rem', color: '#4b5563', lineHeight: 1.6 }}>
+                                <div><span style={{ color: '#6b7280' }}>工艺:</span> {pos.method || (pos as any).printingStyle || '未设置'}</div>
+                                <div>
+                                  <span style={{ color: '#6b7280' }}>尺寸:</span> {
+                                    (() => {
+                                      const w = pos.width && pos.width !== '0' ? `宽 ${pos.width}inch` : '';
+                                      const h = pos.height && pos.height !== '0' ? `高 ${pos.height}inch` : '';
+                                      if (w && h) return `${w} × ${h}`;
+                                      return w || h || '未设置';
+                                    })()
+                                  }
+                                </div>
+                                {pos.dstFileFee !== undefined && Number(pos.dstFileFee) > 0 && (
+                                  <div style={{ color: '#3b82f6', fontWeight: 500 }}>DST Fee: ${Number(pos.dstFileFee).toFixed(2)}</div>
+                                )}
+                                {pos.notes && (
+                                  <div style={{ marginTop: '4px', fontSize: '0.85rem', fontStyle: 'italic', color: '#9ca3af' }}>备注: {pos.notes}</div>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
                     );
                   })}
-                  {Object.entries(printPositionsByProduct).map(([key, positions]) => {
-                    if (config.productItems?.some(item => item.id === key || item.categoryName === key)) {
-                      return null;
-                    }
-                    if (key === '其他') {
-                      return null;
-                    }
-                    return (
-                      <div key={key} className="print-group">
-                        <h3 className="print-group-title">{key}</h3>
-                        <div className="print-positions">
-                          {positions.map((pos, idx) => (
-                            <div key={idx} className="print-position-item">
-                              <div className="print-position-header">
-                                <span className="print-position-name">{pos.position}</span>
-                                <span className="print-position-size">
-                                  {pos.width}&quot; × {pos.height}&quot;
-                                </span>
-                              </div>
-                              {pos.notes && (
-                                <p className="print-position-notes">{pos.notes}</p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {printPositionsByProduct['其他'] && printPositionsByProduct['其他'].length > 0 && (
-                    <div className="print-group">
-                      <h3 className="print-group-title">其他</h3>
-                      <div className="print-positions">
-                        {printPositionsByProduct['其他'].map((pos, idx) => (
-                          <div key={idx} className="print-position-item">
-                            <div className="print-position-header">
-                              <span className="print-position-name">{pos.position}</span>
-                              <span className="print-position-size">
-                                {pos.width}&quot; × {pos.height}&quot;
-                              </span>
-                            </div>
-                            {pos.notes && (
-                              <p className="print-position-notes">{pos.notes}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </section>
             )}
 
-{/* 价格信息 */}
+            {/* 价格汇总 (Matching Step 3 Summary Styling) */}
             {config?.pricing && (
-              <section className="order-section">
-                <h2 className="section-title">价格信息</h2>
-                <div className="pricing-card">
-                  <div className="pricing-row">
-                    <span className="pricing-label">小计</span>
-                    <span className="pricing-value">${config.pricing.subtotal.toFixed(2)} {config.pricing.currency}</span>
-                  </div>
-                  {config.pricing.discount > 0 && (
-                    <div className="pricing-row pricing-discount">
-                      <span className="pricing-label">折扣 ({config.pricing.discount}%)</span>
-                      <span className="pricing-value">-${config.pricing.discountAmount.toFixed(2)}</span>
+              <section className="order-section order-section-wide">
+                <div style={{
+                  padding: '1.5rem',
+                  backgroundColor: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '0.75rem',
+                  marginBottom: '2rem'
+                }}>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: '#111827', margin: '0 0 1rem 0' }}>
+                    价格明细{Number(config.pricing.taxAmount || 0) > 0 ? ' (含税)' : ''}
+                  </h3>
+                  <div style={{ display: 'grid', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                      <span>小计 (CAD)：</span>
+                      <span>${Number(config.pricing.subtotal || 0).toFixed(2)} CAD</span>
                     </div>
-                  )}
-                  <div className="pricing-row pricing-total">
-                    <span className="pricing-label">总计</span>
-                    <span className="pricing-value">${config.pricing.total.toFixed(2)} {config.pricing.currency}</span>
+                    {Number(config.pricing.discountAmount || 0) > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: '#dc2626' }}>
+                        <span>折扣 ({config.pricing.discount}%)：</span>
+                        <span>-${Number(config.pricing.discountAmount).toFixed(2)} CAD</span>
+                      </div>
+                    )}
+                    {Number(config.pricing.dstFileFee || meta?.dst_file_fee || 0) > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span>DST File Fee：</span>
+                        <span>${Number(config.pricing.dstFileFee || meta?.dst_file_fee).toFixed(2)} CAD</span>
+                      </div>
+                    )}
+                    {Number(config.pricing.taxAmount || 0) > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', paddingTop: '0.5rem', borderTop: '1px dashed #bfdbfe' }}>
+                        <span>税前金额：</span>
+                        <span>${(Number(config.pricing.subtotal || 0) - Number(config.pricing.discountAmount || 0) + Number(config.pricing.dstFileFee || meta?.dst_file_fee || 0)).toFixed(2)} CAD</span>
+                      </div>
+                    )}
+                    {(Number(config.pricing.taxAmount || 0) > 0) ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span>税 (HST) ({((Number(config.pricing.taxRate || 0.13)) * 100).toFixed(0)}% HST)：</span>
+                        <span>${Number(config.pricing.taxAmount).toFixed(2)} CAD</span>
+                      </div>
+                    ) : (
+                      (() => {
+                        const base = Number(config.pricing.subtotal || 0) - (Number(config.pricing.discountAmount || 0)) + (Number(config.pricing.dstFileFee ?? meta?.dst_file_fee ?? 0));
+                        const total = Number(config.pricing.total || 0);
+                        const calculatedTax = total - base;
+                        if (calculatedTax > 0.01) {
+                          return (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                              <span>税额 (估算)：</span>
+                              <span>${calculatedTax.toFixed(2)} CAD</span>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()
+                    )}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '1.25rem',
+                      paddingTop: '0.75rem',
+                      marginTop: '0.5rem',
+                      borderTop: '1px solid #bfdbfe',
+                      color: '#1d4ed8'
+                    }}>
+                      <span style={{ fontWeight: 600 }}>总计{Number(config.pricing.taxAmount || 0) > 0 ? ' (含税)' : ''}：</span>
+                      <strong style={{ fontSize: '1.5rem' }}>${Number(config.pricing.total || 0).toFixed(2)} CAD</strong>
+                    </div>
                   </div>
+                </div>
+
+                {/* 计费明细 Table */}
+                {billingData && (
+                  <div style={{ marginBottom: '2rem' }}>
+                    <BillingDetails
+                      productItems={billingData.productItems}
+                      colorGroupsByProduct={billingData.colorGroupsByProduct}
+                      dstFileFee={billingData.dstFileFee}
+                    />
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* 订单历史 */}
+            {meta.histories && meta.histories.length > 0 && (
+              <section className="order-section order-section-wide">
+                <h2 className="section-title">订单历史</h2>
+                <div className="histories-list">
+                  {meta.histories.map((log: any, idx: number) => (
+                    <div key={log.id || idx} className="history-item" style={{
+                      display: 'flex',
+                      gap: '1rem',
+                      padding: '1rem 0',
+                      borderBottom: idx < meta.histories.length - 1 ? '1px solid #f0f2f5' : 'none'
+                    }}>
+                      <div className="history-time" style={{ color: '#718096', fontSize: '0.75rem', whiteSpace: 'nowrap', width: '150px' }}>
+                        {new Date(log.timestamp).toLocaleString('zh-CN')}
+                      </div>
+                      <div className="history-info">
+                        <div className="history-action" style={{ fontWeight: 600, color: '#2d3748', fontSize: '0.875rem' }}>{log.action}</div>
+                        {log.note && <div className="history-note" style={{ color: '#718096', fontSize: '0.8125rem', marginTop: '0.25rem' }}>{log.note}</div>}
+                        {log.operator && <div className="history-operator" style={{ color: '#2563eb', fontSize: '0.75rem', marginTop: '0.25rem' }}>操作人: {log.operator}</div>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </section>
             )}
 
-{/* 发票信息 */}
+            {/* 发票信息 */}
             {config?.requiresInvoice && config.invoiceInfo && (
               <section className="order-section">
                 <h2 className="section-title">发票信息</h2>
@@ -544,7 +729,7 @@ export default function SalesOrderDetailPage() {
               </section>
             )}
 
-{/* 附件 */}
+            {/* 附件 */}
             {meta.assets && meta.assets.length > 0 && (
               <section className="order-section order-section-wide">
                 <h2 className="section-title">附件 ({meta.assets.length})</h2>
@@ -570,7 +755,7 @@ export default function SalesOrderDetailPage() {
               </section>
             )}
 
-{/* 生产信息 */}
+            {/* 生产信息 */}
             {meta.productionWorkOrder && (
               <section className="order-section order-section-wide">
                 <h2 className="section-title">生产信息</h2>

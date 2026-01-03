@@ -1005,6 +1005,10 @@ export interface SalesOfflineOrderSummary {
     email: string;
     name: string;
   } | null;
+  dst_file_fee?: number | string | null; // PRD v2.0
+  order_notes?: string | null; // PRD v2.0
+  payment_method?: string | null; // PRD v2.0
+  reference_number?: string | null; // PRD v2.0
   createdAt: string;
   updatedAt: string;
 }
@@ -1037,9 +1041,11 @@ export interface OfflineOrderPrintPosition {
   categoryId?: string;
   categoryName?: string;
   position: string;
+  method?: string; // DTF, Embroidery, etc.
   width: string;
   height: string;
   notes: string;
+  dstFileFee?: number;
   index?: number;
 }
 
@@ -1047,6 +1053,9 @@ export interface OfflineOrderPricing {
   subtotal: number;
   discount: number;
   discountAmount: number;
+  dstFileFee?: number; // PRD v2.0
+  taxRate?: number; // PRD v2.0
+  taxAmount?: number; // PRD v2.0
   total: number;
   currency: string;
 }
@@ -1066,7 +1075,10 @@ export interface OfflineOrderConfiguration {
   source?: string;
   orderCode?: string;
   artworkNotes?: string;
+  orderNotes?: string; // PRD v2.0
   productItems?: OfflineOrderProductItem[];
+  colorGroupsByProduct?: Record<string, any[]>; // PRD v2.0: OrderItemColorGroup[]
+  dstFileFee?: number; // PRD v2.0: Total DST fee
   sideCount?: number;
   printPositions?: OfflineOrderPrintPosition[];
   requiresInvoice?: boolean;
@@ -1081,9 +1093,30 @@ export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
   requiresProof?: boolean;
   configuration?: OfflineOrderConfiguration | null; // 完整配置信息
   metadata?: Record<string, unknown>; // Issue #105 - Replace any with proper type
-  assets: Array<{ id: string; fileName: string; url: string;[key: string]: unknown }>; // Issue #105 - Replace any[] with proper type
-  histories: Array<{ id: string; action: string; timestamp: string;[key: string]: unknown }>; // Issue #105 - Replace any[] with proper type
-  productionWorkOrder: { id: string; status: string;[key: string]: unknown } | null; // Issue #105 - Replace any with proper type
+  assets: Array<{
+    id: string;
+    fileName: string;
+    url: string;
+    fileSize?: number;
+    [key: string]: any
+  }>;
+  histories: Array<{
+    id: string;
+    action: string;
+    timestamp: string;
+    note?: string;
+    operator?: string;
+    [key: string]: any
+  }>;
+  productionWorkOrder: {
+    id: string;
+    status: string;
+    workOrderCode?: string;
+    assignee?: { name: string };
+    startDate?: string;
+    dueDate?: string;
+    [key: string]: any
+  } | null;
 }
 
 export const salesOrdersApi = {

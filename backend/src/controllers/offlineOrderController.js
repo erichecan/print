@@ -240,7 +240,10 @@ exports.createOfflineOrder = async (req, res) => {
       requiresProof,
       rushOrder,
       configuration,
-      orderNotes // PRD v2.0: 支持从orderNotes字段获取
+      orderNotes, // PRD v2.0: 支持从orderNotes字段获取
+      dstFileFee,
+      paymentMethod,
+      referenceNumber
     } = req.body;
 
     // PRD v2.0: 解析configuration以获取orderNotes（如果projectName不存在）
@@ -314,11 +317,14 @@ exports.createOfflineOrder = async (req, res) => {
         orderNotes: orderNotes?.trim() || null // PRD v2.0: 包含orderNotes到configuration
       },
       metadata: {
-        submittedFrom: 'offline-pod-intake',
-        userAgent: req.headers['user-agent'] || null,
         ip: req.ip || req.connection?.remoteAddress || null,
         submittedByUserId: req.user?.id || null
-      }
+      },
+      // PRD v2.0: 显式保存新字段
+      dst_file_fee: dstFileFee ? parseFloat(dstFileFee) : null,
+      order_notes: orderNotes?.trim() || null,
+      payment_method: paymentMethod?.trim() || null,
+      reference_number: referenceNumber?.trim() || null
     };
 
     const files = Array.isArray(req.files) ? req.files : [];

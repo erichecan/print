@@ -866,10 +866,14 @@ export default function OfflineOrdersIntakePage() {
     return taxBase * taxRate;
   }, [calculateSubtotal, calculateDiscountAmount, formState.requiresInvoice, formState.taxRate, calculateDstFileFee]);
 
-  const calculateTotal = useMemo(() => {
+  const calculateTotalBeforeTax = useMemo(() => {
     // Total includes DST fee
     return calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
   }, [calculateSubtotal, calculateDiscountAmount, calculateDstFileFee]);
+
+  const calculateTotalWithTax = useMemo(() => {
+    return calculateTotalBeforeTax + calculateTaxAmount;
+  }, [calculateTotalBeforeTax, calculateTaxAmount]);
 
   // PRD v2.0: 计算总数量
   const calculateTotalQuantity = useMemo(() => {
@@ -1310,9 +1314,10 @@ export default function OfflineOrdersIntakePage() {
               subtotal: calculateSubtotal,
               discount: formState.discount,
               discountAmount: calculateDiscountAmount,
+              dstFileFee: calculateDstFileFee,
               taxRate: formState.taxRate,
               taxAmount: calculateTaxAmount,
-              total: calculateTotal,
+              total: calculateTotalWithTax,
               currency: 'CAD',
             },
           }),
@@ -1391,8 +1396,7 @@ export default function OfflineOrdersIntakePage() {
       calculateSubtotal,
       calculateDiscountAmount,
       calculateTaxAmount,
-      calculateTotal,
-      calculateTotal,
+      calculateTotalWithTax,
       files,
       API_BASE_URL,
       handleKeyDown, // 添加 handleKeyDown 依赖
@@ -1803,88 +1807,30 @@ export default function OfflineOrdersIntakePage() {
 
         {/* 移除全局单价输入框，改为颜色级别单价 */}
 
-        {/* 计费明细 - 在总计上面 */}
+        {/* 计费明细与总金额 - Step 1 */}
         {calculateTotalQuantity > 0 && (
-          <div className="p-5 bg-white border border-gray-200 rounded-lg mb-4">
-            <h4 className="text-base font-semibold text-gray-900 mb-4">计费明细</h4>
-            <div className="overflow-x-auto mb-4">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-300">
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">产品</th>
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">颜色</th>
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">尺码</th>
-                    <th className="text-right py-2 px-3 font-semibold text-gray-700">数量</th>
-                    <th className="text-left py-2 px-3 font-semibold text-gray-700">位置</th>
-                    <th className="text-right py-2 px-3 font-semibold text-gray-700">单价</th>
-                    <th className="text-right py-2 px-3 font-semibold text-gray-700">小计</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formState.productItems.flatMap((item) => {
-                    const colorGroups = formState.colorGroupsByProduct[item.id] || [];
-                    return item.colors.flatMap((color) => {
-                      const colorGroup = colorGroups.find(g => g.colorCode === color.colorId);
-                      return color.sizes
-                        .filter(sizeData => sizeData.quantity > 0)
-                        .map((sizeData) => {
-                          // 获取印刷位置名称
-                          const positions = colorGroup?.positions
-                            .filter(p => p.enabled)
-                            .map(p => {
-                              const positionNames: Record<string, string> = {
-                                'front': '正面',
-                                'back': '背面',
-                                'left_sleeve': '左袖',
-                                'right_sleeve': '右袖',
-                                'pocket': '口袋',
-                                'tag_inside': '内标',
-                                'tag_outside': '外标',
-                                'custom': '其他位置'
-                              };
-                              return positionNames[p.positionKey] || p.positionKey;
-                            })
-                            .join(', ') || '无位置';
+          <div className="space-y-4">
+            <BillingDetails
+              productItems={formState.productItems}
+              colorGroupsByProduct={formState.colorGroupsByProduct}
+              dstFileFee={calculateDstFileFee}
+            />
 
-                          return (
-                            <tr key={`${item.id}-${color.colorId}-${sizeData.size}`} className="border-b border-gray-200 hover:bg-gray-50">
-                              <td className="py-2 px-3 text-gray-900">{item.productName}</td>
-                              <td className="py-2 px-3 text-gray-700">{color.colorName}</td>
-                              <td className="py-2 px-3 text-gray-700">{sizeData.size}</td>
-                              <td className="py-2 px-3 text-right text-gray-700">{sizeData.quantity}</td>
-                              <td className="py-2 px-3 text-gray-600 text-xs">{positions}</td>
-                              <td className="py-2 px-3 text-right text-gray-700">${sizeData.unitPrice.toFixed(2)}</td>
-                              <td className="py-2 px-3 text-right font-medium text-gray-900">${sizeData.subtotal.toFixed(2)}</td>
-                            </tr>
-                          );
-                        });
-                    });
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-
-
-        {/* 总计 - PRD v2.0 */}
-        {calculateTotalQuantity > 0 && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
-            <div className="flex justify-between items-center text-base">
-              <span>{t('totalQuantity') || '总数量'}：</span>
-              <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items') || '件'}</strong>
-            </div>
-            <div className="flex justify-between items-center text-base">
-              <span>{t('totalAmount') || '总金额'}：</span>
-              <strong className="text-xl text-blue-700">${calculateSubtotal.toFixed(2)} CAD</strong>
-            </div>
-            {calculateDstFileFee > 0 && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
               <div className="flex justify-between items-center text-base">
-                <span>DST File Fee：</span>
-                <strong className="text-lg text-blue-700">${calculateDstFileFee.toFixed(2)} CAD</strong>
+                <span>{t('totalQuantity') || '总数量'}：</span>
+                <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items') || '件'}</strong>
               </div>
-            )}
+              <div className="flex justify-between items-center text-base">
+                <span>{t('totalAmount') || '总金额'}：</span>
+                <strong className="text-xl text-blue-700">${(calculateSubtotal + calculateDstFileFee).toFixed(2)} CAD</strong>
+              </div>
+              {calculateDstFileFee > 0 && (
+                <div className="flex justify-between items-center text-sm text-blue-600">
+                  <span>(包含 DST File Fee: ${calculateDstFileFee.toFixed(2)})</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -1894,10 +1840,10 @@ export default function OfflineOrdersIntakePage() {
   // PRD v2.0: 渲染第二步 - 客户信息和Invoice
   const renderStep2 = () => {
     // 计算税（13%安省税率，仅当选择Invoice时）
-    const taxRate = 0.13;
-    const taxBase = calculateSubtotal - calculateDiscountAmount;
+    const taxRate = formState.taxRate || 0.13;
+    const taxBase = calculateSubtotal - calculateDiscountAmount + calculateDstFileFee;
     const taxAmount = formState.requiresInvoice ? taxBase * taxRate : 0;
-    const totalWithTax = calculateSubtotal - calculateDiscountAmount + taxAmount;
+    const totalWithTax = taxBase + taxAmount;
 
     return (
       <div className="space-y-6">
@@ -2443,7 +2389,7 @@ export default function OfflineOrdersIntakePage() {
                 )}
                 <div className="flex justify-between items-center text-lg pt-3 border-t border-blue-200">
                   <span className="font-semibold">{t('total')}{formState.requiresInvoice ? ` (${t('withTax') || '含税'})` : ''}：</span>
-                  <strong className="text-xl text-blue-700">${calculateTotal.toFixed(2)} CAD</strong>
+                  <strong className="text-xl text-blue-700">${calculateTotalWithTax.toFixed(2)} CAD</strong>
                 </div>
               </div>
             </div>
