@@ -1,79 +1,35 @@
-/**
- * Admin Dashboard (Next.js version faithfully mirroring prototype/admin/admin/index.html)
-* 初版 HTML
-* React 版本 1:1 还原内容 / 布局 / 样式
- */
 'use client';
 
 import { useMemo } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
-import { ordersApi } from '@/lib/api';
-
-interface Order {
-  id: string;
-  orderNumber: string;
-  status: string;
-  paymentStatus: string;
-  total: number;
-  createdAt: string;
-  user?: {
-    firstName: string | null;
-    lastName: string | null;
-    email: string;
-  };
-  items: Array<{
-    quantity: number;
-  }>;
-}
-
-const PENDING_DESIGN_REVIEWS = [
-  {
-    name: 'Conference Backpack',
-    user: 'alex.brown',
-    statusKey: 'designStatusPending',
-    statusLabel: 'Pending',
-    date: 'Oct 31',
-    actionKey: 'designReviewAction',
-    actionLabel: 'Review',
-  },
-  {
-    name: 'Team Jerseys',
-    user: 'sports.club',
-    statusKey: 'designStatusPending',
-    statusLabel: 'Pending',
-    date: 'Oct 31',
-    actionKey: 'designReviewAction',
-    actionLabel: 'Review',
-  },
-  {
-    name: 'Holiday Swag',
-    user: 'marketing.dept',
-    statusKey: 'designStatusPending',
-    statusLabel: 'Pending',
-    date: 'Oct 30',
-    actionKey: 'designReviewAction',
-    actionLabel: 'Review',
-  },
-  {
-    name: 'Welcome Kit',
-    user: 'hr.team',
-    statusKey: 'designStatusApproved',
-    statusLabel: 'Approved',
-    date: 'Oct 30',
-    actionKey: 'designViewAction',
-    actionLabel: 'View',
-  },
-];
+import {
+  unifiedOrdersApi,
+  adminDesignsApi,
+  UnifiedOrderDTO,
+  AdminDesignSummary
+} from '@/lib/api';
 
 export default function AdminDashboardPage() {
-  const { data, error, isLoading } = useSWR('/admin/orders', () => ordersApi.list(1, 100));
+  // Use Unified Orders API for mixed online/offline orders
+  const { data: ordersData, error: ordersError, isLoading: ordersLoading } = useSWR(
+    '/admin/unified-orders',
+    () => unifiedOrdersApi.list({ page: 1, pageSize: 100 })
+  );
+
+  // Use Admin Designs API for real design reviews
+  const { data: designsData, error: designsError, isLoading: designsLoading } = useSWR(
+    '/admin/designs/pending',
+    () => adminDesignsApi.list({ status: 'pending', limit: 5 }) // Fetch specifically pending reviews
+  );
+
   const orders = useMemo(() => {
-    if (!data) return [];
-    if ('data' in data) return data.data as Order[];
-    if ('orders' in data) return data.orders as Order[];
-    return [];
-  }, [data]);
+    return ordersData?.data || [];
+  }, [ordersData]);
+
+  const designReviews = useMemo(() => {
+    return designsData?.data || [];
+  }, [designsData]);
 
   const stats = useMemo(() => {
     const today = new Date();
@@ -86,20 +42,23 @@ export default function AdminDashboardPage() {
     });
 
     const paidOrders = orders.filter((o) => o.paymentStatus === 'PAID');
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
     const todayRevenue = todayOrders
       .filter((o) => o.paymentStatus === 'PAID')
-      .reduce((sum, o) => sum + Number(o.total || 0), 0);
+      .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0);
 
     return {
       todaysRevenue: todayRevenue || 0,
       newOrders: todayOrders.length || orders.length,
-      pendingReviews: PENDING_DESIGN_REVIEWS.length,
-      lowStockItems: 8, // 与原始 HTML 示例保持一致
+      pendingReviews: designReviews.length, // Use real count from API
+      lowStockItems: 8, // Still mock as inventory API is separate
     };
-  }, [orders]);
+  }, [orders, designReviews]);
 
   const recentOrders = useMemo(() => orders.slice(0, 10), [orders]);
+
+  const isLoading = ordersLoading || designsLoading;
+  const error = ordersError || designsError;
 
   if (isLoading) {
     return (
@@ -208,26 +167,24 @@ export default function AdminDashboardPage() {
             </thead>
             <tbody>
               {recentOrders.map((order) => (
-                <tr key={order.id} data-entity="order" data-id={order.id}>
+                <tr key={order.compositeId} data-entity="order" data-id={order.id}>
                   <td>
                     <Link
-                      href={`/admin/orders/${order.id}`}
+                      href={order.type === 'offline' ? `/admin/offline-orders/${order.id}` : `/admin/orders/${order.id}`}
                       style={{ color: 'var(--color-primary)' }}
                       data-action="view-order"
                       data-field="orderNumber"
-                      data-api={`/api/admin/orders/${order.id}`}
                     >
-                      #{order.orderNumber}
+                      <span className={`badge ${order.type === 'offline' ? 'badge-warning' : 'badge-info'}`} style={{ marginRight: 6, fontSize: '0.7em', padding: '2px 4px' }}>
+                        {order.type === 'offline' ? 'OFF' : 'ON'}
+                      </span>
+                      #{order.orderNo}
                     </Link>
                   </td>
                   <td data-field="customerName">
-                    {order.user
-                      ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() || order.user.email
-                      : (
-                          <span data-i18n="guest">Guest</span>
-                        )}
+                    {order.customerName || order.customerEmail || 'Guest'}
                   </td>
-                  <td data-field="total">${Number(order.total || 0).toFixed(2)}</td>
+                  <td data-field="total">${Number(order.totalAmount || 0).toFixed(2)}</td>
                   <td>
                     <span className={`badge badge-${order.status.toLowerCase()}`} data-field="status">
                       {order.status}
@@ -271,32 +228,38 @@ export default function AdminDashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {PENDING_DESIGN_REVIEWS.map((design) => (
-                <tr key={`${design.name}-${design.user}`}>
+              {designReviews.map((design: AdminDesignSummary) => (
+                <tr key={design.id}>
                   <td>{design.name}</td>
-                  <td>{design.user}</td>
+                  <td>{design.user ? `${design.user.firstName || ''} ${design.user.lastName || ''}`.trim() || design.user.email : 'Guest'}</td>
                   <td>
                     <span
-                      className={`badge ${design.statusKey === 'designStatusApproved' ? 'badge-success' : 'badge-pending'}`}
-                      data-i18n={design.statusKey}
+                      className={`badge badge-pending`}
+                      data-i18n="designStatusPending"
                     >
-                      {design.statusLabel}
+                      {design.reviewStatus}
                     </span>
                   </td>
-                  <td>{design.date}</td>
+                  <td>{new Date(design.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</td>
                   <td>
                     <Link
-                      href="/admin/designs"
+                      href={`/admin/designs/${design.id}`}
                       className="btn-icon btn--outline"
                       style={{ fontSize: 12 }}
                       data-action="review-design"
-                      data-i18n={design.actionKey}
                     >
-                      {design.actionLabel}
+                      Review
                     </Link>
                   </td>
                 </tr>
               ))}
+              {!designReviews.length && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: 'center', color: '#6b7280', padding: 24 }}>
+                    No pending reviews.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

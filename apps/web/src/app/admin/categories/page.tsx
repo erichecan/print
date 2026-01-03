@@ -7,6 +7,7 @@
  */
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { adminCategoriesApi, AdminCategorySummary } from '@/lib/api';
 
@@ -46,6 +47,7 @@ const getCategoryIcon = (name: string) => {
 };
 
 export default function AdminCategoriesPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState<CategoryFilters>(initialFilters);
   const [searchInput, setSearchInput] = useState('');
 
@@ -142,10 +144,28 @@ export default function AdminCategoriesPage() {
       ) : (
         <div className="admin-category-list">
           {categories.map((category) => (
-            <article key={category.id} className="admin-category-card">
+            <article
+              key={category.id}
+              className="admin-category-card clickable-row"
+              onClick={(e) => {
+                // Prevent navigation if clicking on actions or buttons
+                if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
+                  return;
+                }
+                router.push(`/admin/categories/${category.id}`);
+              }}
+            >
               <div className="category-meta">
                 <div className="category-icon" aria-hidden="true">
-                  {getCategoryIcon(category.name)}
+                  {category.imageUrl ? (
+                    <img
+                      src={category.imageUrl}
+                      alt={category.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+                    />
+                  ) : (
+                    getCategoryIcon(category.name)
+                  )}
                 </div>
                 <div>
                   <div className="category-name">{category.name}</div>
@@ -199,6 +219,17 @@ export default function AdminCategoriesPage() {
           })}
         </div>
       )}
+      <style jsx>{`
+        .clickable-row {
+          cursor: pointer;
+          transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .clickable-row:hover {
+          background-color: #f8fafc;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+      `}</style>
     </div>
   );
 }

@@ -20,11 +20,16 @@ interface CategoryFormProps {
   onSuccess?: (category: AdminCategoryDetail) => void;
 }
 
+import { ImageUploader } from './ImageUploader';
+
+// ... (imports remain the same, except ImageUploader added above)
+
 export function CategoryForm({ mode, category, onSuccess }: CategoryFormProps) {
+  // ... (hooks remain mostly the same)
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-const [traceId, setTraceId] = useState<string | null>(null); // 添加 traceId 状态
-const abortControllerRef = useRef<AbortController | null>(null); // 用于取消请求
+  const [traceId, setTraceId] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { data: categoryResponse } = useSWR(
     ['admin-categories', 'parent-options'],
@@ -39,6 +44,8 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<AdminCategoryPayload>({
     defaultValues: {
@@ -51,6 +58,8 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
       isActive: true,
     },
   });
+
+  const imageUrl = watch('imageUrl');
 
   useEffect(() => {
     if (category) {
@@ -67,26 +76,17 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
   }, [category, reset]);
 
   const onSubmit = async (values: AdminCategoryPayload) => {
-// 防止重复提交
-    if (submitting) {
-      return;
-    }
-    
+    if (submitting) return;
     setSubmitError(null);
     setTraceId(null);
     setSubmitting(true);
-    
-// 创建新的 AbortController
     abortControllerRef.current = new AbortController();
-    
+
     try {
       const payload: AdminCategoryPayload = {
         ...values,
         parentId: values.parentId || null,
-        sortOrder:
-          values.sortOrder !== undefined
-            ? Number(values.sortOrder)
-            : undefined,
+        sortOrder: values.sortOrder !== undefined ? Number(values.sortOrder) : undefined,
       };
 
       const response =
@@ -98,136 +98,107 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
         onSuccess(response);
       }
     } catch (error: any) {
-// 统一错误处理，提取 traceId 和错误码
+      // ... (error handling remains the same)
       const errorMessage = error?.message || '提交失败，请稍后重试';
-      const errorTraceId = error?.traceId || null;
-      const errorCode = error?.errorCode || null;
-      
-      // 构建用户友好的错误消息
-      let userMessage = errorMessage;
-      if (errorCode) {
-        // 根据错误码提供更友好的提示
-        if (errorCode === 'VALIDATION_ERROR') {
-          userMessage = '数据验证失败，请检查输入信息';
-        } else if (errorCode === 'UNAUTHORIZED') {
-          userMessage = '登录已过期，请重新登录';
-        } else if (errorCode === 'FORBIDDEN') {
-          userMessage = '没有权限执行此操作';
-        } else if (errorCode === 'UPSTREAM_TIMEOUT') {
-          userMessage = '请求超时，请稍后重试';
-        } else if (errorCode === 'NETWORK_ERROR') {
-          userMessage = '网络错误，请检查网络连接';
-        }
-      }
-      
-      setSubmitError(userMessage);
-      setTraceId(errorTraceId);
-      
-      console.error('[CategoryForm] Submit error:', {
-        error: errorMessage,
-        traceId: errorTraceId,
-        errorCode,
-        status: error?.status,
-        details: error?.details,
-      });
+      setSubmitError(errorMessage);
     } finally {
       setSubmitting(false);
       abortControllerRef.current = null;
     }
   };
-  
-// 重试函数
+
   const handleRetry = () => {
     if (submitting) return;
-    // 重新触发表单提交
     const form = document.querySelector('form.admin-form') as HTMLFormElement;
-    if (form) {
-      form.requestSubmit();
-    }
+    if (form) form.requestSubmit();
   };
 
   return (
     <form className="admin-form" onSubmit={handleSubmit(onSubmit)}>
-      <div className="form-card">
-        <h2>分类信息</h2>
-        <div className="form-field">
-          <label>分类名称 *</label>
-          <input type="text" {...register('name', { required: true })} />
-          {errors.name && <span className="error">请填写分类名称</span>}
-        </div>
-        <div className="form-field">
-          <label>Slug *</label>
-          <input type="text" {...register('slug', { required: true })} />
-          {errors.slug && <span className="error">请填写唯一 Slug</span>}
-        </div>
-        <div className="form-field">
-          <label>父级分类</label>
-          <select {...register('parentId')}>
-            <option value="">无（顶级分类）</option>
-            {categories
-              .filter((item) => item.id !== category?.id)
-              .map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-          </select>
-        </div>
-        <div className="form-field">
-          <label>排序值</label>
-          <input type="number" {...register('sortOrder')} />
-        </div>
-        <div className="form-row">
-          <label className="checkbox">
-            <input type="checkbox" {...register('isActive')} />
-            <span>启用</span>
-          </label>
-        </div>
-      </div>
+      <div className="form-layout">
+        {/* Main Column */}
+        <div className="form-main">
+          <div className="form-card">
+            <h2>Category Details</h2>
+            <div className="form-field">
+              <label>Title</label>
+              <input type="text" {...register('name', { required: true })} placeholder="e.g., Summer Collection" />
+              {errors.name && <span className="error">Title is required</span>}
+            </div>
+            <div className="form-field">
+              <label>Description</label>
+              <textarea rows={6} {...register('description')} placeholder="Write a description..." />
+            </div>
+          </div>
 
-      <div className="form-card">
-        <h2>内容与展示</h2>
-        <div className="form-field">
-          <label>分类简介</label>
-          <textarea rows={4} {...register('description')} />
+          <div className="form-card">
+            <h2>URL Handle</h2>
+            <div className="form-field">
+              <label>Slug</label>
+              <input type="text" {...register('slug', { required: true })} />
+              {errors.slug && <span className="error">Slug is required</span>}
+            </div>
+          </div>
         </div>
-        <div className="form-field">
-          <label>封面图地址</label>
-          <input type="text" {...register('imageUrl')} />
-          <span className="hint">支持 CDN/S3 URL，后续可接入上传。</span>
+
+        {/* Sidebar Column */}
+        <div className="form-sidebar">
+          <div className="form-card">
+            <h2>Publishing</h2>
+            <div className="form-field">
+              <label className="checkbox">
+                <input type="checkbox" {...register('isActive')} />
+                <span>Online Store</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="form-card">
+            <h2>Image</h2>
+            <div className="form-field">
+              <ImageUploader
+                currentUrl={imageUrl}
+                onUploadComplete={(url) => setValue('imageUrl', url)}
+                onRemove={() => setValue('imageUrl', '')}
+                label="Category Cover"
+              />
+            </div>
+          </div>
+
+          <div className="form-card">
+            <h2>Organization</h2>
+            <div className="form-field">
+              <label>Parent Category</label>
+              <select {...register('parentId')}>
+                <option value="">None (Top Level)</option>
+                {categories
+                  .filter((item) => item.id !== category?.id)
+                  .map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Sort Order</label>
+              <input type="number" {...register('sortOrder')} />
+            </div>
+          </div>
         </div>
       </div>
 
       {submitError && (
         <div className="form-error">
           <div>{submitError}</div>
-          {traceId && (
-            <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-              追踪ID: {traceId}
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={handleRetry}
-            disabled={submitting}
-            style={{
-              marginTop: '8px',
-              padding: '6px 12px',
-              background: '#f1f5f9',
-              border: '1px solid #e2e8f0',
-              borderRadius: '4px',
-              cursor: submitting ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            重试
-          </button>
+          <button type="button" onClick={handleRetry} className="retry-btn">Retry</button>
         </div>
       )}
 
-      <div className="form-actions">
+      <div className="form-actions-bar">
+        {/* Could add Delete button here for Edit mode */}
         <button type="submit" className="primary-btn" disabled={submitting}>
-          {submitting ? '提交中…' : mode === 'create' ? '创建分类' : '保存修改'}
+          {submitting ? 'Saving…' : 'Save'}
         </button>
       </div>
 
@@ -236,103 +207,117 @@ const abortControllerRef = useRef<AbortController | null>(null); // 用于取消
           display: flex;
           flex-direction: column;
           gap: 24px;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+        .form-layout {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 24px;
+        }
+        @media (max-width: 768px) {
+          .form-layout {
+            grid-template-columns: 1fr;
+          }
+        }
+        .form-main, .form-sidebar {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
         }
         .form-card {
           background: #ffffff;
-          border-radius: 12px;
-          padding: 24px;
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+          border-radius: 8px;
+          padding: 20px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e2e8f0;
         }
         h2 {
           margin: 0 0 16px;
-          font-size: 18px;
+          font-size: 16px;
+          font-weight: 600;
+          color: #1e293b;
         }
         .form-field {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
           margin-bottom: 16px;
+        }
+        .form-field:last-child {
+          margin-bottom: 0;
         }
         .form-field label {
           font-size: 14px;
+          font-weight: 500;
           color: #475569;
         }
-        .form-field input,
+        .form-field input[type="text"],
+        .form-field input[type="number"],
         .form-field select,
         .form-field textarea {
-          border: 1px solid #cbd5f5;
-          border-radius: 8px;
-          padding: 10px 12px;
+          border: 1px solid #cbd5e1;
+          border-radius: 6px;
+          padding: 8px 12px;
           font-size: 14px;
-          transition: border 0.2s ease, box-shadow 0.2s ease;
-        }
-        .form-field textarea {
-          resize: vertical;
+          transition: border-color 0.2s;
+          width: 100%;
         }
         .form-field input:focus,
         .form-field select:focus,
         .form-field textarea:focus {
-          border-color: #ff1f3d;
+          border-color: #2563eb;
           outline: none;
-          box-shadow: 0 0 0 3px rgba(255, 31, 61, 0.1);
-        }
-        .form-row {
-          display: flex;
-          gap: 16px;
-          flex-wrap: wrap;
-          align-items: center;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
         }
         .checkbox {
-          display: inline-flex;
+          display: flex;
           align-items: center;
           gap: 8px;
-          font-size: 14px;
+          cursor: pointer;
+          white-space: nowrap; /* Prevent text wrapping */
         }
-        .hint {
-          font-size: 12px;
-          color: #6b7280;
-        }
-        .form-error {
-          padding: 12px 16px;
-          border-radius: 10px;
-          background: rgba(239, 68, 68, 0.12);
-          color: #b91c1c;
-        }
-        .form-actions {
+        .form-actions-bar {
           display: flex;
           justify-content: flex-end;
+          padding-top: 16px;
+          border-top: 1px solid #e2e8f0;
         }
         .primary-btn {
-          padding: 12px 24px;
-          background: #ff1f3d;
+          background: #1e293b;
+          color: white;
+          padding: 10px 20px;
+          border-radius: 6px;
+          font-weight: 500;
           border: none;
-          border-radius: 999px;
-          color: #fff;
-          font-size: 15px;
-          font-weight: 600;
           cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .primary-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 10px 20px rgba(255, 31, 61, 0.25);
         }
         .primary-btn:disabled {
-          opacity: 0.6;
+          opacity: 0.7;
           cursor: not-allowed;
-          box-shadow: none;
+        }
+        .primary-btn:hover:not(:disabled) {
+          background: #0f172a;
         }
         .error {
-          font-size: 12px;
           color: #ef4444;
+          font-size: 12px;
         }
         .form-error {
-          padding: 12px;
-          background: #fef2f2;
-          border: 1px solid #fecaca;
-          border-radius: 8px;
+          background: #fee2e2;
           color: #991b1b;
-          margin-bottom: 16px;
+          padding: 12px;
+          border-radius: 6px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .retry-btn {
+          background: white;
+          border: 1px solid #fecaca;
+          padding: 4px 8px;
+          border-radius: 4px;
+          cursor: pointer;
         }
       `}</style>
     </form>

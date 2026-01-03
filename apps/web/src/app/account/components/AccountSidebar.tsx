@@ -7,6 +7,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ACCOUNT_ROUTES } from '@/lib/routes/account';
+import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 
 interface MenuItem {
   href: string;
@@ -27,12 +29,28 @@ const MENU: MenuItem[] = [
 
 export function AccountSidebar() {
   const pathname = usePathname();
+  const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const isActive = (href: string, exact?: boolean) => {
     if (exact) {
       return pathname === href;
     }
     return pathname === href || pathname?.startsWith(`${href}/`);
+  };
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isLoggingOut) return;
+
+    try {
+      setIsLoggingOut(true);
+      await logout();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -72,6 +90,37 @@ export function AccountSidebar() {
           </Link>
         );
       })}
+
+      <div style={{ margin: '12px 0', borderTop: '1px solid #e5e7eb' }} />
+
+      <button
+        onClick={handleLogout}
+        disabled={isLoggingOut}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '12px 24px',
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          cursor: isLoggingOut ? 'not-allowed' : 'pointer',
+          color: '#ef4444',
+          fontSize: '15px',
+          textAlign: 'left',
+          transition: 'all 0.2s',
+          borderLeft: '3px solid transparent',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = '#fef2f2';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'transparent';
+        }}
+      >
+        <span style={{ fontSize: '20px', width: '24px', textAlign: 'center' }}>🚪</span>
+        <span>{isLoggingOut ? 'Logging out...' : 'Log Out'}</span>
+      </button>
     </nav>
   );
 }

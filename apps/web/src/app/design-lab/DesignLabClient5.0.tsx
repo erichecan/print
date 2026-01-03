@@ -366,7 +366,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // 5.0 版本：功能3 - ToolPanel 面板类型 state
   // 添加 edit-upload 面板类型
-  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | 'edit-upload' | 'edit-text' | 'edit-art' | 'product-colors' | null; // Add Art: 增加 edit-art
+  type ToolPanelType = 'home' | 'upload' | 'text' | 'art' | 'edit-upload' | 'edit-text' | 'edit-art' | 'product-colors' | null;
   const [toolPanelType, setToolPanelType] = useState<ToolPanelType>('home');
   const [activeTool, setActiveTool] = useState<string | null>(null);
 
@@ -3453,7 +3453,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
             <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
               <Link href="/account/designs" className="dl-header__breadcrumb-link">My Designs</Link>
               <span className="dl-header__breadcrumb-separator">/</span>
-              <span className="dl-header__breadcrumb-current">Untitled Design</span>
+              <span className="dl-header__breadcrumb-current">{designName || 'Untitled Design'}</span>
             </nav>
           </div>
           {/* Contact Section: Phone & Chat */}
@@ -3543,6 +3543,22 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               </svg>
             </span>
             <span className="dl-rail__btn-label">Add Art</span>
+          </button>
+
+          <button
+            className={`dl-rail__btn ${activeTool === 'product-colors' ? 'is-active' : ''} `}
+            onClick={() => handleToolClick('product-colors')}
+            aria-label="Product Details"
+            aria-pressed={activeTool === 'product-colors'}
+            title="Product Details"
+            style={{ height: 'auto', minHeight: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+          >
+            <span className="dl-rail__btn-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+              </svg>
+            </span>
+            <span className="dl-rail__btn-label">Product Details</span>
           </button>
         </nav>
 
@@ -4039,14 +4055,6 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
             </button>
           )}
 
-          <button
-            className="dl-bottom-bar__link"
-            type="button"
-            onClick={() => handleToolClick('product-colors')}
-            style={{ marginLeft: '8px' }}
-          >
-            Change Color
-          </button>
         </div>
 
         <div className="dl-bottom-bar__right">

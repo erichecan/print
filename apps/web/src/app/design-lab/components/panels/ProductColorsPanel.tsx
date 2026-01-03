@@ -1,6 +1,6 @@
 /**
- * Product Colors Panel - 产品颜色选择面板
-* Adapted from ProductColorsModal to display in the left ToolPanel area.
+ * Product Colors Panel - refactored to "Product Details"
+ * Displays product decoration info and color selection
  */
 'use client';
 
@@ -22,104 +22,100 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
   onClose,
   productName
 }) => {
-
   const handleColorClick = (color: ProductColor) => {
     if (color.isAvailable) {
       onSelectColor(color.name);
-
-      // Analytics tracking
-      if (typeof window !== 'undefined') {
-        try {
-          const { analytics } = require('@/lib/analytics');
-          analytics.track('product_color_changed', {
-            colorName: color.name,
-            productName: productName,
-          });
-        } catch (e) {
-          // ignore
-        }
-      }
     }
   };
 
+  // Find currently selected color object
+  const currentColorObj = colors.find(c => c.name === selectedColor);
+
   return (
     <div className="dl-product-colors-panel">
-      <div className="dl-tool-panel__header">
-        <h2 className="dl-tool-panel__title">Product Colors</h2>
+      {/* Header with Title and Close Button */}
+      <div className="dl-tool-panel__header" style={{ justifyContent: 'space-between', alignItems: 'center', padding: '16px' }}>
+        <h2 className="dl-tool-panel__title" style={{ fontSize: '16px', fontWeight: 'bold', margin: 0 }}>
+          Product and Decoration Details
+        </h2>
         <button
-          className="dl-tool-panel__back-btn"
+          className="dl-tool-panel__close-btn"
           onClick={onClose}
-          aria-label="Back to home"
+          aria-label="Close"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M18 6L6 18M6 6l12 12" />
           </svg>
-          Back
         </button>
       </div>
 
-      <div className="dl-product-colors-panel__content">
-        {productName && (
-          <p className="dl-product-colors-panel__product-name">
-            {typeof productName === 'object' ? (productName as any).name : productName}
-          </p>
-        )}
+      <div className="dl-product-colors-panel__content" style={{ padding: '0 16px 16px' }}>
 
-        <div className="dl-product-colors-panel__section">
-          <div className="dl-product-colors-panel__section-header">
-            <h4 className="dl-product-colors-panel__section-title">Colors:</h4>
+        {/* Colors Section - Styled like Add Text Color Picker */}
+        <div className="dl-colors-section">
+          {/* Header with Color Name */}
+          <div className="dl-color-picker__header" style={{ marginBottom: '12px' }}>
+            <span className="dl-color-picker__title" style={{ fontSize: '14px', fontWeight: '600', color: '#333' }}>
+              Product Color: <span style={{ fontWeight: 'normal' }}>{currentColorObj?.name || selectedColor || 'Select'}</span>
+            </span>
           </div>
 
-          <div className="dl-colors-grid">
+          {/* Color Grid - Matching ColorPicker.tsx structure */}
+          <div className="dl-colors-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, 1fr)', // Approximate 7 columns like ColorPicker
+            gap: '8px'
+          }}>
             {colors.map((color) => {
               const isSelected = selectedColor === color.name;
-              const hasAvailableSizes = color.availableSizes.length > 0;
 
               return (
                 <button
                   key={color.name}
                   type="button"
-                  className={`dl-color-item ${isSelected ? 'is-selected' : ''} ${!color.isAvailable ? 'is-unavailable' : ''}`}
                   onClick={() => handleColorClick(color)}
                   disabled={!color.isAvailable}
                   title={color.name}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    padding: 0,
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    borderRadius: '4px', // Rounded squares
+                    backgroundColor: color.hex || '#ccc',
+                    cursor: color.isAvailable ? 'pointer' : 'not-allowed',
+                    position: 'relative',
+                    boxShadow: isSelected ? '0 0 0 2px white, 0 0 0 4px #4a90e2' : 'none',
+                    opacity: color.isAvailable ? 1 : 0.3,
+                    transition: 'all 0.2s',
+                    boxSizing: 'border-box'
+                  }}
+                  className={`dl-color-picker__swatch ${isSelected ? 'is-selected' : ''}`}
                 >
-                  <div
-                    className="dl-color-item__swatch"
-                    style={{ backgroundColor: color.hex || '#cccccc' }}
-                  >
-                    {isSelected && (
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="3"
-                        className="dl-color-item__check"
-                      >
+                  {isSelected && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '100%',
+                      height: '100%',
+                    }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={['#ffffff', '#fff', '#f0f0f0'].includes(color.hex.toLowerCase()) ? '#333' : 'white'} strokeWidth="3">
                         <path d="M20 6L9 17l-5-5" />
                       </svg>
-                    )}
-                  </div>
-                  <div className="dl-color-item__info">
-                    <div className="dl-color-item__name">
-                      {typeof color.name === 'object' ? (color.name as any).name : color.name}
-                    </div>
-                    {hasAvailableSizes && (
-                      <div className="dl-color-item__sizes">
-                        Sizes: {color.availableSizes.join(', ')}
-                      </div>
-                    )}
-                    {!color.isAvailable && (
-                      <div className="dl-color-item__unavailable">Unavailable</div>
-                    )}
-                  </div>
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         </div>
+
       </div>
     </div>
   );

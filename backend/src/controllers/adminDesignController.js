@@ -1,6 +1,6 @@
 /**
  * Admin Design Controller
-* Provides design review listing and moderation APIs
+ * Provides design review listing and moderation APIs
  */
 const prisma = require('../lib/prisma');
 
@@ -20,7 +20,10 @@ const STATUS_FILTERS = {
 // 添加空值检查，避免访问 null 对象的属性时出错
 const mapDesignSummary = (design) => {
   if (!design) return null;
-  
+
+  // Use 'variant' from Prisma result but map to 'productVariant' for API response
+  const variant = design.variant || design.productVariant;
+
   return {
     id: design.id,
     name: design.name || null,
@@ -31,25 +34,25 @@ const mapDesignSummary = (design) => {
     thumbnailUrl: design.thumbnailUrl || null,
     user: design.user
       ? {
-          id: design.user.id || null,
-          email: design.user.email || null,
-          firstName: design.user.firstName || null,
-          lastName: design.user.lastName || null,
-        }
+        id: design.user.id || null,
+        email: design.user.email || null,
+        firstName: design.user.firstName || null,
+        lastName: design.user.lastName || null,
+      }
       : null,
-    productVariant: design.productVariant
+    productVariant: variant
       ? {
-          id: design.productVariant.id || null,
-          sku: design.productVariant.sku || null,
-          color: design.productVariant.color || null,
-          size: design.productVariant.size || null,
-          product: design.productVariant.product
-            ? {
-                id: design.productVariant.product.id || null,
-                name: design.productVariant.product.name || null,
-              }
-            : null,
-        }
+        id: variant.id || null,
+        sku: variant.sku || null,
+        color: variant.color || null,
+        size: variant.size || null,
+        product: variant.product
+          ? {
+            id: variant.product.id || null,
+            name: variant.product.name || null,
+          }
+          : null,
+      }
       : null,
   };
 };
@@ -68,7 +71,8 @@ exports.listDesigns = async (req, res) => {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { user: { email: { contains: search, mode: 'insensitive' } } },
-        { productVariant: { product: { name: { contains: search, mode: 'insensitive' } } } },
+        // Use 'variant' relation
+        { variant: { product: { name: { contains: search, mode: 'insensitive' } } } },
       ];
     }
 
@@ -84,7 +88,8 @@ exports.listDesigns = async (req, res) => {
         orderBy: { updatedAt: 'desc' },
         include: {
           user: true,
-          productVariant: {
+          // Use 'variant' relation instead of 'productVariant'
+          variant: {
             include: {
               product: true,
             },
@@ -95,7 +100,7 @@ exports.listDesigns = async (req, res) => {
     ]);
 
     res.json({
-data: designs.map(mapDesignSummary).filter(Boolean), // 过滤掉 null 值
+      data: designs.map(mapDesignSummary).filter(Boolean), // 过滤掉 null 值
       pagination: {
         page,
         limit,
@@ -110,7 +115,7 @@ data: designs.map(mapDesignSummary).filter(Boolean), // 过滤掉 null 值
       stack: error.stack,
       code: error.code,
     });
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to load designs',
       ...(process.env.NODE_ENV === 'development' && { details: error.message }),
     });
@@ -124,7 +129,8 @@ exports.getDesignDetail = async (req, res) => {
       where: { id },
       include: {
         user: true,
-        productVariant: {
+        // Use 'variant' relation
+        variant: {
           include: {
             product: true,
           },
@@ -195,7 +201,8 @@ exports.updateDesignStatus = async (req, res) => {
         },
         include: {
           user: true,
-          productVariant: {
+          // Use 'variant' relation
+          variant: {
             include: { product: true },
           },
         },
@@ -226,4 +233,3 @@ exports.updateDesignStatus = async (req, res) => {
     res.status(500).json({ error: 'Failed to update design' });
   }
 };
-

@@ -49,9 +49,10 @@ interface ApiProduct {
 * 将 API 产品数据转换为 Redbubble 格式
  */
 export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiProduct[]): ProductData {
-  const basePriceInDollars = apiProduct.price?.base ?? (apiProduct.basePrice / 100);
+  const basePriceVal = typeof apiProduct.basePrice === 'string' ? Number(apiProduct.basePrice) : apiProduct.basePrice;
+  const basePriceInDollars = apiProduct.price?.base ?? (basePriceVal / 100);
   const salePriceInDollars = apiProduct.price?.sale ?? basePriceInDollars;
-  const discountPercent = apiProduct.price?.onSale && apiProduct.price.base > apiProduct.price.sale
+  const discountPercent = apiProduct.price?.onSale && (apiProduct.price.base > apiProduct.price.sale)
     ? Math.round(((apiProduct.price.base - apiProduct.price.sale) / apiProduct.price.base) * 100)
     : 0;
 
@@ -133,13 +134,16 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     ];
 
   // 转换相关产品
-  const allRelated = (relatedProducts || []).map((p) => ({
-    id: p.id,
-    title: p.name,
-    url: p.images[0]?.url || 'https://picsum.photos/seed/' + p.id + '/300/300',
-    price: p.price?.base || p.basePrice / 100,
-    link: `/products/${p.slug}`,
-  }));
+  const allRelated = (relatedProducts || []).map((p) => {
+    const pBasePriceVal = typeof p.basePrice === 'string' ? Number(p.basePrice) : p.basePrice;
+    return {
+      id: p.id,
+      title: p.name,
+      url: p.images[0]?.url || 'https://picsum.photos/seed/' + p.id + '/300/300',
+      price: p.price?.base || (pBasePriceVal / 100),
+      link: `/products/${p.slug}`,
+    };
+  });
 
   // 随机打乱并取 8 个作为 "You might like"
   const shuffled = [...allRelated].sort(() => 0.5 - Math.random());
@@ -187,28 +191,14 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
         },
       ],
     },
-    colors: colors.length > 0 ? colors : [
-      { name: 'Black', hex: '#000000', available: true },
-      { name: 'White', hex: '#FFFFFF', available: true },
-    ],
-    sizes: sizes.length > 0 ? sizes : [
-      { value: 'S', label: 'S', stock: 10, available: true },
-      { value: 'M', label: 'M', stock: 15, available: true },
-      { value: 'L', label: 'L', stock: 12, available: true },
-    ],
+    colors: colors,
+    sizes: sizes,
     printLocations: [
       { value: 'front', label: 'Front' },
       { value: 'back', label: 'Back' },
       { value: 'both', label: 'Front & Back' },
     ],
-    images: images.length > 0 ? images : [
-      {
-        id: 'default',
-        url: 'https://picsum.photos/seed/product/800/1000',
-        alt: apiProduct.name,
-        thumbnail: 'https://picsum.photos/seed/product/100/100',
-      },
-    ],
+    images: images,
     rating: {
       average: apiProduct.rating?.average || 4.5,
       count: apiProduct.rating?.count || 0,
