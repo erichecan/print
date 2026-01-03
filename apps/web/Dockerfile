@@ -6,9 +6,6 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm install
-# 复制 Prisma schema 并生成 Client（在 deps 阶段生成更稳定）
-COPY prisma ../prisma
-RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate --schema=../prisma/schema.prisma
 
 FROM node:18-bullseye-slim AS builder
 # 安装 OpenSSL 以支持 Prisma
@@ -41,8 +38,6 @@ RUN if [ -z "$NEXT_PUBLIC_API_URL" ] || [ "$NEXT_PUBLIC_API_URL" = "" ]; then \
   fi && \
   echo "✅ 环境变量检查通过"
 COPY --from=deps /app/node_modules ./node_modules
-# 复制已生成的 Prisma Client
-COPY --from=deps /app/node_modules/.prisma ./node_modules/.prisma
 # 复制 apps/web 目录内容（构建上下文现在是项目根目录）
 COPY apps/web/package*.json ./
 COPY apps/web/next.config.mjs ./
@@ -52,8 +47,6 @@ COPY apps/web/tailwind.config.js ./tailwind.config.js
 COPY apps/web/postcss.config.js ./postcss.config.js
 COPY apps/web/public ./public
 COPY apps/web/src ./src
-# 复制 Prisma schema（从项目根目录）
-COPY prisma ./prisma
 # 修复：安装 apps/web 的依赖（next 等）
 RUN npm install --production=false
 # Prisma Client 已在 deps 阶段生成，无需重新生成
