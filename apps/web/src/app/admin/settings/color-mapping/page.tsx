@@ -17,10 +17,10 @@ export default function ColorMappingPage() {
     useEffect(() => {
         const fetchColors = async () => {
             try {
-                const res = await fetch('/api/product-color-images', { cache: 'no-store' });
+                const res = await fetch('/api/proxy/product-color-images', { cache: 'no-store' });
                 if (!res.ok) throw new Error('Failed to fetch colors');
                 const data = await res.json();
-                setColors(data);
+                setColors(data.data || []);
             } catch (error) {
                 console.error('Error fetching colors:', error);
             }
@@ -57,7 +57,7 @@ export default function ColorMappingPage() {
         setMessage('');
         try {
             // Only Update HEX mapping
-            const res = await fetch('/api/product-color-images/update-mapping', {
+            const res = await fetch('/api/proxy/product-color-images/update-mapping', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export default function ColorMappingPage() {
         setDeleting(true);
 
         try {
-            const res = await fetch(`/api/product-color-images/${id}`, {
+            const res = await fetch(`/api/proxy/product-color-images/${id}`, {
                 method: 'DELETE',
             });
 

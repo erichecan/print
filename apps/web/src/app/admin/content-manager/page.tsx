@@ -7,17 +7,16 @@
 
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { adminContentApi, ContentConfig, NavigationMenuItem, HomePageContent, AboutPageContent, HelpPageContent, StaticTexts } from '@/lib/api';
+import { adminContentApi, ContentConfig, HomePageContent, AboutPageContent, HelpPageContent, StaticTexts, FooterConfig } from '@/lib/api';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { useAdminI18n } from '@/contexts/adminI18nContext';
 
 export default function ContentManagerPage() {
-const { t, locale } = useAdminI18n(); // 使用国际化
+  const { t, locale } = useAdminI18n(); // 使用国际化
   const { data, isLoading, error, mutate } = useSWR('admin-content-config', adminContentApi.get);
   const [content, setContent] = useState<ContentConfig | null>(null);
   const [saving, setSaving] = useState(false);
-// 移除 legacy tab，不再需要遗留内容
-  const [activeTab, setActiveTab] = useState<'navigation' | 'homepage' | 'about' | 'help' | 'static'>('navigation');
+  const [activeTab, setActiveTab] = useState<'homepage' | 'about' | 'help' | 'static' | 'footer'>('homepage');
 
   useEffect(() => {
     if (data?.data) {
@@ -25,11 +24,10 @@ const { t, locale } = useAdminI18n(); // 使用国际化
     }
   }, [data]);
 
-// 确保内容对象有所有必需的字段
+  // 确保内容对象有所有必需的字段
   const ensureContentStructure = (content: ContentConfig): ContentConfig => {
     return {
       ...content,
-      navigation: content.navigation || [],
       homePage: content.homePage || {
         heroTitle: '',
         heroSubtitle: '',
@@ -53,8 +51,22 @@ const { t, locale } = useAdminI18n(); // 使用国际化
       },
       staticTexts: content.staticTexts || {
         topMessageBar: '',
-        footerColumns: [],
-        footerCopyright: '',
+      },
+      footer: content.footer || {
+        socialLinks: [],
+        contactInfo: {
+          phone: '',
+          email: '',
+          hours: {
+            weekday: '',
+            saturday: '',
+            sunday: '',
+          },
+          holidayNotice: '',
+        },
+        columns: [],
+        copyrightText: '',
+        bottomLinks: [],
       },
     };
   };
@@ -74,47 +86,203 @@ const { t, locale } = useAdminI18n(); // 使用国际化
     }
   };
 
-// 导航管理函数
-  const addNavigationItem = () => {
-    setContent((prev) => {
-      if (!prev) return prev;
-      const newItem: NavigationMenuItem = {
-        id: `nav-${Date.now()}`,
-        label: 'New Menu Item',
-        href: '/',
-        order: (prev.navigation?.length || 0) + 1,
-        type: 'link',
-      };
-      return {
-        ...prev,
-        navigation: [...(prev.navigation || []), newItem],
-      };
-    });
-  };
-
-  const updateNavigationItem = (id: string, field: keyof NavigationMenuItem, value: any) => {
+  // Footer 管理函数
+  const updateFooter = (field: keyof FooterConfig, value: any) => {
     setContent((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        navigation: (prev.navigation || []).map((item) =>
-          item.id === id ? { ...item, [field]: value } : item
-        ),
+        footer: {
+          ...(prev.footer || {} as FooterConfig),
+          [field]: value,
+        } as FooterConfig,
       };
     });
   };
 
-  const removeNavigationItem = (id: string) => {
+  const addFooterSocialLink = () => {
     setContent((prev) => {
       if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
       return {
         ...prev,
-        navigation: (prev.navigation || []).filter((item) => item.id !== id),
+        footer: {
+          ...footer,
+          socialLinks: [...(footer.socialLinks || []), { id: `social-${Date.now()}`, platform: '', url: '', icon: '' }],
+        },
       };
     });
   };
 
-// 首页内容管理函数
+  const updateFooterSocialLink = (id: string, field: string, value: any) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          socialLinks: (footer.socialLinks || []).map((link) => (link.id === id ? { ...link, [field]: value } : link)),
+        },
+      };
+    });
+  };
+
+  const removeFooterSocialLink = (id: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          socialLinks: (footer.socialLinks || []).filter((link) => link.id !== id),
+        },
+      };
+    });
+  };
+
+  const addFooterColumn = () => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          columns: [...(footer.columns || []), { id: `footer-col-${Date.now()}`, title: '', links: [] }],
+        },
+      };
+    });
+  };
+
+  const updateFooterColumn = (id: string, field: string, value: any) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          columns: (footer.columns || []).map((col) => (col.id === id ? { ...col, [field]: value } : col)),
+        },
+      };
+    });
+  };
+
+  const addFooterLink = (columnId: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          columns: (footer.columns || []).map((col) =>
+            col.id === columnId
+              ? { ...col, links: [...col.links, { id: `footer-link-${Date.now()}`, label: '', href: '' }] }
+              : col
+          ),
+        },
+      };
+    });
+  };
+
+  const updateFooterLink = (columnId: string, linkId: string, field: string, value: any) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          columns: (footer.columns || []).map((col) =>
+            col.id === columnId
+              ? {
+                ...col,
+                links: col.links.map((link) => (link.id === linkId ? { ...link, [field]: value } : link)),
+              }
+              : col
+          ),
+        },
+      };
+    });
+  };
+
+  const removeFooterLink = (columnId: string, linkId: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          columns: (footer.columns || []).map((col) =>
+            col.id === columnId ? { ...col, links: col.links.filter((link) => link.id !== linkId) } : col
+          ),
+        },
+      };
+    });
+  };
+
+  const removeFooterColumn = (id: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          columns: (footer.columns || []).filter((col) => col.id !== id),
+        },
+      };
+    });
+  };
+
+  const addFooterBottomLink = () => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          bottomLinks: [...(footer.bottomLinks || []), { id: `bottom-link-${Date.now()}`, label: '', href: '' }],
+        },
+      };
+    });
+  };
+
+  const updateFooterBottomLink = (id: string, field: string, value: any) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          bottomLinks: (footer.bottomLinks || []).map((link) => (link.id === id ? { ...link, [field]: value } : link)),
+        },
+      };
+    });
+  };
+
+  const removeFooterBottomLink = (id: string) => {
+    setContent((prev) => {
+      if (!prev) return prev;
+      const footer = prev.footer || {} as FooterConfig;
+      return {
+        ...prev,
+        footer: {
+          ...footer,
+          bottomLinks: (footer.bottomLinks || []).filter((link) => link.id !== id),
+        },
+      };
+    });
+  };
+
+
+  // 首页内容管理函数
   const updateHomePage = (field: keyof HomePageContent, value: any) => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -193,7 +361,7 @@ const { t, locale } = useAdminI18n(); // 使用国际化
     });
   };
 
-// 关于页内容管理函数
+  // 关于页内容管理函数
   const updateAboutPage = (field: keyof AboutPageContent, value: any) => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -256,7 +424,7 @@ const { t, locale } = useAdminI18n(); // 使用国际化
     });
   };
 
-// 帮助页内容管理函数
+  // 帮助页内容管理函数
   const addHelpPageQuickLink = () => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -396,7 +564,7 @@ const { t, locale } = useAdminI18n(); // 使用国际化
     });
   };
 
-// 静态文字管理函数
+  // 静态文字管理函数
   const updateStaticTexts = (field: keyof StaticTexts, value: any) => {
     setContent((prev) => {
       if (!prev) return prev;
@@ -410,102 +578,6 @@ const { t, locale } = useAdminI18n(); // 使用国际化
     });
   };
 
-  const addFooterColumn = () => {
-    setContent((prev) => {
-      if (!prev) return prev;
-      const staticTexts = prev.staticTexts || {} as StaticTexts;
-      return {
-        ...prev,
-        staticTexts: {
-          ...staticTexts,
-          footerColumns: [...(staticTexts.footerColumns || []), { id: `footer-col-${Date.now()}`, title: '', links: [] }],
-        },
-      };
-    });
-  };
-
-  const updateFooterColumn = (id: string, field: string, value: any) => {
-    setContent((prev) => {
-      if (!prev) return prev;
-      const staticTexts = prev.staticTexts || {} as StaticTexts;
-      return {
-        ...prev,
-        staticTexts: {
-          ...staticTexts,
-          footerColumns: (staticTexts.footerColumns || []).map((col) => (col.id === id ? { ...col, [field]: value } : col)),
-        },
-      };
-    });
-  };
-
-  const addFooterLink = (columnId: string) => {
-    setContent((prev) => {
-      if (!prev) return prev;
-      const staticTexts = prev.staticTexts || {} as StaticTexts;
-      return {
-        ...prev,
-        staticTexts: {
-          ...staticTexts,
-          footerColumns: (staticTexts.footerColumns || []).map((col) =>
-            col.id === columnId
-              ? { ...col, links: [...col.links, { id: `footer-link-${Date.now()}`, label: '', href: '' }] }
-              : col
-          ),
-        },
-      };
-    });
-  };
-
-  const updateFooterLink = (columnId: string, linkId: string, field: string, value: any) => {
-    setContent((prev) => {
-      if (!prev) return prev;
-      const staticTexts = prev.staticTexts || {} as StaticTexts;
-      return {
-        ...prev,
-        staticTexts: {
-          ...staticTexts,
-          footerColumns: (staticTexts.footerColumns || []).map((col) =>
-            col.id === columnId
-              ? {
-                ...col,
-                links: col.links.map((link) => (link.id === linkId ? { ...link, [field]: value } : link)),
-              }
-              : col
-          ),
-        },
-      };
-    });
-  };
-
-  const removeFooterLink = (columnId: string, linkId: string) => {
-    setContent((prev) => {
-      if (!prev) return prev;
-      const staticTexts = prev.staticTexts || {} as StaticTexts;
-      return {
-        ...prev,
-        staticTexts: {
-          ...staticTexts,
-          footerColumns: (staticTexts.footerColumns || []).map((col) =>
-            col.id === columnId ? { ...col, links: col.links.filter((link) => link.id !== linkId) } : col
-          ),
-        },
-      };
-    });
-  };
-
-  const removeFooterColumn = (id: string) => {
-    setContent((prev) => {
-      if (!prev) return prev;
-      const staticTexts = prev.staticTexts || {} as StaticTexts;
-      return {
-        ...prev,
-        staticTexts: {
-          ...staticTexts,
-          footerColumns: (staticTexts.footerColumns || []).filter((col) => col.id !== id),
-        },
-      };
-    });
-  };
 
   if (isLoading && !content) {
     return <div className="admin-table-placeholder">Loading content…</div>;
@@ -540,15 +612,14 @@ const { t, locale } = useAdminI18n(); // 使用国际化
         </nav>
       </header>
 
-{/* Tab Navigation - 按分类组织 */}
+      {/* Tab Navigation - 按分类组织 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, borderBottom: '1px solid #e5e7eb', flexWrap: 'wrap' }}>
-{/* 移除 legacy tab */}
         {([
-          { key: 'navigation', i18nKey: 'navigation' },
           { key: 'homepage', i18nKey: 'homepage' },
           { key: 'about', i18nKey: 'aboutPage' },
           { key: 'help', i18nKey: 'helpPage' },
           { key: 'static', i18nKey: 'staticTexts' },
+          { key: 'footer', i18nKey: 'footer' },
         ] as const).map((tab) => (
           <button
             key={tab.key}
@@ -570,230 +641,221 @@ const { t, locale } = useAdminI18n(); // 使用国际化
         ))}
       </div>
 
-{/* Navigation Management */}
-      {activeTab === 'navigation' && (
+      {/* Navigation Management */}
+      {/* Footer Management */}
+      {activeTab === 'footer' && (
         <section className="content-section">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <div>
-              <h2>{t('navigationMenu')}</h2>
-              <p className="text-muted">{t('navigationSubtitle')}</p>
+          <h2>{t('footer')}</h2>
+          <p className="text-muted">{t('footerSubtitle')}</p>
+
+          {/* Social Links */}
+          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <h3>{t('footerSocial')}</h3>
+              <button type="button" className="btn btn--outline" onClick={addFooterSocialLink}>
+                {t('addSocialLink')}
+              </button>
             </div>
-            <button type="button" className="btn btn--outline" onClick={addNavigationItem}>
-              {t('addMenuItem')}
-            </button>
+            <div style={{ display: 'grid', gap: 12 }}>
+              {safeContent.footer?.socialLinks?.map((link) => (
+                <div key={link.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder={t('platform')}
+                    value={link.platform}
+                    onChange={(e) => updateFooterSocialLink(link.id, 'platform', e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder={t('url')}
+                    value={link.url}
+                    onChange={(e) => updateFooterSocialLink(link.id, 'url', e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder={t('icon')}
+                    value={link.icon}
+                    onChange={(e) => updateFooterSocialLink(link.id, 'icon', e.target.value)}
+                  />
+                  <button type="button" onClick={() => removeFooterSocialLink(link.id)}>
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gap: 16 }}>
-            {safeContent.navigation
-              ?.sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map((item) => (
-                <div key={item.id} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 16 }}>
-                  <div style={{ display: 'grid', gap: 12 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 1fr 1fr auto', gap: 12, alignItems: 'center' }}>
-{/* 排序输入框 */}
-                      <input
-                        type="number"
-                        placeholder="Order"
-                        value={item.order || 0}
-                        onChange={(e) => updateNavigationItem(item.id, 'order', parseInt(e.target.value) || 0)}
-                        style={{ width: '60px', padding: '8px', textAlign: 'center' }}
-                        title={locale === 'zh' ? '排序顺序（数字越小越靠前）' : 'Sort order (lower numbers appear first)'}
-                      />
-                      <input
-                        type="text"
-                        placeholder={t('label')}
-                        value={item.label}
-                        onChange={(e) => updateNavigationItem(item.id, 'label', e.target.value)}
-                      />
-                      <input
-                        type="text"
-                        placeholder={t('url')}
-                        value={item.href}
-                        onChange={(e) => updateNavigationItem(item.id, 'href', e.target.value)}
-                      />
-                      <select
-                        value={item.type}
-                        onChange={(e) => updateNavigationItem(item.id, 'type', e.target.value as any)}
-                      >
-                        <option value="link">{t('simpleLink')}</option>
-                        <option value="mega">{t('megaMenu')}</option>
-                        <option value="simple">{t('simplePanel')}</option>
-                      </select>
-                      <button
-                        type="button"
-                        className="btn btn--outline"
-                        onClick={() => removeNavigationItem(item.id)}
-                      >
-                        {t('remove')}
+          {/* Contact Info */}
+          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+            <h3>{t('footerContact')}</h3>
+            <div style={{ display: 'grid', gap: 12, marginTop: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4 }}>{t('phone')}</label>
+                  <input
+                    type="text"
+                    value={safeContent.footer?.contactInfo?.phone || ''}
+                    onChange={(e) => updateFooter('contactInfo', { ...safeContent.footer!.contactInfo, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4 }}>{t('email')}</label>
+                  <input
+                    type="text"
+                    value={safeContent.footer?.contactInfo?.email || ''}
+                    onChange={(e) => updateFooter('contactInfo', { ...safeContent.footer!.contactInfo, email: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4 }}>{t('weekday')}</label>
+                  <input
+                    type="text"
+                    value={safeContent.footer?.contactInfo?.hours?.weekday || ''}
+                    onChange={(e) => updateFooter('contactInfo', {
+                      ...safeContent.footer!.contactInfo,
+                      hours: { ...safeContent.footer!.contactInfo.hours, weekday: e.target.value }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4 }}>{t('saturday')}</label>
+                  <input
+                    type="text"
+                    value={safeContent.footer?.contactInfo?.hours?.saturday || ''}
+                    onChange={(e) => updateFooter('contactInfo', {
+                      ...safeContent.footer!.contactInfo,
+                      hours: { ...safeContent.footer!.contactInfo.hours, saturday: e.target.value }
+                    })}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: 4 }}>{t('sunday')}</label>
+                  <input
+                    type="text"
+                    value={safeContent.footer?.contactInfo?.hours?.sunday || ''}
+                    onChange={(e) => updateFooter('contactInfo', {
+                      ...safeContent.footer!.contactInfo,
+                      hours: { ...safeContent.footer!.contactInfo.hours, sunday: e.target.value }
+                    })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 4 }}>{t('holidayNotice')}</label>
+                <input
+                  type="text"
+                  value={safeContent.footer?.contactInfo?.holidayNotice || ''}
+                  onChange={(e) => updateFooter('contactInfo', { ...safeContent.footer!.contactInfo, holidayNotice: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Columns */}
+          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <h3>{t('footerColumns')}</h3>
+              <button type="button" className="btn btn--outline" onClick={addFooterColumn}>
+                {t('addColumn')}
+              </button>
+            </div>
+            <div style={{ display: 'grid', gap: 24 }}>
+              {safeContent.footer?.columns?.map((column) => (
+                <div key={column.id} style={{ padding: 16, border: '1px solid #f3f4f6', borderRadius: 8 }}>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                    <input
+                      type="text"
+                      placeholder={t('columnTitle')}
+                      value={column.title}
+                      onChange={(e) => updateFooterColumn(column.id, 'title', e.target.value)}
+                      style={{ fontWeight: 600 }}
+                    />
+                    <button type="button" className="btn btn--outline" onClick={() => removeFooterColumn(column.id)}>
+                      {t('removeColumn')}
+                    </button>
+                  </div>
+                  <div style={{ marginLeft: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <strong>{t('links')}</strong>
+                      <button type="button" className="btn btn--outline btn--sm" onClick={() => addFooterLink(column.id)}>
+                        {t('addLink')}
                       </button>
                     </div>
-
-                    {item.type === 'mega' && item.megaPanel && (
-                      <div style={{ marginTop: 16, padding: 16, background: '#f9fafb', borderRadius: 4 }}>
-                        <h4 style={{ marginBottom: 12 }}>{locale === 'zh' ? '大型菜单列' : 'Mega Menu Columns'}</h4>
-                        {item.megaPanel.columns.map((col, colIndex) => (
-                          <div key={col.id} style={{ marginBottom: 16 }}>
-                            <strong>{locale === 'zh' ? `列 ${colIndex + 1}` : `Column ${colIndex + 1}`}</strong>
-                            {col.links.map((link) => (
-                              <div key={link.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginTop: 8 }}>
-                                <input
-                                  type="text"
-                                  placeholder={t('label')}
-                                  value={link.label}
-                                  onChange={(e) => {
-                                    const newColumns = [...item.megaPanel!.columns];
-                                    newColumns[colIndex] = {
-                                      ...col,
-                                      links: col.links.map((l) => (l.id === link.id ? { ...l, label: e.target.value } : l)),
-                                    };
-                                    updateNavigationItem(item.id, 'megaPanel', { columns: newColumns });
-                                  }}
-                                />
-                                <input
-                                  type="text"
-                                  placeholder={t('url')}
-                                  value={link.href}
-                                  onChange={(e) => {
-                                    const newColumns = [...item.megaPanel!.columns];
-                                    newColumns[colIndex] = {
-                                      ...col,
-                                      links: col.links.map((l) => (l.id === link.id ? { ...l, href: e.target.value } : l)),
-                                    };
-                                    updateNavigationItem(item.id, 'megaPanel', { columns: newColumns });
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newColumns = [...item.megaPanel!.columns];
-                                    newColumns[colIndex] = {
-                                      ...col,
-                                      links: col.links.filter((l) => l.id !== link.id),
-                                    };
-                                    updateNavigationItem(item.id, 'megaPanel', { columns: newColumns });
-                                  }}
-                                >
-                                  ×
-                                </button>
-                              </div>
-                            ))}
-                            <button
-                              type="button"
-                              className="btn btn--outline"
-                              style={{ marginTop: 8 }}
-                              onClick={() => {
-                                const newColumns = [...item.megaPanel!.columns];
-                                newColumns[colIndex] = {
-                                  ...col,
-                                  links: [...col.links, { id: `link-${Date.now()}`, label: '', href: '' }],
-                                };
-                                updateNavigationItem(item.id, 'megaPanel', { columns: newColumns });
-                              }}
-                            >
-                              {t('addLink')}
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          className="btn btn--outline"
-                          onClick={() => {
-                            const newColumns = [...(item.megaPanel?.columns || [])];
-                            newColumns.push({ id: `col-${Date.now()}`, links: [] });
-                            updateNavigationItem(item.id, 'megaPanel', { columns: newColumns });
-                          }}
-                        >
-                          {t('addColumn')}
-                        </button>
-                      </div>
-                    )}
-
-                    {item.type === 'simple' && item.simplePanel && (
-                      <div style={{ marginTop: 16, padding: 16, background: '#f9fafb', borderRadius: 4 }}>
-                        <h4 style={{ marginBottom: 12 }}>{locale === 'zh' ? '简单面板内容' : 'Simple Panel Content'}</h4>
-                        <div style={{ display: 'grid', gap: 12 }}>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {column.links.map((link) => (
+                        <div key={link.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
                           <input
                             type="text"
-                            placeholder={t('title')}
-                            value={item.simplePanel.title}
-                            onChange={(e) =>
-                              updateNavigationItem(item.id, 'simplePanel', { ...item.simplePanel!, title: e.target.value })
-                            }
+                            placeholder={t('linkLabel')}
+                            value={link.label}
+                            onChange={(e) => updateFooterLink(column.id, link.id, 'label', e.target.value)}
                           />
-                          <textarea
-                            placeholder={t('description')}
-                            value={item.simplePanel.description}
-                            onChange={(e) =>
-                              updateNavigationItem(item.id, 'simplePanel', { ...item.simplePanel!, description: e.target.value })
-                            }
-                            rows={3}
+                          <input
+                            type="text"
+                            placeholder={t('linkUrl')}
+                            value={link.href}
+                            onChange={(e) => updateFooterLink(column.id, link.id, 'href', e.target.value)}
                           />
-                          {item.simplePanel.actions.map((action, actionIndex) => (
-                            <div key={actionIndex} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 8 }}>
-                              <input
-                                type="text"
-                                placeholder={t('ctaLabel')}
-                                value={action.label}
-                                onChange={(e) => {
-                                  const newActions = [...item.simplePanel!.actions];
-                                  newActions[actionIndex] = { ...action, label: e.target.value };
-                                  updateNavigationItem(item.id, 'simplePanel', { ...item.simplePanel!, actions: newActions });
-                                }}
-                              />
-                              <input
-                                type="text"
-                                placeholder={t('ctaHref')}
-                                value={action.href}
-                                onChange={(e) => {
-                                  const newActions = [...item.simplePanel!.actions];
-                                  newActions[actionIndex] = { ...action, href: e.target.value };
-                                  updateNavigationItem(item.id, 'simplePanel', { ...item.simplePanel!, actions: newActions });
-                                }}
-                              />
-                              <select
-                                value={action.variant || 'primary'}
-                                onChange={(e) => {
-                                  const newActions = [...item.simplePanel!.actions];
-                                  newActions[actionIndex] = { ...action, variant: e.target.value as any };
-                                  updateNavigationItem(item.id, 'simplePanel', { ...item.simplePanel!, actions: newActions });
-                                }}
-                              >
-                                <option value="primary">{locale === 'zh' ? '主要' : 'Primary'}</option>
-                                <option value="outline">{locale === 'zh' ? '轮廓' : 'Outline'}</option>
-                              </select>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const newActions = item.simplePanel!.actions.filter((_, i) => i !== actionIndex);
-                                  updateNavigationItem(item.id, 'simplePanel', { ...item.simplePanel!, actions: newActions });
-                                }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            type="button"
-                            className="btn btn--outline"
-                            onClick={() => {
-                              const newActions = [...(item.simplePanel?.actions || [])];
-                              newActions.push({ label: '', href: '', variant: 'primary' });
-                              updateNavigationItem(item.id, 'simplePanel', { ...item.simplePanel!, actions: newActions });
-                            }}
-                          >
-                            {locale === 'zh' ? '+ 添加操作' : '+ Add Action'}
+                          <button type="button" onClick={() => removeFooterLink(column.id, link.id)}>
+                            ×
                           </button>
                         </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Copyright & Bottom Links */}
+          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+            <h3>{t('footerCopyright')}</h3>
+            <div style={{ marginTop: 12 }}>
+              <input
+                type="text"
+                placeholder={t('copyrightText')}
+                value={safeContent.footer?.copyrightText || ''}
+                onChange={(e) => updateFooter('copyrightText', e.target.value)}
+              />
+            </div>
+            <div style={{ marginTop: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <strong>{t('bottomLinks')}</strong>
+                <button type="button" className="btn btn--outline" onClick={addFooterBottomLink}>
+                  {t('addBottomLink')}
+                </button>
+              </div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {safeContent.footer?.bottomLinks?.map((link) => (
+                  <div key={link.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder={t('label')}
+                      value={link.label}
+                      onChange={(e) => updateFooterBottomLink(link.id, 'label', e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      placeholder={t('url')}
+                      value={link.href}
+                      onChange={(e) => updateFooterBottomLink(link.id, 'href', e.target.value)}
+                    />
+                    <button type="button" onClick={() => removeFooterBottomLink(link.id)}>
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       )}
 
-{/* Homepage Management */}
+
+      {/* Homepage Management */}
       {activeTab === 'homepage' && (
         <section className="content-section">
           <h2>{t('homepageContent')}</h2>
@@ -882,7 +944,7 @@ const { t, locale } = useAdminI18n(); // 使用国际化
         </section>
       )}
 
-{/* About Page Management */}
+      {/* About Page Management */}
       {activeTab === 'about' && (
         <section className="content-section">
           <h2>{t('aboutPageContent')}</h2>
@@ -990,7 +1052,7 @@ const { t, locale } = useAdminI18n(); // 使用国际化
         </section>
       )}
 
-{/* Help Page Management */}
+      {/* Help Page Management */}
       {activeTab === 'help' && (
         <section className="content-section">
           <h2>{t('helpPageContent')}</h2>
@@ -1104,7 +1166,7 @@ const { t, locale } = useAdminI18n(); // 使用国际化
         </section>
       )}
 
-{/* Static Texts Management */}
+      {/* Static Texts Management */}
       {activeTab === 'static' && (
         <section className="content-section">
           <h2>{t('staticTextsTitle')}</h2>
@@ -1122,77 +1184,6 @@ const { t, locale } = useAdminI18n(); // 使用国际化
             />
           </div>
 
-          {/* Footer Columns */}
-          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <h3>{t('footerColumns')}</h3>
-              <button type="button" className="btn btn--outline" onClick={addFooterColumn}>
-                {t('addColumn')}
-              </button>
-            </div>
-            <div style={{ display: 'grid', gap: 16 }}>
-              {safeContent.staticTexts?.footerColumns?.map((column) => (
-                <div key={column.id} style={{ border: '1px solid #d1d5db', borderRadius: 8, padding: 16 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, marginBottom: 12 }}>
-                    <input
-                      type="text"
-                      placeholder={t('columnTitle')}
-                      value={column.title}
-                      onChange={(e) => updateFooterColumn(column.id, 'title', e.target.value)}
-                    />
-                    <button type="button" onClick={() => removeFooterColumn(column.id)}>
-                      {t('removeColumn')}
-                    </button>
-                  </div>
-                  <div style={{ marginLeft: 16 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <strong>{t('links')}</strong>
-                      <button
-                        type="button"
-                        className="btn btn--outline"
-                        onClick={() => addFooterLink(column.id)}
-                      >
-                        {t('addLink')}
-                      </button>
-                    </div>
-                    <div style={{ display: 'grid', gap: 8 }}>
-                      {column.links.map((link) => (
-                        <div key={link.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8 }}>
-                          <input
-                            type="text"
-                            placeholder={t('linkLabel')}
-                            value={link.label}
-                            onChange={(e) => updateFooterLink(column.id, link.id, 'label', e.target.value)}
-                          />
-                          <input
-                            type="text"
-                            placeholder={t('linkUrl')}
-                            value={link.href}
-                            onChange={(e) => updateFooterLink(column.id, link.id, 'href', e.target.value)}
-                          />
-                          <button type="button" onClick={() => removeFooterLink(column.id, link.id)}>
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Footer Copyright */}
-          <div style={{ marginTop: 24, padding: 16, border: '1px solid #e5e7eb', borderRadius: 8 }}>
-            <h3>{t('footerCopyright')}</h3>
-            <input
-              type="text"
-              placeholder={t('copyrightText')}
-              value={safeContent.staticTexts?.footerCopyright || ''}
-              onChange={(e) => updateStaticTexts('footerCopyright', e.target.value)}
-              style={{ width: '100%', marginTop: 12 }}
-            />
-          </div>
         </section>
       )}
 

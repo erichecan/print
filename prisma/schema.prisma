@@ -23,11 +23,11 @@ model User {
   addresses                 Address[]
   cart                      Cart?
   designs                   Design[]
+  readGuestMessages         GuestMessage[]  @relation("ReadByUser")
   orders                    Order[]
   paymentMethods            PaymentMethod[]
   projects                  Project[]
   sessions                  Session[]
-  readGuestMessages         GuestMessage[] @relation("ReadByUser")
 
   @@index([email])
   @@index([role])
@@ -35,7 +35,6 @@ model User {
   @@map("users")
 }
 
-// Design Lab Analytics Events
 model DesignLabAnalyticsEvent {
   id        String   @id @default(uuid())
   userId    String?  @map("user_id")
@@ -53,12 +52,11 @@ model DesignLabAnalyticsEvent {
   @@map("design_lab_analytics_events")
 }
 
-// Design Lab Upload Ratings
 model DesignLabUploadRating {
   id        String   @id @default(uuid())
   userId    String?  @map("user_id")
   uploadId  String   @map("upload_id")
-  rating    Int // 1-5
+  rating    Int
   comment   String?
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -96,17 +94,17 @@ model Category {
   slug                String              @unique
   description         String?
   imageUrl            String?             @map("image_url")
-  coverImage          Json?               @map("cover_image")
   parentId            String?             @map("parent_id")
   sortOrder           Int                 @default(0) @map("sort_order")
   isActive            Boolean             @default(true) @map("is_active")
   createdAt           DateTime            @default(now()) @map("created_at")
   updatedAt           DateTime            @updatedAt @map("updated_at")
+  coverImage          Json?               @map("cover_image")
   parent              Category?           @relation("CategoryTree", fields: [parentId], references: [id])
   children            Category[]          @relation("CategoryTree")
   designTemplates     DesignTemplate[]
+  productCategories   ProductCategory[]
   products            Product[]
-productCategories  ProductCategory[] // 多对多关系
   promotionCategories PromotionCategory[]
 
   @@index([slug])
@@ -146,23 +144,23 @@ model Product {
   dimensions         String?
   printableAreas     Json?               @map("printable_areas")
   isActive           Boolean             @default(true) @map("is_active")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  categoryId         String              @map("category_id")
+  brandId            String?             @map("brand_id")
   isSystem           Boolean             @default(false) @map("is_system")
   deleted            Boolean             @default(false)
   deletedAt          DateTime?           @map("deleted_at")
-  createdAt          DateTime            @default(now()) @map("created_at")
-  updatedAt          DateTime            @updatedAt @map("updated_at")
-  giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
-categoryId     String       @map("category_id") // 保留主分类（向后兼容）
-  brandId            String?             @map("brand_id")
   collectionProducts CollectionProduct[]
+  productCategories  ProductCategory[]
   colorImages        ProductColorImage[]
   images             ProductImage[]
   reviews            ProductReview[]
   brand              Brand?              @relation(fields: [brandId], references: [id])
   category           Category            @relation(fields: [categoryId], references: [id])
-productCategories ProductCategory[] // 多对多关系
   projects           Project[]
   promotionProducts  PromotionProduct[]
+  giftPromotions     Promotion[]         @relation("PromotionGiftProduct")
   variants           Variant[]
 
   @@index([slug])
@@ -174,13 +172,12 @@ productCategories ProductCategory[] // 多对多关系
   @@map("products")
 }
 
-// ProductCategory - 产品与分类的多对多关系表
 model ProductCategory {
   productId  String   @map("product_id")
   categoryId String   @map("category_id")
   createdAt  DateTime @default(now()) @map("created_at")
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([productId, categoryId])
   @@index([productId])
@@ -204,8 +201,8 @@ model Variant {
   designs         Design[]
   orderItems      OrderItem[]
   projects        Project[]
-  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   giftPromotions  Promotion[] @relation("PromotionGiftVariant")
+  product         Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([sku])
@@ -307,16 +304,16 @@ model CartItem {
   id            String   @id @default(uuid())
   cartId        String   @map("cart_id")
   variantId     String   @map("variant_id")
-  designId      String?  @map("design_id")
   quantity      Int
   priceSnapshot Decimal  @map("price_snapshot") @db.Decimal(10, 2)
-  sizeBreakdown Json?    @map("size_breakdown")
-  metadata      Json?
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
+  designId      String?  @map("design_id")
+  metadata      Json?
+  sizeBreakdown Json?    @map("size_breakdown")
   cart          Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  variant       Variant  @relation(fields: [variantId], references: [id])
   design        Design?  @relation(fields: [designId], references: [id])
+  variant       Variant  @relation(fields: [variantId], references: [id])
 
   @@index([cartId])
   @@index([variantId])
@@ -337,8 +334,8 @@ model Order {
   total                Decimal          @db.Decimal(10, 2)
   paymentStatus        PaymentStatus    @default(PENDING) @map("payment_status")
   paymentIntentId      String?          @unique @map("payment_intent_id")
-balanceTransactionId String?     @map("balance_transaction_id") // Stripe balance transaction ID
-paymentFee      Decimal?     @map("payment_fee") @db.Decimal(10, 2) // Stripe payment fee in CAD
+  balanceTransactionId String?          @map("balance_transaction_id")
+  paymentFee           Decimal?         @map("payment_fee") @db.Decimal(10, 2)
   shippingAddress      Json             @map("shipping_address")
   billingAddress       Json             @map("billing_address")
   trackingNumber       String?          @map("tracking_number")
@@ -370,16 +367,15 @@ model OrderItem {
   quantity      Int
   priceSnapshot Decimal          @map("price_snapshot") @db.Decimal(10, 2)
   createdAt     DateTime         @default(now()) @map("created_at")
+  colors        OrderItemColor[]
   order         Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant       Variant          @relation(fields: [variantId], references: [id])
-colors    OrderItemColor[] // 颜色级别印刷配置
 
   @@index([orderId])
   @@index([variantId])
   @@map("order_items")
 }
 
-// 订单项颜色级别印刷配置模型
 model OrderItemColor {
   id                 Int                          @id @default(autoincrement())
   orderItemId        String                       @map("order_item_id")
@@ -390,8 +386,8 @@ model OrderItemColor {
   sizeBreakdown      Json                         @default("[]") @map("size_breakdown")
   createdAt          DateTime                     @default(now()) @map("created_at")
   updatedAt          DateTime                     @updatedAt @map("updated_at")
-  orderItem          OrderItem                    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   sizeOverrides      OrderItemColorSizeOverride[]
+  orderItem          OrderItem                    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
   @@unique([orderItemId, colorCode])
   @@index([orderItemId])
@@ -399,7 +395,6 @@ model OrderItemColor {
   @@map("order_item_colors")
 }
 
-// 订单项颜色尺码覆盖模型（高级模式）
 model OrderItemColorSizeOverride {
   id                   Int            @id @default(autoincrement())
   orderItemColorId     Int            @map("order_item_color_id")
@@ -460,7 +455,6 @@ model OfflineOrder {
   stageLabel          String                     @map("stage_label")
   stagePosition       Int?                       @map("stage_position")
   status              OfflineOrderStatus         @default(ACTIVE)
-// PRD v2.0: contactName 和 email 改为可选字段
   contactName         String?                    @map("contact_name")
   company             String?
   email               String?
@@ -564,16 +558,16 @@ model Design {
   canvasSnapshot  Json            @map("canvas_snapshot")
   pricingSnapshot Json?           @map("pricing_snapshot")
   thumbnailUrl    String?         @map("thumbnail_url")
-shareToken   String?     @unique @map("share_token") // 分享token
-isPublic    Boolean     @default(false) @map("is_public") // 是否公开分享
+  shareToken      String?         @unique @map("share_token")
+  isPublic        Boolean         @default(false) @map("is_public")
   lockedAt        DateTime?       @map("locked_at")
   lockedBy        String?         @map("locked_by")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
+  cartItems       CartItem[]
   assets          DesignAsset[]
   comments        DesignComment[]
   versions        DesignVersion[]
-  cartItems       CartItem[]
   user            User?           @relation(fields: [userId], references: [id])
   variant         Variant         @relation(fields: [variantId], references: [id])
 
@@ -581,7 +575,7 @@ isPublic    Boolean     @default(false) @map("is_public") // 是否公开分享
   @@index([sessionId])
   @@index([variantId])
   @@index([status])
-@@index([shareToken]) // 分享token索引
+  @@index([shareToken])
   @@map("designs")
 }
 
@@ -751,16 +745,14 @@ model Promotion {
   sortOrder       Int                   @default(0) @map("sort_order")
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime              @updatedAt @map("updated_at")
-  orderPromotions OrderPromotion[]
-  categories      PromotionCategory[]
-  coupon          PromotionCoupon?
-  products        PromotionProduct[]
-
-// Buy X Get Y Free fields
   buyQuantity     Int?                  @map("buy_quantity")
   getQuantity     Int?                  @map("get_quantity")
   giftProductId   String?               @map("gift_product_id")
   giftVariantId   String?               @map("gift_variant_id")
+  orderPromotions OrderPromotion[]
+  categories      PromotionCategory[]
+  coupon          PromotionCoupon?
+  products        PromotionProduct[]
   giftProduct     Product?              @relation("PromotionGiftProduct", fields: [giftProductId], references: [id])
   giftVariant     Variant?              @relation("PromotionGiftVariant", fields: [giftVariantId], references: [id])
 
@@ -862,7 +854,6 @@ model PaymentMethod {
   @@map("payment_methods")
 }
 
-// WebhookEvent model for idempotency
 model WebhookEvent {
   id              String   @id @default(uuid())
   stripeEventId   String   @unique @map("stripe_event_id")
@@ -871,7 +862,7 @@ model WebhookEvent {
   orderId         String?  @map("order_id")
   paymentIntentId String?  @map("payment_intent_id")
   success         Boolean  @default(true)
-  errorMessage    String?  @map("error_message") @db.Text
+  errorMessage    String?  @map("error_message")
   metadata        Json?
 
   @@index([stripeEventId])
@@ -886,21 +877,19 @@ model SequelizeMeta {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-// Artwork Categories - 树状分类表
 model artwork_categories {
-  id         String   @id @default(uuid()) @db.Uuid
-  name       String   @db.VarChar(255)
-  slug       String   @unique @db.VarChar(255)
-  parent_id  String?  @map("parent_id") @db.Uuid
-  sort_order Int      @default(0) @map("sort_order")
-  is_active  Boolean  @default(true) @map("is_active")
-  created_at DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updated_at DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
+  id           String               @id @default(uuid()) @db.Uuid
+  name         String               @db.VarChar(255)
+  slug         String               @unique @db.VarChar(255)
+  parent_id    String?              @map("parent_id") @db.Uuid
+  sort_order   Int                  @default(0) @map("sort_order")
+  is_active    Boolean              @default(true) @map("is_active")
+  created_at   DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updated_at   DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sub_artworks art_assets[]         @relation("SubCategory")
+  top_artworks art_assets[]         @relation("TopCategory")
   parent       artwork_categories?  @relation("CategoryTree", fields: [parent_id], references: [id], onDelete: Cascade)
   children     artwork_categories[] @relation("CategoryTree")
-  top_artworks art_assets[]         @relation("TopCategory")
-  sub_artworks art_assets[]         @relation("SubCategory")
 
   @@index([parent_id], map: "idx_artwork_categories_parent_id")
   @@index([slug], map: "idx_artwork_categories_slug")
@@ -909,39 +898,35 @@ model artwork_categories {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-// 扩展 art_assets 表，支持 GCS 存储、子分类、标签、授权信息
 model art_assets {
-  id            String   @id @db.Uuid
-category   String  @db.VarChar(100) // 保留向后兼容
-  name          String   @db.VarChar(255)
-slug     String? @unique @db.VarChar(255) // 新增：URL 友好的标识符
-description  String? @db.Text // 新增：描述
-  image_url     String   @db.VarChar(500)
-  thumbnail_url String?  @db.VarChar(500)
-  file_size     Int?
-  width         Int?
-  height        Int?
-  mime_type     String?  @db.VarChar(100)
-  is_active     Boolean? @default(true)
-  sort_order    Int?     @default(0)
-  created_by    String?  @db.Uuid
-  created_at    DateTime @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime @default(now()) @db.Timestamptz(6)
-
-// 新增字段：GCS 存储、分类关系、标签、授权
-top_category_id String? @map("top_category_id") @db.Uuid // 一级分类 ID
-sub_category_id String? @map("sub_category_id") @db.Uuid // 二级分类 ID
-gcs_key     String? @map("gcs_key") @db.VarChar(500) // GCS 对象路径
-gcs_bucket   String? @map("gcs_bucket") @db.VarChar(255) // GCS Bucket 名称
-source_url   String? @map("source_url") @db.VarChar(500) // 原始来源 URL
-tags      String[] @default([]) // 标签数组
-license     String? @db.VarChar(100) // 授权类型（Public Domain, CC0, 等）
-attribution   String? @db.Text // 署名信息
-dominant_color String? @map("dominant_color") @db.VarChar(7) // 主色调（hex）
-status     String? @default("active") @db.VarChar(50) // 状态（active/archived）
-
-  top_category artwork_categories? @relation("TopCategory", fields: [top_category_id], references: [id], onDelete: SetNull)
-  sub_category artwork_categories? @relation("SubCategory", fields: [sub_category_id], references: [id], onDelete: SetNull)
+  id              String              @id @db.Uuid
+  category        String              @db.VarChar(100)
+  name            String              @db.VarChar(255)
+  slug            String?             @unique @db.VarChar(255)
+  description     String?
+  image_url       String              @db.VarChar(500)
+  thumbnail_url   String?             @db.VarChar(500)
+  file_size       Int?
+  width           Int?
+  height          Int?
+  mime_type       String?             @db.VarChar(100)
+  is_active       Boolean?            @default(true)
+  sort_order      Int?                @default(0)
+  created_by      String?             @db.Uuid
+  created_at      DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime            @default(now()) @db.Timestamptz(6)
+  top_category_id String?             @map("top_category_id") @db.Uuid
+  sub_category_id String?             @map("sub_category_id") @db.Uuid
+  gcs_key         String?             @map("gcs_key") @db.VarChar(500)
+  gcs_bucket      String?             @map("gcs_bucket") @db.VarChar(255)
+  source_url      String?             @map("source_url") @db.VarChar(500)
+  tags            String[]            @default([])
+  license         String?             @db.VarChar(100)
+  attribution     String?
+  dominant_color  String?             @map("dominant_color") @db.VarChar(7)
+  status          String?             @default("active") @db.VarChar(50)
+  sub_category    artwork_categories? @relation("SubCategory", fields: [sub_category_id], references: [id])
+  top_category    artwork_categories? @relation("TopCategory", fields: [top_category_id], references: [id])
 
   @@index([category], map: "idx_art_assets_category")
   @@index([created_at], map: "idx_art_assets_created_at")
@@ -951,7 +936,6 @@ status     String? @default("active") @db.VarChar(50) // 状态（active/archive
   @@index([sub_category_id], map: "idx_art_assets_sub_category_id")
   @@index([gcs_key], map: "idx_art_assets_gcs_key")
   @@index([status], map: "idx_art_assets_status")
-// 修复：tags 是 text[]，gin_trgm_ops 仅适用于 text；改为默认 GIN array 索引，避免 db push/migrate 报错
   @@index([tags], map: "idx_art_assets_tags", type: Gin)
 }
 
@@ -1037,6 +1021,27 @@ model settings {
   updated_at DateTime @default(now()) @db.Timestamp(6)
 
   @@index([key], map: "idx_settings_key")
+}
+
+model GuestMessage {
+  id          String             @id @default(uuid())
+  name        String
+  email       String
+  phone       String?
+  subject     String?
+  message     String
+  orderNumber String?            @map("order_number")
+  status      GuestMessageStatus @default(UNREAD) @map("status")
+  readAt      DateTime?          @map("read_at")
+  readBy      String?            @map("read_by")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+  readByUser  User?              @relation("ReadByUser", fields: [readBy], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([readBy])
+  @@map("guest_messages")
 }
 
 enum UserRole {
@@ -1126,28 +1131,6 @@ enum enum_fonts_source {
   system
   google
   custom
-}
-
-// Guest Message - 留言本模型（用于 help center 留言）
-model GuestMessage {
-  id          String   @id @default(uuid())
-  name        String
-  email       String
-  phone       String?
-  subject     String?
-  message     String   @db.Text
-  orderNumber String?  @map("order_number")
-  status      GuestMessageStatus @default(UNREAD) @map("status")
-  readAt      DateTime? @map("read_at")
-  readBy      String?   @map("read_by")
-  readByUser  User?     @relation("ReadByUser", fields: [readBy], references: [id])
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-
-  @@index([status])
-  @@index([createdAt])
-  @@index([readBy])
-  @@map("guest_messages")
 }
 
 enum GuestMessageStatus {

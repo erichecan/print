@@ -1949,7 +1949,7 @@ export interface SiteSettingsPayload {
   reviewEmail: string;
 }
 
-// 导航菜单项类型
+// 导航菜单项类型 (保留用于 SiteHeader 向后兼容)
 export interface NavigationMenuItem {
   id: string;
   label: string;
@@ -2055,7 +2055,27 @@ export interface HelpPageContent {
 // 通用静态文字类型
 export interface StaticTexts {
   topMessageBar: string;
-  footerColumns: Array<{
+}
+
+// Footer 配置类型
+export interface FooterConfig {
+  socialLinks: Array<{
+    id: string;
+    platform: string;
+    url: string;
+    icon: string;
+  }>;
+  contactInfo: {
+    phone: string;
+    email: string;
+    hours: {
+      weekday: string;
+      saturday: string;
+      sunday: string;
+    };
+    holidayNotice: string;
+  };
+  columns: Array<{
     id: string;
     title: string;
     links: Array<{
@@ -2064,7 +2084,12 @@ export interface StaticTexts {
       href: string;
     }>;
   }>;
-  footerCopyright: string;
+  copyrightText: string;
+  bottomLinks: Array<{
+    id: string;
+    label: string;
+    href: string;
+  }>;
 }
 
 export interface ContentConfig {
@@ -2087,11 +2112,11 @@ export interface ContentConfig {
     linkUrl: string;
   }>;
   // 新增 CMS 字段
-  navigation?: NavigationMenuItem[];
   homePage?: HomePageContent;
   aboutPage?: AboutPageContent;
   helpPage?: HelpPageContent;
   staticTexts?: StaticTexts;
+  footer?: FooterConfig;
 }
 
 export const adminSettingsApi = {

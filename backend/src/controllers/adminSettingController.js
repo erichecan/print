@@ -18,9 +18,9 @@ const DEFAULT_SITE_SETTINGS = {
   reviewEmail: 'review@souvenirplus.com',
 };
 
-// 扩展内容配置，包含导航、首页、关于页、帮助页和静态文字
+// 扩展内容配置，包含首页、关于页、帮助页和静态文字
 const DEFAULT_CONTENT_CONFIG = {
-// 保留原有字段以向后兼容
+  // 保留原有字段以向后兼容
   heroCards: [
     {
       id: 'hero-1',
@@ -47,203 +47,7 @@ const DEFAULT_CONTENT_CONFIG = {
     { id: 'collection-1', title: 'Work From Anywhere', linkUrl: '/collections/work-from-anywhere' },
     { id: 'collection-2', title: 'Sustainable Essentials', linkUrl: '/collections/sustainable' },
   ],
-// 导航菜单配置
-  navigation: [
-    {
-      id: 'nav-1',
-      label: 'Custom T-shirts',
-      href: '/products',
-      order: 1,
-      type: 'mega',
-      megaPanel: {
-        columns: [
-          {
-            id: 'col-1',
-            links: [
-              { id: 'link-1', label: 'Short Sleeve T-shirts', href: '/products?category=short-sleeve' },
-              { id: 'link-2', label: 'Long Sleeve T-shirts', href: '/products?category=long-sleeve' },
-              { id: 'link-3', label: 'Tank Tops & Sleeveless', href: '/products?category=tank-tops' },
-            ],
-          },
-          {
-            id: 'col-2',
-            links: [
-              { id: 'link-4', label: 'Performance Shirts', href: '/products?category=performance' },
-              { id: 'link-5', label: 'Soft Tri-Blend T-shirts', href: '/products?category=tri-blend' },
-              { id: 'link-6', label: 'Sustainable T-shirts', href: '/products?category=sustainable' },
-            ],
-          },
-          {
-            id: 'col-3',
-            links: [
-              { id: 'link-7', label: "Women's T-shirts", href: '/products?category=women' },
-              { id: 'link-8', label: "Kids T-shirts", href: '/products?category=kids' },
-            ],
-          },
-          {
-            id: 'col-4',
-            links: [
-              { id: 'link-9', label: 'No Minimum T-shirts', href: '/products?tag=no-minimum' },
-              { id: 'link-10', label: 'View All Custom T-shirts', href: '/products' },
-            ],
-          },
-        ],
-      },
-    },
-    {
-      id: 'nav-2',
-      label: 'Custom Apparel',
-      href: '/collections/apparel',
-      order: 2,
-      type: 'mega',
-      megaPanel: {
-        columns: [
-          {
-            id: 'col-1',
-            links: [
-              { id: 'link-1', label: 'Hoodies', href: '/products?category=hoodies' },
-              { id: 'link-2', label: 'Crewneck Sweatshirts', href: '/products?category=crewneck-sweatshirts' },
-              { id: 'link-3', label: 'Quarter Zip Sweatshirts', href: '/products?category=quarter-zip' },
-              { id: 'link-4', label: 'View All Sweatshirts', href: '/products?category=sweatshirts' },
-            ],
-          },
-          {
-            id: 'col-2',
-            links: [
-              { id: 'link-5', label: 'Baseball Hats', href: '/products?category=baseball-hats' },
-              { id: 'link-6', label: 'Trucker Hats', href: '/products?category=trucker-hats' },
-              { id: 'link-7', label: 'Beanies', href: '/products?category=beanies' },
-              { id: 'link-8', label: 'View All Hats', href: '/products?category=all-hats' },
-            ],
-          },
-          {
-            id: 'col-3',
-            links: [
-              { id: 'link-9', label: 'Jackets', href: '/products?category=jackets' },
-              { id: 'link-10', label: 'Polo Shirts', href: '/products?category=polo-shirts' },
-              { id: 'link-11', label: 'Business Apparel', href: '/products?category=business-apparel' },
-              { id: 'link-12', label: 'Workwear & Uniforms', href: '/products?category=workwear' },
-            ],
-          },
-          {
-            id: 'col-4',
-            links: [
-              { id: 'link-13', label: 'Activewear', href: '/products?category=activewear' },
-              { id: 'link-14', label: 'Team Jerseys', href: '/products?category=team-jerseys' },
-              { id: 'link-15', label: 'Pants & Shorts', href: '/products?category=pants-shorts' },
-              { id: 'link-16', label: 'Accessories', href: '/products?category=accessories' },
-            ],
-          },
-        ],
-      },
-    },
-    {
-      id: 'nav-3',
-      label: 'Promotional Products',
-      href: '/promotional-products',
-      order: 3,
-      type: 'mega',
-      megaPanel: {
-        columns: [
-          {
-            id: 'col-1',
-            links: [
-              { id: 'link-1', label: 'Water Bottles', href: '/products?category=water-bottles' },
-              { id: 'link-2', label: 'Mugs', href: '/products?category=mugs' },
-              { id: 'link-3', label: 'Tumblers', href: '/products?category=tumblers' },
-              { id: 'link-4', label: 'Koozie®', href: '/products?category=koozies' },
-              { id: 'link-5', label: 'View All Drinkware', href: '/products?category=drinkware' },
-            ],
-          },
-          {
-            id: 'col-2',
-            links: [
-              { id: 'link-6', label: 'Backpacks', href: '/products?category=backpacks' },
-              { id: 'link-7', label: 'Tote Bags', href: '/products?category=tote-bags' },
-              { id: 'link-8', label: 'Drawstring Bags', href: '/products?category=drawstring-bags' },
-              { id: 'link-9', label: 'Pouches', href: '/products?category=pouches' },
-              { id: 'link-10', label: 'View All Bags', href: '/products?category=bags' },
-            ],
-          },
-          {
-            id: 'col-3',
-            links: [
-              { id: 'link-11', label: 'Pens & Writing', href: '/products?category=pens' },
-              { id: 'link-12', label: 'Stationery', href: '/products?category=stationery' },
-              { id: 'link-13', label: 'Stickers & Magnets', href: '/products?category=stickers' },
-              { id: 'link-14', label: 'Office Supplies', href: '/products?category=office-supplies' },
-              { id: 'link-15', label: 'Technology', href: '/products?category=technology' },
-            ],
-          },
-          {
-            id: 'col-4',
-            links: [
-              { id: 'link-16', label: 'Gifts', href: '/products?category=gifts' },
-              { id: 'link-17', label: 'Trade Show & Signage', href: '/products?category=trade-show' },
-              { id: 'link-18', label: 'Outdoor & Leisure', href: '/products?category=outdoor' },
-              { id: 'link-19', label: 'Home, Auto, & Tools', href: '/products?category=home-auto-tools' },
-              { id: 'link-20', label: 'Health & Personal Care', href: '/products?category=health' },
-            ],
-          },
-        ],
-      },
-    },
-    {
-      id: 'nav-4',
-      label: 'Design Lab',
-      href: '/design-lab',
-      order: 4,
-      type: 'simple',
-      simplePanel: {
-        title: 'The Design Lab Makes It Fun & Easy to Design',
-        description: 'Create custom t-shirts and promotional products your group will love. Simply upload your own logo or create a design using our collection of fonts & artwork.',
-        actions: [
-          { label: 'Start Designing', href: '/design-lab', variant: 'primary' },
-          { label: 'Explore Templates', href: '/design-lab?templates=1', variant: 'outline' },
-        ],
-      },
-    },
-    {
-      id: 'nav-5',
-      label: 'Groups & Events',
-      href: '/group-orders',
-      order: 5,
-      type: 'mega',
-      megaPanel: {
-        columns: [
-          {
-            id: 'col-1',
-            links: [
-              { id: 'link-1', label: 'Group Ordering', href: '/help#group-ordering' },
-              { id: 'link-2', label: 'Fundraising', href: '/help#fundraising' },
-              { id: 'link-3', label: 'Online Stores', href: '/help#online-stores' },
-              { id: 'link-4', label: 'Pro Services', href: '/help#pro-services' },
-              { id: 'link-5', label: 'Tips & Advice', href: '/help#tips' },
-              { id: 'link-6', label: 'T-shirt Maker', href: '/design-lab' },
-            ],
-          },
-          {
-            id: 'col-2',
-            links: [
-              { id: 'link-7', label: 'Corporate Swag', href: '/help#corporate-swag' },
-              { id: 'link-8', label: 'For Businesses', href: '/help#businesses' },
-              { id: 'link-9', label: 'For Trade Shows', href: '/help#trade-shows' },
-            ],
-          },
-          {
-            id: 'col-3',
-            links: [
-              { id: 'link-10', label: 'For Schools K-12', href: '/help#schools' },
-              { id: 'link-11', label: 'For Teachers & Colleges', href: '/help#colleges' },
-              { id: 'link-12', label: 'For Sports Teams', href: '/help#sports' },
-              { id: 'link-13', label: 'For Activities & Celebrations', href: '/help#celebrations' },
-            ],
-          },
-        ],
-      },
-    },
-  ],
-// 首页内容配置
+  // 首页内容配置
   homePage: {
     heroTitle: 'Custom T-shirts & Promo Gear for Your Group',
     heroSubtitle: 'From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.',
@@ -260,7 +64,7 @@ const DEFAULT_CONTENT_CONFIG = {
       { id: 'promise-4', title: 'Rush Options', detail: 'As fast as 3 days' },
     ],
   },
-// 关于页内容配置
+  // 关于页内容配置
   aboutPage: {
     headerTitle: 'Built by merch makers who care',
     headerDescription: 'Suvernire Plus is a team of designers, production experts, and logistics pros helping brands create meaningful merch. From the first sketch to the final unboxing moment, we obsess over every detail so you do not have to.',
@@ -290,7 +94,7 @@ const DEFAULT_CONTENT_CONFIG = {
     teamTitle: 'Meet the team',
     teamDescription: 'Designers, project managers, and production leads collaborate under one roof to keep quality high and timelines short. Want to work with us? Reach out at hello@suvernireplus.com.',
   },
-// 帮助页内容配置
+  // 帮助页内容配置
   helpPage: {
     quickLinks: [
       { id: 'quick-1', label: 'Check order status', href: '/order-tracking', icon: '📦' },
@@ -406,62 +210,72 @@ const DEFAULT_CONTENT_CONFIG = {
       },
     ],
   },
-// 通用静态文字配置
+  // 通用静态文字配置
   staticTexts: {
     topMessageBar: 'Custom T-shirts & Promotional Products • Fast & Free Shipping • All-inclusive Pricing',
-    footerColumns: [
+  },
+  // Footer 配置
+  footer: {
+    socialLinks: [
+      { id: 'social-1', platform: 'Facebook', url: 'https://facebook.com', icon: 'facebook' },
+      { id: 'social-2', platform: 'LinkedIn', url: 'https://linkedin.com', icon: 'linkedin' },
+      { id: 'social-3', platform: 'Pinterest', url: 'https://pinterest.com', icon: 'pinterest' },
+      { id: 'social-4', platform: 'Instagram', url: 'https://instagram.com', icon: 'instagram' },
+      { id: 'social-5', platform: 'RSS', url: '/rss', icon: 'rss' },
+    ],
+    contactInfo: {
+      phone: '855-256-1652',
+      email: 'support@souvenirplus.com',
+      hours: {
+        weekday: 'Monday-Friday: 8am - Midnight ET',
+        saturday: 'Saturday: 10am - 6pm ET',
+        sunday: 'Sunday: 10am - 6pm ET',
+      },
+      holidayNotice: 'Jan. 1st - Closed',
+    },
+    columns: [
       {
         id: 'footer-col-1',
         title: 'About Us',
         links: [
-          { id: 'footer-link-1', label: 'About Us', href: '/about' },
-          { id: 'footer-link-2', label: 'Contact Us', href: '/contact' },
-          { id: 'footer-link-3', label: 'Promotions', href: '/promotions' },
-          { id: 'footer-link-4', label: 'Design Gallery', href: '/design-gallery' },
+          { id: 'footer-link-1', label: 'Get to Know Custom Ink', href: '/about' },
+          { id: 'footer-link-2', label: 'Careers', href: '/careers' },
+          { id: 'footer-link-3', label: 'Press', href: '/press' },
+          { id: 'footer-link-4', label: 'Partnerships', href: '/partnerships' },
+          { id: 'footer-link-5', label: 'Diversity & Belonging', href: '/diversity' },
+          { id: 'footer-link-6', label: 'Customer Reviews', href: '/reviews' },
+          { id: 'footer-link-7', label: 'Customer Photos', href: '/photos' },
+          { id: 'footer-link-8', label: 'Custom Ink Blog', href: '/blog' },
+          { id: 'footer-link-9', label: 'Store Locations', href: '/locations' },
         ],
       },
       {
         id: 'footer-col-2',
         title: 'Your Account',
         links: [
-          { id: 'footer-link-5', label: 'My Account', href: '/account' },
-          { id: 'footer-link-6', label: 'My Designs', href: '/account/designs' },
-          { id: 'footer-link-7', label: 'Track Your Order', href: '/order-tracking' },
-          { id: 'footer-link-8', label: 'View Cart', href: '/cart' },
+          { id: 'footer-link-10', label: 'Retrieve a Saved Design', href: '/designs' },
+          { id: 'footer-link-11', label: 'Retrieve a Printed Proof', href: '/proofs' },
+          { id: 'footer-link-12', label: 'Track Your Order', href: '/order-tracking' },
+          { id: 'footer-link-13', label: 'Place a Reorder', href: '/reorder' },
         ],
       },
       {
         id: 'footer-col-3',
-        title: 'Shop',
+        title: 'Service Center',
         links: [
-          { id: 'footer-link-9', label: 'All Products', href: '/products' },
-          { id: 'footer-link-10', label: 'Design Lab', href: '/design-lab' },
-          { id: 'footer-link-11', label: 'Promotions', href: '/promotions' },
-          { id: 'footer-link-12', label: 'Help Center', href: '/help' },
-        ],
-      },
-      {
-        id: 'footer-col-4',
-        title: 'Support',
-        links: [
-          { id: 'footer-link-13', label: 'Help Center', href: '/help' },
-          { id: 'footer-link-14', label: 'Contact Us', href: '/contact' },
-          { id: 'footer-link-15', label: 'Shipping Info', href: '/shipping-info' },
-          { id: 'footer-link-16', label: 'Returns', href: '/returns' },
-        ],
-      },
-      {
-        id: 'footer-col-5',
-        title: 'Legal',
-        links: [
-          { id: 'footer-link-17', label: 'Privacy Policy', href: '/privacy-policy' },
-          { id: 'footer-link-18', label: 'Terms of Service', href: '/terms-of-service' },
-          { id: 'footer-link-19', label: 'Size Guide', href: '/size-guide' },
-          { id: 'footer-link-20', label: 'Sitemap', href: '/sitemap.xml' },
+          { id: 'footer-link-14', label: 'Help Center', href: '/help' },
+          { id: 'footer-link-15', label: 'Get a Quick Quote', href: '/quote' },
+          { id: 'footer-link-16', label: 'Content Guidelines', href: '/content-guidelines' },
+          { id: 'footer-link-17', label: 'Our Commitment to Accessibility', href: '/accessibility' },
         ],
       },
     ],
-    footerCopyright: '© 2025 Inkify LLC. All rights reserved.',
+    copyrightText: '© 2025 Inkify LLC. All rights reserved.',
+    bottomLinks: [
+      { id: 'bottom-link-1', label: 'Privacy Policy', href: '/privacy-policy' },
+      { id: 'bottom-link-2', label: 'Terms of Service', href: '/terms-of-service' },
+      { id: 'bottom-link-3', label: 'Sitemap', href: '/sitemap.xml' },
+    ],
   },
 };
 
@@ -532,7 +346,7 @@ const upsertSetting = async (key, value, userId) => {
   try {
     const now = new Date();
 
-// 修复：分步处理，避免 PostgreSQL gen_random_uuid() 兼容性问题
+    // 修复：分步处理，避免 PostgreSQL gen_random_uuid() 兼容性问题
     // 1. 先检查记录是否存在
     const existing = await prisma.$queryRaw`
       SELECT * FROM settings WHERE key = ${key} LIMIT 1
@@ -555,7 +369,7 @@ const upsertSetting = async (key, value, userId) => {
       const { v4: uuidv4 } = require('uuid');
       const id = uuidv4();
 
-// 修复：将字符串 UUID 转换为 PostgreSQL uuid 类型
+      // 修复：将字符串 UUID 转换为 PostgreSQL uuid 类型
       await prisma.$executeRaw`
        INSERT INTO settings (id, key, value, updated_by, updated_at)
         VALUES (${id}::uuid, ${key}, ${valueJson}::jsonb, ${userId || null}::uuid, ${now})
