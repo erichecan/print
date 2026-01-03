@@ -51,11 +51,8 @@ COPY apps/web/src ./src
 COPY prisma ./prisma
 # 修复：安装 apps/web 的依赖（next 等）
 RUN npm install --production=false
-# 生成 Prisma Client（API 路由需要）
-# 使用已安装的 Prisma CLI 而不是 npx 以避免版本不匹配
-RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" ./node_modules/.bin/prisma generate --schema=./prisma/schema.prisma
-# 验证 Prisma Client 已生成
-RUN test -d ./node_modules/.prisma/client || (echo "❌ Prisma Client generation failed" && exit 1)
+# 注意：前端通过 API 调用后端，不需要直接生成 Prisma Client
+# Prisma Client 仅在后端生成和使用
 RUN npm run build
 
 FROM node:18-bullseye-slim AS runner
