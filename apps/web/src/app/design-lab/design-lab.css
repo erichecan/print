@@ -4344,23 +4344,29 @@
 /* 更新 Product Colors Panel 样式以匹配 Add Text (Round 2 Refinements) */
 .dl-product-colors-panel__colors-grid {
   display: flex !important;
-  /* Force flex to allow wrapping and gap */
   flex-wrap: wrap;
-  gap: 10px !important;
-  /* Exact gap from screenshot */
+  gap: 5px !important;
+  /* Updated to 5px gap */
   margin-top: var(--dl-space-3);
+  justify-content: flex-start;
 }
 
 .dl-product-colors-panel__color-swatch {
-  width: 32px !important;
-  /* Match Add Text swatch size */
-  height: 32px !important;
-  min-width: 32px !important;
-  /* Force min-width */
-  max-width: 32px !important;
-  /* Force max-width */
-  border-radius: 6px !important;
-  /* Rounded corners */
+  width: 22px !important;
+  /* Updated to 22px */
+  height: 22px !important;
+  /* Updated to 22px */
+  min-width: 0 !important;
+  /* Override global button min-width */
+  min-height: 0 !important;
+  /* Override global button min-height */
+  max-width: 22px !important;
+  aspect-ratio: 1 / 1 !important;
+  /* Force square shape */
+  display: block !important;
+  /* Ensure dimensions are respected */
+  border-radius: 4px !important;
+  /* Rounded corners (roughly 20% of size) */
   border: 1px solid rgba(0, 0, 0, 0.1);
   cursor: pointer;
   position: relative;

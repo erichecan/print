@@ -72,7 +72,7 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
           </div>
 
           {/* Color Grid - Matching Add Text style via updated CSS */}
-          <div className="dl-product-colors-panel__colors-grid">
+          <div className="dl-product-colors-panel__colors-grid" style={{ gap: '5px' }}>
             {colors.map((color) => {
               const isSelected = selectedColor === color.name;
 

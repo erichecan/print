@@ -47,21 +47,20 @@ import GetPriceFlowModal, {
 import { usePricing } from './modules/pricing/usePricing';
 import './design-lab.css';
 
-// 画布常量
-const CANVAS_WIDTH = 4000;
-const CANVAS_HEIGHT = 4800;
-// 打印区域常量 (Custom Ink 风格)
-// Resized based on user feedback: Width +900px, Height +1200px
-const PRINTABLE_WIDTH = 2400; // 1500 + 900
-const PRINTABLE_HEIGHT = 3200; // 2000 + 1200
+// 画布常量 - Optimized to 1200x1440 to match Custom Ink product image resolution (1200px)
+const CANVAS_WIDTH = 1200;
+const CANVAS_HEIGHT = 1440;
+// 打印区域常量 (Custom Ink 风格) - Recalculated for 1200px canvas (Ratio 0.3)
+const PRINTABLE_WIDTH = 546; // 1820 * 0.3
+const PRINTABLE_HEIGHT = 960; // 3200 * 0.3
 // Left Chest 区域 (Front view only)
-const LEFT_CHEST_WIDTH = 600;
-const LEFT_CHEST_HEIGHT = 600;
-const LEFT_CHEST_OFFSET_X = 900; // 1200 - 300 (Tight Top Right)
-const LEFT_CHEST_OFFSET_Y = -1300; // -1600 + 300 (Tight Top Right)
+const LEFT_CHEST_WIDTH = 180; // 600 * 0.3
+const LEFT_CHEST_HEIGHT = 180; // 600 * 0.3
+const LEFT_CHEST_OFFSET_X = 150; // 500 * 0.3
+const LEFT_CHEST_OFFSET_Y = -390; // -1300 * 0.3
 // Sleeve 区域
-const SLEEVE_PRINTABLE_WIDTH = 1000;
-const SLEEVE_PRINTABLE_HEIGHT = 1000;
+const SLEEVE_PRINTABLE_WIDTH = 300; // 1000 * 0.3
+const SLEEVE_PRINTABLE_HEIGHT = 300; // 1000 * 0.3
 
 // 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
@@ -131,6 +130,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
     // 如果有 variantId，优先从服务端预取的数据中获取
     if (initialProductData && variantId) {
+      // FIX: If we are already showing this variant, don't reset.
+      // This prevents the "revert to white" bug when URL updates after color selection.
+      if (productInfo.colorId === variantId) {
+        console.log('[DesignLab 5.0] URL variantId matches current, skipping reset.');
+        return;
+      }
+
       console.log('[DesignLab 5.0] 功能2 - 使用服务端预取的数据:', initialProductData);
       const color = initialProductData.color || initialProductData.colorName || 'White';
       const baseImages = initialProductData.baseImages || getDefaultProductBaseImages(color);
@@ -396,20 +402,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [dynamicColors, setDynamicColors] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/product-color-images')
+    fetch('/api/proxy/product-color-images')
       .then(res => res.json())
-      .then(data => {
+      .then(res => {
+        const data = res.data || [];
         if (Array.isArray(data)) {
           const mapped = data.map((d: any) => ({
-            name: d.colorName,
-            hex: d.colorHex,
+            name: d.name,
+            hex: d.hex,
+            externalColorId: d.externalColorId,
             availableSizes: ["S", "M", "L", "XL", "2XL", "3XL"],
             isAvailable: d.isActive,
             imageUrls: d.imageUrls
           }));
-          // Sort alphabetically or typically? Let's keep API sort or alphabetical
+          // Sort alphabetically
           mapped.sort((a: any, b: any) => a.name.localeCompare(b.name));
-          console.log('[DesignLab 5.0] Loaded dynamic colors:', mapped.map(m => m.name).join(', '));
+          console.log('[DesignLab 5.0] Loaded dynamic colors from mapping API:', mapped.length);
           setDynamicColors(mapped);
         }
       })
@@ -679,118 +687,40 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     await handleProductSelect(product.id);
   };
 
-  // 产品模块：颜色选择处理
+  // 颜色选择处理 - 简化版：仅依靠后台 Color Mapping 数据
   const handleColorSelect = async (colorName: string) => {
-    console.log('[DesignLab 5.0] handleColorSelect called with:', colorName);
+    console.log('[DesignLab 5.0] handleColorSelect (Simplified):', colorName);
 
-    // 1. First, find if we have an official variant for this color
-    let officialVariantId = productInfo.colorId;
-    let officialVariant = null;
-
-    if (productInfo.variants && productInfo.variants.length > 0) {
-      officialVariant = productInfo.variants.find(v =>
-        v.color?.toLowerCase() === colorName.toLowerCase() ||
-        v.color?.toLowerCase().includes(colorName.toLowerCase()) ||
-        colorName.toLowerCase().includes(v.color?.toLowerCase() || '')
-      );
-
-      if (officialVariant) {
-        officialVariantId = officialVariant.id;
-        console.log('[DesignLab 5.0] Found matching official variant:', { color: officialVariant.color, id: officialVariantId });
-      }
-    }
-
-    // 2. Check Dynamic Colors (Backend Mapping) for HIGH-QUALITY SCRAPED IMAGES
-    const dynamicColorObj = dynamicColors.find(c =>
-      c.name.toLowerCase() === colorName.toLowerCase() ||
-      c.name.toLowerCase().includes(colorName.toLowerCase()) ||
-      colorName.toLowerCase().includes(c.name.toLowerCase())
+    // 从 dynamicColors 中寻找匹配项
+    const colorObj = dynamicColors.find(c =>
+      c.name.toLowerCase() === colorName.toLowerCase()
     );
 
-    if (dynamicColorObj && dynamicColorObj.imageUrls) {
-      console.log('[DesignLab 5.0] Found Dynamic Mapping Override for:', colorName, dynamicColorObj.imageUrls);
+    if (colorObj && colorObj.imageUrls) {
+      console.log('[DesignLab 5.0] Updating productInfo from color mapping:', colorName);
 
-      // Update state immediately with dynamic images
-      setProductInfo(prev => ({
-        ...prev,
-        color: colorName, // Keep the display name consistent with what was clicked
-        colorId: officialVariantId, // Store the official variant if found, otherwise keep current
-        baseImages: {
-          front: dynamicColorObj.imageUrls.front || prev.baseImages.front,
-          back: dynamicColorObj.imageUrls.back || prev.baseImages.back,
-          sleeve: dynamicColorObj.imageUrls.left_sleeve || dynamicColorObj.imageUrls.sleeve || prev.baseImages.sleeve,
-          'left-sleeve': dynamicColorObj.imageUrls.left_sleeve || dynamicColorObj.imageUrls.sleeve,
-          'right-sleeve': dynamicColorObj.imageUrls.right_sleeve || dynamicColorObj.imageUrls.sleeve,
-        }
-      }));
-
-      // Update URL tracking
-      if (typeof window !== 'undefined' && officialVariantId) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('variantId', officialVariantId);
-        window.history.replaceState({}, '', url.toString());
-      }
-      return;
-    }
-
-    // 3. Fallback: If no dynamic mapping, use the standard logic
-    console.log('[DesignLab 5.0] No dynamic mapping found, falling back to legacy/standard logic for:', colorName);
-
-    try {
-      // If we have an official variant, try to fetch its full data
-      if (officialVariantId && officialVariantId !== productInfo.colorId) {
-        try {
-          const newProductData = await getProductByVariant(officialVariantId);
-          if (newProductData) {
-            console.log('[DesignLab 5.0] Fetched data for official variant:', newProductData.color);
-            setProductInfo(prev => ({
-              ...prev,
-              productId: newProductData.productId,
-              productName: newProductData.productName,
-              colorId: officialVariantId,
-              color: newProductData.color || colorName,
-              baseImages: {
-                front: newProductData.baseImages.front,
-                back: newProductData.baseImages.back,
-                sleeve: newProductData.baseImages.sleeve,
-                'left-sleeve': newProductData.baseImages['left-sleeve'] || getDefaultProductBaseImages(colorName)['left-sleeve'],
-                'right-sleeve': newProductData.baseImages['right-sleeve'] || getDefaultProductBaseImages(colorName)['right-sleeve'],
-              },
-              variants: newProductData.variants || prev.variants,
-            }));
-
-            if (typeof window !== 'undefined') {
-              const url = new URL(window.location.href);
-              url.searchParams.set('variantId', officialVariantId);
-              window.history.replaceState({}, '', url.toString());
-            }
-            return;
-          }
-        } catch (fetchErr) {
-          console.error('[DesignLab 5.0] Failed to fetch official variant data, using generator fallback:', fetchErr);
-        }
-      }
-
-      // 4. Final Fallback: GCS URL Generator (Guessing paths)
-      const generatedImages = getDefaultProductBaseImages(colorName);
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
+        colorId: colorObj.externalColorId, // 使用映射表中的 ID
         baseImages: {
-          ...generatedImages,
-          'left-sleeve': generatedImages['left-sleeve'] || '',
-          'right-sleeve': generatedImages['right-sleeve'] || '',
-        },
-        colorId: officialVariantId,
+          front: colorObj.imageUrls.front || prev.baseImages.front,
+          back: colorObj.imageUrls.back || prev.baseImages.back,
+          sleeve: colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve || prev.baseImages.sleeve,
+          'left-sleeve': colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve,
+          'right-sleeve': colorObj.imageUrls.right_sleeve || colorObj.imageUrls.sleeve,
+        }
       }));
 
-      if (typeof window !== 'undefined' && officialVariantId) {
+      // 更新浏览器 URL
+      if (typeof window !== 'undefined' && colorObj.externalColorId) {
         const url = new URL(window.location.href);
-        url.searchParams.set('variantId', officialVariantId);
+        url.searchParams.set('colorId', colorName);
+        url.searchParams.set('variantId', colorObj.externalColorId);
         window.history.replaceState({}, '', url.toString());
       }
-    } catch (error) {
-      console.error('[DesignLab 5.0] handleColorSelect final fallback error:', error);
+    } else {
+      console.warn('[DesignLab 5.0] Color not found in mapping or missing images:', colorName);
     }
   };
 
@@ -1188,11 +1118,17 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           fabricHeight: fabricImg.height,
         });
 
-        // 缩放图片以适应 canvas（cover 模式 - 填充 container）
+        // 缩放图片以适应 canvas（现在 canvas 也是 1200，比例应该是 1）
         const scale = Math.max(
           CANVAS_WIDTH / (fabricImg.width || 1),
           CANVAS_HEIGHT / (fabricImg.height || 1)
         );
+
+        console.log('[DesignLab 5.0] Image scale factors:', {
+          canvasW: CANVAS_WIDTH,
+          imgW: fabricImg.width,
+          calculatedScale: scale
+        });
 
         fabricImg.set({
           left: CANVAS_WIDTH / 2,
@@ -1292,7 +1228,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       originY: 'center',
       fill: 'transparent',
       stroke: '#808080', // Dark gray border (visible on both white and dark backgrounds)
-      strokeWidth: 3, // 3px width
+      strokeWidth: 2, // 2px width
       selectable: false,
       evented: false,
     });
@@ -1301,9 +1237,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     // 2. View Label (Top-Left of Main Box)
     const labelText = view === 'front' ? 'Front' : 'Back';
     const mainLabel = new fabric.Text(labelText, {
-      left: -PRINTABLE_WIDTH / 2 + 10,
-      top: -PRINTABLE_HEIGHT / 2 + 10,
-      fontSize: 72, // Increased for visibility (approx 18px visual)
+      left: -areaWidth / 2 + 10,
+      top: -areaHeight / 2 + 10,
+      fontSize: 24, // Scaled down (72 * 0.3 = 21.6 -> 24)
       fontWeight: 'bold',
       fontFamily: 'Arial',
       fill: '#808080', // Dark gray text
@@ -1325,7 +1261,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         originY: 'center',
         fill: 'transparent',
         stroke: '#808080', // Dark gray border
-        strokeWidth: 3, // 3px width
+        strokeWidth: 2, // 2px width
         selectable: false,
         evented: false,
       });
@@ -1333,7 +1269,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       const leftChestLabel = new fabric.Text('Left Chest', {
         left: LEFT_CHEST_OFFSET_X - LEFT_CHEST_WIDTH / 2 + 10,
         top: LEFT_CHEST_OFFSET_Y - LEFT_CHEST_HEIGHT / 2 + 10,
-        fontSize: 54, // Increased for visibility
+        fontSize: 18, // Scaled down (54 * 0.3 = 16.2 -> 18)
         fontWeight: 'bold',
         fontFamily: 'Arial',
         fill: '#808080', // Dark gray text
@@ -1346,9 +1282,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       groupObjects.push(leftChestRect, leftChestLabel);
     }
 
-    // Create Group
     const group = new fabric.Group(groupObjects, {
-      left: CANVAS_WIDTH / 2,
+      left: CANVAS_WIDTH / 2 - 6, // Offset by -6 logical units to handle asymmetry (120*0.3 vs 160*0.3)
       top: CANVAS_HEIGHT / 2,
       originX: 'center',
       originY: 'center',
@@ -1501,7 +1436,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
         // Boundary constraint helper
         const getPrintableAreaBounds = (view: string) => {
-          const centerX = CANVAS_WIDTH / 2;
+          // Correct for asymmetrical center offset (-6)
+          const centerX = CANVAS_WIDTH / 2 - 6;
           const centerY = CANVAS_HEIGHT / 2;
 
           let width = PRINTABLE_WIDTH;
@@ -1544,17 +1480,25 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const exceedsBottom = objBounds.top + objBounds.height - bounds.bottom;
 
           // Adjust object position to constrain within bounds
-          if (exceedsLeft > 0) {
-            obj.left = obj.left! + exceedsLeft;
+          // Use clamping to ensure objects never move outside (Custom Ink style)
+          const boundsWidth = bounds.right - bounds.left;
+          const boundsHeight = bounds.bottom - bounds.top;
+
+          if (objBounds.width <= boundsWidth) {
+            if (objBounds.left < bounds.left) obj.left! += (bounds.left - objBounds.left);
+            if (objBounds.right > bounds.right) obj.left! -= (objBounds.right - bounds.right);
+          } else {
+            // Optimization for oversized images: prioritize keeping them centered within the overflow
+            if (objBounds.left > bounds.left) obj.left! -= (objBounds.left - bounds.left);
+            if (objBounds.right < bounds.right) obj.left! += (bounds.right - objBounds.right);
           }
-          if (exceedsRight > 0) {
-            obj.left = obj.left! - exceedsRight;
-          }
-          if (exceedsTop > 0) {
-            obj.top = obj.top! + exceedsTop;
-          }
-          if (exceedsBottom > 0) {
-            obj.top = obj.top! - exceedsBottom;
+
+          if (objBounds.height <= boundsHeight) {
+            if (objBounds.top < bounds.top) obj.top! += (bounds.top - objBounds.top);
+            if (objBounds.bottom > bounds.bottom) obj.top! -= (objBounds.bottom - bounds.bottom);
+          } else {
+            if (objBounds.top > bounds.top) obj.top! -= (objBounds.top - bounds.top);
+            if (objBounds.bottom < bounds.bottom) obj.top! += (bounds.bottom - objBounds.bottom);
           }
 
           obj.setCoords();
@@ -2873,13 +2817,20 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
     let tintHex = '#ffffff';
 
     if (isDefaultProduct) {
-      const colorData = PRODUCT_COLORS.find(c => c.name === productInfo.color);
-      tintHex = colorData ? colorData.hex : '#ffffff';
+      // FIX: If we have mapped images from dynamicColors, don't force white tinting.
+      // This allows the actual colored images from the mapping to show up.
+      const hasMappedImages = !imageUrl.includes('Loading') && !imageUrl.includes('transparent');
 
-      // ALWAYS use white base image for default products to ensure consistency
-      // was: if (productInfo.color !== 'White') { ... } 
-      // reason: for default tee, the white color from backend might still use the red fallback image
-      finalImageUrl = getDefaultProductBaseImages('White')[currentView];
+      if (!hasMappedImages) {
+        const colorData = PRODUCT_COLORS.find(c => c.name === productInfo.color);
+        tintHex = colorData ? colorData.hex : '#ffffff';
+
+        // ALWAYS use white base image for default products to ensure consistency
+        finalImageUrl = getDefaultProductBaseImages('White')[currentView];
+        console.log('[DesignLab 5.0] Applying tinting fallback for default product:', { color: productInfo.color, tintHex });
+      } else {
+        console.log('[DesignLab 5.0] Using mapped images for default product, skipping tinting.');
+      }
     }
 
     // Restore objects for the new view (Clear old user objects first)
@@ -3039,9 +2990,9 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               selectable: true, // 步骤1：可选择
               evented: true, // 步骤1：可交互
               hasControls: true, // 必须为 true 才能显示自定义控件（默认控件会在 addIconControlsToObject 中隐藏）
-              hasBorders: true, // 步骤2：显示边框
-              borderColor: '#808080', // 步骤2：灰色边框
-              borderScaleFactor: 2, // 步骤2：边框宽度 2px（默认 1px × 2 = 2px）
+              hasBorders: false, // Remove borders as per user request
+              borderColor: '#808080',
+              borderScaleFactor: 2,
               lockMovementX: false, // 步骤1：允许拖拽移动
               lockMovementY: false, // 步骤1：允许拖拽移动
               data: {
@@ -3088,7 +3039,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
             canvas.setActiveObject(fabricImage);
             // 步骤2：确保选中时边框正确显示
             fabricImage.set({
-              hasBorders: true,
+              hasBorders: false,
               borderColor: '#808080', // 灰色边框
               borderScaleFactor: 2, // 2px 宽度
             });
@@ -3097,7 +3048,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
 
             // 记录对象属性用于调试
             console.log('[DesignLab 5.0] ✅ Image added to canvas with properties:', {
-              name: fabricImage.name,
+              name: (fabricImage as any).name,
               position: { left: fabricImage.left, top: fabricImage.top },
               scale,
               selectable: fabricImage.selectable, // 步骤1：应该为 true
@@ -3112,7 +3063,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
             canvas.renderAll();
 
             console.log('[DesignLab 5.0] Image added to canvas:', {
-              name: fabricImage.name,
+              name: (fabricImage as any).name,
               position: { left: fabricImage.left, top: fabricImage.top },
               scale,
             });
@@ -3169,12 +3120,12 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
         originY: 'center',
         fill: '#111827',
         fontFamily: 'Arial',
-        fontSize: 120,
+        fontSize: 40, // Scaled down (120 * 0.3 = 36 -> 40)
         textAlign: 'center',
         selectable: true,
         evented: true,
         hasControls: true,
-        hasBorders: true,
+        hasBorders: false,
         borderColor: '#808080',
         borderScaleFactor: 2,
         name: `text_${Date.now()} `,
@@ -3244,7 +3195,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
           selectable: true,
           evented: true,
           hasControls: true,
-          hasBorders: true,
+          hasBorders: false,
           borderColor: '#808080',
           borderScaleFactor: 2,
           lockRotation: false,
