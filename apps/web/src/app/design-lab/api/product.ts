@@ -56,24 +56,43 @@ export async function getProducts(params?: {
   sort?: string;
 }): Promise<{ data: Product[]; pagination?: any }> {
   try {
-    const response: any = await productsApi.list(params);
+    const response: any = await productsApi.list({
+      ...params,
+      includeOutOfStock: true // Ensure consistent visibility with shop page
+    });
 
     // Map backend response to Design Lab Product interface
     if (response && response.data) {
-      const mappedData = response.data.map((item: any) => ({
-        id: item.id,
-        title: item.name || item.title || 'Untitled',
-        slug: item.slug,
-        // Backend returns price object { base, sale, currency }, frontend expects number
-        // ProductCatalogModal handles object check, but let's normalize if possible.
-        // Actually, let's keep the object if the UI expects it, but the interface says number.
-        // Let's pass the sale price (actual price) as the number to satisfy the interface.
-        price: typeof item.price === 'object' ? (item.price.sale || item.price.base) : item.price,
-        // Map primaryImage.url or first image to coverImageUrl
-        coverImageUrl: item.primaryImage?.url || item.images?.[0]?.url || item.coverImageUrl || null,
-        // Map category object to name
-        category: typeof item.category === 'object' ? item.category.name : item.category
-      }));
+      const mappedData = response.data.map((item: any) => {
+        // Image logic: Prefer White or Black variants, then primary, then first image
+        const variants = item.variants || [];
+        const whiteVariant = variants.find((v: any) => {
+          const c = (v.color || '').toLowerCase();
+          return c === 'white' || c === '白';
+        });
+        const blackVariant = variants.find((v: any) => {
+          const c = (v.color || '').toLowerCase();
+          return c === 'black' || c === '黑';
+        });
+
+        const coverImageUrl = whiteVariant?.imageUrl ||
+          blackVariant?.imageUrl ||
+          item.primaryImage?.url ||
+          item.images?.[0]?.url ||
+          item.coverImageUrl ||
+          null;
+
+        return {
+          id: item.id,
+          title: item.name || item.title || 'Untitled',
+          slug: item.slug,
+          // Handle price object from backend
+          price: typeof item.price === 'object' ? (item.price.sale || item.price.base) : item.price,
+          coverImageUrl,
+          // Map category object to name
+          category: typeof item.category === 'object' ? item.category.name : item.category
+        };
+      });
 
       return {
         ...response,

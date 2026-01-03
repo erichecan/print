@@ -26,21 +26,44 @@ const ProductCatalogModal: React.FC<ProductCatalogModalProps> = ({
     onSelectProduct
 }) => {
     const [products, setProducts] = useState<ApiProduct[]>([]);
+    const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
     const [loading, setLoading] = useState(false);
     const [activeCategory, setActiveCategory] = useState('All Products');
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Fetch categories initially
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const res = await fetch('/api/proxy/products/filters/options');
+                if (!res.ok) throw new Error('Failed to fetch filter options');
+                const data = await res.json();
+                if (data.categories) {
+                    setCategories(data.categories.map((c: any) => ({ name: c.name, slug: c.slug })));
+                }
+            } catch (error) {
+                console.error('[ProductCatalogModal] Failed to load categories:', error);
+            }
+        };
+        loadCategories();
+    }, []);
+
     // Fetch products from API
-    React.useEffect(() => {
+    useEffect(() => {
         if (!isOpen) return;
 
         const loadProducts = async () => {
             setLoading(true);
             try {
+                // Find the slug for the active category
+                const activeCategorySlug = activeCategory === 'All Products'
+                    ? undefined
+                    : categories.find(c => c.name === activeCategory)?.slug;
+
                 const response = await getProducts({
                     limit: 50,
                     search: searchQuery || undefined,
-                    category: activeCategory === 'All Products' ? undefined : activeCategory
+                    category: activeCategorySlug
                 });
                 setProducts(response.data || []);
             } catch (error) {
@@ -52,7 +75,7 @@ const ProductCatalogModal: React.FC<ProductCatalogModalProps> = ({
 
         const timeoutId = setTimeout(loadProducts, 300); // Debounce search
         return () => clearTimeout(timeoutId);
-    }, [isOpen, searchQuery, activeCategory]);
+    }, [isOpen, searchQuery, activeCategory, categories]);
 
     const filteredProducts = products; // Already filtered by API
 
@@ -90,13 +113,20 @@ const ProductCatalogModal: React.FC<ProductCatalogModalProps> = ({
                 <main className="dl-catalog-body">
                     <aside className="dl-catalog-sidebar">
                         <nav className="dl-catalog-nav">
-                            {CATEGORIES.map(cat => (
+                            <button
+                                key="all"
+                                className={`dl-catalog-nav-item ${activeCategory === 'All Products' ? 'is-active' : ''}`}
+                                onClick={() => setActiveCategory('All Products')}
+                            >
+                                All Products
+                            </button>
+                            {categories.map(cat => (
                                 <button
-                                    key={cat}
-                                    className={`dl-catalog-nav-item ${activeCategory === cat ? 'is-active' : ''}`}
-                                    onClick={() => setActiveCategory(cat)}
+                                    key={cat.slug}
+                                    className={`dl-catalog-nav-item ${activeCategory === cat.name ? 'is-active' : ''}`}
+                                    onClick={() => setActiveCategory(cat.name)}
                                 >
-                                    {cat}
+                                    {cat.name}
                                 </button>
                             ))}
                         </nav>
