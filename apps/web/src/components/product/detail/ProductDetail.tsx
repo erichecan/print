@@ -89,8 +89,7 @@ export function ProductDetail() {
       sku: v.sku
     })));
 
-    // 找到对应的 variant
-    let matchingVariant = null;
+
     // 找到对应的 variant (Case-insensitive matching)
     let matchingVariant = null;
     for (const v of apiProduct.variants) {
@@ -160,8 +159,7 @@ export function ProductDetail() {
       return;
     }
 
-    // 找到对应的 variant
-    let matchingVariant = null;
+
     // 找到对应的 variant (Case-insensitive matching)
     let matchingVariant = null;
     for (const v of apiProduct.variants) {
