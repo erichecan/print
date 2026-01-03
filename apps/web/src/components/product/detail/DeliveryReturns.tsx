@@ -32,7 +32,7 @@ interface DeliveryReturnsProps {
 export function DeliveryReturns({ delivery, returns }: DeliveryReturnsProps) {
   return (
     <div className={styles.deliveryReturns}>
-{/* 参考图一位置：配送信息 */}
+      {/* 参考图一位置：配送信息 */}
       <div className={styles.deliveryReturnsDelivery}>
         <div className={styles.deliveryReturnsLabel}>Delivery</div>
         <div className={styles.deliveryReturnsContent}>
@@ -41,9 +41,9 @@ export function DeliveryReturns({ delivery, returns }: DeliveryReturnsProps) {
         </div>
       </div>
 
-{/* 参考图一位置：退货政策 */}
+      {/* 参考图一位置：退货政策 */}
       <div className={styles.deliveryReturnsReturns}>
-        <Link href={returns.url} className={styles.deliveryReturnsLink}>
+        <Link href={returns.url} target="_blank" className={styles.deliveryReturnsLink}>
           {returns.policy}
         </Link>
       </div>

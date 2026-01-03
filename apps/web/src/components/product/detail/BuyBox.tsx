@@ -275,7 +275,7 @@ export function BuyBox({
       <div className={styles.buyboxField}>
         <div className={styles.buyboxSizeHeader}>
           <label className={styles.buyboxLabel}>Size</label>
-          <Link href="#size-guide" className={styles.buyboxSizeGuide}>Size Guide</Link>
+          <Link href="/size-guide" target="_blank" className={styles.buyboxSizeGuide}>Size Guide</Link>
         </div>
         <div className={styles.buyboxSizes} role="radiogroup" aria-label="Select size">
           {sizes.map((size) => {

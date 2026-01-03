@@ -45,6 +45,35 @@ interface ApiProduct {
   };
 }
 
+// 常用颜色映射表
+const PREDEFINED_COLORS: { [key: string]: string } = {
+  'White': '#FFFFFF',
+  'Black': '#000000',
+  'Grey': '#808080',
+  'Gray': '#808080',
+  'Heather Grey': '#999999',
+  'Dark Grey': '#444444',
+  'Navy': '#000080',
+  'Blue': '#0000FF',
+  'Royal': '#4169E1',
+  'Light Blue': '#ADD8E6',
+  'Red': '#FF0000',
+  'Maroon': '#800000',
+  'Green': '#008000',
+  'Forest Green': '#228B22',
+  'Kelly Green': '#4CBB17',
+  'Yellow': '#FFFF00',
+  'Gold': '#FFD700',
+  'Orange': '#FFA500',
+  'Purple': '#800080',
+  'Pink': '#FFC0CB',
+  'Hot Pink': '#FF69B4',
+  'Brown': '#A52A2A',
+  'Beige': '#F5F5DC',
+  'Cream': '#FFFDD0',
+  // Keep lowercase keys just in case, or handle case-insensitivity in logic
+};
+
 /**
 * 将 API 产品数据转换为 Redbubble 格式
  */
@@ -62,8 +91,18 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     if (v.color) {
       const colorName = v.color;
       if (!colorMap.has(colorName)) {
+        // Try to find hex in predefined map (case-insensitive) if not provided
+        let hex = v.colorHex;
+        if (!hex) {
+          // Case insensitive lookup
+          const key = Object.keys(PREDEFINED_COLORS).find(k => k.toLowerCase() === colorName.toLowerCase());
+          if (key) {
+            hex = PREDEFINED_COLORS[key];
+          }
+        }
+
         colorMap.set(colorName, {
-          hex: v.colorHex || '#CCCCCC',
+          hex: hex || '#CCCCCC', // Default to gray only if truly unknown
           available: v.stockQuantity > 0,
         });
       } else {
