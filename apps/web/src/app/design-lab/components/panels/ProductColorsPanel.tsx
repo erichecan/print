@@ -54,19 +54,25 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
 
         {/* Colors Section - Styled like Add Text Color Picker */}
         <div className="dl-colors-section">
-          {/* Header with Color Name */}
-          <div className="dl-color-picker__header" style={{ marginBottom: '12px' }}>
-            <span className="dl-color-picker__title" style={{ fontSize: '14px', fontWeight: '600', color: '#333' }}>
-              Product Color: <span style={{ fontWeight: 'normal' }}>{currentColorObj?.name || selectedColor || 'Select'}</span>
+          {/* Selected Color Header - Matches uploaded_image_0 */}
+          <div className="dl-color-picker__header" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Selected Swatch Preview */}
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: currentColorObj?.hex || '#ccc',
+                borderRadius: '6px', // Slightly rounded
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+              }}
+            />
+            <span className="dl-color-picker__title" style={{ fontSize: '16px', fontWeight: '500', color: '#111' }}>
+              {currentColorObj?.name || selectedColor || 'Select Color'}
             </span>
           </div>
 
-          {/* Color Grid - Matching ColorPicker.tsx structure */}
-          <div className="dl-colors-grid" style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(7, 1fr)', // Approximate 7 columns like ColorPicker
-            gap: '8px'
-          }}>
+          {/* Color Grid - Matching Add Text style via updated CSS */}
+          <div className="dl-product-colors-panel__colors-grid">
             {colors.map((color) => {
               const isSelected = selectedColor === color.name;
 
@@ -77,40 +83,12 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
                   onClick={() => handleColorClick(color)}
                   disabled={!color.isAvailable}
                   title={color.name}
+                  className={`dl-product-colors-panel__color-swatch ${isSelected ? 'is-selected' : ''}`}
                   style={{
-                    width: '32px',
-                    height: '32px',
-                    padding: 0,
-                    border: '1px solid rgba(0,0,0,0.1)',
-                    borderRadius: '4px', // Rounded squares
                     backgroundColor: color.hex || '#ccc',
-                    cursor: color.isAvailable ? 'pointer' : 'not-allowed',
-                    position: 'relative',
-                    boxShadow: isSelected ? '0 0 0 2px white, 0 0 0 4px #4a90e2' : 'none',
-                    opacity: color.isAvailable ? 1 : 0.3,
-                    transition: 'all 0.2s',
-                    boxSizing: 'border-box'
+                    opacity: color.isAvailable ? 1 : 0.3
                   }}
-                  className={`dl-color-picker__swatch ${isSelected ? 'is-selected' : ''}`}
-                >
-                  {isSelected && (
-                    <span style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '100%',
-                      height: '100%',
-                    }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={['#ffffff', '#fff', '#f0f0f0'].includes(color.hex.toLowerCase()) ? '#333' : 'white'} strokeWidth="3">
-                        <path d="M20 6L9 17l-5-5" />
-                      </svg>
-                    </span>
-                  )}
-                </button>
+                />
               );
             })}
           </div>

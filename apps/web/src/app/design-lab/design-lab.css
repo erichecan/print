@@ -417,32 +417,33 @@
   color: rgb(191, 191, 191);
 }
 
-/* 修复：Product Colors 和 Add Names 按钮高度为 86px */
+/* 修复：Product Colors 和 Add Names 按钮高度为 110px，确保 Details 文字完全显示 */
 .dl-rail__btn[aria-label*="Product colors"],
 .dl-rail__btn[aria-label*="Product Colors"],
+.dl-rail__btn[aria-label*="Product Details"],
+/* Added correct selector */
 .dl-rail__btn[aria-label*="Add names"],
 .dl-rail__btn[aria-label*="Add Names"] {
-  height: 86px !important;
+  height: 110px !important;
   /* element-11 和 element-12 的高度 */
 }
 
-/* 修复：Rail 按钮垂直间距 - element-8 y:169, element-9 y:239 (间距 70px) */
+/* 修复：Rail 按钮垂直间距 */
+/* 第一个按钮位置 */
 .dl-rail__btn:first-of-type {
   margin-top: 32px;
-  /* element-8 y:169 - Rail padding-top:137 = 32px */
 }
 
-/* 修复：Rail 按钮之间的间距 - 标准按钮高度 70px */
+/* 按钮之间的间距 */
 .dl-rail__btn:not(:first-of-type) {
   margin-top: 0;
-  /* 按钮之间没有间距，因为高度已经包含了间距 */
 }
 
-/* 修复：Product Colors 和 Add Names 之间的间距 - element-11 y:379, element-12 y:466 (间距 87px) */
+/* Product Colors 和 Add Names 之间的间距调整 */
 .dl-rail__btn[aria-label*="Product colors"]+.dl-rail__btn,
-.dl-rail__btn[aria-label*="Product Colors"]+.dl-rail__btn {
+.dl-rail__btn[aria-label*="Product Colors"]+.dl-rail__btn,
+.dl-rail__btn[aria-label*="Product Details"]+.dl-rail__btn {
   margin-top: 1px;
-  /* element-12 y:466 - (element-11 y:379 + element-11 height:86) = 1px */
 }
 
 /* 修复：Rail 按钮悬停效果对齐 Custom Ink */
@@ -4340,52 +4341,46 @@
   border-radius: var(--dl-radius-sm);
 }
 
+/* 更新 Product Colors Panel 样式以匹配 Add Text (Round 2 Refinements) */
 .dl-product-colors-panel__colors-grid {
-  display: grid;
-  grid-template-columns: repeat(10, 1fr);
-  gap: var(--dl-space-2);
+  display: flex !important;
+  /* Force flex to allow wrapping and gap */
+  flex-wrap: wrap;
+  gap: 10px !important;
+  /* Exact gap from screenshot */
   margin-top: var(--dl-space-3);
 }
 
-@media (max-width: 1200px) {
-  .dl-product-colors-panel__colors-grid {
-    grid-template-columns: repeat(8, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .dl-product-colors-panel__colors-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-}
-
-@media (max-width: 480px) {
-  .dl-product-colors-panel__colors-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
 .dl-product-colors-panel__color-swatch {
-  width: 100%;
-  aspect-ratio: 1;
-  border: 2px solid var(--dl-border-color);
-  border-radius: var(--dl-radius-sm);
+  width: 32px !important;
+  /* Match Add Text swatch size */
+  height: 32px !important;
+  min-width: 32px !important;
+  /* Force min-width */
+  max-width: 32px !important;
+  /* Force max-width */
+  border-radius: 6px !important;
+  /* Rounded corners */
+  border: 1px solid rgba(0, 0, 0, 0.1);
   cursor: pointer;
   position: relative;
   padding: 0;
-  background: transparent;
-  transition: all var(--dl-transition-base);
-  overflow: hidden;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .dl-product-colors-panel__color-swatch:hover:not(:disabled) {
-  border-color: var(--dl-color-primary);
-  transform: scale(1.05);
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
 }
 
 .dl-product-colors-panel__color-swatch.is-selected {
-  border-color: var(--dl-color-primary);
-  border-width: 3px;
+  /* Selected state for grid items is subtle in screenshot, mainly header changes */
+  /* But we can add a focus ring or scale effect */
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #ccc;
+  transform: scale(1.1);
 }
 
 .dl-product-colors-panel__color-swatch.is-unavailable {

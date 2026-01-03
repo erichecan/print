@@ -3,6 +3,14 @@ export interface ProductColor {
     hex: string;
     availableSizes: string[];
     isAvailable: boolean;
+    imageUrls?: {
+        front?: string;
+        back?: string;
+        sleeve?: string;
+        left_sleeve?: string;
+        right_sleeve?: string;
+        [key: string]: string | undefined;
+    };
 }
 
 export const PRODUCT_COLORS: ProductColor[] = [

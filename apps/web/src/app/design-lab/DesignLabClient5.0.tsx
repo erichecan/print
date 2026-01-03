@@ -3551,7 +3551,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
             aria-label="Product Details"
             aria-pressed={activeTool === 'product-colors'}
             title="Product Details"
-            style={{ height: 'auto', minHeight: '80px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+            style={{ height: 'auto', minHeight: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
           >
             <span className="dl-rail__btn-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
