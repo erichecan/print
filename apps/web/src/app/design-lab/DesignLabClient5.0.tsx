@@ -216,10 +216,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 front: images.front,
                 back: images.back,
                 sleeve: images.sleeve,
-                'left-sleeve': images['left-sleeve'] || getDefaultProductBaseImages(resolvedColor)['left-sleeve'],
-                'right-sleeve': images['right-sleeve'] || getDefaultProductBaseImages(resolvedColor)['right-sleeve'],
+                'left-sleeve': images['left-sleeve'],
+                'right-sleeve': images['right-sleeve'],
               },
-              variants: product.variants || [], // 保存 variants 列表
+              variants: (product.variants || []).map(v => ({ ...v, color: v.color || '' })), // 保存 variants 列表
             }));
 
             // 更新 URL 参数以包含 variantId (可选)
@@ -3773,68 +3773,74 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
             <span className="dl-sidebar__label">Front</span>
           </button>
 
-          <button
-            className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''} `}
-            onClick={() => handleViewChange('back')}
-            aria-label="Back view"
-            aria-pressed={currentView === 'back'}
-          >
-            <div className="dl-sidebar__thumbnail">
-              {productInfo.baseImages.back ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={productInfo.baseImages.back}
-                  alt="Back view thumbnail"
-                  className="dl-sidebar__thumbnail-image"
-                />
-              ) : (
-                <div className="dl-sidebar__thumbnail-placeholder">Back</div>
-              )}
-            </div>
-            <span className="dl-sidebar__label">Back</span>
-          </button>
+          {productInfo.baseImages.back && (
+            <button
+              className={`dl-sidebar__btn ${currentView === 'back' ? 'is-active' : ''} `}
+              onClick={() => handleViewChange('back')}
+              aria-label="Back view"
+              aria-pressed={currentView === 'back'}
+            >
+              <div className="dl-sidebar__thumbnail">
+                {productInfo.baseImages.back ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={productInfo.baseImages.back}
+                    alt="Back view thumbnail"
+                    className="dl-sidebar__thumbnail-image"
+                  />
+                ) : (
+                  <div className="dl-sidebar__thumbnail-placeholder">Back</div>
+                )}
+              </div>
+              <span className="dl-sidebar__label">Back</span>
+            </button>
+          )}
 
-          <button
-            className={`dl-sidebar__btn ${currentView === 'left-sleeve' ? 'is-active' : ''} `}
-            onClick={() => handleViewChange('left-sleeve')}
-            aria-label="Left Sleeve"
-            aria-pressed={currentView === 'left-sleeve'}
-          >
-            <div className="dl-sidebar__thumbnail">
-              {productInfo.baseImages['left-sleeve'] ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={productInfo.baseImages['left-sleeve']}
-                  alt="Left Sleeve"
-                  className="dl-sidebar__thumbnail-image"
-                />
-              ) : (
-                <div className="dl-sidebar__thumbnail-placeholder">L.Slv</div>
-              )}
-            </div>
-            <span className="dl-sidebar__label">L.Sleeve</span>
-          </button>
+          {productInfo.baseImages['left-sleeve'] && (
+            <button
+              className={`dl-sidebar__btn ${currentView === 'left-sleeve' ? 'is-active' : ''} `}
+              onClick={() => handleViewChange('left-sleeve')}
+              aria-label="Left Sleeve"
+              aria-pressed={currentView === 'left-sleeve'}
+            >
+              <div className="dl-sidebar__thumbnail">
+                {productInfo.baseImages['left-sleeve'] ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={productInfo.baseImages['left-sleeve']}
+                    alt="Left Sleeve"
+                    className="dl-sidebar__thumbnail-image"
+                  />
+                ) : (
+                  <div className="dl-sidebar__thumbnail-placeholder">L.Slv</div>
+                )}
+              </div>
+              <span className="dl-sidebar__label">L.Sleeve</span>
+            </button>
+          )}
 
-          <button
-            className={`dl-sidebar__btn ${currentView === 'right-sleeve' ? 'is-active' : ''} `}
-            onClick={() => handleViewChange('right-sleeve')}
-            aria-label="Right Sleeve"
-            aria-pressed={currentView === 'right-sleeve'}
-          >
-            <div className="dl-sidebar__thumbnail">
-              {productInfo.baseImages['right-sleeve'] ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={productInfo.baseImages['right-sleeve']}
-                  alt="Right Sleeve"
-                  className="dl-sidebar__thumbnail-image"
-                />
-              ) : (
-                <div className="dl-sidebar__thumbnail-placeholder">R.Slv</div>
-              )}
-            </div>
-            <span className="dl-sidebar__label">R.Sleeve</span>
-          </button>
+          {productInfo.baseImages['right-sleeve'] && (
+            <button
+              className={`dl-sidebar__btn ${currentView === 'right-sleeve' ? 'is-active' : ''} `}
+              onClick={() => handleViewChange('right-sleeve')}
+              aria-label="Right Sleeve"
+              aria-pressed={currentView === 'right-sleeve'}
+            >
+              <div className="dl-sidebar__thumbnail">
+                {productInfo.baseImages['right-sleeve'] ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={productInfo.baseImages['right-sleeve']}
+                    alt="Right Sleeve"
+                    className="dl-sidebar__thumbnail-image"
+                  />
+                ) : (
+                  <div className="dl-sidebar__thumbnail-placeholder">R.Slv</div>
+                )}
+              </div>
+              <span className="dl-sidebar__label">R.Sleeve</span>
+            </button>
+          )}
 
           <button
             className={`dl-sidebar__btn ${zoomLevel > 1 ? 'is-active' : ''} `}

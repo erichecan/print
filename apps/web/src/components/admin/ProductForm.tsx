@@ -165,10 +165,8 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
 
 
   // Handle file selection and preview
-  const handleFileSelect = async (index: number, files: FileList | null) => {
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
+  const handleFileSelect = async (index: number, file: File) => {
+    if (!file) return;
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
@@ -255,7 +253,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     e.stopPropagation();
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-      handleFileSelect(index, files);
+      handleFileSelect(index, files[0]); // Handle single file drop replacement
     }
   };
 
@@ -338,9 +336,11 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
             ? parseNumber(values.weight)
             : undefined,
         variants: values.variants
-          ?.filter((variant) => variant?.sku)
-          .map((variant) => ({
+          // Only filter completely empty rows if needed, but let's be permissive
+          ?.map((variant) => ({
             ...variant,
+            // Auto-generate SKU if missing
+            sku: variant.sku || `${values.sku || 'SKU'}-${variant.color || 'CO'}-${variant.size || 'SZ'}`.replace(/[^a-zA-Z0-9-]/g, '-').toUpperCase(),
             stockQuantity:
               variant.stockQuantity !== undefined
                 ? parseNumber(variant.stockQuantity)
@@ -497,6 +497,10 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           <div className="card">
             <div className="card-header">
               <h3>Media</h3>
+              <div className="text-sm text-gray-500 mb-2" style={{ fontSize: '12px', color: '#666', marginTop: '-8px' }}>
+                <p><strong>Design Lab Image Order:</strong></p>
+                <p>1. Front &nbsp; 2. Back &nbsp; 3. Left Sleeve &nbsp; 4. Right Sleeve</p>
+              </div>
               <button
                 type="button"
                 className="text-btn"
@@ -516,14 +520,12 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
                   e.stopPropagation();
                   const files = e.dataTransfer.files;
                   if (files.length > 0) {
-                    // Find next available index
-                    const nextIndex = imageFields.length;
-                    // Need to handle multiple files, for now just first one loosely
-                    // Actually handleFileSelect handles one index.
-                    // Ideally we should append multiple fields. 
-                    // For simplicity in this UI, we treat dropping on the 'area' as appending new.
-                    appendImage({ ...defaultImage });
-                    setTimeout(() => handleFileSelect(nextIndex, files), 0);
+                    const startIndex = imageFields.length;
+                    Array.from(files).forEach((file, i) => {
+                      appendImage({ ...defaultImage });
+                      // Use clean timeout to allow state update
+                      setTimeout(() => handleFileSelect(startIndex + i, file), 0);
+                    });
                   }
                 }}
               >
@@ -542,7 +544,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
                             const startIndex = imageFields.length;
                             Array.from(e.target.files).forEach((file, i) => {
                               appendImage({ ...defaultImage });
-                              setTimeout(() => handleFileSelect(startIndex + i, e.target.files), 0);
+                              setTimeout(() => handleFileSelect(startIndex + i, file), 0);
                             });
                           }
                         }}
