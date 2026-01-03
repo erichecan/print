@@ -392,6 +392,30 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [showProductModal, setShowProductModal] = useState(false);
   const [showColorModal, setShowColorModal] = useState(false);
 
+  // 5.0 Version: Dynamic Color Mapping State
+  const [dynamicColors, setDynamicColors] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/product-color-images')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const mapped = data.map((d: any) => ({
+            name: d.colorName,
+            hex: d.colorHex,
+            availableSizes: ["S", "M", "L", "XL", "2XL", "3XL"],
+            isAvailable: d.isActive,
+            imageUrls: d.imageUrls
+          }));
+          // Sort alphabetically or typically? Let's keep API sort or alphabetical
+          mapped.sort((a: any, b: any) => a.name.localeCompare(b.name));
+          console.log('[DesignLab 5.0] Loaded dynamic colors:', mapped.map(m => m.name).join(', '));
+          setDynamicColors(mapped);
+        }
+      })
+      .catch(err => console.error('[DesignLab 5.0] Failed to load color mapping:', err));
+  }, []);
+
   // 保存模块：设计名称状态（独立管理，因为 SaveShareModal 需要可编辑）
   const [designName, setDesignName] = useState<string>('Untitled Design');
   const [designId, setDesignId] = useState<string | null>(null);
@@ -567,6 +591,21 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   };
 
   // Helper to sync productInfo with productList updates
+  useEffect(() => {
+    if (productInfo.productId) {
+      setProductList(prev => {
+        const index = prev.findIndex(p => p.productId === productInfo.productId);
+        if (index !== -1) {
+          const newList = [...prev];
+          // Deep sync of baseImages and color info
+          newList[index] = { ...prev[index], ...productInfo };
+          return newList;
+        }
+        return prev;
+      });
+    }
+  }, [productInfo.baseImages, productInfo.color, productInfo.colorId]);
+
   const updateProductList = (newProduct: any) => {
     setProductList(prev => {
       // Check if we are updating an existing product or adding a new one
@@ -642,111 +681,116 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // 产品模块：颜色选择处理
   const handleColorSelect = async (colorName: string) => {
-    console.log('[DesignLab 5.0] 颜色选择:', colorName);
+    console.log('[DesignLab 5.0] handleColorSelect called with:', colorName);
+
+    // 1. First, find if we have an official variant for this color
+    let officialVariantId = productInfo.colorId;
+    let officialVariant = null;
+
+    if (productInfo.variants && productInfo.variants.length > 0) {
+      officialVariant = productInfo.variants.find(v =>
+        v.color?.toLowerCase() === colorName.toLowerCase() ||
+        v.color?.toLowerCase().includes(colorName.toLowerCase()) ||
+        colorName.toLowerCase().includes(v.color?.toLowerCase() || '')
+      );
+
+      if (officialVariant) {
+        officialVariantId = officialVariant.id;
+        console.log('[DesignLab 5.0] Found matching official variant:', { color: officialVariant.color, id: officialVariantId });
+      }
+    }
+
+    // 2. Check Dynamic Colors (Backend Mapping) for HIGH-QUALITY SCRAPED IMAGES
+    const dynamicColorObj = dynamicColors.find(c =>
+      c.name.toLowerCase() === colorName.toLowerCase() ||
+      c.name.toLowerCase().includes(colorName.toLowerCase()) ||
+      colorName.toLowerCase().includes(c.name.toLowerCase())
+    );
+
+    if (dynamicColorObj && dynamicColorObj.imageUrls) {
+      console.log('[DesignLab 5.0] Found Dynamic Mapping Override for:', colorName, dynamicColorObj.imageUrls);
+
+      // Update state immediately with dynamic images
+      setProductInfo(prev => ({
+        ...prev,
+        color: colorName, // Keep the display name consistent with what was clicked
+        colorId: officialVariantId, // Store the official variant if found, otherwise keep current
+        baseImages: {
+          front: dynamicColorObj.imageUrls.front || prev.baseImages.front,
+          back: dynamicColorObj.imageUrls.back || prev.baseImages.back,
+          sleeve: dynamicColorObj.imageUrls.left_sleeve || dynamicColorObj.imageUrls.sleeve || prev.baseImages.sleeve,
+          'left-sleeve': dynamicColorObj.imageUrls.left_sleeve || dynamicColorObj.imageUrls.sleeve,
+          'right-sleeve': dynamicColorObj.imageUrls.right_sleeve || dynamicColorObj.imageUrls.sleeve,
+        }
+      }));
+
+      // Update URL tracking
+      if (typeof window !== 'undefined' && officialVariantId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('variantId', officialVariantId);
+        window.history.replaceState({}, '', url.toString());
+      }
+      return;
+    }
+
+    // 3. Fallback: If no dynamic mapping, use the standard logic
+    console.log('[DesignLab 5.0] No dynamic mapping found, falling back to legacy/standard logic for:', colorName);
 
     try {
-      // 1. 在现有变体列表中查找目标颜色的 variantId
-      let newVariantId = productInfo.colorId;
-      let targetVariant = null;
+      // If we have an official variant, try to fetch its full data
+      if (officialVariantId && officialVariantId !== productInfo.colorId) {
+        try {
+          const newProductData = await getProductByVariant(officialVariantId);
+          if (newProductData) {
+            console.log('[DesignLab 5.0] Fetched data for official variant:', newProductData.color);
+            setProductInfo(prev => ({
+              ...prev,
+              productId: newProductData.productId,
+              productName: newProductData.productName,
+              colorId: officialVariantId,
+              color: newProductData.color || colorName,
+              baseImages: {
+                front: newProductData.baseImages.front,
+                back: newProductData.baseImages.back,
+                sleeve: newProductData.baseImages.sleeve,
+                'left-sleeve': newProductData.baseImages['left-sleeve'] || getDefaultProductBaseImages(colorName)['left-sleeve'],
+                'right-sleeve': newProductData.baseImages['right-sleeve'] || getDefaultProductBaseImages(colorName)['right-sleeve'],
+              },
+              variants: newProductData.variants || prev.variants,
+            }));
 
-      if (productInfo.variants && productInfo.variants.length > 0) {
-        // 改进：不区分大小写查找
-        targetVariant = productInfo.variants.find(v => v.color?.toLowerCase() === colorName.toLowerCase());
-        if (targetVariant) {
-          newVariantId = targetVariant.id;
-          console.log('[DesignLab 5.0] Found variant ID for color:', { color: colorName, variantId: newVariantId });
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.set('variantId', officialVariantId);
+              window.history.replaceState({}, '', url.toString());
+            }
+            return;
+          }
+        } catch (fetchErr) {
+          console.error('[DesignLab 5.0] Failed to fetch official variant data, using generator fallback:', fetchErr);
         }
       }
 
-      // 如果没有找到变体ID，我们可以尝试仅更新前端展示（尽管这可能不准确）
-      if (!newVariantId) {
-        console.warn('[DesignLab 5.0] No variant ID found for color, falling back to legacy image logic');
-        const baseImages = getDefaultProductBaseImages(colorName);
-        setProductInfo(prev => ({
-          ...prev,
-          color: colorName,
-          baseImages: {
-            ...baseImages,
-            'left-sleeve': baseImages['left-sleeve'] || '', // Fallback for legacy path
-            'right-sleeve': baseImages['right-sleeve'] || '',
-          },
-          // 保持原有 ID 或设为 null? 设为 null 可能更安全以免误导
-        }));
-        return;
-      }
-
-      // 2. 关键修复：使用 API 获取新变体的完整数据
-      // 这确保如果是"红色"，我们会得到后端返回的正确红色图片，而不是前端瞎猜的 GCS URL
-      try {
-        const newProductData = await getProductByVariant(newVariantId);
-
-        if (newProductData) {
-          let finalBaseImages = newProductData.baseImages;
-
-          // Fallback check: If backend returns generic fallback image (because DB lacks images),
-          // force use of GCS generated images.
-          if (!finalBaseImages.front || finalBaseImages.front.includes('hero-card-tee.jpg')) {
-            console.warn('[DesignLab 5.0] Backend returned generic fallback image, using GCS generator instead.');
-            finalBaseImages = getDefaultProductBaseImages(newProductData.color || colorName);
-          }
-
-          setProductInfo(prev => ({
-            ...prev,
-            productId: newProductData.productId,
-            productName: newProductData.productName,
-            colorId: newVariantId,
-            color: newProductData.color || colorName,
-            baseImages: {
-              front: finalBaseImages.front,
-              back: finalBaseImages.back,
-              sleeve: finalBaseImages.sleeve,
-              'left-sleeve': finalBaseImages['left-sleeve'] || getDefaultProductBaseImages(newProductData.color || colorName)['left-sleeve'],
-              'right-sleeve': finalBaseImages['right-sleeve'] || getDefaultProductBaseImages(newProductData.color || colorName)['right-sleeve'],
-            },
-            variants: newProductData.variants || prev.variants,
-          }));
-
-          // 更新 URL：只使用 variantId，移除容易混淆的 colorId
-          if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('colorId'); // 移除此参数避免混淆
-            url.searchParams.set('variantId', newVariantId);
-            window.history.replaceState({}, '', url.toString());
-          }
-          return;
-        }
-      } catch (fetchErr) {
-        console.error('[DesignLab 5.0] Failed to fetch variant details:', fetchErr);
-      }
-
-      // 3. 降级方案：如果 API 失败，使用本地逻辑
-      const baseImages = getDefaultProductBaseImages(colorName);
-      // 如果本地变体数据里有图片（后端新加的），优先使用
-      if (targetVariant && (targetVariant as any).imageUrl) {
-        baseImages.front = (targetVariant as any).imageUrl;
-      }
-
+      // 4. Final Fallback: GCS URL Generator (Guessing paths)
+      const generatedImages = getDefaultProductBaseImages(colorName);
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
         baseImages: {
-          ...baseImages,
-          'left-sleeve': baseImages['left-sleeve'] || '',
-          'right-sleeve': baseImages['right-sleeve'] || '',
+          ...generatedImages,
+          'left-sleeve': generatedImages['left-sleeve'] || '',
+          'right-sleeve': generatedImages['right-sleeve'] || '',
         },
-        colorId: newVariantId,
+        colorId: officialVariantId,
       }));
 
-      if (typeof window !== 'undefined' && productInfo.productId) {
+      if (typeof window !== 'undefined' && officialVariantId) {
         const url = new URL(window.location.href);
-        // url.searchParams.set('colorId', colorName); // 不再设置 colorId
-        if (newVariantId) {
-          url.searchParams.set('variantId', newVariantId);
-        }
+        url.searchParams.set('variantId', officialVariantId);
         window.history.replaceState({}, '', url.toString());
       }
     } catch (error) {
-      console.error('[DesignLab 5.0] 颜色选择失败:', error);
+      console.error('[DesignLab 5.0] handleColorSelect final fallback error:', error);
     }
   };
 
@@ -3696,7 +3740,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               {toolPanelType === 'product-colors' && (
                 <ProductColorsPanel
                   productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
-                  colors={PRODUCT_COLORS}
+                  colors={dynamicColors.length > 0 ? dynamicColors : PRODUCT_COLORS}
                   selectedColor={productInfo.color}
                   onSelectColor={handleColorSelect}
                   onClose={handleBackToHome}
@@ -3767,7 +3811,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               {productInfo.baseImages.front ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={getThumbnailImageUrl(productInfo.color, 'front')}
+                  src={productInfo.baseImages.front}
                   alt="Front view thumbnail"
                   className="dl-sidebar__thumbnail-image"
                 />
@@ -3788,7 +3832,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               {productInfo.baseImages.back ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={getThumbnailImageUrl(productInfo.color, 'back')}
+                  src={productInfo.baseImages.back}
                   alt="Back view thumbnail"
                   className="dl-sidebar__thumbnail-image"
                 />
@@ -3809,7 +3853,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               {productInfo.baseImages['left-sleeve'] ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={getThumbnailImageUrl(productInfo.color, 'left-sleeve')}
+                  src={productInfo.baseImages['left-sleeve']}
                   alt="Left Sleeve"
                   className="dl-sidebar__thumbnail-image"
                 />
@@ -3830,7 +3874,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               {productInfo.baseImages['right-sleeve'] ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={getThumbnailImageUrl(productInfo.color, 'right-sleeve')}
+                  src={productInfo.baseImages['right-sleeve']}
                   alt="Right Sleeve"
                   className="dl-sidebar__thumbnail-image"
                 />

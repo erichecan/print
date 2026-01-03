@@ -9,6 +9,8 @@ export default function ColorMappingPage() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState('');
     const [showTopBtn, setShowTopBtn] = useState(false);
+    const [deleteModal, setDeleteModal] = useState<{ id: string, name: string } | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     // Initialize from API
     useEffect(() => {
@@ -78,6 +80,34 @@ export default function ColorMappingPage() {
         }
     };
 
+    const handleDeleteClick = (id: string | undefined, name: string) => {
+        if (!id) return;
+        setDeleteModal({ id, name });
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteModal) return;
+        const { id, name } = deleteModal;
+        setDeleting(true);
+
+        try {
+            const res = await fetch(`/api/product-color-images/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (!res.ok) throw new Error('Failed to delete mapping');
+
+            setMessage(`Successfully deleted ${name}`);
+            setColors(colors.filter(c => c.id !== id));
+            setDeleteModal(null);
+        } catch (err: any) {
+            console.error(err);
+            setMessage('Error: ' + err.message);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     return (
         <div className="p-8 max-w-full mx-auto bg-gray-50 min-h-screen relative">
             <div className="flex justify-between items-center mb-6 sticky top-0 bg-gray-50 py-4 z-10 border-b shadow-sm px-4 -mx-4">
@@ -109,6 +139,7 @@ export default function ColorMappingPage() {
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase w-48">Product Color</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase w-64">Values</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase">Product Images (4 Views)</th>
+                            <th className="px-6 py-4 text-right text-xs font-bold text-gray-600 uppercase w-24">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
@@ -117,6 +148,9 @@ export default function ColorMappingPage() {
                                 <td className="px-6 py-6 whitespace-nowrap text-sm text-gray-300 font-mono">{index + 1}</td>
                                 <td className="px-6 py-6 whitespace-nowrap">
                                     <div className="text-sm font-black text-slate-800">{color.name}</div>
+                                    {color.externalColorId && (
+                                        <div className="text-[10px] text-gray-400 font-mono mt-1">ID: {color.externalColorId}</div>
+                                    )}
                                 </td>
                                 <td className="px-6 py-6 whitespace-nowrap">
                                     <div className="flex items-center gap-3">
@@ -174,11 +208,67 @@ export default function ColorMappingPage() {
                                         })}
                                     </div>
                                 </td>
+                                <td className="px-6 py-6 whitespace-nowrap text-right text-sm font-medium">
+                                    <button
+                                        onClick={() => handleDeleteClick(color.id, color.name)}
+                                        className="text-red-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50"
+                                        title="Delete Mapping"
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {deleteModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">Confirm Deletion</h3>
+                                    <p className="text-gray-500 text-sm mt-1">
+                                        Are you sure you want to delete the mapping for <span className="font-bold text-gray-700">{deleteModal.name}</span>? This action cannot be undone.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+                            <button
+                                onClick={() => setDeleteModal(null)}
+                                disabled={deleting}
+                                className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                disabled={deleting}
+                                className="px-6 py-2 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-200 hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50"
+                            >
+                                {deleting ? 'Deleting...' : 'Delete Now'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
 
             {/* Back to Top Button */}
             {showTopBtn && (

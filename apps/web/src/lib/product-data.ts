@@ -1,8 +1,10 @@
 export interface ProductColor {
+    id?: string;
     name: string;
     hex: string;
     availableSizes: string[];
     isAvailable: boolean;
+    externalColorId?: string;
     imageUrls?: {
         front?: string;
         back?: string;
