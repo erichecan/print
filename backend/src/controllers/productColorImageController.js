@@ -47,7 +47,15 @@ exports.getProductColorImages = async (req, res) => {
 
     res.json({
       success: true,
-      data: colorImages,
+      data: colorImages.map(ci => ({
+        id: ci.id,
+        name: ci.colorName,
+        hex: ci.colorHex,
+        externalColorId: ci.customInkColorId,
+        imageUrls: ci.imageUrls,
+        isVerified: ci.isVerified,
+        isActive: ci.isActive
+      })),
       count: colorImages.length
     });
   } catch (error) {
@@ -221,9 +229,10 @@ exports.getColorMapping = async (req, res) => {
         productId: productId,
         mapping: mapping,
         colors: colorImages.map(ci => ({
-          colorId: ci.customInkColorId,
-          colorName: ci.colorName,
-          colorHex: ci.colorHex,
+          id: ci.id,
+          name: ci.colorName,
+          hex: ci.colorHex,
+          externalColorId: ci.customInkColorId,
           imageUrls: ci.imageUrls
         }))
       }
@@ -298,31 +307,20 @@ exports.updateReferenceColors = async (req, res) => {
       return res.status(400).json({ error: 'Colors array is required' });
     }
 
-    // This updates the reference mapping.
-    // In a real scenario, we might want to update `ProductColorImage` records.
-    // For now, we will iterate and update/create.
-    // We need the default product ID.
+    // Update each color image record
+    const updatePromises = colors.map(color => {
+      if (color.id) {
+        return ProductColorImage.update(
+          { colorHex: color.hex || color.colorHex },
+          { where: { id: color.id } }
+        );
+      }
+      return Promise.resolve();
+    });
 
-    // We will just return success for now as the image upload is the critical part for GCS.
-    // But ideally we should save this. 
-    // Since I'm unsure about the ORM (Prisma vs Sequelize mismatch in my head), 
-    // I'll check models first before committing complex DB logic.
+    await Promise.all(updatePromises);
 
-    // TEMPORARY: Just log and return success to unblock the UI flow.
-    // The frontend mainly wants the images in GCS.
-    // The hex values are seemingly local in the file? 
-    // Wait, frontend `useEffect(() => { setColors(PRODUCT_COLORS); }, []);`
-    // It loads from a CONSTANT file. It doesn't load from DB.
-    // So saving to DB does nothing for the frontend unless we change frontend to load from DB.
-    // The user said: "hex value... obtained through this mapping".
-    // So the frontend SHOULD load from DB.
-
-    // Since I am restoring the page, I should make it functional.
-    // But the frontend `page.tsx` loads from `PRODUCT_COLORS`. 
-    // The "Save" updates DB, but `useEffect` reads from file. 
-    // This implies the previous dev (or user) intends to migrate to DB but hasn't fully.
-
-    res.json({ success: true, message: 'Mapping updated (DB sync pending frontend refactor)' });
+    res.json({ success: true, message: 'Color mappings updated successfully' });
   } catch (error) {
     logger.error('Error updating color mapping:', error);
     res.status(500).json({ error: 'Failed to update mapping' });
