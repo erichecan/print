@@ -91,19 +91,23 @@ export function ProductDetail() {
 
     // 找到对应的 variant
     let matchingVariant = null;
+    // 找到对应的 variant (Case-insensitive matching)
+    let matchingVariant = null;
     for (const v of apiProduct.variants) {
-      const colorMatch = !payload.color || v.color === payload.color || !v.color;
-      const sizeMatch = !payload.size || v.size === payload.size || !v.size;
+      const vColor = (v.color || '').toLowerCase().trim();
+      const pColor = (payload.color || '').toLowerCase().trim();
+      const colorMatch = !pColor || vColor === pColor || !vColor;
+
+      const vSize = (v.size || '').toLowerCase().trim();
+      const pSize = (payload.size || '').toLowerCase().trim();
+      const sizeMatch = !pSize || vSize === pSize || !vSize;
+
       console.log('[Add to Cart] Checking variant:', {
         variantId: v.id,
-        variantColor: v.color,
-        variantSize: v.size,
-        payloadColor: payload.color,
-        payloadSize: payload.size,
-        colorMatch,
-        sizeMatch,
-        matches: colorMatch && sizeMatch
+        vColor, pColor, colorMatch,
+        vSize, pSize, sizeMatch
       });
+
       if (colorMatch && sizeMatch) {
         matchingVariant = v;
         break;
@@ -158,19 +162,23 @@ export function ProductDetail() {
 
     // 找到对应的 variant
     let matchingVariant = null;
+    // 找到对应的 variant (Case-insensitive matching)
+    let matchingVariant = null;
     for (const v of apiProduct.variants) {
-      const colorMatch = !payload.color || v.color === payload.color || !v.color;
-      const sizeMatch = !payload.size || v.size === payload.size || !v.size;
+      const vColor = (v.color || '').toLowerCase().trim();
+      const pColor = (payload.color || '').toLowerCase().trim();
+      const colorMatch = !pColor || vColor === pColor || !vColor;
+
+      const vSize = (v.size || '').toLowerCase().trim();
+      const pSize = (payload.size || '').toLowerCase().trim();
+      const sizeMatch = !pSize || vSize === pSize || !vSize;
+
       console.log('[Buy Now] Checking variant:', {
         variantId: v.id,
-        variantColor: v.color,
-        variantSize: v.size,
-        payloadColor: payload.color,
-        payloadSize: payload.size,
-        colorMatch,
-        sizeMatch,
-        matches: colorMatch && sizeMatch
+        vColor, pColor, colorMatch,
+        vSize, pSize, sizeMatch
       });
+
       if (colorMatch && sizeMatch) {
         matchingVariant = v;
         break;
