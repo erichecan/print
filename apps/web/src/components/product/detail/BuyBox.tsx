@@ -83,59 +83,100 @@ export function BuyBox({
   onStartDesign,
   variantId,
   productId,
+  variants = [],
 }: BuyBoxProps) {
   const router = useRouter();
   const [selectedStyle, setSelectedStyle] = useState(style.options[0]?.value || '');
   const [selectedColor, setSelectedColor] = useState(colors.find(c => c.available)?.name || '');
-  const [selectedSize, setSelectedSize] = useState(sizes.find(s => s.available)?.value || '');
-  // 移除 Print Location 状态（模块已移除）
+
+  // Logic to determine available sizes based on selected color
+  const getAvailableSizesForColor = (color: string) => {
+    if (!variants || variants.length === 0) return sizes.filter(s => s.available).map(s => s.value);
+
+    return variants
+      .filter(v => {
+        const vColor = (v.color || '').toLowerCase().trim();
+        const tColor = (color || '').toLowerCase().trim();
+        return vColor === tColor && v.stockQuantity > 0;
+      })
+      .map(v => (v.size || '').toUpperCase()); // Normalized size values
+  };
+
+  const availableSizesForColor = getAvailableSizesForColor(selectedColor);
+
+  const [selectedSize, setSelectedSize] = useState(() => {
+    const initialSizes = getAvailableSizesForColor(colors.find(c => c.available)?.name || '');
+    return initialSizes.length > 0 ? initialSizes[0] : '';
+  });
+
   const [quantity, setQuantity] = useState(1);
 
-  const selectedSizeData = sizes.find(s => s.value === selectedSize);
-  const maxQuantity = selectedSizeData?.stock || 1;
-  const canAddToCart = selectedSize && selectedColor && quantity > 0 && quantity <= maxQuantity;
+  // Get current specific variant
+  const currentVariant = variants.find(v => {
+    const vColor = (v.color || '').toLowerCase().trim();
+    const tColor = (selectedColor || '').toLowerCase().trim();
+    const vSize = (v.size || '').toLowerCase().trim();
+    const tSize = (selectedSize || '').toLowerCase().trim();
+    return vColor === tColor && vSize === tSize;
+  });
+
+  const maxQuantity = currentVariant ? currentVariant.stockQuantity : 1;
+  const canAddToCart = selectedSize && selectedColor && quantity > 0 && quantity <= maxQuantity && !!currentVariant;
+
+  const handleColorSelect = (newColor: string) => {
+    setSelectedColor(newColor);
+
+    // Check if current size is valid for new color
+    const newAvailableSizes = getAvailableSizesForColor(newColor);
+    const isCurrentSizeValid = newAvailableSizes.some(s => s.toLowerCase() === selectedSize.toLowerCase());
+
+    if (!isCurrentSizeValid) {
+      // Select first available size for this color, or empty
+      setSelectedSize(newAvailableSizes.length > 0 ? newAvailableSizes[0] : '');
+    }
+  };
 
   const handleAddToCart = useCallback(() => {
     if (!canAddToCart) return;
 
     const payload = {
-      productId: productId || 'prod-001', // 使用实际的 productId
+      productId: productId || 'prod-001',
       title,
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      // 移除 printLocation（模块已移除）
       quantity,
       unitPrice: price.sale,
       salePrice: price.sale,
       originalPrice: price.original,
       currency: price.currency,
+      variantId: currentVariant?.id
     };
 
     console.log('[BuyBox] Add to Cart payload:', payload);
     onAddToCart(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onAddToCart, productId]);
+  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onAddToCart, productId, currentVariant]);
 
   const handleBuyNow = useCallback(() => {
     if (!canAddToCart) return;
 
     const payload = {
-      productId: productId || 'prod-001', // 使用实际的 productId
+      productId: productId || 'prod-001',
       title,
       selectedStyle,
       color: selectedColor,
       size: selectedSize,
-      // 移除 printLocation（模块已移除）
       quantity,
       unitPrice: price.sale,
       salePrice: price.sale,
       originalPrice: price.original,
       currency: price.currency,
+      variantId: currentVariant?.id
     };
 
     console.log('[BuyBox] Buy Now payload:', payload);
     onBuyNow(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onBuyNow, productId]);
+  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onBuyNow, productId, currentVariant]);
 
   // 开始设计处理函数 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {
