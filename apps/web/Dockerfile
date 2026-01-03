@@ -51,8 +51,9 @@ COPY apps/web/src ./src
 COPY prisma ./prisma
 # 修复：安装 apps/web 的依赖（next 等）
 RUN npm install --production=false
-# 注意：前端通过 API 调用后端，不需要直接生成 Prisma Client
-# Prisma Client 仅在后端生成和使用
+# 生成 Prisma Client（部分 API 路由需要，如 product-color-images）
+# 使用正确的二进制目标for Linux Docker 环境
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npx prisma generate --schema=./prisma/schema.prisma
 RUN npm run build
 
 FROM node:18-bullseye-slim AS runner
