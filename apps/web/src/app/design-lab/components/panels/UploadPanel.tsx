@@ -23,8 +23,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
   onClose
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragActive, setDragActive] = useState(false);
-
   const handleBrowseClick = () => {
     fileInputRef.current?.click();
     onBrowseClick();
@@ -34,27 +32,6 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
     const file = e.target.files?.[0];
     if (file) {
       onFileSelect(file);
-    }
-  };
-
-// 拖拽上传处理
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onFileSelect(e.dataTransfer.files[0]);
     }
   };
 
@@ -87,25 +64,11 @@ const UploadPanel: React.FC<UploadPanelProps> = ({
           <input
             ref={fileInputRef}
             type="file"
-accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml" // 明确支持 AVIF 和 WebP 格式
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg+xml" // 明确支持 AVIF 和 WebP 格式
             onChange={handleFileChange}
             style={{ display: 'none' }}
             aria-label="Choose file to upload"
           />
-        </div>
-
-        <div className="dl-upload-panel__divider">
-          <span>or</span>
-        </div>
-
-        <div
-          className={`dl-upload-panel__drag-drop ${dragActive ? 'is-active' : ''}`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
-          <p className="dl-upload-panel__drag-text">Drag & Drop Anywhere</p>
         </div>
 
         <div className="dl-upload-panel__info">
@@ -117,11 +80,11 @@ accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,image/avif,image/svg
             </svg>
           </div>
           <p className="dl-upload-panel__info-text">
-Vector or high resolution artwork of 300 DPI or more will look the best. Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>20 MB</strong>. {/* 添加支持的格式说明，包括 AVIF 和 WebP */}
+            Vector or high resolution artwork of 300 DPI or more will look the best. Supported formats: JPG, PNG, GIF, WebP, AVIF, SVG. Max size of <strong>20 MB</strong>. {/* 添加支持的格式说明，包括 AVIF 和 WebP */}
           </p>
         </div>
 
-{/* 按产品要求移除：Sign in to access your saved uploads 模块（截图区域） */}
+        {/* 按产品要求移除：Sign in to access your saved uploads 模块（截图区域） */}
 
         {recentUploads.length > 0 && (
           <div className="dl-upload-panel__recent">
@@ -145,7 +108,7 @@ Vector or high resolution artwork of 300 DPI or more will look the best. Support
           </div>
         )}
 
-{/* 按产品要求移除：Need help with your upload / Chat / email 模块（截图区域） */}
+        {/* 按产品要求移除：Need help with your upload / Chat / email 模块（截图区域） */}
       </div>
     </div>
   );
