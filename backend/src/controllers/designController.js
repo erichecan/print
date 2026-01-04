@@ -40,7 +40,7 @@ exports.createDesignDraft = async (req, res) => {
     const userId = req.user?.id || null;
     const sessionId = userId ? null : req.sessionId || uuidv4();
 
-// Fix: Backend fallback for 'default' variant ID
+    // Fix: Backend fallback for 'default' variant ID
     // If frontend sends 'default' (e.g. failure to resolve), we find a valid one here.
     if (productVariantId === 'default') {
       try {
@@ -68,7 +68,7 @@ exports.createDesignDraft = async (req, res) => {
       return res.status(400).json({ error: 'productVariantId is required' });
     }
 
-// Updated for Variant model rename
+    // Updated for Variant model rename
     const variant = await prisma.variant.findUnique({
       where: { id: productVariantId },
       include: {
@@ -137,7 +137,7 @@ exports.createDesignDraft = async (req, res) => {
       }
     });
   } catch (error) {
-console.error(' createDesignDraft error:', error);
+    console.error(' createDesignDraft error:', error);
     res.status(500).json({ error: 'Failed to create design draft' });
   }
 };
@@ -154,7 +154,7 @@ exports.getDesignDraft = async (req, res) => {
 
     return res.json({ data: result.design });
   } catch (error) {
-console.error(' getDesignDraft error:', error);
+    console.error(' getDesignDraft error:', error);
     return res.status(500).json({ error: 'Failed to load design draft' });
   }
 };
@@ -201,7 +201,7 @@ exports.updateDesignDraft = async (req, res) => {
 
     return res.json({ data: updated });
   } catch (error) {
-console.error(' updateDesignDraft error:', error);
+    console.error(' updateDesignDraft error:', error);
     return res.status(500).json({ error: 'Failed to update design draft' });
   }
 };
@@ -281,7 +281,7 @@ exports.generateAssetUploadUrl = async (req, res) => {
       }
     });
   } catch (error) {
-console.error(' generateAssetUploadUrl error:', error);
+    console.error(' generateAssetUploadUrl error:', error);
     return res.status(500).json({ error: 'Failed to generate upload URL' });
   }
 };
@@ -306,17 +306,17 @@ exports.requestQuote = async (req, res) => {
     // 基础价格（Base Price）来自产品定义
     const basePrice = Number(variant.product.basePrice || 0);
 
-// 计算使用的面数（front, back, sleeve）
+    // 计算使用的面数（front, back, sleeve）
     const sidesCount = Array.isArray(sidesUsed) ? sidesUsed.length : 0;
     const additionalSides = Math.max(0, sidesCount - 1);
     const sidesFee = additionalSides * 2 * 100; // 转换为分，每个额外面 $2
 
-// 图层复杂度费用
+    // 图层复杂度费用
     const baseLayers = 5;
     const additionalLayers = Math.max(0, layerCount - baseLayers);
     const layersFee = additionalLayers * 0.5 * 100; // 转换为分，每个额外图层 $0.50
 
-// 数量折扣
+    // 数量折扣
     let quantityDiscount = 0;
     if (quantity >= 50) {
       quantityDiscount = 0.15;
@@ -326,7 +326,7 @@ exports.requestQuote = async (req, res) => {
       quantityDiscount = 0.05;
     }
 
-// Fetch global size fees for synchronization
+    // Fetch global size fees for synchronization
     let globalSizeFees = [];
     try {
       globalSizeFees = await prisma.offline_order_size_fees.findMany();
@@ -355,9 +355,10 @@ exports.requestQuote = async (req, res) => {
 
       const sizeAdjustmentMap = {};
       allVariants.forEach(v => {
-// Synchronize with global size fee config
+        // Synchronize with global size fee config
         const globalFee = v.size ? globalFeeMap[v.size] : undefined;
-        sizeAdjustmentMap[v.size] = globalFee !== undefined ? globalFee : Number(v.priceAdjustment || 0);
+        // CRITICAL: Use global fee if exists, otherwise 0
+        sizeAdjustmentMap[v.size] = globalFee !== undefined ? globalFee : 0;
       });
 
       // 2. 根据每种尺寸的数量计算总价
@@ -373,7 +374,7 @@ exports.requestQuote = async (req, res) => {
 
       // 如果 sizeQuantities 总和不为 0，则使用计算出的总和
       // 但前端傳來的 quantity 是 override? 不，應該是 totalQuantity.
-      // 這裡為了保險，我们 calculate unit price based on breakdown
+      // 這裡為了保险，我们 calculate unit price based on breakdown
       if (calculatedQuantity > 0) {
         weightedUnitPrice = (totalBasePrice + totalAdjustment) / calculatedQuantity;
       } else {
@@ -382,21 +383,21 @@ exports.requestQuote = async (req, res) => {
 
     } else {
       // 老逻辑：使用当前 design 关联的变体价格
-// Synchronize with global size fee config
+      // Synchronize with global size fee config
       const globalFee = variant.size ? globalFeeMap[variant.size] : undefined;
-      const effectiveAdjustment = globalFee !== undefined ? globalFee : defaultAdjustment;
+      const effectiveAdjustment = globalFee !== undefined ? globalFee : 0;
 
       weightedUnitPrice = basePrice + effectiveAdjustment;
       totalAdjustment = effectiveAdjustment * quantity;
     }
 
-// 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers）
+    // 单价包含基础费用（base + adjustment）加上 附加费用（sides + layers）
     let unitPrice = weightedUnitPrice + sidesFee + layersFee;
 
-// 应用数量折扣
+    // 应用数量折扣
     const discountedUnitPrice = unitPrice * (1 - quantityDiscount);
 
-// 计算总价
+    // 计算总价
     const finalQuantity = (sizeQuantities && sizeQuantities.length > 0) ?
       sizeQuantities.reduce((sum, sq) => sum + (sq.quantity || 0), 0) :
       quantity;
@@ -427,7 +428,7 @@ exports.requestQuote = async (req, res) => {
       }
     });
   } catch (error) {
-console.error(' requestQuote error:', error);
+    console.error(' requestQuote error:', error);
     return res.status(500).json({ error: 'Failed to calculate quote' });
   }
 };
@@ -469,7 +470,7 @@ exports.submitDesignOrder = async (req, res) => {
       }
     });
   } catch (error) {
-console.error(' submitDesignOrder error:', error);
+    console.error(' submitDesignOrder error:', error);
     return res.status(500).json({ error: 'Failed to submit design order' });
   }
 };
@@ -548,7 +549,7 @@ exports.shareDesign = async (req, res) => {
       },
     });
   } catch (error) {
-console.error(' shareDesign error:', error);
+    console.error(' shareDesign error:', error);
     return res.status(500).json({ error: 'Failed to share design' });
   }
 };
@@ -599,7 +600,7 @@ exports.getDesignByShareToken = async (req, res) => {
       },
     });
   } catch (error) {
-console.error(' getDesignByShareToken error:', error);
+    console.error(' getDesignByShareToken error:', error);
     return res.status(500).json({ error: 'Failed to get design by share token' });
   }
 };

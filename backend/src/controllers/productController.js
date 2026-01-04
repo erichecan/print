@@ -99,6 +99,24 @@ const FIXED_RUSH_DELIVERY_OPTIONS = [
 ];
 
 /**
+ * 获取全局尺码费用映射 (用于同步 Design Lab 价格)
+ */
+async function getGlobalFeeMap() {
+  try {
+    const globalSizeFees = await prisma.offline_order_size_fees.findMany();
+    const globalFeeMap = {};
+    globalSizeFees.forEach(fee => {
+      // Global fees are stored as Dollars (Decimal), convert to Cents for internal consistency
+      globalFeeMap[fee.size] = Math.round(Number(fee.additional_fee) * 100);
+    });
+    return globalFeeMap;
+  } catch (e) {
+    logger.warn("Failed to fetch offline_order_size_fees for synchronization:", e.message);
+    return {};
+  }
+}
+
+/**
  * Get filter options with counts
  * GET /api/products/filters/options?collection=
 * 获取筛选选项统计数据，用于动态渲染筛选器
@@ -1019,6 +1037,9 @@ exports.getProductBySlug = async (req, res) => {
       // 继续执行，使用默认值
     }
 
+    // Fetch global size fees for synchronization
+    const globalFeeMap = await getGlobalFeeMap();
+
     // 防御性处理关联数据，避免 null/undefined 导致错误
     const formattedProduct = {
       id: product.id,
@@ -1056,17 +1077,25 @@ exports.getProductBySlug = async (req, res) => {
         alt: image.alt || product.name,
         sortOrder: image.sortOrder || 0,
       })),
-      variants: (product.variants || []).map((variant) => ({
-        id: variant.id,
-        sku: variant.sku || null,
-        color: variant.color || null,
-        colorHex: variant.colorHex || null,
-        size: variant.size || null,
-        stockQuantity: variant.stockQuantity || 0,
-        priceAdjustment: toNumber(variant.priceAdjustment, 0),
-        price: (toNumber(product.basePrice, 0) + toNumber(variant.priceAdjustment, 0)) / 100,
-        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl) : null,
-      })),
+      variants: (product.variants || []).map((variant) => {
+        // Synchronize with global size fee config
+        const globalFee = variant.size ? globalFeeMap[variant.size] : undefined;
+        // CRITICAL: Use global fee if configured, otherwise default to 0 for "base sizes"
+        // This ensures XS-XL don't have stray fees if not in the global table
+        const effectiveAdjustment = globalFee !== undefined ? globalFee : 0;
+
+        return {
+          id: variant.id,
+          sku: variant.sku || null,
+          color: variant.color || null,
+          colorHex: variant.colorHex || null,
+          size: variant.size || null,
+          stockQuantity: variant.stockQuantity || 0,
+          priceAdjustment: effectiveAdjustment,
+          price: (toNumber(product.basePrice, 0) + effectiveAdjustment) / 100,
+          imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { width: 640, quality: 80, req }) || variant.imageUrl) : null,
+        };
+      }),
       rating: {
         average: Number(avgRating._avg.rating || 0),
         count: Number(avgRating._count.rating || 0),
@@ -1525,13 +1554,8 @@ exports.getProductByVariantId = async (req, res) => {
       });
     });
 
-    // Fetch global size fees for synchronization with Design Lab
-    const globalSizeFees = await prisma.offline_order_size_fees.findMany();
-    const globalFeeMap = {};
-    globalSizeFees.forEach(fee => {
-      // Global fees are stored as Dollars (Decimal), convert to Cents for internal consistency
-      globalFeeMap[fee.size] = Math.round(Number(fee.additional_fee) * 100);
-    });
+    // Fetch global size fees for synchronization
+    const globalFeeMap = await getGlobalFeeMap();
 
     const response = {
       productId: product.id,
@@ -1545,6 +1569,8 @@ exports.getProductByVariantId = async (req, res) => {
       variants: product.variants.map((v) => {
         // Synchronize with global size fee config
         const globalFee = v.size ? globalFeeMap[v.size] : undefined;
+        // CRITICAL: Use global fee if configured, otherwise default to 0 for "base sizes"
+        const effectiveAdjustment = globalFee !== undefined ? globalFee : 0;
 
         return {
           id: v.id,
@@ -1553,8 +1579,7 @@ exports.getProductByVariantId = async (req, res) => {
           imageUrl: v.imageUrl,
           size: v.size,
           stockQuantity: v.stockQuantity,
-          // Use global fee if configured, otherwise fallback to specific variant's adjustment
-          priceAdjustment: globalFee !== undefined ? globalFee : Number(v.priceAdjustment || 0),
+          priceAdjustment: effectiveAdjustment,
         };
       }), // 添加变体列表，用于颜色切换
     };
