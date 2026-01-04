@@ -31,6 +31,8 @@ function serializeObject(obj: any): Layer | null {
         rotation: Number(obj.angle?.toFixed(2)) || 0,
         skewX: Number(obj.skewX?.toFixed(2)) || 0,
         skewY: Number(obj.skewY?.toFixed(2)) || 0,
+        originX: obj.originX || 'left',
+        originY: obj.originY || 'top',
     };
 
     const layer: Layer = {
@@ -46,7 +48,6 @@ function serializeObject(obj: any): Layer | null {
         // For images, we need the source
         // In a real app, we'd prefer a stable uploadId, but for now use src
         const src = obj.getSrc ? obj.getSrc() : (obj._element?.src || '');
-        layer.src = src;
         layer.src = src;
         // CRITICAL FIX: Preserve original object name if available, otherwise fallback
         layer.name = obj.name || 'image-layer';
@@ -104,8 +105,6 @@ async function restoreLayer(canvas: any, layer: Layer): Promise<void> {
     try {
         if (type === 'image' && src) {
             // Handle Image loading
-            // We use a Promise wrapper around fabric.Image.fromURL logic 
-            // or similar depending on Fabric version
             await new Promise<void>((resolve, reject) => {
                 const imgEl = new Image();
                 imgEl.crossOrigin = 'anonymous';
@@ -139,6 +138,8 @@ async function restoreLayer(canvas: any, layer: Layer): Promise<void> {
                 angle: transform.rotation,
                 skewX: transform.skewX,
                 skewY: transform.skewY,
+                originX: transform.originX || 'left',
+                originY: transform.originY || 'top',
                 id: layer.id, // Set the ID on the object
                 name: layer.name, // CRITICAL FIX: Restore original object name
                 data: layer.metadata || { id: layer.id, layerType: type }, // Restore metadata
@@ -167,19 +168,11 @@ async function restoreLayer(canvas: any, layer: Layer): Promise<void> {
 
 /**
  * Apply a ViewState (list of layers) to the canvas
- * This is a smart diff/patch could be better, but for now we clear and redraw
- * strictly preserving IDs.
  */
 export async function applyViewState(canvas: any, layers: Layer[]): Promise<void> {
     if (!canvas) return;
 
     // 1. Clear existing user objects
-    // We filter out static background/guides instead of canvas.clear() 
-    // to avoid flickering the shirt background if possible.
-    // BUT the requirements say "Remove 'product-image-base'..." no, actually
-    // the client handles product image separately.
-    // Let's assume we own the "User Layers" only.
-
     const existingObjects = canvas.getObjects().filter((obj: any) => {
         // Keep background and guides
         return obj.name !== 'product-image-base' && obj.name !== 'printable-area-group';
@@ -188,7 +181,6 @@ export async function applyViewState(canvas: any, layers: Layer[]): Promise<void
     canvas.remove(...existingObjects);
 
     // 2. Re-create objects in order
-    // Use sequential await to preserve z-index order
     for (const layer of layers) {
         await restoreLayer(canvas, layer);
     }

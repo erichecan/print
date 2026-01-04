@@ -15,6 +15,8 @@ export interface Transform {
     rotation: number;
     skewX: number;
     skewY: number;
+    originX?: string;
+    originY?: string;
 }
 
 export interface LayerStyle {
