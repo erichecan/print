@@ -505,12 +505,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // 5.0 版本：功能叠加 - 视图切换功能
   // Updated: Save current view objects before switching
-  const handleViewChange = (view: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve') => {
+  const handleViewChange = async (view: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve') => {
     console.log('[DesignLab 5.0] 视图切换:', { from: currentView, to: view });
 
-    // Save current view objects
-    if (fabricCanvasRef.current) {
-      const canvas = fabricCanvasRef.current;
+    const canvas = fabricCanvasRef.current;
+    if (canvas) {
+      // 1. Save current view objects
       // Filter out system objects (background, guides) to only save user design
       const userObjects = canvas.getObjects().filter((obj: any) => {
         const name = obj.name || '';
@@ -524,12 +524,68 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       });
 
       // Serialize with necessary properties
-      const serialized = userObjects.map(obj => obj.toObject(['name', 'data', 'layerType', 'id', 'userProperty']));
+      // IMPORTANT: 'userProperty' is hypothetical, ensure we save standard props + custom data
+      const serialized = userObjects.map(obj => obj.toObject(['name', 'data', 'layerType', 'id', 'selectable', 'evented', 'hasControls', 'hasBorders', 'lockMovementX', 'lockMovementY']));
       viewStates.current[currentView] = serialized;
       console.log(`[DesignLab 5.0] Saved ${serialized.length} objects for view: ${currentView}`);
-    }
 
-    setCurrentView(view);
+      // 2. Clear canvas (remove all objects)
+      canvas.clear();
+
+      // 3. Update current view state
+      setCurrentView(view);
+
+      // 4. Load stored objects for the NEW view (if any)
+      // We must do this AFTER setting the view, but since state update is async, we can just proceed with logic
+      // However, addProductImageToCanvas relies on currentView? No, it takes no args usually? 
+      // Wait, addProductImageToCanvas takes (imageUrl, tintColor). 
+      // We should determine the image URL for the NEW view.
+
+      const newImageUrl = productInfo.baseImages?.[view];
+      // Tint color logic (same as in load logic)
+      const isDefaultProduct = productInfo.productName?.includes('Design Lab Default Tee') || productInfo.productName?.includes('Loading');
+      let tintHex = '#ffffff';
+      if (isDefaultProduct) {
+        const colorData = PRODUCT_COLORS.find(c => c.name === productInfo.color);
+        tintHex = colorData ? colorData.hex : '#ffffff';
+      }
+
+      if (newImageUrl) {
+        // Load the new background image
+        // addProductImageToCanvas is async internally (onload), but we fire and forget
+        addProductImageToCanvas(newImageUrl, tintHex);
+      } else {
+        console.warn(`[DesignLab 5.0] No image found for view: ${view}`);
+      }
+
+      // 5. Restore User Objects
+      const savedObjects = viewStates.current[view];
+      if (savedObjects && savedObjects.length > 0) {
+        console.log(`[DesignLab 5.0] Restoring ${savedObjects.length} objects for view: ${view}`);
+
+        // Enliven objects (hydrate from JSON)
+        // @ts-ignore - fabric type definition mismatch sometimes
+        fabricRef.current.util.enlivenObjects(savedObjects, (enlivened: any[]) => {
+          enlivened.forEach((obj) => {
+            // Re-apply custom controls logic
+            applyCornerControls({ canvas, obj });
+            // Ensure object properties are set correctly
+            obj.setCoords();
+            canvas.add(obj);
+          });
+          canvas.requestRenderAll();
+        }, '');
+      } else {
+        console.log(`[DesignLab 5.0] No saved objects for view: ${view}`);
+      }
+
+      // Update printable area guides for the new view
+      // Note: addPrintableArea is also called in useEffect[currentView], so this might be redundant but safe
+      // addPrintableArea(view); 
+    } else {
+      // Just update state if canvas not ready
+      setCurrentView(view);
+    }
   };
 
   // 5.0 版本：功能3 - Rail 按钮点击处理
