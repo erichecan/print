@@ -3677,7 +3677,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
               </svg>
             </span>
-            <span className="dl-rail__btn-label">Product Details</span>
+            <span className="dl-rail__btn-label">Product & Color</span>
           </button>
         </nav>
 
@@ -4151,7 +4151,20 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                           }
                         }}
                       >
-                        Product Details
+                        Details
+                      </button>
+                      <span style={{ fontSize: '11px', color: '#ccc', margin: '0 4px' }}>|</span>
+                      <button
+                        className="dl-bottom-bar__link"
+                        type="button"
+                        style={{ fontSize: '11px', color: '#0066cc', textDecoration: 'underline' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCatalogMode('change');
+                          setIsCatalogModalOpen(true);
+                        }}
+                      >
+                        Change
                       </button>
                     </div>
                   </div>
