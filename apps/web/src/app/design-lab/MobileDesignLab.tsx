@@ -379,6 +379,7 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                                 </button>
                             ))}
                         </div>
+                    )}
                 </div>
             )}
 
