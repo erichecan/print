@@ -535,6 +535,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       // 3. Update current view state
       setCurrentView(view);
 
+      // RESET Tool Panel to Home
+      setToolPanelType('home');
+      setActiveTool(null);
+      setSelectedImage(null);
+      setSelectedText(null);
+      setSelectedArt(null);
+
       // 4. Load stored objects for the NEW view (if any)
       // We must do this AFTER setting the view, but since state update is async, we can just proceed with logic
       // However, addProductImageToCanvas relies on currentView? No, it takes no args usually? 
@@ -3623,7 +3630,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
               {toolPanelType === 'home' && (
                 <>
                   <div className="dl-tool-panel__header">
-                    <h2 className="dl-tool-panel__title">What&apos;s next for you?</h2>
+                    {/* [MODIFY] Removed title as per request */}
                   </div>
                   <div className="dl-home-panel">
                     <div className="dl-home-panel__actions">

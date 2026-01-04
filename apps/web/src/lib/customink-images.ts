@@ -8,7 +8,7 @@
 const ASSETS = {
   front: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/front-large_extended.png',
   back: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/back-large_extended.png',
-  leftSleeve: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/left-sleeve-large_extended.png',
+  leftSleeve: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/sleeve-large_extended.png',
   rightSleeve: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/right-sleeve-large_extended.png',
 };
 
@@ -43,7 +43,7 @@ export function getDefaultProductImageUrl(
   colorName: string | null = 'White',
   view: ViewType = 'front'
 ): string {
-// Use researched assets for specific views if they match our demo color
+  // Use researched assets for specific views if they match our demo color
   // or just force them for now to ensure the feature works for the user review
   if (view === 'left-sleeve') return ASSETS.leftSleeve;
   if (view === 'right-sleeve') return ASSETS.rightSleeve;
@@ -63,7 +63,7 @@ export function getDefaultProductBaseImages(colorName: string | null = 'White'):
   'right-sleeve': string;
 } {
   const safeColor = colorName || 'White';
-// For Demo: If color is 'Irish Green' (or anything for now), reuse the high-res assets we found
+  // For Demo: If color is 'Irish Green' (or anything for now), reuse the high-res assets we found
   // to ensure the sleeve feature looks correct.
   // Ideally we would map every color.
 
