@@ -381,65 +381,6 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                 </div>
             )}
 
-            {/* ROTATE MODAL */}
-            {showRotateModal && (
-                <div className="dl-mobile-rotate-modal">
-                    <div className="dl-rotate-header">
-                        <button onClick={() => setShowRotateModal(false)} className="dl-back-btn">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-                            </svg>
-                        </button>
-                        <h3>Rotate</h3>
-                        <button onClick={applyRotation} className="dl-done-btn">Done</button>
-                    </div>
-
-                    <div className="dl-rotate-content">
-                        <div className="dl-rotate-controls">
-                            <button onClick={() => setRotateAngle(a => a - 45)} className="dl-rotate-btn">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8h2c0-3.31 2.69-6 6-6z" />
-                                </svg>
-                            </button>
-
-                            <button onClick={() => setRotateAngle(a => a - 1)} className="dl-adjust-btn">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M19 13H5v-2h14v2z" />
-                                </svg>
-                            </button>
-
-                            <input
-                                type="number"
-                                value={Math.round(rotateAngle)}
-                                onChange={(e) => setRotateAngle(Number(e.target.value))}
-                                className="dl-rotate-input"
-                            />
-
-                            <button onClick={() => setRotateAngle(a => a + 1)} className="dl-adjust-btn">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
-                                </svg>
-                            </button>
-
-                            <button onClick={() => setRotateAngle(0)} className="dl-reset-btn">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        <input
-                            type="range"
-                            min="-180"
-                            max="180"
-                            value={rotateAngle}
-                            onChange={(e) => setRotateAngle(Number(e.target.value))}
-                            className="dl-rotate-slider"
-                        />
-                    </div>
-                </div>
-            )}
-
             {/* MOBILE BOTTOM NAV (Hidden in Edit Mode) */}
             {!isEditMode && (
                 <footer className="dl-mobile-bottom-nav">
