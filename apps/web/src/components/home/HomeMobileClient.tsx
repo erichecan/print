@@ -11,52 +11,48 @@ import { contentApi, categoriesApi, Category } from '@/lib/api';
 
 // 分类名称到图片文件的映射函数（与桌面端保持一致）
 const getCategoryImagePath = (category: Category): string => {
+  const name = category.name.toLowerCase();
+  const slug = category.slug.toLowerCase();
+
   const slugToImageMap: Record<string, string> = {
-    't-shirts': '/assets/categories/cat-tshirt.png',
-    'short-sleeve-t-shirts': '/assets/categories/cat-tshirt.png',
-    'long-sleeve-t-shirts': '/assets/categories/cat-tshirt.png',
-    'sweatshirts': '/assets/categories/cat-sweatshirt.png',
-    'hoodies': '/assets/categories/cat-sweatshirt.png',
-    'crewneck-sweatshirts': '/assets/categories/cat-sweatshirt.png',
-    'kids-sweats': '/assets/categories/cat-sweatshirt.png',
-    'hats': '/assets/categories/cat-hat.png',
-    'caps': '/assets/categories/cat-hat.png',
-    'bags': '/assets/categories/cat-bag.png',
-    'tote-bags': '/assets/categories/cat-bag.png',
+    't-shirt': '/assets/categories/cat-tshirt.png',
+    'tee': '/assets/categories/cat-tshirt.png',
+    'sweatshirt': '/assets/categories/cat-sweatshirt.png',
+    'hoodie': '/assets/categories/cat-sweatshirt.png',
+    'sweater': '/assets/categories/cat-sweatshirt.png',
+    'hat': '/assets/categories/cat-hat.png',
+    'cap': '/assets/categories/cat-hat.png',
+    'bag': '/assets/categories/cat-bag.png',
+    'tote': '/assets/categories/cat-bag.png',
     'drinkware': '/assets/categories/cat-drinkware.png',
-    'mugs': '/assets/categories/cat-drinkware.png',
+    'mug': '/assets/categories/cat-drinkware.png',
+    'bottle': '/assets/categories/cat-drinkware.png',
+    'cup': '/assets/categories/cat-drinkware.png',
     'tech': '/assets/categories/cat-tech.png',
-    'tech-accessories': '/assets/categories/cat-tech.png',
     'office': '/assets/categories/cat-office.png',
-    'office-supplies': '/assets/categories/cat-office.png',
-    'activewear': '/assets/categories/cat-activewear.png',
-    'athleticwear': '/assets/categories/cat-activewear.png',
-    'jackets': '/assets/categories/cat-jacket-vest.png',
-    'jacket-vest': '/assets/categories/cat-jacket-vest.png',
-    'vests': '/assets/categories/cat-jacket-vest.png',
+    'active': '/assets/categories/cat-activewear.png',
+    'athletic': '/assets/categories/cat-activewear.png',
+    'jacket': '/assets/categories/cat-jacket-vest.png',
+    'vest': '/assets/categories/cat-jacket-vest.png',
     'polo': '/assets/categories/cat-polo-business.png',
-    'polo-business': '/assets/categories/cat-polo-business.png',
     'business': '/assets/categories/cat-polo-business.png',
-    'trade-show': '/assets/categories/cat-trade-show.png',
-    'tradeshow': '/assets/categories/cat-trade-show.png',
-    'workwear': '/assets/categories/cat-workwear.png',
-    'uniforms': '/assets/categories/cat-workwear.png'
+    'trade': '/assets/categories/cat-trade-show.png',
+    'sign': '/assets/categories/cat-trade-show.png',
+    'work': '/assets/categories/cat-workwear.png',
+    'uniform': '/assets/categories/cat-workwear.png'
   };
 
-  // 首先尝试根据 slug 匹配
-  if (slugToImageMap[category.slug]) {
-    return slugToImageMap[category.slug];
-  }
+  // 1. Try exact slug match
+  if (slugToImageMap[slug]) return slugToImageMap[slug];
 
-  // 然后尝试根据名称的部分匹配
-  const name = category.name.toLowerCase();
+  // 2. Try partial name/slug match against keys
   for (const [key, imagePath] of Object.entries(slugToImageMap)) {
-    if (name.includes(key.replace('-', ' ')) || name.includes(key)) {
+    if (name.includes(key) || slug.includes(key)) {
       return imagePath;
     }
   }
 
-  // 如果都没匹配到，使用默认图片
+  // 默认图片
   return '/assets/categories/cat-tshirt.png';
 };
 
@@ -82,21 +78,23 @@ export function HomeMobileClient() {
       id: category.id,
       name: category.name,
       slug: category.slug,
-      image: category.imageUrl || getCategoryImagePath(category),
+      image: category.imageUrl && category.imageUrl.startsWith('http')
+        ? category.imageUrl
+        : getCategoryImagePath(category),
     }))
     : (homePage as any)?.categories || [
       { id: 'cat-1', name: 'T-shirts', slug: 't-shirts', image: '/assets/categories/cat-tshirt.png' },
-      { id: 'cat-2', name: 'Hoodies & Sweatshirts', slug: 'sweatshirts', image: '/assets/categories/cat-sweatshirt.png' },
+      { id: 'cat-2', name: 'Sweatshirts', slug: 'sweatshirts', image: '/assets/categories/cat-sweatshirt.png' },
       { id: 'cat-3', name: 'Hats', slug: 'hats', image: '/assets/categories/cat-hat.png' },
       { id: 'cat-4', name: 'Jackets & Vests', slug: 'jackets', image: '/assets/categories/cat-jacket-vest.png' },
       { id: 'cat-5', name: 'Bags', slug: 'bags', image: '/assets/categories/cat-bag.png' },
       { id: 'cat-6', name: 'Drinkware', slug: 'drinkware', image: '/assets/categories/cat-drinkware.png' },
-      { id: 'cat-7', name: 'Polos & Business Wear', slug: 'polo', image: '/assets/categories/cat-polo-business.png' },
-      { id: 'cat-8', name: 'Workwear and Uniforms', slug: 'workwear', image: '/assets/categories/cat-workwear.png' },
-      { id: 'cat-9', name: 'Office Supplies', slug: 'office', image: '/assets/categories/cat-office.png' },
-      { id: 'cat-10', name: 'Technology', slug: 'tech', image: '/assets/categories/cat-tech.png' },
-      { id: 'cat-11', name: 'Trade Show & Signage', slug: 'trade-show', image: '/assets/categories/cat-trade-show.png' },
-      { id: 'cat-12', name: 'Athleticwear', slug: 'activewear', image: '/assets/categories/cat-activewear.png' },
+      { id: 'cat-7', name: 'Polos', slug: 'polo', image: '/assets/categories/cat-polo-business.png' },
+      { id: 'cat-8', name: 'Workwear', slug: 'workwear', image: '/assets/categories/cat-workwear.png' },
+      { id: 'cat-9', name: 'Office', slug: 'office', image: '/assets/categories/cat-office.png' },
+      { id: 'cat-10', name: 'Tech', slug: 'tech', image: '/assets/categories/cat-tech.png' },
+      { id: 'cat-11', name: 'Signage', slug: 'trade-show', image: '/assets/categories/cat-trade-show.png' },
+      { id: 'cat-12', name: 'Activewear', slug: 'activewear', image: '/assets/categories/cat-activewear.png' },
     ];
 
   // 品牌 logo（9个，3行3列）
@@ -120,27 +118,44 @@ export function HomeMobileClient() {
 
   return (
     <div className="home-mobile">
-      {/* Hero 区域 - 使用 canvas-design 创建的渐变背景 */}
-      <section className="home-mobile__hero">
-        <div className="home-mobile__hero-background">
+      {/* Hero 区域 - 重新设计匹配截图 */}
+      <section className="bg-white">
+        {/* 图片放在最上方，不遮挡文字 */}
+        <div className="relative w-full aspect-[4/3] bg-[#f0f9fa] overflow-hidden">
           <Image
-            src="/assets/hero/hero-mobile-gradient.png"
-            alt="Hero background"
-            className="home-mobile__hero-bg-image"
+            src="https://storage.googleapis.com/print-482914-images/home/hero-mobile-new.webp"
+            alt="Custom products collection"
             fill
+            className="object-contain p-4"
             unoptimized
             priority
           />
         </div>
-        <div className="home-mobile__hero-content">
-          <h1 className="home-mobile__hero-title">10% OFF EVERYTHING</h1>
-          <p className="home-mobile__hero-subtitle">Gear up for gifting season</p>
-          <p className="home-mobile__hero-detail">
-            Get 10% off sitewide through Dec 8th. Code TENOFF automatically applies at checkout. Conditions apply.
-          </p>
-          <Link href="/products" className="home-mobile__btn home-mobile__btn--primary">
-            Get Started
-          </Link>
+
+        <div className="px-6 py-8 text-center flex flex-col gap-6">
+          <div className="space-y-3">
+            <h1 className="text-[32px] md:text-4xl font-extrabold text-gray-900 leading-tight tracking-tight">
+              Design Easily.<br />Order Confidently.
+            </h1>
+            <p className="text-lg text-gray-600 leading-relaxed max-w-[280px] mx-auto">
+              Add your company logo to custom t-shirts and promo products
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 mt-2">
+            <Link
+              href="/products"
+              className="w-full py-4 bg-[#1a47e5] text-white rounded-md font-bold text-lg hover:bg-blue-700 transition-colors shadow-sm"
+            >
+              Get Started
+            </Link>
+            <Link
+              href="/help#satisfaction"
+              className="w-full py-4 bg-[#ff4d00] text-white rounded-md font-bold text-lg hover:bg-orange-600 transition-colors shadow-sm"
+            >
+              100% Satisfaction Guarantee
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -182,7 +197,7 @@ export function HomeMobileClient() {
           <div className="home-mobile__new-arrivals-grid">
             <div className="home-mobile__new-arrivals-image">
               <Image
-                src="/assets/hero/hero-card-tee.jpg"
+                src="https://storage.googleapis.com/print-482914-images/home/hero-mobile-new.webp"
                 alt="New Arrivals"
                 fill
                 unoptimized

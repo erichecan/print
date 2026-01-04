@@ -2112,6 +2112,7 @@ export interface ContentConfig {
     linkUrl: string;
   }>;
   // 新增 CMS 字段
+  navigation?: NavigationMenuItem[];
   homePage?: HomePageContent;
   aboutPage?: AboutPageContent;
   helpPage?: HelpPageContent;
