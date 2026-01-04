@@ -6,10 +6,10 @@
 
 // Custom Ink Assets (Gildan Ultra Cotton - Irish Green) - Found in Research
 const ASSETS = {
-  front: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/front-large_extended.png',
-  back: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/back-large_extended.png',
-  leftSleeve: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/sleeve-large_extended.png',
-  rightSleeve: 'https://storage.googleapis.com/print-main-product-images/design-lab-products/gildan-softstyle-tshirt/white/right-sleeve-large_extended.png',
+  front: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/front_large_extended.png',
+  back: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/back_large_extended.png',
+  leftSleeve: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/left_sleeve_large_extended.png',
+  rightSleeve: 'https://storage.googleapis.com/print-main-assets/products/customink/colors/176100/right_sleeve_large_extended.png',
 };
 
 // Base Configuration
@@ -43,6 +43,15 @@ export function getDefaultProductImageUrl(
   colorName: string | null = 'White',
   view: ViewType = 'front'
 ): string {
+  // If color is White, use the new ASSETS
+  if (!colorName || colorName.toLowerCase() === 'white') {
+    if (view === 'front') return ASSETS.front;
+    if (view === 'back') return ASSETS.back;
+    if (view === 'left-sleeve') return ASSETS.leftSleeve;
+    if (view === 'right-sleeve') return ASSETS.rightSleeve;
+    if (view === 'sleeve') return ASSETS.leftSleeve; // Default sleeve to left
+  }
+
   // Use researched assets for specific views if they match our demo color
   // or just force them for now to ensure the feature works for the user review
   if (view === 'left-sleeve') return ASSETS.leftSleeve;
@@ -63,6 +72,18 @@ export function getDefaultProductBaseImages(colorName: string | null = 'White'):
   'right-sleeve': string;
 } {
   const safeColor = colorName || 'White';
+
+  // If White, use the new specific ASSETS
+  if (safeColor.toLowerCase() === 'white') {
+    return {
+      front: ASSETS.front,
+      back: ASSETS.back,
+      sleeve: ASSETS.leftSleeve,
+      'left-sleeve': ASSETS.leftSleeve,
+      'right-sleeve': ASSETS.rightSleeve,
+    };
+  }
+
   // For Demo: If color is 'Irish Green' (or anything for now), reuse the high-res assets we found
   // to ensure the sleeve feature looks correct.
   // Ideally we would map every color.

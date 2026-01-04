@@ -29,6 +29,9 @@ import ProductColorsPanel from './components/panels/ProductColorsPanel'; // 5.0 
 import { registerUniversalCornerControls, applyCornerControls } from '../design-lab5/upload-controls/registerUploadCornerControls';
 import { FloatingObjectControls } from './components/FloatingObjectControls';
 import * as fabric from 'fabric';
+import { useDesignStore } from './store/useDesignStore'; // Import Store
+import { serializeCanvas, applyViewState } from './utils/serialization'; // Import Serialization
+import { loadFromLocal } from './store/persistence'; // Import Persistence
 import ProductCatalogModal from './components/modals/ProductCatalogModal';
 import { PRODUCT_COLORS } from '@/lib/product-data';
 // 产品模块：导入产品选择器和颜色选择器
@@ -71,8 +74,21 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
   const searchParams = useSearchParams();
 
+  // Use Global Store
+  const {
+    document: designDoc, // Rename to avoid shadowing global document
+    initializeDesign,
+    setActiveView: setStoreActiveView,
+    setViewLayers,
+    saveDesign: commitToStore
+  } = useDesignStore();
+
+  // Local derived state for UI from the store
+  const currentView = designDoc?.activeView || 'front';
+  const setCurrentView = (view: any) => setStoreActiveView(view);
+
   // 5.0 版本：只保留最基本的 state
-  const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'>('front');
+  // const [currentView, setCurrentView] = useState<'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve'>('front');
   const [zoomLevel, setZoomLevel] = useState(1); // Zoom state (1=100%, 1.2=120%, 1.5=150%)
 
   // 5.0 版本：功能2 - 改为 useState，支持动态更新
@@ -96,9 +112,23 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     // CRITICAL FIX: Initialize from initialProductData if available
     if (initialProductData) {
       console.log('[DesignLab 5.0] Initializing productInfo from initialProductData:', initialProductData);
+      let baseImages = initialProductData.baseImages || getDefaultProductBaseImages(initialProductData.color || initialProductData.colorName || 'White');
+      const resolvedColor = initialProductData.color || initialProductData.colorName || 'White';
+
+      // CRITICAL FIX: Force use local high-res assets for White sleeves (Demo Quality)
+      if (resolvedColor.toLowerCase() === 'white') {
+        const defaults = getDefaultProductBaseImages('White');
+        baseImages = {
+          ...baseImages,
+          'left-sleeve': defaults['left-sleeve'],
+          'right-sleeve': defaults['right-sleeve'],
+          'sleeve': defaults['sleeve']
+        };
+      }
+
       return {
-        color: initialProductData.color || initialProductData.colorName || 'White',
-        baseImages: initialProductData.baseImages || getDefaultProductBaseImages(initialProductData.color || initialProductData.colorName || 'White'),
+        color: resolvedColor,
+        baseImages: baseImages,
         productId: initialProductData.productId || initialProductData.id,
         slug: initialProductData.slug,
         colorId: initialProductData.variantId, // CRITICAL: Set colorId from variantId
@@ -118,6 +148,23 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       variants: [],
     };
   });
+
+  // Init Store on Mount if product info is available or changes
+  useEffect(() => {
+    const init = async () => {
+      if (productInfo.productId && !designDoc) {
+        // Try loading from local storage first?
+        // For now, we just initialize a fresh one or we could check IDB
+        // Let's assume for this MVP we start fresh unless we implement "Resume Session" feature explicitly
+        // Actually, requirements say "Crash-safe autosave". So we SHOULD try to load.
+        // But we don't have a stable DocID in URL yet. So we just init.
+        // If the user refreshes, we might need a way to know the docId.
+        // For now, we initialize a new session.
+        initializeDesign(productInfo.productId, productInfo.colorId);
+      }
+    };
+    init();
+  }, [productInfo.productId, productInfo.colorId]);
 
   // 5.0 版本：功能2 - 从 URL 参数加载商品信息
   // 修复：添加默认图片机制，如果用户直接从导航进入，显示默认白色 T 恤
@@ -139,7 +186,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
       console.log('[DesignLab 5.0] 功能2 - 使用服务端预取的数据:', initialProductData);
       const color = initialProductData.color || initialProductData.colorName || 'White';
-      const baseImages = initialProductData.baseImages || getDefaultProductBaseImages(color);
+      let baseImages = initialProductData.baseImages || getDefaultProductBaseImages(color);
+
+      // CRITICAL FIX: Force use local high-res assets for White sleeves (Demo Quality)
+      if (color.toLowerCase() === 'white') {
+        const defaults = getDefaultProductBaseImages('White');
+        baseImages = {
+          ...baseImages,
+          'left-sleeve': defaults['left-sleeve'],
+          'right-sleeve': defaults['right-sleeve'],
+          'sleeve': defaults['sleeve']
+        };
+      }
 
       setProductInfo({
         color,
@@ -194,9 +252,22 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               shouldUseDefaultImages = true;
             }
 
-            const images = shouldUseDefaultImages
+            let images = shouldUseDefaultImages
               ? getDefaultProductBaseImages(resolvedColor)
               : (product.baseImages || getDefaultProductBaseImages(resolvedColor));
+
+            // CRITICAL FIX: Force use local high-res assets for White sleeves (Demo Quality)
+            // The API might return low-res or old assets for White
+            if (resolvedColor.toLowerCase() === 'white') {
+              const defaults = getDefaultProductBaseImages('White');
+              images = {
+                ...images,
+                'left-sleeve': defaults['left-sleeve'],
+                'right-sleeve': defaults['right-sleeve'],
+                'sleeve': defaults['sleeve']
+              };
+              console.log('[DesignLab 5.0] Force-applied high-res local assets for White sleeves');
+            }
 
             // 修复：检查 variants 是否为空
             if (!product.variants || product.variants.length === 0) {
@@ -505,51 +576,39 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   // 5.0 版本：功能叠加 - 视图切换功能
   // Updated: Save current view objects before switching
+  // 5.0 版本：功能叠加 - 视图切换功能
+  // Updated: Save current view objects before switching
   const handleViewChange = async (view: 'front' | 'back' | 'sleeve' | 'left-sleeve' | 'right-sleeve') => {
-    console.log('[DesignLab 5.0] 视图切换:', { from: currentView, to: view });
+    console.log('[DesignLab 5.0] 视图切换 (Store-based):', { from: currentView, to: view });
 
     const canvas = fabricCanvasRef.current;
     if (canvas) {
-      // 1. Save current view objects
-      // Filter out system objects (background, guides) to only save user design
-      const userObjects = canvas.getObjects().filter((obj: any) => {
-        const name = obj.name || '';
-        const layerType = obj.data?.layerType;
-        return (
-          name !== 'product-image-base' &&
-          name !== 'printable-area-group' &&
-          layerType !== 'guide' &&
-          layerType !== 'product-image'
-        );
-      });
+      // 1. Serialize current view to STORE
+      const layers = serializeCanvas(canvas);
+      setViewLayers(currentView, layers);
 
-      // Serialize with necessary properties
-      // IMPORTANT: 'userProperty' is hypothetical, ensure we save standard props + custom data
-      const serialized = userObjects.map(obj => obj.toObject(['name', 'data', 'layerType', 'id', 'selectable', 'evented', 'hasControls', 'hasBorders', 'lockMovementX', 'lockMovementY']));
-      viewStates.current[currentView] = serialized;
-      console.log(`[DesignLab 5.0] Saved ${serialized.length} objects for view: ${currentView}`);
+      // Trigger save (debounced)
+      commitToStore();
 
-      // 2. Clear canvas (remove all objects)
-      canvas.clear();
+      console.log(`[DesignLab 5.0] Serialized ${layers.length} layers for view: ${currentView}`);
 
-      // 3. Update current view state
-      setCurrentView(view);
+      // 2. Clear canvas (user objects only, handled by Serialization utils if we used applyViewState, 
+      // but here we might want to manually clear to be safe before applying new state)
+      // Actually applyViewState handles clearing.
 
-      // RESET Tool Panel to Home
+      // RESET Tool Panel to Home (Request 2)
       setToolPanelType('home');
       setActiveTool(null);
       setSelectedImage(null);
       setSelectedText(null);
       setSelectedArt(null);
 
-      // 4. Load stored objects for the NEW view (if any)
-      // We must do this AFTER setting the view, but since state update is async, we can just proceed with logic
-      // However, addProductImageToCanvas relies on currentView? No, it takes no args usually? 
-      // Wait, addProductImageToCanvas takes (imageUrl, tintColor). 
-      // We should determine the image URL for the NEW view.
+      // 3. Update current view in Store
+      // This updates 'document.activeView'
+      setStoreActiveView(view);
 
+      // 4. Load background image for NEW view
       const newImageUrl = productInfo.baseImages?.[view];
-      // Tint color logic (same as in load logic)
       const isDefaultProduct = productInfo.productName?.includes('Design Lab Default Tee') || productInfo.productName?.includes('Loading');
       let tintHex = '#ffffff';
       if (isDefaultProduct) {
@@ -559,40 +618,33 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
       if (newImageUrl) {
         // Load the new background image
-        // addProductImageToCanvas is async internally (onload), but we fire and forget
+        // We assume addProductImageToCanvas handles the 'product-image-base' layer
         addProductImageToCanvas(newImageUrl, tintHex);
       } else {
         console.warn(`[DesignLab 5.0] No image found for view: ${view}`);
       }
 
-      // 5. Restore User Objects
-      const savedObjects = viewStates.current[view];
-      if (savedObjects && savedObjects.length > 0) {
-        console.log(`[DesignLab 5.0] Restoring ${savedObjects.length} objects for view: ${view}`);
+      // 5. Restore User Objects from Store
+      // Wait for store to update? Zustand is synchronous usually for state updates
+      // But we need to get the "target view" layers.
+      // We can access it directly via useDesignStore.getState() or just trust the hook re-render?
+      // Since we are inside an event handler, 'document' variable is stale (from render closure).
+      // We should use the store's getter if possible, or just rely on the fact that we just switched.
 
-        // Enliven objects (hydrate from JSON)
-        // @ts-ignore - fabric type definition mismatch sometimes
-        fabricRef.current.util.enlivenObjects(savedObjects, (enlivened: any[]) => {
-          enlivened.forEach((obj) => {
-            // Re-apply custom controls logic
-            applyCornerControls({ canvas, obj });
-            // Ensure object properties are set correctly
-            obj.setCoords();
-            canvas.add(obj);
-          });
-          canvas.requestRenderAll();
-          canvas.requestRenderAll();
-        });
+      // Better: Get fresh state
+      const freshDoc = useDesignStore.getState().document;
+      const targetViewLayers = freshDoc?.views[view]?.layers || [];
+
+      if (targetViewLayers.length > 0) {
+        console.log(`[DesignLab 5.0] Restoring ${targetViewLayers.length} layers for view: ${view}`);
+        await applyViewState(canvas, targetViewLayers);
       } else {
-        console.log(`[DesignLab 5.0] No saved objects for view: ${view}`);
+        // If no layers, we still need to clear the old layers (if applyViewState wasn't called)
+        // applyViewState handles clearing, so we should call it even with empty list?
+        await applyViewState(canvas, []);
       }
-
-      // Update printable area guides for the new view
-      // Note: addPrintableArea is also called in useEffect[currentView], so this might be redundant but safe
-      // addPrintableArea(view); 
     } else {
-      // Just update state if canvas not ready
-      setCurrentView(view);
+      setStoreActiveView(view);
     }
   };
 
@@ -763,17 +815,31 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     if (colorObj && colorObj.imageUrls) {
       console.log('[DesignLab 5.0] Updating productInfo from color mapping:', colorName);
 
+      let newBaseImages = {
+        front: colorObj.imageUrls.front || productInfo.baseImages.front,
+        back: colorObj.imageUrls.back || productInfo.baseImages.back,
+        sleeve: colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve || productInfo.baseImages.sleeve,
+        'left-sleeve': colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve,
+        'right-sleeve': colorObj.imageUrls.right_sleeve || colorObj.imageUrls.sleeve,
+      };
+
+      // CRITICAL FIX: Force use local high-res assets for White sleeves (Demo Quality)
+      if (colorName.toLowerCase() === 'white') {
+        const defaults = getDefaultProductBaseImages('White');
+        newBaseImages = {
+          ...newBaseImages,
+          'left-sleeve': defaults['left-sleeve'],
+          'right-sleeve': defaults['right-sleeve'],
+          'sleeve': defaults['sleeve']
+        };
+        console.log('[DesignLab 5.0] Force-applied high-res local assets for White sleeves (Color Select)');
+      }
+
       setProductInfo(prev => ({
         ...prev,
         color: colorName,
         colorId: colorObj.externalColorId, // 使用映射表中的 ID
-        baseImages: {
-          front: colorObj.imageUrls.front || prev.baseImages.front,
-          back: colorObj.imageUrls.back || prev.baseImages.back,
-          sleeve: colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve || prev.baseImages.sleeve,
-          'left-sleeve': colorObj.imageUrls.left_sleeve || colorObj.imageUrls.sleeve,
-          'right-sleeve': colorObj.imageUrls.right_sleeve || colorObj.imageUrls.sleeve,
-        }
+        baseImages: newBaseImages
       }));
 
       // 更新浏览器 URL
@@ -2154,33 +2220,33 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           // 注释：之前的完整实现代码已注释，现在从简单开始
 
           /* ========== 旧代码（已注释）开始 ==========
-// 修复：添加 sizeX/sizeY 定义可点击区域，增大控件尺寸以匹配 Custom Ink
+  // 修复：添加 sizeX/sizeY 定义可点击区域，增大控件尺寸以匹配 Custom Ink
           const deleteControl = new fabric.Control({
-x: -0.5, // 左上角：x=-0.5（左边缘）
-y: -0.5, // 左上角：y=-0.5（上边缘）
-offsetX: -16, // 向左偏移 16px（根据 32px 控件大小调整）
-offsetY: -16, // 向上偏移 16px
-sizeX: 32, // 关键：设置可点击区域宽度（像素）
-sizeY: 32, // 关键：设置可点击区域高度（像素）
+  x: -0.5, // 左上角：x=-0.5（左边缘）
+  y: -0.5, // 左上角：y=-0.5（上边缘）
+  offsetX: -16, // 向左偏移 16px（根据 32px 控件大小调整）
+  offsetY: -16, // 向上偏移 16px
+  sizeX: 32, // 关键：设置可点击区域宽度（像素）
+  sizeY: 32, // 关键：设置可点击区域高度（像素）
             cursorStyle: 'pointer',
             render: function(ctx, left, top, styleOverride, fabricObject) {
-// 使用 this.sizeX 获取控件尺寸（普通函数确保 this 绑定到 Control 实例）
+  // 使用 this.sizeX 获取控件尺寸（普通函数确保 this 绑定到 Control 实例）
               const size = this.sizeX || this.sizeY || 32;
               ctx.save();
               ctx.translate(left, top);
               ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
               
-// 绘制圆形背景（红色）
+  // 绘制圆形背景（红色）
               ctx.fillStyle = '#ef4444';
               ctx.beginPath();
               ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
               ctx.fill();
               
-// 绘制 X 图标（白色），图标大小约为背景的 55%，线宽 3px
+  // 绘制 X 图标（白色），图标大小约为背景的 55%，线宽 3px
               ctx.strokeStyle = '#ffffff';
-ctx.lineWidth = 3; // 增大线宽到 3px，更清晰
+  ctx.lineWidth = 3; // 增大线宽到 3px，更清晰
               ctx.lineCap = 'round';
-const iconSize = size * 0.55; // 图标大小为背景的 55%
+  const iconSize = size * 0.55; // 图标大小为背景的 55%
               ctx.beginPath();
               ctx.moveTo(-iconSize / 2, -iconSize / 2);
               ctx.lineTo(iconSize / 2, iconSize / 2);
@@ -2191,7 +2257,7 @@ const iconSize = size * 0.55; // 图标大小为背景的 55%
               ctx.restore();
             },
             mouseDownHandler: function(eventData, transformData) {
-// 关键：返回 true 阻止事件冒泡，防止对象被取消选中
+  // 关键：返回 true 阻止事件冒泡，防止对象被取消选中
               return true;
             },
             mouseUpHandler: function (eventData: any, transformData: any) {
@@ -2202,63 +2268,63 @@ const iconSize = size * 0.55; // 图标大小为背景的 55%
                   objectType: target.type,
                   timestamp: new Date().toISOString(),
                 });
-// 删除对象
+  // 删除对象
                 fabricCanvas.remove(target);
                 fabricCanvas.renderAll();
-// 如果删除的是当前选中的图片，清除选中状态
+  // 如果删除的是当前选中的图片，清除选中状态
                 if (selectedImage === target) {
                   setSelectedImage(null);
                   setToolPanelType('home');
                 }
-// 返回 true 表示事件已处理，阻止默认行为
+  // 返回 true 表示事件已处理，阻止默认行为
                 return true;
               }
               return false;
             }
           });
           
-// 添加自定义控件到对象的辅助函数（必须在控件定义之前，以便在控件中使用）
+  // 添加自定义控件到对象的辅助函数（必须在控件定义之前，以便在控件中使用）
           const addCustomControlsToObject = (obj: fabric.Object) => {
             const objName = (obj as any).name || '';
-// 只为上传的图片添加自定义控件（排除商品底图）
+  // 只为上传的图片添加自定义控件（排除商品底图）
             if ((obj as any).name && (obj as any).name.startsWith('image_')) {
               if (!obj.controls) {
                 obj.controls = {};
               }
-// 添加删除控件（左上角）
+  // 添加删除控件（左上角）
               obj.controls.deleteControl = deleteControl;
-// 添加复制控件（左下角）
+  // 添加复制控件（左下角）
               obj.controls.duplicateControl = duplicateControl;
-// 注意：右下角缩放功能使用 Fabric.js 的默认 br 控件
+  // 注意：右下角缩放功能使用 Fabric.js 的默认 br 控件
               // Custom Ink 可能只是使用了默认的缩放控件，不需要自定义
               // 如果需要隐藏默认的 br 控件，可以使用：obj.setControlsVisibility({ br: false });
             }
           };
           
-// 2. 左下角复制控件
-// 修复：添加 sizeX/sizeY 定义可点击区域，增大控件尺寸以匹配 Custom Ink
+  // 2. 左下角复制控件
+  // 修复：添加 sizeX/sizeY 定义可点击区域，增大控件尺寸以匹配 Custom Ink
           const duplicateControl = new fabric.Control({
-x: -0.5, // 左下角：x=-0.5（左边缘）
-y: 0.5, // 左下角：y=0.5（下边缘）
-offsetX: -16, // 向左偏移 16px（根据 32px 控件大小调整）
-offsetY: 16, // 向下偏移 16px
-sizeX: 32, // 关键：设置可点击区域宽度（像素）
-sizeY: 32, // 关键：设置可点击区域高度（像素）
+  x: -0.5, // 左下角：x=-0.5（左边缘）
+  y: 0.5, // 左下角：y=0.5（下边缘）
+  offsetX: -16, // 向左偏移 16px（根据 32px 控件大小调整）
+  offsetY: 16, // 向下偏移 16px
+  sizeX: 32, // 关键：设置可点击区域宽度（像素）
+  sizeY: 32, // 关键：设置可点击区域高度（像素）
             cursorStyle: 'pointer',
             render: function(ctx, left, top, styleOverride, fabricObject) {
-// 使用 this.sizeX 获取控件尺寸（普通函数确保 this 绑定到 Control 实例）
+  // 使用 this.sizeX 获取控件尺寸（普通函数确保 this 绑定到 Control 实例）
               const size = this.sizeX || this.sizeY || 32;
               ctx.save();
               ctx.translate(left, top);
               ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
               
-// 绘制圆形背景（蓝色）
+  // 绘制圆形背景（蓝色）
               ctx.fillStyle = '#0066CC';
               ctx.beginPath();
               ctx.arc(0, 0, size / 2, 0, 2 * Math.PI);
               ctx.fill();
               
-// 绘制复制图标（两个重叠的矩形，白色），优化尺寸比例
+  // 绘制复制图标（两个重叠的矩形，白色），优化尺寸比例
               ctx.fillStyle = '#ffffff';
               // 后面的矩形（稍微偏右下）
               ctx.fillRect(-size * 0.25, -size * 0.35, size * 0.35, size * 0.45);
@@ -2268,7 +2334,7 @@ sizeY: 32, // 关键：设置可点击区域高度（像素）
               ctx.restore();
             },
             mouseDownHandler: function(eventData, transformData) {
-// 关键：返回 true 阻止事件冒泡，防止对象被取消选中
+  // 关键：返回 true 阻止事件冒泡，防止对象被取消选中
               return true;
             },
             mouseUpHandler: async function (eventData: any, transformData: any) {
@@ -2293,13 +2359,13 @@ sizeY: 32, // 关键：设置可点击区域高度（像素）
                   cloned.setCoords();
                   fabricCanvas.add(cloned);
                   
-// 为新复制的对象添加自定义控件
+  // 为新复制的对象添加自定义控件
                   addCustomControlsToObject(cloned);
                   
                   fabricCanvas.setActiveObject(cloned);
                   fabricCanvas.renderAll();
                   
-// 返回 true 表示事件已处理，阻止默认行为
+  // 返回 true 表示事件已处理，阻止默认行为
                   return true;
                 } catch (error) {
                   console.error('[DesignLab 5.0] 复制失败:', error);
@@ -2310,11 +2376,11 @@ sizeY: 32, // 关键：设置可点击区域高度（像素）
             }
           });
           
-// 3. 右下角缩放控件
+  // 3. 右下角缩放控件
           // 注意：Custom Ink 使用 Fabric.js 的默认右下角（br）缩放控件，不需要自定义
           // Fabric.js 的默认 br 控件已经提供了缩放功能
           
-// 保存控件到 canvas，以便后续使用
+  // 保存控件到 canvas，以便后续使用
           (fabricCanvas as any).deleteControl = deleteControl;
           (fabricCanvas as any).duplicateControl = duplicateControl;
           (fabricCanvas as any).addCustomControlsToObject = addCustomControlsToObject;
@@ -2368,19 +2434,19 @@ sizeY: 32, // 关键：设置可点击区域高度（像素）
           };
 
           /*
-// 步骤3：创建三个图标控件（只显示，不做功能）
+  // 步骤3：创建三个图标控件（只显示，不做功能）
           
                     // 1. 左上角删除图标
                     const deleteIconControl = new fabric.Control({
                       x: -0.5, // 左上角
                       y: -0.5,
-// 修复：让三个大图标控件彼此拉开距离（避免在小对象上出现控件命中区域重叠，导致 hover 总是落到 resize）
+  // 修复：让三个大图标控件彼此拉开距离（避免在小对象上出现控件命中区域重叠，导致 hover 总是落到 resize）
                       // 说明：这里用 offset 将控件中心移到对象外侧（与大尺寸 icon 的视觉一致）
-// Fix: Use positionHandler for dynamic alignment (Gap -12px)
+  // Fix: Use positionHandler for dynamic alignment (Gap -12px)
                       positionHandler: getDynamicControlPosition(-0.5, -0.5, -12, -12),
-
+   
                       render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
-// 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top（用于对齐命中区域）
+  // 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top（用于对齐命中区域）
                         try {
                           const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
                           if (qs && qs.get('dlDebug') === '1') {
@@ -2401,7 +2467,7 @@ sizeY: 32, // 关键：设置可点击区域高度（像素）
                         } catch (e) {
                           // ignore
                         }
-const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
+  const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                         ctx.save();
                         ctx.translate(left, top);
                         ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
@@ -2414,7 +2480,7 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
           
                         // 绘制白色 X 图标（线宽也相应放大）
                         ctx.strokeStyle = '#ffffff';
-ctx.lineWidth = 15; // 放大 5 倍：从 3 调整为 15
+  ctx.lineWidth = 15; // 放大 5 倍：从 3 调整为 15
                         ctx.lineCap = 'round';
                         const iconSize = size * 0.55;
                         ctx.beginPath();
@@ -2426,9 +2492,9 @@ ctx.lineWidth = 15; // 放大 5 倍：从 3 调整为 15
           
                         ctx.restore();
                       },
-// 功能1：删除图标 - 添加鼠标事件处理
+  // 功能1：删除图标 - 添加鼠标事件处理
                       mouseDownHandler: function (eventData, transformData) {
-// 返回 true 阻止事件冒泡，防止对象被取消选中
+  // 返回 true 阻止事件冒泡，防止对象被取消选中
                         return true;
                       },
                       mouseUpHandler: function (eventData: any, transformData: any) {
@@ -2440,12 +2506,12 @@ ctx.lineWidth = 15; // 放大 5 倍：从 3 调整为 15
                             timestamp: new Date().toISOString(),
                           });
           
-// 功能1：删除对象
+  // 功能1：删除对象
                           fabricCanvas.remove(target);
                           fabricCanvas.renderAll();
           
-// Add Text: 如果删除的是当前选中的对象，清除选中状态并切换回 home 面板
-// Add Art: 添加 art 对象的删除处理
+  // Add Text: 如果删除的是当前选中的对象，清除选中状态并切换回 home 面板
+  // Add Art: 添加 art 对象的删除处理
                           const targetName = (target as any).name || '';
                           const layerType = (target as any).data?.layerType;
                           if (
@@ -2455,11 +2521,11 @@ ctx.lineWidth = 15; // 放大 5 倍：从 3 调整为 15
                           ) {
                             setSelectedImage(null);
                             setSelectedText(null);
-setSelectedArt(null); // Add Art: 删除时清理艺术素材选中状态
+  setSelectedArt(null); // Add Art: 删除时清理艺术素材选中状态
                             setToolPanelType('home');
                           }
           
-// 返回 true 表示事件已处理，阻止默认行为
+  // 返回 true 表示事件已处理，阻止默认行为
                           return true;
                         }
                         return false;
@@ -2470,12 +2536,12 @@ setSelectedArt(null); // Add Art: 删除时清理艺术素材选中状态
                     const duplicateIconControl = new fabric.Control({
                       x: -0.5, // 左下角
                       y: 0.5,
-// 同 deleteIcon：下移到对象外侧，避免与 delete/resize 命中区域重叠
-// Fix: Use positionHandler for dynamic alignment (Gap 12px)
+  // 同 deleteIcon：下移到对象外侧，避免与 delete/resize 命中区域重叠
+  // Fix: Use positionHandler for dynamic alignment (Gap 12px)
                       positionHandler: getDynamicControlPosition(-0.5, 0.5, -12, 12),
-
+   
                       render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
-// 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
+  // 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
                         try {
                           const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
                           if (qs && qs.get('dlDebug') === '1') {
@@ -2496,7 +2562,7 @@ setSelectedArt(null); // Add Art: 删除时清理艺术素材选中状态
                         } catch (e) {
                           // ignore
                         }
-const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
+  const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                         ctx.save();
                         ctx.translate(left, top);
                         ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
@@ -2514,9 +2580,9 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
           
                         ctx.restore();
                       },
-// 功能2：复制图标 - 添加鼠标事件处理
+  // 功能2：复制图标 - 添加鼠标事件处理
                       mouseDownHandler: function (eventData, transformData) {
-// 返回 true 阻止事件冒泡，防止对象被取消选中
+  // 返回 true 阻止事件冒泡，防止对象被取消选中
                         return true;
                       },
                       mouseUpHandler: async function (eventData: any, transformData: any) {
@@ -2529,7 +2595,7 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                               timestamp: new Date().toISOString(),
                             });
           
-// Add Text: 克隆对象（兼容 sync/promise/callback 三种 clone 形态）
+  // Add Text: 克隆对象（兼容 sync/promise/callback 三种 clone 形态）
                             const cloneResult = (target as any).clone();
                             const cloned = cloneResult instanceof Promise
                               ? await cloneResult
@@ -2547,7 +2613,7 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                             const targetName = (target as any).name || '';
                             const targetLayerType = (target as any).data?.layerType;
                             // 保护商品底图：不允许复制底图
-// Add Art: 允许复制 art 对象
+  // Add Art: 允许复制 art 对象
                             if (
                               targetName === 'product-image-base' ||
                               targetName.startsWith('product-image-') ||
@@ -2558,8 +2624,8 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                               return true;
                             }
           
-// 根据对象类型决定 name 前缀与 layerType
-// Add Art: 添加 art 对象的判断
+  // 根据对象类型决定 name 前缀与 layerType
+  // Add Art: 添加 art 对象的判断
                             const isText =
                               target.type === 'i-text' || target.type === 'textbox' || target.type === 'text' || targetName.startsWith('text_');
                             const isUploadImage = target.type === 'image' && (targetName.startsWith('image_') || targetLayerType === 'upload');
@@ -2584,20 +2650,20 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                             });
                             cloned.setCoords();
           
-// 添加到画布
+  // 添加到画布
                             fabricCanvas.add(cloned);
           
-// 为新复制的对象添加图标控件
+  // 为新复制的对象添加图标控件
                             if ((fabricCanvas as any).addIconControlsToObject) {
                               (fabricCanvas as any).addIconControlsToObject(cloned);
                             }
           
-// 选中新复制的对象
+  // 选中新复制的对象
                             fabricCanvas.setActiveObject(cloned);
-// Add Text: 立即切换编辑面板（selection:created/updated 也会兜底）
+  // Add Text: 立即切换编辑面板（selection:created/updated 也会兜底）
                             const clonedName = (cloned as any).name || '';
                             const clonedLayerType = (cloned as any).data?.layerType;
-// Add Art: 复制后切换到对应的编辑面板
+  // Add Art: 复制后切换到对应的编辑面板
                             if (cloned.type === 'image' && (clonedName.startsWith('art_') || clonedLayerType === 'art')) {
                               setSelectedArt(cloned as any);
                               setSelectedImage(null);
@@ -2606,7 +2672,7 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                             } else if (cloned.type === 'image' && clonedName.startsWith('image_')) {
                               setSelectedImage(cloned as any);
                               setSelectedText(null);
-setSelectedArt(null); // Add Art: 切换到上传编辑时清理艺术素材
+  setSelectedArt(null); // Add Art: 切换到上传编辑时清理艺术素材
                               setToolPanelType('edit-upload');
                             } else if (
                               (cloned.type === 'i-text' || cloned.type === 'textbox' || cloned.type === 'text') &&
@@ -2614,13 +2680,13 @@ setSelectedArt(null); // Add Art: 切换到上传编辑时清理艺术素材
                             ) {
                               setSelectedText(cloned as any);
                               setSelectedImage(null);
-setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
+  setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
                               setToolPanelType('edit-text');
                             }
           
                             fabricCanvas.renderAll();
           
-// 返回 true 表示事件已处理，阻止默认行为
+  // 返回 true 表示事件已处理，阻止默认行为
                             return true;
                           } catch (error) {
                             console.error('[DesignLab 5.0] ❌ 复制失败:', error);
@@ -2635,12 +2701,12 @@ setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
                     const resizeIconControl = new fabric.Control({
                       x: 0.5, // 右下角
                       y: 0.5,
-// 右下角外侧，避免与左侧控件重叠
-// Fix: Use positionHandler for dynamic alignment (Gap 12px)
+  // 右下角外侧，避免与左侧控件重叠
+  // Fix: Use positionHandler for dynamic alignment (Gap 12px)
                       positionHandler: getDynamicControlPosition(0.5, 0.5, 12, 12),
-
+   
                       render: function (ctx: any, left: any, top: any, styleOverride: any, fabricObject: any) {
-// 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
+  // 生产环境定位：仅 dlDebug=1 时打印一次控件 render 的 left/top
                         try {
                           const qs = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
                           if (qs && qs.get('dlDebug') === '1') {
@@ -2661,7 +2727,7 @@ setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
                         } catch (e) {
                           // ignore
                         }
-const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
+  const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
                         ctx.save();
                         ctx.translate(left, top);
                         ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle || 0));
@@ -2674,7 +2740,7 @@ const size = this.sizeX || 160; // 放大 5 倍：默认值从 32 调整为 160
           
                         // 绘制白色 resize 图标（对角线箭头，线宽也相应放大）
                         ctx.strokeStyle = '#ffffff';
-ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
+  ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
                         ctx.lineCap = 'round';
                         const arrowSize = size * 0.4;
                         ctx.beginPath();
@@ -2689,16 +2755,16 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
           
                         ctx.restore();
                       },
-// 功能3：resize 图标 - 使用 actionHandler 实现缩放功能
+  // 功能3：resize 图标 - 使用 actionHandler 实现缩放功能
                       // 使用 Fabric.js 的 controlsUtils 工具函数（如果可用），否则使用自定义实现
-// 修复：缩放后必须 setCoords，否则控件命中区域与渲染位置会逐渐偏离（放大后更明显）
+  // 修复：缩放后必须 setCoords，否则控件命中区域与渲染位置会逐渐偏离（放大后更明显）
                       actionHandler: function (eventData: any, transformData: any, x: any, y: any) {
                         const target = transformData?.target as any;
                         const controlsUtils = (fabric as any).controlsUtils;
           
                         if (controlsUtils && typeof controlsUtils.scalingEqually === 'function') {
                           const result = controlsUtils.scalingEqually(eventData, transformData, x, y);
-// 关键：实时更新坐标，确保 hover/click 命中区与图标一致
+  // 关键：实时更新坐标，确保 hover/click 命中区与图标一致
                           try {
                             target?.setCoords?.();
                             (target?.canvas as any)?.requestRenderAll?.();
@@ -2710,7 +2776,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
           
                         // fallback：自定义缩放实现（当 controlsUtils 不可用时）
                         return (function (eventData2, transformData2, x2, y2) {
-// 功能3：自定义缩放实现（当 controlsUtils 不可用时）
+  // 功能3：自定义缩放实现（当 controlsUtils 不可用时）
                           const target2 = transformData2.target;
                           // 将全局坐标转换为对象的局部坐标
                           const localPoint = target2.toLocalPoint(
@@ -2731,7 +2797,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
                             x: Math.max(0.1, scaleX), // 最小缩放比例 0.1
                             y: Math.max(0.1, scaleY),
                           };
-// 关键：实时更新坐标，确保 hover/click 命中区与图标一致
+  // 关键：实时更新坐标，确保 hover/click 命中区与图标一致
                           try {
                             target2?.setCoords?.();
                             (target2?.canvas as any)?.requestRenderAll?.();
@@ -2741,13 +2807,13 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
                           return result2;
                         })(eventData, transformData, x, y);
                       },
-// 使用 Fabric.js 的缩放光标样式（如果可用）
+  // 使用 Fabric.js 的缩放光标样式（如果可用）
                       cursorStyleHandler: (fabric.controlsUtils && fabric.controlsUtils.scaleCursorStyleHandler)
                         ? fabric.controlsUtils.scaleCursorStyleHandler
                         : 'se-resize',
                     });
           
-// 生产环境验证日志：打印三角控件配置，确认 offsetX/offsetY/size 是否符合预期（用 JSON 输出，避免线上控制台折叠为 [object Object]）
+  // 生产环境验证日志：打印三角控件配置，确认 offsetX/offsetY/size 是否符合预期（用 JSON 输出，避免线上控制台折叠为 [object Object]）
                     try {
                       const payload = {
                         env: process.env.NODE_ENV,
@@ -3670,14 +3736,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
                       </button>
                     </div>
 
-                    <p className="dl-home-panel__hint">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="16" x2="12" y2="12" />
-                        <line x1="12" y1="8" x2="12.01" y2="8" />
-                      </svg>
-                      Drag & drop a file anywhere to upload
-                    </p>
+                    {/* Hint Removed */}
                   </div>
                 </>
               )}
@@ -4199,6 +4258,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
           // FINAL FIX: Pass name directly to save function
           // Don't rely on state updates - pass the name as a parameter
           setDesignName(name); // Still update state for UI
+          commitToStore(); // Checkpoint to local store
           await handleSaveDesign(name); // Pass name directly
         }}
         onShare={handleShareDesign}
