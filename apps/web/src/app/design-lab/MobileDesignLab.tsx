@@ -337,24 +337,47 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
             {/* EDIT TOOLBAR OVERLAY (Visible only in Edit Mode) */}
             {isEditMode && (
                 <div className="dl-mobile-edit-toolbar-container">
-                    {/* We could put a small header or X to close edit mode? */}
                     <div className="dl-mobile-edit-header">
-                        <span>Editing...</span>
-                        <button onClick={() => handleToolClick(null)}>Done</button>
+                        {showRotateModal ? (
+                            <>
+                                <button onClick={() => setShowRotateModal(false)} style={{ background: 'none', border: 'none', padding: '8px' }}>
+                                    ←
+                                </button>
+                                <span>Rotate</span>
+                                <button onClick={applyRotation} style={{ background: 'none', border: 'none', padding: '8px', color: '#007AFF', fontWeight: 600 }}>Done</button>
+                            </>
+                        ) : (
+                            <>
+                                <span>Editing...</span>
+                                <button onClick={() => handleToolClick(null)}>Done</button>
+                            </>
+                        )}
                     </div>
 
-                    <div className="dl-mobile-edit-toolbar">
-                        {toolbarActions.map((item) => (
-                            <button
-                                key={item.action}
-                                className="dl-edit-tool-btn"
-                                onClick={() => item.action === 'rotate-modal' ? handleRotateClick() : handleObjectAction(item.action)}
-                            >
-                                <span className="icon">{item.icon}</span>
-                                <span className="label">{item.label}</span>
-                            </button>
-                        ))}
-                    </div>
+                    {showRotateModal ? (
+                        <div style={{ padding: '12px', background: '#f9f9f9' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', justifyContent: 'center' }}>
+                                <button onClick={() => setRotateAngle(a => a - 45)} style={{ width: '36px', height: '36px', border: '1px solid #ddd', background: '#fff', borderRadius: '6px' }}>↶</button>
+                                <button onClick={() => setRotateAngle(a => a - 1)} style={{ width: '36px', height: '36px', border: '1px solid #ddd', background: '#fff', borderRadius: '6px' }}>−</button>
+                                <input type="number" value={Math.round(rotateAngle)} onChange={(e) => setRotateAngle(Number(e.target.value))} style={{ width: '80px', height: '36px', border: '1px solid #ddd', borderRadius: '6px', textAlign: 'center', fontSize: '14px' }} />
+                                <button onClick={() => setRotateAngle(a => a + 1)} style={{ width: '36px', height: '36px', border: '1px solid #ddd', background: '#fff', borderRadius: '6px' }}>+</button>
+                                <button onClick={() => setRotateAngle(0)} style={{ width: '36px', height: '36px', border: '1px solid #ddd', background: '#fff', borderRadius: '6px' }}>↺</button>
+                            </div>
+                            <input type="range" min="-180" max="180" value={rotateAngle} onChange={(e) => setRotateAngle(Number(e.target.value))} style={{ width: '100%', height: '6px' }} />
+                        </div>
+                    ) : (
+                        <div className="dl-mobile-edit-toolbar">
+                            {toolbarActions.map((item) => (
+                                <button
+                                    key={item.action}
+                                    className="dl-edit-tool-btn"
+                                    onClick={() => item.action === 'rotate-modal' ? handleRotateClick() : handleObjectAction(item.action)}
+                                >
+                                    <span className="icon">{item.icon}</span>
+                                    <span className="label">{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
                 </div>
             )}
 
