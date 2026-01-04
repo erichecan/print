@@ -8,6 +8,15 @@
    Since MobileDesignLabClient is dynamically loaded via DesignLabRouter based on window width,
    we don't need to hide mobile elements by default - they only exist when the mobile client loads. */
 
+/* Mobile Layout Container */
+.dl-mobile-layout {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
 
 @media (max-width: 768px) {
 
