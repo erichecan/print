@@ -9,12 +9,25 @@
    we don't need to hide mobile elements by default - they only exist when the mobile client loads. */
 
 /* Mobile Layout Container */
+/* Mobile Layout Container */
 .dl-mobile-layout {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
+    /* Push footer to bottom */
+    pointer-events: none;
+    /* Let clicks pass through to canvas */
+    z-index: 50;
+}
+
+/* Enable pointer events for interactive elements */
+.dl-mobile-layout>* {
+    pointer-events: auto;
 }
 
 
@@ -198,7 +211,7 @@
     /* 6. Mobile View Switcher (Top Right Overlay) */
     .dl-mobile-view-switcher {
         position: absolute;
-        top: 16px;
+        top: 80px;
         right: 16px;
         background: rgba(255, 255, 255, 0.9);
         width: 44px;
@@ -468,7 +481,9 @@
     to {
         transform: translateY(0);
     }
-}/* Rotate Modal */
+}
+
+/* Rotate Modal */
 .dl-mobile-rotate-modal {
     position: fixed;
     top: 0;
