@@ -49,6 +49,7 @@ import GetPriceFlowModal, {
 } from './components/modals/GetPriceFlowModal';
 import { usePricing } from './modules/pricing/usePricing';
 import './design-lab.css';
+import { MobileDesignLab } from './MobileDesignLab';
 
 // 画布常量 - Optimized to 1200x1440 to match Custom Ink product image resolution (1200px)
 const CANVAS_WIDTH = 1200;
@@ -3563,40 +3564,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   return (
     <div className="design-lab-new">
       {/* MOBILE HEADER */}
-      <header className="dl-mobile-header">
-        <div className="dl-mobile-header__left">
-          <Link href="/" aria-label="Home">
-            <Image src="/logo.png" alt="Logo" width={120} height={32} className="dl-mobile-logo" />
-          </Link>
-        </div>
-        <div className="dl-mobile-header__right">
-          <button className="dl-mobile-nav-item">
-            <span className="dl-mobile-icon">📂</span>
-            <span>Designs</span>
-          </button>
-          <button className="dl-mobile-nav-item" onClick={handleSaveRequest}>
-            <span className="dl-mobile-icon">💾</span>
-            <span>Save</span>
-          </button>
-          <Link href="/account" className="dl-mobile-nav-item">
-            <span className="dl-mobile-icon">👤</span>
-            <span>Account</span>
-          </Link>
-
-          <button
-            className="dl-mobile-next-btn"
-            onClick={() => {
-              if (!designId) {
-                handleSaveDesign().then(id => { if (id) setShowGetPriceModal(true); });
-              } else {
-                setShowGetPriceModal(true);
-              }
-            }}
-          >
-            Next $
-          </button>
-        </div>
-      </header>
+      {/* MOBILE HEADER - REMOVED (Moved to MobileDesignLab) */}
 
       {/* 1. Header - 顶部导航栏 (Desktop Only) */}
       <header className="dl-header dl-desktop-only" data-testid="header">
@@ -3650,33 +3618,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */}
       {/* 5.0 版本：修复布局结构，所有列必须在 .dl-main 容器内 */}
       <div className="dl-main">
-        {/* MOBILE VIEW SWITCHER (Top Right Overlay) */}
-        <button
-          className="dl-mobile-view-switcher"
-          onClick={() => {
-            const views = ['front', 'back', 'sleeve', 'left-sleeve', 'right-sleeve'] as const;
-            const currentIndex = views.indexOf(currentView as any);
-            const nextView = views[(currentIndex + 1) % views.length];
-            // Skip views without images
-            // Simple logic: just cycle till we find one or simpler: just toggle front/back/sleeves linearly
-            handleViewChange(nextView);
-          }}
-        >
-          🔄
-        </button>
-
-        {/* MOBILE FLOATING CONTROLS (Center Overlay) */}
-        <div className="dl-mobile-floating-controls">
-          <button className="dl-float-btn dl-float-btn--primary" onClick={() => handleToolClick('upload')}>
-            <span className="icon">☁️</span> Upload
-          </button>
-          <button className="dl-float-btn" onClick={() => handleToolClick('text')}>
-            <span className="icon">T</span> Add Text
-          </button>
-          <button className="dl-float-btn" onClick={() => handleToolClick('art')}>
-            <span className="icon">🖼️</span> Add Art
-          </button>
-        </div>
+        {/* MOBILE VIEW SWITCHER & FLOATING CONTROLS - REMOVED (Moved to MobileDesignLab) */}
 
         {/* 2. Rail - 左侧深灰色工具栏 (Desktop Only) */}
         {/* 5.0 版本：与 4.0 版本 UI 一致 - Rail 工具栏 */}
@@ -4054,25 +3996,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         </aside>
       </div>
 
-      {/* MOBILE BOTTOM NAV */}
-      <footer className="dl-mobile-bottom-nav">
-        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('upload')}>
-          <span className="icon">☁️</span>
-          <span className="label">Upload</span>
-        </button>
-        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('text')}>
-          <span className="icon">T</span>
-          <span className="label">Add Text</span>
-        </button>
-        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('art')}>
-          <span className="icon">🖼️</span>
-          <span className="label">Add Art</span>
-        </button>
-        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('product-colors')}>
-          <span className="icon">👕</span>
-          <span className="label">Detail</span>
-        </button>
-      </footer>
+      {/* MOBILE BOTTOM NAV - REMOVED (Moved to MobileDesignLab) */}
 
       {/* 鼠标位置调试面板 */}
       {
@@ -4391,6 +4315,77 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         selectedColor={productInfo.color}
         onSelectColor={handleColorSelect}
         productName={productInfo.productName || ''}
+      />
+
+
+      {/* 5.0 Mobile Refactor: Render Mobile Component */}
+      <MobileDesignLab
+        currentView={currentView}
+        designId={designId}
+        designName={designName}
+        activeTool={activeTool}
+        toolPanelType={toolPanelType} // Pass toolPanelType to know if we are in edit mode
+        productInfo={productInfo}
+        productList={productList}
+        handleToolClick={handleToolClick}
+        handleSaveRequest={handleSaveRequest}
+        handleViewChange={handleViewChange}
+        handleSaveDesign={handleSaveDesign}
+        setShowGetPriceModal={setShowGetPriceModal}
+        setCatalogMode={setCatalogMode}
+        setIsCatalogModalOpen={setIsCatalogModalOpen}
+        handleObjectAction={(action, payload) => {
+          const canvas = fabricCanvasRef.current;
+          const activeObj = canvas?.getActiveObject();
+          if (!canvas || !activeObj) return;
+
+          switch (action) {
+            case 'rotate':
+              activeObj.rotate((activeObj.angle || 0) + 90);
+              break;
+            case 'flip':
+              activeObj.set('flipX', !activeObj.flipX);
+              break;
+            case 'duplicate':
+              activeObj.clone((cloned: any) => {
+                canvas.discardActiveObject();
+                cloned.set({
+                  left: (cloned.left || 0) + 20,
+                  top: (cloned.top || 0) + 20,
+                  evented: true,
+                });
+                if (cloned.type === 'activeSelection') {
+                  cloned.canvas = canvas;
+                  cloned.forEachObject((obj: any) => {
+                    canvas.add(obj);
+                  });
+                  cloned.setCoords();
+                } else {
+                  canvas.add(cloned);
+                }
+                canvas.setActiveObject(cloned);
+                canvas.requestRenderAll();
+              });
+              return; // clone is async
+            case 'center':
+              activeObj.center();
+              break;
+            case 'layer-up':
+              activeObj.bringForward();
+              break;
+            case 'layer-down':
+              activeObj.sendBackwards();
+              break;
+            case 'delete':
+              canvas.remove(activeObj);
+              canvas.discardActiveObject();
+              handleBackToHome(); // Go back to home if deleted
+              break;
+          }
+          canvas.requestRenderAll();
+          handleCanvasUpdate();
+        }}
+        selectedObject={selectedImage || selectedText || selectedArt || null} // Pass general selected object state if needed or rely on canvas
       />
     </div >
   );

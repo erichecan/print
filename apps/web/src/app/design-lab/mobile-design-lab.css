@@ -1,0 +1,458 @@
+/* ============================================
+   Mobile Design Lab Styles
+   ============================================ */
+
+/* This file contains ALL mobile-specific styles for the Design Lab.
+   It is ONLY imported in MobileDesignLab.tsx and should NOT affect desktop. */
+
+@media (max-width: 768px) {
+
+    /* 1. Hide Desktop Elements */
+    .dl-desktop-only {
+        display: none !important;
+    }
+
+    /* 2. Reset Grid for Mobile (Single Column) */
+    .design-lab-new {
+        display: flex !important;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .dl-main {
+        flex: 1;
+        display: block !important;
+        position: relative;
+        height: auto;
+        overflow: hidden;
+        grid-column: auto !important;
+        grid-row: auto !important;
+    }
+
+    /* 3. Mobile Header */
+    .dl-mobile-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: #fff;
+        border-bottom: 1px solid #ccc;
+        height: 64px;
+        z-index: 100;
+        flex-shrink: 0;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .dl-mobile-header__left {
+        display: flex;
+        align-items: center;
+    }
+
+    .dl-mobile-logo {
+        display: block;
+        width: auto;
+        height: 28px;
+        max-width: 140px;
+        object-fit: contain;
+    }
+
+    .dl-mobile-header__right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dl-mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        background: none;
+        border: none;
+        font-size: 10px;
+        color: #555;
+        cursor: pointer;
+        text-decoration: none;
+        padding: 0 4px;
+        min-width: 44px;
+    }
+
+    .dl-mobile-nav-item:hover {
+        color: #000;
+    }
+
+    .dl-mobile-icon {
+        font-size: 0;
+        line-height: 1;
+        color: #777;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dl-mobile-nav-item svg {
+        color: #999;
+        fill: #999;
+    }
+
+    .dl-mobile-nav-item .dl-mobile-icon svg {
+        stroke: #777;
+        fill: none;
+    }
+
+    .dl-mobile-next-btn {
+        background-color: #2563EB;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        margin-left: 4px;
+    }
+
+    /* 4. Mobile Canvas Area */
+    .dl-canvas {
+        height: 100% !important;
+        width: 100%;
+        background: #f5f5f5;
+        position: relative;
+    }
+
+    .dl-canvas__preview {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    /* 5. Mobile Floating Controls (Overlaid on Canvas) */
+    .dl-mobile-floating-controls {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: flex !important;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 50;
+        pointer-events: none;
+    }
+
+    .dl-float-btn {
+        pointer-events: auto;
+        background: #fff;
+        color: #333;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        min-width: 150px;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+
+    .dl-float-btn:active {
+        transform: scale(0.98);
+    }
+
+    .dl-float-btn--primary {
+        background: #2563EB;
+        color: #fff;
+        border-color: #2563EB;
+    }
+
+    .dl-float-btn .icon {
+        font-size: 16px;
+    }
+
+    /* 6. Mobile View Switcher (Top Right Overlay) */
+    .dl-mobile-view-switcher {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: rgba(255, 255, 255, 0.9);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        z-index: 60;
+        font-size: 20px;
+        cursor: pointer;
+    }
+
+    /* 7. Mobile Bottom Nav */
+    .dl-mobile-bottom-nav {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-around;
+        height: 70px;
+        background: #1F2937;
+        color: #fff;
+        padding-bottom: env(safe-area-inset-bottom);
+        z-index: 100;
+        flex-shrink: 0;
+    }
+
+    .dl-mobile-nav-btn {
+        background: none;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        color: #9CA3AF;
+        font-size: 10px;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .dl-mobile-nav-btn.active,
+    .dl-mobile-nav-btn:active {
+        color: #fff;
+    }
+
+    .dl-mobile-nav-btn .icon {
+        font-size: 20px;
+    }
+
+    /* Product Dashboard */
+    .dl-mobile-product-dashboard {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: calc(100% - 70px);
+        background: #f5f5f5;
+        z-index: 900;
+        overflow-y: auto;
+        padding-bottom: 20px;
+    }
+
+    /* Mobile Edit Toolbar */
+    .dl-mobile-edit-toolbar-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #fff;
+        z-index: 1000;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dl-mobile-edit-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 16px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+    }
+
+    .dl-mobile-edit-header button {
+        background: none;
+        border: none;
+        color: #0066cc;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .dl-mobile-edit-toolbar {
+        display: flex;
+        overflow-x: auto;
+        padding: 12px 0;
+        gap: 0;
+    }
+
+    .dl-edit-tool-btn {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        background: none;
+        border: none;
+        gap: 4px;
+        color: #333;
+        cursor: pointer;
+    }
+
+    .dl-edit-tool-btn .icon {
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 4px;
+    }
+
+    .dl-edit-tool-btn .label {
+        font-size: 11px;
+        color: #0066cc;
+    }
+
+    .dl-dashboard-header {
+        background: #fff;
+        padding: 16px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        position: relative;
+    }
+
+    .dl-dashboard-header h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .dl-close-btn {
+        position: absolute;
+        right: 16px;
+        border: none;
+        background: none;
+        font-size: 24px;
+        padding: 0;
+        color: #666;
+    }
+
+    .dl-dashboard-content {
+        padding: 16px;
+    }
+
+    .dl-dashboard-top-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        background: #e5e7eb;
+        padding: 16px;
+        border-radius: 8px;
+    }
+
+    .dl-dashboard-add-btn {
+        flex: 1;
+        background: #fff;
+        border: 1px solid #2563EB;
+        color: #2563EB;
+        border-radius: 8px;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+
+    .dl-dashboard-add-btn .icon {
+        font-size: 20px;
+    }
+
+    .dl-dashboard-thumbnail {
+        width: 80px;
+        height: 80px;
+        background: #fff;
+        border-radius: 8px;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dl-dashboard-thumbnail img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .dl-dashboard-product-title h4 {
+        margin: 0 0 4px 0;
+        color: #6B7280;
+        font-size: 12px;
+        text-transform: uppercase;
+    }
+
+    .dl-dashboard-product-title p {
+        margin: 0 0 24px 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111;
+    }
+
+    .dl-dashboard-list {
+        background: #fff;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+
+    .dl-dashboard-item {
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+        color: #374151;
+    }
+
+    .dl-dashboard-item:last-child {
+        border-bottom: none;
+    }
+
+    .dl-dashboard-item.is-clickable {
+        cursor: pointer;
+    }
+
+    .dl-dashboard-item .arrow {
+        color: #ccc;
+        font-weight: bold;
+        margin-left: 8px;
+    }
+
+    .dl-dashboard-value {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #111;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
