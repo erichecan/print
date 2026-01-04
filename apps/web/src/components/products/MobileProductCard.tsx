@@ -162,14 +162,17 @@ export function MobileProductCard({ product, index }: MobileProductCardProps) {
           border-bottom: none;
         }
         .mobile-product-card__content {
-          display: flex;
-          gap: 12px;
+          display: grid;
+          grid-template-columns: auto 1fr;
+          column-gap: 15px;
+          align-items: stretch;
           text-decoration: none;
           color: #333;
         }
         .mobile-product-card__image-container {
-          width: 125px;
-          flex-shrink: 0;
+          width: 140px;
+          display: flex;
+          align-items: stretch;
         }
         .mobile-product-card__image-wrapper {
           position: relative;
@@ -177,8 +180,8 @@ export function MobileProductCard({ product, index }: MobileProductCardProps) {
           border-radius: 8px;
           overflow: hidden;
           width: 100%;
-          aspect-ratio: 0.8; /* Height approx 156px for 125px width */
-          min-height: 132px;
+          height: 100%;
+          min-height: 160px;
         }
         .mobile-product-card__image {
           object-fit: cover;
