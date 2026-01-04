@@ -22,21 +22,21 @@ interface AppliedCoupon {
 }
 
 export default function CartPage() {
-const router = useRouter(); // 修复：使用 router.push 替代 Link 避免 RSC 路由问题
+  const router = useRouter(); // 修复：使用 router.push 替代 Link 避免 RSC 路由问题
   const { cart, isLoading, updateItem, removeItem } = useCart();
-const { success, error: showError, info } = useToast(); // Toast 通知
+  const { success, error: showError, info } = useToast(); // Toast 通知
   const [updating, setUpdating] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [postalCode, setPostalCode] = useState('');
-// 修复：初始值为空，仅在用户点击 Update 且输入无效时才显示错误
+  // 修复：初始值为空，仅在用户点击 Update 且输入无效时才显示错误
   const [postalError, setPostalError] = useState('');
   const [showCouponForm, setShowCouponForm] = useState(false);
-const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防止重复点击
-  
-// 获取每个商品的促销活动信息
+  const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防止重复点击
+
+  // 获取每个商品的促销活动信息
   const productIds = cart?.items.map((item) => item.productId).filter(Boolean) || [];
   const { data: promotionsData } = useSWR(
     productIds.length > 0 ? ['cart-promotions', productIds] : null,
@@ -47,7 +47,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
           try {
             const result = await promotionApi.getForProduct(productId);
             if (result.promotions && result.promotions.length > 0) {
-// 选择折扣最大的促销活动
+              // 选择折扣最大的促销活动
               const bestPromotion = result.promotions.sort((a, b) => {
                 const aValue = a.discountType === 'percentage' ? a.discountValue : a.discountValue;
                 const bValue = b.discountType === 'percentage' ? b.discountValue : b.discountValue;
@@ -64,7 +64,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     }
   );
 
-// 计算促销折扣总额
+  // 计算促销折扣总额
   const promotionDiscount = useMemo(() => {
     if (!cart || !promotionsData) return 0;
     let total = 0;
@@ -104,7 +104,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     []
   );
 
-// 优化数量更新交互反馈
+  // 优化数量更新交互反馈
   const handleUpdateQuantity = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 1) {
       showError('Quantity must be at least 1');
@@ -121,21 +121,21 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     }
   };
 
-// 优化删除交互反馈
-// 添加详细调试日志，修复删除功能
+  // 优化删除交互反馈
+  // 添加详细调试日志，修复删除功能
   const handleRemove = async (itemId: string) => {
     console.log('[Cart] handleRemove() ===== START =====');
     console.log('[Cart] Item ID:', itemId);
     const item = cart?.items.find(i => i.id === itemId);
     console.log('[Cart] Item to remove:', item);
     console.log('[Cart] Cart items count:', cart?.items.length || 0);
-    
+
     if (!item) {
       console.error('[Cart] ❌ Item not found in cart');
       showError('Item not found in cart');
       return;
     }
-    
+
     const confirmMessage = `Remove "${item?.productName || 'this item'}" from cart?`;
 
     if (!window.confirm(confirmMessage)) {
@@ -149,7 +149,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
       await removeItem(itemId);
       console.log('[Cart] ✅ Item removed successfully');
       success('Item removed from cart');
-// 如果应用了优惠券，重新验证
+      // 如果应用了优惠券，重新验证
       if (appliedCoupon) {
         handleApplyCoupon();
       }
@@ -168,7 +168,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     }
   };
 
-// 优化优惠券应用交互反馈
+  // 优化优惠券应用交互反馈
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !cart) {
       showError('Please enter a coupon code');
@@ -196,7 +196,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     }
   };
 
-// 优化移除优惠券交互反馈
+  // 优化移除优惠券交互反馈
   const handleRemoveCoupon = () => {
     const code = appliedCoupon?.code;
     setAppliedCoupon(null);
@@ -207,8 +207,8 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     }
   };
 
-// 优化邮政编码更新交互反馈
-// 修复：仅在用户点击 Update 且输入无效时才显示错误
+  // 优化邮政编码更新交互反馈
+  // 修复：仅在用户点击 Update 且输入无效时才显示错误
   const handlePostalUpdate = () => {
     if (!postalCode.trim() || postalCode.trim().length < 5) {
       const errorMsg = 'Please enter a valid zip/postal code.';
@@ -216,7 +216,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
       showError(errorMsg);
       return;
     }
-// 修复：清除错误提示（使用空字符串而非 null）
+    // 修复：清除错误提示（使用空字符串而非 null）
     setPostalError('');
     success('Postal code updated. Prices will be calculated at checkout.');
   };
@@ -227,7 +227,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     return Math.max(0, cart.total - discount);
   };
 
-// CustomInk风格：优化空购物车状态显示
+  // CustomInk风格：优化空购物车状态显示
   const renderEmptyState = () => (
     <section className="cart-new">
       <div className="cart-new__top">
@@ -250,24 +250,24 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)'
       }}>
         <div style={{ fontSize: '64px', marginBottom: '24px', opacity: 0.3 }}>🛒</div>
-        <h2 style={{ 
-          fontSize: '24px', 
-          fontWeight: 700, 
-          color: 'var(--color-text)', 
-          marginBottom: '12px' 
+        <h2 style={{
+          fontSize: '24px',
+          fontWeight: 700,
+          color: 'var(--color-text)',
+          marginBottom: '12px'
         }}>
           Your cart is empty
         </h2>
-        <p style={{ 
-          fontSize: '16px', 
-          color: 'var(--color-text-muted)', 
+        <p style={{
+          fontSize: '16px',
+          color: 'var(--color-text-muted)',
           marginBottom: '32px',
           lineHeight: 1.6
         }}>
           Start adding items to your cart to get started!
         </p>
-        <Link 
-          href="/products" 
+        <Link
+          href="/products"
           style={{
             display: 'inline-block',
             padding: '14px 32px',
@@ -298,7 +298,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
     </section>
   );
 
-// CustomInk风格：优化加载状态显示
+  // CustomInk风格：优化加载状态显示
   if (isLoading) {
     return (
       <section className="cart-new">
@@ -327,8 +327,8 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
             animation: 'spin 0.8s linear infinite',
             marginBottom: '24px'
           }} />
-          <p style={{ 
-            fontSize: '16px', 
+          <p style={{
+            fontSize: '16px',
             color: 'var(--color-text-muted)',
             margin: 0
           }}>
@@ -356,18 +356,14 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
           <Link href="/">Custom T-shirts</Link>
           <span>My Cart</span>
         </div>
-        <div className="cart-new__actions">
-          <a href="tel:4169166352">Talk to a Real Person 416 916 6352</a>
-          <Link href="/chat">Chat with a Real Person</Link>
-        </div>
       </div>
 
       <div className="cart-new__hero">
         <h1>My Cart</h1>
-{/* 删除：移除顶部重复的邮编提示文案 */}
+        {/* 删除：移除顶部重复的邮编提示文案 */}
       </div>
 
-{/* 删除：移除顶部红框邮编输入模块，邮编输入仅保留在右侧 Summary 区域 */}
+      {/* 删除：移除顶部红框邮编输入模块，邮编输入仅保留在右侧 Summary 区域 */}
 
       <div className="cart-new__grid">
         <div className="cart-new__main">
@@ -375,13 +371,13 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
             <article key={item.id} className="cart-card">
               <div className="cart-card__media">
                 {item.thumbnail ? (
-                  <Image 
-                    src={item.thumbnail} 
-                    alt={item.productName} 
-                    width={144} 
+                  <Image
+                    src={item.thumbnail}
+                    alt={item.productName}
+                    width={144}
                     height={144}
                     onError={(e) => {
-// 图片加载失败时显示占位符
+                      // 图片加载失败时显示占位符
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
                       const placeholder = target.nextElementSibling as HTMLElement;
@@ -392,10 +388,10 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
                     unoptimized={item.thumbnail.startsWith('http') && !item.thumbnail.includes('storage.googleapis.com')}
                   />
                 ) : null}
-{/* 图片占位符：当图片加载失败或无图片时显示 */}
-                <div 
-                  className="cart-card__placeholder" 
-                  style={{ 
+                {/* 图片占位符：当图片加载失败或无图片时显示 */}
+                <div
+                  className="cart-card__placeholder"
+                  style={{
                     display: item.thumbnail ? 'none' : 'flex',
                     position: 'absolute',
                     inset: 0,
@@ -413,7 +409,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
                 <div className="cart-card__top">
                   <div>
                     <p className="cart-card__design-name">{item.productName}</p>
-{/* 暂时隐藏 Edit Design 按钮（功能待实现） */}
+                    {/* 暂时隐藏 Edit Design 按钮（功能待实现） */}
                     {/* <button type="button" className="cart-card__link">
                       Edit Design
                     </button> */}
@@ -430,8 +426,8 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
                 <p className="cart-card__product">
                   {item.productName}
                   <span>{item.variantDescription || 'Heather Dark Grey | Printing'}</span>
-{/* 显示促销活动标签 */}
-{/* CustomInk风格：优化促销标签样式 */}
+                  {/* 显示促销活动标签 */}
+                  {/* CustomInk风格：优化促销标签样式 */}
                   {promotionsData?.[item.productId] && (
                     <span className="cart-card__promotion-badge">
                       {promotionsData[item.productId].discountType === 'percentage'
@@ -483,7 +479,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
             </article>
           ))}
 
-{/* 注释掉 Delivery Options 板块（暂时下线） */}
+          {/* 注释掉 Delivery Options 板块（暂时下线） */}
           {/* <section className="cart-delivery">
             <h3>Delivery Options</h3>
             <div className="cart-delivery__options">
@@ -496,7 +492,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
             </div>
           </section> */}
 
-{/* 注释掉 Add Your Design to More Styles 板块（暂时下线） */}
+          {/* 注释掉 Add Your Design to More Styles 板块（暂时下线） */}
           {/* <section className="cart-upsell">
             <div className="cart-upsell__header">
               <h3>Add Your Design to More Styles</h3>
@@ -526,7 +522,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
               <span>Subtotal ({cart.itemCount} items)</span>
               <span>${cart.subtotal.toFixed(2)}</span>
             </div>
-{/* 显示促销折扣 */}
+            {/* 显示促销折扣 */}
             {promotionDiscount > 0 && (
               <div className="summary-panel__row" style={{ color: '#e74c3c' }}>
                 <span>Promotion Discount</span>
@@ -574,10 +570,10 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
               type="button"
               className="summary-panel__primary"
               onClick={() => {
-// 修复：使用 router.push 替代 Link，避免 RSC 路由问题和 404 错误
+                // 修复：使用 router.push 替代 Link，避免 RSC 路由问题和 404 错误
                 if (navigatingToCheckout) return; // 防止重复点击
                 setNavigatingToCheckout(true);
-                
+
                 try {
                   // 埋点：记录 Checkout 按钮点击
                   if (typeof window !== 'undefined' && (window as any).gtag) {
@@ -596,7 +592,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
                       console.warn('[CartPage] Failed to track checkout analytics:', e);
                     }
                   }
-                  
+
                   // 使用绝对路径，确保正确导航
                   router.push('/checkout');
                 } catch (error) {
@@ -661,7 +657,7 @@ const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防�
         </aside>
       </div>
 
-{/* 移除购物车底部联系信息 */}
+      {/* 移除购物车底部联系信息 */}
     </section>
   );
 }

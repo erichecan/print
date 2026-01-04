@@ -8,6 +8,8 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { authApi, ordersApi, type AccountOrderDetail } from '@/lib/api';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobileOrdersView } from '../components/mobile/MobileOrdersView';
 
 interface AccountOrderSummary {
   id: string;
@@ -41,16 +43,16 @@ export default function AccountOrdersPage() {
   const [downloading, setDownloading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
-// 添加筛选和搜索状态
-// Enhanced with payment status filter
+  // 添加筛选和搜索状态
+  // Enhanced with payment status filter
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<string>('createdAt_desc');
-// Debounce search query
+  // Debounce search query
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>('');
 
-// Debounce search query
+  // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -64,7 +66,7 @@ export default function AccountOrdersPage() {
       setLoading(true);
       setError(null);
       try {
-// Enhanced: Pass search, paymentStatus to API
+        // Enhanced: Pass search, paymentStatus to API
         const data = await ordersApi.list(
           page,
           pagination.limit,
@@ -109,7 +111,7 @@ export default function AccountOrdersPage() {
         setLoading(false);
       }
     },
-[pagination.limit, statusFilter, paymentStatusFilter, sortBy, debouncedSearchQuery] // Use debouncedSearchQuery
+    [pagination.limit, statusFilter, paymentStatusFilter, sortBy, debouncedSearchQuery] // Use debouncedSearchQuery
   );
 
   useEffect(() => {
@@ -133,7 +135,7 @@ export default function AccountOrdersPage() {
     };
   }, [fetchOrders, router]);
 
-// Refetch orders when filters change
+  // Refetch orders when filters change
   useEffect(() => {
     fetchOrders(1);
   }, [debouncedSearchQuery, statusFilter, paymentStatusFilter, sortBy]);
@@ -151,7 +153,7 @@ export default function AccountOrdersPage() {
       link.remove();
       URL.revokeObjectURL(url);
     } catch (err) {
-console.error(' 发票下载失败', err);
+      console.error(' 发票下载失败', err);
       alert('Unable to download invoice. Please try again later.');
     } finally {
       setDownloading(null);
@@ -162,6 +164,28 @@ console.error(' 发票下载失败', err);
     if (page === pagination.page || page < 1 || page > pagination.totalPages) return;
     fetchOrders(page);
   };
+
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <MobileOrdersView
+        orders={orders}
+        pagination={pagination}
+        loading={loading}
+        downloading={downloading}
+        error={error}
+        handleDownload={handleDownload}
+        goToPage={goToPage}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        paymentStatusFilter={paymentStatusFilter}
+        setPaymentStatusFilter={setPaymentStatusFilter}
+      />
+    );
+  }
 
   if (loading && orders.length === 0) {
     return (
@@ -196,8 +220,8 @@ console.error(' 发票下载失败', err);
         </Link>
       </header>
 
-{/* 添加筛选和搜索功能 */}
-{/* Enhanced with payment status filter and improved UI */}
+      {/* 添加筛选和搜索功能 */}
+      {/* Enhanced with payment status filter and improved UI */}
       <div className="filters-section">
         <div className="filters-row">
           <div className="filter-group">

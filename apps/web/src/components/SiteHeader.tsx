@@ -231,22 +231,6 @@ export function SiteHeader() {
               </div>
             </div>
           </div>
-          <div className="primary-nav__actions">
-            {authLoading ? (
-              <span style={{ opacity: 0.6 }}>Loading...</span>
-            ) : user ? (
-              <Link href={ACCOUNT_ROUTES.dashboard} className="primary-nav__account">
-                <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
-                <span>My Account</span>
-              </Link>
-            ) : (
-              <Link href="/login">
-                <Image src="/assets/icon-person.svg" alt="" width={20} height={20} aria-hidden="true" />
-                <span>Sign in</span>
-              </Link>
-            )}
-            <CartIcon />
-          </div>
         </div>
         {/* 桌面端导航 - 仅在桌面端显示 */}
         <nav className="primary-nav primary-nav--desktop !hidden md:!block" aria-label="Primary">

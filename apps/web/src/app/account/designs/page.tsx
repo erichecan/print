@@ -13,17 +13,19 @@ import { DesignTimeFilter, type TimeFilterOption } from '../components/DesignTim
 import { DesignCard } from '../components/DesignCard';
 import { LocalDesignSyncPrompt } from '../components/LocalDesignSyncPrompt';
 import { useAccount } from '@/contexts/AccountContext';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobileDesignsView } from '../components/mobile/MobileDesignsView';
 
 export default function AccountDesignsPage() {
-const { user } = useAccount(); // 使用 useAccount hook
+  const { user } = useAccount(); // 使用 useAccount hook
   const [mergedDesigns, setMergedDesigns] = useState<MergedDesign[]>([]);
   const [filteredDesigns, setFilteredDesigns] = useState<MergedDesign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-const [timeFilter, setTimeFilter] = useState<TimeFilterOption>(30); // 默认30天
-const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
+  const [timeFilter, setTimeFilter] = useState<TimeFilterOption>(30); // 默认30天
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
 
-// 加载设计数据
+  // 加载设计数据
   useEffect(() => {
     const fetchDesigns = async () => {
       try {
@@ -44,7 +46,7 @@ const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
             if (cloudDesigns.length > 0) {
               console.log('[AccountDesigns] First cloud design:', cloudDesigns[0]);
             }
-// 确保 updatedAt 字段存在（使用 createdAt 作为 fallback）
+            // 确保 updatedAt 字段存在（使用 createdAt 作为 fallback）
             cloudDesigns = cloudDesigns.map(design => ({
               ...design,
               updatedAt: design.updatedAt || design.createdAt,
@@ -84,9 +86,9 @@ const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
     };
 
     fetchDesigns();
-}, [user, timeFilter, refreshTrigger]); // 添加 refreshTrigger 依赖
+  }, [user, timeFilter, refreshTrigger]); // 添加 refreshTrigger 依赖
 
-// Handle design deletion
+  // Handle design deletion
   const handleDelete = async (design: MergedDesign) => {
     console.log('[AccountDesigns] ===== DELETION START =====');
     console.log('[AccountDesigns] Deleting design:', {
@@ -97,7 +99,7 @@ const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
       source: design.source
     });
 
-// CRITICAL: Check if design has ANY valid ID
+    // CRITICAL: Check if design has ANY valid ID
     if (!design.cloudId && !design.localId) {
       console.error('[AccountDesigns] ERROR: Design has no cloudId or localId!', design);
       alert('Cannot delete: Design has no valid ID');
@@ -154,6 +156,21 @@ const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
     }
   };
 
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <MobileDesignsView
+        designs={filteredDesigns}
+        loading={loading}
+        error={error}
+        timeFilter={timeFilter}
+        setTimeFilter={setTimeFilter}
+        handleDelete={handleDelete}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div style={{ padding: '48px', textAlign: 'center' }}>
@@ -204,7 +221,7 @@ const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
         </a>
       </div>
 
-{/* Local design sync prompt (only shown if logged in) */}
+      {/* Local design sync prompt (only shown if logged in) */}
       {user && (
         <LocalDesignSyncPrompt
           cloudDesigns={mergedDesigns.filter(d => d.source === 'cloud' || d.source === 'both')}
@@ -214,7 +231,7 @@ const [refreshTrigger, setRefreshTrigger] = useState(0); // 用于触发刷新
         />
       )}
 
-{/* Time filter */}
+      {/* Time filter */}
       <DesignTimeFilter value={timeFilter} onChange={setTimeFilter} />
 
       {/* Design List */}

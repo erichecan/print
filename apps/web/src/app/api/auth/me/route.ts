@@ -19,27 +19,27 @@ function getApiBase(): string {
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('[API Auth Me] Failed to get backend API base:', errorMessage);
-// 如果获取失败，在生产环境抛出错误，开发环境回退到 localhost
+    // 如果获取失败，在生产环境抛出错误，开发环境回退到 localhost
     if (process.env.NODE_ENV === 'production') {
       throw new Error(`生产环境 API 配置错误: ${errorMessage}`);
     }
-// 修复：与本仓库默认本地后端端口 4000 对齐
+    // 修复：与本仓库默认本地后端端口 4000 对齐
     return 'http://localhost:3001/api';
   }
 }
 
 export async function GET(request: NextRequest) {
   const timestamp = new Date().toISOString();
-  
+
   try {
-// 修复：同时支持 Cookie 和 Authorization header
+    // 修复：同时支持 Cookie 和 Authorization header
     // 后端 authenticate 中间件会优先从 Cookie 读取 token，如果没有则从 Authorization header 读取
     const authHeader = request.headers.get('authorization') || request.headers.get('Authorization') || '';
     const token = authHeader.replace(/^Bearer\s+/i, '') || null;
     const cookieHeader = request.headers.get('cookie') || '';
     const hasToken = !!token;
     const hasCookie = !!cookieHeader;
-    
+
     console.log('[Next.js API Route] Get user request', {
       timestamp,
       hasToken,
@@ -48,10 +48,10 @@ export async function GET(request: NextRequest) {
       cookieKeys: cookieHeader ? cookieHeader.split(';').map(c => c.split('=')[0].trim()).filter(Boolean) : [],
     });
 
-// 修复：在运行时获取 API_BASE，确保使用最新的环境变量
+    // 修复：在运行时获取 API_BASE，确保使用最新的环境变量
     const API_BASE = getApiBase();
-    
-// 转发请求到后端
+
+    // 转发请求到后端
     const upstreamUrl = `${API_BASE}/auth/me`;
     console.log('[Next.js API Route] Forwarding to upstream', {
       timestamp,
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       hasCookie
     });
 
-// 修复：同时转发 Cookie 和 Authorization header
+    // 修复：同时转发 Cookie 和 Authorization header
     // 后端 authenticate 中间件会优先从 Cookie 读取 token，如果没有则从 Authorization header 读取
     const upstreamHeaders: HeadersInit = {};
     if (cookieHeader) {
@@ -88,12 +88,12 @@ export async function GET(request: NextRequest) {
       bodyLength: responseBody.length
     });
 
-// 创建响应头
+    // 创建响应头
     const responseHeaders = new Headers({
       'content-type': contentType,
     });
 
-// 复制 Set-Cookie 头（如果有新的 Cookie 设置）
+    // 复制 Set-Cookie 头（如果有新的 Cookie 设置）
     // Next.js 需要逐个设置 Set-Cookie 头
     const setCookieHeaders = upstream.headers.getSetCookie?.() || [];
     if (setCookieHeaders.length > 0) {
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-// 修复：统一错误处理，401 返回结构化 JSON
+    // 修复：统一错误处理，401 返回结构化 JSON
     if (!upstream.ok) {
       console.error('[Next.js API Route] Upstream error', {
         timestamp,
@@ -126,25 +126,17 @@ export async function GET(request: NextRequest) {
         hasToken,
         hasCookie
       });
-      
-// 修复：401 错误返回结构化 JSON，便于前端处理
+
+      // 修复：401 错误返回结构化 JSON，便于前端处理
       if (upstream.status === 401) {
-        let errorData: any;
-        try {
-          errorData = JSON.parse(responseBody);
-        } catch {
-          errorData = { error: 'Not authenticated', code: 'UNAUTHORIZED' };
-        }
-        return NextResponse.json(
-          {
-            error: errorData.error || 'Not authenticated',
-            code: 'UNAUTHORIZED',
-            message: 'Please login to access this resource',
-          },
-          { status: 401, headers: responseHeaders }
-        );
+        // [2026-01-04] Optimization: Return 200 null instead of 401 when not authenticated
+        // This silences the browser console error which can be confusing for guest users on the home page.
+        console.log('[Next.js API Route] User not authenticated (401), returning 200 null to silence console error', {
+          timestamp,
+        });
+        return NextResponse.json(null, { status: 200, headers: responseHeaders });
       }
-      
+
       // 其他错误：尝试解析 JSON，如果失败则返回原始文本
       let errorData: any;
       try {

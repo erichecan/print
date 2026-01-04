@@ -12,7 +12,7 @@ function getSiteUrl(): string {
   if (siteUrl) {
     return siteUrl.replace(/\/+$/, ''); // 移除末尾斜杠
   }
-  
+
   // SSR/构建时回退
   return 'https://suvernireplus.com';
 }
@@ -21,34 +21,34 @@ function getSiteUrl(): string {
 // 构建时如果无法获取产品，返回空数组（只包含静态页面）
 async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: string }>> {
   try {
-// 构建时直接使用环境变量，避免 api-config.ts 的构建时检查
+    // 构建时直接使用环境变量，避免 api-config.ts 的构建时检查
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.API_BASE_URL || 'http://localhost:3001';
     const normalizedUrl = apiBaseUrl.replace(/\/+$/, '');
     const apiUrl = normalizedUrl.endsWith('/api') ? normalizedUrl : `${normalizedUrl}/api`;
-    
-// 构建时可能无法访问后端 API，使用 try-catch 处理
+
+    // 构建时可能无法访问后端 API，使用 try-catch 处理
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 秒超时
-    
+
     const response = await fetch(`${apiUrl}/products?limit=1000&includeOutOfStock=false`, {
       next: { revalidate: 3600 }, // 缓存 1 小时
       signal: controller.signal,
     });
-    
+
     clearTimeout(timeoutId);
-    
+
     if (!response.ok) {
       console.warn('[Sitemap] Failed to fetch products:', response.statusText, '- 仅包含静态页面');
       return [];
     }
-    
+
     const data = await response.json();
     return (data.data || data || []).map((product: any) => ({
       slug: product.slug,
       updatedAt: product.updatedAt || product.updated_at,
     }));
   } catch (error: any) {
-// 构建时如果无法访问 API，只返回静态页面
+    // 构建时如果无法访问 API，只返回静态页面
     if (error?.name === 'AbortError') {
       console.warn('[Sitemap] 获取产品列表超时（构建时可能无法访问后端 API），仅包含静态页面');
     } else {
@@ -61,8 +61,8 @@ async function getAllProducts(): Promise<Array<{ slug: string; updatedAt?: strin
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = getSiteUrl();
   const now = new Date();
-  
-// 核心静态页面
+
+  // 核心静态页面
   const staticPages: MetadataRoute.Sitemap = [
     {
       url: `${baseUrl}/`,
@@ -166,9 +166,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'monthly',
       priority: 0.5,
     },
+    {
+      url: `${baseUrl}/testimonials`,
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.7,
+    },
   ];
-  
-// 动态添加产品页面 for Issue #154
+
+  // 动态添加产品页面 for Issue #154
   const products = await getAllProducts();
   const productPages: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${baseUrl}/products/${product.slug}`,
@@ -176,7 +182,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'weekly' as const,
     priority: 0.8,
   }));
-  
+
   return [...staticPages, ...productPages];
 }
 

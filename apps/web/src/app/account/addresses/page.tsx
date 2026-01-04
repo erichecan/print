@@ -8,7 +8,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, addressesApi, type Address, type AddressPayload } from '@/lib/api';
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // Use route mapping
+import { ACCOUNT_ROUTES } from '@/lib/routes/account';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobileAddressesView } from '../components/mobile/MobileAddressesView';
 
 export default function AddressesPage() {
   const router = useRouter();
@@ -36,7 +38,7 @@ export default function AddressesPage() {
       setLoading(true);
       setError(null);
       const data = await addressesApi.list();
-// Fix: handle response format { addresses: [], count: ... } or [...]
+      // Fix: handle response format { addresses: [], count: ... } or [...]
       if (Array.isArray(data)) {
         setAddresses(data);
       } else if (data && typeof data === 'object' && 'addresses' in data && Array.isArray((data as any).addresses)) {
@@ -152,6 +154,29 @@ export default function AddressesPage() {
     setEditingId(null);
     resetForm();
   };
+
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <MobileAddressesView
+        addresses={addresses}
+        loading={loading}
+        error={error}
+        editingId={editingId}
+        showAddForm={showAddForm}
+        setShowAddForm={setShowAddForm}
+        formData={formData}
+        setFormData={setFormData}
+        handleSubmit={handleSubmit}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        handleSetDefault={handleSetDefault}
+        handleCancel={handleCancel}
+        resetForm={resetForm}
+      />
+    );
+  }
 
   if (loading) {
     return (

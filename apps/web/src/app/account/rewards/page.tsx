@@ -1,8 +1,19 @@
+'use client';
+
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobileRewardsView } from '../components/mobile/MobileRewardsView';
+
 /**
  * Rewards Page
 * 折扣与积分页面
  */
-export default async function RewardsPage() {
+export default function RewardsPage() {
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return <MobileRewardsView />;
+  }
+
   return (
     <section style={{
       backgroundColor: '#ffffff',

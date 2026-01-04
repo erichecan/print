@@ -8,7 +8,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi, type UserProfile } from '@/lib/api';
-import { ACCOUNT_ROUTES } from '@/lib/routes/account'; // 使用路由映射
+import { ACCOUNT_ROUTES } from '@/lib/routes/account';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { MobileProfileView } from '../components/mobile/MobileProfileView';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -76,6 +78,22 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
+
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    return (
+      <MobileProfileView
+        profile={profile}
+        formData={formData}
+        setFormData={setFormData}
+        handleSubmit={handleSubmit}
+        saving={saving}
+        error={error}
+        success={success}
+      />
+    );
+  }
 
   if (loading) {
     return (
