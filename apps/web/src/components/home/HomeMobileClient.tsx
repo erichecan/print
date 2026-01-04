@@ -191,6 +191,105 @@ export function HomeMobileClient() {
         </div>
       </section>
 
+      {/* 重新设计的支持和价格部分 - 参考图 2 */}
+      <section className="bg-[#f8f9fa] py-8 px-4 space-y-6">
+        {/* Support Card */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex gap-4 items-start mb-6">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 flex-shrink-0">
+              <Image
+                src="https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=200&h=200&q=80"
+                alt="Support Agent"
+                width={64}
+                height={64}
+                className="object-cover w-full h-full"
+              />
+            </div>
+            <div className="pt-1">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">An Inker By Your Side</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Need help with your order? Get personalized support from our expert team as your partner from design to delivery.
+              </p>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-base font-bold text-gray-900 mb-4">How An Inker Can Help</h3>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 text-orange-600 flex-shrink-0">
+                  <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.47a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.47a2 2 0 00-1.34-2.23z" /></svg>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Product Selection</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 text-orange-600 flex-shrink-0">
+                  <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" /></svg>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Design Assistance</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 text-orange-600 flex-shrink-0">
+                  <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Group Orders</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 text-orange-600 flex-shrink-0">
+                  <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
+                </div>
+                <span className="text-sm font-medium text-gray-700">Order Support</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <a href="tel:855-271-2660" className="flex items-center justify-center gap-2 w-full py-3 border-2 border-blue-600 rounded-lg text-blue-700 font-bold hover:bg-blue-50 transition-colors">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.12 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" /></svg>
+              855-271-2660
+            </a>
+            <Link href="/help" className="flex items-center justify-center gap-2 w-full py-3 border-2 border-blue-600 rounded-lg text-blue-700 font-bold hover:bg-blue-50 transition-colors">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" /></svg>
+              Chat Now
+            </Link>
+            <Link href="/contact" className="flex items-center justify-center gap-2 w-full py-3 border-2 border-blue-600 rounded-lg text-blue-700 font-bold hover:bg-blue-50 transition-colors">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+              Email Us
+            </Link>
+          </div>
+        </div>
+
+        {/* Pricing Card */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="mb-6">
+            <div className="text-[10px] uppercase tracking-wider font-bold text-gray-600 mb-1">All-in Pricing</div>
+            <h2 className="text-2xl font-bold text-gray-900">Your Price Includes</h2>
+          </div>
+
+          <ul className="space-y-4 mb-8">
+            {[
+              'No setup fees',
+              'FREE design review',
+              'FREE standard shipping',
+              'Exclusive artwork & fonts',
+              'Expert help, 7 days a week',
+              '100% satisfaction guarantee'
+            ].map((item, i) => (
+              <li key={i} className="flex items-center gap-3 text-sm text-gray-700 font-medium">
+                <div className="w-5 h-5 rounded-full border-2 border-orange-500 flex items-center justify-center text-orange-500 flex-shrink-0">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+                </div>
+                {item}
+              </li>
+            ))}
+          </ul>
+
+          <Link href="/products" className="block w-full py-3.5 border-2 border-blue-600 rounded-lg text-blue-700 font-bold text-center hover:bg-blue-50 transition-colors">
+            Learn More
+          </Link>
+        </div>
+      </section>
+
       {/* 客户评价区域 */}
       <section className="home-mobile__testimonials">
         <div className="home-mobile__container">

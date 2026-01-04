@@ -1,52 +1,43 @@
-/**
- * Site Footer component
- * Updated to match the requested 3-column layout design
- * Integrates with Admin CMS for link management
- */
-'use client';
-
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import useSWR from 'swr';
 import { contentApi } from '@/lib/api';
 
-// Default footer link structure (Fallback if CMS is empty)
-const DEFAULT_SECTIONS = {
-  about: {
+const DEFAULT_FOOTER_SECTIONS = [
+  {
     title: 'About Us',
     links: [
       { label: 'Get to Know Custom Ink', href: '/about' },
       { label: 'Careers', href: '/careers' },
       { label: 'Press', href: '/press' },
-      { label: 'Partnerships', href: '/partnerships' },
-      { label: 'Diversity & Belonging', href: '/diversity' },
-      { label: 'Customer Reviews', href: '/reviews' },
-      { label: 'Customer Photos', href: '/photos' },
-      { label: 'Custom Ink Blog', href: '/blog' },
-      { label: 'Store Locations', href: '/locations' },
     ]
   },
-  account: {
+  {
     title: 'Your Account',
     links: [
       { label: 'Retrieve a Saved Design', href: '/designs' },
-      { label: 'Retrieve a Printed Proof', href: '/proofs' },
       { label: 'Track Your Order', href: '/order-tracking' },
-      { label: 'Place a Reorder', href: '/reorder' },
     ]
   },
-  service: {
+  {
+    title: 'Contact Us',
+    links: [
+      { label: '416-916-6352', href: 'tel:4169166352' },
+      { label: 'Chat Now', href: '/help#guestbook' },
+      { label: 'Email Us', href: '/contact' },
+    ]
+  },
+  {
     title: 'Service Center',
     links: [
       { label: 'Help Center', href: '/help' },
       { label: 'Get a Quick Quote', href: '/quote' },
-      { label: 'Content Guidelines', href: '/content-guidelines' },
-      { label: 'Our Commitment to Accessibility', href: '/accessibility' },
     ]
   }
-};
+];
 
 export function SiteFooter() {
+  const [openSection, setOpenSection] = useState<string | null>(null);
   const currentYear = new Date().getFullYear();
 
   // Fetch dynamic content from CMS
@@ -56,237 +47,132 @@ export function SiteFooter() {
   const footerColumns = footerConfig?.columns || [];
   const footerCopyright = footerConfig?.copyrightText || `© ${currentYear} Inkify LLC. All rights reserved.`;
   const socialLinks = footerConfig?.socialLinks || [];
-  const contactInfo = footerConfig?.contactInfo;
   const bottomLinks = footerConfig?.bottomLinks || [];
 
-  // Helper to find a CMS column by title (case-insensitive) or return default
-  const getSectionLinks = (key: keyof typeof DEFAULT_SECTIONS) => {
-    const defaultSection = DEFAULT_SECTIONS[key];
-    const cmsColumn = footerColumns.find(col => col.title.toLowerCase() === defaultSection.title.toLowerCase());
-    return cmsColumn?.links && cmsColumn.links.length > 0
-      ? cmsColumn.links
-      : defaultSection.links;
+  const toggleSection = (title: string) => {
+    setOpenSection(openSection === title ? null : title);
   };
 
-  const aboutLinks = getSectionLinks('about');
-  const accountLinks = getSectionLinks('account');
-  const serviceLinks = getSectionLinks('service');
+  // Sections to display in order: use CMS columns if available, otherwise default
+  const sections = footerColumns.length > 0 ? footerColumns : DEFAULT_FOOTER_SECTIONS;
 
   return (
-    <footer className="w-full bg-white pt-12 pb-8 border-t border-gray-200 text-gray-800">
-      <div className="container mx-auto px-4 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-8">
-
-          {/* Column 1: Multimedia, Newsletter, Social */}
-          <div className="flex flex-col gap-8">
-            {/* TV Commercial Section */}
-            <div>
-              <h4 className="font-bold text-sm uppercase mb-4 tracking-wide text-gray-900">Watch our TV Commercial</h4>
-              <div className="w-full aspect-video bg-gray-100 rounded-lg flex items-center justify-center relative group cursor-pointer overflow-hidden border border-gray-200">
-                <div className="absolute inset-0 bg-gray-200 group-hover:bg-gray-300 transition-colors" />
-                <div className="relative z-10 w-12 h-12 bg-black/70 rounded-full flex items-center justify-center group-hover:bg-red-600 transition-colors">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5 3L19 12L5 21V3Z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Email Sign-up */}
-            <div>
-              <h4 className="font-bold text-sm uppercase mb-3 tracking-wide text-gray-900">Email Sign-up</h4>
-              <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
-                <input
-                  type="email"
-                  placeholder="your email address"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-600"
-                />
-                <button
-                  type="submit"
-                  className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded text-sm font-semibold transition-colors"
-                >
-                  Submit
-                </button>
-              </form>
-              <p className="text-xs text-gray-500 mt-2 italic leading-tight">
-                By clicking submit, I acknowledge I have read and accepted the <Link href="/privacy-policy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
-              </p>
-            </div>
-
-            {/* Follow Us */}
-            <div>
-              <h4 className="font-bold text-sm uppercase mb-4 tracking-wide text-gray-900">Follow Us</h4>
-              <div className="flex gap-4">
-                {socialLinks.length > 0 ? (
-                  socialLinks.map((link) => (
-                    <a
-                      key={link.id}
-                      href={link.url}
-                      className="text-orange-600 hover:text-orange-700 transition-colors"
-                      title={link.platform}
-                    >
-                      <span className="text-xl">
-                        {link.platform.toLowerCase().includes('facebook') && (
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
-                        )}
-                        {link.platform.toLowerCase().includes('linkedin') && (
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg>
-                        )}
-                        {link.platform.toLowerCase().includes('instagram') && (
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" /></svg>
-                        )}
-                        {link.platform.toLowerCase().includes('pinterest') && (
-                          <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.666 19.315c-.097-.822-.178-2.086.037-2.986l1.288-5.464s-.328-.655-.328-1.625c0-1.522.883-2.658 1.983-2.658.935 0 1.387.702 1.387 1.544 0 .94-.599 2.346-.908 3.65-.259 1.091.547 1.982 1.622 1.982 1.947 0 3.444-2.053 3.444-5.015 0-2.622-1.884-4.453-4.576-4.453-3.333 0-5.286 2.5-5.286 5.084 0 1.006.388 2.084.872 2.67.096.116.11.218.081.336l-.328 1.353c-.053.22-.175.267-.404.161-1.503-.699-2.441-2.886-2.441-4.646 0-3.784 2.748-7.256 7.922-7.256 4.159 0 7.394 2.964 7.394 6.924 0 4.134-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.749 2.853c-.271 1.043-1.002 2.35-1.492 3.146C10.519 21.921 11.246 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" /></svg>
-                        )}
-                        {!['facebook', 'linkedin', 'instagram', 'pinterest'].some(p => link.platform.toLowerCase().includes(p)) && (
-                          <span className="text-sm font-bold">{link.platform[0]}</span>
-                        )}
-                      </span>
-                    </a>
-                  ))
-                ) : (
-                  <>
-                    <a href="#" className="text-orange-600 hover:text-orange-700 transition-colors">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
-                    </a>
-                    <a href="#" className="text-orange-600 hover:text-orange-700 transition-colors">
-                      <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" /><rect x="2" y="9" width="4" height="12" /><circle cx="4" cy="4" r="2" /></svg>
-                    </a>
-                  </>
-                )}
-              </div>
+    <footer className="w-full bg-white border-t border-gray-100 font-sans">
+      {/* Navigation Sections */}
+      <div className="border-b border-gray-100">
+        {sections.map((section: any) => (
+          <div key={section.title} className="border-b border-gray-50 last:border-b-0">
+            <button
+              onClick={() => toggleSection(section.title)}
+              className="w-full flex justify-between items-center px-6 py-5 text-lg font-medium text-gray-800"
+            >
+              <span>{section.title}</span>
+              <span className={`text-2xl text-gray-300 font-light transition-transform duration-200 ${openSection === section.title ? 'rotate-45' : ''}`}>
+                +
+              </span>
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${openSection === section.title ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}
+            >
+              <ul className="px-6 pb-6 space-y-4">
+                {(section.links || []).map((link: any) => (
+                  <li key={link.label || link.id || Math.random()}>
+                    <Link href={link.href} className="text-gray-600 hover:text-blue-600 transition-colors">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
+        ))}
+      </div>
 
-          {/* Column 2: Navigation Links */}
-          <div className="flex flex-col gap-10">
-            {footerColumns.length > 0 ? (
-              footerColumns.map((col) => (
-                <div key={col.id}>
-                  <h4 className="font-bold text-sm uppercase mb-4 tracking-wide text-gray-900">{col.title}</h4>
-                  <ul className="space-y-3 text-base text-gray-700">
-                    {col.links.map((link) => (
-                      <li key={link.id}>
-                        <Link href={link.href} className="hover:text-blue-600">{link.label}</Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+      <div className="px-6 py-10 space-y-12">
+        {/* Email Sign-up */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-bold text-gray-900 tracking-wider">EMAIL SIGN-UP</h4>
+          <form className="flex gap-2" onSubmit={(e) => e.preventDefault()}>
+            <input
+              type="email"
+              placeholder="your email address"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded focus:outline-none focus:border-blue-600 text-gray-600"
+            />
+            <button
+              type="submit"
+              className="bg-[#1a47e5] text-white px-8 py-3 rounded font-bold hover:bg-blue-700 transition-colors"
+            >
+              Submit
+            </button>
+          </form>
+          <p className="text-[13px] text-gray-500 italic leading-relaxed">
+            By clicking submit, I acknowledge I have read and accepted the{' '}
+            <Link href="/privacy-policy" className="text-blue-600 underline">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </div>
+
+        {/* Social Follow */}
+        <div className="space-y-4">
+          <h4 className="text-sm font-bold text-gray-900 tracking-wider text-center">FOLLOW US</h4>
+          <div className="flex justify-center gap-6">
+            {socialLinks.length > 0 ? (
+              socialLinks.map((link: any) => (
+                <a key={link.id} href={link.url} className="text-[#ff4500] hover:opacity-80 transition-opacity" title={link.platform}>
+                  {link.platform.toLowerCase().includes('facebook') && (
+                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1V12h3l-.5 3h-2.5v6.8c4.56-.93 8-4.96 8-9.8z" /></svg>
+                  )}
+                  {link.platform.toLowerCase().includes('linkedin') && (
+                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" /></svg>
+                  )}
+                  {link.platform.toLowerCase().includes('pinterest') && (
+                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 4.25 2.66 7.87 6.42 9.29-.09-.79-.17-2 .03-2.87l1.24-5.26s-.31-.63-.31-1.56c0-1.46.85-2.55 1.90-2.55.9 0 1.33.67 1.33 1.48 0 .9-.57 2.25-.87 3.5-.25 1.05.52 1.9 1.55 1.9 1.86 0 3.29-1.96 3.29-4.79 0-2.5-1.8-4.25-4.36-4.25-2.96 0-4.7 2.22-4.7 4.51 0 .9.34 1.86.77 2.38.09.11.1.2.07.3l-.31 1.3c-.05.19-.16.23-.37.13-1.39-.65-2.26-2.69-2.26-4.32 0-3.52 2.56-6.76 7.37-6.76 3.87 0 6.87 2.76 6.87 6.44 0 3.84-2.42 6.94-5.78 6.94-1.13 0-2.2-.59-2.56-1.28l-.7 2.66c-.25.96-.93 2.16-1.39 2.9 1.04.31 2.14.47 3.28.47 5.52 0 10-4.48 10-10S17.52 2 12 2z" /></svg>
+                  )}
+                  {link.platform.toLowerCase().includes('instagram') && (
+                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6A3.6 3.6 0 0 0 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z" /></svg>
+                  )}
+                  {!['facebook', 'linkedin', 'pinterest', 'instagram'].some(p => link.platform.toLowerCase().includes(p)) && (
+                    <div className="w-8 h-8 bg-[#ff4500] text-white rounded-sm flex items-center justify-center font-bold text-xs">
+                      {link.platform[0].toUpperCase()}
+                    </div>
+                  )}
+                </a>
               ))
             ) : (
+              /* Fallback Social Icons */
               <>
-                <div>
-                  <h4 className="font-bold text-sm uppercase mb-4 tracking-wide text-gray-900">{DEFAULT_SECTIONS.about.title}</h4>
-                  <ul className="space-y-3 text-base text-gray-700">
-                    {aboutLinks.map((link) => (
-                      <li key={link.href}>
-                        <Link href={link.href} className="hover:text-blue-600">{link.label}</Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm uppercase mb-4 tracking-wide text-gray-900">{DEFAULT_SECTIONS.account.title}</h4>
-                  <ul className="space-y-3 text-base text-gray-700">
-                    {accountLinks.map((link) => (
-                      <li key={link.href}>
-                        <Link href={link.href} className="hover:text-blue-600">{link.label}</Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <a href="#" className="text-[#ff4500] hover:opacity-80 transition-opacity">
+                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1V12h3l-.5 3h-2.5v6.8c4.56-.93 8-4.96 8-9.8z" /></svg>
+                </a>
+                <a href="#" className="text-[#ff4500] hover:opacity-80 transition-opacity">
+                  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" /></svg>
+                </a>
               </>
-            )}
-          </div>
-
-          {/* Column 3: Contact & Service */}
-          <div className="flex flex-col gap-10">
-            <div>
-              <h4 className="font-bold text-sm uppercase mb-2 tracking-wide text-gray-900">Talk to a Real Person</h4>
-              <p className="font-bold text-xs uppercase text-gray-800 mb-4">7 Days a Week</p>
-
-              <ul className="space-y-1 text-base text-gray-700 mb-6">
-                <li>Monday-Friday: {contactInfo?.hours?.weekday || '8am - Midnight ET'}</li>
-                <li>Saturday: {contactInfo?.hours?.saturday || '10am - 6pm ET'}</li>
-                <li>Sunday: {contactInfo?.hours?.sunday || '10am - 6pm ET'}</li>
-              </ul>
-
-              {contactInfo?.holidayNotice && (
-                <div className="mb-6">
-                  <p className="font-bold text-red-600 text-sm">Holiday Notice:</p>
-                  <p className="text-gray-700">{contactInfo.holidayNotice}</p>
-                </div>
-              )}
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-gray-700 hover:text-blue-600 cursor-pointer">
-                  <span className="text-orange-500">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
-                  </span>
-                  <span className="text-lg font-medium text-gray-500">{contactInfo?.phone || '855-256-1652'}</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-gray-700 hover:text-blue-600 cursor-pointer">
-                  <span className="text-orange-500">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                  </span>
-                  <span className="text-lg font-normal text-gray-500">Live Chat</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-gray-700 hover:text-blue-600 cursor-pointer">
-                  <span className="text-orange-500">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                  </span>
-                  <span className="text-lg font-normal text-gray-500">{contactInfo?.email || 'Send us an Email'}</span>
-                </div>
-              </div>
-            </div>
-
-            {!footerColumns.some(col => col.title.toLowerCase() === DEFAULT_SECTIONS.service.title.toLowerCase()) && (
-              <div>
-                <h4 className="font-bold text-sm uppercase mb-4 tracking-wide text-gray-900">{DEFAULT_SECTIONS.service.title}</h4>
-                <ul className="space-y-3 text-base text-gray-700">
-                  {serviceLinks.map((link) => (
-                    <li key={link.href}>
-                      <Link href={link.href} className="hover:text-blue-600">{link.label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
             )}
           </div>
         </div>
 
-        <div className="mt-16 pt-8 border-t border-gray-200">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500">
-            <p>{footerCopyright}</p>
-            <div className="flex items-center gap-4">
-              {bottomLinks.length > 0 ? (
-                bottomLinks.map((link, idx) => (
-                  <React.Fragment key={link.id}>
-                    <Link href={link.href} className="hover:text-blue-600">{link.label}</Link>
-                    {idx < bottomLinks.length - 1 && <span>|</span>}
-                  </React.Fragment>
-                ))
-              ) : (
-                <>
-                  <Link href="/privacy-policy" className="hover:text-blue-600">Privacy Policy</Link>
-                  <span>|</span>
-                  <Link href="/terms-of-service" className="hover:text-blue-600">Terms of Service</Link>
-                  <span>|</span>
-                  <Link href="/sitemap.xml" className="hover:text-blue-600">Sitemap</Link>
-                </>
-              )}
-              <span>|</span>
-              <Link href="/admin/offline-orders" className="hover:text-blue-600">Admin</Link>
-            </div>
+        {/* Footer Bottom / Copyright */}
+        <div className="flex flex-col items-center gap-4 text-center pt-4">
+          <p className="text-xs text-gray-500">{footerCopyright}</p>
+          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs text-gray-400">
+            {bottomLinks.length > 0 ? (
+              bottomLinks.map((link: any, idx: number) => (
+                <React.Fragment key={link.id || idx}>
+                  <Link href={link.href} className="hover:text-blue-600 transition-colors cursor-pointer">{link.label}</Link>
+                  {idx < bottomLinks.length - 1 && <span>|</span>}
+                </React.Fragment>
+              ))
+            ) : (
+              <>
+                <Link href="/privacy-policy" className="hover:text-blue-600 cursor-pointer">Privacy Policy</Link>
+                <span>|</span>
+                <Link href="/terms-of-service" className="hover:text-blue-600 cursor-pointer">Terms of Service</Link>
+              </>
+            )}
           </div>
         </div>
       </div>
