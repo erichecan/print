@@ -7,17 +7,19 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
 export default function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refresh: refreshAuth } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-// 获取 redirect 参数
+  // 获取 redirect 参数
   const redirect = searchParams?.get('redirect') || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,32 +29,43 @@ export default function LoginClient() {
 
     try {
       const response = await authApi.login(email, password);
-      
-// 根据用户角色和 redirect 参数决定跳转位置
+
+      console.log('[LoginClient] Login successful, redirect param:', redirect);
+
+      // 根据用户角色和 redirect 参数决定跳转位置
       let targetPath = redirect;
-      
-// 如果是管理员，且 redirect 是 /admin，则跳转到 /admin
-      // 否则提示管理员应该使用 /admin/login
+
+      // 如果是管理员
       if (response.user?.role === 'ADMIN' || response.user?.role === 'admin') {
         if (redirect === '/admin' || redirect.startsWith('/admin/')) {
+          // Admin路径：跳转到admin
           targetPath = '/admin';
-        } else {
-// 管理员从普通登录页面登录，提示使用专用登录页面
-          // 但仍然允许登录，跳转到账户页面（不暴露后台入口）
+        } else if (redirect === '/' || !redirect) {
+          // 没有指定redirect：跳转到账户页面
           targetPath = '/account';
+        } else {
+          // 有明确的redirect（如/design-lab）：允许管理员访问
+          targetPath = redirect;
         }
       } else {
-// 普通用户登录，跳转到账户页面
-        // 如果 redirect 是 /admin，则跳转到账户页面（不允许普通用户访问后台）
-        if (redirect === '/admin' || redirect.startsWith('/admin/')) {
+        // 普通用户登录
+        // 如果 redirect 是 /admin 相关路径，跳转到账户页面（不允许普通用户访问后台）
+        if (redirect.startsWith('/admin')) {
           targetPath = '/account';
         } else if (redirect === '/' || !redirect) {
+          // 如果没有指定redirect或是首页，跳转到账户页面
           targetPath = '/account';
         } else {
+          // 否则跳转到指定的redirect地址（如 /design-lab）
           targetPath = redirect;
         }
       }
-      
+
+      console.log('[LoginClient] Final targetPath:', targetPath);
+
+      // Refresh auth context to update client-side user state
+      await refreshAuth();
+
       router.push(targetPath);
       router.refresh();
     } catch (err: any) {

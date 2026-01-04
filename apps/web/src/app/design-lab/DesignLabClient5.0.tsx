@@ -3609,7 +3609,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
               </div>
             </div>
 
-            <Link href="/login" className="dl-header__signin-link">Sign In</Link>
+            {user ? (
+              <Link href="/account" className="dl-header__signin-link">
+                {user.firstName || user.email || 'My Account'}
+              </Link>
+            ) : (
+              <Link
+                href={`/login?redirect=${encodeURIComponent('/design-lab')}`}
+                className="dl-header__signin-link"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </header >

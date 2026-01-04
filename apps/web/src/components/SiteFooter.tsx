@@ -58,24 +58,45 @@ export function SiteFooter() {
 
   return (
     <footer className="w-full bg-white border-t border-gray-100 font-sans">
-      {/* Navigation Sections */}
+      {/* Navigation Sections - Mobile: Accordion, Desktop: Grid */}
       <div className="border-b border-gray-100">
-        {sections.map((section: any) => (
-          <div key={section.title} className="border-b border-gray-50 last:border-b-0">
-            <button
-              onClick={() => toggleSection(section.title)}
-              className="w-full flex justify-between items-center px-6 py-5 text-lg font-medium text-gray-800"
-            >
-              <span>{section.title}</span>
-              <span className={`text-2xl text-gray-300 font-light transition-transform duration-200 ${openSection === section.title ? 'rotate-45' : ''}`}>
-                +
-              </span>
-            </button>
-            <div
-              className={`overflow-hidden transition-all duration-300 ease-in-out ${openSection === section.title ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                }`}
-            >
-              <ul className="px-6 pb-6 space-y-4">
+        {/* Mobile Accordion View (< md) */}
+        <div className="md:hidden">
+          {sections.map((section: any) => (
+            <div key={section.title} className="border-b border-gray-50 last:border-b-0">
+              <button
+                onClick={() => toggleSection(section.title)}
+                className="w-full flex justify-between items-center px-6 py-5 text-lg font-medium text-gray-800"
+              >
+                <span>{section.title}</span>
+                <span className={`text-2xl text-gray-300 font-light transition-transform duration-200 ${openSection === section.title ? 'rotate-45' : ''}`}>
+                  +
+                </span>
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${openSection === section.title ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+              >
+                <ul className="px-6 pb-6 space-y-4">
+                  {(section.links || []).map((link: any) => (
+                    <li key={link.label || link.id || Math.random()}>
+                      <Link href={link.href} className="text-gray-600 hover:text-blue-600 transition-colors">
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Grid View (>= md) */}
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8 px-12 py-12">
+          {sections.map((section: any) => (
+            <div key={section.title}>
+              <h3 className="text-lg font-medium text-gray-800 mb-6">{section.title}</h3>
+              <ul className="space-y-4">
                 {(section.links || []).map((link: any) => (
                   <li key={link.label || link.id || Math.random()}>
                     <Link href={link.href} className="text-gray-600 hover:text-blue-600 transition-colors">
@@ -85,8 +106,8 @@ export function SiteFooter() {
                 ))}
               </ul>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <div className="px-6 py-10 space-y-12">
