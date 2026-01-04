@@ -214,14 +214,14 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                     </Link>
                 </div>
                 <div className="dl-mobile-header__right">
-                    <button className="dl-mobile-nav-item">
+                    <Link href="/account/designs" target="_blank" className="dl-mobile-nav-item">
                         <span className="dl-mobile-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
                             </svg>
                         </span>
                         <span>Designs</span>
-                    </button>
+                    </Link>
                     <button className="dl-mobile-nav-item" onClick={handleSaveRequest}>
                         <span className="dl-mobile-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -232,7 +232,7 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                         </span>
                         <span>Save</span>
                     </button>
-                    <Link href="/account" className="dl-mobile-nav-item">
+                    <Link href="/account" target="_blank" className="dl-mobile-nav-item">
                         <span className="dl-mobile-icon">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />

@@ -23,6 +23,7 @@ export interface ProductColor {
 export interface ProductDetail {
   productId: string;
   productName: string;
+  slug: string;
   variantId?: string;
   color: string | null;
   colors: string[];
@@ -134,6 +135,7 @@ export async function getProduct(productId: string): Promise<ProductDetail> {
         ...response,
         productId: response.id,
         productName: response.name,
+        slug: response.slug || productId,
         // Ensure other fields are mapped if needed
         baseImages: response.images && response.images.length > 0 ? {
           front: response.images[0]?.url,
@@ -142,10 +144,10 @@ export async function getProduct(productId: string): Promise<ProductDetail> {
           'left-sleeve': response.images[2]?.url,
           'right-sleeve': response.images[3]?.url,
         } : { front: '', back: '', sleeve: '', 'left-sleeve': '', 'right-sleeve': '' }, // Fallback
-      } as ProductDetail;
+      };
     }
 
-    return response as unknown as ProductDetail;
+    return response as ProductDetail;
   } catch (error) {
     // Fallback to variant ID lookup if slug fails
     try {
@@ -170,4 +172,15 @@ export async function getProductColors(productId: string): Promise<ProductColor[
     throw error;
   }
 }
-
+/**
+ * 获取筛选选项统计数据
+ */
+export async function getFilterOptions(params?: { collection?: string; search?: string }): Promise<any> {
+  try {
+    const response = await productsApi.getFilterOptions(params);
+    return response;
+  } catch (error) {
+    console.error('[Product API] Failed to get filter options:', error);
+    throw error;
+  }
+}

@@ -508,6 +508,7 @@ export const productsApi = {
   getByVariant: (variantId: string) => api<{
     productId: string;
     productName: string;
+    slug: string;
     variantId: string;
     color: string | null;
     colors: string[];

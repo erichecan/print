@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProducts, type Product as ApiProduct } from '../../api/product';
+import { getProducts, getFilterOptions, type Product as ApiProduct } from '../../api/product';
 import './MobileProductCatalogModal.css';
 
 interface MobileProductCatalogModalProps {
@@ -23,10 +23,8 @@ const MobileProductCatalogModal: React.FC<MobileProductCatalogModalProps> = ({
     useEffect(() => {
         const loadCategories = async () => {
             try {
-                const res = await fetch('/api/proxy/products/filters/options');
-                if (!res.ok) throw new Error('Failed to fetch filter options');
-                const data = await res.json();
-                if (data.categories) {
+                const data = await getFilterOptions();
+                if (data && data.categories) {
                     setCategories(data.categories.map((c: any) => ({ name: c.name, slug: c.slug })));
                 }
             } catch (error) {
@@ -135,8 +133,8 @@ const MobileProductCatalogModal: React.FC<MobileProductCatalogModalProps> = ({
                                         <img src={product.coverImageUrl || ''} alt={product.title} />
                                     </div>
                                     <div className="product-info">
-                                        <h3>{typeof product.title === 'object' ? (product.title as any).name : product.title}</h3>
-                                        <p className="price">From ${typeof product.price === 'object' ? (product.price as any).sale : product.price}</p>
+                                        <h3>{typeof product.title === 'string' ? product.title : (product.title as any)?.name || 'Untitled'}</h3>
+                                        <p className="price">From ${typeof product.price === 'number' ? product.price : (product.price as any)?.sale || (product.price as any)?.base || product.price}</p>
                                     </div>
                                 </div>
                             ))}

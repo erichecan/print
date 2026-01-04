@@ -1,0 +1,154 @@
+.dl-mobile-tool-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.dl-mobile-tool-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.dl-mobile-tool-panel__header {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid #eee;
+    background: #fcfcfc;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.dl-mobile-tool-panel__back {
+    background: none;
+    border: none;
+    padding: 8px;
+    margin-left: -8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+}
+
+.dl-mobile-tool-panel__title {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    color: #111;
+    margin: 0;
+}
+
+.dl-mobile-tool-panel__header-right {
+    width: 40px;
+    /* Balance the back button space */
+}
+
+.dl-mobile-tool-panel__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Overrides for existing panels when rendered inside MobileToolPanel */
+
+/* Upload Panel Mobile Overrides */
+.dl-mobile-tool-panel__content .dl-upload-panel {
+    width: 100%;
+    padding: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.dl-mobile-tool-panel__content .dl-upload-panel__header {
+    display: none;
+    /* Already have header in MobileToolPanel */
+}
+
+.dl-mobile-tool-panel__content .dl-upload-panel__content {
+    padding: 0;
+}
+
+.dl-mobile-tool-panel__content .dl-upload-panel__browse-btn {
+    width: 100%;
+    font-size: 16px;
+    padding: 14px;
+}
+
+/* Text Panel Mobile Overrides */
+.dl-mobile-tool-panel__content .dl-text-panel {
+    width: 100%;
+    padding: 0;
+    box-shadow: none;
+}
+
+.dl-mobile-tool-panel__content .dl-text-panel__content {
+    padding: 0;
+}
+
+.dl-mobile-tool-panel__content .dl-text-panel__input {
+    width: 100%;
+    font-size: 18px;
+    min-height: 120px;
+}
+
+.dl-mobile-tool-panel__content .dl-text-panel__add-btn {
+    width: 100%;
+    font-size: 16px;
+    padding: 14px;
+    margin-top: 24px;
+}
+
+/* Art Panel Mobile Overrides */
+.dl-mobile-tool-panel__content .dl-art-panel {
+    width: 100%;
+    padding: 0;
+}
+
+.dl-mobile-tool-panel__content .dl-art-panel__header {
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 16px;
+}
+
+.dl-mobile-tool-panel__content .dl-art-panel__title {
+    font-size: 16px;
+    text-align: left;
+}
+
+.dl-mobile-tool-panel__content .dl-art-panel__grid {
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 columns on mobile */
+    gap: 12px;
+}
+
+.dl-mobile-tool-panel__content .dl-art-panel__assets-grid {
+    grid-template-columns: repeat(3, 1fr);
+    /* 3 assets per row on mobile */
+    gap: 8px;
+}
+
+.dl-mobile-tool-panel__content .dl-art-panel__category-card {
+    padding: 12px;
+}
+
+.dl-mobile-tool-panel__content .dl-art-panel__asset-item {
+    height: auto;
+    aspect-ratio: 1;
+}
+
+.dl-mobile-tool-panel__content .dl-art-panel__search-input {
+    font-size: 16px;
+    /* Avoid zoom on iOS */
+}

@@ -33,6 +33,7 @@ import { useDesignStore } from './store/useDesignStore'; // Import Store
 import { serializeCanvas, applyViewState } from './utils/serialization'; // Import Serialization
 import { loadFromLocal } from './store/persistence'; // Import Persistence
 import MobileProductCatalogModal from './components/modals/MobileProductCatalogModal';
+import { MobileToolPanel } from './components/modals/MobileToolPanel';
 import { PRODUCT_COLORS } from '@/lib/product-data';
 // 产品模块：导入产品选择器和颜色选择器
 import ProductSelectorModal from './modules/product/ProductSelectorModal';
@@ -110,7 +111,14 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
     slug?: string; // Added for Product Details link
     colorId?: string; // CRITICAL: This is the productVariantId
     productName?: string;
-    variants?: Array<{ id: string; color: string; }>;
+    variants?: Array<{
+      id: string;
+      color: string | null;
+      colorHex?: string | null;
+      imageUrl?: string;
+      size?: string | null;
+      stockQuantity?: number;
+    }>;
   }>(() => {
     // CRITICAL FIX: Initialize from initialProductData if available
     if (initialProductData) {
@@ -322,7 +330,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
     // 修复：如果 URL 中没有 productId（无论是否有 colorId），都加载默认产品
     // 改进：加载特定的系统内置 Design Lab 默认产品 (design-lab-default-tee)
     // Fix: Do NOT load default product if we are loading a design (designId present)
-    const hasDesignId = searchParams.get('designId');
+    const hasDesignId = searchParams?.get('designId');
     if (!productId && !initialProductData && !hasDesignId) {
       console.log('[DesignLab 5.0] No product selected and no design loaded, fetching SYSTEM DEFAULT Design Lab product...');
 
@@ -1464,7 +1472,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       visible: false, // Initially hidden, shown only on interaction
       name: 'printable-area-group',
       data: { layerType: 'guide' } // Identify as guide
-    });
+    } as any);
 
     canvas.add(group);
 
@@ -1492,8 +1500,8 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       try {
         // 动态导入 fabric
         const fabricModule = await import('fabric');
-        if (!isMounted || !canvasRef.current) {
-          // 如果组件已卸载，返回 undefined
+        if (!isMounted || !canvasElement) {
+          // 如果组件已卸载或 canvas 丢失，返回 undefined
           return undefined;
         }
 
@@ -3194,6 +3202,8 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
             // 上传图片后自动切换到 EditUploadPanel
             setSelectedImage(fabricImage);
             setToolPanelType('edit-upload');
+            // On mobile, close panel; on desktop, tool panel stays open as edit-upload
+            setActiveTool(null);
             console.log('[DesignLab 5.0] 切换到 edit-upload 面板');
 
           } catch (error) {
@@ -3274,8 +3284,8 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       setSelectedImage(null);
       setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
       setToolPanelType('edit-text');
-      setToolPanelType('edit-text');
-      setActiveTool('text');
+      // On mobile, close panel; on desktop, tool panel stays open as edit-text
+      setActiveTool(null);
 
       // CRITICAL FIX: Sync to store immediately
       const layers = serializeCanvas(canvas);
@@ -3379,9 +3389,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         // 自动切换到 Edit Art 面板
         setSelectedArt(fabricImage);
         setSelectedImage(null);
-        setSelectedText(null);
         setToolPanelType('edit-art');
-        setActiveTool('art');
+        // On mobile, close panel; on desktop, tool panel stays open as edit-art
+        setActiveTool(null);
 
         // CRITICAL FIX: Sync to store immediately
         const layers = serializeCanvas(canvas);
@@ -3499,7 +3509,8 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
             setSelectedImage(null);
             setSelectedText(null);
             setToolPanelType('edit-art');
-            setActiveTool('art');
+            // On mobile, close panel; on desktop, tool panel stays open as edit-art
+            setActiveTool(null);
 
             console.log('[DesignLab 5.0] ✅ Art added via fallback:', {
               name: (fabricImage as any).name,
@@ -4329,7 +4340,30 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       />
 
 
-      {/* 5.0 Mobile Refactor: Render Mobile Component */}
+      {/* 5.0 Mobile Tool Panels (Upload, Text, Art) */}
+      <MobileToolPanel
+        isOpen={['upload', 'text', 'art'].includes(activeTool || '')}
+        title={
+          activeTool === 'upload' ? 'Upload Image' :
+            activeTool === 'text' ? 'Add Text' :
+              activeTool === 'art' ? 'Add Art' : ''
+        }
+        onClose={handleBackToHome}
+      >
+        {activeTool === 'upload' && (
+          <UploadPanel
+            onFileSelect={handleFileUpload}
+            onBrowseClick={() => { }}
+            onClose={handleBackToHome}
+          />
+        )}
+        {activeTool === 'text' && (
+          <TextPanel onAddText={handleAddText} />
+        )}
+        {activeTool === 'art' && (
+          <ArtPanel onSelectArt={handleAddArt} />
+        )}
+      </MobileToolPanel>
       <MobileDesignLab
         currentView={currentView}
         designId={designId}
@@ -4365,7 +4399,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               activeObj.set('flipX', !activeObj.flipX);
               break;
             case 'duplicate':
-              activeObj.clone((cloned: any) => {
+              (activeObj as any).clone((cloned: any) => {
                 canvas.discardActiveObject();
                 cloned.set({
                   left: (cloned.left || 0) + 20,
@@ -4386,13 +4420,13 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               });
               return; // clone is async
             case 'center':
-              activeObj.center();
+              (activeObj as any).center?.();
               break;
             case 'layer-up':
-              activeObj.bringForward();
+              (activeObj as any).bringForward?.();
               break;
             case 'layer-down':
-              activeObj.sendBackwards();
+              (activeObj as any).sendBackwards?.();
               break;
             case 'delete':
               canvas.remove(activeObj);
