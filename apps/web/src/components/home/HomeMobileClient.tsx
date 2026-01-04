@@ -145,13 +145,13 @@ export function HomeMobileClient() {
           <div className="flex flex-col gap-3 mt-2">
             <Link
               href="/products"
-              className="w-full py-4 bg-[#1a47e5] text-white rounded-md font-bold text-lg hover:bg-blue-700 transition-colors shadow-sm"
+              className="w-full py-4 px-[15px] bg-[#1a47e5] text-white rounded-md font-bold text-lg hover:bg-blue-700 transition-colors shadow-sm text-left"
             >
               Get Started
             </Link>
             <Link
               href="/help#satisfaction"
-              className="w-full py-4 bg-[#ff4d00] text-white rounded-md font-bold text-lg hover:bg-orange-600 transition-colors shadow-sm"
+              className="w-full py-4 px-[15px] bg-[#ff4d00] text-white rounded-md font-bold text-lg hover:bg-orange-600 transition-colors shadow-sm text-left"
             >
               100% Satisfaction Guarantee
             </Link>
