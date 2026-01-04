@@ -98,6 +98,7 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
         setShowRotateModal(false);
     };
 
+
     // Toolbar Buttons Configuration with SVG Icons
     const toolbarActions = [
         {
