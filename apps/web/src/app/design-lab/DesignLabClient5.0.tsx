@@ -4211,6 +4211,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
         onAddToCart={handleAddToCart}
         getQuoteData={getQuoteDataInternal}
         productName={productInfo.productName}
+        variants={productInfo.variants}
         // Pass persistent states
         currentStep={getPriceStep}
         setCurrentStep={setGetPriceStep}

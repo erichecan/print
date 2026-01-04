@@ -22,7 +22,8 @@ interface GetPriceFlowModalProps {
   onAddToCart?: (orderData: any) => void;
   getQuoteData?: () => Promise<{ sidesUsed: string[]; layerCount: number }> | { sidesUsed: string[]; layerCount: number };
   productName?: string;
-// States lifted from parent for persistence
+  variants?: any[]; // Added variants prop
+  // States lifted from parent for persistence
   currentStep: GetPriceFlowStep;
   setCurrentStep: React.Dispatch<React.SetStateAction<GetPriceFlowStep>>;
   orderingOptions: OrderingOptions;
@@ -54,6 +55,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   onAddToCart,
   getQuoteData,
   productName = 'Design Item',
+  variants, // Destructure variants
   currentStep,
   setCurrentStep,
   orderingOptions,
@@ -67,19 +69,32 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 }) => {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
-// Content Check 相关状态
+  // Content Check 相关状态
   const [needsContentCheck, setNeedsContentCheck] = useState(false);
   const [hasUploadedImages, setHasUploadedImages] = useState(false);
-// 加车成功相关状态
+  // 加车成功相关状态
   const [addedToCartData, setAddedToCartData] = useState<any>(null);
-// Adding to cart loading state
+  // Adding to cart loading state
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-// Fetch size pricing from DB
+  // Fetch size pricing from DB
   const [sizeAdjustments, setSizeAdjustments] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const fetchSizeData = async () => {
+      // Prioritize passed variants prop
+      if (variants && variants.length > 0) {
+        console.log('[GetPriceFlowModal] Using provided variants for size fees');
+        const adjustments: Record<string, number> = {};
+        variants.forEach((v: any) => {
+          if (v.size && v.priceAdjustment) {
+            adjustments[v.size] = Number(v.priceAdjustment) / 100;
+          }
+        });
+        setSizeAdjustments(adjustments);
+        return;
+      }
+
       if (!designId) return;
       try {
         // 1. Get design to find variant params
@@ -109,7 +124,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       }
     };
     fetchSizeData();
-  }, [designId]);
+  }, [designId, variants]);
 
   // Actually, let's just make a new simple effect using productApi if possible or assume designLabApi can be extended.
   // The file imports `designLabApi` from `@/lib/api`. 
@@ -118,10 +133,10 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   const youthSizes = React.useMemo(() => ['YS', 'YM', 'YL'], []);
   const adultSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'], []);
   const allSizes = React.useMemo(() => [...youthSizes, ...adultSizes], [youthSizes, adultSizes]);
-const womensSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], []); // 女性尺码
-const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示女性尺码
+  const womensSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], []); // 女性尺码
+  const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示女性尺码
 
-// 初始化尺码数量
+  // 初始化尺码数量
   React.useEffect(() => {
     if (currentStep === 'quantity' && sizeQuantities.length === 0 && orderingOptions.sizesQuantities === 'i-know-sizes') {
       setSizeQuantities(
@@ -130,7 +145,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     }
   }, [currentStep, orderingOptions.sizesQuantities, allSizes, sizeQuantities.length]);
 
-// 检查是否有上传的图片（用于 Content Check）
+  // 检查是否有上传的图片（用于 Content Check）
   React.useEffect(() => {
     const checkImages = async () => {
       if (getQuoteData) {
@@ -149,7 +164,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     checkImages();
   }, [getQuoteData]);
 
-// 计算总数量
+  // 计算总数量
   const totalQuantity = React.useMemo(() => {
     if (orderingOptions.sizesQuantities === 'i-know-sizes') {
       return sizeQuantities.reduce((sum: number, sq: SizeQuantity) => sum + sq.quantity, 0);
@@ -158,10 +173,10 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     }
   }, [sizeQuantities, estimatedQuantity, orderingOptions.sizesQuantities]);
 
-// 重置状态当模态框关闭
+  // 重置状态当模态框关闭
   React.useEffect(() => {
     if (!isOpen) {
-// Note: We NO LONGER reset persistent state here.
+      // Note: We NO LONGER reset persistent state here.
       // We only reset local temporary states if needed.
       setQuoteError(null);
       setAddedToCartData(null);
@@ -170,7 +185,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
 
 
 
-// 步骤2：Ordering Options
+  // 步骤2：Ordering Options
   const renderOrderingOptionsStep = () => (
     <div className="dl-get-price-flow__step">
       <h2 className="dl-get-price-flow__step-title">Ordering Options</h2>
@@ -304,7 +319,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     </div>
   );
 
-// 步骤1：Quantity - 尺码网格 (Now the first step)
+  // 步骤1：Quantity - 尺码网格 (Now the first step)
   const renderQuantityStep = () => {
     if (orderingOptions.sizesQuantities === 'invite-group') {
       return (
@@ -455,7 +470,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     );
   };
 
-// 获取报价数据
+  // 获取报价数据
   const fetchQuote = async () => {
     if (totalQuantity === 0) {
       return;
@@ -482,7 +497,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
           quantity: totalQuantity,
           sidesUsed: quoteParams.sidesUsed,
           layerCount: quoteParams.layerCount,
-// Pass size quantities for accurate pricing
+          // Pass size quantities for accurate pricing
           sizeQuantities: sizeQuantities.filter(sq => sq.quantity > 0),
         }) as any;
 
@@ -492,7 +507,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
           throw new Error('Failed to get price quote');
         }
       } else {
-// 如果没有 designId，使用模拟数据，不阻塞流程
+        // 如果没有 designId，使用模拟数据，不阻塞流程
         console.log('[GetPriceFlowModal] No designId, using mock quote data');
         setQuoteData({
           unitPrice: 0,
@@ -516,8 +531,8 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     }
   };
 
-// 当进入Order Options步骤时，自动获取报价
-// 依赖 totalQuantity 和 sizeQuantities 变化时重新获取
+  // 当进入Order Options步骤时，自动获取报价
+  // 依赖 totalQuantity 和 sizeQuantities 变化时重新获取
   useEffect(() => {
     if (currentStep === 'order-options' && designId && totalQuantity > 0 && !quoteLoading) {
       fetchQuote();
@@ -525,7 +540,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStep, designId, totalQuantity, JSON.stringify(sizeQuantities)]);
 
-// 处理加入购物车
+  // 处理加入购物车
   const handleAddToCart = async () => {
     if (!onAddToCart) {
       console.warn('[GetPriceFlowModal] onAddToCart callback not provided');
@@ -563,7 +578,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     }
   };
 
-// 步骤5：Content Check - 内容合规确认
+  // 步骤5：Content Check - 内容合规确认
   const renderContentCheckStep = () => (
     <div className="dl-get-price-flow__step">
       <h2 className="dl-get-price-flow__step-title">Content Check</h2>
@@ -591,7 +606,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
           className="dl-modal__btn dl-modal__btn--secondary"
           onClick={() => {
             onClose();
-// 返回设计器（通过关闭模态框）
+            // 返回设计器（通过关闭模态框）
           }}
         >
           Edit Design
@@ -611,7 +626,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     </div>
   );
 
-// 步骤6：Added to Cart - 加车成功页
+  // 步骤6：Added to Cart - 加车成功页
   const renderAddedToCartStep = () => {
     if (!addedToCartData) return null;
 
@@ -647,7 +662,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
           <button
             className="dl-modal__btn dl-modal__btn--primary"
             onClick={() => {
-// 跳转到购物车页面
+              // 跳转到购物车页面
               if (typeof window !== 'undefined') {
                 window.location.href = '/cart';
               }
@@ -674,7 +689,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
               className="dl-get-price-flow__want-more-btn"
               onClick={() => {
                 onClose();
-// 从当前设计继续
+                // 从当前设计继续
               }}
             >
               Start from this design
@@ -683,7 +698,7 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
               className="dl-get-price-flow__want-more-btn"
               onClick={() => {
                 onClose();
-// 开始新设计（重置画布）
+                // 开始新设计（重置画布）
                 if (typeof window !== 'undefined') {
                   window.location.href = '/design-lab';
                 }
@@ -697,9 +712,9 @@ const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示�
     );
   };
 
-// 步骤 4 的高级渲染方案（Tailwind 风格）
+  // 步骤 4 的高级渲染方案（Tailwind 风格）
   const renderOrderOptionsStep = () => {
-// Declare quote variable properly
+    // Declare quote variable properly
     const quote = quoteData || {
       unitPrice: 0,
       total: 0,
