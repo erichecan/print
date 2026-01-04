@@ -13,6 +13,7 @@ import { useCart } from '@/contexts/CartContext';
 import { couponApi, promotionApi, Promotion } from '@/lib/api'; // 添加促销活动 API
 import { useToast } from '@/hooks/useToast'; // Toast 通知
 import useSWR from 'swr'; // 用于获取促销活动
+import DeleteConfirmationModal from '@/components/ui/DeleteConfirmationModal';
 
 interface AppliedCoupon {
   code: string;
@@ -35,6 +36,8 @@ export default function CartPage() {
   const [postalError, setPostalError] = useState('');
   const [showCouponForm, setShowCouponForm] = useState(false);
   const [navigatingToCheckout, setNavigatingToCheckout] = useState(false); // 防止重复点击
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // 获取每个商品的促销活动信息
   const productIds = cart?.items.map((item) => item.productId).filter(Boolean) || [];
@@ -123,25 +126,16 @@ export default function CartPage() {
 
   // 优化删除交互反馈
   // 添加详细调试日志，修复删除功能
-  const handleRemove = async (itemId: string) => {
-    console.log('[Cart] handleRemove() ===== START =====');
-    console.log('[Cart] Item ID:', itemId);
-    const item = cart?.items.find(i => i.id === itemId);
-    console.log('[Cart] Item to remove:', item);
-    console.log('[Cart] Cart items count:', cart?.items.length || 0);
+  const handleRemove = (itemId: string) => {
+    console.log('[Cart] handleRemove() triggered for:', itemId);
+    setItemToDelete(itemId);
+    setDeleteModalOpen(true);
+  };
 
-    if (!item) {
-      console.error('[Cart] ❌ Item not found in cart');
-      showError('Item not found in cart');
-      return;
-    }
+  const confirmRemove = async () => {
+    if (!itemToDelete) return;
 
-    const confirmMessage = `Remove "${item?.productName || 'this item'}" from cart?`;
-
-    if (!window.confirm(confirmMessage)) {
-      console.log('[Cart] Remove cancelled by user');
-      return;
-    }
+    const itemId = itemToDelete;
 
     setUpdating(itemId);
     try {
@@ -149,24 +143,23 @@ export default function CartPage() {
       await removeItem(itemId);
       console.log('[Cart] ✅ Item removed successfully');
       success('Item removed from cart');
-      // 如果应用了优惠券，重新验证
+
+      // Re-validate coupon if applied
       if (appliedCoupon) {
-        handleApplyCoupon();
+        // Rely on context update for subtotal, but we might want to ensure coupon validity
+        // simpler just to keep the current coupon or let user re-apply if invalid
       }
-      console.log('[Cart] ===== SUCCESS =====');
     } catch (err: any) {
       console.error('[Cart] ❌ Remove item error:', err);
-      console.error('[Cart] Error details:', {
-        message: err?.message,
-        stack: err?.stack,
-        status: err?.status
-      });
       showError(err.message || 'Failed to remove item');
-      console.log('[Cart] ===== FAILED =====');
     } finally {
       setUpdating(null);
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
     }
   };
+
+
 
   // 优化优惠券应用交互反馈
   const handleApplyCoupon = async () => {
@@ -658,6 +651,19 @@ export default function CartPage() {
       </div>
 
       {/* 移除购物车底部联系信息 */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={confirmRemove}
+        title="Remove Item"
+        description="Are you sure you want to remove this item from your cart?"
+        confirmLabel="Remove"
+        isDeleting={!!updating && updating === itemToDelete}
+        itemName={cart?.items.find(i => i.id === itemToDelete)?.productName}
+      />
     </section>
   );
 }

@@ -3562,8 +3562,47 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
   return (
     <div className="design-lab-new">
-      {/* 1. Header - 顶部导航栏 */}
-      <header className="dl-header" data-testid="header">
+      {/* MOBILE HEADER */}
+      <header className="dl-mobile-header">
+        <div className="dl-mobile-header__left">
+          <Link href="/" aria-label="Home">
+            <Image src="/logo-icon.png" alt="Logo" width={32} height={32} className="dl-mobile-logo" />
+          </Link>
+        </div>
+        <div className="dl-mobile-header__right">
+          <button className="dl-mobile-nav-item">
+            <span className="dl-mobile-icon">📂</span>
+            <span>Designs</span>
+          </button>
+          <button className="dl-mobile-nav-item" onClick={handleSaveRequest}>
+            <span className="dl-mobile-icon">💾</span>
+            <span>Save</span>
+          </button>
+          <Link href="/account" className="dl-mobile-nav-item">
+            <span className="dl-mobile-icon">👤</span>
+            <span>Account</span>
+          </Link>
+          <button className="dl-mobile-nav-item">
+            <span className="dl-mobile-icon">🛒</span>
+            <span>Cart</span>
+          </button>
+          <button
+            className="dl-mobile-next-btn"
+            onClick={() => {
+              if (!designId) {
+                handleSaveDesign().then(id => { if (id) setShowGetPriceModal(true); });
+              } else {
+                setShowGetPriceModal(true);
+              }
+            }}
+          >
+            Next $
+          </button>
+        </div>
+      </header>
+
+      {/* 1. Header - 顶部导航栏 (Desktop Only) */}
+      <header className="dl-header dl-desktop-only" data-testid="header">
         <div className="dl-header__content">
           <div className="dl-header__left">
             <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
@@ -3614,11 +3653,39 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */}
       {/* 5.0 版本：修复布局结构，所有列必须在 .dl-main 容器内 */}
       <div className="dl-main">
-        {/* 2. Rail - 左侧深灰色工具栏 */}
+        {/* MOBILE VIEW SWITCHER (Top Right Overlay) */}
+        <button
+          className="dl-mobile-view-switcher"
+          onClick={() => {
+            const views = ['front', 'back', 'sleeve', 'left-sleeve', 'right-sleeve'] as const;
+            const currentIndex = views.indexOf(currentView as any);
+            const nextView = views[(currentIndex + 1) % views.length];
+            // Skip views without images
+            // Simple logic: just cycle till we find one or simpler: just toggle front/back/sleeves linearly
+            handleViewChange(nextView);
+          }}
+        >
+          🔄
+        </button>
+
+        {/* MOBILE FLOATING CONTROLS (Center Overlay) */}
+        <div className="dl-mobile-floating-controls">
+          <button className="dl-float-btn dl-float-btn--primary" onClick={() => handleToolClick('upload')}>
+            <span className="icon">☁️</span> Upload
+          </button>
+          <button className="dl-float-btn" onClick={() => handleToolClick('text')}>
+            <span className="icon">T</span> Add Text
+          </button>
+          <button className="dl-float-btn" onClick={() => handleToolClick('art')}>
+            <span className="icon">🖼️</span> Add Art
+          </button>
+        </div>
+
+        {/* 2. Rail - 左侧深灰色工具栏 (Desktop Only) */}
         {/* 5.0 版本：与 4.0 版本 UI 一致 - Rail 工具栏 */}
         {/* 5.0 版本：添加 ref 用于调试 */}
         {/* 5.0 版本：功能3 - Rail 按钮点击交互 */}
-        <nav ref={railRef} className="dl-rail" aria-label="Design tools" data-testid="rail">
+        <nav ref={railRef} className="dl-rail dl-desktop-only" aria-label="Design tools" data-testid="rail">
           <button
             className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''} `}
             onClick={() => handleToolClick('upload')}
@@ -3681,175 +3748,177 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
         </nav>
 
-        {/* 3. ToolPanel - 左侧工具面板 */}
+        {/* 3. ToolPanel - 左侧工具面板 (May show on mobile if active) */}
         {/* 5.0 版本：功能3 - ToolPanel 面板切换 */}
-        {toolPanelType && (
-          <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="panel">
-            <div className="dl-tool-panel__content">
-              {/* Home 面板 */}
-              {toolPanelType === 'home' && (
-                <>
-                  <div className="dl-tool-panel__header">
-                    {/* [MODIFY] Removed title as per request */}
-                  </div>
-                  <div className="dl-home-panel">
-                    <div className="dl-home-panel__actions">
-                      <button
-                        className="dl-home-panel__action"
-                        aria-label="Upload"
-                        onClick={() => handleToolClick('upload')}
-                      >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                          <polyline points="17 8 12 3 7 8" />
-                          <line x1="12" y1="3" x2="12" y2="15" />
-                        </svg>
-                        <span>Upload</span>
-                      </button>
-
-                      <button
-                        className="dl-home-panel__action"
-                        aria-label="Add Text"
-                        onClick={() => handleToolClick('text')}
-                      >
-                        <span className="dl-home-panel__text-icon">abc</span>
-                        <span>Add Text</span>
-                      </button>
-
-                      <button
-                        className="dl-home-panel__action"
-                        aria-label="Add Art"
-                        onClick={() => handleToolClick('art')}
-                      >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="3" width="18" height="18" rx="2" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <polyline points="21 15 16 10 5 21" />
-                        </svg>
-                        <span>Add Art</span>
-                      </button>
+        <div className={`dl-tool-panel-wrapper ${toolPanelType !== 'home' ? 'is-open' : ''}`}> {/* Wrapper for mobile handling if needed */}
+          {toolPanelType && (
+            <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="panel">
+              <div className="dl-tool-panel__content">
+                {/* Home 面板 */}
+                {toolPanelType === 'home' && (
+                  <>
+                    <div className="dl-tool-panel__header">
+                      {/* [MODIFY] Removed title as per request */}
                     </div>
+                    <div className="dl-home-panel">
+                      <div className="dl-home-panel__actions">
+                        <button
+                          className="dl-home-panel__action"
+                          aria-label="Upload"
+                          onClick={() => handleToolClick('upload')}
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                          <span>Upload</span>
+                        </button>
 
-                    {/* Hint Removed */}
-                  </div>
-                </>
-              )}
+                        <button
+                          className="dl-home-panel__action"
+                          aria-label="Add Text"
+                          onClick={() => handleToolClick('text')}
+                        >
+                          <span className="dl-home-panel__text-icon">abc</span>
+                          <span>Add Text</span>
+                        </button>
 
-              {/* Upload 面板 */}
-              {/* 5.0 版本：步骤1 - 集成 UploadPanel 组件 */}
-              {toolPanelType === 'upload' && (
-                <UploadPanel
-                  onFileSelect={handleFileUpload}
-                  onBrowseClick={() => { }}
-                  onClose={handleBackToHome}
-                />
-              )}
+                        <button
+                          className="dl-home-panel__action"
+                          aria-label="Add Art"
+                          onClick={() => handleToolClick('art')}
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21 15 16 10 5 21" />
+                          </svg>
+                          <span>Add Art</span>
+                        </button>
+                      </div>
 
-              {/* Edit Upload 面板 */}
-              {/* 上传图片后显示的编辑面板 */}
-              {toolPanelType === 'edit-upload' && (
-                <EditUploadPanel
-                  selectedImage={selectedImage}
-                  canvas={fabricCanvasRef.current}
-                  onUpdate={handleCanvasUpdate}
-                  onClose={handleBackToHome}
-                  onSave={handleSaveRequest} // Use handleSaveRequest
-                />
-              )}
+                      {/* Hint Removed */}
+                    </div>
+                  </>
+                )}
 
-              {/* Text 面板 */}
-              {toolPanelType === 'text' && (
-                <>
-                  <div className="dl-tool-panel__header">
-                    <h2 className="dl-tool-panel__title">Add Text</h2>
-                    <button
-                      className="dl-tool-panel__back-btn"
-                      onClick={handleBackToHome}
-                      aria-label="Back to home"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      </svg>
-                      Back
-                    </button>
-                  </div>
-                  {/* Add Text: 复用 4.0 TextPanel（输入文本并 Add To Design） */}
-                  <TextPanel onAddText={handleAddText} />
-                </>
-              )}
+                {/* Upload 面板 */}
+                {/* 5.0 版本：步骤1 - 集成 UploadPanel 组件 */}
+                {toolPanelType === 'upload' && (
+                  <UploadPanel
+                    onFileSelect={handleFileUpload}
+                    onBrowseClick={() => { }}
+                    onClose={handleBackToHome}
+                  />
+                )}
 
-              {/* Edit Text 面板 */}
-              {/* Add Text: 文本选中后显示编辑面板 */}
-              {toolPanelType === 'edit-text' && (
-                <>
-                  <div className="dl-tool-panel__header">
-                    <h2 className="dl-tool-panel__title">Edit Text</h2>
-                    <button
-                      className="dl-tool-panel__back-btn"
-                      onClick={handleBackToHome}
-                      aria-label="Back to home"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      </svg>
-                      Back
-                    </button>
-                  </div>
-                  <EditTextPanel selectedText={selectedText} canvas={fabricCanvasRef.current} onUpdate={handleCanvasUpdate} onSave={handleSaveRequest} />
-                </>
-              )}
-
-              {/* Art 面板 */}
-              {toolPanelType === 'art' && (
-                <ArtPanel onSelectArt={handleAddArt} />
-              )}
-
-              {/* Product Colors 面板 */}
-              {toolPanelType === 'product-colors' && (
-                <ProductColorsPanel
-                  productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
-                  colors={dynamicColors.length > 0 ? dynamicColors : PRODUCT_COLORS}
-                  selectedColor={productInfo.color}
-                  onSelectColor={handleColorSelect}
-                  onClose={handleBackToHome}
-                  onChangeProduct={() => {
-                    setCatalogMode('change');
-                    setIsCatalogModalOpen(true);
-                  }}
-                />
-              )}
-
-              {/* Edit Art 面板 */}
-              {toolPanelType === 'edit-art' && (
-                <>
-                  <div className="dl-tool-panel__header">
-                    <h2 className="dl-tool-panel__title">Edit Art</h2>
-                    <button
-                      className="dl-tool-panel__back-btn"
-                      onClick={handleBackToHome}
-                      aria-label="Back to home"
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7" />
-                      </svg>
-                      Back
-                    </button>
-                  </div>
-                  <EditArtPanel
-                    selectedArt={selectedArt}
+                {/* Edit Upload 面板 */}
+                {/* 上传图片后显示的编辑面板 */}
+                {toolPanelType === 'edit-upload' && (
+                  <EditUploadPanel
+                    selectedImage={selectedImage}
                     canvas={fabricCanvasRef.current}
                     onUpdate={handleCanvasUpdate}
-                    onChangeArt={() => {
-                      setSelectedArt(null);
-                      setToolPanelType('art');
-                    }}
-                    onSave={handleSaveRequest}
+                    onClose={handleBackToHome}
+                    onSave={handleSaveRequest} // Use handleSaveRequest
                   />
-                </>
-              )}
-            </div>
-          </aside>
-        )}
+                )}
+
+                {/* Text 面板 */}
+                {toolPanelType === 'text' && (
+                  <>
+                    <div className="dl-tool-panel__header">
+                      <h2 className="dl-tool-panel__title">Add Text</h2>
+                      <button
+                        className="dl-tool-panel__back-btn"
+                        onClick={handleBackToHome}
+                        aria-label="Back to home"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                      </button>
+                    </div>
+                    {/* Add Text: 复用 4.0 TextPanel（输入文本并 Add To Design） */}
+                    <TextPanel onAddText={handleAddText} />
+                  </>
+                )}
+
+                {/* Edit Text 面板 */}
+                {/* Add Text: 文本选中后显示编辑面板 */}
+                {toolPanelType === 'edit-text' && (
+                  <>
+                    <div className="dl-tool-panel__header">
+                      <h2 className="dl-tool-panel__title">Edit Text</h2>
+                      <button
+                        className="dl-tool-panel__back-btn"
+                        onClick={handleBackToHome}
+                        aria-label="Back to home"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                      </button>
+                    </div>
+                    <EditTextPanel selectedText={selectedText} canvas={fabricCanvasRef.current} onUpdate={handleCanvasUpdate} onSave={handleSaveRequest} />
+                  </>
+                )}
+
+                {/* Art 面板 */}
+                {toolPanelType === 'art' && (
+                  <ArtPanel onSelectArt={handleAddArt} />
+                )}
+
+                {/* Product Colors 面板 */}
+                {toolPanelType === 'product-colors' && (
+                  <ProductColorsPanel
+                    productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
+                    colors={dynamicColors.length > 0 ? dynamicColors : PRODUCT_COLORS}
+                    selectedColor={productInfo.color}
+                    onSelectColor={handleColorSelect}
+                    onClose={handleBackToHome}
+                    onChangeProduct={() => {
+                      setCatalogMode('change');
+                      setIsCatalogModalOpen(true);
+                    }}
+                  />
+                )}
+
+                {/* Edit Art 面板 */}
+                {toolPanelType === 'edit-art' && (
+                  <>
+                    <div className="dl-tool-panel__header">
+                      <h2 className="dl-tool-panel__title">Edit Art</h2>
+                      <button
+                        className="dl-tool-panel__back-btn"
+                        onClick={handleBackToHome}
+                        aria-label="Back to home"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M19 12H5M12 19l-7-7 7-7" />
+                        </svg>
+                        Back
+                      </button>
+                    </div>
+                    <EditArtPanel
+                      selectedArt={selectedArt}
+                      canvas={fabricCanvasRef.current}
+                      onUpdate={handleCanvasUpdate}
+                      onChangeArt={() => {
+                        setSelectedArt(null);
+                        setToolPanelType('art');
+                      }}
+                      onSave={handleSaveRequest}
+                    />
+                  </>
+                )}
+              </div>
+            </aside>
+          )}
+        </div>
 
         {/* 4. Canvas - 中央画布区域 */}
         {/* 5.0 版本：添加 ref 用于调试 */}
@@ -3869,10 +3938,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </div>
         </section>
 
-        {/* 5. Sidebar - 右侧视图切换面板 */}
+        {/* 5. Sidebar - 右侧视图切换面板 (Desktop Only) */}
         {/* 5.0 版本：与 4.0 版本 UI 一致 - Sidebar 完整内容 */}
         {/* 5.0 版本：添加 ref 用于调试 */}
-        <aside ref={sidebarRef} className="dl-sidebar" aria-label="View options" data-testid="sidebar">
+        <aside ref={sidebarRef} className="dl-sidebar dl-desktop-only" aria-label="View options" data-testid="sidebar">
           <button
             className={`dl-sidebar__btn ${currentView === 'front' ? 'is-active' : ''} `}
             onClick={() => handleViewChange('front')}
@@ -3987,6 +4056,33 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           </button>
         </aside>
       </div>
+
+      {/* MOBILE BOTTOM NAV */}
+      <footer className="dl-mobile-bottom-nav">
+        <button className="dl-mobile-nav-btn" onClick={() => {
+          setCatalogMode('add');
+          setIsCatalogModalOpen(true);
+        }}>
+          <span className="icon">👕</span>
+          <span className="label">Product</span>
+        </button>
+        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('upload')}>
+          <span className="icon">☁️</span>
+          <span className="label">Upload</span>
+        </button>
+        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('text')}>
+          <span className="icon">T</span>
+          <span className="label">Add Text</span>
+        </button>
+        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('art')}>
+          <span className="icon">🖼️</span>
+          <span className="label">Add Art</span>
+        </button>
+        <button className="dl-mobile-nav-btn">
+          <span className="icon">🔢</span>
+          <span className="label">Names</span>
+        </button>
+      </footer>
 
       {/* 鼠标位置调试面板 */}
       {
