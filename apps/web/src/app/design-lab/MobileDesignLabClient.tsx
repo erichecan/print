@@ -1947,7 +1947,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
 
         // 生产环境修复：禁用“鼠标控件调试光标覆盖”
         // 根因：此调试逻辑会用近似距离计算并强制设置 canvas cursor，导致控件图标的真实 hover/click 命中行为被“错位覆盖”（表现为离图标约 100px 才触发手势变化）
-        const ENABLE_MOUSE_DEBUG = process.env.NODE_ENV !== 'production';
+        const ENABLE_MOUSE_DEBUG = false; // process.env.NODE_ENV !== 'production';
 
         // Debug 辅助：仅在显式 query 参数开启时暴露 canvas/fabric，便于生产环境用 DevTools 验证 hover 命中
         // 使用方式：在 URL 加上 ?dlDebug=1
@@ -4345,6 +4345,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         setShowGetPriceModal={setShowGetPriceModal}
         setCatalogMode={setCatalogMode}
         setIsCatalogModalOpen={setIsCatalogModalOpen}
+        onOpenColorModal={() => setShowColorModal(true)}
+        availableColors={dynamicColors.length > 0 ? dynamicColors : PRODUCT_COLORS}
+        onSelectColor={handleColorSelect}
         handleObjectAction={(action, payload) => {
           const canvas = fabricCanvasRef.current;
           const activeObj = canvas?.getActiveObject();

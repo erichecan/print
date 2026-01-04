@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import './mobile-design-lab.css';
+import { getProductColors, type ProductColor } from './api/product';
 
 
 interface MobileDesignLabProps {
@@ -29,6 +30,9 @@ interface MobileDesignLabProps {
     // New Product Dashboard Actions
     setCatalogMode: (mode: 'add' | 'change') => void;
     setIsCatalogModalOpen: (isOpen: boolean) => void;
+    onOpenColorModal: () => void;
+    availableColors?: ProductColor[];
+    onSelectColor: (color: string) => void;
 
     // NEW: Object Actions
     handleObjectAction: (action: string, payload?: any) => void;
@@ -43,6 +47,7 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
     activeTool,
     toolPanelType,
     productInfo,
+    productList,
     handleToolClick,
     handleSaveRequest,
     handleViewChange,
@@ -50,12 +55,20 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
     setShowGetPriceModal,
     setCatalogMode,
     setIsCatalogModalOpen,
+    onOpenColorModal,
+    availableColors = [],
+    onSelectColor,
     handleObjectAction,
     selectedObject,
     hasObjectOnCanvas
 }) => {
     // Mobile Dashboard State
     const [showProductDashboard, setShowProductDashboard] = useState(false);
+
+    // Color Selection State
+    const [isColorExpanded, setIsColorExpanded] = useState(false);
+    const [colors, setColors] = useState<ProductColor[]>([]);
+    const [isLoadingColors, setIsLoadingColors] = useState(false);
 
     // Rotate Modal State
     const [showRotateModal, setShowRotateModal] = useState(false);
@@ -81,6 +94,31 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
     const closeDashboard = () => {
         setShowProductDashboard(false);
     };
+
+    // Handle Color Toggle
+    // Handle Color Toggle
+    const toggleColorExpansion = async () => {
+        const nextState = !isColorExpanded;
+        setIsColorExpanded(nextState);
+
+        // Fetch colors if expanding and we don't have availableColors from props
+        if (nextState && colorsToDisplay.length === 0) {
+            setIsLoadingColors(true);
+            try {
+                const targetId = productInfo.productId || productInfo.id;
+                console.log('[MobileDesignLab] Fetching colors for ID:', targetId);
+                const fetchedColors = await getProductColors(targetId);
+                console.log('[MobileDesignLab] Fetched colors:', fetchedColors);
+                setColors(fetchedColors);
+            } catch (err) {
+                console.error('[MobileDesignLab] Failed to load colors', err);
+            } finally {
+                setIsLoadingColors(false);
+            }
+        }
+    };
+
+    const colorsToDisplay = (availableColors && availableColors.length > 0) ? availableColors : colors;
 
 
     // Handle Rotate Modal
@@ -266,15 +304,48 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                                 }}
                             >
                                 <span className="icon">⊕</span>
-                                <span>Add Products</span>
+                                <span>Add</span>
                             </button>
 
-                            <div className="dl-dashboard-thumbnail">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={productInfo.baseImages.front || productInfo.baseImages[currentView] || ''}
-                                    alt="Product"
-                                />
+                            <div className="dl-horizontal-product-list">
+                                {/* Always show current product first if list is empty or just as part of the list? 
+                                    Actually, productList usually contains the current design products.
+                                    If productList is empty, we show just the current productInfo.
+                                */}
+                                {productList && productList.length > 0 ? (
+                                    productList.map((prod, index) => {
+                                        // Check if this is the active product
+                                        // Active if prod.id matches designId or logic. 
+                                        // For now, let's just render them. 
+                                        // Highlight current one based on some ID math if possible, 
+                                        // but for this UI, just listing them is the step.
+                                        const isCurrent = (prod.productId === productInfo.productId && prod.color === productInfo.color);
+                                        // Note: Logic might need refinement depending on how productList is structured vs productInfo
+
+                                        return (
+                                            <div
+                                                key={index}
+                                                className={`dl-dashboard-thumbnail ${isCurrent ? 'active' : ''}`}
+                                            // Optional: Add click handler to switch to this product
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={prod.image || prod.baseImages?.front || ''}
+                                                    alt="Product"
+                                                />
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    // Fallback if list is empty (should at least have current)
+                                    <div className="dl-dashboard-thumbnail active">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={productInfo.baseImages.front || productInfo.baseImages[currentView] || ''}
+                                            alt="Current Product"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -284,30 +355,64 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                         </div>
 
                         <div className="dl-dashboard-list">
-                            <div className="dl-dashboard-item">
-                                <span>Decoration Method</span>
-                                <div className="dl-dashboard-value">
-                                    <span style={{ color: 'orange' }}>🔥</span> Printed
-                                    <span className="info-icon">ⓘ</span>
-                                </div>
-                            </div>
+
 
                             <div
                                 className="dl-dashboard-item is-clickable"
-                                onClick={() => {
-                                    handleToolClick('product-colors');
-                                }}
+                                onClick={toggleColorExpansion}
                             >
                                 <span>Change Color</span>
                                 <div className="dl-dashboard-value">
                                     <span>{productInfo.color}</span>
                                     <span
                                         className="color-swatch-sm"
-                                        style={{ backgroundColor: 'red', display: 'inline-block', width: 20, height: 20, borderRadius: 4, marginLeft: 8 }}
+                                        style={{
+                                            backgroundColor: colorsToDisplay.find(c => c.name === productInfo.color)?.hex || '#ccc',
+                                            display: 'inline-block',
+                                            width: 18,
+                                            height: 18,
+                                            borderRadius: 4,
+                                            marginLeft: 8,
+                                            border: '1px solid rgba(0,0,0,0.1)'
+                                        }}
                                     ></span>
-                                    <span className="arrow">&gt;</span>
+                                    <span className="arrow">{isColorExpanded ? '▲' : '>'}</span>
                                 </div>
                             </div>
+
+                            {/* Inline Color Grid */}
+                            {/* Inline Color Grid */}
+                            {isColorExpanded && (
+                                <div className="dl-product-colors-panel__colors-grid">
+                                    {colorsToDisplay.map((color) => {
+                                        const isSelected = productInfo.color === color.name;
+                                        return (
+                                            <button
+                                                key={color.name}
+                                                type="button"
+                                                className={`dl-product-colors-panel__color-swatch ${isSelected ? 'is-selected' : ''}`}
+                                                style={{
+                                                    backgroundColor: color.hex || '#ccc',
+                                                }}
+                                                onClick={() => {
+                                                    console.log('[MobileDesignLab] Selecting color:', color.name);
+                                                    if (onSelectColor) onSelectColor(color.name);
+                                                }}
+                                                disabled={!color.isAvailable}
+                                                title={color.name}
+                                            >
+                                                <div className="dl-product-colors-panel__color-swatch-inner" />
+                                            </button>
+                                        );
+                                    })}
+                                    {isLoadingColors && <div style={{ padding: '20px', textAlign: 'center', width: '100%', color: '#666' }}>Loading colors...</div>}
+                                    {!isLoadingColors && colorsToDisplay.length === 0 && (
+                                        <div style={{ padding: '20px', textAlign: 'center', width: '100%', color: '#666' }}>
+                                            No colors available.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             <div
                                 className="dl-dashboard-item is-clickable"
@@ -323,8 +428,12 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                             <div
                                 className="dl-dashboard-item is-clickable"
                                 onClick={() => {
-                                    const targetId = productInfo.slug || productInfo.productId;
-                                    if (targetId) window.open(`/products/${targetId}`, '_blank');
+                                    const targetId = productInfo.slug || productInfo.productId || productInfo.id;
+                                    if (targetId) {
+                                        window.open(`/products/${targetId}`, '_blank');
+                                    } else {
+                                        console.warn('Product ID not found for navigation', productInfo);
+                                    }
                                 }}
                             >
                                 <span>View Product Details</span>

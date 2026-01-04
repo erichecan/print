@@ -162,6 +162,26 @@
         overflow: hidden;
     }
 
+    /* FIX: Force Fabric wrapper to fill preview area but allow centering */
+    .dl-canvas__fabric-container {
+        width: 100% !important;
+        height: 100% !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* FIX: Ensure the canvas scales down to fit (Contain behavior) */
+    .dl-canvas__fabric-container canvas {
+        width: auto !important;
+        height: auto !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        /* Aspect ratio fallback (1200/1440 = 0.8333) */
+        aspect-ratio: 1200 / 1440;
+        object-fit: contain;
+    }
+
     /* 5. Mobile Floating Controls (Overlaid on Canvas) */
     .dl-mobile-floating-controls {
         position: absolute;
@@ -378,33 +398,65 @@
     .dl-dashboard-top-row {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 12px;
         margin-bottom: 24px;
-        background: #e5e7eb;
-        padding: 16px;
-        border-radius: 8px;
+        background: #f3f4f6;
+        /* Lighter background */
+        padding: 12px;
+        border-radius: 12px;
+        overflow: hidden;
+        /* Contain scroll */
     }
 
+    /* Minimized Add Button */
     .dl-dashboard-add-btn {
-        flex: 1;
+        flex: 0 0 48px;
+        /* Fixed width */
+        width: 48px;
+        height: 80px;
+        /* Match product image height */
         background: #fff;
-        border: 1px solid #2563EB;
+        border: 1px dashed #2563EB;
         color: #2563EB;
         border-radius: 8px;
-        height: 80px;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        font-weight: 500;
+        font-size: 24px;
+        padding: 0;
+        cursor: pointer;
     }
 
-    .dl-dashboard-add-btn .icon {
-        font-size: 20px;
+    .dl-dashboard-add-btn span:not(.icon) {
+        display: none;
+        /* Hide text label */
+    }
+
+    /* Horizontal Product List Container */
+    .dl-horizontal-product-list {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+        /* Enable horizontal scroll */
+        flex: 1;
+        /* Take remaining space */
+        scrollbar-width: none;
+        /* Firefox: Hide scrollbar */
+        -ms-overflow-style: none;
+        /* IE/Edge: Hide scrollbar */
+        padding-right: 12px;
+        /* Padding for end of list */
+    }
+
+    .dl-horizontal-product-list::-webkit-scrollbar {
+        display: none;
+        /* Chrome/Safari: Hide scrollbar */
     }
 
     .dl-dashboard-thumbnail {
+        flex: 0 0 80px;
+        /* Fixed size items */
         width: 80px;
         height: 80px;
         background: #fff;
@@ -413,6 +465,13 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        border: 1px solid #e5e7eb;
+        position: relative;
+    }
+
+    .dl-dashboard-thumbnail.active {
+        border-color: #2563EB;
+        border-width: 2px;
     }
 
     .dl-dashboard-thumbnail img {
@@ -539,10 +598,62 @@
 
 .dl-rotate-controls {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
+    flex-direction: column;
+    gap: 16px;
 }
+
+/* Color Grid */
+.dl-product-colors-panel__colors-grid {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 5px !important;
+    padding: 16px;
+    background: #fff;
+    justify-content: flex-start;
+    border-top: 1px solid #f0f0f0;
+}
+
+.dl-product-colors-panel__color-swatch {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-width: 22px !important;
+    aspect-ratio: 1 / 1 !important;
+    display: block !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    position: relative;
+    padding: 0;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.dl-product-colors-panel__color-swatch:hover:not(:disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.dl-product-colors-panel__color-swatch.is-selected {
+    border: 2px solid #fff !important;
+    box-shadow: 0 0 0 2px #333 !important;
+    /* Darker focus on mobile */
+    transform: scale(1.1);
+}
+
+.dl-product-colors-panel__color-swatch.is-unavailable,
+.dl-product-colors-panel__color-swatch:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+
+
+
+
+
 
 .dl-rotate-btn,
 .dl-adjust-btn,
