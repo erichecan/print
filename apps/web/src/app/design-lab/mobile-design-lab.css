@@ -3,20 +3,11 @@
    ============================================ */
 
 /* This file contains ALL mobile-specific styles for the Design Lab.
-   It is ONLY imported in MobileDesignLab.tsx and should NOT affect desktop. */
+   It is ONLY imported in MobileDesignLabClient.tsx.
+   
+   Since MobileDesignLabClient is dynamically loaded via DesignLabRouter based on window width,
+   we don't need to hide mobile elements by default - they only exist when the mobile client loads. */
 
-/* Desktop: Hide ALL mobile elements by default */
-.dl-mobile-layout,
-.dl-mobile-header,
-.dl-mobile-bottom-nav,
-.dl-mobile-floating-controls,
-.dl-mobile-view-switcher,
-.dl-mobile-edit-toolbar-container,
-.dl-mobile-product-dashboard,
-.dl-mobile-edit-header,
-.dl-mobile-edit-toolbar {
-    display: none !important;
-}
 
 @media (max-width: 768px) {
 

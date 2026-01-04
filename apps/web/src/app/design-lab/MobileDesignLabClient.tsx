@@ -689,9 +689,20 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
   };
 
   // Canvas 更新处理函数（EditUploadPanel 需要）
+  const [hasObjectOnCanvas, setHasObjectOnCanvas] = useState(false);
+
   const handleCanvasUpdate = () => {
     if (fabricCanvasRef.current) {
       fabricCanvasRef.current.renderAll();
+
+      // Check if canvas has user-added objects (exclude system objects)
+      const userObjects = fabricCanvasRef.current.getObjects().filter((obj: any) => {
+        const objName = obj.name || '';
+        return !objName.includes('product-image-base') &&
+          !objName.includes('guide') &&
+          !objName.includes('printable-area');
+      });
+      setHasObjectOnCanvas(userObjects.length > 0);
     }
   };
 
@@ -4386,6 +4397,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           handleCanvasUpdate();
         }}
         selectedObject={selectedImage || selectedText || selectedArt || null} // Pass general selected object state if needed or rely on canvas
+        hasObjectOnCanvas={hasObjectOnCanvas}
       />
     </div >
   );
