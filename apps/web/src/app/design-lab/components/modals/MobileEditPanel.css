@@ -1,0 +1,91 @@
+/* Mobile Edit Panel - 50vh高度编辑面板 */
+
+.dl-mobile-edit-panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    backdrop-filter: blur(2px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.dl-mobile-edit-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50vh;
+    max-height: 50vh;
+    background: #fff;
+    z-index: 999;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    animation: slideUpEdit 0.3s ease-out;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+@keyframes slideUpEdit {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.dl-mobile-edit-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    min-height: 48px;
+    flex-shrink: 0;
+}
+
+.dl-mobile-edit-panel__header-spacer {
+    flex: 1;
+}
+
+.dl-mobile-edit-panel__back,
+.dl-mobile-edit-panel__close {
+    background: none;
+    border: none;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #333;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.dl-mobile-edit-panel__back:hover,
+.dl-mobile-edit-panel__close:hover {
+    background-color: #f5f5f5;
+}
+
+.dl-mobile-edit-panel__back:active,
+.dl-mobile-edit-panel__close:active {
+    background-color: #e5e5e5;
+}
+
+.dl-mobile-edit-panel__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 压缩样式 - 应用于编辑面板内的内容（与design-lab.css中的移动端样式保持一致） */
+/* 注意：主要压缩样式在design-lab.css的@media (max-width: 768px)中定义，这里仅作为备用 */
+

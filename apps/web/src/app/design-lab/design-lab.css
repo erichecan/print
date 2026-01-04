@@ -3973,28 +3973,14 @@
     display: none;
   }
 
-  /* 移动端工具面板 - 底部抽屉样式 - 只在打开时显示 */
-  .dl-tool-panel {
-    display: none;
-    /* 默认隐藏 */
+  /* 移动端隐藏旧的工具面板wrapper（使用新的MobileCompactPanel/MobileEditPanel/MobileArtFullPage） */
+  .dl-tool-panel-wrapper {
+    display: none !important;
   }
 
-  /* 当 wrapper 有 is-open 类时显示面板 */
-  .dl-tool-panel-wrapper.is-open .dl-tool-panel {
-    display: block !important;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    max-height: 80vh;
-    background: #fff;
-    z-index: 1000;
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
-    overflow-y: auto;
-    padding-bottom: env(safe-area-inset-bottom);
-    animation: slideUp 0.3s ease-out;
+  /* 移动端工具面板 - 已废弃，使用新的面板系统 */
+  .dl-tool-panel {
+    display: none !important;
   }
 
   @keyframes slideUp {
@@ -4110,6 +4096,159 @@
     max-width: 100%;
     max-height: 60vh;
     /* 移动端限制产品图片高度 */
+  }
+
+  /* 移动端编辑面板压缩样式 - 参考桌面端CSS，使移动端样式更紧凑 */
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel,
+  .dl-mobile-edit-panel__content .dl-edit-text-panel,
+  .dl-mobile-edit-panel__content .dl-edit-art-panel {
+    font-size: 14px;
+    padding: 0;
+    box-shadow: none;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  /* 隐藏桌面端的header（移动端使用MobileEditPanel的header） */
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__header,
+  .dl-mobile-edit-panel__content .dl-edit-text-panel__header,
+  .dl-mobile-edit-panel__content .dl-edit-art-panel__header {
+    display: none;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__content,
+  .dl-mobile-edit-panel__content .dl-edit-text-panel__content,
+  .dl-mobile-edit-panel__content .dl-edit-art-panel__content {
+    padding: 0;
+    gap: 12px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__section,
+  .dl-mobile-edit-panel__content .dl-edit-text-panel__section,
+  .dl-mobile-edit-panel__content .dl-edit-art-panel__section {
+    padding: 8px 0;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__label,
+  .dl-mobile-edit-panel__content .dl-edit-text-panel__label,
+  .dl-mobile-edit-panel__content .dl-edit-art-panel__label {
+    font-size: 13px;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  /* Size inputs */
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__size-header {
+    margin-bottom: 6px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__size-inputs {
+    gap: 6px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__size-input,
+  .dl-mobile-edit-panel__content .dl-edit-text-panel input[type="text"],
+  .dl-mobile-edit-panel__content .dl-edit-text-panel input[type="number"],
+  .dl-mobile-edit-panel__content .dl-edit-art-panel input[type="text"],
+  .dl-mobile-edit-panel__content .dl-edit-art-panel input[type="number"] {
+    height: 34px;
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__size-separator,
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__size-unit {
+    font-size: 13px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__lock-btn {
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__lock-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Controls (Center, Layering, Flip, etc.) */
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__controls {
+    gap: 8px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__tool-group {
+    gap: 4px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__control-btn {
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__control-btn svg {
+    max-width: 18px;
+    max-height: 18px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__tool-label {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  /* Rotation */
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__rotation {
+    gap: 8px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__slider {
+    height: 5px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__slider::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+  }
+
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__rotation-input {
+    width: 50px;
+    height: 34px;
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  /* Action buttons */
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__actions {
+    gap: 8px;
+  }
+
+  .dl-mobile-edit-panel__content button,
+  .dl-mobile-edit-panel__content .dl-edit-upload-panel__action-btn,
+  .dl-mobile-edit-panel__content .dl-edit-text-panel__action-btn,
+  .dl-mobile-edit-panel__content .dl-edit-art-panel__action-btn {
+    height: 38px;
+    font-size: 14px;
+    padding: 8px 14px;
+    min-height: 38px;
+  }
+
+  .dl-mobile-edit-panel__content select {
+    height: 34px;
+    font-size: 14px;
+    padding: 6px 10px;
   }
 }
 

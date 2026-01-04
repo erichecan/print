@@ -34,6 +34,11 @@ import { serializeCanvas, applyViewState } from './utils/serialization'; // Impo
 import { loadFromLocal } from './store/persistence'; // Import Persistence
 import MobileProductCatalogModal from './components/modals/MobileProductCatalogModal';
 import { MobileToolPanel } from './components/modals/MobileToolPanel';
+import { MobileCompactPanel } from './components/modals/MobileCompactPanel';
+import { MobileEditPanel } from './components/modals/MobileEditPanel';
+import { MobileArtFullPage } from './components/modals/MobileArtFullPage';
+import { MobileUploadFirstStep } from './components/modals/MobileUploadFirstStep';
+import { MobileTextFirstStep } from './components/modals/MobileTextFirstStep';
 import { PRODUCT_COLORS } from '@/lib/product-data';
 // 产品模块：导入产品选择器和颜色选择器
 import ProductSelectorModal from './modules/product/ProductSelectorModal';
@@ -1737,13 +1742,12 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           const objectName = (activeObject as any).name || '';
           const layerType = (activeObject as any).data?.layerType;
 
-          // 当对象被选中时，关闭工具面板，让FloatingObjectControls（编辑工具栏）来处理编辑
-          // 不再切换到edit面板
-          console.log('[DesignLab 5.0] 对象被选中，关闭工具面板，使用FloatingObjectControls编辑');
+          // 移动端：当对象被选中时，切换到对应的编辑面板（而不是关闭面板）
+          // 桌面端：FloatingObjectControls会处理编辑，但移动端需要显示编辑面板
+          console.log('[DesignLab 5.0] 对象被选中，切换到编辑面板');
           setActiveTool(null);
-          setToolPanelType(null); // 关闭工具面板
 
-          // 保存选中对象的状态（用于FloatingObjectControls）
+          // 根据对象类型切换到对应的编辑面板
           if (activeObject.type === 'image') {
             const fabricImage = activeObject as fabric.Image;
             if ((fabricImage as any).name && (fabricImage as any).name.startsWith('image_')) {
@@ -1770,6 +1774,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               setSelectedImage(fabricImage);
               setSelectedText(null);
               setSelectedArt(null);
+              setToolPanelType('edit-upload'); // 切换到编辑面板
             } else if (layerType === 'art' || objectName.startsWith('art_')) {
               // Art图片
               const artImage = activeObject as fabric.Image;
@@ -1782,6 +1787,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               setSelectedArt(artImage);
               setSelectedImage(null);
               setSelectedText(null);
+              setToolPanelType('edit-art'); // 切换到编辑面板
             }
           } else if (activeObject.type === 'i-text' || activeObject.type === 'textbox' || activeObject.type === 'text') {
             // 文本对象
@@ -1791,6 +1797,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               setSelectedText(activeObject as any);
               setSelectedImage(null);
               setSelectedArt(null);
+              setToolPanelType('edit-text'); // 切换到编辑面板
             }
           }
 
@@ -1801,10 +1808,26 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
           if (!activeObject) return;
 
-          // 当选择更新时，确保工具面板保持关闭，使用FloatingObjectControls编辑
+          // 移动端：当选择更新时，确保显示对应的编辑面板
           // 与selection:created保持一致的行为
           setActiveTool(null);
-          setToolPanelType(null);
+          
+          const objectName = (activeObject as any).name || '';
+          const layerType = (activeObject as any).data?.layerType;
+          
+          // 根据对象类型确保显示正确的编辑面板
+          if (activeObject.type === 'image') {
+            if ((activeObject as any).name && (activeObject as any).name.startsWith('image_')) {
+              setToolPanelType('edit-upload');
+            } else if (layerType === 'art' || objectName.startsWith('art_')) {
+              setToolPanelType('edit-art');
+            }
+          } else if (activeObject.type === 'i-text' || activeObject.type === 'textbox' || activeObject.type === 'text') {
+            if (objectName.startsWith('text_') || layerType === 'text') {
+              setToolPanelType('edit-text');
+            }
+          }
+          
           fabricCanvas.renderAll();
         });
 
@@ -3659,16 +3682,18 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
                   />
                 )}
 
-                {/* Edit Upload 面板 */}
+                {/* Edit Upload 面板 - Desktop Only (移动端使用MobileEditPanel) */}
                 {/* 上传图片后显示的编辑面板 */}
                 {toolPanelType === 'edit-upload' && (
-                  <EditUploadPanel
-                    selectedImage={selectedImage}
-                    canvas={fabricCanvasRef.current}
-                    onUpdate={handleCanvasUpdate}
-                    onClose={handleBackToHome}
-                    onSave={handleSaveRequest} // Use handleSaveRequest
-                  />
+                  <div className="dl-desktop-only">
+                    <EditUploadPanel
+                      selectedImage={selectedImage}
+                      canvas={fabricCanvasRef.current}
+                      onUpdate={handleCanvasUpdate}
+                      onClose={handleBackToHome}
+                      onSave={handleSaveRequest} // Use handleSaveRequest
+                    />
+                  </div>
                 )}
 
                 {/* Text 面板 */}
@@ -3692,25 +3717,27 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
                   </>
                 )}
 
-                {/* Edit Text 面板 */}
+                {/* Edit Text 面板 - Desktop Only (移动端使用MobileEditPanel) */}
                 {/* Add Text: 文本选中后显示编辑面板 */}
                 {toolPanelType === 'edit-text' && (
-                  <>
-                    <div className="dl-tool-panel__header">
-                      <h2 className="dl-tool-panel__title">Edit Text</h2>
-                      <button
-                        className="dl-tool-panel__back-btn"
-                        onClick={handleBackToHome}
-                        aria-label="Back to home"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M19 12H5M12 19l-7-7 7-7" />
-                        </svg>
-                        Back
-                      </button>
-                    </div>
-                    <EditTextPanel selectedText={selectedText} canvas={fabricCanvasRef.current} onUpdate={handleCanvasUpdate} onSave={handleSaveRequest} />
-                  </>
+                  <div className="dl-desktop-only">
+                    <>
+                      <div className="dl-tool-panel__header">
+                        <h2 className="dl-tool-panel__title">Edit Text</h2>
+                        <button
+                          className="dl-tool-panel__back-btn"
+                          onClick={handleBackToHome}
+                          aria-label="Back to home"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                          </svg>
+                          Back
+                        </button>
+                      </div>
+                      <EditTextPanel selectedText={selectedText} canvas={fabricCanvasRef.current} onUpdate={handleCanvasUpdate} onSave={handleSaveRequest} />
+                    </>
+                  </div>
                 )}
 
                 {/* Art 面板 */}
@@ -3733,33 +3760,35 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
                   />
                 )}
 
-                {/* Edit Art 面板 */}
+                {/* Edit Art 面板 - Desktop Only (移动端使用MobileEditPanel) */}
                 {toolPanelType === 'edit-art' && (
-                  <>
-                    <div className="dl-tool-panel__header">
-                      <h2 className="dl-tool-panel__title">Edit Art</h2>
-                      <button
-                        className="dl-tool-panel__back-btn"
-                        onClick={handleBackToHome}
-                        aria-label="Back to home"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M19 12H5M12 19l-7-7 7-7" />
-                        </svg>
-                        Back
-                      </button>
-                    </div>
-                    <EditArtPanel
-                      selectedArt={selectedArt}
-                      canvas={fabricCanvasRef.current}
-                      onUpdate={handleCanvasUpdate}
-                      onChangeArt={() => {
-                        setSelectedArt(null);
-                        setToolPanelType('art');
-                      }}
-                      onSave={handleSaveRequest}
-                    />
-                  </>
+                  <div className="dl-desktop-only">
+                    <>
+                      <div className="dl-tool-panel__header">
+                        <h2 className="dl-tool-panel__title">Edit Art</h2>
+                        <button
+                          className="dl-tool-panel__back-btn"
+                          onClick={handleBackToHome}
+                          aria-label="Back to home"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                          </svg>
+                          Back
+                        </button>
+                      </div>
+                      <EditArtPanel
+                        selectedArt={selectedArt}
+                        canvas={fabricCanvasRef.current}
+                        onUpdate={handleCanvasUpdate}
+                        onChangeArt={() => {
+                          setSelectedArt(null);
+                          setToolPanelType('art');
+                        }}
+                        onSave={handleSaveRequest}
+                      />
+                    </>
+                  </div>
                 )}
               </div>
             </aside>
@@ -4225,30 +4254,74 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       />
 
 
-      {/* 5.0 Mobile Tool Panels (Upload, Text, Art) */}
-      <MobileToolPanel
-        isOpen={['upload', 'text', 'art'].includes(activeTool || '')}
-        title={
-          activeTool === 'upload' ? 'Upload Image' :
-            activeTool === 'text' ? 'Add Text' :
-              activeTool === 'art' ? 'Add Art' : ''
-        }
+      {/* Mobile Panels - New UI System */}
+      {/* 1. Compact Panel for Upload/Text first step (150px) */}
+      <MobileCompactPanel
+        isOpen={toolPanelType === 'upload' || toolPanelType === 'text'}
         onClose={handleBackToHome}
+        onBack={toolPanelType === 'upload' || toolPanelType === 'text' ? handleBackToHome : undefined}
       >
-        {activeTool === 'upload' && (
-          <UploadPanel
-            onFileSelect={handleFileUpload}
-            onBrowseClick={() => { }}
+        {toolPanelType === 'upload' && (
+          <MobileUploadFirstStep onFileSelect={handleFileUpload} />
+        )}
+        {toolPanelType === 'text' && (
+          <MobileTextFirstStep onAddText={handleAddText} />
+        )}
+      </MobileCompactPanel>
+
+      {/* 2. Edit Panel for edit-upload/edit-text/edit-art (50vh) */}
+      <MobileEditPanel
+        isOpen={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art'}
+        onClose={handleBackToHome}
+        onBack={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art' ? () => {
+          // Back to first step or close
+          if (toolPanelType === 'edit-upload') {
+            setToolPanelType('upload');
+          } else if (toolPanelType === 'edit-text') {
+            setToolPanelType('text');
+          } else if (toolPanelType === 'edit-art') {
+            setToolPanelType('art');
+          }
+        } : undefined}
+      >
+        {toolPanelType === 'edit-upload' && (
+          <EditUploadPanel
+            selectedImage={selectedImage}
+            canvas={fabricCanvasRef.current}
+            onUpdate={handleCanvasUpdate}
             onClose={handleBackToHome}
+            onSave={handleSaveRequest}
           />
         )}
-        {activeTool === 'text' && (
-          <TextPanel onAddText={handleAddText} />
+        {toolPanelType === 'edit-text' && (
+          <EditTextPanel
+            selectedText={selectedText}
+            canvas={fabricCanvasRef.current}
+            onUpdate={handleCanvasUpdate}
+            onSave={handleSaveRequest}
+          />
         )}
-        {activeTool === 'art' && (
-          <ArtPanel onSelectArt={handleAddArt} />
+        {toolPanelType === 'edit-art' && (
+          <EditArtPanel
+            selectedArt={selectedArt}
+            canvas={fabricCanvasRef.current}
+            onUpdate={handleCanvasUpdate}
+            onChangeArt={() => {
+              setSelectedArt(null);
+              setToolPanelType('art');
+            }}
+            onSave={handleSaveRequest}
+          />
         )}
-      </MobileToolPanel>
+      </MobileEditPanel>
+
+      {/* 3. Full Page for Art selection */}
+      <MobileArtFullPage
+        isOpen={toolPanelType === 'art'}
+        onClose={handleBackToHome}
+      >
+        <ArtPanel onSelectArt={handleAddArt} />
+      </MobileArtFullPage>
       <MobileDesignLab
         currentView={currentView}
         designId={designId}
