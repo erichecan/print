@@ -3698,9 +3698,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           </button>
         </nav>
 
-        {/* 3. ToolPanel - 左侧工具面板 (May show on mobile if active) */}
+        {/* 3. ToolPanel - 左侧工具面板 (Desktop Only - Mobile uses bottom edit toolbar) */}
         {/* 5.0 版本：功能3 - ToolPanel 面板切换 */}
-        <div className={`dl-tool-panel-wrapper ${toolPanelType !== 'home' ? 'is-open' : ''}`}> {/* Wrapper for mobile handling if needed */}
+        <div className={`dl-tool-panel-wrapper dl-desktop-only ${toolPanelType !== 'home' ? 'is-open' : ''}`}> {/* Wrapper for mobile handling if needed */}
           {toolPanelType && (
             <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="panel">
               <div className="dl-tool-panel__content">

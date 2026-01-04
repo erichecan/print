@@ -78,17 +78,72 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
         setShowProductDashboard(false);
     };
 
-    // Toolbar Buttons Configuration
+
+    // Toolbar Buttons Configuration with SVG Icons
     const toolbarActions = [
-        // { label: 'Edit Color', icon: '🎨', action: 'color', showFor: ['text', 'art'] }, // Handled separately or needs popup
-        { label: 'Rotate', icon: '↷', action: 'rotate' },
-        { label: 'Flip', icon: '↔', action: 'flip' },
-        { label: 'Duplicate', icon: '❐', action: 'duplicate' },
-        // { label: 'Crop', icon: '✂', action: 'crop', showFor: ['image'] }, // Too complex for now?
-        { label: 'Center', icon: '⤨', action: 'center' },
-        { label: 'Layer Up', icon: '↑', action: 'layer-up' },
-        { label: 'Layer Down', icon: '↓', action: 'layer-down' },
-        { label: 'Delete', icon: '🗑', action: 'delete' },
+        {
+            label: 'Rotate',
+            action: 'rotate',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 6v3l4-4-4-4v3c-4.42 0-8 3.58-8 8 0 1.57.46 3.03 1.24 4.26L6.7 14.8c-.45-.83-.7-1.79-.7-2.8 0-3.31 2.69-6 6-6zm6.76 1.74L17.3 9.2c.44.84.7 1.79.7 2.8 0 3.31-2.69 6-6 6v-3l-4 4 4 4v-3c4.42 0 8-3.58 8-8 0-1.57-.46-3.03-1.24-4.26z" />
+                </svg>
+            )
+        },
+        {
+            label: 'Flip',
+            action: 'flip',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M15 21h2v-2h-2v2zm4-12h2V7h-2v2zM3 5v14c0 1.1.9 2 2 2h4v-2H5V5h4V3H5c-1.1 0-2 .9-2 2zm16-2v2h2c0-1.1-.9-2-2-2zm-8 20h2V1h-2v22zm8-6h2v-2h-2v2zM15 5h2V3h-2v2zm4 8h2v-2h-2v2zm0 8c1.1 0 2-.9 2-2h-2v2z" />
+                </svg>
+            )
+        },
+        {
+            label: 'Duplicate',
+            action: 'duplicate',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                </svg>
+            )
+        },
+        {
+            label: 'Center',
+            action: 'center',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M15 15V9H3.99562C3.44576 9 3 8.55614 3 8C3 7.44772 3.44995 7 3.99562 7H7V4.00427C7 3.44962 7.44386 3 8 3C8.55228 3 9 3.45098 9 4.00427V7H16.0044C16.2786 7 16.5268 7.11036 16.7069 7.28996C16.8887 7.47472 17 7.72297 17 7.9954V15H20.0044C20.5542 15 21 15.4439 21 16C21 16.5523 20.5501 17 20.0044 17H7.99562C7.44832 16.9976 7.00482 16.5548 7.00004 16.006C7.00001 16.004 7 10.5034 7 10.5034C7 10.2254 7.22168 10 7.50468 10H8.49532C8.77404 10 9 10.225 9 10.5034V15H15ZM15 18.4954C15 18.2218 15.2217 18 15.5047 18H16.4953C16.774 18 17 18.2255 17 18.4954V20.001C17 20.5528 16.5561 21 16 21C15.4477 21 15 20.5509 15 20.001V18.4954Z" />
+                </svg>
+            )
+        },
+        {
+            label: 'Layer Up',
+            action: 'layer-up',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+            )
+        },
+        {
+            label: 'Layer Down',
+            action: 'layer-down',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" transform="rotate(180 12 12)" />
+                </svg>
+            )
+        },
+        {
+            label: 'Delete',
+            action: 'delete',
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                </svg>
+            )
+        },
     ];
 
     return (
