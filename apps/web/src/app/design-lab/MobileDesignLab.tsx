@@ -271,20 +271,7 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                 🔄
             </button>
 
-            {/* MOBILE FLOATING CONTROLS (Only visible if showFloatingControls is true) */}
-            {showFloatingControls && (
-                <div className="dl-mobile-floating-controls">
-                    <button className="dl-float-btn dl-float-btn--primary" onClick={() => handleToolClick('upload')}>
-                        <span className="icon">☁️</span> Upload
-                    </button>
-                    <button className="dl-float-btn" onClick={() => handleToolClick('text')}>
-                        <span className="icon">T</span> Add Text
-                    </button>
-                    <button className="dl-float-btn" onClick={() => handleToolClick('art')}>
-                        <span className="icon">🖼️</span> Add Art
-                    </button>
-                </div>
-            )}
+            {/* MOBILE FLOATING CONTROLS - REMOVED (Use bottom nav instead) */}
 
             {/* PRODUCT DASHBOARD OVERLAY */}
             {showProductDashboard && (
@@ -492,30 +479,28 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                 </div>
             )}
 
-            {/* MOBILE BOTTOM NAV (Hidden in Edit Mode) */}
-            {!isEditMode && (
-                <footer className="dl-mobile-bottom-nav">
-                    <button className={`dl-mobile-nav-btn ${activeTool === 'upload' ? 'active' : ''}`} onClick={() => handleToolClick('upload')}>
-                        <span className="icon">☁️</span>
-                        <span className="label">Upload</span>
-                    </button>
-                    <button className={`dl-mobile-nav-btn ${activeTool === 'text' ? 'active' : ''}`} onClick={() => handleToolClick('text')}>
-                        <span className="icon">T</span>
-                        <span className="label">Add Text</span>
-                    </button>
-                    <button className={`dl-mobile-nav-btn ${activeTool === 'art' ? 'active' : ''}`} onClick={() => handleToolClick('art')}>
-                        <span className="icon">🖼️</span>
-                        <span className="label">Add Art</span>
-                    </button>
-                    <button
-                        className={`dl-mobile-nav-btn ${showProductDashboard ? 'active' : ''}`}
-                        onClick={handleProductTabClick}
-                    >
-                        <span className="icon">👕</span>
-                        <span className="label">Product</span>
-                    </button>
-                </footer>
-            )}
+            {/* MOBILE BOTTOM NAV (Always visible at bottom) */}
+            <footer className="dl-mobile-bottom-nav">
+                <button className={`dl-mobile-nav-btn ${activeTool === 'upload' ? 'active' : ''}`} onClick={() => handleToolClick('upload')}>
+                    <span className="icon">☁️</span>
+                    <span className="label">Upload</span>
+                </button>
+                <button className={`dl-mobile-nav-btn ${activeTool === 'text' ? 'active' : ''}`} onClick={() => handleToolClick('text')}>
+                    <span className="icon">T</span>
+                    <span className="label">Add Text</span>
+                </button>
+                <button className={`dl-mobile-nav-btn ${activeTool === 'art' ? 'active' : ''}`} onClick={() => handleToolClick('art')}>
+                    <span className="icon">🖼️</span>
+                    <span className="label">Add Art</span>
+                </button>
+                <button
+                    className={`dl-mobile-nav-btn ${showProductDashboard ? 'active' : ''}`}
+                    onClick={handleProductTabClick}
+                >
+                    <span className="icon">👕</span>
+                    <span className="label">Product</span>
+                </button>
+            </footer>
         </div>
     );
 };

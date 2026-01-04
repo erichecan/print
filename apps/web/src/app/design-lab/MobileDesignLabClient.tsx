@@ -1737,66 +1737,41 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           const objectName = (activeObject as any).name || '';
           const layerType = (activeObject as any).data?.layerType;
 
-          // -------- Art Image (优先检查) --------
-          if (layerType === 'art' || objectName.startsWith('art_')) {
-            const artImage = activeObject as fabric.Image;
-            console.log('[DesignLab 5.0] Art 对象被选中，切换到 edit panel');
-            setSelectedArt(artImage);
-            setSelectedImage(null);
-            setSelectedText(null);
-            setToolPanelType('edit-art');
-            setActiveTool('art');
-            fabricCanvas.renderAll();
-            return;
-          }
+          // 当对象被选中时，关闭工具面板，让FloatingObjectControls（编辑工具栏）来处理编辑
+          // 不再切换到edit面板
+          console.log('[DesignLab 5.0] 对象被选中，关闭工具面板，使用FloatingObjectControls编辑');
+          setActiveTool(null);
+          setToolPanelType(null); // 关闭工具面板
 
-          // -------- Upload Image (保持原逻辑) --------
+          // 保存选中对象的状态（用于FloatingObjectControls）
           if (activeObject.type === 'image') {
             const fabricImage = activeObject as fabric.Image;
-            // 检查是否是上传的图片（不是商品底图）
             if ((fabricImage as any).name && (fabricImage as any).name.startsWith('image_')) {
-              // 步骤2：确保选中时边框为灰色 2px
+              // 上传图片
               fabricImage.set({
                 hasBorders: true,
-                borderColor: '#808080', // 灰色边框
-                borderScaleFactor: 2, // 2px 宽度
+                borderColor: '#808080',
+                borderScaleFactor: 2,
               });
               fabricImage.setCoords();
-
-              // 保存当前图层顺序
               const allObjects = fabricCanvas.getObjects();
               const currentIndex = allObjects.indexOf(fabricImage);
               layerOrderMap.set(fabricImage, currentIndex);
-              console.log('[DesignLab 5.0] 上传图片被选中，切换到 edit panel，保存图层顺序:', currentIndex);
-
-              // 延迟恢复图层顺序（Fabric.js 可能在 setActiveObject 时自动 bringToFront）
               setTimeout(() => {
                 const savedIndex = layerOrderMap.get(fabricImage);
                 if (savedIndex !== undefined) {
                   const currentIndex = fabricCanvas.getObjects().indexOf(fabricImage);
                   if (currentIndex !== savedIndex) {
-                    console.log('[DesignLab 5.0] 恢复图层顺序:', { from: currentIndex, to: savedIndex });
                     fabricCanvas.moveObjectTo(fabricImage, savedIndex);
                     fabricCanvas.renderAll();
                   }
                 }
               }, 0);
-
-              fabricCanvas.renderAll();
               setSelectedImage(fabricImage);
-              setSelectedText(null); // Add Text: 切换到上传编辑时清理文本
-              setSelectedArt(null); // Add Art: 切换到上传编辑时清理艺术素材
-              setToolPanelType('edit-upload');
-              return;
-            }
-          }
-
-          // -------- Art Image (新增) --------
-          if (activeObject.type === 'image') {
-            const objName = (activeObject as any).name || '';
-            const layerType = (activeObject as any).data?.layerType;
-            // Add Art: 仅对 art_* 或 layerType=art 的对象切换到 Edit Art
-            if (objName.startsWith('art_') || layerType === 'art') {
+              setSelectedText(null);
+              setSelectedArt(null);
+            } else if (layerType === 'art' || objectName.startsWith('art_')) {
+              // Art图片
               const artImage = activeObject as fabric.Image;
               artImage.set({
                 hasBorders: true,
@@ -1807,120 +1782,30 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               setSelectedArt(artImage);
               setSelectedImage(null);
               setSelectedText(null);
-              setToolPanelType('edit-art');
-              setActiveTool('art');
-              fabricCanvas.renderAll();
-              return;
             }
-          }
-
-          // -------- Text (新增) --------
-          if (activeObject.type === 'i-text' || activeObject.type === 'textbox' || activeObject.type === 'text') {
+          } else if (activeObject.type === 'i-text' || activeObject.type === 'textbox' || activeObject.type === 'text') {
+            // 文本对象
             const objName = (activeObject as any).name || '';
             const layerType = (activeObject as any).data?.layerType;
-            // Add Text: 仅对 text_* 或 layerType=text 的对象切换到 Edit Text
             if (objName.startsWith('text_') || layerType === 'text') {
               setSelectedText(activeObject as any);
               setSelectedImage(null);
-              setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
-              setToolPanelType('edit-text');
+              setSelectedArt(null);
             }
           }
+
+          fabricCanvas.renderAll();
         });
 
         fabricCanvas.on('selection:updated', (e: any) => {
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
           if (!activeObject) return;
 
-          const objectName = (activeObject as any).name || '';
-          const layerType = (activeObject as any).data?.layerType;
-
-          // -------- Art Image (优先检查) --------
-          if (layerType === 'art' || objectName.startsWith('art_')) {
-            const artImage = activeObject as fabric.Image;
-            console.log('[DesignLab 5.0] Art 对象选择更新，切换到 edit panel');
-            setSelectedArt(artImage);
-            setSelectedImage(null);
-            setSelectedText(null);
-            setToolPanelType('edit-art');
-            setActiveTool('art');
-            fabricCanvas.renderAll();
-            return;
-          }
-
-          // Upload Image
-          if (activeObject.type === 'image') {
-            const fabricImage = activeObject as fabric.Image;
-            if ((fabricImage as any).name && (fabricImage as any).name.startsWith('image_')) {
-              // 步骤2：确保选中时边框为灰色 2px
-              fabricImage.set({
-                hasBorders: true,
-                borderColor: '#808080', // 灰色边框
-                borderScaleFactor: 2, // 2px 宽度
-              });
-              fabricImage.setCoords();
-
-              // 保存当前图层顺序
-              const allObjects = fabricCanvas.getObjects();
-              const currentIndex = allObjects.indexOf(fabricImage);
-              layerOrderMap.set(fabricImage, currentIndex);
-
-              // 延迟恢复图层顺序
-              setTimeout(() => {
-                const savedIndex = layerOrderMap.get(fabricImage);
-                if (savedIndex !== undefined) {
-                  const currentIndex = fabricCanvas.getObjects().indexOf(fabricImage);
-                  if (currentIndex !== savedIndex) {
-                    fabricCanvas.moveObjectTo(fabricImage, savedIndex);
-                    fabricCanvas.renderAll();
-                  }
-                }
-              }, 0);
-
-              fabricCanvas.renderAll();
-              console.log('[DesignLab 5.0] 上传图片选择更新，切换到 edit panel');
-              setSelectedImage(fabricImage);
-              setSelectedText(null);
-              setSelectedArt(null); // Add Art: 切换到上传编辑时清理艺术素材
-              setToolPanelType('edit-upload');
-              return;
-            }
-          }
-
-          // Art Image
-          if (activeObject.type === 'image') {
-            const objName = (activeObject as any).name || '';
-            const layerType = (activeObject as any).data?.layerType;
-            // Add Art: 仅对 art_* 或 layerType=art 的对象切换到 Edit Art
-            if (objName.startsWith('art_') || layerType === 'art') {
-              const artImage = activeObject as fabric.Image;
-              artImage.set({
-                hasBorders: true,
-                borderColor: '#808080',
-                borderScaleFactor: 2,
-              });
-              artImage.setCoords();
-              setSelectedArt(artImage);
-              setSelectedImage(null);
-              setSelectedText(null);
-              setToolPanelType('edit-art');
-              setActiveTool('art');
-              fabricCanvas.renderAll();
-              return;
-            }
-          }
-
-          // Text
-          if (activeObject.type === 'i-text' || activeObject.type === 'textbox' || activeObject.type === 'text') {
-            const objName = (activeObject as any).name || '';
-            const layerType = (activeObject as any).data?.layerType;
-            if (objName.startsWith('text_') || layerType === 'text') {
-              setSelectedText(activeObject as any);
-              setSelectedImage(null);
-              setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
-              setToolPanelType('edit-text');
-            }
-          }
+          // 当选择更新时，确保工具面板保持关闭，使用FloatingObjectControls编辑
+          // 与selection:created保持一致的行为
+          setActiveTool(null);
+          setToolPanelType(null);
+          fabricCanvas.renderAll();
         });
 
         fabricCanvas.on('selection:cleared', (e: any) => {
@@ -3709,9 +3594,9 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           </button>
         </nav>
 
-        {/* 3. ToolPanel - 左侧工具面板 (Desktop Only - Mobile uses bottom edit toolbar) */}
+        {/* 3. ToolPanel - 左侧工具面板 (Desktop) / 底部抽屉 (Mobile) */}
         {/* 5.0 版本：功能3 - ToolPanel 面板切换 */}
-        <div className={`dl-tool-panel-wrapper dl-desktop-only ${toolPanelType !== 'home' ? 'is-open' : ''}`}> {/* Wrapper for mobile handling if needed */}
+        <div className={`dl-tool-panel-wrapper ${toolPanelType !== 'home' && toolPanelType !== null ? 'is-open' : ''}`}> {/* Wrapper for mobile handling - removed dl-desktop-only to allow mobile display */}
           {toolPanelType && (
             <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="panel">
               <div className="dl-tool-panel__content">
