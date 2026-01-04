@@ -81,6 +81,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     initializeDesign,
     setActiveView: setStoreActiveView,
     setViewLayers,
+    updateProductInfo,
     saveDesign: commitToStore
   } = useDesignStore();
 
@@ -454,6 +455,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [selectedText, setSelectedText] = useState<fabric.IText | null>(null);
   const [selectedArt, setSelectedArt] = useState<fabric.Image | null>(null);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false); // 5.0 Version: Catalog Modal state
+  const [catalogMode, setCatalogMode] = useState<'add' | 'change'>('add'); // 'add' to insert, 'change' to update current
 
   // 鼠标位置调试信息
   const [mouseDebug, setMouseDebug] = useState<{
@@ -773,9 +775,25 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           variants: productDetail.variants, // Ensure variants are preserved
         };
 
-        // Feature: Add Product with Design Inheritance
-        // 1. Add to list
-        setProductList(prev => [...prev, newProductInfo]);
+        // Feature: Add/Change Product with Design Inheritance
+        if (catalogMode === 'change') {
+          console.log('[DesignLab 5.0] UPDATING current product in place:', productInfo.productName, '->', newProductInfo.productName);
+          setProductList(prev => {
+            const index = prev.findIndex(p => p.productId === productInfo.productId);
+            if (index !== -1) {
+              const newList = [...prev];
+              newList[index] = newProductInfo;
+              return newList;
+            }
+            return [...prev, newProductInfo]; // Fallback to add if not found
+          });
+          // Update product identity in existing design store
+          updateProductInfo(newProductInfo.productId, newProductInfo.colorId);
+        } else {
+          console.log('[DesignLab 5.0] Adding NEW product to inventory');
+          setProductList(prev => [...prev, newProductInfo]);
+        }
+
         // 2. Set as active
         setProductInfo(newProductInfo);
 
@@ -3794,7 +3812,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                   selectedColor={productInfo.color}
                   onSelectColor={handleColorSelect}
                   onClose={handleBackToHome}
-                  onChangeProduct={() => setIsCatalogModalOpen(true)}
+                  onChangeProduct={() => {
+                    setCatalogMode('change');
+                    setIsCatalogModalOpen(true);
+                  }}
                 />
               )}
 
@@ -4014,7 +4035,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         <div className="dl-bottom-bar__left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             className="dl-bottom-bar__add-products"
-            onClick={() => setIsCatalogModalOpen(true)}
+            onClick={() => {
+              setCatalogMode('add');
+              setIsCatalogModalOpen(true);
+            }}
             type="button"
             style={{ flexShrink: 0 }}
           >

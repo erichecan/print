@@ -22,6 +22,7 @@ interface DesignState {
 
     // Canvas/View Management
     updateViewConstraints: (viewId: ViewId, constraints: ViewState['constraints']) => void;
+    updateProductInfo: (productId: string, variantId?: string) => void;
 
     // Persistence stubs (to be connected later)
     saveDesign: () => Promise<void>;
@@ -141,6 +142,17 @@ export const useDesignStore = create<DesignState>()(
                 const view = state.document?.views[viewId];
                 if (view) {
                     view.constraints = { ...view.constraints, ...constraints };
+                }
+            });
+        },
+
+        updateProductInfo: (productId, variantId) => {
+            set((state) => {
+                if (state.document) {
+                    state.document.productId = productId;
+                    state.document.variantId = variantId;
+                    state.document.updatedAt = new Date().toISOString();
+                    state.dirty = true;
                 }
             });
         },
