@@ -47,7 +47,9 @@ function serializeObject(obj: any): Layer | null {
         // In a real app, we'd prefer a stable uploadId, but for now use src
         const src = obj.getSrc ? obj.getSrc() : (obj._element?.src || '');
         layer.src = src;
-        layer.name = 'image-layer';
+        layer.src = src;
+        // CRITICAL FIX: Preserve original object name if available, otherwise fallback
+        layer.name = obj.name || 'image-layer';
     }
 
     if (type === 'text') {
@@ -59,7 +61,7 @@ function serializeObject(obj: any): Layer | null {
             textAlign: obj.textAlign,
             opacity: obj.opacity,
         };
-        layer.name = 'text-layer';
+        layer.name = obj.name || 'text-layer';
     }
 
     // Preserve existing metadata if any
@@ -138,11 +140,24 @@ async function restoreLayer(canvas: any, layer: Layer): Promise<void> {
                 skewX: transform.skewX,
                 skewY: transform.skewY,
                 id: layer.id, // Set the ID on the object
+                name: layer.name, // CRITICAL FIX: Restore original object name
                 data: layer.metadata || { id: layer.id, layerType: type }, // Restore metadata
             });
 
             // Add controls hook if needed (will be handled by client)
             canvas.add(fabricObj);
+
+            // CRITICAL FIX: Re-attach custom controls (delete, duplicate, etc.)
+            if (typeof (canvas as any).addIconControlsToObject === 'function') {
+                (canvas as any).addIconControlsToObject(fabricObj);
+            } else if (typeof (canvas as any).addCustomControlsToObject === 'function') {
+                (canvas as any).addCustomControlsToObject(fabricObj);
+            }
+
+            // Ensure borders are off for Text if requested
+            if (type === 'text') {
+                fabricObj.set({ hasBorders: false, borderColor: 'transparent' });
+            }
         }
 
     } catch (err) {

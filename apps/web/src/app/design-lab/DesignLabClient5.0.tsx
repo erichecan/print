@@ -357,7 +357,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   const [canvasInitialized, setCanvasInitialized] = useState(false); // 用于触发图片加载的 state
   const [isLoadingDesign, setIsLoadingDesign] = useState(false); // 防止加载设计时重新添加产品图片
   const cleanupMouseListenerRef = useRef<(() => void) | null>(null); // 保存鼠标监听器清理函数
-  const viewStates = useRef<Record<string, any[]>>({}); // Store objects for each view (state preservation)
+  // viewStates removed in favor of useDesignStore for persistence <!-- id: 360 -->
 
   // 调试：监听 canvasInitialized 变化
   useEffect(() => {
@@ -2298,8 +2298,10 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 添加自定义控件到对象的辅助函数（必须在控件定义之前，以便在控件中使用）
           const addCustomControlsToObject = (obj: fabric.Object) => {
             const objName = (obj as any).name || '';
-  // 只为上传的图片添加自定义控件（排除商品底图）
-            if ((obj as any).name && (obj as any).name.startsWith('image_')) {
+            // 只为上传的图片、艺术字、文本添加自定义控件（排除商品底图）
+            // Updated: Support image_, art_, text_
+            const name = (obj as any).name || '';
+            if (name && (name.startsWith('image_') || name.startsWith('art_') || name.startsWith('text_'))) {
               if (!obj.controls) {
                 obj.controls = {};
               }
@@ -2396,6 +2398,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           (fabricCanvas as any).deleteControl = deleteControl;
           (fabricCanvas as any).duplicateControl = duplicateControl;
           (fabricCanvas as any).addCustomControlsToObject = addCustomControlsToObject;
+          // Alias for consistency if used elsewhere
+          (fabricCanvas as any).addIconControlsToObject = addCustomControlsToObject;
           
           console.log('[DesignLab 5.0] ✅ Custom Ink 样式的自定义控件已创建');
           ========== 旧代码（已注释）结束 ========== */
@@ -2839,32 +2843,18 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     }
           */
           // 添加图标控件到对象的辅助函数
+          // 添加图标控件到对象的辅助函数
           const addIconControlsToObject = (obj: fabric.Object) => {
-            // New implementation using FloatingObjectControls.
-            // This function is now a no-op to disable old Fabric.js controls.
-            // We set hasControls = false to ensure no default controls appear, 
-            // as FloatingObjectControls will handle interactions.
-
-            // Wait, if hasControls=false, we can't select/move easily? 
-            // FloatingObjectControls handles move? No, Fabric handles move.
-            // If hasControls=false, Fabric forbids scaling/rotation via default UI.
-            // Our floating controls implement their own logic.
-            // But we still want 'selectable: true, evented: true'.
-
-            // Let's just make sure we don't add the bad 'Icon' controls.
-            // And potentially hide default controls if we want.
-
-            const objName = (obj as any).name || '';
-            const layerType = (obj as any).data?.layerType;
-            if (objName.startsWith('product') || layerType === 'product') return;
-
-            // Ensure no default controls interfere if we want pure HTML controls
-            // OR, if FloatingObjectControls requires the object to be active, we leave it.
-            // FloatingObjectControls sets selected.hasControls = false in its own logic (I remember seeing that).
-            // So here we primarily just STOP adding the custom icons.
-
-            // We can optionally log here to confirm it's being called but doing nothing.
-            // console.log('[DesignLab 5.0] addIconControlsToObject called (skipped for Floating Controls)');
+            // Re-enabled: Call the imported applyCornerControls function
+            const canvas = fabricCanvasRef.current;
+            if (typeof applyCornerControls === 'function' && canvas) {
+              applyCornerControls({ canvas, obj });
+              // Ensure coordinates are updated for control placement
+              obj.setCoords();
+              canvas.requestRenderAll();
+            } else {
+              console.warn('[DesignLab 5.0] applyCornerControls or canvas not found');
+            }
           };
 
           // 保存到 canvas，以便后续使用
@@ -2975,60 +2965,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       }
     }
 
-    // Restore objects for the new view (Clear old user objects first)
-    // We do this BEFORE async image load because image stays at back anyway, 
-    // and we want UI to feel responsive.
-    const restoreViewObjects = () => {
-      const canvas = fabricCanvasRef.current;
-      if (!canvas) return;
-      const fabric = fabricRef.current;
-      if (!fabric) return;
-
-      // 1. Remove current USER objects (keep base image until replaced)
-      const objectsToRemove = canvas.getObjects().filter((obj: any) => {
-        const name = obj.name || '';
-        const layerType = obj.data?.layerType;
-        return (
-          name !== 'product-image-base' &&
-          name !== 'printable-area-group' &&
-          layerType !== 'guide' &&
-          layerType !== 'product-image'
-        );
-      });
-      objectsToRemove.forEach(obj => canvas.remove(obj));
-
-      // 2. Restore saved objects
-      const savedObjects = viewStates.current[currentView];
-      if (savedObjects && savedObjects.length > 0) {
-        console.log(`[DesignLab 5.0] Restoring ${savedObjects.length} objects for view: ${currentView} `);
-        fabric.util.enlivenObjects(savedObjects, (enlivenedObjects: fabric.Object[]) => {
-          enlivenedObjects.forEach((obj) => {
-            canvas.add(obj);
-            // Re-attach controls if needed (icon controls)
-            if (typeof (canvas as any).addIconControlsToObject === 'function') {
-              (canvas as any).addIconControlsToObject(obj);
-            }
-          });
-          canvas.renderAll();
-        }, ""); // namespace string
-      } else {
-        canvas.renderAll();
-      }
-
-      // Re-add printable area guide on top (hidden but present)
-      addPrintableArea(currentView);
-    };
-
-    // CRITICAL FIX: Only restore view objects if the VIEW has actually changed.
-    // If only the product changed (but view is same), we want to KEEP existing objects.
+    // CRITICAL FIX: Restoration is now handled in handleViewChange using useDesignStore.
+    // The previous restoreViewObjects logic was clearing the canvas and conflicting 
+    // with the store-based restoration, which caused Text/Art objects to disappear.
     if (prevViewRef.current !== currentView) {
-      console.log('[DesignLab 5.0] View changed (Restoring objects):', { from: prevViewRef.current, to: currentView });
-      restoreViewObjects();
+      console.log('[DesignLab 5.0] View changed (handled by handleViewChange):', { from: prevViewRef.current, to: currentView });
       prevViewRef.current = currentView;
     } else {
       console.log('[DesignLab 5.0] Product change prevented canvas reset (Preserving objects)');
-      // If product changed, we still ensure printable area is correct (it might depend on product spec later, right now view based)
-      // But we DO NOT clear the canvas.
     }
 
     // 小延迟确保 Canvas 容器样式已经稳定
@@ -3179,6 +3123,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
             // 步骤2：自动选中图片，显示灰色边框
             canvas.setActiveObject(fabricImage);
+
+            // CRITICAL FIX: Sync to store immediately (Uniform persistence)
+            const layers = serializeCanvas(canvas);
+            setViewLayers(currentView, layers);
+            commitToStore();
+            console.log('[DesignLab 5.0] Image added: synced to store');
+
             // 步骤2：确保选中时边框正确显示
             fabricImage.set({
               hasBorders: false,
@@ -3267,8 +3218,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         selectable: true,
         evented: true,
         hasControls: true,
-        hasBorders: false,
-        borderColor: '#808080',
+        hasBorders: false, // Ensure no border
+        borderColor: 'transparent',
         borderScaleFactor: 2,
         name: `text_${Date.now()} `,
         data: {
@@ -3293,7 +3244,14 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       setSelectedImage(null);
       setSelectedArt(null); // Add Art: 切换到文本编辑时清理艺术素材
       setToolPanelType('edit-text');
+      setToolPanelType('edit-text');
       setActiveTool('text');
+
+      // CRITICAL FIX: Sync to store immediately
+      const layers = serializeCanvas(canvas);
+      setViewLayers(currentView, layers);
+      commitToStore();
+      console.log('[DesignLab 5.0] Add Text: synced to store');
     } catch (error) {
       console.error('[DesignLab 5.0] Add Text failed:', error);
     }
@@ -3394,6 +3352,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         setSelectedText(null);
         setToolPanelType('edit-art');
         setActiveTool('art');
+
+        // CRITICAL FIX: Sync to store immediately
+        const layers = serializeCanvas(canvas);
+        setViewLayers(currentView, layers);
+        commitToStore();
+        console.log('[DesignLab 5.0] Add Art: synced to store');
 
         console.log('[DesignLab 5.0] ✅ Art added to canvas:', {
           name: (fabricImage as any).name,
