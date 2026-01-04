@@ -62,8 +62,9 @@ const LEFT_CHEST_HEIGHT = 180; // 600 * 0.3
 const LEFT_CHEST_OFFSET_X = 150; // 500 * 0.3
 const LEFT_CHEST_OFFSET_Y = -390; // -1300 * 0.3
 // Sleeve 区域
-const SLEEVE_PRINTABLE_WIDTH = 300; // 1000 * 0.3
-const SLEEVE_PRINTABLE_HEIGHT = 300; // 1000 * 0.3
+// Sleeve 区域 - Expanded by 200 units (Conceptually larger area, but adjusted down to 500)
+const SLEEVE_PRINTABLE_WIDTH = 500; // 300 + 200
+const SLEEVE_PRINTABLE_HEIGHT = 500; // 300 + 200
 
 // 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
@@ -1365,7 +1366,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     groupObjects.push(mainRect);
 
     // 2. View Label (Top-Left of Main Box)
-    const labelText = view === 'front' ? 'Front' : 'Back';
+    let labelText = 'Front';
+    if (view === 'back') labelText = 'Back';
+    if (view === 'left-sleeve' || view === 'sleeve') labelText = 'L.Sleeve';
+    if (view === 'right-sleeve') labelText = 'R.Sleeve';
+
     const mainLabel = new fabric.Text(labelText, {
       left: -areaWidth / 2 + 10,
       top: -areaHeight / 2 + 10,
@@ -1412,9 +1417,16 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       groupObjects.push(leftChestRect, leftChestLabel);
     }
 
+    // Offset Logic:
+    // Left Sleeve: +100 (Right)
+    // Right Sleeve: -100 (Left) -> 200 units left of Left Sleeve
+    let offsetX = 0;
+    if (view === 'sleeve' || view === 'left-sleeve') offsetX = 100;
+    if (view === 'right-sleeve') offsetX = -100;
+
     const group = new fabric.Group(groupObjects, {
-      left: CANVAS_WIDTH / 2 - 6, // Offset by -6 logical units to handle asymmetry (120*0.3 vs 160*0.3)
-      top: CANVAS_HEIGHT / 2,
+      left: CANVAS_WIDTH / 2 - 6 + offsetX,
+      top: CANVAS_HEIGHT / 2, // Centered vertically
       originX: 'center',
       originY: 'center',
       selectable: false,
