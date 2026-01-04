@@ -32,7 +32,7 @@ import * as fabric from 'fabric';
 import { useDesignStore } from './store/useDesignStore'; // Import Store
 import { serializeCanvas, applyViewState } from './utils/serialization'; // Import Serialization
 import { loadFromLocal } from './store/persistence'; // Import Persistence
-import ProductCatalogModal from './components/modals/ProductCatalogModal';
+import MobileProductCatalogModal from './components/modals/MobileProductCatalogModal';
 import { PRODUCT_COLORS } from '@/lib/product-data';
 // 产品模块：导入产品选择器和颜色选择器
 import ProductSelectorModal from './modules/product/ProductSelectorModal';
@@ -4267,7 +4267,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         currentProductId={productInfo.productId || ''}
       />
 
-      <ProductCatalogModal
+      <MobileProductCatalogModal
         isOpen={isCatalogModalOpen}
         onClose={() => setIsCatalogModalOpen(false)}
         onSelectProduct={handleProductSelect}

@@ -934,8 +934,9 @@ exports.getProductBySlug = async (req, res) => {
     }
 
     // 修复：Product id 是 UUID，不是数字，应该始终使用 slug 查找
-    // 之前的代码错误地尝试将数字 slug 当作 id 查找，导致 Prisma 查询失败
-    const product = await prisma.product.findUnique({
+    // 之前代码错误地尝试将数字 slug 当作 id 查找，导致 Prisma 查询失败
+    // 增加：支持通过 id 查找（回退方案），以支持 /products/[uuid] 格式
+    let product = await prisma.product.findUnique({
       where: { slug },
       select: {
         id: true,
@@ -1008,6 +1009,84 @@ exports.getProductBySlug = async (req, res) => {
         },
       },
     });
+
+    // 如果 slug 没找到，且 slug 看起来像个 UUID，尝试按 id 查找
+    if (!product && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)) {
+      logger.info('Product not found by slug, trying by ID', { id: slug });
+      product = await prisma.product.findUnique({
+        where: { id: slug },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          longDescription: true,
+          basePrice: true,
+          salePrice: true,
+          createdAt: true,
+          updatedAt: true,
+          category: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          brand: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          images: {
+            select: {
+              id: true,
+              url: true,
+              alt: true,
+              sortOrder: true,
+            },
+            orderBy: { sortOrder: 'asc' },
+          },
+          variants: {
+            select: {
+              id: true,
+              sku: true,
+              color: true,
+              colorHex: true,
+              size: true,
+              priceAdjustment: true,
+              stockQuantity: true,
+              imageUrl: true,
+            },
+            orderBy: [{ size: 'asc' }, { color: 'asc' }],
+          },
+          reviews: {
+            take: 10,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              rating: true,
+              title: true,
+              comment: true,
+              isVerifiedPurchase: true,
+              createdAt: true,
+            },
+          },
+          collectionProducts: {
+            select: {
+              collection: {
+                select: {
+                  id: true,
+                  name: true,
+                  slug: true,
+                },
+              },
+            },
+          },
+        },
+      });
+    }
 
     if (!product) {
       logger.info('Product not found', { slug: req.params.slug });
