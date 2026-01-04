@@ -5,6 +5,19 @@
 /* This file contains ALL mobile-specific styles for the Design Lab.
    It is ONLY imported in MobileDesignLab.tsx and should NOT affect desktop. */
 
+/* Desktop: Hide ALL mobile elements by default */
+.dl-mobile-layout,
+.dl-mobile-header,
+.dl-mobile-bottom-nav,
+.dl-mobile-floating-controls,
+.dl-mobile-view-switcher,
+.dl-mobile-edit-toolbar-container,
+.dl-mobile-product-dashboard,
+.dl-mobile-edit-header,
+.dl-mobile-edit-toolbar {
+    display: none !important;
+}
+
 @media (max-width: 768px) {
 
     /* 1. Hide Desktop Elements */

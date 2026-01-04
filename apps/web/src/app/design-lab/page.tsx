@@ -5,7 +5,7 @@
 import { Suspense } from 'react';
 import { generateSEOMetadata } from '@/lib/seo';
 // 5.0 版本：临时切换到极简版本进行开发
-import DesignLabClient from './DesignLabClient5.0';
+import DesignLabRouter from './DesignLabRouter';
 // import DesignLabClient from './DesignLabClient'; // 4.0 版本（已备份）
 import type { Metadata } from 'next';
 import { getBackendApiBaseUrl } from '@/config/env';
@@ -28,16 +28,16 @@ export default async function DesignLabPage({
 }: {
   searchParams: Promise<{ productId?: string; colorId?: string; designId?: string; variantId?: string; source?: string }>;
 }) {
-// Design Lab 4.0: 服务端预取产品数据（可选，不阻塞）
+  // Design Lab 4.0: 服务端预取产品数据（可选，不阻塞）
   const params = await searchParams;
   let initialProductData = null;
-  
+
   if (params?.productId || params?.variantId) {
     try {
       const apiBaseUrl = getBackendApiBaseUrl();
       const productId = params.productId || (params.variantId ? undefined : null);
       const variantId = params.variantId;
-      
+
       // 使用服务端 fetch，不依赖客户端 API
       if (variantId) {
         const response = await fetch(`${apiBaseUrl}/products/variant/${variantId}`, {
@@ -66,34 +66,33 @@ export default async function DesignLabPage({
     }
   }
 
-// Design Lab 4.0: 使用 layout 的分阶段初始化
+  // Design Lab 4.0: 使用 layout 的分阶段初始化
   // layout.tsx 会自动处理 Boot/Config/Data Prefetch/Feature Hydration 阶段
-// 修复：DesignLabClient5.0 使用 useSearchParams()，必须用 Suspense 包裹
+  // 修复：DesignLabClient5.0 使用 useSearchParams()，必须用 Suspense 包裹
   return (
     <Suspense fallback={
-      <section style={{ 
-        minHeight: '100vh', 
-        display: 'grid', 
-        placeItems: 'center', 
-        background: '#f5f5f5' 
+      <section style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        background: '#f5f5f5'
       }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#666' }}>
             Preparing the Design Lab…
           </div>
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
-            border: '4px solid #f3f3f3', 
-            borderTop: '4px solid #3498db', 
-            borderRadius: '50%', 
-            margin: '0 auto' 
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3498db',
+            borderRadius: '50%',
+            margin: '0 auto'
           }} />
         </div>
       </section>
     }>
-      <DesignLabClient initialProductData={initialProductData} />
+      <DesignLabRouter initialProductData={initialProductData} />
     </Suspense>
   );
 }
-

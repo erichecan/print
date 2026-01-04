@@ -48,7 +48,8 @@ import GetPriceFlowModal, {
   GetPriceFlowStep
 } from './components/modals/GetPriceFlowModal';
 import { usePricing } from './modules/pricing/usePricing';
-import './design-lab.css';
+import './mobile-design-lab.css';
+import { MobileDesignLab } from './MobileDesignLab';
 
 // 画布常量 - Optimized to 1200x1440 to match Custom Ink product image resolution (1200px)
 const CANVAS_WIDTH = 1200;
@@ -71,7 +72,7 @@ interface DesignLabClient5Props {
   initialProductData?: any; // 服务端预取的产品数据（暂时未使用）
 }
 
-const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData }) => {
+const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProductData }) => {
   // 5.0 版本：功能2 - 从 URL 参数获取 productId/colorId
   const searchParams = useSearchParams();
 
@@ -4315,8 +4316,79 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         onSelectColor={handleColorSelect}
         productName={productInfo.productName || ''}
       />
+
+
+      {/* 5.0 Mobile Refactor: Render Mobile Component */}
+      <MobileDesignLab
+        currentView={currentView}
+        designId={designId}
+        designName={designName}
+        activeTool={activeTool}
+        toolPanelType={toolPanelType} // Pass toolPanelType to know if we are in edit mode
+        productInfo={productInfo}
+        productList={productList}
+        handleToolClick={handleToolClick}
+        handleSaveRequest={handleSaveRequest}
+        handleViewChange={handleViewChange}
+        handleSaveDesign={handleSaveDesign}
+        setShowGetPriceModal={setShowGetPriceModal}
+        setCatalogMode={setCatalogMode}
+        setIsCatalogModalOpen={setIsCatalogModalOpen}
+        handleObjectAction={(action, payload) => {
+          const canvas = fabricCanvasRef.current;
+          const activeObj = canvas?.getActiveObject();
+          if (!canvas || !activeObj) return;
+
+          switch (action) {
+            case 'rotate':
+              activeObj.rotate((activeObj.angle || 0) + 90);
+              break;
+            case 'flip':
+              activeObj.set('flipX', !activeObj.flipX);
+              break;
+            case 'duplicate':
+              activeObj.clone((cloned: any) => {
+                canvas.discardActiveObject();
+                cloned.set({
+                  left: (cloned.left || 0) + 20,
+                  top: (cloned.top || 0) + 20,
+                  evented: true,
+                });
+                if (cloned.type === 'activeSelection') {
+                  cloned.canvas = canvas;
+                  cloned.forEachObject((obj: any) => {
+                    canvas.add(obj);
+                  });
+                  cloned.setCoords();
+                } else {
+                  canvas.add(cloned);
+                }
+                canvas.setActiveObject(cloned);
+                canvas.requestRenderAll();
+              });
+              return; // clone is async
+            case 'center':
+              activeObj.center();
+              break;
+            case 'layer-up':
+              activeObj.bringForward();
+              break;
+            case 'layer-down':
+              activeObj.sendBackwards();
+              break;
+            case 'delete':
+              canvas.remove(activeObj);
+              canvas.discardActiveObject();
+              handleBackToHome(); // Go back to home if deleted
+              break;
+          }
+          canvas.requestRenderAll();
+          handleCanvasUpdate();
+        }}
+        selectedObject={selectedImage || selectedText || selectedArt || null} // Pass general selected object state if needed or rely on canvas
+      />
     </div >
   );
 };
 
-export default DesignLabClient5;
+export default MobileDesignLabClient;
