@@ -3955,758 +3955,760 @@
     margin: 0;
   }
 
-  /* 7.3 移动端 (320px - 767px) - 阶段 7 实现 */
-  @media (max-width: 768px) {
-    .design-lab-new {
-      grid-template-columns: 1fr;
-      grid-template-rows: var(--dl-header-height) 1fr var(--dl-bottom-bar-height);
-    }
+}
 
-    .dl-main {
-      grid-template-columns: 1fr;
-    }
-
-    /* 移动端隐藏 Rail，可以考虑改为底部导航 */
-    .dl-rail {
-      display: none;
-    }
-
-    /* 移动端隐藏工具面板，可以考虑改为底部抽屉 */
-    .dl-tool-panel {
-      display: none;
-    }
-
-    /* 移动端隐藏 Sidebar */
-    .dl-sidebar {
-      display: none;
-    }
-
-    /* Guide Panel 在移动端调整为静态定位 */
-    .dl-guide-panel {
-      position: static;
-      transform: none;
-      margin: var(--dl-space-4);
-      max-width: 100%;
-    }
-
-    /* Header 在移动端优化 */
-    .dl-header {
-      padding: 0 var(--dl-space-3);
-    }
-
-    .dl-header__breadcrumb {
-      font-size: var(--dl-font-sm);
-    }
-
-    .dl-header__breadcrumb-link--button,
-    .dl-header__breadcrumb-current--button {
-      padding: var(--dl-space-1) var(--dl-space-2);
-      font-size: var(--dl-font-sm);
-    }
-
-    /* Bottom Bar 在移动端调整为垂直布局 */
-    .dl-bottom-bar {
-      flex-direction: column;
-      height: auto;
-      min-height: var(--dl-bottom-bar-height);
-      padding: var(--dl-space-3);
-      gap: var(--dl-space-3);
-    }
-
-    .dl-bottom-bar__left,
-    .dl-bottom-bar__right {
-      width: 100%;
-      justify-content: space-between;
-    }
-
-    /* 按钮在移动端优化大小，适合触摸 */
-    .dl-bottom-bar__btn {
-      min-width: 140px;
-      height: 44px;
-      /* 移动端按钮高度稍微增加，适合触摸 */
-      font-size: var(--dl-font-base);
-      padding: var(--dl-space-2) var(--dl-space-4);
-    }
-
-    /* Canvas 在移动端优化 */
-    .dl-canvas {
-      padding: var(--dl-space-2);
-    }
-
-    .dl-canvas__product {
-      max-width: 100%;
-      max-height: 60vh;
-      /* 移动端限制产品图片高度 */
-    }
+/* 7.3 移动端 (320px - 767px) - 阶段 7 实现 */
+@media (max-width: 768px) {
+  .design-lab-new {
+    grid-template-columns: 1fr;
+    grid-template-rows: var(--dl-header-height) 1fr var(--dl-bottom-bar-height);
   }
 
-  /* ============================================
-   Layer Management Panel - 图层管理面板
-实现图层管理功能，对齐 Custom Ink
-   ============================================ */
-  .dl-layer-management-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: var(--dl-bg-panel);
-    border-right: 1px solid var(--dl-border-color);
+  .dl-main {
+    grid-template-columns: 1fr;
   }
 
-  .dl-layer-management-panel__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--dl-space-3) var(--dl-space-4);
-    border-bottom: 1px solid var(--dl-border-color);
-    gap: var(--dl-space-2);
+  /* 移动端隐藏 Rail，可以考虑改为底部导航 */
+  .dl-rail {
+    display: none;
   }
 
-  .dl-layer-management-panel__title {
-    font-size: var(--dl-font-md);
-    font-weight: var(--dl-font-weight-medium);
-    color: var(--dl-text-primary);
-    margin: 0;
+  /* 移动端隐藏工具面板，可以考虑改为底部抽屉 */
+  .dl-tool-panel {
+    display: none;
   }
 
-  .dl-layer-management-panel__count {
+  /* 移动端隐藏 Sidebar */
+  .dl-sidebar {
+    display: none;
+  }
+
+  /* Guide Panel 在移动端调整为静态定位 */
+  .dl-guide-panel {
+    position: static;
+    transform: none;
+    margin: var(--dl-space-4);
+    max-width: 100%;
+  }
+
+  /* Header 在移动端优化 */
+  .dl-header {
+    padding: 0 var(--dl-space-3);
+  }
+
+  .dl-header__breadcrumb {
     font-size: var(--dl-font-sm);
-    color: var(--dl-text-secondary);
-    background: var(--dl-bg-primary);
-    padding: 2px 8px;
-    border-radius: 12px;
   }
 
-  .dl-layer-management-panel__group-btn {
-    display: flex;
-    align-items: center;
-    gap: var(--dl-space-1);
+  .dl-header__breadcrumb-link--button,
+  .dl-header__breadcrumb-current--button {
     padding: var(--dl-space-1) var(--dl-space-2);
-    background: var(--dl-color-primary);
-    color: white;
-    border: none;
-    border-radius: var(--dl-radius-sm);
     font-size: var(--dl-font-sm);
-    cursor: pointer;
-    transition: background var(--dl-transition-base);
   }
 
-  .dl-layer-management-panel__group-btn:hover {
-    background: rgb(24, 46, 168);
+  /* Bottom Bar 在移动端调整为垂直布局 */
+  .dl-bottom-bar {
+    flex-direction: column;
+    height: auto;
+    min-height: var(--dl-bottom-bar-height);
+    padding: var(--dl-space-3);
+    gap: var(--dl-space-3);
   }
 
-  .dl-layer-management-panel__list {
-    flex: 1;
-    overflow-y: auto;
+  .dl-bottom-bar__left,
+  .dl-bottom-bar__right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* 按钮在移动端优化大小，适合触摸 */
+  .dl-bottom-bar__btn {
+    min-width: 140px;
+    height: 44px;
+    /* 移动端按钮高度稍微增加，适合触摸 */
+    font-size: var(--dl-font-base);
+    padding: var(--dl-space-2) var(--dl-space-4);
+  }
+
+  /* Canvas 在移动端优化 */
+  .dl-canvas {
     padding: var(--dl-space-2);
   }
 
-  .dl-layer-management-panel__empty {
-    text-align: center;
-    padding: var(--dl-space-6);
-    color: var(--dl-text-secondary);
+  .dl-canvas__product {
+    max-width: 100%;
+    max-height: 60vh;
+    /* 移动端限制产品图片高度 */
   }
+}
 
-  .dl-layer-management-panel__empty-hint {
-    font-size: var(--dl-font-sm);
-    margin-top: var(--dl-space-2);
-  }
+/* ============================================
+   Layer Management Panel - 图层管理面板
+实现图层管理功能，对齐 Custom Ink
+   ============================================ */
+.dl-layer-management-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--dl-bg-panel);
+  border-right: 1px solid var(--dl-border-color);
+}
 
-  .dl-layer-management-panel__group {
-    margin-bottom: var(--dl-space-2);
-    border: 1px solid var(--dl-border-color);
-    border-radius: var(--dl-radius-sm);
-    background: var(--dl-bg-primary);
-  }
+.dl-layer-management-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--dl-space-3) var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+  gap: var(--dl-space-2);
+}
 
-  .dl-layer-management-panel__group-header {
-    display: flex;
-    align-items: center;
-    padding: var(--dl-space-2) var(--dl-space-3);
-    cursor: pointer;
-    user-select: none;
-    gap: var(--dl-space-2);
-  }
+.dl-layer-management-panel__title {
+  font-size: var(--dl-font-md);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
 
-  .dl-layer-management-panel__group-header:hover {
-    background: rgba(0, 0, 0, 0.02);
-  }
+.dl-layer-management-panel__count {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  background: var(--dl-bg-primary);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
 
-  .dl-layer-management-panel__group-toggle {
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    color: var(--dl-text-secondary);
-  }
+.dl-layer-management-panel__group-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-1);
+  padding: var(--dl-space-1) var(--dl-space-2);
+  background: var(--dl-color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-sm);
+  cursor: pointer;
+  transition: background var(--dl-transition-base);
+}
 
-  .dl-layer-management-panel__group-name {
-    font-size: var(--dl-font-sm);
-    font-weight: var(--dl-font-weight-medium);
-    color: var(--dl-text-primary);
-    flex: 1;
-  }
+.dl-layer-management-panel__group-btn:hover {
+  background: rgb(24, 46, 168);
+}
 
-  .dl-layer-management-panel__group-count {
-    font-size: var(--dl-font-sm);
-    color: var(--dl-text-secondary);
-  }
+.dl-layer-management-panel__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--dl-space-2);
+}
 
-  .dl-layer-management-panel__group-controls {
-    display: flex;
-    gap: var(--dl-space-1);
-  }
+.dl-layer-management-panel__empty {
+  text-align: center;
+  padding: var(--dl-space-6);
+  color: var(--dl-text-secondary);
+}
 
-  .dl-layer-management-panel__group-layers {
-    padding-left: var(--dl-space-4);
-    border-top: 1px solid var(--dl-border-color);
-    background: var(--dl-bg-panel);
-  }
+.dl-layer-management-panel__empty-hint {
+  font-size: var(--dl-font-sm);
+  margin-top: var(--dl-space-2);
+}
 
-  .dl-layer-management-panel__item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: var(--dl-space-2) var(--dl-space-3);
-    margin-bottom: var(--dl-space-1);
-    border-radius: var(--dl-radius-sm);
-    cursor: pointer;
-    transition: background var(--dl-transition-base);
-    user-select: none;
-  }
+.dl-layer-management-panel__group {
+  margin-bottom: var(--dl-space-2);
+  border: 1px solid var(--dl-border-color);
+  border-radius: var(--dl-radius-sm);
+  background: var(--dl-bg-primary);
+}
 
-  .dl-layer-management-panel__item:hover {
-    background: rgba(0, 0, 0, 0.02);
-  }
+.dl-layer-management-panel__group-header {
+  display: flex;
+  align-items: center;
+  padding: var(--dl-space-2) var(--dl-space-3);
+  cursor: pointer;
+  user-select: none;
+  gap: var(--dl-space-2);
+}
 
-  .dl-layer-management-panel__item.is-selected {
-    background: rgba(0, 102, 204, 0.1);
-    border-left: 3px solid var(--dl-color-primary);
-  }
+.dl-layer-management-panel__group-header:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
 
-  .dl-layer-management-panel__item.is-dragging {
-    opacity: 0.5;
-  }
+.dl-layer-management-panel__group-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--dl-text-secondary);
+}
 
-  .dl-layer-management-panel__item--nested {
-    padding-left: var(--dl-space-6);
-    font-size: var(--dl-font-sm);
-  }
+.dl-layer-management-panel__group-name {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+  flex: 1;
+}
 
-  .dl-layer-management-panel__item-content {
-    display: flex;
-    align-items: center;
-    gap: var(--dl-space-2);
-    flex: 1;
-    min-width: 0;
-  }
+.dl-layer-management-panel__group-count {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+}
 
-  .dl-layer-management-panel__item-icon {
-    font-size: var(--dl-font-base);
-    width: 20px;
-    text-align: center;
-    flex-shrink: 0;
-  }
+.dl-layer-management-panel__group-controls {
+  display: flex;
+  gap: var(--dl-space-1);
+}
 
-  .dl-layer-management-panel__item-name {
-    font-size: var(--dl-font-sm);
-    color: var(--dl-text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+.dl-layer-management-panel__group-layers {
+  padding-left: var(--dl-space-4);
+  border-top: 1px solid var(--dl-border-color);
+  background: var(--dl-bg-panel);
+}
 
-  .dl-layer-management-panel__item-controls {
-    display: flex;
-    gap: var(--dl-space-1);
-    opacity: 0;
-    transition: opacity var(--dl-transition-base);
-  }
+.dl-layer-management-panel__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--dl-space-2) var(--dl-space-3);
+  margin-bottom: var(--dl-space-1);
+  border-radius: var(--dl-radius-sm);
+  cursor: pointer;
+  transition: background var(--dl-transition-base);
+  user-select: none;
+}
 
-  .dl-layer-management-panel__item:hover .dl-layer-management-panel__item-controls {
-    opacity: 1;
-  }
+.dl-layer-management-panel__item:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
 
-  .dl-layer-management-panel__control-btn {
-    background: none;
-    border: none;
-    padding: var(--dl-space-1);
-    cursor: pointer;
-    font-size: var(--dl-font-base);
-    color: var(--dl-text-secondary);
-    transition: color var(--dl-transition-base);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--dl-radius-sm);
-  }
+.dl-layer-management-panel__item.is-selected {
+  background: rgba(0, 102, 204, 0.1);
+  border-left: 3px solid var(--dl-color-primary);
+}
 
-  .dl-layer-management-panel__control-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-    color: var(--dl-text-primary);
-  }
+.dl-layer-management-panel__item.is-dragging {
+  opacity: 0.5;
+}
 
-  .dl-layer-management-panel__control-btn.is-visible {
-    color: var(--dl-color-primary);
-  }
+.dl-layer-management-panel__item--nested {
+  padding-left: var(--dl-space-6);
+  font-size: var(--dl-font-sm);
+}
 
-  .dl-layer-management-panel__control-btn.is-locked {
-    color: var(--dl-color-accent);
-  }
+.dl-layer-management-panel__item-content {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  flex: 1;
+  min-width: 0;
+}
 
-  /* ============================================
+.dl-layer-management-panel__item-icon {
+  font-size: var(--dl-font-base);
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.dl-layer-management-panel__item-name {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dl-layer-management-panel__item-controls {
+  display: flex;
+  gap: var(--dl-space-1);
+  opacity: 0;
+  transition: opacity var(--dl-transition-base);
+}
+
+.dl-layer-management-panel__item:hover .dl-layer-management-panel__item-controls {
+  opacity: 1;
+}
+
+.dl-layer-management-panel__control-btn {
+  background: none;
+  border: none;
+  padding: var(--dl-space-1);
+  cursor: pointer;
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-secondary);
+  transition: color var(--dl-transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--dl-radius-sm);
+}
+
+.dl-layer-management-panel__control-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--dl-text-primary);
+}
+
+.dl-layer-management-panel__control-btn.is-visible {
+  color: var(--dl-color-primary);
+}
+
+.dl-layer-management-panel__control-btn.is-locked {
+  color: var(--dl-color-accent);
+}
+
+/* ============================================
    Product Colors Panel
 产品颜色选择面板样式
    ============================================ */
 
-  .dl-product-colors-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
+.dl-product-colors-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
-  .dl-product-colors-panel__content {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--dl-space-6);
-    display: flex;
-    flex-direction: column;
-    gap: var(--dl-space-4);
-  }
+.dl-product-colors-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--dl-space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-4);
+}
 
-  .dl-product-colors-panel__product-name {
-    font-size: var(--dl-font-sm);
-    font-weight: var(--dl-font-weight-medium);
-    margin-bottom: var(--dl-space-1);
-    color: var(--dl-text-primary);
-  }
+.dl-product-colors-panel__product-name {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  margin-bottom: var(--dl-space-1);
+  color: var(--dl-text-primary);
+}
 
-  .dl-product-colors-panel__section {
-    padding-bottom: var(--dl-space-4);
-    margin-bottom: var(--dl-space-4);
-    border-bottom: 1px solid var(--dl-border-color);
-  }
+.dl-product-colors-panel__section {
+  padding-bottom: var(--dl-space-4);
+  margin-bottom: var(--dl-space-4);
+  border-bottom: 1px solid var(--dl-border-color);
+}
 
-  .dl-product-colors-panel__section:last-child {
-    border-bottom: none;
-  }
+.dl-product-colors-panel__section:last-child {
+  border-bottom: none;
+}
 
-  .dl-product-colors-panel__section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--dl-space-2);
-  }
+.dl-product-colors-panel__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--dl-space-2);
+}
 
-  .dl-product-colors-panel__section-label {
-    font-weight: var(--dl-font-weight-bold);
-    font-size: var(--dl-font-base);
-    color: var(--dl-text-primary);
-  }
+.dl-product-colors-panel__section-label {
+  font-weight: var(--dl-font-weight-bold);
+  font-size: var(--dl-font-base);
+  color: var(--dl-text-primary);
+}
 
-  .dl-product-colors-panel__section-title {
-    font-weight: var(--dl-font-weight-bold);
-    font-size: var(--dl-font-base);
-    margin-bottom: var(--dl-space-3);
-  }
+.dl-product-colors-panel__section-title {
+  font-weight: var(--dl-font-weight-bold);
+  font-size: var(--dl-font-base);
+  margin-bottom: var(--dl-space-3);
+}
 
-  .dl-product-colors-panel__section-title {
-    font-size: var(--dl-font-md);
-    font-weight: var(--dl-font-weight-bold);
-    color: var(--dl-text-primary);
-    margin: 0;
-  }
+.dl-product-colors-panel__section-title {
+  font-size: var(--dl-font-md);
+  font-weight: var(--dl-font-weight-bold);
+  color: var(--dl-text-primary);
+  margin: 0;
+}
 
-  .dl-product-colors-panel__decoration-method {
-    display: flex;
-    align-items: center;
-    gap: var(--dl-space-2);
-    color: var(--dl-text-primary);
-    font-size: var(--dl-font-base);
-  }
+.dl-product-colors-panel__decoration-method {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  color: var(--dl-text-primary);
+  font-size: var(--dl-font-base);
+}
 
-  .dl-product-colors-panel__decoration-method svg:first-child {
-    color: var(--dl-color-accent);
-    width: 16px;
-    height: 16px;
-  }
+.dl-product-colors-panel__decoration-method svg:first-child {
+  color: var(--dl-color-accent);
+  width: 16px;
+  height: 16px;
+}
 
-  .dl-product-colors-panel__checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: var(--dl-space-2);
-    font-size: var(--dl-font-sm);
-    color: var(--dl-text-primary);
-    cursor: pointer;
-  }
+.dl-product-colors-panel__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-2);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+  cursor: pointer;
+}
 
-  .dl-product-colors-panel__checkbox {
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-  }
+.dl-product-colors-panel__checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
 
-  .dl-product-colors-panel__hint {
-    font-size: var(--dl-font-sm);
-    color: var(--dl-text-secondary);
-    margin: var(--dl-space-2) 0;
-    padding: var(--dl-space-2);
-    background: rgba(0, 102, 204, 0.05);
-    border-radius: var(--dl-radius-sm);
-  }
+.dl-product-colors-panel__hint {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: var(--dl-space-2) 0;
+  padding: var(--dl-space-2);
+  background: rgba(0, 102, 204, 0.05);
+  border-radius: var(--dl-radius-sm);
+}
 
-  /* 更新 Product Colors Panel 样式以匹配 Add Text (Round 2 Refinements) */
-  .dl-product-colors-panel__colors-grid {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 5px !important;
-    /* Updated to 5px gap */
-    margin-top: var(--dl-space-3);
-    justify-content: flex-start;
-  }
+/* 更新 Product Colors Panel 样式以匹配 Add Text (Round 2 Refinements) */
+.dl-product-colors-panel__colors-grid {
+  display: flex !important;
+  flex-wrap: wrap;
+  gap: 5px !important;
+  /* Updated to 5px gap */
+  margin-top: var(--dl-space-3);
+  justify-content: flex-start;
+}
 
-  .dl-product-colors-panel__color-swatch {
-    width: 22px !important;
-    /* Updated to 22px */
-    height: 22px !important;
-    /* Updated to 22px */
-    min-width: 0 !important;
-    /* Override global button min-width */
-    min-height: 0 !important;
-    /* Override global button min-height */
-    max-width: 22px !important;
-    aspect-ratio: 1 / 1 !important;
-    /* Force square shape */
-    display: block !important;
-    /* Ensure dimensions are respected */
-    border-radius: 4px !important;
-    /* Rounded corners (roughly 20% of size) */
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    position: relative;
-    padding: 0;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-  }
+.dl-product-colors-panel__color-swatch {
+  width: 22px !important;
+  /* Updated to 22px */
+  height: 22px !important;
+  /* Updated to 22px */
+  min-width: 0 !important;
+  /* Override global button min-width */
+  min-height: 0 !important;
+  /* Override global button min-height */
+  max-width: 22px !important;
+  aspect-ratio: 1 / 1 !important;
+  /* Force square shape */
+  display: block !important;
+  /* Ensure dimensions are respected */
+  border-radius: 4px !important;
+  /* Rounded corners (roughly 20% of size) */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
 
-  .dl-product-colors-panel__color-swatch:hover:not(:disabled) {
-    transform: scale(1.1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    border-color: rgba(0, 0, 0, 0.2);
-  }
+.dl-product-colors-panel__color-swatch:hover:not(:disabled) {
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.2);
+}
 
-  .dl-product-colors-panel__color-swatch.is-selected {
-    /* Selected state for grid items is subtle in screenshot, mainly header changes */
-    /* But we can add a focus ring or scale effect */
-    border: 2px solid #fff;
-    box-shadow: 0 0 0 2px #ccc;
-    transform: scale(1.1);
-  }
+.dl-product-colors-panel__color-swatch.is-selected {
+  /* Selected state for grid items is subtle in screenshot, mainly header changes */
+  /* But we can add a focus ring or scale effect */
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #ccc;
+  transform: scale(1.1);
+}
 
-  .dl-product-colors-panel__color-swatch.is-unavailable {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.dl-product-colors-panel__color-swatch.is-unavailable {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .dl-product-colors-panel__color-swatch:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.dl-product-colors-panel__color-swatch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .dl-product-colors-panel__color-swatch-inner {
-    width: 100%;
-    height: 100%;
-    border-radius: var(--dl-radius-sm);
-    position: relative;
-  }
+.dl-product-colors-panel__color-swatch-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--dl-radius-sm);
+  position: relative;
+}
 
-  /* Compact Color Grid for Panel */
-  /* Compact Color Grid for Panel - Matching Product List Page Filters */
-  .dl-product-colors-panel .dl-colors-grid {
-    display: grid;
-    grid-template-columns: repeat(13, 1fr);
-    gap: 6px;
-    justify-content: start;
-    padding: 2px;
-    width: 100%;
-  }
+/* Compact Color Grid for Panel */
+/* Compact Color Grid for Panel - Matching Product List Page Filters */
+.dl-product-colors-panel .dl-colors-grid {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 6px;
+  justify-content: start;
+  padding: 2px;
+  width: 100%;
+}
 
-  .dl-product-colors-panel .dl-color-item {
-    width: 20px;
-    height: 20px;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    padding: 0;
-    border: none;
-    background: transparent;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    margin: 0;
-  }
+.dl-product-colors-panel .dl-color-item {
+  width: 20px;
+  height: 20px;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 0;
+}
 
-  .dl-product-colors-panel .dl-color-item:hover {
-    /* Remove border on hover for container, handled by inner swatch */
-    border-color: transparent;
-    transform: none;
-    z-index: 1;
-  }
+.dl-product-colors-panel .dl-color-item:hover {
+  /* Remove border on hover for container, handled by inner swatch */
+  border-color: transparent;
+  transform: none;
+  z-index: 1;
+}
 
-  .dl-product-colors-panel .dl-color-item__swatch {
-    width: 20px;
-    height: 20px;
-    border-radius: 3px;
-    border: none;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    box-sizing: border-box;
-    background-clip: padding-box;
-    position: relative;
-    box-shadow: none;
-  }
+.dl-product-colors-panel .dl-color-item__swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: none;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-sizing: border-box;
+  background-clip: padding-box;
+  position: relative;
+  box-shadow: none;
+}
 
-  .dl-product-colors-panel .dl-color-item:hover .dl-color-item__swatch {
-    transform: scale(1.1);
-    z-index: 1;
-  }
+.dl-product-colors-panel .dl-color-item:hover .dl-color-item__swatch {
+  transform: scale(1.1);
+  z-index: 1;
+}
 
-  .dl-product-colors-panel .dl-color-item.is-selected {
-    /* Remove container styles */
-    border: none;
-    background: transparent;
-    outline: none;
-  }
+.dl-product-colors-panel .dl-color-item.is-selected {
+  /* Remove container styles */
+  border: none;
+  background: transparent;
+  outline: none;
+}
 
-  .dl-product-colors-panel .dl-color-item.is-selected .dl-color-item__swatch {
-    outline: 2px solid #ccc;
-    outline-offset: 2px;
-    z-index: 2;
-    transform: none;
-    /* No scale on selection, just outline */
-  }
+.dl-product-colors-panel .dl-color-item.is-selected .dl-color-item__swatch {
+  outline: 2px solid #ccc;
+  outline-offset: 2px;
+  z-index: 2;
+  transform: none;
+  /* No scale on selection, just outline */
+}
 
-  .dl-product-colors-panel .dl-color-item__check {
-    display: none !important;
-    /* Hide checkmark as outline indicates selection */
-  }
+.dl-product-colors-panel .dl-color-item__check {
+  display: none !important;
+  /* Hide checkmark as outline indicates selection */
+}
 
-  .dl-product-colors-panel .dl-color-item__info {
-    display: none;
-    /* Hide name/sizes in the compact grid */
-  }
+.dl-product-colors-panel .dl-color-item__info {
+  display: none;
+  /* Hide name/sizes in the compact grid */
+}
 
-  .dl-product-colors-panel .dl-color-item.is-unavailable {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
+.dl-product-colors-panel .dl-color-item.is-unavailable {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
 
-  .dl-product-colors-panel__checkmark {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1;
-  }
+.dl-product-colors-panel__checkmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
 
-  .dl-product-colors-panel__product-name {
-    font-size: var(--dl-font-sm);
-    font-weight: var(--dl-font-weight-medium);
-    margin-bottom: var(--dl-space-3);
-    color: var(--dl-text-primary);
-  }
+.dl-product-colors-panel__product-name {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  margin-bottom: var(--dl-space-3);
+  color: var(--dl-text-primary);
+}
 
-  /* Consistent small rounded rect */
-  .dl-product-colors-panel__swatch-border {
-    border: 1px solid rgba(0, 0, 0, 0.1);
-  }
+/* Consistent small rounded rect */
+.dl-product-colors-panel__swatch-border {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
 
-  .dl-product-colors-panel .dl-color-item__info {
-    display: none;
-    /* Hide detailed info in panel view */
-  }
+.dl-product-colors-panel .dl-color-item__info {
+  display: none;
+  /* Hide detailed info in panel view */
+}
 
-  .dl-product-colors-panel__sizes-available {
-    margin-top: var(--dl-space-4);
-    background: var(--dl-bg-primary);
-    padding: var(--dl-space-3);
-    border-radius: var(--dl-radius-sm);
-  }
+.dl-product-colors-panel__sizes-available {
+  margin-top: var(--dl-space-4);
+  background: var(--dl-bg-primary);
+  padding: var(--dl-space-3);
+  border-radius: var(--dl-radius-sm);
+}
 
-  .dl-product-colors-panel__sizes-title {
-    font-size: var(--dl-font-sm);
-    color: var(--dl-text-secondary);
-    margin: 0 0 var(--dl-space-1) 0;
-  }
+.dl-product-colors-panel__sizes-title {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: 0 0 var(--dl-space-1) 0;
+}
 
-  .dl-product-colors-panel__sizes-list {
-    font-size: var(--dl-font-sm);
-    font-weight: var(--dl-font-weight-medium);
-    color: var(--dl-text-primary);
-  }
+.dl-product-colors-panel__sizes-list {
+  font-size: var(--dl-font-sm);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+}
 
-  .dl-product-colors-panel__pick-another {
-    text-align: center;
-    padding-top: var(--dl-space-2);
-  }
+.dl-product-colors-panel__pick-another {
+  text-align: center;
+  padding-top: var(--dl-space-2);
+}
 
-  .dl-product-colors-panel__pick-hint {
-    font-size: var(--dl-font-sm);
-    color: var(--dl-text-secondary);
-    margin: 0 0 var(--dl-space-1) 0;
-  }
+.dl-product-colors-panel__pick-hint {
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-secondary);
+  margin: 0 0 var(--dl-space-1) 0;
+}
 
-  .dl-product-colors-panel__pick-link {
-    background: none;
-    border: none;
-    padding: 0;
-    color: var(--dl-color-primary);
-    font-size: var(--dl-font-sm);
-    text-decoration: underline;
-    cursor: pointer;
-  }
+.dl-product-colors-panel__pick-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--dl-color-primary);
+  font-size: var(--dl-font-sm);
+  text-decoration: underline;
+  cursor: pointer;
+}
 
-  /* ============================================
+/* ============================================
    Color Picker Styles - Custom Ink Style
 Matching screenshot grid and styles
    ============================================ */
 
-  .dl-color-picker {
-    display: flex;
-    flex-direction: column;
-    gap: var(--dl-space-4);
-    padding: var(--dl-space-2) 0;
-  }
-
-  .dl-color-picker__header {
-    margin-bottom: var(--dl-space-2);
-  }
-
-  .dl-color-picker__title {
-    font-size: var(--dl-font-md);
-    font-weight: var(--dl-font-weight-medium);
-    color: var(--dl-text-primary);
-  }
-
-  .dl-color-picker__selected-info {
-    display: flex;
-    align-items: center;
-    gap: var(--dl-space-3);
-    margin-bottom: var(--dl-space-2);
-  }
-
-  .dl-color-picker__selected-swatch {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--dl-radius-sm);
-    border: 1px solid var(--dl-border-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .dl-color-picker__selected-name {
-    font-size: var(--dl-font-md);
-    color: var(--dl-text-primary);
-    font-weight: var(--dl-font-weight-medium);
-  }
-
-  .dl-color-picker__grid {
-    display: grid;
-    grid-template-columns: repeat(13, 1fr);
-    gap: 6px;
-    width: 100%;
-  }
-
-  .dl-color-picker__swatch {
-    width: 20px;
-    height: 20px;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    border-radius: 3px;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
-    position: relative;
-  }
-
-  .dl-color-picker__swatch:hover {
-    transform: scale(1.1);
-    z-index: 1;
-  }
-
-  .dl-color-picker__swatch.is-selected {
-    outline: 2px solid #ccc;
-    outline-offset: 2px;
-    z-index: 2;
-  }
-
-  .dl-color-picker__legend {
-    display: flex;
-    flex-direction: column;
-    gap: var(--dl-space-2);
-    margin-top: var(--dl-space-4);
-    padding-top: var(--dl-space-4);
-    border-top: 1px solid var(--dl-border-color);
-  }
-
-  .dl-color-picker__legend-item {
-    display: flex;
-    align-items: center;
-    gap: var(--dl-space-3);
-    font-size: var(--dl-font-sm);
-    color: var(--dl-text-primary);
-  }
-
-  .dl-color-picker__legend-swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-  }
-
-  .dl-color-picker__legend-swatch--design {
-    background-color: #999;
-    position: relative;
-  }
-
-  .dl-color-picker__legend-swatch--design::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    border-width: 8px 8px 0 0;
-    border-color: #fff transparent transparent transparent;
-  }
-
-  .dl-color-picker__legend-swatch--contrast {
-    border: 1px dashed #333;
-  }
-
-  .dl-color-picker__done-btn {
-    margin-top: var(--dl-space-6);
-    padding: 14px;
-    background-color: #2441D0;
-    /* Custom Ink blue button color */
-    color: white;
-    border: none;
-    border-radius: var(--dl-radius-sm);
-    font-size: var(--dl-font-md);
-    font-weight: var(--dl-font-weight-bold);
-    cursor: pointer;
-    width: 100%;
-  }
-
-  .dl-color-picker__done-btn:hover {
-    background-color: #1e36b0;
-  }
+.dl-color-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-4);
+  padding: var(--dl-space-2) 0;
 }
+
+.dl-color-picker__header {
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-color-picker__title {
+  font-size: var(--dl-font-md);
+  font-weight: var(--dl-font-weight-medium);
+  color: var(--dl-text-primary);
+}
+
+.dl-color-picker__selected-info {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-3);
+  margin-bottom: var(--dl-space-2);
+}
+
+.dl-color-picker__selected-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--dl-radius-sm);
+  border: 1px solid var(--dl-border-color);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dl-color-picker__selected-name {
+  font-size: var(--dl-font-md);
+  color: var(--dl-text-primary);
+  font-weight: var(--dl-font-weight-medium);
+}
+
+.dl-color-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.dl-color-picker__swatch {
+  width: 20px;
+  height: 20px;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  position: relative;
+}
+
+.dl-color-picker__swatch:hover {
+  transform: scale(1.1);
+  z-index: 1;
+}
+
+.dl-color-picker__swatch.is-selected {
+  outline: 2px solid #ccc;
+  outline-offset: 2px;
+  z-index: 2;
+}
+
+.dl-color-picker__legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dl-space-2);
+  margin-top: var(--dl-space-4);
+  padding-top: var(--dl-space-4);
+  border-top: 1px solid var(--dl-border-color);
+}
+
+.dl-color-picker__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--dl-space-3);
+  font-size: var(--dl-font-sm);
+  color: var(--dl-text-primary);
+}
+
+.dl-color-picker__legend-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.dl-color-picker__legend-swatch--design {
+  background-color: #999;
+  position: relative;
+}
+
+.dl-color-picker__legend-swatch--design::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 8px 0 0;
+  border-color: #fff transparent transparent transparent;
+}
+
+.dl-color-picker__legend-swatch--contrast {
+  border: 1px dashed #333;
+}
+
+.dl-color-picker__done-btn {
+  margin-top: var(--dl-space-6);
+  padding: 14px;
+  background-color: #2441D0;
+  /* Custom Ink blue button color */
+  color: white;
+  border: none;
+  border-radius: var(--dl-radius-sm);
+  font-size: var(--dl-font-md);
+  font-weight: var(--dl-font-weight-bold);
+  cursor: pointer;
+  width: 100%;
+}
+
+.dl-color-picker__done-btn:hover {
+  background-color: #1e36b0;
+}
+
 
 /* ============================================
    Mobile Responsive Styles

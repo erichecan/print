@@ -4056,13 +4056,6 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
 
       {/* MOBILE BOTTOM NAV */}
       <footer className="dl-mobile-bottom-nav">
-        <button className="dl-mobile-nav-btn" onClick={() => {
-          setCatalogMode('add');
-          setIsCatalogModalOpen(true);
-        }}>
-          <span className="icon">👕</span>
-          <span className="label">Product</span>
-        </button>
         <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('upload')}>
           <span className="icon">☁️</span>
           <span className="label">Upload</span>
@@ -4075,9 +4068,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           <span className="icon">🖼️</span>
           <span className="label">Add Art</span>
         </button>
-        <button className="dl-mobile-nav-btn">
-          <span className="icon">🔢</span>
-          <span className="label">Names</span>
+        <button className="dl-mobile-nav-btn" onClick={() => handleToolClick('product-colors')}>
+          <span className="icon">👕</span>
+          <span className="label">Detail</span>
         </button>
       </footer>
 
@@ -4124,7 +4117,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       }
 
       {/* 6. BottomBar - 底部操作栏 */}
-      <footer className="dl-bottom-bar" role="contentinfo" data-testid="bottom-bar">
+      <footer className="dl-bottom-bar dl-desktop-only" role="contentinfo" data-testid="bottom-bar">
         <div className="dl-bottom-bar__left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             className="dl-bottom-bar__add-products"
