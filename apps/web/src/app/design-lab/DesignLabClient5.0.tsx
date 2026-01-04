@@ -3566,7 +3566,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       <header className="dl-mobile-header">
         <div className="dl-mobile-header__left">
           <Link href="/" aria-label="Home">
-            <Image src="/logo-icon.png" alt="Logo" width={32} height={32} className="dl-mobile-logo" />
+            <Image src="/logo.png" alt="Logo" width={120} height={32} className="dl-mobile-logo" />
           </Link>
         </div>
         <div className="dl-mobile-header__right">
@@ -3582,10 +3582,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             <span className="dl-mobile-icon">👤</span>
             <span>Account</span>
           </Link>
-          <button className="dl-mobile-nav-item">
-            <span className="dl-mobile-icon">🛒</span>
-            <span>Cart</span>
-          </button>
+
           <button
             className="dl-mobile-next-btn"
             onClick={() => {
@@ -3760,7 +3757,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                     <div className="dl-tool-panel__header">
                       {/* [MODIFY] Removed title as per request */}
                     </div>
-                    <div className="dl-home-panel">
+                    <div className="dl-home-panel dl-desktop-only">
                       <div className="dl-home-panel__actions">
                         <button
                           className="dl-home-panel__action"
