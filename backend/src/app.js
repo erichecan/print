@@ -28,31 +28,33 @@ const allowedOrigins = [
   'http://localhost:8080',
   'http://localhost:3000',
   'https://souvenirplus.netlify.app',
-'https://printm.netlify.app', // 添加生产环境前端域名
-process.env.FRONTEND_URL, // GCP Cloud Run 前端 URL
+  'https://printm.netlify.app', // 添加生产环境前端域名
+  'https://printngoplus.com', // 生产环境主域名
+  'https://www.printngoplus.com', // 生产环境 www 域名
+  process.env.FRONTEND_URL, // GCP Cloud Run 前端 URL
 ].filter(Boolean); // 移除 undefined 值
 // 允许任意 localhost / 127.0.0.1 端口，避免 Next.js dev server 改用 3001/3002 导致 CORS
 const localhostOriginPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
 const corsOptions = {
   origin: (origin, callback) => {
-// 允许没有 origin 的请求（如移动应用或 Postman）
+    // 允许没有 origin 的请求（如移动应用或 Postman）
     if (!origin) return callback(null, true);
 
-// 检查 origin 是否在允许列表或本地域名列表中
+    // 检查 origin 是否在允许列表或本地域名列表中
     if (allowedOrigins.includes(origin) || localhostOriginPattern.test(origin)) {
       callback(null, true);
     } else {
-// 也允许所有 netlify.app 子域名（用于预览部署）
+      // 也允许所有 netlify.app 子域名（用于预览部署）
       if (origin.endsWith('.netlify.app')) {
         callback(null, true);
       } else if (origin.endsWith('.run.app')) {
-// 允许所有 Cloud Run 域名（用于 GCP 部署）
-// 记录允许的 Cloud Run 域名以便调试
+        // 允许所有 Cloud Run 域名（用于 GCP 部署）
+        // 记录允许的 Cloud Run 域名以便调试
         console.log(`[CORS] Allowing Cloud Run origin: ${origin}`);
         callback(null, true);
       } else {
-// 记录被拒绝的 origin 以便调试
+        // 记录被拒绝的 origin 以便调试
         console.warn(`[CORS] Blocked origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
@@ -66,7 +68,7 @@ const corsOptions = {
     'Authorization',
     'X-Requested-With',
     'Cookie',
-'x-playwright-e2e', // 允许 Playwright 测试头
+    'x-playwright-e2e', // 允许 Playwright 测试头
     'Accept',
     'Origin',
     'Referer',
