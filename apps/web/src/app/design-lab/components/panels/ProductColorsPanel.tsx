@@ -13,6 +13,7 @@ interface ProductColorsPanelProps {
   onSelectColor: (color: string) => void;
   onClose: () => void;
   productName?: string;
+  onChangeProduct?: () => void; // Added prompt to change product
 }
 
 const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
@@ -20,7 +21,8 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
   selectedColor,
   onSelectColor,
   onClose,
-  productName
+  productName,
+  onChangeProduct
 }) => {
   const handleColorClick = (color: ProductColor) => {
     if (color.isAvailable) {
@@ -51,6 +53,36 @@ const ProductColorsPanel: React.FC<ProductColorsPanelProps> = ({
       </div>
 
       <div className="dl-product-colors-panel__content" style={{ padding: '0 16px 16px' }}>
+
+        {/* Product Information and Change Button */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>
+            Product: <strong style={{ color: '#111' }}>{productName || 'Custom Product'}</strong>
+          </div>
+          {onChangeProduct && (
+            <button
+              onClick={onChangeProduct}
+              style={{
+                padding: '6px 12px',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#0066CC',
+                background: '#f0f7ff',
+                border: '1px solid #cce4ff',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1v-20l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" />
+              </svg>
+              Change Product
+            </button>
+          )}
+        </div>
 
         {/* Colors Section - Styled like Add Text Color Picker */}
         <div className="dl-colors-section">

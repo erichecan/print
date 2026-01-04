@@ -574,7 +574,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
             canvas.add(obj);
           });
           canvas.requestRenderAll();
-        }, '');
+          canvas.requestRenderAll();
+        });
       } else {
         console.log(`[DesignLab 5.0] No saved objects for view: ${view}`);
       }
@@ -3751,6 +3752,7 @@ ctx.lineWidth = 12.5; // 放大 5 倍：从 2.5 调整为 12.5
                   selectedColor={productInfo.color}
                   onSelectColor={handleColorSelect}
                   onClose={handleBackToHome}
+                  onChangeProduct={() => setIsCatalogModalOpen(true)}
                 />
               )}
 
