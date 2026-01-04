@@ -40,9 +40,10 @@ type SearchParams = {
   search?: string;
   sort?: string;
   collection?: string;
-brand?: string; // 品牌筛选
-minPrice?: string; // 最低价格
-maxPrice?: string; // 最高价格
+  category?: string; // 支持 category 筛选
+  brand?: string; // 品牌筛选
+  minPrice?: string; // 最低价格
+  maxPrice?: string; // 最高价格
 };
 
 type ProductListItem = {
@@ -233,9 +234,9 @@ async function fetchProducts(searchParams: SearchParams) {
       limit: limit.toString(),
       search: searchParams.search,
       collection: searchParams.collection,
-brand: searchParams.brand, // 品牌筛选
-minPrice: searchParams.minPrice, // 最低价格
-maxPrice: searchParams.maxPrice, // 最高价格
+      brand: searchParams.brand, // 品牌筛选
+      minPrice: searchParams.minPrice, // 最低价格
+      maxPrice: searchParams.maxPrice, // 最高价格
       sort,
       order,
     }, {
@@ -258,7 +259,7 @@ async function fetchCollections() {
     });
     return response;
   } catch (error) {
-// 如果获取 collections 失败，返回空数组而不是抛出错误
+    // 如果获取 collections 失败，返回空数组而不是抛出错误
     console.warn('[Products Page] Failed to fetch collections:', error);
     return [] as Collection[];
   }
@@ -293,27 +294,27 @@ function normalizeSearchParams(
     search: toStringValue(params.search),
     sort: toStringValue(params.sort),
     collection: toStringValue(params.collection),
-brand: toStringValue(params.brand), // 品牌筛选
-minPrice: toStringValue(params.minPrice), // 最低价格
-maxPrice: toStringValue(params.maxPrice), // 最高价格
+    brand: toStringValue(params.brand), // 品牌筛选
+    minPrice: toStringValue(params.minPrice), // 最低价格
+    maxPrice: toStringValue(params.maxPrice), // 最高价格
   };
 }
 
 export default async function ProductsPage({
   searchParams,
 }: {
-// Next.js 15: searchParams 现在是异步的
+  // Next.js 15: searchParams 现在是异步的
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const resolvedSearchParams = await (searchParams ?? Promise.resolve({}));
+  const resolvedSearchParams = await (searchParams ?? Promise.resolve({})) as Record<string, string | string[] | undefined>;
   const normalizedParams = normalizeSearchParams(resolvedSearchParams);
-  
-// 创建客户端筛选器包装组件（必须在服务器组件中处理）
+
+  // 创建客户端筛选器包装组件（必须在服务器组件中处理）
   let collections: Collection[] = [];
   let productsResponse: ProductsResponse | null = null;
   let fetchError: string | null = null;
 
-// 解耦列表与集合请求，避免 /collections 404 影响产品渲染
+  // 解耦列表与集合请求，避免 /collections 404 影响产品渲染
   const productsPromise = fetchProducts(normalizedParams).catch((error: unknown) => {
     fetchError = error instanceof Error ? error.message : 'Unexpected error loading products.';
     return null;
@@ -332,11 +333,11 @@ export default async function ProductsPage({
   const currentSort = normalizedParams.sort || '';
   const currentSearch = normalizedParams.search || '';
   const currentCollection = normalizedParams.collection || '';
-const currentBrand = normalizedParams.brand || ''; // 当前品牌筛选
-const currentMinPrice = normalizedParams.minPrice || ''; // 当前最低价格
-const currentMaxPrice = normalizedParams.maxPrice || ''; // 当前最高价格
+  const currentBrand = normalizedParams.brand || ''; // 当前品牌筛选
+  const currentMinPrice = normalizedParams.minPrice || ''; // 当前最低价格
+  const currentMaxPrice = normalizedParams.maxPrice || ''; // 当前最高价格
 
-// 从产品数据中提取品牌列表
+  // 从产品数据中提取品牌列表
   const brands: Brand[] = Array.from(
     new Map(
       products
@@ -354,62 +355,69 @@ const currentMaxPrice = normalizedParams.maxPrice || ''; // 当前最高价格
       ? buildRoute(normalizedParams, { page: String(pagination.page + 1) })
       : null;
 
-// 使用动态导入的客户端组件，禁用 SSR，避免服务端报错影响页面渲染
+  // 使用动态导入的客户端组件，禁用 SSR，避免服务端报错影响页面渲染
   const ProductsClient = dynamic(() => import('./ProductsClient'), { ssr: false });
 
-// 获取当前分类名称用于面包屑
-  const currentCategoryName = currentCollection 
-    ? collections.find(c => c.slug === currentCollection)?.name || 'T-shirts'
-    : 'T-shirts';
+  // 获取当前分类名称用于面包屑
+  const currentCategoryName = currentCollection
+    ? (collections.find(c => c.slug === currentCollection)?.name || 'T-shirts')
+    : (normalizedParams.category ? (normalizedParams.category.charAt(0).toUpperCase() + (normalizedParams.category as string).slice(1).replace(/-/g, ' ')) : 'T-shirts');
 
   return (
     <div className="catalog-page">
-{/* 完全重新设计的布局以匹配参考设计 */}
+      {/* 完全重新设计的布局以匹配参考设计 */}
       <section className="plp-new">
         <div className="container plp-new__grid">
           {/* 左侧筛选器 */}
           <aside className="plp-new__sidebar">
-{/* 使用分组分类导航组件 */}
-            <SidebarGrouped 
+            {/* 使用分组分类导航组件 */}
+            <SidebarGrouped
               selected={{
-                groupSlug: searchParams?.group as string,
-                childSlug: searchParams?.category as string,
+                groupSlug: resolvedSearchParams?.group as string,
+                childSlug: resolvedSearchParams?.category as string,
               }}
             />
-{/* 使用客户端筛选组件处理筛选逻辑 */}
+            {/* 使用客户端筛选组件处理筛选逻辑 */}
             <ProductFiltersClient currentCollection={currentCollection} currentBrand={currentBrand} brands={brands} />
-{/* 使用动态筛选器组件（从API获取筛选选项和数量） */}
-{/* 移除表单和按钮，改为实时筛选（参考 Custom Ink） */}
+            {/* 使用动态筛选器组件（从API获取筛选选项和数量） */}
+            {/* 移除表单和按钮，改为实时筛选（参考 Custom Ink） */}
             <DynamicFilters currentCollection={currentCollection} />
           </aside>
 
           {/* 主内容区 */}
           <div className="plp-new__main">
-{/* 移动端筛选按钮 */}
-            <MobileFilterDrawer 
-              currentCollection={currentCollection} 
-              currentBrand={currentBrand} 
-              brands={brands} 
-            />
-            
-            {/* 面包屑和标题 */}
-            <nav className="breadcrumb-nav">
+            {/* 移动端筛选按钮 - 仅在移动端显示，但 MobileProductListView 已包含它，所以这里隐藏 */}
+            <div className="md:hidden hidden">
+              <MobileFilterDrawer
+                currentCollection={currentCollection}
+                currentBrand={currentBrand}
+                brands={brands}
+              />
+            </div>
+
+            {/* 面包屑和标题 - 移动端由 MobileProductListView 渲染，这里仅在桌面端显示 */}
+            <nav className="breadcrumb-nav hidden md:block">
               <ol>
                 <li><Link href="/products">All Products</Link></li>
                 <li>›</li>
-                <li><Link href="/products?collection=t-shirts">T-shirts</Link></li>
+                <li><Link href="/products?category=t-shirts">T-shirts</Link></li>
                 <li>›</li>
                 <li>{currentCategoryName}</li>
               </ol>
             </nav>
 
-            <h1 className="plp-new__title">{currentCategoryName}</h1>
+            <h1 className="plp-new__title hidden md:block">{currentCategoryName}</h1>
 
-            {/* 排序 */}
-            <SortSelect defaultValue={currentSort} />
+            {/* 排序 - 移动端由 MobileProductListView 渲染，这里仅在桌面端显示 */}
+            <div className="hidden md:block">
+              <SortSelect defaultValue={currentSort} />
+            </div>
 
             {/* 产品网格 */}
-            <ProductsClient />
+            <ProductsClient
+              collections={collections}
+              initialCategoryName={currentCategoryName}
+            />
           </div>
         </div>
       </section>
