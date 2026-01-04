@@ -4352,7 +4352,11 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
 
           switch (action) {
             case 'rotate':
-              activeObj.rotate((activeObj.angle || 0) + 90);
+              if (payload && typeof payload.angle === 'number') {
+                activeObj.rotate(payload.angle);
+              } else {
+                activeObj.rotate((activeObj.angle || 0) + 90);
+              }
               break;
             case 'flip':
               activeObj.set('flipX', !activeObj.flipX);
