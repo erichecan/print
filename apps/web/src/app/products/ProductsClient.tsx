@@ -15,7 +15,7 @@ import { useSearchParams } from 'next/navigation';
 import { Pagination } from '@/components/ui/Pagination'; // 分页组件
 import { promotionApi, Promotion } from '@/lib/api'; // 促销活动 API
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { MobileProductListView } from './MobileProductListView';
+import { MobileProductsPage } from './MobileProductsPage';
 
 type Product = {
   id: string;
@@ -189,7 +189,7 @@ export default function ProductsClient({
 
   if (isMobile) {
     return (
-      <MobileProductListView
+      <MobileProductsPage
         products={products}
         categoryName={categoryName}
         pagination={pagination}

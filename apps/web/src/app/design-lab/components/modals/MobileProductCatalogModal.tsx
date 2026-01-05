@@ -130,7 +130,7 @@ const MobileProductCatalogModal: React.FC<MobileProductCatalogModalProps> = ({
                                     onClick={() => onSelectProduct(product.id)}
                                 >
                                     <div className="product-image">
-                                        <img src={product.coverImageUrl || ''} alt={product.title} />
+                                        <img src={product.coverImageUrl || ''} alt={"product title" in product ? (product as any).title : (product as any).name || 'Untitled'} />
                                     </div>
                                     <div className="product-info">
                                         <h3>{typeof product.title === 'string' ? product.title : (product.title as any)?.name || 'Untitled'}</h3>
