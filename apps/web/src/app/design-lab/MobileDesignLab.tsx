@@ -64,6 +64,7 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
 }) => {
     // Mobile Dashboard State
     const [showProductDashboard, setShowProductDashboard] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Color Selection State
     const [isColorExpanded, setIsColorExpanded] = useState(false);
@@ -209,6 +210,17 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
             {/* MOBILE HEADER */}
             <header className="dl-mobile-header">
                 <div className="dl-mobile-header__left">
+                    <button
+                        className="dl-mobile-menu-btn"
+                        onClick={() => setIsMenuOpen(true)}
+                        aria-label="Toggle menu"
+                    >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
                     <Link href="/" aria-label="Home">
                         <Image src="/logo.png" alt="Logo" width={120} height={32} className="dl-mobile-logo" />
                     </Link>
@@ -501,6 +513,40 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                     <span className="label">Product</span>
                 </button>
             </footer>
+
+            {/* MOBILE NAVIGATION DRAWER */}
+            <div
+                className={`dl-mobile-menu-overlay ${isMenuOpen ? 'is-open' : ''}`}
+                onClick={() => setIsMenuOpen(false)}
+            />
+            <nav className={`dl-mobile-nav-drawer ${isMenuOpen ? 'is-open' : ''}`}>
+                <div className="dl-nav-drawer-header">
+                    <button className="dl-nav-close-btn" onClick={() => setIsMenuOpen(false)}>×</button>
+                    <Image src="/logo.png" alt="Logo" width={140} height={34} />
+                </div>
+                <ul className="dl-nav-drawer-links">
+                    <li>
+                        <Link href="/products" onClick={() => setIsMenuOpen(false)}>
+                            Custom T-shirts
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/promotional-products" onClick={() => setIsMenuOpen(false)}>
+                            Promotional Products
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/design-lab" onClick={() => setIsMenuOpen(false)}>
+                            Design Lab
+                        </Link>
+                    </li>
+                    <li>
+                        <Link href="/group-orders" onClick={() => setIsMenuOpen(false)}>
+                            Groups & Events
+                        </Link>
+                    </li>
+                </ul>
+            </nav>
         </div>
     );
 };
