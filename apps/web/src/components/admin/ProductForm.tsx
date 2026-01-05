@@ -145,6 +145,18 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     }
   }, [basePriceValue, salePriceValue, unitCostValue, setValue]);
 
+  // 自动根据变体库存计算总库存
+  const variantsValue = watch('variants');
+  const isCustomizableValue = watch('isCustomizable');
+
+  useEffect(() => {
+    // 只有当开启多规格且有变体数据时才自动计算
+    if (isCustomizableValue && variantsValue && variantsValue.length > 0) {
+      const totalStock = variantsValue.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0);
+      setValue('stockQuantity', totalStock);
+    }
+  }, [variantsValue, isCustomizableValue, setValue]);
+
   const {
     fields: variantFields,
     append: appendVariant,

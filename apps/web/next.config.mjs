@@ -254,6 +254,11 @@ const nextConfig = {
         source: '/api/auth/me',
         destination: `${apiUrl}/auth/me`,
       },
+      // [2026-01-05] Add generic proxy for size-fees and other new endpoints
+      {
+        source: '/api/:path*',
+        destination: `${apiUrl}/api/:path*`,
+      },
     ];
   },
   // [2025-12-31] Force disable caching for all routes to prevent stale content issues

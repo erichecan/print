@@ -15,5 +15,9 @@ router.put('/content', controller.updateContentConfig);
 router.get('/production/templates', controller.getProductionTemplates);
 router.put('/production/templates', controller.updateProductionTemplates);
 
+// Shipping settings
+router.get('/shipping', controller.getShippingSettings);
+router.put('/shipping', controller.updateShippingSettings);
+
 module.exports = router;
 

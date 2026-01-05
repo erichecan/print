@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { designLabApi, productsApi } from '@/lib/api';
+import { designLabApi, productsApi, sizeFeesApi } from '@/lib/api';
 import './GetPriceFlowModal.css';
 
 export type GetPriceFlowStep = 'ordering-options' | 'quantity' | 'order-options' | 'content-check' | 'added-to-cart';
@@ -82,20 +82,48 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
   useEffect(() => {
     const fetchSizeData = async () => {
+      // Fetch global size fees
+      let globalSizeFees: Record<string, number> = {};
+      try {
+        const sizeFeesRes = await sizeFeesApi.getAll();
+        if (sizeFeesRes.data) {
+          sizeFeesRes.data.forEach(fee => {
+            if (fee.additionalFee > 0) {
+              globalSizeFees[fee.size] = fee.additionalFee;
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch global size fees", e);
+      }
+
       // Prioritize passed variants prop
       if (variants && variants.length > 0) {
         console.log('[GetPriceFlowModal] Using provided variants for size fees');
-        const adjustments: Record<string, number> = {};
+        const adjustments: Record<string, number> = { ...globalSizeFees };
         variants.forEach((v: any) => {
           if (v.size && v.priceAdjustment) {
-            adjustments[v.size] = Number(v.priceAdjustment) / 100;
+            // If global fee exists, it takes precedence (or we can decide logic here)
+            // For now, let's assume global config overrides or if specific variant has higher, use that?
+            // User request implies we want to show the fees from the config.
+            // Let's use global fee if present, otherwise variant adjustment.
+            if (!adjustments[v.size]) {
+              adjustments[v.size] = Number(v.priceAdjustment) / 100;
+            }
           }
         });
         setSizeAdjustments(adjustments);
         return;
       }
 
-      if (!designId) return;
+      if (!designId) {
+        // Fallback: use global fees if no design/variants
+        if (Object.keys(globalSizeFees).length > 0) {
+          setSizeAdjustments(globalSizeFees);
+        }
+        return;
+      }
+
       try {
         // 1. Get design to find variant params
         const designRes = await designLabApi.getDesign(designId);
@@ -108,15 +136,25 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           const productRes = await productsApi.getByVariant(variantId);
 
           if (productRes && productRes.variants) {
-            const adjustments: Record<string, number> = {};
+            const adjustments: Record<string, number> = { ...globalSizeFees };
             // Extract priceAdjustment from variants
             // Note: frontend type might not have priceAdjustment yet, cast if needed
             productRes.variants.forEach((v: any) => {
-              if (v.size && v.priceAdjustment) {
+              if (v.size && v.priceAdjustment && !adjustments[v.size]) {
                 adjustments[v.size] = Number(v.priceAdjustment) / 100;
               }
             });
             setSizeAdjustments(adjustments);
+          } else {
+            // Fallback if no variants found in product response
+            if (Object.keys(globalSizeFees).length > 0) {
+              setSizeAdjustments(globalSizeFees);
+            }
+          }
+        } else {
+          // Fallback if no variant in design
+          if (Object.keys(globalSizeFees).length > 0) {
+            setSizeAdjustments(globalSizeFees);
           }
         }
       } catch (e) {

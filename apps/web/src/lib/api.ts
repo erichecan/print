@@ -2127,6 +2127,26 @@ export const adminSettingsApi = {
     api<{ data: SiteSettingsPayload }>('/admin/settings/site', { method: 'PUT', body: data }),
 };
 
+export interface ShippingRate {
+  enabled: boolean;
+  cost: number;
+  costUS?: number;
+  costIntl?: number;
+  estimatedDaysCA: number;
+  estimatedDaysUS: number;
+}
+
+export interface ShippingSettingsPayload {
+  standard: ShippingRate;
+  express: ShippingRate;
+}
+
+export const adminShippingApi = {
+  get: () => api<{ data: ShippingSettingsPayload }>('/admin/settings/shipping'),
+  update: (data: ShippingSettingsPayload) =>
+    api<{ data: ShippingSettingsPayload }>('/admin/settings/shipping', { method: 'PUT', body: data }),
+};
+
 export const adminContentApi = {
   get: () => api<{ data: ContentConfig }>('/admin/settings/content'),
   update: (data: ContentConfig) =>
@@ -2268,6 +2288,10 @@ export const productColorImageApi = {
 };
 
 // Design Lab API
+export const sizeFeesApi = {
+  getAll: () => api<{ data: Array<{ id: string; size: string; additionalFee: number }>; count: number }>('/api/size-fees'),
+};
+
 export const designLabApi = {
   createDraft: (payload: CreateDesignDraftPayload) =>
     api<{ data: DesignDraft; meta?: { sessionId?: string } }>('/designs', {

@@ -16,7 +16,27 @@ const getStripe = () => {
 const logger = require('../utils/logger');
 const { sendOrderConfirmation } = require('../services/emailService');
 const { checkMultipleStockAvailability, decreaseInventory } = require('../services/inventoryService');
+const { getSettingValue } = require('../services/settingService');
 const { BadRequestError } = require('../utils/errors');
+
+const DEFAULT_SHIPPING_SETTINGS = {
+  standard: {
+    enabled: true,
+    cost: 9.99,
+    costUS: 12.99,
+    costIntl: 15.99,
+    estimatedDaysCA: 7,
+    estimatedDaysUS: 10,
+  },
+  express: {
+    enabled: true,
+    cost: 19.99,
+    costUS: 24.99,
+    costIntl: 29.99,
+    estimatedDaysCA: 3,
+    estimatedDaysUS: 5,
+  },
+};
 
 /**
  * Get or create cart helper (reuse from cartController logic)
@@ -125,14 +145,20 @@ function calculateTax(subtotal, province) {
 /**
  * Calculate static shipping rates
  */
-function calculateShipping(country, province, shippingMethod = 'standard') {
-  // Phase 1: Static rates
-  if (country?.toUpperCase() === 'CA' || country?.toUpperCase() === 'CAN') {
-    return shippingMethod === 'express' ? 19.99 : 9.99;
-  } else if (country?.toUpperCase() === 'US' || country?.toUpperCase() === 'USA') {
-    return 12.99;
-  }
-  return 15.99; // Default
+function calculateShipping(country, province, shippingMethod = 'standard', settings = DEFAULT_SHIPPING_SETTINGS) {
+  const isCA = country?.toUpperCase() === 'CA' || country?.toUpperCase() === 'CAN';
+  const isUS = country?.toUpperCase() === 'US' || country?.toUpperCase() === 'USA';
+
+  const methodKey = shippingMethod === 'express' ? 'express' : 'standard';
+  const method = settings[methodKey];
+
+  // If method is disabled, fallback to standard or return 0/error (here we allow it if provided)
+  if (!method) return 15.99; // Fallback safety
+
+  if (isCA) return Number(method.cost);
+  if (isUS) return Number(method.costUS || method.cost); // Fallback to base cost if US not defined
+
+  return Number(method.costIntl || 15.99);
 }
 
 /**
@@ -149,13 +175,13 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
     let totalDiscount = 0;
     const appliedPromotions = [];
 
-// For each cart item, find the best promotion
+    // For each cart item, find the best promotion
     for (const item of cartItems) {
       const { variantId, quantity, priceSnapshot } = item;
       const unitPrice = Number(priceSnapshot);
       const itemSubtotal = unitPrice * quantity;
 
-// Get product ID from variant
+      // Get product ID from variant
       const variant = await prisma.variant.findUnique({
         where: { id: variantId },
         include: { product: { include: { category: true } } },
@@ -168,10 +194,10 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
       const productId = variant.productId;
       const categoryId = variant.product.categoryId;
 
-// Find active promotions for this product
-// Include buy-get-free promotion fields for Issue #139
-// Find active promotions for this product
-// Include buy-get-free promotion fields for Issue #139
+      // Find active promotions for this product
+      // Include buy-get-free promotion fields for Issue #139
+      // Find active promotions for this product
+      // Include buy-get-free promotion fields for Issue #139
       const productPromotions = await prisma.promotion.findMany({
         where: {
           isActive: true,
@@ -200,18 +226,18 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
         continue;
       }
 
-// Select the promotion with the highest discount
+      // Select the promotion with the highest discount
       let bestPromotion = null;
       let bestDiscount = 0;
 
       for (const promotion of productPromotions) {
-// Check minimum order value
+        // Check minimum order value
         if (promotion.minOrderValue && subtotal < Number(promotion.minOrderValue)) {
           continue;
         }
 
-// Calculate discount for this item
-// Support buy-get-free promotions for Issue #139
+        // Calculate discount for this item
+        // Support buy-get-free promotions for Issue #139
         let itemDiscount = 0;
 
         if (promotion.discountType === 'PERCENTAGE') {
@@ -221,7 +247,7 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
             itemDiscount = Number(promotion.maxDiscount);
           }
         } else if (promotion.discountType === 'BUY_GET_FREE') {
-// Buy X Get Y Free: Calculate free items discount
+          // Buy X Get Y Free: Calculate free items discount
           const buyQty = promotion.buyQuantity || 1;
           const getQty = promotion.getQuantity || 1;
 
@@ -258,7 +284,7 @@ async function calculatePromotionDiscount(cartItems, subtotal) {
           promotionTitle: bestPromotion.title,
           productId: productId,
           discountAmount: Math.round(bestDiscount * 100) / 100,
-// Include buy-get-free promotion details for Issue #139
+          // Include buy-get-free promotion details for Issue #139
           promotionType: bestPromotion.discountType,
           buyQuantity: bestPromotion.buyQuantity,
           getQuantity: bestPromotion.getQuantity,
@@ -369,7 +395,7 @@ exports.prepareCheckout = async (req, res) => {
   try {
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
-const { shippingAddress, shippingMethod = 'standard', couponCode } = req.body || {}; // 支持优惠券代码
+    const { shippingAddress, shippingMethod = 'standard', couponCode } = req.body || {}; // 支持优惠券代码
 
     const cart = await getOrCreateCart(userId, sessionId);
 
@@ -382,31 +408,32 @@ const { shippingAddress, shippingMethod = 'standard', couponCode } = req.body ||
       return sum + Number(item.priceSnapshot) * item.quantity;
     }, 0);
 
-// Calculate promotion discount
+    // Calculate promotion discount
     const promotionResult = await calculatePromotionDiscount(cart.items, subtotal);
     const promotionDiscount = promotionResult.discount || 0;
 
-// Calculate subtotal after promotion discount
+    // Calculate subtotal after promotion discount
     const subtotalAfterPromotion = subtotal - promotionDiscount;
 
-// Validate coupon and calculate discount (on subtotal after promotion)
+    // Validate coupon and calculate discount (on subtotal after promotion)
     const couponResult = await validateCouponAndCalculateDiscount(couponCode, subtotalAfterPromotion, userId);
     const couponDiscount = couponResult.discount || 0;
 
-// Total discount is promotion + coupon
+    // Total discount is promotion + coupon
     const totalDiscount = promotionDiscount + couponDiscount;
 
     let shippingCost = 0;
     let tax = 0;
 
     if (shippingAddress?.country && shippingAddress?.province) {
-// 当地址完整时返回运费与税费估算
+      // 当地址完整时返回运费与税费估算
       shippingCost = calculateShipping(
         shippingAddress.country,
         shippingAddress.province,
-        shippingMethod
+        shippingMethod,
+        shippingSettings
       );
-// Tax is calculated on subtotal minus all discounts
+      // Tax is calculated on subtotal minus all discounts
       tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
     }
 
@@ -414,8 +441,8 @@ const { shippingAddress, shippingMethod = 'standard', couponCode } = req.body ||
 
     res.json({
       subtotal: Math.round(subtotal * 100) / 100,
-promotionDiscount: Math.round(promotionDiscount * 100) / 100, // 分开显示促销折扣
-discount: Math.round(totalDiscount * 100) / 100, // 总折扣（促销+优惠券）
+      promotionDiscount: Math.round(promotionDiscount * 100) / 100, // 分开显示促销折扣
+      discount: Math.round(totalDiscount * 100) / 100, // 总折扣（促销+优惠券）
       itemCount: cart.items.length,
       shipping: Math.round(shippingCost * 100) / 100,
       tax: Math.round(tax * 100) / 100,
@@ -428,7 +455,7 @@ discount: Math.round(totalDiscount * 100) / 100, // 总折扣（促销+优惠券
       })),
       ...(promotionResult.promotions && promotionResult.promotions.length > 0
         ? { promotions: promotionResult.promotions }
-: {}), // 返回应用的促销活动信息
+        : {}), // 返回应用的促销活动信息
       ...(couponResult.error ? { couponError: couponResult.error } : {}),
       ...(couponResult.coupon ? { coupon: couponResult.coupon } : {}),
     });
@@ -444,26 +471,39 @@ discount: Math.round(totalDiscount * 100) / 100, // 总折扣（促销+优惠券
 exports.getShippingRates = async (req, res) => {
   try {
     const { address } = req.body;
+    const settings = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
 
     if (!address || !address.country) {
       return res.status(400).json({ error: 'Address with country is required' });
     }
 
-    // Phase 1: Static rates
-    const rates = [
-      {
+    // Phase 1: Static rates (Now dynamic)
+    const isCA = address.country?.toUpperCase() === 'CA' || address.country?.toUpperCase() === 'CAN';
+    const isUS = address.country?.toUpperCase() === 'US' || address.country?.toUpperCase() === 'USA';
+
+    // Determine days based on location
+    const stdDays = isCA ? settings.standard.estimatedDaysCA : (isUS ? settings.standard.estimatedDaysUS : 12);
+    const expDays = isCA ? settings.express.estimatedDaysCA : (isUS ? settings.express.estimatedDaysUS : 7);
+
+    const rates = [];
+
+    if (settings.standard.enabled) {
+      rates.push({
         id: 'standard',
         name: 'Standard Shipping',
-        cost: calculateShipping(address.country, address.province, 'standard'),
-        estimatedDays: address.country?.toUpperCase() === 'CA' || address.country?.toUpperCase() === 'CAN' ? 7 : 10,
-      },
-      {
+        cost: calculateShipping(address.country, address.province, 'standard', settings),
+        estimatedDays: stdDays,
+      });
+    }
+
+    if (settings.express.enabled) {
+      rates.push({
         id: 'express',
         name: 'Express Shipping',
-        cost: calculateShipping(address.country, address.province, 'express'),
-        estimatedDays: address.country?.toUpperCase() === 'CA' || address.country?.toUpperCase() === 'CAN' ? 3 : 5,
-      },
-    ];
+        cost: calculateShipping(address.country, address.province, 'express', settings),
+        estimatedDays: expDays,
+      });
+    }
 
     res.json({ rates });
   } catch (error) {
@@ -482,14 +522,16 @@ exports.createPaymentIntent = async (req, res) => {
       shippingAddress,
       shippingMethod = 'standard',
       couponCode,
-draftOrderId, // Optional draft order ID
-amount, // Optional amount from frontend (for validation)
+      draftOrderId, // Optional draft order ID
+      amount, // Optional amount from frontend (for validation)
       currency = 'CAD',
-customerEmail, // Customer email for receipt
-metadata: additionalMetadata = {}, // Additional metadata
+      customerEmail, // Customer email for receipt
+      metadata: additionalMetadata = {}, // Additional metadata
     } = req.body;
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
+
+    const shippingSettings = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
 
     if (!shippingAddress) {
       return res.status(400).json({ error: 'Shipping address is required', errorCode: 'MISSING_ADDRESS' });
@@ -506,25 +548,25 @@ metadata: additionalMetadata = {}, // Additional metadata
       return sum + Number(item.priceSnapshot) * item.quantity;
     }, 0);
 
-// Calculate promotion discount
+    // Calculate promotion discount
     const promotionResult = await calculatePromotionDiscount(cart.items, subtotal);
     const promotionDiscount = promotionResult.discount || 0;
     const subtotalAfterPromotion = subtotal - promotionDiscount;
 
-// Validate coupon and calculate discount (on subtotal after promotion)
+    // Validate coupon and calculate discount (on subtotal after promotion)
     const couponResult = await validateCouponAndCalculateDiscount(couponCode, subtotalAfterPromotion, userId);
     if (couponResult.error) {
       return res.status(400).json({ error: couponResult.error, errorCode: 'INVALID_COUPON' });
     }
     const couponDiscount = couponResult.discount || 0;
-const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
+    const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
 
-    const shippingCost = calculateShipping(shippingAddress.country, shippingAddress.province, shippingMethod);
-// Tax is calculated on subtotal minus all discounts
+    const shippingCost = calculateShipping(shippingAddress.country, shippingAddress.province, shippingMethod, shippingSettings);
+    // Tax is calculated on subtotal minus all discounts
     const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
     const calculatedTotal = subtotal - totalDiscount + shippingCost + tax;
 
-// Validate amount if provided (prevent frontend tampering)
+    // Validate amount if provided (prevent frontend tampering)
     if (amount !== undefined) {
       const amountDiff = Math.abs(amount - calculatedTotal);
       if (amountDiff > 0.01) { // Allow 1 cent tolerance for rounding
@@ -544,19 +586,19 @@ const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
     }
 
     // Create PaymentIntent with Stripe
-// 检查 Stripe 配置
+    // 检查 Stripe 配置
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.trim() === '') {
       logger.error('Stripe Secret Key is missing!');
       return res.status(500).json({ error: 'Stripe is not configured', details: 'Please configure STRIPE_SECRET_KEY in environment variables' });
     }
 
-// 延迟初始化 Stripe 客户端
+    // 延迟初始化 Stripe 客户端
     const stripe = getStripe();
 
-// Generate idempotency key for safe retries
+    // Generate idempotency key for safe retries
     const idempotencyKey = `${userId || sessionId || 'guest'}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-// Build metadata
+    // Build metadata
     const paymentMetadata = {
       userId: userId || '',
       sessionId: sessionId || '',
@@ -566,7 +608,7 @@ const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
       ...(promotionResult.promotions && promotionResult.promotions.length > 0
         ? { promotionIds: promotionResult.promotions.map((p) => p.promotionId).join(',') }
         : {}),
-...additionalMetadata, // Allow additional metadata
+      ...additionalMetadata, // Allow additional metadata
     };
 
     logger.info('Creating PaymentIntent with:', {
@@ -579,11 +621,11 @@ const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(calculatedTotal * 100), // Convert to cents
       currency: currency.toLowerCase(),
-capture_method: 'automatic', // Automatic capture
+      capture_method: 'automatic', // Automatic capture
       metadata: paymentMetadata,
-receipt_email: customerEmail || shippingAddress.email, // Receipt email
+      receipt_email: customerEmail || shippingAddress.email, // Receipt email
     }, {
-idempotencyKey, // Prevent duplicate payment intents
+      idempotencyKey, // Prevent duplicate payment intents
     });
 
     res.json({
@@ -593,20 +635,20 @@ idempotencyKey, // Prevent duplicate payment intents
       currency: currency.toUpperCase(),
       breakdown: {
         subtotal: Math.round(subtotal * 100) / 100,
-promotionDiscount: Math.round(promotionDiscount * 100) / 100, // 促销折扣
-discount: Math.round(totalDiscount * 100) / 100, // 总折扣（促销+优惠券）
+        promotionDiscount: Math.round(promotionDiscount * 100) / 100, // 促销折扣
+        discount: Math.round(totalDiscount * 100) / 100, // 总折扣（促销+优惠券）
         shipping: Math.round(shippingCost * 100) / 100,
         tax: Math.round(tax * 100) / 100,
         total: Math.round(calculatedTotal * 100) / 100,
-}, // 返回费用明细供前端展示
+      }, // 返回费用明细供前端展示
       ...(promotionResult.promotions && promotionResult.promotions.length > 0
         ? { promotions: promotionResult.promotions }
-: {}), // 返回促销活动信息
-...(couponResult.coupon ? { coupon: couponResult.coupon } : {}), // 返回优惠券信息
+        : {}), // 返回促销活动信息
+      ...(couponResult.coupon ? { coupon: couponResult.coupon } : {}), // 返回优惠券信息
     });
   } catch (error) {
-// 改进错误处理和日志记录
-// Enhanced error handling with error codes
+    // 改进错误处理和日志记录
+    // Enhanced error handling with error codes
     logger.error('Error creating payment intent:', {
       error: error.message,
       stack: error.stack,
@@ -715,10 +757,12 @@ async function upsertUserAddress(prismaClient, userId, address, options = {}) {
 
 exports.confirmOrder = async (req, res) => {
   try {
-const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'standard', couponCode, couponId } = req.body; // 支持优惠券代码和ID
+    const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'standard', couponCode, couponId } = req.body; // 支持优惠券代码和ID
     const userId = req.user?.id || null;
     const sessionId = req.sessionId || null;
     const email = req.body.email || req.user?.email;
+
+    const shippingSettings = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
 
     if (!paymentIntentId) {
       return res.status(400).json({ error: 'paymentIntentId is required' });
@@ -733,7 +777,7 @@ const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'stan
     }
 
     // Verify PaymentIntent with Stripe
-// 检查 Stripe 配置并使用延迟初始化
+    // 检查 Stripe 配置并使用延迟初始化
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.trim() === '') {
       logger.error('Stripe Secret Key is missing in confirmOrder!');
       return res.status(500).json({ error: 'Stripe is not configured', details: 'Please configure STRIPE_SECRET_KEY in environment variables' });
@@ -785,12 +829,12 @@ const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'stan
       return sum + Number(item.priceSnapshot) * item.quantity;
     }, 0);
 
-// Calculate promotion discount
+    // Calculate promotion discount
     const promotionResult = await calculatePromotionDiscount(cart.items, subtotal);
     const promotionDiscount = promotionResult.discount || 0;
     const subtotalAfterPromotion = subtotal - promotionDiscount;
 
-// Validate coupon and calculate discount (on subtotal after promotion)
+    // Validate coupon and calculate discount (on subtotal after promotion)
     // Use couponId if provided, otherwise use couponCode
     let couponResult = { discount: 0, coupon: null, error: null };
     if (couponId) {
@@ -808,16 +852,16 @@ const { paymentIntentId, shippingAddress, billingAddress, shippingMethod = 'stan
     }
 
     const couponDiscount = couponResult.discount || 0;
-const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
-    const shippingCost = calculateShipping(shippingAddress.country, shippingAddress.province, shippingMethod);
-// Tax is calculated on subtotal minus all discounts
+    const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
+    const shippingCost = calculateShipping(shippingAddress.country, shippingAddress.province, shippingMethod, shippingSettings);
+    // Tax is calculated on subtotal minus all discounts
     const tax = calculateTax(subtotalAfterPromotion - couponDiscount, shippingAddress.province);
     const total = subtotal - totalDiscount + shippingCost + tax;
 
     // Generate order number
     const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-// Create order and apply coupon in transaction
+    // Create order and apply coupon in transaction
     const order = await prisma.$transaction(async (tx) => {
       // Create order
       const createdOrder = await tx.order.create({
@@ -830,7 +874,7 @@ const totalDiscount = promotionDiscount + couponDiscount; // 总折扣
           subtotal: subtotal,
           shippingCost: shippingCost,
           tax: tax,
-discount: totalDiscount, // 使用总折扣金额（促销+优惠券）
+          discount: totalDiscount, // 使用总折扣金额（促销+优惠券）
           total: total,
           paymentStatus: 'COMPLETED',
           paymentIntentId: paymentIntentId,
@@ -846,7 +890,7 @@ discount: totalDiscount, // 使用总折扣金额（促销+优惠券）
               priceSnapshot: item.priceSnapshot,
             })),
           },
-// Create OrderPromotion records if promotions were applied
+          // Create OrderPromotion records if promotions were applied
           ...(promotionResult.promotions && promotionResult.promotions.length > 0
             ? {
               orderPromotions: {
@@ -857,14 +901,14 @@ discount: totalDiscount, // 使用总折扣金额（促销+优惠券）
               },
             }
             : {}),
-// Create OrderCoupon record if coupon was applied
+          // Create OrderCoupon record if coupon was applied
           ...(couponResult.coupon
             ? {
               orderCoupons: {
                 create: {
                   couponId: couponResult.coupon.id,
                   userId: userId || null,
-discountAmount: couponDiscount, // 只记录优惠券折扣
+                  discountAmount: couponDiscount, // 只记录优惠券折扣
                 },
               },
             }
@@ -883,7 +927,7 @@ discountAmount: couponDiscount, // 只记录优惠券折扣
         },
       });
 
-// Decrease inventory for all order items
+      // Decrease inventory for all order items
       // Use correct Prisma model name: Variant (not productVariant)
       // This is done within the transaction to ensure atomicity
       for (const item of createdOrder.items) {
@@ -903,7 +947,7 @@ discountAmount: couponDiscount, // 只记录优惠券折扣
         itemsProcessed: createdOrder.items.length,
       });
 
-// Update coupon used count if coupon was applied
+      // Update coupon used count if coupon was applied
       if (couponResult.coupon) {
         await tx.coupon.update({
           where: { id: couponResult.coupon.id },
@@ -921,7 +965,7 @@ discountAmount: couponDiscount, // 只记录优惠券折扣
       }
 
       if (userId) {
-// 保存用户常用地址
+        // 保存用户常用地址
         await upsertUserAddress(tx, userId, shippingAddress, { isDefault: true });
         if (
           billingAddress &&

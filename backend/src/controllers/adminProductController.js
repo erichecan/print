@@ -511,7 +511,9 @@ exports.createProduct = async (req, res) => {
           salePrice: convertToDecimal(salePrice) || new Prisma.Decimal(basePriceCents).dividedBy(100),
           grossProfit: convertToDecimal(grossProfit) || new Prisma.Decimal(0),
           sku,
-          stockQuantity: stockQuantity || 0,
+          stockQuantity: (variants && variants.length > 0)
+            ? variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0)
+            : (stockQuantity || 0),
           description: description || null,
           longDescription: longDescription || null,
           isActive,
@@ -825,7 +827,9 @@ exports.updateProduct = async (req, res) => {
         ...(salePrice !== undefined ? { salePrice: convertToDecimal(salePrice) } : {}),
         ...(grossProfit !== undefined ? { grossProfit: convertToDecimal(grossProfit) } : {}),
         ...(sku !== undefined ? { sku } : {}),
-        ...(stockQuantity !== undefined ? { stockQuantity } : {}),
+        ...((Array.isArray(variants))
+          ? { stockQuantity: variants.reduce((sum, v) => sum + (Number(v.stockQuantity) || 0), 0) }
+          : (stockQuantity !== undefined ? { stockQuantity } : {})),
         ...(description !== undefined ? { description } : {}),
         ...(longDescription !== undefined ? { longDescription } : {}),
         ...(isActive !== undefined ? { isActive } : {}),

@@ -1,9 +1,4 @@
-/**
- * Admin Setting Controller
-* Site configuration and content manager APIs
- */
-const prisma = require('../lib/prisma');
-const logger = require('../utils/logger');
+const { getSettingValue, upsertSetting } = require('../services/settingService');
 
 const DEFAULT_SITE_SETTINGS = {
   siteName: 'suvernire plus',
@@ -18,6 +13,26 @@ const DEFAULT_SITE_SETTINGS = {
   reviewEmail: 'review@souvenirplus.com',
 };
 
+const DEFAULT_SHIPPING_SETTINGS = {
+  standard: {
+    enabled: true,
+    cost: 9.99,
+    costUS: 12.99,
+    costIntl: 15.99,
+    estimatedDaysCA: 7,
+    estimatedDaysUS: 10,
+  },
+  express: {
+    enabled: true,
+    cost: 19.99,
+    costUS: 24.99,
+    costIntl: 29.99,
+    estimatedDaysCA: 3,
+    estimatedDaysUS: 5,
+  },
+};
+
+// ... (DEFAULT_CONTENT_CONFIG and DEFAULT_PRODUCTION_TEMPLATES remain same)
 // 扩展内容配置，包含首页、关于页、帮助页和静态文字
 const DEFAULT_CONTENT_CONFIG = {
   // 保留原有字段以向后兼容
@@ -307,92 +322,6 @@ const DEFAULT_PRODUCTION_TEMPLATES = [
   },
 ];
 
-// 使用 Prisma 原始查询访问 settings 表（因为 settings 不在 Prisma schema 中）
-const getSettingValue = async (key, defaultValue) => {
-  try {
-    const setting = await prisma.$queryRaw`
-      SELECT * FROM settings WHERE key = ${key} LIMIT 1
-    `.then((results) => results[0] || null);
-
-    if (!setting) {
-      return defaultValue;
-    }
-
-    // 解析 JSON 值（可能是字符串或对象）
-    let parsedValue = defaultValue;
-    if (setting.value) {
-      try {
-        parsedValue = typeof setting.value === 'string'
-          ? JSON.parse(setting.value)
-          : setting.value;
-      } catch (e) {
-        logger.warn('Failed to parse setting value', { key, error: e.message });
-        parsedValue = defaultValue;
-      }
-    }
-
-    // 合并默认值和数据库值
-    return {
-      ...defaultValue,
-      ...parsedValue,
-    };
-  } catch (error) {
-    logger.error('Error getting setting value', { key, error: error.message });
-    return defaultValue;
-  }
-};
-
-const upsertSetting = async (key, value, userId) => {
-  try {
-    const now = new Date();
-
-    // 修复：分步处理，避免 PostgreSQL gen_random_uuid() 兼容性问题
-    // 1. 先检查记录是否存在
-    const existing = await prisma.$queryRaw`
-      SELECT * FROM settings WHERE key = ${key} LIMIT 1
-    `.then((results) => results[0] || null);
-
-    const valueJson = JSON.stringify(value);
-
-    if (existing) {
-      // 2a. 更新现有记录
-      await prisma.$executeRaw`
-        UPDATE settings 
-        SET value = ${valueJson}::jsonb,
-            updated_by = ${userId || null}::uuid,
-            updated_at = ${now}
-        WHERE key = ${key}
-      `;
-      logger.info('[adminSettingController] Setting updated', { key, userId: userId || 'system' });
-    } else {
-      // 2b. 插入新记录 - 使用 Node.js UUID 生成
-      const { v4: uuidv4 } = require('uuid');
-      const id = uuidv4();
-
-      // 修复：将字符串 UUID 转换为 PostgreSQL uuid 类型
-      await prisma.$executeRaw`
-       INSERT INTO settings (id, key, value, updated_by, updated_at)
-        VALUES (${id}::uuid, ${key}, ${valueJson}::jsonb, ${userId || null}::uuid, ${now})
-      `;
-      logger.info('[adminSettingController] Setting created', { key, userId: userId || 'system' });
-    }
-
-    // 3. 获取更新后的值
-    const setting = await prisma.$queryRaw`
-      SELECT * FROM settings WHERE key = ${key} LIMIT 1
-    `.then((results) => results[0]);
-
-    return setting;
-  } catch (error) {
-    logger.error('[adminSettingController] Error upserting setting', {
-      key,
-      error: error.message,
-      stack: error.stack
-    });
-    throw error;
-  }
-};
-
 exports.getSiteSettings = async (req, res) => {
   try {
     const data = await getSettingValue('site.settings', DEFAULT_SITE_SETTINGS);
@@ -514,6 +443,28 @@ exports.updateProductionTemplates = async (req, res) => {
   } catch (error) {
     console.error('[adminSettingController] updateProductionTemplates error:', error);
     res.status(500).json({ error: 'Failed to update production templates' });
+  }
+};
+
+// Shipping Settings
+exports.getShippingSettings = async (req, res) => {
+  try {
+    const data = await getSettingValue('site.shipping', DEFAULT_SHIPPING_SETTINGS);
+    res.json({ data });
+  } catch (error) {
+    console.error('[adminSettingController] getShippingSettings error:', error);
+    res.status(500).json({ error: 'Failed to load shipping settings' });
+  }
+};
+
+exports.updateShippingSettings = async (req, res) => {
+  try {
+    const payload = { ...DEFAULT_SHIPPING_SETTINGS, ...(req.body || {}) };
+    await upsertSetting('site.shipping', payload, req.user?.id);
+    res.json({ data: payload });
+  } catch (error) {
+    console.error('[adminSettingController] updateShippingSettings error:', error);
+    res.status(500).json({ error: 'Failed to update shipping settings' });
   }
 };
 

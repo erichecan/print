@@ -123,6 +123,11 @@ const ICONS: Record<string, JSX.Element> = {
       <path fill="currentColor" d="M21 6h-2v9H6v2c0 .55.45 1 1 1h11l4 4V7c0-.55-.45-1-1-1zm-4 6V3c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1v14l4-4h10c.55 0 1-.45 1-1z" />
     </svg>
   ),
+  shipping: (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+    </svg>
+  ),
 };
 
 const NAV_LINKS = [
@@ -145,6 +150,7 @@ const NAV_LINKS = [
   { href: '/admin/fonts', label: 'Fonts', icon: 'fonts', i18n: 'fonts' }, // Font management
   { href: '/admin/testimonials', label: 'Testimonials', icon: 'testimonials', i18n: 'testimonials' }, // Dedicated testimonials management
   { href: '/admin/content-manager', label: 'CMS', icon: 'cms', i18n: 'cms' }, // Content Management System
+  { href: '/admin/settings/shipping', label: 'Shipping', icon: 'shipping', i18n: 'shipping' },
   { href: '/admin/settings/color-mapping', label: 'Color Mapping', icon: 'settings', i18n: 'colorMapping' },
   { href: '/admin/settings', label: 'Settings', icon: 'settings', i18n: 'settings' },
 ];

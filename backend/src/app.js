@@ -227,6 +227,7 @@ app.use('/api/admin/offline-orders', require('./routes/adminOfflineOrders'));
 app.use('/api/admin/offline-order-products', require('./routes/offlineOrderProducts'));
 app.use('/api/admin/offline-order-colors', require('./routes/offlineOrderColors'));
 app.use('/api/admin/offline-order-size-fees', require('./routes/offlineOrderSizeFees'));
+app.use('/api/size-fees', require('./routes/sizeFees')); // Public size fees API for Design Lab
 app.use('/api/admin/offline-order-product-color-sizes', require('./routes/offlineOrderProductColorSizes'));
 // Sales 线下订单查看接口（基于 OfflineOrder）
 app.use('/api/sales/orders', require('./routes/salesOrders'));

@@ -11,6 +11,13 @@ PROJECT_ID="print-482914"
 REGION="us-central1"
 SERVICE_NAME="print-main-backend"
 
+# Check for AUTH_TOKEN
+if [ -z "$AUTH_TOKEN" ]; then
+  echo "❌ Error: AUTH_TOKEN environment variable is not set."
+  echo "Usage: AUTH_TOKEN=your_admin_token ./backend/scripts/seed-remote-size-pricing.sh"
+  exit 1
+fi
+
 # Get the backend service URL
 echo "📡 Getting backend service URL..."
 BACKEND_URL=$(gcloud run services describe $SERVICE_NAME \
@@ -46,6 +53,7 @@ for item in "${SIZE_FEES[@]}"; do
     -X POST \
     "$BACKEND_URL/api/admin/offline-orders/size-fees" \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $AUTH_TOKEN" \
     -d "{\"sizeFees\": [{\"size\": \"$size\", \"additionalFee\": $fee}]}")
   
   http_code=$(echo "$response" | tail -n1)
