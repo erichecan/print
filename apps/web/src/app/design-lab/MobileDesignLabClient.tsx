@@ -1811,10 +1811,10 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
           // 移动端：当选择更新时，确保显示对应的编辑面板
           // 与selection:created保持一致的行为
           setActiveTool(null);
-          
+
           const objectName = (activeObject as any).name || '';
           const layerType = (activeObject as any).data?.layerType;
-          
+
           // 根据对象类型确保显示正确的编辑面板
           if (activeObject.type === 'image') {
             if ((activeObject as any).name && (activeObject as any).name.startsWith('image_')) {
@@ -1827,7 +1827,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               setToolPanelType('edit-text');
             }
           }
-          
+
           fabricCanvas.renderAll();
         });
 
@@ -3621,7 +3621,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         {/* 5.0 版本：功能3 - ToolPanel 面板切换 */}
         <div className={`dl-tool-panel-wrapper ${toolPanelType !== 'home' && toolPanelType !== null ? 'is-open' : ''}`}> {/* Wrapper for mobile handling - removed dl-desktop-only to allow mobile display */}
           {toolPanelType && (
-            <aside className="dl-tool-panel" aria-label="Tool panel" data-testid="panel">
+            <aside className="dl-tool-panel dl-desktop-only" aria-label="Tool panel" data-testid="panel">
               <div className="dl-tool-panel__content">
                 {/* Home 面板 */}
                 {toolPanelType === 'home' && (
@@ -3675,11 +3675,13 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
                 {/* Upload 面板 */}
                 {/* 5.0 版本：步骤1 - 集成 UploadPanel 组件 */}
                 {toolPanelType === 'upload' && (
-                  <UploadPanel
-                    onFileSelect={handleFileUpload}
-                    onBrowseClick={() => { }}
-                    onClose={handleBackToHome}
-                  />
+                  <div className="dl-desktop-only">
+                    <UploadPanel
+                      onFileSelect={handleFileUpload}
+                      onBrowseClick={() => { }}
+                      onClose={handleBackToHome}
+                    />
+                  </div>
                 )}
 
                 {/* Edit Upload 面板 - Desktop Only (移动端使用MobileEditPanel) */}
@@ -3698,23 +3700,27 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
 
                 {/* Text 面板 */}
                 {toolPanelType === 'text' && (
-                  <>
-                    <div className="dl-tool-panel__header">
-                      <h2 className="dl-tool-panel__title">Add Text</h2>
-                      <button
-                        className="dl-tool-panel__back-btn"
-                        onClick={handleBackToHome}
-                        aria-label="Back to home"
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M19 12H5M12 19l-7-7 7-7" />
-                        </svg>
-                        Back
-                      </button>
-                    </div>
-                    {/* Add Text: 复用 4.0 TextPanel（输入文本并 Add To Design） */}
-                    <TextPanel onAddText={handleAddText} />
-                  </>
+                  <div className="dl-desktop-only">
+                    <>
+                      <div className="dl-tool-panel__header">
+                        <h2 className="dl-tool-panel__title">Add Text</h2>
+                        <button
+                          className="dl-tool-panel__back-btn"
+                          onClick={handleBackToHome}
+                          aria-label="Back to home"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7" />
+                          </svg>
+                          Back
+                        </button>
+                      </div>
+                      {/* Add Text: 复用 4.0 TextPanel（输入文本并 Add To Design） */}
+                      <div className="dl-desktop-only">
+                        <TextPanel onAddText={handleAddText} />
+                      </div>
+                    </>
+                  </div>
                 )}
 
                 {/* Edit Text 面板 - Desktop Only (移动端使用MobileEditPanel) */}
@@ -3742,22 +3748,26 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
 
                 {/* Art 面板 */}
                 {toolPanelType === 'art' && (
-                  <ArtPanel onSelectArt={handleAddArt} />
+                  <div className="dl-desktop-only">
+                    <ArtPanel onSelectArt={handleAddArt} />
+                  </div>
                 )}
 
                 {/* Product Colors 面板 */}
                 {toolPanelType === 'product-colors' && (
-                  <ProductColorsPanel
-                    productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
-                    colors={dynamicColors.length > 0 ? dynamicColors : PRODUCT_COLORS}
-                    selectedColor={productInfo.color}
-                    onSelectColor={handleColorSelect}
-                    onClose={handleBackToHome}
-                    onChangeProduct={() => {
-                      setCatalogMode('change');
-                      setIsCatalogModalOpen(true);
-                    }}
-                  />
+                  <div className="dl-desktop-only">
+                    <ProductColorsPanel
+                      productName={productInfo.productName || 'Gildan Softstyle Jersey T-shirt'}
+                      colors={dynamicColors.length > 0 ? dynamicColors : PRODUCT_COLORS}
+                      selectedColor={productInfo.color}
+                      onSelectColor={handleColorSelect}
+                      onClose={handleBackToHome}
+                      onChangeProduct={() => {
+                        setCatalogMode('change');
+                        setIsCatalogModalOpen(true);
+                      }}
+                    />
+                  </div>
                 )}
 
                 {/* Edit Art 面板 - Desktop Only (移动端使用MobileEditPanel) */}
@@ -4273,6 +4283,11 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
       <MobileEditPanel
         isOpen={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art'}
         onClose={handleBackToHome}
+        title={
+          toolPanelType === 'edit-upload' ? 'Edit Upload' :
+            toolPanelType === 'edit-text' ? 'Edit Text' :
+              toolPanelType === 'edit-art' ? 'Edit Art' : undefined
+        }
         onBack={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art' ? () => {
           // Back to first step or close
           if (toolPanelType === 'edit-upload') {

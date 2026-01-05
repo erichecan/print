@@ -4189,9 +4189,11 @@
   }
 
   .dl-mobile-edit-panel__content .dl-edit-upload-panel__control-btn {
-    width: 36px;
-    height: 36px;
-    padding: 6px;
+    width: 44px;
+    height: 44px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid #ddd;
   }
 
   .dl-mobile-edit-panel__content .dl-edit-upload-panel__control-btn svg {

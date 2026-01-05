@@ -13,6 +13,7 @@ import { fontsApi, type Font } from '@/lib/api';
 import { FONT_CATEGORY_LABELS, type FontCategory } from '@/data/fonts';
 import { TextEditControls } from '../../../design-lab5/toolbar/controls'; // 复用 Text 工具栏组件
 import ColorPicker from '../ColorPicker';
+import { DESIGN_LAB_COLORS, type DesignLabColor } from '@/data/colors';
 import { applyCornerControls } from '../../../design-lab5/upload-controls/registerUploadCornerControls';
 
 interface EditTextPanelProps {
@@ -31,17 +32,17 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   const [outlineColor, setOutlineColor] = useState('#000000');
   const [outlineWidth, setOutlineWidth] = useState(0);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('center');
-const [textShape, setTextShape] = useState<'straight' | 'arc' | 'circle' | 'wave'>('straight'); // 文本形状
-const [isOutOfSafeArea, setIsOutOfSafeArea] = useState(false); // 是否超出安全区
-// 字体选择器下拉菜单状态
+  const [textShape, setTextShape] = useState<'straight' | 'arc' | 'circle' | 'wave'>('straight'); // 文本形状
+  const [isOutOfSafeArea, setIsOutOfSafeArea] = useState(false); // 是否超出安全区
+  // 字体选择器下拉菜单状态
   const [showFontDropdown, setShowFontDropdown] = useState(false);
   const fontSelectorRef = useRef<HTMLDivElement>(null);
-// 从 API 加载字体
+  // 从 API 加载字体
   const [fonts, setFonts] = useState<Record<string, Font[]>>({});
   const [fontsLoading, setFontsLoading] = useState(true);
-const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载的 Google Fonts，避免重复插入 <link>
+  const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载的 Google Fonts，避免重复插入 <link>
 
-// 确保 Google Font 已加载（否则下拉预览看起来“都一样”）
+  // 确保 Google Font 已加载（否则下拉预览看起来“都一样”）
   const ensureGoogleFontLoaded = (fontInfo?: Font) => {
     if (!fontInfo) return;
     if (typeof document === 'undefined') return;
@@ -76,7 +77,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     loadedGoogleFontsRef.current.add(key);
   };
 
-// 点击外部关闭下拉菜单
+  // 点击外部关闭下拉菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (fontSelectorRef.current && !fontSelectorRef.current.contains(event.target as Node)) {
@@ -93,7 +94,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     };
   }, [showFontDropdown]);
 
-// 从 API 加载字体
+  // 从 API 加载字体
   useEffect(() => {
     const loadFonts = async () => {
       try {
@@ -134,11 +135,11 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     loadFonts();
   }, []);
 
-// 更新文本属性
+  // 更新文本属性
   useEffect(() => {
     if (selectedText) {
       setText(selectedText.text || '');
-// 检查字体是否在加载的字体列表中
+      // 检查字体是否在加载的字体列表中
       const fontName = selectedText.fontFamily || 'Arial';
       const allFonts = Object.values(fonts).flat();
       const fontExists = allFonts.some(f => f.name === fontName);
@@ -148,13 +149,13 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
       setRotation(selectedText.angle || 0);
       setTextAlign((selectedText.textAlign as "left" | "center" | "right") || 'center');
 
-// 描边设置
+      // 描边设置
       if (selectedText.stroke) {
         setOutlineColor(selectedText.stroke as string || '#000000');
         setOutlineWidth(selectedText.strokeWidth || 0);
       }
 
-// 文本形状（如果有path属性，判断形状类型）
+      // 文本形状（如果有path属性，判断形状类型）
       if ((selectedText as any).path) {
         const path = (selectedText as any).path;
         if (typeof path === 'string') {
@@ -172,12 +173,12 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
         setTextShape('straight');
       }
 
-// 检查是否超出安全区
+      // 检查是否超出安全区
       checkSafeArea(selectedText, canvas);
     }
   }, [selectedText, fonts, canvas]);
 
-// 检查对象是否超出安全区
+  // 检查对象是否超出安全区
   const checkSafeArea = (textObj: fabric.IText, canvasObj: fabric.Canvas | null) => {
     if (!textObj || !canvasObj) {
       setIsOutOfSafeArea(false);
@@ -210,7 +211,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     setIsOutOfSafeArea(outOfBounds);
   };
 
-// 监听对象移动和缩放，实时检查安全区
+  // 监听对象移动和缩放，实时检查安全区
   useEffect(() => {
     if (!selectedText || !canvas) return;
 
@@ -227,7 +228,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     };
   }, [selectedText, canvas]);
 
-// 更新文本内容
+  // 更新文本内容
   const handleTextChange = (newText: string) => {
     setText(newText);
     if (selectedText) {
@@ -240,32 +241,32 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// 更新字体
-// 支持多语言字体，需要加载 Google Fonts
-// 修复：使用从 API 加载的 fonts 数据或从 fonts.ts 导入的配置
-// 修复：添加错误处理和调试日志，确保字体更改正确应用
+  // 更新字体
+  // 支持多语言字体，需要加载 Google Fonts
+  // 修复：使用从 API 加载的 fonts 数据或从 fonts.ts 导入的配置
+  // 修复：添加错误处理和调试日志，确保字体更改正确应用
   const handleFontChange = (font: string) => {
     console.log('[EditTextPanel] handleFontChange called:', { font, hasSelectedText: !!selectedText, hasCanvas: !!canvas });
     setFontFamily(font);
     if (selectedText && canvas) {
       try {
-// 对于 Google Fonts，需要确保字体已加载
-// 从加载的 fonts 数据中查找字体信息
+        // 对于 Google Fonts，需要确保字体已加载
+        // 从加载的 fonts 数据中查找字体信息
         const allFonts = Object.values(fonts).flat();
         const fontInfo = allFonts.find(f => f.name === font);
-// 选择时触发加载，确保 Fabric/预览都能用到真实字体
+        // 选择时触发加载，确保 Fabric/预览都能用到真实字体
         ensureGoogleFontLoaded(fontInfo);
 
-// 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
-// 优先使用 googleFontFamily（有些字体 name/displayName 不等于 Google 的 family）
+        // 直接设置字体，Fabric.js 会自动使用系统字体或已加载的 Web 字体
+        // 优先使用 googleFontFamily（有些字体 name/displayName 不等于 Google 的 family）
         selectedText.set('fontFamily', fontInfo?.googleFontFamily || font);
-(selectedText as any).dirty = true; // 强制标记为 dirty，避免缓存导致“看起来没变”
+        (selectedText as any).dirty = true; // 强制标记为 dirty，避免缓存导致“看起来没变”
         selectedText.setCoords();
         canvas.renderAll();
 
         console.log('[EditTextPanel] Font changed successfully:', { font, textObjectName: (selectedText as any).name });
 
-// 延迟调用 onUpdate，确保字体更改已应用
+        // 延迟调用 onUpdate，确保字体更改已应用
         setTimeout(() => {
           onUpdate();
         }, 100);
@@ -277,7 +278,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// 当字体列表加载完成或当前 fontFamily 变化时，预加载当前字体（让下拉/预览立即有差异）
+  // 当字体列表加载完成或当前 fontFamily 变化时，预加载当前字体（让下拉/预览立即有差异）
   useEffect(() => {
     const allFonts = Object.values(fonts).flat();
     const fontInfo = allFonts.find(f => f.name === fontFamily || f.googleFontFamily === fontFamily);
@@ -285,8 +286,8 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fontsLoading, fontFamily]);
 
-// 更新颜色
-// 修复：添加错误处理和调试日志，确保颜色更改正确应用
+  // 更新颜色
+  // 修复：添加错误处理和调试日志，确保颜色更改正确应用
   const handleColorChange = (newColor: string) => {
     console.log('[EditTextPanel] handleColorChange called:', { newColor, hasSelectedText: !!selectedText, hasCanvas: !!canvas });
     setColor(newColor);
@@ -298,7 +299,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
 
         console.log('[EditTextPanel] Color changed successfully:', { newColor, textObjectName: (selectedText as any).name });
 
-// 延迟调用 onUpdate，确保颜色更改已应用
+        // 延迟调用 onUpdate，确保颜色更改已应用
         setTimeout(() => {
           onUpdate();
         }, 100);
@@ -310,7 +311,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// 更新旋转
+  // 更新旋转
   const handleRotationChange = (angle: number) => {
     setRotation(angle);
     if (selectedText) {
@@ -323,7 +324,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// 更新字体大小
+  // 更新字体大小
   const handleFontSizeChange = (size: number) => {
     setFontSize(size);
     if (selectedText) {
@@ -336,7 +337,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// 更新描边
+  // 更新描边
   const handleOutlineChange = (color: string, width: number) => {
     setOutlineColor(color);
     setOutlineWidth(width);
@@ -353,7 +354,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// 更新文本对齐
+  // 更新文本对齐
   const handleTextAlignChange = (align: 'left' | 'center' | 'right') => {
     setTextAlign(align);
     if (selectedText) {
@@ -366,14 +367,14 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// 处理文本形状变化
-// 修复：添加参数验证和错误处理，防止 TypeError "t is not iterable"
+  // 处理文本形状变化
+  // 修复：添加参数验证和错误处理，防止 TypeError "t is not iterable"
   const handleTextShapeChange = (shape: 'straight' | 'arc' | 'circle' | 'wave') => {
     setTextShape(shape);
     if (!selectedText || !canvas) return;
 
     try {
-// 验证 selectedText 是有效的文本对象
+      // 验证 selectedText 是有效的文本对象
       if (selectedText.type !== 'i-text' && selectedText.type !== 'textbox') {
         console.warn('[EditTextPanel] Selected object is not a text object, skipping shape change');
         return;
@@ -427,13 +428,13 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
           path = undefined;
       }
 
-// 验证路径格式：必须是字符串或 undefined
+      // 验证路径格式：必须是字符串或 undefined
       if (path !== undefined && typeof path !== 'string') {
         console.error('[EditTextPanel] Invalid path format, expected string or undefined, got:', typeof path, path);
         path = undefined;
       }
 
-// 安全地设置路径属性
+      // 安全地设置路径属性
       if (path === undefined) {
         selectedText.set('path', undefined);
       } else {
@@ -445,7 +446,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
       canvas.renderAll();
       onUpdate();
     } catch (error) {
-// 仅打印错误，不弹窗也不改变面板状态
+      // 仅打印错误，不弹窗也不改变面板状态
       console.error('[EditTextPanel] Error applying text shape:', error);
       // 如果路径设置失败，回退到直线
       try {
@@ -460,8 +461,8 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// Center 按钮
-// 添加调试日志和错误处理
+  // Center 按钮
+  // 添加调试日志和错误处理
   const handleCenter = () => {
     if (!selectedText || !canvas) {
       console.warn('[EditTextPanel] handleCenter: selectedText or canvas is null');
@@ -484,7 +485,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     onUpdate();
   };
 
-// Bring to Front - 修复 Fabric.js v6 API
+  // Bring to Front - 修复 Fabric.js v6 API
   const handleBringToFront = () => {
     if (!selectedText || !canvas) return;
     try {
@@ -508,8 +509,8 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// Send to Back - 修复 Fabric.js v6 API
-// 限制：不能将对象移到商品底图（background）下面
+  // Send to Back - 修复 Fabric.js v6 API
+  // 限制：不能将对象移到商品底图（background）下面
   const handleSendToBack = async () => {
     if (!selectedText || !canvas) return;
     try {
@@ -521,7 +522,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
       const backgroundIndex = objects.findIndex((obj: any) => {
         const name = (obj as any).name || '';
         const layerType = (obj as any).data?.layerType;
-// 兼容 5.0：底图名称为 product-image-base
+        // 兼容 5.0：底图名称为 product-image-base
         return (
           name === 'background' ||
           name === 'product-image-base' ||
@@ -535,7 +536,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
       // 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
       const targetIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
 
-// 添加调试日志
+      // 添加调试日志
       console.log('[EditTextPanel] sendToBack called:', {
         currentIndex,
         backgroundIndex,
@@ -543,13 +544,13 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
         objectsCount: objects.length,
       });
 
-// 如果已经在目标位置，不需要移动
+      // 如果已经在目标位置，不需要移动
       if (currentIndex === targetIndex) {
         console.log('[EditTextPanel] Already at target position, skipping');
         return;
       }
 
-// 修复根因：不再先 sendObjectToBack（会把对象送到绝对底层，必然跑到商品底图后面）
+      // 修复根因：不再先 sendObjectToBack（会把对象送到绝对底层，必然跑到商品底图后面）
       // 直接将对象移动到“商品底图之后的第一个位置”（backgroundIndex + 1），使用 Fabric API 保证顺序生效
       if (typeof (canvas as any).moveObjectTo === 'function') {
         (canvas as any).moveObjectTo(selectedText, targetIndex);
@@ -571,7 +572,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
-// Duplicate - 修复 clone API 兼容性问题
+  // Duplicate - 修复 clone API 兼容性问题
   const handleDuplicate = async () => {
     if (!selectedText || !canvas) return;
     try {
@@ -600,7 +601,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
       }
 
       canvas.add(cloned);
-// Add Text: 复用 5.0 图标角控件（delete/duplicate/resize）
+      // Add Text: 复用 5.0 图标角控件（delete/duplicate/resize）
       applyCornerControls({ canvas, obj: cloned });
       canvas.setActiveObject(cloned);
       canvas.renderAll();
@@ -610,13 +611,206 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
     }
   };
 
+  // Determine if we are on mobile (can be passed as prop or detected, but for now we look at layout needs)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const [showColorAccordion, setShowColorAccordion] = useState(false);
+  const [showFontAccordion, setShowFontAccordion] = useState(false);
+
   if (!selectedText) {
     return (
       <div className="dl-edit-text-panel">
-        <p>No text selected</p>
+        <p style={{ padding: '20px', textAlign: 'center', color: '#666' }}>No text selected</p>
       </div>
     );
   }
+
+  // --- Mobile Main View ---
+  if (isMobile) {
+    return (
+      <div className="dl-edit-text-panel">
+        <div className="dl-edit-text-panel__scroll-area">
+          {/* 1. Text Section: 100px */}
+          <div className="dl-edit-text-panel__section dl-edit-text-panel__section--text" style={{ height: '100px' }}>
+            <label className="dl-edit-text-panel__row-label" style={{ marginBottom: '4px', display: 'block' }}>Text</label>
+            <textarea
+              className="dl-edit-text-panel__textarea"
+              value={text}
+              onChange={(e) => handleTextChange(e.target.value)}
+              placeholder="Type your text..."
+              rows={2}
+              style={{ height: '60px' }}
+            />
+          </div>
+
+          {/* 2. Change Color Row: 49px + Accordion */}
+          <div className="dl-edit-text-panel__section" style={{ borderBottom: '1px solid #f0f0f0' }}>
+            <div
+              className="dl-edit-text-panel__section--color"
+              onClick={() => {
+                setShowColorAccordion(!showColorAccordion);
+                setShowFontAccordion(false);
+              }}
+              style={{ height: '49px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', cursor: 'pointer' }}
+            >
+              <span className="dl-edit-text-panel__row-label">Change Color</span>
+              <div className="dl-edit-text-panel__row-value">
+                <span>{DESIGN_LAB_COLORS.find(c => c.hex.toLowerCase() === color.toLowerCase())?.name || 'Custom'}</span>
+                <div className="dl-edit-text-panel__color-swatch" style={{ backgroundColor: color }} />
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  style={{ transform: showColorAccordion ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </div>
+            </div>
+            {showColorAccordion && (
+              <div style={{ padding: '0 12px 12px' }}>
+                <div className="dl-product-colors-panel__colors-grid" style={{ gap: '6px', display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)' }}>
+                  {DESIGN_LAB_COLORS.map((c) => {
+                    const isSelected = color.toLowerCase() === c.hex.toLowerCase();
+                    return (
+                      <button
+                        key={c.hex}
+                        type="button"
+                        onClick={() => handleColorChange(c.hex)}
+                        className={`dl-product-colors-panel__color-swatch ${isSelected ? 'is-selected' : ''}`}
+                        style={{
+                          backgroundColor: c.hex,
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '6px',
+                          border: isSelected ? '2px solid #0066cc' : '1px solid #ddd',
+                          padding: 0
+                        }}
+                        title={c.name}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 3. Change Font Row: 49px + Accordion */}
+          <div className="dl-edit-text-panel__section" style={{ borderBottom: '1px solid #f0f0f0' }}>
+            <div
+              className="dl-edit-text-panel__section--font"
+              onClick={() => {
+                setShowFontAccordion(!showFontAccordion);
+                setShowColorAccordion(false);
+              }}
+              style={{ height: '49px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', cursor: 'pointer' }}
+            >
+              <span className="dl-edit-text-panel__row-label">Change Font</span>
+              <div className="dl-edit-text-panel__row-value">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid #eee', padding: '2px 8px', borderRadius: '4px' }}>
+                  <span style={{ fontSize: '16px', fontWeight: 'bold' }}>Aa</span>
+                  <span style={{ fontSize: '14px' }}>{fontFamily}</span>
+                </div>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  style={{ transform: showFontAccordion ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}
+                >
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </div>
+            </div>
+            {showFontAccordion && (
+              <div style={{ maxHeight: '200px', overflowY: 'auto', borderTop: '1px solid #f9f9f9' }}>
+                {Object.keys(fonts).sort().map(category => (
+                  <div key={category}>
+                    <div style={{ padding: '6px 16px', background: '#f9f9f9', fontSize: '11px', fontWeight: 'bold', color: '#999' }}>
+                      {FONT_CATEGORY_LABELS[category as FontCategory] || category}
+                    </div>
+                    {fonts[category].map(font => (
+                      <button
+                        key={font.id}
+                        onClick={() => {
+                          handleFontChange(font.name);
+                          setShowFontAccordion(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '10px 16px',
+                          textAlign: 'left',
+                          background: font.name === fontFamily ? '#f0f7ff' : '#fff',
+                          border: 'none',
+                          borderBottom: '1px solid #f5f5f5',
+                          fontFamily: font.googleFontFamily || font.name,
+                          fontSize: '16px'
+                        }}
+                      >
+                        {font.displayName || font.name}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 4. Sliders Section: 70px */}
+          <div className="dl-edit-text-panel__section dl-edit-text-panel__section--sliders" style={{ height: '70px', padding: '8px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '13px', color: '#333', minWidth: '85px' }}>Rotation: {rotation.toFixed(0)}°</span>
+              <input
+                type="range"
+                min="0"
+                max="360"
+                value={rotation}
+                onChange={(e) => handleRotationChange(parseFloat(e.target.value))}
+                className="dl-edit-text-panel__slider"
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '13px', color: '#333', minWidth: '85px' }}>Text Size: {fontSize}px</span>
+              <input
+                type="range"
+                min="12"
+                max="200"
+                value={fontSize}
+                onChange={(e) => handleFontSizeChange(parseFloat(e.target.value))}
+                className="dl-edit-text-panel__slider"
+              />
+            </div>
+          </div>
+
+          {/* 5. Controls Section: 60px */}
+          <div className="dl-edit-text-panel__section dl-edit-text-panel__section--controls" style={{ height: '60px', display: 'flex', alignItems: 'center', padding: '0 12px' }}>
+            <TextEditControls
+              onCenter={handleCenter}
+              onBringToFront={handleBringToFront}
+              onSendToBack={handleSendToBack}
+              textAlign={textAlign}
+              onTextAlignChange={handleTextAlignChange}
+              onDuplicate={handleDuplicate}
+              isMobile={true}
+            />
+          </div>
+        </div>
+
+        {/* 6. Action Section: 45px + 10px shift down */}
+        <div className="dl-edit-text-panel__section--action" style={{ height: '45px', marginTop: '10px', padding: '0 16px', display: 'flex', alignItems: 'center', background: '#fff' }}>
+          {onSave && (
+            <button className="dl-edit-text-panel__save-btn" onClick={onSave} style={{ width: '100%', height: '40px', background: '#0066cc', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 'bold' }}>Save Design</button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- Desktop View ---
 
   return (
     <div className="dl-edit-text-panel">
@@ -672,7 +866,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
                 {fontsLoading ? (
                   <div style={{ padding: '20px', textAlign: 'center' }}>Loading fonts...</div>
                 ) : (
-/* 按类别分组显示字体，从 API 动态获取 */
+                  /* 按类别分组显示字体，从 API 动态获取 */
                   Object.keys(fonts).sort().map(category => {
                     const categoryFonts = fonts[category] || [];
                     if (categoryFonts.length === 0) return null;
@@ -689,13 +883,13 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
                             role="option"
                             aria-selected={font.name === fontFamily}
                             className={`dl-edit-text-panel__font-option ${font.name === fontFamily ? 'is-selected' : ''}`}
-// 悬停时懒加载字体，确保下拉预览“像字体应该有的样子”
+                            // 悬停时懒加载字体，确保下拉预览“像字体应该有的样子”
                             onMouseEnter={() => ensureGoogleFontLoaded(font)}
                             onClick={() => {
                               handleFontChange(font.name);
                               setShowFontDropdown(false);
                             }}
-// 优先用 googleFontFamily 渲染预览
+                            // 优先用 googleFontFamily 渲染预览
                             style={{ fontFamily: `${font.googleFontFamily || font.name}, Arial, sans-serif` }}
                           >
                             <span className="dl-edit-text-panel__font-option-preview">
@@ -773,10 +967,10 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
         </div>
       </div>
 
-{/* 5.5. Text Shape（文本形状） - 已移除 */}
+      {/* 5.5. Text Shape（文本形状） - 已移除 */}
 
       {/* 6. Text Size（字体大小滑块） */}
-{/* 像素级对齐：根据 Custom Ink designlab-addtext03.jpeg，Text Size 应在 Outline 之后 */}
+      {/* 像素级对齐：根据 Custom Ink designlab-addtext03.jpeg，Text Size 应在 Outline 之后 */}
       <div className="dl-edit-text-panel__section">
         <label className="dl-edit-text-panel__label">
           Text Size: {fontSize}px
@@ -813,7 +1007,7 @@ const loadedGoogleFontsRef = useRef<Set<string>>(new Set()); // 记录已加载�
         </button>
       </div>
 
-{/* 超出安全区警示 */}
+      {/* 超出安全区警示 */}
       {isOutOfSafeArea && (
         <div className="dl-edit-text-panel__section dl-edit-text-panel__section--warning">
           <div className="dl-edit-text-panel__warning">

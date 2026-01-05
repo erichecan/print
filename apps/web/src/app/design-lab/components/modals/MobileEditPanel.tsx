@@ -7,6 +7,7 @@ interface MobileEditPanelProps {
     isOpen: boolean;
     onClose: () => void;
     onBack?: () => void;
+    title?: string;
     children: React.ReactNode;
 }
 
@@ -14,6 +15,7 @@ export const MobileEditPanel: React.FC<MobileEditPanelProps> = ({
     isOpen,
     onClose,
     onBack,
+    title,
     children
 }) => {
     if (!isOpen) return null;
@@ -22,14 +24,14 @@ export const MobileEditPanel: React.FC<MobileEditPanelProps> = ({
         <>
             {/* 遮罩层 */}
             <div className="dl-mobile-edit-panel-overlay" onClick={onClose} />
-            
+
             {/* 面板 */}
             <div className="dl-mobile-edit-panel">
                 <header className="dl-mobile-edit-panel__header">
                     {onBack && (
-                        <button 
-                            className="dl-mobile-edit-panel__back" 
-                            onClick={onBack} 
+                        <button
+                            className="dl-mobile-edit-panel__back"
+                            onClick={onBack}
                             aria-label="Back"
                         >
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -37,10 +39,16 @@ export const MobileEditPanel: React.FC<MobileEditPanelProps> = ({
                             </svg>
                         </button>
                     )}
-                    <div className="dl-mobile-edit-panel__header-spacer" />
-                    <button 
-                        className="dl-mobile-edit-panel__close" 
-                        onClick={onClose} 
+
+                    {title ? (
+                        <h2 className="dl-mobile-edit-panel__title">{title}</h2>
+                    ) : (
+                        <div className="dl-mobile-edit-panel__header-spacer" />
+                    )}
+
+                    <button
+                        className="dl-mobile-edit-panel__close"
+                        onClick={onClose}
                         aria-label="Close"
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

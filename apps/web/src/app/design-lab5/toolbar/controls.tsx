@@ -174,6 +174,7 @@ export interface TextEditControlsProps {
   textAlign: 'left' | 'center' | 'right';
   onTextAlignChange: (align: 'left' | 'center' | 'right') => void;
   onDuplicate: () => void;
+  isMobile?: boolean;
 }
 
 export const TextEditControls: React.FC<TextEditControlsProps> = ({
@@ -183,7 +184,61 @@ export const TextEditControls: React.FC<TextEditControlsProps> = ({
   textAlign,
   onTextAlignChange,
   onDuplicate,
+  isMobile = false,
 }) => {
+  if (isMobile) {
+    return (
+      <div className="dl-edit-upload-panel__controls" style={{ width: '100%', gap: '8px', justifyContent: 'center' }}>
+        {/* Center */}
+        <button className="dl-edit-upload-panel__control-btn" onClick={onCenter} type="button">
+          <CenterIcon size={20} />
+        </button>
+
+        {/* Layering */}
+        <div className="dl-edit-upload-panel__tool-buttons">
+          <button className="dl-edit-upload-panel__control-btn" onClick={onBringToFront} type="button">
+            <LayeringUpIcon size={20} />
+          </button>
+          <button className="dl-edit-upload-panel__control-btn" onClick={onSendToBack} type="button">
+            <LayeringDownIcon size={20} />
+          </button>
+        </div>
+
+        {/* Align */}
+        <div className="dl-edit-upload-panel__tool-buttons">
+          <button
+            className={`dl-edit-upload-panel__control-btn ${textAlign === 'left' ? 'is-active' : ''}`}
+            onClick={() => onTextAlignChange('left')}
+            type="button"
+            style={{ background: textAlign === 'left' ? '#f0f7ff' : '#fff' }}
+          >
+            <TextAlignLeftIcon size={20} />
+          </button>
+          <button
+            className={`dl-edit-upload-panel__control-btn ${textAlign === 'center' ? 'is-active' : ''}`}
+            onClick={() => onTextAlignChange('center')}
+            type="button"
+            style={{ background: textAlign === 'center' ? '#f0f7ff' : '#fff' }}
+          >
+            <TextAlignCenterIcon size={20} />
+          </button>
+          <button
+            className={`dl-edit-upload-panel__control-btn ${textAlign === 'right' ? 'is-active' : ''}`}
+            onClick={() => onTextAlignChange('right')}
+            type="button"
+            style={{ background: textAlign === 'right' ? '#f0f7ff' : '#fff' }}
+          >
+            <TextAlignRightIcon size={20} />
+          </button>
+        </div>
+
+        {/* Duplicate */}
+        <button className="dl-edit-upload-panel__control-btn" onClick={onDuplicate} type="button">
+          <DuplicateIcon size={20} />
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="dl-edit-text-panel__section dl-edit-text-panel__section--toolbar">
       <div className="dl-edit-text-panel__toolbar">
@@ -262,7 +317,7 @@ export const TextEditControls: React.FC<TextEditControlsProps> = ({
           <DuplicateIcon size={18} />
         </button>
 
-{/* 旋转控件去重：移除底部工具栏的旋转条（保留上方 Rotation 区块） */}
+        {/* 旋转控件去重：移除底部工具栏的旋转条（保留上方 Rotation 区块） */}
       </div>
     </div>
   );
@@ -293,7 +348,7 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
 }) => {
   return (
     <>
-{/* Positioning Controls - 布局与 upload/text 保持一致 */}
+      {/* Positioning Controls - 布局与 upload/text 保持一致 */}
       <div className="dl-edit-art-panel__section">
         <div className="dl-edit-art-panel__controls">
           {/* Center Tool */}
@@ -310,7 +365,7 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
             <div className="dl-edit-art-panel__tool-label">Center</div>
           </div>
 
-{/* Layering Tool - 只保留 Bring to Front 和 Send to Back（删除 +1 和 -1） */}
+          {/* Layering Tool - 只保留 Bring to Front 和 Send to Back（删除 +1 和 -1） */}
           <div className="dl-edit-art-panel__tool-group">
             <div className="dl-edit-art-panel__tool-buttons">
               <button
@@ -376,7 +431,7 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
         </div>
       </div>
 
-{/* Rotation - 布局与 upload 保持一致 */}
+      {/* Rotation - 布局与 upload 保持一致 */}
       <div className="dl-edit-art-panel__section">
         <label className="dl-edit-art-panel__label">
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
