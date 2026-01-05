@@ -15,26 +15,26 @@ interface EditArtPanelProps {
   selectedArt: fabric.Image | null;
   canvas: fabric.Canvas | null;
   onUpdate: () => void;
-onChangeArt: () => void; // 重新选择 Art，返回到 Art Categories
+  onChangeArt: () => void; // 重新选择 Art，返回到 Art Categories
   onSave?: () => void;
+  isMobile?: boolean;
 }
-
 // 像素转英寸转换函数（假设 150 DPI）
 const pixelsToInches = (pixels: number): number => {
   const dpi = 150;
   return pixels / dpi;
 };
 
-const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpdate, onChangeArt, onSave }) => {
+const EditArtPanel: React.FC<EditArtPanelProps> = ({ selectedArt, canvas, onUpdate, onChangeArt, onSave, isMobile = false }) => {
   const [rotation, setRotation] = useState(0);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [sizeInches, setSizeInches] = useState({ width: 0, height: 0 });
-const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // 比例锁状态
-const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽高比
+  const [aspectRatioLocked, setAspectRatioLocked] = useState(true); // 比例锁状态
+  const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽高比
 
 
-// 更新艺术素材属性
-// 添加英寸单位转换
+  // 更新艺术素材属性
+  // 添加英寸单位转换
   useEffect(() => {
     if (selectedArt) {
       setRotation(selectedArt.angle || 0);
@@ -50,15 +50,15 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
         height: pixelsToInches(actualHeight)
       });
 
-// 保存原始宽高比
+      // 保存原始宽高比
       if (actualHeight > 0) {
         setOriginalAspectRatio(actualWidth / actualHeight);
       }
     }
   }, [selectedArt]);
 
-// Center 按钮
-// 添加调试日志和错误处理
+  // Center 按钮
+  // 添加调试日志和错误处理
   const handleCenter = () => {
     if (!selectedArt || !canvas) {
       console.warn('[EditArtPanel] handleCenter: selectedArt or canvas is null');
@@ -81,7 +81,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     onUpdate();
   };
 
-// Bring to Front - 修复 Fabric.js v6 API
+  // Bring to Front - 修复 Fabric.js v6 API
   const handleBringToFront = () => {
     if (!selectedArt || !canvas) return;
     try {
@@ -105,8 +105,8 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     }
   };
 
-// Send to Back - 修复 Fabric.js v6 API
-// 限制：不能将对象移到商品底图（background）下面
+  // Send to Back - 修复 Fabric.js v6 API
+  // 限制：不能将对象移到商品底图（background）下面
   const handleSendToBack = async () => {
     if (!selectedArt || !canvas) return;
     try {
@@ -124,7 +124,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
       // 计算目标索引：应该在商品底图之后（索引 = backgroundIndex + 1）
       const targetIndex = backgroundIndex >= 0 ? backgroundIndex + 1 : 0;
 
-// 添加调试日志
+      // 添加调试日志
       console.log('[EditArtPanel] sendToBack called:', {
         currentIndex,
         backgroundIndex,
@@ -132,13 +132,13 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
         objectsCount: objects.length,
       });
 
-// 如果已经在目标位置，不需要移动
+      // 如果已经在目标位置，不需要移动
       if (currentIndex === targetIndex) {
         console.log('[EditArtPanel] Already at target position, skipping');
         return;
       }
 
-// 使用原生方法 sendObjectToBack，然后检查并调整位置
+      // 使用原生方法 sendObjectToBack，然后检查并调整位置
       // 先使用 Fabric.js 原生方法将对象移到底部
       if (typeof (canvas as any).sendObjectToBack === 'function') {
         try {
@@ -162,7 +162,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
         return;
       }
 
-// 检查并调整：确保对象在商品底图之后
+      // 检查并调整：确保对象在商品底图之后
       // 等待一个 tick 确保原生方法执行完成
       await new Promise(resolve => setTimeout(resolve, 0));
 
@@ -218,7 +218,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     }
   };
 
-// Flip Horizontal
+  // Flip Horizontal
   const handleFlipHorizontal = () => {
     if (!selectedArt) return;
     selectedArt.set('flipX', !selectedArt.flipX);
@@ -229,7 +229,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     }
   };
 
-// Flip Vertical
+  // Flip Vertical
   const handleFlipVertical = () => {
     if (!selectedArt) return;
     selectedArt.set('flipY', !selectedArt.flipY);
@@ -240,7 +240,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     }
   };
 
-// Duplicate - 修复 clone API 兼容性问题
+  // Duplicate - 修复 clone API 兼容性问题
   const handleDuplicate = async () => {
     if (!selectedArt || !canvas) return;
     try {
@@ -277,7 +277,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     }
   };
 
-// Rotation slider
+  // Rotation slider
   const handleRotationChange = (angle: number) => {
     setRotation(angle);
     if (selectedArt) {
@@ -290,10 +290,10 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     }
   };
 
-// Art Size（大小控制）
-// 更新英寸单位显示
-// 添加比例锁支持
-// 修复：参考 upload 和 text 的实现，使用英寸输入框
+  // Art Size（大小控制）
+  // 更新英寸单位显示
+  // 添加比例锁支持
+  // 修复：参考 upload 和 text 的实现，使用英寸输入框
   const handleSizeChange = (widthInches: number, heightInches: number) => {
     if (!selectedArt) return;
 
@@ -326,8 +326,8 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
     }
   };
 
-// Edit Colors
-// 修复：交互形式保持和 add text 一样（使用颜色选择器）
+  // Edit Colors
+  // 修复：交互形式保持和 add text 一样（使用颜色选择器）
 
 
 
@@ -343,11 +343,11 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
 
   const currentScale = selectedArt.scaleX || 1;
 
-// 按照 Custom Ink 顺序重新排列控件
+  // 按照 Custom Ink 顺序重新排列控件
   return (
     <div className="dl-edit-art-panel">
-{/* 1. Art Size（宽×高，单位 in）- 添加比例锁 */}
-{/* 修复：参考 upload 和 text 的实现，使用英寸输入框 */}
+      {/* 1. Art Size（宽×高，单位 in）- 添加比例锁 */}
+      {/* 修复：参考 upload 和 text 的实现，使用英寸输入框 */}
       <div className="dl-edit-art-panel__section">
         <div className="dl-edit-art-panel__size-header">
           <label className="dl-edit-art-panel__label">Art Size</label>
@@ -381,7 +381,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
               if (newWidth > 0) {
                 let newHeight = sizeInches.height;
                 if (aspectRatioLocked) {
-// 锁定比例时，按比例计算高度
+                  // 锁定比例时，按比例计算高度
                   newHeight = newWidth / originalAspectRatio;
                 }
                 handleSizeChange(newWidth, newHeight);
@@ -401,7 +401,7 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
               if (newHeight > 0) {
                 let newWidth = sizeInches.width;
                 if (aspectRatioLocked) {
-// 锁定比例时，按比例计算宽度
+                  // 锁定比例时，按比例计算宽度
                   newWidth = newHeight * originalAspectRatio;
                 }
                 handleSizeChange(newWidth, newHeight);
@@ -416,8 +416,8 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
       </div>
 
       {/* 2-6. Center / Layering / Flip / Duplicate / Rotation - 统一封装为 ArtEditControls */}
-{/* 确保操作按钮布局与 upload/text 一致 */}
-{/* 删除 +1 和 -1 按钮（Bring Forward 和 Send Backward） */}
+      {/* 确保操作按钮布局与 upload/text 一致 */}
+      {/* 删除 +1 和 -1 按钮（Bring Forward 和 Send Backward） */}
       <ArtEditControls
         onCenter={handleCenter}
         onBringToFront={handleBringToFront}
@@ -427,11 +427,12 @@ const [originalAspectRatio, setOriginalAspectRatio] = useState(1); // 原始宽�
         onDuplicate={handleDuplicate}
         rotation={rotation}
         onRotationChange={handleRotationChange}
+        isMobile={isMobile}
       />
 
 
 
-{/* 8. Add New Art - 修改为 Add New Art（不是替换） */}
+      {/* 8. Add New Art - 修改为 Add New Art（不是替换） */}
       {/* 8. Add New Art & Save Design */}
       <div className="dl-edit-art-panel__section">
         <div style={{ display: 'flex', gap: '10px' }}>

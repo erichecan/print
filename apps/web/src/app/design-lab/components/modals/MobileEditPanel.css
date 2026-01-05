@@ -515,3 +515,166 @@
     padding: 4px;
     cursor: pointer;
 }
+/* Art Panel Mobile Styles */
+.dl-art-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.dl-art-panel__header {
+    margin-bottom: 24px;
+}
+
+.dl-art-panel__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+}
+
+.dl-art-panel__search {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: #f5f5f5;
+    border-radius: 20px;
+    padding: 0 16px;
+    height: 48px;
+    margin-bottom: 16px;
+}
+
+.dl-art-panel__search-icon {
+    color: #666;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.dl-art-panel__search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    font-size: 16px;
+    color: #333;
+    outline: none;
+    padding: 0;
+}
+
+.dl-art-panel__search-input::placeholder {
+    color: #999;
+}
+
+.dl-art-panel__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    overflow-y: auto;
+    padding-bottom: 20px;
+}
+
+.dl-art-panel__category-card {
+    background: #f9f9f9;
+    border: none;
+    border-radius: 12px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background-color 0.2s;
+    cursor: pointer;
+}
+
+.dl-art-panel__category-card:active {
+    transform: scale(0.98);
+    background: #f0f0f0;
+}
+
+.dl-art-panel__category-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    background: none;
+}
+
+.dl-art-panel__category-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.dl-art-panel__category-count {
+    font-size: 14px;
+    color: #888;
+}
+
+/* Asset grid (when category selected) */
+.dl-art-panel__assets-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    overflow-y: auto;
+}
+
+.dl-art-panel__asset-item {
+    aspect-ratio: 1;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.dl-art-panel__asset-item img {
+    max-width: 100%;
+    max-height: 80%;
+    object-fit: contain;
+}
+
+.dl-art-panel__asset-name {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: center;
+}
+
+.dl-art-panel__back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #0066cc;
+    font-size: 15px;
+    font-weight: 600;
+    padding: 0;
+    margin-bottom: 20px;
+    cursor: pointer;
+}
+
+.dl-art-panel__category-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+}
+
+/* Interaction State: Semi-transparent when moving items on canvas */
+.dl-mobile-edit-panel.is-interacting {
+    opacity: 0.15;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.dl-mobile-edit-panel-overlay.is-interacting {
+    opacity: 0;
+    pointer-events: none;
+}

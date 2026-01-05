@@ -21,9 +21,9 @@ interface EditTextPanelProps {
   canvas: fabric.Canvas | null;
   onUpdate: () => void;
   onSave?: () => void;
+  isMobile?: boolean;
 }
-
-const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onUpdate, onSave }) => {
+const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onUpdate, onSave, isMobile: isMobileProp = false }) => {
   const [text, setText] = useState('');
   const [fontFamily, setFontFamily] = useState('Arial');
   const [fontSize, setFontSize] = useState(48);
@@ -612,7 +612,7 @@ const EditTextPanel: React.FC<EditTextPanelProps> = ({ selectedText, canvas, onU
   };
 
   // Determine if we are on mobile (can be passed as prop or detected, but for now we look at layout needs)
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+  const isMobile = isMobileProp || (typeof window !== 'undefined' && window.innerWidth <= 768);
   const [showColorAccordion, setShowColorAccordion] = useState(false);
   const [showFontAccordion, setShowFontAccordion] = useState(false);
 

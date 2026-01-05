@@ -8,6 +8,7 @@ interface MobileEditPanelProps {
     onClose: () => void;
     onBack?: () => void;
     title?: string;
+    isInteracting?: boolean;
     children: React.ReactNode;
 }
 
@@ -16,6 +17,7 @@ export const MobileEditPanel: React.FC<MobileEditPanelProps> = ({
     onClose,
     onBack,
     title,
+    isInteracting = false,
     children
 }) => {
     if (!isOpen) return null;
@@ -23,10 +25,13 @@ export const MobileEditPanel: React.FC<MobileEditPanelProps> = ({
     return (
         <>
             {/* 遮罩层 */}
-            <div className="dl-mobile-edit-panel-overlay" onClick={onClose} />
+            <div
+                className={`dl-mobile-edit-panel-overlay ${isInteracting ? 'is-interacting' : ''}`}
+                onClick={onClose}
+            />
 
             {/* 面板 */}
-            <div className="dl-mobile-edit-panel">
+            <div className={`dl-mobile-edit-panel ${isInteracting ? 'is-interacting' : ''}`}>
                 <header className="dl-mobile-edit-panel__header">
                     {onBack && (
                         <button

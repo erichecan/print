@@ -37,6 +37,7 @@ export interface UploadEditControlsProps {
   rotation: number;
   onRotationSliderChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRotationInputChange: (value: number) => void;
+  isMobile?: boolean;
 }
 
 export const UploadEditControls: React.FC<UploadEditControlsProps> = ({
@@ -49,7 +50,44 @@ export const UploadEditControls: React.FC<UploadEditControlsProps> = ({
   rotation,
   onRotationSliderChange,
   onRotationInputChange,
+  isMobile = false,
 }) => {
+  if (isMobile) {
+    return (
+      <div className="dl-edit-upload-panel__controls" style={{ width: '100%', gap: '8px', justifyContent: 'center', marginBottom: '16px' }}>
+        {/* Center */}
+        <button className="dl-edit-upload-panel__control-btn" onClick={onCenter} type="button">
+          <CenterIcon size={20} />
+        </button>
+
+        {/* Layering */}
+        <div className="dl-edit-upload-panel__tool-buttons">
+          <button className="dl-edit-upload-panel__control-btn" onClick={onBringToFront} type="button">
+            <LayeringUpIcon size={20} />
+          </button>
+          <button className="dl-edit-upload-panel__control-btn" onClick={onSendToBack} type="button">
+            <LayeringDownIcon size={20} />
+          </button>
+        </div>
+
+        {/* Flip */}
+        <div className="dl-edit-upload-panel__tool-buttons">
+          <button className="dl-edit-upload-panel__control-btn" onClick={onFlipHorizontal} type="button">
+            <FlipHorizontalIcon size={20} />
+          </button>
+          <button className="dl-edit-upload-panel__control-btn" onClick={onFlipVertical} type="button">
+            <FlipVerticalIcon size={20} />
+          </button>
+        </div>
+
+        {/* Duplicate */}
+        <button className="dl-edit-upload-panel__control-btn" onClick={onDuplicate} type="button">
+          <DuplicateIcon size={20} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Positioning Controls */}
@@ -334,6 +372,7 @@ export interface ArtEditControlsProps {
   onDuplicate: () => void;
   rotation: number;
   onRotationChange: (angle: number) => void;
+  isMobile?: boolean;
 }
 
 export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
@@ -345,7 +384,44 @@ export const ArtEditControls: React.FC<ArtEditControlsProps> = ({
   onDuplicate,
   rotation,
   onRotationChange,
+  isMobile = false,
 }) => {
+  if (isMobile) {
+    return (
+      <div className="dl-edit-upload-panel__controls" style={{ width: '100%', gap: '8px', justifyContent: 'center', marginBottom: '16px' }}>
+        {/* Center */}
+        <button className="dl-edit-upload-panel__control-btn" onClick={onCenter} type="button">
+          <CenterIcon size={20} />
+        </button>
+
+        {/* Layering */}
+        <div className="dl-edit-upload-panel__tool-buttons">
+          <button className="dl-edit-upload-panel__control-btn" onClick={onBringToFront} type="button">
+            <LayeringUpIcon size={20} />
+          </button>
+          <button className="dl-edit-upload-panel__control-btn" onClick={onSendToBack} type="button">
+            <LayeringDownIcon size={20} />
+          </button>
+        </div>
+
+        {/* Flip */}
+        <div className="dl-edit-upload-panel__tool-buttons">
+          <button className="dl-edit-upload-panel__control-btn" onClick={onFlipHorizontal} type="button">
+            <FlipHorizontalIcon size={20} />
+          </button>
+          <button className="dl-edit-upload-panel__control-btn" onClick={onFlipVertical} type="button">
+            <FlipVerticalIcon size={20} />
+          </button>
+        </div>
+
+        {/* Duplicate */}
+        <button className="dl-edit-upload-panel__control-btn" onClick={onDuplicate} type="button">
+          <DuplicateIcon size={20} />
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* Positioning Controls - 布局与 upload/text 保持一致 */}

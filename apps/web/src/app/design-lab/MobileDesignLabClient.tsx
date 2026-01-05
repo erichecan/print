@@ -468,6 +468,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
   // Add Text: 当前选中的文本对象
   const [selectedText, setSelectedText] = useState<fabric.IText | null>(null);
   const [selectedArt, setSelectedArt] = useState<fabric.Image | null>(null);
+  const [isInteractingWithCanvas, setIsInteractingWithCanvas] = useState(false);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false); // 5.0 Version: Catalog Modal state
   const [catalogMode, setCatalogMode] = useState<'add' | 'change'>('add'); // 'add' to insert, 'change' to update current
 
@@ -1734,6 +1735,22 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
         fabricCanvas.on('object:rotating', showGuides);
         fabricCanvas.on('mouse:up', hideGuides); // Ensure it hides on mouse up even if not modified (e.g. just click)
         fabricCanvas.on('selection:cleared', hideGuides);
+
+        // UX Improvement: Dim panel during interaction
+        fabricCanvas.on('mouse:down', (e: any) => {
+          if (e.target && e.target.data?.layerType !== 'product-image' && e.target.data?.layerType !== 'guide') {
+            setIsInteractingWithCanvas(true);
+          }
+        });
+        fabricCanvas.on('mouse:up', () => {
+          setIsInteractingWithCanvas(false);
+        });
+        fabricCanvas.on('object:moving', () => {
+          setIsInteractingWithCanvas(true);
+        });
+        fabricCanvas.on('object:modified', () => {
+          setIsInteractingWithCanvas(false);
+        });
 
         fabricCanvas.on('selection:created', (e: any) => {
           const activeObject = e.selected?.[0] || fabricCanvas.getActiveObject();
@@ -4281,21 +4298,23 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
 
       {/* 2. Edit Panel for edit-upload/edit-text/edit-art (50vh) */}
       <MobileEditPanel
-        isOpen={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art'}
+        isOpen={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art' || toolPanelType === 'art'}
         onClose={handleBackToHome}
+        isInteracting={isInteractingWithCanvas}
         title={
           toolPanelType === 'edit-upload' ? 'Edit Upload' :
             toolPanelType === 'edit-text' ? 'Edit Text' :
-              toolPanelType === 'edit-art' ? 'Edit Art' : undefined
+              toolPanelType === 'edit-art' ? 'Edit Art' :
+                toolPanelType === 'art' ? 'Add Art' : undefined
         }
-        onBack={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art' ? () => {
+        onBack={toolPanelType === 'edit-upload' || toolPanelType === 'edit-text' || toolPanelType === 'edit-art' || toolPanelType === 'art' ? () => {
           // Back to first step or close
           if (toolPanelType === 'edit-upload') {
             setToolPanelType('upload');
           } else if (toolPanelType === 'edit-text') {
             setToolPanelType('text');
-          } else if (toolPanelType === 'edit-art') {
-            setToolPanelType('art');
+          } else if (toolPanelType === 'edit-art' || toolPanelType === 'art') {
+            handleBackToHome();
           }
         } : undefined}
       >
@@ -4306,6 +4325,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
             onUpdate={handleCanvasUpdate}
             onClose={handleBackToHome}
             onSave={handleSaveRequest}
+            isMobile={true}
           />
         )}
         {toolPanelType === 'edit-text' && (
@@ -4314,6 +4334,7 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
             canvas={fabricCanvasRef.current}
             onUpdate={handleCanvasUpdate}
             onSave={handleSaveRequest}
+            isMobile={true}
           />
         )}
         {toolPanelType === 'edit-art' && (
@@ -4326,17 +4347,14 @@ const MobileDesignLabClient: React.FC<DesignLabClient5Props> = ({ initialProduct
               setToolPanelType('art');
             }}
             onSave={handleSaveRequest}
+            isMobile={true}
           />
+        )}
+        {toolPanelType === 'art' && (
+          <ArtPanel onSelectArt={handleAddArt} isMobile={true} />
         )}
       </MobileEditPanel>
 
-      {/* 3. Full Page for Art selection */}
-      <MobileArtFullPage
-        isOpen={toolPanelType === 'art'}
-        onClose={handleBackToHome}
-      >
-        <ArtPanel onSelectArt={handleAddArt} />
-      </MobileArtFullPage>
       <MobileDesignLab
         currentView={currentView}
         designId={designId}

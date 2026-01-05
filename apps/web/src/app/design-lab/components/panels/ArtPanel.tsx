@@ -12,7 +12,7 @@ import { artworksApi, type Artwork, type CategoryNode } from '@/lib/api';
 // CORS 修复：将 GCS URL 转换为代理 URL
 const getProxyUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
-// 如果是 GCS URL，使用图片代理
+  // 如果是 GCS URL，使用图片代理
   if (url.includes('storage.googleapis.com') || url.includes('.storage.googleapis.com')) {
     return `/api/image-proxy?src=${encodeURIComponent(url)}`;
   }
@@ -21,9 +21,10 @@ const getProxyUrl = (url: string | null | undefined): string | null => {
 
 interface ArtPanelProps {
   onSelectArt: (artUrl: string, artName: string) => void;
+  isMobile?: boolean;
 }
 
-const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
+const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt, isMobile = false }) => {
   const [categoriesTree, setCategoriesTree] = useState<CategoryNode[]>([]);
   const [currentTopCategory, setCurrentTopCategory] = useState<CategoryNode | null>(null);
   const [currentSubcategory, setCurrentSubcategory] = useState<{ id: string; name: string; slug: string; count: number } | null>(null);
@@ -35,7 +36,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 48;
 
-// 加载分类树
+  // 加载分类树
   useEffect(() => {
     const loadCategoriesTree = async () => {
       try {
@@ -56,7 +57,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     loadCategoriesTree();
   }, []);
 
-// 加载艺术作品
+  // 加载艺术作品
   const loadArtworks = useCallback(async (topSlug?: string, subSlug?: string, query?: string, pageNum = 1) => {
     try {
       setLoading(true);
@@ -81,7 +82,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     }
   }, [pageSize]);
 
-// 当选择分类或搜索时加载素材
+  // 当选择分类或搜索时加载素材
   useEffect(() => {
     if (currentTopCategory) {
       loadArtworks(
@@ -93,35 +94,54 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     }
   }, [currentTopCategory, currentSubcategory, searchQuery, loadArtworks]);
 
-// 显示分类网格（一级分类）
+  // 显示分类网格（一级分类）
   if (!currentTopCategory) {
     return (
       <div className="dl-art-panel">
         <div className="dl-art-panel__header">
           <h2 className="dl-art-panel__title">Artwork Categories</h2>
-{/* 搜索框 */}
+          {/* 搜索框 */}
           <div className="dl-art-panel__search">
-            <input
-              type="text"
-              className="dl-art-panel__search-input"
-              placeholder="Search For Artwork"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-// 如果有搜索词，直接加载搜索结果
-                if (e.target.value.trim()) {
-                  loadArtworks(undefined, undefined, e.target.value, 1);
-                  setCurrentTopCategory({ id: '', name: 'Search Results', slug: 'search', count: 0, children: [] });
-                } else {
-                  setCurrentTopCategory(null);
-                }
-              }}
-              data-testid="art-search-input"
-            />
+            {!isMobile && (
+              <input
+                type="text"
+                className="dl-art-panel__search-input"
+                placeholder="Search For Artwork"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.trim()) {
+                    loadArtworks(undefined, undefined, e.target.value, 1);
+                    setCurrentTopCategory({ id: '', name: 'Search Results', slug: 'search', count: 0, children: [] });
+                  } else {
+                    setCurrentTopCategory(null);
+                  }
+                }}
+                data-testid="art-search-input"
+              />
+            )}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="dl-art-panel__search-icon">
               <circle cx="11" cy="11" r="8" />
               <path d="M21 21l-4.35-4.35" />
             </svg>
+            {isMobile && (
+              <input
+                type="text"
+                className="dl-art-panel__search-input"
+                placeholder="Search For Artwork"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (e.target.value.trim()) {
+                    loadArtworks(undefined, undefined, e.target.value, 1);
+                    setCurrentTopCategory({ id: '', name: 'Search Results', slug: 'search', count: 0, children: [] });
+                  } else {
+                    setCurrentTopCategory(null);
+                  }
+                }}
+                data-testid="art-search-input"
+              />
+            )}
           </div>
         </div>
         <div className="dl-art-panel__categories">
@@ -154,7 +174,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
     );
   }
 
-// 显示分类下的素材列表
+  // 显示分类下的素材列表
   const subcategories = currentTopCategory.children || [];
 
   return (
@@ -177,7 +197,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
           Back to Categories
         </button>
         <h3 className="dl-art-panel__category-title">{currentTopCategory.name}</h3>
-{/* 分类页面也显示搜索框 */}
+        {/* 分类页面也显示搜索框 */}
         <div className="dl-art-panel__search">
           <input
             type="text"
@@ -197,7 +217,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
         </div>
       </div>
 
-{/* 子分类导航 */}
+      {/* 子分类导航 */}
       {subcategories.length > 0 && (
         <div className="dl-art-panel__subcategories">
           <button
@@ -248,7 +268,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                       data-testid={`artwork-${artwork.slug}`}
                     >
                       {(() => {
-// CORS 修复：使用代理 URL
+                        // CORS 修复：使用代理 URL
                         const thumbnailUrl = getProxyUrl(artwork.thumbnailUrl);
                         const imageUrl = getProxyUrl(artwork.imageUrl);
 
@@ -278,7 +298,7 @@ const ArtPanel: React.FC<ArtPanelProps> = ({ onSelectArt }) => {
                     </button>
                   ))}
                 </div>
-{/* 分页控件 */}
+                {/* 分页控件 */}
                 {totalPages > 1 && (
                   <div className="dl-art-panel__pagination">
                     <button
