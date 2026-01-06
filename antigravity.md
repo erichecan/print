@@ -48,7 +48,12 @@
 ### 🔴 生产环境 "Internal Server Error" (500)
 **现象**：本地运行正常，GCP 上某些接口（如创建产品、查看购物车）报错 500。
 **原因分析**：
-1.  **静默迁移失败 (Silent Migration Failure)**：
+1.  **AUTO_MIGRATE 未开启** (Critical):
+    -   即使代码中包含 `runMigrationsIfEnabled`，如果环境变量 `AUTO_MIGRATE` 不为 `true`，**迁移根本不会运行**。
+    -   `deploy_clean.sh` 曾缺失此变量配置，导致所有迁移被跳过，引发 Schema Drift。
+    -   **修复**：确保部署命令包含 `--set-env-vars AUTO_MIGRATE=true`。
+
+2.  **静默迁移失败 (Silent Migration Failure)**：
     -   **机制**：`backend/scripts/run-migrations.js` 配置了 `allowFailure: true`。
     -   **后果**：即使 `prisma migrate deploy` 失败（如超时、连接问题），服务器**也会启动**。
     -   **结果**：代码使用的是新生成的 Prisma Client（包含新字段如 `printable_areas`），但数据库表结构很旧（缺少该列）。
@@ -56,10 +61,10 @@
         -   `POST /products`: 尝试写入不存在的列 -> DB 拒绝 -> 500。
         -   `GET /cart`: `include` 查询生成的 SQL 包含不存在的列 -> DB 拒绝 -> 500。
 
-2.  **Schema 漂移 (Schema Drift)**：
+3.  **Schema 漂移 (Schema Drift)**：
     -   本地 `prisma migrate dev` 修改了 DB 结构，但生成的 migration 文件夹未被提交到 Git，导致 Cloud Build 只有 schema 却没有 SQL 文件来执行变更。
 
-3.  **环境隔离问题**：
+4.  **环境隔离问题**：
     -   前端构建时注入的环境变量 (`NEXT_PUBLIC_*`) 与运行时 Secret 不一致。
 
 ### 🟡 文件系统只读
@@ -88,9 +93,9 @@
 2.  **提交**：
     -   `git add prisma/migrations`
     -   `git commit -m "chore: db migration for printable areas"`
-3.  **部署后验证**：
-    -   去 GCP Logs 搜索 "Prisma migrate deploy"。
-    -   如果看到 "失败" 但 "服务器继续启动"，**立即手动干预**（手动连接 DB 运行 SQL 或重新部署）。
+3.  **部署命令**：
+    -   确保运行 `deploy_clean.sh` 时，脚本中包含 `AUTO_MIGRATE=true`。
+    -   或者手动运行：`gcloud run deploy ... --set-env-vars AUTO_MIGRATE=true ...`
 
 ### 🐛 调试 GCP 上的 500 错误
 1.  **不要只看前端**：前端的 `500` 是掩盖后的信息。
