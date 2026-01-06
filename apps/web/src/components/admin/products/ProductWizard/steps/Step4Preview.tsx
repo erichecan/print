@@ -73,7 +73,7 @@ export function Step4Preview() {
       slug: wizardData.slug || '',
       categoryId: wizardData.categoryId || '',
       sku: wizardData.sku || '',
-      basePrice: (wizardData.basePrice || 0) * 100, // Convert to cents
+      basePrice: wizardData.basePrice || 0, // Send dollars, backend handles conversion
       salePrice: wizardData.salePrice,
       unitCost: wizardData.unitCost,
       grossProfit: wizardData.grossProfit,

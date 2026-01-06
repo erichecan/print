@@ -65,7 +65,7 @@ export function ProductDetailPreview({ wizardData }: ProductDetailPreviewProps) 
         {/* Left: Gallery */}
         <div className="detail-gallery">
           <div className="gallery-main">
-            <div className="gallery-main-image">
+            <div className="gallery-main-image" key={currentImage}>
               {currentImage && (
                 <Image
                   src={currentImage}
