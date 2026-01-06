@@ -12,8 +12,10 @@ const { optimizeImageUrl } = require('../utils/imageHelper');
 
 /**
  * Get or create cart for user/session
+ * 修复时间：2026-01-06T22:45:00.000Z - 添加错误处理和防御性检查
  */
 async function getOrCreateCart(userId, sessionId) {
+  try {
   if (userId) {
     // Try to find user's cart
     let cart = await prisma.cart.findUnique({
@@ -117,7 +119,20 @@ design: true, // Include design details
     return cart;
   }
 
-  throw new Error('Either userId or sessionId must be provided');
+    throw new Error('Either userId or sessionId must be provided');
+  } catch (error) {
+    // 记录详细错误信息
+    logger.error('Error in getOrCreateCart:', {
+      error: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name,
+      userId: userId || null,
+      sessionId: sessionId || null,
+    });
+    // 重新抛出错误，让调用者处理
+    throw error;
+  }
 }
 
 /**
@@ -237,8 +252,51 @@ exports.getCart = async (req, res) => {
       itemCount,
     });
   } catch (error) {
+    // 修复时间：2026-01-06T22:45:00.000Z - 增强错误处理，提供更详细的错误信息
+    logger.error('Error fetching cart:', {
+      error: error.message,
+      stack: error.stack,
+      code: error.code,
+      name: error.name,
+      userId: req.user?.id || null,
+      sessionId: req.sessionId || null,
+      hasUser: !!req.user,
+      hasSessionCookie: !!req.cookies?.sessionId,
+    });
     console.error('Error fetching cart:', error);
-    res.status(500).json({ error: 'Failed to fetch cart' });
+    
+    // 根据错误类型返回不同的状态码和错误信息
+    if (error.code === 'P2002') {
+      return res.status(409).json({ 
+        error: 'Cart conflict',
+        details: 'A cart with this identifier already exists'
+      });
+    }
+    
+    if (error.code === 'P2025') {
+      return res.status(404).json({ 
+        error: 'Cart not found',
+        details: 'The requested cart could not be found'
+      });
+    }
+    
+    // 数据库连接错误
+    if (error.code === 'P1001' || error.code === 'P1002' || error.message?.includes('connect')) {
+      logger.error('Database connection error in getCart');
+      return res.status(503).json({ 
+        error: 'Service temporarily unavailable',
+        details: 'Database connection failed'
+      });
+    }
+    
+    // 其他错误返回 500，但在开发环境提供详细信息
+    res.status(500).json({ 
+      error: 'Failed to fetch cart',
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error.message,
+        code: error.code 
+      })
+    });
   }
 };
 

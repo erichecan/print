@@ -109,15 +109,29 @@ exports.listDesigns = async (req, res) => {
       },
     });
   } catch (error) {
+    // 修复时间：2026-01-06T22:45:00.000Z - 增强错误处理，提供更详细的错误信息
     console.error('[adminDesignController] listDesigns error:', error);
     console.error('[adminDesignController] Error details:', {
       message: error.message,
       stack: error.stack,
       code: error.code,
+      name: error.name,
     });
+    
+    // 根据错误类型返回不同的状态码
+    if (error.code === 'P1001' || error.code === 'P1002' || error.message?.includes('connect')) {
+      return res.status(503).json({
+        error: 'Service temporarily unavailable',
+        details: 'Database connection failed'
+      });
+    }
+    
     res.status(500).json({
       error: 'Failed to load designs',
-      ...(process.env.NODE_ENV === 'development' && { details: error.message }),
+      ...(process.env.NODE_ENV === 'development' && { 
+        details: error.message,
+        code: error.code 
+      }),
     });
   }
 };
