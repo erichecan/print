@@ -136,6 +136,7 @@
 - **现象**：上传文件报错 `EROFS`。
 - **原因**：Cloud Run 容器文件系统只读。
 - **解法**：必须使用 GCS (Google Cloud Storage) 存储上传文件。
+    -   **关键配置**：确保部署脚本中包含 `GCP_IMAGE_BUCKET` 环境变量（例如 `print-482914-images`）。缺少此变量会导致 "Storage configuration error"。
 
 ## 5. 重要决策记录 (ADR - Simplified)
 

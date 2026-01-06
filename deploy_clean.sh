@@ -32,7 +32,7 @@ gcloud run deploy $SERVICE_NAME \
   --region $REGION \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars AUTO_MIGRATE=true \
+  --set-env-vars AUTO_MIGRATE=true,GCP_IMAGE_BUCKET=print-482914-images,GCP_IMAGE_BASE_URL=https://storage.googleapis.com/print-482914-images \
   --set-secrets DATABASE_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest \
   --project $PROJECT_ID
 
