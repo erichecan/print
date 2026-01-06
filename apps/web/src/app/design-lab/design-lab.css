@@ -554,6 +554,8 @@
   z-index: 10;
   height: 100%;
   min-height: 0;
+  /* [2026-01-06] 修复：确保在浏览器高度变小时可以正常滚动 */
+  max-height: calc(100vh - var(--dl-header-height) - var(--dl-bottom-bar-height));
 }
 
 .dl-tool-panel__content {
@@ -562,6 +564,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--dl-space-4);
+  /* [2026-01-06] 修复：确保内容区域可以正确收缩，允许父容器滚动 */
+  min-height: 0;
+  overflow: visible;
 }
 
 /* 5.0 版本：ToolPanel 占位符样式 */
@@ -582,6 +587,8 @@
   margin-bottom: var(--dl-space-4);
   padding-bottom: var(--dl-space-4);
   border-bottom: 1px solid var(--dl-border-color);
+  /* [2026-01-06] 修复：确保header固定在顶部，不参与滚动 */
+  flex-shrink: 0;
 }
 
 .dl-tool-panel__title {
@@ -1422,6 +1429,9 @@
   flex-direction: column;
   gap: var(--dl-space-4);
   width: 100%;
+  /* [2026-01-06] 修复：确保编辑面板不会阻止父容器滚动 */
+  min-height: 0;
+  flex-shrink: 1;
 }
 
 .dl-edit-text-panel__section {
