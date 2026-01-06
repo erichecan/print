@@ -353,12 +353,70 @@ export function ProductDetail() {
     );
   }
 
-  // 根据选中颜色过滤图片（如果有颜色特定图片）
-  const galleryImages = productData.images.map(img => ({
+  // [2026-01-06 15:45:30] 图片展示逻辑调整：每个颜色对应该颜色变体上传的主图 + 该颜色的细节图
+  // 规则：
+  // - 找到当前选中颜色对应的变体，优先使用该变体的 imageUrl 作为该颜色的“主图”；
+  // - 该颜色下的其它图片（dataAdapter 根据颜色映射出来的 images）作为细节图，主图排在第一张；
+  // - 若选中颜色但该颜色没有任何图片，则回退到产品主图（第一张）；
+  // - 若未选中颜色，则展示全部图片列表（保持原行为）。
+  const mainImage = productData.images[0] || null;
+  const rawApiProduct: any = apiProduct as any;
+  const primaryVariantForColor =
+    selectedColor && rawApiProduct?.variants
+      ? rawApiProduct.variants.find(
+          (v: any) =>
+            (v.color || '').toLowerCase().trim() ===
+            (selectedColor || '').toLowerCase().trim()
+        )
+      : null;
+  const primaryVariantImageUrl: string | null =
+    primaryVariantForColor?.imageUrl || null;
+
+  // 基于颜色过滤出的图片组
+  let colorImages = selectedColor
+    ? productData.images.filter((img) => img.color === selectedColor)
+    : [];
+
+  // 如果变体有自己的 imageUrl，则确保它出现在该颜色图片组的第一张
+  if (selectedColor && primaryVariantImageUrl) {
+    const existingIndex = colorImages.findIndex(
+      (img) => img.url === primaryVariantImageUrl
+    );
+
+    if (existingIndex === -1) {
+      // 不在当前颜色图片组中，则人为插入一张以变体图为主图的图片
+      colorImages = [
+        {
+          id:
+            primaryVariantForColor?.id ||
+            `variant-${selectedColor.toLowerCase()}`,
+          url: primaryVariantImageUrl,
+          alt: `${productData.title} - ${selectedColor}`,
+          thumbnail: primaryVariantImageUrl,
+          color: selectedColor,
+        },
+        ...colorImages,
+      ];
+    } else if (existingIndex > 0) {
+      // 已在组内但不是第一张，则移动到第一张
+      const [variantImg] = colorImages.splice(existingIndex, 1);
+      colorImages = [variantImg, ...colorImages];
+    }
+  }
+
+  const imagesToShow =
+    selectedColor && colorImages.length > 0
+      ? colorImages
+      : selectedColor && mainImage
+      ? [mainImage]
+      : productData.images;
+
+  const galleryImages = imagesToShow.map(img => ({
     id: img.id,
     url: img.url,
     alt: img.alt,
     thumbnail: img.thumbnail,
+    color: img.color,
   }));
 
   const breadcrumbItems = [

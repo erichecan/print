@@ -38,19 +38,12 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
     }
   }, [isLightboxOpen, images.length]);
 
-  // Sync selected index when selectedColor changes
+  // [2026-01-06 15:30:00] 颜色切换逻辑优化：切换颜色时始终重置到该颜色图片列表的第一张（与后台 Step4 预览行为对齐）
   useEffect(() => {
     if (selectedColor && images.length > 0) {
-      // Find the first image that matches the selected color
-      // Note: GalleryImage interface needs color property, but we passed it from dataAdapter which now has it.
-      // However, GalleryImage interface here doesn't have it defined. We should cast or update interface.
-      // But wait, we define GalleryImage locally. Let's update interface too.
-      const index = images.findIndex((img: any) => img.color === selectedColor);
-      if (index !== -1) {
-        setSelectedIndex(index);
-      }
+      setSelectedIndex(0);
     }
-  }, [selectedColor, images]);
+  }, [selectedColor, images.length]);
 
   useEffect(() => {
     if (isLightboxOpen) {
