@@ -67,6 +67,31 @@
 4.  **环境隔离问题**：
     -   前端构建时注入的环境变量 (`NEXT_PUBLIC_*`) 与运行时 Secret 不一致。
 
+5.  **imageHelper.js 中 req 对象无效导致 500 错误** (2026-01-06 修复):
+    -   **现象**：反复出现的 500 错误，涉及 `/api/cart`、`/api/proxy/admin/products`、创建产品等接口。
+    -   **根因分析**：
+        -   `backend/src/utils/imageHelper.js` 中的 `normalizeImageUrl` 函数在调用 `req.get('host')` 和 `req.protocol` 时，如果 `req` 不是有效的 Express 请求对象（如 `undefined`、`null` 或格式不正确），会抛出错误。
+        -   在代理路由或某些特殊场景下，传递给 `optimizeImageUrl` 的 `req` 对象可能不是标准的 Express 请求对象，导致调用不存在的方法时抛出异常。
+        -   错误传播到整个请求处理流程，最终返回 500 Internal Server Error。
+    -   **影响范围**：
+        -   `GET /api/cart` - 购物车获取失败
+        -   `GET /api/proxy/admin/products` - 商品列表加载失败
+        -   `POST /api/proxy/admin/products` - 创建产品失败
+        -   所有涉及图片 URL 优化的接口都可能受影响
+    -   **修复方案**：
+        1.  **防御性检查**：在 `normalizeImageUrl` 函数中添加对 `req` 对象的有效性验证，确保它是对象且具有 `get` 方法。
+        2.  **错误隔离**：使用 try-catch 包装所有可能抛出错误的调用，确保图片 URL 优化失败不会导致整个 API 请求失败。
+        3.  **降级处理**：当优化失败时，回退到原始 URL，保证功能可用性。
+        4.  **增强错误处理**：在 `adminProductController.js` 中所有调用 `optimizeImageUrl` 的地方添加 try-catch，记录警告日志但不中断请求。
+    -   **修复文件**：
+        -   `backend/src/utils/imageHelper.js` - 核心修复，添加防御性检查和错误处理
+        -   `backend/src/controllers/adminProductController.js` - 增强所有图片优化调用的错误处理
+    -   **修复时间**：2026-01-06T22:30:00.000Z
+    -   **经验教训**：
+        -   在处理可能为 `null` 或 `undefined` 的对象时，必须添加防御性检查。
+        -   工具函数（如 `optimizeImageUrl`）应该能够优雅地处理各种边界情况，不应该因为单个功能失败而导致整个请求失败。
+        -   在代理路由或中间件中传递请求对象时，需要确保对象格式的一致性。
+
 ### 🟡 文件系统只读
 - **现象**：上传文件报错 `EROFS`。
 - **原因**：Cloud Run 容器文件系统只读。
