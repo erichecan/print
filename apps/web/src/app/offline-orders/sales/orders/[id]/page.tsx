@@ -21,9 +21,7 @@ export default function SalesOrderDetailPage() {
   const [error, setError] = useState('');
   const [stages, setStages] = useState<Array<{ key: string; label: string; position: number }>>([]);
   const [updatingStage, setUpdatingStage] = useState(false);
-  const [stageDraft, setStageDraft] = useState<string>(''); // 修改阶段：存储选择的阶段（未提交）
   const [stageNote, setStageNote] = useState('');
-  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (!orderId) return;
@@ -50,13 +48,33 @@ export default function SalesOrderDetailPage() {
 
       try {
         // 获取订单详情和阶段配置
-        // 修复：使用 authenticatedFetch 确保 token 正确传递
-        const [detail, stagesRes] = await Promise.all([
-          salesOrdersApi.get(orderId),
-          authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
-            .then(res => res.ok ? res.json() : { stages: [] })
-            .catch(() => ({ stages: [] }))
-        ]);
+        // 修复：使用 adminOfflineOrdersApi 直接调用，而不是通过 proxy
+        const detail = await salesOrdersApi.get(orderId);
+        
+        // 尝试获取阶段配置，如果失败则从订单数据中推断阶段信息
+        let stagesList: Array<{ key: string; label: string; position: number }> = [];
+        try {
+          const { adminOfflineOrdersApi } = await import('@/lib/api');
+          const stagesRes = await adminOfflineOrdersApi.getWorkflowStages();
+          // 转换类型以匹配组件期望的格式
+          stagesList = (stagesRes.stages || []).map(stage => ({
+            key: stage.key,
+            label: stage.label || stage.labelEn || stage.labelZh || '',
+            position: stage.position ?? 0
+          }));
+        } catch (err) {
+          console.warn('[Order Detail] Failed to fetch stages config, will try to infer from order data:', err);
+          // 如果API失败，尝试从订单数据中获取当前阶段信息
+          // 至少显示当前订单的阶段，让用户能看到阶段信息
+          if (detail?.stage?.key && detail?.stage?.label) {
+            stagesList = [{
+              key: detail.stage.key,
+              label: detail.stage.label,
+              position: detail.stage.position || 0
+            }];
+          }
+        }
+        
         if (!cancelled) {
           // 添加详细的数据结构日志以诊断产品信息问题
           console.log('[Order Detail] Full order data:', {
@@ -66,12 +84,12 @@ export default function SalesOrderDetailPage() {
             productItemsCount: detail?.configuration?.productItems?.length || 0,
             productItemsSample: detail?.configuration?.productItems?.[0],
             hasVariants: detail?.configuration?.productItems?.some(item => item.variants?.length > 0),
-            variantsCount: detail?.configuration?.productItems?.reduce((sum, item) => sum + (item.variants?.length || 0), 0) || 0
+            variantsCount: detail?.configuration?.productItems?.reduce((sum, item) => sum + (item.variants?.length || 0), 0) || 0,
+            stagesCount: stagesList.length,
+            stagesSample: stagesList[0]
           });
           setOrder(detail);
-          setStages(stagesRes.stages || []);
-          // 初始化阶段选择为当前订单的阶段
-          setStageDraft(detail?.stage?.key || '');
+          setStages(stagesList);
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -216,48 +234,23 @@ export default function SalesOrderDetailPage() {
     router.push('/offline-orders/sales/orders');
   };
 
-  // 更新订单阶段（修改为需要点击按钮才更新）
-  const handleUpdateStage = async () => {
-    if (!order || updatingStage || !stageDraft) return;
+  // 更新订单阶段（直接在选择时更新）
+  const handleUpdateStage = async (newStageKey: string) => {
+    if (!order || updatingStage) return;
 
     setUpdatingStage(true);
     try {
       const updated = await salesOrdersApi.updateStage(order.id, {
-        stageKey: stageDraft,
+        stageKey: newStageKey,
         note: stageNote || undefined,
       });
       setOrder(updated.order);
       setStageNote('');
       setError('');
-      // 更新成功后，将draft同步为新的阶段
-      setStageDraft(updated.order.stage?.key || '');
     } catch (err: any) {
       setError(err.message || '更新订单阶段失败。');
     } finally {
       setUpdatingStage(false);
-    }
-  };
-
-
-
-  // 更新订单状态
-  const handleUpdateStatus = async (newStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED') => {
-    if (!order || updatingStatus) return;
-
-    if (newStatus === 'CANCELLED' && !confirm('确定要取消此订单吗？')) {
-      return;
-    }
-
-    setUpdatingStatus(true);
-    try {
-      await salesOrdersApi.updateStatus(order.id, newStatus);
-      // Manually update local state since API might return simplified response or we just want to reflect change immediately
-      setOrder(prev => prev ? ({ ...prev, status: newStatus }) : null);
-      setError('');
-    } catch (err: any) {
-      setError(err.message || '更新订单状态失败。');
-    } finally {
-      setUpdatingStatus(false);
     }
   };
 
@@ -314,73 +307,33 @@ export default function SalesOrderDetailPage() {
                   {meta.rushOrder && <span className="status-badge status-rush">加急</span>}
                   {meta.stage?.label && <span className="status-badge status-stage">{meta.stage.label}</span>}
                 </div>
-                {/* 修改阶段 - 恢复原来的修改逻辑：先选择，再点击按钮更新 */}
+                {/* 修改阶段 */}
                 {stages.length > 0 && (
                   <div className="order-stage-update">
-                    <div className="stage-update-controls" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                      <label className="stage-update-label" style={{ flex: 1 }}>
-                        <span>修改阶段：</span>
-                        <select
-                          value={stageDraft || meta.stage?.key || ''}
-                          onChange={(e) => setStageDraft(e.target.value)}
-                          disabled={updatingStage}
-                          className="stage-update-select"
-                        >
-                          {stages.map((stage) => (
-                            <option key={stage.key} value={stage.key}>
-                              {stage.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleUpdateStage}
-                        disabled={!stageDraft || updatingStage || stageDraft === meta.stage?.key}
-                        className="stage-update-btn"
-                        style={{
-                          padding: '0.5rem 1rem',
-                          backgroundColor: stageDraft && stageDraft !== meta.stage?.key ? '#2563eb' : '#9ca3af',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '8px',
-                          fontSize: '0.875rem',
-                          fontWeight: 500,
-                          cursor: stageDraft && stageDraft !== meta.stage?.key ? 'pointer' : 'not-allowed',
-                          whiteSpace: 'nowrap',
-                          marginTop: '1.75rem'
-                        }}
+                    <label className="stage-update-label">
+                      <span>修改阶段：</span>
+                      <select
+                        value={meta.stage?.key || ''}
+                        onChange={(e) => handleUpdateStage(e.target.value)}
+                        disabled={updatingStage}
+                        className="stage-update-select"
                       >
-                        {updatingStage ? '更新中...' : '更新阶段'}
-                      </button>
-                    </div>
+                        {stages.map((stage) => (
+                          <option key={stage.key} value={stage.key}>
+                            {stage.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <textarea
                       value={stageNote}
                       onChange={(e) => setStageNote(e.target.value)}
                       placeholder="备注（可选）"
                       className="stage-update-note"
                       rows={2}
-                      style={{ marginTop: '0.75rem' }}
                     />
                   </div>
                 )}
-
-                {/* 修改状态 - 新增 */}
-                <div className="order-stage-update" style={{ marginTop: '0.5rem' }}>
-                  <label className="stage-update-label">
-                    <span>归档状态：</span>
-                    <select
-                      value={meta.status}
-                      onChange={(e) => handleUpdateStatus(e.target.value as any)}
-                      disabled={updatingStatus}
-                      className="stage-update-select"
-                    >
-                      <option value="ACTIVE">ACTIVE</option>
-                      <option value="COMPLETED">COMPLETED</option>
-                      <option value="CANCELLED">CANCELLED</option>
-                    </select>
-                  </label>
-                </div>
               </div>
             )}
           </div>
