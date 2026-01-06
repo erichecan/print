@@ -449,6 +449,7 @@ exports.createProduct = async (req, res) => {
       isCustomizable = true,
       weight,
       dimensions,
+      printableArea, // Added printableArea
       variants = [],
       images = [],
       collections = [],
@@ -464,15 +465,24 @@ exports.createProduct = async (req, res) => {
     // basePrice 在 schema 中是 Int 类型（base_price_cents），前端可能发送美元金额
     let basePriceCents;
     if (typeof basePrice === 'number') {
-      // 如果是美元金额（通常小于 10000），转换为分
-      // 如果已经是分（通常大于 1000），直接使用
-      basePriceCents = basePrice < 1000 ? Math.round(basePrice * 100) : Math.round(basePrice);
+      // 假设如果数值小于 10000，可能是美元金额（例如 $10.00），转换为分
+      // 如果数值很大（> 10000），可能是以分为单位（例如 15000 = $150.00）
+      // 这是一个启发式判断，可能存在边缘情况，但在电商场景下 $100 以下的整数价格（1-100）作为分是不太可能的
+      // 如果前端明确发送分，应该确保数值是整数
+      if (Number.isInteger(basePrice) && basePrice >= 100) {
+        // 假设是分（前端已转换）或高价值商品
+        // 为了安全起见，我们信任前端通常发送 "美元金额"（带小数或不带），除非数值极其巨大
+        // 这里沿用之前的逻辑：
+        basePriceCents = basePrice < 10000 ? Math.round(basePrice * 100) : Math.round(basePrice);
+      } else {
+        basePriceCents = Math.round(basePrice * 100);
+      }
     } else if (typeof basePrice === 'string') {
       const parsed = parseFloat(basePrice);
       if (isNaN(parsed)) {
         return res.status(400).json({ error: 'Invalid basePrice format' });
       }
-      basePriceCents = parsed < 1000 ? Math.round(parsed * 100) : Math.round(parsed);
+      basePriceCents = parsed < 10000 ? Math.round(parsed * 100) : Math.round(parsed);
     } else {
       const parsed = parseInt(basePrice, 10);
       if (isNaN(parsed)) {
@@ -522,6 +532,7 @@ exports.createProduct = async (req, res) => {
           isCustomizable,
           weight: weight ? convertToDecimal(weight) : null,
           dimensions: dimensions || null,
+          printableAreas: printableArea ? printableArea : undefined, // Add printableArea
           variants: variants && variants.length > 0
             ? {
               create: variants
@@ -635,7 +646,12 @@ exports.createProduct = async (req, res) => {
       name: error.name,
       stack: error.stack?.split('\n').slice(0, 10).join('\n'), // 只输出前10行堆栈
     });
-    console.error('Request body:', JSON.stringify(req.body, null, 2));
+    // Limit request body logging for large payloads (e.g. huge variants list)
+    const safeBody = { ...req.body };
+    if (safeBody.variants && safeBody.variants.length > 10) {
+      safeBody.variants = `[${safeBody.variants.length} variants]`;
+    }
+    console.error('Request body:', JSON.stringify(safeBody, null, 2));
 
     if (error.code === 'P2002') {
       return res.status(409).json({
@@ -652,16 +668,17 @@ exports.createProduct = async (req, res) => {
     }
 
     // 返回更详细的错误信息（开发环境）
-    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
-      return res.status(500).json({
-        error: 'Failed to create product',
-        details: error.message,
-        code: error.code,
-        meta: error.meta,
-      });
-    }
+    // ALWAYS return details for now to help user debug the 500 error
+    // if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+    return res.status(500).json({
+      error: 'Failed to create product',
+      details: error.message,
+      code: error.code,
+      meta: error.meta,
+    });
+    // }
 
-    return res.status(500).json({ error: 'Failed to create product' });
+    // return res.status(500).json({ error: 'Failed to create product' });
   }
 };
 

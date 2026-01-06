@@ -2655,11 +2655,17 @@ const DesignLabClient: React.FC<DesignLabClientProps> = ({ initialProductData })
         };
 
         const response = await designLabApi.createDraft(payload);
-        if (response.data && response.data.id) {
-          designId = response.data.id;
+        console.log('[DesignLab] createDraft response:', response);
+
+        // 兼容处理：检查 response.data.id 或 response.id
+        const newDesignId = response?.data?.id || (response as any).id;
+
+        if (newDesignId) {
+          designId = newDesignId;
           setCurrentDesignId(designId);
         } else {
-          throw new Error('Failed to create design draft');
+          console.error('[DesignLab] Invalid createDraft response:', response);
+          throw new Error(`Failed to create design draft. Response: ${JSON.stringify(response)}`);
         }
       } else {
         // 更新现有设计
@@ -4094,7 +4100,7 @@ return (
   <div className="design-lab-new">
     {/* 1. Header - 顶部导航栏 */}
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
-    < header className = "dl-header" data - testid="header" >
+    <header className = "dl-header" data-testid="header" >
   <div className="dl-header__content">
     <div className="dl-header__left">
       {/* 使用主站Logo图片，点击跳转到主站首页 */}
@@ -4127,10 +4133,10 @@ return (
       <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
     </div>
   </div>
-  </header >
+    </header>
 
   {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */ }
-  < div className = "dl-main" >
+  <div className = "dl-main" >
     {/* 2. Dark Rail - 左侧深灰色工具栏 */ }
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
 <nav className="dl-rail" aria-label="Design tools" data-testid="rail">

@@ -8,7 +8,7 @@ export interface DesignDraft {
   id: string;
   name: string;
   canvas: any;
-canvasSnapshot?: any; // Add canvas snapshot for loading
+  canvasSnapshot?: any; // Add canvas snapshot for loading
   productVariantId?: string;
   variant?: {
     id: string;
@@ -27,13 +27,13 @@ export interface CreateDesignPayload {
   name: string;
   canvas: any;
   productVariantId: string;
-thumbnailUrl?: string; // Add thumbnail support
+  thumbnailUrl?: string; // Add thumbnail support
 }
 
 export interface UpdateDesignPayload {
   name?: string;
   canvas?: any;
-thumbnailUrl?: string; // Add thumbnail support
+  thumbnailUrl?: string; // Add thumbnail support
 }
 
 export interface ShareDesignResponse {
@@ -47,10 +47,13 @@ export interface ShareDesignResponse {
 export async function createDesign(payload: CreateDesignPayload): Promise<DesignDraft> {
   try {
     const response = await designLabApi.createDraft(payload as any) as any;
-    if (response.data) {
-      return response.data;
+    // Support both { data: ... } wrapper and direct response
+    const data = response?.data || response;
+    if (data && data.id) {
+      return data;
     }
-    throw new Error('Failed to create design');
+    console.error('[Design API] Invalid create response:', response);
+    throw new Error('Failed to create design: Invalid response format');
   } catch (error) {
     console.error('[Design API] Failed to create design:', error);
     throw error;
