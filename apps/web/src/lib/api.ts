@@ -1399,6 +1399,8 @@ export interface AdminProductDetail extends AdminProductSummary {
     id: string;
     sku: string;
     color?: string | null;
+    colorHex?: string | null;
+    colorDisplayName?: string | null;
     size?: string | null;
     stockQuantity: number;
     priceAdjustment: number;
@@ -1433,12 +1435,15 @@ export interface AdminProductPayload {
   description?: string;
   longDescription?: string;
   isActive?: boolean;
+  isDraft?: boolean;
   isCustomizable?: boolean;
   weight?: number;
   dimensions?: string;
   variants?: Array<{
     sku: string;
     color?: string;
+    colorHex?: string;
+    colorDisplayName?: string;
     size?: string;
     stockQuantity: number;
     priceAdjustment?: number;
@@ -1457,6 +1462,61 @@ export interface AdminProductPayload {
     'left-sleeve'?: { width: number; height: number; x: number; y: number };
     'right-sleeve'?: { width: number; height: number; x: number; y: number };
   } | null;
+}
+
+// Product Wizard Data Type
+export interface ProductWizardData {
+  // Step 1: Basic Info
+  name?: string;
+  categoryId?: string;
+  description?: string;
+  longDescription?: string;
+  mainImage?: { url: string; alt?: string; file?: File };
+  tags?: string[];
+  
+  // Step 2: Variants
+  colors?: Array<{
+    color: string;
+    colorHex: string;
+    displayName: string;
+    images: Array<{ url: string; file?: File }>;
+    enabled: boolean;
+  }>;
+  sizes?: Array<{
+    size: string;
+    displayName: string;
+    sortOrder: number;
+    enabled: boolean;
+  }>;
+  variantCombinations?: Array<{
+    color: string;
+    size: string;
+    enabled: boolean;
+    sku?: string;
+  }>;
+  
+  // Step 3: Details
+  sku?: string;
+  basePrice?: number;
+  salePrice?: number;
+  unitCost?: number;
+  grossProfit?: number;
+  stockQuantity?: number;
+  weight?: number;
+  dimensions?: string;
+  printableArea?: {
+    front: { width: number; height: number; x: number; y: number };
+    back: { width: number; height: number; x: number; y: number };
+    sleeve: { width: number; height: number; x: number; y: number };
+  };
+  
+  // Step 4: Publish
+  publishOption?: 'publish' | 'draft' | 'scheduled';
+  scheduledPublishAt?: Date;
+  
+  // Metadata
+  productId?: string; // For draft recovery
+  slug?: string;
 }
 
 // Admin Categories API

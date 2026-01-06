@@ -2,77 +2,53 @@
 
 /**
  * Admin Product Edit Client Component
-* 提取客户端逻辑到单独组件
+ * 使用新的向导模板进行编辑
+ * Created: 2025-01-06
  */
 import useSWR from 'swr';
 import { useRouter } from 'next/navigation';
-import { ProductForm } from '@/components/admin/ProductForm';
-import { adminProductsApi } from '@/lib/api';
+import { ProductWizard } from '@/components/admin/products/ProductWizard/ProductWizard';
+import { adminProductsApi, AdminProductDetail } from '@/lib/api';
 
 export default function AdminProductEditClient({ id }: { id: string }) {
   const router = useRouter();
-  const { data, isLoading, error, mutate } = useSWR(
+  const { data: product, isLoading, error, mutate } = useSWR<AdminProductDetail>(
     ['admin-product', id],
     () => adminProductsApi.get(id)
   );
 
+  if (isLoading) {
+    return (
+      <div className="admin-section">
+        <p>正在加载商品信息…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="admin-section">
+        <p className="error">商品加载失败，请刷新重试。</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="admin-section">
+        <p className="error">商品不存在。</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="admin-section">
-      <header className="page-header">
-        <div>
-          <h1>编辑商品</h1>
-          <p>更新商品信息、库存、定价与变体。</p>
-        </div>
-        <button type="button" className="text-button" onClick={() => router.back()}>
-          返回上一页
-        </button>
-      </header>
-
-      {isLoading && <p>正在加载商品信息…</p>}
-      {error && <p className="error">商品加载失败，请刷新重试。</p>}
-      {data && (
-        <ProductForm
-          mode="edit"
-          product={data}
-          onSuccess={async () => {
-            await mutate();
-            router.refresh();
-          }}
-        />
-      )}
-
-      <style jsx>{`
-        .admin-section {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-        }
-        .page-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 16px;
-        }
-        .page-header h1 {
-          margin: 0;
-          font-size: 26px;
-        }
-        .page-header p {
-          margin: 4px 0 0;
-          color: #64748b;
-        }
-        .text-button {
-          background: none;
-          border: none;
-          color: #2563eb;
-          cursor: pointer;
-          font-weight: 600;
-        }
-        .error {
-          color: #ef4444;
-        }
-      `}</style>
-    </div>
+    <ProductWizard
+      initialProduct={product}
+      onComplete={async (updatedProduct) => {
+        await mutate();
+        router.push(`/admin/products/${updatedProduct.id}`);
+      }}
+    />
   );
 }
 

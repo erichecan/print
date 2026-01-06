@@ -144,6 +144,7 @@ model Product {
   dimensions         String?
   printableAreas     Json?               @map("printable_areas")
   isActive           Boolean             @default(true) @map("is_active")
+  isDraft            Boolean             @default(false) @map("is_draft")
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
   categoryId         String              @map("category_id")
@@ -190,6 +191,7 @@ model Variant {
   productId       String      @map("product_id")
   color           String
   colorHex        String?     @map("color_hex")
+  colorDisplayName String?    @map("color_display_name")
   size            String
   sku             String      @unique
   priceAdjustment Decimal     @default(0) @map("price_adjustment") @db.Decimal(10, 2)

@@ -1,0 +1,561 @@
+'use client';
+
+/**
+ * Color Attribute Configuration Component
+ * 颜色属性配置组件
+ * Created: 2025-01-06
+ */
+import React, { useState } from 'react';
+import Image from 'next/image';
+
+export interface ColorConfig {
+  color: string;
+  colorHex: string;
+  displayName: string;
+  images: Array<{ url: string; file?: File }>;
+  enabled: boolean;
+}
+
+interface ColorAttributeConfigProps {
+  colors: ColorConfig[];
+  onColorsChange: (colors: ColorConfig[]) => void;
+  onUploadImage?: (colorIndex: number, file: File) => Promise<string>;
+  productImages?: Array<{ url: string; alt?: string }>;
+}
+
+export function ColorAttributeConfig({
+  colors,
+  onColorsChange,
+  onUploadImage,
+  productImages = [],
+}: ColorAttributeConfigProps) {
+  const [expandedColors, setExpandedColors] = useState<Set<number>>(new Set([0]));
+  const fileInputRefs = React.useRef<{ [key: number]: HTMLInputElement | null }>({});
+
+  const toggleColorExpanded = (index: number) => {
+    setExpandedColors((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
+
+  const addColor = () => {
+    const newColor: ColorConfig = {
+      color: `Color ${colors.length + 1}`,
+      colorHex: '#CCCCCC',
+      displayName: `Color ${colors.length + 1}`,
+      images: [],
+      enabled: true,
+    };
+    onColorsChange([...colors, newColor]);
+    setExpandedColors((prev) => new Set([...prev, colors.length]));
+  };
+
+  const removeColor = (index: number) => {
+    if (colors.length <= 1) {
+      alert('至少需要保留一个颜色');
+      return;
+    }
+    const newColors = colors.filter((_, i) => i !== index);
+    onColorsChange(newColors);
+    setExpandedColors((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+  };
+
+  const updateColor = (index: number, updates: Partial<ColorConfig>) => {
+    const newColors = [...colors];
+    newColors[index] = { ...newColors[index], ...updates };
+    onColorsChange(newColors);
+  };
+
+  const handleFileSelect = async (colorIndex: number, file: File) => {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('不支持的文件类型');
+      return;
+    }
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('文件大小不能超过 10MB');
+      return;
+    }
+
+    if (onUploadImage) {
+      try {
+        const url = await onUploadImage(colorIndex, file);
+        const newColors = [...colors];
+        newColors[colorIndex].images = [
+          ...newColors[colorIndex].images,
+          { url, file },
+        ];
+        onColorsChange(newColors);
+      } catch (error) {
+        console.error('Failed to upload image:', error);
+        alert('图片上传失败');
+      }
+    } else {
+      // Local preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          const url = e.target.result as string;
+          const newColors = [...colors];
+          newColors[colorIndex].images = [
+            ...newColors[colorIndex].images,
+            { url, file },
+          ];
+          onColorsChange(newColors);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeColorImage = (colorIndex: number, imageIndex: number) => {
+    const newColors = [...colors];
+    newColors[colorIndex].images = newColors[colorIndex].images.filter(
+      (_, i) => i !== imageIndex
+    );
+    onColorsChange(newColors);
+  };
+
+  return (
+    <div className="color-attribute-config">
+      <div className="color-attribute-config__header">
+        <h4 className="color-attribute-config__title">
+          颜色 <span className="required-indicator">*</span>
+          <span className="color-attribute-config__subtitle">
+            （必选属性，影响商品展示图片）
+          </span>
+        </h4>
+      </div>
+
+      <div className="color-attribute-config__list">
+        {colors.map((colorConfig, index) => {
+          const isExpanded = expandedColors.has(index);
+
+          return (
+            <div
+              key={index}
+              className={`color-config-item ${isExpanded ? 'color-config-item--expanded' : ''}`}
+            >
+              <div
+                className="color-config-item__header"
+                onClick={() => toggleColorExpanded(index)}
+              >
+                <div className="color-config-item__preview">
+                  <div
+                    className="color-config-item__swatch"
+                    style={{ backgroundColor: colorConfig.colorHex }}
+                  />
+                  <span className="color-config-item__name">{colorConfig.displayName}</span>
+                </div>
+                <div className="color-config-item__actions">
+                  {colorConfig.images.length > 0 && (
+                    <span className="color-config-item__image-count">
+                      已上传 {colorConfig.images.length} 张
+                    </span>
+                  )}
+                  {colors.length > 1 && (
+                    <button
+                      type="button"
+                      className="color-config-item__remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeColor(index);
+                      }}
+                    >
+                      删除
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className="color-config-item__toggle"
+                  >
+                    {isExpanded ? '−' : '+'}
+                  </button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="color-config-item__content">
+                  {/* Color Value */}
+                  <div className="form-row">
+                    <div className="form-field">
+                      <label className="form-field__label">颜色值</label>
+                      <div className="color-picker-group">
+                        <div
+                          className="color-picker-swatch"
+                          style={{ backgroundColor: colorConfig.colorHex }}
+                        />
+                        <input
+                          type="color"
+                          className="form-field__input color-picker-input"
+                          value={colorConfig.colorHex}
+                          onChange={(e) =>
+                            updateColor(index, { colorHex: e.target.value })
+                          }
+                        />
+                        <input
+                          type="text"
+                          className="form-field__input color-hex-input"
+                          value={colorConfig.colorHex}
+                          onChange={(e) =>
+                            updateColor(index, { colorHex: e.target.value })
+                          }
+                          placeholder="#FF0000"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Display Name */}
+                  <div className="form-field">
+                    <label className="form-field__label">显示名称</label>
+                    <input
+                      type="text"
+                      className="form-field__input"
+                      value={colorConfig.displayName}
+                      onChange={(e) =>
+                        updateColor(index, { displayName: e.target.value })
+                      }
+                      placeholder="例如：经典红"
+                    />
+                  </div>
+
+                  {/* Variant Images */}
+                  <div className="form-field">
+                    <label className="form-field__label">变体主图</label>
+                    <div className="variant-images-upload">
+                      {colorConfig.images.map((image, imgIndex) => (
+                        <div key={imgIndex} className="variant-image-item">
+                          <div className="variant-image-preview">
+                            <Image
+                              src={image.url}
+                              alt={`${colorConfig.displayName} ${imgIndex + 1}`}
+                              fill
+                              style={{ objectFit: 'cover' }}
+                              unoptimized
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            className="variant-image-remove"
+                            onClick={() => removeColorImage(index, imgIndex)}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <div
+                        className="variant-image-upload-btn"
+                        onClick={() => fileInputRefs.current[index]?.click()}
+                      >
+                        <span>+ 上传图片</span>
+                      </div>
+                      <input
+                        ref={(el) => (fileInputRefs.current[index] = el)}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            Array.from(e.target.files).forEach((file) => {
+                              handleFileSelect(index, file);
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                    <small className="form-field__hint">
+                      建议上传 3-5 张不同角度的图片
+                    </small>
+                  </div>
+
+                  {/* Enabled Status */}
+                  <div className="form-field checkbox-field">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={colorConfig.enabled}
+                        onChange={(e) =>
+                          updateColor(index, { enabled: e.target.checked })
+                        }
+                      />
+                      <span>启用此颜色</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        type="button"
+        className="add-color-btn"
+        onClick={addColor}
+      >
+        + 添加新颜色
+      </button>
+
+      <style jsx>{`
+        .color-attribute-config {
+          background: #fff;
+          border-radius: 8px;
+          padding: 20px;
+          border: 1px solid #e1e3e5;
+        }
+
+        .color-attribute-config__header {
+          margin-bottom: 16px;
+        }
+
+        .color-attribute-config__title {
+          font-size: 16px;
+          font-weight: 600;
+          margin: 0;
+          color: #202223;
+        }
+
+        .required-indicator {
+          color: #e74c3c;
+        }
+
+        .color-attribute-config__subtitle {
+          font-size: 14px;
+          font-weight: 400;
+          color: #6d7175;
+          margin-left: 8px;
+        }
+
+        .color-config-item {
+          border: 1px solid #e1e3e5;
+          border-radius: 4px;
+          margin-bottom: 12px;
+          overflow: hidden;
+        }
+
+        .color-config-item__header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          cursor: pointer;
+          background: #fafbfb;
+          transition: background 0.2s;
+        }
+
+        .color-config-item__header:hover {
+          background: #f6f6f7;
+        }
+
+        .color-config-item__preview {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .color-config-item__swatch {
+          width: 32px;
+          height: 32px;
+          border-radius: 4px;
+          border: 2px solid #e1e3e5;
+        }
+
+        .color-config-item__name {
+          font-size: 14px;
+          font-weight: 500;
+          color: #202223;
+        }
+
+        .color-config-item__actions {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .color-config-item__image-count {
+          font-size: 12px;
+          color: #6d7175;
+        }
+
+        .color-config-item__remove,
+        .color-config-item__toggle {
+          background: none;
+          border: none;
+          color: #005bd3;
+          cursor: pointer;
+          font-size: 16px;
+          padding: 4px 8px;
+        }
+
+        .color-config-item__remove:hover {
+          color: #e74c3c;
+        }
+
+        .color-config-item__content {
+          padding: 16px;
+          border-top: 1px solid #e1e3e5;
+        }
+
+        .form-row {
+          display: flex;
+          gap: 16px;
+        }
+
+        .form-field {
+          margin-bottom: 16px;
+        }
+
+        .form-field__label {
+          display: block;
+          font-size: 14px;
+          font-weight: 500;
+          margin-bottom: 8px;
+          color: #202223;
+        }
+
+        .form-field__input {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #c9cccf;
+          border-radius: 4px;
+          font-size: 14px;
+        }
+
+        .color-picker-group {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .color-picker-swatch {
+          width: 40px;
+          height: 40px;
+          border-radius: 4px;
+          border: 1px solid #e1e3e5;
+        }
+
+        .color-picker-input {
+          width: 60px;
+          height: 40px;
+          padding: 0;
+          border: none;
+          cursor: pointer;
+        }
+
+        .color-hex-input {
+          flex: 1;
+        }
+
+        .variant-images-upload {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        .variant-image-item {
+          position: relative;
+          width: 80px;
+          height: 80px;
+        }
+
+        .variant-image-preview {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          border-radius: 4px;
+          overflow: hidden;
+          border: 1px solid #e1e3e5;
+        }
+
+        .variant-image-remove {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: #e74c3c;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .variant-image-upload-btn {
+          width: 80px;
+          height: 80px;
+          border: 2px dashed #c9cccf;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 12px;
+          color: #6d7175;
+          transition: all 0.2s;
+        }
+
+        .variant-image-upload-btn:hover {
+          border-color: #005bd3;
+          color: #005bd3;
+        }
+
+        .form-field__hint {
+          font-size: 12px;
+          color: #6d7175;
+          margin-top: 4px;
+          display: block;
+        }
+
+        .checkbox-field {
+          margin-bottom: 0;
+        }
+
+        .checkbox-label {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          color: #202223;
+        }
+
+        .add-color-btn {
+          width: 100%;
+          padding: 12px;
+          background: #fff;
+          border: 1px dashed #c9cccf;
+          border-radius: 4px;
+          color: #005bd3;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .add-color-btn:hover {
+          border-color: #005bd3;
+          background: #f0f7ff;
+        }
+      `}</style>
+    </div>
+  );
+}
+

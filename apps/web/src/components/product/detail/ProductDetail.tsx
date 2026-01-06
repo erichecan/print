@@ -5,7 +5,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import useSWR from 'swr';
 import { productsApi } from '@/lib/api';
 import { Breadcrumb } from './Breadcrumb';
@@ -25,6 +25,8 @@ const DESIGN_LAB_PAYLOAD_KEY = 'designLab:productPayload';
 export function ProductDetail() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const slug = params?.slug as string;
 
   // 从 API 获取产品数据
@@ -63,9 +65,22 @@ export function ProductDetail() {
     if (apiProduct) {
       const adapted = adaptProductData(apiProduct as any, relatedData?.data as any);
       setProductData(adapted);
-      setSelectedColor(adapted.colors.find(c => c.available)?.name || '');
+
+      const urlColor = searchParams?.get('color');
+      const initialColor = urlColor || adapted.colors.find(c => c.available)?.name || '';
+      setSelectedColor(initialColor);
     }
-  }, [apiProduct, relatedData]);
+  }, [apiProduct, relatedData, searchParams]);
+
+  const handleColorSelect = useCallback((color: string) => {
+    setSelectedColor(color);
+    // Update URL without full reload
+    const current = new URLSearchParams(Array.from(searchParams?.entries() || []));
+    current.set('color', color);
+    const search = current.toString();
+    const query = search ? `?${search}` : '';
+    router.replace(`${pathname}${query}`, { scroll: false });
+  }, [searchParams, pathname, router]);
 
   // 加入购物车处理函数
   // 移除 alert 弹窗，使用 CartContext 确保状态同步
@@ -74,15 +89,17 @@ export function ProductDetail() {
     console.log('[Add to Cart] ===== START =====');
     console.log('[Add to Cart] Payload:', JSON.stringify(payload, null, 2));
     console.log('[Add to Cart] API Product exists:', !!apiProduct);
-    console.log('[Add to Cart] Variants count:', apiProduct?.variants?.length || 0);
+    console.log('[Add to Cart] Variants count:', (apiProduct as any)?.variants?.length || 0);
 
-    if (!apiProduct || !apiProduct.variants) {
+    const product = apiProduct as any;
+
+    if (!product || !product.variants) {
       console.error('[Add to Cart] ❌ No API product or variants');
       alert('Product data not loaded. Please refresh and try again.');
       return;
     }
 
-    console.log('[Add to Cart] Available variants:', apiProduct.variants.map((v: any) => ({
+    console.log('[Add to Cart] Available variants:', product.variants.map((v: any) => ({
       id: v.id,
       color: v.color,
       size: v.size,
@@ -150,10 +167,13 @@ export function ProductDetail() {
   const handleBuyNow = useCallback(async (payload: any) => {
     console.log('[Buy Now] ===== START =====');
     console.log('[Buy Now] Payload:', JSON.stringify(payload, null, 2));
-    console.log('[Buy Now] API Product exists:', !!apiProduct);
-    console.log('[Buy Now] Variants count:', apiProduct?.variants?.length || 0);
 
-    if (!apiProduct || !apiProduct.variants) {
+    const product = apiProduct as any;
+
+    console.log('[Buy Now] API Product exists:', !!product);
+    console.log('[Buy Now] Variants count:', product?.variants?.length || 0);
+
+    if (!product || !product.variants) {
       console.error('[Buy Now] ❌ No API product or variants');
       alert('Product data not loaded. Please refresh and try again.');
       return;
@@ -162,7 +182,7 @@ export function ProductDetail() {
 
     // 找到对应的 variant (Case-insensitive matching)
     let matchingVariant = null;
-    for (const v of apiProduct.variants) {
+    for (const v of product.variants) {
       const vColor = (v.color || '').toLowerCase().trim();
       const pColor = (payload.color || '').toLowerCase().trim();
       const colorMatch = !pColor || vColor === pColor || !vColor;
@@ -218,9 +238,10 @@ export function ProductDetail() {
   }, [router, apiProduct]);
 
   const persistDesignLabPayload = useCallback((variant: any) => {
-    if (typeof window === 'undefined' || !apiProduct) return;
+    const product = apiProduct as any;
+    if (typeof window === 'undefined' || !product) return;
     try {
-      const galleryUrls = (apiProduct.images || []).map((img: any) => img.url).filter(Boolean);
+      const galleryUrls = (product.images || []).map((img: any) => img.url).filter(Boolean);
       const fallbackImage = variant?.imageUrl || galleryUrls[0] || '/assets/hero/hero-card-tee.jpg';
       const baseImages = {
         front: variant?.imageUrl || fallbackImage,
@@ -236,8 +257,8 @@ export function ProductDetail() {
       );
 
       const payload = {
-        productId: apiProduct.id,
-        productName: apiProduct.name,
+        productId: product.id,
+        productName: product.name,
         variantId: variant?.id || null,
         color: variant?.color || null,
         colors: colorOptions,
@@ -263,9 +284,10 @@ export function ProductDetail() {
 
     // 根据选中的颜色和尺码找到对应的 variantId
     let targetVariant: any = null;
+    const product = apiProduct as any;
 
-    if (apiProduct && apiProduct.variants) {
-      const matchingVariant = apiProduct.variants.find((v: any) => {
+    if (product && product.variants) {
+      const matchingVariant = product.variants.find((v: any) => {
         const colorMatch = !payload.color || v.color === payload.color || !v.color;
         const sizeMatch = !payload.size || v.size === payload.size || !v.size;
         return colorMatch && sizeMatch;
@@ -273,9 +295,9 @@ export function ProductDetail() {
 
       if (matchingVariant && matchingVariant.id) {
         targetVariant = matchingVariant;
-      } else if (apiProduct.variants.length > 0) {
+      } else if (product.variants.length > 0) {
         // 如果没有找到匹配的 variant，使用第一个可用的 variant
-        targetVariant = apiProduct.variants[0];
+        targetVariant = product.variants[0];
       }
     }
 
@@ -292,7 +314,7 @@ export function ProductDetail() {
       // 使用新的 URL 构建函数
       const designUrl = buildNewDesignUrlSafe({
         variantId: targetVariant.id,
-        productId: apiProduct?.id,
+        productId: product?.id,
         color: targetVariant.color || payload.color || undefined,
         size: targetVariant.size || payload.size || undefined,
         referrer: 'product_detail',
@@ -373,8 +395,10 @@ export function ProductDetail() {
               onAddToCart={handleAddToCart}
               onBuyNow={handleBuyNow}
               onStartDesign={handleStartDesign}
-              productId={apiProduct?.id} // 传递实际的 productId
-              variants={apiProduct?.variants || []}
+              productId={(apiProduct as any)?.id} // 传递实际的 productId
+              variants={(apiProduct as any)?.variants || []}
+              selectedColor={selectedColor}
+              onColorSelect={handleColorSelect}
             />
 
             {/* 参考图一位置：配送和退货信息 */}
@@ -383,13 +407,7 @@ export function ProductDetail() {
               returns={productData.returns}
             />
 
-            {/* 参考图一位置：产品特性 */}
-            <ProductFeatures
-              features={productData.features}
-              rating={productData.rating}
-              description={productData.description}
-              longDescription={productData.longDescription}
-            />
+            {/* 参考图一位置：产品特性 (Removed) */}
           </div>
         </div>
 

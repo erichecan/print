@@ -25,6 +25,7 @@ interface ApiProduct {
     size: string | null;
     stockQuantity: number;
     priceAdjustment: number;
+    imageUrl?: string | null;
   }>;
   images: Array<{
     id: string;
@@ -87,7 +88,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     : 0;
 
   // 提取唯一颜色
-  const colorMap = new Map<string, { hex: string; available: boolean }>();
+  const colorMap = new Map<string, { hex: string; available: boolean; imageUrl?: string }>();
   apiProduct.variants.forEach(v => {
     if (v.color) {
       const colorName = v.color;
@@ -105,12 +106,16 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
         colorMap.set(colorName, {
           hex: hex || '#CCCCCC', // Default to gray only if truly unknown
           available: v.stockQuantity > 0,
+          imageUrl: v.imageUrl || undefined,
         });
       } else {
         // 如果已有该颜色，更新可用性（任一变体有库存即可）
         const existing = colorMap.get(colorName)!;
         if (v.stockQuantity > 0) {
           existing.available = true;
+        }
+        if (v.imageUrl && !existing.imageUrl) {
+          existing.imageUrl = v.imageUrl;
         }
       }
     }
@@ -120,6 +125,7 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     name,
     hex: data.hex,
     available: data.available,
+    imageUrl: data.imageUrl,
   }));
 
   // 提取唯一尺码
@@ -156,12 +162,17 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
   // 转换图片数据
   const images = apiProduct.images
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map(img => ({
-      id: img.id,
-      url: img.url,
-      alt: img.alt || apiProduct.name,
-      thumbnail: img.url, // 可以后续优化为生成缩略图
-    }));
+    .map(img => {
+      // Find if this image is linked to any color
+      const linkedColor = Array.from(colorMap.entries()).find(([_, data]) => data.imageUrl === img.url)?.[0];
+      return {
+        id: img.id,
+        url: img.url,
+        alt: img.alt || apiProduct.name,
+        thumbnail: img.url, // 可以后续优化为生成缩略图
+        color: linkedColor || null,
+      };
+    });
 
   // 生成产品特性 - 不再从描述生成，使用通用默认值，或者留空
   const features = [

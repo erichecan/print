@@ -13,6 +13,7 @@ interface GalleryImage {
   url: string;
   alt: string;
   thumbnail?: string;
+  color?: string | null;
 }
 
 interface GalleryProps {
@@ -24,10 +25,10 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
-// 键盘导航支持
+  // 键盘导航支持
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isLightboxOpen) return;
-    
+
     if (e.key === 'ArrowLeft') {
       setSelectedIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
     } else if (e.key === 'ArrowRight') {
@@ -37,6 +38,20 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
     }
   }, [isLightboxOpen, images.length]);
 
+  // Sync selected index when selectedColor changes
+  useEffect(() => {
+    if (selectedColor && images.length > 0) {
+      // Find the first image that matches the selected color
+      // Note: GalleryImage interface needs color property, but we passed it from dataAdapter which now has it.
+      // However, GalleryImage interface here doesn't have it defined. We should cast or update interface.
+      // But wait, we define GalleryImage locally. Let's update interface too.
+      const index = images.findIndex((img: any) => img.color === selectedColor);
+      if (index !== -1) {
+        setSelectedIndex(index);
+      }
+    }
+  }, [selectedColor, images]);
+
   useEffect(() => {
     if (isLightboxOpen) {
       window.addEventListener('keydown', handleKeyDown);
@@ -44,7 +59,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
     } else {
       document.body.style.overflow = '';
     }
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
@@ -57,7 +72,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
     <>
       <section className={styles.gallery} aria-label="Product gallery">
         <div className={styles.galleryContainer}>
-{/* 参考图一位置：左侧竖向缩略图列 */}
+          {/* 参考图一位置：左侧竖向缩略图列 */}
           <div className={styles.galleryThumbnails}>
             {images.map((img, index) => (
               <button
@@ -78,9 +93,9 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
             ))}
           </div>
 
-{/* 参考图一位置：大图区域 */}
+          {/* 参考图一位置：大图区域 */}
           <div className={styles.galleryMain}>
-            <div 
+            <div
               className={styles.galleryMainImageWrapper}
               onClick={() => setIsLightboxOpen(true)}
               role="button"
@@ -115,9 +130,9 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
         </div>
       </section>
 
-{/* 灯箱模态框 */}
+      {/* 灯箱模态框 */}
       {isLightboxOpen && (
-        <div 
+        <div
           className={styles.galleryLightbox}
           onClick={() => setIsLightboxOpen(false)}
           role="dialog"
@@ -134,7 +149,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
-          
+
           <button
             className={styles.galleryLightboxPrev}
             onClick={(e) => {
@@ -147,7 +162,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
-          
+
           <div className={styles.galleryLightboxContent} onClick={(e) => e.stopPropagation()}>
             {currentImage && (
               <SafeImage
@@ -159,7 +174,7 @@ export function Gallery({ images, selectedColor }: GalleryProps) {
               />
             )}
           </div>
-          
+
           <button
             className={styles.galleryLightboxNext}
             onClick={(e) => {

@@ -53,6 +53,7 @@ export interface ProductData {
     url: string;
     alt: string;
     thumbnail?: string;
+    color?: string | null;
   }>;
   rating: {
     average: number;

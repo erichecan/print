@@ -15,6 +15,7 @@ import {
   AdminProductDetail,
   AdminProductPayload,
 } from '@/lib/api';
+import { ProductVariantsEditor } from './products/ProductVariantsEditor';
 
 interface ProductFormProps {
   mode: 'create' | 'edit';
@@ -163,15 +164,6 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
   }, [variantsValue, isCustomizableValue, setValue]);
 
   const {
-    fields: variantFields,
-    append: appendVariant,
-    remove: removeVariant,
-  } = useFieldArray({
-    control,
-    name: 'variants',
-  });
-
-  const {
     fields: imageFields,
     append: appendImage,
     remove: removeImage,
@@ -256,6 +248,53 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
     } finally {
       setUploadingImages((prev) => ({ ...prev, [index]: false }));
       setUploadProgress((prev) => ({ ...prev, [index]: 0 }));
+    }
+  };
+
+  // Specialized upload handler for variants that returns the URL
+  const handleVariantImageUpload = async (file: File): Promise<string> => {
+    // 1. Determine next index
+    const currentImages = watch('images') || [];
+    const nextIndex = currentImages.length;
+
+    // 2. Optimistic update (optional, but good for UI)
+    // We don't want to mess with main form index until success if possible,
+    // but handleImageUpload relies on index.
+    // Let's use the existing handler logic but adapted to return the URL.
+
+    if (!product?.id) {
+      // New product case: just create a local file URL
+      const localUrl = `file://${file.name}`;
+      // We still need to add it to the main images array so it gets uploaded on save?
+      // Actually, for new products, the main form handles this via fileRefs.
+      // We need to simulate adding a file to the main image list.
+      setValue(`images.${nextIndex}.url` as any, localUrl);
+      // We need to store the file to be uploaded later
+      fileRefs.current[nextIndex] = file;
+      return localUrl;
+    }
+
+    // Existing product case: Upload immediately
+    setUploadingImages((prev) => ({ ...prev, [nextIndex]: true }));
+    try {
+      const response = await adminProductsApi.uploadImages(
+        product.id,
+        [file]
+      );
+
+      if (response.images && response.images.length > 0) {
+        const uploadedImage = response.images[response.images.length - 1];
+        // Add to main images list state so it appears in gallery
+        setValue(`images.${nextIndex}.url` as any, uploadedImage.url);
+        setValue(`images.${nextIndex}.sortOrder` as any, uploadedImage.sortOrder);
+        return uploadedImage.url;
+      }
+      throw new Error('Upload failed - no image returned');
+    } catch (error: any) {
+      console.error('Variant upload error:', error);
+      throw error;
+    } finally {
+      setUploadingImages((prev) => ({ ...prev, [nextIndex]: false }));
     }
   };
 
@@ -737,53 +776,13 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           </div>
 
           {/* 6. Variants */}
-          <div className="card">
-            <div className="card-header">
-              <h3>Variants</h3>
-              <button type="button" className="text-btn" onClick={() => appendVariant(defaultVariant)}>
-                + Add Option
-              </button>
-            </div>
-
-            <div className="checkbox-row mb-4">
-              <input type="checkbox" {...register('isCustomizable')} id="isCustomizable" />
-              <label htmlFor="isCustomizable">This product has options, like size or color</label>
-            </div>
-
-            <div className="variants-list">
-              {variantFields.map((field, index) => (
-                <div key={field.id} className="variant-item form-row">
-                  <div className="form-field" style={{ flex: 2 }}>
-                    {index === 0 && <label>Option Name</label>}
-                    <input
-                      type="text"
-                      placeholder="Color / Size"
-                      value={`${watch(`variants.${index}.color`) || ''} ${watch(`variants.${index}.size`) || ''}`.trim()}
-                      readOnly
-                    />
-                  </div>
-                  <div className="form-field" style={{ flex: 1 }}>
-                    {index === 0 && <label>Values</label>}
-                    <div className="flex-row gap-2">
-                      <input type="text" placeholder="Color" {...register(`variants.${index}.color` as const)} />
-                      <input type="text" placeholder="Size" {...register(`variants.${index}.size` as const)} />
-                    </div>
-                  </div>
-                  <div className="form-field" style={{ width: '80px' }}>
-                    {index === 0 && <label>Price</label>}
-                    <input type="number" step="0.01" {...register(`variants.${index}.priceAdjustment` as const)} placeholder="0.00" />
-                  </div>
-                  <div className="form-field" style={{ width: '80px' }}>
-                    {index === 0 && <label>Stock</label>}
-                    <input type="number" {...register(`variants.${index}.stockQuantity` as const)} placeholder="0" />
-                  </div>
-                  <div className="form-field" style={{ width: '30px', paddingTop: index === 0 ? '28px' : '0' }}>
-                    <button type="button" className="icon-btn" onClick={() => removeVariant(index)}>×</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ProductVariantsEditor
+            control={control}
+            register={register}
+            watch={watch}
+            setValue={setValue}
+            errors={errors}
+          />
 
           {/* 7. Printable Area Configuration */}
           <div className="card">

@@ -67,6 +67,8 @@ interface BuyBoxProps {
   variantId?: string; // 添加 variantId 支持
   productId?: string; // 添加 productId 支持
   variants?: any[];
+  selectedColor?: string;
+  onColorSelect?: (color: string) => void;
 }
 
 export function BuyBox({
@@ -85,10 +87,15 @@ export function BuyBox({
   variantId,
   productId,
   variants = [],
+  selectedColor: controlledColor,
+  onColorSelect: controlledOnColorSelect,
 }: BuyBoxProps) {
   const router = useRouter();
   const [selectedStyle, setSelectedStyle] = useState(style.options[0]?.value || '');
-  const [selectedColor, setSelectedColor] = useState(colors.find(c => c.available)?.name || '');
+
+  // Use controlled color if provided, otherwise internal state
+  const [internalColor, setInternalColor] = useState(colors.find(c => c.available)?.name || '');
+  const activeColor = controlledColor !== undefined ? controlledColor : internalColor;
 
   // Logic to determine available sizes based on selected color
   const getAvailableSizesForColor = (color: string) => {
@@ -103,10 +110,10 @@ export function BuyBox({
       .map(v => (v.size || '').toUpperCase()); // Normalized size values
   };
 
-  const availableSizesForColor = getAvailableSizesForColor(selectedColor);
+  const availableSizesForColor = getAvailableSizesForColor(activeColor);
 
   const [selectedSize, setSelectedSize] = useState(() => {
-    const initialSizes = getAvailableSizesForColor(colors.find(c => c.available)?.name || '');
+    const initialSizes = getAvailableSizesForColor(activeColor || colors.find(c => c.available)?.name || '');
     return initialSizes.length > 0 ? initialSizes[0] : '';
   });
 
@@ -115,17 +122,21 @@ export function BuyBox({
   // Get current specific variant
   const currentVariant = variants.find(v => {
     const vColor = (v.color || '').toLowerCase().trim();
-    const tColor = (selectedColor || '').toLowerCase().trim();
+    const tColor = (activeColor || '').toLowerCase().trim();
     const vSize = (v.size || '').toLowerCase().trim();
     const tSize = (selectedSize || '').toLowerCase().trim();
     return vColor === tColor && vSize === tSize;
   });
 
   const maxQuantity = currentVariant ? currentVariant.stockQuantity : 1;
-  const canAddToCart = selectedSize && selectedColor && quantity > 0 && quantity <= maxQuantity && !!currentVariant;
+  const canAddToCart = selectedSize && activeColor && quantity > 0 && quantity <= maxQuantity && !!currentVariant;
 
   const handleColorSelect = (newColor: string) => {
-    setSelectedColor(newColor);
+    if (controlledOnColorSelect) {
+      controlledOnColorSelect(newColor);
+    } else {
+      setInternalColor(newColor);
+    }
 
     // Check if current size is valid for new color
     const newAvailableSizes = getAvailableSizesForColor(newColor);
@@ -144,7 +155,7 @@ export function BuyBox({
       productId: productId || 'prod-001',
       title,
       selectedStyle,
-      color: selectedColor,
+      color: activeColor,
       size: selectedSize,
       quantity,
       unitPrice: price.sale,
@@ -156,7 +167,7 @@ export function BuyBox({
 
     console.log('[BuyBox] Add to Cart payload:', payload);
     onAddToCart(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onAddToCart, productId, currentVariant]);
+  }, [canAddToCart, title, selectedStyle, activeColor, selectedSize, quantity, price, onAddToCart, productId, currentVariant]);
 
   const handleBuyNow = useCallback(() => {
     if (!canAddToCart) return;
@@ -165,7 +176,7 @@ export function BuyBox({
       productId: productId || 'prod-001',
       title,
       selectedStyle,
-      color: selectedColor,
+      color: activeColor,
       size: selectedSize,
       quantity,
       unitPrice: price.sale,
@@ -177,7 +188,7 @@ export function BuyBox({
 
     console.log('[BuyBox] Buy Now payload:', payload);
     onBuyNow(payload);
-  }, [canAddToCart, title, selectedStyle, selectedColor, selectedSize, quantity, price, onBuyNow, productId, currentVariant]);
+  }, [canAddToCart, title, selectedStyle, activeColor, selectedSize, quantity, price, onBuyNow, productId, currentVariant]);
 
   // 开始设计处理函数 - 跳转到新的 Design Lab 页面
   const handleStartDesign = useCallback(() => {
@@ -185,7 +196,7 @@ export function BuyBox({
       productId: productId || 'prod-001',
       title,
       selectedStyle,
-      color: selectedColor,
+      color: activeColor,
       size: selectedSize,
       // 移除 printLocation（模块已移除）
     };
@@ -210,7 +221,7 @@ export function BuyBox({
       const designUrl = buildNewDesignUrlSafe({
         variantId,
         productId: productId || undefined,
-        color: selectedColor || undefined,
+        color: activeColor || undefined,
         size: selectedSize || undefined,
         referrer: 'product_detail',
       });
@@ -221,7 +232,7 @@ export function BuyBox({
       console.error('[BuyBox] Failed to build design URL:', error);
       alert('Unable to start design. Please try again.');
     }
-  }, [title, selectedStyle, selectedColor, selectedSize, onStartDesign, variantId, productId, router]);
+  }, [title, selectedStyle, activeColor, selectedSize, onStartDesign, variantId, productId, router]);
 
   const formatPrice = (amount: number) => {
     return new Intl.NumberFormat('en-CA', {
@@ -301,11 +312,11 @@ export function BuyBox({
           {colors.map((color) => (
             <button
               key={color.name}
-              className={`${styles.buyboxColor} ${selectedColor === color.name ? styles.isSelected : ''} ${!color.available ? styles.isUnavailable : ''}`}
+              className={`${styles.buyboxColor} ${activeColor === color.name ? styles.isSelected : ''} ${!color.available ? styles.isUnavailable : ''}`}
               onClick={() => color.available && handleColorSelect(color.name)}
               disabled={!color.available}
               aria-label={`Select color ${color.name}`}
-              aria-pressed={selectedColor === color.name}
+              aria-pressed={activeColor === color.name}
               style={{ backgroundColor: color.hex }}
               title={color.name}
             />
