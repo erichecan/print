@@ -128,3 +128,154 @@
     -   过滤 `Severity: Error`。
     -   搜索关键字 `Column ... does not exist` (表明迁移没跑) 或 `P2002` (唯一性冲突)。
 3.  **检查环境变量**：确认 `AUTO_MIGRATE` 是否开启。
+
+### 🔍 500 错误诊断检查清单 (2026-01-06 更新)
+**当生产环境出现 500 错误时，按以下顺序检查：**
+
+#### 步骤 1: 检查代码是否已部署
+```bash
+# 检查最新部署的代码版本
+gcloud run services describe print-main-backend \
+  --region us-central1 \
+  --project print-482914 \
+  --format='value(spec.template.spec.containers[0].image)'
+
+# 检查 Git 提交历史，确认修复是否已提交
+git log --oneline -5
+```
+
+#### 步骤 2: 检查环境变量配置
+```bash
+# 检查 AUTO_MIGRATE 是否开启
+gcloud run services describe print-main-backend \
+  --region us-central1 \
+  --project print-482914 \
+  --format='value(spec.template.spec.containers[0].env)'
+
+# 应该看到 AUTO_MIGRATE=true
+```
+
+#### 步骤 3: 检查数据库连接
+```bash
+# 查看 Cloud Run 日志中的数据库连接错误
+gcloud logging read "resource.type=cloud_run_revision AND \
+  resource.labels.service_name=print-main-backend AND \
+  severity>=ERROR" \
+  --limit 50 \
+  --format json \
+  --project print-482914 | \
+  grep -i "database\|connection\|P1001\|P1002\|P1017"
+
+# 检查是否有连接超时或连接被拒绝的错误
+```
+
+#### 步骤 4: 检查数据库迁移状态
+```bash
+# 方法 1: 通过 API 检查数据库状态（如果服务可访问）
+curl https://printngoplus.com/api/admin-seed/status
+
+# 方法 2: 手动运行迁移检查
+# 在本地或 Cloud Shell 中：
+cd backend
+export DATABASE_URL="your-production-database-url"
+npx prisma migrate status
+
+# 如果显示 "Database schema is out of sync"，需要运行迁移
+npx prisma migrate deploy
+```
+
+#### 步骤 5: 验证 Schema 是否匹配
+```bash
+# 检查 Prisma Schema 和数据库是否同步
+cd backend
+export DATABASE_URL="your-production-database-url"
+npx prisma db pull  # 这会显示差异
+npx prisma migrate diff \
+  --from-schema-datamodel prisma/schema.prisma \
+  --to-schema-datasource prisma/schema.prisma \
+  --script
+```
+
+#### 步骤 6: 检查 Cloud Run 日志中的具体错误
+```bash
+# 查看最近的错误日志
+gcloud logging read "resource.type=cloud_run_revision AND \
+  resource.labels.service_name=print-main-backend AND \
+  severity>=ERROR AND \
+  timestamp>=\"$(date -u -v-1H +%Y-%m-%dT%H:%M:%SZ)\"" \
+  --limit 100 \
+  --format json \
+  --project print-482914
+
+# 搜索特定错误模式
+# - "Column ... does not exist" -> Schema 不匹配
+# - "P1001" -> 数据库连接失败
+# - "P2002" -> 唯一性约束冲突
+# - "P2025" -> 记录不存在
+# - "req.get is not a function" -> imageHelper.js 问题（已修复）
+```
+
+#### 步骤 7: 手动触发数据库迁移（如果需要）
+```bash
+# 如果 AUTO_MIGRATE 未开启或迁移失败，手动运行：
+# 1. 通过 API 端点触发（如果可用）
+curl -X POST https://printngoplus.com/api/admin-seed/migrate \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+
+# 2. 或者在 Cloud Shell 中直接运行
+gcloud run jobs execute migrate-database \
+  --region us-central1 \
+  --project print-482914
+
+# 3. 或者通过 Cloud Run 服务手动执行
+gcloud run services update print-main-backend \
+  --set-env-vars AUTO_MIGRATE=true \
+  --region us-central1 \
+  --project print-482914
+```
+
+#### 步骤 8: 验证修复是否生效
+```bash
+# 重新部署服务（确保包含所有修复）
+./deploy_clean.sh
+
+# 等待部署完成后，检查日志
+gcloud logging read "resource.type=cloud_run_revision AND \
+  resource.labels.service_name=print-main-backend AND \
+  textPayload=~\"migration\" OR textPayload=~\"AUTO_MIGRATE\"" \
+  --limit 20 \
+  --format json \
+  --project print-482914
+
+# 测试 API 端点
+curl https://printngoplus.com/api/cart
+curl https://printngoplus.com/api/proxy/admin/products?page=1
+```
+
+#### 常见问题快速修复
+1. **AUTO_MIGRATE 未开启**：
+   ```bash
+   gcloud run services update print-main-backend \
+     --set-env-vars AUTO_MIGRATE=true \
+     --region us-central1 \
+     --project print-482914
+   ```
+
+2. **Schema 不匹配**：
+   ```bash
+   # 在本地或 Cloud Shell 中运行迁移
+   cd backend
+   export DATABASE_URL="your-production-database-url"
+   npx prisma migrate deploy
+   ```
+
+3. **数据库连接问题**：
+   - 检查 `DATABASE_URL` Secret 是否正确配置
+   - 检查 Cloud SQL 实例是否运行
+   - 检查网络连接和防火墙规则
+
+4. **代码未部署**：
+   ```bash
+   # 重新部署
+   ./deploy_clean.sh
+   ```
