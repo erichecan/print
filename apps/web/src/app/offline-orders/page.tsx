@@ -27,11 +27,9 @@ const MAX_FILES =
 const MAX_FILE_SIZE_MB =
   Number(process.env.NEXT_PUBLIC_OFFLINE_ORDER_MAX_FILE_MB || DEFAULT_MAX_FILE_MB) || DEFAULT_MAX_FILE_MB;
 
-// PRD v2.0: 尺码分类
-const YOUTH_SIZES = ['YS', 'YM', 'YL'];
-const ADULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-const ALL_SIZES = [...YOUTH_SIZES, ...ADULT_SIZES];
-const LARGE_SIZES = ['2XL', '3XL', '4XL', '5XL']; // 需要额外费用的大尺码
+// PRD v2.0: 尺码分类（已移除硬编码，改为从配置读取）
+// [2026-01-06] 重构：尺码列表现在从 offlineOrderProductApi.getOrderConfig() 获取
+// 尺码配置包括：size, sizeType (Youth/Adult/Other), additionalFee, displayOrder, isActive
 
 // 步骤定义（将在组件中根据语言动态生成）
 
@@ -613,24 +611,50 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
     availability: fullConfig?.availability || [],
   };
 
+  // [2026-01-06] 从配置读取尺码列表，按类型分组和显示顺序排序
+  const { youthSizes, adultSizes, allSizes, largeSizes } = useMemo(() => {
+    // 只获取启用的尺码，按显示顺序排序
+    const activeSizeFees = (orderConfig.sizeFees || [])
+      .filter((sf) => sf.isActive !== false)
+      .sort((a, b) => {
+        const orderA = a.displayOrder || 0;
+        const orderB = b.displayOrder || 0;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.size.localeCompare(b.size);
+      });
+
+    const youth: string[] = [];
+    const adult: string[] = [];
+    const all: string[] = [];
+    const large: string[] = [];
+
+    activeSizeFees.forEach((sf) => {
+      all.push(sf.size);
+      if (sf.sizeType === 'Youth') {
+        youth.push(sf.size);
+      } else if (sf.sizeType === 'Adult' || !sf.sizeType) {
+        adult.push(sf.size);
+      }
+      // 如果费用大于0，认为是large size
+      if (sf.additionalFee > 0) {
+        large.push(sf.size);
+      }
+    });
+
+    return {
+      youthSizes: youth.length > 0 ? youth : ['YS', 'YM', 'YL'], // 后备默认值
+      adultSizes: adult.length > 0 ? adult : ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'], // 后备默认值
+      allSizes: all.length > 0 ? all : [...youth, ...adult],
+      largeSizes: large,
+    };
+  }, [orderConfig.sizeFees]);
+
   // PRD v2.0: 构建尺码费用映射表
   const sizeFeeMap = useMemo(() => {
     const map: Record<string, number> = {};
-    orderConfig.sizeFees.forEach((sf) => {
+    (orderConfig.sizeFees || []).forEach((sf) => {
       map[sf.size] = sf.additionalFee;
     });
-    // 默认值（如果API没有返回）
-    if (orderConfig.sizeFees.length === 0) {
-      LARGE_SIZES.forEach((size) => {
-        const defaultFees: Record<string, number> = {
-          '2XL': 2.50,
-          '3XL': 3.50,
-          '4XL': 4.50,
-          '5XL': 5.50,
-        };
-        map[size] = defaultFees[size] || 0;
-      });
-    }
     return map;
   }, [orderConfig.sizeFees]);
 
@@ -754,7 +778,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
           const newColor: ProductColor = {
             colorId,
             colorName,
-            availableSizes: ALL_SIZES, // 默认所有尺码可用，后续从配置读取
+            availableSizes: allSizes, // [2026-01-06] 从配置读取尺码列表
             sizes: [],
             totalQuantity: 0,
             totalPrice: 0,
@@ -1753,8 +1777,11 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                           key={color.colorId}
                           group={group}
                           productItemId={item.productId}
-                          availableSizes={color.availableSizes.length > 0 ? color.availableSizes : ALL_SIZES}
+                          availableSizes={color.availableSizes.length > 0 ? color.availableSizes : allSizes}
                           sizeFeeMap={sizeFeeMap}
+                          youthSizes={youthSizes}
+                          adultSizes={adultSizes}
+                          largeSizes={largeSizes}
                           isSizeAvailable={isSizeAvailable}
                           colorHex={colorHex}
                           onUpdate={(updated) => {

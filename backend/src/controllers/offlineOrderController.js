@@ -1410,18 +1410,25 @@ exports.getOrderConfig = async (req, res, next) => {
     }
 
     // 尝试获取尺码费用配置
+    // [2026-01-06] 修复：按 display_order 排序，而不是按字母顺序
     try {
       sizeFees = await prisma.offline_order_size_fees.findMany({
-        orderBy: { size: 'asc' },
+        where: {
+          is_active: true, // 只返回启用的尺码
+        },
+        orderBy: [
+          { display_order: 'asc' },
+          { size: 'asc' },
+        ],
       });
     } catch (error) {
       logger.warn('[getOrderConfig] offline_order_size_fees table not found, returning default values');
       // 返回默认值
       sizeFees = [
-        { size: '2XL', additional_fee: 2.50 },
-        { size: '3XL', additional_fee: 3.50 },
-        { size: '4XL', additional_fee: 4.50 },
-        { size: '5XL', additional_fee: 5.50 },
+        { size: '2XL', additional_fee: 2.50, size_type: 'Adult', display_order: 9, is_active: true },
+        { size: '3XL', additional_fee: 3.50, size_type: 'Adult', display_order: 10, is_active: true },
+        { size: '4XL', additional_fee: 4.50, size_type: 'Adult', display_order: 11, is_active: true },
+        { size: '5XL', additional_fee: 5.50, size_type: 'Adult', display_order: 12, is_active: true },
       ];
     }
 
@@ -1449,7 +1456,10 @@ exports.getOrderConfig = async (req, res, next) => {
       })),
       sizeFees: sizeFees.map(sf => ({
         size: sf.size,
+        sizeType: sf.size_type || 'Adult',
         additionalFee: typeof sf.additional_fee === 'number' ? sf.additional_fee : Number(sf.additional_fee),
+        displayOrder: sf.display_order || 0,
+        isActive: sf.is_active !== false,
       })),
       availability: availability.map(a => ({
         productId: a.product_id,

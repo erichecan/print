@@ -80,19 +80,28 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   // Fetch size pricing from DB
   const [sizeAdjustments, setSizeAdjustments] = useState<Record<string, number>>({});
 
+  // [2026-01-06] 从API读取尺码配置（包括所有尺码，不仅仅是费用）
+  const [sizeConfig, setSizeConfig] = useState<Array<{ size: string; sizeType?: string; additionalFee: number; displayOrder?: number }>>([]);
+
   useEffect(() => {
     const fetchSizeData = async () => {
-      // Fetch global size fees
+      // Fetch global size fees from public API
       let globalSizeFees: Record<string, number> = {};
+      let configData: Array<{ size: string; sizeType?: string; additionalFee: number; displayOrder?: number }> = [];
       try {
         const sizeFeesRes = await sizeFeesApi.getAll();
         if (sizeFeesRes.data) {
+          configData = sizeFeesRes.data.map(fee => ({
+            size: fee.size,
+            sizeType: fee.sizeType,
+            additionalFee: fee.additionalFee,
+            displayOrder: fee.displayOrder || 0,
+          }));
           sizeFeesRes.data.forEach(fee => {
-            if (fee.additionalFee > 0) {
-              globalSizeFees[fee.size] = fee.additionalFee;
-            }
+            globalSizeFees[fee.size] = fee.additionalFee;
           });
         }
+        setSizeConfig(configData);
       } catch (e) {
         console.error("Failed to fetch global size fees", e);
       }
@@ -164,13 +173,46 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
     fetchSizeData();
   }, [designId, variants]);
 
-  // Actually, let's just make a new simple effect using productApi if possible or assume designLabApi can be extended.
-  // The file imports `designLabApi` from `@/lib/api`. 
-  // I should check `apps/web/src/lib/api.ts` to see if `productsApi` is exported. Yes it is.
+  // [2026-01-06] 从配置读取尺码列表，按类型分组和显示顺序排序
+  const { youthSizes, adultSizes, allSizes } = React.useMemo(() => {
+    if (sizeConfig.length === 0) {
+      // 后备默认值（如果API未返回数据）
+      const defaultYouth = ['YS', 'YM', 'YL'];
+      const defaultAdult = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+      return {
+        youthSizes: defaultYouth,
+        adultSizes: defaultAdult,
+        allSizes: [...defaultYouth, ...defaultAdult],
+      };
+    }
 
-  const youthSizes = React.useMemo(() => ['YS', 'YM', 'YL'], []);
-  const adultSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'], []);
-  const allSizes = React.useMemo(() => [...youthSizes, ...adultSizes], [youthSizes, adultSizes]);
+    // 按显示顺序排序
+    const sorted = [...sizeConfig].sort((a, b) => {
+      const orderA = a.displayOrder || 0;
+      const orderB = b.displayOrder || 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.size.localeCompare(b.size);
+    });
+
+    const youth: string[] = [];
+    const adult: string[] = [];
+    const all: string[] = [];
+
+    sorted.forEach((sf) => {
+      all.push(sf.size);
+      if (sf.sizeType === 'Youth') {
+        youth.push(sf.size);
+      } else if (sf.sizeType === 'Adult' || !sf.sizeType) {
+        adult.push(sf.size);
+      }
+    });
+
+    return {
+      youthSizes: youth.length > 0 ? youth : ['YS', 'YM', 'YL'],
+      adultSizes: adult.length > 0 ? adult : ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'],
+      allSizes: all.length > 0 ? all : [...youth, ...adult],
+    };
+  }, [sizeConfig]);
   const womensSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], []); // 女性尺码
   const [showWomensSizes, setShowWomensSizes] = useState(false); // 是否显示女性尺码
 

@@ -37,8 +37,20 @@ router.use((req, res, next) => {
   next();
 });
 
+// GET / - 获取所有尺码配置
 router.get('/', offlineOrderSizeFeeController.getSizeFees);
+
+// POST / - 创建新尺码配置
+router.post('/', offlineOrderSizeFeeController.createSizeFee);
+
+// PATCH / - 批量更新（保持向后兼容）
 router.patch('/', offlineOrderSizeFeeController.updateSizeFees);
+
+// PATCH /:id - 更新单个尺码配置
+router.patch('/:id', offlineOrderSizeFeeController.updateSizeFee);
+
+// DELETE /:id - 删除尺码配置
+router.delete('/:id', offlineOrderSizeFeeController.deleteSizeFee);
 
 module.exports = router;
 

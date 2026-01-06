@@ -20,12 +20,17 @@ interface ColorGroupCardIntegratedProps {
   previousGroup?: OrderItemColorGroup | null;
   onSizeQuantityChange: (size: string, quantity: number) => void;
   colorHex?: string; // 颜色hex值（用于显示色块）
+  // [2026-01-06] 从配置读取的尺码列表
+  youthSizes?: string[];
+  adultSizes?: string[];
+  largeSizes?: string[];
 }
 
-// 尺码定义（与page.tsx保持一致）
-const YOUTH_SIZES = ['YS', 'YM', 'YL'];
-const ADULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-const LARGE_SIZES = ['2XL', '3XL', '4XL', '5XL'];
+// [2026-01-06] 移除硬编码尺码，改为从props传入
+// 后备默认值（仅当props未提供时使用）
+const DEFAULT_YOUTH_SIZES = ['YS', 'YM', 'YL'];
+const DEFAULT_ADULT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
+const DEFAULT_LARGE_SIZES = ['2XL', '3XL', '4XL', '5XL'];
 
 export function ColorGroupCardIntegrated({
   group,
@@ -38,9 +43,25 @@ export function ColorGroupCardIntegrated({
   onCopyToOthers,
   previousGroup,
   onSizeQuantityChange,
-  colorHex
+  colorHex,
+  youthSizes = DEFAULT_YOUTH_SIZES,
+  adultSizes = DEFAULT_ADULT_SIZES,
+  largeSizes = DEFAULT_LARGE_SIZES,
 }: ColorGroupCardIntegratedProps) {
   const [showInheritConfirm, setShowInheritConfirm] = useState(false);
+
+  // [2026-01-06] 确保尺码按照配置的display_order排序，并且只显示availableSizes中的尺码
+  // 关键：youthSizes和adultSizes已经按display_order排序，我们只需要过滤availableSizes中的尺码，保持原有顺序
+  // 使用Set来提高查找效率
+  const availableSizesSet = new Set(availableSizes.length > 0 ? availableSizes : []);
+  
+  const filteredYouthSizes = availableSizes.length > 0
+    ? youthSizes.filter(size => availableSizesSet.has(size))
+    : youthSizes;
+  
+  const filteredAdultSizes = availableSizes.length > 0
+    ? adultSizes.filter(size => availableSizesSet.has(size))
+    : adultSizes;
 
   // 处理尺码数量变化
   const handleSizeQuantityChange = (size: string, quantity: number) => {
@@ -136,7 +157,7 @@ export function ColorGroupCardIntegrated({
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
             <div className="flex flex-wrap gap-2">
-              {YOUTH_SIZES.map((size) => {
+              {filteredYouthSizes.map((size) => {
                 const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
                 const quantity = group.quantities[size] || 0;
                 const additionalFee = sizeFeeMap[size] || 0;
@@ -173,7 +194,7 @@ export function ColorGroupCardIntegrated({
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
             <div className="flex flex-wrap gap-2">
-              {ADULT_SIZES.map((size) => {
+              {filteredAdultSizes.map((size) => {
                 const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
                 const quantity = group.quantities[size] || 0;
                 const additionalFee = sizeFeeMap[size] || 0;
@@ -182,7 +203,7 @@ export function ColorGroupCardIntegrated({
                   <div key={size} className={`flex-shrink-0 ${!isAvailable ? 'opacity-50' : ''}`}>
                     <label className="block text-xs text-gray-600 mb-1">
                       {size}
-                      {LARGE_SIZES.includes(size) && additionalFee > 0 && (
+                      {largeSizes.includes(size) && additionalFee > 0 && (
                         <span className="text-red-600 text-xs ml-1">+${additionalFee.toFixed(2)}</span>
                       )}
                     </label>

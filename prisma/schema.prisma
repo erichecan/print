@@ -1005,12 +1005,17 @@ model offline_order_products {
 }
 
 model offline_order_size_fees {
-  id             String   @id
-  size           String   @unique
-  additional_fee Decimal  @db.Decimal(10, 2)
+  id             String   @id @default(uuid())
+  size           String   @unique // 尺码名称（可修改）
+  size_type      String?  @default("Adult") // 类型：Youth, Adult, Other
+  additional_fee Decimal  @db.Decimal(10, 2) // 额外费用
+  display_order  Int      @default(0) // 显示顺序
+  is_active      Boolean  @default(true) // 是否启用
   created_at     DateTime @default(now())
-  updated_at     DateTime
+  updated_at     DateTime @updatedAt
 
+  @@index([size_type])
+  @@index([is_active])
   @@map("offline_order_size_fees")
 }
 

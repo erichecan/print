@@ -1198,8 +1198,12 @@ export interface OfflineOrderColor {
 }
 
 export interface OfflineOrderSizeFee {
-  size: string;
-  additionalFee: number;
+  id?: string;              // 尺码ID（可选，用于创建时）
+  size: string;              // 尺码名称（可修改）
+  sizeType?: 'Youth' | 'Adult' | 'Other';  // 尺码类型
+  additionalFee: number;     // 额外费用
+  displayOrder?: number;     // 显示顺序
+  isActive?: boolean;        // 是否启用
 }
 
 export interface OfflineOrderAvailability {
@@ -2306,9 +2310,19 @@ export const productColorImageApi = {
     api<{ data: Array<{ id: string; productId: string; colorName: string; imageUrl: string;[key: string]: unknown }>; count: number }>(`/product-color-images${productId ? `?productId=${productId}` : ''}`), // Issue #105 - Replace any[] with proper type
 };
 
-// Design Lab API
+// Design Lab API - Public size fees API
 export const sizeFeesApi = {
-  getAll: () => api<{ data: Array<{ id: string; size: string; additionalFee: number }>; count: number }>('/api/size-fees'),
+  getAll: () => api<{ 
+    success: boolean;
+    data: Array<{ 
+      id: string; 
+      size: string; 
+      sizeType?: 'Youth' | 'Adult' | 'Other';
+      additionalFee: number; 
+      displayOrder?: number;
+    }>; 
+    count: number;
+  }>('/api/size-fees'),
 };
 
 export const designLabApi = {
@@ -2715,6 +2729,23 @@ export const adminOfflineOrdersApi = {
     api<{ success: boolean; stages: OfflineOrderStage[] }>('/admin/offline-orders/config/stages', {
       method: 'PUT',
       body: { stages },
+    }),
+  // Size fee management
+  getSizeFees: () =>
+    api<{ success: boolean; data: OfflineOrderSizeFee[]; count: number }>('/admin/offline-order-size-fees'),
+  createSizeFee: (sizeFee: Omit<OfflineOrderSizeFee, 'id'>) =>
+    api<{ success: boolean; data: OfflineOrderSizeFee }>('/admin/offline-order-size-fees', {
+      method: 'POST',
+      body: sizeFee,
+    }),
+  updateSizeFee: (id: string, sizeFee: Partial<OfflineOrderSizeFee>) =>
+    api<{ success: boolean; data: OfflineOrderSizeFee }>(`/admin/offline-order-size-fees/${id}`, {
+      method: 'PATCH',
+      body: sizeFee,
+    }),
+  deleteSizeFee: (id: string) =>
+    api<{ success: boolean; message: string }>(`/admin/offline-order-size-fees/${id}`, {
+      method: 'DELETE',
     }),
 };
 
