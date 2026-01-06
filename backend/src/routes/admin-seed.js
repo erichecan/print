@@ -310,6 +310,66 @@ router.post('/migrate', async (req, res) => {
   }
 });
 
+// POST /api/admin-seed/resolve-migration - 解决失败的迁移
+// 修复时间: 2026-01-06T23:20:00.000Z
+router.post('/resolve-migration', async (req, res) => {
+  try {
+    const { migrationName, action = 'applied' } = req.body;
+    
+    if (!migrationName) {
+      return res.status(400).json({
+        success: false,
+        error: 'migrationName is required'
+      });
+    }
+    
+    console.log(`🔧 解决失败的迁移: ${migrationName}, action: ${action}`);
+    
+    const repoRoot = path.resolve(__dirname, '../../..');
+    
+    // 使用 prisma migrate resolve 命令
+    const args = action === 'applied' 
+      ? ['prisma', 'migrate', 'resolve', '--applied', migrationName, '--schema=./prisma/schema.prisma']
+      : ['prisma', 'migrate', 'resolve', '--rolled-back', migrationName, '--schema=./prisma/schema.prisma'];
+    
+    try {
+      const output = execSync(`npx ${args.join(' ')}`, {
+        cwd: repoRoot,
+        stdio: 'pipe',
+        timeout: 60000,
+        env: {
+          ...process.env,
+          DATABASE_URL: process.env.DATABASE_URL,
+        },
+      });
+      
+      console.log('✅ 迁移状态已解决');
+      
+      res.json({
+        success: true,
+        message: `Migration ${migrationName} marked as ${action}`,
+        output: output.toString().substring(0, 500)
+      });
+    } catch (resolveError) {
+      console.error('❌ 解决迁移状态失败:', resolveError.message);
+      const errorOutput = resolveError.stdout ? resolveError.stdout.toString() : resolveError.message;
+      
+      res.status(500).json({
+        success: false,
+        error: resolveError.message,
+        output: errorOutput.substring(0, 500)
+      });
+    }
+  } catch (error) {
+    console.error('❌ 解决迁移状态失败:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
+  }
+});
+
 // GET /api/admin-seed/status - 检查数据库状态
 router.get('/status', async (req, res) => {
   try {
