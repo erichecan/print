@@ -326,27 +326,60 @@ exports.listProducts = async (req, res) => {
     // 将图片URL转换为完整的后端服务器URL
     // 添加空值检查，避免处理 null/undefined 时出错
     // 这里同时将数据库中的价格（分 / Decimal）转换为接口返回的金额（元/美元）
+    // 修复时间：2026-01-06T22:30:00.000Z - 添加错误处理，防止 optimizeImageUrl 抛出错误导致整个请求失败
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedProducts = products.map((product) => {
       const basePriceCents = toNumber(product.basePrice, 0);
       const salePriceValue = toNumber(product.salePrice, 0);
-      const images = (product.images || []).map((image) => ({
-        ...image,
-        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
-      }));
+      const images = (product.images || []).map((image) => {
+        let optimizedUrl = image.url;
+        if (image.url) {
+          try {
+            optimizedUrl = optimizeImageUrl(image.url, { req }) || image.url;
+          } catch (error) {
+            // 如果优化失败，使用原始 URL
+            logger.warn('Failed to optimize image URL in listProducts', {
+              imageId: image.id,
+              originalUrl: image.url,
+              error: error.message,
+            });
+            optimizedUrl = image.url;
+          }
+        }
+        return {
+          ...image,
+          url: optimizedUrl,
+        };
+      });
 
       return {
         ...product,
-        // 数据库存的是“分”，返回给前端统一用“金额”（元/美元，两位小数）
+        // 数据库存的是"分"，返回给前端统一用"金额"（元/美元，两位小数）
         basePrice: basePriceCents / 100,
         // salePrice 在 schema 中是 Decimal，这里直接转为 number（金额）
         salePrice: salePriceValue,
         images,
         primaryImage: images[0] || null,
-        variants: (product.variants || []).map((variant) => ({
-          ...variant,
-          imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
-        })),
+        variants: (product.variants || []).map((variant) => {
+          let optimizedVariantImageUrl = variant.imageUrl;
+          if (variant.imageUrl) {
+            try {
+              optimizedVariantImageUrl = optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl;
+            } catch (error) {
+              // 如果优化失败，使用原始 URL
+              logger.warn('Failed to optimize variant image URL in listProducts', {
+                variantId: variant.id,
+                originalUrl: variant.imageUrl,
+                error: error.message,
+              });
+              optimizedVariantImageUrl = variant.imageUrl;
+            }
+          }
+          return {
+            ...variant,
+            imageUrl: optimizedVariantImageUrl,
+          };
+        }),
       };
     });
 
@@ -404,6 +437,7 @@ exports.getProductById = async (req, res) => {
     // 将图片URL转换为完整的后端服务器URL
     // 添加空值检查，避免处理 null/undefined 时出错
     // 同时将数据库中的 basePrice（分）与 salePrice（Decimal）转换为金额
+    // 修复时间：2026-01-06T22:30:00.000Z - 添加错误处理，防止 optimizeImageUrl 抛出错误导致整个请求失败
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const basePriceCents = toNumber(product.basePrice, 0);
     const salePriceValue = toNumber(product.salePrice, 0);
@@ -411,14 +445,44 @@ exports.getProductById = async (req, res) => {
       ...product,
       basePrice: basePriceCents / 100,
       salePrice: salePriceValue,
-      images: (product.images || []).map((image) => ({
-        ...image,
-        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
-      })),
-      variants: (product.variants || []).map((variant) => ({
-        ...variant,
-        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
-      })),
+      images: (product.images || []).map((image) => {
+        let optimizedUrl = image.url;
+        if (image.url) {
+          try {
+            optimizedUrl = optimizeImageUrl(image.url, { req }) || image.url;
+          } catch (error) {
+            logger.warn('Failed to optimize image URL in getProductById', {
+              imageId: image.id,
+              originalUrl: image.url,
+              error: error.message,
+            });
+            optimizedUrl = image.url;
+          }
+        }
+        return {
+          ...image,
+          url: optimizedUrl,
+        };
+      }),
+      variants: (product.variants || []).map((variant) => {
+        let optimizedVariantImageUrl = variant.imageUrl;
+        if (variant.imageUrl) {
+          try {
+            optimizedVariantImageUrl = optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl;
+          } catch (error) {
+            logger.warn('Failed to optimize variant image URL in getProductById', {
+              variantId: variant.id,
+              originalUrl: variant.imageUrl,
+              error: error.message,
+            });
+            optimizedVariantImageUrl = variant.imageUrl;
+          }
+        }
+        return {
+          ...variant,
+          imageUrl: optimizedVariantImageUrl,
+        };
+      }),
     };
 
     return res.json(normalizedProduct);
@@ -613,17 +677,48 @@ exports.createProduct = async (req, res) => {
 
     // 将图片URL转换为完整的后端服务器URL
     // 添加空值检查，避免处理 null/undefined 时出错
+    // 修复时间：2026-01-06T22:30:00.000Z - 添加错误处理，防止 optimizeImageUrl 抛出错误导致整个请求失败
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const normalizedResult = {
       ...result,
-      images: (result.images || []).map((image) => ({
-        ...image,
-        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
-      })),
-      variants: (result.variants || []).map((variant) => ({
-        ...variant,
-        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
-      })),
+      images: (result.images || []).map((image) => {
+        let optimizedUrl = image.url;
+        if (image.url) {
+          try {
+            optimizedUrl = optimizeImageUrl(image.url, { req }) || image.url;
+          } catch (error) {
+            logger.warn('Failed to optimize image URL in createProduct', {
+              imageId: image.id,
+              originalUrl: image.url,
+              error: error.message,
+            });
+            optimizedUrl = image.url;
+          }
+        }
+        return {
+          ...image,
+          url: optimizedUrl,
+        };
+      }),
+      variants: (result.variants || []).map((variant) => {
+        let optimizedVariantImageUrl = variant.imageUrl;
+        if (variant.imageUrl) {
+          try {
+            optimizedVariantImageUrl = optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl;
+          } catch (error) {
+            logger.warn('Failed to optimize variant image URL in createProduct', {
+              variantId: variant.id,
+              originalUrl: variant.imageUrl,
+              error: error.message,
+            });
+            optimizedVariantImageUrl = variant.imageUrl;
+          }
+        }
+        return {
+          ...variant,
+          imageUrl: optimizedVariantImageUrl,
+        };
+      }),
     };
 
     // 创建商品后立即清理缓存，确保前台可以看到最新商品
@@ -1005,6 +1100,7 @@ exports.updateProduct = async (req, res) => {
 
     // 将图片URL转换为完整的后端服务器URL
     // 添加空值检查，避免处理 null/undefined 时出错
+    // 修复时间：2026-01-06T22:30:00.000Z - 添加错误处理，防止 optimizeImageUrl 抛出错误导致整个请求失败
     const { optimizeImageUrl } = require('../utils/imageHelper');
     const basePriceCents = toNumber(result.basePrice, 0);
     const salePriceValue = toNumber(result.salePrice, 0);
@@ -1012,14 +1108,44 @@ exports.updateProduct = async (req, res) => {
       ...result,
       basePrice: basePriceCents / 100,
       salePrice: salePriceValue,
-      images: (result.images || []).map((image) => ({
-        ...image,
-        url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
-      })),
-      variants: (result.variants || []).map((variant) => ({
-        ...variant,
-        imageUrl: variant.imageUrl ? (optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl) : null,
-      })),
+      images: (result.images || []).map((image) => {
+        let optimizedUrl = image.url;
+        if (image.url) {
+          try {
+            optimizedUrl = optimizeImageUrl(image.url, { req }) || image.url;
+          } catch (error) {
+            logger.warn('Failed to optimize image URL in updateProduct', {
+              imageId: image.id,
+              originalUrl: image.url,
+              error: error.message,
+            });
+            optimizedUrl = image.url;
+          }
+        }
+        return {
+          ...image,
+          url: optimizedUrl,
+        };
+      }),
+      variants: (result.variants || []).map((variant) => {
+        let optimizedVariantImageUrl = variant.imageUrl;
+        if (variant.imageUrl) {
+          try {
+            optimizedVariantImageUrl = optimizeImageUrl(variant.imageUrl, { req }) || variant.imageUrl;
+          } catch (error) {
+            logger.warn('Failed to optimize variant image URL in updateProduct', {
+              variantId: variant.id,
+              originalUrl: variant.imageUrl,
+              error: error.message,
+            });
+            optimizedVariantImageUrl = variant.imageUrl;
+          }
+        }
+        return {
+          ...variant,
+          imageUrl: optimizedVariantImageUrl,
+        };
+      }),
     };
 
     // 更新商品后同步刷新缓存，避免旧数据残留
@@ -1199,11 +1325,27 @@ exports.uploadProductImages = async (req, res) => {
     });
 
     // 将图片 URL 转换为优化的 URL（如果需要）
+    // 修复时间：2026-01-06T22:30:00.000Z - 添加错误处理，防止 optimizeImageUrl 抛出错误导致整个请求失败
     const { optimizeImageUrl } = require('../utils/imageHelper');
-    const normalizedImages = (images || []).map((image) => ({
-      ...image,
-      url: image.url ? (optimizeImageUrl(image.url, { req }) || image.url) : null,
-    }));
+    const normalizedImages = (images || []).map((image) => {
+      let optimizedUrl = image.url;
+      if (image.url) {
+        try {
+          optimizedUrl = optimizeImageUrl(image.url, { req }) || image.url;
+        } catch (error) {
+          logger.warn('Failed to optimize image URL in uploadProductImages', {
+            imageId: image.id,
+            originalUrl: image.url,
+            error: error.message,
+          });
+          optimizedUrl = image.url;
+        }
+      }
+      return {
+        ...image,
+        url: optimizedUrl,
+      };
+    });
 
     await invalidateProductCache(product.slug);
 

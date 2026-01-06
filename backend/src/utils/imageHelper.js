@@ -13,22 +13,32 @@ const DEFAULT_QUALITY = 85;
  * @param {string} url - 图片URL（可能是相对路径或完整URL）
  * @param {Object} req - Express请求对象（可选）
  * @returns {string} 完整的图片URL
+ * 修复时间：2026-01-06T22:30:00.000Z - 添加防御性检查，防止 req 对象无效时抛出错误
  */
 function normalizeImageUrl(url, req = null) {
   if (!url || typeof url !== 'string') {
     return url;
   }
 
+  // 修复：添加防御性检查，确保 req 对象有效且具有必要的方法
+  const isValidReq = req && typeof req === 'object' && typeof req.get === 'function';
+
 // 如果包含 localhost，根据环境决定是否替换
   // 生产环境：替换 localhost 为实际的后端 URL
   // 本地开发：保持 localhost
   if (url.includes('localhost')) {
     const isProduction = process.env.NODE_ENV === 'production';
-    if (isProduction && req) {
-      // 生产环境：使用请求的实际 host
-      const protocol = req.protocol || 'https';
-      const host = req.get('host') || process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com';
-      return url.replace(/http:\/\/localhost:\d+/, `${protocol}://${host}`);
+    if (isProduction && isValidReq) {
+      try {
+        // 生产环境：使用请求的实际 host
+        const protocol = req.protocol || 'https';
+        const host = req.get('host') || process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com';
+        return url.replace(/http:\/\/localhost:\d+/, `${protocol}://${host}`);
+      } catch (error) {
+        // 如果 req.get 抛出错误，回退到环境变量
+        const backendUrl = process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com';
+        return url.replace(/http:\/\/localhost:\d+/, `https://${backendUrl}`);
+      }
     }
     // 本地开发：保持 localhost，但确保端口正确
     if (!isProduction) {
@@ -71,13 +81,24 @@ function normalizeImageUrl(url, req = null) {
 
 // 如果是相对路径（以 / 开头），转换为完整的后端服务器URL
   if (url.startsWith('/')) {
-    if (req) {
-// 优先使用请求的实际 host（自动适配环境）
-      const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
-      const host = req.get('host') || (process.env.NODE_ENV === 'production'
-        ? (process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com')
-        : `localhost:${process.env.PORT || '3001'}`);
-      return `${protocol}://${host}${url}`;
+    if (isValidReq) {
+      try {
+        // 优先使用请求的实际 host（自动适配环境）
+        const protocol = req.protocol || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+        const host = req.get('host') || (process.env.NODE_ENV === 'production'
+          ? (process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com')
+          : `localhost:${process.env.PORT || '3001'}`);
+        return `${protocol}://${host}${url}`;
+      } catch (error) {
+        // 如果 req.get 抛出错误，回退到环境变量或默认值
+        const isProduction = process.env.NODE_ENV === 'production';
+        if (isProduction) {
+          const backendUrl = process.env.BACKEND_URL?.replace(/^https?:\/\//, '') || 'print-mnmz.onrender.com';
+          return `https://${backendUrl}${url}`;
+        }
+        const port = process.env.PORT || '3001';
+        return `http://localhost:${port}${url}`;
+      }
     }
 
 // 从环境变量获取后端URL（生产环境）
@@ -112,14 +133,31 @@ function normalizeImageUrl(url, req = null) {
  * @param {string | null | undefined} url - Original image URL
  * @param {{ width?: number, quality?: number, req?: Object }} [options] - Optimization options
  * @returns {string | null}
+ * 修复时间：2026-01-06T22:30:00.000Z - 添加错误处理，防止 normalizeImageUrl 抛出错误时导致整个请求失败
  */
 function optimizeImageUrl(url, options = {}) {
   if (!url || typeof url !== 'string') {
     return null;
   }
 
-// 首先将相对路径转换为完整URL
-  const normalizedUrl = normalizeImageUrl(url, options.req);
+  // 修复：添加 try-catch 包装，防止 normalizeImageUrl 抛出错误
+  let normalizedUrl;
+  try {
+    // 首先将相对路径转换为完整URL
+    normalizedUrl = normalizeImageUrl(url, options.req);
+  } catch (error) {
+    // 如果 normalizeImageUrl 失败，记录错误但返回原始 URL，避免整个请求失败
+    console.warn('[imageHelper] Failed to normalize image URL, using original:', {
+      url,
+      error: error.message,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n'),
+    });
+    // 如果原始 URL 已经是完整 URL，直接返回；否则返回 null
+    normalizedUrl = (url.startsWith('http://') || url.startsWith('https://')) ? url : null;
+    if (!normalizedUrl) {
+      return null;
+    }
+  }
 
   const width = Math.max(1, Math.min(options.width || DEFAULT_WIDTH, 2000));
   const quality = Math.max(1, Math.min(options.quality || DEFAULT_QUALITY, 100));
