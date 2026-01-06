@@ -14,7 +14,8 @@ export interface VariantCombination {
   size: string;
   enabled: boolean;
   sku?: string;
-  hasImage: boolean;
+  hasImage?: boolean;
+  stockQuantity?: number;
 }
 
 interface VariantCombinationPreviewProps {

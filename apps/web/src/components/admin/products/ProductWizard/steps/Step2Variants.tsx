@@ -56,6 +56,7 @@ export function Step2Variants() {
           enabled: existing?.enabled ?? true,
           sku,
           hasImage: color.images && color.images.length > 0,
+          stockQuantity: existing?.stockQuantity || 0,
         });
       });
     });

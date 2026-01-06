@@ -41,7 +41,7 @@ export function Step4Preview() {
           colorHex: colorConfig?.colorHex,
           colorDisplayName: colorConfig?.displayName,
           size: combination.size,
-          stockQuantity: 0, // TODO: Get from variant data
+          stockQuantity: combination.stockQuantity || 0,
           priceAdjustment: 0,
           imageUrl: colorConfig?.images?.[0]?.url,
         };

@@ -1473,7 +1473,7 @@ export interface ProductWizardData {
   longDescription?: string;
   mainImage?: { url: string; alt?: string; file?: File };
   tags?: string[];
-  
+
   // Step 2: Variants
   colors?: Array<{
     color: string;
@@ -1493,8 +1493,10 @@ export interface ProductWizardData {
     size: string;
     enabled: boolean;
     sku?: string;
+    stockQuantity?: number;
+    hasImage?: boolean;
   }>;
-  
+
   // Step 3: Details
   sku?: string;
   basePrice?: number;
@@ -1509,11 +1511,11 @@ export interface ProductWizardData {
     back: { width: number; height: number; x: number; y: number };
     sleeve: { width: number; height: number; x: number; y: number };
   };
-  
+
   // Step 4: Publish
   publishOption?: 'publish' | 'draft' | 'scheduled';
   scheduledPublishAt?: Date;
-  
+
   // Metadata
   productId?: string; // For draft recovery
   slug?: string;
@@ -2375,18 +2377,18 @@ export const sizeFeesApi = {
   getAll: async () => {
     console.log('[sizeFeesApi] 📡 Calling getAll() - endpoint: /size-fees');
     try {
-      const result = await api<{ 
+      const result = await api<{
         success: boolean;
-        data: Array<{ 
-          id: string; 
-          size: string; 
+        data: Array<{
+          id: string;
+          size: string;
           sizeType?: 'Youth' | 'Adult' | 'Other';
-          additionalFee: number; 
+          additionalFee: number;
           displayOrder?: number;
-        }>; 
+        }>;
         count: number;
       }>('/size-fees');
-      
+
       console.log('[sizeFeesApi] ✅ API call successful:', {
         success: result?.success,
         hasData: !!result?.data,
@@ -2394,7 +2396,7 @@ export const sizeFeesApi = {
         count: result?.count,
         firstFewItems: result?.data?.slice(0, 3) || []
       });
-      
+
       return result;
     } catch (error: any) {
       console.error('[sizeFeesApi] ❌ API call failed:', {

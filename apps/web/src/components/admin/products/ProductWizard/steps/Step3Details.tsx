@@ -30,10 +30,15 @@ export function Step3Details() {
   // Auto-calculate total stock from variants
   useEffect(() => {
     if (wizardData.variantCombinations && wizardData.variantCombinations.length > 0) {
-      // This would be calculated from variant stock quantities
-      // For now, we keep the stockQuantity field
+      const enabledCombinations = wizardData.variantCombinations.filter((c) => c.enabled);
+      if (enabledCombinations.length > 0) {
+        const total = enabledCombinations.reduce((sum, c) => sum + (c.stockQuantity || 0), 0);
+        if (total !== wizardData.stockQuantity) {
+          updateWizardData({ stockQuantity: total });
+        }
+      }
     }
-  }, [wizardData.variantCombinations]);
+  }, [wizardData.variantCombinations, updateWizardData, wizardData.stockQuantity]);
 
   const handleChange = (field: string, value: any) => {
     updateWizardData({ [field]: value });
@@ -42,8 +47,8 @@ export function Step3Details() {
   const margin =
     wizardData.basePrice && wizardData.basePrice > 0
       ? Math.round(
-          ((wizardData.basePrice - (wizardData.unitCost || 0)) / wizardData.basePrice) * 100
-        )
+        ((wizardData.basePrice - (wizardData.unitCost || 0)) / wizardData.basePrice) * 100
+      )
       : 0;
 
   return (
@@ -160,11 +165,64 @@ export function Step3Details() {
             />
             <small className="form-field__hint">
               {wizardData.variantCombinations &&
-              wizardData.variantCombinations.filter((c) => c.enabled).length > 0
+                wizardData.variantCombinations.filter((c) => c.enabled).length > 0
                 ? '多规格产品将自动汇总各变体库存'
                 : '单规格产品直接输入总库存'}
             </small>
           </div>
+
+          {/* Variant Stock Table */}
+          {wizardData.variantCombinations &&
+            wizardData.variantCombinations.filter((c) => c.enabled).length > 0 && (
+              <div className="variant-stock-table">
+                <div className="variant-stock-header">
+                  <div className="variant-stock-cell">变体</div>
+                  <div className="variant-stock-cell">SKU</div>
+                  <div className="variant-stock-cell">库存</div>
+                </div>
+                {wizardData.variantCombinations.map((combo, index) => {
+                  if (!combo.enabled) return null;
+                  return (
+                    <div key={`${combo.color}-${combo.size}`} className="variant-stock-row">
+                      <div className="variant-stock-cell">
+                        <span
+                          className="color-dot"
+                          style={{
+                            backgroundColor:
+                              wizardData.colors?.find((c) => c.color === combo.color)
+                                ?.colorHex || '#ccc',
+                          }}
+                        />
+                        {wizardData.colors?.find((c) => c.color === combo.color)?.displayName || combo.color}
+                        {' / '}
+                        {combo.size}
+                      </div>
+                      <div className="variant-stock-cell text-small text-muted">{combo.sku || '-'}</div>
+                      <div className="variant-stock-cell">
+                        <input
+                          type="number"
+                          min="0"
+                          className="form-field__input stock-input"
+                          value={combo.stockQuantity !== undefined ? combo.stockQuantity : ''}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? undefined : parseNumber(e.target.value);
+                            const newCombinations = [...(wizardData.variantCombinations || [])];
+                            if (newCombinations[index]) {
+                              newCombinations[index] = {
+                                ...newCombinations[index],
+                                stockQuantity: val !== undefined ? val : 0,
+                              };
+                              updateWizardData({ variantCombinations: newCombinations });
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
         </div>
 
         {/* Shipping Section */}
@@ -685,6 +743,62 @@ export function Step3Details() {
         .btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+        }
+
+        .variant-stock-table {
+          margin-top: 16px;
+          border: 1px solid #e1e3e5;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .variant-stock-header {
+          display: grid;
+          grid-template-columns: 2fr 2fr 1fr;
+          background: #f6f6f7;
+          border-bottom: 1px solid #e1e3e5;
+          font-weight: 500;
+          font-size: 14px;
+        }
+
+        .variant-stock-row {
+          display: grid;
+          grid-template-columns: 2fr 2fr 1fr;
+          border-bottom: 1px solid #e1e3e5;
+          align-items: center;
+        }
+
+        .variant-stock-row:last-child {
+          border-bottom: none;
+        }
+
+        .variant-stock-cell {
+          padding: 8px 12px;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .stock-input {
+          width: 100%;
+          text-align: right;
+        }
+
+        .color-dot {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          border: 1px solid #dcdcdc;
+          display: inline-block;
+        }
+
+        .text-small {
+          font-size: 12px;
+        }
+        
+        .text-muted {
+          color: #6d7175;
         }
       `}</style>
     </div>
