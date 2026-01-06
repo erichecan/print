@@ -53,18 +53,16 @@ import './design-lab.css';
 // 画布常量 - Optimized to 1200x1440 to match Custom Ink product image resolution (1200px)
 const CANVAS_WIDTH = 1200;
 const CANVAS_HEIGHT = 1440;
-// 打印区域常量 (Custom Ink 风格) - Recalculated for 1200px canvas (Ratio 0.3)
-const PRINTABLE_WIDTH = 546; // 1820 * 0.3
-const PRINTABLE_HEIGHT = 960; // 3200 * 0.3
-// Left Chest 区域 (Front view only)
-const LEFT_CHEST_WIDTH = 180; // 600 * 0.3
-const LEFT_CHEST_HEIGHT = 180; // 600 * 0.3
-const LEFT_CHEST_OFFSET_X = 150; // 500 * 0.3
-const LEFT_CHEST_OFFSET_Y = -390; // -1300 * 0.3
-// Sleeve 区域
-// Sleeve 区域 - Expanded by 200 units (Conceptually larger area, but adjusted down to 500)
-const SLEEVE_PRINTABLE_WIDTH = 500; // 300 + 200
-const SLEEVE_PRINTABLE_HEIGHT = 500; // 300 + 200
+// 打印区域常量 (Custom Ink 风格) - Optimized to 1200x1440
+// Default values used as fallback if product has no specific printable area config
+const DEFAULT_PRINTABLE_WIDTH = 546;
+const DEFAULT_PRINTABLE_HEIGHT = 960;
+const LEFT_CHEST_WIDTH = 180;
+const LEFT_CHEST_HEIGHT = 180;
+const LEFT_CHEST_OFFSET_X = 150;
+const LEFT_CHEST_OFFSET_Y = -390;
+const DEFAULT_SLEEVE_WIDTH = 500;
+const DEFAULT_SLEEVE_HEIGHT = 500;
 
 // 5.0 版本：添加 props 接口（为后续功能准备）
 interface DesignLabClient5Props {
@@ -110,6 +108,11 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     colorId?: string; // CRITICAL: This is the productVariantId
     productName?: string;
     variants?: Array<{ id: string; color: string; }>;
+    printableArea?: {
+      front: { width: number; height: number; x: number; y: number };
+      back: { width: number; height: number; x: number; y: number };
+      sleeve: { width: number; height: number; x: number; y: number };
+    } | null;
   }>(() => {
     // CRITICAL FIX: Initialize from initialProductData if available
     if (initialProductData) {
@@ -135,7 +138,9 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         slug: initialProductData.slug,
         colorId: initialProductData.variantId, // CRITICAL: Set colorId from variantId
         productName: initialProductData.productName || initialProductData.name,
+
         variants: initialProductData.variants,
+        printableArea: initialProductData.printableArea,
       };
     }
 
@@ -293,6 +298,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
                 'right-sleeve': images['right-sleeve'],
               },
               variants: (product.variants || []).map(v => ({ ...v, color: v.color || '' })), // 保存 variants 列表
+              printableArea: product.printableArea, // Add dynamic printable area
             }));
 
             // 更新 URL 参数以包含 variantId (可选)
@@ -772,7 +778,8 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           slug: productDetail.slug, // Capture slug
           colorId: productDetail.variantId, // CRITICAL: Set colorId from variantId
           productName: productDetail.productName,
-          variants: productDetail.variants, // Ensure variants are preserved
+          variants: (productDetail.variants || []).map(v => ({ ...v, color: v.color || '' })), // Fix type mismatch
+          printableArea: productDetail.printableArea,
         };
 
         // Feature: Add/Change Product with Design Inheritance
@@ -1354,16 +1361,32 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
       canvas.remove(existing);
     }
 
-    // Determine dimensions based on view
-    let areaWidth = PRINTABLE_WIDTH;
-    let areaHeight = PRINTABLE_HEIGHT;
+    // Determine dimensions based on view and product configuration
+    const getSafePrintableArea = (v: string) => {
+      const config = productInfo.printableArea;
+      // Default fallback
+      let width = DEFAULT_PRINTABLE_WIDTH;
+      let height = DEFAULT_PRINTABLE_HEIGHT;
+      let offsetX = 0;
+      let offsetY = 0;
 
-    if (view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve') {
-      areaWidth = SLEEVE_PRINTABLE_WIDTH;
-      areaHeight = SLEEVE_PRINTABLE_HEIGHT;
-    }
+      if (v === 'sleeve' || v === 'left-sleeve' || v === 'right-sleeve') {
+        width = DEFAULT_SLEEVE_WIDTH;
+        height = DEFAULT_SLEEVE_HEIGHT;
+      }
 
-    console.log('[DesignLab 5.0] Updating printable area guide for view:', view);
+      // Override if product has custom configuration
+      if (config) {
+        if (v === 'front' && config.front) return { ...config.front, offsetX: 0, offsetY: 0 }; // Usually centered by default logic, but let's check config format
+        if (v === 'back' && config.back) return { ...config.back, offsetX: 0, offsetY: 0 };
+        if ((v === 'sleeve' || v === 'left-sleeve' || v === 'right-sleeve') && config.sleeve) return { ...config.sleeve, offsetX: 0, offsetY: 0 };
+      }
+
+      return { width, height, offsetX, offsetY };
+    };
+
+    const area = getSafePrintableArea(view);
+    console.log('[DesignLab 5.0] Updating printable area guide for view:', view, area);
 
     const groupObjects: any[] = [];
 
@@ -1371,13 +1394,13 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     const mainRect = new fabric.Rect({
       left: 0,
       top: 0,
-      width: areaWidth,
-      height: areaHeight,
+      width: area.width,
+      height: area.height,
       originX: 'center',
       originY: 'center',
       fill: 'transparent',
-      stroke: '#808080', // Dark gray border (visible on both white and dark backgrounds)
-      strokeWidth: 2, // 2px width
+      stroke: '#808080', // Dark gray border
+      strokeWidth: 2,
       selectable: false,
       evented: false,
     });
@@ -1390,12 +1413,12 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
     if (view === 'right-sleeve') labelText = 'R.Sleeve';
 
     const mainLabel = new fabric.Text(labelText, {
-      left: -areaWidth / 2 + 10,
-      top: -areaHeight / 2 + 10,
-      fontSize: 24, // Scaled down (72 * 0.3 = 21.6 -> 24)
+      left: -area.width / 2 + 10,
+      top: -area.height / 2 + 10,
+      fontSize: 24,
       fontWeight: 'bold',
       fontFamily: 'Arial',
-      fill: '#808080', // Dark gray text
+      fill: '#808080',
       originX: 'left',
       originY: 'top',
       selectable: false,
@@ -1465,7 +1488,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
   // 监听视图变化更新参考线
   useEffect(() => {
     addPrintableArea(currentView);
-  }, [currentView]);
+  }, [currentView, productInfo.printableArea]); // Added printableArea dependency
 
   // 5.0 版本：步骤2 - 初始化 Fabric.js Canvas
   useEffect(() => {
@@ -1600,12 +1623,20 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
           const centerX = CANVAS_WIDTH / 2 - 6;
           const centerY = CANVAS_HEIGHT / 2;
 
-          let width = PRINTABLE_WIDTH;
-          let height = PRINTABLE_HEIGHT;
+          let width = DEFAULT_PRINTABLE_WIDTH;
+          let height = DEFAULT_PRINTABLE_HEIGHT;
 
           if (view === 'left-sleeve' || view === 'right-sleeve' || view === 'sleeve') {
-            width = SLEEVE_PRINTABLE_WIDTH;
-            height = SLEEVE_PRINTABLE_HEIGHT;
+            width = DEFAULT_SLEEVE_WIDTH;
+            height = DEFAULT_SLEEVE_HEIGHT;
+          }
+
+          // Use dynamic config if available
+          const config = productInfo.printableArea;
+          if (config) {
+            if (view === 'front' && config.front) { width = config.front.width; height = config.front.height; }
+            else if (view === 'back' && config.back) { width = config.back.width; height = config.back.height; }
+            else if ((view === 'sleeve' || view === 'left-sleeve' || view === 'right-sleeve') && config.sleeve) { width = config.sleeve.width; height = config.sleeve.height; }
           }
 
           return {

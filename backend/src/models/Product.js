@@ -38,7 +38,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
-// Added cost management numeric fields
+    printable_area: {
+      type: DataTypes.JSON,
+      allowNull: true
+    },
+    // Added cost management numeric fields
     unit_cost: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

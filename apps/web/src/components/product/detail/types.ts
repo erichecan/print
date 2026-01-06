@@ -6,6 +6,8 @@ export interface ProductData {
   id: string;
   title: string;
   slug: string;
+  description?: string | null;
+  longDescription?: string | null;
   artist: {
     name: string;
     slug: string;

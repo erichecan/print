@@ -1406,6 +1406,13 @@ export interface AdminProductDetail extends AdminProductSummary {
       name: string;
     };
   }>;
+  printableArea?: {
+    front: { width: number; height: number; x: number; y: number };
+    back: { width: number; height: number; x: number; y: number };
+    sleeve: { width: number; height: number; x: number; y: number };
+    'left-sleeve'?: { width: number; height: number; x: number; y: number };
+    'right-sleeve'?: { width: number; height: number; x: number; y: number };
+  } | null;
 }
 
 export interface AdminProductPayload {
@@ -1439,6 +1446,13 @@ export interface AdminProductPayload {
     sortOrder?: number;
   }>;
   collections?: string[];
+  printableArea?: {
+    front: { width: number; height: number; x: number; y: number };
+    back: { width: number; height: number; x: number; y: number };
+    sleeve: { width: number; height: number; x: number; y: number };
+    'left-sleeve'?: { width: number; height: number; x: number; y: number };
+    'right-sleeve'?: { width: number; height: number; x: number; y: number };
+  } | null;
 }
 
 // Admin Categories API

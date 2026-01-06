@@ -108,6 +108,11 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
       variants: [defaultVariant],
       images: [defaultImage],
       collections: [],
+      printableArea: {
+        front: { width: 546, height: 960, x: 326, y: 240 },
+        back: { width: 546, height: 960, x: 326, y: 240 },
+        sleeve: { width: 500, height: 500, x: 600, y: 300 },
+      },
     },
   });
 
@@ -308,6 +313,11 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
         collections: product.collectionProducts?.map(
           (item) => item.collection.id
         ),
+        printableArea: product.printableArea || {
+          front: { width: 546, height: 960, x: 326, y: 240 },
+          back: { width: 546, height: 960, x: 326, y: 240 },
+          sleeve: { width: 500, height: 500, x: 600, y: 300 },
+        },
       });
     }
   }, [product, reset]);
@@ -772,6 +782,77 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* 7. Printable Area Configuration */}
+          <div className="card">
+            <h3>Printable Area Configuration (Design Lab)</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Define the printable area for each view. Default (T-Shirt): 546x960.
+              Coordinates are based on a 1200x1440 canvas.
+            </p>
+
+            <div className="form-row">
+              <div style={{ flex: 1 }}>
+                <h4 className="mb-2 font-bold">Front View</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="form-field">
+                    <label>Width</label>
+                    <input type="number" {...register('printableArea.front.width', { valueAsNumber: true })} />
+                  </div>
+                  <div className="form-field">
+                    <label>Height</label>
+                    <input type="number" {...register('printableArea.front.height', { valueAsNumber: true })} />
+                  </div>
+                  <div className="form-field">
+                    <label>Offset X</label>
+                    <input type="number" {...register('printableArea.front.x', { valueAsNumber: true })} />
+                  </div>
+                  <div className="form-field">
+                    <label>Offset Y</label>
+                    <input type="number" {...register('printableArea.front.y', { valueAsNumber: true })} />
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ flex: 1 }}>
+                <h4 className="mb-2 font-bold">Back View</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="form-field">
+                    <label>Width</label>
+                    <input type="number" {...register('printableArea.back.width', { valueAsNumber: true })} />
+                  </div>
+                  <div className="form-field">
+                    <label>Height</label>
+                    <input type="number" {...register('printableArea.back.height', { valueAsNumber: true })} />
+                  </div>
+                  <div className="form-field">
+                    <label>Offset X</label>
+                    <input type="number" {...register('printableArea.back.x', { valueAsNumber: true })} />
+                  </div>
+                  <div className="form-field">
+                    <label>Offset Y</label>
+                    <input type="number" {...register('printableArea.back.y', { valueAsNumber: true })} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="form-row border-top pt-4 mt-4">
+              <div style={{ flex: 1 }}>
+                <h4 className="mb-2 font-bold">Sleeve View (Shared)</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="form-field">
+                    <label>Width</label>
+                    <input type="number" {...register('printableArea.sleeve.width', { valueAsNumber: true })} />
+                  </div>
+                  <div className="form-field">
+                    <label>Height</label>
+                    <input type="number" {...register('printableArea.sleeve.height', { valueAsNumber: true })} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

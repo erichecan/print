@@ -44,6 +44,13 @@ export interface ProductDetail {
     'right-sleeve'?: string;
   };
   gallery: string[];
+  printableArea?: {
+    front: { width: number; height: number; x: number; y: number };
+    back: { width: number; height: number; x: number; y: number };
+    sleeve: { width: number; height: number; x: number; y: number };
+    'left-sleeve'?: { width: number; height: number; x: number; y: number };
+    'right-sleeve'?: { width: number; height: number; x: number; y: number };
+  } | null;
 }
 
 /**
@@ -144,6 +151,7 @@ export async function getProduct(productId: string): Promise<ProductDetail> {
           'left-sleeve': response.images[2]?.url,
           'right-sleeve': response.images[3]?.url,
         } : { front: '', back: '', sleeve: '', 'left-sleeve': '', 'right-sleeve': '' }, // Fallback
+        printableArea: response.printableArea || null, // Map from response
       };
     }
 

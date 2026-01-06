@@ -9,6 +9,7 @@ interface ApiProduct {
   name: string;
   slug: string;
   description?: string | null;
+  longDescription?: string | null;
   basePrice: number | string;
   price?: {
     base: number;
@@ -162,15 +163,13 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
       thumbnail: img.url, // 可以后续优化为生成缩略图
     }));
 
-  // 生成产品特性（从描述中提取或使用默认）
-  const features = apiProduct.description
-    ? apiProduct.description.split('.').filter(f => f.trim().length > 0).slice(0, 6)
-    : [
-      'Premium quality materials',
-      'Comfortable fit',
-      'Durable construction',
-      'Easy care',
-    ];
+  // 生成产品特性 - 不再从描述生成，使用通用默认值，或者留空
+  const features = [
+    'Premium quality materials',
+    'Comfortable fit',
+    'Durable construction',
+    'Easy care',
+  ];
 
   // 转换相关产品
   const allRelated = (relatedProducts || []).map((p) => {
@@ -204,6 +203,8 @@ export function adaptProductData(apiProduct: ApiProduct, relatedProducts?: ApiPr
     id: apiProduct.id,
     title: apiProduct.name,
     slug: apiProduct.slug,
+    description: apiProduct.description,
+    longDescription: apiProduct.longDescription,
     artist: {
       name: apiProduct.brand?.name || 'Placeholder Artist Name',
       slug: apiProduct.brand?.slug || 'placeholder-artist',

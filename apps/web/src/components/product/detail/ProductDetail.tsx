@@ -387,6 +387,8 @@ export function ProductDetail() {
             <ProductFeatures
               features={productData.features}
               rating={productData.rating}
+              description={productData.description}
+              longDescription={productData.longDescription}
             />
           </div>
         </div>
