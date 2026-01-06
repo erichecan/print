@@ -2312,17 +2312,40 @@ export const productColorImageApi = {
 
 // Design Lab API - Public size fees API
 export const sizeFeesApi = {
-  getAll: () => api<{ 
-    success: boolean;
-    data: Array<{ 
-      id: string; 
-      size: string; 
-      sizeType?: 'Youth' | 'Adult' | 'Other';
-      additionalFee: number; 
-      displayOrder?: number;
-    }>; 
-    count: number;
-  }>('/api/size-fees'),
+  getAll: async () => {
+    console.log('[sizeFeesApi] 📡 Calling getAll() - endpoint: /size-fees');
+    try {
+      const result = await api<{ 
+        success: boolean;
+        data: Array<{ 
+          id: string; 
+          size: string; 
+          sizeType?: 'Youth' | 'Adult' | 'Other';
+          additionalFee: number; 
+          displayOrder?: number;
+        }>; 
+        count: number;
+      }>('/size-fees');
+      
+      console.log('[sizeFeesApi] ✅ API call successful:', {
+        success: result?.success,
+        hasData: !!result?.data,
+        dataLength: result?.data?.length || 0,
+        count: result?.count,
+        firstFewItems: result?.data?.slice(0, 3) || []
+      });
+      
+      return result;
+    } catch (error: any) {
+      console.error('[sizeFeesApi] ❌ API call failed:', {
+        error,
+        message: error?.message,
+        status: error?.status,
+        response: error?.response
+      });
+      throw error;
+    }
+  },
 };
 
 export const designLabApi = {
