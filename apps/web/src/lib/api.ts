@@ -1070,6 +1070,8 @@ export interface OfflineOrderInvoiceInfo {
   province: string;
   postalCode: string;
   country: string;
+  paymentMethod?: string;
+  referenceNumber?: string;
 }
 
 export interface OfflineOrderConfiguration {
@@ -1085,6 +1087,9 @@ export interface OfflineOrderConfiguration {
   requiresInvoice?: boolean;
   invoiceInfo?: OfflineOrderInvoiceInfo | null;
   pricing?: OfflineOrderPricing;
+  paymentMethod?: string;
+  referenceNumber?: string;
+  depositAmount?: number;
 }
 
 export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
@@ -2588,6 +2593,12 @@ export interface AdminOfflineOrderSummary {
   metadata?: any;
   assets: OfflineOrderAsset[];
   productionWorkOrder?: ProductionWorkOrderDetail | null;
+  payment?: {
+    method?: string | null;
+    referenceNumber?: string | null;
+    depositAmount?: number;
+    dstFileFee?: number;
+  };
   createdAt: string;
   updatedAt: string;
 }

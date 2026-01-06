@@ -21,7 +21,9 @@ export default function SalesOrderDetailPage() {
   const [error, setError] = useState('');
   const [stages, setStages] = useState<Array<{ key: string; label: string; position: number }>>([]);
   const [updatingStage, setUpdatingStage] = useState(false);
+  const [stageDraft, setStageDraft] = useState<string>(''); // 修改阶段：存储选择的阶段（未提交）
   const [stageNote, setStageNote] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (!orderId) return;
@@ -68,6 +70,8 @@ export default function SalesOrderDetailPage() {
           });
           setOrder(detail);
           setStages(stagesRes.stages || []);
+          // 初始化阶段选择为当前订单的阶段
+          setStageDraft(detail?.stage?.key || '');
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -212,23 +216,48 @@ export default function SalesOrderDetailPage() {
     router.push('/offline-orders/sales/orders');
   };
 
-  // 更新订单阶段
-  const handleUpdateStage = async (newStageKey: string) => {
-    if (!order || updatingStage) return;
+  // 更新订单阶段（修改为需要点击按钮才更新）
+  const handleUpdateStage = async () => {
+    if (!order || updatingStage || !stageDraft) return;
 
     setUpdatingStage(true);
     try {
       const updated = await salesOrdersApi.updateStage(order.id, {
-        stageKey: newStageKey,
+        stageKey: stageDraft,
         note: stageNote || undefined,
       });
       setOrder(updated.order);
       setStageNote('');
       setError('');
+      // 更新成功后，将draft同步为新的阶段
+      setStageDraft(updated.order.stage?.key || '');
     } catch (err: any) {
       setError(err.message || '更新订单阶段失败。');
     } finally {
       setUpdatingStage(false);
+    }
+  };
+
+
+
+  // 更新订单状态
+  const handleUpdateStatus = async (newStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED') => {
+    if (!order || updatingStatus) return;
+
+    if (newStatus === 'CANCELLED' && !confirm('确定要取消此订单吗？')) {
+      return;
+    }
+
+    setUpdatingStatus(true);
+    try {
+      await salesOrdersApi.updateStatus(order.id, newStatus);
+      // Manually update local state since API might return simplified response or we just want to reflect change immediately
+      setOrder(prev => prev ? ({ ...prev, status: newStatus }) : null);
+      setError('');
+    } catch (err: any) {
+      setError(err.message || '更新订单状态失败。');
+    } finally {
+      setUpdatingStatus(false);
     }
   };
 
@@ -243,7 +272,38 @@ export default function SalesOrderDetailPage() {
             <span>返回</span>
           </button>
           <div className="order-detail-header-content">
-            <h1>订单详情</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+              <h1>订单详情</h1>
+              {/* 编辑按钮 */}
+              {meta && (
+                <button
+                  type="button"
+                  onClick={() => router.push(`/offline-orders?editId=${meta.id}`)}
+                  className="order-detail-edit-btn"
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M11.05 3.00002L4.20831 10.2417C3.94998 10.5167 3.69998 11.0584 3.64998 11.4334L3.34165 14.1334C3.23331 15.1084 3.93331 15.775 4.89998 15.6084L7.58331 15.15C7.95831 15.0834 8.48331 14.8084 8.74165 14.525L15.5833 7.28335C16.7666 6.03335 17.3 4.60835 15.4583 2.86668C13.625 1.14168 12.2333 1.75002 11.05 3.00002Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M9.90833 4.20831C10.2667 6.50831 12.1333 8.26665 14.45 8.49998" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2.5 18.3334H17.5" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  编辑订单
+                </button>
+              )}
+            </div>
             {meta && (
               <div className="order-detail-header-meta">
                 <span className="order-code">{meta.orderCode}</span>
@@ -254,33 +314,73 @@ export default function SalesOrderDetailPage() {
                   {meta.rushOrder && <span className="status-badge status-rush">加急</span>}
                   {meta.stage?.label && <span className="status-badge status-stage">{meta.stage.label}</span>}
                 </div>
-                {/* 修改订单阶段 */}
+                {/* 修改阶段 - 恢复原来的修改逻辑：先选择，再点击按钮更新 */}
                 {stages.length > 0 && (
                   <div className="order-stage-update">
-                    <label className="stage-update-label">
-                      <span>修改阶段：</span>
-                      <select
-                        value={meta.stage?.key || ''}
-                        onChange={(e) => handleUpdateStage(e.target.value)}
-                        disabled={updatingStage}
-                        className="stage-update-select"
+                    <div className="stage-update-controls" style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                      <label className="stage-update-label" style={{ flex: 1 }}>
+                        <span>修改阶段：</span>
+                        <select
+                          value={stageDraft || meta.stage?.key || ''}
+                          onChange={(e) => setStageDraft(e.target.value)}
+                          disabled={updatingStage}
+                          className="stage-update-select"
+                        >
+                          {stages.map((stage) => (
+                            <option key={stage.key} value={stage.key}>
+                              {stage.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleUpdateStage}
+                        disabled={!stageDraft || updatingStage || stageDraft === meta.stage?.key}
+                        className="stage-update-btn"
+                        style={{
+                          padding: '0.5rem 1rem',
+                          backgroundColor: stageDraft && stageDraft !== meta.stage?.key ? '#2563eb' : '#9ca3af',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          cursor: stageDraft && stageDraft !== meta.stage?.key ? 'pointer' : 'not-allowed',
+                          whiteSpace: 'nowrap',
+                          marginTop: '1.75rem'
+                        }}
                       >
-                        {stages.map((stage) => (
-                          <option key={stage.key} value={stage.key}>
-                            {stage.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                        {updatingStage ? '更新中...' : '更新阶段'}
+                      </button>
+                    </div>
                     <textarea
                       value={stageNote}
                       onChange={(e) => setStageNote(e.target.value)}
                       placeholder="备注（可选）"
                       className="stage-update-note"
                       rows={2}
+                      style={{ marginTop: '0.75rem' }}
                     />
                   </div>
                 )}
+
+                {/* 修改状态 - 新增 */}
+                <div className="order-stage-update" style={{ marginTop: '0.5rem' }}>
+                  <label className="stage-update-label">
+                    <span>归档状态：</span>
+                    <select
+                      value={meta.status}
+                      onChange={(e) => handleUpdateStatus(e.target.value as any)}
+                      disabled={updatingStatus}
+                      className="stage-update-select"
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="COMPLETED">COMPLETED</option>
+                      <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                  </label>
+                </div>
               </div>
             )}
           </div>
@@ -657,6 +757,49 @@ export default function SalesOrderDetailPage() {
                     />
                   </div>
                 )}
+
+                {/* 支付信息 - 如果已支付定金 */}
+                {Number(config?.depositAmount || 0) > 0 && (
+                  <div style={{
+                    padding: '1.5rem',
+                    backgroundColor: '#ecfdf5',
+                    border: '1px solid #a7f3d0',
+                    borderRadius: '0.75rem',
+                    marginBottom: '0'
+                  }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#111827', margin: '0 0 1rem 0' }}>
+                      支付信息
+                    </h4>
+                    <div style={{ display: 'grid', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span style={{ color: '#4b5563' }}>总金额：</span>
+                        <span style={{ fontWeight: 500, color: '#059669' }}>
+                          ${Number(config.pricing?.total || 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                        <span style={{ color: '#4b5563' }}>定金：</span>
+                        <span style={{ fontWeight: 500, color: '#059669' }}>
+                          -${Number(config?.depositAmount || 0).toFixed(2)}
+                        </span>
+                      </div>
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: '1rem',
+                        paddingTop: '0.5rem',
+                        marginTop: '0.5rem',
+                        borderTop: '1px solid #a7f3d0'
+                      }}>
+                        <span style={{ fontWeight: 600, color: '#111827' }}>剩余应付：</span>
+                        <strong style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2563eb' }}>
+                          ${Math.max(0, Number(config.pricing?.total || 0) - Number(config?.depositAmount || 0)).toFixed(2)}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </section>
             )}
 
@@ -685,6 +828,41 @@ export default function SalesOrderDetailPage() {
                 </div>
               </section>
             )}
+
+            {/* 支付信息 - 新增 */}
+            <section className="order-section">
+              <h2 className="section-title">支付信息</h2>
+              <div className="info-grid">
+                <div className="info-item">
+                  <span className="info-label">支付方式</span>
+                  <span className="info-value">
+                    {config?.invoiceInfo?.paymentMethod
+                      ? (config.invoiceInfo.paymentMethod === 'card' ? '刷卡' :
+                        config.invoiceInfo.paymentMethod === 'etrans' ? 'e-trans' :
+                          config.invoiceInfo.paymentMethod)
+                      : (config?.paymentMethod || '—')}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">参考号</span>
+                  <span className="info-value">
+                    {config?.invoiceInfo?.referenceNumber || config?.referenceNumber || '—'}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">定金金额</span>
+                  <span className="info-value text-green-600">
+                    ${Number(config?.depositAmount || 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="info-item">
+                  <span className="info-label">剩余应付</span>
+                  <span className="info-value text-blue-600 font-bold">
+                    ${Math.max(0, Number(config?.pricing?.total || 0) - Number(config?.depositAmount || 0)).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </section>
 
             {/* 发票信息 */}
             {config?.requiresInvoice && config.invoiceInfo && (
@@ -871,11 +1049,21 @@ export default function SalesOrderDetailPage() {
         }
 
         .order-detail-header-content h1 {
-          margin: 0 0 1rem;
+          margin: 0;
           font-size: 2rem;
           font-weight: 700;
           color: #1a202c;
           letter-spacing: -0.02em;
+        }
+
+        .order-detail-edit-btn:hover {
+          background-color: #1d4ed8 !important;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+        }
+
+        .order-detail-edit-btn:active {
+          transform: translateY(0);
         }
 
         .order-detail-header-meta {

@@ -19,7 +19,7 @@ interface ColorGroupCardIntegratedProps {
   onCopyToOthers?: () => void;
   previousGroup?: OrderItemColorGroup | null;
   onSizeQuantityChange: (size: string, quantity: number) => void;
-colorHex?: string; // 颜色hex值（用于显示色块）
+  colorHex?: string; // 颜色hex值（用于显示色块）
 }
 
 // 尺码定义（与page.tsx保持一致）
@@ -42,10 +42,10 @@ export function ColorGroupCardIntegrated({
 }: ColorGroupCardIntegratedProps) {
   const [showInheritConfirm, setShowInheritConfirm] = useState(false);
 
-// 处理尺码数量变化
+  // 处理尺码数量变化
   const handleSizeQuantityChange = (size: string, quantity: number) => {
     onSizeQuantityChange(size, quantity);
-// 更新颜色组的quantities
+    // 更新颜色组的quantities
     onUpdate({
       ...group,
       quantities: {
@@ -55,7 +55,7 @@ export function ColorGroupCardIntegrated({
     });
   };
 
-// 继承上一颜色的positions
+  // 继承上一颜色的positions
   const handleInheritPositions = () => {
     if (previousGroup && previousGroup.positions.length > 0) {
       const inheritedPositions = previousGroup.positions.map(pos => ({
@@ -72,20 +72,20 @@ export function ColorGroupCardIntegrated({
     }
   };
 
-// 获取颜色hex值（从props传入或使用默认值）
+  // 获取颜色hex值（从props传入或使用默认值）
   const getColorHex = (): string => {
     return colorHex || '#CCCCCC'; // 使用传入的hex值或默认灰色
   };
 
   return (
     <section className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm mb-4 relative">
-{/* 颜色色块（2号位置）- 左侧8px宽色块，使用颜色hex值 */}
+      {/* 颜色色块（2号位置）- 左侧8px宽色块，使用颜色hex值 */}
       <div
         className="absolute left-0 top-0 bottom-0 w-2 rounded-l-lg"
         style={{ backgroundColor: getColorHex() }}
       />
 
-{/* 标题区：颜色名、删除按钮、继承按钮 */}
+      {/* 标题区：颜色名、删除按钮、继承按钮 */}
       <header className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 ml-2">
         <div className="flex items-center gap-3">
           <h3 className="text-lg font-semibold text-gray-900">{group.colorName}</h3>
@@ -97,7 +97,7 @@ export function ColorGroupCardIntegrated({
           )}
         </div>
         <div className="flex items-center gap-2">
-{/* 继承按钮（仅当有上一颜色且未继承时显示） */}
+          {/* 继承按钮（仅当有上一颜色且未继承时显示） */}
           {previousGroup && !group.inheritsFromColorId && (
             <button
               type="button"
@@ -108,7 +108,7 @@ export function ColorGroupCardIntegrated({
               继承上一颜色
             </button>
           )}
-{/* 复制到其他颜色按钮 */}
+          {/* 复制到其他颜色按钮 */}
           {onCopyToOthers && (
             <button
               type="button"
@@ -129,7 +129,7 @@ export function ColorGroupCardIntegrated({
         </div>
       </header>
 
-{/* 尺码表：YOUTH和ADULT两组 - 放在一行 */}
+      {/* 尺码表：YOUTH和ADULT两组 - 放在一行 */}
       <div className="mb-4 ml-2">
         <div className="flex flex-wrap gap-4">
           {/* YOUTH尺码 */}
@@ -154,7 +154,7 @@ export function ColorGroupCardIntegrated({
                         handleSizeQuantityChange(size, qty);
                       }}
                       onKeyDown={(e) => {
-// 修复：阻止Enter键触发表单提交
+                        // 修复：阻止Enter键触发表单提交
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           e.stopPropagation();
@@ -196,7 +196,7 @@ export function ColorGroupCardIntegrated({
                         handleSizeQuantityChange(size, qty);
                       }}
                       onKeyDown={(e) => {
-// 修复：阻止Enter键触发表单提交
+                        // 修复：阻止Enter键触发表单提交
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           e.stopPropagation();
@@ -213,7 +213,7 @@ export function ColorGroupCardIntegrated({
         </div>
       </div>
 
-{/* 单价和印刷位置：一行两列布局 */}
+      {/* 单价和印刷位置：一行两列布局 */}
       <div className="ml-2 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* 单价输入框 - 颜色级别单价 */}
@@ -223,11 +223,13 @@ export function ColorGroupCardIntegrated({
                 单价（适用于该颜色的所有尺码）:
               </span>
               <input
-                type="text"
+                type="number"
+                step="0.01"
+                min="0"
                 value={group.unitPrice > 0 ? group.unitPrice.toString() : ''}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/[^\d.]/g, '');
-                  const unitPrice = parseFloat(value) || 0;
+                  const value = parseFloat(e.target.value);
+                  const unitPrice = isNaN(value) ? 0 : value;
                   onUpdate({
                     ...group,
                     unitPrice
@@ -256,13 +258,13 @@ export function ColorGroupCardIntegrated({
         </div>
       </div>
 
-{/* 继承确认弹窗 */}
+      {/* 继承确认弹窗 */}
       {showInheritConfirm && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">继承上一颜色的 print positions</h3>
             <p className="text-sm text-gray-600 mb-4">
-{/* 修复 ESLint react/no-unescaped-entities：避免直接使用双引号（显示效果不变） */}
+              {/* 修复 ESLint react/no-unescaped-entities：避免直接使用双引号（显示效果不变） */}
               确定要继承“{previousGroup?.colorName}”的印刷位置配置吗？这将复制所有位置设置（不包含文件）。
             </p>
             <div className="flex justify-end gap-3">

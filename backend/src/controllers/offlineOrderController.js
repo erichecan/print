@@ -208,6 +208,12 @@ const mapOrder = (order) => ({
     note: history.note,
     createdAt: history.createdAt
   })),
+  payment: {
+    method: order.payment_method,
+    referenceNumber: order.reference_number,
+    depositAmount: order.deposit_amount ? parseFloat(order.deposit_amount) : 0,
+    dstFileFee: order.dst_file_fee ? parseFloat(order.dst_file_fee) : 0,
+  },
   productionWorkOrder: mapProductionWorkOrder(order.productionWorkOrder),
   createdAt: order.createdAt,
   updatedAt: order.updatedAt
@@ -225,6 +231,12 @@ exports.createOfflineOrder = async (req, res) => {
     logger.info('[offlineOrderController] Request body:', JSON.stringify(req.body, null, 2));
     logger.info('[offlineOrderController] Request files:', req.files ? `Files count: ${req.files.length}` : 'No files');
     logger.info('[offlineOrderController] Content-Type:', req.headers['content-type']);
+    logger.info('[offlineOrderController] Payment Info Debug:', {
+      paymentMethod: req.body.paymentMethod,
+      referenceNumber: req.body.referenceNumber,
+      depositAmount: req.body.depositAmount,
+      configuration: req.body.configuration ? 'Present' : 'Missing'
+    });
 
     const {
       projectName,
@@ -324,7 +336,8 @@ exports.createOfflineOrder = async (req, res) => {
       dst_file_fee: dstFileFee ? parseFloat(dstFileFee) : null,
       order_notes: orderNotes?.trim() || null,
       payment_method: paymentMethod?.trim() || null,
-      reference_number: referenceNumber?.trim() || null
+      reference_number: referenceNumber?.trim() || null,
+      deposit_amount: req.body.depositAmount ? parseFloat(req.body.depositAmount) : null
     };
 
     const files = Array.isArray(req.files) ? req.files : [];
@@ -794,6 +807,11 @@ exports.updateOfflineOrder = async (req, res) => {
     if (phone !== undefined) data.phone = phone?.trim() || null;
     if (configuration !== undefined) data.configuration = safeJsonParse(configuration) || configuration || null;
     if (metadata !== undefined) data.metadata = safeJsonParse(metadata) || metadata || null;
+
+    // Payment updates
+    if (req.body.paymentMethod !== undefined) data.payment_method = req.body.paymentMethod?.trim() || null;
+    if (req.body.referenceNumber !== undefined) data.reference_number = req.body.referenceNumber?.trim() || null;
+    if (req.body.depositAmount !== undefined) data.deposit_amount = req.body.depositAmount ? parseFloat(req.body.depositAmount) : null;
 
     if (status !== undefined) {
       const normalizedStatus = status?.toString().toUpperCase();

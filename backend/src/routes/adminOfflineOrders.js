@@ -62,7 +62,9 @@ router.get('/:id', offlineOrderController.getOfflineOrderById);
 
 router.patch('/:id/stage', offlineOrderController.updateOfflineOrderStage);
 
-router.patch('/:id', offlineOrderController.updateOfflineOrder);
+// 修复：PATCH /:id 需要支持 FormData（用于更新订单时上传文件）
+// 使用 multer 中间件处理可能的文件上传
+router.patch('/:id', adminUpload.array('assets', parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)), offlineOrderController.updateOfflineOrder);
 
 router.post('/:id/notes', offlineOrderController.addOfflineOrderNote);
 

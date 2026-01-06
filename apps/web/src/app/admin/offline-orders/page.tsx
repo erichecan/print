@@ -685,6 +685,27 @@ export default function AdminOfflineOrdersPage() {
                         <p>{selectedDetail.contact?.company || '—'}</p>
                       </div>
                     </div>
+
+                    {/* Payment Info Section */}
+                    <div className="admin-form">
+                      <h3>{t('paymentInfo') || 'Payment & Billing'}</h3>
+                      <div className="address-block">
+                        <h4>Payment Details</h4>
+                        <p><strong>Method:</strong> {selectedDetail.payment?.method || '—'}</p>
+                        <p><strong>Reference:</strong> {selectedDetail.payment?.referenceNumber || '—'}</p>
+                      </div>
+                      <div className="address-block" style={{ marginTop: '1rem' }}>
+                        <h4>Billing</h4>
+                        {/* We can calculate totals if needed, or rely on what's stored. For now showing Deposit. */}
+                        <p><strong>Deposit:</strong> ${selectedDetail.payment?.depositAmount?.toFixed(2) || '0.00'}</p>
+                        <p><strong>DST Fee:</strong> ${selectedDetail.payment?.dstFileFee?.toFixed(2) || '0.00'}</p>
+                        {/* Note: Total/Balance calculation might require more data in mapOrder (like subtotal/total from products). 
+                            Since we store products in configuration or assume they are transient in offline order for now (JSON),
+                            accurate balance calculation in Admin might be tricky without parsing configuration. 
+                            However, user asked to "Display these recorded payment details".
+                        */}
+                      </div>
+                    </div>
                     <div className="admin-form">
                       <h3>{t('timeline')}</h3>
                       <ul className="detail-notes">

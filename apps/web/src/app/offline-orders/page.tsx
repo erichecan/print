@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent } from 'react'; // 添加useRef用于定位下拉菜单，useMemo用于颜色组初始化
+import { useCallback, useEffect, useMemo, useState, useRef, ChangeEvent, FormEvent, DragEvent, Suspense } from 'react'; // 添加useRef用于定位下拉菜单，useMemo用于颜色组初始化
 import { createPortal } from 'react-dom'; // 使用Portal将下拉菜单渲染到body，彻底解决遮挡问题
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link'; // 添加 Link 用于导航
 import { API_BASE_URL } from '@/lib/api-config'; // 使用统一 API 基址，避免指向 Next.js 自身路由
-import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct } from '@/lib/api'; // 简化的产品 API
+import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct, authenticatedFetch, salesOrdersApi, SalesOfflineOrderDetail } from '@/lib/api'; // 简化的产品 API
 import useSWR from 'swr'; // 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // 引入翻译
 import { OrderItemColorGroup } from '@/types/order'; // 导入颜色组类型
@@ -141,6 +141,9 @@ type FormState = {
   discountAmount: number; // 折扣金额
   taxRate: number; // 税率（0.13 for 13%）
   taxAmount: number; // 税额
+  depositAmount: number; // 定金金额
+  paymentMethod: string; // 支付方式
+  referenceNumber: string; // 参考号
   total: number; // 总计（含税）
 
   // 流程控制
@@ -212,6 +215,9 @@ const initialFormState: FormState = {
   discountAmount: 0,
   taxRate: 0.13,
   taxAmount: 0,
+  depositAmount: 0,
+  paymentMethod: '',
+  referenceNumber: '',
   total: 0,
   currentStep: 1,
 };
@@ -388,12 +394,31 @@ function UserMenu() {
   );
 }
 
+// 编辑模式包装组件（处理useSearchParams的Suspense）
+function OfflineOrdersIntakePageContent() {
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('editId');
+  return <OfflineOrdersIntakePageInner editId={editId || undefined} />;
+}
+
 export default function OfflineOrdersIntakePage() {
+  return (
+    <Suspense fallback={<div>加载中...</div>}>
+      <OfflineOrdersIntakePageContent />
+    </Suspense>
+  );
+}
+
+function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   // 语言切换状态 - 默认值，避免hydration错误
   const [locale, setLocale] = useState<OfflineOrdersLocale>('zh');
   const [isClient, setIsClient] = useState(false); // 标记是否在客户端
   // 移动设备检测 - 用于支持拍照功能
   const [isMobile, setIsMobile] = useState(false);
+  // 编辑模式状态
+  const [isEditMode, setIsEditMode] = useState(!!editId);
+  const [editOrderData, setEditOrderData] = useState<SalesOfflineOrderDetail | null>(null);
+  const [loadingEditData, setLoadingEditData] = useState(!!editId);
 
   const [formState, setFormState] = useState<FormState>(initialFormState);
   const [files, setFiles] = useState<File[]>([]);
@@ -417,6 +442,72 @@ export default function OfflineOrdersIntakePage() {
   const submitButtonRef = useRef<HTMLButtonElement | null>(null);
   const isSubmittingFromButtonRef = useRef(false);
 
+  // 加载编辑订单数据（如果editId存在）
+  useEffect(() => {
+    if (!editId || !isClient) return;
+    
+    const loadEditOrder = async () => {
+      try {
+        setLoadingEditData(true);
+        const order = await salesOrdersApi.get(editId);
+        setEditOrderData(order);
+        setIsEditMode(true);
+        
+        // 填充表单数据
+        if (order && order.configuration) {
+          const config = order.configuration as any;
+          
+          // 转换订单数据到表单状态
+          const productItems: ProductItem[] = [];
+          if (config.productItems && Array.isArray(config.productItems)) {
+            productItems.push(...config.productItems);
+          }
+          
+          const colorGroupsByProduct: Record<string, OrderItemColorGroup[]> = {};
+          if (config.colorGroupsByProduct) {
+            Object.assign(colorGroupsByProduct, config.colorGroupsByProduct);
+          }
+          
+          setFormState((prev) => ({
+            ...prev,
+            orderCode: order.orderCode || prev.orderCode,
+            productItems,
+            colorGroupsByProduct,
+            orderNotes: config.orderNotes || '',
+            dstFileFee: config.dstFileFee || 0,
+            contactName: order.contact?.name || '',
+            email: order.contact?.email || '',
+            phone: order.contact?.phone || '',
+            company: order.contact?.company || '',
+            dueDate: order.deliveryDate || order.dueDate || '',
+            requiresInvoice: config.requiresInvoice || false,
+            invoiceInfo: config.invoiceInfo || prev.invoiceInfo,
+            depositAmount: config.depositAmount || 0,
+            paymentMethod: config.paymentMethod || config.invoiceInfo?.paymentMethod || '',
+            referenceNumber: config.referenceNumber || config.invoiceInfo?.referenceNumber || '',
+            // 价格信息
+            subtotal: config.pricing?.subtotal || 0,
+            discount: config.pricing?.discount || 0,
+            discountAmount: config.pricing?.discountAmount || 0,
+            taxRate: config.pricing?.taxRate || 0.13,
+            taxAmount: config.pricing?.taxAmount || 0,
+            total: config.pricing?.total || 0,
+          }));
+        }
+      } catch (err: any) {
+        console.error('[Edit Order] Failed to load order:', err);
+        setStatus({
+          type: 'error',
+          message: `加载订单失败：${err.message || '未知错误'}`,
+        });
+      } finally {
+        setLoadingEditData(false);
+      }
+    };
+    
+    loadEditOrder();
+  }, [editId, isClient]);
+
   // 确保客户端渲染后再读取localStorage，避免hydration错误
   // 在客户端生成订单编号，避免 hydration 错误
   // 检测移动设备，用于支持拍照功能
@@ -427,20 +518,22 @@ export default function OfflineOrdersIntakePage() {
       if (stored === 'en' || stored === 'zh') {
         setLocale(stored);
       }
-      // 在客户端生成订单编号
-      setFormState((prev) => {
-        if (!prev.orderCode) {
-          return { ...prev, orderCode: generateOrderCode() };
-        }
-        return prev;
-      });
+      // 在客户端生成订单编号（仅在非编辑模式下）
+      if (!editId) {
+        setFormState((prev) => {
+          if (!prev.orderCode) {
+            return { ...prev, orderCode: generateOrderCode() };
+          }
+          return prev;
+        });
+      }
       // 检测移动设备
       const userAgent = window.navigator.userAgent.toLowerCase();
       const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) ||
         (window.innerWidth <= 768);
       setIsMobile(isMobileDevice);
     }
-  }, []);
+  }, [editId]);
 
   // 翻译函数 - 只在客户端渲染时使用localStorage中的语言
   const t = useCallback((key: string, params?: Record<string, string | number>) => {
@@ -1260,13 +1353,31 @@ export default function OfflineOrdersIntakePage() {
         setIsSubmitting(true);
         const payload = new FormData();
         // PRD v2.0: 移除旧字段 projectName, artworkNotes, requiresMockups, requiresProof, rushOrder
-        payload.append('primaryProduct', primaryProductDescription);
-        payload.append('quantity', calculateTotalQuantity.toString());
-        payload.append('deliveryDate', formState.dueDate);
-        payload.append('contactName', formState.contactName.trim());
-        payload.append('email', formState.email.trim());
-        payload.append('phone', formState.phone.trim());
-        payload.append('company', formState.requiresInvoice && formState.invoiceInfo.companyName ? formState.invoiceInfo.companyName.trim() : formState.company || '');
+        // 修复：编辑模式下也需要发送这些基本字段，确保后端能够更新
+        if (primaryProductDescription) {
+          payload.append('primaryProduct', primaryProductDescription);
+        }
+        if (calculateTotalQuantity > 0) {
+          payload.append('quantity', calculateTotalQuantity.toString());
+        }
+        if (formState.dueDate) {
+          payload.append('deliveryDate', formState.dueDate);
+        }
+        if (formState.contactName) {
+          payload.append('contactName', formState.contactName.trim());
+        }
+        if (formState.email) {
+          payload.append('email', formState.email.trim());
+        }
+        if (formState.phone) {
+          payload.append('phone', formState.phone.trim());
+        }
+        const companyValue = formState.requiresInvoice && formState.invoiceInfo.companyName 
+          ? formState.invoiceInfo.companyName.trim() 
+          : formState.company || '';
+        if (companyValue) {
+          payload.append('company', companyValue);
+        }
 
         // PRD v2.0: 聚合印刷位置（全局 + 产品级别）
         // 从colorGroupsByProduct中提取所有印刷位置
@@ -1308,8 +1419,9 @@ export default function OfflineOrdersIntakePage() {
             colorGroupsByProduct: formState.colorGroupsByProduct, // 按颜色分组的印刷位配置（主要数据源）
             requiresInvoice: formState.requiresInvoice,
             invoiceInfo: formState.requiresInvoice ? formState.invoiceInfo : null,
-            paymentMethod: formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null,
-            referenceNumber: formState.requiresInvoice ? formState.invoiceInfo.referenceNumber : null,
+            paymentMethod: formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : null),
+            referenceNumber: formState.referenceNumber || (formState.requiresInvoice ? formState.invoiceInfo.referenceNumber : null),
+            depositAmount: formState.depositAmount,
             pricing: {
               subtotal: calculateSubtotal,
               discount: formState.discount,
@@ -1328,22 +1440,38 @@ export default function OfflineOrdersIntakePage() {
         if (calculateDstFileFee > 0) {
           payload.append('dstFileFee', calculateDstFileFee.toString());
         }
-        if (formState.requiresInvoice) {
-          if (formState.invoiceInfo.paymentMethod) {
-            payload.append('paymentMethod', formState.invoiceInfo.paymentMethod);
-          }
-          if (formState.invoiceInfo.referenceNumber) {
-            payload.append('referenceNumber', formState.invoiceInfo.referenceNumber);
-          }
+
+        // Fix: Always send payment info if available, regardless of invoice requirement
+        const finalPaymentMethod = formState.paymentMethod || (formState.requiresInvoice ? formState.invoiceInfo.paymentMethod : '');
+        const finalReferenceNumber = formState.referenceNumber || (formState.requiresInvoice ? formState.invoiceInfo.referenceNumber : '');
+
+        if (finalPaymentMethod) {
+          payload.append('paymentMethod', finalPaymentMethod);
         }
+        if (finalReferenceNumber) {
+          payload.append('referenceNumber', finalReferenceNumber);
+        }
+        if (formState.depositAmount > 0) {
+          payload.append('depositAmount', formState.depositAmount.toString());
+        }
+
         // PRD v2.0: 添加文件到 payload（使用 files state，不是 formState.files）
         files.forEach((file) => payload.append('assets', file, file.name));
 
+        // 根据编辑模式选择API端点和方法
+        const apiUrl = isEditMode && editId
+          ? `${API_BASE_URL}/admin/offline-orders/${editId}`
+          : `${API_BASE_URL}/offline-orders`;
+        const method = isEditMode && editId ? 'PATCH' : 'POST';
+
         // 指向后端 API_BASE_URL，避免 Netlify 返回 HTML 404
-        const response = await fetch(`${API_BASE_URL}/offline-orders`, {
-          method: 'POST',
+        const response = await fetch(apiUrl, {
+          method,
           body: payload,
           credentials: 'include',
+          headers: {
+            // 对于PATCH请求，需要明确指定Content-Type，让浏览器自动设置boundary
+          },
         });
         // 改进错误处理，显示更详细的错误信息
         let data;
@@ -1365,9 +1493,19 @@ export default function OfflineOrdersIntakePage() {
         const finalOrderCode = data?.order?.orderCode || formState.orderCode;
         setStatus({
           type: 'success',
-          message: `订单提交成功！订单编号：${finalOrderCode}。订单已进入生产管理系统，我们会尽快处理。`,
+          message: isEditMode
+            ? `订单更新成功！订单编号：${finalOrderCode}。`
+            : `订单提交成功！订单编号：${finalOrderCode}。订单已进入生产管理系统，我们会尽快处理。`,
         });
-        resetForm();
+        
+        // 编辑模式下，跳转到订单详情页面
+        if (isEditMode && editId) {
+          setTimeout(() => {
+            router.push(`/offline-orders/sales/orders/${editId}`);
+          }, 1500);
+        } else {
+          resetForm();
+        }
       } catch (error: any) {
         console.error('[OfflineOrder] Submission error:', error);
         const errorMessage = error.message || 'Submission failed.';
@@ -1923,6 +2061,70 @@ export default function OfflineOrdersIntakePage() {
           </div>
         </section>
 
+        {/* 支付信息 - PRD v2.0 */}
+        <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
+          <h3 className="text-xl font-semibold text-gray-900 m-0 mb-4">{t('paymentInfo') || '支付信息'}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('paymentMethod') || '支付方式'}</span>
+              <select
+                value={formState.paymentMethod}
+                onChange={(e) => setField('paymentMethod', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              >
+                <option value="">{t('selectForPayment') || '选择支付方式'}</option>
+                <option value="Cash">Cash</option>
+                <option value="Debit Card">Debit Card</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="E-Transfer">E-Transfer</option>
+                <option value="Check">Check</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('referenceNumber') || '参考号'}</span>
+              <input
+                type="text"
+                value={formState.referenceNumber}
+                onChange={(e) => setField('referenceNumber', e.target.value)}
+                placeholder={t('referencePlaceholder') || 'Reference # / Check #'}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-sm font-medium text-gray-700 mb-2">{t('depositAmount') || '定金金额'}</span>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formState.depositAmount > 0 ? formState.depositAmount : ''}
+                  onChange={(e) => setField('depositAmount', parseFloat(e.target.value) || 0)}
+                  className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+              </div>
+            </label>
+
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">{t('totalAmount') || '总金额'}:</span>
+                <span className="text-base font-medium">${calculateTotalWithTax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-600">{t('deposit') || '定金'}:</span>
+                <span className="text-base font-medium text-green-600">-${formState.depositAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                <span className="text-sm font-bold text-gray-900">{t('balanceDue') || '剩余应付'}:</span>
+                <span className="text-lg font-bold text-blue-600">${Math.max(0, calculateTotalWithTax - formState.depositAmount).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Invoice功能 */}
         <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
           <label className="inline-flex items-center gap-3 cursor-pointer mb-4">
@@ -2394,6 +2596,27 @@ export default function OfflineOrdersIntakePage() {
               </div>
             </div>
 
+            {/* 定金和剩余应付信息（如果已填写定金） */}
+            {formState.depositAmount > 0 && (
+              <div className="mb-4 p-5 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="text-base font-semibold text-gray-900 m-0 mb-3">支付信息</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">总金额：</span>
+                    <span className="font-medium text-green-600">${calculateTotalWithTax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">定金：</span>
+                    <span className="font-medium text-green-600">-${formState.depositAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-green-200">
+                    <span className="text-sm font-bold text-gray-900">剩余应付：</span>
+                    <span className="text-lg font-bold text-blue-600">${Math.max(0, calculateTotalWithTax - formState.depositAmount).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <BillingDetails
               productItems={formState.productItems}
               colorGroupsByProduct={formState.colorGroupsByProduct}
@@ -2450,26 +2673,35 @@ export default function OfflineOrdersIntakePage() {
           {isClient && (
             <>
               <p className="text-xs uppercase tracking-wider text-yellow-900 mb-2">{t('heroTitle')}</p>
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{t('heroSubtitle')}</h1>
-              <p className="text-gray-700">{t('heroDescription')}</p>
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                {isEditMode ? '编辑订单' : t('heroSubtitle')}
+              </h1>
+              <p className="text-gray-700">
+                {isEditMode ? `正在编辑订单：${editOrderData?.orderCode || editId || ''}` : t('heroDescription')}
+              </p>
             </>
           )}
         </div>
       </header>
 
       <main className="max-w-[1400px] mx-auto -mt-8 mb-10 px-6 relative z-10"> {/* 降低main区域的z-index，避免遮挡下拉菜单 */}
-        <form className="bg-white rounded-2xl p-8 shadow-xl grid gap-8" onSubmit={handleSubmit}>
-          {status.type !== 'idle' && (
-            <div
-              className={`rounded-lg px-4 py-3 ${status.type === 'success'
-                ? 'bg-green-50 text-green-800 border border-green-200'
-                : 'bg-red-50 text-red-800 border border-red-200'
-                }`}
-              role="status"
-            >
-              {status.message}
-            </div>
-          )}
+        {loadingEditData ? (
+          <div className="bg-white rounded-2xl p-8 shadow-xl text-center">
+            <p className="text-gray-600">正在加载订单数据...</p>
+          </div>
+        ) : (
+          <form className="bg-white rounded-2xl p-8 shadow-xl grid gap-8" onSubmit={handleSubmit}>
+            {status.type !== 'idle' && (
+              <div
+                className={`rounded-lg px-4 py-3 ${status.type === 'success'
+                  ? 'bg-green-50 text-green-800 border border-green-200'
+                  : 'bg-red-50 text-red-800 border border-red-200'
+                  }`}
+                role="status"
+              >
+                {status.message}
+              </div>
+            )}
 
           {/* 订单编号显示（所有步骤可见）- 使用 Tailwind */}
           {/* 只在客户端显示订单编号，避免 hydration 错误 */}
@@ -2564,78 +2796,92 @@ export default function OfflineOrdersIntakePage() {
           {/* 使用 grid 布局确保提交按钮真正居中 */}
           {/* 修复：使用绝对定位确保提交按钮真正居中 */}
           {isClient && (
-            <div className={`pt-6 border-t border-gray-200 relative ${currentStep === STEPS.length
-              ? 'grid grid-cols-3 items-center gap-3'
+            <div className={`pt-6 border-t border-gray-200 ${currentStep === STEPS.length
+              ? 'flex justify-center items-center gap-[50px]'
               : 'flex justify-between items-center gap-3'
               }`}>
-              {/* 左侧：保存草稿按钮 */}
-              <div className={currentStep === STEPS.length ? 'flex justify-start' : ''}>
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={saveDraft}
-                  disabled={isSubmitting || isSavingDraft}
-                >
-                  {isSavingDraft ? t('saving') : t('saveDraft')}
-                </button>
-              </div>
 
-              {/* 中间：提交订单按钮（仅在第3步显示，使用绝对定位居中） */}
+              {/* Case 1: Final Step (Last Step) */}
               {currentStep === STEPS.length && (
-                <div className="absolute left-1/2 transform -translate-x-1/2">
-                  <button
-                    ref={submitButtonRef}
-                    type="submit"
-                    onClick={() => {
-                      // 标记这是按钮点击触发的提交
-                      isSubmittingFromButtonRef.current = true;
-                      console.log('[OfflineOrder] Submit button clicked, setting flag');
-                    }}
-                    className="px-8 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? t('submitting') : t('submitOrder')}
-                  </button>
-                </div>
-              )}
-
-              {/* 右侧：上一步和下一步按钮（仅在前两步显示） */}
-              {currentStep < STEPS.length && (
-                <div className="flex gap-3 justify-end">
+                <>
+                  {/* 1. Previous Step Button */}
                   {currentStep > 1 && (
                     <button
                       type="button"
-                      className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                      className="px-8 py-2 rounded-full font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors shadow-sm min-w-[120px]"
                       onClick={goToPreviousStep}
                     >
                       {t('previousStep')}
                     </button>
                   )}
+
+                  {/* 2. Save Draft Button */}
                   <button
                     type="button"
-                    className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
-                    onClick={goToNextStep}
+                    className="px-8 py-2 rounded-full font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed min-w-[120px]"
+                    onClick={saveDraft}
+                    disabled={isSubmitting || isSavingDraft}
                   >
-                    {t('nextStep')}
+                    {isSavingDraft ? t('saving') : t('saveDraft')}
                   </button>
-                </div>
+
+                  {/* 3. Submit Button */}
+                  <button
+                    ref={submitButtonRef}
+                    type="submit"
+                    onClick={() => {
+                      // Mark as submitted by button
+                      isSubmittingFromButtonRef.current = true;
+                      console.log('[OfflineOrder] Submit button clicked, setting flag');
+                    }}
+                    className="px-8 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md disabled:opacity-60 disabled:cursor-not-allowed min-w-[160px]"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (isEditMode ? '更新中...' : t('submitting')) : (isEditMode ? '更新订单' : t('submitOrder'))}
+                  </button>
+                </>
               )}
 
-              {/* 右侧：上一步按钮（仅在第3步显示，与提交按钮配合） */}
-              {currentStep === STEPS.length && currentStep > 1 && (
-                <div className="flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
-                    onClick={goToPreviousStep}
-                  >
-                    {t('previousStep')}
-                  </button>
-                </div>
+              {/* Case 2: Intermediate Steps (Not Last Step) */}
+              {currentStep < STEPS.length && (
+                <>
+                  {/* Left: Save Draft (or Empty if we want to keep it consistent? User only specified last step. Keeping existing logic for prev steps but cleanup) */}
+                  <div className="flex justify-start">
+                    <button
+                      type="button"
+                      className="px-6 py-2 rounded-lg font-semibold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={saveDraft}
+                      disabled={isSubmitting || isSavingDraft}
+                    >
+                      {isSavingDraft ? t('saving') : t('saveDraft')}
+                    </button>
+                  </div>
+
+                  {/* Right: Navigation */}
+                  <div className="flex gap-3 justify-end">
+                    {currentStep > 1 && (
+                      <button
+                        type="button"
+                        className="px-6 py-2 rounded-lg font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                        onClick={goToPreviousStep}
+                      >
+                        {t('previousStep')}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="px-6 py-2 rounded-full font-semibold bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
+                      onClick={goToNextStep}
+                    >
+                      {t('nextStep')}
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           )}
         </form>
+        )}
       </main>
     </div>
   );

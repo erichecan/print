@@ -465,8 +465,9 @@ model OfflineOrder {
   updatedAt           DateTime                   @updatedAt @map("updated_at")
   dst_file_fee        Decimal?                   @db.Decimal(10, 2)
   order_notes         String?
-  payment_method      String?
-  reference_number    String?
+  payment_method      String?                    @map("payment_method")
+  reference_number    String?                    @map("reference_number")
+  deposit_amount      Decimal?                   @map("deposit_amount") @db.Decimal(10, 2)
   assets              OfflineOrderAsset[]
   histories           OfflineOrderStageHistory[]
   productionWorkOrder ProductionWorkOrder?

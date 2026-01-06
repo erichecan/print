@@ -124,9 +124,9 @@ const getStageConfig = async () => {
 
     return stages;
   } catch (error) {
-// 如果查询失败，记录错误并返回空数组（将使用默认阶段）
-    logger.warn('[offlineWorkflowService] Failed to get stage config from database:', error?.message);
-    return [];
+    // 如果查询失败，记录错误并返回默认阶段配置，确保前端能正常渲染
+    logger.warn('[offlineWorkflowService] Failed to get stage config from database, using defaults:', error?.message);
+    return DEFAULT_STAGE_CONFIG;
   }
 };
 
@@ -164,15 +164,15 @@ const findStageByKey = async (stageKey) => {
 const getInitialStage = async () => {
   try {
     const stages = await getStageConfig();
-// 确保始终返回有效的阶段对象
+    // 确保始终返回有效的阶段对象
     if (stages && stages.length > 0) {
       return stages[0];
     }
   } catch (error) {
-// 如果获取阶段配置失败，返回默认阶段
+    // 如果获取阶段配置失败，返回默认阶段
     logger.warn('[offlineWorkflowService] Failed to get stage config, using default:', error?.message);
   }
-// 返回默认阶段，确保永远不会返回 undefined
+  // 返回默认阶段，确保永远不会返回 undefined
   return DEFAULT_STAGE_CONFIG[0];
 };
 
