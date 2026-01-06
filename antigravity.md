@@ -67,7 +67,47 @@
 4.  **环境隔离问题**：
     -   前端构建时注入的环境变量 (`NEXT_PUBLIC_*`) 与运行时 Secret 不一致。
 
-5.  **imageHelper.js 中 req 对象无效导致 500 错误** (2026-01-06 修复):
+5.  **失败的迁移阻止后续迁移执行** (2026-01-06 发现并修复):
+    -   **现象**：生产环境持续出现 500 错误，即使代码修复已部署。
+    -   **根因分析**：
+        -   迁移 `20250131_add_color_size_overrides` 在 2026-01-06 08:08:54 开始执行但失败。
+        -   Prisma 检测到失败的迁移后，会阻止所有后续迁移的执行。
+        -   错误信息：`migrate found failed migrations in the target database, new migrations will not be applied`。
+        -   由于 `allowFailure: true`，服务器继续启动，但数据库 Schema 与代码不匹配，导致 500 错误。
+    -   **影响范围**：
+        -   所有需要数据库查询的接口都可能返回 500。
+        -   新功能无法使用（因为 Schema 变更未应用）。
+    -   **解决方案**：
+        1.  **使用 prisma migrate resolve**：标记失败的迁移为已应用或回滚。
+        2.  **直接 SQL 方式**：使用 `scripts/resolve-migration-direct-sql.sql` 直接更新迁移表。
+        3.  **API 端点方式**：调用 `POST /api/admin-seed/resolve-migration` 端点。
+        4.  **Cloud Run Job 方式**：使用 `scripts/resolve-failed-migration-20250131.sh`。
+    -   **修复步骤**：
+        ```bash
+        # 方法 1: 使用 API 端点（推荐）
+        curl -X POST https://printngoplus.com/api/admin-seed/resolve-migration \
+          -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"migrationName": "20250131_add_color_size_overrides", "action": "applied"}'
+        
+        # 方法 2: 使用 Cloud Run Job
+        ./scripts/resolve-failed-migration-20250131.sh
+        
+        # 方法 3: 直接执行 SQL（需要数据库访问）
+        psql $DATABASE_URL -f scripts/resolve-migration-direct-sql.sql
+        ```
+    -   **修复文件**：
+        -   `scripts/resolve-failed-migration-20250131.sh` - Cloud Run Job 脚本
+        -   `scripts/resolve-migration-direct-sql.sql` - 直接 SQL 脚本
+        -   `scripts/resolve-migration-via-api.sh` - API 调用脚本
+        -   `backend/src/routes/admin-seed.js` - 新增 resolve-migration 端点
+    -   **修复时间**：2026-01-06T23:20:00.000Z
+    -   **经验教训**：
+        -   失败的迁移必须及时解决，否则会阻止所有后续迁移。
+        -   在生产环境部署前，应该检查迁移状态。
+        -   考虑在部署脚本中添加迁移状态检查步骤。
+
+6.  **imageHelper.js 中 req 对象无效导致 500 错误** (2026-01-06 修复):
     -   **现象**：反复出现的 500 错误，涉及 `/api/cart`、`/api/proxy/admin/products`、创建产品等接口。
     -   **根因分析**：
         -   `backend/src/utils/imageHelper.js` 中的 `normalizeImageUrl` 函数在调用 `req.get('host')` 和 `req.protocol` 时，如果 `req` 不是有效的 Express 请求对象（如 `undefined`、`null` 或格式不正确），会抛出错误。
