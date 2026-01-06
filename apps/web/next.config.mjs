@@ -255,8 +255,9 @@ const nextConfig = {
         destination: `${apiUrl}/auth/me`,
       },
       // [2026-01-05] Add generic proxy for size-fees and other new endpoints
+      // 修复：排除 /api/proxy/* 路径，这些路径应该通过 Next.js API 路由处理器处理
       {
-        source: '/api/:path*',
+        source: '/api/:path((?!proxy).)*',
         destination: `${apiUrl}/api/:path*`,
       },
     ];

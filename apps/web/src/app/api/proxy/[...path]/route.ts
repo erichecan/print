@@ -174,9 +174,9 @@ async function fetchWithRetry(
  */
 async function handleProxyRequest(
   request: NextRequest,
-  context: { params: { path: string[] } }
+  context: { params: Promise<{ path: string[] }> | { path: string[] } }
 ) {
-  // 修复：Next.js 14.2.33 使用同步对象，直接使用 params
+  // 修复：Next.js 15 中 params 可能是 Promise，需要 await
   // 生成 traceId 用于请求追踪
   const timestamp = new Date().toISOString();
   const traceId = generateTraceId();
@@ -187,14 +187,14 @@ async function handleProxyRequest(
     traceId,
     url: request.nextUrl.pathname,
     method: request.method,
-    params: context.params,
-    path: context.params?.path,
+    paramsIsPromise: context.params instanceof Promise,
   });
 
   let params: { path: string[] };
   try {
-    // Next.js 14.2.33 使用同步对象，直接使用 params
-    params = context.params;
+    // 修复：Next.js 15 中 params 可能是 Promise，需要 await
+    // 处理 params 可能是 Promise 的情况
+    params = context.params instanceof Promise ? await context.params : context.params;
 
     // 验证 params 结构
     if (!params || typeof params !== 'object' || !('path' in params)) {
@@ -246,15 +246,33 @@ async function handleProxyRequest(
     }
 
     // 如果 pathSegments 为空，尝试从 URL 中提取
+    // 修复：确保正确去除 /api/proxy 前缀
     if (pathSegments.length === 0) {
       const urlPath = request.nextUrl.pathname;
       const match = urlPath.match(/^\/api\/proxy\/(.+)$/);
       if (match && match[1]) {
         pathSegments = match[1].split('/').filter(Boolean);
+      } else {
+        // 如果匹配失败，尝试直接使用路径（去除 /api/proxy 前缀）
+        if (urlPath.startsWith('/api/proxy/')) {
+          pathSegments = urlPath.replace(/^\/api\/proxy\//, '').split('/').filter(Boolean);
+        }
       }
     }
 
-    const backendPath = pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+    // 确保 backendPath 不包含 /api/proxy 前缀
+    let backendPath = pathSegments.length > 0 ? `/${pathSegments.join('/')}` : '/';
+    
+    // 安全检查：确保 backendPath 不包含 /api/proxy
+    if (backendPath.includes('/api/proxy')) {
+      console.error('[API Proxy] ⚠️ WARNING: backendPath contains /api/proxy, stripping it', {
+        timestamp,
+        originalBackendPath: backendPath,
+        pathSegments,
+      });
+      const cleanedSegments = backendPath.replace(/^\/api\/proxy\//, '').split('/').filter(Boolean);
+      backendPath = cleanedSegments.length > 0 ? `/${cleanedSegments.join('/')}` : '/';
+    }
 
     // 增强日志：记录路径解析过程
     console.log('[API Proxy] 📍 Path Resolution', {
@@ -811,10 +829,9 @@ async function handleProxyRequest(
 
 // 导出所有 HTTP 方法处理器
 // 修复：兼容 Next.js 14 和 15 的参数类型定义
-// 修复：Next.js 14.2.33 使用同步对象，直接使用 { params: { path: string[] } }
-// 注意：Next.js 15 使用 Promise，但当前版本是 14.2.33，使用同步对象
+// Next.js 15: params 可能是 Promise，需要 await
 type RouteContext = {
-  params: { path: string[] };
+  params: Promise<{ path: string[] }> | { path: string[] };
 };
 
 export async function GET(
