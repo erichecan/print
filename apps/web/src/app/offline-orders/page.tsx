@@ -478,7 +478,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             email: order.contact?.email || '',
             phone: order.contact?.phone || '',
             company: order.contact?.company || '',
-            dueDate: order.deliveryDate || order.dueDate || '',
+            dueDate: order.deliveryDate || '',
             requiresInvoice: config.requiresInvoice || false,
             invoiceInfo: config.invoiceInfo || prev.invoiceInfo,
             depositAmount: config.depositAmount || 0,
