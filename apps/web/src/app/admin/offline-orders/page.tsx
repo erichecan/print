@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState, FormEvent, ChangeEvent, useEffect, DragEvent as ReactDragEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import useSWR from 'swr';
 import {
@@ -39,9 +40,18 @@ const BOARD_KEY = 'admin-offline-orders-board';
 
 export default function AdminOfflineOrdersPage() {
   const { t, locale } = useAdminI18n(); // 国际化支持
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState('');
   const [rushFilter, setRushFilter] = useState<'all' | 'rush' | 'standard'>('all');
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  // Read ?id=... from URL to open side panel automatically
+  useEffect(() => {
+    const idParam = searchParams?.get('id');
+    if (idParam && idParam !== selectedOrderId) {
+      setSelectedOrderId(idParam);
+    }
+  }, [searchParams, selectedOrderId]);
   const [noteDraft, setNoteDraft] = useState('');
   const [stageDraft, setStageDraft] = useState('');
   const [productionStatusDraft, setProductionStatusDraft] = useState('');

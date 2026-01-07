@@ -397,36 +397,28 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
             ? parseNumber(values.weight)
             : undefined,
         variants: values.variants
-          // Only filter completely empty rows if needed, but let's be permissive
-          ?.map((variant) => ({
-            ...variant,
-            // Auto-generate SKU if missing
-            sku: variant.sku || `${values.sku || 'SKU'}-${variant.color || 'CO'}-${variant.size || 'SZ'}`.replace(/[^a-zA-Z0-9-]/g, '-').toUpperCase(),
-            stockQuantity:
-              variant.stockQuantity !== undefined
-                ? parseNumber(variant.stockQuantity)
-                : 0,
-            priceAdjustment:
-              variant.priceAdjustment !== undefined
-                ? parseNumber(variant.priceAdjustment)
-                : 0,
-          })),
-        // Filter out temporary file placeholders, keep only valid URLs
+          ?.map((variant) => {
+            const { id, ...vRest } = variant as any;
+            return {
+              ...(mode === 'create' ? vRest : variant),
+              sku: (variant.sku && !variant.sku.startsWith('SKU-'))
+                ? variant.sku.toUpperCase()
+                : (values.sku ? `${values.sku}-${variant.color || 'CO'}-${variant.size || 'SZ'}`.replace(/[^a-zA-Z0-9-]/g, '-').toUpperCase() : ''),
+              stockQuantity: parseNumber(variant.stockQuantity || 0),
+              priceAdjustment: parseNumber(variant.priceAdjustment || 0),
+            };
+          }),
         images: values.images
-          ?.filter((image, index) => {
-            // If it's a file placeholder (starts with file://), don't include in payload
-            if (image.url && image.url.startsWith('file://')) {
-              return false; // Don't include in initial payload, will upload after creation
-            }
-            return image.url && (image.url.startsWith('http') || image.url.startsWith('/')); // Only include valid URLs
-          })
-          .map((image, index) => ({
-            ...image,
-            sortOrder:
-              image.sortOrder !== undefined
-                ? parseNumber(image.sortOrder)
-                : index,
-          })),
+          ?.filter(img => img.url && !img.url.startsWith('file://'))
+          .map((image, index) => {
+            const { id, ...imgRest } = image as any;
+            return {
+              ...(mode === 'create' ? imgRest : image),
+              sortOrder: parseNumber(image.sortOrder !== undefined ? image.sortOrder : index),
+            };
+          }),
+        // Ensure collections are unique to avoid P2002 on join table
+        collections: Array.from(new Set(values.collections || [])),
       };
 
       const response =
@@ -435,7 +427,6 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
           : await adminProductsApi.update(product!.id, payload);
 
       // Upload any pending files after product creation/update
-      // FIX: Also enable for 'edit' mode to handle race conditions or missed uploads
       const hasPendingFiles = Object.keys(fileRefs.current).length > 0;
       if (response.id && hasPendingFiles) {
         const uploadPromises: Promise<void>[] = [];
@@ -450,6 +441,7 @@ export function ProductForm({ mode, product, onSuccess }: ProductFormProps) {
             );
           }
         });
+
         if (uploadPromises.length > 0) {
           await Promise.all(uploadPromises);
           // Clear file refs after upload

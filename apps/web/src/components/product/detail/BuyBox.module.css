@@ -164,11 +164,12 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 3px solid transparent;
+  border: 1px solid #e5e7eb;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  padding: 0;
+  padding: 3px;
+  background-clip: content-box;
 }
 
 .buyboxColor:hover:not(.isUnavailable) {

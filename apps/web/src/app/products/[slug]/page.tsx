@@ -11,11 +11,11 @@ async function getProductForSEO(slug: string) {
     const response = await fetch(`${API_BASE_URL}/products/${slug}`, {
       next: { revalidate: 3600 }, // 缓存 1 小时
     });
-    
+
     if (!response.ok) {
       return null;
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('[Product SEO] Error fetching product:', error);
@@ -27,13 +27,13 @@ async function getProductForSEO(slug: string) {
 // 优化为从 API 获取实际产品信息 for Issue #154
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const product = await getProductForSEO(params.slug);
-  
+
   if (product) {
     const productName = product.name || params.slug.replace(/-/g, ' ');
     const description = product.description || `Custom ${productName} - Design your own custom apparel. Free shipping, satisfaction guaranteed.`;
     const image = product.images?.[0]?.url || product.imageUrl || 'https://suvernireplus.com/assets/hero/hero-card-tee.jpg';
     const fullImageUrl = image.startsWith('http') ? image : `https://suvernireplus.com${image}`;
-    
+
     return generateSEOMetadata({
       title: productName,
       description: description.substring(0, 160), // 限制描述长度
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       type: 'article',
     });
   }
-  
+
   // 回退到默认元数据
   return generateSEOMetadata({
     title: `商品详情 - ${params.slug.replace(/-/g, ' ')}`,
@@ -66,7 +66,13 @@ export async function generateStaticParams() {
   return [];
 }
 
+import { Suspense } from 'react';
+
 export default function ProductDetailPage({ params }: { params: { slug: string } }) {
   void params; // 满足静态导出要求，实际 slug 由组件内部解析
-  return <ProductDetail />;
+  return (
+    <Suspense fallback={<div className="container mx-auto p-8 text-center">Loading product...</div>}>
+      <ProductDetail />
+    </Suspense>
+  );
 }

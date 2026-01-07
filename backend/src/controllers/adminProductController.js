@@ -609,7 +609,9 @@ exports.createProduct = async (req, res) => {
                   colorHex: variant.colorHex ? variant.colorHex.trim() : null,
                   colorDisplayName: variant.colorDisplayName ? variant.colorDisplayName.trim() : null,
                   size: variant.size.trim() || 'ONE',
-                  sku: variant.sku.trim(),
+                  sku: (variant.sku && !variant.sku.trim().toUpperCase().startsWith('SKU-'))
+                    ? variant.sku.trim().toUpperCase()
+                    : `${(sku || 'SKU').trim().toUpperCase()}-${(variant.color || 'CO').trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()}-${(variant.size || 'SZ').trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()}`,
                   priceAdjustment: variant.priceAdjustment
                     ? convertToDecimal(variant.priceAdjustment)
                     : new Prisma.Decimal(0),
@@ -749,9 +751,11 @@ exports.createProduct = async (req, res) => {
     console.error('Request body:', JSON.stringify(safeBody, null, 2));
 
     if (error.code === 'P2002') {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(', ') : (error.meta?.target || 'unknown field');
       return res.status(409).json({
-        error: 'SKU or slug already exists',
-        details: error.meta?.target || 'Unknown field',
+        error: `Unique constraint violation: [${target}] already exists`,
+        details: target,
+        meta: error.meta,
       });
     }
 
@@ -977,7 +981,9 @@ exports.updateProduct = async (req, res) => {
             colorHex: variant.colorHex || null,
             colorDisplayName: variant.colorDisplayName ? variant.colorDisplayName.trim() : null,
             size: variant.size || 'ONE',
-            sku: variant.sku,
+            sku: (variant.sku && !variant.sku.trim().toUpperCase().startsWith('SKU-'))
+              ? variant.sku.trim().toUpperCase()
+              : `${(sku || existing.sku || 'SKU').trim().toUpperCase()}-${(variant.color || 'CO').trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()}-${(variant.size || 'SZ').trim().replace(/[^A-Z0-9]/gi, '').toUpperCase()}`,
             priceAdjustment: convertToDecimal(variant.priceAdjustment) || new Prisma.Decimal(0),
             stockQuantity: typeof variant.stockQuantity === 'number' ? Math.max(0, variant.stockQuantity) : 0,
             imageUrl: denormalizeImageUrl(variant.imageUrl, req) || null,
@@ -1162,9 +1168,11 @@ exports.updateProduct = async (req, res) => {
       productId: req.params?.id,
     });
     if (error.code === 'P2002') {
+      const target = Array.isArray(error.meta?.target) ? error.meta.target.join(', ') : (error.meta?.target || 'unknown field');
       return res.status(409).json({
-        error: 'Duplicate SKU or slug',
-        message: error.meta?.target ? `Duplicate value for ${error.meta.target}` : undefined,
+        error: `Unique constraint violation: [${target}] already exists`,
+        details: target,
+        meta: error.meta,
       });
     }
     return res.status(500).json({

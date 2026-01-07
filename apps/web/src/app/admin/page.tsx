@@ -170,7 +170,7 @@ export default function AdminDashboardPage() {
                 <tr key={order.compositeId} data-entity="order" data-id={order.id}>
                   <td>
                     <Link
-                      href={order.type === 'offline' ? `/admin/offline-orders/${order.id}` : `/admin/orders/${order.id}`}
+                      href={order.type === 'offline' ? `/admin/offline-orders?id=${order.id}` : `/admin/orders/${order.id}`}
                       style={{ color: 'var(--color-primary)' }}
                       data-action="view-order"
                       data-field="orderNumber"

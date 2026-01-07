@@ -107,7 +107,7 @@ export function ProductVariantsEditor({
             return;
         }
 
-        const currentSku = watch('sku') || 'SKU';
+        const productSku = watch('sku');
         const newVariants = [];
 
         for (const color of colors) {
@@ -115,8 +115,12 @@ export function ProductVariantsEditor({
                 // Try to find existing variant to preserve price/stock
                 const existing = fields.find((f: any) => f.color === color && f.size === size);
 
+                const skuToUse = (existing?.sku && !existing?.sku.startsWith('SKU-'))
+                    ? existing.sku
+                    : (productSku ? `${productSku}-${color || 'CO'}-${size || 'SZ'}`.replace(/[^a-zA-Z0-9-]/g, '-').toUpperCase() : '');
+
                 newVariants.push({
-                    sku: existing?.sku || `${currentSku}-${color.toUpperCase()}-${size.toUpperCase()}`.replace(/[^A-Z0-9-]/g, ''),
+                    sku: skuToUse,
                     color,
                     size,
                     stockQuantity: existing ? existing.stockQuantity : 0,
