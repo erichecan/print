@@ -2766,6 +2766,16 @@ export interface ProductionWorkOrderPayload {
 
 // Admin Offline Orders API aligned with backend routes
 export const adminOfflineOrdersApi = {
+  create: (payload: FormData) =>
+    api<{ success: boolean; order: AdminOfflineOrderDetail }>('/offline-orders', {
+      method: 'POST',
+      body: payload,
+    }),
+  update: (id: string, payload: FormData) =>
+    api<{ success: boolean; order: AdminOfflineOrderDetail }>(`/admin/offline-orders/${id}`, {
+      method: 'PATCH',
+      body: payload,
+    }),
   list: (params?: { stageKey?: string; search?: string; rush?: boolean; status?: string }) => {
     const query = new URLSearchParams();
     if (params?.stageKey) query.append('stageKey', params.stageKey);

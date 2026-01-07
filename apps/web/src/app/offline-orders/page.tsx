@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'; // 使用Portal将下拉菜单渲染�
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link'; // 添加 Link 用于导航
 import { API_BASE_URL } from '@/lib/api-config'; // 使用统一 API 基址，避免指向 Next.js 自身路由
-import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct, authenticatedFetch, salesOrdersApi, SalesOfflineOrderDetail } from '@/lib/api'; // 简化的产品 API
+import { categoriesApi, Category, offlineOrderProductApi, OfflineOrderConfig, simpleOfflineOrderProductApi, SimpleOfflineOrderProduct, authenticatedFetch, salesOrdersApi, SalesOfflineOrderDetail, adminOfflineOrdersApi } from '@/lib/api'; // 简化的产品 API
 import useSWR from 'swr'; // 使用 SWR 获取分类数据
 import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders'; // 引入翻译
 import { OrderItemColorGroup } from '@/types/order'; // 导入颜色组类型
@@ -1513,37 +1513,12 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         // PRD v2.0: 添加文件到 payload（使用 files state，不是 formState.files）
         files.forEach((file) => payload.append('assets', file, file.name));
 
-        // 根据编辑模式选择API端点和方法
-        const apiUrl = isEditMode && editId
-          ? `${API_BASE_URL}/admin/offline-orders/${editId}`
-          : `${API_BASE_URL}/offline-orders`;
-        const method = isEditMode && editId ? 'PATCH' : 'POST';
-
-        // 指向后端 API_BASE_URL，避免 Netlify 返回 HTML 404
-        const response = await fetch(apiUrl, {
-          method,
-          body: payload,
-          credentials: 'include',
-          headers: {
-            // 对于PATCH请求，需要明确指定Content-Type，让浏览器自动设置boundary
-          },
-        });
-        // 改进错误处理，显示更详细的错误信息
+        // 使用统一的 adminOfflineOrdersApi 进行提交，它会自动处理 Token 和 credentials
         let data;
-        try {
-          data = await response.json();
-        } catch (parseError) {
-          throw new Error(`服务器响应格式错误 (${response.status}): ${response.statusText}`);
-        }
-
-        if (!response.ok) {
-          // 尝试从错误响应中提取详细信息
-          const errorMessage = data?.message || data?.error || 'Failed to submit offline order';
-          const errorDetails = data?.details || data?.missingFields?.join(', ') || '';
-          const fullErrorMessage = errorDetails
-            ? `${errorMessage}${errorDetails ? ` (${errorDetails})` : ''}`
-            : errorMessage;
-          throw new Error(fullErrorMessage);
+        if (isEditMode && editId) {
+          data = await adminOfflineOrdersApi.update(editId, payload);
+        } else {
+          data = await adminOfflineOrdersApi.create(payload);
         }
         const finalOrderCode = data?.order?.orderCode || formState.orderCode;
         setStatus({
