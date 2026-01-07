@@ -16,8 +16,11 @@ router.get('/config/stages', authenticate, authorizeRoles('SALES', 'SALES_MANAGE
 // PUT /config/stages 仅允许 ADMIN 访问
 router.put('/config/stages', requireAdmin, offlineOrderController.updateOfflineWorkflowStages);
 
-// 其他接口需要 ADMIN 权限
-router.use(requireAdmin);
+// Base authentication for all following routes
+router.use(authenticate);
+
+// List of roles allowed for general offline order management
+const ORDER_MANAGEMENT_ROLES = ['SALES', 'SALES_MANAGER', 'ADMIN'];
 
 const uploadRoot = ensureOfflineUploadRoot();
 
@@ -54,30 +57,31 @@ const adminUpload = multer({
 
 // 注意：以下路由都会应用 requireAdmin 中间件（通过上面的 router.use）
 
-router.get('/metrics/summary', offlineOrderController.getOfflineOrderMetrics);
+router.get('/metrics/summary', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.getOfflineOrderMetrics);
 
-router.get('/', offlineOrderController.listOfflineOrders);
+router.get('/', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.listOfflineOrders);
 
-router.get('/:id', offlineOrderController.getOfflineOrderById);
+router.get('/:id', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.getOfflineOrderById);
 
-router.patch('/:id/stage', offlineOrderController.updateOfflineOrderStage);
+router.patch('/:id/stage', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.updateOfflineOrderStage);
 
 // 修复：PATCH /:id 需要支持 FormData（用于更新订单时上传文件）
 // 使用 multer 中间件处理可能的文件上传
-router.patch('/:id', adminUpload.array('assets', parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)), offlineOrderController.updateOfflineOrder);
+router.patch('/:id', authorizeRoles(...ORDER_MANAGEMENT_ROLES), adminUpload.array('assets', parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)), offlineOrderController.updateOfflineOrder);
 
-router.post('/:id/notes', offlineOrderController.addOfflineOrderNote);
+router.post('/:id/notes', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.addOfflineOrderNote);
 
 router.post(
   '/:id/assets',
+  authorizeRoles(...ORDER_MANAGEMENT_ROLES),
   adminUpload.array('assets', parseInt(process.env.OFFLINE_ORDER_MAX_FILES || '10', 10)),
   offlineOrderController.uploadOfflineOrderAssets
 );
 
-router.post('/:id/production', offlineOrderController.createOrUpdateProductionWorkOrder);
+router.post('/:id/production', authorizeRoles(...ORDER_MANAGEMENT_ROLES), offlineOrderController.createOrUpdateProductionWorkOrder);
 
-// 删除订单
-router.delete('/:id', offlineOrderController.deleteOfflineOrder);
+// 删除订单 - 仅限 ADMIN
+router.delete('/:id', authorizeRoles('ADMIN'), offlineOrderController.deleteOfflineOrder);
 
 module.exports = router;
 

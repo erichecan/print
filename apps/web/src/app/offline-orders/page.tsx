@@ -1515,7 +1515,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
         // 根据编辑模式选择API端点和方法
         const apiUrl = isEditMode && editId
-          ? `${API_BASE_URL} /admin/offline - orders / ${editId} `
+          ? `${API_BASE_URL}/admin/offline-orders/${editId}`
           : `${API_BASE_URL}/offline-orders`;
         const method = isEditMode && editId ? 'PATCH' : 'POST';
 
