@@ -1795,6 +1795,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                           largeSizes={largeSizes}
                           isSizeAvailable={isSizeAvailable}
                           colorHex={colorHex}
+                          locale={locale}
                           onUpdate={(updated) => {
                             // 更新颜色组配置
                             setFormState(prev => {
@@ -1969,14 +1970,14 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
         <div className="mt-6 p-5 bg-white border border-gray-200 rounded-xl">
           <label className="block">
             <span className="block text-sm font-medium text-gray-700 mb-2">
-              {t('orderNotes') || '订单备注'}
+              {t('orderNotes')}
             </span>
             <textarea
               value={formState.orderNotes}
               onChange={(e) => setFormState(prev => ({ ...prev, orderNotes: e.target.value }))}
               onKeyDown={handleKeyDown}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[100px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              placeholder={t('orderNotesPlaceholder') || '请输入订单备注（可选）...'}
+              placeholder={t('orderNotesPlaceholder')}
             />
           </label>
         </div>
@@ -1990,20 +1991,21 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               productItems={formState.productItems}
               colorGroupsByProduct={formState.colorGroupsByProduct}
               dstFileFee={calculateDstFileFee}
+              locale={locale}
             />
 
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg grid gap-3">
               <div className="flex justify-between items-center text-base">
-                <span>{t('totalQuantity') || '总数量'}：</span>
-                <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items') || '件'}</strong>
+                <span>{t('totalQuantity')}：</span>
+                <strong className="text-lg text-blue-700">{calculateTotalQuantity} {t('items')}</strong>
               </div>
               <div className="flex justify-between items-center text-base">
-                <span>{t('totalAmount') || '总金额'}：</span>
+                <span>{t('totalAmount')}：</span>
                 <strong className="text-xl text-blue-700">${(calculateSubtotal + calculateDstFileFee).toFixed(2)} CAD</strong>
               </div>
               {calculateDstFileFee > 0 && (
                 <div className="flex justify-between items-center text-sm text-blue-600">
-                  <span>(包含 DST File Fee: ${calculateDstFileFee.toFixed(2)})</span>
+                  <span>{t('containingDstFee', { amount: calculateDstFileFee.toFixed(2) })}</span>
                 </div>
               )}
             </div>
@@ -2023,8 +2025,8 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading') || '客户信息'}</h2>
-        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro') || '填写客户信息和Invoice信息（所有字段均为可选）'}</p>
+        <h2 className="text-2xl font-bold text-gray-900 m-0 mb-2">{t('step2Heading')}</h2>
+        <p className="text-gray-600 mb-6 text-sm">{t('step2Intro')}</p>
 
         {/* 客户基本信息 */}
         <section className="mb-8 p-5 bg-white border border-gray-200 rounded-xl">
@@ -2148,15 +2150,15 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
 
             <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">{t('totalAmount') || '总金额'}:</span>
+                <span className="text-sm text-gray-600">{t('totalAmount')}:</span>
                 <span className="text-base font-medium">${calculateTotalWithTax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">{t('deposit') || '定金'}:</span>
+                <span className="text-sm text-gray-600">{t('deposit')}:</span>
                 <span className="text-base font-medium text-green-600">-${formState.depositAmount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-gray-200">
-                <span className="text-sm font-bold text-gray-900">{t('balanceDue') || '剩余应付'}:</span>
+                <span className="text-sm font-bold text-gray-900">{t('balanceDue')}:</span>
                 <span className="text-lg font-bold text-blue-600">${Math.max(0, calculateTotalWithTax - formState.depositAmount).toFixed(2)}</span>
               </div>
             </div>
@@ -2394,6 +2396,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             productItems={formState.productItems}
             colorGroupsByProduct={formState.colorGroupsByProduct}
             dstFileFee={calculateDstFileFee}
+            locale={locale}
           />
         </section>
       </div>
@@ -2660,6 +2663,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               productItems={formState.productItems}
               colorGroupsByProduct={formState.colorGroupsByProduct}
               dstFileFee={calculateDstFileFee}
+              locale={locale}
             />
           </div>
         </div>
@@ -2720,10 +2724,10 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
             <>
               <p className="text-xs uppercase tracking-wider text-yellow-900 mb-2">{t('heroTitle')}</p>
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-                {isEditMode ? '编辑订单' : t('heroSubtitle')}
+                {isEditMode ? t('editOrder') : t('heroSubtitle')}
               </h1>
               <p className="text-gray-700">
-                {isEditMode ? `正在编辑订单：${editOrderData?.orderCode || editId || ''}` : t('heroDescription')}
+                {isEditMode ? t('editingOrder', { orderCode: editOrderData?.orderCode || editId || '' }) : t('heroDescription')}
               </p>
             </>
           )}
@@ -2833,6 +2837,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                   setAddColorModal(null);
                 }}
                 onCancel={() => setAddColorModal(null)}
+                locale={locale}
               />
             )}
 

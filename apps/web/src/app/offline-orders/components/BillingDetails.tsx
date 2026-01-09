@@ -68,8 +68,8 @@ export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee 
                 'left_sleeve': t('positionLeftSleeve'),
                 'right_sleeve': t('positionRightSleeve'),
                 'pocket': t('positionLeftPocket'), // Pocket in detail refers to Left Upper Pocket often
-                'tag_inside': 'Tag Inside',
-                'tag_outside': 'Tag Outside',
+                'tag_inside': t('tag_inside'),
+                'tag_outside': t('tag_outside'),
                 'custom': t('positionOther')
               };
               return positionNames[p.positionKey] || p.positionKey;

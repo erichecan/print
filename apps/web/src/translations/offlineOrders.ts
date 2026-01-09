@@ -161,7 +161,10 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     productSubtotal: 'Product Subtotal',
     totalQuantity: 'Total Quantity',
     totalAmount: 'Total Amount',
-    items: 'item(s)',
+    items: 'pcs',
+    addAnotherColor: 'Add another color',
+    orderNotes: 'Order Notes',
+    orderNotesPlaceholder: 'Enter order notes (optional)...',
 
     // Step 2
     step2Heading: 'Print Location',
@@ -208,6 +211,8 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     pleaseAddProductsFirst: 'Please go back to Step 1 to add products',
     discount: 'Discount (%)',
     discountAmount: 'Discount Amount',
+    deposit: 'Deposit',
+    balanceDue: 'Balance Due',
     total: 'Total',
 
     // Step 4
@@ -266,6 +271,12 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     draftSaved: 'Draft saved locally. Files are not stored.',
     draftRestored: 'Draft restored. Please re-attach files before submitting.',
     errorSaveDraftFailed: 'Failed to save draft locally.',
+    errorNoProducts: 'Please add at least one product',
+    errorEmailFormat: 'Invalid email format',
+    editOrder: 'Edit Order',
+    editingOrder: 'Editing Order: {orderCode}',
+    containingDstFee: '(Inc. DST File Fee: ${amount})',
+    selectForPayment: 'Select payment method',
 
     // Order Detail Page
     projectInfo: 'Project Information',
@@ -331,6 +342,9 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     methodVinyl: 'Vinyl',
     methodOther: 'Other',
     alreadyAdded: '(Added)',
+    tag_inside: 'Tag Inside',
+    tag_outside: 'Tag Outside',
+    noPosition: 'No Position',
     methodLabel: 'Method:',
     dimensionsLabel: 'Dimensions:',
     fileUploaded: '✓ File Uploaded',
@@ -523,6 +537,9 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     totalQuantity: '总数量',
     totalAmount: '总金额',
     items: '件',
+    addAnotherColor: '添加其他颜色',
+    orderNotes: '订单备注',
+    orderNotesPlaceholder: '请输入订单备注（可选）...',
 
     // Step 2
     step2Heading: '印刷位置',
@@ -569,6 +586,8 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     pleaseAddProductsFirst: '请先返回第一步添加产品',
     discount: '折扣 (%)',
     discountAmount: '折扣金额',
+    deposit: '定金',
+    balanceDue: '剩余应付',
     total: '总计',
 
     // Step 4
@@ -627,6 +646,12 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     draftSaved: '草稿已本地保存。文件未存储。',
     draftRestored: '草稿已恢复。请在提交前重新附加文件。',
     errorSaveDraftFailed: '保存草稿失败。',
+    errorNoProducts: '请至少添加一个产品',
+    errorEmailFormat: '邮箱格式不正确',
+    editOrder: '编辑订单',
+    editingOrder: '正在编辑订单：{orderCode}',
+    containingDstFee: '(包含 DST File Fee: ${amount})',
+    selectForPayment: '选择支付方式',
 
     // 订单详情页
     projectInfo: '项目信息',
@@ -692,6 +717,9 @@ export const OFFLINE_ORDERS_TRANSLATIONS: Record<OfflineOrdersLocale, Translatio
     methodVinyl: '胶膜',
     methodOther: '其他',
     alreadyAdded: '(已添加)',
+    tag_inside: '领内标',
+    tag_outside: '领外标',
+    noPosition: '无印刷位置',
     methodLabel: '工艺:',
     dimensionsLabel: '尺寸:',
     fileUploaded: '✓ 已上传文件',
