@@ -26,6 +26,19 @@ export default function SalesOrderDetailPage() {
   const [updatingStage, setUpdatingStage] = useState(false);
   const [stageNote, setStageNote] = useState('');
 
+  // Print Settings State
+  const [showPrintSettings, setShowPrintSettings] = useState(false);
+  const [compactMode, setCompactMode] = useState(true);
+  const [visibleSections, setVisibleSections] = useState({
+    projectInfo: true,
+    productList: true,
+    printPositions: true,
+    pricing: true,
+    billing: true,
+    history: false, // Default hidden for print
+    attachments: true
+  });
+
   // 语言环境状态
   const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
 
@@ -152,16 +165,18 @@ export default function SalesOrderDetailPage() {
     };
   }, [orderId, router]);
 
-  // Auto-print logic
+  // Handle Print Mode
   useEffect(() => {
-    const shouldPrint = searchParams?.get('print') === 'true';
-    if (shouldPrint && !loading && order && !error) {
-      const timer = setTimeout(() => {
-        window.print();
-      }, 500);
-      return () => clearTimeout(timer);
+    const isPrintMode = searchParams?.get('print') === 'true';
+    if (isPrintMode && !loading && order && !error) {
+      setShowPrintSettings(true);
+      // Auto-print is now optional, user triggers it from settings
     }
   }, [searchParams, loading, order, error]);
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const meta = order;
 
@@ -286,7 +301,7 @@ export default function SalesOrderDetailPage() {
     router.push('/offline-orders/sales/orders');
   };
 
-  // 更新订单阶段（直接在选择时更新）
+  // Update order stage
   const handleUpdateStage = async (newStageKey: string) => {
     if (!order || updatingStage) return;
 
@@ -307,7 +322,64 @@ export default function SalesOrderDetailPage() {
   };
 
   return (
-    <div className="order-detail-shell">
+    <div className={`order-detail-shell ${compactMode && showPrintSettings ? 'print-compact-mode' : ''}`}>
+      {/* Print Settings Panel */}
+      {showPrintSettings && (
+        <div className="print:hidden bg-blue-50 border-b border-blue-200 p-4 sticky top-0 z-50 shadow-md mb-4">
+          <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <h3 className="font-bold text-blue-900">Print Options</h3>
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={compactMode}
+                  onChange={(e) => setCompactMode(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Compact Layout (Save Paper)</span>
+              </label>
+            </div>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-700">
+              {Object.entries({
+                projectInfo: 'Project Info',
+                productList: 'Products',
+                printPositions: 'Positions',
+                pricing: 'Pricing',
+                billing: 'Billing',
+                history: 'History'
+              }).map(([key, label]) => (
+                <label key={key} className="flex items-center gap-1 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={visibleSections[key as keyof typeof visibleSections]}
+                    onChange={(e) => setVisibleSections({ ...visibleSections, [key]: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handlePrint}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-semibold shadow-sm flex items-center gap-2"
+              >
+                <span>🖨️ Print Now</span>
+              </button>
+              <button
+                onClick={() => setShowPrintSettings(false)}
+                className="px-3 py-2 text-gray-600 hover:text-gray-800 underline text-sm"
+              >
+                Close Settings
+              </button>
+            </div>
+          </div>
+          {/* Print styles moved to globals.css */}
+        </div>
+      )}
+
       <div className="order-detail-card">
         <header className="order-detail-header print:hidden">
           <button type="button" className="order-detail-back" onClick={handleBack}>
@@ -481,192 +553,197 @@ export default function SalesOrderDetailPage() {
           ) : (
             <div className="order-detail-content">
               {/* 项目信息 */}
-              <section className="order-section">
-                <h2 className="section-title">{t('projectInfo')}</h2>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">{t('projectName')}</span>
-                    <span className="info-value">{meta.projectName}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">{t('primaryProduct')}</span>
-                    <span className="info-value">{meta.primaryProduct || '—'}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">{t('quantity')}</span>
-                    <span className="info-value">{meta.quantity ?? '—'}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">{t('deliveryDate')}</span>
-                    <span className="info-value">
-                      {meta.deliveryDate ? new Date(meta.deliveryDate).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      }) : '—'}
-                    </span>
-                  </div>
-                  {meta!.dst_file_fee && Number(meta!.dst_file_fee) > 0 && (
+              {(!showPrintSettings || visibleSections.projectInfo) && (
+                <section className={`order-section ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
+                  <h2 className="section-title">{t('projectInfo')}</h2>
+                  <div className="info-grid">
                     <div className="info-item">
-                      <span className="info-label">DST File Fee</span>
-                      <span className="info-value">${Number(meta!.dst_file_fee).toFixed(2)} CAD</span>
+                      <span className="info-label">{t('projectName')}</span>
+                      <span className="info-value">{meta.projectName}</span>
                     </div>
-                  )}
-                  {(meta.requiresMockups || meta.requiresProof || meta.rushOrder) && (
-                    <div className="info-item info-item-full">
-                      <span className="info-label">{t('specialRequirements')}</span>
-                      <div className="info-tags">
-                        {meta.requiresMockups && <span className="info-tag tag-mockups">{t('requiresMockups')}</span>}
-                        {meta.requiresProof && <span className="info-tag tag-proof">{t('requiresProof')}</span>}
-                        {meta.rushOrder && <span className="info-tag tag-rush">{t('rushOrder')}</span>}
+                    <div className="info-item">
+                      <span className="info-label">{t('primaryProduct')}</span>
+                      <span className="info-value">{meta.primaryProduct || '—'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">{t('quantity')}</span>
+                      <span className="info-value">{meta.quantity ?? '—'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">{t('deliveryDate')}</span>
+                      <span className="info-value">
+                        {meta.deliveryDate ? new Date(meta.deliveryDate).toLocaleDateString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        }) : '—'}
+                      </span>
+                    </div>
+                    {meta!.dst_file_fee && Number(meta!.dst_file_fee) > 0 && (
+                      <div className="info-item">
+                        <span className="info-label">DST File Fee</span>
+                        <span className="info-value">${Number(meta!.dst_file_fee).toFixed(2)} CAD</span>
                       </div>
-                    </div>
-                  )}
-                  {(config?.artworkNotes || meta.description) && (
-                    <div className="info-item info-item-full">
-                      <span className="info-label">{t('designNotes')}</span>
-                      <div className="info-text">
-                        {config?.artworkNotes || meta.description || '—'}
+                    )}
+                    {(meta.requiresMockups || meta.requiresProof || meta.rushOrder) && (
+                      <div className="info-item info-item-full">
+                        <span className="info-label">{t('specialRequirements')}</span>
+                        <div className="info-tags">
+                          {meta.requiresMockups && <span className="info-tag tag-mockups">{t('requiresMockups')}</span>}
+                          {meta.requiresProof && <span className="info-tag tag-proof">{t('requiresProof')}</span>}
+                          {meta.rushOrder && <span className="info-tag tag-rush">{t('rushOrder')}</span>}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </section>
+                    )}
+                    {(config?.artworkNotes || meta.description) && (
+                      <div className="info-item info-item-full">
+                        <span className="info-label">{t('designNotes')}</span>
+                        <div className="info-text">
+                          {config?.artworkNotes || meta.description || '—'}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
 
               {/* 客户信息 */}
-              <section className="order-section">
-                <h2 className="section-title">{t('customerInfo')}</h2>
-                <div className="info-grid">
-                  <div className="info-item">
-                    <span className="info-label">{t('contactName')}</span>
-                    <span className="info-value">{meta.contact.name}</span>
+              {(!showPrintSettings || visibleSections.projectInfo) && (
+                <section className={`order-section ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
+                  <h2 className="section-title">{t('customerInfo')}</h2>
+                  <div className="info-grid">
+                    <div className="info-item">
+                      <span className="info-label">{t('contactName')}</span>
+                      <span className="info-value">{meta.contact.name}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">{t('company')}</span>
+                      <span className="info-value">{meta.contact.company || '—'}</span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">{t('email')}</span>
+                      <a href={`mailto:${meta.contact.email}`} className="info-value info-link">
+                        {meta.contact.email}
+                      </a>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">{t('phone')}</span>
+                      <a href={`tel:${meta.contact.phone}`} className="info-value info-link">
+                        {meta.contact.phone || '—'}
+                      </a>
+                    </div>
                   </div>
-                  <div className="info-item">
-                    <span className="info-label">{t('company')}</span>
-                    <span className="info-value">{meta.contact.company || '—'}</span>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">{t('email')}</span>
-                    <a href={`mailto:${meta.contact.email}`} className="info-value info-link">
-                      {meta.contact.email}
-                    </a>
-                  </div>
-                  <div className="info-item">
-                    <span className="info-label">{t('phone')}</span>
-                    <a href={`tel:${meta.contact.phone}`} className="info-value info-link">
-                      {meta.contact.phone || '—'}
-                    </a>
-                  </div>
-                </div>
-              </section>
+                </section>
+              )}
 
-              {/* 产品列表 */}
-              {/* 添加产品信息缺失时的友好提示 */}
-              <section className="order-section order-section-wide">
-                <h2 className="section-title">{t('productList')}</h2>
-                {config?.productItems && config.productItems.length > 0 ? (
-                  <div className="products-list">
-                    {config.productItems.map((item) => {
-                      const totals = productTotals[item.id] || { quantity: 0, total: 0 };
-                      // PRD v2.0: 获取该产品的颜色组
-                      const colorGroups = config.colorGroupsByProduct?.[item.id] || [];
+              {/* Product List Section */}
+              {(!showPrintSettings || visibleSections.productList) && (
+                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
+                  <h2 className="section-title">{t('productList')}</h2>
+                  {config?.productItems && config.productItems.length > 0 ? (
+                    <div className="products-list">
+                      {config.productItems.map((item) => {
+                        const totals = productTotals[item.id] || { quantity: 0, total: 0 };
+                        // PRD v2.0: 获取该产品的颜色组
+                        const colorGroups = config.colorGroupsByProduct?.[item.id] || [];
 
-                      return (
-                        <div key={item.id} className="product-card">
-                          <div className="product-header">
-                            <h3 className="product-name">{item.categoryName || meta?.primaryProduct || t('unknownProduct')}</h3>
-                            <div className="product-summary">
-                              <span>{totals.quantity} {t('items')}</span>
-                              <span className="product-total">${totals.total.toFixed(2)} CAD</span>
+                        return (
+                          <div key={item.id} className="product-card">
+                            <div className="product-header">
+                              <h3 className="product-name">{item.categoryName || meta?.primaryProduct || t('unknownProduct')}</h3>
+                              <div className="product-summary">
+                                <span>{totals.quantity} {t('items')}</span>
+                                <span className="product-total">${totals.total.toFixed(2)} CAD</span>
+                              </div>
                             </div>
-                          </div>
 
-                          {colorGroups.length > 0 ? (
-                            <div className="color-groups">
-                              {colorGroups.map((group: any, gIdx: number) => (
-                                <div key={gIdx} className="color-group-box" style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #f0f0f0', borderRadius: '12px' }}>
-                                  <div style={{ marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: group.colorHex || '#eee', border: '1px solid #ddd' }} />
-                                    <span>{group.colorName}</span>
-                                    <span style={{ marginLeft: 'auto', color: '#666', fontSize: '0.875rem' }}>{t('unitPrice')}: ${group.unitPrice?.toFixed(2)}</span>
+                            {colorGroups.length > 0 ? (
+                              <div className="color-groups">
+                                {colorGroups.map((group: any, gIdx: number) => (
+                                  <div key={gIdx} className="color-group-box" style={{ marginBottom: '1.5rem', padding: '1rem', border: '1px solid #f0f0f0', borderRadius: '12px' }}>
+                                    <div style={{ marginBottom: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                      <div style={{ width: 16, height: 16, borderRadius: '50%', backgroundColor: group.colorHex || '#eee', border: '1px solid #ddd' }} />
+                                      <span>{group.colorName}</span>
+                                      <span style={{ marginLeft: 'auto', color: '#666', fontSize: '0.875rem' }}>{t('unitPrice')}: ${group.unitPrice?.toFixed(2)}</span>
+                                    </div>
+                                    <table className="variants-table">
+                                      <thead>
+                                        <tr>
+                                          <th>{t('size')}</th>
+                                          <th>{t('quantity')}</th>
+                                          <th>{t('unitPrice')}</th>
+                                          <th>{t('subtotal')}</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {Object.entries(group.quantities || {}).map(([size, qty], idx) => {
+                                          const q = Number(qty) || 0;
+                                          if (q === 0) return null;
+                                          const subtotal = q * (group.unitPrice || 0);
+                                          return (
+                                            <tr key={idx}>
+                                              <td>{size}</td>
+                                              <td>{q}</td>
+                                              <td>${(group.unitPrice || 0).toFixed(2)}</td>
+                                              <td className="variant-total">${subtotal.toFixed(2)}</td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
                                   </div>
-                                  <table className="variants-table">
-                                    <thead>
-                                      <tr>
-                                        <th>{t('size')}</th>
-                                        <th>{t('quantity')}</th>
-                                        <th>{t('unitPrice')}</th>
-                                        <th>{t('subtotal')}</th>
+                                ))}
+                              </div>
+                            ) : (
+                              <table className="variants-table">
+                                <thead>
+                                  <tr>
+                                    <th>{t('size')}</th>
+                                    <th>{t('color')}</th>
+                                    <th>{t('quantity')}</th>
+                                    <th>{t('unitPrice')}</th>
+                                    <th>{t('subtotal')}</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(item.variants || []).map((variant, idx) => {
+                                    const variantTotal = (variant.quantity || 0) * (variant.unitPrice || 0);
+                                    return (
+                                      <tr key={idx}>
+                                        <td>{variant.size || '—'}</td>
+                                        <td>{variant.color || '—'}</td>
+                                        <td>{variant.quantity || 0}</td>
+                                        <td>${(variant.unitPrice || 0).toFixed(2)}</td>
+                                        <td className="variant-total">${variantTotal.toFixed(2)}</td>
                                       </tr>
-                                    </thead>
-                                    <tbody>
-                                      {Object.entries(group.quantities || {}).map(([size, qty], idx) => {
-                                        const q = Number(qty) || 0;
-                                        if (q === 0) return null;
-                                        const subtotal = q * (group.unitPrice || 0);
-                                        return (
-                                          <tr key={idx}>
-                                            <td>{size}</td>
-                                            <td>{q}</td>
-                                            <td>${(group.unitPrice || 0).toFixed(2)}</td>
-                                            <td className="variant-total">${subtotal.toFixed(2)}</td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <table className="variants-table">
-                              <thead>
-                                <tr>
-                                  <th>{t('size')}</th>
-                                  <th>{t('color')}</th>
-                                  <th>{t('quantity')}</th>
-                                  <th>{t('unitPrice')}</th>
-                                  <th>{t('subtotal')}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {(item.variants || []).map((variant, idx) => {
-                                  const variantTotal = (variant.quantity || 0) * (variant.unitPrice || 0);
-                                  return (
-                                    <tr key={idx}>
-                                      <td>{variant.size || '—'}</td>
-                                      <td>{variant.color || '—'}</td>
-                                      <td>{variant.quantity || 0}</td>
-                                      <td>${(variant.unitPrice || 0).toFixed(2)}</td>
-                                      <td className="variant-total">${variantTotal.toFixed(2)}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="info-text" style={{
-                    padding: '2rem',
-                    textAlign: 'center',
-                    color: '#6b7280',
-                    backgroundColor: '#f9fafb',
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb'
-                  }}>
-                    <p style={{ margin: '0 0 0.5rem', fontWeight: 500, color: '#374151' }}>{t('noProductInfo')}</p>
-                    <p style={{ margin: 0, fontSize: '0.875rem' }}>{t('noProductInfoDesc')}</p>
-                  </div>
-                )}
-              </section>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="info-text" style={{
+                      padding: '2rem',
+                      textAlign: 'center',
+                      color: '#6b7280',
+                      backgroundColor: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      <p style={{ margin: '0 0 0.5rem', fontWeight: 500, color: '#374151' }}>{t('noProductInfo')}</p>
+                      <p style={{ margin: 0, fontSize: '0.875rem' }}>{t('noProductInfoDesc')}</p>
+                    </div>
+                  )}
+                </section>
+              )}
 
-              {/* 印刷位置 */}
-              {config?.printPositions && config.printPositions.length > 0 && (
-                <section className="order-section order-section-wide">
+              {/* Print Positions Section */}
+              {config?.printPositions && config.printPositions.length > 0 && (!showPrintSettings || visibleSections.printPositions) && (
+                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
                   <h2 className="section-title">{t('printPositions')}</h2>
                   <div className="print-positions-list">
                     {(config.productItems || []).map((item) => {
@@ -719,9 +796,9 @@ export default function SalesOrderDetailPage() {
                 </section>
               )}
 
-              {/* 价格汇总 (Matching Step 3 Summary Styling) */}
-              {config?.pricing && (
-                <section className="order-section order-section-wide">
+              {/* Pricing Section */}
+              {config?.pricing && (!showPrintSettings || visibleSections.pricing) && (
+                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
                   <div style={{
                     padding: '1.5rem',
                     backgroundColor: '#eff6ff',
@@ -793,8 +870,8 @@ export default function SalesOrderDetailPage() {
                   </div>
 
                   {/* 计费明细 Table */}
-                  {billingData && (
-                    <div style={{ marginBottom: '2rem' }}>
+                  {billingData && (!showPrintSettings || visibleSections.billing) && (
+                    <div style={{ marginBottom: '2rem' }} className={compactMode && showPrintSettings ? 'mt-2' : ''}>
                       <BillingDetails
                         productItems={billingData.productItems}
                         colorGroupsByProduct={billingData.colorGroupsByProduct}
@@ -849,9 +926,9 @@ export default function SalesOrderDetailPage() {
                 </section>
               )}
 
-              {/* 订单历史 */}
-              {meta.histories && meta.histories.length > 0 && (
-                <section className="order-section order-section-wide">
+              {/* Order History */}
+              {meta.histories && meta.histories.length > 0 && (!showPrintSettings || visibleSections.history) && (
+                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
                   <h2 className="section-title">{t('orderHistory')}</h2>
                   <div className="histories-list">
                     {meta.histories.map((log: any, idx: number) => (
@@ -954,8 +1031,8 @@ export default function SalesOrderDetailPage() {
               )}
 
               {/* 附件 */}
-              {meta.assets && meta.assets.length > 0 && (
-                <section className="order-section order-section-wide">
+              {meta.assets && meta.assets.length > 0 && (!showPrintSettings || visibleSections.attachments) && (
+                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
                   <h2 className="section-title">{t('attachmentsCount', { count: meta.assets.length })}</h2>
                   <div className="assets-list">
                     {meta.assets.map((asset: any) => (
@@ -980,8 +1057,8 @@ export default function SalesOrderDetailPage() {
               )}
 
               {/* 生产信息 */}
-              {meta.productionWorkOrder && (
-                <section className="order-section order-section-wide">
+              {meta.productionWorkOrder && (!showPrintSettings || visibleSections.history) && (
+                <section className={`order-section order-section-wide ${compactMode && showPrintSettings ? 'mb-2' : ''}`}>
                   <h2 className="section-title">{t('productionInfo')}</h2>
                   <div className="info-grid">
                     <div className="info-item">
@@ -1026,7 +1103,7 @@ export default function SalesOrderDetailPage() {
             </div>
           )
         }
-      </div >
+      </div>
 
       <style jsx>{`
 /* Refined Minimalism 设计风格 - 优雅、精致、简洁 */
@@ -1635,6 +1712,6 @@ export default function SalesOrderDetailPage() {
           }
         }
       `}</style>
-    </div >
+    </div>
   );
 }

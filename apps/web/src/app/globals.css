@@ -11405,3 +11405,15 @@ select {
   margin-top: 2px;
   /* Align with text line-height */
 }
+/* Print styles moved from offline-orders page due to SWC panic */
+@media print {
+  .print-compact-mode .order-detail-card {
+     padding: 0.5rem !important;
+     border: none !important;
+     box-shadow: none !important;
+  }
+  .print-compact-mode h1 { font-size: 1.25rem !important; }
+  .print-compact-mode h2 { font-size: 1.1rem !important; margin-bottom: 0.25rem !important; }
+  .print-compact-mode .py-2, .print-compact-mode .mb-4 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; margin-bottom: 0.5rem !important; }
+}
+

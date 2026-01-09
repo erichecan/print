@@ -4099,8 +4099,7 @@ useEffect(() => {
 return (
   <div className="design-lab-new">
     {/* 1. Header - 顶部导航栏 */}
-{/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
-    <header className = "dl-header" data-testid="header" >
+    <header className="dl-header" data-testid="header">
   <div className="dl-header__content">
     <div className="dl-header__left">
       {/* 使用主站Logo图片，点击跳转到主站首页 */}
@@ -4136,7 +4135,7 @@ return (
     </header>
 
   {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */ }
-  <div className = "dl-main" >
+  <div className="dl-main">
     {/* 2. Dark Rail - 左侧深灰色工具栏 */ }
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
 <nav className="dl-rail" aria-label="Design tools" data-testid="rail">
@@ -4555,7 +4554,7 @@ return (
     <span className="dl-sidebar__label">Zoom</span>
   </button>
 </aside>
-</div >
+</div>
 
   {/* 5. Bottom Bar - 底部操作栏 */ }
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
