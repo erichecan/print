@@ -821,106 +821,108 @@ export default function SalesOrdersPage() {
                 )}
               </div>
             ) : (
-              <table className="sales-orders-table">
-                <thead>
-                  <tr>
-                    <th>{t('thOrderCode')}</th>
-                    <th>{t('thProjectName')}</th>
-                    <th>{t('thCustomer')}</th>
-                    {isManager && <th>{t('thCreator')}</th>}
-                    <th>{t('thQuantity')}</th>
-                    <th>{t('thDueDate')}</th>
-                    <th>{t('thStatus')}</th>
-                    <th>{t('thStage')}</th>
-                    <th>{t('thActions')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.map((order) => (
-                    <tr key={order.id}>
-                      <td>{order.orderCode}</td>
-                      <td>{order.projectName}</td>
-                      <td>
-                        <div className="sales-orders-contact">
-                          <span>{order.contact.name}</span>
-                          <span className="sales-orders-contact-sub">
-                            {order.contact.company || order.contact.email}
-                          </span>
-                        </div>
-                      </td>
-                      {isManager && (
-                        <td>
-                          {order.creator ? (
-                            <div className="sales-orders-creator">
-                              <span>{order.creator.name}</span>
-                              <span className="sales-orders-creator-sub">{order.creator.email}</span>
-                            </div>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                      )}
-                      <td>{order.quantity ?? '—'}</td>
-                      <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          <StatusSelector
-                            orderId={order.id}
-                            currentValue={order.status}
-                            statusOptions={statusOptions}
-                            onUpdate={handleQuickUpdateStatus}
-                            disabled={updatingStatus === order.id}
-                          />
-                          {order.rushOrder && (
-                            <span className="tag tag-rush">{t('tagRush')}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="sales-orders-stage">
-                          {stages.length > 0 ? (
-                            <select
-                              value={order.stage?.key || ''}
-                              onChange={(e) => handleQuickUpdateStage(order.id, e.target.value)}
-                              disabled={updatingStage === order.id}
-                              className="sales-orders-stage-select"
-                            >
-                              <option value="">—</option>
-                              {stages.map((stage) => (
-                                <option key={stage.key} value={stage.key}>
-                                  {stage.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span>{order.stage?.label || '—'}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <button
-                            type="button"
-                            className="sales-orders-detail-btn-small"
-                            onClick={() => handleViewDetail(order.id)}
-                          >
-                            {t('btnDetail')}
-                          </button>
-                          <button
-                            type="button"
-                            className="sales-orders-delete-btn"
-                            onClick={() => handleDeleteOrder(order.id, order.orderCode)}
-                            disabled={deletingOrder === order.id}
-                            title={t('btnDelete')}
-                          >
-                            {deletingOrder === order.id ? t('submitting') : '🗑️'}
-                          </button>
-                        </div>
-                      </td>
+              <div className="sales-orders-table-wrapper">
+                <table className="sales-orders-table">
+                  <thead>
+                    <tr>
+                      <th>{t('thOrderCode')}</th>
+                      <th>{t('thProjectName')}</th>
+                      <th>{t('thCustomer')}</th>
+                      {isManager && <th>{t('thCreator')}</th>}
+                      <th>{t('thQuantity')}</th>
+                      <th>{t('thDueDate')}</th>
+                      <th>{t('thStatus')}</th>
+                      <th>{t('thStage')}</th>
+                      <th>{t('thActions')}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {orders.map((order) => (
+                      <tr key={order.id}>
+                        <td>{order.orderCode}</td>
+                        <td>{order.projectName}</td>
+                        <td>
+                          <div className="sales-orders-contact">
+                            <span>{order.contact.name}</span>
+                            <span className="sales-orders-contact-sub">
+                              {order.contact.company || order.contact.email}
+                            </span>
+                          </div>
+                        </td>
+                        {isManager && (
+                          <td>
+                            {order.creator ? (
+                              <div className="sales-orders-creator">
+                                <span>{order.creator.name}</span>
+                                <span className="sales-orders-creator-sub">{order.creator.email}</span>
+                              </div>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        )}
+                        <td>{order.quantity ?? '—'}</td>
+                        <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <StatusSelector
+                              orderId={order.id}
+                              currentValue={order.status}
+                              statusOptions={statusOptions}
+                              onUpdate={handleQuickUpdateStatus}
+                              disabled={updatingStatus === order.id}
+                            />
+                            {order.rushOrder && (
+                              <span className="tag tag-rush">{t('tagRush')}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div className="sales-orders-stage">
+                            {stages.length > 0 ? (
+                              <select
+                                value={order.stage?.key || ''}
+                                onChange={(e) => handleQuickUpdateStage(order.id, e.target.value)}
+                                disabled={updatingStage === order.id}
+                                className="sales-orders-stage-select"
+                              >
+                                <option value="">—</option>
+                                {stages.map((stage) => (
+                                  <option key={stage.key} value={stage.key}>
+                                    {stage.label}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span>{order.stage?.label || '—'}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <button
+                              type="button"
+                              className="sales-orders-detail-btn-small"
+                              onClick={() => handleViewDetail(order.id)}
+                            >
+                              {t('btnDetail')}
+                            </button>
+                            <button
+                              type="button"
+                              className="sales-orders-delete-btn"
+                              onClick={() => handleDeleteOrder(order.id, order.orderCode)}
+                              disabled={deletingOrder === order.id}
+                              title={t('btnDelete')}
+                            >
+                              {deletingOrder === order.id ? t('submitting') : '🗑️'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
@@ -1309,7 +1311,7 @@ export default function SalesOrdersPage() {
         }
         .sales-orders-card {
           width: 100%;
-          max-width: 1200px;
+          max-width: 1440px;
           background: #ffffff;
           border-radius: 18px;
           padding: 1.75rem 1.5rem;
@@ -1319,8 +1321,13 @@ export default function SalesOrdersPage() {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 1rem;
+          gap: 1.5rem;
           margin-bottom: 1.5rem;
+          flex-wrap: wrap;
+        }
+        .sales-orders-header > div:first-child {
+          flex: 1;
+          min-width: 300px;
         }
         .sales-orders-header-actions {
           display: flex;
@@ -1556,16 +1563,29 @@ export default function SalesOrdersPage() {
           color: #b91c1c;
           font-size: 0.9rem;
         }
+        .sales-orders-table-wrapper {
+          width: 100%;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          margin-bottom: 1rem;
+        }
         .sales-orders-table {
           width: 100%;
+          min-width: 1000px; /* Ensure table doesn't compress too much */
           border-collapse: collapse;
           font-size: 0.9rem;
         }
         .sales-orders-table th,
         .sales-orders-table td {
-          padding: 0.6rem 0.5rem;
+          padding: 0.75rem 0.6rem;
           border-bottom: 1px solid #e5e7eb;
           text-align: left;
+          white-space: nowrap; /* Prevent awkward wrapping in cells */
+        }
+        /* Specific alignment for projectName can allow wrapping if needed */
+        .sales-orders-table td:nth-child(2) {
+          white-space: normal;
+          min-width: 150px;
         }
         .sales-orders-table th {
           font-weight: 600;
@@ -1700,8 +1720,7 @@ export default function SalesOrdersPage() {
             align-items: flex-start;
           }
           .sales-orders-table {
-            display: block;
-            overflow-x: auto;
+            min-width: 800px;
           }
           .sales-orders-tabs {
             overflow-x: auto;
