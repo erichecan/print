@@ -7,6 +7,7 @@
  */
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { ColorMappingPayload } from '@/lib/api';
 
 export interface ColorConfig {
   color: string;
@@ -14,6 +15,7 @@ export interface ColorConfig {
   displayName: string;
   images: Array<{ url: string; file?: File }>;
   enabled: boolean;
+  mappingId?: string; // ID from ColorMapping
 }
 
 interface ColorAttributeConfigProps {
@@ -21,6 +23,7 @@ interface ColorAttributeConfigProps {
   onColorsChange: (colors: ColorConfig[]) => void;
   onUploadImage?: (colorIndex: number, file: File) => Promise<string>;
   productImages?: Array<{ url: string; alt?: string }>;
+  colorMappings?: ColorMappingPayload[];
 }
 
 export function ColorAttributeConfig({
@@ -28,6 +31,7 @@ export function ColorAttributeConfig({
   onColorsChange,
   onUploadImage,
   productImages = [],
+  colorMappings = [],
 }: ColorAttributeConfigProps) {
   const [expandedColors, setExpandedColors] = useState<Set<number>>(new Set([0]));
   const fileInputRefs = React.useRef<{ [key: number]: HTMLInputElement | null }>({});
@@ -74,6 +78,25 @@ export function ColorAttributeConfig({
     const newColors = [...colors];
     newColors[index] = { ...newColors[index], ...updates };
     onColorsChange(newColors);
+  };
+
+  const handleColorSelectionChange = (index: number, value: string) => {
+    // "Other" option or specific mapping
+    if (value === 'other') {
+      // Clear mapping, keep current visible values but allow editing
+      updateColor(index, { mappingId: undefined });
+    } else {
+      // Find mapping
+      const mapping = colorMappings.find(m => m.id === value);
+      if (mapping) {
+        updateColor(index, {
+          mappingId: mapping.id,
+          color: mapping.productColor, // Internal ID/Name
+          colorHex: mapping.values[0] || '#CCCCCC',
+          displayName: mapping.productColor, // Default display name
+        });
+      }
+    }
   };
 
   const handleFileSelect = async (colorIndex: number, file: File) => {
@@ -188,37 +211,74 @@ export function ColorAttributeConfig({
 
               {isExpanded && (
                 <div className="color-config-item__content">
-                  {/* Color Value */}
-                  <div className="form-row">
-                    <div className="form-field">
-                      <label className="form-field__label">颜色值</label>
-                      <div className="color-picker-group">
+                  <div className="form-row" style={{ alignItems: 'flex-start', gap: '24px' }}>
+                    <div className="form-field" style={{ flex: 1 }}>
+                      <label className="form-field__label">选择颜色</label>
+                      <select
+                        className="form-field__input"
+                        value={colorConfig.mappingId || 'other'}
+                        onChange={(e) => handleColorSelectionChange(index, e.target.value)}
+                      >
+                        {/* Default empty option if needed, but we default to Other or specific ID */}
+                        {colorMappings.map(m => (
+                          <option key={m.id} value={m.id}>{m.productColor}</option>
+                        ))}
+                        <option value="other">其他 (自定义)</option>
+                      </select>
+                    </div>
+
+                    <div className="form-field" style={{ flex: 1 }}>
+                      <label className="form-field__label">颜色值 / 预览</label>
+                      <div className="color-picker-group" style={{ height: '40px' }}>
                         <div
                           className="color-picker-swatch"
-                          style={{ backgroundColor: colorConfig.colorHex }}
+                          style={{
+                            backgroundColor: colorConfig.colorHex,
+                            flexShrink: 0
+                          }}
                         />
-                        <input
-                          type="color"
-                          className="form-field__input color-picker-input"
-                          value={colorConfig.colorHex}
-                          onChange={(e) =>
-                            updateColor(index, { colorHex: e.target.value })
-                          }
-                        />
-                        <input
-                          type="text"
-                          className="form-field__input color-hex-input"
-                          value={colorConfig.colorHex}
-                          onChange={(e) =>
-                            updateColor(index, { colorHex: e.target.value })
-                          }
-                          placeholder="#FF0000"
-                        />
+                        {/* Only show editable input when "Other" is selected */}
+                        {!colorConfig.mappingId ? (
+                          <>
+                            <input
+                              type="color"
+                              className="form-field__input color-picker-input"
+                              value={colorConfig.colorHex}
+                              onChange={(e) =>
+                                updateColor(index, { colorHex: e.target.value })
+                              }
+                            />
+                            <input
+                              type="text"
+                              className="form-field__input color-hex-input"
+                              value={colorConfig.colorHex}
+                              onChange={(e) =>
+                                updateColor(index, { colorHex: e.target.value })
+                              }
+                              placeholder="#FF0000"
+                            />
+                          </>
+                        ) : (
+                          /* Read-only display for mapped colors */
+                          <div
+                            className="form-field__input color-hex-input"
+                            style={{
+                              backgroundColor: '#f9fafb',
+                              color: '#6b7280',
+                              display: 'flex',
+                              alignItems: 'center',
+                              userSelect: 'none',
+                              cursor: 'default'
+                            }}
+                          >
+                            {colorConfig.colorHex}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Display Name */}
+                  {/* Display Name - ReadOnly if mapped, Editable if Other */}
                   <div className="form-field">
                     <label className="form-field__label">显示名称</label>
                     <input
@@ -229,6 +289,8 @@ export function ColorAttributeConfig({
                         updateColor(index, { displayName: e.target.value })
                       }
                       placeholder="例如：经典红"
+                      disabled={!!colorConfig.mappingId}
+                      style={{ backgroundColor: colorConfig.mappingId ? '#f4f6f8' : 'white' }}
                     />
                   </div>
 
@@ -263,7 +325,7 @@ export function ColorAttributeConfig({
                         <span>+ 上传图片</span>
                       </div>
                       <input
-                        ref={(el) => (fileInputRefs.current[index] = el)}
+                        ref={(el) => { fileInputRefs.current[index] = el; }}
                         type="file"
                         accept="image/*"
                         multiple
@@ -558,4 +620,3 @@ export function ColorAttributeConfig({
     </div>
   );
 }
-

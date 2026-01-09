@@ -89,6 +89,7 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
               displayName: string;
               images: Array<{ url: string; file?: File }>;
               enabled: boolean;
+              mappingId?: string;
             }>();
 
             initialProduct.variants.forEach((variant) => {

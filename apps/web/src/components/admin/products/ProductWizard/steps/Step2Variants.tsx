@@ -13,10 +13,15 @@ import {
   VariantCombinationPreview,
   VariantCombination,
 } from '../components/VariantCombinationPreview';
+import useSWR from 'swr';
+import { adminSettingsApi, ColorMappingPayload } from '@/lib/api';
 
 export function Step2Variants() {
   const { wizardData, updateWizardData, nextStep, prevStep, saveDraft, isLoading, productId } =
     useProductWizard();
+
+  const { data: colorMappingsData } = useSWR('admin-color-mappings', adminSettingsApi.getColorMappings);
+  const colorMappings = useMemo(() => colorMappingsData?.data || [], [colorMappingsData]);
 
   const colors = wizardData.colors || [
     {
@@ -25,6 +30,7 @@ export function Step2Variants() {
       displayName: '白色',
       images: [],
       enabled: true,
+      mappingId: undefined, // Optional mapping ID
     },
   ];
 
@@ -77,7 +83,39 @@ export function Step2Variants() {
     });
 
     updateWizardData({ variantCombinations: newCombinations });
+    updateWizardData({ variantCombinations: newCombinations });
   }, [colors, sizes, wizardData.sku]);
+
+  // Auto-link initial colors to mappings if they match by name but have no mappingId
+  useEffect(() => {
+    if (colorMappings.length > 0 && colors.some(c => !c.mappingId)) {
+      let changed = false;
+      const linkedColors = colors.map(c => {
+        if (!c.mappingId) {
+          // Try to find by name (case insensitive) or if it's "White" (common default)
+          const mapping = colorMappings.find(m =>
+            m.productColor.toLowerCase() === c.color.toLowerCase() ||
+            m.productColor.toLowerCase() === c.displayName.toLowerCase()
+          );
+          if (mapping) {
+            changed = true;
+            return {
+              ...c,
+              mappingId: mapping.id,
+              color: mapping.productColor,
+              colorHex: mapping.values[0] || c.colorHex,
+              displayName: mapping.productColor
+            };
+          }
+        }
+        return c;
+      });
+
+      if (changed) {
+        updateWizardData({ colors: linkedColors });
+      }
+    }
+  }, [colorMappings, colors]);
 
   const handleColorsChange = (newColors: ColorConfig[]) => {
     updateWizardData({ colors: newColors });
@@ -161,6 +199,7 @@ export function Step2Variants() {
               colors={colors}
               onColorsChange={handleColorsChange}
               onUploadImage={handleUploadImage}
+              colorMappings={colorMappings}
             />
           </div>
 

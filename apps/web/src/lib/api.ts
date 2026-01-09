@@ -1494,6 +1494,7 @@ export interface ProductWizardData {
     displayName: string;
     images: Array<{ url: string; file?: File }>;
     enabled: boolean;
+    mappingId?: string;
   }>;
   sizes?: Array<{
     size: string;
