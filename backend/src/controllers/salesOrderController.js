@@ -28,18 +28,25 @@ const mapSalesOfflineOrder = (order, includeDetails = false) => {
       email: order.email,
       phone: order.phone,
     },
+    // PRD v2.0: 包含配置和支付信息以支持列表页计算余额
+    configuration: order.configuration,
+    payment: {
+      method: order.payment_method,
+      referenceNumber: order.reference_number,
+      depositAmount: order.deposit_amount ? parseFloat(order.deposit_amount) : 0,
+      dstFileFee: order.dst_file_fee ? parseFloat(order.dst_file_fee) : 0,
+    },
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
   };
 
-  // 详情接口包含完整配置信息
+  // 详情接口额外包含的字段
   if (includeDetails) {
     return {
       ...base,
       description: order.description, // 设计说明
       requiresMockups: order.requiresMockups,
       requiresProof: order.requiresProof,
-      configuration: order.configuration, // 包含 productItems, printPositions, pricing, invoiceInfo 等
       metadata: order.metadata,
     };
   }
