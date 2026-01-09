@@ -54,12 +54,12 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
         setSaving(false);
         onClose();
         console.log('[SaveShareModal] ✅ Design saved successfully to My Designs!');
-// REMOVED: alert() auto-dismisses due to React re-render
+        // REMOVED: alert() auto-dismisses due to React re-render
         // TODO: Implement toast notification instead
       }, 500);
     } catch (error) {
       console.error('[SaveShareModal] ❌ Failed to save design:', error);
-// REMOVED: alert() auto-dismisses due to React re-render
+      // REMOVED: alert() auto-dismisses due to React re-render
       // TODO: Implement toast notification instead
       setSaving(false);
     }
@@ -68,7 +68,7 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="dl-modal-overlay" onClick={onClose}>
+    <div className="dl-modal-overlay">
       <div className="dl-modal dl-save-share-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
           <h2 className="dl-modal__title">Save Design</h2>
@@ -80,7 +80,7 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
         <div className="dl-modal__body">
           <div className="dl-save-share-modal__content">
             <p className="dl-save-share-modal__description">
-{/* 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
+              {/* 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
               Save your design to access it later from &quot;My Designs&quot;.
             </p>
             <div className="dl-save-share-modal__form">
@@ -95,7 +95,7 @@ const SaveShareModal: React.FC<SaveShareModalProps> = ({
               </label>
               {!designId && (
                 <p className="dl-save-share-modal__hint" style={{ color: '#6b7280', fontSize: '14px', marginTop: '8px' }}>
-{/* 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
+                  {/* 修复 ESLint react/no-unescaped-entities：转义双引号（显示效果不变） */}
                   Your design will be saved when you click &quot;Save Design&quot;.
                 </p>
               )}

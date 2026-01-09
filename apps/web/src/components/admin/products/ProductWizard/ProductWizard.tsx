@@ -83,58 +83,58 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
         // Load colors from variants
         colors: initialProduct.variants && initialProduct.variants.length > 0
           ? (() => {
-              const colorMap = new Map<string, {
-                color: string;
-                colorHex: string;
-                displayName: string;
-                images: Array<{ url: string; file?: File }>;
-                enabled: boolean;
-              }>();
-              
-              initialProduct.variants.forEach((variant) => {
-                if (variant.color) {
-                  const colorKey = variant.color;
-                  if (!colorMap.has(colorKey)) {
-                    colorMap.set(colorKey, {
-                      color: variant.color,
-                      colorHex: variant.colorHex || '#CCCCCC',
-                      displayName: variant.colorDisplayName || variant.color,
-                      images: variant.imageUrl ? [{ url: variant.imageUrl }] : [],
-                      enabled: true,
-                    });
-                  } else {
-                    // Add image if not already present
-                    const colorConfig = colorMap.get(colorKey)!;
-                    if (variant.imageUrl && !colorConfig.images.find(img => img.url === variant.imageUrl)) {
-                      colorConfig.images.push({ url: variant.imageUrl });
-                    }
+            const colorMap = new Map<string, {
+              color: string;
+              colorHex: string;
+              displayName: string;
+              images: Array<{ url: string; file?: File }>;
+              enabled: boolean;
+            }>();
+
+            initialProduct.variants.forEach((variant) => {
+              if (variant.color) {
+                const colorKey = variant.color;
+                if (!colorMap.has(colorKey)) {
+                  colorMap.set(colorKey, {
+                    color: variant.color,
+                    colorHex: variant.colorHex || '#CCCCCC',
+                    displayName: variant.colorDisplayName || variant.color,
+                    images: variant.imageUrl ? [{ url: variant.imageUrl }] : [],
+                    enabled: true,
+                  });
+                } else {
+                  // Add image if not already present
+                  const colorConfig = colorMap.get(colorKey)!;
+                  if (variant.imageUrl && !colorConfig.images.find(img => img.url === variant.imageUrl)) {
+                    colorConfig.images.push({ url: variant.imageUrl });
                   }
                 }
-              });
-              
-              return Array.from(colorMap.values());
-            })()
+              }
+            });
+
+            return Array.from(colorMap.values());
+          })()
           : undefined,
         // Load sizes from variants
         sizes: initialProduct.variants && initialProduct.variants.length > 0
           ? (() => {
-              const sizeSet = new Set<string>();
-              const sizes: Array<{ size: string; displayName: string; sortOrder: number; enabled: boolean }> = [];
-              
-              initialProduct.variants.forEach((variant, index) => {
-                if (variant.size && !sizeSet.has(variant.size)) {
-                  sizeSet.add(variant.size);
-                  sizes.push({
-                    size: variant.size,
-                    displayName: variant.size,
-                    sortOrder: index,
-                    enabled: true,
-                  });
-                }
-              });
-              
-              return sizes.sort((a, b) => a.sortOrder - b.sortOrder);
-            })()
+            const sizeSet = new Set<string>();
+            const sizes: Array<{ size: string; displayName: string; sortOrder: number; enabled: boolean }> = [];
+
+            initialProduct.variants.forEach((variant, index) => {
+              if (variant.size && !sizeSet.has(variant.size)) {
+                sizeSet.add(variant.size);
+                sizes.push({
+                  size: variant.size,
+                  displayName: variant.size,
+                  sortOrder: index,
+                  enabled: true,
+                });
+              }
+            });
+
+            return sizes.sort((a, b) => a.sortOrder - b.sortOrder);
+          })()
           : undefined,
       };
     }
@@ -153,6 +153,7 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
 
   const nextStep = useCallback(() => {
     if (currentStep < STEPS.length) {
+      window.scrollTo(0, 0);
       setCurrentStep((prev) => prev + 1);
     }
   }, [currentStep]);
@@ -169,7 +170,7 @@ export function ProductWizard({ initialProduct, onComplete }: ProductWizardProps
       // TODO: Implement draft saving logic
       // This will be implemented when we have the API ready
       console.log('Saving draft:', wizardData);
-      
+
       // For now, just create a placeholder
       // In real implementation, this will call adminProductsApi.create or update with isDraft: true
     } catch (error) {

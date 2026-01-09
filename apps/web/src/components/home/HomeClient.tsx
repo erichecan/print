@@ -14,11 +14,11 @@ import { InkerSupportSection } from './InkerSupportSection';
 import TestimonialCarousel from '../TestimonialCarousel';
 
 export function HomeClient() {
-// 从 CMS 获取首页内容
+  // 从 CMS 获取首页内容
   const { data: contentData } = useSWR('public-content-config', contentApi.get);
   const homePage = contentData?.data?.homePage;
 
-// 使用 CMS 数据或默认值（向后兼容）
+  // 使用 CMS 数据或默认值（向后兼容）
   const heroTitle = homePage?.heroTitle || 'Custom T-shirts & Promo Gear for Your Group';
   const heroSubtitle = homePage?.heroSubtitle || 'From tees to tech, create premium swag with expert help, fast delivery, and a 100% satisfaction guarantee.';
   const heroCards = homePage?.heroCards || [
@@ -42,7 +42,7 @@ export function HomeClient() {
       <section className="hero" aria-labelledby="hero-heading">
         <div className="container hero__grid">
           <div>
-            <div style={{ marginBottom: '20px', fontSize: '26px', fontWeight: 700, color: '#1f2937', whiteSpace: 'nowrap', display: 'flex', gap: '30px', alignItems: 'center' }}>
+            <div className="hero__contact">
               <span>📞 416-916-6352</span>
               <span>✉️ dtfsouvenir@gmail.com</span>
             </div>
@@ -53,14 +53,14 @@ export function HomeClient() {
               {heroSubtitle}
             </p>
             <div className="hero__actions">
-{/* 使用和商品详情页相同的设计链接格式 */}
+              {/* 使用和商品详情页相同的设计链接格式 */}
               <Link className="btn" href="/design-lab">
                 Start Designing
               </Link>
               <Link className="btn btn--outline" href="/products">
                 Browse Products
               </Link>
-{/* Provide entry point to offline order intake */}
+              {/* Provide entry point to offline order intake */}
               <Link className="btn btn--outline" href="/offline-orders">
                 Submit Offline Order
               </Link>
@@ -76,11 +76,11 @@ export function HomeClient() {
         </div>
       </section>
 
-{/* 服务承诺区域 - 添加图标 */}
+      {/* 服务承诺区域 - 添加图标 */}
       <section className="promises" aria-label="Service promises">
         <div className="container promises__grid">
           {servicePromises.map((promise) => {
-// 根据标题选择对应的图标
+            // 根据标题选择对应的图标
             const getIcon = (title: string) => {
               const titleLower = title.toLowerCase();
               if (titleLower.includes('shipping') || titleLower.includes('delivery')) {
@@ -132,13 +132,13 @@ export function HomeClient() {
         </div>
       </section>
 
-{/* Shop by Category moved up */}
+      {/* Shop by Category moved up */}
       <DatabaseCategoriesSection />
 
-{/* Replaced static testimonials with dynamic carousel from Amazon reviews */}
+      {/* Replaced static testimonials with dynamic carousel from Amazon reviews */}
       <TestimonialCarousel />
 
-{/* Inker Support Section (Replicated from Custom Ink) */}
+      {/* Inker Support Section (Replicated from Custom Ink) */}
       <InkerSupportSection />
 
 

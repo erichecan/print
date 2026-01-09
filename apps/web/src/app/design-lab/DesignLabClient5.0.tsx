@@ -3601,7 +3601,7 @@ const DesignLabClient5: React.FC<DesignLabClient5Props> = ({ initialProductData 
         <div className="dl-header__content">
           <div className="dl-header__left">
             <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
-              <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
+              <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: '34px', width: 'auto', objectFit: 'contain' }} />
             </Link>
             <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
               <Link href="/account/designs" className="dl-header__breadcrumb-link">My Designs</Link>

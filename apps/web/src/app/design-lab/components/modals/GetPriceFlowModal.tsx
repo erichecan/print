@@ -79,7 +79,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
 
   // [2026-01-06] 从API读取尺码配置（包括所有尺码，不仅仅是费用）
   const [sizeConfig, setSizeConfig] = useState<Array<{ size: string; sizeType?: string; additionalFee: number; displayOrder?: number }>>([]);
-  
+
   // 组件挂载时的初始日志
   React.useEffect(() => {
     console.log('[GetPriceFlowModal] 🎬 Component mounted/rendered', {
@@ -89,34 +89,34 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       sizeConfigLength: sizeConfig.length
     });
   }, []);
-  
+
   // 尺码费用映射表（从配置读取）
   const sizeAdjustments = React.useMemo(() => {
     console.log('[GetPriceFlowModal] 🔄 Computing sizeAdjustments from sizeConfig:', {
       timestamp: new Date().toISOString(),
       sizeConfigLength: sizeConfig.length,
-      sizeConfig: sizeConfig.map(s => ({ 
-        size: s.size, 
-        fee: s.additionalFee, 
+      sizeConfig: sizeConfig.map(s => ({
+        size: s.size,
+        fee: s.additionalFee,
         type: s.sizeType,
-        order: s.displayOrder 
+        order: s.displayOrder
       }))
     });
-    
+
     const adjustments: Record<string, number> = {};
     sizeConfig.forEach(fee => {
       const feeValue = fee.additionalFee || 0;
       adjustments[fee.size] = feeValue; // 记录所有尺码的费用，包括0
       console.log(`[GetPriceFlowModal] 📊 Size ${fee.size} (${fee.sizeType || 'Adult'}): additionalFee = $${feeValue.toFixed(2)}, displayOrder = ${fee.displayOrder || 0}`);
     });
-    
+
     console.log('[GetPriceFlowModal] ✅ Final sizeAdjustments:', {
       totalSizes: Object.keys(adjustments).length,
       adjustments: adjustments,
       sizesWithFees: Object.entries(adjustments).filter(([_, fee]) => fee > 0).map(([size, fee]) => ({ size, fee })),
       sizesWithoutFees: Object.entries(adjustments).filter(([_, fee]) => fee === 0).map(([size]) => size)
     });
-    
+
     return adjustments;
   }, [sizeConfig]);
 
@@ -127,26 +127,26 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       isOpen,
       componentMounted: true
     });
-    
+
     // 只在modal打开时获取数据
     if (!isOpen) {
       console.log('[GetPriceFlowModal] ⚠️ Modal is closed, skipping fetch');
       return;
     }
-    
+
     const fetchSizeData = async () => {
       console.log('[GetPriceFlowModal] 🚀 Starting to fetch size data from API...', {
         timestamp: new Date().toISOString(),
         isOpen
       });
-      
+
       // [2026-01-06] 从公共API获取所有启用的尺码配置（包括尺码名称、类型、费用、顺序）
       try {
         console.log('[GetPriceFlowModal] 📡 About to call sizeFeesApi.getAll()...');
         console.log('[GetPriceFlowModal] 📡 API endpoint will be: /size-fees');
-        
+
         const sizeFeesRes = await sizeFeesApi.getAll();
-        
+
         console.log('[GetPriceFlowModal] ✅ sizeFeesApi.getAll() completed successfully');
         console.log('[GetPriceFlowModal] 📥 Raw API Response:', sizeFeesRes);
         console.log('[GetPriceFlowModal] 📥 API Response structure:', {
@@ -158,17 +158,17 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
           count: sizeFeesRes?.count,
           firstFewItems: sizeFeesRes?.data?.slice(0, 5) || []
         });
-        
+
         if (sizeFeesRes && sizeFeesRes.data && Array.isArray(sizeFeesRes.data)) {
           console.log('[GetPriceFlowModal] ✅ Data is valid array, processing...');
-          
+
           const configData = sizeFeesRes.data.map(fee => ({
             size: fee.size,
             sizeType: fee.sizeType || 'Adult',
             additionalFee: fee.additionalFee || 0,
             displayOrder: fee.displayOrder || 0,
           }));
-          
+
           console.log('[GetPriceFlowModal] ✅ Processed configData:', {
             totalSizes: configData.length,
             allSizes: configData.map(s => ({
@@ -179,13 +179,13 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
             })),
             youthSizes: configData.filter(s => s.sizeType === 'Youth').map(s => s.size),
             adultSizes: configData.filter(s => s.sizeType === 'Adult' || !s.sizeType).map(s => s.size),
-            sizesWithFees: configData.filter(s => s.additionalFee > 0).map(s => ({ 
-              size: s.size, 
+            sizesWithFees: configData.filter(s => s.additionalFee > 0).map(s => ({
+              size: s.size,
               fee: s.additionalFee,
               type: s.sizeType
             }))
           });
-          
+
           setSizeConfig(configData);
           console.log('[GetPriceFlowModal] ✅✅✅ setSizeConfig called with', configData.length, 'items');
         } else {
@@ -212,7 +212,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
         setSizeConfig([]);
       }
     };
-    
+
     // 立即执行数据获取
     console.log('[GetPriceFlowModal] 🎯 About to call fetchSizeData()...');
     fetchSizeData().catch(err => {
@@ -226,7 +226,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       sizeConfigLength: sizeConfig.length,
       sizeConfig: sizeConfig
     });
-    
+
     if (sizeConfig.length === 0) {
       // 后备默认值（如果API未返回数据）
       const defaultYouth = ['YS', 'YM', 'YL'];
@@ -275,13 +275,13 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
       adultSizes: adult.length > 0 ? adult : ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'],
       allSizes: all.length > 0 ? all : [...youth, ...adult],
     };
-    
+
     console.log('[GetPriceFlowModal] ✅ Final size groups:', {
       youthSizes: result.youthSizes,
       adultSizes: result.adultSizes,
       allSizes: result.allSizes
     });
-    
+
     return result;
   }, [sizeConfig]);
   const womensSizes = React.useMemo(() => ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], []); // 女性尺码
@@ -538,7 +538,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
               {adultSizes.map(size => {
                 const adjustment = sizeAdjustments[size] || 0;
                 const sizeFee = adjustment > 0 ? `(+$${adjustment.toFixed(2)})` : '';
-                
+
                 // 调试日志（只在首次渲染时打印）
                 if (adultSizes.indexOf(size) === 0) {
                   console.log('[GetPriceFlowModal] 🎨 Rendering Adult sizes:', {
@@ -549,7 +549,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
                     hasAdjustment: adjustment > 0
                   });
                 }
-                
+
                 return (
                   <div key={size} className="dl-get-price-flow__size-item">
                     <label className="dl-get-price-flow__size-label">
@@ -588,7 +588,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
               {youthSizes.map(size => {
                 const adjustment = sizeAdjustments[size] || 0;
                 const sizeFee = adjustment > 0 ? `(+$${adjustment.toFixed(2)})` : '';
-                
+
                 // 调试日志（只在首次渲染时打印）
                 if (youthSizes.indexOf(size) === 0) {
                   console.log('[GetPriceFlowModal] 🎨 Rendering Youth sizes:', {
@@ -599,7 +599,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
                     hasAdjustment: adjustment > 0
                   });
                 }
-                
+
                 return (
                   <div key={size} className="dl-get-price-flow__size-item">
                     <label className="dl-get-price-flow__size-label">{size}</label>
@@ -1083,7 +1083,7 @@ const GetPriceFlowModal: React.FC<GetPriceFlowModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="dl-modal-overlay" onClick={onClose}>
+    <div className="dl-modal-overlay">
       <div className="dl-modal dl-get-price-flow-modal" onClick={(e) => e.stopPropagation()}>
         <div className="dl-modal__header">
           <h2 className="dl-modal__title">Get Price</h2>

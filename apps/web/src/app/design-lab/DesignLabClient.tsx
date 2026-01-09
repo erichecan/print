@@ -4100,45 +4100,52 @@ return (
   <div className="design-lab-new">
     {/* 1. Header - 顶部导航栏 */}
     <header className="dl-header" data-testid="header">
-  <div className="dl-header__content">
-    <div className="dl-header__left">
-      {/* 使用主站Logo图片，点击跳转到主站首页 */}
-      <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
-        <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority style={{ height: 'auto', width: 'auto', maxWidth: '200px' }} />
-      </Link>
-      <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
-        {/* 移除My Designs按钮，改用本地存储，无需跳转 */}
-        {/* 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
-        <button
-          className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
-          onClick={() => {
-            const newName = prompt('Enter design name:', designName);
-            if (newName) setDesignName(newName);
-          }}
-          type="button"
-        >
-          {designName}
-        </button>
-      </nav>
-    </div>
-    <div className="dl-header__right">
-      {/* 修复：添加"Talk to a Real Person"文案 */}
-      <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
-        📞 Talk to a Real Person: 416 916 6352
-      </a>
-      {/* 修复：Chat Now 链接到留言本 */}
-      {/* 修复：Chat Now 在新窗口打开 */}
-      <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
-      <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
-    </div>
-  </div>
+      <div className="dl-header__content">
+        <div className="dl-header__left">
+          {/* 使用主站Logo图片，点击跳转到主站首页 */}
+          <Link href="/" className="dl-header__logo" aria-label="Souvenir Plus Inc home" style={{ display: 'flex', alignItems: 'center' }}>
+            <Image
+              src="/logo.png"
+              alt="Souvenir Plus Inc"
+              width={200}
+              height={34}
+              priority
+              style={{ width: 'auto', height: '34px', objectFit: 'contain', maxWidth: '200px' }}
+            />
+          </Link>
+          <nav className="dl-header__breadcrumb" aria-label="Breadcrumb">
+            {/* 移除My Designs按钮，改用本地存储，无需跳转 */}
+            {/* 修复：Untitled design 按钮样式对齐 Custom Ink - element-2 */}
+            <button
+              className="dl-header__breadcrumb-current dl-header__breadcrumb-current--button"
+              onClick={() => {
+                const newName = prompt('Enter design name:', designName);
+                if (newName) setDesignName(newName);
+              }}
+              type="button"
+            >
+              {designName}
+            </button>
+          </nav>
+        </div>
+        <div className="dl-header__right">
+          {/* 修复：添加"Talk to a Real Person"文案 */}
+          <a href="tel:4169166352" className="dl-header__link" aria-label="Talk to a Real Person">
+            📞 Talk to a Real Person: 416 916 6352
+          </a>
+          {/* 修复：Chat Now 链接到留言本 */}
+          {/* 修复：Chat Now 在新窗口打开 */}
+          <Link href="/help#guestbook" className="dl-header__btn" aria-label="Chat Now" target="_blank" rel="noopener noreferrer">Chat Now</Link>
+          <button className="dl-header__btn" aria-label="Sign In">Sign In</button>
+        </div>
+      </div>
     </header>
 
   {/* 2-5. Main Content - Rail + Tool Panel + Canvas + Sidebar */ }
-  <div className="dl-main">
+    < div className = "dl-main" >
     {/* 2. Dark Rail - 左侧深灰色工具栏 */ }
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
-<nav className="dl-rail" aria-label="Design tools" data-testid="rail">
+    < nav className = "dl-rail" aria - label="Design tools" data - testid="rail" >
   <button
     className={`dl-rail__btn ${activeTool === 'upload' ? 'is-active' : ''}`}
     onClick={() => handleToolClick('upload')}
@@ -4181,12 +4188,12 @@ return (
     <span className="dl-rail__btn-label">Add Art</span>
   </button>
 
-  {/* 启用 Product Colors 功能 */}
-  <button
-    className={`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
-    onClick={() => handleToolClick('colors')}
-    aria-label="Product colors"
-    aria-pressed={activeTool === 'colors'}
+  {/* 启用 Product Colors 功能 */ }
+    < button
+    className = {`dl-rail__btn ${activeTool === 'colors' ? 'is-active' : ''}`}
+onClick = {() => handleToolClick('colors')}
+aria - label="Product colors"
+aria - pressed={ activeTool === 'colors' }
   >
     <span className="dl-rail__btn-icon">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -4198,10 +4205,11 @@ return (
       </svg>
     </span>
     <span className="dl-rail__btn-label">Product Colors</span>
-  </button>
+  </button >
 
-  {/* 暂时屏蔽 Add Names 功能 */}
-  {false && (
+  {/* 暂时屏蔽 Add Names 功能 */ }
+{
+  false && (
     <button
       className={`dl-rail__btn ${activeTool === 'names' ? 'is-active' : ''}`}
       onClick={() => handleToolClick('names')}
@@ -4214,15 +4222,17 @@ return (
       </span>
       <span className="dl-rail__btn-label">Add Names</span>
     </button>
-  )}
-</nav>
+  )
+}
+</nav >
 
-{/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */ }
-<ToolPanel panelType={toolPanelType} onBack={handleBackToHome}>
-  {toolPanelType === 'home' && (
-    <HomePanel onAction={handleHomeAction} />
-  )}
-  {toolPanelType === 'upload' && (
+  {/* 3. Tool Panel - 左侧工具面板（Rail 右侧，430px 宽） */ }
+  < ToolPanel panelType = { toolPanelType } onBack = { handleBackToHome } >
+    { toolPanelType === 'home' && (
+      <HomePanel onAction={handleHomeAction} />
+    )}
+{
+  toolPanelType === 'upload' && (
     <UploadPanel
       onFileSelect={handleFileUpload}
       onBrowseClick={() => { }}
@@ -4230,14 +4240,20 @@ return (
       onRecentUploadClick={handleRecentUploadClick}
       onClose={handleBackToHome}
     />
-  )}
-  {toolPanelType === 'text' && (
+  )
+}
+{
+  toolPanelType === 'text' && (
     <TextPanel onAddText={handleAddText} />
-  )}
-  {toolPanelType === 'art' && (
+  )
+}
+{
+  toolPanelType === 'art' && (
     <ArtPanel onSelectArt={handleAddArt} />
-  )}
-  {toolPanelType === 'colors' && (
+  )
+}
+{
+  toolPanelType === 'colors' && (
     <ProductColorsPanel
       colors={productColors}
       selectedColor={productInfo?.color || null}
@@ -4245,8 +4261,10 @@ return (
       onClose={handleBackToHome}
       productName={productInfo?.productName}
     />
-  )}
-  {toolPanelType === 'edit-upload' && (
+  )
+}
+{
+  toolPanelType === 'edit-upload' && (
     <EditUploadPanel
       selectedImage={selectedImage}
       canvas={fabricCanvasRef.current}
@@ -4261,26 +4279,31 @@ return (
         setShowUploadRatingModal(true);
       }}
     />
-  )}
-  {toolPanelType === 'edit-text' && (
+  )
+}
+{
+  toolPanelType === 'edit-text' && (
     <EditTextPanel
       selectedText={selectedText}
       canvas={fabricCanvasRef.current}
       onUpdate={handleCanvasUpdate}
     />
-  )}
-  {toolPanelType === 'edit-art' && (
+  )
+}
+{
+  toolPanelType === 'edit-art' && (
     <EditArtPanel
       selectedArt={selectedArt}
       canvas={fabricCanvasRef.current}
       onUpdate={handleCanvasUpdate}
       onChangeArt={handleChangeArt}
     />
-  )}
-  {/* 移除：layers 功能 */}
-</ToolPanel>
+  )
+}
+{/* 移除：layers 功能 */ }
+</ToolPanel >
 
-{/* 移除：模板库面板功能 */ }
+  {/* 移除：模板库面板功能 */ }
 
 {/* 4. Canvas - 中央画布区域 */ }
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }
@@ -4554,7 +4577,7 @@ return (
     <span className="dl-sidebar__label">Zoom</span>
   </button>
 </aside>
-</div>
+</div >
 
   {/* 5. Bottom Bar - 底部操作栏 */ }
 {/* 阶段1：添加 data-testid 用于 Playwright 测试 */ }

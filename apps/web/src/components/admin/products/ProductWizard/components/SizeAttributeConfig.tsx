@@ -115,7 +115,7 @@ export function SizeAttributeConfig({
                 type="button"
                 className={`quick-size-btn ${exists ? 'quick-size-btn--selected' : ''}`}
                 onClick={() => !exists && addQuickSize(size)}
-                disabled={exists}
+                disabled={!!exists}
               >
                 {size}
               </button>
@@ -216,33 +216,6 @@ export function SizeAttributeConfig({
           })}
       </div>
 
-      {/* Size Guide */}
-      <div className="form-field">
-        <label className="form-field__label">尺寸指导</label>
-        <div className="size-guide-section">
-          <button
-            type="button"
-            className="btn-upload-guide"
-            onClick={() => sizeGuideInputRef.current?.click()}
-          >
-            📤 上传尺寸表图片
-          </button>
-          <input
-            ref={sizeGuideInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              if (e.target.files?.[0]) {
-                handleSizeGuideUpload(e.target.files[0]);
-              }
-            }}
-          />
-          <a href="#" className="link-size-guide">
-            链接到尺寸指导页面
-          </a>
-        </div>
-      </div>
 
       <style jsx>{`
         .size-attribute-config {

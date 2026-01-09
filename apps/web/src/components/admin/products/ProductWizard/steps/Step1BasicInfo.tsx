@@ -291,18 +291,6 @@ export function Step1BasicInfo() {
               {errors.image && <span className="form-field__error">{errors.image}</span>}
             </div>
 
-            {/* Tags */}
-            <div className="form-field">
-              <label className="form-field__label">商品标签</label>
-              <input
-                type="text"
-                className="form-field__input"
-                placeholder="输入标签，用逗号分隔（例如：Vintage, Cotton, Summer）"
-                value={wizardData.tags?.join(', ') || ''}
-                onChange={handleTagsChange}
-              />
-              <small className="form-field__hint">多个标签请用逗号分隔</small>
-            </div>
           </div>
         </div>
 

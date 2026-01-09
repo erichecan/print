@@ -222,7 +222,14 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
                         </svg>
                     </button>
                     <Link href="/" aria-label="Home">
-                        <Image src="/logo.png" alt="Logo" width={120} height={32} className="dl-mobile-logo" />
+                        <Image
+                            src="/logo.png"
+                            alt="Logo"
+                            width={120}
+                            height={32}
+                            className="dl-mobile-logo"
+                            style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+                        />
                     </Link>
                 </div>
                 <div className="dl-mobile-header__right">
@@ -522,7 +529,13 @@ export const MobileDesignLab: React.FC<MobileDesignLabProps> = ({
             <nav className={`dl-mobile-nav-drawer ${isMenuOpen ? 'is-open' : ''}`}>
                 <div className="dl-nav-drawer-header">
                     <button className="dl-nav-close-btn" onClick={() => setIsMenuOpen(false)}>×</button>
-                    <Image src="/logo.png" alt="Logo" width={140} height={34} />
+                    <Image
+                        src="/logo.png"
+                        alt="Logo"
+                        width={140}
+                        height={34}
+                        style={{ height: '34px', width: 'auto', objectFit: 'contain' }}
+                    />
                 </div>
                 <ul className="dl-nav-drawer-links">
                     <li>

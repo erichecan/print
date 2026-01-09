@@ -277,7 +277,7 @@ function requiresAuthProxy(path: string): boolean {
 async function api<T>(endpoint: string, options: ApiOptions = {}): Promise<T> {
   // 添加超时控制和取消支持
   const { method = 'GET', body, headers = {} } = options;
-  const timeout = 10000; // 10秒超时
+  const timeout = 120000; // 120秒超时
 
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
 

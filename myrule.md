@@ -23,6 +23,12 @@
     2. **Frontend**: 在 `apps/web/` 目录下运行 `npm run dev` (端口 3000)。
 - **注意**: 仅重启前端不足以解决连接问题，务必检查 3001 端口是否处于监听状态 (`lsof -i:3001`)。
 
+### 3.2 Cloud Run 部署变量冲突 (Deployment Env Var Conflict)
+- **错误**: `Cannot update environment variable [KEY] to string literal because it has already been set with a different type.`
+- **根因**: Cloud Run 中该环境变量之前被配置为引用 **Secret**，现在脚本试图将其设置为**普通字符串**（或者反之）。Cloud Run 不允许直接覆盖不同类型的变量。
+- **解决方案**: 在 `gcloud run deploy` 命令中，必须先使用 `--clear-env-vars=KEY` 清除旧配置，然后再设置新值。
+    - **正确写法**: `--clear-env-vars=NEXT_PUBLIC_API_URL --set-env-vars="NEXT_PUBLIC_API_URL=..."` (注意使用等号和引号避免解析错误)。
+
 ## 4. 数据一致性规范 (Data Consistency)
 ### 4.1 列表视图与其计算逻辑的数据依赖
 - **数据一致性**: 在优化或修改 API 响应时，务必检查前端组件是否依赖特定字段进行计算（例如 `configuration` 或 `payment` 用于余额计算）。
@@ -81,3 +87,16 @@
 ### 9.2 路由定义
 - 后端路由: `backend/src/routes/`
 - 前端 API 客户端: `apps/web/src/lib/api.ts`
+
+## 10. UI 与布局最佳实践 (UI & Layout Best Practices)
+### 10.1 独立布局的隔离 (Isolation of Independent Layouts)
+- **规则**: 当页面（如 `/design-lab`）拥有独立的 Layout 时，必须确保 Root Layout (`LayoutWrapper`) 正确识别并隐藏全局 Header/Footer。
+- **验证**: 检查 `pathname` 匹配逻辑是否覆盖所有子路由（如 `/design-lab/` 前缀），防止全局 Header 与页面独立 Header 重叠（看起来像“浮层”）。
+
+### 10.2 文件引用验证 (Import Verification)
+- **规则**: 在修改文件前，务必检查父组件实际引用的是哪个文件。
+- **案例**: 编辑了 `DesignLabClient.tsx` 但 Router 实际导入的是 `DesignLabClient5.0.tsx`，导致修复不生效。
+
+### 10.3 Logo 与图片适配 (Logo & Image Scaling)
+- **规则**: 替换不同比例的 Logo 时，必须显式约束 `height` 并配合 `width: auto` 和 `object-fit: contain`。
+- **避免**: 仅设置 `maxWidth` 而不限制 `height`，会导致高宽比不同的新图撑破容器。

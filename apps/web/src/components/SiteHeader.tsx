@@ -135,7 +135,15 @@ export function SiteHeader() {
 
           <div className="flex-1 flex justify-center px-4">
             <Link href="/" aria-label="Suvernire Plus home">
-              <Image src="/logo.png" alt="Souvenir Plus Inc" width={140} height={24} priority className="h-6 w-auto object-contain" />
+              <Image
+                src="/logo.png"
+                alt="Souvenir Plus Inc"
+                width={140}
+                height={24}
+                priority
+                className="h-6 w-auto object-contain"
+                style={{ width: 'auto', height: '24px' }}
+              />
             </Link>
           </div>
 
@@ -185,7 +193,14 @@ export function SiteHeader() {
         <div className="container !hidden md:!grid site-header__row">
           <div className="site-header__brand">
             <Link href="/" aria-label="Suvernire Plus home">
-              <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} priority />
+              <Image
+                src="/logo.png"
+                alt="Souvenir Plus Inc"
+                width={200}
+                height={34}
+                priority
+                style={{ width: 'auto', height: '34px', objectFit: 'contain' }}
+              />
             </Link>
           </div>
           <div className="site-header__search" role="search">
@@ -304,7 +319,13 @@ export function SiteHeader() {
             onClick={() => setIsMobileMenuOpen(false)}
           >
             {/* 使用 Souvenir Plus Inc 官方 logo */}
-            <Image src="/logo.png" alt="Souvenir Plus Inc" width={200} height={34} />
+            <Image
+              src="/logo.png"
+              alt="Souvenir Plus Inc"
+              width={200}
+              height={34}
+              style={{ width: 'auto', height: '28px', objectFit: 'contain' }}
+            />
           </Link>
           <button
             type="button"

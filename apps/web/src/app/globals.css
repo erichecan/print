@@ -560,6 +560,19 @@ select {
   line-height: 1.6;
 }
 
+.hero__contact {
+  margin-bottom: 24px;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  gap: 12px 30px;
+  align-items: center;
+  flex-wrap: wrap;
+  /* Allow wrapping to prevent overlap */
+  line-height: 1.4;
+}
+
 .hero__actions {
   display: flex;
   gap: 16px;
@@ -616,6 +629,18 @@ select {
 
   .hero__subtitle {
     font-size: 18px;
+  }
+
+  .hero__contact {
+    font-size: 22px;
+  }
+}
+
+/* 移动端额外优化 */
+@media (max-width: 768px) {
+  .hero__contact {
+    font-size: 18px;
+    gap: 8px 16px;
   }
 }
 
@@ -11405,15 +11430,28 @@ select {
   margin-top: 2px;
   /* Align with text line-height */
 }
+
 /* Print styles moved from offline-orders page due to SWC panic */
 @media print {
   .print-compact-mode .order-detail-card {
-     padding: 0.5rem !important;
-     border: none !important;
-     box-shadow: none !important;
+    padding: 0.5rem !important;
+    border: none !important;
+    box-shadow: none !important;
   }
-  .print-compact-mode h1 { font-size: 1.25rem !important; }
-  .print-compact-mode h2 { font-size: 1.1rem !important; margin-bottom: 0.25rem !important; }
-  .print-compact-mode .py-2, .print-compact-mode .mb-4 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; margin-bottom: 0.5rem !important; }
-}
 
+  .print-compact-mode h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .print-compact-mode h2 {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  .print-compact-mode .py-2,
+  .print-compact-mode .mb-4 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+}
