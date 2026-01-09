@@ -550,7 +550,12 @@ exports.updateSalesOrderStatus = async (req, res) => {
       const total = taxBase + taxAmount;
 
       updateData.deposit_amount = total;
-      logger.info(`[SalesOrders] Order ${id} marked COMPLETED. Auto-balancing deposit to ${total}`);
+      // 同时更新 configuration JSON 块中的金额，确保详情页显示一致
+      updateData.configuration = {
+        ...config,
+        depositAmount: total
+      };
+      logger.info(`[SalesOrders] Order ${id} marked COMPLETED. Auto-balancing deposit to ${total} and syncing configuration blob.`);
     }
 
     const updatedOrder = await prisma.$transaction(async (tx) => {

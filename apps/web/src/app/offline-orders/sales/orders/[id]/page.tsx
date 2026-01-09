@@ -790,7 +790,7 @@ export default function SalesOrderDetailPage() {
                   )}
 
                   {/* 支付信息 - 如果已支付定金 */}
-                  {Number(config?.depositAmount || 0) > 0 && (
+                  {Number(order?.payment?.depositAmount || 0) > 0 && (
                     <div style={{
                       padding: '1.5rem',
                       backgroundColor: '#ecfdf5',
@@ -811,7 +811,7 @@ export default function SalesOrderDetailPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                           <span style={{ color: '#4b5563' }}>{t('deposit')}:</span>
                           <span style={{ fontWeight: 500, color: '#059669' }}>
-                            -${Number(config?.depositAmount || 0).toFixed(2)}
+                            -${Number(order?.payment?.depositAmount || 0).toFixed(2)}
                           </span>
                         </div>
                         <div style={{
@@ -825,7 +825,7 @@ export default function SalesOrderDetailPage() {
                         }}>
                           <span style={{ fontWeight: 600, color: '#111827' }}>{t('remainingBalance')}:</span>
                           <strong style={{ fontSize: '1.25rem', fontWeight: 700, color: '#2563eb' }}>
-                            ${Math.max(0, Number(config.pricing?.total || 0) - Number(config?.depositAmount || 0)).toFixed(2)}
+                            ${Math.max(0, Number(config.pricing?.total || 0) - Number(order?.payment?.depositAmount || 0)).toFixed(2)}
                           </strong>
                         </div>
                       </div>
@@ -883,13 +883,13 @@ export default function SalesOrderDetailPage() {
                   <div className="info-item">
                     <span className="info-label">{t('depositAmount')}</span>
                     <span className="info-value text-green-600">
-                      ${Number(config?.depositAmount || 0).toFixed(2)} CAD
+                      ${Number(order?.payment?.depositAmount || 0).toFixed(2)} CAD
                     </span>
                   </div>
                   <div className="info-item">
                     <span className="info-label">{t('remainingAmount')}</span>
                     <span className="info-value text-blue-600 font-bold">
-                      ${Math.max(0, Number(config?.pricing?.total || 0) - Number(config?.depositAmount || 0)).toFixed(2)} CAD
+                      ${Math.max(0, Number(config?.pricing?.total || 0) - Number(order?.payment?.depositAmount || 0)).toFixed(2)} CAD
                     </span>
                   </div>
                 </div>

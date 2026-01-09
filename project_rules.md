@@ -3,7 +3,10 @@
 ## 1. 数据一致性规范 (Data Consistency)
 
 ### 1.1 列表视图与其计算逻辑的数据依赖
-- **错误回顾**: 在 `OFF-YYMMDD-NN` 订单编号格式更新后，列表页新增了“剩余应付”（Balance Due）列。但由于后端 `salesOrderController.js` 的 `listSalesOrders` 接口为了减小体积移除了 `configuration` 字段，导致前端计算逻辑拿不到数据，显示为 0。
+- **Data Consistency**: When optimizing or modifying API responses, always check if frontend components depend on specific fields for calculations (e.g., `configuration` or `payment` for balance calculation).
+- **Data Redundancy (Column vs JSON)**: Be aware that some fields (like `deposit_amount`) are stored both as dedicated database columns and inside JSON blobs (e.g., `configuration`).
+    - **Backend**: Always update BOTH the column and the JSON field to maintain consistency.
+    - **Frontend**: Prefer using properties mapped from dedicated columns (like `order.payment.depositAmount`) as the primary source of truth, rather than deep-nesting into JSON blobs, for critical business logic or financial displays.
 - **根因分析**: 经典的“列表与详情”分离模式（Summary vs Detail）在精简列表字段时，没有考虑到前端对这些字段存在**逻辑依赖**（如动态计算金额）。
 - **强制规则**: 
     - **禁止盲目精简**: 在优化 API 输出体积时，必须核对前端对应页面（及子组件）是否使用了该字段进行计算。
