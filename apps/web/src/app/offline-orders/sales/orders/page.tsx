@@ -881,7 +881,6 @@ export default function SalesOrdersPage() {
                             {order.creator ? (
                               <div className="sales-orders-creator">
                                 <span>{order.creator.name}</span>
-                                <span className="sales-orders-creator-sub">{order.creator.email}</span>
                               </div>
                             ) : (
                               '—'
@@ -938,6 +937,15 @@ export default function SalesOrdersPage() {
                               onClick={() => handleViewDetail(order.id)}
                             >
                               {t('btnDetail')}
+                            </button>
+                            <button
+                              type="button"
+                              className="sales-orders-detail-btn-small"
+                              style={{ backgroundColor: '#64748b' }}
+                              onClick={() => window.open(`/offline-orders/sales/orders/${order.id}?print=true`, '_blank')}
+                              title={t('btnPrint')}
+                            >
+                              🖨️
                             </button>
                             <button
                               type="button"

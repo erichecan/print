@@ -1034,6 +1034,8 @@ export interface SalesOfflineOrderListResponse {
 // 订单配置数据结构类型定义
 export interface OfflineOrderProductItem {
   id: string;
+  productId?: string; // PRD v2.0
+  productName?: string; // PRD v2.0
   categoryId: string;
   categoryName: string;
   variants: Array<{

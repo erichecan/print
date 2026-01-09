@@ -5,7 +5,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { authApi, salesOrdersApi, SalesOfflineOrderDetail, OfflineOrderConfiguration, authenticatedFetch } from '@/lib/api';
 import { BillingDetails } from '@/app/offline-orders/components/BillingDetails';
 import { OrderItemColorGroup } from '@/types/order';
@@ -15,6 +15,7 @@ import { useCallback } from 'react';
 export default function SalesOrderDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const orderId = params?.id as string | undefined;
 
   const [authChecking, setAuthChecking] = useState(true);
@@ -151,6 +152,17 @@ export default function SalesOrderDetailPage() {
     };
   }, [orderId, router]);
 
+  // Auto-print logic
+  useEffect(() => {
+    const shouldPrint = searchParams?.get('print') === 'true';
+    if (shouldPrint && !loading && order && !error) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, loading, order, error]);
+
   const meta = order;
 
   // 解析配置信息
@@ -206,7 +218,7 @@ export default function SalesOrderDetailPage() {
       const colorsMap: Record<string, any> = {};
 
       if (config.colorGroupsByProduct && config.colorGroupsByProduct[item.id]) {
-        config.colorGroupsByProduct[item.id].forEach(group => {
+        config.colorGroupsByProduct[item.id].forEach((group, idx) => {
           const sizes = Object.entries(group.quantities || {}).map(([size, quantity]) => ({
             size,
             quantity: Number(quantity),
@@ -216,7 +228,9 @@ export default function SalesOrderDetailPage() {
           })).filter(s => s.quantity > 0);
 
           if (sizes.length > 0) {
-            colorsMap[group.colorCode] = {
+            // Use unique key (group.id or index) to prevent overwriting same-color groups
+            const key = group.id || `${group.colorCode}-${idx}`;
+            colorsMap[key] = {
               colorId: group.colorCode,
               colorName: group.colorName,
               sizes
@@ -226,14 +240,15 @@ export default function SalesOrderDetailPage() {
       } else {
         // Fallback for legacy variants
         (item.variants || []).forEach(v => {
-          if (!colorsMap[v.color]) {
-            colorsMap[v.color] = {
+          const key = v.color; // Legacy behavior implies unique colors per item
+          if (!colorsMap[key]) {
+            colorsMap[key] = {
               colorId: v.color,
               colorName: v.color,
               sizes: []
             };
           }
-          colorsMap[v.color].sizes.push({
+          colorsMap[key].sizes.push({
             size: v.size,
             quantity: v.quantity,
             unitPrice: v.unitPrice,
@@ -245,7 +260,7 @@ export default function SalesOrderDetailPage() {
 
       return {
         id: item.id,
-        productName: item.categoryName || meta?.primaryProduct || t('unknownProduct'),
+        productName: item.productName || item.categoryName || meta?.primaryProduct || t('unknownProduct'),
         colors: Object.values(colorsMap)
       };
     }).filter(item => item.colors.length > 0);
@@ -294,7 +309,7 @@ export default function SalesOrderDetailPage() {
   return (
     <div className="order-detail-shell">
       <div className="order-detail-card">
-        <header className="order-detail-header">
+        <header className="order-detail-header print:hidden">
           <button type="button" className="order-detail-back" onClick={handleBack}>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -305,7 +320,7 @@ export default function SalesOrderDetailPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 {/* 语言切换按钮 */}
-                <div style={{ display: 'flex', gap: '0.25rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem' }}>
+                <div className="print:hidden" style={{ display: 'flex', gap: '0.25rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem' }}>
                   <button
                     type="button"
                     style={{
@@ -346,7 +361,7 @@ export default function SalesOrderDetailPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/offline-orders?editId=${meta.id}`)}
-                  className="order-detail-edit-btn"
+                  className="order-detail-edit-btn print:hidden"
                   style={{
                     padding: '0.5rem 1rem',
                     backgroundColor: '#2563eb',
@@ -383,7 +398,7 @@ export default function SalesOrderDetailPage() {
                 </div>
                 {/* 修改阶段 */}
                 {stages.length > 0 && (
-                  <div className="order-stage-update">
+                  <div className="order-stage-update print:hidden">
                     <label className="stage-update-label">
                       <span>{t('updateStage')}:</span>
                       <select
