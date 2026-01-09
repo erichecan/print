@@ -32,7 +32,7 @@ const mapSalesOfflineOrder = (order, includeDetails = false) => {
     updatedAt: order.updatedAt,
   };
 
-// 详情接口包含完整配置信息
+  // 详情接口包含完整配置信息
   if (includeDetails) {
     return {
       ...base,
@@ -56,6 +56,8 @@ exports.listSalesOrders = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
+    const search = req.query.search ? req.query.search.trim() : null;
+    const creatorId = req.query.creatorId ? req.query.creatorId.trim() : null;
     const skip = (page - 1) * limit;
 
     const roleRaw = req.user?.role || '';
@@ -70,19 +72,39 @@ exports.listSalesOrders = async (req, res) => {
       isManager,
       page,
       limit,
+      search,
+      creatorId,
     });
 
     const where = {};
 
-// 普通 Sales 只看自己提交的订单（通过 metadata.submittedByUserId）
+    // 1. 权限过滤
+    // 普通 Sales 只看自己提交的订单（通过 metadata.submittedByUserId）
     if (!isManager && userId) {
       where.metadata = {
         path: ['submittedByUserId'],
         equals: userId,
       };
+    } else if (isManager && creatorId) {
+      // Manager 可以指定筛选某个创建者
+      where.metadata = {
+        path: ['submittedByUserId'],
+        equals: creatorId,
+      };
     }
 
-// 查询订单时，同时获取创建者信息（用于销售主管查看）
+    // 2. 搜索过滤 (支持模糊搜索: 订单号, 项目名, 客户名, 公司名, 邮箱)
+    if (search) {
+      where.OR = [
+        { orderCode: { contains: search, mode: 'insensitive' } },
+        { projectName: { contains: search, mode: 'insensitive' } },
+        { contactName: { contains: search, mode: 'insensitive' } },
+        { company: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // 查询订单时，同时获取创建者信息（用于销售主管查看）
     const [orders, total] = await prisma.$transaction([
       prisma.offlineOrder.findMany({
         where,
@@ -92,40 +114,45 @@ exports.listSalesOrders = async (req, res) => {
           { createdAt: 'desc' },
           { orderCode: 'desc' },
         ],
-        include: {
-// 通过 metadata.submittedByUserId 查找创建者
-          // 注意：这里需要手动查询用户信息，因为 Prisma 不支持通过 JSON 字段关联
-        },
+        // 通过 metadata.submittedByUserId 查找创建者
+        // 注意：这里需要手动查询用户信息，因为 Prisma 不支持通过 JSON 字段关联
       }),
       prisma.offlineOrder.count({ where }),
     ]);
 
-// 获取所有订单的创建者信息
-    const submittedByUserIds = orders
+    // 获取所有订单的创建者信息
+    let submittedByUserIds = orders
       .map(order => order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id)
       .filter(Boolean);
-    
-    const creators = submittedByUserIds.length > 0
+
+    // 如果有筛选 creatorId, 也要确保把它包含进去查名字（虽然一般会在列表中）
+    if (creatorId && !submittedByUserIds.includes(creatorId)) {
+      submittedByUserIds.push(creatorId);
+    }
+
+    const uniqueCreatorIds = [...new Set(submittedByUserIds)];
+
+    const creators = uniqueCreatorIds.length > 0
       ? await prisma.user.findMany({
-          where: { id: { in: submittedByUserIds } },
-          select: { id: true, email: true, firstName: true, lastName: true },
-        })
+        where: { id: { in: uniqueCreatorIds } },
+        select: { id: true, email: true, firstName: true, lastName: true },
+      })
       : [];
-    
+
     const creatorMap = new Map(creators.map(u => [u.id, u]));
 
     res.json({
       data: orders.map(order => {
         const mapped = mapSalesOfflineOrder(order);
-// 添加创建者信息
+        // 添加创建者信息
         const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id;
         if (submittedByUserId && creatorMap.has(submittedByUserId)) {
           const creator = creatorMap.get(submittedByUserId);
           mapped.creator = {
             id: creator.id,
             email: creator.email,
-            name: creator.firstName && creator.lastName 
-              ? `${creator.firstName} ${creator.lastName}` 
+            name: creator.firstName && creator.lastName
+              ? `${creator.firstName} ${creator.lastName}`
               : creator.email.split('@')[0],
           };
         }
@@ -145,6 +172,52 @@ exports.listSalesOrders = async (req, res) => {
       stack: error.stack,
     });
     res.status(500).json({ error: 'Failed to list sales orders' });
+  }
+};
+
+/**
+ * GET /api/sales/creators
+ * 获取所有相关的创建者列表（仅 Manager 可用）
+ * 用于筛选下拉菜单
+ */
+exports.getSalesCreators = async (req, res) => {
+  try {
+    const roleRaw = req.user?.role || '';
+    const role = String(roleRaw).toUpperCase();
+    const isManager = role === 'SALES_MANAGER' || role === 'ADMIN';
+
+    if (!isManager) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    // 获取所有拥有 SALES, SALES_MANAGER, ADMIN 角色的用户
+    const creators = await prisma.user.findMany({
+      where: {
+        role: { in: ['SALES', 'SALES_MANAGER', 'ADMIN'] },
+        // 只显示 verify 过的或者有名字的？先全部显示
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true
+      },
+      orderBy: { createdAt: 'asc' }
+    });
+
+    res.json({
+      data: creators.map(u => ({
+        id: u.id,
+        email: u.email,
+        name: u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.email,
+        role: u.role
+      }))
+    });
+
+  } catch (error) {
+    logger.error('[SalesOrders] getSalesCreators error', error);
+    res.status(500).json({ error: 'Failed to fetch creators' });
   }
 };
 
@@ -186,13 +259,13 @@ exports.getSalesOrderById = async (req, res) => {
       return res.status(404).json({ error: 'Offline order not found' });
     }
 
-// 普通 Sales 只能访问自己提交的订单
+    // 普通 Sales 只能访问自己提交的订单
     const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
     if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
       return res.status(403).json({ error: 'You do not have permission to view this order' });
     }
 
-// 详情接口包含完整配置信息
+    // 详情接口包含完整配置信息
     res.json({
       order: {
         ...mapSalesOfflineOrder(order, true), // 传入 true 包含详情字段
@@ -256,7 +329,7 @@ exports.updateSalesOrderStage = async (req, res) => {
       return res.status(404).json({ error: 'Offline order not found' });
     }
 
-// 普通 Sales 只能修改自己提交的订单
+    // 普通 Sales 只能修改自己提交的订单
     const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
     if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
       return res.status(403).json({ error: 'You do not have permission to update this order' });
@@ -377,7 +450,7 @@ exports.updateSalesOrderStatus = async (req, res) => {
       newStatus: status,
     });
 
-// 验证状态值
+    // 验证状态值
     const validStatuses = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
     const normalizedStatus = status ? String(status).toUpperCase() : null;
     if (!normalizedStatus || !validStatuses.includes(normalizedStatus)) {
@@ -387,8 +460,8 @@ exports.updateSalesOrderStatus = async (req, res) => {
       });
     }
 
-// 查找订单并验证权限
-// 修复：包含 rushOrder 字段用于比较
+    // 查找订单并验证权限
+    // 修复：包含 rushOrder 字段用于比较
     const order = await prisma.offlineOrder.findUnique({
       where: { id },
       select: {
@@ -403,17 +476,17 @@ exports.updateSalesOrderStatus = async (req, res) => {
       return res.status(404).json({ error: 'Offline order not found' });
     }
 
-// 普通 Sales 只能修改自己提交的订单
+    // 普通 Sales 只能修改自己提交的订单
     const submittedByUserId = order.metadata?.submittedByUserId || order.metadata?.submitted_by_user_id || null;
     if (!isManager && userId && submittedByUserId && submittedByUserId !== userId) {
       return res.status(403).json({ error: 'You do not have permission to update this order' });
     }
 
-// 检查是否需要更新
+    // 检查是否需要更新
     const statusUnchanged = order.status === normalizedStatus;
     const rushOrderNeedsUpdate = rushOrder !== undefined && order.rushOrder !== Boolean(rushOrder);
-    
-// 如果状态和加急标记都没有变化，直接返回
+
+    // 如果状态和加急标记都没有变化，直接返回
     if (statusUnchanged && !rushOrderNeedsUpdate) {
       const currentOrder = await prisma.offlineOrder.findUnique({
         where: { id },
@@ -441,14 +514,14 @@ exports.updateSalesOrderStatus = async (req, res) => {
       ? `${req.user.firstName || ''} ${req.user.lastName || ''}`.trim() || req.user.email
       : 'Sales';
 
-// 更新订单状态
-// 如果提供了 rushOrder，同时更新加急状态
-// 修复：状态更新不需要创建 stage history（stage history 用于阶段变更，不是状态变更）
+    // 更新订单状态
+    // 如果提供了 rushOrder，同时更新加急状态
+    // 修复：状态更新不需要创建 stage history（stage history 用于阶段变更，不是状态变更）
     const updateData = {
       status: normalizedStatus,
     };
 
-// 如果提供了 rushOrder 参数，更新加急状态
+    // 如果提供了 rushOrder 参数，更新加急状态
     if (rushOrder !== undefined) {
       updateData.rushOrder = Boolean(rushOrder);
     }

@@ -11,6 +11,9 @@ router.use(authorizeRoles('SALES', 'SALES_MANAGER', 'ADMIN'));
 // GET /api/sales/orders - 列表
 router.get('/', salesOrderController.listSalesOrders);
 
+// GET /api/sales/orders/creators - 获取创建者列表 (用于筛选)
+router.get('/creators', salesOrderController.getSalesCreators);
+
 // GET /api/sales/orders/:id - 详情
 router.get('/:id', salesOrderController.getSalesOrderById);
 

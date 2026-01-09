@@ -217,6 +217,34 @@ export default function SalesOrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
 
+  // 搜索和筛选状态
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(''); // Debounced value for API
+  const [selectedCreator, setSelectedCreator] = useState('');
+  const [creators, setCreators] = useState<Array<{ id: string; name: string; email: string }>>([]);
+
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  // Load creators if manager
+  useEffect(() => {
+    // Only load if manager role
+    // Check role is done in other effect, but we can check user object here
+    const role = currentUser?.role ? String(currentUser.role).toUpperCase() : '';
+    const isManagerRole = ['SALES_MANAGER', 'ADMIN'].includes(role);
+
+    if (currentUser && isManagerRole) {
+      salesOrdersApi.getCreators()
+        .then(res => setCreators(res.data))
+        .catch(err => console.error('Failed to load creators', err));
+    }
+  }, [currentUser]);
+
   // 在页面加载时打印构建版本信息，便于验证部署
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -288,40 +316,39 @@ export default function SalesOrdersPage() {
     }
   }, [currentUser, authLoading, router]);
 
+  // Fetch Stages once
   useEffect(() => {
     let cancelled = false;
+    const loadStages = async () => {
+      try {
+        const { authenticatedFetch } = await import('@/lib/api');
+        const stagesRes = await authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
+          .then(res => res.ok ? res.json() : { stages: [] })
+          .catch(() => ({ stages: [] }));
+        if (!cancelled) setStages(stagesRes.stages || []);
+      } catch (e) {
+        console.warn('Failed to load stages:', e);
+      }
+    };
+    if (currentUser) loadStages();
+    return () => { cancelled = true; };
+  }, [currentUser]);
 
-    const bootstrap = async () => {
-      // Auth check moved to dedicated useEffect above
+  // Fetch Orders when status/filters change
+  useEffect(() => {
+    let cancelled = false;
+    const fetchOrders = async () => {
       if (authLoading || !currentUser) return;
 
+      setLoading(true);
+      setError(''); // Clear error before fetch
       try {
-        // 获取阶段配置（用于快速修改状态）
-        // 使用代理 API 访问，确保认证正确传递
-        // 修复：使用 authenticatedFetch 确保 token 正确传递
-        try {
-          const { authenticatedFetch } = await import('@/lib/api');
-          const stagesRes = await authenticatedFetch('/api/proxy/admin/offline-orders/config/stages')
-            .then(res => {
-              if (!res.ok) {
-                console.warn('[SalesOrders] Failed to fetch stages:', res.status);
-                return { stages: [] };
-              }
-              return res.json();
-            })
-            .catch(() => ({ stages: [] }));
-          if (!cancelled) {
-            setStages(stagesRes.stages || []);
-          }
-        } catch (e) {
-          console.warn('Failed to load stages:', e);
-        }
-      } catch (e) {
-        // Ignore
-      }
-
-      try {
-        const response = await salesOrdersApi.list({ page: 1, limit: 50 });
+        const response = await salesOrdersApi.list({
+          page: 1,
+          limit: 50,
+          search: debouncedSearch,
+          creatorId: selectedCreator || undefined
+        });
         if (!cancelled) {
           setOrders(response.data);
         }
@@ -336,11 +363,11 @@ export default function SalesOrdersPage() {
       }
     };
 
-    bootstrap();
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser, authLoading]); // Removed router dependence to avoid loop, depend on auth state
+    if (activeTab === 'orders') {
+      fetchOrders();
+    }
+    return () => { cancelled = true; };
+  }, [currentUser, authLoading, activeTab, debouncedSearch, selectedCreator]);
 
   const handleViewDetail = (orderId: string) => {
     router.push(`/offline-orders/sales/orders/${orderId}`);
@@ -659,10 +686,64 @@ export default function SalesOrdersPage() {
         {activeTab === 'orders' && (
           <div className="sales-orders-tab-content">
 
+            {/* 筛选工具栏 */}
+            <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <div className="flex-1 w-full md:w-auto">
+                <label htmlFor="search" className="sr-only">搜索</label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="2 2 16 16" fill="currentColor" aria-hidden="true">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    name="search"
+                    id="search"
+                    className="pl-10 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-slate-300 rounded-md py-2"
+                    placeholder="搜索订单号、客户、项目..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {isManager && (
+                <div className="w-full md:w-64">
+                  <select
+                    id="creator-filter"
+                    name="creator-filter"
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-slate-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+                    value={selectedCreator}
+                    onChange={(e) => setSelectedCreator(e.target.value)}
+                  >
+                    <option value="">所有创建者</option>
+                    {creators.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
             {loading ? (
               <p>正在加载订单...</p>
             ) : orders.length === 0 ? (
-              <p>当前还没有线下订单。</p>
+              <div className="text-center py-10 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                <p className="text-slate-500">
+                  {(searchQuery || selectedCreator) ? '没有找到匹配的线下订单' : '当前还没有线下订单。'}
+                </p>
+                {(searchQuery || selectedCreator) && (
+                  <button
+                    className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                    onClick={() => { setSearchQuery(''); setSelectedCreator(''); }}
+                  >
+                    清除筛选条件
+                  </button>
+                )}
+              </div>
             ) : (
               <table className="sales-orders-table">
                 <thead>

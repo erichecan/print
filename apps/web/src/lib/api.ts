@@ -970,7 +970,7 @@ export const authApi = {
     }
   },
   updateProfile: (data: { firstName?: string; lastName?: string; phone?: string }) =>
-    api('/auth/me', { method: 'PATCH', body: data }),
+    api('/auth/me', { method: 'PUT', body: data }),
   changePassword: (data: { currentPassword: string; newPassword: string }) =>
     api('/auth/me/password', { method: 'PUT', body: data }), // 密码修改API路径修复为PUT /auth/me/password
   forgotPassword: (email: string) =>
@@ -1126,13 +1126,17 @@ export interface SalesOfflineOrderDetail extends SalesOfflineOrderSummary {
 }
 
 export const salesOrdersApi = {
-  list: (params?: { page?: number; limit?: number }) => {
+  list: (params?: { page?: number; limit?: number; search?: string; creatorId?: string }) => {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', String(params.page));
     if (params?.limit) query.append('limit', String(params.limit));
+    if (params?.search) query.append('search', params.search);
+    if (params?.creatorId) query.append('creatorId', params.creatorId);
     const qs = query.toString();
     return api<SalesOfflineOrderListResponse>(`/sales/orders${qs ? `?${qs}` : ''}`);
   },
+  // 获取销售人员/创建者列表
+  getCreators: () => api<{ data: Array<{ id: string; name: string; email: string; role: string }> }>('/sales/orders/creators'),
   get: (id: string) =>
     api<{ order: SalesOfflineOrderDetail } | SalesOfflineOrderDetail>(`/sales/orders/${id}`).then((res) => {
       // 修复：处理两种可能的返回格式
