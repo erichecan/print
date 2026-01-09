@@ -4,9 +4,10 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { OrderItemColorGroup, PositionKey } from '@/types/order';
 import { PrintPositionsPanel } from './PrintPositionsPanel';
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 
 interface ColorGroupCardIntegratedProps {
   group: OrderItemColorGroup;
@@ -24,6 +25,7 @@ interface ColorGroupCardIntegratedProps {
   youthSizes?: string[];
   adultSizes?: string[];
   largeSizes?: string[];
+  locale?: OfflineOrdersLocale;
 }
 
 // [2026-01-06] 移除硬编码尺码，改为从props传入
@@ -47,18 +49,33 @@ export function ColorGroupCardIntegrated({
   youthSizes = DEFAULT_YOUTH_SIZES,
   adultSizes = DEFAULT_ADULT_SIZES,
   largeSizes = DEFAULT_LARGE_SIZES,
+  locale = 'en'
 }: ColorGroupCardIntegratedProps) {
   const [showInheritConfirm, setShowInheritConfirm] = useState(false);
+
+  // 翻译函数
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
+    let text = translations[key] || fallback[key] || key;
+
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+      });
+    }
+    return text;
+  }, [locale]);
 
   // [2026-01-06] 确保尺码按照配置的display_order排序，并且只显示availableSizes中的尺码
   // 关键：youthSizes和adultSizes已经按display_order排序，我们只需要过滤availableSizes中的尺码，保持原有顺序
   // 使用Set来提高查找效率
   const availableSizesSet = new Set(availableSizes.length > 0 ? availableSizes : []);
-  
+
   const filteredYouthSizes = availableSizes.length > 0
     ? youthSizes.filter(size => availableSizesSet.has(size))
     : youthSizes;
-  
+
   const filteredAdultSizes = availableSizes.length > 0
     ? adultSizes.filter(size => availableSizesSet.has(size))
     : adultSizes;
@@ -113,7 +130,7 @@ export function ColorGroupCardIntegrated({
           <span className="text-sm text-gray-500">({group.colorCode})</span>
           {group.inheritsFromColorId && (
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
-              已继承
+              {t('inherited')}
             </span>
           )}
         </div>
@@ -124,9 +141,9 @@ export function ColorGroupCardIntegrated({
               type="button"
               onClick={() => setShowInheritConfirm(true)}
               className="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-              title="继承上一颜色的 print positions"
+              title={t('inheritConfirmTitle')}
             >
-              继承上一颜色
+              {t('inheritPrevious')}
             </button>
           )}
           {/* 复制到其他颜色按钮 */}
@@ -135,9 +152,9 @@ export function ColorGroupCardIntegrated({
               type="button"
               onClick={onCopyToOthers}
               className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-              title="将本颜色的设置复制到其他颜色"
+              title={t('copyTooltip')}
             >
-              复制到其他颜色
+              {t('copyToOthers')}
             </button>
           )}
           <button
@@ -145,7 +162,7 @@ export function ColorGroupCardIntegrated({
             onClick={onRemove}
             className="text-red-600 hover:text-red-700 text-sm font-medium"
           >
-            删除颜色
+            {t('deleteColor')}
           </button>
         </div>
       </header>
@@ -155,7 +172,7 @@ export function ColorGroupCardIntegrated({
         <div className="flex flex-wrap gap-4">
           {/* YOUTH尺码 */}
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-2">YOUTH（童装）</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('youthLabel')}</label>
             <div className="flex flex-wrap gap-2">
               {filteredYouthSizes.map((size) => {
                 const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
@@ -192,7 +209,7 @@ export function ColorGroupCardIntegrated({
 
           {/* ADULT尺码 */}
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-2">ADULT（成人）</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('adultLabel')}</label>
             <div className="flex flex-wrap gap-2">
               {filteredAdultSizes.map((size) => {
                 const isAvailable = isSizeAvailable(productItemId, group.colorCode, size);
@@ -241,7 +258,7 @@ export function ColorGroupCardIntegrated({
           <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
             <label className="block">
               <span className="block text-sm font-medium text-gray-700 mb-2">
-                单价（适用于该颜色的所有尺码）:
+                {t('unitPriceLabel')}
               </span>
               <input
                 type="number"
@@ -263,7 +280,7 @@ export function ColorGroupCardIntegrated({
                   }
                 }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="请输入单价"
+                placeholder={t('unitPricePlaceholder')}
               />
             </label>
           </div>
@@ -274,6 +291,7 @@ export function ColorGroupCardIntegrated({
               positions={group.positions}
               onChange={(positions) => onUpdate({ ...group, positions })}
               onCopyToOthers={onCopyToOthers}
+              locale={locale}
             />
           </div>
         </div>
@@ -283,10 +301,9 @@ export function ColorGroupCardIntegrated({
       {showInheritConfirm && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">继承上一颜色的 print positions</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('inheritConfirmTitle')}</h3>
             <p className="text-sm text-gray-600 mb-4">
-              {/* 修复 ESLint react/no-unescaped-entities：避免直接使用双引号（显示效果不变） */}
-              确定要继承“{previousGroup?.colorName}”的印刷位置配置吗？这将复制所有位置设置（不包含文件）。
+              {t('inheritConfirmDesc', { colorName: previousGroup?.colorName || '' })}
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -294,14 +311,14 @@ export function ColorGroupCardIntegrated({
                 onClick={() => setShowInheritConfirm(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                取消
+                {t('cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleInheritPositions}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                确定继承
+                {t('confirm')}
               </button>
             </div>
           </div>

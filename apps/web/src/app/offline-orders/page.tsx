@@ -2527,6 +2527,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
                   });
                 }
               }}
+              locale={locale}
             />
           );
         })}

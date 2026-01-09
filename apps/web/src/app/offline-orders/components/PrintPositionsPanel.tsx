@@ -4,42 +4,50 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { PositionConfig, PositionKey } from '@/types/order';
 import { PositionEditorModal } from './PositionEditorModal';
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 
 interface PrintPositionsPanelProps {
   positions: PositionConfig[];
   onChange: (positions: PositionConfig[]) => void;
   onCopyToOthers?: () => void;
+  locale?: OfflineOrdersLocale;
 }
 
 const POSITION_KEYS: PositionKey[] = ['front', 'back', 'left_sleeve', 'right_sleeve', 'pocket', 'tag_inside', 'tag_outside', 'custom'];
-const POSITION_LABELS: Record<PositionKey, string> = {
-  front: '正面',
-  back: '背面',
-  left_sleeve: '左袖',
-  right_sleeve: '右袖',
-  pocket: '口袋',
-  tag_inside: '内标',
-  tag_outside: '外标',
-  custom: '其他位置'
-};
 
-const PRINT_METHODS = [
-  { value: 'DTF', label: 'DTF' },
-  { value: 'Screen', label: '丝网印刷' },
-  { value: 'Embroidery', label: '刺绣' },
-  { value: 'UV', label: 'UV印刷' },
-  { value: 'Vinyl', label: '胶膜' },
-  { value: '其他', label: '其他' }
-] as const;
-
-export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: PrintPositionsPanelProps) {
+export function PrintPositionsPanel({ positions, onChange, onCopyToOthers, locale = 'en' }: PrintPositionsPanelProps) {
   const [editingPosition, setEditingPosition] = useState<PositionKey | null>(null);
   const [selectedPositionKey, setSelectedPositionKey] = useState<PositionKey | ''>('');
 
-// 添加位置
+  // 翻译函数
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
+    let text = translations[key] || fallback[key] || key;
+
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+      });
+    }
+    return text;
+  }, [locale]);
+
+  const POSITION_LABELS: Record<PositionKey, string> = {
+    front: t('positionFront'),
+    back: t('positionBack'),
+    left_sleeve: t('positionLeftSleeve'),
+    right_sleeve: t('positionRightSleeve'),
+    pocket: t('positionPocket'),
+    tag_inside: t('tag_inside'),
+    tag_outside: t('tag_outside'),
+    custom: t('positionOther')
+  };
+
+  // 添加位置
   const handleAddPosition = (key: PositionKey) => {
     const exists = positions.find(p => p.positionKey === key);
     if (exists) {
@@ -47,7 +55,7 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
       setEditingPosition(key);
       return;
     }
-    
+
     // 添加新位置
     const newPosition: PositionConfig = {
       positionKey: key,
@@ -61,7 +69,7 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
     setSelectedPositionKey('');
   };
 
-// 更新位置
+  // 更新位置
   const handleUpdatePosition = (updated: PositionConfig) => {
     const index = positions.findIndex(p => p.positionKey === updated.positionKey);
     if (index >= 0) {
@@ -74,12 +82,12 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
     setEditingPosition(null);
   };
 
-// 删除位置
+  // 删除位置
   const handleRemovePosition = (key: PositionKey) => {
     onChange(positions.filter(p => p.positionKey !== key));
   };
 
-// 切换位置启用状态
+  // 切换位置启用状态
   const handleToggleEnabled = (key: PositionKey) => {
     const index = positions.findIndex(p => p.positionKey === key);
     if (index >= 0) {
@@ -92,19 +100,19 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
   return (
     <div className="print-positions border-t border-dashed border-gray-300 pt-4 mt-4">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-semibold text-gray-700">印刷位置（Print Positions）</h4>
+        <h4 className="text-sm font-semibold text-gray-700">{t('printPositionsTitle')}</h4>
         {onCopyToOthers && (
           <button
             type="button"
             onClick={onCopyToOthers}
             className="px-3 py-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
           >
-            复制到其它颜色
+            {t('copyToOthers')}
           </button>
         )}
       </div>
 
-{/* 位置选择下拉 */}
+      {/* 位置选择下拉 */}
       <div className="mb-3">
         <select
           value={selectedPositionKey}
@@ -116,29 +124,28 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
           }}
           className="w-full max-w-xs border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value="" disabled>选择位置</option>
+          <option value="" disabled>{t('selectPosition')}</option>
           {POSITION_KEYS.map((key) => {
             const exists = positions.find(p => p.positionKey === key);
             return (
-              <option key={key} value={key} disabled={!!exists}>
-                {POSITION_LABELS[key]} {exists ? '(已添加)' : ''}
+              <option key={key} value={key} disabled={!!exists} className="p-1">
+                {POSITION_LABELS[key]} {exists ? t('alreadyAdded') : ''}
               </option>
             );
           })}
         </select>
       </div>
 
-{/* 已选位置列表 */}
+      {/* 已选位置列表 */}
       {positions.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {positions.map((pos) => (
             <div
               key={pos.positionKey}
-              className={`border rounded-lg p-3 ${
-                pos.enabled
+              className={`border rounded-lg p-3 ${pos.enabled
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-gray-50'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between mb-2">
                 <label className="flex items-center gap-2 cursor-pointer flex-1">
@@ -158,25 +165,25 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
                     onClick={() => setEditingPosition(pos.positionKey)}
                     className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-100"
                   >
-                    编辑
+                    {t('btnEdit')}
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRemovePosition(pos.positionKey)}
                     className="text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded hover:bg-red-100"
                   >
-                    删除
+                    {t('btnDelete')}
                   </button>
                 </div>
               </div>
               {pos.enabled && (
                 <div className="text-xs text-gray-600 space-y-1 mt-2">
-                  <div>工艺: {pos.method}</div>
+                  <div>{t('methodLabel')} {t(`method${pos.method}` as any) || pos.method}</div>
                   {pos.widthMm && pos.heightMm && (
-                    <div>尺寸: {pos.widthMm}×{pos.heightMm}mm</div>
+                    <div>{t('dimensionsLabel')} {pos.widthMm}×{pos.heightMm}mm</div>
                   )}
                   {pos.designAssetId && (
-                    <div className="text-green-600">✓ 已上传文件</div>
+                    <div className="text-green-600">{t('fileUploaded')}</div>
                   )}
                 </div>
               )}
@@ -185,17 +192,18 @@ export function PrintPositionsPanel({ positions, onChange, onCopyToOthers }: Pri
         </div>
       ) : (
         <div className="text-sm text-gray-500 text-center py-4 bg-gray-50 rounded-lg">
-          暂无印刷位置，请从上方下拉菜单选择
+          {t('noPrintPositions')}
         </div>
       )}
 
-{/* 位置编辑弹窗 */}
+      {/* 位置编辑弹窗 */}
       {editingPosition && (
         <PositionEditorModal
           positionKey={editingPosition}
           initialConfig={positions.find(p => p.positionKey === editingPosition) || undefined}
           onSave={handleUpdatePosition}
           onCancel={() => setEditingPosition(null)}
+          locale={locale}
         />
       )}
     </div>

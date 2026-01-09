@@ -7,6 +7,7 @@
 import { useState, useCallback } from 'react';
 import { OrderItemColorGroup, PositionKey } from '@/types/order';
 import { ColorGroupCard } from './ColorGroupCard';
+import { OfflineOrdersLocale, OFFLINE_ORDERS_TRANSLATIONS } from '@/translations/offlineOrders';
 
 import { validateColorGroups } from '@/lib/services/orderItemPricing';
 
@@ -15,13 +16,15 @@ interface OrderItemConfiguratorProps {
   colorGroups: OrderItemColorGroup[]; // 颜色组列表
   onUpdate: (groups: OrderItemColorGroup[]) => void; // 更新回调
   onValidationChange?: (isValid: boolean, errors: string[]) => void; // 验证状态变化回调
+  locale?: OfflineOrdersLocale;
 }
 
 export function OrderItemConfigurator({
   productItemId,
   colorGroups,
   onUpdate,
-  onValidationChange
+  onValidationChange,
+  locale = 'en'
 }: OrderItemConfiguratorProps) {
   // 更新单个颜色组
   const handleGroupUpdate = useCallback((index: number, updated: OrderItemColorGroup) => {
@@ -133,6 +136,7 @@ export function OrderItemConfigurator({
             onUpdate={(updated) => handleGroupUpdate(index, updated)}
             onInherit={index > 0 ? () => handleInherit(index) : undefined}
             onCopyToOthers={() => handleCopyToOthers(index)}
+            locale={locale}
           />
         ))}
       </div>

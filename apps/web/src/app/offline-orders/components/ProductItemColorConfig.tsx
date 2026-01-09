@@ -8,6 +8,7 @@ import { useEffect, useMemo } from 'react';
 import { OrderItemColorGroup } from '@/types/order';
 import { OrderItemConfigurator } from './OrderItemConfigurator';
 import { convertProductColorsToColorGroups } from './utils/colorGroupConverter';
+import { OfflineOrdersLocale } from '@/translations/offlineOrders';
 
 interface ProductItemColorConfigProps {
   productItemId: string;
@@ -29,6 +30,7 @@ interface ProductItemColorConfigProps {
   existingGroups: OrderItemColorGroup[];
   onUpdate: (groups: OrderItemColorGroup[]) => void;
   onValidationChange: (isValid: boolean, errors: string[]) => void;
+  locale?: OfflineOrdersLocale;
 }
 
 export function ProductItemColorConfig({
@@ -37,9 +39,10 @@ export function ProductItemColorConfig({
   colors,
   existingGroups,
   onUpdate,
-  onValidationChange
+  onValidationChange,
+  locale = 'en'
 }: ProductItemColorConfigProps) {
-// 初始化颜色组（如果不存在）
+  // 初始化颜色组（如果不存在）
   useEffect(() => {
     if (existingGroups.length === 0 && colors.length > 0) {
       const newGroups = convertProductColorsToColorGroups(colors as any, []);
@@ -49,7 +52,7 @@ export function ProductItemColorConfig({
     }
   }, [productItemId, colors.length, existingGroups.length, onUpdate]);
 
-// 使用现有的颜色组，如果不存在则从colors转换
+  // 使用现有的颜色组，如果不存在则从colors转换
   const colorGroups = useMemo(() => {
     if (existingGroups.length > 0) {
       return existingGroups;
@@ -65,6 +68,7 @@ export function ProductItemColorConfig({
         colorGroups={colorGroups}
         onUpdate={onUpdate}
         onValidationChange={onValidationChange}
+        locale={locale}
       />
     </div>
   );

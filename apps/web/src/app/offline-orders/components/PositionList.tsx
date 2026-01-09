@@ -4,26 +4,48 @@
  */
 'use client';
 
+import { useCallback } from 'react';
 import { PositionConfig, PositionKey } from '@/types/order';
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 
 interface PositionListProps {
   positions: PositionConfig[];
   onChange: (positions: PositionConfig[]) => void;
   onEdit?: (positionKey: PositionKey) => void;
+  locale?: OfflineOrdersLocale;
 }
 
-const POSITION_LABELS: Record<PositionKey, string> = {
-  front: '正面',
-  back: '背面',
-  left_sleeve: '左袖',
-  right_sleeve: '右袖',
-  pocket: '口袋',
-  tag_inside: '内标',
-  tag_outside: '外标',
-  custom: '其他位置'
-};
+export function PositionList({
+  positions,
+  onChange,
+  onEdit,
+  locale = 'en'
+}: PositionListProps) {
+  // 翻译函数
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
+    let text = translations[key] || fallback[key] || key;
 
-export function PositionList({ positions, onChange, onEdit }: PositionListProps) {
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+      });
+    }
+    return text;
+  }, [locale]);
+
+  const POSITION_LABELS: Record<PositionKey, string> = {
+    front: t('positionFront'),
+    back: t('positionBack'),
+    left_sleeve: t('positionLeftSleeve'),
+    right_sleeve: t('positionRightSleeve'),
+    pocket: t('positionPocket'),
+    tag_inside: t('tag_inside'),
+    tag_outside: t('tag_outside'),
+    custom: t('positionOther')
+  };
+
   const allPositionKeys: PositionKey[] = ['front', 'back', 'left_sleeve', 'right_sleeve', 'pocket', 'tag_inside', 'tag_outside', 'custom'];
 
   // 切换位置启用状态
@@ -64,10 +86,10 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
     const sizeInfo = config.widthMm && config.heightMm
       ? `${config.widthMm}×${config.heightMm}mm`
       : config.widthMm
-        ? `宽${config.widthMm}mm`
+        ? `${t('widthShort')}${config.widthMm}mm`
         : config.heightMm
-          ? `高${config.heightMm}mm`
-          : '未设置尺寸';
+          ? `${t('heightShort')}${config.heightMm}mm`
+          : t('notSet');
 
     return {
       method: config.method,
@@ -80,7 +102,7 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
 
   return (
     <div className="space-y-2">
-      <div className="text-sm font-medium text-gray-700 mb-3">印刷位置配置：</div>
+      <div className="text-sm font-medium text-gray-700 mb-3">{t('printPositionsTitle')}</div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {allPositionKeys.map((key) => {
           const config = positions.find(p => p.positionKey === key);
@@ -91,8 +113,8 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
             <div
               key={key}
               className={`border rounded-lg p-3 cursor-pointer transition-all ${isEnabled
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                 }`}
               onClick={() => handleTogglePosition(key)}
             >
@@ -118,24 +140,24 @@ export function PositionList({ positions, onChange, onEdit }: PositionListProps)
                     }}
                     className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-100"
                   >
-                    编辑
+                    {t('edit')}
                   </button>
                 )}
               </div>
               {isEnabled && info && (
                 <div className="text-xs text-gray-600 space-y-1 mt-2">
-                  <div>工艺: {info.method}</div>
-                  <div>尺寸: {info.size}</div>
+                  <div>{t('methodLabel')}: {t(`method${info.method}` as any) || info.method}</div>
+                  <div>{t('sizeLabelAlt')}: {info.size}</div>
                   {/* Only show Unit Price if > 0 */}
                   {info.price > 0 && (
-                    <div>单价: ${info.price.toFixed(2)}</div>
+                    <div>{t('unitPriceLabel')}: ${info.price.toFixed(2)}</div>
                   )}
                   {/* Show DST Fee if exists and > 0 */}
                   {info.dstFileFee > 0 && (
-                    <div className="text-blue-600">DST Fee: ${info.dstFileFee.toFixed(2)}</div>
+                    <div className="text-blue-600">{t('dstFeeLabel')}: ${info.dstFileFee.toFixed(2)}</div>
                   )}
                   {info.hasFile && (
-                    <div className="text-green-600">✓ 已上传文件</div>
+                    <div className="text-green-600">{t('fileUploaded')}</div>
                   )}
                 </div>
               )}

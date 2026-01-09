@@ -4,26 +4,29 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { OrderItemColorGroup, PositionKey } from '@/types/order';
 import { SizePositionMatrix } from './SizePositionMatrix';
 import { PositionList } from './PositionList';
 import { PositionEditorModal } from './PositionEditorModal';
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 
 interface ColorGroupCardProps {
   group: OrderItemColorGroup;
   onUpdate: (updated: OrderItemColorGroup) => void;
-onInherit?: () => void; // 继承上一颜色的回调
-onCopyToOthers?: () => void; // 复制到其他颜色的回调
-previousGroup?: OrderItemColorGroup | null; // 上一个颜色组（用于继承）
+  onInherit?: () => void; // 继承上一颜色的回调
+  onCopyToOthers?: () => void; // 复制到其他颜色的回调
+  previousGroup?: OrderItemColorGroup | null; // 上一个颜色组（用于继承）
+  locale?: OfflineOrdersLocale;
 }
 
-export function ColorGroupCard({ 
-  group, 
-  onUpdate, 
+export function ColorGroupCard({
+  group,
+  onUpdate,
   onInherit,
   onCopyToOthers,
-  previousGroup 
+  previousGroup,
+  locale = 'en'
 }: ColorGroupCardProps) {
   const [perSizeEnabled, setPerSizeEnabled] = useState(!!group.perSizeOverrides?.length);
   const [editingPosition, setEditingPosition] = useState<{
@@ -31,7 +34,21 @@ export function ColorGroupCard({
     size?: string;
   } | null>(null);
 
-// 切换per-size overrides模式
+  // 翻译函数
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
+    let text = translations[key] || fallback[key] || key;
+
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+      });
+    }
+    return text;
+  }, [locale]);
+
+  // 切换per-size overrides模式
   const handleTogglePerSize = (enabled: boolean) => {
     setPerSizeEnabled(enabled);
     onUpdate({
@@ -40,7 +57,7 @@ export function ColorGroupCard({
     });
   };
 
-// 更新位置列表
+  // 更新位置列表
   const handlePositionsUpdate = (positions: typeof group.positions) => {
     onUpdate({
       ...group,
@@ -48,7 +65,7 @@ export function ColorGroupCard({
     });
   };
 
-// 处理继承上一颜色
+  // 处理继承上一颜色
   const handleInherit = () => {
     if (previousGroup && previousGroup.positions.length > 0) {
       // 复制位置配置（不复制文件二进制，仅引用）
@@ -56,7 +73,7 @@ export function ColorGroupCard({
         ...pos,
         designAssetId: pos.designAssetId || null // 保留引用，但不复制文件
       }));
-      
+
       onUpdate({
         ...group,
         positions: inheritedPositions,
@@ -67,38 +84,38 @@ export function ColorGroupCard({
     }
   };
 
-// 打开位置编辑弹窗
+  // 打开位置编辑弹窗
   const handleEditPosition = (positionKey: PositionKey, size?: string) => {
     setEditingPosition({ positionKey, size });
   };
 
-// 保存位置编辑
+  // 保存位置编辑
   const handleSavePosition = (config: typeof group.positions[0]) => {
     if (editingPosition?.size) {
       // 更新per-size override
       const overrides = group.perSizeOverrides || [];
       const sizeOverride = overrides.find(o => o.size === editingPosition.size);
       const otherOverrides = overrides.filter(o => o.size !== editingPosition.size);
-      
+
       const updatedOverrides = sizeOverride
         ? [
-            ...otherOverrides,
-            {
-              ...sizeOverride,
-              overrides: [
-                ...sizeOverride.overrides.filter(p => p.positionKey !== config.positionKey),
-                config
-              ]
-            }
-          ]
+          ...otherOverrides,
+          {
+            ...sizeOverride,
+            overrides: [
+              ...sizeOverride.overrides.filter(p => p.positionKey !== config.positionKey),
+              config
+            ]
+          }
+        ]
         : [
-            ...otherOverrides,
-            {
-              size: editingPosition.size,
-              overrides: [config]
-            }
-          ];
-      
+          ...otherOverrides,
+          {
+            size: editingPosition.size,
+            overrides: [config]
+          }
+        ];
+
       onUpdate({
         ...group,
         perSizeOverrides: updatedOverrides
@@ -108,17 +125,17 @@ export function ColorGroupCard({
       const updatedPositions = group.positions.find(p => p.positionKey === config.positionKey)
         ? group.positions.map(p => p.positionKey === config.positionKey ? config : p)
         : [...group.positions, config];
-      
+
       onUpdate({
         ...group,
         positions: updatedPositions
       });
     }
-    
+
     setEditingPosition(null);
   };
 
-// 检查是否有数量
+  // 检查是否有数量
   const hasQuantities = Object.values(group.quantities).some(qty => qty > 0);
 
   return (
@@ -129,32 +146,32 @@ export function ColorGroupCard({
           <span className="text-sm text-gray-500">({group.colorCode})</span>
         </div>
         <div className="flex items-center gap-2">
-{/* 继承上一颜色按钮 */}
+          {/* 继承上一颜色按钮 */}
           {previousGroup && (
             <button
               type="button"
               onClick={handleInherit}
               className="px-3 py-1.5 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md transition-colors"
-              title="继承上一颜色的印刷位置配置"
+              title={t('inheritTooltip')}
             >
-              继承上一颜色
+              {t('inheritPrevious')}
             </button>
           )}
-{/* 复制到其他颜色按钮 */}
+          {/* 复制到其他颜色按钮 */}
           {onCopyToOthers && (
             <button
               type="button"
               onClick={onCopyToOthers}
               className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-              title="将本颜色的设置复制到其他颜色"
+              title={t('copyTooltip')}
             >
-              复制到其他颜色
+              {t('copyToOthers')}
             </button>
           )}
         </div>
       </header>
 
-{/* Per-size overrides开关 */}
+      {/* Per-size overrides开关 */}
       {hasQuantities && (
         <div className="mb-4 flex items-center gap-2">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -165,28 +182,30 @@ export function ColorGroupCard({
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             <span className="text-sm text-gray-700">
-              同色不同尺码印刷位（Per-size overrides）
+              {t('perSizeOverrides')}
             </span>
           </label>
         </div>
       )}
 
-{/* 根据模式显示不同的UI */}
+      {/* 根据模式显示不同的UI */}
       {!perSizeEnabled ? (
         <PositionList
           positions={group.positions}
           onChange={handlePositionsUpdate}
           onEdit={handleEditPosition}
+          locale={locale}
         />
       ) : (
         <SizePositionMatrix
           group={group}
           onChange={onUpdate}
           onEdit={handleEditPosition}
+          locale={locale}
         />
       )}
 
-{/* 位置编辑弹窗 */}
+      {/* 位置编辑弹窗 */}
       {editingPosition && (
         <PositionEditorModal
           positionKey={editingPosition.positionKey}
@@ -194,7 +213,7 @@ export function ColorGroupCard({
           initialConfig={
             editingPosition.size
               ? group.perSizeOverrides?.find(o => o.size === editingPosition.size)
-                  ?.overrides.find(p => p.positionKey === editingPosition.positionKey)
+                ?.overrides.find(p => p.positionKey === editingPosition.positionKey)
               : group.positions.find(p => p.positionKey === editingPosition.positionKey)
           }
           defaultConfig={
@@ -204,6 +223,7 @@ export function ColorGroupCard({
           }
           onSave={handleSavePosition}
           onCancel={() => setEditingPosition(null)}
+          locale={locale}
         />
       )}
     </section>

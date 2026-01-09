@@ -2,9 +2,8 @@
 * 添加颜色弹窗组件
  * 让用户选择是否继承上一颜色的print positions
  */
-'use client';
-
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
 
 interface AddColorModalProps {
   isOpen: boolean;
@@ -12,6 +11,7 @@ interface AddColorModalProps {
   hasPreviousColor: boolean;
   onConfirm: (inheritFromPrev: boolean) => void;
   onCancel: () => void;
+  locale?: OfflineOrdersLocale;
 }
 
 export function AddColorModal({
@@ -19,23 +19,38 @@ export function AddColorModal({
   previousColorName,
   hasPreviousColor,
   onConfirm,
-  onCancel
+  onCancel,
+  locale = 'en'
 }: AddColorModalProps) {
   const [inheritFromPrev, setInheritFromPrev] = useState(true);
+
+  // 翻译函数
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
+    let text = translations[key] || fallback[key] || key;
+
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+      });
+    }
+    return text;
+  }, [locale]);
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">添加新颜色</h3>
-        
+      <div className="bg-white rounded-lg shadow-xl max-md w-full mx-4 p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('addNewColorTitle')}</h3>
+
         {hasPreviousColor ? (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              请选择如何设置新颜色的印刷位置：
+              {t('inheritMethodLabel')}
             </p>
-            
+
             <label className="flex items-start gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
               <input
                 type="radio"
@@ -46,15 +61,14 @@ export function AddColorModal({
               />
               <div className="flex-1">
                 <div className="text-sm font-medium text-gray-900">
-                  继承上一颜色的 print positions
+                  {t('inheritPrevious')}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-{/* 修复 ESLint react/no-unescaped-entities：避免直接使用双引号（显示效果不变） */}
-                  复制“{previousColorName}”的所有印刷位置配置（不包含文件）
+                  {t('inheritPrevColorDesc', { colorName: previousColorName || '' })}
                 </div>
               </div>
             </label>
-            
+
             <label className="flex items-start gap-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
               <input
                 type="radio"
@@ -65,17 +79,17 @@ export function AddColorModal({
               />
               <div className="flex-1">
                 <div className="text-sm font-medium text-gray-900">
-                  从空白开始
+                  {t('startFromBlank')}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  不继承任何配置，自行选择印刷位置
+                  {t('startFromBlankDesc')}
                 </div>
               </div>
             </label>
           </div>
         ) : (
           <p className="text-sm text-gray-600 mb-4">
-            这是第一个颜色，将创建新的印刷位置配置。
+            {t('firstColorNotice')}
           </p>
         )}
 
@@ -85,14 +99,14 @@ export function AddColorModal({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             type="button"
             onClick={() => onConfirm(inheritFromPrev && hasPreviousColor)}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            确定
+            {t('confirm')}
           </button>
         </div>
       </div>
