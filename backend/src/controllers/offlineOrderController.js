@@ -817,20 +817,13 @@ exports.updateOfflineOrder = async (req, res) => {
 
     if (status !== undefined) {
       const normalizedStatus = status?.toString().toUpperCase();
-      if (!['ACTIVE', 'COMPLETED', 'CANCELLED'].includes(normalizedStatus)) {
+      if (!['ACTIVE', 'PRINTED', 'COMPLETED', 'CANCELLED'].includes(normalizedStatus)) {
         return res.status(400).json({
           error: 'Validation Error',
           message: 'Invalid status value'
         });
       }
       data.status = normalizedStatus;
-    }
-
-    if (!Object.keys(data).length && !note) {
-      return res.status(400).json({
-        error: 'Validation Error',
-        message: 'No valid fields to update'
-      });
     }
 
     const actorName = req.user
@@ -842,12 +835,19 @@ exports.updateOfflineOrder = async (req, res) => {
         where: { id },
         select: {
           id: true,
-          stageKey: true
+          stageKey: true,
+          status: true,
         }
       });
 
       if (!existing) {
         return null;
+      }
+
+      // 核心逻辑：如果修改了配置（添加了新产品等）且当前状态是已完成，则状态自动回退到进行中
+      if (configuration !== undefined && existing.status === 'COMPLETED' && status === undefined) {
+        data.status = 'ACTIVE';
+        logger.info(`[OfflineOrder] Order ${id} configuration updated. Reverting status from COMPLETED to ACTIVE.`);
       }
 
       const order = await tx.offlineOrder.update({

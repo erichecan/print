@@ -458,7 +458,7 @@ exports.updateSalesOrderStatus = async (req, res) => {
     });
 
     // 验证状态值
-    const validStatuses = ['ACTIVE', 'COMPLETED', 'CANCELLED'];
+    const validStatuses = ['ACTIVE', 'PRINTED', 'COMPLETED', 'CANCELLED'];
     const normalizedStatus = status ? String(status).toUpperCase() : null;
     if (!normalizedStatus || !validStatuses.includes(normalizedStatus)) {
       return res.status(400).json({
@@ -468,7 +468,7 @@ exports.updateSalesOrderStatus = async (req, res) => {
     }
 
     // 查找订单并验证权限
-    // 修复：包含 rushOrder 字段用于比较
+    // 修复：包含 rushOrder 字段用于比较，包含 configuration 用于计算总额
     const order = await prisma.offlineOrder.findUnique({
       where: { id },
       select: {
@@ -476,6 +476,9 @@ exports.updateSalesOrderStatus = async (req, res) => {
         status: true,
         rushOrder: true,
         metadata: true,
+        configuration: true,
+        deposit_amount: true,
+        dst_file_fee: true,
       },
     });
 
@@ -522,8 +525,6 @@ exports.updateSalesOrderStatus = async (req, res) => {
       : 'Sales';
 
     // 更新订单状态
-    // 如果提供了 rushOrder，同时更新加急状态
-    // 修复：状态更新不需要创建 stage history（stage history 用于阶段变更，不是状态变更）
     const updateData = {
       status: normalizedStatus,
     };
@@ -531,6 +532,25 @@ exports.updateSalesOrderStatus = async (req, res) => {
     // 如果提供了 rushOrder 参数，更新加急状态
     if (rushOrder !== undefined) {
       updateData.rushOrder = Boolean(rushOrder);
+    }
+
+    // 核心逻辑：如果变为 COMPLETED，自动将定金设为总额（平衡余额为 0）
+    if (normalizedStatus === 'COMPLETED' && order.status !== 'COMPLETED') {
+      const config = order.configuration || {};
+      const productItems = config.productItems || [];
+      const discount = config.discount || 0;
+      const taxRate = config.taxRate || 0.13;
+      const requiresInvoice = config.requiresInvoice || false;
+      const dstFileFee = order.dst_file_fee ? parseFloat(order.dst_file_fee.toString()) : (config.dstFileFee || 0);
+
+      const subtotal = productItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+      const discountAmount = (subtotal * discount) / 100;
+      const taxBase = subtotal - discountAmount + dstFileFee;
+      const taxAmount = requiresInvoice ? taxBase * taxRate : 0;
+      const total = taxBase + taxAmount;
+
+      updateData.deposit_amount = total;
+      logger.info(`[SalesOrders] Order ${id} marked COMPLETED. Auto-balancing deposit to ${total}`);
     }
 
     const updatedOrder = await prisma.$transaction(async (tx) => {

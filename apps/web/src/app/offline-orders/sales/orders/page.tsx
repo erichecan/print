@@ -328,6 +328,7 @@ export default function SalesOrdersPage() {
   const statusOptions = [
     { value: 'ACTIVE', label: 'ACTIVE' },
     { value: 'ACTIVE_RUSH', label: t('statusActiveRush') },
+    { value: 'PRINTED', label: 'PRINTED' },
     { value: 'COMPLETED', label: 'COMPLETED' },
     { value: 'CANCELLED', label: 'CANCELLED' },
   ];

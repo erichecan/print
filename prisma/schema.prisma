@@ -1085,6 +1085,7 @@ enum ShipmentStatus {
 
 enum OfflineOrderStatus {
   ACTIVE
+  PRINTED
   COMPLETED
   CANCELLED
 }
