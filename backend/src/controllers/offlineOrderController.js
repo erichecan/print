@@ -46,7 +46,9 @@ const safeJsonParse = (value) => {
  */
 const generateOrderCode = async (tx = null) => {
   const timestamp = new Date();
-  const datePart = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
+  // YYMMDD 格式 (e.g., 2026-01-08 -> 260108)
+  const fullDate = timestamp.toISOString().slice(0, 10).replace(/-/g, '');
+  const datePart = fullDate.substring(2);
 
   // 获取当天的最大流水号
   const prismaClient = tx || prisma;
@@ -56,11 +58,13 @@ const generateOrderCode = async (tx = null) => {
   todayEnd.setHours(23, 59, 59, 999);
 
   // 查询当天所有订单编号，提取流水号
+  // 同时兼容旧格式 OFF-YYYYMMDD- 和新格式 OFF-YYMMDD-
   const todayOrders = await prismaClient.offlineOrder.findMany({
     where: {
-      orderCode: {
-        startsWith: `OFF-${datePart}-`
-      },
+      OR: [
+        { orderCode: { startsWith: `OFF-${datePart}-` } },
+        { orderCode: { startsWith: `OFF-${fullDate}-` } }
+      ],
       createdAt: {
         gte: todayStart,
         lte: todayEnd
@@ -77,34 +81,32 @@ const generateOrderCode = async (tx = null) => {
   // 提取流水号并找到最大值
   let maxSequence = 0;
   todayOrders.forEach(order => {
-    // 订单编号格式：OFF-YYYYMMDD-XXXXXX
-    // 提取最后6位，前3位是流水号
-    const suffix = order.orderCode.split('-').pop() || '';
-    if (suffix.length >= 3) {
-      const sequenceStr = suffix.substring(0, 3);
-      const sequence = parseInt(sequenceStr, 10);
-      if (!isNaN(sequence) && sequence > maxSequence) {
-        maxSequence = sequence;
-      }
+    // 订单编号格式：OFF-YYYYMMDD-XXXXXX 或 OFF-YYMMDD-XX
+    const parts = order.orderCode.split('-');
+    const suffix = parts.pop() || '';
+
+    // 对于旧格式 OFF-YYYYMMDD-001ABC，提取前3位作为序号
+    // 对于新格式 OFF-YYMMDD-01，直接提取全部作为序号
+    let sequenceStr = '';
+    if (parts[1] && parts[1].length === 8) {
+      // 旧格式 YYYYMMDD
+      sequenceStr = suffix.substring(0, 3);
+    } else {
+      // 新格式 YYMMDD
+      sequenceStr = suffix;
+    }
+
+    const sequence = parseInt(sequenceStr, 10);
+    if (!isNaN(sequence) && sequence > maxSequence) {
+      maxSequence = sequence;
     }
   });
 
-  // 递增流水号（从001开始）
+  // 递增流水号（从01开始）
   const nextSequence = maxSequence + 1;
-  const sequencePart = String(nextSequence).padStart(3, '0');
+  const sequencePart = String(nextSequence).padStart(2, '0');
 
-  // 生成3位随机字母
-  const generateRandomLetters = () => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
-    for (let i = 0; i < 3; i++) {
-      result += letters.charAt(Math.floor(Math.random() * letters.length));
-    }
-    return result;
-  };
-  const randomPart = generateRandomLetters();
-
-  return `OFF-${datePart}-${sequencePart}${randomPart}`;
+  return `OFF-${datePart}-${sequencePart}`;
 };
 
 const generateWorkOrderCode = () => {
