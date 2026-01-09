@@ -20,8 +20,39 @@ export function Step2Variants() {
   const { wizardData, updateWizardData, nextStep, prevStep, saveDraft, isLoading, productId } =
     useProductWizard();
 
-  const { data: colorMappingsData } = useSWR('admin-color-mappings', adminSettingsApi.getColorMappings);
-  const colorMappings = useMemo(() => colorMappingsData?.data || [], [colorMappingsData]);
+  const { data: colorMappingsData, error: mappingsError, isLoading: mappingsLoading } = useSWR('admin-color-mappings', adminSettingsApi.getColorMappings);
+
+  const colorMappings = useMemo(() => {
+    // Robustly handle different response structures
+    if (colorMappingsData?.data && Array.isArray(colorMappingsData.data)) {
+      return colorMappingsData.data;
+    }
+    if (Array.isArray(colorMappingsData)) {
+      return colorMappingsData;
+    }
+    return [];
+  }, [colorMappingsData]);
+
+  // Temporary UI Debugging (to be removed later)
+  // console.log('Mappings:', colorMappings);
+
+  /*
+  // Uncomment to see on screen if needed
+  const debugInfo = (
+      <div style={{ padding: 10, background: '#fee', color: 'red', fontSize: 12 }}>
+          Debug: Count={colorMappings.length}, Loading={String(mappingsLoading)}, Error={String(mappingsError)}
+      </div>
+  );
+  */
+
+  useEffect(() => {
+    console.log('ColorMappings Load Status:', {
+      count: colorMappings.length,
+      loading: mappingsLoading,
+      error: mappingsError,
+      data: colorMappingsData
+    });
+  }, [colorMappings, mappingsLoading, mappingsError, colorMappingsData]);
 
   const colors = wizardData.colors || [
     {

@@ -100,3 +100,31 @@
 ### 10.3 Logo 与图片适配 (Logo & Image Scaling)
 - **规则**: 替换不同比例的 Logo 时，必须显式约束 `height` 并配合 `width: auto` 和 `object-fit: contain`。
 - **避免**: 仅设置 `maxWidth` 而不限制 `height`，会导致高宽比不同的新图撑破容器。
+
+## 11. 产品向导与复杂表单 (Product Wizard & Complex Forms)
+### 11.1 数据获取封装性 (Data Fetching Robustness)
+- **规则**: 在使用 `useSWR` 或其他 Fetch Hook 获取数据时，必须在 `useMemo` 或 `useEffect` 中健壮地处理响应结构。
+- **背景**: API 响应可能被封装在 `{ data: [...] }` 对象中，也可能直接返回数组。前端必须同时兼容这两种情况，避免因后端包装格式微调导致页面空白。
+- **代码示例**:
+  ```typescript
+  const items = useMemo(() => {
+    // 优先检查 data 属性，其次检查本身是否为数组
+    if (fetchedData?.data && Array.isArray(fetchedData.data)) return fetchedData.data;
+    if (Array.isArray(fetchedData)) return fetchedData;
+    return [];
+  }, [fetchedData]);
+  ```
+
+### 11.2 默认状态的关联逻辑 (Default State Linking)
+- **规则**: 当表单具有默认初始值（如“白色”）时，组件初始化时必须尝试将其与全局映射（Mapping ID）关联。
+- **问题**: 如果仅初始化文本为“白色”而未关联 Mapping ID，UI 会将其视为“自定义/其他”颜色，导致只读字段变为可编辑，或下拉菜单无法正确显示选中项。
+- **解决方案**: 在 `useEffect` 中遍历初始数据，通过名称（toLowerCase）匹配全局配置，并自动补全 ID 和标准值。
+
+### 11.3 混合输入模式的 UI 布局 (UI Layout for Mixed Inputs)
+- **规则**: 对于既支持“预设选项”又支持“自定义输入”的控件（如颜色选择），推荐使用**内联布局**（Inline Layout）。
+- **最佳实践**:
+    - **下拉菜单**（左侧） + **预览/值显示**（右侧）在同一行。
+    - **状态区分**: 
+        - 选中**预设映射**时：右侧显示为只读文本或预览色块，暗示不可修改。
+        - 选中**自定义/其他**时：右侧自动切换为可编辑的 Input，暗示完全控制。
+    - 这种视觉反馈比垂直堆叠更直观，能清晰传达“标准”与“自定义”的区别。
