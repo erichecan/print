@@ -437,21 +437,46 @@ export default function SalesOrdersPage() {
     }
   };
 
+  // 计算订单剩余应付金额
+  const calculateOrderBalance = useCallback((order: SalesOfflineOrderSummary) => {
+    const config = order.configuration || {};
+    const productItems = (config.productItems || []) as any[];
+    const discount = config.discount || 0;
+    const taxRate = config.taxRate || 0.13;
+    const requiresInvoice = config.requiresInvoice || false;
+    const depositAmount = order.payment?.depositAmount || 0;
+    const dstFileFee = order.payment?.dstFileFee || 0;
+
+    const subtotal = productItems.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
+    const discountAmount = (subtotal * discount) / 100;
+    const taxBase = subtotal - discountAmount + dstFileFee;
+    const taxAmount = requiresInvoice ? taxBase * taxRate : 0;
+    const total = taxBase + taxAmount;
+    const balanceDue = Math.max(0, total - depositAmount);
+
+    return balanceDue;
+  }, []);
+
   // 快速修改订单阶段
   const handleQuickUpdateStage = async (orderId: string, newStageKey: string) => {
-    if (!newStageKey) return;
-
+    return; // 功能不运转，避免产生额外的 bug
+    /* 已注释
+    if (updatingStage) return;
     setUpdatingStage(orderId);
     try {
-      await salesOrdersApi.updateStage(orderId, { stageKey: newStageKey });
-      // 刷新订单列表
-      const response = await salesOrdersApi.list({ page: 1, limit: 50 });
-      setOrders(response.data);
+      await salesOrdersApi.updateStage(orderId, newStageKey);
+      // Update local state
+      setOrders(prev => prev.map(o =>
+        o.id === orderId
+          ? { ...o, stage: { ...o.stage, key: newStageKey, label: stages.find(s => s.key === newStageKey)?.label || o.stage?.label } }
+          : o
+      ));
     } catch (err: any) {
-      setError(err.message || t('errorUpdateStage'));
+      alert(err.message || t('errorUpdateStage'));
     } finally {
       setUpdatingStage(null);
     }
+    */
   };
 
   // 快速修改订单状态
@@ -826,13 +851,14 @@ export default function SalesOrdersPage() {
                   <thead>
                     <tr>
                       <th>{t('thOrderCode')}</th>
-                      <th>{t('thProjectName')}</th>
+                      {/* <th>{t('thProjectName')}</th> */}
                       <th>{t('thCustomer')}</th>
                       {isManager && <th>{t('thCreator')}</th>}
-                      <th>{t('thQuantity')}</th>
+                      {/* <th>{t('thQuantity')}</th> */}
+                      <th>{t('balanceDue')}</th>
                       <th>{t('thDueDate')}</th>
                       <th>{t('thStatus')}</th>
-                      <th>{t('thStage')}</th>
+                      {/* <th>{t('thStage')}</th> */}
                       <th>{t('thActions')}</th>
                     </tr>
                   </thead>
@@ -840,7 +866,7 @@ export default function SalesOrdersPage() {
                     {orders.map((order) => (
                       <tr key={order.id}>
                         <td>{order.orderCode}</td>
-                        <td>{order.projectName}</td>
+                        {/* <td>{order.projectName}</td> */}
                         <td>
                           <div className="sales-orders-contact">
                             <span>{order.contact.name}</span>
@@ -861,7 +887,12 @@ export default function SalesOrdersPage() {
                             )}
                           </td>
                         )}
-                        <td>{order.quantity ?? '—'}</td>
+                        {/* <td>{order.quantity ?? '—'}</td> */}
+                        <td>
+                          <span className="font-semibold text-blue-600">
+                            ${calculateOrderBalance(order).toFixed(2)}
+                          </span>
+                        </td>
                         <td>{order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString() : '—'}</td>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -877,7 +908,7 @@ export default function SalesOrdersPage() {
                             )}
                           </div>
                         </td>
-                        <td>
+                        {/* <td>
                           <div className="sales-orders-stage">
                             {stages.length > 0 ? (
                               <select
@@ -897,7 +928,7 @@ export default function SalesOrdersPage() {
                               <span>{order.stage?.label || '—'}</span>
                             )}
                           </div>
-                        </td>
+                        </td> */}
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <button

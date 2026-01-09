@@ -1006,6 +1006,13 @@ export interface SalesOfflineOrderSummary {
     email: string;
     name: string;
   } | null;
+  configuration?: any; // PRD v2.0
+  payment?: {
+    method: string | null;
+    referenceNumber: string | null;
+    depositAmount: number;
+    dstFileFee: number;
+  };
   dst_file_fee?: number | string | null; // PRD v2.0
   order_notes?: string | null; // PRD v2.0
   payment_method?: string | null; // PRD v2.0
