@@ -10,6 +10,8 @@ import { authApi, salesOrdersApi, SalesOfflineOrderSummary } from '@/lib/api';
 import api from '@/lib/api';
 import useSWR from 'swr';
 import { useAuth } from '@/contexts/AuthContext';
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
+import { useCallback } from 'react';
 
 // 状态选择组件 - 参考 PillSelect 的单选版样式
 function StatusSelector({
@@ -217,6 +219,41 @@ export default function SalesOrdersPage() {
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<string | null>(null);
 
+  // 语言环境状态
+  const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
+
+  // 翻译函数
+  const t = useCallback((key: string, params?: Record<string, string | number>) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
+    let text = translations[key] || fallback[key] || key;
+
+    if (params) {
+      Object.entries(params).forEach(([paramKey, paramValue]) => {
+        text = text.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+      });
+    }
+    return text;
+  }, [locale]);
+
+  // 切换语言
+  const handleLocaleChange = (newLocale: OfflineOrdersLocale) => {
+    setLocale(newLocale);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('offline-orders-locale', newLocale);
+    }
+  };
+
+  // 初始化语言
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('offline-orders-locale') as OfflineOrdersLocale;
+      if (stored === 'en' || stored === 'zh') {
+        setLocale(stored);
+      }
+    }
+  }, []);
+
   // 搜索和筛选状态
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState(''); // Debounced value for API
@@ -290,7 +327,7 @@ export default function SalesOrdersPage() {
   // 添加 ACTIVE_RUSH 状态
   const statusOptions = [
     { value: 'ACTIVE', label: 'ACTIVE' },
-    { value: 'ACTIVE_RUSH', label: 'ACTIVE (加急)' },
+    { value: 'ACTIVE_RUSH', label: t('statusActiveRush') },
     { value: 'COMPLETED', label: 'COMPLETED' },
     { value: 'CANCELLED', label: 'CANCELLED' },
   ];
@@ -354,7 +391,7 @@ export default function SalesOrdersPage() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          setError(err.message || '加载订单列表失败，请稍后重试。');
+          setError(err.message || t('errorLoadOrders'));
         }
       } finally {
         if (!cancelled) {
@@ -394,7 +431,7 @@ export default function SalesOrdersPage() {
       // Actually, if I remove confirm, I should probably use a non-blocking toast.
       // But let's just remove the confirm first.
     } catch (err: any) {
-      alert(err.message || '删除失败，请稍后重试');
+      alert(err.message || t('errorDeleteOrder'));
     } finally {
       setDeletingOrder(null);
     }
@@ -411,7 +448,7 @@ export default function SalesOrdersPage() {
       const response = await salesOrdersApi.list({ page: 1, limit: 50 });
       setOrders(response.data);
     } catch (err: any) {
-      setError(err.message || '更新订单阶段失败。');
+      setError(err.message || t('errorUpdateStage'));
     } finally {
       setUpdatingStage(null);
     }
@@ -443,7 +480,7 @@ export default function SalesOrdersPage() {
       const response = await salesOrdersApi.list({ page: 1, limit: 50 });
       setOrders(response.data);
     } catch (err: any) {
-      setError(err.message || '更新订单状态失败。');
+      setError(err.message || t('errorUpdateStatus'));
     } finally {
       setUpdatingStatus(null);
     }
@@ -515,7 +552,7 @@ export default function SalesOrdersPage() {
       setNewColorHex('');
       mutateColors();
     } catch (err: any) {
-      alert(err.message || '创建失败');
+      alert(err.message || t('errorCreateFailed'));
     }
   };
 
@@ -529,7 +566,7 @@ export default function SalesOrdersPage() {
       setEditingColorId(null);
       mutateColors();
     } catch (err: any) {
-      alert(err.message || '更新失败');
+      alert(err.message || t('errorUpdateFailed'));
     }
   };
 
@@ -539,7 +576,7 @@ export default function SalesOrdersPage() {
       await api(`/api/proxy/admin/offline-order-colors/${id}`, { method: 'DELETE' });
       mutateColors();
     } catch (err: any) {
-      alert(err.message || '删除失败');
+      alert(err.message || t('errorDeleteFailed'));
     }
   };
 
@@ -560,7 +597,7 @@ export default function SalesOrdersPage() {
       setNewProductIsCustomerOwned(false);
       mutateProducts();
     } catch (err: any) {
-      alert(err.message || '创建失败');
+      alert(err.message || t('errorCreateFailed'));
     }
   };
 
@@ -578,7 +615,7 @@ export default function SalesOrdersPage() {
       setEditingProductId(null);
       mutateProducts();
     } catch (err: any) {
-      alert(err.message || '更新失败');
+      alert(err.message || t('errorUpdateFailed'));
     }
   };
 
@@ -588,7 +625,7 @@ export default function SalesOrdersPage() {
       await api(`/api/proxy/admin/offline-order-products/${id}`, { method: 'DELETE' });
       mutateProducts();
     } catch (err: any) {
-      alert(err.message || '删除失败');
+      alert(err.message || t('errorDeleteFailed'));
     }
   };
 
@@ -596,7 +633,7 @@ export default function SalesOrdersPage() {
   const handleUpdateSizeFee = async (id: string, size: string) => {
     const fee = parseFloat(editSizeFeeValue);
     if (isNaN(fee) || fee < 0) {
-      alert('请输入有效的金额');
+      alert(t('errorInvalidAmount'));
       return;
     }
 
@@ -612,7 +649,7 @@ export default function SalesOrdersPage() {
       setEditingSizeFeeId(null);
       mutateSizeFees();
     } catch (err: any) {
-      alert(err.message || '更新失败');
+      alert(err.message || t('errorUpdateFailed'));
     }
   };
 
@@ -620,7 +657,7 @@ export default function SalesOrdersPage() {
     return (
       <div className="sales-orders-shell">
         <div className="sales-orders-card">
-          <p>正在检查登录状态...</p>
+          <p>{t('checkLoginStatus')}</p>
         </div>
       </div>
     );
@@ -631,33 +668,71 @@ export default function SalesOrdersPage() {
       <div className="sales-orders-card">
         <header className="sales-orders-header">
           <div>
-            <h1>Sales 线下订单管理</h1>
-            <p>在这里查看你创建的线下订单（主管可查看全部订单）。</p>
+            <h1>{t('salesOrderManagement')}</h1>
+            <p>{t('salesOrderIntro')}</p>
           </div>
           <div className="sales-orders-header-actions">
+            {/* 语言切换按钮 */}
+            <div style={{ display: 'flex', gap: '0.5rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem', marginRight: '1rem' }}>
+              <button
+                type="button"
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  transition: 'all 0.2s',
+                  backgroundColor: locale === 'en' ? '#4f46e5' : 'transparent',
+                  color: locale === 'en' ? 'white' : '#475569',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                onClick={() => handleLocaleChange('en')}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                style={{
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '0.375rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  transition: 'all 0.2s',
+                  backgroundColor: locale === 'zh' ? '#4f46e5' : 'transparent',
+                  color: locale === 'zh' ? 'white' : '#475569',
+                  border: 'none',
+                  cursor: 'pointer'
+                }}
+                onClick={() => handleLocaleChange('zh')}
+              >
+                中文
+              </button>
+            </div>
             {/* 顶部导航按钮 - 放在新建订单按钮旁边 */}
             <button
               type="button"
               className="sales-orders-nav-btn sales-orders-nav-btn-secondary"
               onClick={() => window.open('/', '_blank')}
             >
-              返回主站
+              {t('backToMainSite')}
             </button>
             <button
               type="button"
               className="sales-orders-nav-btn sales-orders-nav-btn-primary"
               onClick={() => router.push('/admin/offline-orders')}
             >
-              进入主站管理后台
+              {t('enterAdminBackend')}
             </button>
             <button
               type="button"
               className="sales-orders-new"
               onClick={() => window.open('/offline-orders', '_blank')}
             >
-              新建线下订单
+              {t('newOfflineOrder')}
             </button>
           </div>
+
         </header>
 
         {/* Tab切换 */}
@@ -667,7 +742,7 @@ export default function SalesOrdersPage() {
             className={`sales-orders-tab ${activeTab === 'orders' ? 'active' : ''}`}
             onClick={() => setActiveTab('orders')}
           >
-            订单列表
+            {t('orderList')}
           </button>
           {isManager && (
             <button
@@ -675,10 +750,11 @@ export default function SalesOrdersPage() {
               className={`sales-orders-tab ${activeTab === 'config' ? 'active' : ''}`}
               onClick={() => setActiveTab('config')}
             >
-              配置管理
+              {t('configManagement')}
             </button>
           )}
         </div>
+
 
         {error && <div className="sales-orders-error">{error}</div>}
 
@@ -689,7 +765,7 @@ export default function SalesOrdersPage() {
             {/* 筛选工具栏 */}
             <div className="mb-6 flex flex-col md:flex-row gap-4 items-start md:items-center bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div className="flex-1 w-full md:w-auto">
-                <label htmlFor="search" className="sr-only">搜索</label>
+                <label htmlFor="search" className="sr-only">{t('search')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="2 2 16 16" fill="currentColor" aria-hidden="true">
@@ -701,7 +777,7 @@ export default function SalesOrdersPage() {
                     name="search"
                     id="search"
                     className="pl-10 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-slate-300 rounded-md py-2"
-                    placeholder="搜索订单号、客户、项目..."
+                    placeholder={t('searchPlaceholder')}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -717,7 +793,7 @@ export default function SalesOrdersPage() {
                     value={selectedCreator}
                     onChange={(e) => setSelectedCreator(e.target.value)}
                   >
-                    <option value="">所有创建者</option>
+                    <option value="">{t('allCreators')}</option>
                     {creators.map(c => (
                       <option key={c.id} value={c.id}>
                         {c.name} ({c.email})
@@ -729,18 +805,18 @@ export default function SalesOrdersPage() {
             </div>
 
             {loading ? (
-              <p>正在加载订单...</p>
+              <p>{t('loadingOrders')}</p>
             ) : orders.length === 0 ? (
               <div className="text-center py-10 bg-slate-50 rounded-lg border border-dashed border-slate-300">
                 <p className="text-slate-500">
-                  {(searchQuery || selectedCreator) ? '没有找到匹配的线下订单' : '当前还没有线下订单。'}
+                  {(searchQuery || selectedCreator) ? t('noOrdersFound') : t('noOrdersYet')}
                 </p>
                 {(searchQuery || selectedCreator) && (
                   <button
                     className="mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
                     onClick={() => { setSearchQuery(''); setSelectedCreator(''); }}
                   >
-                    清除筛选条件
+                    {t('clearFilters')}
                   </button>
                 )}
               </div>
@@ -748,15 +824,15 @@ export default function SalesOrdersPage() {
               <table className="sales-orders-table">
                 <thead>
                   <tr>
-                    <th>订单编号</th>
-                    <th>项目名称</th>
-                    <th>客户</th>
-                    {isManager && <th>创建者</th>}
-                    <th>数量</th>
-                    <th>交付日期</th>
-                    <th>状态</th>
-                    <th>阶段</th>
-                    <th>操作</th>
+                    <th>{t('thOrderCode')}</th>
+                    <th>{t('thProjectName')}</th>
+                    <th>{t('thCustomer')}</th>
+                    {isManager && <th>{t('thCreator')}</th>}
+                    <th>{t('thQuantity')}</th>
+                    <th>{t('thDueDate')}</th>
+                    <th>{t('thStatus')}</th>
+                    <th>{t('thStage')}</th>
+                    <th>{t('thActions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -796,7 +872,7 @@ export default function SalesOrdersPage() {
                             disabled={updatingStatus === order.id}
                           />
                           {order.rushOrder && (
-                            <span className="tag tag-rush">加急</span>
+                            <span className="tag tag-rush">{t('tagRush')}</span>
                           )}
                         </div>
                       </td>
@@ -828,16 +904,16 @@ export default function SalesOrdersPage() {
                             className="sales-orders-detail-btn-small"
                             onClick={() => handleViewDetail(order.id)}
                           >
-                            详情
+                            {t('btnDetail')}
                           </button>
                           <button
                             type="button"
                             className="sales-orders-delete-btn"
                             onClick={() => handleDeleteOrder(order.id, order.orderCode)}
                             disabled={deletingOrder === order.id}
-                            title="删除订单"
+                            title={t('btnDelete')}
                           >
-                            {deletingOrder === order.id ? '删除中...' : '🗑️'}
+                            {deletingOrder === order.id ? t('submitting') : '🗑️'}
                           </button>
                         </div>
                       </td>
@@ -858,49 +934,49 @@ export default function SalesOrdersPage() {
                 className={`config-sub-tab ${configTab === 'colors' ? 'active' : ''}`}
                 onClick={() => setConfigTab('colors')}
               >
-                颜色管理
+                {t('colorManagement')}
               </button>
               <button
                 type="button"
                 className={`config-sub-tab ${configTab === 'products' ? 'active' : ''}`}
                 onClick={() => setConfigTab('products')}
               >
-                产品管理
+                {t('productManagement')}
               </button>
               <button
                 type="button"
                 className={`config-sub-tab ${configTab === 'size-fees' ? 'active' : ''}`}
                 onClick={() => setConfigTab('size-fees')}
               >
-                尺码价格
+                {t('sizePriceManagement')}
               </button>
             </div>
 
             {configTab === 'colors' && (
               <div className="config-tab-panel">
-                <h2>颜色管理</h2>
-                <p className="config-desc">管理产品可选的颜色列表</p>
+                <h2>{t('colorManagementTitle')}</h2>
+                <p className="config-desc">{t('colorManagementDesc')}</p>
 
                 <div className="config-form">
-                  <h3>添加新颜色</h3>
+                  <h3>{t('addNewColor')}</h3>
                   <div className="config-form-row">
                     <input
                       type="text"
-                      placeholder="颜色名称"
+                      placeholder={t('colorName')}
                       value={newColorName}
                       onChange={(e) => setNewColorName(e.target.value)}
                       className="config-input"
                     />
                     <input
                       type="text"
-                      placeholder="十六进制颜色码（可选）"
+                      placeholder={t('colorHex')}
                       value={newColorHex}
                       onChange={(e) => setNewColorHex(e.target.value)}
                       className="config-input"
                       style={{ width: '200px' }}
                     />
                     <button onClick={handleCreateColor} className="config-btn config-btn-primary">
-                      添加
+                      {t('btnAdd')}
                     </button>
                   </div>
                 </div>
@@ -909,9 +985,9 @@ export default function SalesOrdersPage() {
                   <table className="config-table">
                     <thead>
                       <tr>
-                        <th>颜色名称</th>
-                        <th>颜色码</th>
-                        <th>操作</th>
+                        <th>{t('thColorName')}</th>
+                        <th>{t('thColorHex')}</th>
+                        <th>{t('thActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -961,13 +1037,13 @@ export default function SalesOrdersPage() {
                                   onClick={() => handleUpdateColor(color.id)}
                                   className="config-btn config-btn-success"
                                 >
-                                  保存
+                                  {t('btnSave')}
                                 </button>
                                 <button
                                   onClick={() => setEditingColorId(null)}
                                   className="config-btn config-btn-secondary"
                                 >
-                                  取消
+                                  {t('btnCancel')}
                                 </button>
                               </div>
                             ) : (
@@ -980,13 +1056,13 @@ export default function SalesOrdersPage() {
                                   }}
                                   className="config-btn config-btn-secondary"
                                 >
-                                  编辑
+                                  {t('btnEdit')}
                                 </button>
                                 <button
                                   onClick={() => handleDeleteColor(color.id)}
                                   className="config-btn config-btn-danger"
                                 >
-                                  删除
+                                  {t('btnDelete')}
                                 </button>
                               </div>
                             )}
@@ -996,7 +1072,7 @@ export default function SalesOrdersPage() {
                     </tbody>
                   </table>
                   {colors.length === 0 && (
-                    <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>暂无颜色配置</p>
+                    <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>{t('noColorsConfigured')}</p>
                   )}
                 </div>
               </div>
@@ -1004,22 +1080,22 @@ export default function SalesOrdersPage() {
 
             {configTab === 'products' && (
               <div className="config-tab-panel">
-                <h2>产品管理</h2>
-                <p className="config-desc">管理线下订单可用的产品列表（显示哪些产品可以定制）</p>
+                <h2>{t('productManagementTitle')}</h2>
+                <p className="config-desc">{t('productManagementDesc')}</p>
 
                 <div className="config-form">
-                  <h3>添加新产品</h3>
+                  <h3>{t('addNewProduct')}</h3>
                   <div className="config-form-row">
                     <input
                       type="text"
-                      placeholder="产品名称"
+                      placeholder={t('productName')}
                       value={newProductName}
                       onChange={(e) => setNewProductName(e.target.value)}
                       className="config-input"
                     />
                     <input
                       type="text"
-                      placeholder="图片 URL（可选）"
+                      placeholder={t('imageUrl')}
                       value={newProductImageUrl}
                       onChange={(e) => setNewProductImageUrl(e.target.value)}
                       className="config-input"
@@ -1030,10 +1106,10 @@ export default function SalesOrdersPage() {
                         checked={newProductIsCustomerOwned}
                         onChange={(e) => setNewProductIsCustomerOwned(e.target.checked)}
                       />
-                      客户自有产品
+                      {t('customerOwnedProduct')}
                     </label>
                     <button onClick={handleCreateProduct} className="config-btn config-btn-primary">
-                      添加
+                      {t('btnAdd')}
                     </button>
                   </div>
                 </div>
@@ -1042,10 +1118,10 @@ export default function SalesOrdersPage() {
                   <table className="config-table">
                     <thead>
                       <tr>
-                        <th>产品名称</th>
-                        <th>图片</th>
-                        <th>类型</th>
-                        <th>操作</th>
+                        <th>{t('productName')}</th>
+                        <th>{t('thImage')}</th>
+                        <th>{t('thType')}</th>
+                        <th>{t('thActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1070,7 +1146,7 @@ export default function SalesOrdersPage() {
                                 value={editProductImageUrl}
                                 onChange={(e) => setEditProductImageUrl(e.target.value)}
                                 className="config-input-inline"
-                                placeholder="图片 URL"
+                                placeholder={t('imageUrl')}
                               />
                             ) : product.imageUrl ? (
                               /* eslint-disable-next-line @next/next/no-img-element */
@@ -1087,11 +1163,11 @@ export default function SalesOrdersPage() {
                                   checked={editProductIsCustomerOwned}
                                   onChange={(e) => setEditProductIsCustomerOwned(e.target.checked)}
                                 />
-                                客户自有
+                                {t('isCustomerOwned')}
                               </label>
                             ) : (
                               <span className={`tag ${product.isCustomerOwned ? 'tag-rush' : 'tag-active'}`}>
-                                {product.isCustomerOwned ? '客户自有' : '标准产品'}
+                                {product.isCustomerOwned ? t('isCustomerOwned') : t('standardProduct')}
                               </span>
                             )}
                           </td>
@@ -1102,13 +1178,13 @@ export default function SalesOrdersPage() {
                                   onClick={() => handleUpdateProduct(product.id)}
                                   className="config-btn config-btn-success"
                                 >
-                                  保存
+                                  {t('btnSave')}
                                 </button>
                                 <button
                                   onClick={() => setEditingProductId(null)}
                                   className="config-btn config-btn-secondary"
                                 >
-                                  取消
+                                  {t('btnCancel')}
                                 </button>
                               </div>
                             ) : (
@@ -1122,13 +1198,13 @@ export default function SalesOrdersPage() {
                                   }}
                                   className="config-btn config-btn-secondary"
                                 >
-                                  编辑
+                                  {t('btnEdit')}
                                 </button>
                                 <button
                                   onClick={() => handleDeleteProduct(product.id)}
                                   className="config-btn config-btn-danger"
                                 >
-                                  删除
+                                  {t('btnDelete')}
                                 </button>
                               </div>
                             )}
@@ -1138,7 +1214,7 @@ export default function SalesOrdersPage() {
                     </tbody>
                   </table>
                   {products.length === 0 && (
-                    <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>暂无产品配置</p>
+                    <p style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>{t('noProductsConfigured')}</p>
                   )}
                 </div>
               </div>
@@ -1146,16 +1222,16 @@ export default function SalesOrdersPage() {
 
             {configTab === 'size-fees' && (
               <div className="config-tab-panel">
-                <h2>尺码价格管理</h2>
-                <p className="config-desc">配置不同尺码的额外费用（基础尺码无额外费用）</p>
+                <h2>{t('sizePriceTitle')}</h2>
+                <p className="config-desc">{t('sizePriceDesc')}</p>
 
                 <div className="config-table-wrapper">
                   <table className="config-table">
                     <thead>
                       <tr>
-                        <th>尺码</th>
-                        <th>额外费用 (CAD)</th>
-                        <th>操作</th>
+                        <th>{t('thSize')}</th>
+                        <th>{t('thAdditionalFee')}</th>
+                        <th>{t('thActions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1187,13 +1263,13 @@ export default function SalesOrdersPage() {
                                   onClick={() => handleUpdateSizeFee(fee.id, fee.size)}
                                   className="config-btn config-btn-success"
                                 >
-                                  保存
+                                  {t('btnSave')}
                                 </button>
                                 <button
                                   onClick={() => setEditingSizeFeeId(null)}
                                   className="config-btn config-btn-secondary"
                                 >
-                                  取消
+                                  {t('btnCancel')}
                                 </button>
                               </div>
                             ) : (
@@ -1204,14 +1280,14 @@ export default function SalesOrdersPage() {
                                 }}
                                 className="config-btn config-btn-secondary"
                               >
-                                编辑
+                                {t('btnEdit')}
                               </button>
                             )}
                           </td>
                         </tr>
                       ))}
                       {sizeFees.length === 0 && (
-                        <tr><td colSpan={3} style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>未配置尺码费用</td></tr>
+                        <tr><td colSpan={3} style={{ textAlign: 'center', color: '#999', padding: '2rem' }}>{t('noSizeFeesConfigured')}</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -1641,7 +1717,7 @@ export default function SalesOrdersPage() {
           }
         }
       `}</style>
-    </div>
+    </div >
   );
 }
 

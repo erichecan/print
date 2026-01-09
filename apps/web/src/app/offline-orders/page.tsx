@@ -226,7 +226,12 @@ const extensionIsAllowed = (fileName: string) => {
 };
 
 // 用户菜单组件（登录按钮/用户菜单）
-function UserMenu() {
+function UserMenu({ locale }: { locale: OfflineOrdersLocale }) {
+  const t = useCallback((key: string) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    return translations[key] || OFFLINE_ORDERS_TRANSLATIONS.en[key] || key;
+  }, [locale]);
+
   const [isClient, setIsClient] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -310,7 +315,7 @@ function UserMenu() {
         onClick={() => router.push('/offline-orders/sales/login')}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors text-sm shadow-md"
       >
-        登录
+        {t('login')}
       </button>
     );
   }
@@ -348,7 +353,7 @@ function UserMenu() {
           }}
           className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
         >
-          订单管理
+          {t('orderManagement')}
         </button>
         <button
           type="button"
@@ -358,14 +363,14 @@ function UserMenu() {
           }}
           className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
         >
-          修改密码
+          {t('changePassword')}
         </button>
         <button
           type="button"
           onClick={handleLogout}
           className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-200"
         >
-          退出登录
+          {t('logout')}
         </button>
       </div>
     </>
@@ -395,13 +400,13 @@ function UserMenu() {
 // 编辑模式包装组件（处理useSearchParams的Suspense）
 function OfflineOrdersIntakePageContent() {
   const searchParams = useSearchParams();
-  const editId = searchParams.get('editId');
+  const editId = searchParams?.get('editId');
   return <OfflineOrdersIntakePageInner editId={editId || undefined} />;
 }
 
 export default function OfflineOrdersIntakePage() {
   return (
-    <Suspense fallback={<div>加载中...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading...</div>}>
       <OfflineOrdersIntakePageContent />
     </Suspense>
   );
@@ -410,7 +415,7 @@ export default function OfflineOrdersIntakePage() {
 function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   const router = useRouter();
   // 语言切换状态 - 默认值，避免hydration错误
-  const [locale, setLocale] = useState<OfflineOrdersLocale>('zh');
+  const [locale, setLocale] = useState<OfflineOrdersLocale>('en');
   const [isClient, setIsClient] = useState(false); // 标记是否在客户端
   // 移动设备检测 - 用于支持拍照功能
   const [isMobile, setIsMobile] = useState(false);
@@ -537,7 +542,7 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
   // 翻译函数 - 只在客户端渲染时使用localStorage中的语言
   const t = useCallback((key: string, params?: Record<string, string | number>) => {
     // 避免hydration错误，如果还没到客户端，使用默认语言
-    const currentLocale = isClient ? locale : 'zh';
+    const currentLocale = isClient ? locale : 'en';
     const translations = OFFLINE_ORDERS_TRANSLATIONS[currentLocale] || OFFLINE_ORDERS_TRANSLATIONS.en;
     const fallback = OFFLINE_ORDERS_TRANSLATIONS.en;
     let text = translations[key] || fallback[key] || key;
@@ -2674,10 +2679,17 @@ function OfflineOrdersIntakePageInner({ editId }: { editId?: string }) {
               href="/"
               className="px-4 py-2 bg-white/90 hover:bg-white rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 shadow-md transition-colors"
             >
-              回到主站
+              {t('backToMainSite')}
+            </Link>
+            {/* 进入主站后台按钮 */}
+            <Link
+              href="/admin"
+              className="px-4 py-2 bg-blue-50/90 hover:bg-blue-50 rounded-lg text-sm font-medium text-blue-700 hover:text-blue-900 shadow-md transition-colors"
+            >
+              {t('enterAdminBackend')}
             </Link>
             {/* 登录按钮/用户菜单 */}
-            <UserMenu />
+            <UserMenu locale={locale} />
             {/* 语言切换按钮 - 使用 Tailwind */}
             <div className="flex gap-2 bg-white/90 rounded-lg p-1 shadow-md">
               <button

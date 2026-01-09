@@ -1,10 +1,12 @@
 /**
-* 计费明细组件
+ * 计费明细组件
  * 显示购物小票样式的计费明细，每个"产品包"一行
  */
 'use client';
 
 import { OrderItemColorGroup } from '@/types/order';
+import { OFFLINE_ORDERS_TRANSLATIONS, OfflineOrdersLocale } from '@/translations/offlineOrders';
+import { useMemo } from 'react';
 
 interface BillingItem {
   productName: string;
@@ -34,9 +36,16 @@ interface BillingDetailsProps {
   }>;
   colorGroupsByProduct: Record<string, OrderItemColorGroup[]>;
   dstFileFee?: number;
+  locale?: OfflineOrdersLocale;
 }
 
-export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee = 0 }: BillingDetailsProps) {
+export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee = 0, locale = 'en' }: BillingDetailsProps) {
+  // Use translations
+  const t = useMemo(() => (key: string) => {
+    const translations = OFFLINE_ORDERS_TRANSLATIONS[locale] || OFFLINE_ORDERS_TRANSLATIONS.en;
+    return translations[key] || key;
+  }, [locale]);
+
   // 生成计费明细数据
   const billingItems: BillingItem[] = [];
 
@@ -54,18 +63,18 @@ export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee 
             .map(p => {
               // 将 positionKey 转换为可读名称
               const positionNames: Record<string, string> = {
-                'front': 'Front',
-                'back': 'Back',
-                'left_sleeve': 'Left Sleeve',
-                'right_sleeve': 'Right Sleeve',
-                'pocket': 'Pocket',
+                'front': t('positionFront'),
+                'back': t('positionBack'),
+                'left_sleeve': t('positionLeftSleeve'),
+                'right_sleeve': t('positionRightSleeve'),
+                'pocket': t('positionLeftPocket'), // Pocket in detail refers to Left Upper Pocket often
                 'tag_inside': 'Tag Inside',
                 'tag_outside': 'Tag Outside',
-                'custom': 'Custom'
+                'custom': t('positionOther')
               };
               return positionNames[p.positionKey] || p.positionKey;
             })
-            .join(', ') || '无位置';
+            .join(', ') || t('noPosition');
 
           // Effective Unit Price = Base Unit Price + Additional Fee (Size Fee)
           const effectiveUnitPrice = sizeData.unitPrice + (sizeData.additionalFee || 0);
@@ -90,18 +99,18 @@ export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee 
 
   return (
     <div className="mt-4 p-5 bg-white border border-gray-200 rounded-lg">
-      <h4 className="text-base font-semibold text-gray-900 m-0 mb-4">计费明细</h4>
+      <h4 className="text-base font-semibold text-gray-900 m-0 mb-4">{t('billingDetails')}</h4>
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="border-b border-gray-300">
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">产品</th>
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">颜色</th>
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">尺码</th>
-              <th className="text-right py-2 px-3 font-semibold text-gray-700">数量</th>
-              <th className="text-left py-2 px-3 font-semibold text-gray-700">位置</th>
-              <th className="text-right py-2 px-3 font-semibold text-gray-700">单价</th>
-              <th className="text-right py-2 px-3 font-semibold text-gray-700">小计</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">{t('thProduct')}</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">{t('thColor')}</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">{t('thSize')}</th>
+              <th className="text-right py-2 px-3 font-semibold text-gray-700">{t('thQuantity')}</th>
+              <th className="text-left py-2 px-3 font-semibold text-gray-700">{t('thPosition')}</th>
+              <th className="text-right py-2 px-3 font-semibold text-gray-700">{t('thUnitPrice')}</th>
+              <th className="text-right py-2 px-3 font-semibold text-gray-700">{t('thSubtotal')}</th>
             </tr>
           </thead>
           <tbody>
@@ -114,7 +123,6 @@ export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee 
                 <td className="py-2 px-3 text-gray-600 text-xs">{item.positions}</td>
                 <td className="py-2 px-3 text-right text-gray-700">
                   ${item.unitPrice.toFixed(2)}
-                  {/* If there is a diff between base and effective, we could show it, but simpler is better */}
                 </td>
                 <td className="py-2 px-3 text-right font-medium text-gray-900">${item.subtotal.toFixed(2)}</td>
               </tr>
@@ -137,4 +145,5 @@ export function BillingDetails({ productItems, colorGroupsByProduct, dstFileFee 
     </div>
   );
 }
+
 
